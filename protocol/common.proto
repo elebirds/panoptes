@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package panoptes.common;
 
-option go_package = "github.com/elebirds/panoptes/server/gen/common";
+option go_package = "github.com/elebirds/panoptes/internal/gen/common";
 option csharp_namespace = "Panoptes.Protocol.Common";
 
 // Player identity shared across all messages.

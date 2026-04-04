@@ -4,7 +4,7 @@ package panoptes.lobby;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/server/gen/lobby";
+option go_package = "github.com/elebirds/panoptes/internal/gen/lobby";
 option csharp_namespace = "Panoptes.Protocol.Lobby";
 
 service LobbyService {

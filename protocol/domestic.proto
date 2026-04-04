@@ -4,7 +4,7 @@ package panoptes.domestic;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/server/gen/domestic";
+option go_package = "github.com/elebirds/panoptes/internal/gen/domestic";
 option csharp_namespace = "Panoptes.Protocol.Domestic";
 
 // Internal (domestic) affairs: resource management, construction, diplomacy.
