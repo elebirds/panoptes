@@ -8,7 +8,8 @@
 
 using UnityEngine;
 using System.Threading.Tasks;
-using Panoptes.Runtime.Protocol;
+using Panoptes.Protocol.V1;
+using Panoptes.Protocol.V1.Auth;
 using Panoptes.Runtime.Network;
 using UnityEngine.SceneManagement;
 

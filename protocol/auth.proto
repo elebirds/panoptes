@@ -1,28 +1,31 @@
 syntax = "proto3";
 
-package panoptes.auth;
+package panoptes.proto.v1;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/auth";
-option csharp_namespace = "Panoptes.Protocol.Auth";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1.Auth";
 
-service AuthService {
-  rpc Login  (LoginRequest)  returns (LoginResponse);
-  rpc Logout (LogoutRequest) returns (panoptes.common.Status);
-}
-
-message LoginRequest {
+// 客户端→服务端
+message MsgRegister {
   string username = 1;
   string password = 2;
 }
 
-message LoginResponse {
-  panoptes.common.Status status = 1;
-  string                 token  = 2;
-  panoptes.common.Player player = 3;
+message MsgLogin {
+  string username = 1;
+  string password = 2;
 }
 
-message LogoutRequest {
+// 服务端→客户端
+message MsgLoginSuccess {
   string token = 1;
+  string player_id = 2;
+  string username = 3;
+}
+
+message MsgAuthError {
+  string code = 1;
+  string message = 2;
 }

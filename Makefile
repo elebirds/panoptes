@@ -30,4 +30,4 @@ db-reset: db-migrate-down db-migrate-up
 
 # Generate sqlc code
 db-sqlc:
-	cd server && sqlc generate
+	cd server && sqlc generate -f ./db/sqlc.yaml

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using NativeWebSocket;
-using Panoptes.Runtime.Protocol;
+using Panoptes.Protocol.V1;
 using UnityEngine;
 
 namespace Panoptes.Runtime.Network

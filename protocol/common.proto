@@ -1,18 +1,32 @@
 syntax = "proto3";
 
-package panoptes.common;
+package panoptes.proto.v1;
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/common";
-option csharp_namespace = "Panoptes.Protocol.Common";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
-// Player identity shared across all messages.
-message Player {
-  string player_id = 1;
-  string display_name = 2;
+message Position {
+  int32 x = 1;
+  int32 y = 2;
 }
 
-// Generic RPC status wrapper.
-message Status {
-  int32  code    = 1;
+message Resources {
+  int32 ore = 1;
+  int32 wood = 2;
+  int32 food = 3;
+  int32 refined_ore = 4;
+  int32 engineer_material = 5;
+  int32 build_points = 6;
+}
+
+message ErrorResponse {
+  string code = 1;
   string message = 2;
+}
+
+// 所有WebSocket消息的外层包装
+// type用于路由，payload是对应消息的protojson序列化
+message Envelope {
+  string type = 1;
+  bytes payload = 2;
 }

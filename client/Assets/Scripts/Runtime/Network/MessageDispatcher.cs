@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
+using Panoptes.Protocol.V1;
 using UnityEngine;
 
 namespace Panoptes.Runtime.Network

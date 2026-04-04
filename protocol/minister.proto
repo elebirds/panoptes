@@ -1,35 +1,29 @@
 syntax = "proto3";
 
-package panoptes.minister;
+package panoptes.proto.v1;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/minister";
-option csharp_namespace = "Panoptes.Protocol.Minister";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
-// Minister system: advisors / officials that grant passive bonuses.
-service MinisterService {
-  rpc ListMinisters  (ListMinistersRequest)  returns (ListMinistersResponse);
-  rpc AssignMinister (AssignMinisterRequest) returns (panoptes.common.Status);
+// 部长汇报（流式，多条chunk）
+message MsgMinisterReportChunk {
+  string minister_role = 1;
+  string chunk = 2;
+  bool is_final = 3;
 }
 
-message Minister {
-  string minister_id  = 1;
-  string name         = 2;
-  string role         = 3;
-  string skill_desc   = 4;
+// 数值轨（与叙事轨同时推送，is_final=true时一并发送）
+message MsgMinisterMetrics {
+  string minister_role = 1;
+  repeated MetricItem metrics = 2;
 }
 
-message ListMinistersRequest {
-  string player_id = 1;
-}
-
-message ListMinistersResponse {
-  repeated Minister ministers = 1;
-}
-
-message AssignMinisterRequest {
-  string player_id   = 1;
-  string minister_id = 2;
-  string position    = 3;
+message MetricItem {
+  string label = 1;
+  string value = 2;
+  string trend = 3; // "up|down|stable"
+  string confidence = 4; // "high|medium|low"
+  bool is_delayed = 5;
 }

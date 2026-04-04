@@ -8,8 +8,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using Panoptes.Runtime.Map;
-using Panoptes.Runtime.Protocol;
+using Panoptes.Protocol.V1;
 
 namespace Panoptes.Runtime.Cache
 {

@@ -1,8 +1,9 @@
-version: v1
+version: v2
+clean: true
 plugins:
-  - plugin: go
+  - local: protoc-gen-go
     out: ../server/internal/gen/proto
-    opt: paths=source_relative
-  # - plugin: grpc-csharp
-  #   out: ../client/Assets/Generated/Protocol
-
+    opt:
+      - paths=source_relative
+  - protoc_builtin: csharp
+    out: ../client/Assets/Scripts/Runtime/Protocol
