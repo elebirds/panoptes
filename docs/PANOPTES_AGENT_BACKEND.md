@@ -49,7 +49,8 @@ github.com/yohamta/donburi         ECS框架
 github.com/golang-jwt/jwt/v5       JWT
 github.com/xeipuuv/gojsonschema    JSON Schema校验
 google.golang.org/protobuf         Protobuf运行时
-github.com/lib/pq                  PostgreSQL驱动
+github.com/jackc/pgx/v5            PostgreSQL驱动
+github.com/pressly/goose/v3        数据库迁移
 ```
 
 ### 代码生成工具（不进go.mod）
