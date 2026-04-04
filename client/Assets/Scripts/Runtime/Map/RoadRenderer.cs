@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.Map
+namespace Panoptes.Runtime.Map
 {
     public sealed class RoadRenderer : MonoBehaviour
     {

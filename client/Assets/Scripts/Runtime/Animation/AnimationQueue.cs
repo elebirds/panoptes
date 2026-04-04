@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.Animation
+namespace Panoptes.Runtime.Animation
 {
     public sealed class AnimationQueue : MonoBehaviour
     {

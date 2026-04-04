@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Auth
+namespace Panoptes.Runtime.UI.Auth
 {
     public sealed class LoginPanel : MonoBehaviour
     {

@@ -1,9 +1,11 @@
 {
-  "name": "Panoptes.Frontend.Tests.PlayMode",
+  "name": "Panoptes.Tests.EditMode",
   "references": [
-    "Panoptes.Frontend.Runtime"
+    "Panoptes"
   ],
-  "includePlatforms": [],
+  "includePlatforms": [
+    "Editor"
+  ],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

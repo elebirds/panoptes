@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Minister
+namespace Panoptes.Runtime.UI.Minister
 {
     public sealed class ActionCard : MonoBehaviour
     {

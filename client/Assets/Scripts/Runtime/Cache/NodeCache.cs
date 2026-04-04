@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.Cache
+namespace Panoptes.Runtime.Cache
 {
     public sealed class NodeCache : MonoBehaviour
     {

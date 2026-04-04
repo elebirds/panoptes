@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Domestic
+namespace Panoptes.Runtime.UI.Domestic
 {
     public sealed class TokenActionBar : MonoBehaviour
     {

@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Combat
+namespace Panoptes.Runtime.UI.Combat
 {
     public sealed class OrderReviewPanel : MonoBehaviour
     {

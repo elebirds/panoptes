@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.HUD
+namespace Panoptes.Runtime.UI.HUD
 {
     public sealed class TurnHUD : MonoBehaviour
     {
