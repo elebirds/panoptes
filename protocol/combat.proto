@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package panoptes.combat;
+
+import "common.proto";
+import "game_state.proto";
+
+option go_package = "github.com/elebirds/panoptes/server/gen/combat";
+option csharp_namespace = "Panoptes.Protocol.Combat";
+
+service CombatService {
+  rpc UseSkill  (UseSkillRequest)  returns (panoptes.common.Status);
+  rpc MoveUnit  (MoveUnitRequest)  returns (panoptes.common.Status);
+}
+
+message UseSkillRequest {
+  string player_id = 1;
+  string skill_id  = 2;
+  string target_id = 3;
+}
+
+message MoveUnitRequest {
+  string                   unit_id     = 1;
+  panoptes.game_state.Vec2 destination = 2;
+}

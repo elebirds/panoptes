@@ -1,89 +1,69 @@
 # ===========================
-# Unity
+# Go (server/)
 # ===========================
-[Ll]ibrary/
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-[Ll]ogs/
-[Uu]ser[Ss]ettings/
-[Mm]emory[Cc]aptures/
-
-# Unity auto-generated VS/Rider project files
-*.csproj
-*.unityproj
-*.sln
-*.suo
-*.tmp
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-
-# Unity3D generated meta files
-*.pidb.meta
-*.pdb.meta
-*.mdb.meta
-
-# Unity3D generated file on crash reports
-sysinfo.txt
-
-# Builds
-*.apk
-*.aab
-*.unitypackage
-*.app
-
-# Crashlytics generated file
-crashlytics-build.properties
-
-# Packed Addressables
-/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/**/*.bin*
-
-# Temporary auto-generated Android Assets
-/[Aa]ssets/[Ss]treamingAssets/aa.meta
-/[Aa]ssets/[Ss]treamingAssets/aa/
-
-# ===========================
-# Go
-# ===========================
-# Binaries
+server/bin/
+server/dist/
+server/tmp/
+server/vendor/
+go.work
+go.work.sum
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binaries
 *.test
-
-# Output of go coverage tool
 *.out
 
-# Go workspace file
-go.work
-go.work.sum
+# ===========================
+# Unity (client/)
+# ===========================
+client/Library/
+client/Temp/
+client/Obj/
+client/Build/
+client/Builds/
+client/Logs/
+client/UserSettings/
+client/MemoryCaptures/
+client/*.csproj
+client/*.unityproj
+client/*.sln
+client/*.suo
+client/*.user
+client/*.userprefs
+client/*.pidb
+client/*.booproj
+client/*.svd
+client/*.pdb
+client/*.mdb
+client/*.opendb
+client/*.VC.db
+client/*.pidb.meta
+client/*.pdb.meta
+client/*.mdb.meta
+client/sysinfo.txt
+client/*.apk
+client/*.aab
+client/*.unitypackage
+client/*.app
+client/crashlytics-build.properties
+client/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/**/*.bin*
+client/[Aa]ssets/[Ss]treamingAssets/aa.meta
+client/[Aa]ssets/[Ss]treamingAssets/aa/
 
-# Dependency directory (vendor)
-backend/vendor/
-
-# Build output
-backend/bin/
-backend/dist/
-
-# Air live reload tmp directory
-backend/tmp/
+# ===========================
+# Generated protocol code
+# (commit these to avoid requiring buf on every machine)
+# Uncomment the lines below only if you decide NOT to commit generated files.
+# ===========================
+# protocol/gen/
+# server/gen/
+# client/Assets/Generated/
 
 # ===========================
 # General
 # ===========================
-# OS-generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -92,8 +72,6 @@ backend/tmp/
 ehthumbs.db
 Thumbs.db
 desktop.ini
-
-# Editor directories and files
 .vscode/
 .idea/
 *.swp

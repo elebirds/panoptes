@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package panoptes.game_state;
+
+import "common.proto";
+
+option go_package = "github.com/elebirds/panoptes/server/gen/game_state";
+option csharp_namespace = "Panoptes.Protocol.GameState";
+
+// Authoritative snapshot of the entire game world, broadcast each tick.
+message GameState {
+  int64                   tick       = 1;
+  repeated PlayerState    players    = 2;
+  repeated EntityState    entities   = 3;
+}
+
+message PlayerState {
+  panoptes.common.Player player   = 1;
+  Vec2                   position = 2;
+  int32                  hp       = 3;
+  int32                  mp       = 4;
+}
+
+message EntityState {
+  string entity_id = 1;
+  string type      = 2;
+  Vec2   position  = 3;
+  int32  hp        = 4;
+}
+
+message Vec2 {
+  float x = 1;
+  float y = 2;
+}
