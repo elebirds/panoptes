@@ -9,7 +9,9 @@ import (
 )
 
 type Config struct {
-	Port string `env:"PORT" envDefault:"8080"`
+	Port      string `env:"PORT" envDefault:"8080"`
+	LogLevel  string `env:"LOG_LEVEL" envDefault:"info"`
+	LogFormat string `env:"LOG_FORMAT" envDefault:"auto"`
 }
 
 func Load() (Config, error) {
