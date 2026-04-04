@@ -1,11 +1,20 @@
-# Go backend binaries
+# Go server binaries
 bin/
 dist/
 tmp/
 
-# Test binaries
-*.test
-*.out
-
 # Vendor directory
 vendor/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Binaries & test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
