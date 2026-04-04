@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package panoptes.domestic;
+
+import "common.proto";
+
+option go_package = "github.com/elebirds/panoptes/server/gen/domestic";
+option csharp_namespace = "Panoptes.Protocol.Domestic";
+
+// Internal (domestic) affairs: resource management, construction, diplomacy.
+service DomesticService {
+  rpc GetResources  (GetResourcesRequest)  returns (GetResourcesResponse);
+  rpc BuildStructure(BuildStructureRequest) returns (panoptes.common.Status);
+}
+
+message Resources {
+  int32 gold  = 1;
+  int32 food  = 2;
+  int32 wood  = 3;
+  int32 stone = 4;
+}
+
+message GetResourcesRequest {
+  string player_id = 1;
+}
+
+message GetResourcesResponse {
+  panoptes.common.Status status    = 1;
+  Resources              resources = 2;
+}
+
+message BuildStructureRequest {
+  string player_id     = 1;
+  string structure_type = 2;
+  int32  grid_x        = 3;
+  int32  grid_y        = 4;
+}

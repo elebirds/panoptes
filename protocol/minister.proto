@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package panoptes.minister;
+
+import "common.proto";
+
+option go_package = "github.com/elebirds/panoptes/server/gen/minister";
+option csharp_namespace = "Panoptes.Protocol.Minister";
+
+// Minister system: advisors / officials that grant passive bonuses.
+service MinisterService {
+  rpc ListMinisters  (ListMinistersRequest)  returns (ListMinistersResponse);
+  rpc AssignMinister (AssignMinisterRequest) returns (panoptes.common.Status);
+}
+
+message Minister {
+  string minister_id  = 1;
+  string name         = 2;
+  string role         = 3;
+  string skill_desc   = 4;
+}
+
+message ListMinistersRequest {
+  string player_id = 1;
+}
+
+message ListMinistersResponse {
+  repeated Minister ministers = 1;
+}
+
+message AssignMinisterRequest {
+  string player_id   = 1;
+  string minister_id = 2;
+  string position    = 3;
+}

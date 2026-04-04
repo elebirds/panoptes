@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package panoptes.common;
+
+option go_package = "github.com/elebirds/panoptes/server/gen/common";
+option csharp_namespace = "Panoptes.Protocol.Common";
+
+// Player identity shared across all messages.
+message Player {
+  string player_id = 1;
+  string display_name = 2;
+}
+
+// Generic RPC status wrapper.
+message Status {
+  int32  code    = 1;
+  string message = 2;
+}
