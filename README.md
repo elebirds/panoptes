@@ -28,7 +28,10 @@ panoptes/
 ├── Makefile                    # 顶层命令，统一入口
 │
 ├── server/                     # Go 后端
-│   ├── main.go
+│   ├── cmd/
+│   │   └── server/
+│   │       └── main.go
+│   ├── internal/               # 后端各业务包（脚手架）
 │   ├── go.mod
 │   ├── go.sum
 │   └── gen/                    # buf 生成的 Go 代码（已提交）
@@ -63,14 +66,14 @@ panoptes/
 | 工具 | 版本 |
 |------|------|
 | Unity | 2022.3 LTS+ |
-| Go | 1.22+ |
+| Go | 1.26+ |
 | [buf](https://buf.build/docs/installation) | 最新版（仅改 proto 时需要） |
 
 ### 后端
 
 ```bash
 make server
-# 等价于: cd server && go run main.go
+# 等价于: cd server && go run ./cmd/server
 # 默认监听 :8080，PORT 环境变量可覆盖
 ```
 

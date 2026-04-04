@@ -7,7 +7,7 @@ gen:
 
 # Run the Go backend
 server:
-	cd server && go run main.go
+	cd server && go run ./cmd/server
 
 # Lint & vet
 lint:

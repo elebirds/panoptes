@@ -1,3 +1,3 @@
-module github.com/elebirds/panoptes
+module panoptes-server
 
-go 1.22
+go 1.26
