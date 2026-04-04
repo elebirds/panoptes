@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Lobby
+namespace Panoptes.Runtime.UI.Lobby
 {
     public sealed class LobbyPanel : MonoBehaviour
     {

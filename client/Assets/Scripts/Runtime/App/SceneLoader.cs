@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.App
+namespace Panoptes.Runtime.App
 {
     public sealed class SceneLoader : MonoBehaviour
     {

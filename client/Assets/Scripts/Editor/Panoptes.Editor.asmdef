@@ -1,7 +1,7 @@
 {
-  "name": "Panoptes.Frontend.Tests.EditMode",
+  "name": "Panoptes.Editor",
   "references": [
-    "Panoptes.Frontend.Runtime"
+    "Panoptes"
   ],
   "includePlatforms": [
     "Editor"
@@ -10,11 +10,8 @@
   "allowUnsafeCode": false,
   "overrideReferences": false,
   "precompiledReferences": [],
-  "autoReferenced": false,
+  "autoReferenced": true,
   "defineConstraints": [],
   "versionDefines": [],
-  "noEngineReferences": false,
-  "optionalUnityReferences": [
-    "TestAssemblies"
-  ]
+  "noEngineReferences": false
 }

@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.UI.Common
+namespace Panoptes.Runtime.UI.Common
 {
     public sealed class LoadingOverlay : MonoBehaviour
     {

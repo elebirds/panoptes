@@ -8,7 +8,7 @@
 
 using UnityEngine;
 
-namespace Panoptes.Frontend.App
+namespace Panoptes.Runtime.App
 {
     [CreateAssetMenu(fileName = "ClientConfig", menuName = "Panoptes/Client Config")]
     public sealed class Config : ScriptableObject
