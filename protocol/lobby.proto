@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package panoptes.lobby;
+
+import "common.proto";
+
+option go_package = "github.com/elebirds/panoptes/server/gen/lobby";
+option csharp_namespace = "Panoptes.Protocol.Lobby";
+
+service LobbyService {
+  rpc CreateRoom (CreateRoomRequest) returns (CreateRoomResponse);
+  rpc JoinRoom   (JoinRoomRequest)   returns (JoinRoomResponse);
+  rpc LeaveRoom  (LeaveRoomRequest)  returns (panoptes.common.Status);
+  rpc ListRooms  (ListRoomsRequest)  returns (ListRoomsResponse);
+}
+
+message Room {
+  string                         room_id     = 1;
+  string                         name        = 2;
+  repeated panoptes.common.Player players    = 3;
+  int32                          max_players = 4;
+}
+
+message CreateRoomRequest {
+  string room_name   = 1;
+  int32  max_players = 2;
+}
+
+message CreateRoomResponse {
+  panoptes.common.Status status = 1;
+  Room                   room   = 2;
+}
+
+message JoinRoomRequest {
+  string room_id = 1;
+}
+
+message JoinRoomResponse {
+  panoptes.common.Status status = 1;
+  Room                   room   = 2;
+}
+
+message LeaveRoomRequest {
+  string room_id = 1;
+}
+
+message ListRoomsRequest {}
+
+message ListRoomsResponse {
+  repeated Room rooms = 1;
+}
