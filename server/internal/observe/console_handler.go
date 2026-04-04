@@ -1,0 +1,288 @@
+package observe
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"log/slog"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode"
+)
+
+// consoleHandler 实现 slog.Handler 接口，提供彩色控制台输出。
+type consoleHandler struct {
+	w      io.Writer
+	level  slog.Level
+	attrs  []slog.Attr
+	groups []string
+	mu     *sync.Mutex
+}
+
+// consoleField 表示一个日志字段。
+type consoleField struct {
+	key   string
+	value slog.Value
+}
+
+// newConsoleHandler 创建一个新的控制台处理器。
+func newConsoleHandler(w io.Writer, level slog.Level) slog.Handler {
+	return &consoleHandler{
+		w:     w,
+		level: level,
+		mu:    &sync.Mutex{},
+	}
+}
+
+// Enabled 判断给定级别的日志是否应该被输出。
+func (h *consoleHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+// Handle 处理日志记录。
+func (h *consoleHandler) Handle(_ context.Context, record slog.Record) error {
+	attrs := make([]slog.Attr, 0, len(h.attrs)+record.NumAttrs())
+	attrs = append(attrs, h.attrs...)
+	record.Attrs(func(attr slog.Attr) bool {
+		attrs = append(attrs, attr)
+		return true
+	})
+
+	var b strings.Builder
+	if !record.Time.IsZero() {
+		b.WriteString(colorize("\x1b[90m", record.Time.Format(time.Kitchen)))
+		b.WriteByte(' ')
+	}
+	b.WriteString(colorize(levelColor(record.Level), levelLabel(record.Level)))
+	if record.Message != "" {
+		b.WriteByte(' ')
+		b.WriteString(formatConsoleMessage(record.Level, record.Message))
+	}
+
+	fields := collectConsoleFields(h.groups, attrs)
+	sortConsoleFields(fields)
+	for _, field := range fields {
+		b.WriteByte(' ')
+		b.WriteString(formatConsoleFieldName(field.key))
+		b.WriteString(formatConsoleValue(field.key, field.value))
+	}
+	b.WriteByte('\n')
+
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	_, err := io.WriteString(h.w, b.String())
+	return err
+}
+
+// WithAttrs 返回带有额外属性的新处理器。
+func (h *consoleHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &consoleHandler{
+		w:      h.w,
+		level:  h.level,
+		attrs:  append(cloneAttrs(h.attrs), attrs...),
+		groups: cloneStrings(h.groups),
+		mu:     h.mu,
+	}
+}
+
+// WithGroup 返回带有分组的新处理器。
+func (h *consoleHandler) WithGroup(name string) slog.Handler {
+	return &consoleHandler{
+		w:      h.w,
+		level:  h.level,
+		attrs:  cloneAttrs(h.attrs),
+		groups: append(cloneStrings(h.groups), name),
+		mu:     h.mu,
+	}
+}
+
+// collectConsoleFields 从属性中收集字段。
+func collectConsoleFields(prefix []string, attrs []slog.Attr) []consoleField {
+	fields := make([]consoleField, 0, len(attrs))
+	for _, attr := range attrs {
+		fields = appendConsoleField(fields, prefix, attr)
+	}
+	return fields
+}
+
+// appendConsoleField 递归添加字段。
+func appendConsoleField(fields []consoleField, prefix []string, attr slog.Attr) []consoleField {
+	attr.Value = attr.Value.Resolve()
+	if attr.Equal(slog.Attr{}) {
+		return fields
+	}
+
+	if attr.Value.Kind() == slog.KindGroup {
+		groupPrefix := prefix
+		if attr.Key != "" {
+			groupPrefix = appendPrefix(prefix, attr.Key)
+		}
+		for _, item := range attr.Value.Group() {
+			fields = appendConsoleField(fields, groupPrefix, item)
+		}
+		return fields
+	}
+
+	key := attr.Key
+	if key == "" {
+		return fields
+	}
+	if len(prefix) > 0 {
+		key = strings.Join(appendPrefix(prefix, key), ".")
+	}
+
+	fields = append(fields, consoleField{key: key, value: attr.Value})
+	return fields
+}
+
+// sortConsoleFields 对字段进行排序，error 字段优先。
+func sortConsoleFields(fields []consoleField) {
+	sort.Slice(fields, func(i, j int) bool {
+		leftError := isErrorKey(fields[i].key)
+		rightError := isErrorKey(fields[j].key)
+		if leftError != rightError {
+			return leftError
+		}
+		return fields[i].key < fields[j].key
+	})
+}
+
+// formatConsoleMessage 格式化日志消息。
+func formatConsoleMessage(level slog.Level, message string) string {
+	switch {
+	case level >= slog.LevelInfo:
+		return colorize("\x1b[1m", message)
+	default:
+		return message
+	}
+}
+
+// formatConsoleFieldName 格式化字段名。
+func formatConsoleFieldName(key string) string {
+	return colorize("\x1b[36m", key+"=")
+}
+
+// formatConsoleValue 格式化字段值。
+func formatConsoleValue(key string, value slog.Value) string {
+	value = value.Resolve()
+	rendered := formatConsoleValueText(value)
+	if isErrorKey(key) {
+		return colorize("\x1b[31;1m", rendered)
+	}
+	return rendered
+}
+
+// formatConsoleValueText 格式化值的文本表示。
+func formatConsoleValueText(value slog.Value) string {
+	switch value.Kind() {
+	case slog.KindString:
+		return quoteIfNeeded(value.String())
+	case slog.KindInt64:
+		return strconv.FormatInt(value.Int64(), 10)
+	case slog.KindUint64:
+		return strconv.FormatUint(value.Uint64(), 10)
+	case slog.KindFloat64:
+		return strconv.FormatFloat(value.Float64(), 'f', -1, 64)
+	case slog.KindBool:
+		return strconv.FormatBool(value.Bool())
+	case slog.KindDuration:
+		return value.Duration().String()
+	case slog.KindTime:
+		return value.Time().Format(time.RFC3339Nano)
+	case slog.KindAny:
+		return quoteIfNeeded(fmt.Sprint(value.Any()))
+	default:
+		return quoteIfNeeded(value.String())
+	}
+}
+
+// quoteIfNeeded 在必要时给字符串添加引号。
+func quoteIfNeeded(s string) string {
+	if s == "" {
+		return `""`
+	}
+	for _, r := range s {
+		if unicode.IsSpace(r) || r == '=' || r == '"' || unicode.IsControl(r) {
+			return strconv.Quote(s)
+		}
+	}
+	return s
+}
+
+// appendPrefix 添加前缀。
+func appendPrefix(prefix []string, value string) []string {
+	out := make([]string, 0, len(prefix)+1)
+	out = append(out, prefix...)
+	out = append(out, value)
+	return out
+}
+
+// cloneAttrs 克隆属性切片。
+func cloneAttrs(attrs []slog.Attr) []slog.Attr {
+	if len(attrs) == 0 {
+		return nil
+	}
+	out := make([]slog.Attr, len(attrs))
+	copy(out, attrs)
+	return out
+}
+
+// cloneStrings 克隆字符串切片。
+func cloneStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]string, len(values))
+	copy(out, values)
+	return out
+}
+
+// levelColor 返回日志级别对应的 ANSI 颜色代码。
+func levelColor(level slog.Level) string {
+	switch {
+	case level < slog.LevelDebug:
+		return "\x1b[34m"
+	case level <= slog.LevelDebug:
+		return ""
+	case level < slog.LevelWarn:
+		return "\x1b[32m"
+	case level < slog.LevelError:
+		return "\x1b[33m"
+	default:
+		return "\x1b[31m"
+	}
+}
+
+// levelLabel 返回日志级别的简短标签。
+func levelLabel(level slog.Level) string {
+	switch {
+	case level < slog.LevelDebug:
+		return "TRC"
+	case level == slog.LevelDebug:
+		return "DBG"
+	case level < slog.LevelWarn:
+		return "INF"
+	case level < slog.LevelError:
+		return "WRN"
+	case level < slog.LevelError+4:
+		return "ERR"
+	default:
+		return "ERR"
+	}
+}
+
+// isErrorKey 判断键是否为错误字段。
+func isErrorKey(key string) bool {
+	return key == "err" || key == "error"
+}
+
+// colorize 给文本添加 ANSI 颜色。
+func colorize(colorCode, value string) string {
+	if colorCode == "" {
+		return value
+	}
+	return colorCode + value + "\x1b[0m"
+}
