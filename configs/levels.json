@@ -1,0 +1,21 @@
+[
+  {
+    "id": "level_01",
+    "name": "Grasslands",
+    "scene": "Assets/Scenes/Level01.unity",
+    "unlocked": true,
+    "enemies": [
+      { "type": "slime", "count": 5, "spawnRate": 3.0 }
+    ]
+  },
+  {
+    "id": "level_02",
+    "name": "Dark Forest",
+    "scene": "Assets/Scenes/Level02.unity",
+    "unlocked": false,
+    "enemies": [
+      { "type": "wolf", "count": 3, "spawnRate": 5.0 },
+      { "type": "slime", "count": 8, "spawnRate": 2.0 }
+    ]
+  }
+]
