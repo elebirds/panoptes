@@ -16,7 +16,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
 
-	log.Printf("panoptes backend listening on :%s", port)
+	log.Printf("panoptes server listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
