@@ -1,0 +1,11 @@
+# Go backend binaries
+bin/
+dist/
+tmp/
+
+# Test binaries
+*.test
+*.out
+
+# Vendor directory
+vendor/
