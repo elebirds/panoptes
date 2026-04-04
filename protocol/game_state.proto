@@ -1,34 +1,81 @@
 syntax = "proto3";
 
-package panoptes.game_state;
+package panoptes.proto.v1;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/game_state";
-option csharp_namespace = "Panoptes.Protocol.GameState";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
-// Authoritative snapshot of the entire game world, broadcast each tick.
-message GameState {
-  int64                   tick       = 1;
-  repeated PlayerState    players    = 2;
-  repeated EntityState    entities   = 3;
+message NodeView {
+  string id = 1;
+  Position pos = 2;
+  string terrain = 3; // "plain|mountain|forest|river"
+  string owner = 4; // player_id or ""
+  string building_type = 5; // "" if none
+  int32 building_hp = 6;
+  int32 wall_level = 7;
+  int32 my_unit_count = 8; // 己方兵力（精确）
+  int32 enemy_unit_count = 9; // 敌方兵力（可能有延迟/失真）
+  bool has_road = 10;
+  bool is_resource_point = 11;
+  string resource_type = 12; // "ore|wood|food"
+  bool is_safe_zone = 13;
 }
 
-message PlayerState {
-  panoptes.common.Player player   = 1;
-  Vec2                   position = 2;
-  int32                  hp       = 3;
-  int32                  mp       = 4;
+message UnitView {
+  string id = 1;
+  string faction = 2;
+  string unit_type = 3;
+  int32 hp = 4;
+  int32 max_hp = 5;
+  Position pos = 6;
 }
 
-message EntityState {
-  string entity_id = 1;
-  string type      = 2;
-  Vec2   position  = 3;
-  int32  hp        = 4;
+message PlayerView {
+  string id = 1;
+  string username = 2;
+  Resources resources = 3;
+  int32 tokens_left = 4;
+  string current_policy = 5;
+  int32 main_castle_hp = 6;
+  int32 max_castle_hp = 7;
+  repeated WarZone war_zones = 8;
 }
 
-message Vec2 {
-  float x = 1;
-  float y = 2;
+message WarZone {
+  string id = 1;
+  string name = 2;
+  repeated string node_ids = 3;
+  string directive = 4;
+  string target_node = 5;
+}
+
+message MinisterView {
+  string role = 1; // "military|agriculture|diplomacy"
+  string name = 2;
+  int32 ability = 3; // 1-10，可见
+  string personality = 4; // 性格描述词，可见（模糊）
+  // loyalty和ambition不推送给客户端
+}
+
+// 游戏初始化（仅发送一次）
+message MsgGameInit {
+  string game_id = 1;
+  string your_player_id = 2;
+  int32 turn = 3;
+  string phase = 4;
+  repeated NodeView nodes = 5;
+  repeated UnitView units = 6;
+  PlayerView my_player = 7;
+  repeated MinisterView ministers = 8;
+  int32 map_width = 9;
+  int32 map_height = 10;
+}
+
+// 游戏结束
+message MsgGameOver {
+  string winner_id = 1;
+  string reason = 2; // "castle_destroyed|timeout_draw"
+  string narrative = 3; // LLM生成的本局历史总结
 }

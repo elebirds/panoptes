@@ -7,6 +7,8 @@
  *************************************************/
 
 
+using Google.Protobuf;
+
 namespace Panoptes.Runtime.Network
 {
     // 静态工具类，所有发送操作走这里

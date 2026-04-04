@@ -19,5 +19,5 @@ go.work.sum
 *.test
 *.out
 
-server
-server.exe
+server # Ignore macOS/Linux executable, which may be generated during development.
+server.exe # Windows executable

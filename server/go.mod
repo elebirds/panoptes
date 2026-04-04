@@ -9,6 +9,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/redis/go-redis/v9 v9.18.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (

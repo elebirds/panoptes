@@ -1,47 +1,59 @@
 syntax = "proto3";
 
-package panoptes.lobby;
+package panoptes.proto.v1;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/lobby";
-option csharp_namespace = "Panoptes.Protocol.Lobby";
-
-service LobbyService {
-  rpc CreateRoom (CreateRoomRequest) returns (CreateRoomResponse);
-  rpc JoinRoom   (JoinRoomRequest)   returns (JoinRoomResponse);
-  rpc LeaveRoom  (LeaveRoomRequest)  returns (panoptes.common.Status);
-  rpc ListRooms  (ListRoomsRequest)  returns (ListRoomsResponse);
-}
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 message Room {
-  string                         room_id     = 1;
-  string                         name        = 2;
-  repeated panoptes.common.Player players    = 3;
-  int32                          max_players = 4;
-}
-
-message CreateRoomRequest {
-  string room_name   = 1;
-  int32  max_players = 2;
-}
-
-message CreateRoomResponse {
-  panoptes.common.Status status = 1;
-  Room                   room   = 2;
-}
-
-message JoinRoomRequest {
   string room_id = 1;
+  string room_code = 2; // 6位邀请码
+  repeated RoomPlayer players = 3;
+  string status = 4; // "waiting|ready|starting"
 }
 
-message JoinRoomResponse {
-  panoptes.common.Status status = 1;
-  Room                   room   = 2;
+// 客户端→服务端
+message MsgCreateRoom {
+  string room_name = 1;
 }
 
-message LeaveRoomRequest {
+message MsgJoinRoom {
+  string room_code = 1;
+}
+
+message MsgLeaveRoom {}
+
+message MsgReadyUp {}
+
+// 服务端→客户端
+message MsgRoomCreated {
   string room_id = 1;
+  string room_code = 2; // 6位邀请码
+}
+
+message MsgRoomState {
+  string room_id = 1;
+  string room_code = 2;
+  repeated RoomPlayer players = 3;
+  string status = 4; // "waiting|ready|starting"
+}
+
+message RoomPlayer {
+  string player_id = 1;
+  string username = 2;
+  bool is_ready = 3;
+  bool is_host = 4;
+}
+
+message MsgGameStarting {
+  int32 countdown = 1; // 秒
+}
+
+message MsgLobbyError {
+  string code = 1;
+  string message = 2;
 }
 
 message ListRoomsRequest {}

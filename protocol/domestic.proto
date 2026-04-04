@@ -1,37 +1,97 @@
 syntax = "proto3";
 
-package panoptes.domestic;
+package panoptes.proto.v1;
 
 import "common.proto";
+import "game_state.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/domestic";
-option csharp_namespace = "Panoptes.Protocol.Domestic";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
-// Internal (domestic) affairs: resource management, construction, diplomacy.
-service DomesticService {
-  rpc GetResources  (GetResourcesRequest)  returns (GetResourcesResponse);
-  rpc BuildStructure(BuildStructureRequest) returns (panoptes.common.Status);
+
+// ===== 客户端→服务端 =====
+
+message MsgSetPolicy {
+  string policy = 1;
+  // "ready_for_war|expansion|recuperation|diplomacy"
 }
 
-message Resources {
-  int32 gold  = 1;
-  int32 food  = 2;
-  int32 wood  = 3;
-  int32 stone = 4;
+message MsgMinisterDirective {
+  string minister_role = 1;
+  string content = 2;
 }
 
-message GetResourcesRequest {
-  string player_id = 1;
+message MsgTokenBuild {
+  string node_id = 1;
+  string building_type = 2;
 }
 
-message GetResourcesResponse {
-  panoptes.common.Status status    = 1;
-  Resources              resources = 2;
+message MsgTokenReveal {
+  string node_id = 1;
 }
 
-message BuildStructureRequest {
-  string player_id     = 1;
-  string structure_type = 2;
-  int32  grid_x        = 3;
-  int32  grid_y        = 4;
+message MsgTokenVeto {
+  string action_id = 1;
+}
+
+message MsgTokenAdjustFlow {
+  string from_node = 1;
+  string to_node = 2;
+  string resource_type = 3;
+  int32 amount = 4;
+}
+
+message MsgBuildRoad {
+  string from_node = 1;
+  string to_node = 2;
+  // 服务端A*自动寻路
+  // 若玩家指定路径点，放入waypoints
+  repeated Position waypoints = 3;
+}
+
+message MsgSubmitDomestic {}
+
+// ===== 服务端→客户端 =====
+
+message MsgDomesticPhaseStart {
+  int32 timeout = 1;
+  int32 turn = 2;
+  int32 tokens = 3;
+  string current_policy = 4;
+}
+
+message MsgTokenResult {
+  bool success = 1;
+  string action = 2;
+  int32 tokens_left = 3;
+  string error_code = 4; // 失败时填
+}
+
+message MsgRevealResult {
+  string node_id = 1;
+  NodeView true_state = 2;
+  int32 tokens_left = 3;
+}
+
+message MsgMinisterAction {
+  string minister = 1;
+  string action_id = 2;
+  repeated MinisterActionItem actions = 3;
+  string report = 4; // 叙事轨（LLM生成）
+}
+
+message MinisterActionItem {
+  string type = 1;
+  // "build|repair_road|move_units|redirect_flow"
+  map<string, string> params = 2;
+}
+
+message MsgDomesticSettlement {
+  repeated DomesticChange changes = 1;
+  Resources my_resources_after = 2;
+}
+
+message DomesticChange {
+  string type = 1;
+  map<string, string> data = 2;
 }
