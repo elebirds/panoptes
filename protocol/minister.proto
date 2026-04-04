@@ -4,7 +4,7 @@ package panoptes.minister;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/server/gen/minister";
+option go_package = "github.com/elebirds/panoptes/internal/gen/minister";
 option csharp_namespace = "Panoptes.Protocol.Minister";
 
 // Minister system: advisors / officials that grant passive bonuses.

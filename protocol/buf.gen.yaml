@@ -1,10 +1,8 @@
 version: v1
 plugins:
   - plugin: go
-    out: ../server/gen
+    out: ../server/internal/gen/proto
     opt: paths=source_relative
-  - plugin: go-grpc
-    out: ../server/gen
-    opt: paths=source_relative
-  - plugin: grpc-csharp
-    out: gen/csharp
+  # - plugin: grpc-csharp
+  #   out: ../client/Assets/Generated/Protocol
+

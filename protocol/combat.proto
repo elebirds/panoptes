@@ -5,7 +5,7 @@ package panoptes.combat;
 import "common.proto";
 import "game_state.proto";
 
-option go_package = "github.com/elebirds/panoptes/server/gen/combat";
+option go_package = "github.com/elebirds/panoptes/internal/gen/combat";
 option csharp_namespace = "Panoptes.Protocol.Combat";
 
 service CombatService {

@@ -4,7 +4,7 @@ package panoptes.game_state;
 
 import "common.proto";
 
-option go_package = "github.com/elebirds/panoptes/server/gen/game_state";
+option go_package = "github.com/elebirds/panoptes/internal/gen/game_state";
 option csharp_namespace = "Panoptes.Protocol.GameState";
 
 // Authoritative snapshot of the entire game world, broadcast each tick.
