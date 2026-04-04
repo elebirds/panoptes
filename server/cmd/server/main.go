@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
+
+	"panoptes-server/internal/config"
 )
 
 func main() {
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = os.Getenv("PORT")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("load config error: %v", err)
 	}
-	if port == "" {
-		port = "8080"
-	}
+
+	port := cfg.Port
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
