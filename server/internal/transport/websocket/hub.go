@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,8 @@ type broadcastMsg struct {
 	data   []byte
 }
 
+type LeaveRoomFunc func(ctx context.Context, playerID string) error
+
 // Hub manages all active websocket connections.
 type Hub struct {
 	clients    map[string]*Client
@@ -25,6 +28,8 @@ type Hub struct {
 	jwtSecret string
 	upgrader  websocket.Upgrader
 	mu        sync.RWMutex
+	router    *Router
+	leaveRoom LeaveRoomFunc
 }
 
 func NewHub(jwtSecret string) *Hub {
@@ -60,12 +65,20 @@ func (h *Hub) Run() {
 				go stale.Close()
 			}
 		case client := <-h.unregister:
-			// Hub 仅维护连接索引；真正的资源清理由 Client.Close 负责。
+			var leaveRoom LeaveRoomFunc
 			h.mu.Lock()
 			if registered, ok := h.clients[client.playerID]; ok && registered == client {
 				delete(h.clients, client.playerID)
 			}
+			leaveRoom = h.leaveRoom
 			h.mu.Unlock()
+			if leaveRoom != nil && client.playerID != "" {
+				go func(playerID string) {
+					if err := leaveRoom(context.Background(), playerID); err != nil {
+						slog.Warn("断线退房失败", "玩家ID", playerID, "错误", err)
+					}
+				}(client.playerID)
+			}
 		case msg := <-h.broadcast:
 			h.mu.RLock()
 			clients := make([]*Client, 0, len(h.clients))
@@ -128,6 +141,19 @@ func (h *Hub) SendToPlayer(playerID string, data []byte) error {
 
 func (h *Hub) BroadcastToRoom(roomID string, data []byte) {
 	h.broadcast <- broadcastMsg{roomID: roomID, data: data}
+}
+
+func (h *Hub) SetRouter(router *Router) {
+	h.mu.Lock()
+	h.router = router
+	h.mu.Unlock()
+	activeRouter.Store(router)
+}
+
+func (h *Hub) SetLeaveRoomFunc(fn LeaveRoomFunc) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.leaveRoom = fn
 }
 
 func (h *Hub) SetRoom(playerID, roomID string) {
