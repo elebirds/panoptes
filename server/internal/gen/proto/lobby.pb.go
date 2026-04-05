@@ -25,8 +25,10 @@ type Room struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RoomId        string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
 	RoomCode      string                 `protobuf:"bytes,2,opt,name=room_code,json=roomCode,proto3" json:"room_code,omitempty"` // 6位邀请码
-	Players       []*RoomPlayer          `protobuf:"bytes,3,rep,name=players,proto3" json:"players,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // "waiting|ready|starting"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Players       []*RoomPlayer          `protobuf:"bytes,4,rep,name=players,proto3" json:"players,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"` // "waiting|ready|starting"
+	MaxPlayers    int32                  `protobuf:"varint,6,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,6 +77,13 @@ func (x *Room) GetRoomCode() string {
 	return ""
 }
 
+func (x *Room) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 func (x *Room) GetPlayers() []*RoomPlayer {
 	if x != nil {
 		return x.Players
@@ -89,10 +98,18 @@ func (x *Room) GetStatus() string {
 	return ""
 }
 
+func (x *Room) GetMaxPlayers() int32 {
+	if x != nil {
+		return x.MaxPlayers
+	}
+	return 0
+}
+
 // 客户端→服务端
 type MsgCreateRoom struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RoomName      string                 `protobuf:"bytes,1,opt,name=room_name,json=roomName,proto3" json:"room_name,omitempty"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MaxPlayers    int32                  `protobuf:"varint,2,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -127,11 +144,18 @@ func (*MsgCreateRoom) Descriptor() ([]byte, []int) {
 	return file_lobby_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MsgCreateRoom) GetRoomName() string {
+func (x *MsgCreateRoom) GetName() string {
 	if x != nil {
-		return x.RoomName
+		return x.Name
 	}
 	return ""
+}
+
+func (x *MsgCreateRoom) GetMaxPlayers() int32 {
+	if x != nil {
+		return x.MaxPlayers
+	}
+	return 0
 }
 
 type MsgJoinRoom struct {
@@ -307,8 +331,10 @@ type MsgRoomState struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RoomId        string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
 	RoomCode      string                 `protobuf:"bytes,2,opt,name=room_code,json=roomCode,proto3" json:"room_code,omitempty"`
-	Players       []*RoomPlayer          `protobuf:"bytes,3,rep,name=players,proto3" json:"players,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // "waiting|ready|starting"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Players       []*RoomPlayer          `protobuf:"bytes,4,rep,name=players,proto3" json:"players,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"` // "waiting|ready|starting"
+	MaxPlayers    int32                  `protobuf:"varint,6,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -357,6 +383,13 @@ func (x *MsgRoomState) GetRoomCode() string {
 	return ""
 }
 
+func (x *MsgRoomState) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 func (x *MsgRoomState) GetPlayers() []*RoomPlayer {
 	if x != nil {
 		return x.Players
@@ -369,6 +402,13 @@ func (x *MsgRoomState) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *MsgRoomState) GetMaxPlayers() int32 {
+	if x != nil {
+		return x.MaxPlayers
+	}
+	return 0
 }
 
 type RoomPlayer struct {
@@ -619,14 +659,19 @@ var File_lobby_proto protoreflect.FileDescriptor
 
 const file_lobby_proto_rawDesc = "" +
 	"\n" +
-	"\vlobby.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"\x8d\x01\n" +
+	"\vlobby.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"\xc2\x01\n" +
 	"\x04Room\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x1b\n" +
-	"\troom_code\x18\x02 \x01(\tR\broomCode\x127\n" +
-	"\aplayers\x18\x03 \x03(\v2\x1d.panoptes.proto.v1.RoomPlayerR\aplayers\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\",\n" +
-	"\rMsgCreateRoom\x12\x1b\n" +
-	"\troom_name\x18\x01 \x01(\tR\broomName\"*\n" +
+	"\troom_code\x18\x02 \x01(\tR\broomCode\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x127\n" +
+	"\aplayers\x18\x04 \x03(\v2\x1d.panoptes.proto.v1.RoomPlayerR\aplayers\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x1f\n" +
+	"\vmax_players\x18\x06 \x01(\x05R\n" +
+	"maxPlayers\"D\n" +
+	"\rMsgCreateRoom\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\vmax_players\x18\x02 \x01(\x05R\n" +
+	"maxPlayers\"*\n" +
 	"\vMsgJoinRoom\x12\x1b\n" +
 	"\troom_code\x18\x01 \x01(\tR\broomCode\"\x0e\n" +
 	"\fMsgLeaveRoom\"\f\n" +
@@ -634,12 +679,15 @@ const file_lobby_proto_rawDesc = "" +
 	"MsgReadyUp\"F\n" +
 	"\x0eMsgRoomCreated\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x1b\n" +
-	"\troom_code\x18\x02 \x01(\tR\broomCode\"\x95\x01\n" +
+	"\troom_code\x18\x02 \x01(\tR\broomCode\"\xca\x01\n" +
 	"\fMsgRoomState\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x1b\n" +
-	"\troom_code\x18\x02 \x01(\tR\broomCode\x127\n" +
-	"\aplayers\x18\x03 \x03(\v2\x1d.panoptes.proto.v1.RoomPlayerR\aplayers\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"y\n" +
+	"\troom_code\x18\x02 \x01(\tR\broomCode\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x127\n" +
+	"\aplayers\x18\x04 \x03(\v2\x1d.panoptes.proto.v1.RoomPlayerR\aplayers\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x1f\n" +
+	"\vmax_players\x18\x06 \x01(\x05R\n" +
+	"maxPlayers\"y\n" +
 	"\n" +
 	"RoomPlayer\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x1a\n" +
