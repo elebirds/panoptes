@@ -28,5 +28,5 @@ message ErrorResponse {
 // type用于路由，payload是对应消息的protojson序列化
 message Envelope {
   string type = 1;
-  bytes payload = 2;
+  string payload = 2;
 }
