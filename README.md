@@ -137,16 +137,16 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 ### 对于 AI Agent
 
-开始任何任务前必须阅读 `CLAUDE.md`。
+开始任何任务前必须阅读 `AGENTS.md`。
 
 ### 对于人类开发者
 
 | 文档 | 说明 |
 |---|---|
-| `CLAUDE.md` | Agent 行为准则，也是架构决策记录 |
-| `server/AGENT_BACKEND.md` | 服务端完整开发指南 |
-| `client/AGENT_FRONTEND.md` | 客户端完整开发指南 |
-| `server/HTTP_API_DESIGN.md` | HTTP API 设计规范 |
+| `AGENTS.md` | Agent 行为准则，也是架构决策记录 |
+| `docs/PANOPTES_AGENT_BACKEND.md` | 服务端完整开发指南 |
+| `docs/PANOPTES_AGENT_FRONTEND.md` | 客户端完整开发指南 |
+| `docs/HTTP_DESIGN.md` | HTTP API 设计规范 |
 
 ### 修改协议
 
