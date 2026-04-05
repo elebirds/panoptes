@@ -7,7 +7,7 @@
  *************************************************/
 
 using System;
-using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using NativeWebSocket;
@@ -23,16 +23,18 @@ namespace Panoptes.Runtime.Network
         [Header("Config")]
         [SerializeField] private string serverUrl = "ws://localhost:8080/ws";
 
-        public bool IsConnected => _ws?.State == WebSocketState.Open;
+        public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
+        public bool IsConnecting { get; private set; }
 
         private WebSocket _ws;
-        private readonly Queue<byte[]> _receiveQueue = new();
-        private readonly object _queueLock = new();
+        private readonly JsonParser _jsonParser =
+            new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
-        // 连接状态事件
         public event Action OnConnected;
         public event Action OnDisconnected;
         public event Action<string> OnError;
+        public event Action<Envelope> OnEnvelopeReceived;
+        public event Action<Envelope> OnEnvelopeSent;
 
         void Awake()
         {
@@ -47,64 +49,59 @@ namespace Panoptes.Runtime.Network
 
         void Update()
         {
-            // NativeWebSocket 需要在主线程 dispatch
 #if !UNITY_WEBGL || UNITY_EDITOR
             _ws?.DispatchMessageQueue();
 #endif
-
-            // 处理接收队列（已在主线程）
-            lock (_queueLock)
-            {
-                while (_receiveQueue.Count > 0)
-                {
-                    var data = _receiveQueue.Dequeue();
-                    ProcessMessage(data);
-                }
-            }
         }
 
-        public async Task ConnectAsync(string url = null)
+        public async Task ConnectAsync(string url)
         {
-            var targetUrl = url ?? serverUrl;
+            var targetUrl = string.IsNullOrWhiteSpace(url) ? serverUrl : url;
+            await DisconnectInternalAsync();
+            IsConnecting = true;
 
             _ws = new WebSocket(targetUrl);
 
             _ws.OnOpen += () =>
             {
+                IsConnecting = false;
                 Debug.Log("[Network] Connected");
                 OnConnected?.Invoke();
             };
 
             _ws.OnClose += code =>
             {
+                IsConnecting = false;
                 Debug.Log($"[Network] Disconnected: {code}");
                 OnDisconnected?.Invoke();
             };
 
             _ws.OnError += err =>
             {
+                IsConnecting = false;
                 Debug.LogError($"[Network] Error: {err}");
                 OnError?.Invoke(err);
             };
 
-            _ws.OnMessage += data =>
-            {
-                // WebSocket 回调可能在非主线程，放进队列
-                lock (_queueLock)
-                {
-                    _receiveQueue.Enqueue(data);
-                }
-            };
+            _ws.OnMessage += ProcessMessage;
 
-            await _ws.Connect();
+            try
+            {
+                await _ws.Connect();
+            }
+            catch (Exception e)
+            {
+                IsConnecting = false;
+                OnError?.Invoke(e.Message);
+                throw;
+            }
         }
 
         public void Disconnect()
         {
-            _ws?.Close();
+            _ = DisconnectInternalAsync();
         }
 
-        // 发送任意 proto 消息，自动包装进 Envelope
         public void Send<T>(T message) where T : IMessage<T>
         {
             if (!IsConnected)
@@ -115,30 +112,65 @@ namespace Panoptes.Runtime.Network
 
             var envelope = new Envelope
             {
-                Type = typeof(T).Name,
-                Payload = message.ToByteString()
+                Type = message.Descriptor.Name,
+                Payload = JsonFormatter.Default.Format(message)
             };
 
-            var bytes = envelope.ToByteArray();
+            var envelopeJson = JsonFormatter.Default.Format(envelope);
+            var bytes = Encoding.UTF8.GetBytes(envelopeJson);
             _ws.Send(bytes);
+            OnEnvelopeSent?.Invoke(envelope);
         }
 
         private void ProcessMessage(byte[] data)
         {
             try
             {
-                var envelope = Envelope.Parser.ParseFrom(data);
+                var rawJson = Encoding.UTF8.GetString(data);
+                var envelope = _jsonParser.Parse<Envelope>(rawJson);
+                OnEnvelopeReceived?.Invoke(envelope);
+
+                if (MessageDispatcher.Instance == null)
+                {
+                    Debug.LogWarning("[Network] MessageDispatcher is not ready.");
+                    return;
+                }
+
                 MessageDispatcher.Instance.Dispatch(envelope);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Network] Failed to parse message: {e.Message}");
+                Debug.LogError($"[Network] Failed to parse message: {e}");
+                OnError?.Invoke("invalid_message");
+            }
+        }
+
+        private async Task DisconnectInternalAsync()
+        {
+            if (_ws == null)
+            {
+                return;
+            }
+
+            var socket = _ws;
+            _ws = null;
+
+            try
+            {
+                if (socket.State == WebSocketState.Open || socket.State == WebSocketState.Connecting)
+                {
+                    await socket.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Network] Close failed: {e.Message}");
             }
         }
 
         async void OnApplicationQuit()
         {
-            await _ws?.Close();
+            await DisconnectInternalAsync();
         }
     }
 }
