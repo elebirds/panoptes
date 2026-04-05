@@ -11,7 +11,6 @@ using Google.Protobuf;
 
 namespace Panoptes.Runtime.Network
 {
-    // 静态工具类，所有发送操作走这里
     public static class MessageSender
     {
         public static void Send<T>(T message) where T : IMessage<T>
