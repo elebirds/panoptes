@@ -1,146 +1,216 @@
-# panoptes
+# Panoptes
 
-**Monorepo** — Unity 2D 前端 + Go 后端 + 共享 Protocol 定义。
+> P社让你当上帝，我们让你当人。
 
----
+回合制联机城建对战游戏。玩家扮演信息残缺的君主，通过 AI 部长感知世界、执行意志，在不完整信息下做不可逆决策。
 
-## 为什么不用 Submodule
-
-Submodule 在小团队短周期项目里几乎只带来麻烦：
-
-```
-git clone 之后要手动 git submodule update --init
-切分支时 submodule 不跟着切
-某人忘记 push submodule 先 push 主仓库 → 别人 pull 到悬空引用
-三个人协作，每次都要记得 cd 到正确的子仓库操作
-```
-
-Gamejam 期间联调最频繁，出任何 git 问题都是在浪费时间。
+Gamejam 参赛作品，主题：**我的 AI 队友**。
 
 ---
 
-## 仓库结构
+## 核心玩法
 
-```
-panoptes/
-├── .gitignore
-├── README.md
-├── Makefile                    # 顶层命令，统一入口
-│
-├── server/                     # Go 后端
-│   ├── cmd/
-│   │   └── server/
-│   │       └── main.go
-│   ├── internal/               # 后端各业务包（脚手架）
-│   ├── go.mod
-│   ├── go.sum
-│   └── gen/                    # buf 生成的 Go 代码（已提交）
-│
-├── client/                     # Unity 前端
-│   ├── Assets/
-│   │   └── Generated/
-│   │       └── Protocol/       # buf 生成的 C# 代码（已提交）
-│   ├── Packages/
-│   └── ProjectSettings/
-│
-└── protocol/                   # Proto 定义（单一数据源）
-    ├── buf.yaml
-    ├── buf.gen.yaml
-    ├── common.proto
-    ├── auth.proto
-    ├── lobby.proto
-    ├── game_state.proto
-    ├── domestic.proto
-    ├── combat.proto
-    └── minister.proto
-```
-
-`protocol/` 独立在顶层而不是放在 `server/` 里，原因是它属于双方——改 proto 之后在根目录跑一条命令，生成的代码分别进入 `server/gen/` 和 `client/Assets/Generated/Protocol/`。
+- **AI 部长系统**：玩家不直接操控游戏世界，而是发布宏观政策，由 AI 部长自主执行。部长有性格、私心、记忆，会犯错、会互相冲突。
+- **信息不对称**：玩家感知世界的唯一方式是部长汇报，汇报经过延迟、过滤、失真处理。
+- **控制网络**：战争本质是破坏对方的基础设施拓扑，切断生产管道是核心战术。
+- **亲政令牌**：每回合有限次数的亲自干预配额，其余交由 AI 执行。
 
 ---
 
 ## 快速开始
 
-### 环境依赖
+### 环境要求
 
-| 工具 | 版本 |
-|------|------|
-| Unity | 2022.3 LTS+ |
-| Go | 1.26+ |
-| [buf](https://buf.build/docs/installation) | 最新版（仅改 proto 时需要） |
-
-### 后端
-
-```bash
-make server
-# 等价于: cd server && go run ./cmd/server
-# 默认监听 :8080，PORT 环境变量可覆盖
+```
+Go 1.22+
+Unity 2022.3 LTS
+buf（Protobuf 代码生成）
+Redis
+PostgreSQL（可选，开发阶段用内存实现）
 ```
 
-### 前端
-
-用 Unity Hub 打开 `client/` 目录作为现有项目。
-
-### 重新生成协议代码
+### 一键生成协议代码
 
 ```bash
-# 修改 protocol/*.proto 之后
 make gen
-# server/gen/ 和 client/Assets/Generated/Protocol/ 同时更新
-git add .
-git commit -m "proto: 新增 MsgXxx 消息"
 ```
 
-### 检查代码
+生成结果：
+- `server/internal/gen/proto/` → Go 代码
+- `client/Assets/Generated/Protocol/` → Unity C# 代码
+
+### 启动服务端
 
 ```bash
-make lint
-# go vet + buf lint
+# 复制并填写配置
+cp server/.env.example server/.env
+
+# 启动
+make server
+```
+
+服务端默认监听：
+- HTTP API：`http://localhost:8080/api`
+- WebSocket：`ws://localhost:8080/ws`
+
+### 启动客户端
+
+用 Unity Hub 打开 `client/` 目录，运行 Boot 场景。
+
+---
+
+## 项目结构
+
+```
+panoptes/
+├── protocol/          # Proto 定义（单一数据源）
+├── server/            # Go 服务端
+│   ├── cmd/server/    # 启动入口
+│   ├── internal/      # 内部实现
+│   └── data/          # 游戏数值配置
+└── client/            # Unity 客户端
+    └── Assets/
+        ├── Scripts/
+        ├── Scenes/
+        └── Generated/ # 自动生成，不要手动修改
 ```
 
 ---
 
-## 分支策略
+## 技术架构
 
-Gamejam 15 天，三条分支够了：
+### 服务端
 
 ```
-main        始终保持可运行状态，demo 从这里出
-dev         日常开发，功能完成后合并到 main
-fix/xxx     紧急修复，直接从 main 拉，修完合并回 main 和 dev
+Go 1.22 · WebSocket · ECS（donburi）· Redis · PostgreSQL · Anthropic API · Protobuf
 ```
 
-三人协作规则：
+- **ECS + Data-Driven**：游戏状态用 ECS 管理，所有数值从 `gamedata.json` 读取
+- **Event Sourcing**：Engine 层纯函数产生事件，统一 Apply 修改状态
+- **AI 部长**：服务端异步调用 LLM API，部长决策返回结构化 JSON 直接执行
+- **Transport 抽象**：WebSocket 现在，gRPC 将来，业务代码零修改
 
-- 不直接 push main
-- dev 上自由提交，不需要 PR
-- 每天结束前把 dev 合并一次到 main（确保 main 可运行）
-- 冲突在 dev 上解决，不带到 main
+### 客户端
+
+```
+Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
+```
+
+- **纯展示层**：不包含任何游戏逻辑，所有状态以服务端为准
+- **Protobuf + protojson**：消息用 Envelope 包装，明文 JSON 传输，方便调试
 
 ---
 
-## 潜在冲突点
+## 游戏机制
 
-Monorepo 唯一需要注意的是 Unity 的 meta 文件冲突：
+### 回合结构
 
 ```
-client/Assets/Scripts/Network/NetworkManager.cs.meta
+内政阶段（60秒）→ 内政结算 → 战斗阶段（60秒）→ 战斗结算 → 下一回合
 ```
 
-两个人同时新增文件，meta 冲突解决起来很烦。预防措施：
+### 兵种
 
-1. 约定分工目录不重叠（后端同学不动 `client/Assets/Scripts/`，客户端同学不动 `server/`）
-2. `Assets/` 下的目录提前建好（即使是空目录也 commit 进去）
-3. 遇到 meta 冲突，选择保留任意一个版本都行——meta 本质上只是 GUID，重新生成也没问题
+| 兵种 | 特攻 | 移动力 |
+|---|---|---|
+| 步兵 | 主战场均衡 | 2格/回合 |
+| 弓手 | 远程压制（射程2格） | 1格/回合 |
+| 骑兵 | 快速机动 | 3格/回合 |
+| 攻城兵 | 城堡/城墙（×3） | 1格/回合 |
+| 破坏兵 | 道路/建筑（×3） | 2格/回合 |
+
+### 胜负条件
+
+攻破对方主城（血量归零）判胜。最多 30 回合，超时判平局。
+
+### AI 部长
+
+| 职位 | 职责 |
+|---|---|
+| 军事部长 | 战区指令拆解、前线汇报、自主调兵 |
+| 农业部长 | 生产线管理、资源流动、自主建造 |
+| 外交部长（加分项） | 敌方情报分析、信息干扰 |
 
 ---
 
-## 总结
+## 开发指南
 
-```
-仓库结构：Monorepo，一个仓库三个顶层目录
-分支策略：main + dev，每日合并
-协议生成：make gen，一条命令双端同步
-冲突预防：目录分工提前约定好
+### 对于 AI Agent
+
+开始任何任务前必须阅读 `CLAUDE.md`。
+
+### 对于人类开发者
+
+| 文档 | 说明 |
+|---|---|
+| `CLAUDE.md` | Agent 行为准则，也是架构决策记录 |
+| `server/AGENT_BACKEND.md` | 服务端完整开发指南 |
+| `client/AGENT_FRONTEND.md` | 客户端完整开发指南 |
+| `server/HTTP_API_DESIGN.md` | HTTP API 设计规范 |
+
+### 修改协议
+
+只改 `protocol/*.proto`，然后 `make gen`，不要手动修改生成代码。
+
+### 修改游戏数值
+
+只改 `server/data/gamedata.json`，不改代码。
+
+---
+
+## 分工
+
+| 职责 | 内容 |
+|---|---|
+| 服务端架构 | 游戏状态机、战斗引擎、LLM 集成、WebSocket 通信 |
+| Unity 客户端 | 地图渲染、UI 系统、网络层、动画 |
+| 策划 & 辅助 | 数值设计、地图设计、部长角色池、测试 |
+
+---
+
+## MVP 范围
+
+**必做**
+
+- 2人联机对战
+- 内政+战斗两阶段完整回合
+- 军事部长+农业部长（LLM驱动）
+- 管道式生产线基础版
+- 5种兵种（步兵/弓手/骑兵/攻城兵/破坏兵）
+- 攻占主城胜利判定
+
+**加分项**
+
+- 外交部长
+- 地图程序生成
+- 部长记忆系统
+- 关键节点自动命名
+- 胜负叙事收尾
+
+---
+
+## 环境变量
+
+```bash
+# 服务器
+SERVER_PORT=8080
+
+# Redis
+REDIS_ADDR=localhost:6379
+
+# PostgreSQL（可选）
+POSTGRES_DSN=postgres://user:pass@localhost/panoptes
+
+# LLM
+LLM_PROVIDER=anthropic
+LLM_API_KEY=sk-...
+LLM_MODEL=claude-sonnet-4-20250514
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRE_HOURS=24
 ```
 
+---
+
+*项目代号：Panoptes | Gamejam 参赛作品 | 2026*
