@@ -20,7 +20,7 @@
 
 ```
 panoptes/                          # Monorepo 根目录
-├── CLAUDE.md                      # 本文件，Agent 行为准则
+├── AGENTS.md                      # 本文件，Agent 行为准则
 ├── README.md                      # 项目概述
 ├── Makefile                       # 顶层命令
 │
