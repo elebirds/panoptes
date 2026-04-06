@@ -193,7 +193,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 ```bash
 # 服务器
-SERVER_PORT=8080
+PORT=8080
 
 # Redis
 REDIS_ADDR=localhost:6379
