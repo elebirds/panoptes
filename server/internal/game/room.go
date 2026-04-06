@@ -6,8 +6,12 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/engine/maploader"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/transport"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,6 +24,7 @@ type GameRoom struct {
 	transport transport.GameTransport
 	submitCh  chan string
 	cancelFn  context.CancelFunc
+	state     *domain.GameState
 }
 
 type Room = GameRoom
@@ -37,10 +42,32 @@ func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config
 }
 
 func (r *GameRoom) Start() {
-	r.Turn = 1
-	r.Phase = "domestic"
+	mapFile, err := maploader.LoadMap(r.cfg.MapPath)
+	if err != nil {
+		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
+		return
+	}
+
+	world := donburi.NewWorld()
+	playerIDs := r.humanPlayerIDs()
+	usernames := r.humanUsernames()
+	mapData := maploader.InitWorldFromMap(world, mapFile, playerIDs)
+	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
+	r.state.World = world
+
+	r.Turn = r.state.Turn
+	r.Phase = r.state.Phase
+
+	slog.Info("地图加载成功", "room_id", r.ID, "map_id", mapFile.ID, "nodes", len(mapFile.Nodes))
+
+	for _, player := range r.Players {
+		if player.IsBot() {
+			continue
+		}
+		r.sendGameInit(player)
+	}
+
 	Registry.Register(r)
-	r.sendInitialGameState()
 	go r.runLoop()
 }
 
@@ -116,6 +143,10 @@ func (r *GameRoom) advancePhase() {
 	default:
 		r.Phase = "domestic"
 	}
+	if r.state != nil {
+		r.state.Phase = r.Phase
+		r.state.Turn = r.Turn
+	}
 }
 
 func (r *GameRoom) submitDomestic(playerID string) {
@@ -142,80 +173,139 @@ func (r *GameRoom) Broadcast(msg proto.Message) {
 	}
 }
 
-func (r *GameRoom) sendInitialGameState() {
-	for idx, player := range r.Players {
-		if player.IsBot() {
-			continue
-		}
-		if err := player.Send(r.buildInitialMessage(idx, player)); err != nil {
-			slog.Warn("发送游戏初始化消息失败", "room_id", r.ID, "player_id", player.PlayerID(), "error", err)
-		}
+func (r *GameRoom) sendGameInit(p Player) {
+	if r.state == nil {
+		return
+	}
+	msg := &pb.MsgGameInit{
+		GameId:       r.state.GameID,
+		YourPlayerId: p.PlayerID(),
+		Turn:         int32(r.state.Turn),
+		Phase:        r.state.Phase,
+		MapWidth:     int32(r.state.Map.Width),
+		MapHeight:    int32(r.state.Map.Height),
+		MyPlayer:     r.buildPlayerView(p.PlayerID()),
+		Ministers:    nil,
+		Nodes:        r.buildNodeViews(p.PlayerID()),
+		Units:        r.buildUnitViews(),
+	}
+	if err := p.Send(msg); err != nil {
+		slog.Warn("发送游戏初始化消息失败", "room_id", r.ID, "player_id", p.PlayerID(), "error", err)
 	}
 }
 
-func (r *GameRoom) buildInitialMessage(playerIndex int, player Player) *pb.MsgGameInit {
-	spawn1Owner := ""
-	spawn2Owner := ""
-	if len(r.Players) > 0 {
-		spawn1Owner = r.Players[0].PlayerID()
-	}
-	if len(r.Players) > 1 {
-		spawn2Owner = r.Players[1].PlayerID()
+func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
+	playerState := r.state.Players[playerID]
+	if playerState == nil {
+		return &pb.PlayerView{Id: playerID}
 	}
 
-	return &pb.MsgGameInit{
-		GameId:       r.ID,
-		YourPlayerId: player.PlayerID(),
-		Turn:         1,
-		Phase:        "domestic",
-		MapWidth:     20,
-		MapHeight:    20,
-		MyPlayer: &pb.PlayerView{
-			Id:            player.PlayerID(),
-			Username:      player.Username(),
-			Resources:     &pb.Resources{},
-			TokensLeft:    int32(r.cfg.TokensPerTurn),
-			MainCastleHp:  100,
-			MaxCastleHp:   100,
-			WarZones:      nil,
-			CurrentPolicy: "",
-		},
-		Ministers: nil,
-		Nodes: []*pb.NodeView{
-			{
-				Id:      "spawn_p1",
-				Pos:     &pb.Position{X: 2, Y: 10},
-				Terrain: "plain",
-				Owner:   spawn1Owner,
-			},
-			{
-				Id:      "spawn_p2",
-				Pos:     &pb.Position{X: 17, Y: 10},
-				Terrain: "plain",
-				Owner:   spawn2Owner,
-			},
-			{
-				Id:              "res_ore",
-				Pos:             &pb.Position{X: 10, Y: 8},
-				Terrain:         "mountain",
-				IsResourcePoint: true,
-				ResourceType:    "ore",
-			},
-			{
-				Id:              "res_wood",
-				Pos:             &pb.Position{X: 10, Y: 10},
-				Terrain:         "forest",
-				IsResourcePoint: true,
-				ResourceType:    "wood",
-			},
-			{
-				Id:              "res_food",
-				Pos:             &pb.Position{X: 10, Y: 12},
-				Terrain:         "plain",
-				IsResourcePoint: true,
-				ResourceType:    "food",
-			},
-		},
-		Units: nil,
+	warZones := make([]*pb.WarZone, 0, len(playerState.WarZones))
+	for _, zone := range playerState.WarZones {
+		warZones = append(warZones, &pb.WarZone{
+			Id:         zone.ID,
+			Name:       zone.Name,
+			NodeIds:    zone.NodeIDs,
+			Directive:  zone.Directive,
+			TargetNode: zone.Target,
+		})
+	}
+
+	return &pb.PlayerView{
+		Id:            playerState.PlayerID,
+		Username:      playerState.Username,
+		Resources:     toProtoResources(playerState.Resources),
+		TokensLeft:    int32(playerState.TokensLeft),
+		CurrentPolicy: string(playerState.Policy),
+		MainCastleHp:  int32(playerState.MainCastleHP),
+		MaxCastleHp:   int32(config.Data.Rules.CastleBaseHP),
+		WarZones:      warZones,
+	}
+}
+
+func (r *GameRoom) buildNodeViews(playerID string) []*pb.NodeView {
+	nodes := make([]*pb.NodeView, 0, ecs.AllNodes(r.state.World).Count(r.state.World))
+	ecs.AllNodes(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		node := ecs.NodeC.Get(entry)
+		pos := ecs.PositionC.Get(entry)
+		unitsByFaction := domain.UnitsByFactionAtNode(r.state.World, domain.Position{X: pos.X, Y: pos.Y})
+
+		myCount := len(unitsByFaction[playerID])
+		enemyCount := 0
+		for faction, units := range unitsByFaction {
+			if faction == playerID {
+				continue
+			}
+			enemyCount += len(units)
+		}
+
+		view := &pb.NodeView{
+			Id:              node.ID,
+			Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+			Terrain:         string(node.Terrain),
+			Owner:           node.Owner,
+			MyUnitCount:     int32(myCount),
+			EnemyUnitCount:  int32(enemyCount),
+			HasRoad:         node.HasRoad,
+			IsResourcePoint: node.IsResource,
+			ResourceType:    node.ResourceType,
+			IsSafeZone:      domain.IsInSafeZone(r.state.World, domain.Position{X: pos.X, Y: pos.Y}, playerID),
+		}
+		if entry.HasComponent(ecs.BuildingC) {
+			building := ecs.BuildingC.Get(entry)
+			view.BuildingType = string(building.Type)
+			view.BuildingHp = int32(building.HP)
+			view.WallLevel = int32(building.WallLevel)
+		}
+		nodes = append(nodes, view)
+	})
+	return nodes
+}
+
+func (r *GameRoom) buildUnitViews() []*pb.UnitView {
+	units := make([]*pb.UnitView, 0, ecs.AllUnits(r.state.World).Count(r.state.World))
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		stats := ecs.UnitStatsC.Get(entry)
+		pos := ecs.PositionC.Get(entry)
+		units = append(units, &pb.UnitView{
+			Id:       stats.ID,
+			Faction:  stats.Faction,
+			UnitType: string(stats.Type),
+			Hp:       int32(stats.HP),
+			MaxHp:    int32(stats.MaxHP),
+			Pos:      &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		})
+	})
+	return units
+}
+
+func (r *GameRoom) humanPlayerIDs() []string {
+	ids := make([]string, 0, len(r.Players))
+	for _, player := range r.Players {
+		if !player.IsBot() {
+			ids = append(ids, player.PlayerID())
+		}
+	}
+	return ids
+}
+
+func (r *GameRoom) humanUsernames() []string {
+	usernames := make([]string, 0, len(r.Players))
+	for _, player := range r.Players {
+		if !player.IsBot() {
+			usernames = append(usernames, player.Username())
+		}
+	}
+	return usernames
+}
+
+func toProtoResources(resources domain.Resources) *pb.Resources {
+	return &pb.Resources{
+		Ore:              int32(resources.Ore),
+		Wood:             int32(resources.Wood),
+		Food:             int32(resources.Food),
+		RefinedOre:       int32(resources.RefinedOre),
+		EngineerMaterial: int32(resources.EngineerMaterial),
+		BuildPoints:      int32(resources.BuildPoints),
 	}
 }

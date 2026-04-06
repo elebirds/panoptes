@@ -18,5 +18,11 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("parse env config: %w", err)
 	}
 
+	data, err := LoadGameData(cfg.GameDataPath)
+	if err != nil {
+		return Config{}, fmt.Errorf("load gamedata: %w", err)
+	}
+	Data = data
+
 	return cfg, nil
 }
