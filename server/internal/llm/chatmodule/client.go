@@ -18,7 +18,7 @@ type sessionCtxKey struct{}
 type ChatClient interface {
 	NormalChat(ctx context.Context, req *ChatRequest) (*ChatResponse, error)
 	StreamChat(ctx context.Context, req *ChatRequest) (<-chan *ChatResponse, error)
-	Stop(ctx context.Context, sessionId string)
+	Stop(ctx context.Context, sessionID string)
 }
 
 // -------------------------------- 选项模式 --------------------------------
@@ -113,20 +113,20 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 		return nil, errors.New("message is required")
 	}
 
-	sessionId := req.SessionId
-	if sessionId == "" {
+	sessionID := req.SessionID
+	if sessionID == "" {
 		var genErr error
-		sessionId, genErr = service.GenerateSessionId()
+		sessionID, genErr = service.GenerateSessionID()
 		if genErr != nil {
 			slog.Warn(c.name+"-[StreamChat] 会话 ID 使用 fallback", "err", genErr)
 		}
 	}
-	if sessionId == "" {
-		return nil, errors.New("sessionId is required")
+	if sessionID == "" {
+		return nil, errors.New("sessionID is required")
 	}
 
-	jobCtx, cancel := context.WithCancel(context.WithValue(ctx, sessionCtxKey{}, sessionId))
-	service.SetChatSession(sessionId, cancel)
+	jobCtx, cancel := context.WithCancel(context.WithValue(ctx, sessionCtxKey{}, sessionID))
+	service.SetChatSession(sessionID, cancel)
 
 	stream := c.oai.Chat.Completions.NewStreaming(jobCtx, openai.ChatCompletionNewParams{
 		Messages:    buildMessages(req),
@@ -141,7 +141,7 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 	go func() {
 		defer close(messageChan)
 		defer cancel()
-		defer service.RemoveChatSession(sessionId)
+		defer service.RemoveChatSession(sessionID)
 		defer stream.Close()
 
 		for stream.Next() {
@@ -155,9 +155,9 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 			}
 
 			msg := &ChatResponse{
-				Role:      IdBot,
+				Role:      RoleAssistant,
 				Content:   content,
-				SessionId: sessionId,
+				SessionID: sessionID,
 			}
 
 			select {
@@ -175,11 +175,11 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 }
 
 // Stop 主动终止指定会话的流式输出
-func (c *Client) Stop(_ context.Context, sessionId string) {
-	if cancel := service.GetChatSession(sessionId); cancel != nil {
+func (c *Client) Stop(_ context.Context, sessionID string) {
+	if cancel := service.GetChatSession(sessionID); cancel != nil {
 		cancel()
 	}
-	service.RemoveChatSession(sessionId)
+	service.RemoveChatSession(sessionID)
 }
 
 // -------------------------------- 工具函数 --------------------------------
@@ -199,12 +199,15 @@ func buildMessages(req *ChatRequest) []openai.ChatCompletionMessageParamUnion {
 		msgs = append(msgs, openai.SystemMessage(req.Tips.Content))
 	}
 	for _, h := range req.History {
+		if h == nil {
+			continue
+		}
 		switch h.Role {
-		case IdBot:
+		case RoleAssistant:
 			msgs = append(msgs, openai.AssistantMessage(h.Content))
-		case IdSystem:
+		case RoleSystem:
 			msgs = append(msgs, openai.SystemMessage(h.Content))
-		case IdUser:
+		case RoleUser:
 			msgs = append(msgs, openai.UserMessage(h.Content))
 		default:
 			continue

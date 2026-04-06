@@ -5,7 +5,7 @@ package chatmodule
 // 使用 Option 函数可在调用时覆盖任意默认值。
 
 const (
-	baseURLQWen     = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+	baseURLQwen     = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 	baseURLDeepSeek = "https://api.deepseek.com"
 	baseURLOpenAI   = "https://api.openai.com/v1"
 	baseURLMoonshot = "https://api.moonshot.cn/v1"
@@ -27,9 +27,9 @@ func moonshotDefaults() clientCfg {
 	return clientCfg{defaultModel: "moonshot-v1-8k", temperature: 0.3, topP: 1.0, maxTokens: 2048}
 }
 
-// NewQWenClient 通义千问（DashScope OpenAI 兼容模式）
-func NewQWenClient(apiKey string, opts ...Option) *Client {
-	return newClient("[通义千问]", apiKey, baseURLQWen, qwenDefaults(), opts)
+// NewQwenClient 通义千问（DashScope OpenAI 兼容模式）
+func NewQwenClient(apiKey string, opts ...Option) *Client {
+	return newClient("[通义千问]", apiKey, baseURLQwen, qwenDefaults(), opts)
 }
 
 // NewDeepSeekClient DeepSeek
