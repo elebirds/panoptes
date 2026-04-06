@@ -219,6 +219,36 @@ panoptes-client/
 
 运行时状态来自`GameStateCache`，静态目录与展示元数据来自`StaticCatalogCache`；两者都不能由 UI 本地推导业务合法性。
 
+静态目录加载链路固定为：
+
+```text
+data/ 作者源
+  -> make data-gen
+  -> client/Assets/Resources/Data/
+  -> StaticCatalogCache.LoadLocalCatalog()
+  -> UI / MapRenderer / HUD 按 catalog key 查询展示信息
+```
+
+运行时状态与静态目录职责分离如下：
+- `GameStateCache`：缓存服务端推送的节点、单位、玩家当前状态
+- `StaticCatalogCache`：缓存本地静态目录 bundle、地图 runtime bundle、展示元数据
+- `MsgStaticCatalogManifest`：只做版本握手与 hash 对比，不承担常规全量静态数据下发
+
+地图加载优先级固定为：
+
+```text
+GameStateCache 中已有服务端节点
+  -> 直接渲染服务端状态
+否则
+  -> StaticCatalogCache.TryGetDefaultMap()
+  -> 从 Resources/Data/maps/<map_id>.runtime.json 构建静态预览地图
+```
+
+因此客户端禁止：
+- 直接读取旧 `Resources/Config/*.json`
+- 自己拼装地图默认节点
+- 根据静态目录推导建造合法性、资源是否足够等业务规则
+
 ### 原则三：单例管理
 
 全局单例通过`Boot.unity`场景初始化，`DontDestroyOnLoad`。场景间通信通过单例，不使用静态变量。

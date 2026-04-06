@@ -228,6 +228,60 @@ lint:
 	go vet ./...
 ```
 
+### 静态数据生成与加载
+
+当前静态数据采用“作者源”和“运行时 bundle”分离模型。
+
+作者源目录：
+- `data/registry/`：注册表、manifest、动态资源定义
+- `data/content/`：单位、建筑、地形、规则、地图等玩法内容
+- `data/ui/`：展示层元数据与本地化
+
+生成命令：
+
+```bash
+make data-gen
+make data-validate
+```
+
+生成结果：
+- `data/generated/server/`：服务端运行时静态目录
+- `client/Assets/Resources/Data/`：客户端本地静态目录
+- `data/schema/`：生成的 JSON Schema
+- `protocol/data_types.proto`、`protocol/data_catalog.proto`、`protocol/map_catalog.proto`
+
+服务端运行时加载链路固定为：
+
+```text
+data/registry + data/content + data/ui
+  -> server/cmd/datagen
+  -> data/generated/server/
+  -> config.Load()
+  -> staticdata.LoadDir(DATA_ROOT/generated/server)
+  -> staticdata.SetDefault(catalog)
+  -> game/domain/ecs/engine 通过 staticdata.Default() 只读访问
+```
+
+禁止业务层直接读取 `data/content/*.json` 或 `data/generated/server/*.json`；统一通过 `staticdata.Default()` 查询。
+
+对局启动时的数据流固定为：
+
+```text
+GameRoom.Start()
+  -> staticdata.Default()
+  -> manifest.default_map_id 或 cfg.MapID
+  -> maploader.LoadMap()
+  -> maploader.InitWorldFromMap()
+  -> domain.NewGameState()
+```
+
+其中 `InitWorldFromMap()` 负责把 `MapRuntimeBundle` 展开为 ECS 世界，包括：
+- 创建所有节点 Entity
+- 应用道路、资源点、命名点
+- 解析预置 owner / owner_slot
+- 创建预置建筑并写入节点 owner
+- 维护 `node_id -> Entity` 索引
+
 ---
 
 ## 4. 架构原则
