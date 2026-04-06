@@ -30,13 +30,14 @@ type LobbyService struct {
 	gameTransport transport.GameTransport
 	authSvc       *auth.Service
 	defaultMax    int
+	devMode       bool
 
 	mu             sync.RWMutex
 	onGameStart    func(room *Room)
 	countdownDelay time.Duration
 }
 
-func NewService(store LobbyStore, gameTransport transport.GameTransport, authSvc *auth.Service, defaultMax int) *LobbyService {
+func NewService(store LobbyStore, gameTransport transport.GameTransport, authSvc *auth.Service, defaultMax int, devMode bool) *LobbyService {
 	if defaultMax < minPlayers || defaultMax > maxPlayers {
 		defaultMax = minPlayers
 	}
@@ -46,6 +47,7 @@ func NewService(store LobbyStore, gameTransport transport.GameTransport, authSvc
 		gameTransport:  gameTransport,
 		authSvc:        authSvc,
 		defaultMax:     defaultMax,
+		devMode:        devMode,
 		countdownDelay: countdownSeconds * time.Second,
 	}
 }
@@ -73,22 +75,7 @@ func (s *LobbyService) CreateRoom(ctx context.Context, hostID string, name strin
 		return err
 	}
 
-	room := &Room{
-		ID:         uuid.NewString(),
-		Code:       code,
-		Name:       name,
-		HostID:     hostID,
-		MaxPlayers: maxPlayers,
-		Status:     RoomStatusWaiting,
-		CreatedAt:  time.Now(),
-		Players: []*RoomPlayer{
-			{
-				PlayerID: hostID,
-				Username: user.Username,
-				JoinedAt: time.Now(),
-			},
-		},
-	}
+	room := NewRoom(uuid.NewString(), code, name, hostID, user.Username, maxPlayers, s.devMode)
 
 	if err := s.store.CreateRoom(ctx, room); err != nil {
 		return err
@@ -115,6 +102,7 @@ func (s *LobbyService) JoinRoom(ctx context.Context, playerID string, code strin
 	if err != nil {
 		return err
 	}
+	room.SetDevMode(s.devMode)
 	if room.Status != RoomStatusWaiting {
 		return ErrInvalidStatus
 	}
@@ -140,6 +128,7 @@ func (s *LobbyService) LeaveRoom(ctx context.Context, playerID string) error {
 	if err != nil {
 		return err
 	}
+	room.SetDevMode(s.devMode)
 
 	if room.HostID == playerID {
 		if err := s.store.DeleteRoom(ctx, room.ID); err != nil {
@@ -171,6 +160,7 @@ func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
 	if err != nil {
 		return err
 	}
+	room.SetDevMode(s.devMode)
 	if room.Status != RoomStatusWaiting && room.Status != RoomStatusReady {
 		return ErrInvalidStatus
 	}
@@ -212,6 +202,62 @@ func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
 	return nil
 }
 
+func (s *LobbyService) AddBot(ctx context.Context, operatorID string) error {
+	room, err := s.store.GetRoomByPlayerID(ctx, operatorID)
+	if err != nil {
+		return err
+	}
+	room.SetDevMode(s.devMode)
+	if room.HostID != operatorID {
+		return ErrNotHost
+	}
+
+	if _, err := room.AddBot(); err != nil {
+		return err
+	}
+	if room.IsAllReady() {
+		room.Status = RoomStatusReady
+	} else {
+		room.Status = RoomStatusWaiting
+	}
+	if err := s.store.UpdateRoom(ctx, room); err != nil {
+		return err
+	}
+
+	return s.sendRoomState(room)
+}
+
+func (s *LobbyService) KickPlayer(ctx context.Context, operatorID, targetID string) error {
+	room, err := s.store.GetRoomByPlayerID(ctx, operatorID)
+	if err != nil {
+		return err
+	}
+	room.SetDevMode(s.devMode)
+
+	kicked, err := room.KickPlayer(operatorID, targetID)
+	if err != nil {
+		return err
+	}
+	if room.IsAllReady() {
+		room.Status = RoomStatusReady
+	} else {
+		room.Status = RoomStatusWaiting
+	}
+	if err := s.store.UpdateRoom(ctx, room); err != nil {
+		return err
+	}
+	if kicked != nil && !kicked.IsBot {
+		if err := s.sendToPlayer(kicked.PlayerID, &pb.MsgPlayerKicked{
+			PlayerId: kicked.PlayerID,
+			Username: kicked.Username,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return s.sendRoomState(room)
+}
+
 func (s *LobbyService) SetGameStartCallback(fn func(room *Room)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -243,6 +289,7 @@ func (s *LobbyService) startCountdown(ctx context.Context, room *Room) {
 		if currentRoom.Status != RoomStatusStarting {
 			return
 		}
+		currentRoom.SetDevMode(s.devMode)
 
 		currentRoom.Status = RoomStatusInGame
 		if err := s.store.UpdateRoom(context.Background(), currentRoom); err != nil {

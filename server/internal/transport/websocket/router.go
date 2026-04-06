@@ -9,6 +9,7 @@ import (
 	"github.com/elebirds/panoptes/internal/auth"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/lobby"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -18,13 +19,14 @@ type Sender interface {
 }
 
 type Router struct {
-	lobbySvc *lobby.LobbyService
+	lobbySvc  *lobby.LobbyService
+	gameRooms coretransport.GameRoomRegistry
 }
 
 var activeRouter atomic.Pointer[Router]
 
-func NewRouter(lobbySvc *lobby.LobbyService) *Router {
-	return &Router{lobbySvc: lobbySvc}
+func NewRouter(lobbySvc *lobby.LobbyService, gameRooms coretransport.GameRoomRegistry) *Router {
+	return &Router{lobbySvc: lobbySvc, gameRooms: gameRooms}
 }
 
 func Route(sender Sender, playerID string, envelope *pb.Envelope) {
@@ -86,6 +88,56 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		if err := r.lobbySvc.ReadyUp(context.Background(), playerID); err != nil {
 			r.sendLobbyError(sender, err)
 		}
+	case "MsgAddBot":
+		msg := &pb.MsgAddBot{}
+		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
+		if err := r.lobbySvc.AddBot(context.Background(), playerID); err != nil {
+			r.sendLobbyError(sender, err)
+		}
+	case "MsgKickPlayer":
+		msg := &pb.MsgKickPlayer{}
+		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
+		if err := r.lobbySvc.KickPlayer(context.Background(), playerID, msg.GetPlayerId()); err != nil {
+			r.sendLobbyError(sender, err)
+		}
+	case "MsgSubmitDomestic":
+		msg := &pb.MsgSubmitDomestic{}
+		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
+		if r.gameRooms == nil {
+			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			return
+		}
+		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
+		if !ok {
+			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			return
+		}
+		room.OnHumanSubmitDomestic(playerID)
+	case "MsgSubmitCombat":
+		msg := &pb.MsgSubmitCombat{}
+		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
+		if r.gameRooms == nil {
+			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			return
+		}
+		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
+		if !ok {
+			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			return
+		}
+		room.OnHumanSubmitCombat(playerID)
 	default:
 		slog.Warn("未知的 WebSocket 消息类型", "玩家ID", playerID, "类型", envelope.GetType())
 	}
@@ -121,6 +173,8 @@ func mapLobbyErrorCode(err error) string {
 		return "room_not_found"
 	case errors.Is(err, lobby.ErrPlayerNotFound), errors.Is(err, auth.ErrUserNotFound):
 		return "player_not_found"
+	case errors.Is(err, lobby.ErrNotHost):
+		return "unauthorized"
 	case errors.Is(err, lobby.ErrInvalidStatus):
 		return "invalid_status"
 	case errors.Is(err, lobby.ErrInvalidPlayers):

@@ -30,6 +30,12 @@ message MsgLeaveRoom {}
 
 message MsgReadyUp {}
 
+message MsgAddBot {}
+
+message MsgKickPlayer {
+  string player_id = 1;
+}
+
 // 服务端→客户端
 message MsgRoomCreated {
   string room_id = 1;
@@ -50,10 +56,16 @@ message RoomPlayer {
   string username = 2;
   bool is_ready = 3;
   bool is_host = 4;
+  bool is_bot = 5;
 }
 
 message MsgGameStarting {
   int32 countdown = 1; // 秒
+}
+
+message MsgPlayerKicked {
+  string player_id = 1;
+  string username = 2;
 }
 
 message MsgLobbyError {

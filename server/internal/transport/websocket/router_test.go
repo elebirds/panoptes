@@ -29,7 +29,7 @@ func TestRouterRouteCreateRoom(t *testing.T) {
 			"host-1": {ID: "host-1", Username: "host"},
 		},
 	}, "secret", 60)
-	router := NewRouter(lobby.NewService(store, transport, authSvc, 4))
+	router := NewRouter(lobby.NewService(store, transport, authSvc, 4, false), nil)
 
 	payload, err := protojson.Marshal(&pb.MsgCreateRoom{
 		Name:       "房间A",
@@ -50,7 +50,7 @@ func TestRouterRouteCreateRoom(t *testing.T) {
 func TestRouterRouteServiceErrorReturnsLobbyError(t *testing.T) {
 	router := NewRouter(lobby.NewService(newRouterStore(), newRouterTransport(), auth.NewService(&routerUserStore{
 		users: map[string]*auth.User{},
-	}, "secret", 60), 4))
+	}, "secret", 60), 4, false), nil)
 
 	payload, err := protojson.Marshal(&pb.MsgLeaveRoom{})
 	if err != nil {

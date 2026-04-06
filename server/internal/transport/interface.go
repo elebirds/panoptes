@@ -9,3 +9,14 @@ type GameTransport interface {
 	Broadcast(roomID string, msg proto.Message) error
 	Stream(playerID string, msgs <-chan proto.Message) error
 }
+
+// GameRoom 是运行中的对局房间最小提交接口。
+type GameRoom interface {
+	OnHumanSubmitDomestic(playerID string)
+	OnHumanSubmitCombat(playerID string)
+}
+
+// GameRoomRegistry 是运行中对局房间的最小查询接口。
+type GameRoomRegistry interface {
+	GetRoomByPlayerID(playerID string) (GameRoom, bool)
+}

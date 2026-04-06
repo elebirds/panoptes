@@ -4,6 +4,7 @@ type Config struct {
 	Port      string `env:"PORT" envDefault:"8080"`
 	LogLevel  string `env:"LOG_LEVEL" envDefault:"info"`
 	LogFormat string `env:"LOG_FORMAT" envDefault:"auto"`
+	DevMode   bool   `env:"DEV_MODE" envDefault:"false"`
 
 	// PostgreSQL 配置
 	PostgresDSN string `env:"POSTGRES_DSN" envDefault:"postgres://panoptes:panoptes_dev@localhost:5432/panoptes?sslmode=disable"`
@@ -17,5 +18,13 @@ type Config struct {
 	JWTSecret     string `env:"JWT_SECRET" envDefault:"your-secret-key"`
 	JWTExpiration int    `env:"JWT_EXPIRATION" envDefault:"86400"` // 秒，默认24小时
 
-	DefaultMaxPlayers int `env:"DEFAULT_MAX_PLAYERS" envDefault:"2"`
+	// 对局配置
+	DefaultMaxPlayers     int `env:"DEFAULT_MAX_PLAYERS" envDefault:"2"`
+	TokensPerTurn         int `env:"TOKENS_PER_TURN" envDefault:"3"`
+	TurnTimeLimitDomestic int `env:"TURN_TIME_LIMIT_DOMESTIC" envDefault:"15"`
+	TurnTimeLimitCombat   int `env:"TURN_TIME_LIMIT_COMBAT" envDefault:"20"`
+
+	// LLM 配置
+	QwenAPIKey     string `env:"QWEN_API_KEY" envDefault:""`
+	DeepSeekAPIKey string `env:"DEEPSEEK_API_KEY" envDefault:""`
 }
