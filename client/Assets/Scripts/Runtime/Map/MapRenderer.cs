@@ -67,6 +67,9 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private bool useJsonMapOnStart = false;
         [SerializeField] private TextAsset startupMapJson;
         [SerializeField] private bool autoFillMissingJsonTiles = false;
+        [SerializeField] private bool preferServerPushedMapConfig = true;
+        [SerializeField] private string serverMapConfigKey = "mapconfig";
+        [SerializeField] private bool listenServerMapConfigUpdates = true;
 
         [Header("Prefab")]
         [SerializeField] private NodeView nodeTilePrefab;
@@ -96,6 +99,7 @@ namespace Panoptes.Runtime.Map
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
 
         private readonly List<ProtoUnitView> _jsonUnits = new();
+        private ConfigCache _configCache;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -112,9 +116,24 @@ namespace Panoptes.Runtime.Map
             Instance = this;
         }
 
+        private void OnEnable()
+        {
+            SubscribeServerMapConfig();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeServerMapConfig();
+        }
+
         private void Start()
         {
             EnsureRuntimeControllers();
+
+            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
+            {
+                return;
+            }
 
             if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
             {
@@ -141,6 +160,11 @@ namespace Panoptes.Runtime.Map
 
         public void RebuildMap()
         {
+            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
+            {
+                return;
+            }
+
             if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
             {
                 return;
@@ -159,6 +183,61 @@ namespace Panoptes.Runtime.Map
             }
 
             BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+        }
+
+        private void SubscribeServerMapConfig()
+        {
+            if (!listenServerMapConfigUpdates)
+            {
+                return;
+            }
+
+            _configCache = ConfigCache.EnsureInstance();
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated += OnServerMapConfigUpdated;
+            }
+        }
+
+        private void UnsubscribeServerMapConfig()
+        {
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
+                _configCache = null;
+            }
+        }
+
+        private void OnServerMapConfigUpdated(string configKey)
+        {
+            if (!preferServerPushedMapConfig)
+            {
+                return;
+            }
+
+            if (!string.Equals(NormalizeToken(configKey), NormalizeToken(serverMapConfigKey), System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            TryLoadMapFromConfigCache();
+        }
+
+        private bool TryLoadMapFromConfigCache()
+        {
+            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
+            var key = NormalizeToken(serverMapConfigKey);
+            if (cache == null || string.IsNullOrEmpty(key))
+            {
+                return false;
+            }
+
+            if (!cache.TryGetJson(key, out var mapJson) || string.IsNullOrWhiteSpace(mapJson))
+            {
+                return false;
+            }
+
+            return LoadMapFromJsonString(mapJson);
         }
 
         public bool LoadMapFromJsonString(string json)

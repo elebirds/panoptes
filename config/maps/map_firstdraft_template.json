@@ -1,0 +1,56 @@
+{
+  "mapId": "first_draft_20x20",
+  "width": 20,
+  "height": 20,
+  "defaultTerrain": "plain",
+  "nodes": [
+    {
+      "id": "N_0_0",
+      "x": 0,
+      "y": 0,
+      "terrain": "plain",
+      "hasRoad": false,
+      "isResourcePoint": false,
+      "resourceType": "",
+      "buildingType": "",
+      "buildingHp": 0,
+      "owner": ""
+    },
+    {
+      "id": "N_1_0",
+      "x": 1,
+      "y": 0,
+      "terrain": "forest",
+      "hasRoad": true,
+      "isResourcePoint": true,
+      "resourceType": "wood",
+      "buildingType": "",
+      "buildingHp": 0,
+      "owner": ""
+    },
+    {
+      "id": "N_2_0",
+      "x": 2,
+      "y": 0,
+      "terrain": "plain",
+      "hasRoad": true,
+      "isResourcePoint": false,
+      "resourceType": "",
+      "buildingType": "farm",
+      "buildingHp": 100,
+      "owner": "blue"
+    },
+    {
+      "id": "N_3_0",
+      "x": 3,
+      "y": 0,
+      "terrain": "mountain",
+      "hasRoad": false,
+      "isResourcePoint": false,
+      "resourceType": "",
+      "buildingType": "",
+      "buildingHp": 0,
+      "owner": ""
+    }
+  ]
+}

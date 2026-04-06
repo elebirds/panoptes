@@ -56,7 +56,12 @@ namespace Panoptes.Runtime.Map
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;
         private string _buildingType = string.Empty;
-        private readonly MaterialPropertyBlock _highlightBlock = new();
+        private MaterialPropertyBlock _highlightBlock;
+
+        private void Awake()
+        {
+            EnsureHighlightBlock();
+        }
 
         /// <summary>
         /// Bind visual from protocol node data.
@@ -122,12 +127,14 @@ namespace Panoptes.Runtime.Map
 
         public void SetHighlightColor(Color color)
         {
+            EnsureHighlightBlock();
+
             if (highlightRenderer == null && highlight != null)
             {
                 highlightRenderer = highlight.GetComponentInChildren<Renderer>();
             }
 
-            if (highlightRenderer == null)
+            if (highlightRenderer == null || _highlightBlock == null)
             {
                 return;
             }
@@ -144,6 +151,14 @@ namespace Panoptes.Runtime.Map
                 _highlightBlock.SetColor("_BaseColor", color);
                 _highlightBlock.SetColor("_Color", color);
                 highlightRenderer.SetPropertyBlock(_highlightBlock, i);
+            }
+        }
+
+        private void EnsureHighlightBlock()
+        {
+            if (_highlightBlock == null)
+            {
+                _highlightBlock = new MaterialPropertyBlock();
             }
         }
 

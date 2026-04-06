@@ -8,6 +8,7 @@
 
 
 using Google.Protobuf;
+using UnityEngine;
 
 namespace Panoptes.Runtime.Network
 {
@@ -16,7 +17,20 @@ namespace Panoptes.Runtime.Network
     {
         public static void Send<T>(T message) where T : IMessage<T>
         {
-            NetworkManager.Instance.Send(message);
+            if (message == null)
+            {
+                Debug.LogWarning("[MessageSender] Send ignored: message is null.");
+                return;
+            }
+
+            var network = NetworkManager.Instance;
+            if (network == null)
+            {
+                Debug.LogWarning($"[MessageSender] Send ignored: NetworkManager.Instance is null for {typeof(T).Name}.");
+                return;
+            }
+
+            network.Send(message);
         }
     }
 }

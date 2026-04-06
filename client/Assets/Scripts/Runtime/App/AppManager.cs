@@ -1,4 +1,4 @@
-/*************************************************
+﻿/*************************************************
  * Project: Panoptes
  * File: AppManager.cs
  * Author: Panoptes Team
@@ -6,12 +6,12 @@
  * Description: Global app state machine placeholder.
  *************************************************/
 
-using UnityEngine;
 using System.Threading.Tasks;
 using Panoptes.Protocol.V1;
 using Panoptes.Protocol.V1.Auth;
 using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Network;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Panoptes.Runtime.App
@@ -30,7 +30,6 @@ namespace Panoptes.Runtime.App
 
         public AppState State { get; private set; } = AppState.Initializing;
 
-        // 登录后保存
         public string PlayerID { get; private set; }
         public string Username { get; private set; }
         public string Token { get; private set; }
@@ -38,7 +37,7 @@ namespace Panoptes.Runtime.App
         [Header("Config")]
         [SerializeField] private string serverUrl = "ws://localhost:8080/ws";
 
-        void Awake()
+        private void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -49,38 +48,37 @@ namespace Panoptes.Runtime.App
             DontDestroyOnLoad(gameObject);
         }
 
-        async void Start()
+        private async void Start()
         {
             await InitializeAsync();
         }
 
         private async Task InitializeAsync()
         {
-            // 连接服务端
+            EnsureGlobalRuntimeServices();
+
             await NetworkManager.Instance.ConnectAsync(serverUrl);
-
-            // 注册全局消息处理
             RegisterGlobalHandlers();
-
-            // 跳转登录
             TransitionTo(AppState.Login);
+        }
+
+        private void EnsureGlobalRuntimeServices()
+        {
+            ConfigCache.EnsureInstance();
+
+            if (UnityEngine.Object.FindObjectOfType<ConfigMessageBridge>() == null)
+            {
+                var go = new GameObject("ConfigMessageBridge");
+                go.AddComponent<ConfigMessageBridge>();
+            }
         }
 
         private void RegisterGlobalHandlers()
         {
-            // 登录成功
-            MessageDispatcher.Instance.Register<MsgLoginSuccess>(
-                "MsgLoginSuccess", OnLoginSuccess);
+            MessageDispatcher.Instance.Register<MsgLoginSuccess>("MsgLoginSuccess", OnLoginSuccess);
+            MessageDispatcher.Instance.Register<MsgGameStarting>("MsgGameStarting", OnGameStarting);
+            MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
 
-            // 游戏开始
-            MessageDispatcher.Instance.Register<MsgGameStarting>(
-                "MsgGameStarting", OnGameStarting);
-
-            // 游戏初始化
-            MessageDispatcher.Instance.Register<MsgGameInit>(
-                "MsgGameInit", OnGameInit);
-
-            // 断线处理
             NetworkManager.Instance.OnDisconnected += OnDisconnected;
         }
 
@@ -90,7 +88,6 @@ namespace Panoptes.Runtime.App
             Username = msg.Username;
             Token = msg.Token;
 
-            // 保存 token 供重连使用
             PlayerPrefs.SetString("token", msg.Token);
             PlayerPrefs.SetString("player_id", msg.PlayerId);
 
@@ -99,8 +96,7 @@ namespace Panoptes.Runtime.App
 
         private void OnGameStarting(MsgGameStarting msg)
         {
-            // 倒计时由 LobbyPanel 处理，这里不做场景跳转
-            // MsgGameInit 收到后再跳转
+            // Handled by lobby UI countdown. Scene transition waits for MsgGameInit.
         }
 
         private void OnGameInit(MsgGameInit msg)
@@ -116,7 +112,6 @@ namespace Panoptes.Runtime.App
         private void OnDisconnected()
         {
             Debug.Log("[App] Disconnected, attempting reconnect...");
-            // 断线重连逻辑由 NetworkManager 处理
         }
 
         public void TransitionTo(AppState newState)
