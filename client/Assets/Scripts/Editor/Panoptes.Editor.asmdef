@@ -1,7 +1,8 @@
 {
   "name": "Panoptes.Editor",
   "references": [
-    "Panoptes"
+    "Panoptes.Runtime",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [
     "Editor"
