@@ -1,6 +1,7 @@
 ﻿<Solution>
   <Project Path="Panoptes.Runtime.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Panoptes.Tests.EditMode.csproj" />
   <Project Path="Panoptes.Editor.csproj" />
 </Solution>

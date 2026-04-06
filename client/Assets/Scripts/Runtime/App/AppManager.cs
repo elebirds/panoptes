@@ -162,11 +162,7 @@ namespace Panoptes.Runtime.App
 
         private void OnGameInit(MsgGameInit msg)
         {
-            if (GameStateCache.Instance != null)
-            {
-                GameStateCache.Instance.ApplyGameInit(msg);
-            }
-
+            GameStateCache.Instance?.ApplyGameInit(msg);
             TransitionTo(AppState.Game);
         }
 
