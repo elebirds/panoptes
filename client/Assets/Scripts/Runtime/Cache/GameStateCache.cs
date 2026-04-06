@@ -79,8 +79,8 @@ namespace Panoptes.Runtime.Cache
             foreach (var unit in msg.Units)
                 _units[unit.Id] = unit;
 
-            MyPlayer = msg.MyPlayer ?? new PlayerView();
-            TokensLeft = MyPlayer.TokensLeft;
+            MyPlayer = msg.MyPlayer;
+            TokensLeft = msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : 0;
 
             _ministers.Clear();
             _ministers.AddRange(msg.Ministers);
@@ -106,6 +106,28 @@ namespace Panoptes.Runtime.Cache
 
             _nodes[node.Id] = node;
             OnStateChanged?.Invoke();
+        }
+
+        public NodeView GetNode(string nodeId)
+        {
+            _nodes.TryGetValue(nodeId, out var node);
+
+            if (Panoptes.Runtime.Map.MapRenderer.Instance != null)
+            {
+                Panoptes.Runtime.Map.MapRenderer.Instance.RebuildMap();
+            }
+        }
+
+        public void UpdateTokens(int tokensLeft)
+        {
+            TokensLeft = tokensLeft;
+            if (MyPlayer != null)
+                MyPlayer.TokensLeft = tokensLeft;
+        }
+
+        public void UpdateNode(NodeView node)
+        {
+            _nodes[node.Id] = node;
         }
 
         public NodeView GetNode(string nodeId)

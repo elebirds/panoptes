@@ -136,10 +136,10 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 		MaxTokens:   openai.Int(c.cfg.maxTokens),
 	})
 
-	messageChan := make(chan *ChatResponse)
+	responseCh := make(chan *ChatResponse)
 
 	go func() {
-		defer close(messageChan)
+		defer close(responseCh)
 		defer cancel()
 		defer service.RemoveChatSession(sessionID)
 		defer stream.Close()
@@ -161,7 +161,7 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 			}
 
 			select {
-			case messageChan <- msg:
+			case responseCh <- msg:
 			case <-jobCtx.Done():
 				return
 			}
@@ -171,7 +171,7 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 			slog.Error(c.name+"-[StreamChat] 流读取错误", "err", err)
 		}
 	}()
-	return messageChan, nil
+	return responseCh, nil
 }
 
 // Stop 主动终止指定会话的流式输出
