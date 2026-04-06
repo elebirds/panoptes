@@ -5,6 +5,8 @@ namespace Panoptes.Tests.EditMode.Fonts
 {
     public sealed class FontFallbackTests
     {
+        private readonly string _loadingOverlayPath = Path.GetFullPath("Assets/Scripts/Runtime/UI/Common/LoadingOverlay.cs");
+
         [Test]
         public void TmpSettings_ShouldConfigureGlobalFallbackFonts()
         {
@@ -114,6 +116,16 @@ namespace Panoptes.Tests.EditMode.Fonts
                 "Game 场景必须挂载 GameSceneController。");
             StringAssert.Contains("m_Name: StatusText", content,
                 "Game 场景必须包含状态占位文本。");
+        }
+
+        [Test]
+        public void LoadingOverlay_ShouldAssignTmpFont_WhenCreatingRuntimeMessageText()
+        {
+            Assert.That(File.Exists(_loadingOverlayPath), Is.True, "LoadingOverlay.cs 不存在。");
+
+            var content = File.ReadAllText(_loadingOverlayPath);
+            StringAssert.Contains("text.font = TMP_Settings.defaultFontAsset;", content,
+                "LoadingOverlay 动态创建 TextMeshProUGUI 时必须显式绑定默认字体。");
         }
     }
 }
