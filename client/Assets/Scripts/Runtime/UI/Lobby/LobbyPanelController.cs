@@ -200,6 +200,8 @@ namespace Panoptes.Runtime.UI.Lobby
                 "already_in_room" => "你已在房间中",
                 "invalid_status" => "房间状态不允许此操作",
                 "room_dissolved" => "房主已离开，房间解散",
+                "invalid_player_count" => "玩家数量不合法",
+                "player_not_found" => "玩家不存在",
                 _ => "操作失败，请重试"
             };
         }
