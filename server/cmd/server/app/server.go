@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -28,7 +29,7 @@ func (a *App) buildServer() *http.Server {
 	router := wstransport.NewRouter(lobbySvc)
 	wsHub.SetRouter(router)
 	wsHub.SetLeaveRoomFunc(lobbySvc.LeaveRoom)
-	go wsHub.Run()
+	go wsHub.Run(context.Background())
 
 	httpServer := httptransport.NewServer(
 		authSvc,

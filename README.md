@@ -22,11 +22,11 @@ Gamejam 参赛作品，主题：**我的 AI 队友**。
 ### 环境要求
 
 ```
-Go 1.22+
-Unity 2022.3 LTS
+Go 1.26+
+Unity 6.4
 buf（Protobuf 代码生成）
 Redis
-PostgreSQL（可选，开发阶段用内存实现）
+PostgreSQL
 ```
 
 ### 一键生成协议代码
@@ -198,7 +198,7 @@ PORT=8080
 # Redis
 REDIS_ADDR=localhost:6379
 
-# PostgreSQL（可选）
+# PostgreSQL（必选）
 POSTGRES_DSN=postgres://user:pass@localhost/panoptes
 
 # LLM
@@ -208,7 +208,10 @@ LLM_MODEL=claude-sonnet-4-20250514
 
 # JWT
 JWT_SECRET=your-secret-key
-JWT_EXPIRE_HOURS=24
+JWT_EXPIRATION=86400
+
+# 大厅配置
+DEFAULT_MAX_PLAYERS=2
 ```
 
 ---

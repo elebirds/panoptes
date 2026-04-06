@@ -49,9 +49,11 @@ func NewHub(jwtSecret string) *Hub {
 	}
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case client := <-h.register:
 			var stale *Client
 			h.mu.Lock()
