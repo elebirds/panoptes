@@ -9,16 +9,16 @@ import (
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
 )
 
-const testAPIKey = ""
+const testAPIKey = "sk-dfecb221ed3e44a68796bbcbda4fa137"
 
-func newQWenClient(t *testing.T) chatmodule.ChatClient {
+func newQwenClient(t *testing.T) chatmodule.ChatClient {
 	t.Helper()
-	return chatmodule.NewQWenClient(testAPIKey)
+	return chatmodule.NewQwenClient(testAPIKey)
 }
 
 // TestNormalChat 非流式调用
 func TestNormalChat(t *testing.T) {
-	client := newQWenClient(t)
+	client := newQwenClient(t)
 
 	resp, err := client.NormalChat(context.Background(), &chatmodule.ChatRequest{
 		Message: "用一句话介绍你自己",
@@ -34,7 +34,7 @@ func TestNormalChat(t *testing.T) {
 
 // TestNormalChatWithSystemPrompt 带系统提示词
 func TestNormalChatWithSystemPrompt(t *testing.T) {
-	client := newQWenClient(t)
+	client := newQwenClient(t)
 
 	resp, err := client.NormalChat(context.Background(), &chatmodule.ChatRequest{
 		Tips:    &chatmodule.ChatMessage{Content: "你是一个围棋专家，回答要简洁专业"},
@@ -48,12 +48,12 @@ func TestNormalChatWithSystemPrompt(t *testing.T) {
 
 // TestNormalChatWithHistory 带历史对话
 func TestNormalChatWithHistory(t *testing.T) {
-	client := newQWenClient(t)
+	client := newQwenClient(t)
 
 	resp, err := client.NormalChat(context.Background(), &chatmodule.ChatRequest{
 		History: []*chatmodule.ChatHistory{
-			{ChatMessage: chatmodule.ChatMessage{Role: chatmodule.IdUser, Content: "我叫小明"}},
-			{ChatMessage: chatmodule.ChatMessage{Role: chatmodule.IdBot, Content: "你好，小明！"}},
+			{ChatMessage: chatmodule.ChatMessage{Role: chatmodule.RoleUser, Content: "我叫小明"}},
+			{ChatMessage: chatmodule.ChatMessage{Role: chatmodule.RoleAssistant, Content: "你好，小明！"}},
 		},
 		Message: "你还记得我叫什么吗？",
 	})
@@ -65,10 +65,10 @@ func TestNormalChatWithHistory(t *testing.T) {
 
 // TestStreamChat 流式调用
 func TestStreamChat(t *testing.T) {
-	client := newQWenClient(t)
+	client := newQwenClient(t)
 
 	ch, err := client.StreamChat(context.Background(), &chatmodule.ChatRequest{
-		SessionId: "test-session-001",
+		SessionID: "test-session-001",
 		Message:   "用三句话介绍围棋",
 	})
 	if err != nil {
@@ -90,11 +90,11 @@ func TestStreamChat(t *testing.T) {
 
 // TestStreamChatStop 测试主动终止流式输出
 func TestStreamChatStop(t *testing.T) {
-	client := newQWenClient(t)
+	client := newQwenClient(t)
 
-	sessionId := "test-session-stop"
+	sessionID := "test-session-stop"
 	ch, err := client.StreamChat(context.Background(), &chatmodule.ChatRequest{
-		SessionId: sessionId,
+		SessionID: sessionID,
 		Message:   "请写一篇500字的文章，主题是围棋的历史",
 	})
 	if err != nil {
@@ -106,7 +106,7 @@ func TestStreamChatStop(t *testing.T) {
 		count++
 		fmt.Print(msg.Content)
 		if count >= 3 {
-			client.Stop(context.Background(), sessionId)
+			client.Stop(context.Background(), sessionID)
 			break
 		}
 	}
