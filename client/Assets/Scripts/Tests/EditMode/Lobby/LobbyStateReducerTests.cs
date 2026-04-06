@@ -57,8 +57,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                 roomName: "测试房间",
                 status: "waiting",
                 maxPlayers: 4,
-                CreatePlayer("player-1", "alice", isReady: true, isHost: true),
-                CreatePlayer("player-2", "bob", isReady: false, isHost: false));
+                CreatePlayer("player-1", "alice", isReady: true, isHost: true, isBot: false),
+                CreatePlayer("player-2", "bob", isReady: false, isHost: false, isBot: true));
 
             roomCacheType.GetMethod("Apply")?.Invoke(roomCache, new object[] { msg });
 
@@ -72,6 +72,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             var players = GetProperty<System.Collections.IList>(roomCache, roomCacheType, "Players");
             Assert.That(players, Is.Not.Null);
             Assert.That(players.Count, Is.EqualTo(2));
+            Assert.That(GetPlayerBool(players[0], "IsBot"), Is.False);
+            Assert.That(GetPlayerBool(players[1], "IsBot"), Is.True);
             Assert.That(changedCount, Is.EqualTo(1));
         }
 
@@ -93,7 +95,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                 roomName: "待清理房间",
                 status: "ready",
                 maxPlayers: 6,
-                CreatePlayer("player-2", "bob", isReady: true, isHost: true));
+                CreatePlayer("player-2", "bob", isReady: true, isHost: true, isBot: false));
 
             roomCacheType.GetMethod("Apply")?.Invoke(roomCache, new object[] { msg });
             roomCacheType.GetMethod("Clear")?.Invoke(roomCache, Array.Empty<object>());
@@ -146,7 +148,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             return roomState;
         }
 
-        private static object CreatePlayer(string playerId, string username, bool isReady, bool isHost)
+        private static object CreatePlayer(string playerId, string username, bool isReady, bool isHost, bool isBot)
         {
             var roomPlayerType = Type.GetType("Panoptes.Protocol.V1.RoomPlayer, Panoptes.Runtime")
                                  ?? throw new AssertionException("RoomPlayer 类型不存在。");
@@ -157,7 +159,15 @@ namespace Panoptes.Tests.EditMode.Lobby
             roomPlayerType.GetProperty("Username")?.SetValue(player, username);
             roomPlayerType.GetProperty("IsReady")?.SetValue(player, isReady);
             roomPlayerType.GetProperty("IsHost")?.SetValue(player, isHost);
+            roomPlayerType.GetProperty("IsBot")?.SetValue(player, isBot);
             return player;
+        }
+
+        private static bool GetPlayerBool(object player, string propertyName)
+        {
+            var property = player.GetType().GetProperty(propertyName)
+                           ?? throw new AssertionException($"RoomPlayer 缺少属性 {propertyName}");
+            return (bool)property.GetValue(player);
         }
 
         private static T GetProperty<T>(Component instance, Type type, string propertyName)
