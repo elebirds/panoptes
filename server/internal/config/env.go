@@ -24,6 +24,10 @@ type Config struct {
 	// JWT 配置
 	JWTSecret     string `env:"JWT_SECRET" envDefault:"your-secret-key"`
 	JWTExpiration int    `env:"JWT_EXPIRATION" envDefault:"86400"` // 秒，默认24小时
+
+	// LLM 配置
+	QwenAPIKey     string `env:"QWEN_API_KEY" envDefault:""`
+	DeepSeekAPIKey string `env:"DEEPSEEK_API_KEY" envDefault:""`
 }
 
 func Load() (Config, error) {
