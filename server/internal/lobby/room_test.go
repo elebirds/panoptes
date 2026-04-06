@@ -109,3 +109,93 @@ func TestRoomSetReadyMissingPlayer(t *testing.T) {
 		t.Fatalf("SetReady() error = %v", err)
 	}
 }
+
+func TestRoomAddBotAssignsIdentityAndReadyState(t *testing.T) {
+	room := NewRoom("room-1", "ABC234", "测试房间", "host-1", "host", 3, false)
+
+	firstBot, err := room.AddBot()
+	if err != nil {
+		t.Fatalf("AddBot() first error = %v", err)
+	}
+	secondBot, err := room.AddBot()
+	if err != nil {
+		t.Fatalf("AddBot() second error = %v", err)
+	}
+
+	if firstBot.Username != "Bot" {
+		t.Fatalf("first bot username = %q", firstBot.Username)
+	}
+	if secondBot.Username != "Bot 2" {
+		t.Fatalf("second bot username = %q", secondBot.Username)
+	}
+	if !firstBot.IsBot || !firstBot.IsReady {
+		t.Fatalf("first bot flags = %#v", firstBot)
+	}
+	if !secondBot.IsBot || !secondBot.IsReady {
+		t.Fatalf("second bot flags = %#v", secondBot)
+	}
+	if len(firstBot.PlayerID) != len("bot_")+8 {
+		t.Fatalf("first bot id = %q", firstBot.PlayerID)
+	}
+	if err := room.AddPlayer("guest-1", "guest"); err != ErrRoomFull {
+		t.Fatalf("AddPlayer() after full room error = %v", err)
+	}
+
+	state := room.ToProto()
+	if !state.GetPlayers()[1].GetIsBot() {
+		t.Fatalf("first bot proto flag = false")
+	}
+	if !state.GetPlayers()[2].GetIsBot() {
+		t.Fatalf("second bot proto flag = false")
+	}
+}
+
+func TestRoomKickPlayerValidatesOperatorAndTarget(t *testing.T) {
+	room := NewRoom("room-1", "ABC234", "测试房间", "host-1", "host", 4, false)
+	if err := room.AddPlayer("guest-1", "guest"); err != nil {
+		t.Fatalf("AddPlayer() error = %v", err)
+	}
+	bot, err := room.AddBot()
+	if err != nil {
+		t.Fatalf("AddBot() error = %v", err)
+	}
+
+	if _, err := room.KickPlayer("guest-1", bot.PlayerID); err != ErrNotHost {
+		t.Fatalf("non-host KickPlayer() error = %v", err)
+	}
+	if _, err := room.KickPlayer("host-1", "host-1"); err != ErrInvalidStatus {
+		t.Fatalf("host self KickPlayer() error = %v", err)
+	}
+	if _, err := room.KickPlayer("host-1", "missing"); err != ErrPlayerNotFound {
+		t.Fatalf("missing KickPlayer() error = %v", err)
+	}
+
+	kicked, err := room.KickPlayer("host-1", "guest-1")
+	if err != nil {
+		t.Fatalf("KickPlayer() error = %v", err)
+	}
+	if kicked == nil || kicked.PlayerID != "guest-1" {
+		t.Fatalf("kicked player = %#v", kicked)
+	}
+	if _, ok := room.GetPlayer("guest-1"); ok {
+		t.Fatalf("guest still in room")
+	}
+}
+
+func TestRoomIsAllReadyHonorsDevMode(t *testing.T) {
+	devRoom := NewRoom("room-1", "ABC234", "测试房间", "host-1", "host", 2, true)
+	if err := devRoom.SetReady("host-1", true); err != nil {
+		t.Fatalf("SetReady() dev room error = %v", err)
+	}
+	if !devRoom.IsAllReady() {
+		t.Fatalf("expected dev room to allow single ready player")
+	}
+
+	normalRoom := NewRoom("room-2", "ABC235", "普通房间", "host-2", "host", 2, false)
+	if err := normalRoom.SetReady("host-2", true); err != nil {
+		t.Fatalf("SetReady() normal room error = %v", err)
+	}
+	if normalRoom.IsAllReady() {
+		t.Fatalf("expected normal room to require at least two players")
+	}
+}

@@ -171,7 +171,7 @@ func TestLobbyServiceCreateRoomSendsInitialMessages(t *testing.T) {
 		},
 	}, "secret", 60)
 
-	svc := NewService(store, transport, authSvc, 4)
+	svc := NewService(store, transport, authSvc, 4, false)
 
 	if err := svc.CreateRoom(context.Background(), "host-1", "第一房间", 0); err != nil {
 		t.Fatalf("CreateRoom() error = %v", err)
@@ -211,7 +211,7 @@ func TestLobbyServiceReadyUpStartsCountdown(t *testing.T) {
 		},
 	}, "secret", 60)
 
-	svc := NewService(store, transport, authSvc, 4)
+	svc := NewService(store, transport, authSvc, 4, false)
 	svc.countdownDelay = 10 * time.Millisecond
 
 	room := &Room{

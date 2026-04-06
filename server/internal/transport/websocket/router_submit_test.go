@@ -1,0 +1,96 @@
+package websocket
+
+import (
+	"context"
+	"testing"
+
+	"github.com/elebirds/panoptes/internal/auth"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/lobby"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
+	"google.golang.org/protobuf/encoding/protojson"
+)
+
+type stubGameRoom struct {
+	domestic []string
+	combat   []string
+}
+
+func (r *stubGameRoom) OnHumanSubmitDomestic(playerID string) {
+	r.domestic = append(r.domestic, playerID)
+}
+
+func (r *stubGameRoom) OnHumanSubmitCombat(playerID string) {
+	r.combat = append(r.combat, playerID)
+}
+
+type stubGameRoomRegistry struct {
+	room coretransport.GameRoom
+	ok   bool
+}
+
+func (r *stubGameRoomRegistry) GetRoomByPlayerID(string) (coretransport.GameRoom, bool) {
+	return r.room, r.ok
+}
+
+func TestRouterRouteAddBotAndKickPlayer(t *testing.T) {
+	store := newRouterStore()
+	transport := newRouterTransport()
+	authSvc := auth.NewService(&routerUserStore{
+		users: map[string]*auth.User{
+			"host-1":  {ID: "host-1", Username: "host"},
+			"guest-1": {ID: "guest-1", Username: "guest"},
+		},
+	}, "secret", 60)
+	lobbySvc := lobby.NewService(store, transport, authSvc, 4, false)
+	room := lobby.NewRoom("room-1", "ABCD23", "router-room", "host-1", "host", 4, false)
+	if err := room.AddPlayer("guest-1", "guest"); err != nil {
+		t.Fatalf("AddPlayer() error = %v", err)
+	}
+	if err := store.CreateRoom(context.Background(), room); err != nil {
+		t.Fatalf("CreateRoom() error = %v", err)
+	}
+
+	router := NewRouter(lobbySvc, &stubGameRoomRegistry{})
+	sender := &captureSender{}
+
+	router.Route(sender, "host-1", &pb.Envelope{Type: "MsgAddBot", Payload: "{}"})
+	if len(transport.sent["host-1"]) != 1 {
+		t.Fatalf("host sent count after add bot = %d", len(transport.sent["host-1"]))
+	}
+
+	payload, err := protojson.Marshal(&pb.MsgKickPlayer{PlayerId: "guest-1"})
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+	router.Route(sender, "host-1", &pb.Envelope{Type: "MsgKickPlayer", Payload: string(payload)})
+
+	guestMsgs := transport.sent["guest-1"]
+	if len(guestMsgs) == 0 {
+		t.Fatalf("guest should receive kick notification")
+	}
+	if _, ok := guestMsgs[len(guestMsgs)-1].(*pb.MsgPlayerKicked); !ok {
+		t.Fatalf("guest last message type = %T", guestMsgs[len(guestMsgs)-1])
+	}
+}
+
+func TestRouterRouteSubmitMessages(t *testing.T) {
+	store := newRouterStore()
+	transport := newRouterTransport()
+	authSvc := auth.NewService(&routerUserStore{users: map[string]*auth.User{}}, "secret", 60)
+	room := &stubGameRoom{}
+	router := NewRouter(lobby.NewService(store, transport, authSvc, 4, false), &stubGameRoomRegistry{
+		room: room,
+		ok:   true,
+	})
+
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitDomestic", Payload: "{}"})
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+
+	if len(room.domestic) != 1 || room.domestic[0] != "player-1" {
+		t.Fatalf("domestic submits = %#v", room.domestic)
+	}
+	if len(room.combat) != 1 || room.combat[0] != "player-1" {
+		t.Fatalf("combat submits = %#v", room.combat)
+	}
+}
