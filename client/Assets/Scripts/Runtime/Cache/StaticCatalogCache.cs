@@ -162,7 +162,7 @@ namespace Panoptes.Runtime.Cache
 
         public bool LoadLocalCatalog()
         {
-            var asset = Resources.Load<TextAsset>(catalogBundleResourcePath);
+            var asset = UnityEngine.Resources.Load<TextAsset>(catalogBundleResourcePath);
             if (asset == null || string.IsNullOrWhiteSpace(asset.text))
             {
                 if (logStatus)
@@ -247,7 +247,7 @@ namespace Panoptes.Runtime.Cache
                 return true;
             }
 
-            var asset = Resources.Load<TextAsset>($"Data/maps/{key}.runtime");
+            var asset = UnityEngine.Resources.Load<TextAsset>($"Data/maps/{key}.runtime");
             if (asset == null || string.IsNullOrWhiteSpace(asset.text))
             {
                 return false;
