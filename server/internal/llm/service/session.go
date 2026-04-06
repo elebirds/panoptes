@@ -31,7 +31,9 @@ func SetChatSession(sessionId string, session context.CancelFunc) {
 	if sessionId == "" {
 		return
 	}
-	chatSessions.Store(sessionId, session)
+	if _, loaded := chatSessions.LoadOrStore(sessionId, session); loaded {
+		return
+	}
 }
 
 func GetChatSession(sessionId string) context.CancelFunc {
