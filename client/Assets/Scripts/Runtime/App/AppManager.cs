@@ -1,4 +1,4 @@
-﻿/*************************************************
+/*************************************************
  * Project: Panoptes
  * File: AppManager.cs
  * Author: Panoptes Team
@@ -6,11 +6,11 @@
  * Description: Global app state machine placeholder.
  *************************************************/
 
-using System.Threading.Tasks;
 using Panoptes.Protocol.V1;
-using Panoptes.Protocol.V1.Auth;
 using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Network;
+using Panoptes.Runtime.Service;
+using Panoptes.Runtime.UI.Common;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -30,14 +30,44 @@ namespace Panoptes.Runtime.App
 
         public AppState State { get; private set; } = AppState.Initializing;
 
-        public string PlayerID { get; private set; }
-        public string Username { get; private set; }
-        public string Token { get; private set; }
-
         [Header("Config")]
-        [SerializeField] private string serverUrl = "ws://localhost:8080/ws";
+        [SerializeField] private string loginSceneName = "Login";
+        [SerializeField] private string lobbySceneName = "Lobby";
+        [SerializeField] private string gameSceneName = "Game";
 
-        private void Awake()
+        [Header("Local Test")]
+        [SerializeField] private bool bypassLoginForLocalTest = true;
+        [SerializeField] private string localTestSceneName = "MapEditor";
+        [SerializeField] private AppState localTestState = AppState.Game;
+        [SerializeField] private bool logLocalTestBypass = true;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void EnsureManagersBootstrap()
+        {
+            var managers = GameObject.Find("Managers");
+            if (managers == null)
+            {
+                managers = new GameObject("Managers");
+            }
+
+            DontDestroyOnLoad(managers);
+            EnsureComponent<AppManager>(managers);
+            EnsureComponent<NetworkManager>(managers);
+            EnsureComponent<MessageDispatcher>(managers);
+            EnsureComponent<SessionManager>(managers);
+            EnsureComponent<RoomCache>(managers);
+            EnsureComponent<LoadingOverlay>(managers);
+        }
+
+        private static void EnsureComponent<T>(GameObject owner) where T : Component
+        {
+            if (owner.GetComponent<T>() == null)
+            {
+                owner.AddComponent<T>();
+            }
+        }
+
+        void Awake()
         {
             if (Instance != null && Instance != this)
             {
@@ -48,55 +78,61 @@ namespace Panoptes.Runtime.App
             DontDestroyOnLoad(gameObject);
         }
 
-        private async void Start()
+        void Start()
         {
-            await InitializeAsync();
-        }
-
-        private async Task InitializeAsync()
-        {
-            EnsureGlobalRuntimeServices();
-
-            await NetworkManager.Instance.ConnectAsync(serverUrl);
             RegisterGlobalHandlers();
+            if (bypassLoginForLocalTest)
+            {
+                EnterLocalTestMode();
+                return;
+            }
+
             TransitionTo(AppState.Login);
         }
 
-        private void EnsureGlobalRuntimeServices()
+        void OnDestroy()
         {
-            ConfigCache.EnsureInstance();
-
-            if (UnityEngine.Object.FindObjectOfType<ConfigMessageBridge>() == null)
+            if (MessageDispatcher.Instance != null)
             {
-                var go = new GameObject("ConfigMessageBridge");
-                go.AddComponent<ConfigMessageBridge>();
+                MessageDispatcher.Instance.Unregister("MsgGameInit");
             }
+        }
+
+        public void TransitionTo(AppState newState)
+        {
+            State = newState;
+            EnsureRealtimeConnectionIfNeeded(newState);
+
+            var sceneName = newState switch
+            {
+                AppState.Login => loginSceneName,
+                AppState.Lobby => lobbySceneName,
+                AppState.Game => gameSceneName,
+                _ => string.Empty
+            };
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return;
+            }
+
+            var activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene == sceneName)
+            {
+                return;
+            }
+
+            SceneManager.LoadScene(sceneName);
         }
 
         private void RegisterGlobalHandlers()
         {
-            MessageDispatcher.Instance.Register<MsgLoginSuccess>("MsgLoginSuccess", OnLoginSuccess);
-            MessageDispatcher.Instance.Register<MsgGameStarting>("MsgGameStarting", OnGameStarting);
+            if (MessageDispatcher.Instance == null)
+            {
+                return;
+            }
+
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
-
-            NetworkManager.Instance.OnDisconnected += OnDisconnected;
-        }
-
-        private void OnLoginSuccess(MsgLoginSuccess msg)
-        {
-            PlayerID = msg.PlayerId;
-            Username = msg.Username;
-            Token = msg.Token;
-
-            PlayerPrefs.SetString("token", msg.Token);
-            PlayerPrefs.SetString("player_id", msg.PlayerId);
-
-            TransitionTo(AppState.Lobby);
-        }
-
-        private void OnGameStarting(MsgGameStarting msg)
-        {
-            // Handled by lobby UI countdown. Scene transition waits for MsgGameInit.
         }
 
         private void OnGameInit(MsgGameInit msg)
@@ -109,36 +145,76 @@ namespace Panoptes.Runtime.App
             TransitionTo(AppState.Game);
         }
 
-        private void OnDisconnected()
+        private async void EnsureRealtimeConnectionIfNeeded(AppState state)
         {
-            Debug.Log("[App] Disconnected, attempting reconnect...");
-        }
-
-        public void TransitionTo(AppState newState)
-        {
-            State = newState;
-            switch (newState)
+            if (state != AppState.Lobby && state != AppState.Game)
             {
-                case AppState.Login:
-                    SceneManager.LoadScene("Login");
-                    break;
-                case AppState.Lobby:
-                    SceneManager.LoadScene("Lobby");
-                    break;
-                case AppState.Game:
-                    SceneManager.LoadScene("Game");
-                    break;
+                return;
+            }
+
+            if (NetworkManager.Instance == null ||
+                NetworkManager.Instance.IsConnected ||
+                NetworkManager.Instance.IsConnecting)
+            {
+                return;
+            }
+
+            if (SessionManager.Instance == null || !SessionManager.Instance.IsLoggedIn)
+            {
+                return;
+            }
+
+            try
+            {
+                await NetworkManager.Instance.ConnectWithSessionAsync();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[AppManager] Failed to establish realtime connection: {e.Message}");
             }
         }
 
-        public void Logout()
+        private void EnterLocalTestMode()
         {
-            PlayerID = null;
-            Username = null;
-            Token = null;
-            PlayerPrefs.DeleteKey("token");
-            PlayerPrefs.DeleteKey("player_id");
-            TransitionTo(AppState.Login);
+            State = localTestState;
+
+            var sceneName = string.IsNullOrWhiteSpace(localTestSceneName)
+                ? gameSceneName
+                : localTestSceneName.Trim();
+
+            if (logLocalTestBypass)
+            {
+                Debug.Log($"[AppManager] Local test mode enabled, bypass login and load scene '{sceneName}'.");
+            }
+
+            if (!CanLoadScene(sceneName))
+            {
+                Debug.LogWarning($"[AppManager] Local test scene '{sceneName}' is not loadable. Fallback to '{gameSceneName}'.");
+                sceneName = gameSceneName;
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return;
+            }
+
+            var activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene == sceneName)
+            {
+                return;
+            }
+
+            SceneManager.LoadScene(sceneName);
+        }
+
+        private static bool CanLoadScene(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return false;
+            }
+
+            return Application.CanStreamedLevelBeLoaded(sceneName);
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Panoptes.Protocol.V1 {
             "CgxidWlsZF9wb2ludHMYBiABKAVSC2J1aWxkUG9pbnRzIj0KDUVycm9yUmVz",
             "cG9uc2USEgoEY29kZRgBIAEoCVIEY29kZRIYCgdtZXNzYWdlGAIgASgJUgdt",
             "ZXNzYWdlIjgKCEVudmVsb3BlEhIKBHR5cGUYASABKAlSBHR5cGUSGAoHcGF5",
-            "bG9hZBgCIAEoDFIHcGF5bG9hZEJTWjpnaXRodWIuY29tL2VsZWJpcmRzL3Bh",
+            "bG9hZBgCIAEoCVIHcGF5bG9hZEJTWjpnaXRodWIuY29tL2VsZWJpcmRzL3Bh",
             "bm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIUUGFub3B0",
             "ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
@@ -965,10 +965,10 @@ namespace Panoptes.Protocol.V1 {
 
     /// <summary>Field number for the "payload" field.</summary>
     public const int PayloadFieldNumber = 2;
-    private pb::ByteString payload_ = pb::ByteString.Empty;
+    private string payload_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pb::ByteString Payload {
+    public string Payload {
       get { return payload_; }
       set {
         payload_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
@@ -1025,7 +1025,7 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Payload.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteBytes(Payload);
+        output.WriteString(Payload);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1043,7 +1043,7 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Payload.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteBytes(Payload);
+        output.WriteString(Payload);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1059,7 +1059,7 @@ namespace Panoptes.Protocol.V1 {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Type);
       }
       if (Payload.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Payload);
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Payload);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1103,7 +1103,7 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            Payload = input.ReadBytes();
+            Payload = input.ReadString();
             break;
           }
         }
@@ -1130,7 +1130,7 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            Payload = input.ReadBytes();
+            Payload = input.ReadString();
             break;
           }
         }
