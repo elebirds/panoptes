@@ -25,37 +25,39 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cgtsb2JieS5wcm90bxIRcGFub3B0ZXMucHJvdG8udjEaDGNvbW1vbi5wcm90",
-            "byKNAQoEUm9vbRIXCgdyb29tX2lkGAEgASgJUgZyb29tSWQSGwoJcm9vbV9j",
-            "b2RlGAIgASgJUghyb29tQ29kZRI3CgdwbGF5ZXJzGAMgAygLMh0ucGFub3B0",
-            "ZXMucHJvdG8udjEuUm9vbVBsYXllclIHcGxheWVycxIWCgZzdGF0dXMYBCAB",
-            "KAlSBnN0YXR1cyIsCg1Nc2dDcmVhdGVSb29tEhsKCXJvb21fbmFtZRgBIAEo",
-            "CVIIcm9vbU5hbWUiKgoLTXNnSm9pblJvb20SGwoJcm9vbV9jb2RlGAEgASgJ",
-            "Ughyb29tQ29kZSIOCgxNc2dMZWF2ZVJvb20iDAoKTXNnUmVhZHlVcCJGCg5N",
-            "c2dSb29tQ3JlYXRlZBIXCgdyb29tX2lkGAEgASgJUgZyb29tSWQSGwoJcm9v",
-            "bV9jb2RlGAIgASgJUghyb29tQ29kZSKVAQoMTXNnUm9vbVN0YXRlEhcKB3Jv",
-            "b21faWQYASABKAlSBnJvb21JZBIbCglyb29tX2NvZGUYAiABKAlSCHJvb21D",
-            "b2RlEjcKB3BsYXllcnMYAyADKAsyHS5wYW5vcHRlcy5wcm90by52MS5Sb29t",
-            "UGxheWVyUgdwbGF5ZXJzEhYKBnN0YXR1cxgEIAEoCVIGc3RhdHVzInkKClJv",
-            "b21QbGF5ZXISGwoJcGxheWVyX2lkGAEgASgJUghwbGF5ZXJJZBIaCgh1c2Vy",
-            "bmFtZRgCIAEoCVIIdXNlcm5hbWUSGQoIaXNfcmVhZHkYAyABKAhSB2lzUmVh",
-            "ZHkSFwoHaXNfaG9zdBgEIAEoCFIGaXNIb3N0Ii8KD01zZ0dhbWVTdGFydGlu",
-            "ZxIcCgljb3VudGRvd24YASABKAVSCWNvdW50ZG93biI9Cg1Nc2dMb2JieUVy",
-            "cm9yEhIKBGNvZGUYASABKAlSBGNvZGUSGAoHbWVzc2FnZRgCIAEoCVIHbWVz",
-            "c2FnZSISChBMaXN0Um9vbXNSZXF1ZXN0IkIKEUxpc3RSb29tc1Jlc3BvbnNl",
-            "Ei0KBXJvb21zGAEgAygLMhcucGFub3B0ZXMucHJvdG8udjEuUm9vbVIFcm9v",
-            "bXNCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9n",
-            "ZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZw",
-            "cm90bzM="));
+            "byLCAQoEUm9vbRIXCgdyb29tX2lkGAEgASgJUgZyb29tSWQSGwoJcm9vbV9j",
+            "b2RlGAIgASgJUghyb29tQ29kZRISCgRuYW1lGAMgASgJUgRuYW1lEjcKB3Bs",
+            "YXllcnMYBCADKAsyHS5wYW5vcHRlcy5wcm90by52MS5Sb29tUGxheWVyUgdw",
+            "bGF5ZXJzEhYKBnN0YXR1cxgFIAEoCVIGc3RhdHVzEh8KC21heF9wbGF5ZXJz",
+            "GAYgASgFUgptYXhQbGF5ZXJzIkQKDU1zZ0NyZWF0ZVJvb20SEgoEbmFtZRgB",
+            "IAEoCVIEbmFtZRIfCgttYXhfcGxheWVycxgCIAEoBVIKbWF4UGxheWVycyIq",
+            "CgtNc2dKb2luUm9vbRIbCglyb29tX2NvZGUYASABKAlSCHJvb21Db2RlIg4K",
+            "DE1zZ0xlYXZlUm9vbSIMCgpNc2dSZWFkeVVwIkYKDk1zZ1Jvb21DcmVhdGVk",
+            "EhcKB3Jvb21faWQYASABKAlSBnJvb21JZBIbCglyb29tX2NvZGUYAiABKAlS",
+            "CHJvb21Db2RlIsoBCgxNc2dSb29tU3RhdGUSFwoHcm9vbV9pZBgBIAEoCVIG",
+            "cm9vbUlkEhsKCXJvb21fY29kZRgCIAEoCVIIcm9vbUNvZGUSEgoEbmFtZRgD",
+            "IAEoCVIEbmFtZRI3CgdwbGF5ZXJzGAQgAygLMh0ucGFub3B0ZXMucHJvdG8u",
+            "djEuUm9vbVBsYXllclIHcGxheWVycxIWCgZzdGF0dXMYBSABKAlSBnN0YXR1",
+            "cxIfCgttYXhfcGxheWVycxgGIAEoBVIKbWF4UGxheWVycyJ5CgpSb29tUGxh",
+            "eWVyEhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySWQSGgoIdXNlcm5hbWUY",
+            "AiABKAlSCHVzZXJuYW1lEhkKCGlzX3JlYWR5GAMgASgIUgdpc1JlYWR5EhcK",
+            "B2lzX2hvc3QYBCABKAhSBmlzSG9zdCIvCg9Nc2dHYW1lU3RhcnRpbmcSHAoJ",
+            "Y291bnRkb3duGAEgASgFUgljb3VudGRvd24iPQoNTXNnTG9iYnlFcnJvchIS",
+            "CgRjb2RlGAEgASgJUgRjb2RlEhgKB21lc3NhZ2UYAiABKAlSB21lc3NhZ2Ui",
+            "EgoQTGlzdFJvb21zUmVxdWVzdCJCChFMaXN0Um9vbXNSZXNwb25zZRItCgVy",
+            "b29tcxgBIAMoCzIXLnBhbm9wdGVzLnByb3RvLnYxLlJvb21SBXJvb21zQlNa",
+            "OmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3By",
+            "b3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Room), global::Panoptes.Protocol.V1.Room.Parser, new[]{ "RoomId", "RoomCode", "Players", "Status" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCreateRoom), global::Panoptes.Protocol.V1.MsgCreateRoom.Parser, new[]{ "RoomName" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Room), global::Panoptes.Protocol.V1.Room.Parser, new[]{ "RoomId", "RoomCode", "Name", "Players", "Status", "MaxPlayers" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCreateRoom), global::Panoptes.Protocol.V1.MsgCreateRoom.Parser, new[]{ "Name", "MaxPlayers" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgJoinRoom), global::Panoptes.Protocol.V1.MsgJoinRoom.Parser, new[]{ "RoomCode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgLeaveRoom), global::Panoptes.Protocol.V1.MsgLeaveRoom.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgReadyUp), global::Panoptes.Protocol.V1.MsgReadyUp.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgRoomCreated), global::Panoptes.Protocol.V1.MsgRoomCreated.Parser, new[]{ "RoomId", "RoomCode" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgRoomState), global::Panoptes.Protocol.V1.MsgRoomState.Parser, new[]{ "RoomId", "RoomCode", "Players", "Status" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgRoomState), global::Panoptes.Protocol.V1.MsgRoomState.Parser, new[]{ "RoomId", "RoomCode", "Name", "Players", "Status", "MaxPlayers" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.RoomPlayer), global::Panoptes.Protocol.V1.RoomPlayer.Parser, new[]{ "PlayerId", "Username", "IsReady", "IsHost" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameStarting), global::Panoptes.Protocol.V1.MsgGameStarting.Parser, new[]{ "Countdown" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgLobbyError), global::Panoptes.Protocol.V1.MsgLobbyError.Parser, new[]{ "Code", "Message" }, null, null, null, null),
@@ -104,8 +106,10 @@ namespace Panoptes.Protocol.V1 {
     public Room(Room other) : this() {
       roomId_ = other.roomId_;
       roomCode_ = other.roomCode_;
+      name_ = other.name_;
       players_ = other.players_.Clone();
       status_ = other.status_;
+      maxPlayers_ = other.maxPlayers_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -142,10 +146,22 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 3;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "players" field.</summary>
-    public const int PlayersFieldNumber = 3;
+    public const int PlayersFieldNumber = 4;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.RoomPlayer> _repeated_players_codec
-        = pb::FieldCodec.ForMessage(26, global::Panoptes.Protocol.V1.RoomPlayer.Parser);
+        = pb::FieldCodec.ForMessage(34, global::Panoptes.Protocol.V1.RoomPlayer.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.RoomPlayer> players_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.RoomPlayer>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -154,7 +170,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 4;
+    public const int StatusFieldNumber = 5;
     private string status_ = "";
     /// <summary>
     /// "waiting|ready|starting"
@@ -165,6 +181,18 @@ namespace Panoptes.Protocol.V1 {
       get { return status_; }
       set {
         status_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "max_players" field.</summary>
+    public const int MaxPlayersFieldNumber = 6;
+    private int maxPlayers_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MaxPlayers {
+      get { return maxPlayers_; }
+      set {
+        maxPlayers_ = value;
       }
     }
 
@@ -185,8 +213,10 @@ namespace Panoptes.Protocol.V1 {
       }
       if (RoomId != other.RoomId) return false;
       if (RoomCode != other.RoomCode) return false;
+      if (Name != other.Name) return false;
       if(!players_.Equals(other.players_)) return false;
       if (Status != other.Status) return false;
+      if (MaxPlayers != other.MaxPlayers) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -196,8 +226,10 @@ namespace Panoptes.Protocol.V1 {
       int hash = 1;
       if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
       if (RoomCode.Length != 0) hash ^= RoomCode.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
       hash ^= players_.GetHashCode();
       if (Status.Length != 0) hash ^= Status.GetHashCode();
+      if (MaxPlayers != 0) hash ^= MaxPlayers.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -224,10 +256,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteString(RoomCode);
       }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
       players_.WriteTo(output, _repeated_players_codec);
       if (Status.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Status);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -247,10 +287,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteString(RoomCode);
       }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
       players_.WriteTo(ref output, _repeated_players_codec);
       if (Status.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Status);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -268,9 +316,15 @@ namespace Panoptes.Protocol.V1 {
       if (RoomCode.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomCode);
       }
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
       size += players_.CalculateSize(_repeated_players_codec);
       if (Status.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Status);
+      }
+      if (MaxPlayers != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxPlayers);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -290,9 +344,15 @@ namespace Panoptes.Protocol.V1 {
       if (other.RoomCode.Length != 0) {
         RoomCode = other.RoomCode;
       }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
       players_.Add(other.players_);
       if (other.Status.Length != 0) {
         Status = other.Status;
+      }
+      if (other.MaxPlayers != 0) {
+        MaxPlayers = other.MaxPlayers;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -322,11 +382,19 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 26: {
-            players_.AddEntriesFrom(input, _repeated_players_codec);
+            Name = input.ReadString();
             break;
           }
           case 34: {
+            players_.AddEntriesFrom(input, _repeated_players_codec);
+            break;
+          }
+          case 42: {
             Status = input.ReadString();
+            break;
+          }
+          case 48: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }
@@ -357,11 +425,19 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 26: {
-            players_.AddEntriesFrom(ref input, _repeated_players_codec);
+            Name = input.ReadString();
             break;
           }
           case 34: {
+            players_.AddEntriesFrom(ref input, _repeated_players_codec);
+            break;
+          }
+          case 42: {
             Status = input.ReadString();
+            break;
+          }
+          case 48: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }
@@ -409,7 +485,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public MsgCreateRoom(MsgCreateRoom other) : this() {
-      roomName_ = other.roomName_;
+      name_ = other.name_;
+      maxPlayers_ = other.maxPlayers_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -419,15 +496,27 @@ namespace Panoptes.Protocol.V1 {
       return new MsgCreateRoom(this);
     }
 
-    /// <summary>Field number for the "room_name" field.</summary>
-    public const int RoomNameFieldNumber = 1;
-    private string roomName_ = "";
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 1;
+    private string name_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string RoomName {
-      get { return roomName_; }
+    public string Name {
+      get { return name_; }
       set {
-        roomName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "max_players" field.</summary>
+    public const int MaxPlayersFieldNumber = 2;
+    private int maxPlayers_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MaxPlayers {
+      get { return maxPlayers_; }
+      set {
+        maxPlayers_ = value;
       }
     }
 
@@ -446,7 +535,8 @@ namespace Panoptes.Protocol.V1 {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (RoomName != other.RoomName) return false;
+      if (Name != other.Name) return false;
+      if (MaxPlayers != other.MaxPlayers) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -454,7 +544,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (RoomName.Length != 0) hash ^= RoomName.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (MaxPlayers != 0) hash ^= MaxPlayers.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -473,9 +564,13 @@ namespace Panoptes.Protocol.V1 {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (RoomName.Length != 0) {
+      if (Name.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(RoomName);
+        output.WriteString(Name);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -487,9 +582,13 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (RoomName.Length != 0) {
+      if (Name.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(RoomName);
+        output.WriteString(Name);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -501,8 +600,11 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (RoomName.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomName);
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (MaxPlayers != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxPlayers);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -516,8 +618,11 @@ namespace Panoptes.Protocol.V1 {
       if (other == null) {
         return;
       }
-      if (other.RoomName.Length != 0) {
-        RoomName = other.RoomName;
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      if (other.MaxPlayers != 0) {
+        MaxPlayers = other.MaxPlayers;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -539,7 +644,11 @@ namespace Panoptes.Protocol.V1 {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            RoomName = input.ReadString();
+            Name = input.ReadString();
+            break;
+          }
+          case 16: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }
@@ -562,7 +671,11 @@ namespace Panoptes.Protocol.V1 {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            RoomName = input.ReadString();
+            Name = input.ReadString();
+            break;
+          }
+          case 16: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }
@@ -1370,8 +1483,10 @@ namespace Panoptes.Protocol.V1 {
     public MsgRoomState(MsgRoomState other) : this() {
       roomId_ = other.roomId_;
       roomCode_ = other.roomCode_;
+      name_ = other.name_;
       players_ = other.players_.Clone();
       status_ = other.status_;
+      maxPlayers_ = other.maxPlayers_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1405,10 +1520,22 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 3;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "players" field.</summary>
-    public const int PlayersFieldNumber = 3;
+    public const int PlayersFieldNumber = 4;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.RoomPlayer> _repeated_players_codec
-        = pb::FieldCodec.ForMessage(26, global::Panoptes.Protocol.V1.RoomPlayer.Parser);
+        = pb::FieldCodec.ForMessage(34, global::Panoptes.Protocol.V1.RoomPlayer.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.RoomPlayer> players_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.RoomPlayer>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1417,7 +1544,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "status" field.</summary>
-    public const int StatusFieldNumber = 4;
+    public const int StatusFieldNumber = 5;
     private string status_ = "";
     /// <summary>
     /// "waiting|ready|starting"
@@ -1428,6 +1555,18 @@ namespace Panoptes.Protocol.V1 {
       get { return status_; }
       set {
         status_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "max_players" field.</summary>
+    public const int MaxPlayersFieldNumber = 6;
+    private int maxPlayers_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MaxPlayers {
+      get { return maxPlayers_; }
+      set {
+        maxPlayers_ = value;
       }
     }
 
@@ -1448,8 +1587,10 @@ namespace Panoptes.Protocol.V1 {
       }
       if (RoomId != other.RoomId) return false;
       if (RoomCode != other.RoomCode) return false;
+      if (Name != other.Name) return false;
       if(!players_.Equals(other.players_)) return false;
       if (Status != other.Status) return false;
+      if (MaxPlayers != other.MaxPlayers) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1459,8 +1600,10 @@ namespace Panoptes.Protocol.V1 {
       int hash = 1;
       if (RoomId.Length != 0) hash ^= RoomId.GetHashCode();
       if (RoomCode.Length != 0) hash ^= RoomCode.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
       hash ^= players_.GetHashCode();
       if (Status.Length != 0) hash ^= Status.GetHashCode();
+      if (MaxPlayers != 0) hash ^= MaxPlayers.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1487,10 +1630,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteString(RoomCode);
       }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
       players_.WriteTo(output, _repeated_players_codec);
       if (Status.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Status);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1510,10 +1661,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteString(RoomCode);
       }
+      if (Name.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Name);
+      }
       players_.WriteTo(ref output, _repeated_players_codec);
       if (Status.Length != 0) {
-        output.WriteRawTag(34);
+        output.WriteRawTag(42);
         output.WriteString(Status);
+      }
+      if (MaxPlayers != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(MaxPlayers);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1531,9 +1690,15 @@ namespace Panoptes.Protocol.V1 {
       if (RoomCode.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(RoomCode);
       }
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
       size += players_.CalculateSize(_repeated_players_codec);
       if (Status.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Status);
+      }
+      if (MaxPlayers != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxPlayers);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1553,9 +1718,15 @@ namespace Panoptes.Protocol.V1 {
       if (other.RoomCode.Length != 0) {
         RoomCode = other.RoomCode;
       }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
       players_.Add(other.players_);
       if (other.Status.Length != 0) {
         Status = other.Status;
+      }
+      if (other.MaxPlayers != 0) {
+        MaxPlayers = other.MaxPlayers;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1585,11 +1756,19 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 26: {
-            players_.AddEntriesFrom(input, _repeated_players_codec);
+            Name = input.ReadString();
             break;
           }
           case 34: {
+            players_.AddEntriesFrom(input, _repeated_players_codec);
+            break;
+          }
+          case 42: {
             Status = input.ReadString();
+            break;
+          }
+          case 48: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }
@@ -1620,11 +1799,19 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 26: {
-            players_.AddEntriesFrom(ref input, _repeated_players_codec);
+            Name = input.ReadString();
             break;
           }
           case 34: {
+            players_.AddEntriesFrom(ref input, _repeated_players_codec);
+            break;
+          }
+          case 42: {
             Status = input.ReadString();
+            break;
+          }
+          case 48: {
+            MaxPlayers = input.ReadInt32();
             break;
           }
         }

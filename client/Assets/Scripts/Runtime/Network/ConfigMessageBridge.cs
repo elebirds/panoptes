@@ -7,7 +7,6 @@
  *************************************************/
 
 using System.Collections.Generic;
-using Google.Protobuf;
 using Panoptes.Runtime.Cache;
 using UnityEngine;
 
@@ -130,10 +129,9 @@ namespace Panoptes.Runtime.Network
             _handlersRegistered = false;
         }
 
-        private void HandleWrappedPayload(ByteString payload)
+        private void HandleWrappedPayload(string payloadJson)
         {
-            var json = payload == null ? string.Empty : payload.ToStringUtf8();
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(payloadJson))
             {
                 if (logUnknownPayloadWarning)
                 {
@@ -143,16 +141,15 @@ namespace Panoptes.Runtime.Network
             }
 
             var cache = ConfigCache.EnsureInstance();
-            if (!cache.ApplyPushJson(json) && logUnknownPayloadWarning)
+            if (!cache.ApplyPushJson(payloadJson) && logUnknownPayloadWarning)
             {
                 Debug.LogWarning("[ConfigMessageBridge] Unsupported wrapped config payload format.");
             }
         }
 
-        private void HandleDirectPayload(ByteString payload, string configKey)
+        private void HandleDirectPayload(string payloadJson, string configKey)
         {
-            var json = payload == null ? string.Empty : payload.ToStringUtf8();
-            if (string.IsNullOrWhiteSpace(json))
+            if (string.IsNullOrWhiteSpace(payloadJson))
             {
                 if (logUnknownPayloadWarning)
                 {
@@ -162,7 +159,7 @@ namespace Panoptes.Runtime.Network
             }
 
             var cache = ConfigCache.EnsureInstance();
-            cache.SetJson(configKey, json);
+            cache.SetJson(configKey, payloadJson);
         }
     }
 }

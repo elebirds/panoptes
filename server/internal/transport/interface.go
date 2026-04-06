@@ -1,19 +1,11 @@
 package transport
 
-import (
-	"net/http"
+import "google.golang.org/protobuf/proto"
 
-	httptransport "github.com/elebirds/panoptes/internal/transport/http"
-
-	"github.com/elebirds/panoptes/internal/auth"
-)
-
-// Transport defines the interface for external connections
-type Transport interface {
-	Handler() http.Handler
-}
-
-// NewHTTPTransport creates a new HTTP transport
-func NewHTTPTransport(authSvc *auth.Service, jwtSecret string, dbPinger httptransport.Pinger, redisPinger httptransport.Pinger) Transport {
-	return httptransport.NewServer(authSvc, jwtSecret, dbPinger, redisPinger)
+// GameTransport 是游戏消息推送抽象。
+// WebSocket 和 gRPC 都应实现该接口。
+type GameTransport interface {
+	Send(playerID string, msg proto.Message) error
+	Broadcast(roomID string, msg proto.Message) error
+	Stream(playerID string, msgs <-chan proto.Message) error
 }

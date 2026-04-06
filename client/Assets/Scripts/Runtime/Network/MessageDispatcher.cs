@@ -1,9 +1,9 @@
-/*************************************************
+﻿/*************************************************
  * Project: Panoptes
  * File: MessageDispatcher.cs
  * Author: Panoptes Team
  * Date: 2026-04-04
- * Description: Envelope message dispatch placeholder.
+ * Description: Envelope message dispatcher.
  *************************************************/
 
 using System;
@@ -18,42 +18,44 @@ namespace Panoptes.Runtime.Network
     {
         public static MessageDispatcher Instance { get; private set; }
 
-        // type string → handler
-        private readonly Dictionary<string, Action<ByteString>> _handlers = new();
+        // message type -> handlers
+        private readonly Dictionary<string, List<Action<string>>> _handlers =
+            new(StringComparer.Ordinal);
+        private readonly JsonParser _jsonParser =
+            new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
-        void Awake()
+        private void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
+
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
 
-        // 注册 Handler
-        // 用法：Register<MsgGameInit>("MsgGameInit", OnGameInit)
         public void Register<T>(string messageType, Action<T> handler)
             where T : IMessage<T>, new()
         {
-            RegisterRaw(messageType, payload =>
+            RegisterRaw(messageType, payloadJson =>
             {
                 try
                 {
-                    var msg = new T();
-                    msg = (T)msg.Descriptor.Parser.ParseFrom(payload);
+                    var json = string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson;
+                    var msg = _jsonParser.Parse<T>(json);
                     handler(msg);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e.Message}");
+                    Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e}");
                 }
             });
         }
 
-        // Register handler that receives Envelope.Payload directly.
-        public void RegisterRaw(string messageType, Action<ByteString> handler)
+        // Register raw payload handler (Envelope.Payload JSON string)
+        public void RegisterRaw(string messageType, Action<string> handler)
         {
             if (string.IsNullOrWhiteSpace(messageType))
             {
@@ -67,31 +69,47 @@ namespace Panoptes.Runtime.Network
                 return;
             }
 
-            _handlers[messageType] = payload =>
+            if (!_handlers.TryGetValue(messageType, out var list))
             {
-                try
-                {
-                    handler(payload);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[Dispatcher] Handler failed for {messageType}: {e.Message}");
-                }
-            };
+                list = new List<Action<string>>();
+                _handlers[messageType] = list;
+            }
+
+            list.Add(handler);
         }
 
-        // 取消注册
         public void Unregister(string messageType)
         {
+            if (string.IsNullOrWhiteSpace(messageType))
+            {
+                return;
+            }
+
             _handlers.Remove(messageType);
         }
 
-        // 由 NetworkManager 调用，已在主线程
         public void Dispatch(Envelope envelope)
         {
-            if (_handlers.TryGetValue(envelope.Type, out var handler))
+            if (envelope == null)
             {
-                handler(envelope.Payload);
+                Debug.LogWarning("[Dispatcher] Received null envelope.");
+                return;
+            }
+
+            if (_handlers.TryGetValue(envelope.Type, out var handlers) && handlers != null && handlers.Count > 0)
+            {
+                var snapshot = handlers.ToArray();
+                for (int i = 0; i < snapshot.Length; i++)
+                {
+                    try
+                    {
+                        snapshot[i]?.Invoke(envelope.Payload);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[Dispatcher] Handler failed for {envelope.Type}: {e}");
+                    }
+                }
             }
             else
             {
