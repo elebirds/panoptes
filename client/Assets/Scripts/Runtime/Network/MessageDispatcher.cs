@@ -1,9 +1,9 @@
-﻿/*************************************************
+/*************************************************
  * Project: Panoptes
  * File: MessageDispatcher.cs
  * Author: Panoptes Team
  * Date: 2026-04-04
- * Description: Envelope message dispatcher.
+ * Description: Envelope message dispatch placeholder.
  *************************************************/
 
 using System;
@@ -18,20 +18,16 @@ namespace Panoptes.Runtime.Network
     {
         public static MessageDispatcher Instance { get; private set; }
 
-        // message type -> handlers
         private readonly Dictionary<string, List<Action<string>>> _handlers =
             new(StringComparer.Ordinal);
-        private readonly JsonParser _jsonParser =
-            new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
-        private void Awake()
+        void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
@@ -39,12 +35,30 @@ namespace Panoptes.Runtime.Network
         public void Register<T>(string messageType, Action<T> handler)
             where T : IMessage<T>, new()
         {
-            RegisterRaw(messageType, payloadJson =>
+            if (string.IsNullOrWhiteSpace(messageType))
+            {
+                Debug.LogError("[Dispatcher] Message type is required.");
+                return;
+            }
+
+            if (handler == null)
+            {
+                Debug.LogError($"[Dispatcher] Handler for {messageType} is null.");
+                return;
+            }
+
+            if (!_handlers.TryGetValue(messageType, out var handlers))
+            {
+                handlers = new List<Action<string>>();
+                _handlers[messageType] = handlers;
+            }
+
+            handlers.Add(payloadJson =>
             {
                 try
                 {
                     var json = string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson;
-                    var msg = _jsonParser.Parse<T>(json);
+                    var msg = JsonParser.Default.Parse<T>(json);
                     handler(msg);
                 }
                 catch (Exception e)
@@ -52,30 +66,6 @@ namespace Panoptes.Runtime.Network
                     Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e}");
                 }
             });
-        }
-
-        // Register raw payload handler (Envelope.Payload JSON string)
-        public void RegisterRaw(string messageType, Action<string> handler)
-        {
-            if (string.IsNullOrWhiteSpace(messageType))
-            {
-                Debug.LogWarning("[Dispatcher] RegisterRaw failed: messageType is empty.");
-                return;
-            }
-
-            if (handler == null)
-            {
-                Debug.LogWarning($"[Dispatcher] RegisterRaw failed: handler is null for {messageType}.");
-                return;
-            }
-
-            if (!_handlers.TryGetValue(messageType, out var list))
-            {
-                list = new List<Action<string>>();
-                _handlers[messageType] = list;
-            }
-
-            list.Add(handler);
         }
 
         public void Unregister(string messageType)
@@ -96,19 +86,11 @@ namespace Panoptes.Runtime.Network
                 return;
             }
 
-            if (_handlers.TryGetValue(envelope.Type, out var handlers) && handlers != null && handlers.Count > 0)
+            if (_handlers.TryGetValue(envelope.Type, out var handler))
             {
-                var snapshot = handlers.ToArray();
-                for (int i = 0; i < snapshot.Length; i++)
+                foreach (var item in handler.ToArray())
                 {
-                    try
-                    {
-                        snapshot[i]?.Invoke(envelope.Payload);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError($"[Dispatcher] Handler failed for {envelope.Type}: {e}");
-                    }
+                    item(envelope.Payload);
                 }
             }
             else
