@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using Panoptes.Runtime.Map;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
@@ -49,11 +50,33 @@ namespace Panoptes.Runtime.UI.Domestic
         private struct BuildButtonBinding
         {
             public Button button;
+            public Image iconImage;
+            public TMP_Text labelText;
+            [Tooltip("Used when config icon is missing or not configured.")]
+            public Sprite fallbackIcon;
             public BuildingType buildingType;
             [Tooltip("Only used when Building Type = Custom")]
             public string customBuildingType;
             [TextArea] public string tooltipText;
             public BuildRule rule;
+        }
+
+        [Serializable]
+        private sealed class BuildConfigRoot
+        {
+            public string config_version;
+            public string default_locale;
+            public BuildConfigEntry[] buildings;
+        }
+
+        [Serializable]
+        private sealed class BuildConfigEntry
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string placement_rule;
         }
 
         [Header("Top Area")]
@@ -77,13 +100,25 @@ namespace Panoptes.Runtime.UI.Domestic
         [SerializeField] private Button cancelButton;
         [SerializeField] private BuildTooltipView tooltipView;
 
+        [Header("Build Config Source")]
+        [SerializeField] private bool applyConfigToButtons = true;
+        [SerializeField] private bool useConfigPlacementRule = true;
+        [SerializeField] private TextAsset buildConfigJson;
+        [Tooltip("Used when Build Config Json is empty. Relative to Resources/, without extension.")]
+        [SerializeField] private string buildConfigResourcesPath = "Config/buildconfig";
+        [Tooltip("Icon load path under Resources/. Final path: <Icon Resources Root>/<icon_key>")]
+        [SerializeField] private string iconResourcesRoot = "Icons/Buildings";
+        [SerializeField] private bool logConfigWarnings = true;
+
         private readonly List<Button> _boundButtons = new();
         private readonly List<UnityAction> _boundActions = new();
+        private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
         private Coroutine _emblemLoadRoutine;
 
         private void OnEnable()
         {
             ResolveMapInputHandler();
+            LoadBuildConfig();
             BindButtons();
             BindModeToggles();
             SetMode(defaultMode, true);
@@ -177,13 +212,16 @@ namespace Panoptes.Runtime.UI.Domestic
                     }
 
                     var buildingType = ResolveBuildingTypeToken(binding);
-                    var rule = binding.rule;
+                    var configEntry = GetBuildConfigEntry(buildingType);
+                    var rule = ResolveBuildRule(binding.rule, configEntry);
                     UnityAction action = () => TriggerBuild(buildingType, rule);
                     binding.button.onClick.AddListener(action);
                     _boundButtons.Add(binding.button);
                     _boundActions.Add(action);
 
-                    InstallTooltip(binding);
+                    ApplyButtonPresentation(binding, buildingType, configEntry);
+                    var tooltip = ResolveTooltipText(binding, configEntry);
+                    InstallTooltip(binding.button, tooltip);
                 }
             }
 
@@ -347,20 +385,173 @@ namespace Panoptes.Runtime.UI.Domestic
             }
         }
 
-        private void InstallTooltip(BuildButtonBinding binding)
+        private void InstallTooltip(Button button, string text)
         {
-            if (binding.button == null || tooltipView == null || string.IsNullOrWhiteSpace(binding.tooltipText))
+            if (button == null || tooltipView == null || string.IsNullOrWhiteSpace(text))
             {
                 return;
             }
 
-            var trigger = binding.button.GetComponent<BuildTooltipTrigger>();
+            var trigger = button.GetComponent<BuildTooltipTrigger>();
             if (trigger == null)
             {
-                trigger = binding.button.gameObject.AddComponent<BuildTooltipTrigger>();
+                trigger = button.gameObject.AddComponent<BuildTooltipTrigger>();
             }
 
-            trigger.Configure(tooltipView, binding.tooltipText.Trim());
+            trigger.Configure(tooltipView, text.Trim());
+        }
+
+        private void LoadBuildConfig()
+        {
+            _buildConfigById.Clear();
+            if (!applyConfigToButtons)
+            {
+                return;
+            }
+
+            var source = buildConfigJson;
+            if (source == null && !string.IsNullOrWhiteSpace(buildConfigResourcesPath))
+            {
+                source = Resources.Load<TextAsset>(buildConfigResourcesPath);
+            }
+
+            if (source == null || string.IsNullOrWhiteSpace(source.text))
+            {
+                if (logConfigWarnings)
+                {
+                    Debug.LogWarning("[BuildCommandPanel] Build config JSON is missing.");
+                }
+                return;
+            }
+
+            BuildConfigRoot config = null;
+            try
+            {
+                config = JsonUtility.FromJson<BuildConfigRoot>(source.text);
+            }
+            catch (Exception ex)
+            {
+                if (logConfigWarnings)
+                {
+                    Debug.LogWarning($"[BuildCommandPanel] Failed to parse build config JSON: {ex.Message}");
+                }
+                return;
+            }
+
+            if (config == null || config.buildings == null || config.buildings.Length == 0)
+            {
+                if (logConfigWarnings)
+                {
+                    Debug.LogWarning("[BuildCommandPanel] Build config JSON has no buildings array.");
+                }
+                return;
+            }
+
+            for (int i = 0; i < config.buildings.Length; i++)
+            {
+                var entry = config.buildings[i];
+                var id = NormalizeToken(entry != null ? entry.id : string.Empty);
+                if (string.IsNullOrEmpty(id))
+                {
+                    continue;
+                }
+
+                _buildConfigById[id] = entry;
+            }
+        }
+
+        private BuildConfigEntry GetBuildConfigEntry(string buildingType)
+        {
+            var key = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+
+            _buildConfigById.TryGetValue(key, out var entry);
+            return entry;
+        }
+
+        private BuildRule ResolveBuildRule(BuildRule fallback, BuildConfigEntry entry)
+        {
+            if (!useConfigPlacementRule || entry == null)
+            {
+                return fallback;
+            }
+
+            switch (NormalizeToken(entry.placement_rule))
+            {
+                case "resource_only":
+                    return BuildRule.ResourceOnly;
+                case "city_only":
+                    return BuildRule.CityOnly;
+                case "any_terrain":
+                    return BuildRule.AnyTerrain;
+                default:
+                    return fallback;
+            }
+        }
+
+        private string ResolveTooltipText(BuildButtonBinding binding, BuildConfigEntry entry)
+        {
+            if (applyConfigToButtons && entry != null && !string.IsNullOrWhiteSpace(entry.description))
+            {
+                return entry.description.Trim();
+            }
+
+            return binding.tooltipText;
+        }
+
+        private void ApplyButtonPresentation(BuildButtonBinding binding, string buildingType, BuildConfigEntry entry)
+        {
+            if (!applyConfigToButtons)
+            {
+                return;
+            }
+
+            var displayName = (entry != null && !string.IsNullOrWhiteSpace(entry.name))
+                ? entry.name.Trim()
+                : buildingType;
+
+            if (binding.labelText != null && !string.IsNullOrWhiteSpace(displayName))
+            {
+                binding.labelText.text = displayName;
+            }
+
+            if (binding.iconImage == null)
+            {
+                return;
+            }
+
+            Sprite sprite = null;
+            if (entry != null)
+            {
+                sprite = LoadIconByKey(entry.icon_key);
+            }
+
+            if (sprite == null)
+            {
+                sprite = binding.fallbackIcon;
+            }
+
+            if (sprite != null)
+            {
+                binding.iconImage.sprite = sprite;
+                binding.iconImage.preserveAspect = true;
+            }
+        }
+
+        private Sprite LoadIconByKey(string iconKey)
+        {
+            var key = (iconKey ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+
+            var root = (iconResourcesRoot ?? string.Empty).Trim();
+            var path = string.IsNullOrEmpty(root) ? key : $"{root.TrimEnd('/')}/{key}";
+            return Resources.Load<Sprite>(path);
         }
 
         private System.Collections.IEnumerator LoadEmblemCoroutine(string imageUrl)
