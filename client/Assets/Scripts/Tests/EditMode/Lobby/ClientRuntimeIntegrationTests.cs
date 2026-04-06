@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using NUnit.Framework;
 using Panoptes.Protocol.V1;
+using Panoptes.Runtime.UI.Game;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Panoptes.Tests.EditMode.Lobby
 {
@@ -114,6 +116,23 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(transitionIndex, Is.GreaterThan(applyIndex), "AppManager 必须在 ApplyGameInit 之后再切换 Game 场景。");
         }
 
+        [Test]
+        public void GameSceneController_ShouldRenderWaitingStateWithoutWarning_WhenCacheIsEmpty()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<Panoptes.Runtime.Cache.GameStateCache>();
+            SetSingletonInstance(typeof(Panoptes.Runtime.Cache.GameStateCache), cache);
+
+            var controllerObject = new GameObject("GameSceneController");
+            var controller = controllerObject.AddComponent<GameSceneController>();
+
+            InvokeLifecycle(controller, "Awake");
+
+            LogAssert.NoUnexpectedReceived();
+            controller.RefreshFromCache();
+            LogAssert.NoUnexpectedReceived();
+        }
+
         private static void DestroySingleton(string typeName)
         {
             var type = Type.GetType(typeName);
@@ -127,6 +146,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             {
                 UnityEngine.Object.DestroyImmediate(existing.gameObject);
             }
+
+            SetSingletonInstance(type, null);
         }
 
         private static T GetProperty<T>(Component instance, Type type, string propertyName)
@@ -134,6 +155,30 @@ namespace Panoptes.Tests.EditMode.Lobby
             var property = type.GetProperty(propertyName)
                            ?? throw new AssertionException($"缺少属性 {propertyName}");
             return (T)property.GetValue(instance);
+        }
+
+        private static void InvokeLifecycle(object instance, string methodName)
+        {
+            var method = instance.GetType().GetMethod(methodName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new AssertionException($"缺少生命周期方法 {methodName}");
+            }
+
+            method.Invoke(instance, null);
+        }
+
+        private static void SetSingletonInstance(Type type, object value)
+        {
+            var field = type.GetField("<Instance>k__BackingField",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            if (field == null)
+            {
+                return;
+            }
+
+            field.SetValue(null, value);
         }
     }
 }
