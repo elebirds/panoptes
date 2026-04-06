@@ -176,6 +176,8 @@ namespace Panoptes.Editor
             var readyButton = CreateButton("ReadyButton", parent, "准备", new Vector2(0f, 0f), new Vector2(220f, 60f), new Vector2(50f, 66f), new Color(0.24f, 0.62f, 0.36f, 1f));
             var addBotButton = CreateButton("AddBotButton", parent, "添加 Bot", new Vector2(0.5f, 0f), new Vector2(220f, 60f), new Vector2(0f, 66f), new Color(0.17f, 0.43f, 0.78f, 1f));
             addBotButton.gameObject.SetActive(false);
+            var startGameButton = CreateButton("StartGameButton", parent, "开始游戏", new Vector2(0.5f, 0f), new Vector2(220f, 60f), new Vector2(0f, 140f), new Color(0.79f, 0.52f, 0.16f, 1f));
+            startGameButton.gameObject.SetActive(false);
             var leaveButton = CreateButton("LeaveButton", parent, "离开房间", new Vector2(1f, 0f), new Vector2(220f, 60f), new Vector2(-50f, 66f), new Color(0.71f, 0.24f, 0.25f, 1f));
             var statusText = CreateText("StatusText", parent, "等待玩家准备...", 26, TextAlignmentOptions.Center, FontStyles.Bold, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 76f), new Vector2(520f, 34f), new Color(0.29f, 0.36f, 0.44f, 1f));
 
@@ -186,6 +188,7 @@ namespace Panoptes.Editor
             serialized.FindProperty("playerSlotContainer").objectReferenceValue = playerSlotContainer.transform;
             serialized.FindProperty("playerSlotPrefab").objectReferenceValue = playerSlotPrefab;
             serialized.FindProperty("addBotButton").objectReferenceValue = addBotButton;
+            serialized.FindProperty("startGameButton").objectReferenceValue = startGameButton;
             serialized.FindProperty("readyButton").objectReferenceValue = readyButton;
             serialized.FindProperty("leaveButton").objectReferenceValue = leaveButton;
             serialized.FindProperty("statusText").objectReferenceValue = statusText;
