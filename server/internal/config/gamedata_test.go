@@ -16,7 +16,7 @@ func TestLoadGameDataParsesCoreFields(t *testing.T) {
       "hp": 25,
       "attack": 12,
       "speed": 3,
-      "cost": { "food": 2, "refined_ore": 1 },
+      "cost": { "food": 2, "refined_ore": 1, "engineer_material": 7 },
       "multipliers": { "infantry": 1.5 },
       "can_siege": false,
       "siege_multiplier": 1.0,
@@ -31,7 +31,7 @@ func TestLoadGameDataParsesCoreFields(t *testing.T) {
     "wall": {
       "name": "城墙",
       "category": "military",
-      "build_cost": { "ore": 2, "build_points": 3 },
+      "build_cost": { "ore": 2, "build_points": 3, "engineer_material": 4 },
       "hp": 50,
       "defense_bonus_per_level": 0.1,
       "max_level": 3
@@ -77,10 +77,48 @@ func TestLoadGameDataParsesCoreFields(t *testing.T) {
 	if data.Units["cavalry"].ChargeBonus != 1.5 {
 		t.Fatalf("ChargeBonus = %f", data.Units["cavalry"].ChargeBonus)
 	}
+	if data.Units["cavalry"].Cost[ResourceEngineerMaterial] != 7 {
+		t.Fatalf("dynamic cost engineer_material = %d", data.Units["cavalry"].Cost[ResourceEngineerMaterial])
+	}
 	if data.Buildings["wall"].Category != "military" {
 		t.Fatalf("Building category = %q", data.Buildings["wall"].Category)
 	}
+	if data.Buildings["wall"].BuildCost[ResourceEngineerMaterial] != 4 {
+		t.Fatalf("dynamic build cost engineer_material = %d", data.Buildings["wall"].BuildCost[ResourceEngineerMaterial])
+	}
 	if data.Rules.CastleBaseHP != 100 {
 		t.Fatalf("CastleBaseHP = %d", data.Rules.CastleBaseHP)
+	}
+}
+
+func TestLoadGameDataRejectsUnknownResourceKey(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "gamedata.json")
+	if err := os.WriteFile(path, []byte(`{
+  "units": {
+    "cavalry": {
+      "name": "骑兵",
+      "hp": 25,
+      "attack": 12,
+      "speed": 3,
+      "cost": { "mispelled_resource": 2 },
+      "multipliers": {},
+      "can_siege": false,
+      "siege_multiplier": 1.0,
+      "can_destroy": false,
+      "destroy_multiplier": 1.0,
+      "range": 1
+    }
+  },
+  "buildings": {},
+  "terrain": {},
+  "combat": {},
+  "rules": {}
+}`), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	if _, err := LoadGameData(path); err == nil {
+		t.Fatalf("LoadGameData() expected error for unknown resource key")
 	}
 }

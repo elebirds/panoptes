@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"fmt"
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
@@ -212,9 +213,15 @@ func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
 	}
 
 	return &pb.PlayerView{
-		Id:            playerState.PlayerID,
-		Username:      playerState.Username,
-		Resources:     toProtoResources(playerState.Resources),
+		Id:       playerState.PlayerID,
+		Username: playerState.Username,
+		Resources: func() *pb.Resources {
+			resources, unknown := toProtoResources(playerState.Resources)
+			if len(unknown) > 0 {
+				slog.Warn("存在未映射到协议的资源", "player_id", playerID, "keys", fmt.Sprint(unknown))
+			}
+			return resources
+		}(),
 		TokensLeft:    int32(playerState.TokensLeft),
 		CurrentPolicy: string(playerState.Policy),
 		MainCastleHp:  int32(playerState.MainCastleHP),
@@ -299,13 +306,22 @@ func (r *GameRoom) humanUsernames() []string {
 	return usernames
 }
 
-func toProtoResources(resources domain.Resources) *pb.Resources {
-	return &pb.Resources{
-		Ore:              int32(resources.Ore),
-		Wood:             int32(resources.Wood),
-		Food:             int32(resources.Food),
-		RefinedOre:       int32(resources.RefinedOre),
-		EngineerMaterial: int32(resources.EngineerMaterial),
-		BuildPoints:      int32(resources.BuildPoints),
+func toProtoResources(resources domain.ResourceBag) (*pb.Resources, []domain.ResourceKey) {
+	mapped := &pb.Resources{
+		Ore:              int32(resources.Get(domain.ResourceOre)),
+		Wood:             int32(resources.Get(domain.ResourceWood)),
+		Food:             int32(resources.Get(domain.ResourceFood)),
+		RefinedOre:       int32(resources.Get(domain.ResourceRefinedOre)),
+		EngineerMaterial: int32(resources.Get(domain.ResourceEngineerMat)),
+		BuildPoints:      int32(resources.Get(domain.ResourceBuildPoints)),
 	}
+
+	unknown := make([]domain.ResourceKey, 0)
+	for _, key := range resources.Keys() {
+		if !config.IsProtoVisibleResourceKey(key) {
+			unknown = append(unknown, key)
+		}
+	}
+
+	return mapped, unknown
 }

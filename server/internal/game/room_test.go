@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
@@ -168,6 +169,28 @@ func TestRegistryRegisterAndUnregister(t *testing.T) {
 	registry.Unregister("game-1")
 	if _, ok := registry.GetRoomByPlayerID("bot_abcdwxyz"); ok {
 		t.Fatalf("registry should remove bot mapping")
+	}
+}
+
+func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
+	got, unknown := toProtoResources(domain.ResourceBag{
+		domain.ResourceOre:            3,
+		domain.ResourceWood:           4,
+		domain.ResourceFood:           5,
+		domain.ResourceRefinedOre:     6,
+		domain.ResourceEngineerMat:    7,
+		domain.ResourceBuildPoints:    8,
+		domain.ResourceKey("crystal"): 99,
+	})
+
+	if got.GetOre() != 3 || got.GetWood() != 4 || got.GetFood() != 5 {
+		t.Fatalf("basic proto resources = %#v", got)
+	}
+	if got.GetRefinedOre() != 6 || got.GetEngineerMaterial() != 7 || got.GetBuildPoints() != 8 {
+		t.Fatalf("advanced proto resources = %#v", got)
+	}
+	if len(unknown) != 1 || unknown[0] != domain.ResourceKey("crystal") {
+		t.Fatalf("unknown resource keys = %#v", unknown)
 	}
 }
 

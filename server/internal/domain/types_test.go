@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/config"
@@ -35,42 +36,45 @@ func TestPositionMethods(t *testing.T) {
 	}
 }
 
-func TestResourcesMethods(t *testing.T) {
-	base := Resources{
-		Ore:              3,
-		Wood:             4,
-		Food:             5,
-		RefinedOre:       2,
-		EngineerMaterial: 1,
-		BuildPoints:      6,
+func TestResourceBagMethods(t *testing.T) {
+	base := ResourceBag{
+		ResourceOre:         3,
+		ResourceWood:        4,
+		ResourceFood:        5,
+		ResourceRefinedOre:  2,
+		ResourceEngineerMat: 1,
+		ResourceBuildPoints: 6,
+		ResourceKey("mana"): 9,
 	}
-	other := Resources{
-		Ore:              1,
-		Wood:             2,
-		Food:             3,
-		RefinedOre:       1,
-		EngineerMaterial: 1,
-		BuildPoints:      2,
+	other := ResourceBag{
+		ResourceOre:         1,
+		ResourceWood:        2,
+		ResourceFood:        3,
+		ResourceRefinedOre:  1,
+		ResourceEngineerMat: 1,
+		ResourceBuildPoints: 2,
+		ResourceKey("mana"): 4,
 	}
 
-	if got := base.Add(other); got != (Resources{
-		Ore:              4,
-		Wood:             6,
-		Food:             8,
-		RefinedOre:       3,
-		EngineerMaterial: 2,
-		BuildPoints:      8,
+	if got := base.Add(other); !reflect.DeepEqual(got, ResourceBag{
+		ResourceOre:         4,
+		ResourceWood:        6,
+		ResourceFood:        8,
+		ResourceRefinedOre:  3,
+		ResourceEngineerMat: 2,
+		ResourceBuildPoints: 8,
+		ResourceKey("mana"): 13,
 	}) {
 		t.Fatalf("Add() = %#v", got)
 	}
 
-	if got := base.Sub(other); got != (Resources{
-		Ore:              2,
-		Wood:             2,
-		Food:             2,
-		RefinedOre:       1,
-		EngineerMaterial: 0,
-		BuildPoints:      4,
+	if got := base.Sub(other); !reflect.DeepEqual(got, ResourceBag{
+		ResourceOre:         2,
+		ResourceWood:        2,
+		ResourceFood:        2,
+		ResourceRefinedOre:  1,
+		ResourceBuildPoints: 4,
+		ResourceKey("mana"): 5,
 	}) {
 		t.Fatalf("Sub() = %#v", got)
 	}
@@ -78,14 +82,59 @@ func TestResourcesMethods(t *testing.T) {
 	if !base.CanAfford(other) {
 		t.Fatalf("CanAfford() = false")
 	}
-	if base.CanAfford(Resources{Food: 99}) {
+	if base.CanAfford(ResourceBag{ResourceFood: 99}) {
 		t.Fatalf("CanAfford() = true for impossible cost")
 	}
-	if !(Resources{}).IsZero() {
+	if !(ResourceBag{}).IsZero() {
 		t.Fatalf("IsZero() = false")
 	}
 	if base.IsZero() {
 		t.Fatalf("IsZero() = true")
+	}
+}
+
+func TestResourceBagUtilityMethods(t *testing.T) {
+	bag := NewResourceBag()
+	bag.Set(ResourceOre, 3)
+	bag.AddAmount(ResourceWood, 2)
+	bag.AddAmount(ResourceWood, -2)
+	bag.Set(ResourceKey("mystery"), 4)
+
+	if bag.Get(ResourceOre) != 3 {
+		t.Fatalf("ResourceOre = %d", bag.Get(ResourceOre))
+	}
+	if _, ok := bag[ResourceWood]; ok {
+		t.Fatalf("zero resource should be normalized away")
+	}
+
+	keys := bag.Keys()
+	if len(keys) != 2 {
+		t.Fatalf("Keys len = %d", len(keys))
+	}
+
+	knownOnly := bag.KnownOnly()
+	if len(knownOnly) != 1 || knownOnly.Get(ResourceOre) != 3 {
+		t.Fatalf("KnownOnly = %#v", knownOnly)
+	}
+
+	withNegative := ResourceBag{
+		ResourceOre: -1,
+	}
+	if err := withNegative.ValidateNonNegative(); err == nil {
+		t.Fatalf("ValidateNonNegative() expected error")
+	}
+}
+
+func TestResourceBagFromConfigAmount(t *testing.T) {
+	bag, err := ResourceBagFromConfigAmount(config.ResourceAmount{
+		config.ResourceOre:         2,
+		config.ResourceBuildPoints: 5,
+	})
+	if err != nil {
+		t.Fatalf("ResourceBagFromConfigAmount() error = %v", err)
+	}
+	if bag.Get(ResourceOre) != 2 || bag.Get(ResourceBuildPoints) != 5 {
+		t.Fatalf("bag = %#v", bag)
 	}
 }
 
@@ -142,8 +191,8 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	if player.Username != "alice" {
 		t.Fatalf("Username = %q", player.Username)
 	}
-	if player.Resources.BuildPoints != 10 {
-		t.Fatalf("BuildPoints = %d", player.Resources.BuildPoints)
+	if player.Resources.Get(ResourceBuildPoints) != 10 {
+		t.Fatalf("BuildPoints = %d", player.Resources.Get(ResourceBuildPoints))
 	}
 	if player.TokensLeft != 3 {
 		t.Fatalf("TokensLeft = %d", player.TokensLeft)

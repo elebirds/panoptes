@@ -1,5 +1,12 @@
 package domain
 
+import (
+	"fmt"
+	"sort"
+
+	"github.com/elebirds/panoptes/internal/config"
+)
+
 type Terrain string
 
 const (
@@ -91,46 +98,128 @@ func (p Position) Neighbors() []Position {
 	}
 }
 
-type Resources struct {
-	Ore              int
-	Wood             int
-	Food             int
-	RefinedOre       int
-	EngineerMaterial int
-	BuildPoints      int
+type ResourceKey = config.ResourceKey
+
+const (
+	ResourceOre         = config.ResourceOre
+	ResourceWood        = config.ResourceWood
+	ResourceFood        = config.ResourceFood
+	ResourceRefinedOre  = config.ResourceRefinedOre
+	ResourceEngineerMat = config.ResourceEngineerMaterial
+	ResourceBuildPoints = config.ResourceBuildPoints
+)
+
+type ResourceBag map[ResourceKey]int
+
+func NewResourceBag() ResourceBag {
+	return make(ResourceBag)
 }
 
-func (r Resources) Add(other Resources) Resources {
-	return Resources{
-		Ore:              r.Ore + other.Ore,
-		Wood:             r.Wood + other.Wood,
-		Food:             r.Food + other.Food,
-		RefinedOre:       r.RefinedOre + other.RefinedOre,
-		EngineerMaterial: r.EngineerMaterial + other.EngineerMaterial,
-		BuildPoints:      r.BuildPoints + other.BuildPoints,
+func (r ResourceBag) Clone() ResourceBag {
+	cloned := make(ResourceBag, len(r))
+	for key, value := range r {
+		cloned[key] = value
 	}
+	return cloned
 }
 
-func (r Resources) Sub(other Resources) Resources {
-	return Resources{
-		Ore:              r.Ore - other.Ore,
-		Wood:             r.Wood - other.Wood,
-		Food:             r.Food - other.Food,
-		RefinedOre:       r.RefinedOre - other.RefinedOre,
-		EngineerMaterial: r.EngineerMaterial - other.EngineerMaterial,
-		BuildPoints:      r.BuildPoints - other.BuildPoints,
+func (r ResourceBag) Get(key ResourceKey) int {
+	return r[key]
+}
+
+func (r ResourceBag) Set(key ResourceKey, amount int) {
+	if amount == 0 {
+		delete(r, key)
+		return
 	}
+	r[key] = amount
 }
 
-func (r Resources) CanAfford(cost Resources) bool {
-	return r.Ore >= cost.Ore &&
-		r.Wood >= cost.Wood &&
-		r.Food >= cost.Food &&
-		r.RefinedOre >= cost.RefinedOre &&
-		r.EngineerMaterial >= cost.EngineerMaterial &&
-		r.BuildPoints >= cost.BuildPoints
+func (r ResourceBag) AddAmount(key ResourceKey, delta int) {
+	r.Set(key, r.Get(key)+delta)
 }
 
-func (r Resources) IsZero() bool {
-	return r == (Resources{})
+func (r ResourceBag) Add(other ResourceBag) ResourceBag {
+	sum := r.Clone()
+	for key, value := range other {
+		sum.AddAmount(key, value)
+	}
+	return sum.Normalize()
+}
+
+func (r ResourceBag) Sub(other ResourceBag) ResourceBag {
+	diff := r.Clone()
+	for key, value := range other {
+		diff.AddAmount(key, -value)
+	}
+	return diff.Normalize()
+}
+
+func (r ResourceBag) CanAfford(cost ResourceBag) bool {
+	for key, value := range cost {
+		if r.Get(key) < value {
+			return false
+		}
+	}
+	return true
+}
+
+func (r ResourceBag) IsZero() bool {
+	for _, value := range r {
+		if value != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (r ResourceBag) Normalize() ResourceBag {
+	normalized := make(ResourceBag, len(r))
+	for key, value := range r {
+		if value != 0 {
+			normalized[key] = value
+		}
+	}
+	return normalized
+}
+
+func (r ResourceBag) Keys() []ResourceKey {
+	keys := make([]ResourceKey, 0, len(r))
+	for key, value := range r {
+		if value != 0 {
+			keys = append(keys, key)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
+}
+
+func (r ResourceBag) KnownOnly() ResourceBag {
+	filtered := make(ResourceBag)
+	for key, value := range r {
+		if config.IsKnownResourceKey(key) && value != 0 {
+			filtered[key] = value
+		}
+	}
+	return filtered
+}
+
+func (r ResourceBag) ValidateNonNegative() error {
+	for key, value := range r {
+		if value < 0 {
+			return fmt.Errorf("resource %q is negative: %d", key, value)
+		}
+	}
+	return nil
+}
+
+func ResourceBagFromConfigAmount(amount config.ResourceAmount) (ResourceBag, error) {
+	bag := NewResourceBag()
+	for key, value := range amount {
+		if !config.IsKnownResourceKey(key) {
+			return nil, fmt.Errorf("unknown resource key %q", key)
+		}
+		bag.Set(key, value)
+	}
+	return bag, nil
 }
