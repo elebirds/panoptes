@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"runtime/debug"
-
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 
 	"github.com/elebirds/panoptes/internal/llm/service"
+	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 // sessionCtxKey 避免 context value 键名冲突
@@ -78,7 +76,7 @@ func newClient(name, apiKey, baseURL string, defaults clientCfg, opts []Option) 
 // NormalChat 非流式对话，阻塞直到 LLM 返回完整结果
 func (c *Client) NormalChat(ctx context.Context, req *ChatRequest) (*ChatResponse, error) {
 	if req.Message == "" {
-		return nil, errors.New("MessageCannotBeEmpty")
+		return nil, errors.New("message is required")
 	}
 
 	completion, err := c.oai.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
@@ -103,12 +101,19 @@ func (c *Client) NormalChat(ctx context.Context, req *ChatRequest) (*ChatRespons
 // StreamChat 流式对话，返回 channel 逐 token 输出；调用 Stop() 可提前终止
 func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *ChatResponse, error) {
 	if req.Message == "" {
-		return nil, errors.New("MessageCannotBeEmpty")
+		return nil, errors.New("message is required")
 	}
 
 	sessionId := req.SessionId
 	if sessionId == "" {
-		sessionId = service.GenerateSessionId()
+		var genErr error
+		sessionId, genErr = service.GenerateSessionId()
+		if genErr != nil {
+			slog.Warn(c.name+"-[StreamChat] 会话 ID 使用 fallback", "err", genErr)
+		}
+	}
+	if sessionId == "" {
+		return nil, errors.New("sessionId is required")
 	}
 
 	jobCtx, cancel := context.WithCancel(context.WithValue(ctx, sessionCtxKey{}, sessionId))
@@ -123,14 +128,11 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 	})
 
 	messageChan := make(chan *ChatResponse)
+
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				slog.Error(c.name+"-[StreamChat] goroutine panic",
-					"err", r, "stack", string(debug.Stack()))
-			}
-		}()
 		defer close(messageChan)
+		defer cancel()
+		defer service.RemoveChatSession(sessionId)
 		defer stream.Close()
 
 		for stream.Next() {
@@ -138,21 +140,28 @@ func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *Chat
 			if len(chunk.Choices) == 0 {
 				continue
 			}
-			if content := chunk.Choices[0].Delta.Content; content != "" {
-				messageChan <- &ChatResponse{
-					Role:      IdBot,
-					Content:   content,
-					SessionId: sessionId,
-				}
+			content := chunk.Choices[0].Delta.Content
+			if content == "" {
+				continue
+			}
+
+			msg := &ChatResponse{
+				Role:      IdBot,
+				Content:   content,
+				SessionId: sessionId,
+			}
+
+			select {
+			case messageChan <- msg:
+			case <-jobCtx.Done():
+				return
 			}
 		}
 
-		service.RemoveChatSession(sessionId)
 		if err := stream.Err(); err != nil && !errors.Is(err, context.Canceled) {
 			slog.Error(c.name+"-[StreamChat] 流读取错误", "err", err)
 		}
 	}()
-
 	return messageChan, nil
 }
 
@@ -184,8 +193,12 @@ func buildMessages(req *ChatRequest) []openai.ChatCompletionMessageParamUnion {
 		switch h.Role {
 		case IdBot:
 			msgs = append(msgs, openai.AssistantMessage(h.Content))
-		default:
+		case IdSystem:
+			msgs = append(msgs, openai.SystemMessage(h.Content))
+		case IdUser:
 			msgs = append(msgs, openai.UserMessage(h.Content))
+		default:
+			continue
 		}
 	}
 	msgs = append(msgs, openai.UserMessage(req.Message))

@@ -32,12 +32,12 @@ type Config struct {
 
 func Load() (Config, error) {
 	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
-		return Config{}, fmt.Errorf("load ..env: %w", err)
+		return Config{}, fmt.Errorf("load .env: %w", err)
 	}
 
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
-		return Config{}, fmt.Errorf("parse .env config: %w", err)
+		return Config{}, fmt.Errorf("parse env config: %w", err)
 	}
 
 	return cfg, nil
