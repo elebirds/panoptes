@@ -75,6 +75,10 @@ func newClient(name, apiKey, baseURL string, defaults clientCfg, opts []Option) 
 
 // NormalChat 非流式对话，阻塞直到 LLM 返回完整结果
 func (c *Client) NormalChat(ctx context.Context, req *ChatRequest) (*ChatResponse, error) {
+	if req == nil {
+		return nil, errors.New("req is nil")
+	}
+
 	if req.Message == "" {
 		return nil, errors.New("message is required")
 	}
@@ -100,6 +104,11 @@ func (c *Client) NormalChat(ctx context.Context, req *ChatRequest) (*ChatRespons
 
 // StreamChat 流式对话，返回 channel 逐 token 输出；调用 Stop() 可提前终止
 func (c *Client) StreamChat(ctx context.Context, req *ChatRequest) (<-chan *ChatResponse, error) {
+
+	if req == nil {
+		return nil, errors.New("req is nil")
+	}
+
 	if req.Message == "" {
 		return nil, errors.New("message is required")
 	}
