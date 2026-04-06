@@ -55,6 +55,7 @@ namespace Panoptes.Runtime.UI.Lobby
         private void Start()
         {
             RefreshUI();
+            SetRoomPanelVisible(_cache != null && !string.IsNullOrEmpty(_cache.RoomID));
         }
 
         private void OnDestroy()
