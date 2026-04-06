@@ -6,8 +6,9 @@
  * Description: Server-state mirror cache placeholder.
  *************************************************/
 
-using UnityEngine;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Panoptes.Protocol.V1;
 
 namespace Panoptes.Runtime.Cache
@@ -21,6 +22,8 @@ namespace Panoptes.Runtime.Cache
         public string MyPlayerID { get; private set; }
         public int Turn { get; private set; }
         public string Phase { get; private set; }
+        public int MapWidth { get; private set; }
+        public int MapHeight { get; private set; }
 
         // 节点（key = node_id）
         private readonly Dictionary<string, NodeView> _nodes = new();
@@ -40,6 +43,8 @@ namespace Panoptes.Runtime.Cache
         // 令牌
         public int TokensLeft { get; private set; }
 
+        public event Action OnStateChanged;
+
         void Awake()
         {
             if (Instance != null && Instance != this)
@@ -54,10 +59,17 @@ namespace Panoptes.Runtime.Cache
         // 由 AppManager 或 GameScene 注册，收到 MsgGameInit 时调用
         public void ApplyGameInit(MsgGameInit msg)
         {
+            if (msg == null)
+            {
+                return;
+            }
+
             GameID = msg.GameId;
             MyPlayerID = msg.YourPlayerId;
             Turn = msg.Turn;
             Phase = msg.Phase;
+            MapWidth = msg.MapWidth;
+            MapHeight = msg.MapHeight;
 
             _nodes.Clear();
             foreach (var node in msg.Nodes)
@@ -74,6 +86,31 @@ namespace Panoptes.Runtime.Cache
             _ministers.AddRange(msg.Ministers);
 
             Debug.Log($"[Cache] GameInit applied: {_nodes.Count} nodes, {_units.Count} units");
+            OnStateChanged?.Invoke();
+        }
+
+        public void UpdateTokens(int tokensLeft)
+        {
+            TokensLeft = tokensLeft;
+            if (MyPlayer != null)
+                MyPlayer.TokensLeft = tokensLeft;
+            OnStateChanged?.Invoke();
+        }
+
+        public void UpdateNode(NodeView node)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            _nodes[node.Id] = node;
+            OnStateChanged?.Invoke();
+        }
+
+        public NodeView GetNode(string nodeId)
+        {
+            _nodes.TryGetValue(nodeId, out var node);
 
             if (Panoptes.Runtime.Map.MapRenderer.Instance != null)
             {
@@ -103,6 +140,22 @@ namespace Panoptes.Runtime.Cache
         {
             _units.TryGetValue(unitId, out var unit);
             return unit;
+        }
+
+        public void Clear()
+        {
+            GameID = string.Empty;
+            MyPlayerID = string.Empty;
+            Turn = 0;
+            Phase = string.Empty;
+            MapWidth = 0;
+            MapHeight = 0;
+            _nodes.Clear();
+            _units.Clear();
+            MyPlayer = null;
+            _ministers.Clear();
+            TokensLeft = 0;
+            OnStateChanged?.Invoke();
         }
     }
 }

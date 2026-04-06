@@ -31,5 +31,23 @@ namespace Panoptes.Runtime.Service
         {
             MessageSender.Send(new MsgReadyUp());
         }
+
+        public void AddBot()
+        {
+            MessageSender.Send(new MsgAddBot());
+        }
+
+        public void StartGame()
+        {
+            MessageSender.Send(new MsgStartGame());
+        }
+
+        public void KickPlayer(string playerId)
+        {
+            MessageSender.Send(new MsgKickPlayer
+            {
+                PlayerId = playerId
+            });
+        }
     }
 }

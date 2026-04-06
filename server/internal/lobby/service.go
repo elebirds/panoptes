@@ -185,20 +185,6 @@ func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
 	if err := s.sendRoomState(room); err != nil {
 		return err
 	}
-
-	if !room.IsAllReady() {
-		return nil
-	}
-
-	room.Status = RoomStatusStarting
-	if err := s.store.UpdateRoom(ctx, room); err != nil {
-		return err
-	}
-	if err := s.sendRoomState(room); err != nil {
-		return err
-	}
-
-	s.startCountdown(ctx, room)
 	return nil
 }
 
@@ -225,6 +211,31 @@ func (s *LobbyService) AddBot(ctx context.Context, operatorID string) error {
 	}
 
 	return s.sendRoomState(room)
+}
+
+func (s *LobbyService) StartGame(ctx context.Context, operatorID string) error {
+	room, err := s.store.GetRoomByPlayerID(ctx, operatorID)
+	if err != nil {
+		return err
+	}
+	room.SetDevMode(s.devMode)
+	if room.HostID != operatorID {
+		return ErrNotHost
+	}
+	if room.Status != RoomStatusReady || !room.IsAllReady() {
+		return ErrInvalidStatus
+	}
+
+	room.Status = RoomStatusStarting
+	if err := s.store.UpdateRoom(ctx, room); err != nil {
+		return err
+	}
+	if err := s.sendRoomState(room); err != nil {
+		return err
+	}
+
+	s.startCountdown(ctx, room)
+	return nil
 }
 
 func (s *LobbyService) KickPlayer(ctx context.Context, operatorID, targetID string) error {
@@ -314,6 +325,9 @@ func (s *LobbyService) sendRoomState(room *Room) error {
 func (s *LobbyService) sendToRoomPlayers(room *Room, msg proto.Message) error {
 	var firstErr error
 	for _, player := range room.Players {
+		if player.IsBot {
+			continue
+		}
 		if err := s.sendToPlayer(player.PlayerID, msg); err != nil && firstErr == nil {
 			firstErr = err
 		}

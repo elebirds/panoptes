@@ -17,6 +17,7 @@ type broadcastMsg struct {
 }
 
 type LeaveRoomFunc func(ctx context.Context, playerID string) error
+type ConnectFunc func(ctx context.Context, playerID string) error
 
 // Hub manages all active websocket connections.
 type Hub struct {
@@ -30,6 +31,7 @@ type Hub struct {
 	mu        sync.RWMutex
 	router    *Router
 	leaveRoom LeaveRoomFunc
+	onConnect ConnectFunc
 }
 
 func NewHub(jwtSecret string) *Hub {
@@ -125,6 +127,20 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.register <- client
+
+	h.mu.RLock()
+	onConnect := h.onConnect
+	h.mu.RUnlock()
+	if onConnect != nil {
+		// 使用请求的 context，允许调用方通过超时/取消控制初始化逻辑
+		ctx := r.Context()
+		go func() {
+			if err := onConnect(ctx, playerID); err != nil {
+				slog.Warn("WebSocket 连接后初始化失败", "玩家ID", playerID, "错误", err)
+			}
+		}()
+	}
+
 	go client.writePump()
 	go client.readPump()
 }
@@ -158,6 +174,12 @@ func (h *Hub) SetLeaveRoomFunc(fn LeaveRoomFunc) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.leaveRoom = fn
+}
+
+func (h *Hub) SetConnectFunc(fn ConnectFunc) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onConnect = fn
 }
 
 func (h *Hub) SetRoom(playerID, roomID string) {

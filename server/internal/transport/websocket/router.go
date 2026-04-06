@@ -97,6 +97,15 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		if err := r.lobbySvc.AddBot(context.Background(), playerID); err != nil {
 			r.sendLobbyError(sender, err)
 		}
+	case "MsgStartGame":
+		msg := &pb.MsgStartGame{}
+		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
+		if err := r.lobbySvc.StartGame(context.Background(), playerID); err != nil {
+			r.sendLobbyError(sender, err)
+		}
 	case "MsgKickPlayer":
 		msg := &pb.MsgKickPlayer{}
 		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {

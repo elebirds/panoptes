@@ -1,6 +1,7 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Network;
+using Panoptes.Runtime.Service;
 using UnityEngine;
 
 namespace Panoptes.Runtime.UI.Lobby
@@ -29,6 +30,7 @@ namespace Panoptes.Runtime.UI.Lobby
             MessageDispatcher.Instance.Register<MsgRoomCreated>("MsgRoomCreated", OnRoomCreated);
             MessageDispatcher.Instance.Register<MsgRoomState>("MsgRoomState", OnRoomState);
             MessageDispatcher.Instance.Register<MsgGameStarting>("MsgGameStarting", OnGameStarting);
+            MessageDispatcher.Instance.Register<MsgPlayerKicked>("MsgPlayerKicked", OnPlayerKicked);
             MessageDispatcher.Instance.Register<MsgLobbyError>("MsgLobbyError", OnLobbyError);
         }
 
@@ -47,6 +49,7 @@ namespace Panoptes.Runtime.UI.Lobby
             MessageDispatcher.Instance.Unregister("MsgRoomCreated");
             MessageDispatcher.Instance.Unregister("MsgRoomState");
             MessageDispatcher.Instance.Unregister("MsgGameStarting");
+            MessageDispatcher.Instance.Unregister("MsgPlayerKicked");
             MessageDispatcher.Instance.Unregister("MsgLobbyError");
         }
 
@@ -94,6 +97,20 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             _lobbyPanelController?.HandleLobbyError(msg);
+        }
+
+        private void OnPlayerKicked(MsgPlayerKicked msg)
+        {
+            var selfPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            if (msg == null || msg.PlayerId != selfPlayerId)
+            {
+                return;
+            }
+
+            _roomPanelController?.HandlePlayerKicked(msg);
+            _cache?.Clear();
+            ShowLobbyPanel();
+            _lobbyPanelController?.ShowError("你已被移出房间");
         }
 
         private void SyncPanelVisibility()

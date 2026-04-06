@@ -32,6 +32,8 @@ message MsgReadyUp {}
 
 message MsgAddBot {}
 
+message MsgStartGame {}
+
 message MsgKickPlayer {
   string player_id = 1;
 }
