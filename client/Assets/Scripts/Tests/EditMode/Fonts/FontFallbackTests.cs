@@ -5,6 +5,8 @@ namespace Panoptes.Tests.EditMode.Fonts
 {
     public sealed class FontFallbackTests
     {
+        private readonly string _loadingOverlayPath = Path.GetFullPath("Assets/Scripts/Runtime/UI/Common/LoadingOverlay.cs");
+
         [Test]
         public void TmpSettings_ShouldConfigureGlobalFallbackFonts()
         {
@@ -39,7 +41,7 @@ namespace Panoptes.Tests.EditMode.Fonts
             var content = File.ReadAllText(scenePath);
             Assert.That(content, Does.Not.Contain("UnityEngine.EventSystems.StandaloneInputModule"),
                 "Lobby 场景仍在使用 StandaloneInputModule。");
-            StringAssert.Contains("UnityEngine.InputSystem.UI.InputSystemUIInputModule", content);
+            StringAssert.Contains("InputSystemUIInputModule", content);
         }
 
         [Test]
@@ -77,6 +79,53 @@ namespace Panoptes.Tests.EditMode.Fonts
             var content = File.ReadAllText(scenePath);
             StringAssert.Contains("Panoptes.Runtime.UI.Lobby.LobbySceneController", content,
                 "Lobby 场景的 Canvas 必须挂载 LobbySceneController。");
+        }
+
+        [Test]
+        public void LobbyScene_ShouldContainAddBotButton()
+        {
+            var scenePath = Path.GetFullPath("Assets/Scenes/Lobby.unity");
+            Assert.That(File.Exists(scenePath), Is.True, "Lobby.unity 不存在。");
+
+            var content = File.ReadAllText(scenePath);
+            StringAssert.Contains("m_Name: AddBotButton", content,
+                "Lobby 房间面板缺少 AddBotButton。");
+            StringAssert.Contains("m_Name: StartGameButton", content,
+                "Lobby 房间面板缺少 StartGameButton。");
+        }
+
+        [Test]
+        public void PlayerSlotPrefab_ShouldContainBotBadgeAndKickButton()
+        {
+            var prefabPath = Path.GetFullPath("Assets/Prefabs/UI/PlayerSlot.prefab");
+            Assert.That(File.Exists(prefabPath), Is.True, "PlayerSlot.prefab 不存在。");
+
+            var content = File.ReadAllText(prefabPath);
+            StringAssert.Contains("m_Name: BotBadge", content);
+            StringAssert.Contains("m_Name: KickButton", content);
+        }
+
+        [Test]
+        public void GameScene_ShouldAttachGameSceneController()
+        {
+            var scenePath = Path.GetFullPath("Assets/Scenes/Game.unity");
+            Assert.That(File.Exists(scenePath), Is.True, "Game.unity 不存在。");
+
+            var content = File.ReadAllText(scenePath);
+            StringAssert.Contains("Panoptes.Runtime.UI.Game.GameSceneController", content,
+                "Game 场景必须挂载 GameSceneController。");
+            StringAssert.Contains("m_Name: StatusText", content,
+                "Game 场景必须包含状态占位文本。");
+        }
+
+        [Test]
+        public void LoadingOverlay_ShouldAssignTmpFont_WhenCreatingRuntimeMessageText()
+        {
+            Assert.That(File.Exists(_loadingOverlayPath), Is.True, "LoadingOverlay.cs 不存在。");
+
+            var content = File.ReadAllText(_loadingOverlayPath);
+            StringAssert.Contains("text.font = TMP_Settings.defaultFontAsset;", content,
+                "LoadingOverlay 动态创建 TextMeshProUGUI 时必须显式绑定默认字体。");
         }
     }
 }

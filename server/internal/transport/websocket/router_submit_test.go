@@ -33,7 +33,7 @@ func (r *stubGameRoomRegistry) GetRoomByPlayerID(string) (coretransport.GameRoom
 	return r.room, r.ok
 }
 
-func TestRouterRouteAddBotAndKickPlayer(t *testing.T) {
+func TestRouterRouteAddBotStartGameAndKickPlayer(t *testing.T) {
 	store := newRouterStore()
 	transport := newRouterTransport()
 	authSvc := auth.NewService(&routerUserStore{
@@ -57,6 +57,22 @@ func TestRouterRouteAddBotAndKickPlayer(t *testing.T) {
 	router.Route(sender, "host-1", &pb.Envelope{Type: "MsgAddBot", Payload: "{}"})
 	if len(transport.sent["host-1"]) != 1 {
 		t.Fatalf("host sent count after add bot = %d", len(transport.sent["host-1"]))
+	}
+
+	room, err := store.GetRoom(context.Background(), room.ID)
+	if err != nil {
+		t.Fatalf("GetRoom() error = %v", err)
+	}
+	for _, player := range room.Players {
+		player.IsReady = true
+	}
+	room.Status = lobby.RoomStatusReady
+	if err := store.UpdateRoom(context.Background(), room); err != nil {
+		t.Fatalf("UpdateRoom() error = %v", err)
+	}
+	router.Route(sender, "host-1", &pb.Envelope{Type: "MsgStartGame", Payload: "{}"})
+	if len(transport.sent["host-1"]) < 2 {
+		t.Fatalf("host sent count after start game = %d", len(transport.sent["host-1"]))
 	}
 
 	payload, err := protojson.Marshal(&pb.MsgKickPlayer{PlayerId: "guest-1"})

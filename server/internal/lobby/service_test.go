@@ -107,6 +107,10 @@ type stubTransport struct {
 	broadcasts map[string][]proto.Message
 }
 
+type botFailingTransport struct {
+	*stubTransport
+}
+
 func newStubTransport() *stubTransport {
 	return &stubTransport{
 		sent:       make(map[string][]proto.Message),
@@ -135,6 +139,13 @@ func (t *stubTransport) Stream(playerID string, msgs <-chan proto.Message) error
 		}
 	}
 	return nil
+}
+
+func (t *botFailingTransport) Send(playerID string, msg proto.Message) error {
+	if len(playerID) >= 4 && playerID[:4] == "bot_" {
+		return errors.New("client not connected")
+	}
+	return t.stubTransport.Send(playerID, msg)
 }
 
 type stubUserStore struct {
@@ -201,7 +212,7 @@ func TestLobbyServiceCreateRoomSendsInitialMessages(t *testing.T) {
 	}
 }
 
-func TestLobbyServiceReadyUpStartsCountdown(t *testing.T) {
+func TestLobbyServiceStartGameStartsCountdownAfterReadyUp(t *testing.T) {
 	store := newMemoryLobbyStore()
 	transport := newStubTransport()
 	authSvc := auth.NewService(&stubUserStore{
@@ -238,6 +249,9 @@ func TestLobbyServiceReadyUpStartsCountdown(t *testing.T) {
 	if err := svc.ReadyUp(context.Background(), "guest-1"); err != nil {
 		t.Fatalf("ReadyUp() error = %v", err)
 	}
+	if err := svc.StartGame(context.Background(), "host-1"); err != nil {
+		t.Fatalf("StartGame() error = %v", err)
+	}
 
 	select {
 	case startedRoom := <-started:
@@ -262,6 +276,175 @@ func TestLobbyServiceReadyUpStartsCountdown(t *testing.T) {
 	}
 	if _, ok := msgs[len(msgs)-1].(*pb.MsgGameStarting); !ok {
 		t.Fatalf("last send type = %T", msgs[len(msgs)-1])
+	}
+}
+
+func TestLobbyServiceStartGameWithBotSkipsBotPushAndStartsCountdown(t *testing.T) {
+	store := newMemoryLobbyStore()
+	transport := &botFailingTransport{stubTransport: newStubTransport()}
+	authSvc := auth.NewService(&stubUserStore{
+		users: map[string]*auth.User{
+			"host-1": {ID: "host-1", Username: "host"},
+		},
+	}, "secret", 60)
+
+	svc := NewService(store, transport, authSvc, 4, true)
+	svc.countdownDelay = 10 * time.Millisecond
+
+	room := NewRoom("room-1", "ABCD23", "bot-ready-room", "host-1", "host", 4, true)
+	if _, err := room.AddBot(); err != nil {
+		t.Fatalf("AddBot() error = %v", err)
+	}
+	if err := store.CreateRoom(context.Background(), room); err != nil {
+		t.Fatalf("CreateRoom() error = %v", err)
+	}
+
+	started := make(chan *Room, 1)
+	svc.SetGameStartCallback(func(room *Room) {
+		started <- room
+	})
+
+	if err := svc.ReadyUp(context.Background(), "host-1"); err != nil {
+		t.Fatalf("ReadyUp() error = %v", err)
+	}
+	if err := svc.StartGame(context.Background(), "host-1"); err != nil {
+		t.Fatalf("StartGame() error = %v", err)
+	}
+
+	select {
+	case startedRoom := <-started:
+		if startedRoom.Status != RoomStatusInGame {
+			t.Fatalf("started room status = %q", startedRoom.Status)
+		}
+	case <-time.After(time.Second):
+		t.Fatalf("game start callback not called")
+	}
+
+	msgs := transport.sent["host-1"]
+	if len(msgs) < 3 {
+		t.Fatalf("host send count = %d", len(msgs))
+	}
+	if _, ok := msgs[len(msgs)-1].(*pb.MsgGameStarting); !ok {
+		t.Fatalf("last send type = %T", msgs[len(msgs)-1])
+	}
+}
+
+func TestLobbyServiceReadyUpAllReadyDoesNotStartAutomatically(t *testing.T) {
+	store := newMemoryLobbyStore()
+	transport := newStubTransport()
+	authSvc := auth.NewService(&stubUserStore{
+		users: map[string]*auth.User{
+			"host-1":  {ID: "host-1", Username: "host"},
+			"guest-1": {ID: "guest-1", Username: "guest"},
+		},
+	}, "secret", 60)
+
+	svc := NewService(store, transport, authSvc, 4, false)
+	svc.countdownDelay = 10 * time.Millisecond
+
+	room := &Room{
+		ID:         "room-auto-off",
+		Code:       "ABCD24",
+		Name:       "manual-room",
+		HostID:     "host-1",
+		MaxPlayers: 4,
+		Status:     RoomStatusWaiting,
+		Players: []*RoomPlayer{
+			{PlayerID: "host-1", Username: "host", IsReady: true},
+			{PlayerID: "guest-1", Username: "guest"},
+		},
+	}
+	if err := store.CreateRoom(context.Background(), room); err != nil {
+		t.Fatalf("CreateRoom() error = %v", err)
+	}
+
+	started := make(chan *Room, 1)
+	svc.SetGameStartCallback(func(room *Room) {
+		started <- room
+	})
+
+	if err := svc.ReadyUp(context.Background(), "guest-1"); err != nil {
+		t.Fatalf("ReadyUp() error = %v", err)
+	}
+
+	select {
+	case startedRoom := <-started:
+		t.Fatalf("game should not auto start, got room status %q", startedRoom.Status)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	roomAfter, err := store.GetRoom(context.Background(), "room-auto-off")
+	if err != nil {
+		t.Fatalf("GetRoom() error = %v", err)
+	}
+	if roomAfter.Status != RoomStatusReady {
+		t.Fatalf("room status = %q", roomAfter.Status)
+	}
+
+	for _, msg := range transport.sent["guest-1"] {
+		if _, ok := msg.(*pb.MsgGameStarting); ok {
+			t.Fatalf("guest should not receive MsgGameStarting")
+		}
+	}
+}
+
+func TestLobbyServiceStartGameStartsCountdownWhenHostConfirms(t *testing.T) {
+	store := newMemoryLobbyStore()
+	transport := newStubTransport()
+	authSvc := auth.NewService(&stubUserStore{
+		users: map[string]*auth.User{
+			"host-1":  {ID: "host-1", Username: "host"},
+			"guest-1": {ID: "guest-1", Username: "guest"},
+		},
+	}, "secret", 60)
+
+	svc := NewService(store, transport, authSvc, 4, false)
+	svc.countdownDelay = 10 * time.Millisecond
+
+	room := &Room{
+		ID:         "room-start-btn",
+		Code:       "ABCD25",
+		Name:       "manual-start-room",
+		HostID:     "host-1",
+		MaxPlayers: 4,
+		Status:     RoomStatusReady,
+		Players: []*RoomPlayer{
+			{PlayerID: "host-1", Username: "host", IsReady: true},
+			{PlayerID: "guest-1", Username: "guest", IsReady: true},
+		},
+	}
+	if err := store.CreateRoom(context.Background(), room); err != nil {
+		t.Fatalf("CreateRoom() error = %v", err)
+	}
+
+	started := make(chan *Room, 1)
+	svc.SetGameStartCallback(func(room *Room) {
+		started <- room
+	})
+
+	if err := svc.StartGame(context.Background(), "host-1"); err != nil {
+		t.Fatalf("StartGame() error = %v", err)
+	}
+
+	select {
+	case startedRoom := <-started:
+		if startedRoom.Status != RoomStatusInGame {
+			t.Fatalf("started room status = %q", startedRoom.Status)
+		}
+	case <-time.After(time.Second):
+		t.Fatalf("game start callback not called")
+	}
+
+	msgs := transport.sent["guest-1"]
+	foundStarting := false
+	for _, msg := range msgs {
+		if _, ok := msg.(*pb.MsgGameStarting); ok {
+			foundStarting = true
+			break
+		}
+	}
+	if !foundStarting {
+		t.Fatalf("guest should receive MsgGameStarting")
 	}
 }
 

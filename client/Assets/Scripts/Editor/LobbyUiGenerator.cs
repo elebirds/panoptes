@@ -67,12 +67,20 @@ namespace Panoptes.Editor
             usernameLayout.minWidth = 200f;
 
             var hostBadge = CreateBadge("HostBadge", root.transform, "房主", new Color(0.89f, 0.72f, 0.22f, 1f));
+            var botBadge = CreateBadge("BotBadge", root.transform, "Bot", new Color(0.22f, 0.45f, 0.74f, 1f));
             var readyBadge = CreateBadge("ReadyBadge", root.transform, "已准备", new Color(0.24f, 0.62f, 0.36f, 1f));
+            var kickButton = CreateButton("KickButton", root.transform, "踢出", new Vector2(0.5f, 0.5f), new Vector2(110f, 44f), Vector2.zero, new Color(0.71f, 0.24f, 0.25f, 1f));
+            var kickLayout = kickButton.gameObject.AddComponent<LayoutElement>();
+            kickLayout.preferredWidth = 110f;
+            kickLayout.preferredHeight = 44f;
+            kickButton.gameObject.SetActive(false);
 
             var viewSerialized = new SerializedObject(root.GetComponent<PlayerSlotView>());
             viewSerialized.FindProperty("usernameText").objectReferenceValue = usernameText;
             viewSerialized.FindProperty("hostBadge").objectReferenceValue = hostBadge;
             viewSerialized.FindProperty("readyBadge").objectReferenceValue = readyBadge;
+            viewSerialized.FindProperty("botBadge").objectReferenceValue = botBadge;
+            viewSerialized.FindProperty("kickButton").objectReferenceValue = kickButton;
             viewSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerSlotPrefabPath);
@@ -166,6 +174,10 @@ namespace Panoptes.Editor
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var readyButton = CreateButton("ReadyButton", parent, "准备", new Vector2(0f, 0f), new Vector2(220f, 60f), new Vector2(50f, 66f), new Color(0.24f, 0.62f, 0.36f, 1f));
+            var addBotButton = CreateButton("AddBotButton", parent, "添加 Bot", new Vector2(0.5f, 0f), new Vector2(220f, 60f), new Vector2(0f, 66f), new Color(0.17f, 0.43f, 0.78f, 1f));
+            addBotButton.gameObject.SetActive(false);
+            var startGameButton = CreateButton("StartGameButton", parent, "开始游戏", new Vector2(0.5f, 0f), new Vector2(220f, 60f), new Vector2(0f, 140f), new Color(0.79f, 0.52f, 0.16f, 1f));
+            startGameButton.gameObject.SetActive(false);
             var leaveButton = CreateButton("LeaveButton", parent, "离开房间", new Vector2(1f, 0f), new Vector2(220f, 60f), new Vector2(-50f, 66f), new Color(0.71f, 0.24f, 0.25f, 1f));
             var statusText = CreateText("StatusText", parent, "等待玩家准备...", 26, TextAlignmentOptions.Center, FontStyles.Bold, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 76f), new Vector2(520f, 34f), new Color(0.29f, 0.36f, 0.44f, 1f));
 
@@ -175,6 +187,8 @@ namespace Panoptes.Editor
             serialized.FindProperty("playerCountText").objectReferenceValue = playerCountText;
             serialized.FindProperty("playerSlotContainer").objectReferenceValue = playerSlotContainer.transform;
             serialized.FindProperty("playerSlotPrefab").objectReferenceValue = playerSlotPrefab;
+            serialized.FindProperty("addBotButton").objectReferenceValue = addBotButton;
+            serialized.FindProperty("startGameButton").objectReferenceValue = startGameButton;
             serialized.FindProperty("readyButton").objectReferenceValue = readyButton;
             serialized.FindProperty("leaveButton").objectReferenceValue = leaveButton;
             serialized.FindProperty("statusText").objectReferenceValue = statusText;

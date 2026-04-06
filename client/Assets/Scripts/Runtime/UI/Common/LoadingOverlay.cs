@@ -131,6 +131,7 @@ namespace Panoptes.Runtime.UI.Common
             rect.sizeDelta = new Vector2(720f, 120f);
 
             var text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = TMP_Settings.defaultFontAsset;
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 36f;
             text.enableWordWrapping = true;

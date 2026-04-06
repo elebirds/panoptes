@@ -77,5 +77,19 @@ namespace Panoptes.Runtime.Cache
 
             OnRoomStateChanged?.Invoke();
         }
+
+        public int GetBotCount()
+        {
+            var count = 0;
+            foreach (var player in Players)
+            {
+                if (player.IsBot)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
     }
 }
