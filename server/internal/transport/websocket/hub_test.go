@@ -31,7 +31,9 @@ func TestHubUnregisterCallsLeaveRoom(t *testing.T) {
 		return nil
 	})
 
-	go hub.Run()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go hub.Run(ctx)
 
 	client := &Client{playerID: "player-1"}
 	hub.register <- client
