@@ -2,7 +2,6 @@ using System.Collections;
 using Panoptes.Protocol.V1;
 using Panoptes.Runtime.App;
 using Panoptes.Runtime.Cache;
-using Panoptes.Runtime.Network;
 using Panoptes.Runtime.Service;
 using TMPro;
 using UnityEngine;
@@ -27,21 +26,14 @@ namespace Panoptes.Runtime.UI.Lobby
         private Coroutine _countdownCoroutine;
         private Coroutine _statusResetCoroutine;
         private TextMeshProUGUI _readyButtonText;
-        private GameObject _lobbyPanel;
+        private LobbySceneController _sceneController;
 
         private void Awake()
         {
             _lobbySvc = new LobbyService();
             _cache = RoomCache.Instance;
             _readyButtonText = readyButton != null ? readyButton.GetComponentInChildren<TextMeshProUGUI>(true) : null;
-            _lobbyPanel = transform.parent != null ? transform.parent.Find("LobbyPanel")?.gameObject : null;
-
-            if (MessageDispatcher.Instance != null)
-            {
-                MessageDispatcher.Instance.Register<MsgRoomState>("MsgRoomState", OnRoomState);
-                MessageDispatcher.Instance.Register<MsgGameStarting>("MsgGameStarting", OnGameStarting);
-                MessageDispatcher.Instance.Register<MsgLobbyError>("MsgLobbyError", OnLobbyError);
-            }
+            _sceneController = transform.parent != null ? transform.parent.GetComponent<LobbySceneController>() : null;
 
             if (_cache != null)
             {
@@ -55,18 +47,10 @@ namespace Panoptes.Runtime.UI.Lobby
         private void Start()
         {
             RefreshUI();
-            SetRoomPanelVisible(_cache != null && !string.IsNullOrEmpty(_cache.RoomID));
         }
 
         private void OnDestroy()
         {
-            if (MessageDispatcher.Instance != null)
-            {
-                MessageDispatcher.Instance.Unregister("MsgRoomState");
-                MessageDispatcher.Instance.Unregister("MsgGameStarting");
-                MessageDispatcher.Instance.Unregister("MsgLobbyError");
-            }
-
             if (_cache != null)
             {
                 _cache.OnRoomStateChanged -= RefreshUI;
@@ -77,16 +61,6 @@ namespace Panoptes.Runtime.UI.Lobby
 
             StopCountdown();
             StopStatusReset();
-        }
-
-        private void OnRoomState(MsgRoomState msg)
-        {
-            RoomCache.Instance?.Apply(msg);
-
-            if (!gameObject.activeSelf)
-            {
-                SetRoomPanelVisible(true);
-            }
         }
 
         private void RefreshUI()
@@ -136,7 +110,7 @@ namespace Panoptes.Runtime.UI.Lobby
             }
         }
 
-        private void OnGameStarting(MsgGameStarting msg)
+        public void HandleGameStarting(MsgGameStarting msg)
         {
             StopCountdown();
             _countdownCoroutine = StartCoroutine(CountdownCoroutine(msg != null ? msg.Countdown : 0));
@@ -172,14 +146,13 @@ namespace Panoptes.Runtime.UI.Lobby
             }
         }
 
-        private void OnLobbyError(MsgLobbyError msg)
+        public void HandleLobbyError(MsgLobbyError msg)
         {
             var code = msg != null ? msg.Code : string.Empty;
             if (code == "room_dissolved")
             {
                 StopCountdown();
                 RoomCache.Instance?.Clear();
-                SetRoomPanelVisible(false);
                 return;
             }
 
@@ -209,7 +182,7 @@ namespace Panoptes.Runtime.UI.Lobby
             StopCountdown();
             _lobbySvc.LeaveRoom();
             RoomCache.Instance?.Clear();
-            SetRoomPanelVisible(false);
+            _sceneController?.ShowLobbyPanel();
         }
 
         private void RebuildPlayerSlots()
@@ -294,16 +267,6 @@ namespace Panoptes.Runtime.UI.Lobby
 
             StopCoroutine(_statusResetCoroutine);
             _statusResetCoroutine = null;
-        }
-
-        private void SetRoomPanelVisible(bool visible)
-        {
-            if (_lobbyPanel != null)
-            {
-                _lobbyPanel.SetActive(!visible);
-            }
-
-            gameObject.SetActive(visible);
         }
 
         private static string MapLobbyError(string code)

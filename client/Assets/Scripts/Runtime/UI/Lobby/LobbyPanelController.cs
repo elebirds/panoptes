@@ -1,6 +1,5 @@
 using System.Collections;
 using Panoptes.Protocol.V1;
-using Panoptes.Runtime.Network;
 using Panoptes.Runtime.Service;
 using TMPro;
 using UnityEngine;
@@ -27,12 +26,6 @@ namespace Panoptes.Runtime.UI.Lobby
         {
             _lobbySvc = new LobbyService();
 
-            if (MessageDispatcher.Instance != null)
-            {
-                MessageDispatcher.Instance.Register<MsgRoomCreated>("MsgRoomCreated", OnRoomCreated);
-                MessageDispatcher.Instance.Register<MsgLobbyError>("MsgLobbyError", OnLobbyError);
-            }
-
             createButton?.onClick.AddListener(OnClickCreateRoom);
             joinButton?.onClick.AddListener(OnClickJoinRoom);
         }
@@ -51,12 +44,6 @@ namespace Panoptes.Runtime.UI.Lobby
 
         private void OnDestroy()
         {
-            if (MessageDispatcher.Instance != null)
-            {
-                MessageDispatcher.Instance.Unregister("MsgRoomCreated");
-                MessageDispatcher.Instance.Unregister("MsgLobbyError");
-            }
-
             createButton?.onClick.RemoveListener(OnClickCreateRoom);
             joinButton?.onClick.RemoveListener(OnClickJoinRoom);
 
@@ -75,12 +62,30 @@ namespace Panoptes.Runtime.UI.Lobby
             errorText.gameObject.SetActive(true);
         }
 
-        private void OnRoomCreated(MsgRoomCreated msg)
+        public void HandleRoomCreated(MsgRoomCreated msg)
         {
             Debug.Log($"[LobbyPanel] Room created: {msg.RoomId} / {msg.RoomCode}");
         }
 
-        private void OnLobbyError(MsgLobbyError msg)
+        public void HandleRoomStateReceived()
+        {
+            StopTimeoutCoroutine(ref _createTimeoutCoroutine);
+            StopTimeoutCoroutine(ref _joinTimeoutCoroutine);
+
+            if (createButton != null)
+            {
+                createButton.interactable = true;
+            }
+
+            if (joinButton != null)
+            {
+                joinButton.interactable = true;
+            }
+
+            HideError();
+        }
+
+        public void HandleLobbyError(MsgLobbyError msg)
         {
             StopTimeoutCoroutine(ref _createTimeoutCoroutine);
             StopTimeoutCoroutine(ref _joinTimeoutCoroutine);
