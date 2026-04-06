@@ -7,8 +7,11 @@
  *************************************************/
 
 using UnityEngine;
+using Panoptes.Protocol.V1;
 using Panoptes.Runtime.Network;
 using Panoptes.Runtime.Service;
+using Panoptes.Runtime.Cache;
+using Panoptes.Runtime.UI.Common;
 using UnityEngine.SceneManagement;
 
 namespace Panoptes.Runtime.App
@@ -46,6 +49,8 @@ namespace Panoptes.Runtime.App
             EnsureComponent<NetworkManager>(managers);
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
+            EnsureComponent<RoomCache>(managers);
+            EnsureComponent<LoadingOverlay>(managers);
         }
 
         private static void EnsureComponent<T>(GameObject owner) where T : Component
@@ -69,12 +74,22 @@ namespace Panoptes.Runtime.App
 
         void Start()
         {
+            RegisterGlobalHandlers();
             TransitionTo(AppState.Login);
+        }
+
+        void OnDestroy()
+        {
+            if (MessageDispatcher.Instance != null)
+            {
+                MessageDispatcher.Instance.Unregister("MsgGameInit");
+            }
         }
 
         public void TransitionTo(AppState newState)
         {
             State = newState;
+            EnsureRealtimeConnectionIfNeeded(newState);
 
             var sceneName = newState switch
             {
@@ -96,6 +111,50 @@ namespace Panoptes.Runtime.App
             }
 
             SceneManager.LoadScene(sceneName);
+        }
+
+        private void RegisterGlobalHandlers()
+        {
+            if (MessageDispatcher.Instance == null)
+            {
+                return;
+            }
+
+            MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+        }
+
+        private void OnGameInit(MsgGameInit msg)
+        {
+            TransitionTo(AppState.Game);
+        }
+
+        private async void EnsureRealtimeConnectionIfNeeded(AppState state)
+        {
+            if (state != AppState.Lobby && state != AppState.Game)
+            {
+                return;
+            }
+
+            if (NetworkManager.Instance == null ||
+                NetworkManager.Instance.IsConnected ||
+                NetworkManager.Instance.IsConnecting)
+            {
+                return;
+            }
+
+            if (SessionManager.Instance == null || !SessionManager.Instance.IsLoggedIn)
+            {
+                return;
+            }
+
+            try
+            {
+                await NetworkManager.Instance.ConnectWithSessionAsync();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[AppManager] Failed to establish realtime connection: {e.Message}");
+            }
         }
     }
 }

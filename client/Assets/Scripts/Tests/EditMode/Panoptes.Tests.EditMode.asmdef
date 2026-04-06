@@ -1,7 +1,7 @@
 {
   "name": "Panoptes.Tests.EditMode",
   "references": [
-    "Panoptes"
+    "Panoptes.Runtime"
   ],
   "includePlatforms": [
     "Editor"
