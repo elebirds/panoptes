@@ -69,6 +69,7 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private Color buildValidColor = new Color(0.35f, 1f, 0.35f, 0.92f);
         [SerializeField] private Color buildInvalidColor = new Color(1f, 0.3f, 0.3f, 0.92f);
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
+        [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
@@ -239,6 +240,11 @@ namespace Panoptes.Runtime.Map
 
         private void ExitBuildMode()
         {
+            if (_hoverNode != null)
+            {
+                _hoverNode.SetHighlightVisible(false);
+            }
+
             _mode = Mode.None;
             _buildType = string.Empty;
             _hoverNode = null;
@@ -332,6 +338,12 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
+            if (GetRightMouseButtonDown())
+            {
+                ExitBuildMode();
+                return;
+            }
+
             var hasNode = TryRaycastNode(out var node);
             if (!hasNode)
             {
@@ -341,6 +353,11 @@ namespace Panoptes.Runtime.Map
                 }
                 _hoverNode = null;
                 DestroyHoverGhost();
+
+                if (GetLeftMouseButtonDown() && !IsPointerOverUI() && logInvalidBuildClick)
+                {
+                    Debug.LogWarning("[MapInputHandler] Invalid build target: cursor is outside map tile.");
+                }
                 return;
             }
 
@@ -377,6 +394,10 @@ namespace Panoptes.Runtime.Map
 
                 if (!canPlace)
                 {
+                    if (logInvalidBuildClick)
+                    {
+                        Debug.LogWarning($"[MapInputHandler] Invalid build target at node '{node.NodeId}' for type '{_buildType}'.");
+                    }
                     return;
                 }
 
@@ -791,6 +812,16 @@ namespace Panoptes.Runtime.Map
             return mouse != null && mouse.leftButton.wasPressedThisFrame;
 #else
             return Input.GetMouseButtonDown(0);
+#endif
+        }
+
+        private bool GetRightMouseButtonDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var mouse = Mouse.current;
+            return mouse != null && mouse.rightButton.wasPressedThisFrame;
+#else
+            return Input.GetMouseButtonDown(1);
 #endif
         }
     }

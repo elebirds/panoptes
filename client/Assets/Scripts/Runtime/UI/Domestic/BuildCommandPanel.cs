@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Map;
 using TMPro;
 using UnityEngine;
@@ -103,6 +104,9 @@ namespace Panoptes.Runtime.UI.Domestic
         [Header("Build Config Source")]
         [SerializeField] private bool applyConfigToButtons = true;
         [SerializeField] private bool useConfigPlacementRule = true;
+        [SerializeField] private bool preferServerPushedConfig = true;
+        [SerializeField] private string serverConfigKey = "buildconfig";
+        [SerializeField] private bool listenServerConfigUpdates = true;
         [SerializeField] private TextAsset buildConfigJson;
         [Tooltip("Used when Build Config Json is empty. Relative to Resources/, without extension.")]
         [SerializeField] private string buildConfigResourcesPath = "Config/buildconfig";
@@ -114,9 +118,11 @@ namespace Panoptes.Runtime.UI.Domestic
         private readonly List<UnityAction> _boundActions = new();
         private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
         private Coroutine _emblemLoadRoutine;
+        private ConfigCache _configCache;
 
         private void OnEnable()
         {
+            SubscribeServerConfig();
             ResolveMapInputHandler();
             LoadBuildConfig();
             BindButtons();
@@ -128,6 +134,7 @@ namespace Panoptes.Runtime.UI.Domestic
         {
             UnbindButtons();
             UnbindModeToggles();
+            UnsubscribeServerConfig();
             if (tooltipView != null)
             {
                 tooltipView.Hide();
@@ -401,10 +408,54 @@ namespace Panoptes.Runtime.UI.Domestic
             trigger.Configure(tooltipView, text.Trim());
         }
 
+        private void SubscribeServerConfig()
+        {
+            if (!listenServerConfigUpdates)
+            {
+                return;
+            }
+
+            _configCache = ConfigCache.EnsureInstance();
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated += OnServerConfigUpdated;
+            }
+        }
+
+        private void UnsubscribeServerConfig()
+        {
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated -= OnServerConfigUpdated;
+                _configCache = null;
+            }
+        }
+
+        private void OnServerConfigUpdated(string key)
+        {
+            if (!preferServerPushedConfig)
+            {
+                return;
+            }
+
+            if (!string.Equals(NormalizeToken(key), NormalizeToken(serverConfigKey), StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            LoadBuildConfig();
+            BindButtons();
+        }
+
         private void LoadBuildConfig()
         {
             _buildConfigById.Clear();
             if (!applyConfigToButtons)
+            {
+                return;
+            }
+
+            if (preferServerPushedConfig && TryLoadBuildConfigFromCache())
             {
                 return;
             }
@@ -424,10 +475,37 @@ namespace Panoptes.Runtime.UI.Domestic
                 return;
             }
 
+            ParseBuildConfigText(source.text);
+        }
+
+        private bool TryLoadBuildConfigFromCache()
+        {
+            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
+            var key = NormalizeToken(serverConfigKey);
+            if (cache == null || string.IsNullOrEmpty(key))
+            {
+                return false;
+            }
+
+            if (!cache.TryGetJson(key, out var json) || string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            return ParseBuildConfigText(json);
+        }
+
+        private bool ParseBuildConfigText(string jsonText)
+        {
+            if (string.IsNullOrWhiteSpace(jsonText))
+            {
+                return false;
+            }
+
             BuildConfigRoot config = null;
             try
             {
-                config = JsonUtility.FromJson<BuildConfigRoot>(source.text);
+                config = JsonUtility.FromJson<BuildConfigRoot>(jsonText);
             }
             catch (Exception ex)
             {
@@ -435,7 +513,7 @@ namespace Panoptes.Runtime.UI.Domestic
                 {
                     Debug.LogWarning($"[BuildCommandPanel] Failed to parse build config JSON: {ex.Message}");
                 }
-                return;
+                return false;
             }
 
             if (config == null || config.buildings == null || config.buildings.Length == 0)
@@ -444,7 +522,7 @@ namespace Panoptes.Runtime.UI.Domestic
                 {
                     Debug.LogWarning("[BuildCommandPanel] Build config JSON has no buildings array.");
                 }
-                return;
+                return false;
             }
 
             for (int i = 0; i < config.buildings.Length; i++)
@@ -458,6 +536,8 @@ namespace Panoptes.Runtime.UI.Domestic
 
                 _buildConfigById[id] = entry;
             }
+
+            return true;
         }
 
         private BuildConfigEntry GetBuildConfigEntry(string buildingType)

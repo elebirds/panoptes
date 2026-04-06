@@ -7,6 +7,7 @@
  *************************************************/
 
 using TMPro;
+using System.Text;
 using UnityEngine;
 
 namespace Panoptes.Runtime.UI.Domestic
@@ -18,6 +19,7 @@ namespace Panoptes.Runtime.UI.Domestic
         [SerializeField] private Canvas canvas;
         [SerializeField] private Vector2 screenOffset = new Vector2(16f, -16f);
         [SerializeField] private bool clampToScreen = true;
+        [SerializeField] private bool normalizeFullWidthPunctuation = true;
 
         private void Awake()
         {
@@ -36,7 +38,10 @@ namespace Panoptes.Runtime.UI.Domestic
                 return;
             }
 
-            tooltipText.text = text ?? string.Empty;
+            var normalizedText = normalizeFullWidthPunctuation
+                ? NormalizePunctuation(text)
+                : (text ?? string.Empty);
+            tooltipText.text = normalizedText;
             tooltipRoot.gameObject.SetActive(true);
             Move(screenPosition);
         }
@@ -96,6 +101,45 @@ namespace Panoptes.Runtime.UI.Domestic
             if (tooltipRoot != null)
             {
                 tooltipRoot.gameObject.SetActive(false);
+            }
+        }
+
+        private static string NormalizePunctuation(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var sb = new StringBuilder(value.Length);
+            for (int i = 0; i < value.Length; i++)
+            {
+                sb.Append(MapFullWidth(value[i]));
+            }
+            return sb.ToString();
+        }
+
+        private static char MapFullWidth(char ch)
+        {
+            switch (ch)
+            {
+                case '\u3002': return '.';
+                case '\uFF0C': return ',';
+                case '\uFF1A': return ':';
+                case '\uFF1B': return ';';
+                case '\uFF01': return '!';
+                case '\uFF1F': return '?';
+                case '\uFF08': return '(';
+                case '\uFF09': return ')';
+                case '\u3010': return '[';
+                case '\u3011': return ']';
+                case '\u201C': return '"';
+                case '\u201D': return '"';
+                case '\u2018': return '\'';
+                case '\u2019': return '\'';
+                case '\u3001': return ',';
+                case '\u3000': return ' ';
+                default: return ch;
             }
         }
     }

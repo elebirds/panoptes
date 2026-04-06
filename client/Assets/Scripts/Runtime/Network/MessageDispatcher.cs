@@ -37,7 +37,7 @@ namespace Panoptes.Runtime.Network
         public void Register<T>(string messageType, Action<T> handler)
             where T : IMessage<T>, new()
         {
-            _handlers[messageType] = payload =>
+            RegisterRaw(messageType, payload =>
             {
                 try
                 {
@@ -48,6 +48,34 @@ namespace Panoptes.Runtime.Network
                 catch (Exception e)
                 {
                     Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e.Message}");
+                }
+            });
+        }
+
+        // Register handler that receives Envelope.Payload directly.
+        public void RegisterRaw(string messageType, Action<ByteString> handler)
+        {
+            if (string.IsNullOrWhiteSpace(messageType))
+            {
+                Debug.LogWarning("[Dispatcher] RegisterRaw failed: messageType is empty.");
+                return;
+            }
+
+            if (handler == null)
+            {
+                Debug.LogWarning($"[Dispatcher] RegisterRaw failed: handler is null for {messageType}.");
+                return;
+            }
+
+            _handlers[messageType] = payload =>
+            {
+                try
+                {
+                    handler(payload);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[Dispatcher] Handler failed for {messageType}: {e.Message}");
                 }
             };
         }
