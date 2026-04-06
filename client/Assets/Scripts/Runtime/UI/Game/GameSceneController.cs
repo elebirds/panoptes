@@ -53,7 +53,10 @@ namespace Panoptes.Runtime.UI.Game
                 statusText.text = summary;
             }
 
-            Debug.Log($"[GameScene] {summary}");
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"[GameScene] {summary}");
+            }
         }
     }
 }
