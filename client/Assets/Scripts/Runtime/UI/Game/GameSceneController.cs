@@ -44,8 +44,6 @@ namespace Panoptes.Runtime.UI.Game
                 {
                     statusText.text = "等待游戏初始化...";
                 }
-
-                Debug.LogWarning("[GameScene] GameStateCache 尚未初始化。");
                 return;
             }
 
