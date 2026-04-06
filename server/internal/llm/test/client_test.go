@@ -3,17 +3,20 @@ package test_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
 )
 
-const testAPIKey = "sk-dfecb221ed3e44a68796bbcbda4fa137"
-
 func newQwenClient(t *testing.T) chatmodule.ChatClient {
 	t.Helper()
-	return chatmodule.NewQwenClient(testAPIKey)
+	apiKey := os.Getenv("QWEN_API_KEY")
+	if apiKey == "" {
+		t.Skip("QWEN_API_KEY not set, skipping integration test")
+	}
+	return chatmodule.NewQwenClient(apiKey)
 }
 
 // TestNormalChat 非流式调用
