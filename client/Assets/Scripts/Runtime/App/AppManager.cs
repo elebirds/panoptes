@@ -6,12 +6,12 @@
  * Description: Global app state machine placeholder.
  *************************************************/
 
-using UnityEngine;
 using Panoptes.Protocol.V1;
+using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Network;
 using Panoptes.Runtime.Service;
-using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.UI.Common;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Panoptes.Runtime.App
@@ -34,6 +34,12 @@ namespace Panoptes.Runtime.App
         [SerializeField] private string loginSceneName = "Login";
         [SerializeField] private string lobbySceneName = "Lobby";
         [SerializeField] private string gameSceneName = "Game";
+
+        [Header("Local Test")]
+        [SerializeField] private bool bypassLoginForLocalTest = true;
+        [SerializeField] private string localTestSceneName = "MapEditor";
+        [SerializeField] private AppState localTestState = AppState.Game;
+        [SerializeField] private bool logLocalTestBypass = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureManagersBootstrap()
@@ -75,6 +81,12 @@ namespace Panoptes.Runtime.App
         void Start()
         {
             RegisterGlobalHandlers();
+            if (bypassLoginForLocalTest)
+            {
+                EnterLocalTestMode();
+                return;
+            }
+
             TransitionTo(AppState.Login);
         }
 
@@ -125,6 +137,11 @@ namespace Panoptes.Runtime.App
 
         private void OnGameInit(MsgGameInit msg)
         {
+            if (GameStateCache.Instance != null)
+            {
+                GameStateCache.Instance.ApplyGameInit(msg);
+            }
+
             TransitionTo(AppState.Game);
         }
 
@@ -155,6 +172,49 @@ namespace Panoptes.Runtime.App
             {
                 Debug.LogWarning($"[AppManager] Failed to establish realtime connection: {e.Message}");
             }
+        }
+
+        private void EnterLocalTestMode()
+        {
+            State = localTestState;
+
+            var sceneName = string.IsNullOrWhiteSpace(localTestSceneName)
+                ? gameSceneName
+                : localTestSceneName.Trim();
+
+            if (logLocalTestBypass)
+            {
+                Debug.Log($"[AppManager] Local test mode enabled, bypass login and load scene '{sceneName}'.");
+            }
+
+            if (!CanLoadScene(sceneName))
+            {
+                Debug.LogWarning($"[AppManager] Local test scene '{sceneName}' is not loadable. Fallback to '{gameSceneName}'.");
+                sceneName = gameSceneName;
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return;
+            }
+
+            var activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene == sceneName)
+            {
+                return;
+            }
+
+            SceneManager.LoadScene(sceneName);
+        }
+
+        private static bool CanLoadScene(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName))
+            {
+                return false;
+            }
+
+            return Application.CanStreamedLevelBeLoaded(sceneName);
         }
     }
 }

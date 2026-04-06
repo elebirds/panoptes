@@ -1,0 +1,63 @@
+{
+  "$schema": "./maptileconfig.schema.json",
+  "config_version": "2026-04-06.tile.v1",
+  "default_tile_size": 1.0,
+  "terrain_tiles": [
+    {
+      "id": "plain",
+      "name": "Plain",
+      "icon_key": "terrain_plain",
+      "material_key": "M_Ground_Lit",
+      "move_cost_no_road": 2,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "mountain",
+      "name": "Mountain",
+      "icon_key": "terrain_mountain",
+      "material_key": "M_Ground_Mountain_Lit",
+      "move_cost_no_road": 3,
+      "passable": true,
+      "buildable": false
+    },
+    {
+      "id": "forest",
+      "name": "Forest",
+      "icon_key": "terrain_forest",
+      "material_key": "M_Ground_Forest_Lit",
+      "move_cost_no_road": 3,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "river",
+      "name": "River",
+      "icon_key": "terrain_river",
+      "material_key": "M_Ground_River_Lit",
+      "move_cost_no_road": 99,
+      "passable": false,
+      "buildable": false
+    }
+  ],
+  "overlay_markers": [
+    {
+      "id": "road",
+      "name": "Road",
+      "icon_key": "marker_road",
+      "source_field": "hasRoad"
+    },
+    {
+      "id": "resource_point",
+      "name": "Resource Point",
+      "icon_key": "marker_resource",
+      "source_field": "isResourcePoint"
+    },
+    {
+      "id": "safe_zone",
+      "name": "Safe Zone",
+      "icon_key": "marker_safe_zone",
+      "source_field": "isSafeZone"
+    }
+  ]
+}
