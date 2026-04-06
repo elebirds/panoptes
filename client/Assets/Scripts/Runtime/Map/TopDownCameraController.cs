@@ -129,6 +129,22 @@ namespace Panoptes.Runtime.Map
             boundsPadding = padding;
         }
 
+        public void SnapTargetToCurrentPosition()
+        {
+            _targetPosition = transform.position;
+            _moveVelocity = Vector3.zero;
+        }
+
+        public void SetManualTargetPosition(Vector3 position, bool snapInstantly = false)
+        {
+            _targetPosition = position;
+            if (snapInstantly)
+            {
+                transform.position = position;
+                _moveVelocity = Vector3.zero;
+            }
+        }
+
         // ===== Zoom Runtime API (for UI panel bindings) =====
         // Suggested slider convention: 0 = far, 1 = near.
         public void SetZoomNormalized(float normalized)

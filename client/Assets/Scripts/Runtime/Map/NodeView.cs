@@ -28,6 +28,7 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private Renderer groundRenderer;
         [SerializeField] private GameObject roadOverlay;
         [SerializeField] private GameObject highlight;
+        [SerializeField] private Renderer highlightRenderer;
         [SerializeField] private Transform resourceAnchor;
         [SerializeField] private Transform buildingAnchor;
         [SerializeField] private Transform unitAnchor;
@@ -55,6 +56,7 @@ namespace Panoptes.Runtime.Map
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;
         private string _buildingType = string.Empty;
+        private readonly MaterialPropertyBlock _highlightBlock = new();
 
         /// <summary>
         /// Bind visual from protocol node data.
@@ -74,7 +76,7 @@ namespace Panoptes.Runtime.Map
             SetTerrain(node.Terrain);
             SetRoadVisible(node.HasRoad);
             SetResource(node.IsResourcePoint, node.ResourceType);
-            SetBuilding(node.BuildingType, node.Owner, node.BuildingHp);
+            SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, false);
             SetHighlightVisible(false);
         }
 
@@ -112,6 +114,39 @@ namespace Panoptes.Runtime.Map
             }
         }
 
+        public void SetHighlight(bool isVisible, Color color)
+        {
+            SetHighlightVisible(isVisible);
+            SetHighlightColor(color);
+        }
+
+        public void SetHighlightColor(Color color)
+        {
+            if (highlightRenderer == null && highlight != null)
+            {
+                highlightRenderer = highlight.GetComponentInChildren<Renderer>();
+            }
+
+            if (highlightRenderer == null)
+            {
+                return;
+            }
+
+            var mats = highlightRenderer.sharedMaterials;
+            if (mats == null || mats.Length == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < mats.Length; i++)
+            {
+                highlightRenderer.GetPropertyBlock(_highlightBlock, i);
+                _highlightBlock.SetColor("_BaseColor", color);
+                _highlightBlock.SetColor("_Color", color);
+                highlightRenderer.SetPropertyBlock(_highlightBlock, i);
+            }
+        }
+
         /// <summary>
         /// Update/clear resource visual according to resource point state.
         /// </summary>
@@ -143,7 +178,7 @@ namespace Panoptes.Runtime.Map
         /// <summary>
         /// Update/clear building visual according to building_type.
         /// </summary>
-        public void SetBuilding(string buildingType, string ownerId, int buildingHp)
+        public void SetBuilding(string buildingType, string ownerId, int buildingHp, bool isGhost)
         {
             var normalized = NormalizeToken(buildingType);
             if (string.IsNullOrEmpty(normalized))
@@ -168,6 +203,37 @@ namespace Panoptes.Runtime.Map
                 _buildingInstance.SetBuildingType(normalized);
                 _buildingInstance.SetOwner(ownerId);
                 _buildingInstance.SetHitPoints(buildingHp);
+                _buildingInstance.SetPlacementGhost(isGhost);
+            }
+
+            _buildingType = normalized;
+        }
+
+        public void SetBuildingGhost(string buildingType, string ownerId, Color ghostColor)
+        {
+            var normalized = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                ClearBuilding();
+                return;
+            }
+
+            if (buildingAnchor == null)
+            {
+                _buildingType = normalized;
+                return;
+            }
+
+            if (_buildingInstance == null || _buildingType != normalized)
+            {
+                ReplaceBuildingInstance(normalized);
+            }
+
+            if (_buildingInstance != null)
+            {
+                _buildingInstance.SetBuildingType(normalized);
+                _buildingInstance.SetOwner(ownerId);
+                _buildingInstance.SetPlacementGhost(true, ghostColor);
             }
 
             _buildingType = normalized;
@@ -177,7 +243,7 @@ namespace Panoptes.Runtime.Map
         {
             if (_resourceInstance != null)
             {
-                Destroy(_resourceInstance);
+                Destroy(_resourceInstance.gameObject);
                 _resourceInstance = null;
             }
             _resourceType = string.Empty;
@@ -239,6 +305,11 @@ namespace Panoptes.Runtime.Map
             return defaultBuildingPrefab;
         }
 
+        public BuildingView ResolveBuildingPrefab(string buildingType)
+        {
+            return GetBuildingPrefab(NormalizeToken(buildingType));
+        }
+
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
@@ -277,6 +348,11 @@ namespace Panoptes.Runtime.Map
                 {
                     buildingAnchor = anchor;
                 }
+            }
+
+            if (highlightRenderer == null && highlight != null)
+            {
+                highlightRenderer = highlight.GetComponentInChildren<Renderer>();
             }
         }
 #endif

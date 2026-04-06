@@ -35,6 +35,8 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private Color enemyOwnerColor = new Color(1f, 0.35f, 0.35f, 1f);
         [Range(0f, 1f)] [SerializeField] private float ownerTintStrength = 0.45f;
         [SerializeField] private bool useHashedColorWhenNoMyPlayerId = false;
+        [SerializeField] private Color defaultGhostColor = new Color(0.6f, 1f, 0.6f, 0.9f);
+        [Range(0f, 1f)] [SerializeField] private float ghostTintStrength = 0.85f;
 
         [Header("Damage Threshold")]
         [SerializeField] private int lowHitPointThreshold = 30;
@@ -43,6 +45,9 @@ namespace Panoptes.Runtime.Map
         public string OwnerId { get; private set; } = string.Empty;
         public int HitPoints { get; private set; }
         public int MaxHitPoints { get; private set; }
+        public bool IsGhost { get; private set; }
+
+        private Renderer[] _allRenderers;
 
         public void SetBuildingType(string value)
         {
@@ -77,6 +82,60 @@ namespace Panoptes.Runtime.Map
             if (selectedRing != null)
             {
                 selectedRing.SetActive(isSelected);
+            }
+        }
+
+        public void SetPlacementGhost(bool isGhost)
+        {
+            SetPlacementGhost(isGhost, defaultGhostColor);
+        }
+
+        public void SetPlacementGhost(bool isGhost, Color ghostColor)
+        {
+            IsGhost = isGhost;
+
+            EnsureAllRenderers();
+            if (_allRenderers == null || _allRenderers.Length == 0)
+            {
+                return;
+            }
+
+            for (int r = 0; r < _allRenderers.Length; r++)
+            {
+                var renderer = _allRenderers[r];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var materials = renderer.sharedMaterials;
+                if (materials == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (isGhost)
+                    {
+                        var color = Color.Lerp(Color.white, ghostColor, ghostTintStrength);
+                        var block = new MaterialPropertyBlock();
+                        renderer.GetPropertyBlock(block, i);
+                        block.SetColor("_BaseColor", color);
+                        block.SetColor("_Color", color);
+                        renderer.SetPropertyBlock(block, i);
+                    }
+                    else
+                    {
+                        renderer.SetPropertyBlock(new MaterialPropertyBlock(), i);
+                    }
+                }
+            }
+
+            if (!isGhost)
+            {
+                // Restore owner tint after leaving ghost mode.
+                ApplyOwnerTint(ResolveOwnerColor(OwnerId));
             }
         }
 
@@ -118,6 +177,14 @@ namespace Panoptes.Runtime.Map
                 }
 
                 ApplyTintToRenderer(renderer, finalColor);
+            }
+        }
+
+        private void EnsureAllRenderers()
+        {
+            if (_allRenderers == null || _allRenderers.Length == 0)
+            {
+                _allRenderers = GetComponentsInChildren<Renderer>(true);
             }
         }
 
@@ -270,6 +337,7 @@ namespace Panoptes.Runtime.Map
         {
             // Intentionally not auto-filling renderer list.
             // This prevents tinting the whole building by mistake.
+            EnsureAllRenderers();
         }
 #endif
     }
