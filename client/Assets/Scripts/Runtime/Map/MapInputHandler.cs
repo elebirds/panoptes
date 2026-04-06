@@ -753,7 +753,19 @@ namespace Panoptes.Runtime.Map
             }
 
             nodeView = hit.collider.GetComponentInParent<NodeView>();
-            return nodeView != null;
+            if (nodeView == null)
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map != null && !map.IsNodeInteractable(nodeView.NodeId))
+            {
+                nodeView = null;
+                return false;
+            }
+
+            return true;
         }
 
         private bool TryRaycastUnit(out UnitView unitView)

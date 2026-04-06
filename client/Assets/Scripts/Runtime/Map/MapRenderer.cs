@@ -41,12 +41,16 @@ namespace Panoptes.Runtime.Map
             public int x;
             public int y;
             public string terrain;
+            public string materialKey;
+            public bool canMove = true;
             public bool hasRoad;
             public bool isResourcePoint;
             public string resourceType;
             public string buildingType;
             public int buildingHp;
             public string owner;
+            public int cost;
+            public int moveCost;
         }
 
         [System.Serializable]
@@ -93,6 +97,12 @@ namespace Panoptes.Runtime.Map
         private readonly Dictionary<string, NodeView> _tileViews = new();
         private readonly Dictionary<Vector2Int, NodeView> _tileViewsByGrid = new();
         private readonly Dictionary<string, ProtoNodeView> _nodeStates = new();
+        private readonly Dictionary<string, int> _nodeMoveCosts = new();
+        private readonly Dictionary<string, bool> _nodePassable = new();
+        private readonly Dictionary<string, string> _nodeMaterialKeys = new();
+        private readonly Dictionary<string, int> _parsedJsonNodeMoveCosts = new();
+        private readonly Dictionary<string, bool> _parsedJsonNodePassable = new();
+        private readonly Dictionary<string, string> _parsedJsonNodeMaterialKeys = new();
 
         private readonly Dictionary<string, UnitView> _unitViews = new();
         private readonly Dictionary<string, string> _unitNodeById = new();
@@ -276,7 +286,7 @@ namespace Panoptes.Runtime.Map
 
             if (_nodeStates.TryGetValue(nodeId, out var node))
             {
-                view.Bind(node);
+                view.Bind(node, GetNodeMaterialKey(nodeId, node.Terrain));
             }
         }
 
@@ -319,18 +329,101 @@ namespace Panoptes.Runtime.Map
 
         public bool IsNodePassableForMove(string nodeId)
         {
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
             if (!TryGetNodeState(nodeId, out var state))
             {
                 return false;
             }
 
-            var terrain = NormalizeToken(state.Terrain);
-            return terrain != "river" && terrain != "mountain";
+            if (IsForbiddenTerrain(state.Terrain))
+            {
+                return false;
+            }
+
+            if (_nodePassable.TryGetValue(nodeId, out var passable))
+            {
+                return passable;
+            }
+
+            passable = GetDefaultPassable(state.Terrain);
+            _nodePassable[nodeId] = passable;
+            return passable;
+        }
+
+        public bool IsNodeInteractable(string nodeId)
+        {
+            if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            return !IsForbiddenTerrain(state.Terrain);
+        }
+
+        public bool TryGetNodeMoveCost(string nodeId, out int moveCost)
+        {
+            moveCost = 0;
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            if (_nodeMoveCosts.TryGetValue(nodeId, out moveCost))
+            {
+                return true;
+            }
+
+            if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            moveCost = GetDefaultMoveCost(state.Terrain, state.HasRoad, IsNodePassableForMove(nodeId));
+            _nodeMoveCosts[nodeId] = moveCost;
+            return true;
+        }
+
+        public bool TryGetNodeMaterialKey(string nodeId, out string materialKey)
+        {
+            materialKey = string.Empty;
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            if (_nodeMaterialKeys.TryGetValue(nodeId, out var value))
+            {
+                materialKey = value ?? string.Empty;
+                return true;
+            }
+
+            if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            materialKey = GetDefaultMaterialKey(state.Terrain);
+            _nodeMaterialKeys[nodeId] = materialKey;
+            return true;
         }
 
         public bool IsNodeBuildBaseAvailable(string nodeId)
         {
             if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            if (IsForbiddenTerrain(state.Terrain))
+            {
+                return false;
+            }
+
+            if (!IsNodePassableForMove(nodeId))
             {
                 return false;
             }
@@ -525,6 +618,9 @@ namespace Panoptes.Runtime.Map
             }
 
             ClearMap();
+            _nodeMoveCosts.Clear();
+            _nodePassable.Clear();
+            _nodeMaterialKeys.Clear();
 
             foreach (var node in nodes)
             {
@@ -535,13 +631,22 @@ namespace Panoptes.Runtime.Map
 
                 var tile = Instantiate(nodeTilePrefab, EnsureTilesRoot(), false);
                 tile.transform.localPosition = GridToWorld(node.Pos.X, node.Pos.Y);
-                tile.Bind(node);
+                var passable = ResolveNodePassable(node);
+                var moveCost = ResolveNodeMoveCost(node, passable);
+                var materialKey = ResolveNodeMaterialKey(node);
+                tile.Bind(node, materialKey);
 
                 _tileViews[node.Id] = tile;
                 _tileViewsByGrid[tile.GridPos] = tile;
                 _nodeStates[node.Id] = node;
+                _nodePassable[node.Id] = passable;
+                _nodeMoveCosts[node.Id] = moveCost;
+                _nodeMaterialKeys[node.Id] = materialKey;
             }
 
+            _parsedJsonNodeMoveCosts.Clear();
+            _parsedJsonNodePassable.Clear();
+            _parsedJsonNodeMaterialKeys.Clear();
             FocusCameraToCenter();
             RebuildUnitsForCurrentSource();
         }
@@ -716,6 +821,9 @@ namespace Panoptes.Runtime.Map
             _tileViews.Clear();
             _tileViewsByGrid.Clear();
             _nodeStates.Clear();
+            _nodeMoveCosts.Clear();
+            _nodePassable.Clear();
+            _nodeMaterialKeys.Clear();
         }
 
         private void ClearUnits()
@@ -850,6 +958,9 @@ namespace Panoptes.Runtime.Map
                 return result;
             }
 
+            _parsedJsonNodeMoveCosts.Clear();
+            _parsedJsonNodePassable.Clear();
+            _parsedJsonNodeMaterialKeys.Clear();
             var width = Mathf.Max(0, config.width);
             var height = Mathf.Max(0, config.height);
             var defaultTerrain = NormalizeToken(config.defaultTerrain);
@@ -914,10 +1025,17 @@ namespace Panoptes.Runtime.Map
                 var resourceType = NormalizeToken(jsonNode.resourceType);
                 var hasBuilding = !string.IsNullOrEmpty(buildingType);
                 var isResourcePoint = jsonNode.isResourcePoint || !string.IsNullOrEmpty(resourceType);
+                var nodeId = string.IsNullOrWhiteSpace(jsonNode.id) ? $"N_{jsonNode.x}_{jsonNode.y}" : jsonNode.id.Trim();
+                var passable = ResolveNodePassable(jsonNode);
+                var moveCost = ResolveNodeMoveCost(jsonNode, terrain, passable);
+                var materialKey = ResolveNodeMaterialKey(jsonNode, terrain);
+                _parsedJsonNodeMoveCosts[nodeId] = moveCost;
+                _parsedJsonNodePassable[nodeId] = passable;
+                _parsedJsonNodeMaterialKeys[nodeId] = materialKey;
 
                 var node = new ProtoNodeView
                 {
-                    Id = string.IsNullOrWhiteSpace(jsonNode.id) ? $"N_{jsonNode.x}_{jsonNode.y}" : jsonNode.id.Trim(),
+                    Id = nodeId,
                     Pos = new ProtoPosition { X = jsonNode.x, Y = jsonNode.y },
                     Terrain = terrain,
                     HasRoad = jsonNode.hasRoad,
@@ -965,6 +1083,148 @@ namespace Panoptes.Runtime.Map
         private static string MakeCoordKey(int x, int y)
         {
             return $"{x}_{y}";
+        }
+
+        private int ResolveNodeMoveCost(ProtoNodeView node)
+        {
+            return ResolveNodeMoveCost(node, ResolveNodePassable(node));
+        }
+
+        private int ResolveNodeMoveCost(ProtoNodeView node, bool passable)
+        {
+            if (node == null || string.IsNullOrEmpty(node.Id))
+            {
+                return 0;
+            }
+
+            if (_parsedJsonNodeMoveCosts.TryGetValue(node.Id, out var configured))
+            {
+                return configured;
+            }
+
+            return GetDefaultMoveCost(node.Terrain, node.HasRoad, passable);
+        }
+
+        private bool ResolveNodePassable(ProtoNodeView node)
+        {
+            if (node == null || string.IsNullOrEmpty(node.Id))
+            {
+                return false;
+            }
+
+            if (_parsedJsonNodePassable.TryGetValue(node.Id, out var configured))
+            {
+                return configured;
+            }
+
+            return GetDefaultPassable(node.Terrain);
+        }
+
+        private static bool ResolveNodePassable(MapJsonNode node)
+        {
+            return node != null ? node.canMove : true;
+        }
+
+        private string ResolveNodeMaterialKey(ProtoNodeView node)
+        {
+            if (node == null || string.IsNullOrEmpty(node.Id))
+            {
+                return string.Empty;
+            }
+
+            if (_parsedJsonNodeMaterialKeys.TryGetValue(node.Id, out var configured))
+            {
+                return configured;
+            }
+
+            return GetDefaultMaterialKey(node.Terrain);
+        }
+
+        private static string ResolveNodeMaterialKey(MapJsonNode node, string normalizedTerrain)
+        {
+            var key = node != null ? (node.materialKey ?? string.Empty).Trim() : string.Empty;
+            if (!string.IsNullOrEmpty(key))
+            {
+                return key;
+            }
+
+            return GetDefaultMaterialKey(normalizedTerrain);
+        }
+
+        private static int ResolveNodeMoveCost(MapJsonNode node, string normalizedTerrain, bool passable)
+        {
+            if (node != null)
+            {
+                if (node.moveCost > 0)
+                {
+                    return node.moveCost;
+                }
+
+                if (node.cost > 0)
+                {
+                    return node.cost;
+                }
+            }
+
+            return GetDefaultMoveCost(normalizedTerrain, node != null && node.hasRoad, passable);
+        }
+
+        private static int GetDefaultMoveCost(string terrain, bool hasRoad, bool passable)
+        {
+            var t = NormalizeToken(terrain);
+            if (!passable || t == "forbidden")
+            {
+                return 999;
+            }
+
+            if (hasRoad)
+            {
+                return 1;
+            }
+
+            if (t == "forest")
+            {
+                return 3;
+            }
+
+            return 2;
+        }
+
+        private string GetNodeMaterialKey(string nodeId, string terrainFallback)
+        {
+            if (!string.IsNullOrEmpty(nodeId) && _nodeMaterialKeys.TryGetValue(nodeId, out var materialKey))
+            {
+                return materialKey;
+            }
+
+            return GetDefaultMaterialKey(terrainFallback);
+        }
+
+        private static bool GetDefaultPassable(string terrain)
+        {
+            return true;
+        }
+
+        private static string GetDefaultMaterialKey(string terrain)
+        {
+            switch (NormalizeToken(terrain))
+            {
+                case "forest":
+                    return "M_Ground_Forest_Lit";
+                case "mountain":
+                    return "M_Ground_Mountain_Lit";
+                case "river":
+                    return "M_Ground_River_Lit";
+                case "forbidden":
+                    return "M_Ground_Forbidden_Lit";
+                default:
+                    return "M_Ground_Lit";
+            }
+        }
+
+        private static bool IsForbiddenTerrain(string terrain)
+        {
+            return NormalizeToken(terrain) == "forbidden";
         }
 
         private static string NormalizeToken(string value)

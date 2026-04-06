@@ -24,6 +24,13 @@ namespace Panoptes.Runtime.Map
             public BuildingView prefab;
         }
 
+        [System.Serializable]
+        private struct TerrainMaterialEntry
+        {
+            public string materialKey;
+            public Material material;
+        }
+
         [Header("Core References")]
         [SerializeField] private Renderer groundRenderer;
         [SerializeField] private GameObject roadOverlay;
@@ -38,6 +45,8 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private Material mountainMaterial;
         [SerializeField] private Material forestMaterial;
         [SerializeField] private Material riverMaterial;
+        [SerializeField] private Material forbiddenMaterial;
+        [SerializeField] private TerrainMaterialEntry[] terrainMaterialOverrides;
 
         [Header("Resource")]
         [SerializeField] private ResourcePointView resourcePointPrefab;
@@ -66,7 +75,7 @@ namespace Panoptes.Runtime.Map
         /// <summary>
         /// Bind visual from protocol node data.
         /// </summary>
-        public void Bind(ProtoNodeView node)
+        public void Bind(ProtoNodeView node, string materialKey = null)
         {
             if (node == null)
             {
@@ -78,17 +87,18 @@ namespace Panoptes.Runtime.Map
             GridPos = new Vector2Int(node.Pos?.X ?? 0, node.Pos?.Y ?? 0);
             name = $"Node_{NodeId}";
 
-            SetTerrain(node.Terrain);
-            SetRoadVisible(node.HasRoad);
-            SetResource(node.IsResourcePoint, node.ResourceType);
-            SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, false);
+            var isForbidden = IsForbiddenTerrain(node.Terrain);
+            SetTerrain(node.Terrain, materialKey);
+            SetRoadVisible(!isForbidden && node.HasRoad);
+            SetResource(!isForbidden && node.IsResourcePoint, node.ResourceType);
+            SetBuilding(isForbidden ? string.Empty : node.BuildingType, node.Owner, node.BuildingHp, false);
             SetHighlightVisible(false);
         }
 
         /// <summary>
         /// Set tile terrain material by protocol terrain string.
         /// </summary>
-        public void SetTerrain(string terrain)
+        public void SetTerrain(string terrain, string materialKey = null)
         {
             if (groundRenderer == null)
             {
@@ -96,7 +106,12 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
-            var material = GetTerrainMaterial(terrain);
+            var material = GetMaterialByKey(materialKey);
+            if (material == null)
+            {
+                material = GetTerrainMaterial(terrain);
+            }
+
             if (material != null)
             {
                 groundRenderer.sharedMaterial = material;
@@ -299,6 +314,8 @@ namespace Panoptes.Runtime.Map
                     return forestMaterial;
                 case "river":
                     return riverMaterial;
+                case "forbidden":
+                    return forbiddenMaterial != null ? forbiddenMaterial : mountainMaterial;
                 default:
                     return plainMaterial;
             }
@@ -325,9 +342,58 @@ namespace Panoptes.Runtime.Map
             return GetBuildingPrefab(NormalizeToken(buildingType));
         }
 
+        private Material GetMaterialByKey(string materialKey)
+        {
+            if (string.IsNullOrWhiteSpace(materialKey) || terrainMaterialOverrides == null)
+            {
+                return ResolveBuiltInMaterialByKey(materialKey);
+            }
+
+            var key = NormalizeToken(materialKey);
+            for (int i = 0; i < terrainMaterialOverrides.Length; i++)
+            {
+                var entry = terrainMaterialOverrides[i];
+                if (entry.material == null)
+                {
+                    continue;
+                }
+
+                if (NormalizeToken(entry.materialKey) == key)
+                {
+                    return entry.material;
+                }
+            }
+
+            return ResolveBuiltInMaterialByKey(materialKey);
+        }
+
+        private Material ResolveBuiltInMaterialByKey(string materialKey)
+        {
+            switch (NormalizeToken(materialKey))
+            {
+                case "m_ground_lit":
+                    return plainMaterial;
+                case "m_ground_forest_lit":
+                    return forestMaterial;
+                case "m_ground_mountain_lit":
+                    return mountainMaterial;
+                case "m_ground_river_lit":
+                    return riverMaterial;
+                case "m_ground_forbidden_lit":
+                    return forbiddenMaterial != null ? forbiddenMaterial : mountainMaterial;
+                default:
+                    return null;
+            }
+        }
+
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static bool IsForbiddenTerrain(string terrain)
+        {
+            return NormalizeToken(terrain) == "forbidden";
         }
 
 #if UNITY_EDITOR

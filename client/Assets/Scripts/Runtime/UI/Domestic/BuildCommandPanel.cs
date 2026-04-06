@@ -8,13 +8,16 @@
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Protocol.V1;
 using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Map;
+using Panoptes.Runtime.Network;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using Resources = UnityEngine.Resources;
 
 namespace Panoptes.Runtime.UI.Domestic
 {
@@ -114,15 +117,31 @@ namespace Panoptes.Runtime.UI.Domestic
         [SerializeField] private string iconResourcesRoot = "Icons/Buildings";
         [SerializeField] private bool logConfigWarnings = true;
 
+        [Header("Minister Stream")]
+        [SerializeField] private bool listenMinisterReportChunk = true;
+        [SerializeField] private string ministerReportChunkMessageType = "MsgMinisterReportChunk";
+        [SerializeField] private TMP_Text govIcon1SpeechText;
+        [SerializeField] private string govIcon1Path = "GovernanceIconGrid/GovIcon_1";
+        [SerializeField] private bool autoCreateSpeechTextIfMissing = true;
+        [SerializeField] private Vector2 speechTextOffset = new Vector2(16f, 0f);
+        [SerializeField] private Vector2 speechTextSize = new Vector2(340f, 90f);
+        [SerializeField] private bool sanitizeCjkPunctuation = true;
+
         private readonly List<Button> _boundButtons = new();
         private readonly List<UnityAction> _boundActions = new();
         private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
+        private static readonly char[] SentenceTerminators =
+            { '.', '!', '?', '\u3002', '\uFF01', '\uFF1F', '\n' };
         private Coroutine _emblemLoadRoutine;
         private ConfigCache _configCache;
+        private bool _ministerHandlerRegistered;
+        private string _ministerStreamBuffer = string.Empty;
+        private bool _ministerFirstSentenceShown;
 
         private void OnEnable()
         {
             SubscribeServerConfig();
+            TryRegisterMinisterHandler();
             ResolveMapInputHandler();
             LoadBuildConfig();
             BindButtons();
@@ -135,9 +154,18 @@ namespace Panoptes.Runtime.UI.Domestic
             UnbindButtons();
             UnbindModeToggles();
             UnsubscribeServerConfig();
+            UnregisterMinisterHandler();
             if (tooltipView != null)
             {
                 tooltipView.Hide();
+            }
+        }
+
+        private void Update()
+        {
+            if (listenMinisterReportChunk && !_ministerHandlerRegistered && MessageDispatcher.Instance != null)
+            {
+                TryRegisterMinisterHandler();
             }
         }
 
@@ -676,6 +704,239 @@ namespace Panoptes.Runtime.UI.Domestic
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private void TryRegisterMinisterHandler()
+        {
+            if (!listenMinisterReportChunk || _ministerHandlerRegistered || MessageDispatcher.Instance == null)
+            {
+                return;
+            }
+
+            MessageDispatcher.Instance.Register<MsgMinisterReportChunk>(ministerReportChunkMessageType, OnMinisterReportChunk);
+            _ministerHandlerRegistered = true;
+        }
+
+        private void UnregisterMinisterHandler()
+        {
+            if (!_ministerHandlerRegistered)
+            {
+                return;
+            }
+
+            if (MessageDispatcher.Instance != null)
+            {
+                MessageDispatcher.Instance.Unregister(ministerReportChunkMessageType);
+            }
+
+            _ministerHandlerRegistered = false;
+            _ministerStreamBuffer = string.Empty;
+            _ministerFirstSentenceShown = false;
+        }
+
+        private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(msg.Chunk))
+            {
+                _ministerStreamBuffer += msg.Chunk;
+            }
+
+            if (!_ministerFirstSentenceShown)
+            {
+                if (TryExtractFirstSentence(_ministerStreamBuffer, out var firstSentence))
+                {
+                    ShowMinisterSentence(firstSentence);
+                    _ministerFirstSentenceShown = true;
+                }
+                else if (msg.IsFinal)
+                {
+                    var fallback = (_ministerStreamBuffer ?? string.Empty).Trim();
+                    if (!string.IsNullOrEmpty(fallback))
+                    {
+                        ShowMinisterSentence(fallback);
+                        _ministerFirstSentenceShown = true;
+                    }
+                }
+            }
+
+            if (msg.IsFinal)
+            {
+                _ministerStreamBuffer = string.Empty;
+                _ministerFirstSentenceShown = false;
+            }
+        }
+
+        private static bool TryExtractFirstSentence(string text, out string sentence)
+        {
+            sentence = string.Empty;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return false;
+            }
+
+            var idx = text.IndexOfAny(SentenceTerminators);
+            if (idx < 0)
+            {
+                return false;
+            }
+
+            sentence = text.Substring(0, idx + 1).Trim();
+            return !string.IsNullOrEmpty(sentence);
+        }
+
+        private void ShowMinisterSentence(string sentence)
+        {
+            if (string.IsNullOrWhiteSpace(sentence))
+            {
+                return;
+            }
+
+            EnsurePanelVisible();
+            SelectGovernanceMode();
+
+            var targetText = ResolveGovIcon1SpeechText();
+            if (targetText == null)
+            {
+                if (logConfigWarnings)
+                {
+                    Debug.LogWarning("[BuildCommandPanel] Missing GovIcon_1 speech text target.");
+                }
+                return;
+            }
+
+            targetText.text = sanitizeCjkPunctuation ? SanitizePunctuation(sentence) : sentence;
+            targetText.gameObject.SetActive(true);
+        }
+
+        private void EnsurePanelVisible()
+        {
+            if (!gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
+
+            BuildPanelSlideToggle slideToggle = null;
+
+            if (slideToggle == null)
+            {
+                slideToggle = GetComponentInChildren<BuildPanelSlideToggle>(true);
+            }
+
+            if (slideToggle == null && transform.parent != null)
+            {
+                slideToggle = transform.parent.GetComponentInChildren<BuildPanelSlideToggle>(true);
+            }
+
+            if (slideToggle == null && transform.root != null)
+            {
+                slideToggle = transform.root.GetComponentInChildren<BuildPanelSlideToggle>(true);
+            }
+
+            slideToggle?.Expand();
+        }
+
+        private TMP_Text ResolveGovIcon1SpeechText()
+        {
+            if (govIcon1SpeechText != null)
+            {
+                return govIcon1SpeechText;
+            }
+
+            var govIcon = ResolveGovIcon1Transform();
+            if (govIcon == null)
+            {
+                return null;
+            }
+
+            var existing = govIcon.Find("MinisterSpeechText");
+            if (existing != null)
+            {
+                govIcon1SpeechText = existing.GetComponent<TMP_Text>();
+                if (govIcon1SpeechText != null)
+                {
+                    return govIcon1SpeechText;
+                }
+            }
+
+            if (!autoCreateSpeechTextIfMissing)
+            {
+                return null;
+            }
+
+            var textGo = new GameObject("MinisterSpeechText", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textGo.transform.SetParent(govIcon, false);
+
+            var rt = (RectTransform)textGo.transform;
+            rt.anchorMin = new Vector2(1f, 0.5f);
+            rt.anchorMax = new Vector2(1f, 0.5f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.anchoredPosition = speechTextOffset;
+            rt.sizeDelta = speechTextSize;
+
+            var tmp = textGo.GetComponent<TextMeshProUGUI>();
+            tmp.fontSize = 24f;
+            tmp.enableWordWrapping = true;
+            tmp.overflowMode = TextOverflowModes.Truncate;
+            tmp.alignment = TextAlignmentOptions.Left;
+            tmp.color = Color.white;
+            tmp.raycastTarget = false;
+            tmp.text = string.Empty;
+
+            govIcon1SpeechText = tmp;
+            return govIcon1SpeechText;
+        }
+
+        private Transform ResolveGovIcon1Transform()
+        {
+            if (governanceContentRoot == null)
+            {
+                return null;
+            }
+
+            var root = governanceContentRoot.transform;
+            if (!string.IsNullOrWhiteSpace(govIcon1Path))
+            {
+                var byPath = root.Find(govIcon1Path);
+                if (byPath != null)
+                {
+                    return byPath;
+                }
+            }
+
+            var direct = root.Find("GovIcon_1");
+            if (direct != null)
+            {
+                return direct;
+            }
+
+            var all = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] != null && string.Equals(all[i].name, "GovIcon_1", StringComparison.Ordinal))
+                {
+                    return all[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static string SanitizePunctuation(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
+
+            return text
+                .Replace('\u3002', '.')
+                .Replace('\uFF01', '!')
+                .Replace('\uFF1F', '?');
         }
 
         private static string ResolveBuildingTypeToken(BuildButtonBinding binding)

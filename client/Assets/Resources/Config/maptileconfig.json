@@ -38,6 +38,15 @@
       "move_cost_no_road": 99,
       "passable": false,
       "buildable": false
+    },
+    {
+      "id": "forbidden",
+      "name": "Forbidden",
+      "icon_key": "terrain_forbidden",
+      "material_key": "M_Ground_Forbidden_Lit",
+      "move_cost_no_road": 999,
+      "passable": false,
+      "buildable": false
     }
   ],
   "overlay_markers": [

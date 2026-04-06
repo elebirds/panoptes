@@ -15,7 +15,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_0",
@@ -28,7 +30,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_0",
@@ -41,7 +45,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_0",
@@ -54,7 +60,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_0",
@@ -67,7 +75,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_0",
@@ -80,7 +90,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_0",
@@ -93,7 +105,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_0",
@@ -106,7 +120,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_0",
@@ -119,7 +135,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_0",
@@ -132,7 +150,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_0",
@@ -145,7 +165,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_0",
@@ -158,7 +180,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_0",
@@ -171,7 +195,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_0",
@@ -184,7 +210,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_0",
@@ -197,7 +225,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_0",
@@ -210,7 +240,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_0",
@@ -223,7 +255,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_0",
@@ -236,7 +270,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_0",
@@ -249,7 +285,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_0",
@@ -262,7 +300,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_1",
@@ -275,7 +315,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_1",
@@ -288,7 +330,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_1",
@@ -301,7 +345,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_1",
@@ -314,7 +360,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_1",
@@ -327,7 +375,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_1",
@@ -340,7 +390,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_1",
@@ -353,7 +405,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_1",
@@ -366,7 +420,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_1",
@@ -379,7 +435,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_1",
@@ -392,7 +450,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_1",
@@ -405,7 +465,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_1",
@@ -418,7 +480,9 @@
                       "resourceType":  "wood",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_1",
@@ -431,7 +495,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_1",
@@ -444,7 +510,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_1",
@@ -457,7 +525,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_1",
@@ -470,7 +540,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_1",
@@ -483,7 +555,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_1",
@@ -496,7 +570,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_1",
@@ -509,7 +585,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_1",
@@ -522,7 +600,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_2",
@@ -535,7 +615,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_2",
@@ -548,7 +630,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_2",
@@ -561,7 +645,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_2",
@@ -574,7 +660,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_2",
@@ -587,7 +675,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_2",
@@ -600,7 +690,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_2",
@@ -613,7 +705,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_2",
@@ -626,7 +720,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_2",
@@ -639,7 +735,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_2",
@@ -652,7 +750,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_2",
@@ -665,7 +765,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_2",
@@ -678,7 +780,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_2",
@@ -691,7 +795,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_2",
@@ -704,7 +810,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_2",
@@ -717,7 +825,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_2",
@@ -730,7 +840,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_2",
@@ -743,7 +855,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_2",
@@ -756,7 +870,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_2",
@@ -769,7 +885,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_2",
@@ -782,7 +900,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_3",
@@ -795,7 +915,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_3",
@@ -808,7 +930,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_3",
@@ -821,7 +945,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_3",
@@ -834,7 +960,9 @@
                       "resourceType":  "food",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_3",
@@ -847,7 +975,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_3",
@@ -860,7 +990,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_3",
@@ -873,7 +1005,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_3",
@@ -886,7 +1020,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_3",
@@ -899,7 +1035,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_3",
@@ -912,7 +1050,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_3",
@@ -925,7 +1065,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_3",
@@ -938,7 +1080,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_3",
@@ -951,7 +1095,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_3",
@@ -964,7 +1110,9 @@
                       "resourceType":  "ore",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_3",
@@ -977,7 +1125,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_3",
@@ -990,7 +1140,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_3",
@@ -1003,7 +1155,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_3",
@@ -1016,7 +1170,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_3",
@@ -1029,7 +1185,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_3",
@@ -1042,7 +1200,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_4",
@@ -1055,7 +1215,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_4",
@@ -1068,7 +1230,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_4",
@@ -1081,7 +1245,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_4",
@@ -1094,7 +1260,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_4",
@@ -1107,7 +1275,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_4",
@@ -1120,7 +1290,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_4",
@@ -1133,7 +1305,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_4",
@@ -1146,7 +1320,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_4",
@@ -1159,7 +1335,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_4",
@@ -1172,7 +1350,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_4",
@@ -1185,7 +1365,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_4",
@@ -1198,7 +1380,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_4",
@@ -1211,7 +1395,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_4",
@@ -1224,7 +1410,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_4",
@@ -1237,7 +1425,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_4",
@@ -1250,7 +1440,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_4",
@@ -1263,7 +1455,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_4",
@@ -1276,7 +1470,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_4",
@@ -1289,7 +1485,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_4",
@@ -1302,7 +1500,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_5",
@@ -1315,7 +1515,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_5",
@@ -1328,7 +1530,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_5",
@@ -1341,7 +1545,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_5",
@@ -1354,7 +1560,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_5",
@@ -1367,7 +1575,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_5",
@@ -1380,7 +1590,9 @@
                       "resourceType":  "",
                       "buildingType":  "barracks",
                       "buildingHp":  100,
-                      "owner":  "green"
+                      "owner":  "green",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_5",
@@ -1393,7 +1605,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_5",
@@ -1406,7 +1620,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_5",
@@ -1419,7 +1635,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_5",
@@ -1432,7 +1650,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_5",
@@ -1445,7 +1665,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_5",
@@ -1458,7 +1680,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_5",
@@ -1471,7 +1695,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_5",
@@ -1484,7 +1710,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_5",
@@ -1497,7 +1725,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_5",
@@ -1510,7 +1740,9 @@
                       "resourceType":  "",
                       "buildingType":  "barracks",
                       "buildingHp":  100,
-                      "owner":  "yellow"
+                      "owner":  "yellow",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_5",
@@ -1523,7 +1755,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_5",
@@ -1536,7 +1770,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_5",
@@ -1549,7 +1785,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_5",
@@ -1562,7 +1800,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_6",
@@ -1575,7 +1815,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_6",
@@ -1588,7 +1830,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_6",
@@ -1601,7 +1845,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_6",
@@ -1614,7 +1860,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_6",
@@ -1627,7 +1875,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_6",
@@ -1640,7 +1890,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_6",
@@ -1653,7 +1905,9 @@
                       "resourceType":  "wood",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_6",
@@ -1666,7 +1920,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_6",
@@ -1679,7 +1935,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_6",
@@ -1692,7 +1950,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_6",
@@ -1705,7 +1965,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_6",
@@ -1718,7 +1980,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_6",
@@ -1731,7 +1995,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_6",
@@ -1744,7 +2010,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_6",
@@ -1757,7 +2025,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_6",
@@ -1770,7 +2040,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_6",
@@ -1783,7 +2055,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_6",
@@ -1796,7 +2070,9 @@
                       "resourceType":  "food",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_6",
@@ -1809,7 +2085,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_6",
@@ -1822,7 +2100,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_7",
@@ -1835,7 +2115,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_7",
@@ -1848,7 +2130,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_7",
@@ -1861,7 +2145,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_7",
@@ -1874,7 +2160,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_7",
@@ -1887,7 +2175,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_7",
@@ -1900,7 +2190,9 @@
                       "resourceType":  "",
                       "buildingType":  "farm",
                       "buildingHp":  100,
-                      "owner":  "green"
+                      "owner":  "green",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_7",
@@ -1913,7 +2205,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_7",
@@ -1926,7 +2220,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_7",
@@ -1939,7 +2235,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_7",
@@ -1952,7 +2250,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_7",
@@ -1965,7 +2265,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_7",
@@ -1978,7 +2280,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_7",
@@ -1991,7 +2295,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_7",
@@ -2004,7 +2310,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_7",
@@ -2017,7 +2325,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_7",
@@ -2030,7 +2340,9 @@
                       "resourceType":  "",
                       "buildingType":  "farm",
                       "buildingHp":  100,
-                      "owner":  "yellow"
+                      "owner":  "yellow",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_7",
@@ -2043,7 +2355,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_7",
@@ -2056,7 +2370,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_7",
@@ -2069,7 +2385,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_7",
@@ -2082,7 +2400,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_8",
@@ -2095,7 +2415,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_8",
@@ -2108,7 +2430,9 @@
                       "resourceType":  "ore",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_8",
@@ -2121,7 +2445,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_8",
@@ -2134,7 +2460,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_8",
@@ -2147,7 +2475,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_8",
@@ -2160,7 +2490,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_8",
@@ -2173,7 +2505,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_8",
@@ -2186,7 +2520,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_8",
@@ -2199,7 +2535,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_8",
@@ -2212,7 +2550,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_8",
@@ -2225,7 +2565,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_8",
@@ -2238,7 +2580,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_12_8",
@@ -2251,7 +2595,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_13_8",
@@ -2264,7 +2610,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_14_8",
@@ -2277,7 +2625,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_15_8",
@@ -2290,7 +2640,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_8",
@@ -2303,7 +2655,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_17_8",
@@ -2316,7 +2670,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_18_8",
@@ -2329,7 +2685,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_19_8",
@@ -2342,7 +2700,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_0_9",
@@ -2355,7 +2715,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_1_9",
@@ -2368,7 +2730,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_2_9",
@@ -2381,7 +2745,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_3_9",
@@ -2394,7 +2760,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_4_9",
@@ -2407,7 +2775,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_5_9",
@@ -2420,7 +2790,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_6_9",
@@ -2433,7 +2805,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_7_9",
@@ -2446,7 +2820,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_8_9",
@@ -2459,7 +2835,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_9_9",
@@ -2472,7 +2850,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_9",
@@ -2485,7 +2865,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_9",
@@ -2498,7 +2880,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_9",
@@ -2511,7 +2895,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_9",
@@ -2524,7 +2910,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_9",
@@ -2537,7 +2925,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_9",
@@ -2550,7 +2940,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_9",
@@ -2563,7 +2955,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_9",
@@ -2576,7 +2970,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_9",
@@ -2589,7 +2985,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_9",
@@ -2602,7 +3000,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_10",
@@ -2615,7 +3015,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_1_10",
@@ -2628,7 +3030,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_2_10",
@@ -2641,7 +3045,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_3_10",
@@ -2654,7 +3060,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_4_10",
@@ -2667,7 +3075,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_5_10",
@@ -2680,7 +3090,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_6_10",
@@ -2693,7 +3105,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_7_10",
@@ -2706,7 +3120,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_8_10",
@@ -2719,7 +3135,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_9_10",
@@ -2732,7 +3150,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_10",
@@ -2745,7 +3165,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_10",
@@ -2758,7 +3180,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_10",
@@ -2771,7 +3195,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_10",
@@ -2784,7 +3210,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_10",
@@ -2797,7 +3225,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_10",
@@ -2810,7 +3240,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_10",
@@ -2823,7 +3255,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_10",
@@ -2836,7 +3270,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_10",
@@ -2849,7 +3285,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_10",
@@ -2862,7 +3300,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_11",
@@ -2875,7 +3315,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_11",
@@ -2888,7 +3330,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_11",
@@ -2901,7 +3345,9 @@
                       "resourceType":  "food",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_11",
@@ -2914,7 +3360,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_11",
@@ -2927,7 +3375,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_11",
@@ -2940,7 +3390,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_11",
@@ -2953,7 +3405,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_11",
@@ -2966,7 +3420,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_11",
@@ -2979,7 +3435,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_11",
@@ -2992,7 +3450,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_11",
@@ -3005,7 +3465,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_11",
@@ -3018,7 +3480,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_11",
@@ -3031,7 +3495,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_11",
@@ -3044,7 +3510,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_11",
@@ -3057,7 +3525,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_11",
@@ -3070,7 +3540,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_11",
@@ -3083,7 +3555,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_11",
@@ -3096,7 +3570,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_11",
@@ -3109,7 +3585,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_11",
@@ -3122,7 +3600,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_12",
@@ -3135,7 +3615,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_12",
@@ -3148,7 +3630,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_12",
@@ -3161,7 +3645,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_12",
@@ -3174,7 +3660,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_12",
@@ -3187,7 +3675,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_12",
@@ -3200,7 +3690,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_12",
@@ -3213,7 +3705,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_12",
@@ -3226,7 +3720,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_12",
@@ -3239,7 +3735,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_12",
@@ -3252,7 +3750,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_12",
@@ -3265,7 +3765,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_12",
@@ -3278,7 +3780,9 @@
                       "resourceType":  "food",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_12",
@@ -3291,7 +3795,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_12",
@@ -3304,7 +3810,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_12",
@@ -3317,7 +3825,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_12",
@@ -3330,7 +3840,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_12",
@@ -3343,7 +3855,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_12",
@@ -3356,7 +3870,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_12",
@@ -3369,7 +3885,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_12",
@@ -3382,7 +3900,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_13",
@@ -3395,7 +3915,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_13",
@@ -3408,7 +3930,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_13",
@@ -3421,7 +3945,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_13",
@@ -3434,7 +3960,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_13",
@@ -3447,7 +3975,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_13",
@@ -3460,7 +3990,9 @@
                       "resourceType":  "",
                       "buildingType":  "farm",
                       "buildingHp":  100,
-                      "owner":  "blue"
+                      "owner":  "blue",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_13",
@@ -3473,7 +4005,9 @@
                       "resourceType":  "wood",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_13",
@@ -3486,7 +4020,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_13",
@@ -3499,7 +4035,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_13",
@@ -3512,7 +4050,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_13",
@@ -3525,7 +4065,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_13",
@@ -3538,7 +4080,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_13",
@@ -3551,7 +4095,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_13",
@@ -3564,7 +4110,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_13",
@@ -3577,7 +4125,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_13",
@@ -3590,7 +4140,9 @@
                       "resourceType":  "",
                       "buildingType":  "farm",
                       "buildingHp":  100,
-                      "owner":  "red"
+                      "owner":  "red",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_13",
@@ -3603,7 +4155,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_13",
@@ -3616,7 +4170,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_13",
@@ -3629,7 +4185,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_13",
@@ -3642,7 +4200,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_14",
@@ -3655,7 +4215,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_14",
@@ -3668,7 +4230,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_14",
@@ -3681,7 +4245,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_14",
@@ -3694,7 +4260,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_14",
@@ -3707,7 +4275,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_14",
@@ -3720,7 +4290,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_14",
@@ -3733,7 +4305,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_14",
@@ -3746,7 +4320,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_14",
@@ -3759,7 +4335,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_14",
@@ -3772,7 +4350,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_14",
@@ -3785,7 +4365,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_14",
@@ -3798,7 +4380,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_14",
@@ -3811,7 +4395,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_14",
@@ -3824,7 +4410,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_14",
@@ -3837,7 +4425,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_14",
@@ -3850,7 +4440,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_14",
@@ -3863,7 +4455,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_14",
@@ -3876,7 +4470,9 @@
                       "resourceType":  "ore",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_14",
@@ -3889,7 +4485,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_14",
@@ -3902,7 +4500,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_15",
@@ -3915,7 +4515,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_15",
@@ -3928,7 +4530,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_15",
@@ -3941,7 +4545,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_15",
@@ -3954,7 +4560,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_15",
@@ -3967,7 +4575,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_15",
@@ -3980,7 +4590,9 @@
                       "resourceType":  "",
                       "buildingType":  "barracks",
                       "buildingHp":  100,
-                      "owner":  "blue"
+                      "owner":  "blue",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_15",
@@ -3993,7 +4605,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_15",
@@ -4006,7 +4620,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_15",
@@ -4019,7 +4635,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_15",
@@ -4032,7 +4650,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_15",
@@ -4045,7 +4665,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_15",
@@ -4058,7 +4680,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_15",
@@ -4071,7 +4695,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_15",
@@ -4084,7 +4710,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_15",
@@ -4097,7 +4725,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_15",
@@ -4110,7 +4740,9 @@
                       "resourceType":  "",
                       "buildingType":  "barracks",
                       "buildingHp":  100,
-                      "owner":  "red"
+                      "owner":  "red",
+                      "materialKey":  "M_Ground_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_16_15",
@@ -4123,7 +4755,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_15",
@@ -4136,7 +4770,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_15",
@@ -4149,7 +4785,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_15",
@@ -4162,7 +4800,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_16",
@@ -4175,7 +4815,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_16",
@@ -4188,7 +4830,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_16",
@@ -4201,7 +4845,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_16",
@@ -4214,7 +4860,9 @@
                       "resourceType":  "wood",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_16",
@@ -4227,7 +4875,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_16",
@@ -4240,7 +4890,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_16",
@@ -4253,7 +4905,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_16",
@@ -4266,7 +4920,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_16",
@@ -4279,7 +4935,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_16",
@@ -4292,7 +4950,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_16",
@@ -4305,7 +4965,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_16",
@@ -4318,7 +4980,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_16",
@@ -4331,7 +4995,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_16",
@@ -4344,7 +5010,9 @@
                       "resourceType":  "ore",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_16",
@@ -4357,7 +5025,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_16",
@@ -4370,7 +5040,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_16",
@@ -4383,7 +5055,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_16",
@@ -4396,7 +5070,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_16",
@@ -4409,7 +5085,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_16",
@@ -4422,7 +5100,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_17",
@@ -4435,7 +5115,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_17",
@@ -4448,7 +5130,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_17",
@@ -4461,7 +5145,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_17",
@@ -4474,7 +5160,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_17",
@@ -4487,7 +5175,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_17",
@@ -4500,7 +5190,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_17",
@@ -4513,7 +5205,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_17",
@@ -4526,7 +5220,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_17",
@@ -4539,7 +5235,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_17",
@@ -4552,7 +5250,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_17",
@@ -4565,7 +5265,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_17",
@@ -4578,7 +5280,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_17",
@@ -4591,7 +5295,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_17",
@@ -4604,7 +5310,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_17",
@@ -4617,7 +5325,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_17",
@@ -4630,7 +5340,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_17",
@@ -4643,7 +5355,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_17",
@@ -4656,7 +5370,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_17",
@@ -4669,7 +5385,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_17",
@@ -4682,7 +5400,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_18",
@@ -4695,7 +5415,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_18",
@@ -4708,7 +5430,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_18",
@@ -4721,7 +5445,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_18",
@@ -4734,7 +5460,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_18",
@@ -4747,7 +5475,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_18",
@@ -4760,7 +5490,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_18",
@@ -4773,7 +5505,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_18",
@@ -4786,7 +5520,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_18",
@@ -4799,7 +5535,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_18",
@@ -4812,7 +5550,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_18",
@@ -4825,7 +5565,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_18",
@@ -4838,7 +5580,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_18",
@@ -4851,7 +5595,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_18",
@@ -4864,7 +5610,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_18",
@@ -4877,7 +5625,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_18",
@@ -4890,7 +5640,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_18",
@@ -4903,7 +5655,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_18",
@@ -4916,7 +5670,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_18",
@@ -4929,7 +5685,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_18",
@@ -4942,7 +5700,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_0_19",
@@ -4955,7 +5715,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_1_19",
@@ -4968,7 +5730,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_2_19",
@@ -4981,7 +5745,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_3_19",
@@ -4994,7 +5760,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_4_19",
@@ -5007,7 +5775,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_5_19",
@@ -5020,7 +5790,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_6_19",
@@ -5033,7 +5805,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_7_19",
@@ -5046,7 +5820,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_8_19",
@@ -5059,7 +5835,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Forest_Lit",
+                      "canMove":  true
                   },
                   {
                       "id":  "N_9_19",
@@ -5072,7 +5850,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_10_19",
@@ -5085,7 +5865,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_River_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_11_19",
@@ -5098,7 +5880,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_12_19",
@@ -5111,7 +5895,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_13_19",
@@ -5124,7 +5910,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_14_19",
@@ -5137,7 +5925,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_15_19",
@@ -5150,7 +5940,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_16_19",
@@ -5163,7 +5955,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_17_19",
@@ -5176,7 +5970,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_18_19",
@@ -5189,7 +5985,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   },
                   {
                       "id":  "N_19_19",
@@ -5202,7 +6000,9 @@
                       "resourceType":  "",
                       "buildingType":  "",
                       "buildingHp":  0,
-                      "owner":  ""
+                      "owner":  "",
+                      "materialKey":  "M_Ground_Mountain_Lit",
+                      "canMove":  false
                   }
               ]
 }
