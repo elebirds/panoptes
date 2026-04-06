@@ -9,7 +9,7 @@ import (
 	"github.com/elebirds/panoptes/internal/llm/chatmodule"
 )
 
-const testAPIKey = "sk-dfecb221ed3e44a68796bbcbda4fa137"
+const testAPIKey = ""
 
 func newQwenClient(t *testing.T) chatmodule.ChatClient {
 	t.Helper()
