@@ -1,0 +1,241 @@
+{
+  "units": {
+    "infantry": {
+      "name": "步兵",
+      "hp": 30,
+      "attack": 10,
+      "speed": 2,
+      "cost": { "ore": 1, "food": 1 },
+      "multipliers": { "saboteur": 1.5 },
+      "can_siege": false,
+      "siege_multiplier": 1.0,
+      "can_destroy": false,
+      "destroy_multiplier": 1.0,
+      "range": 1
+    },
+    "archer": {
+      "name": "弓手",
+      "hp": 20,
+      "attack": 8,
+      "speed": 1,
+      "cost": { "wood": 1, "food": 1 },
+      "multipliers": { "cavalry": 1.5 },
+      "can_siege": false,
+      "siege_multiplier": 1.0,
+      "can_destroy": false,
+      "destroy_multiplier": 1.0,
+      "range": 2
+    },
+    "cavalry": {
+      "name": "骑兵",
+      "hp": 25,
+      "attack": 12,
+      "speed": 3,
+      "cost": { "refined_ore": 1, "food": 2 },
+      "multipliers": { "infantry": 1.5 },
+      "can_siege": false,
+      "siege_multiplier": 1.0,
+      "can_destroy": false,
+      "destroy_multiplier": 1.0,
+      "range": 1,
+      "road_speed_bonus": 1,
+      "charge_bonus": 1.5
+    },
+    "siege": {
+      "name": "攻城兵",
+      "hp": 35,
+      "attack": 5,
+      "speed": 1,
+      "cost": { "refined_ore": 2, "food": 1 },
+      "multipliers": {},
+      "can_siege": true,
+      "siege_multiplier": 3.0,
+      "can_destroy": false,
+      "destroy_multiplier": 1.0,
+      "range": 1
+    },
+    "saboteur": {
+      "name": "破坏兵",
+      "hp": 20,
+      "attack": 5,
+      "speed": 2,
+      "cost": { "ore": 1, "wood": 1 },
+      "multipliers": {},
+      "can_siege": false,
+      "siege_multiplier": 1.0,
+      "can_destroy": true,
+      "destroy_multiplier": 3.0,
+      "range": 1
+    }
+  },
+  "buildings": {
+    "farm": {
+      "name": "农场",
+      "category": "production",
+      "build_cost": { "build_points": 2 },
+      "production_out": { "food": 2 },
+      "terrain_required": "plain_resource"
+    },
+    "mine": {
+      "name": "矿山",
+      "category": "production",
+      "build_cost": { "build_points": 3 },
+      "production_out": { "ore": 2 },
+      "terrain_required": "mountain_resource"
+    },
+    "lumber": {
+      "name": "伐木场",
+      "category": "production",
+      "build_cost": { "build_points": 2 },
+      "production_out": { "wood": 2 },
+      "terrain_required": "forest_resource"
+    },
+    "granary": {
+      "name": "粮仓",
+      "category": "production",
+      "build_cost": { "build_points": 2, "wood": 2 },
+      "food_capacity_bonus": 20
+    },
+    "smelter": {
+      "name": "冶炼厂",
+      "category": "production",
+      "build_cost": { "build_points": 3, "ore": 2 },
+      "production_in": { "ore": 2 },
+      "production_out": { "refined_ore": 1 }
+    },
+    "workshop": {
+      "name": "木工坊",
+      "category": "production",
+      "build_cost": { "build_points": 3, "wood": 2 },
+      "production_in": { "wood": 2 },
+      "production_out": { "engineer_material": 1 }
+    },
+    "barracks": {
+      "name": "兵营",
+      "category": "military_production",
+      "build_cost": { "build_points": 3, "ore": 1 },
+      "production_in": { "ore": 1, "food": 1 },
+      "produces": ["infantry", "archer"]
+    },
+    "stable": {
+      "name": "骑兵场",
+      "category": "military_production",
+      "build_cost": { "build_points": 4, "refined_ore": 1 },
+      "production_in": { "refined_ore": 1, "food": 2 },
+      "produces": ["cavalry"]
+    },
+    "engineer_camp": {
+      "name": "工程营",
+      "category": "military_production",
+      "build_cost": { "build_points": 4, "engineer_material": 1 },
+      "production_in": { "engineer_material": 1, "food": 1 },
+      "produces": ["siege", "saboteur"]
+    },
+    "wall": {
+      "name": "城墙",
+      "category": "military",
+      "build_cost": { "build_points": 3, "ore": 2 },
+      "hp": 50,
+      "defense_bonus_per_level": 0.1,
+      "max_level": 3
+    },
+    "tower": {
+      "name": "箭塔",
+      "category": "military",
+      "build_cost": { "build_points": 2, "wood": 2 },
+      "upkeep": { "food": 1 },
+      "attack_per_turn": 8,
+      "range": 2
+    },
+    "watchtower": {
+      "name": "烽火台",
+      "category": "military",
+      "build_cost": { "build_points": 1 },
+      "vision_range_bonus": 3
+    }
+  },
+  "terrain": {
+    "plain": {
+      "name": "平原",
+      "move_cost_no_road": 2,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false
+    },
+    "mountain": {
+      "name": "山地",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.3,
+      "attack_penalty": 0.2,
+      "blocks_cavalry": true
+    },
+    "forest": {
+      "name": "森林",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.2,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false
+    },
+    "river": {
+      "name": "河流",
+      "move_cost_no_road": 99,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": true,
+      "passable_with_road": true
+    }
+  },
+  "combat": {
+    "wall_reduction_per_level": 0.1,
+    "max_wall_reduction": 0.5,
+    "tower_damage_per_tower": 8,
+    "guard_bonus_per_unit": 3,
+    "road_move_cost": 1
+  },
+  "rules": {
+    "turn_time_limit_domestic": 60,
+    "turn_time_limit_combat": 60,
+    "tokens_per_turn": 3,
+    "tokens_recuperation_bonus": 1,
+    "max_turns": 30,
+    "castle_base_hp": 100,
+    "safe_zone_radius": 4,
+    "occupy_turns": 1,
+    "build_points_per_turn": 10,
+    "build_points_max": 30
+  },
+  "ministers": {
+    "pool": [
+      {
+        "id": "m001",
+        "name": "李猛",
+        "role": "military",
+        "ability": 8,
+        "personality": "aggressive",
+        "personality_desc": "果敢激进，善于把握战机",
+        "loyalty": 7,
+        "ambition": 6
+      },
+      {
+        "id": "m003",
+        "name": "陈丰",
+        "role": "agriculture",
+        "ability": 8,
+        "personality": "conservative",
+        "personality_desc": "精于算计，注重积累",
+        "loyalty": 6,
+        "ambition": 7
+      },
+      {
+        "id": "m005",
+        "name": "孙谋",
+        "role": "diplomacy",
+        "ability": 9,
+        "personality": "cunning",
+        "personality_desc": "老谋深算，情报精准",
+        "loyalty": 5,
+        "ambition": 8
+      }
+    ]
+  }
+}

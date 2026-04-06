@@ -2,6 +2,8 @@ package game
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -76,11 +78,22 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	Registry = NewGameRoomRegistry()
 	defer func() { Registry = previousRegistry }()
 
+	config.Data = config.GameData{
+		Rules: config.RulesConfig{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			BuildPointsPerTurn: 10,
+			SafeZoneRadius:     4,
+		},
+	}
+
+	mapPath := writeTestMap(t)
 	tp := newStubTransport()
 	cfg := &config.Config{
 		TurnTimeLimitDomestic: 2,
 		TurnTimeLimitCombat:   2,
 		TokensPerTurn:         3,
+		MapPath:               mapPath,
 	}
 	room := NewRoom(
 		"game-1",
@@ -109,11 +122,20 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	if initMsg.GetYourPlayerId() != "player-1" {
 		t.Fatalf("your player id = %q", initMsg.GetYourPlayerId())
 	}
-	if len(initMsg.GetNodes()) != 5 {
+	if len(initMsg.GetNodes()) != 3 {
 		t.Fatalf("nodes len = %d", len(initMsg.GetNodes()))
+	}
+	if initMsg.GetMapWidth() != 20 || initMsg.GetMapHeight() != 20 {
+		t.Fatalf("map size = %dx%d", initMsg.GetMapWidth(), initMsg.GetMapHeight())
 	}
 	if initMsg.GetMyPlayer().GetTokensLeft() != 3 {
 		t.Fatalf("tokens left = %d", initMsg.GetMyPlayer().GetTokensLeft())
+	}
+	if initMsg.GetMyPlayer().GetMainCastleHp() != 100 {
+		t.Fatalf("main castle hp = %d", initMsg.GetMyPlayer().GetMainCastleHp())
+	}
+	if room.state == nil || room.state.Map == nil {
+		t.Fatalf("state not initialized")
 	}
 
 	room.OnHumanSubmitDomestic("player-1")
@@ -168,4 +190,30 @@ func hasMessage[T proto.Message](msgs []proto.Message) bool {
 		}
 	}
 	return false
+}
+
+func writeTestMap(t *testing.T) string {
+	t.Helper()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "default.json")
+	if err := os.WriteFile(path, []byte(`{
+  "id": "default",
+  "width": 20,
+  "height": 20,
+  "spawn_points": [
+    { "player_index": 0, "x": 2, "y": 10 },
+    { "player_index": 1, "x": 17, "y": 10 }
+  ],
+  "nodes": [
+    { "id": "spawn_p1", "x": 2, "y": 10, "terrain": "plain", "is_resource_point": false },
+    { "id": "spawn_p2", "x": 17, "y": 10, "terrain": "plain", "is_resource_point": false },
+    { "id": "K10", "x": 10, "y": 9, "terrain": "plain", "is_resource_point": true, "resource_type": "food" }
+  ],
+  "central_points": ["K10"],
+  "named_nodes": { "K10": "龙脊" }
+}`), 0o600); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	return path
 }
