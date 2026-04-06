@@ -85,7 +85,7 @@ panoptes/
 Go 1.22 · WebSocket · ECS（donburi）· Redis · PostgreSQL · Anthropic API · Protobuf
 ```
 
-- **ECS + Data-Driven**：游戏状态用 ECS 管理，所有数值从 `gamedata.json` 读取
+- **ECS + Data-Driven**：游戏状态用 ECS 管理，所有静态数据从根 `data/` 作者源生成
 - **Event Sourcing**：Engine 层纯函数产生事件，统一 Apply 修改状态
 - **AI 部长**：服务端异步调用 LLM API，部长决策返回结构化 JSON 直接执行
 - **Transport 抽象**：WebSocket 现在，gRPC 将来，业务代码零修改
@@ -154,7 +154,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 ### 修改游戏数值
 
-只改 `server/data/gamedata.json`，不改代码。
+只改根 `data/registry`、`data/content`、`data/ui`，不改业务代码。
 
 ---
 

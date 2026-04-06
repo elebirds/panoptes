@@ -1,51 +1,26 @@
 package maploader
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
-type MapNode = ecs.MapNode
-
-type SpawnPoint struct {
-	PlayerIndex int `json:"player_index"`
-	X           int `json:"x"`
-	Y           int `json:"y"`
+func LoadMap(catalog *staticdata.Catalog, mapID string) (*staticdata.MapRuntimeBundle, error) {
+	if catalog == nil {
+		return nil, fmt.Errorf("static catalog is nil")
+	}
+	mapFile, ok := catalog.GetMap(mapID)
+	if !ok {
+		return nil, fmt.Errorf("map %q not found", mapID)
+	}
+	return mapFile, nil
 }
 
-type MapFile struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Width         int               `json:"width"`
-	Height        int               `json:"height"`
-	SpawnPoints   []SpawnPoint      `json:"spawn_points"`
-	Nodes         []MapNode         `json:"nodes"`
-	CentralPoints []string          `json:"central_points"`
-	NamedNodes    map[string]string `json:"named_nodes"`
-}
-
-func LoadMap(path string) (*MapFile, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read map: %w", err)
-	}
-
-	var file MapFile
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return nil, fmt.Errorf("unmarshal map: %w", err)
-	}
-	if file.NamedNodes == nil {
-		file.NamedNodes = map[string]string{}
-	}
-	return &file, nil
-}
-
-func InitWorldFromMap(world donburi.World, mapFile *MapFile, playerIDs []string) *domain.MapData {
+func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle, playerIDs []string) *domain.MapData {
 	mapData := &domain.MapData{
 		ID:          mapFile.ID,
 		Width:       mapFile.Width,
@@ -58,9 +33,9 @@ func InitWorldFromMap(world donburi.World, mapFile *MapFile, playerIDs []string)
 	spawnOwners := make(map[domain.Position]string, len(mapFile.SpawnPoints))
 	for _, spawn := range mapFile.SpawnPoints {
 		pos := domain.Position{X: spawn.X, Y: spawn.Y}
-		mapData.SpawnPoints[spawn.PlayerIndex] = pos
-		if spawn.PlayerIndex < len(playerIDs) {
-			spawnOwners[pos] = playerIDs[spawn.PlayerIndex]
+		mapData.SpawnPoints[spawn.Slot] = pos
+		if spawn.Slot < len(playerIDs) {
+			spawnOwners[pos] = playerIDs[spawn.Slot]
 		}
 	}
 	for nodeID, name := range mapFile.NamedNodes {
@@ -68,17 +43,44 @@ func InitWorldFromMap(world donburi.World, mapFile *MapFile, playerIDs []string)
 	}
 
 	for _, node := range mapFile.Nodes {
-		entity := ecs.CreateNode(world, node)
+		entity := ecs.CreateNode(world, ecs.MapNode{
+			ID:              node.ID,
+			X:               node.X,
+			Y:               node.Y,
+			Terrain:         node.Terrain,
+			IsResourcePoint: node.IsResourcePoint,
+			ResourceType:    node.ResourceType,
+		})
 		entry := world.Entry(entity)
-		if name, ok := mapData.NamedNodes[node.ID]; ok {
-			ecs.NodeC.Get(entry).NodeName = name
-		}
+		ecs.NodeC.Get(entry).NodeName = node.NodeName
 		pos := domain.Position{X: node.X, Y: node.Y}
-		if owner, ok := spawnOwners[pos]; ok {
-			ecs.NodeC.Get(entry).Owner = owner
+		owner := resolveNodeOwner(node, pos, playerIDs, spawnOwners)
+		ecs.NodeC.Get(entry).Owner = owner
+		ecs.NodeC.Get(entry).HasRoad = node.HasRoad
+		if node.BuildingType != "" {
+			ecs.CreateBuilding(world, node.BuildingType, owner, entry)
+			if node.BuildingHP > 0 {
+				building := ecs.BuildingC.Get(entry)
+				if node.BuildingHP < building.MaxHP {
+					building.HP = node.BuildingHP
+				}
+			}
 		}
 		mapData.NodeIndex[node.ID] = entity
 	}
 
 	return mapData
+}
+
+func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+	if node.OwnerSlot != nil {
+		slot := *node.OwnerSlot
+		if slot >= 0 && slot < len(playerIDs) {
+			return playerIDs[slot]
+		}
+	}
+	if node.Owner != "" {
+		return node.Owner
+	}
+	return spawnOwners[pos]
 }

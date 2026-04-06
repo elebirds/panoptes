@@ -3,8 +3,8 @@ package ecs
 import (
 	"fmt"
 
-	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/google/uuid"
 	"github.com/yohamta/donburi"
 )
@@ -32,7 +32,7 @@ func CreateNode(world donburi.World, mapNode MapNode) donburi.Entity {
 }
 
 func CreateUnit(world donburi.World, unitType string, faction string, pos domain.Position) donburi.Entity {
-	cfg, ok := config.Data.Units[unitType]
+	cfg, ok := staticdata.Default().GetUnit(unitType)
 	if !ok {
 		panic(fmt.Sprintf("unknown unit type: %s", unitType))
 	}
@@ -44,23 +44,23 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		ID:      uuid.NewString(),
 		Faction: faction,
 		Type:    domain.UnitType(unitType),
-		HP:      cfg.HP,
-		MaxHP:   cfg.HP,
+		HP:      cfg.MaxHP,
+		MaxHP:   cfg.MaxHP,
 		Attack:  cfg.Attack,
-		Speed:   cfg.Speed,
+		Speed:   cfg.MoveRange,
 	})
 
-	if cfg.CanSiege {
+	if cfg.Flags.CanSiege {
 		entry.AddComponent(SiegeAbilityC)
-		SiegeAbilityC.SetValue(entry, SiegeAbilityComp{Multiplier: cfg.SiegeMultiplier})
+		SiegeAbilityC.SetValue(entry, SiegeAbilityComp{Multiplier: cfg.Flags.SiegeMultiplier})
 	}
-	if cfg.CanDestroy {
+	if cfg.Flags.CanDestroyRoad {
 		entry.AddComponent(DestroyAbilityC)
-		DestroyAbilityC.SetValue(entry, DestroyAbilityComp{Multiplier: cfg.DestroyMultiplier})
+		DestroyAbilityC.SetValue(entry, DestroyAbilityComp{Multiplier: cfg.Flags.DestroyMultiplier})
 	}
-	if cfg.Range > 1 {
+	if cfg.AttackRange > 1 {
 		entry.AddComponent(RangedAbilityC)
-		RangedAbilityC.SetValue(entry, RangedAbilityComp{Range: cfg.Range})
+		RangedAbilityC.SetValue(entry, RangedAbilityComp{Range: cfg.AttackRange})
 	}
 	if unitType == string(domain.UnitTypeCavalry) {
 		entry.AddComponent(ChargeAbilityC)
@@ -71,7 +71,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 }
 
 func CreateBuilding(world donburi.World, buildingType string, owner string, nodeEntry *donburi.Entry) donburi.Entity {
-	cfg, ok := config.Data.Buildings[buildingType]
+	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
 		panic(fmt.Sprintf("unknown building type: %s", buildingType))
 	}
@@ -80,9 +80,11 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 	buildingEntry := world.Entry(entity)
 	comp := BuildingComp{
 		Type:  domain.BuildingType(buildingType),
-		HP:    cfg.HP,
-		MaxHP: cfg.HP,
+		HP:    cfg.Combat.MaxHP,
+		MaxHP: cfg.Combat.MaxHP,
 		Owner: owner,
+		WallLevel: cfg.Combat.WallLevel,
+		Towers: cfg.Combat.Towers,
 	}
 	BuildingC.SetValue(buildingEntry, comp)
 

@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -59,6 +59,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		}
 	}
 
+	rules := staticdata.Default().Rules()
 	for idx, playerID := range playerIDs {
 		username := playerID
 		if idx < len(usernames) && usernames[idx] != "" {
@@ -69,11 +70,11 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Username: username,
 			Resources: func() ResourceBag {
 				bag := NewResourceBag()
-				bag[ResourceBuildPoints] = config.Data.Rules.BuildPointsPerTurn
+				bag[ResourceBuildPoints] = rules.BuildPointsPerTurn
 				return bag
 			}(),
-			TokensLeft:   config.Data.Rules.TokensPerTurn,
-			MainCastleHP: config.Data.Rules.CastleBaseHP,
+			TokensLeft:   rules.TokensPerTurn,
+			MainCastleHP: rules.CastleBaseHP,
 			WarZones:     []*WarZone{},
 		}
 	}

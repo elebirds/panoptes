@@ -743,7 +743,7 @@ func (x *MinisterActionItem) GetParams() map[string]string {
 type MsgDomesticSettlement struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Changes          []*DomesticChange      `protobuf:"bytes,1,rep,name=changes,proto3" json:"changes,omitempty"`
-	MyResourcesAfter *Resources             `protobuf:"bytes,2,opt,name=my_resources_after,json=myResourcesAfter,proto3" json:"my_resources_after,omitempty"`
+	MyResourcesAfter *ResourceBag           `protobuf:"bytes,2,opt,name=my_resources_after,json=myResourcesAfter,proto3" json:"my_resources_after,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -785,7 +785,7 @@ func (x *MsgDomesticSettlement) GetChanges() []*DomesticChange {
 	return nil
 }
 
-func (x *MsgDomesticSettlement) GetMyResourcesAfter() *Resources {
+func (x *MsgDomesticSettlement) GetMyResourcesAfter() *ResourceBag {
 	if x != nil {
 		return x.MyResourcesAfter
 	}
@@ -848,7 +848,7 @@ var File_domestic_proto protoreflect.FileDescriptor
 
 const file_domestic_proto_rawDesc = "" +
 	"\n" +
-	"\x0edomestic.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10game_state.proto\"&\n" +
+	"\x0edomestic.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10data_types.proto\x1a\x10game_state.proto\"&\n" +
 	"\fMsgSetPolicy\x12\x16\n" +
 	"\x06policy\x18\x01 \x01(\tR\x06policy\"U\n" +
 	"\x14MsgMinisterDirective\x12#\n" +
@@ -899,10 +899,10 @@ const file_domestic_proto_rawDesc = "" +
 	"\x06params\x18\x02 \x03(\v21.panoptes.proto.v1.MinisterActionItem.ParamsEntryR\x06params\x1a9\n" +
 	"\vParamsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa0\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa2\x01\n" +
 	"\x15MsgDomesticSettlement\x12;\n" +
-	"\achanges\x18\x01 \x03(\v2!.panoptes.proto.v1.DomesticChangeR\achanges\x12J\n" +
-	"\x12my_resources_after\x18\x02 \x01(\v2\x1c.panoptes.proto.v1.ResourcesR\x10myResourcesAfter\"\x9e\x01\n" +
+	"\achanges\x18\x01 \x03(\v2!.panoptes.proto.v1.DomesticChangeR\achanges\x12L\n" +
+	"\x12my_resources_after\x18\x02 \x01(\v2\x1e.panoptes.proto.v1.ResourceBagR\x10myResourcesAfter\"\x9e\x01\n" +
 	"\x0eDomesticChange\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12?\n" +
 	"\x04data\x18\x02 \x03(\v2+.panoptes.proto.v1.DomesticChange.DataEntryR\x04data\x1a7\n" +
@@ -943,7 +943,7 @@ var file_domestic_proto_goTypes = []any{
 	nil,                           // 16: panoptes.proto.v1.DomesticChange.DataEntry
 	(*Position)(nil),              // 17: panoptes.proto.v1.Position
 	(*NodeView)(nil),              // 18: panoptes.proto.v1.NodeView
-	(*Resources)(nil),             // 19: panoptes.proto.v1.Resources
+	(*ResourceBag)(nil),           // 19: panoptes.proto.v1.ResourceBag
 }
 var file_domestic_proto_depIdxs = []int32{
 	17, // 0: panoptes.proto.v1.MsgBuildRoad.waypoints:type_name -> panoptes.proto.v1.Position
@@ -951,7 +951,7 @@ var file_domestic_proto_depIdxs = []int32{
 	12, // 2: panoptes.proto.v1.MsgMinisterAction.actions:type_name -> panoptes.proto.v1.MinisterActionItem
 	15, // 3: panoptes.proto.v1.MinisterActionItem.params:type_name -> panoptes.proto.v1.MinisterActionItem.ParamsEntry
 	14, // 4: panoptes.proto.v1.MsgDomesticSettlement.changes:type_name -> panoptes.proto.v1.DomesticChange
-	19, // 5: panoptes.proto.v1.MsgDomesticSettlement.my_resources_after:type_name -> panoptes.proto.v1.Resources
+	19, // 5: panoptes.proto.v1.MsgDomesticSettlement.my_resources_after:type_name -> panoptes.proto.v1.ResourceBag
 	16, // 6: panoptes.proto.v1.DomesticChange.data:type_name -> panoptes.proto.v1.DomesticChange.DataEntry
 	7,  // [7:7] is the sub-list for method output_type
 	7,  // [7:7] is the sub-list for method input_type
@@ -966,6 +966,7 @@ func file_domestic_proto_init() {
 		return
 	}
 	file_common_proto_init()
+	file_data_types_proto_init()
 	file_game_state_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{

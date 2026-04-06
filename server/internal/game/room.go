@@ -5,12 +5,12 @@ import (
 	"log/slog"
 	"time"
 
-	"fmt"
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
@@ -43,7 +43,12 @@ func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config
 }
 
 func (r *GameRoom) Start() {
-	mapFile, err := maploader.LoadMap(r.cfg.MapPath)
+	catalog := staticdata.Default()
+	mapID := r.cfg.MapID
+	if mapID == "" {
+		mapID = catalog.DefaultMapID()
+	}
+	mapFile, err := maploader.LoadMap(catalog, mapID)
 	if err != nil {
 		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
 		return
@@ -65,6 +70,7 @@ func (r *GameRoom) Start() {
 		if player.IsBot() {
 			continue
 		}
+		r.sendStaticCatalogManifest(player)
 		r.sendGameInit(player)
 	}
 
@@ -99,9 +105,10 @@ func (r *GameRoom) notifyTurnStart(ctx context.Context) {
 
 func (r *GameRoom) waitAllSubmit(ctx context.Context) {
 	submitted := make(map[string]bool, len(r.Players))
-	timeout := time.Duration(r.cfg.TurnTimeLimitDomestic) * time.Second
+	rules := staticdata.Default().Rules()
+	timeout := time.Duration(rules.TurnTimeLimitDomestic) * time.Second
 	if r.Phase == "combat" {
-		timeout = time.Duration(r.cfg.TurnTimeLimitCombat) * time.Second
+		timeout = time.Duration(rules.TurnTimeLimitCombat) * time.Second
 	}
 
 	timer := time.NewTimer(timeout)
@@ -195,6 +202,22 @@ func (r *GameRoom) sendGameInit(p Player) {
 	}
 }
 
+func (r *GameRoom) sendStaticCatalogManifest(p Player) {
+	manifest := staticdata.Default().Manifest()
+	msg := &pb.MsgStaticCatalogManifest{
+		Manifest: &pb.StaticCatalogManifest{
+			SchemaVersion:  manifest.SchemaVersion,
+			ContentVersion: manifest.ContentVersion,
+			BundleHash:     manifest.BundleHash,
+			DefaultLocale:  manifest.DefaultLocale,
+			DefaultMapId:   manifest.DefaultMapID,
+		},
+	}
+	if err := p.Send(msg); err != nil {
+		slog.Warn("发送静态目录清单失败", "room_id", r.ID, "player_id", p.PlayerID(), "error", err)
+	}
+}
+
 func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
 	playerState := r.state.Players[playerID]
 	if playerState == nil {
@@ -215,17 +238,13 @@ func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
 	return &pb.PlayerView{
 		Id:       playerState.PlayerID,
 		Username: playerState.Username,
-		Resources: func() *pb.Resources {
-			resources, unknown := toProtoResources(playerState.Resources)
-			if len(unknown) > 0 {
-				slog.Warn("存在未映射到协议的资源", "player_id", playerID, "keys", fmt.Sprint(unknown))
-			}
-			return resources
+		Resources: func() *pb.ResourceBag {
+			return toProtoResourceBag(playerState.Resources)
 		}(),
 		TokensLeft:    int32(playerState.TokensLeft),
 		CurrentPolicy: string(playerState.Policy),
 		MainCastleHp:  int32(playerState.MainCastleHP),
-		MaxCastleHp:   int32(config.Data.Rules.CastleBaseHP),
+		MaxCastleHp:   int32(staticdata.Default().Rules().CastleBaseHP),
 		WarZones:      warZones,
 	}
 }
@@ -306,22 +325,13 @@ func (r *GameRoom) humanUsernames() []string {
 	return usernames
 }
 
-func toProtoResources(resources domain.ResourceBag) (*pb.Resources, []domain.ResourceKey) {
-	mapped := &pb.Resources{
-		Ore:              int32(resources.Get(domain.ResourceOre)),
-		Wood:             int32(resources.Get(domain.ResourceWood)),
-		Food:             int32(resources.Get(domain.ResourceFood)),
-		RefinedOre:       int32(resources.Get(domain.ResourceRefinedOre)),
-		EngineerMaterial: int32(resources.Get(domain.ResourceEngineerMat)),
-		BuildPoints:      int32(resources.Get(domain.ResourceBuildPoints)),
-	}
-
-	unknown := make([]domain.ResourceKey, 0)
+func toProtoResourceBag(resources domain.ResourceBag) *pb.ResourceBag {
+	items := make([]*pb.ResourceValue, 0, len(resources))
 	for _, key := range resources.Keys() {
-		if !config.IsProtoVisibleResourceKey(key) {
-			unknown = append(unknown, key)
-		}
+		items = append(items, &pb.ResourceValue{
+			Key:    string(key),
+			Amount: int32(resources.Get(key)),
+		})
 	}
-
-	return mapped, unknown
+	return &pb.ResourceBag{Items: items}
 }

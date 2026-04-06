@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 )
@@ -77,7 +77,7 @@ func IsInSafeZone(world donburi.World, pos Position, ownerID string) bool {
 		return false
 	}
 	castlePos := Position{X: PositionC.Get(nodes[0]).X, Y: PositionC.Get(nodes[0]).Y}
-	return pos.DistanceTo(castlePos) <= config.Data.Rules.SafeZoneRadius
+	return pos.DistanceTo(castlePos) <= staticdata.Default().Rules().SafeZoneRadius
 }
 
 func findNodeByID(world donburi.World, nodeID string) (*donburi.Entry, bool) {

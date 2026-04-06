@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
 )
@@ -40,17 +41,18 @@ func (p *HumanPlayer) Send(msg proto.Message) error {
 }
 
 func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
+	rules := staticdata.Default().Rules()
 	switch phase {
 	case "domestic":
 		_ = p.Send(&pb.MsgDomesticPhaseStart{
-			Timeout: int32(room.cfg.TurnTimeLimitDomestic),
+			Timeout: int32(rules.TurnTimeLimitDomestic),
 			Turn:    int32(room.Turn),
-			Tokens:  int32(room.cfg.TokensPerTurn),
+			Tokens:  int32(rules.TokensPerTurn),
 		})
 	case "combat":
 		_ = p.Send(&pb.MsgCombatPhaseStart{
-			Timeout: int32(room.cfg.TurnTimeLimitCombat),
-			Tokens:  int32(room.cfg.TokensPerTurn),
+			Timeout: int32(rules.TurnTimeLimitCombat),
+			Tokens:  int32(rules.TokensPerTurn),
 		})
 	default:
 		slog.Warn("未知阶段通知", "phase", phase, "player_id", p.playerID)

@@ -3,8 +3,8 @@ package ecs
 import (
 	"testing"
 
-	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -44,39 +44,14 @@ func TestCreateNodeAndFindNodeByID(t *testing.T) {
 }
 
 func TestCreateUnitAttachesAbilityComponents(t *testing.T) {
-	config.Data = config.GameData{
-		Units: map[string]config.UnitConfig{
-			"cavalry": {
-				HP:          25,
-				Attack:      12,
-				Speed:       3,
-				Range:       1,
-				ChargeBonus: 1.5,
-			},
-			"archer": {
-				HP:     20,
-				Attack: 8,
-				Speed:  1,
-				Range:  2,
-			},
-			"siege": {
-				HP:              35,
-				Attack:          5,
-				Speed:           1,
-				Range:           1,
-				CanSiege:        true,
-				SiegeMultiplier: 3,
-			},
-			"saboteur": {
-				HP:                20,
-				Attack:            5,
-				Speed:             2,
-				Range:             1,
-				CanDestroy:        true,
-				DestroyMultiplier: 3,
-			},
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "cavalry", MaxHP: 25, Attack: 12, MoveRange: 3, AttackRange: 1, ChargeBonus: 1.5},
+			{ID: "archer", MaxHP: 20, Attack: 8, MoveRange: 1, AttackRange: 2},
+			{ID: "siege", MaxHP: 35, Attack: 5, MoveRange: 1, AttackRange: 1, Flags: staticdata.UnitFlags{CanSiege: true, SiegeMultiplier: 3}},
+			{ID: "saboteur", MaxHP: 20, Attack: 5, MoveRange: 2, AttackRange: 1, Flags: staticdata.UnitFlags{CanDestroyRoad: true, DestroyMultiplier: 3}},
 		},
-	}
+	}))
 
 	world := donburi.NewWorld()
 	cavalry := world.Entry(CreateUnit(world, "cavalry", "player-1", domain.Position{X: 2, Y: 3}))
@@ -104,14 +79,11 @@ func TestCreateUnitAttachesAbilityComponents(t *testing.T) {
 }
 
 func TestCreateBuildingSetsNodeOwner(t *testing.T) {
-	config.Data = config.GameData{
-		Buildings: map[string]config.BuildingConfig{
-			"wall": {
-				Category: "military",
-				HP:       50,
-			},
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "wall", Category: "military", Combat: staticdata.BuildingCombat{MaxHP: 50}},
 		},
-	}
+	}))
 
 	world := donburi.NewWorld()
 	nodeEntity := CreateNode(world, MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})

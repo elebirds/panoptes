@@ -56,6 +56,7 @@ namespace Panoptes.Runtime.App
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
             EnsureComponent<ClientRuntimeConfigCache>(managers);
+            EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
             EnsureComponent<LoadingOverlay>(managers);
@@ -98,6 +99,7 @@ namespace Panoptes.Runtime.App
             {
                 MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
+                MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
             }
         }
 
@@ -108,6 +110,7 @@ namespace Panoptes.Runtime.App
             {
                 RoomCache.Instance?.Clear();
                 ClientRuntimeConfigCache.Instance?.Clear();
+                StaticCatalogCache.Instance?.Clear();
                 GameStateCache.Instance?.Clear();
             }
 
@@ -143,12 +146,18 @@ namespace Panoptes.Runtime.App
             }
 
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
+            MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
         }
 
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
         {
             ClientRuntimeConfigCache.Instance?.Apply(msg);
+        }
+
+        private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
+        {
+            StaticCatalogCache.EnsureInstance()?.ApplyManifest(msg?.Manifest);
         }
 
         private void OnGameInit(MsgGameInit msg)

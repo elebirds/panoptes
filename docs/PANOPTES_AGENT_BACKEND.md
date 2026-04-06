@@ -109,17 +109,19 @@ panoptes/
 │   │   └── internal/gen/sqlc/
 │   │
 │   ├── data/
-│   │   ├── gamedata.json          # 数值配置（唯一数值来源）
-│   │   ├── gamedata.schema.json   # JSON Schema（自动生成+手工维护）
-│   │   └── maps/
-│   │       └── default.json       # 固定地图数据
+│   ├── data/
+│   │   ├── registry/              # 唯一作者源：注册表与投影规则
+│   │   ├── content/               # 玩法内容分领域 JSON
+│   │   ├── ui/                    # 展示元数据与本地化
+│   │   ├── schema/                # 生成的 JSON Schema
+│   │   └── generated/server/      # 服务端运行时 bundle
 │   │
 │   ├── internal/
 │   │   ├── gen/proto/             # 自动生成，禁止手动修改
 │   │   ├── config/
-│   │   │   ├── config.go          # 所有配置结构体
-│   │   │   ├── gamedata.go        # GameData结构体定义
-│   │   │   └── loader.go          # 加载+校验gamedata.json
+│   │   │   ├── config.go          # 环境变量与进程配置
+│   │   │   └── env.go             # 加载 env + staticdata
+│   │   ├── staticdata/            # 静态目录加载与只读查询
 │   │   ├── transport/
 │   │   │   ├── interface.go       # Transport interface定义
 │   │   │   ├── websocket/
@@ -263,7 +265,7 @@ func (s *SiegeSystem) Run(world donburi.World) { world.Entry(...).HP -= 10 }
 
 ### 原则四：Config是唯一数值来源
 
-兵种攻击力、建筑消耗、地形系数等所有数值只从`config.Data`读取，禁止在代码中硬编码数值常量。
+兵种攻击力、建筑消耗、地形系数等所有数值只从`staticdata.Default()`读取，禁止在代码中硬编码数值常量。
 
 ### 原则五：每个System文件不超过150行
 
@@ -1493,7 +1495,7 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRATION=86400
 
 # 游戏数据
-GAMEDATA_PATH=data/gamedata.json
+DATA_ROOT=../data
 MAP_PATH=data/maps/default.json
 ```
 
@@ -1507,7 +1509,7 @@ MAP_PATH=data/maps/default.json
 Step 1：基础框架（Day 1）
   - go.mod，依赖安装
   - buf generate跑通，三端代码生成验证
-  - config加载（gamedata.json + 环境变量）
+  - config加载（环境变量）+ staticdata加载（generated bundle）
   - WebSocket Hub能连接，Envelope消息收发正常
   - 硬编码两个测试账号（alice/bob），JWT生成和校验
   - 手动房间号加入（不做匹配队列）
@@ -1548,7 +1550,7 @@ Step 6：联调和修复（Day 6）
   - 胜负判定和MsgGameOver
 
 Step 7：打磨（Day 7）
-  - 数值调整（只改gamedata.json）
+  - 数值调整（只改根 `data/` 作者源）
   - 超时边界情况处理
   - 错误处理完善
   - Demo录制准备

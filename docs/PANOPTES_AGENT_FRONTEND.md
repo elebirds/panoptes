@@ -192,8 +192,7 @@ panoptes-client/
 │   │   └── Fonts/
 │   │
 │   └── Resources/
-│       └── Config/
-│           └── ClientConfig.asset     # ScriptableObject配置
+│       └── Data/                      # 生成的静态目录 bundle
 │
 └── Packages/
     └── manifest.json
@@ -218,7 +217,7 @@ panoptes-client/
 
 ### 原则二：状态以服务端为准
 
-所有UI显示数据来自`GameStateCache`，`GameStateCache`只由网络消息更新，不由本地操作直接修改。
+运行时状态来自`GameStateCache`，静态目录与展示元数据来自`StaticCatalogCache`；两者都不能由 UI 本地推导业务合法性。
 
 ### 原则三：单例管理
 

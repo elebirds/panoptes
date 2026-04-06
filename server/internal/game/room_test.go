@@ -2,14 +2,13 @@ package game
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
 )
@@ -40,12 +39,11 @@ func (t *stubTransport) Stream(playerID string, msgs <-chan proto.Message) error
 var _ transport.GameTransport = (*stubTransport)(nil)
 
 func TestHumanPlayerNotifyTurnSendsPhaseMessages(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TurnTimeLimitDomestic: 12, TurnTimeLimitCombat: 18, TokensPerTurn: 3},
+	}))
 	tp := newStubTransport()
-	room := NewRoom("game-1", nil, tp, &config.Config{
-		TurnTimeLimitDomestic: 12,
-		TurnTimeLimitCombat:   18,
-		TokensPerTurn:         3,
-	})
+	room := NewRoom("game-1", nil, tp, &config.Config{})
 	room.Turn = 7
 
 	player := NewHumanPlayer("player-1", "alice", tp)
@@ -79,23 +77,40 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	Registry = NewGameRoomRegistry()
 	defer func() { Registry = previousRegistry }()
 
-	config.Data = config.GameData{
-		Rules: config.RulesConfig{
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-06",
+			ContentVersion: "test",
+			BundleHash:     "bundle-hash",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "default",
+		},
+		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
 			CastleBaseHP:       100,
 			BuildPointsPerTurn: 10,
 			SafeZoneRadius:     4,
 		},
-	}
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "测试地图",
+		Width:  20,
+		Height: 20,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 2, Y: 10},
+			{Slot: 1, X: 17, Y: 10},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "spawn_p1", X: 2, Y: 10, Terrain: "plain"},
+			{ID: "spawn_p2", X: 17, Y: 10, Terrain: "plain"},
+			{ID: "K10", X: 10, Y: 9, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", NodeName: "龙脊"},
+		},
+		NamedNodes: map[string]string{"K10": "龙脊"},
+		CentralPoints: []string{"K10"},
+	}))
 
-	mapPath := writeTestMap(t)
 	tp := newStubTransport()
-	cfg := &config.Config{
-		TurnTimeLimitDomestic: 2,
-		TurnTimeLimitCombat:   2,
-		TokensPerTurn:         3,
-		MapPath:               mapPath,
-	}
+	cfg := &config.Config{MapID: "default"}
 	room := NewRoom(
 		"game-1",
 		[]Player{
@@ -109,16 +124,20 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	go room.Start()
 
 	waitFor(t, time.Second, func() bool {
-		return len(tp.sent["player-1"]) >= 2
+		return len(tp.sent["player-1"]) >= 3
 	})
 
 	if _, ok := Registry.GetRoomByPlayerID("player-1"); !ok {
 		t.Fatalf("registry missing player room")
 	}
 
-	initMsg, ok := tp.sent["player-1"][0].(*pb.MsgGameInit)
+	if _, ok := tp.sent["player-1"][0].(*pb.MsgStaticCatalogManifest); !ok {
+		t.Fatalf("manifest type = %T", tp.sent["player-1"][0])
+	}
+
+	initMsg, ok := tp.sent["player-1"][1].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("init type = %T", tp.sent["player-1"][0])
+		t.Fatalf("init type = %T", tp.sent["player-1"][1])
 	}
 	if initMsg.GetYourPlayerId() != "player-1" {
 		t.Fatalf("your player id = %q", initMsg.GetYourPlayerId())
@@ -173,7 +192,7 @@ func TestRegistryRegisterAndUnregister(t *testing.T) {
 }
 
 func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
-	got, unknown := toProtoResources(domain.ResourceBag{
+	got := toProtoResourceBag(domain.ResourceBag{
 		domain.ResourceOre:            3,
 		domain.ResourceWood:           4,
 		domain.ResourceFood:           5,
@@ -183,14 +202,18 @@ func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
 		domain.ResourceKey("crystal"): 99,
 	})
 
-	if got.GetOre() != 3 || got.GetWood() != 4 || got.GetFood() != 5 {
-		t.Fatalf("basic proto resources = %#v", got)
+	items := make(map[string]int32, len(got.GetItems()))
+	for _, item := range got.GetItems() {
+		items[item.GetKey()] = item.GetAmount()
 	}
-	if got.GetRefinedOre() != 6 || got.GetEngineerMaterial() != 7 || got.GetBuildPoints() != 8 {
-		t.Fatalf("advanced proto resources = %#v", got)
+	if items["ore"] != 3 || items["wood"] != 4 || items["food"] != 5 {
+		t.Fatalf("basic proto resources = %#v", items)
 	}
-	if len(unknown) != 1 || unknown[0] != domain.ResourceKey("crystal") {
-		t.Fatalf("unknown resource keys = %#v", unknown)
+	if items["refined_ore"] != 6 || items["engineer_material"] != 7 || items["build_points"] != 8 {
+		t.Fatalf("advanced proto resources = %#v", items)
+	}
+	if items["crystal"] != 99 {
+		t.Fatalf("custom resource missing = %#v", items)
 	}
 }
 
@@ -213,30 +236,4 @@ func hasMessage[T proto.Message](msgs []proto.Message) bool {
 		}
 	}
 	return false
-}
-
-func writeTestMap(t *testing.T) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	path := filepath.Join(dir, "default.json")
-	if err := os.WriteFile(path, []byte(`{
-  "id": "default",
-  "width": 20,
-  "height": 20,
-  "spawn_points": [
-    { "player_index": 0, "x": 2, "y": 10 },
-    { "player_index": 1, "x": 17, "y": 10 }
-  ],
-  "nodes": [
-    { "id": "spawn_p1", "x": 2, "y": 10, "terrain": "plain", "is_resource_point": false },
-    { "id": "spawn_p2", "x": 17, "y": 10, "terrain": "plain", "is_resource_point": false },
-    { "id": "K10", "x": 10, "y": 9, "terrain": "plain", "is_resource_point": true, "resource_type": "food" }
-  ],
-  "central_points": ["K10"],
-  "named_nodes": { "K10": "龙脊" }
-}`), 0o600); err != nil {
-		t.Fatalf("WriteFile() error = %v", err)
-	}
-	return path
 }

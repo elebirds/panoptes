@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "id": "default",
+    "name": "中原",
+    "width": 20,
+    "height": 20,
+    "default_terrain": "plain",
+    "tags": ["default", "pvp"]
+  },
+  "terrain_patches": [],
+  "node_overrides": [
+    {
+      "x": 1,
+      "y": 4,
+      "terrain": "mountain"
+    },
+    {
+      "x": 14,
+      "y": 7,
+      "terrain": "forest"
+    }
+  ],
+  "features": {
+    "resource_points": [
+      { "x": 10, "y": 9, "resource_type": "food", "node_name": "龙脊" },
+      { "x": 1, "y": 4, "resource_type": "ore" },
+      { "x": 14, "y": 7, "resource_type": "wood" }
+    ],
+    "roads": [],
+    "named_nodes": [],
+    "central_points": [
+      { "x": 10, "y": 9 }
+    ]
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 2, "y": 10 },
+    { "slot": 1, "x": 17, "y": 10 }
+  ]
+}

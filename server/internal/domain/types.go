@@ -3,8 +3,6 @@ package domain
 import (
 	"fmt"
 	"sort"
-
-	"github.com/elebirds/panoptes/internal/config"
 )
 
 type Terrain string
@@ -98,16 +96,25 @@ func (p Position) Neighbors() []Position {
 	}
 }
 
-type ResourceKey = config.ResourceKey
+type ResourceKey string
 
 const (
-	ResourceOre         = config.ResourceOre
-	ResourceWood        = config.ResourceWood
-	ResourceFood        = config.ResourceFood
-	ResourceRefinedOre  = config.ResourceRefinedOre
-	ResourceEngineerMat = config.ResourceEngineerMaterial
-	ResourceBuildPoints = config.ResourceBuildPoints
+	ResourceOre         ResourceKey = "ore"
+	ResourceWood        ResourceKey = "wood"
+	ResourceFood        ResourceKey = "food"
+	ResourceRefinedOre  ResourceKey = "refined_ore"
+	ResourceEngineerMat ResourceKey = "engineer_material"
+	ResourceBuildPoints ResourceKey = "build_points"
 )
+
+var knownResourceKeys = map[ResourceKey]struct{}{
+	ResourceOre:         {},
+	ResourceWood:        {},
+	ResourceFood:        {},
+	ResourceRefinedOre:  {},
+	ResourceEngineerMat: {},
+	ResourceBuildPoints: {},
+}
 
 type ResourceBag map[ResourceKey]int
 
@@ -197,7 +204,7 @@ func (r ResourceBag) Keys() []ResourceKey {
 func (r ResourceBag) KnownOnly() ResourceBag {
 	filtered := make(ResourceBag)
 	for key, value := range r {
-		if config.IsKnownResourceKey(key) && value != 0 {
+		if _, ok := knownResourceKeys[key]; ok && value != 0 {
 			filtered[key] = value
 		}
 	}
@@ -213,13 +220,14 @@ func (r ResourceBag) ValidateNonNegative() error {
 	return nil
 }
 
-func ResourceBagFromConfigAmount(amount config.ResourceAmount) (ResourceBag, error) {
+func ResourceBagFromAmounts(amount map[string]int) (ResourceBag, error) {
 	bag := NewResourceBag()
 	for key, value := range amount {
-		if !config.IsKnownResourceKey(key) {
+		resourceKey := ResourceKey(key)
+		if _, ok := knownResourceKeys[resourceKey]; !ok {
 			return nil, fmt.Errorf("unknown resource key %q", key)
 		}
-		bag.Set(key, value)
+		bag.Set(resourceKey, value)
 	}
 	return bag, nil
 }

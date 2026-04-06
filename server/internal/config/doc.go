@@ -1,2 +1,2 @@
-// Package config defines runtime configuration and game data loading boundaries.
+// Package config defines runtime environment and process configuration.
 package config

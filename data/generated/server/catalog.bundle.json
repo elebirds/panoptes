@@ -1,0 +1,860 @@
+{
+  "manifest": {
+    "schema_version": "2026-04-06",
+    "content_version": "2026-04-06.v2",
+    "default_locale": "zh-CN",
+    "default_map_id": "initial_4_regions_20x20",
+    "bundle_hash": "b7675f6f31d14819b8a297852a4864e1884406b18f253859cf06e4954cf6f6a2"
+  },
+  "resources": [
+    {
+      "key": "ore",
+      "display_name": "矿石",
+      "description": "基础矿物资源。",
+      "icon_key": "resource_ore",
+      "sort_order": 10,
+      "proto_number": 1,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    },
+    {
+      "key": "wood",
+      "display_name": "木材",
+      "description": "木料与加工原料。",
+      "icon_key": "resource_wood",
+      "sort_order": 20,
+      "proto_number": 2,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    },
+    {
+      "key": "food",
+      "display_name": "粮食",
+      "description": "人口与军队补给。",
+      "icon_key": "resource_food",
+      "sort_order": 30,
+      "proto_number": 3,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    },
+    {
+      "key": "refined_ore",
+      "display_name": "精炼矿",
+      "description": "高阶军用矿材。",
+      "icon_key": "resource_refined_ore",
+      "sort_order": 40,
+      "proto_number": 4,
+      "visible_in_hud": true,
+      "tags": [
+        "advanced"
+      ]
+    },
+    {
+      "key": "engineer_material",
+      "display_name": "工程材料",
+      "description": "工程营与特殊建筑材料。",
+      "icon_key": "resource_engineer_material",
+      "sort_order": 50,
+      "proto_number": 5,
+      "visible_in_hud": true,
+      "tags": [
+        "advanced"
+      ]
+    },
+    {
+      "key": "build_points",
+      "display_name": "建造点",
+      "description": "建筑行动额度。",
+      "icon_key": "resource_build_points",
+      "sort_order": 60,
+      "proto_number": 6,
+      "visible_in_hud": true,
+      "tags": [
+        "meta"
+      ]
+    }
+  ],
+  "units": [
+    {
+      "id": "infantry",
+      "name": "步兵",
+      "description": "均衡近战单位。",
+      "icon_key": "unit_infantry",
+      "prefab_key": "Infantry",
+      "class": "melee",
+      "max_hp": 30,
+      "attack": 10,
+      "attack_range": 1,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": {
+        "food": 1,
+        "ore": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {
+        "saboteur": 1.5
+      },
+      "flags": {
+        "can_siege": false,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 10,
+      "tags": [
+        "frontline"
+      ]
+    },
+    {
+      "id": "archer",
+      "name": "弓手",
+      "description": "远程压制单位。",
+      "icon_key": "unit_archer",
+      "prefab_key": "Archer",
+      "class": "ranged",
+      "max_hp": 20,
+      "attack": 8,
+      "attack_range": 2,
+      "move_range": 1,
+      "vision_range": 4,
+      "train_cost": {
+        "food": 1,
+        "wood": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {
+        "cavalry": 1.5
+      },
+      "flags": {
+        "can_siege": false,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 11,
+      "tags": [
+        "ranged"
+      ]
+    },
+    {
+      "id": "cavalry",
+      "name": "骑兵",
+      "description": "高速机动单位。",
+      "icon_key": "unit_cavalry",
+      "prefab_key": "Cavalry",
+      "class": "mobile",
+      "max_hp": 25,
+      "attack": 12,
+      "attack_range": 1,
+      "move_range": 3,
+      "vision_range": 4,
+      "train_cost": {
+        "food": 2,
+        "refined_ore": 1
+      },
+      "upkeep": {
+        "food": 2
+      },
+      "multipliers": {
+        "infantry": 1.5
+      },
+      "road_speed_bonus": 1,
+      "charge_bonus": 1.5,
+      "flags": {
+        "can_siege": false,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 12,
+      "tags": [
+        "flank",
+        "charge"
+      ]
+    },
+    {
+      "id": "siege",
+      "name": "攻城兵",
+      "description": "擅长攻击建筑与主城。",
+      "icon_key": "unit_siege",
+      "prefab_key": "Siege",
+      "class": "siege",
+      "max_hp": 35,
+      "attack": 5,
+      "attack_range": 1,
+      "move_range": 1,
+      "vision_range": 3,
+      "train_cost": {
+        "food": 1,
+        "refined_ore": 2
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": true,
+        "siege_multiplier": 3,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 13,
+      "tags": [
+        "anti_building"
+      ]
+    },
+    {
+      "id": "saboteur",
+      "name": "破坏兵",
+      "description": "擅长破坏道路与工事。",
+      "icon_key": "unit_saboteur",
+      "prefab_key": "Saboteur",
+      "class": "special",
+      "max_hp": 20,
+      "attack": 5,
+      "attack_range": 1,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": {
+        "ore": 1,
+        "wood": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_destroy_road": true,
+        "destroy_multiplier": 3,
+        "can_capture": true
+      },
+      "sort_order": 14,
+      "tags": [
+        "special"
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "id": "farm",
+      "name": "农场",
+      "description": "基础粮食产出建筑。",
+      "icon_key": "building_farm",
+      "prefab_key": "Farm",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "food",
+      "build_cost": {
+        "build_points": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {
+          "food": 2
+        },
+        "cycle_turns": 1
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 80,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 10,
+      "tags": [
+        "eco",
+        "food"
+      ]
+    },
+    {
+      "id": "mine",
+      "name": "矿山",
+      "description": "基础矿石产出建筑。",
+      "icon_key": "building_mine",
+      "prefab_key": "Mine",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "ore",
+      "build_cost": {
+        "build_points": 3
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {
+          "ore": 2
+        },
+        "cycle_turns": 1
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 90,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 11,
+      "tags": [
+        "eco",
+        "ore"
+      ]
+    },
+    {
+      "id": "lumber",
+      "name": "伐木场",
+      "description": "基础木材产出建筑。",
+      "icon_key": "building_lumber",
+      "prefab_key": "Lumber",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "wood",
+      "build_cost": {
+        "build_points": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {
+          "wood": 2
+        },
+        "cycle_turns": 1
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 80,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 12,
+      "tags": [
+        "eco",
+        "wood"
+      ]
+    },
+    {
+      "id": "granary",
+      "name": "粮仓",
+      "description": "用于储备粮食。",
+      "icon_key": "building_granary",
+      "prefab_key": "Granary",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 2,
+        "wood": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 90,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 20,
+      "tags": [
+        "eco"
+      ]
+    },
+    {
+      "id": "smelter",
+      "name": "冶炼厂",
+      "description": "将矿石精炼为精炼矿。",
+      "icon_key": "building_smelter",
+      "prefab_key": "Smelter",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {
+          "ore": 2
+        },
+        "output": {
+          "refined_ore": 1
+        },
+        "cycle_turns": 1
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 100,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 21,
+      "tags": [
+        "eco",
+        "refine"
+      ]
+    },
+    {
+      "id": "workshop",
+      "name": "工坊",
+      "description": "将木材加工为工程材料。",
+      "icon_key": "building_workshop",
+      "prefab_key": "Workshop",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "wood": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {
+          "wood": 2
+        },
+        "output": {
+          "engineer_material": 1
+        },
+        "cycle_turns": 1
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 100,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 22,
+      "tags": [
+        "eco",
+        "craft"
+      ]
+    },
+    {
+      "id": "barracks",
+      "name": "兵营",
+      "description": "基础军队训练建筑。",
+      "icon_key": "building_barracks",
+      "prefab_key": "Barracks",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [
+        "infantry",
+        "archer"
+      ],
+      "combat": {
+        "max_hp": 120,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 30,
+      "tags": [
+        "military",
+        "train"
+      ]
+    },
+    {
+      "id": "stable",
+      "name": "骑兵场",
+      "description": "训练骑兵的军用设施。",
+      "icon_key": "building_stable",
+      "prefab_key": "Stable",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 4,
+        "refined_ore": 1
+      },
+      "upkeep": {
+        "food": 2
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [
+        "cavalry"
+      ],
+      "combat": {
+        "max_hp": 120,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 31,
+      "tags": [
+        "military",
+        "train"
+      ]
+    },
+    {
+      "id": "engineer_camp",
+      "name": "工程营",
+      "description": "训练攻城兵与破坏兵。",
+      "icon_key": "building_engineer_camp",
+      "prefab_key": "EngineerCamp",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 4,
+        "engineer_material": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [
+        "siege",
+        "saboteur"
+      ],
+      "combat": {
+        "max_hp": 110,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 32,
+      "tags": [
+        "military",
+        "train"
+      ]
+    },
+    {
+      "id": "wall",
+      "name": "城墙",
+      "description": "提高防御能力。",
+      "icon_key": "building_wall",
+      "prefab_key": "Wall",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 2
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 50,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 3,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 40,
+      "tags": [
+        "defense"
+      ]
+    },
+    {
+      "id": "tower",
+      "name": "箭塔",
+      "description": "自动攻击附近敌军。",
+      "icon_key": "building_tower",
+      "prefab_key": "Tower",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 2,
+        "wood": 2
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 70,
+        "attack_per_turn": 8,
+        "range": 2,
+        "wall_level": 0,
+        "towers": 1
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 41,
+      "tags": [
+        "defense"
+      ]
+    },
+    {
+      "id": "watchtower",
+      "name": "烽火台",
+      "description": "用于观察周边态势。",
+      "icon_key": "building_watchtower",
+      "prefab_key": "Watchtower",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 1
+      },
+      "upkeep": {},
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": [],
+      "combat": {
+        "max_hp": 60,
+        "attack_per_turn": 0,
+        "range": 0,
+        "wall_level": 0,
+        "towers": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "sort_order": 42,
+      "tags": [
+        "vision"
+      ]
+    }
+  ],
+  "terrains": [
+    {
+      "id": "plain",
+      "name": "平原",
+      "description": "标准地块。",
+      "icon_key": "terrain_plain",
+      "material_key": "M_Ground_Lit",
+      "move_cost_no_road": 2,
+      "defense_bonus": 0,
+      "attack_penalty": 0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true,
+      "sort_order": 10,
+      "tags": [
+        "ground"
+      ]
+    },
+    {
+      "id": "mountain",
+      "name": "山地",
+      "description": "高防御地形。",
+      "icon_key": "terrain_mountain",
+      "material_key": "M_Ground_Mountain_Lit",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.3,
+      "attack_penalty": 0.2,
+      "blocks_cavalry": true,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": false,
+      "sort_order": 20,
+      "tags": [
+        "ground"
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "森林",
+      "description": "适合伏击的地形。",
+      "icon_key": "terrain_forest",
+      "material_key": "M_Ground_Forest_Lit",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.2,
+      "attack_penalty": 0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true,
+      "sort_order": 30,
+      "tags": [
+        "ground"
+      ]
+    },
+    {
+      "id": "river",
+      "name": "河流",
+      "description": "难以通行。",
+      "icon_key": "terrain_river",
+      "material_key": "M_Ground_River_Lit",
+      "move_cost_no_road": 99,
+      "defense_bonus": 0,
+      "attack_penalty": 0,
+      "blocks_cavalry": true,
+      "passable_with_road": true,
+      "passable": false,
+      "buildable": false,
+      "sort_order": 40,
+      "tags": [
+        "ground"
+      ]
+    }
+  ],
+  "rules": {
+    "turn_time_limit_domestic": 60,
+    "turn_time_limit_combat": 60,
+    "tokens_per_turn": 3,
+    "tokens_recuperation_bonus": 1,
+    "max_turns": 30,
+    "castle_base_hp": 100,
+    "safe_zone_radius": 4,
+    "occupy_turns": 1,
+    "build_points_per_turn": 10,
+    "build_points_max": 30
+  },
+  "ministers": [
+    {
+      "id": "m001",
+      "name": "李猛",
+      "role": "military",
+      "ability": 8,
+      "personality": "aggressive",
+      "personality_desc": "果敢激进，善于把握战机",
+      "loyalty": 7,
+      "ambition": 6
+    },
+    {
+      "id": "m003",
+      "name": "陈丰",
+      "role": "agriculture",
+      "ability": 8,
+      "personality": "conservative",
+      "personality_desc": "精于算计，注重积累",
+      "loyalty": 6,
+      "ambition": 7
+    },
+    {
+      "id": "m005",
+      "name": "孙谋",
+      "role": "diplomacy",
+      "ability": 9,
+      "personality": "cunning",
+      "personality_desc": "老谋深算，情报精准",
+      "loyalty": 5,
+      "ambition": 8
+    }
+  ],
+  "maps": [
+    {
+      "id": "default",
+      "name": "中原",
+      "description": "标准双人对战地图。",
+      "thumbnail_key": "map_default",
+      "width": 20,
+      "height": 20,
+      "tags": [
+        "default",
+        "pvp"
+      ]
+    },
+    {
+      "id": "initial_4_regions_20x20",
+      "name": "经典四域",
+      "description": "由旧版 init 地图迁移而来的四人经典地图，保留道路、资源点与预置据点布局。",
+      "thumbnail_key": "map_initial_4_regions_20x20",
+      "width": 20,
+      "height": 20,
+      "tags": [
+        "classic",
+        "legacy",
+        "pvp",
+        "four_player"
+      ]
+    }
+  ]
+}
