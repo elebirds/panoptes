@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using Panoptes.Runtime.UI.Lobby;
 using TMPro;
 using UnityEditor;
@@ -75,7 +76,7 @@ namespace Panoptes.Editor
             viewSerialized.ApplyModifiedPropertiesWithoutUndo();
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerSlotPrefabPath);
-            Object.DestroyImmediate(root);
+            UnityEngine.Object.DestroyImmediate(root);
             return prefab;
         }
 
@@ -209,7 +210,14 @@ namespace Panoptes.Editor
 
         private static void CreateEventSystem()
         {
-            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            var eventSystem = new GameObject("EventSystem", typeof(EventSystem));
+            var inputModuleType = Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+            if (inputModuleType == null)
+            {
+                throw new InvalidOperationException("找不到 InputSystemUIInputModule，请确认已安装并启用 Input System package。");
+            }
+
+            eventSystem.AddComponent(inputModuleType);
         }
 
         private static void CreateFullscreenBackground(Transform parent, Color color)
