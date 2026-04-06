@@ -18,7 +18,7 @@ namespace Panoptes.Runtime.Network
     {
         public static MessageDispatcher Instance { get; private set; }
 
-        private readonly Dictionary<string, Action<string>> _handlers =
+        private readonly Dictionary<string, List<Action<string>>> _handlers =
             new(StringComparer.Ordinal);
 
         void Awake()
@@ -47,7 +47,13 @@ namespace Panoptes.Runtime.Network
                 return;
             }
 
-            _handlers[messageType] = payloadJson =>
+            if (!_handlers.TryGetValue(messageType, out var handlers))
+            {
+                handlers = new List<Action<string>>();
+                _handlers[messageType] = handlers;
+            }
+
+            handlers.Add(payloadJson =>
             {
                 try
                 {
@@ -59,7 +65,7 @@ namespace Panoptes.Runtime.Network
                 {
                     Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e}");
                 }
-            };
+            });
         }
 
         public void Unregister(string messageType)
@@ -82,7 +88,10 @@ namespace Panoptes.Runtime.Network
 
             if (_handlers.TryGetValue(envelope.Type, out var handler))
             {
-                handler(envelope.Payload);
+                foreach (var item in handler.ToArray())
+                {
+                    item(envelope.Payload);
+                }
             }
             else
             {
