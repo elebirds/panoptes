@@ -10,13 +10,16 @@ option csharp_namespace = "Panoptes.Protocol.V1";
 message Room {
   string room_id = 1;
   string room_code = 2; // 6位邀请码
-  repeated RoomPlayer players = 3;
-  string status = 4; // "waiting|ready|starting"
+  string name = 3;
+  repeated RoomPlayer players = 4;
+  string status = 5; // "waiting|ready|starting"
+  int32 max_players = 6;
 }
 
 // 客户端→服务端
 message MsgCreateRoom {
-  string room_name = 1;
+  string name = 1;
+  int32 max_players = 2;
 }
 
 message MsgJoinRoom {
@@ -36,8 +39,10 @@ message MsgRoomCreated {
 message MsgRoomState {
   string room_id = 1;
   string room_code = 2;
-  repeated RoomPlayer players = 3;
-  string status = 4; // "waiting|ready|starting"
+  string name = 3;
+  repeated RoomPlayer players = 4;
+  string status = 5; // "waiting|ready|starting"
+  int32 max_players = 6;
 }
 
 message RoomPlayer {

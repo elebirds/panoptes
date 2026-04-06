@@ -12,7 +12,12 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using NativeWebSocket;
 using Panoptes.Protocol.V1;
+using Panoptes.Runtime.App;
+using Panoptes.Runtime.Cache;
+using Panoptes.Runtime.Service;
+using Panoptes.Runtime.UI.Common;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Panoptes.Runtime.Network
 {
@@ -27,6 +32,9 @@ namespace Panoptes.Runtime.Network
         public bool IsConnecting { get; private set; }
 
         private WebSocket _ws;
+        private string _lastConnectedUrl = string.Empty;
+        private bool _manualDisconnectRequested;
+        private bool _isReconnecting;
         private readonly JsonParser _jsonParser =
             new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
@@ -57,6 +65,8 @@ namespace Panoptes.Runtime.Network
         public async Task ConnectAsync(string url)
         {
             var targetUrl = string.IsNullOrWhiteSpace(url) ? serverUrl : url;
+            _lastConnectedUrl = targetUrl;
+            _manualDisconnectRequested = false;
             await DisconnectInternalAsync();
             IsConnecting = true;
 
@@ -66,6 +76,7 @@ namespace Panoptes.Runtime.Network
             {
                 IsConnecting = false;
                 Debug.Log("[Network] Connected");
+                LoadingOverlay.Instance?.Hide();
                 OnConnected?.Invoke();
             };
 
@@ -73,7 +84,7 @@ namespace Panoptes.Runtime.Network
             {
                 IsConnecting = false;
                 Debug.Log($"[Network] Disconnected: {code}");
-                OnDisconnected?.Invoke();
+                _ = HandleDisconnectAsync();
             };
 
             _ws.OnError += err =>
@@ -97,8 +108,22 @@ namespace Panoptes.Runtime.Network
             }
         }
 
+        public Task ConnectWithSessionAsync()
+        {
+            var token = SessionManager.Instance != null ? SessionManager.Instance.Token : string.Empty;
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new InvalidOperationException("Session token is missing.");
+            }
+
+            var delimiter = serverUrl.Contains("?") ? "&" : "?";
+            var url = $"{serverUrl}{delimiter}token={UnityWebRequest.EscapeURL(token)}";
+            return ConnectAsync(url);
+        }
+
         public void Disconnect()
         {
+            _manualDisconnectRequested = true;
             _ = DisconnectInternalAsync();
         }
 
@@ -165,6 +190,59 @@ namespace Panoptes.Runtime.Network
             catch (Exception e)
             {
                 Debug.LogWarning($"[Network] Close failed: {e.Message}");
+            }
+        }
+
+        private async Task HandleDisconnectAsync()
+        {
+            OnDisconnected?.Invoke();
+
+            if (_manualDisconnectRequested)
+            {
+                _manualDisconnectRequested = false;
+                return;
+            }
+
+            if (RoomCache.Instance != null && !string.IsNullOrWhiteSpace(RoomCache.Instance.RoomID))
+            {
+                RoomCache.Instance.Clear();
+            }
+
+            LoadingOverlay.Instance?.Show("连接断开，正在重连...");
+
+            if (_isReconnecting || string.IsNullOrWhiteSpace(_lastConnectedUrl))
+            {
+                return;
+            }
+
+            _isReconnecting = true;
+            try
+            {
+                for (var retry = 0; retry < 5; retry++)
+                {
+                    await Task.Delay(2000);
+
+                    try
+                    {
+                        await ConnectAsync(_lastConnectedUrl);
+                        LoadingOverlay.Instance?.Hide();
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[Network] Reconnect failed ({retry + 1}/5): {e.Message}");
+                    }
+                }
+            }
+            finally
+            {
+                _isReconnecting = false;
+            }
+
+            LoadingOverlay.Instance?.Hide();
+            if (AppManager.Instance != null)
+            {
+                AppManager.Instance.TransitionTo(AppState.Login);
             }
         }
 
