@@ -6,7 +6,9 @@
  * Description: Building visual controller.
  *************************************************/
 
+using System;
 using UnityEngine;
+using Panoptes.Runtime.Cache;
 
 namespace Panoptes.Runtime.Map
 {
@@ -16,10 +18,23 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private string buildingType = string.Empty;
 
         [Header("Visuals")]
+        [Tooltip("Only assign roof renderers here if you want roof-only faction tint.")]
         [SerializeField] private Renderer[] ownerTintRenderers;
+        [Tooltip("If enabled, tint only materials that match the filters below.")]
+        [SerializeField] private bool tintOnlyMatchingMaterials = true;
+        [Tooltip("If set, these material slot indices are tinted directly (e.g. 0,2).")]
+        [SerializeField] private int[] tintMaterialIndices;
+        [Tooltip("Material name contains any keyword -> tinted (case-insensitive).")]
+        [SerializeField] private string[] tintMaterialNameKeywords = { "roof", "tile", "top" };
+        [Tooltip("Shader name contains any keyword -> tinted (case-insensitive).")]
+        [SerializeField] private string[] tintShaderNameKeywords = { "roof" };
         [SerializeField] private GameObject damagedMark;
         [SerializeField] private GameObject selectedRing;
         [SerializeField] private Color neutralOwnerColor = Color.white;
+        [SerializeField] private Color friendlyOwnerColor = new Color(0.26f, 0.78f, 1f, 1f);
+        [SerializeField] private Color enemyOwnerColor = new Color(1f, 0.35f, 0.35f, 1f);
+        [Range(0f, 1f)] [SerializeField] private float ownerTintStrength = 0.45f;
+        [SerializeField] private bool useHashedColorWhenNoMyPlayerId = false;
 
         [Header("Damage Threshold")]
         [SerializeField] private int lowHitPointThreshold = 30;
@@ -41,9 +56,7 @@ namespace Panoptes.Runtime.Map
         public void SetOwner(string ownerId)
         {
             OwnerId = ownerId ?? string.Empty;
-            var color = string.IsNullOrEmpty(OwnerId)
-                ? neutralOwnerColor
-                : GetColorFromOwnerId(OwnerId);
+            var color = ResolveOwnerColor(OwnerId);
 
             ApplyOwnerTint(color);
         }
@@ -89,10 +102,12 @@ namespace Panoptes.Runtime.Map
 
         private void ApplyOwnerTint(Color color)
         {
-            if (ownerTintRenderers == null)
+            if (ownerTintRenderers == null || ownerTintRenderers.Length == 0)
             {
                 return;
             }
+
+            var finalColor = Color.Lerp(Color.white, color, ownerTintStrength);
 
             for (int i = 0; i < ownerTintRenderers.Length; i++)
             {
@@ -102,12 +117,124 @@ namespace Panoptes.Runtime.Map
                     continue;
                 }
 
-                var block = new MaterialPropertyBlock();
-                renderer.GetPropertyBlock(block);
-                block.SetColor("_BaseColor", color);
-                block.SetColor("_Color", color);
-                renderer.SetPropertyBlock(block);
+                ApplyTintToRenderer(renderer, finalColor);
             }
+        }
+
+        private void ApplyTintToRenderer(Renderer renderer, Color finalColor)
+        {
+            var materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+            {
+                return;
+            }
+
+            // Always clear previous per-material overrides first.
+            for (int matIndex = 0; matIndex < materials.Length; matIndex++)
+            {
+                renderer.SetPropertyBlock(new MaterialPropertyBlock(), matIndex);
+            }
+
+            if (!tintOnlyMatchingMaterials)
+            {
+                for (int matIndex = 0; matIndex < materials.Length; matIndex++)
+                {
+                    SetTintBlock(renderer, matIndex, finalColor);
+                }
+                return;
+            }
+
+            for (int matIndex = 0; matIndex < materials.Length; matIndex++)
+            {
+                if (ShouldTintMaterial(matIndex, materials[matIndex]))
+                {
+                    SetTintBlock(renderer, matIndex, finalColor);
+                }
+            }
+        }
+
+        private bool ShouldTintMaterial(int materialIndex, Material material)
+        {
+            if (tintMaterialIndices != null && tintMaterialIndices.Length > 0)
+            {
+                for (int i = 0; i < tintMaterialIndices.Length; i++)
+                {
+                    if (tintMaterialIndices[i] == materialIndex)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            var materialName = material != null ? material.name : string.Empty;
+            var shaderName = (material != null && material.shader != null) ? material.shader.name : string.Empty;
+
+            if (ContainsAnyToken(materialName, tintMaterialNameKeywords))
+            {
+                return true;
+            }
+
+            if (ContainsAnyToken(shaderName, tintShaderNameKeywords))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void SetTintBlock(Renderer renderer, int materialIndex, Color color)
+        {
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block, materialIndex);
+            block.SetColor("_BaseColor", color);
+            block.SetColor("_Color", color);
+            renderer.SetPropertyBlock(block, materialIndex);
+        }
+
+        private static bool ContainsAnyToken(string source, string[] tokens)
+        {
+            if (string.IsNullOrEmpty(source) || tokens == null || tokens.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                var token = tokens[i];
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    continue;
+                }
+
+                if (source.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Color ResolveOwnerColor(string ownerId)
+        {
+            if (string.IsNullOrEmpty(ownerId))
+            {
+                return neutralOwnerColor;
+            }
+
+            var myPlayerId = GameStateCache.Instance != null
+                ? GameStateCache.Instance.MyPlayerID
+                : string.Empty;
+
+            if (!string.IsNullOrEmpty(myPlayerId))
+            {
+                return ownerId == myPlayerId ? friendlyOwnerColor : enemyOwnerColor;
+            }
+
+            return useHashedColorWhenNoMyPlayerId
+                ? GetColorFromOwnerId(ownerId)
+                : enemyOwnerColor;
         }
 
         private static string NormalizeToken(string value)
@@ -141,10 +268,8 @@ namespace Panoptes.Runtime.Map
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if ((ownerTintRenderers == null || ownerTintRenderers.Length == 0))
-            {
-                ownerTintRenderers = GetComponentsInChildren<Renderer>(true);
-            }
+            // Intentionally not auto-filling renderer list.
+            // This prevents tinting the whole building by mistake.
         }
 #endif
     }

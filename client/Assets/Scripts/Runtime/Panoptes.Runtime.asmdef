@@ -2,7 +2,8 @@
     "name": "Panoptes.Runtime",
     "rootNamespace": "Panoptes",
     "references": [
-        "GUID:cd0da57754a90f0e1a0430815739a7cc"
+        "GUID:cd0da57754a90f0e1a0430815739a7cc",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

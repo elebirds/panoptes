@@ -141,7 +141,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1159425409067151994
 Transform:
   m_ObjectHideFlags: 0
@@ -225,6 +225,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4422204292970723678}
+  - component: {fileID: 6119559488442800000}
   m_Layer: 0
   m_Name: ResourcePoint
   m_TagString: Untagged
@@ -248,6 +249,25 @@ Transform:
   - {fileID: 5521469149461058284}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6119559488442800000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2876109517508377469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbaed4e9e09da9a4fa180e283d963325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.ResourcePointView
+  oreIcon: {fileID: 1200340061612311145}
+  woodIcon: {fileID: 4354904635233981567}
+  foodIcon: {fileID: 2558224145627527859}
+  highValueMark: {fileID: 0}
+  ownerRing: {fileID: 0}
+  ownerRingRenderer: {fileID: 0}
+  neutralOwnerColor: {r: 1, g: 1, b: 1, a: 0.35}
 --- !u!1 &4354904635233981567
 GameObject:
   m_ObjectHideFlags: 0
@@ -264,7 +284,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &587897186396615291
 Transform:
   m_ObjectHideFlags: 0
