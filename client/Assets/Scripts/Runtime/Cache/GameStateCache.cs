@@ -74,6 +74,11 @@ namespace Panoptes.Runtime.Cache
             _ministers.AddRange(msg.Ministers);
 
             Debug.Log($"[Cache] GameInit applied: {_nodes.Count} nodes, {_units.Count} units");
+
+            if (Panoptes.Runtime.Map.MapRenderer.Instance != null)
+            {
+                Panoptes.Runtime.Map.MapRenderer.Instance.RebuildMap();
+            }
         }
 
         public void UpdateTokens(int tokensLeft)

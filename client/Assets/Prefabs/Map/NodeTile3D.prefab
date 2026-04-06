@@ -356,6 +356,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5985246837972300791}
+  - component: {fileID: 5107247747950518977}
   m_Layer: 0
   m_Name: NodeTile3D
   m_TagString: Untagged
@@ -379,6 +380,35 @@ Transform:
   - {fileID: 169564109608481759}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5107247747950518977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5064273746554883294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce184c73aef26c34994fcb4db0b2e4e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.NodeView
+  groundRenderer: {fileID: 5171557245648721043}
+  roadOverlay: {fileID: 1084501715393880173}
+  highlight: {fileID: 5053331373000196553}
+  resourceAnchor: {fileID: 1697120485641667070}
+  buildingAnchor: {fileID: 7505964873251956980}
+  unitAnchor: {fileID: 7253903450159226267}
+  plainMaterial: {fileID: 2100000, guid: 6a5245c39ecaefc4eb307202d173a56f, type: 2}
+  mountainMaterial: {fileID: 2100000, guid: 1281d8d480ad53c46a518201d99198e0, type: 2}
+  forestMaterial: {fileID: 2100000, guid: f9485d5a168614743a33360749626610, type: 2}
+  riverMaterial: {fileID: 2100000, guid: 4505ca735e91fa2439d0ec62d43f9121, type: 2}
+  resourcePointPrefab: {fileID: 6119559488442800000, guid: a53b34b039682fa4a9d4ed3ecdfd9549, type: 3}
+  defaultBuildingPrefab: {fileID: 8465135733123450000, guid: 36fe37ddaca302d4d9a1fd34eebd5b1e, type: 3}
+  buildingPrefabs:
+  - buildingType: farm
+    prefab: {fileID: 8465135733123450000, guid: 36fe37ddaca302d4d9a1fd34eebd5b1e, type: 3}
+  - buildingType: barracks
+    prefab: {fileID: 7443026781934560000, guid: b3c0749b5f6a90d4d82a116d035abce7, type: 3}
 --- !u!1 &5706546515238586262
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,7 +419,6 @@ GameObject:
   m_Component:
   - component: {fileID: 169564109608481759}
   - component: {fileID: 388362762556419154}
-  - component: {fileID: 3128890781681111983}
   m_Layer: 0
   m_Name: Root
   m_TagString: Untagged
@@ -439,30 +468,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 0.1, z: 1}
   m_Center: {x: 0, y: 0.05, z: 0}
---- !u!114 &3128890781681111983
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5706546515238586262}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce184c73aef26c34994fcb4db0b2e4e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.NodeView
-  groundRenderer: {fileID: 5171557245648721043}
-  roadOverlay: {fileID: 1084501715393880173}
-  highlight: {fileID: 5053331373000196553}
-  resourceAnchor: {fileID: 1697120485641667070}
-  unitAnchor: {fileID: 7253903450159226267}
-  plainMaterial: {fileID: 0}
-  mountainMaterial: {fileID: 0}
-  forestMaterial: {fileID: 0}
-  riverMaterial: {fileID: 0}
-  oreResourcePrefab: {fileID: 0}
-  woodResourcePrefab: {fileID: 0}
-  foodResourcePrefab: {fileID: 0}
 --- !u!1 &7273565703315508206
 GameObject:
   m_ObjectHideFlags: 0
