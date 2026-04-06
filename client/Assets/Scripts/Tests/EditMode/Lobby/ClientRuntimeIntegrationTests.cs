@@ -85,6 +85,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("MessageSender.Send(new MsgAddBot())", content);
             StringAssert.Contains("public void KickPlayer(string playerId)", content);
             StringAssert.Contains("MessageSender.Send(new MsgKickPlayer", content);
+            StringAssert.Contains("public void StartGame()", content);
+            StringAssert.Contains("MessageSender.Send(new MsgStartGame())", content);
         }
 
         [Test]

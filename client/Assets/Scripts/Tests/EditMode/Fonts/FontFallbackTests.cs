@@ -88,6 +88,8 @@ namespace Panoptes.Tests.EditMode.Fonts
             var content = File.ReadAllText(scenePath);
             StringAssert.Contains("m_Name: AddBotButton", content,
                 "Lobby 房间面板缺少 AddBotButton。");
+            StringAssert.Contains("m_Name: StartGameButton", content,
+                "Lobby 房间面板缺少 StartGameButton。");
         }
 
         [Test]

@@ -18,6 +18,7 @@ namespace Panoptes.Runtime.UI.Lobby
         [SerializeField] private Transform playerSlotContainer;
         [SerializeField] private GameObject playerSlotPrefab;
         [SerializeField] private Button addBotButton;
+        [SerializeField] private Button startGameButton;
         [SerializeField] private Button readyButton;
         [SerializeField] private Button leaveButton;
         [SerializeField] private TextMeshProUGUI statusText;
@@ -50,6 +51,7 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             addBotButton?.onClick.AddListener(OnClickAddBot);
+            startGameButton?.onClick.AddListener(OnClickStartGame);
             readyButton?.onClick.AddListener(OnClickReady);
             leaveButton?.onClick.AddListener(OnClickLeave);
         }
@@ -72,6 +74,7 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             addBotButton?.onClick.RemoveListener(OnClickAddBot);
+            startGameButton?.onClick.RemoveListener(OnClickStartGame);
             readyButton?.onClick.RemoveListener(OnClickReady);
             leaveButton?.onClick.RemoveListener(OnClickLeave);
 
@@ -104,6 +107,7 @@ namespace Panoptes.Runtime.UI.Lobby
             RebuildPlayerSlots();
             RefreshReadyButton();
             RefreshAddBotButton();
+            RefreshStartGameButton();
 
             if (_countdownCoroutine == null)
             {
@@ -215,6 +219,16 @@ namespace Panoptes.Runtime.UI.Lobby
             _lobbySvc.AddBot();
         }
 
+        private void OnClickStartGame()
+        {
+            if (!CanStartGame())
+            {
+                return;
+            }
+
+            _lobbySvc.StartGame();
+        }
+
         private void OnClickLeave()
         {
             StopCountdown();
@@ -278,6 +292,11 @@ namespace Panoptes.Runtime.UI.Lobby
             if (addBotButton != null)
             {
                 addBotButton.interactable = interactable && CanAddBot();
+            }
+
+            if (startGameButton != null)
+            {
+                startGameButton.interactable = interactable && CanStartGame();
             }
 
             if (readyButton != null)
@@ -352,6 +371,18 @@ namespace Panoptes.Runtime.UI.Lobby
             addBotButton.interactable = visible && CanAddBot();
         }
 
+        private void RefreshStartGameButton()
+        {
+            if (startGameButton == null)
+            {
+                return;
+            }
+
+            var visible = _cache != null && _cache.IsHost;
+            startGameButton.gameObject.SetActive(visible);
+            startGameButton.interactable = visible && CanStartGame();
+        }
+
         private bool CanAddBot()
         {
             if (_cache == null || _runtimeConfig == null)
@@ -380,6 +411,21 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             return _cache.GetBotCount() < _cache.MaxPlayers - 1;
+        }
+
+        private bool CanStartGame()
+        {
+            if (_cache == null || !_cache.IsHost)
+            {
+                return false;
+            }
+
+            if (_countdownCoroutine != null || _isWaitingForGameInit)
+            {
+                return false;
+            }
+
+            return _cache.Status == "ready";
         }
 
         private bool ShouldShowKickButton(RoomPlayer player)
