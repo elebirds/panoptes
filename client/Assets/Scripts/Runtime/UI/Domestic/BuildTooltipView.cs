@@ -9,6 +9,7 @@
 using TMPro;
 using System.Text;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Panoptes.Runtime.UI.Domestic
 {
@@ -18,6 +19,7 @@ namespace Panoptes.Runtime.UI.Domestic
         [SerializeField] private TMP_Text tooltipText;
         [SerializeField] private Canvas canvas;
         [SerializeField] private Vector2 screenOffset = new Vector2(16f, -16f);
+        [SerializeField] private float aboveTargetPixels = 12f;
         [SerializeField] private bool clampToScreen = true;
         [SerializeField] private bool normalizeFullWidthPunctuation = true;
 
@@ -43,10 +45,57 @@ namespace Panoptes.Runtime.UI.Domestic
                 : (text ?? string.Empty);
             tooltipText.text = normalizedText;
             tooltipRoot.gameObject.SetActive(true);
+            RefreshTooltipLayout();
             Move(screenPosition);
         }
 
+        public void ShowAbove(string text, RectTransform target, Camera targetEventCamera = null)
+        {
+            if (tooltipRoot == null || tooltipText == null || target == null)
+            {
+                return;
+            }
+
+            var normalizedText = normalizeFullWidthPunctuation
+                ? NormalizePunctuation(text)
+                : (text ?? string.Empty);
+            tooltipText.text = normalizedText;
+            tooltipRoot.gameObject.SetActive(true);
+            RefreshTooltipLayout();
+            MoveAbove(target, targetEventCamera);
+        }
+
         public void Move(Vector2 screenPosition)
+        {
+            SetScreenPosition(screenPosition, screenOffset);
+        }
+
+        public void MoveAbove(RectTransform target, Camera targetEventCamera = null)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var worldTopCenter = target.TransformPoint(
+                new Vector3(target.rect.center.x, target.rect.yMax, 0f));
+            Camera cameraForScreenPoint = null;
+            if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                cameraForScreenPoint = canvas.worldCamera != null ? canvas.worldCamera : targetEventCamera;
+            }
+
+            var screenTopCenter = RectTransformUtility.WorldToScreenPoint(cameraForScreenPoint, worldTopCenter);
+            var yOffset = aboveTargetPixels;
+            if (tooltipRoot != null)
+            {
+                yOffset += tooltipRoot.rect.height * tooltipRoot.pivot.y;
+            }
+
+            SetScreenPosition(screenTopCenter, new Vector2(0f, yOffset));
+        }
+
+        private void SetScreenPosition(Vector2 screenPosition, Vector2 extraOffset)
         {
             if (tooltipRoot == null)
             {
@@ -75,11 +124,12 @@ namespace Panoptes.Runtime.UI.Domestic
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 canvasRect,
-                screenPosition + screenOffset,
+                screenPosition + extraOffset,
                 cameraForCanvas,
                 out localPoint);
 
-            tooltipRoot.anchoredPosition = localPoint;
+            var worldPosition = canvasRect.TransformPoint(new Vector3(localPoint.x, localPoint.y, 0f));
+            tooltipRoot.position = worldPosition;
 
             if (!clampToScreen)
             {
@@ -87,13 +137,23 @@ namespace Panoptes.Runtime.UI.Domestic
             }
 
             var rootSize = tooltipRoot.rect.size;
-            var half = rootSize * 0.5f;
-            var min = canvasRect.rect.min + half;
-            var max = canvasRect.rect.max - half;
-            var p = tooltipRoot.anchoredPosition;
+            var min = canvasRect.rect.min + Vector2.Scale(rootSize, tooltipRoot.pivot);
+            var max = canvasRect.rect.max - Vector2.Scale(rootSize, Vector2.one - tooltipRoot.pivot);
+            var p = localPoint;
             p.x = Mathf.Clamp(p.x, min.x, max.x);
             p.y = Mathf.Clamp(p.y, min.y, max.y);
-            tooltipRoot.anchoredPosition = p;
+            var clampedWorldPosition = canvasRect.TransformPoint(new Vector3(p.x, p.y, 0f));
+            tooltipRoot.position = clampedWorldPosition;
+        }
+
+        private void RefreshTooltipLayout()
+        {
+            if (tooltipRoot == null)
+            {
+                return;
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRoot);
         }
 
         public void Hide()
