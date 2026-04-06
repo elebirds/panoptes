@@ -93,7 +93,6 @@ namespace Panoptes.Editor
 
             var lobbyPanel = CreatePanel("LobbyPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(880f, 760f), new Color(0.97f, 0.97f, 0.98f, 0.98f));
             var roomPanel = CreatePanel("RoomPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(920f, 760f), new Color(0.97f, 0.97f, 0.98f, 0.98f));
-            roomPanel.SetActive(false);
 
             BuildLobbyPanel(lobbyPanel.transform);
             BuildRoomPanel(roomPanel.transform, playerSlotPrefab);

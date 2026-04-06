@@ -41,5 +41,20 @@ namespace Panoptes.Tests.EditMode.Fonts
                 "Lobby 场景仍在使用 StandaloneInputModule。");
             StringAssert.Contains("UnityEngine.InputSystem.UI.InputSystemUIInputModule", content);
         }
+
+        [Test]
+        public void LobbyScene_ShouldKeepRoomPanelActiveForDispatcherRegistration()
+        {
+            var scenePath = Path.GetFullPath("Assets/Scenes/Lobby.unity");
+            Assert.That(File.Exists(scenePath), Is.True, "Lobby.unity 不存在。");
+
+            var content = File.ReadAllText(scenePath);
+            var roomPanelIndex = content.IndexOf("m_Name: RoomPanel");
+            Assert.That(roomPanelIndex, Is.GreaterThanOrEqualTo(0), "Lobby 场景缺少 RoomPanel。");
+
+            var activeFlagIndex = content.IndexOf("m_IsActive: 1", roomPanelIndex);
+            Assert.That(activeFlagIndex, Is.GreaterThan(roomPanelIndex),
+                "RoomPanel 在场景加载时必须保持激活，确保 RoomPanelController.Awake() 能注册 MsgRoomState。");
+        }
     }
 }
