@@ -49,7 +49,9 @@ namespace Panoptes.Runtime.App
             EnsureComponent<NetworkManager>(managers);
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
+            EnsureComponent<ClientRuntimeConfigCache>(managers);
             EnsureComponent<RoomCache>(managers);
+            EnsureComponent<GameStateCache>(managers);
             EnsureComponent<LoadingOverlay>(managers);
         }
 
@@ -82,6 +84,7 @@ namespace Panoptes.Runtime.App
         {
             if (MessageDispatcher.Instance != null)
             {
+                MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
             }
         }
@@ -89,6 +92,13 @@ namespace Panoptes.Runtime.App
         public void TransitionTo(AppState newState)
         {
             State = newState;
+            if (newState == AppState.Login)
+            {
+                RoomCache.Instance?.Clear();
+                ClientRuntimeConfigCache.Instance?.Clear();
+                GameStateCache.Instance?.Clear();
+            }
+
             EnsureRealtimeConnectionIfNeeded(newState);
 
             var sceneName = newState switch
@@ -120,11 +130,18 @@ namespace Panoptes.Runtime.App
                 return;
             }
 
+            MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+        }
+
+        private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
+        {
+            ClientRuntimeConfigCache.Instance?.Apply(msg);
         }
 
         private void OnGameInit(MsgGameInit msg)
         {
+            GameStateCache.Instance?.ApplyGameInit(msg);
             TransitionTo(AppState.Game);
         }
 

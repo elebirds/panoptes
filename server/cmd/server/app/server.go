@@ -7,6 +7,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/auth"
 	"github.com/elebirds/panoptes/internal/game"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/lobby"
 	redistore "github.com/elebirds/panoptes/internal/store/redis"
 	httptransport "github.com/elebirds/panoptes/internal/transport/http"
@@ -28,6 +29,11 @@ func (a *App) buildServer() *http.Server {
 	router := wstransport.NewRouter(lobbySvc, game.Registry)
 	wsHub.SetRouter(router)
 	wsHub.SetLeaveRoomFunc(lobbySvc.LeaveRoom)
+	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
+		return a.gameTransport.Send(playerID, &pb.MsgClientRuntimeConfig{
+			DevMode: a.cfg.DevMode,
+		})
+	})
 	go wsHub.Run(context.Background())
 
 	httpServer := httptransport.NewServer(

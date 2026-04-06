@@ -209,6 +209,50 @@ func (x *ErrorResponse) GetMessage() string {
 	return ""
 }
 
+type MsgClientRuntimeConfig struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DevMode       bool                   `protobuf:"varint,1,opt,name=dev_mode,json=devMode,proto3" json:"dev_mode,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgClientRuntimeConfig) Reset() {
+	*x = MsgClientRuntimeConfig{}
+	mi := &file_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgClientRuntimeConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgClientRuntimeConfig) ProtoMessage() {}
+
+func (x *MsgClientRuntimeConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgClientRuntimeConfig.ProtoReflect.Descriptor instead.
+func (*MsgClientRuntimeConfig) Descriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MsgClientRuntimeConfig) GetDevMode() bool {
+	if x != nil {
+		return x.DevMode
+	}
+	return false
+}
+
 // 所有WebSocket消息的外层包装
 // type用于路由，payload是对应消息的protojson序列化
 type Envelope struct {
@@ -221,7 +265,7 @@ type Envelope struct {
 
 func (x *Envelope) Reset() {
 	*x = Envelope{}
-	mi := &file_common_proto_msgTypes[3]
+	mi := &file_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -233,7 +277,7 @@ func (x *Envelope) String() string {
 func (*Envelope) ProtoMessage() {}
 
 func (x *Envelope) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[3]
+	mi := &file_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -246,7 +290,7 @@ func (x *Envelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Envelope.ProtoReflect.Descriptor instead.
 func (*Envelope) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{3}
+	return file_common_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Envelope) GetType() string {
@@ -281,7 +325,9 @@ const file_common_proto_rawDesc = "" +
 	"\fbuild_points\x18\x06 \x01(\x05R\vbuildPoints\"=\n" +
 	"\rErrorResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"8\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"3\n" +
+	"\x16MsgClientRuntimeConfig\x12\x19\n" +
+	"\bdev_mode\x18\x01 \x01(\bR\adevMode\"8\n" +
 	"\bEnvelope\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\tR\apayloadBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
@@ -298,12 +344,13 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_common_proto_goTypes = []any{
-	(*Position)(nil),      // 0: panoptes.proto.v1.Position
-	(*Resources)(nil),     // 1: panoptes.proto.v1.Resources
-	(*ErrorResponse)(nil), // 2: panoptes.proto.v1.ErrorResponse
-	(*Envelope)(nil),      // 3: panoptes.proto.v1.Envelope
+	(*Position)(nil),               // 0: panoptes.proto.v1.Position
+	(*Resources)(nil),              // 1: panoptes.proto.v1.Resources
+	(*ErrorResponse)(nil),          // 2: panoptes.proto.v1.ErrorResponse
+	(*MsgClientRuntimeConfig)(nil), // 3: panoptes.proto.v1.MsgClientRuntimeConfig
+	(*Envelope)(nil),               // 4: panoptes.proto.v1.Envelope
 }
 var file_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -324,7 +371,7 @@ func file_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

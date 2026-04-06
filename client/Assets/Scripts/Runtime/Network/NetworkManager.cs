@@ -240,6 +240,8 @@ namespace Panoptes.Runtime.Network
             }
 
             LoadingOverlay.Instance?.Hide();
+            ClientRuntimeConfigCache.Instance?.Clear();
+            GameStateCache.Instance?.Clear();
             if (AppManager.Instance != null)
             {
                 AppManager.Instance.TransitionTo(AppState.Login);

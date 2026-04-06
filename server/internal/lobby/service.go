@@ -314,6 +314,9 @@ func (s *LobbyService) sendRoomState(room *Room) error {
 func (s *LobbyService) sendToRoomPlayers(room *Room, msg proto.Message) error {
 	var firstErr error
 	for _, player := range room.Players {
+		if player.IsBot {
+			continue
+		}
 		if err := s.sendToPlayer(player.PlayerID, msg); err != nil && firstErr == nil {
 			firstErr = err
 		}

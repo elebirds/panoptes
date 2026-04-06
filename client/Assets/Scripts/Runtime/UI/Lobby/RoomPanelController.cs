@@ -17,21 +17,25 @@ namespace Panoptes.Runtime.UI.Lobby
         [SerializeField] private TextMeshProUGUI playerCountText;
         [SerializeField] private Transform playerSlotContainer;
         [SerializeField] private GameObject playerSlotPrefab;
+        [SerializeField] private Button addBotButton;
         [SerializeField] private Button readyButton;
         [SerializeField] private Button leaveButton;
         [SerializeField] private TextMeshProUGUI statusText;
 
         private LobbyService _lobbySvc;
         private RoomCache _cache;
+        private ClientRuntimeConfigCache _runtimeConfig;
         private Coroutine _countdownCoroutine;
         private Coroutine _statusResetCoroutine;
         private TextMeshProUGUI _readyButtonText;
         private LobbySceneController _sceneController;
+        private bool _isWaitingForGameInit;
 
         private void Awake()
         {
             _lobbySvc = new LobbyService();
             _cache = RoomCache.Instance;
+            _runtimeConfig = ClientRuntimeConfigCache.Instance;
             _readyButtonText = readyButton != null ? readyButton.GetComponentInChildren<TextMeshProUGUI>(true) : null;
             _sceneController = transform.parent != null ? transform.parent.GetComponent<LobbySceneController>() : null;
 
@@ -40,6 +44,12 @@ namespace Panoptes.Runtime.UI.Lobby
                 _cache.OnRoomStateChanged += RefreshUI;
             }
 
+            if (_runtimeConfig != null)
+            {
+                _runtimeConfig.OnConfigChanged += RefreshUI;
+            }
+
+            addBotButton?.onClick.AddListener(OnClickAddBot);
             readyButton?.onClick.AddListener(OnClickReady);
             leaveButton?.onClick.AddListener(OnClickLeave);
         }
@@ -56,6 +66,12 @@ namespace Panoptes.Runtime.UI.Lobby
                 _cache.OnRoomStateChanged -= RefreshUI;
             }
 
+            if (_runtimeConfig != null)
+            {
+                _runtimeConfig.OnConfigChanged -= RefreshUI;
+            }
+
+            addBotButton?.onClick.RemoveListener(OnClickAddBot);
             readyButton?.onClick.RemoveListener(OnClickReady);
             leaveButton?.onClick.RemoveListener(OnClickLeave);
 
@@ -87,6 +103,7 @@ namespace Panoptes.Runtime.UI.Lobby
 
             RebuildPlayerSlots();
             RefreshReadyButton();
+            RefreshAddBotButton();
 
             if (_countdownCoroutine == null)
             {
@@ -98,13 +115,19 @@ namespace Panoptes.Runtime.UI.Lobby
                 case "waiting":
                     if (statusText != null)
                     {
-                        statusText.text = "等待玩家准备...";
+                        statusText.text = _isWaitingForGameInit ? "等待游戏初始化..." : "等待玩家准备...";
                     }
                     break;
                 case "ready":
                     if (statusText != null)
                     {
-                        statusText.text = "全员已准备！";
+                        statusText.text = _isWaitingForGameInit ? "等待游戏初始化..." : "全员已准备！";
+                    }
+                    break;
+                case "starting":
+                    if (statusText != null && !_isWaitingForGameInit)
+                    {
+                        statusText.text = "游戏即将开始...";
                     }
                     break;
             }
@@ -112,6 +135,7 @@ namespace Panoptes.Runtime.UI.Lobby
 
         public void HandleGameStarting(MsgGameStarting msg)
         {
+            _isWaitingForGameInit = false;
             StopCountdown();
             _countdownCoroutine = StartCoroutine(CountdownCoroutine(msg != null ? msg.Countdown : 0));
         }
@@ -122,9 +146,11 @@ namespace Panoptes.Runtime.UI.Lobby
 
             if (seconds <= 0)
             {
-                if (AppManager.Instance != null)
+                _countdownCoroutine = null;
+                _isWaitingForGameInit = true;
+                if (statusText != null)
                 {
-                    AppManager.Instance.TransitionTo(AppState.Game);
+                    statusText.text = "等待游戏初始化...";
                 }
                 yield break;
             }
@@ -140,9 +166,10 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             _countdownCoroutine = null;
-            if (AppManager.Instance != null)
+            _isWaitingForGameInit = true;
+            if (statusText != null)
             {
-                AppManager.Instance.TransitionTo(AppState.Game);
+                statusText.text = "等待游戏初始化...";
             }
         }
 
@@ -152,6 +179,7 @@ namespace Panoptes.Runtime.UI.Lobby
             if (code == "room_dissolved")
             {
                 StopCountdown();
+                _isWaitingForGameInit = false;
                 RoomCache.Instance?.Clear();
                 return;
             }
@@ -177,9 +205,20 @@ namespace Panoptes.Runtime.UI.Lobby
             _lobbySvc.ReadyUp();
         }
 
+        private void OnClickAddBot()
+        {
+            if (!CanAddBot())
+            {
+                return;
+            }
+
+            _lobbySvc.AddBot();
+        }
+
         private void OnClickLeave()
         {
             StopCountdown();
+            _isWaitingForGameInit = false;
             _lobbySvc.LeaveRoom();
             RoomCache.Instance?.Clear();
             _sceneController?.ShowLobbyPanel();
@@ -208,7 +247,7 @@ namespace Panoptes.Runtime.UI.Lobby
                 var slotView = slotObject.GetComponent<PlayerSlotView>();
                 if (slotView != null)
                 {
-                    slotView.Setup(player, player.IsHost);
+                    slotView.Setup(player, ShouldShowKickButton(player), OnClickKickPlayer);
                 }
             }
         }
@@ -236,6 +275,11 @@ namespace Panoptes.Runtime.UI.Lobby
 
         private void SetButtonsInteractable(bool interactable)
         {
+            if (addBotButton != null)
+            {
+                addBotButton.interactable = interactable && CanAddBot();
+            }
+
             if (readyButton != null)
             {
                 readyButton.interactable = interactable;
@@ -256,6 +300,17 @@ namespace Panoptes.Runtime.UI.Lobby
 
             StopCoroutine(_countdownCoroutine);
             _countdownCoroutine = null;
+        }
+
+        public void HandlePlayerKicked(MsgPlayerKicked msg)
+        {
+            StopCountdown();
+            _isWaitingForGameInit = false;
+            StopStatusReset();
+            if (statusText != null)
+            {
+                statusText.text = $"{msg?.Username ?? "你"}已被移出房间";
+            }
         }
 
         private void StopStatusReset()
@@ -280,6 +335,77 @@ namespace Panoptes.Runtime.UI.Lobby
                 "room_dissolved" => "房主已离开，房间解散",
                 _ => "操作失败，请重试"
             };
+        }
+
+        private void RefreshAddBotButton()
+        {
+            if (addBotButton == null)
+            {
+                return;
+            }
+
+            var visible = _cache != null &&
+                          _cache.IsHost &&
+                          _runtimeConfig != null &&
+                          _runtimeConfig.DevMode;
+            addBotButton.gameObject.SetActive(visible);
+            addBotButton.interactable = visible && CanAddBot();
+        }
+
+        private bool CanAddBot()
+        {
+            if (_cache == null || _runtimeConfig == null)
+            {
+                return false;
+            }
+
+            if (!_runtimeConfig.DevMode || !_cache.IsHost)
+            {
+                return false;
+            }
+
+            if (_countdownCoroutine != null || _isWaitingForGameInit)
+            {
+                return false;
+            }
+
+            if (_cache.Status != "waiting")
+            {
+                return false;
+            }
+
+            if (_cache.Players.Count >= _cache.MaxPlayers)
+            {
+                return false;
+            }
+
+            return _cache.GetBotCount() < _cache.MaxPlayers - 1;
+        }
+
+        private bool ShouldShowKickButton(RoomPlayer player)
+        {
+            if (player == null || _cache == null || !_cache.IsHost)
+            {
+                return false;
+            }
+
+            if (_countdownCoroutine != null || _isWaitingForGameInit)
+            {
+                return false;
+            }
+
+            var selfPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            return !string.IsNullOrWhiteSpace(player.PlayerId) && player.PlayerId != selfPlayerId;
+        }
+
+        private void OnClickKickPlayer(string playerId)
+        {
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                return;
+            }
+
+            _lobbySvc.KickPlayer(playerId);
         }
     }
 }
