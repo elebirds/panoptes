@@ -1,0 +1,16 @@
+{
+  "buildings": [
+    { "id": "farm", "name": "农场", "description": "基础粮食产出建筑。", "icon_key": "building_farm", "prefab_key": "Farm", "sort_order": 10, "tags": ["eco", "food"] },
+    { "id": "mine", "name": "矿山", "description": "基础矿石产出建筑。", "icon_key": "building_mine", "prefab_key": "Mine", "sort_order": 11, "tags": ["eco", "ore"] },
+    { "id": "lumber", "name": "伐木场", "description": "基础木材产出建筑。", "icon_key": "building_lumber", "prefab_key": "Lumber", "sort_order": 12, "tags": ["eco", "wood"] },
+    { "id": "granary", "name": "粮仓", "description": "用于储备粮食。", "icon_key": "building_granary", "prefab_key": "Granary", "sort_order": 20, "tags": ["eco"] },
+    { "id": "smelter", "name": "冶炼厂", "description": "将矿石精炼为精炼矿。", "icon_key": "building_smelter", "prefab_key": "Smelter", "sort_order": 21, "tags": ["eco", "refine"] },
+    { "id": "workshop", "name": "工坊", "description": "将木材加工为工程材料。", "icon_key": "building_workshop", "prefab_key": "Workshop", "sort_order": 22, "tags": ["eco", "craft"] },
+    { "id": "barracks", "name": "兵营", "description": "基础军队训练建筑。", "icon_key": "building_barracks", "prefab_key": "Barracks", "sort_order": 30, "tags": ["military", "train"] },
+    { "id": "stable", "name": "骑兵场", "description": "训练骑兵的军用设施。", "icon_key": "building_stable", "prefab_key": "Stable", "sort_order": 31, "tags": ["military", "train"] },
+    { "id": "engineer_camp", "name": "工程营", "description": "训练攻城兵与破坏兵。", "icon_key": "building_engineer_camp", "prefab_key": "EngineerCamp", "sort_order": 32, "tags": ["military", "train"] },
+    { "id": "wall", "name": "城墙", "description": "提高防御能力。", "icon_key": "building_wall", "prefab_key": "Wall", "sort_order": 40, "tags": ["defense"] },
+    { "id": "tower", "name": "箭塔", "description": "自动攻击附近敌军。", "icon_key": "building_tower", "prefab_key": "Tower", "sort_order": 41, "tags": ["defense"] },
+    { "id": "watchtower", "name": "烽火台", "description": "用于观察周边态势。", "icon_key": "building_watchtower", "prefab_key": "Watchtower", "sort_order": 42, "tags": ["vision"] }
+  ]
+}

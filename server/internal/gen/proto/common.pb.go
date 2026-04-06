@@ -73,90 +73,6 @@ func (x *Position) GetY() int32 {
 	return 0
 }
 
-type Resources struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Ore              int32                  `protobuf:"varint,1,opt,name=ore,proto3" json:"ore,omitempty"`
-	Wood             int32                  `protobuf:"varint,2,opt,name=wood,proto3" json:"wood,omitempty"`
-	Food             int32                  `protobuf:"varint,3,opt,name=food,proto3" json:"food,omitempty"`
-	RefinedOre       int32                  `protobuf:"varint,4,opt,name=refined_ore,json=refinedOre,proto3" json:"refined_ore,omitempty"`
-	EngineerMaterial int32                  `protobuf:"varint,5,opt,name=engineer_material,json=engineerMaterial,proto3" json:"engineer_material,omitempty"`
-	BuildPoints      int32                  `protobuf:"varint,6,opt,name=build_points,json=buildPoints,proto3" json:"build_points,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *Resources) Reset() {
-	*x = Resources{}
-	mi := &file_common_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Resources) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Resources) ProtoMessage() {}
-
-func (x *Resources) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Resources.ProtoReflect.Descriptor instead.
-func (*Resources) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Resources) GetOre() int32 {
-	if x != nil {
-		return x.Ore
-	}
-	return 0
-}
-
-func (x *Resources) GetWood() int32 {
-	if x != nil {
-		return x.Wood
-	}
-	return 0
-}
-
-func (x *Resources) GetFood() int32 {
-	if x != nil {
-		return x.Food
-	}
-	return 0
-}
-
-func (x *Resources) GetRefinedOre() int32 {
-	if x != nil {
-		return x.RefinedOre
-	}
-	return 0
-}
-
-func (x *Resources) GetEngineerMaterial() int32 {
-	if x != nil {
-		return x.EngineerMaterial
-	}
-	return 0
-}
-
-func (x *Resources) GetBuildPoints() int32 {
-	if x != nil {
-		return x.BuildPoints
-	}
-	return 0
-}
-
 type ErrorResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
@@ -167,7 +83,7 @@ type ErrorResponse struct {
 
 func (x *ErrorResponse) Reset() {
 	*x = ErrorResponse{}
-	mi := &file_common_proto_msgTypes[2]
+	mi := &file_common_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -179,7 +95,7 @@ func (x *ErrorResponse) String() string {
 func (*ErrorResponse) ProtoMessage() {}
 
 func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[2]
+	mi := &file_common_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +108,7 @@ func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorResponse.ProtoReflect.Descriptor instead.
 func (*ErrorResponse) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{2}
+	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ErrorResponse) GetCode() string {
@@ -218,7 +134,7 @@ type MsgClientRuntimeConfig struct {
 
 func (x *MsgClientRuntimeConfig) Reset() {
 	*x = MsgClientRuntimeConfig{}
-	mi := &file_common_proto_msgTypes[3]
+	mi := &file_common_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +146,7 @@ func (x *MsgClientRuntimeConfig) String() string {
 func (*MsgClientRuntimeConfig) ProtoMessage() {}
 
 func (x *MsgClientRuntimeConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[3]
+	mi := &file_common_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +159,7 @@ func (x *MsgClientRuntimeConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgClientRuntimeConfig.ProtoReflect.Descriptor instead.
 func (*MsgClientRuntimeConfig) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{3}
+	return file_common_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MsgClientRuntimeConfig) GetDevMode() bool {
@@ -265,7 +181,7 @@ type Envelope struct {
 
 func (x *Envelope) Reset() {
 	*x = Envelope{}
-	mi := &file_common_proto_msgTypes[4]
+	mi := &file_common_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -277,7 +193,7 @@ func (x *Envelope) String() string {
 func (*Envelope) ProtoMessage() {}
 
 func (x *Envelope) ProtoReflect() protoreflect.Message {
-	mi := &file_common_proto_msgTypes[4]
+	mi := &file_common_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -290,7 +206,7 @@ func (x *Envelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Envelope.ProtoReflect.Descriptor instead.
 func (*Envelope) Descriptor() ([]byte, []int) {
-	return file_common_proto_rawDescGZIP(), []int{4}
+	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Envelope) GetType() string {
@@ -314,15 +230,7 @@ const file_common_proto_rawDesc = "" +
 	"\fcommon.proto\x12\x11panoptes.proto.v1\"&\n" +
 	"\bPosition\x12\f\n" +
 	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x05R\x01y\"\xb6\x01\n" +
-	"\tResources\x12\x10\n" +
-	"\x03ore\x18\x01 \x01(\x05R\x03ore\x12\x12\n" +
-	"\x04wood\x18\x02 \x01(\x05R\x04wood\x12\x12\n" +
-	"\x04food\x18\x03 \x01(\x05R\x04food\x12\x1f\n" +
-	"\vrefined_ore\x18\x04 \x01(\x05R\n" +
-	"refinedOre\x12+\n" +
-	"\x11engineer_material\x18\x05 \x01(\x05R\x10engineerMaterial\x12!\n" +
-	"\fbuild_points\x18\x06 \x01(\x05R\vbuildPoints\"=\n" +
+	"\x01y\x18\x02 \x01(\x05R\x01y\"=\n" +
 	"\rErrorResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"3\n" +
@@ -344,13 +252,12 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_common_proto_goTypes = []any{
 	(*Position)(nil),               // 0: panoptes.proto.v1.Position
-	(*Resources)(nil),              // 1: panoptes.proto.v1.Resources
-	(*ErrorResponse)(nil),          // 2: panoptes.proto.v1.ErrorResponse
-	(*MsgClientRuntimeConfig)(nil), // 3: panoptes.proto.v1.MsgClientRuntimeConfig
-	(*Envelope)(nil),               // 4: panoptes.proto.v1.Envelope
+	(*ErrorResponse)(nil),          // 1: panoptes.proto.v1.ErrorResponse
+	(*MsgClientRuntimeConfig)(nil), // 2: panoptes.proto.v1.MsgClientRuntimeConfig
+	(*Envelope)(nil),               // 3: panoptes.proto.v1.Envelope
 }
 var file_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -371,7 +278,7 @@ func file_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_proto_rawDesc), len(file_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

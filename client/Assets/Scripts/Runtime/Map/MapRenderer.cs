@@ -99,7 +99,7 @@ namespace Panoptes.Runtime.Map
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
 
         private readonly List<ProtoUnitView> _jsonUnits = new();
-        private ConfigCache _configCache;
+        private StaticCatalogCache _catalogCache;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -130,7 +130,13 @@ namespace Panoptes.Runtime.Map
         {
             EnsureRuntimeControllers();
 
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
+            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
+            {
+                BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+                return;
+            }
+
+            if (TryLoadMapFromStaticCatalog())
             {
                 return;
             }
@@ -160,7 +166,13 @@ namespace Panoptes.Runtime.Map
 
         public void RebuildMap()
         {
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
+            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
+            {
+                BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+                return;
+            }
+
+            if (TryLoadMapFromStaticCatalog())
             {
                 return;
             }
@@ -192,52 +204,75 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
-            _configCache = ConfigCache.EnsureInstance();
-            if (_configCache != null)
+            _catalogCache = StaticCatalogCache.EnsureInstance();
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated += OnServerMapConfigUpdated;
+                _catalogCache.CatalogChanged += OnServerMapCatalogChanged;
             }
         }
 
         private void UnsubscribeServerMapConfig()
         {
-            if (_configCache != null)
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
-                _configCache = null;
+                _catalogCache.CatalogChanged -= OnServerMapCatalogChanged;
+                _catalogCache = null;
             }
         }
 
-        private void OnServerMapConfigUpdated(string configKey)
+        private void OnServerMapCatalogChanged()
         {
-            if (!preferServerPushedMapConfig)
+            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
             {
                 return;
             }
-
-            if (!string.Equals(NormalizeToken(configKey), NormalizeToken(serverMapConfigKey), System.StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            TryLoadMapFromConfigCache();
+            TryLoadMapFromStaticCatalog();
         }
 
-        private bool TryLoadMapFromConfigCache()
+        private bool TryLoadMapFromStaticCatalog()
         {
-            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
-            var key = NormalizeToken(serverMapConfigKey);
-            if (cache == null || string.IsNullOrEmpty(key))
+            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
+            if (cache == null)
             {
                 return false;
             }
 
-            if (!cache.TryGetJson(key, out var mapJson) || string.IsNullOrWhiteSpace(mapJson))
+            if (!cache.TryGetDefaultMap(out var mapBundle) || mapBundle?.nodes == null || mapBundle.nodes.Length == 0)
             {
                 return false;
             }
 
-            return LoadMapFromJsonString(mapJson);
+            var nodes = new List<ProtoNodeView>(mapBundle.nodes.Length);
+            for (var i = 0; i < mapBundle.nodes.Length; i++)
+            {
+                var node = mapBundle.nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                var buildingType = NormalizeToken(node.building_type);
+                nodes.Add(new ProtoNodeView
+                {
+                    Id = string.IsNullOrWhiteSpace(node.id) ? $"N_{node.x}_{node.y}" : node.id.Trim(),
+                    Pos = new ProtoPosition { X = node.x, Y = node.y },
+                    Terrain = NormalizeToken(node.terrain),
+                    HasRoad = node.has_road,
+                    IsResourcePoint = node.is_resource_point,
+                    ResourceType = NormalizeToken(node.resource_type),
+                    Owner = NormalizeToken(node.owner),
+                    BuildingType = buildingType,
+                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp)
+                });
+            }
+
+            if (nodes.Count == 0)
+            {
+                return false;
+            }
+
+            BuildFromNodes(nodes);
+            return true;
         }
 
         public bool LoadMapFromJsonString(string json)

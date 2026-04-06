@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
 func TestPositionMethods(t *testing.T) {
@@ -125,13 +125,13 @@ func TestResourceBagUtilityMethods(t *testing.T) {
 	}
 }
 
-func TestResourceBagFromConfigAmount(t *testing.T) {
-	bag, err := ResourceBagFromConfigAmount(config.ResourceAmount{
-		config.ResourceOre:         2,
-		config.ResourceBuildPoints: 5,
+func TestResourceBagFromAmounts(t *testing.T) {
+	bag, err := ResourceBagFromAmounts(map[string]int{
+		"ore":          2,
+		"build_points": 5,
 	})
 	if err != nil {
-		t.Fatalf("ResourceBagFromConfigAmount() error = %v", err)
+		t.Fatalf("ResourceBagFromAmounts() error = %v", err)
 	}
 	if bag.Get(ResourceOre) != 2 || bag.Get(ResourceBuildPoints) != 5 {
 		t.Fatalf("bag = %#v", bag)
@@ -139,13 +139,13 @@ func TestResourceBagFromConfigAmount(t *testing.T) {
 }
 
 func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
-	config.Data = config.GameData{
-		Rules: config.RulesConfig{
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
 			CastleBaseHP:       100,
 			BuildPointsPerTurn: 10,
 		},
-	}
+	}))
 
 	mapData := &MapData{
 		ID:     "default",

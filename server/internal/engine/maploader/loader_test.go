@@ -1,37 +1,32 @@
 package maploader
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
 func TestLoadMapAndInitWorldFromMap(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "default.json")
-	if err := os.WriteFile(path, []byte(`{
-  "id": "default",
-  "width": 20,
-  "height": 20,
-  "spawn_points": [
-    { "player_index": 0, "x": 2, "y": 10 },
-    { "player_index": 1, "x": 17, "y": 10 }
-  ],
-  "nodes": [
-    { "id": "A1", "x": 0, "y": 0, "terrain": "mountain", "is_resource_point": false },
-    { "id": "K10", "x": 10, "y": 9, "terrain": "plain", "is_resource_point": true, "resource_type": "food" }
-  ],
-  "central_points": ["K10"],
-  "named_nodes": { "K10": "龙脊" }
-}`), 0o600); err != nil {
-		t.Fatalf("WriteFile() error = %v", err)
-	}
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "默认地图",
+		Width:  20,
+		Height: 20,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 2, Y: 10},
+			{Slot: 1, X: 17, Y: 10},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "mountain"},
+			{ID: "K10", X: 10, Y: 9, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", NodeName: "龙脊"},
+		},
+		NamedNodes: map[string]string{"K10": "龙脊"},
+		CentralPoints: []string{"K10"},
+	})
 
-	mapFile, err := LoadMap(path)
+	mapFile, err := LoadMap(catalog, "default")
 	if err != nil {
 		t.Fatalf("LoadMap() error = %v", err)
 	}
@@ -62,19 +57,19 @@ func TestLoadMapAndInitWorldFromMap(t *testing.T) {
 }
 
 func TestInitWorldFromMapSetsSafeZoneReadyData(t *testing.T) {
-	config.Data = config.GameData{
-		Rules: config.RulesConfig{SafeZoneRadius: 4},
-	}
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{SafeZoneRadius: 4},
+	}))
 
 	world := donburi.NewWorld()
-	mapFile := &MapFile{
+	mapFile := &staticdata.MapRuntimeBundle{
 		ID:     "default",
 		Width:  20,
 		Height: 20,
-		SpawnPoints: []SpawnPoint{
-			{PlayerIndex: 0, X: 2, Y: 10},
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 2, Y: 10},
 		},
-		Nodes: []MapNode{
+		Nodes: []staticdata.MapRuntimeNode{
 			{ID: "castle", X: 2, Y: 10, Terrain: "plain"},
 		},
 	}
@@ -83,4 +78,98 @@ func TestInitWorldFromMapSetsSafeZoneReadyData(t *testing.T) {
 	if mapData.SpawnPoints[0].X != 2 || mapData.SpawnPoints[0].Y != 10 {
 		t.Fatalf("spawn = %#v", mapData.SpawnPoints[0])
 	}
+}
+
+func TestInitWorldFromMapCreatesPrebuiltStructures(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", Category: "military_production", Combat: staticdata.BuildingCombat{MaxHP: 120}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapFile := &staticdata.MapRuntimeBundle{
+		ID:     "legacy",
+		Width:  4,
+		Height: 4,
+		Nodes: []staticdata.MapRuntimeNode{
+			{
+				ID:          "B2",
+				X:           1,
+				Y:           1,
+				Terrain:     "plain",
+				HasRoad:     true,
+				Owner:       "green",
+				BuildingType: "barracks",
+				BuildingHP:  90,
+			},
+		},
+		NamedNodes: map[string]string{},
+	}
+
+	mapData := InitWorldFromMap(world, mapFile, nil)
+	entry := world.Entry(mapData.NodeIndex["B2"])
+
+	if !entry.HasComponent(ecs.BuildingC) {
+		t.Fatalf("node should have BuildingComp")
+	}
+
+	building := ecs.BuildingC.Get(entry)
+	if building.Type != "barracks" || building.HP != 90 {
+		t.Fatalf("building = %#v", building)
+	}
+
+	node := ecs.NodeC.Get(entry)
+	if !node.HasRoad || node.Owner != "green" {
+		t.Fatalf("node = %#v", node)
+	}
+}
+
+func TestInitWorldFromMapResolvesOwnerSlotToPlayerID(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", Category: "production", Combat: staticdata.BuildingCombat{MaxHP: 80}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapFile := &staticdata.MapRuntimeBundle{
+		ID:     "legacy",
+		Width:  4,
+		Height: 4,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 0, Y: 0},
+			{Slot: 1, X: 2, Y: 2},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{
+				ID:           "C3",
+				X:            2,
+				Y:            2,
+				Terrain:      "plain",
+				Owner:        "yellow",
+				OwnerSlot:    intPtr(1),
+				BuildingType: "farm",
+				BuildingHP:   100,
+			},
+		},
+		NamedNodes: map[string]string{},
+	}
+
+	mapData := InitWorldFromMap(world, mapFile, []string{"player-1", "player-2"})
+	entry := world.Entry(mapData.NodeIndex["C3"])
+
+	node := ecs.NodeC.Get(entry)
+	if node.Owner != "player-2" {
+		t.Fatalf("resolved owner = %q", node.Owner)
+	}
+
+	building := ecs.BuildingC.Get(entry)
+	if building.Owner != "player-2" || building.HP != 80 || building.MaxHP != 80 {
+		t.Fatalf("building = %#v", building)
+	}
+}
+
+func intPtr(v int) *int {
+	return &v
 }

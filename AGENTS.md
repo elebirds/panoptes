@@ -27,7 +27,10 @@ panoptes/                          # Monorepo 根目录
 ├── protocol/                      # Proto 定义（单一数据源）
 │   ├── buf.yaml
 │   ├── buf.gen.yaml
-│   ├── common.proto               # Envelope、Position、Resources
+│   ├── common.proto               # Envelope、Position
+│   ├── data_types.proto           # ResourceBag、StaticCatalogManifest
+│   ├── data_catalog.proto         # 静态目录消息
+│   ├── map_catalog.proto          # 地图目录消息
 │   ├── auth.proto
 │   ├── lobby.proto
 │   ├── game_state.proto
@@ -76,7 +79,7 @@ panoptes/                          # Monorepo 根目录
 ❌ 在 game/ 里 import transport/websocket 包
 ❌ 在 UI 脚本里直接调用 NetworkManager
 ❌ 在客户端做任何游戏逻辑计算或合法性校验
-❌ 在代码中硬编码任何游戏数值（必须从 gamedata.json 读取）
+❌ 在代码中硬编码任何游戏数值（必须从根 `data/` 作者源生成）
 ❌ 引入文档中未列出的第三方依赖
 ❌ 修改已定义的 proto 消息字段名或字段编号
 ❌ 修改已定义的 Go interface 签名
@@ -246,19 +249,19 @@ MessageDispatcher.Instance.Unregister("MsgGameInit");
 
 ---
 
-## 数值配置规范
+## 静态数据规范
 
-所有游戏数值从 `server/data/gamedata.json` 读取：
+所有静态玩法数据从根 `data/` 生成，服务端运行时只读取 `data/generated/server/`：
 
 ```go
 // 正确
-dmg := int(float64(stats.Attack) * config.Data.Combat.SiegeMultiplier)
+dmg := staticdata.Default().Rules().CastleBaseHP
 
 // 错误
 dmg := stats.Attack * 3  // 硬编码 ❌
 ```
 
-修改数值只改 `gamedata.json`，不改代码。第三位同学（策划）有权直接修改此文件。
+修改静态数据只改 `data/registry`、`data/content`、`data/ui`，再运行 `make data-gen` / `make gen`。
 
 ---
 

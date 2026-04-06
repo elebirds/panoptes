@@ -1,0 +1,11 @@
+{
+  "id": "default",
+  "name": "中原",
+  "description": "标准双人对战地图。",
+  "thumbnail_key": "map_default",
+  "legend": [
+    { "id": "road", "name": "道路", "icon_key": "marker_road" },
+    { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" },
+    { "id": "safe_zone", "name": "安全区", "icon_key": "marker_safe_zone" }
+  ]
+}

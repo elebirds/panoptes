@@ -249,7 +249,7 @@ type PlayerView struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Resources     *Resources             `protobuf:"bytes,3,opt,name=resources,proto3" json:"resources,omitempty"`
+	Resources     *ResourceBag           `protobuf:"bytes,3,opt,name=resources,proto3" json:"resources,omitempty"`
 	TokensLeft    int32                  `protobuf:"varint,4,opt,name=tokens_left,json=tokensLeft,proto3" json:"tokens_left,omitempty"`
 	CurrentPolicy string                 `protobuf:"bytes,5,opt,name=current_policy,json=currentPolicy,proto3" json:"current_policy,omitempty"`
 	MainCastleHp  int32                  `protobuf:"varint,6,opt,name=main_castle_hp,json=mainCastleHp,proto3" json:"main_castle_hp,omitempty"`
@@ -303,7 +303,7 @@ func (x *PlayerView) GetUsername() string {
 	return ""
 }
 
-func (x *PlayerView) GetResources() *Resources {
+func (x *PlayerView) GetResources() *ResourceBag {
 	if x != nil {
 		return x.Resources
 	}
@@ -671,7 +671,7 @@ var File_game_state_proto protoreflect.FileDescriptor
 
 const file_game_state_proto_rawDesc = "" +
 	"\n" +
-	"\x10game_state.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"\xba\x03\n" +
+	"\x10game_state.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10data_types.proto\"\xba\x03\n" +
 	"\bNodeView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
 	"\x03pos\x18\x02 \x01(\v2\x1b.panoptes.proto.v1.PositionR\x03pos\x12\x18\n" +
@@ -696,12 +696,12 @@ const file_game_state_proto_rawDesc = "" +
 	"\tunit_type\x18\x03 \x01(\tR\bunitType\x12\x0e\n" +
 	"\x02hp\x18\x04 \x01(\x05R\x02hp\x12\x15\n" +
 	"\x06max_hp\x18\x05 \x01(\x05R\x05maxHp\x12-\n" +
-	"\x03pos\x18\x06 \x01(\v2\x1b.panoptes.proto.v1.PositionR\x03pos\"\xbf\x02\n" +
+	"\x03pos\x18\x06 \x01(\v2\x1b.panoptes.proto.v1.PositionR\x03pos\"\xc1\x02\n" +
 	"\n" +
 	"PlayerView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\x12:\n" +
-	"\tresources\x18\x03 \x01(\v2\x1c.panoptes.proto.v1.ResourcesR\tresources\x12\x1f\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12<\n" +
+	"\tresources\x18\x03 \x01(\v2\x1e.panoptes.proto.v1.ResourceBagR\tresources\x12\x1f\n" +
 	"\vtokens_left\x18\x04 \x01(\x05R\n" +
 	"tokensLeft\x12%\n" +
 	"\x0ecurrent_policy\x18\x05 \x01(\tR\rcurrentPolicy\x12$\n" +
@@ -760,12 +760,12 @@ var file_game_state_proto_goTypes = []any{
 	(*MsgGameInit)(nil),  // 5: panoptes.proto.v1.MsgGameInit
 	(*MsgGameOver)(nil),  // 6: panoptes.proto.v1.MsgGameOver
 	(*Position)(nil),     // 7: panoptes.proto.v1.Position
-	(*Resources)(nil),    // 8: panoptes.proto.v1.Resources
+	(*ResourceBag)(nil),  // 8: panoptes.proto.v1.ResourceBag
 }
 var file_game_state_proto_depIdxs = []int32{
 	7, // 0: panoptes.proto.v1.NodeView.pos:type_name -> panoptes.proto.v1.Position
 	7, // 1: panoptes.proto.v1.UnitView.pos:type_name -> panoptes.proto.v1.Position
-	8, // 2: panoptes.proto.v1.PlayerView.resources:type_name -> panoptes.proto.v1.Resources
+	8, // 2: panoptes.proto.v1.PlayerView.resources:type_name -> panoptes.proto.v1.ResourceBag
 	3, // 3: panoptes.proto.v1.PlayerView.war_zones:type_name -> panoptes.proto.v1.WarZone
 	0, // 4: panoptes.proto.v1.MsgGameInit.nodes:type_name -> panoptes.proto.v1.NodeView
 	1, // 5: panoptes.proto.v1.MsgGameInit.units:type_name -> panoptes.proto.v1.UnitView
@@ -784,6 +784,7 @@ func file_game_state_proto_init() {
 		return
 	}
 	file_common_proto_init()
+	file_data_types_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
