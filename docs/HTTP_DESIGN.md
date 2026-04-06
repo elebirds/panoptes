@@ -2,7 +2,7 @@
 
 > 本文档描述 Panoptes 服务端的 HTTP API 设计规范。
 > 覆盖范围：认证系统（注册/登录）、健康检查。
-> WebSocket 游戏通信不在本文档范围内，见 AGENT_BACKEND.md。
+> WebSocket 游戏通信不在本文档范围内，见 `PANOPTES_AGENT_BACKEND.md`。
 
 ---
 

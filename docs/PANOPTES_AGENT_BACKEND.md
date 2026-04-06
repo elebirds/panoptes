@@ -29,7 +29,7 @@
 ## 1. 项目概述
 
 **项目代号**：Panoptes
-**仓库名**：`panoptes-server`
+**仓库名**：`panoptes`（服务端代码位于 `server/`）
 **语言**：Go 1.26
 **架构**：单进程，多服务边界，WebSocket通信，ECS游戏状态，Protobuf协议
 
@@ -39,18 +39,20 @@
 
 ## 2. 技术栈与依赖
 
-### 直接依赖（go.mod）
+### 直接依赖（当前已引入 + 规划保留）
 
 ```
 github.com/gorilla/websocket       WebSocket
 github.com/redis/go-redis/v9       Redis客户端
-github.com/sashabaranov/go-openai  OpenAI兼容API
+github.com/openai/openai-go        OpenAI兼容API客户端
 github.com/yohamta/donburi         ECS框架
 github.com/golang-jwt/jwt/v5       JWT
 github.com/xeipuuv/gojsonschema    JSON Schema校验
 google.golang.org/protobuf         Protobuf运行时
 github.com/jackc/pgx/v5            PostgreSQL驱动
 github.com/pressly/goose/v3        数据库迁移
+github.com/caarlos0/env/v11        环境变量解析
+github.com/joho/godotenv           本地 .env 加载
 ```
 
 ### 代码生成工具（不进go.mod）
@@ -77,12 +79,10 @@ protoc-gen-csharp                  C#代码生成插件
 严格按照此结构，不得新增顶级目录，子目录可在规则内扩展。
 
 ```
-(panoptes-)server/
+panoptes/
 │
-├── main.go                        # 启动入口，组装所有服务
-├── go.mod
-├── go.sum
-├── Makefile                       # 常用命令
+├── AGENTS.md
+├── Makefile
 │
 ├── protocol/                      # Proto定义（单一数据源）
 │   ├── buf.yaml
@@ -95,110 +95,113 @@ protoc-gen-csharp                  C#代码生成插件
 │   ├── combat.proto
 │   └── minister.proto
 │
-├── gen/                           # 自动生成，禁止手动修改
-│   ├── go/                        # Go protobuf代码
-│   └── csharp/                    # Unity C#代码（供客户端使用）
+├── server/
+│   ├── cmd/server/
+│   │   ├── main.go                # 启动入口，组装所有服务
+│   │   └── app/
+│   ├── go.mod
+│   ├── go.sum
+│   │
+│   ├── db/
+│   │   ├── migrations/
+│   │   ├── queries/
+│   │   ├── sqlc.yaml
+│   │   └── internal/gen/sqlc/
+│   │
+│   ├── data/
+│   │   ├── gamedata.json          # 数值配置（唯一数值来源）
+│   │   ├── gamedata.schema.json   # JSON Schema（自动生成+手工维护）
+│   │   └── maps/
+│   │       └── default.json       # 固定地图数据
+│   │
+│   ├── internal/
+│   │   ├── gen/proto/             # 自动生成，禁止手动修改
+│   │   ├── config/
+│   │   │   ├── config.go          # 所有配置结构体
+│   │   │   ├── gamedata.go        # GameData结构体定义
+│   │   │   └── loader.go          # 加载+校验gamedata.json
+│   │   ├── transport/
+│   │   │   ├── interface.go       # Transport interface定义
+│   │   │   ├── websocket/
+│   │   │   │   ├── hub.go         # 连接池管理
+│   │   │   │   ├── client.go      # 单连接读写goroutine
+│   │   │   │   ├── router.go      # Envelope.Type路由到handler
+│   │   │   │   └── transport.go   # 实现Transport interface
+│   │   │   └── grpc/
+│   │   │       └── .gitkeep       # 预留，暂不实现
+│   │   ├── auth/
+│   │   │   ├── service.go         # 注册/登录业务逻辑
+│   │   │   ├── jwt.go             # Token签发/校验
+│   │   │   ├── middleware.go      # WebSocket握手JWT校验
+│   │   │   └── store.go           # UserStore interface + 内存实现
+│   │   ├── lobby/
+│   │   │   ├── service.go         # 房间创建/加入/解散
+│   │   │   ├── matchmaker.go      # 匹配逻辑（Gamejam：手动房间号）
+│   │   │   ├── room_manager.go    # 管理等待中的房间
+│   │   │   └── store.go           # LobbyStore interface + Redis实现
+│   │   ├── algo/
+│   │   │   ├── pathfinding/
+│   │   │   │   ├── astar.go       # A*，只依赖Grid interface
+│   │   │   │   └── astar_test.go
+│   │   │   ├── graph/
+│   │   │   │   └── flow.go        # 最大流（资源流动用）
+│   │   │   └── geometry/
+│   │   │       └── distance.go    # 曼哈顿距离等工具函数
+│   │   ├── llm/
+│   │   │   ├── interface.go       # LLMClient interface
+│   │   │   ├── anthropic.go       # Anthropic实现
+│   │   │   ├── openai.go          # OpenAI兼容实现
+│   │   │   └── factory.go         # 按配置创建实例
+│   │   ├── domain/
+│   │   │   ├── types.go           # 基础枚举和类型
+│   │   │   ├── state.go           # GameState根结构
+│   │   │   ├── node.go            # Node纯查询方法
+│   │   │   └── unit.go            # Unit纯查询方法
+│   │   ├── ecs/
+│   │   │   ├── components.go      # 所有Component类型定义和注册
+│   │   │   ├── factory.go         # 从config创建Entity的工厂
+│   │   │   └── query.go           # 常用Query封装
+│   │   ├── event/
+│   │   │   ├── interface.go       # Event interface
+│   │   │   ├── combat.go          # 战斗事件
+│   │   │   ├── production.go      # 生产事件
+│   │   │   ├── minister.go        # 部长事件
+│   │   │   └── game.go            # 游戏流程事件
+│   │   ├── engine/
+│   │   │   ├── pipeline.go        # Pipeline：串联System，统一Apply
+│   │   │   ├── combat/
+│   │   │   │   ├── movement.go    # MovementSystem
+│   │   │   │   ├── conflict.go    # 冲突检测System
+│   │   │   │   ├── battle.go      # BattleSystem
+│   │   │   │   ├── siege.go       # SiegeSystem
+│   │   │   │   ├── ranged.go      # RangedSystem（弓手远程）
+│   │   │   │   └── upkeep.go      # UpkeepSystem（粮食消耗）
+│   │   │   ├── production/
+│   │   │   │   ├── build.go       # BuildSystem（建造结算）
+│   │   │   │   ├── flow.go        # FlowSystem（资源流动）
+│   │   │   │   └── upkeep.go      # ProductionUpkeepSystem
+│   │   │   └── minister/
+│   │   │       ├── engine.go      # 部长调度器（异步）
+│   │   │       ├── prompt.go      # 游戏状态→Prompt序列化
+│   │   │       ├── parser.go      # LLM响应解析和actions执行
+│   │   │       └── memory.go      # 部长记忆管理
+│   │   ├── game/
+│   │   │   ├── room.go            # Room：生命周期+状态机主循环
+│   │   │   ├── phase/
+│   │   │   │   ├── interface.go   # Phase interface
+│   │   │   │   ├── domestic.go    # 内政阶段
+│   │   │   │   └── combat.go      # 战斗阶段
+│   │   │   └── settlement.go      # 结算：调Engine+Apply+推送
+│   │   └── store/
+│   │       ├── interface.go       # 所有Store interface汇总
+│   │       ├── postgres/
+│   │       │   └── user_store.go  # UserStore PostgreSQL实现
+│   │       └── redis/
+│   │           ├── game_store.go  # GameStore Redis实现
+│   │           └── lobby_store.go # LobbyStore Redis实现
 │
-├── config/
-│   ├── config.go                  # 所有配置结构体
-│   ├── gamedata.go                # GameData结构体定义
-│   └── loader.go                  # 加载+校验gamedata.json
-│
-├── data/
-│   ├── gamedata.json              # 数值配置（唯一数值来源）
-│   ├── gamedata.schema.json       # JSON Schema（自动生成+手工维护）
-│   └── maps/
-│       └── default.json           # 固定地图数据
-│
-├── transport/
-│   ├── interface.go               # Transport interface定义
-│   ├── websocket/
-│   │   ├── hub.go                 # 连接池管理
-│   │   ├── client.go              # 单连接读写goroutine
-│   │   ├── router.go              # Envelope.Type路由到handler
-│   │   └── transport.go           # 实现Transport interface
-│   └── grpc/
-│       └── .gitkeep               # 预留，暂不实现
-│
-├── auth/
-│   ├── service.go                 # 注册/登录业务逻辑
-│   ├── jwt.go                     # Token签发/校验
-│   ├── middleware.go              # WebSocket握手JWT校验
-│   └── store.go                   # UserStore interface + 内存实现
-│
-├── lobby/
-│   ├── service.go                 # 房间创建/加入/解散
-│   ├── matchmaker.go              # 匹配逻辑（Gamejam：手动房间号）
-│   ├── room_manager.go            # 管理等待中的房间
-│   └── store.go                   # LobbyStore interface + Redis实现
-│
-├── algo/
-│   ├── pathfinding/
-│   │   ├── astar.go               # A*，只依赖Grid interface
-│   │   └── astar_test.go
-│   ├── graph/
-│   │   └── flow.go                # 最大流（资源流动用）
-│   └── geometry/
-│       └── distance.go            # 曼哈顿距离等工具函数
-│
-├── llm/
-│   ├── interface.go               # LLMClient interface
-│   ├── anthropic.go               # Anthropic实现
-│   ├── openai.go                  # OpenAI兼容实现
-│   └── factory.go                 # 按配置创建实例
-│
-├── domain/
-│   ├── types.go                   # 基础枚举和类型
-│   ├── state.go                   # GameState根结构
-│   ├── node.go                    # Node纯查询方法
-│   └── unit.go                    # Unit纯查询方法
-│
-├── ecs/
-│   ├── components.go              # 所有Component类型定义和注册
-│   ├── factory.go                 # 从config创建Entity的工厂
-│   └── query.go                   # 常用Query封装
-│
-├── event/
-│   ├── interface.go               # Event interface
-│   ├── combat.go                  # 战斗事件
-│   ├── production.go              # 生产事件
-│   ├── minister.go                # 部长事件
-│   └── game.go                    # 游戏流程事件
-│
-├── engine/
-│   ├── pipeline.go                # Pipeline：串联System，统一Apply
-│   ├── combat/
-│   │   ├── movement.go            # MovementSystem
-│   │   ├── conflict.go            # 冲突检测System
-│   │   ├── battle.go              # BattleSystem
-│   │   ├── siege.go               # SiegeSystem
-│   │   ├── ranged.go              # RangedSystem（弓手远程）
-│   │   └── upkeep.go              # UpkeepSystem（粮食消耗）
-│   ├── production/
-│   │   ├── build.go               # BuildSystem（建造结算）
-│   │   ├── flow.go                # FlowSystem（资源流动）
-│   │   └── upkeep.go              # ProductionUpkeepSystem
-│   └── minister/
-│       ├── engine.go              # 部长调度器（异步）
-│       ├── prompt.go              # 游戏状态→Prompt序列化
-│       ├── parser.go              # LLM响应解析和actions执行
-│       └── memory.go              # 部长记忆管理
-│
-├── game/
-│   ├── room.go                    # Room：生命周期+状态机主循环
-│   ├── phase/
-│   │   ├── interface.go           # Phase interface
-│   │   ├── domestic.go            # 内政阶段
-│   │   └── combat.go              # 战斗阶段
-│   └── settlement.go              # 结算：调Engine+Apply+推送
-│
-└── store/
-    ├── interface.go               # 所有Store interface汇总
-    ├── postgres/
-    │   └── user_store.go          # UserStore PostgreSQL实现
-    └── redis/
-        ├── game_store.go          # GameStore Redis实现
-        └── lobby_store.go         # LobbyStore Redis实现
+└── client/
+    └── Assets/Scripts/Runtime/Protocol/ # buf generate 输出的 C# 协议代码
 ```
 
 ### Makefile命令
@@ -256,7 +259,7 @@ func (s *SiegeSystem) Run(world donburi.World) { world.Entry(...).HP -= 10 }
 
 ### 原则三：Transport透明
 
-业务代码只依赖`transport.Transport`接口，不得import`transport/websocket`包。
+业务代码只依赖`transport.GameTransport`接口，不得import`transport/websocket`包。
 
 ### 原则四：Config是唯一数值来源
 
@@ -284,18 +287,18 @@ modules:
 version: v2
 plugins:
   - plugin: go
-    out: gen/go
+    out: ../server/internal/gen/proto
     opt: paths=source_relative
   - plugin: csharp
-    out: gen/csharp
+    out: ../client/Assets/Scripts/Runtime/Protocol
 ```
 
 ### common.proto
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 message Position {
@@ -329,8 +332,8 @@ message Envelope {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 // 客户端→服务端
@@ -361,8 +364,8 @@ message MsgAuthError {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 // 客户端→服务端
@@ -412,8 +415,8 @@ message MsgLobbyError {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 import "common.proto";
@@ -496,8 +499,8 @@ message MsgGameOver {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 import "common.proto";
@@ -594,8 +597,8 @@ message DomesticChange {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 import "common.proto";
@@ -726,8 +729,8 @@ message BuildingDamagedEvent {
 
 ```protobuf
 syntax = "proto3";
-package panoptes;
-option go_package = "panoptes-server/gen/go/panoptes";
+package panoptes.proto.v1;
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol";
 
 // 部长汇报（流式，多条chunk）
@@ -1060,11 +1063,11 @@ message MetricItem {
 
 以下接口定义固定，实现可自行补充，但签名不得修改。
 
-### transport.Transport
+### transport.GameTransport
 
 ```go
 // transport/interface.go
-type Transport interface {
+type GameTransport interface {
     Send(playerID string, msg proto.Message) error
     Broadcast(roomID string, msg proto.Message) error
     Stream(playerID string, msgs <-chan proto.Message) error
@@ -1474,15 +1477,20 @@ REDIS_DB=0
 # PostgreSQL（Gamejam阶段可不配置，使用内存实现）
 POSTGRES_DSN=postgres://user:pass@localhost/panoptes
 
+# Lobby / Game
+DEFAULT_MAX_PLAYERS=2
+DEV_MODE=false
+TOKENS_PER_TURN=3
+TURN_TIME_LIMIT_DOMESTIC=15
+TURN_TIME_LIMIT_COMBAT=20
+
 # LLM
-LLM_PROVIDER=anthropic          # anthropic|openai
-LLM_API_KEY=sk-...
-LLM_MODEL=claude-sonnet-4-20250514
-LLM_TIMEOUT_SECONDS=5
+QWEN_API_KEY=
+DEEPSEEK_API_KEY=
 
 # JWT
 JWT_SECRET=your-secret-key
-JWT_EXPIRE_HOURS=24
+JWT_EXPIRATION=86400
 
 # 游戏数据
 GAMEDATA_PATH=data/gamedata.json
