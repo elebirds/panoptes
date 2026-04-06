@@ -15,18 +15,39 @@ namespace Panoptes.Runtime.UI.Domestic
     {
         [SerializeField] private BuildTooltipView tooltipView;
         [TextArea] [SerializeField] private string tooltipText;
-        [SerializeField] private bool followPointer = true;
+        [SerializeField] private bool followPointer = false;
+        [SerializeField] private bool forcePointerPosition = false;
+
+        private RectTransform _selfRect;
+
+        private void Awake()
+        {
+            _selfRect = transform as RectTransform;
+        }
 
         public void Configure(BuildTooltipView view, string text)
         {
             tooltipView = view;
             tooltipText = text;
+            followPointer = false;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (tooltipView == null || string.IsNullOrWhiteSpace(tooltipText))
             {
+                return;
+            }
+
+            if (forcePointerPosition)
+            {
+                tooltipView.Show(tooltipText, eventData.position);
+                return;
+            }
+
+            if (_selfRect != null)
+            {
+                tooltipView.ShowAbove(tooltipText, _selfRect, eventData != null ? eventData.enterEventCamera : null);
                 return;
             }
 
@@ -37,6 +58,18 @@ namespace Panoptes.Runtime.UI.Domestic
         {
             if (!followPointer || tooltipView == null)
             {
+                return;
+            }
+
+            if (forcePointerPosition)
+            {
+                tooltipView.Move(eventData.position);
+                return;
+            }
+
+            if (_selfRect != null)
+            {
+                tooltipView.MoveAbove(_selfRect, eventData != null ? eventData.enterEventCamera : null);
                 return;
             }
 
