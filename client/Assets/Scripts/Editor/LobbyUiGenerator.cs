@@ -93,6 +93,7 @@ namespace Panoptes.Editor
 
             var lobbyPanel = CreatePanel("LobbyPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(880f, 760f), new Color(0.97f, 0.97f, 0.98f, 0.98f));
             var roomPanel = CreatePanel("RoomPanel", canvas.transform, new Vector2(0.5f, 0.5f), new Vector2(920f, 760f), new Color(0.97f, 0.97f, 0.98f, 0.98f));
+            roomPanel.SetActive(false);
 
             BuildLobbyPanel(lobbyPanel.transform);
             BuildRoomPanel(roomPanel.transform, playerSlotPrefab);
@@ -182,7 +183,7 @@ namespace Panoptes.Editor
 
         private static GameObject CreateCanvas()
         {
-            var canvasObject = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var canvasObject = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(LobbySceneController));
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.pixelPerfect = false;
