@@ -66,13 +66,15 @@ func (h *Hub) Run() {
 			}
 		case client := <-h.unregister:
 			var leaveRoom LeaveRoomFunc
+			var removed bool
 			h.mu.Lock()
 			if registered, ok := h.clients[client.playerID]; ok && registered == client {
 				delete(h.clients, client.playerID)
+				removed = true
 			}
 			leaveRoom = h.leaveRoom
 			h.mu.Unlock()
-			if leaveRoom != nil && client.playerID != "" {
+			if removed && leaveRoom != nil && client.playerID != "" {
 				go func(playerID string) {
 					if err := leaveRoom(context.Background(), playerID); err != nil {
 						slog.Warn("断线退房失败", "玩家ID", playerID, "错误", err)
