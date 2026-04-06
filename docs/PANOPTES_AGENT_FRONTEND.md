@@ -81,8 +81,8 @@ Google.Protobuf                Protobuf C#运行时
 ### 生成代码
 
 ```
-Assets/Generated/Protocol/     从服务端buf generate生成的C#代码
-                                不手动修改，与服务端proto同步
+Assets/Scripts/Runtime/Protocol/  从服务端 buf generate 生成的 C# 代码
+                                  不手动修改，与服务端 proto 同步
 ```
 
 ---
@@ -93,17 +93,16 @@ Assets/Generated/Protocol/     从服务端buf generate生成的C#代码
 panoptes-client/
 ├── Assets/
 │   │
-│   ├── Generated/                     # 自动生成，禁止手动修改
-│   │   └── Protocol/                  # protobuf生成的C#代码
-│   │       ├── Common.cs
-│   │       ├── Auth.cs
-│   │       ├── Lobby.cs
-│   │       ├── GameState.cs
-│   │       ├── Domestic.cs
-│   │       ├── Combat.cs
-│   │       └── Minister.cs
-│   │
 │   ├── Scripts/
+│   │   │
+│   │   ├── Runtime/Protocol/          # 自动生成，禁止手动修改
+│   │   │   ├── Common.cs
+│   │   │   ├── Auth.cs
+│   │   │   ├── Lobby.cs
+│   │   │   ├── GameState.cs
+│   │   │   ├── Domestic.cs
+│   │   │   ├── Combat.cs
+│   │   │   └── Minister.cs
 │   │   │
 │   │   ├── Network/
 │   │   │   ├── NetworkManager.cs      # WebSocket连接管理，单例
@@ -885,7 +884,7 @@ public class UnitMoveAnim : MonoBehaviour
 Step 1：项目基础（Day 1）
   - Unity项目创建，URP配置
   - NativeWebSocket和Protobuf插件导入
-  - 把服务端gen/csharp/放入Generated/Protocol/
+  - 运行根目录 `make gen`，同步更新 `Assets/Scripts/Runtime/Protocol/`
   - Boot场景，单例初始化
   - NetworkManager：连接，发送，接收，主线程回调
   - MessageDispatcher：Envelope路由骨架

@@ -57,7 +57,7 @@ panoptes/                          # Monorepo 根目录
 │
 └── client/                        # Unity 客户端
     ├── Assets/
-    │   ├── Generated/Protocol/    # buf generate 生成，禁止手动修改
+    │   ├── Scripts/Runtime/Protocol/ # buf generate 生成，禁止手动修改
     │   ├── Scripts/
     │   ├── Scenes/
     │   ├── Prefabs/
@@ -70,7 +70,7 @@ panoptes/                          # Monorepo 根目录
 ## 绝对禁止（任何情况下都不得违反）
 
 ```
-❌ 在 gen/ 或 Generated/ 目录下手动修改任何文件
+❌ 在 `server/internal/gen/proto/` 或 `client/Assets/Scripts/Runtime/Protocol/` 下手动修改生成文件
 ❌ 在 engine/ 的 System 里直接修改游戏状态（必须通过 Event）
 ❌ 在 transport/websocket/ 里 import game 包
 ❌ 在 game/ 里 import transport/websocket 包
@@ -95,9 +95,9 @@ panoptes/                          # Monorepo 根目录
 | WebSocket | github.com/gorilla/websocket |
 | ECS | github.com/yohamta/donburi |
 | Redis | github.com/redis/go-redis/v9 |
-| PostgreSQL | github.com/lib/pq |
+| PostgreSQL | github.com/jackc/pgx/v5 |
 | JWT | github.com/golang-jwt/jwt/v5 |
-| LLM | github.com/anthropics/anthropic-sdk-go |
+| LLM | github.com/openai/openai-go |
 | Protobuf | google.golang.org/protobuf |
 | 协议生成 | buf |
 
@@ -141,7 +141,7 @@ panoptes/                          # Monorepo 根目录
 # 1. 修改 protocol/*.proto
 # 2. 在根目录执行
 make gen
-# 3. 提交 gen/ 和 Generated/ 下的变更
+# 3. 提交 `server/internal/gen/proto/` 和 `client/Assets/Scripts/Runtime/Protocol/` 下的变更
 ```
 
 禁止只改一端的生成代码而不改 proto 源文件。
@@ -312,9 +312,9 @@ unauthorized         → "请重新登录"
 
 | 文档 | 说明 |
 |---|---|
-| `docs/AGENT_BACKEND.md` | 服务端完整开发指南，含所有接口定义 |
-| `docs/AGENT_FRONTEND.md` | 客户端完整开发指南 |
-| `docs/HTTP_API_DESIGN.md` | HTTP API 设计规范 |
+| `docs/PANOPTES_AGENT_BACKEND.md` | 服务端完整开发指南，含所有接口定义 |
+| `docs/PANOPTES_AGENT_FRONTEND.md` | 客户端完整开发指南 |
+| `docs/HTTP_DESIGN.md` | HTTP API 设计规范 |
 | `protocol/*.proto` | 当前消息协议定义 |
 
 ---
