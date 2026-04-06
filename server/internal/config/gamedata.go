@@ -1,13 +1,6 @@
 package config
 
-type ResourceAmount struct {
-	Ore              int `json:"ore"`
-	Wood             int `json:"wood"`
-	Food             int `json:"food"`
-	RefinedOre       int `json:"refined_ore"`
-	EngineerMaterial int `json:"engineer_material"`
-	BuildPoints      int `json:"build_points"`
-}
+type ResourceAmount map[ResourceKey]int
 
 type UnitConfig struct {
 	Name              string             `json:"name"`

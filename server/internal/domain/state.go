@@ -18,7 +18,7 @@ type GameState struct {
 type PlayerState struct {
 	PlayerID     string
 	Username     string
-	Resources    Resources
+	Resources    ResourceBag
 	Policy       Policy
 	TokensLeft   int
 	MainCastleHP int
@@ -67,9 +67,11 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		state.Players[playerID] = &PlayerState{
 			PlayerID: playerID,
 			Username: username,
-			Resources: Resources{
-				BuildPoints: config.Data.Rules.BuildPointsPerTurn,
-			},
+			Resources: func() ResourceBag {
+				bag := NewResourceBag()
+				bag[ResourceBuildPoints] = config.Data.Rules.BuildPointsPerTurn
+				return bag
+			}(),
 			TokensLeft:   config.Data.Rules.TokensPerTurn,
 			MainCastleHP: config.Data.Rules.CastleBaseHP,
 			WarZones:     []*WarZone{},
