@@ -2,8 +2,8 @@
  * Project: Panoptes
  * File: MapRenderer.cs
  * Author: Panoptes Team
- * Date: 2026-04-04
- * Description: Map rendering manager.
+ * Date: 2026-04-06
+ * Description: Map + unit runtime rendering manager.
  *************************************************/
 
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ using Panoptes.Runtime.Cache;
 using UnityEngine;
 using ProtoNodeView = Panoptes.Protocol.V1.NodeView;
 using ProtoPosition = Panoptes.Protocol.V1.Position;
+using ProtoUnitView = Panoptes.Protocol.V1.UnitView;
 
 namespace Panoptes.Runtime.Map
 {
@@ -30,6 +31,7 @@ namespace Panoptes.Runtime.Map
             public int height;
             public string defaultTerrain = "plain";
             public MapJsonNode[] nodes;
+            public MapJsonUnit[] units;
         }
 
         [System.Serializable]
@@ -47,6 +49,18 @@ namespace Panoptes.Runtime.Map
             public string owner;
         }
 
+        [System.Serializable]
+        private sealed class MapJsonUnit
+        {
+            public string id;
+            public string faction;
+            public string unitType;
+            public int hp = 100;
+            public int maxHp = 100;
+            public int x;
+            public int y;
+        }
+
         public static MapRenderer Instance { get; private set; }
 
         [Header("Map Source")]
@@ -59,6 +73,12 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private Transform tilesRoot;
         [SerializeField] private float tileSize = 1f;
 
+        [Header("Units")]
+        [SerializeField] private UnitView unitPrefab;
+        [SerializeField] private Transform unitsRoot;
+        [SerializeField] private bool spawnDebugUnitsWhenNoUnits = true;
+        [SerializeField] private string[] debugFactions = { "blue", "red", "green", "yellow" };
+
         [Header("Debug Generation (Local Only)")]
         [SerializeField] private bool generateDebugMapOnStart = true;
         [SerializeField] private int debugMapWidth = 20;
@@ -68,7 +88,18 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private int randomSeed = 20260405;
 
         private readonly Dictionary<string, NodeView> _tileViews = new();
+        private readonly Dictionary<Vector2Int, NodeView> _tileViewsByGrid = new();
         private readonly Dictionary<string, ProtoNodeView> _nodeStates = new();
+
+        private readonly Dictionary<string, UnitView> _unitViews = new();
+        private readonly Dictionary<string, string> _unitNodeById = new();
+        private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
+
+        private readonly List<ProtoUnitView> _jsonUnits = new();
+
+        public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
+        public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
+        public float TileSize => tileSize;
 
         private void Awake()
         {
@@ -83,6 +114,8 @@ namespace Panoptes.Runtime.Map
 
         private void Start()
         {
+            EnsureRuntimeControllers();
+
             if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
             {
                 return;
@@ -91,6 +124,18 @@ namespace Panoptes.Runtime.Map
             if (generateDebugMapOnStart)
             {
                 BuildDebugMap();
+                return;
+            }
+
+            RebuildMap();
+        }
+
+        private static void EnsureRuntimeControllers()
+        {
+            if (UnityEngine.Object.FindObjectOfType<MapInputHandler>() == null)
+            {
+                var go = new GameObject("MapInputHandler");
+                go.AddComponent<MapInputHandler>();
             }
         }
 
@@ -101,7 +146,6 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
-            // Local debug map mode for early visual iteration.
             if (generateDebugMapOnStart)
             {
                 BuildDebugMap();
@@ -117,12 +161,6 @@ namespace Panoptes.Runtime.Map
             BuildFromNodes(GameStateCache.Instance.Nodes.Values);
         }
 
-        /// <summary>
-        /// Build map from JSON string. Can be used by backend message handlers directly.
-        /// Supported JSON:
-        /// 1) { "mapId":"...", "width":20, "height":20, "nodes":[...] }
-        /// 2) { "map": { ...same fields... } }
-        /// </summary>
         public bool LoadMapFromJsonString(string json)
         {
             if (!TryParseNodesFromJson(json, out var nodes))
@@ -134,9 +172,6 @@ namespace Panoptes.Runtime.Map
             return true;
         }
 
-        /// <summary>
-        /// Convenience overload for TextAsset usage in editor.
-        /// </summary>
         public bool LoadMapFromJsonAsset(TextAsset jsonAsset)
         {
             if (jsonAsset == null)
@@ -166,8 +201,175 @@ namespace Panoptes.Runtime.Map
             }
         }
 
+        public bool TryGetNodeView(string nodeId, out NodeView nodeView)
+        {
+            return _tileViews.TryGetValue(nodeId, out nodeView) && nodeView != null;
+        }
+
+        public bool TryGetNodeViewByGrid(Vector2Int gridPos, out NodeView nodeView)
+        {
+            return _tileViewsByGrid.TryGetValue(gridPos, out nodeView) && nodeView != null;
+        }
+
+        public bool TryGetNodeState(string nodeId, out ProtoNodeView nodeState)
+        {
+            return _nodeStates.TryGetValue(nodeId, out nodeState) && nodeState != null;
+        }
+
+        public bool TryGetNodeIdByGrid(Vector2Int gridPos, out string nodeId)
+        {
+            nodeId = string.Empty;
+            if (!_tileViewsByGrid.TryGetValue(gridPos, out var nodeView) || nodeView == null)
+            {
+                return false;
+            }
+
+            nodeId = nodeView.NodeId;
+            return !string.IsNullOrEmpty(nodeId);
+        }
+
+        public bool TryGetUnitView(string unitId, out UnitView unitView)
+        {
+            return _unitViews.TryGetValue(unitId, out unitView) && unitView != null;
+        }
+
+        public bool IsNodeResourcePoint(string nodeId)
+        {
+            return TryGetNodeState(nodeId, out var state) && state.IsResourcePoint;
+        }
+
+        public bool IsNodePassableForMove(string nodeId)
+        {
+            if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            var terrain = NormalizeToken(state.Terrain);
+            return terrain != "river" && terrain != "mountain";
+        }
+
+        public bool IsNodeBuildBaseAvailable(string nodeId)
+        {
+            if (!TryGetNodeState(nodeId, out var state))
+            {
+                return false;
+            }
+
+            return string.IsNullOrEmpty(NormalizeToken(state.BuildingType));
+        }
+
+        public bool ApplyBuildingPlacement(string nodeId, string buildingType, string ownerId, bool isGhost, int hp = 100, Color? ghostColor = null)
+        {
+            if (!TryGetNodeView(nodeId, out var nodeView))
+            {
+                return false;
+            }
+
+            if (isGhost)
+            {
+                nodeView.SetBuildingGhost(buildingType, ownerId, ghostColor ?? new Color(0.6f, 1f, 0.6f, 0.9f));
+            }
+            else
+            {
+                nodeView.SetBuilding(buildingType, ownerId, hp, false);
+            }
+
+            if (_nodeStates.TryGetValue(nodeId, out var state) && state != null)
+            {
+                state.BuildingType = buildingType ?? string.Empty;
+                state.Owner = ownerId ?? string.Empty;
+                state.BuildingHp = hp;
+            }
+
+            return true;
+        }
+
+        public void SetUnitNode(string unitId, string targetNodeId)
+        {
+            if (string.IsNullOrEmpty(unitId) || string.IsNullOrEmpty(targetNodeId))
+            {
+                return;
+            }
+
+            if (!_unitViews.TryGetValue(unitId, out var unitView) || unitView == null)
+            {
+                return;
+            }
+
+            if (!TryGetNodeView(targetNodeId, out var targetNode))
+            {
+                return;
+            }
+
+            if (_unitNodeById.TryGetValue(unitId, out var oldNodeId))
+            {
+                if (_unitsByNodeId.TryGetValue(oldNodeId, out var unitsAtOld))
+                {
+                    unitsAtOld.Remove(unitId);
+                }
+            }
+
+            if (!_unitsByNodeId.TryGetValue(targetNodeId, out var unitsAtNew))
+            {
+                unitsAtNew = new HashSet<string>();
+                _unitsByNodeId[targetNodeId] = unitsAtNew;
+            }
+            unitsAtNew.Add(unitId);
+            _unitNodeById[unitId] = targetNodeId;
+
+            unitView.SetGridPosition(targetNode.GridPos);
+            if (targetNode.UnitAnchor != null)
+            {
+                unitView.transform.position = targetNode.UnitAnchor.position;
+            }
+
+            if (GameStateCache.Instance != null)
+            {
+                var protocolUnit = GameStateCache.Instance.GetUnit(unitId);
+                if (protocolUnit != null)
+                {
+                    protocolUnit.Pos = new ProtoPosition
+                    {
+                        X = targetNode.GridPos.x,
+                        Y = targetNode.GridPos.y
+                    };
+                }
+            }
+        }
+
+        public bool TryGetGridBounds(out int minX, out int maxX, out int minY, out int maxY)
+        {
+            minX = int.MaxValue;
+            maxX = int.MinValue;
+            minY = int.MaxValue;
+            maxY = int.MinValue;
+
+            if (_tileViewsByGrid.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var pair in _tileViewsByGrid)
+            {
+                var pos = pair.Key;
+                if (pos.x < minX) minX = pos.x;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.y < minY) minY = pos.y;
+                if (pos.y > maxY) maxY = pos.y;
+            }
+
+            return true;
+        }
+
+        public Vector3 GridToWorld(int x, int y)
+        {
+            return new Vector3(x * tileSize, 0f, y * tileSize);
+        }
+
         private void BuildDebugMap()
         {
+            _jsonUnits.Clear();
             var nodes = CreateDebugNodes();
             BuildFromNodes(nodes);
         }
@@ -192,7 +394,6 @@ namespace Panoptes.Runtime.Map
                         Terrain = terrain,
                         BuildingType = buildingType,
                         BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : 100,
-                        // Keep debug buildings neutral so original material colors stay readable.
                         Owner = string.Empty,
                         HasRoad = false,
                         IsResourcePoint = false,
@@ -258,10 +459,143 @@ namespace Panoptes.Runtime.Map
                 tile.Bind(node);
 
                 _tileViews[node.Id] = tile;
+                _tileViewsByGrid[tile.GridPos] = tile;
                 _nodeStates[node.Id] = node;
             }
 
             FocusCameraToCenter();
+            RebuildUnitsForCurrentSource();
+        }
+
+        private void RebuildUnitsForCurrentSource()
+        {
+            ClearUnits();
+
+            if (_jsonUnits.Count > 0)
+            {
+                BuildUnitsFromState(_jsonUnits);
+                return;
+            }
+
+            if (!generateDebugMapOnStart && GameStateCache.Instance != null && GameStateCache.Instance.Units.Count > 0)
+            {
+                BuildUnitsFromState(GameStateCache.Instance.Units.Values);
+                return;
+            }
+
+            if (spawnDebugUnitsWhenNoUnits)
+            {
+                BuildUnitsFromState(CreateDebugUnits());
+            }
+        }
+
+        private List<ProtoUnitView> CreateDebugUnits()
+        {
+            var result = new List<ProtoUnitView>();
+            if (!TryGetGridBounds(out var minX, out var maxX, out var minY, out var maxY))
+            {
+                return result;
+            }
+
+            var corners = new[]
+            {
+                new Vector2Int(minX + 1, minY + 1),
+                new Vector2Int(maxX - 1, minY + 1),
+                new Vector2Int(minX + 1, maxY - 1),
+                new Vector2Int(maxX - 1, maxY - 1)
+            };
+
+            for (int i = 0; i < corners.Length; i++)
+            {
+                var p = corners[i];
+                if (!TryGetNodeViewByGrid(p, out _))
+                {
+                    continue;
+                }
+
+                var faction = (debugFactions != null && i < debugFactions.Length)
+                    ? debugFactions[i]
+                    : $"faction_{i + 1}";
+
+                result.Add(new ProtoUnitView
+                {
+                    Id = $"U_DEBUG_{i + 1}",
+                    Faction = faction,
+                    UnitType = "infantry",
+                    Hp = 100,
+                    MaxHp = 100,
+                    Pos = new ProtoPosition { X = p.x, Y = p.y }
+                });
+            }
+
+            return result;
+        }
+
+        private void BuildUnitsFromState(IEnumerable<ProtoUnitView> units)
+        {
+            if (units == null)
+            {
+                return;
+            }
+
+            var unitCache = UnitCache.Instance;
+            if (unitCache == null)
+            {
+                var cacheGo = new GameObject("UnitCache");
+                unitCache = cacheGo.AddComponent<UnitCache>();
+            }
+
+            foreach (var unit in units)
+            {
+                if (unit == null || unit.Pos == null || string.IsNullOrEmpty(unit.Id))
+                {
+                    continue;
+                }
+
+                var gridPos = new Vector2Int(unit.Pos.X, unit.Pos.Y);
+                if (!TryGetNodeViewByGrid(gridPos, out var nodeView) || nodeView == null)
+                {
+                    continue;
+                }
+
+                var instance = CreateUnitInstance();
+                instance.transform.SetParent(EnsureUnitsRoot(), false);
+                var worldPos = nodeView.UnitAnchor != null
+                    ? nodeView.UnitAnchor.position
+                    : nodeView.transform.position + Vector3.up * 0.2f;
+                instance.Bind(unit, worldPos);
+
+                _unitViews[unit.Id] = instance;
+                _unitNodeById[unit.Id] = nodeView.NodeId;
+
+                if (!_unitsByNodeId.TryGetValue(nodeView.NodeId, out var set))
+                {
+                    set = new HashSet<string>();
+                    _unitsByNodeId[nodeView.NodeId] = set;
+                }
+                set.Add(unit.Id);
+
+                unitCache?.Register(instance);
+            }
+        }
+
+        private UnitView CreateUnitInstance()
+        {
+            if (unitPrefab != null)
+            {
+                return Instantiate(unitPrefab);
+            }
+
+            // Fallback: build a runtime capsule unit if prefab is not assigned yet.
+            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            go.name = "Unit_Runtime";
+            go.transform.localScale = new Vector3(0.45f, 0.45f, 0.45f);
+            var view = go.GetComponent<UnitView>();
+            if (view == null)
+            {
+                view = go.AddComponent<UnitView>();
+            }
+            return view;
         }
 
         private Transform EnsureTilesRoot()
@@ -277,9 +611,17 @@ namespace Panoptes.Runtime.Map
             return tilesRoot;
         }
 
-        private Vector3 GridToWorld(int x, int y)
+        private Transform EnsureUnitsRoot()
         {
-            return new Vector3(x * tileSize, 0f, y * tileSize);
+            if (unitsRoot != null)
+            {
+                return unitsRoot;
+            }
+
+            var root = new GameObject("UnitsRoot");
+            root.transform.SetParent(transform, false);
+            unitsRoot = root.transform;
+            return unitsRoot;
         }
 
         private void ClearMap()
@@ -293,7 +635,28 @@ namespace Panoptes.Runtime.Map
             }
 
             _tileViews.Clear();
+            _tileViewsByGrid.Clear();
             _nodeStates.Clear();
+        }
+
+        private void ClearUnits()
+        {
+            foreach (var pair in _unitViews)
+            {
+                if (pair.Value != null)
+                {
+                    if (UnitCache.Instance != null)
+                    {
+                        UnitCache.Instance.Unregister(pair.Value);
+                    }
+
+                    Destroy(pair.Value.gameObject);
+                }
+            }
+
+            _unitViews.Clear();
+            _unitNodeById.Clear();
+            _unitsByNodeId.Clear();
         }
 
         private void FocusCameraToCenter()
@@ -350,6 +713,8 @@ namespace Panoptes.Runtime.Map
         private bool TryParseNodesFromJson(string json, out List<ProtoNodeView> nodes)
         {
             nodes = null;
+            _jsonUnits.Clear();
+
             if (string.IsNullOrWhiteSpace(json))
             {
                 Debug.LogWarning("[MapRenderer] Map JSON is empty.");
@@ -393,7 +758,8 @@ namespace Panoptes.Runtime.Map
                 return false;
             }
 
-            Debug.Log($"[MapRenderer] Loaded map JSON: mapId='{config.mapId}', nodes={nodes.Count}.");
+            BuildUnitsFromJsonConfig(config, _jsonUnits);
+            Debug.Log($"[MapRenderer] Loaded map JSON: mapId='{config.mapId}', nodes={nodes.Count}, units={_jsonUnits.Count}.");
             return true;
         }
 
@@ -424,22 +790,15 @@ namespace Panoptes.Runtime.Map
 
                 if (width > 0 && (jsonNode.x < 0 || jsonNode.x >= width))
                 {
-                    Debug.LogWarning($"[MapRenderer] Node x out of range and skipped: x={jsonNode.x}, width={width}.");
                     continue;
                 }
 
                 if (height > 0 && (jsonNode.y < 0 || jsonNode.y >= height))
                 {
-                    Debug.LogWarning($"[MapRenderer] Node y out of range and skipped: y={jsonNode.y}, height={height}.");
                     continue;
                 }
 
                 var key = MakeCoordKey(jsonNode.x, jsonNode.y);
-                if (nodeByKey.ContainsKey(key))
-                {
-                    Debug.LogWarning($"[MapRenderer] Duplicate node at ({jsonNode.x},{jsonNode.y}); last one wins.");
-                }
-
                 nodeByKey[key] = jsonNode;
             }
 
@@ -494,6 +853,34 @@ namespace Panoptes.Runtime.Map
             }
 
             return result;
+        }
+
+        private static void BuildUnitsFromJsonConfig(MapJsonConfig config, List<ProtoUnitView> output)
+        {
+            output.Clear();
+            if (config?.units == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < config.units.Length; i++)
+            {
+                var src = config.units[i];
+                if (src == null)
+                {
+                    continue;
+                }
+
+                output.Add(new ProtoUnitView
+                {
+                    Id = string.IsNullOrWhiteSpace(src.id) ? $"U_{src.x}_{src.y}_{i}" : src.id.Trim(),
+                    Faction = (src.faction ?? string.Empty).Trim(),
+                    UnitType = string.IsNullOrWhiteSpace(src.unitType) ? "infantry" : src.unitType.Trim(),
+                    Hp = Mathf.Max(0, src.hp),
+                    MaxHp = Mathf.Max(1, src.maxHp),
+                    Pos = new ProtoPosition { X = src.x, Y = src.y }
+                });
+            }
         }
 
         private static string MakeCoordKey(int x, int y)

@@ -68,7 +68,7 @@ namespace Panoptes.Runtime.Cache
                 _units[unit.Id] = unit;
 
             MyPlayer = msg.MyPlayer;
-            TokensLeft = msg.MyPlayer.TokensLeft;
+            TokensLeft = msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : 0;
 
             _ministers.Clear();
             _ministers.AddRange(msg.Ministers);

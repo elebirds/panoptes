@@ -10,6 +10,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Panoptes.Protocol.V1;
 using Panoptes.Protocol.V1.Auth;
+using Panoptes.Runtime.Cache;
 using Panoptes.Runtime.Network;
 using UnityEngine.SceneManagement;
 
@@ -104,6 +105,11 @@ namespace Panoptes.Runtime.App
 
         private void OnGameInit(MsgGameInit msg)
         {
+            if (GameStateCache.Instance != null)
+            {
+                GameStateCache.Instance.ApplyGameInit(msg);
+            }
+
             TransitionTo(AppState.Game);
         }
 

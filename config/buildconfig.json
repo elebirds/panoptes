@@ -1,0 +1,335 @@
+﻿{
+  "config_version": "2026-04-06.build.v1",
+  "default_locale": "zh-CN",
+  "buildings": {
+    "farm": {
+      "id": "farm",
+      "name": "农场",
+      "description": "基础粮食产出建筑。",
+      "icon_key": "building_farm",
+      "prefab_key": "Farm",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "food",
+      "build_cost": {
+        "build_points": 2
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {},
+        "output": {
+          "food": 2
+        },
+        "cycle_turns": 1
+      },
+      "combat": {
+        "max_hp": 80,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 10
+      },
+      "tags": ["eco", "food"]
+    },
+    "mine": {
+      "id": "mine",
+      "name": "矿山",
+      "description": "基础矿石产出建筑。",
+      "icon_key": "building_mine",
+      "prefab_key": "Mine",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "ore",
+      "build_cost": {
+        "build_points": 3
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {},
+        "output": {
+          "ore": 2
+        },
+        "cycle_turns": 1
+      },
+      "combat": {
+        "max_hp": 90,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 11
+      },
+      "tags": ["eco", "ore"]
+    },
+    "smelter": {
+      "id": "smelter",
+      "name": "冶炼厂",
+      "description": "将矿石精炼为精炼矿。",
+      "icon_key": "building_smelter",
+      "prefab_key": "Smelter",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 2
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {
+          "ore": 2
+        },
+        "output": {
+          "refined_ore": 1
+        },
+        "cycle_turns": 1
+      },
+      "combat": {
+        "max_hp": 100,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 20
+      },
+      "tags": ["eco", "refine"]
+    },
+    "workshop": {
+      "id": "workshop",
+      "name": "工坊",
+      "description": "将木材加工为工程材料。",
+      "icon_key": "building_workshop",
+      "prefab_key": "Workshop",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "wood": 2
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {
+          "wood": 2
+        },
+        "output": {
+          "engineer_material": 1
+        },
+        "cycle_turns": 1
+      },
+      "combat": {
+        "max_hp": 100,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 21
+      },
+      "tags": ["eco", "craft"]
+    },
+    "barracks": {
+      "id": "barracks",
+      "name": "兵营",
+      "description": "基础军队训练建筑。",
+      "icon_key": "building_barracks",
+      "prefab_key": "Barracks",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": ["infantry", "archer"],
+      "combat": {
+        "max_hp": 120,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 30
+      },
+      "tags": ["military", "train"]
+    },
+    "engineer_camp": {
+      "id": "engineer_camp",
+      "name": "工程营",
+      "description": "训练攻城与破坏单位。",
+      "icon_key": "building_engineer_camp",
+      "prefab_key": "EngineerCamp",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 4,
+        "engineer_material": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "produces_units": ["siege", "saboteur"],
+      "combat": {
+        "max_hp": 120,
+        "attack_per_turn": 0,
+        "range": 0
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 31
+      },
+      "tags": ["military", "engineer"]
+    },
+    "wall": {
+      "id": "wall",
+      "name": "城墙",
+      "description": "提高据点防御。",
+      "icon_key": "building_wall",
+      "prefab_key": "Wall",
+      "category": "military",
+      "placement_rule": "any_terrain",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 3,
+        "ore": 2
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "combat": {
+        "max_hp": 160,
+        "attack_per_turn": 0,
+        "range": 0,
+        "defense_bonus_per_level": 0.1,
+        "max_level": 3
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 40
+      },
+      "tags": ["military", "defense"]
+    },
+    "tower": {
+      "id": "tower",
+      "name": "箭塔",
+      "description": "固定防御火力点。",
+      "icon_key": "building_tower",
+      "prefab_key": "Tower",
+      "category": "military",
+      "placement_rule": "any_terrain",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 2,
+        "wood": 2
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "combat": {
+        "max_hp": 110,
+        "attack_per_turn": 8,
+        "range": 2
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 41
+      },
+      "tags": ["military", "ranged_defense"]
+    },
+    "watchtower": {
+      "id": "watchtower",
+      "name": "瞭望塔",
+      "description": "提高视野与侦查能力。",
+      "icon_key": "building_watchtower",
+      "prefab_key": "Watchtower",
+      "category": "military",
+      "placement_rule": "any_terrain",
+      "required_resource_type": "",
+      "build_cost": {
+        "build_points": 1
+      },
+      "upkeep": {
+        "food": 0
+      },
+      "production": {
+        "input": {},
+        "output": {},
+        "cycle_turns": 0
+      },
+      "combat": {
+        "max_hp": 90,
+        "attack_per_turn": 0,
+        "range": 0,
+        "vision_range_bonus": 3
+      },
+      "limits": {
+        "max_per_node": 1,
+        "max_per_player": -1
+      },
+      "ui": {
+        "sort_order": 42
+      },
+      "tags": ["military", "vision"]
+    }
+  }
+}
