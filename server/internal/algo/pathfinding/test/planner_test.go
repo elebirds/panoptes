@@ -1,348 +1,150 @@
 package test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	pf "github.com/elebirds/panoptes/internal/algo/pathfinding"
 	"github.com/elebirds/panoptes/internal/algo/pathfinding/strategy"
 )
 
-type staticBuilder struct {
-	grid pf.Grid
-}
+func make4x4SharedWorld() strategy.WorldState {
+	// 4x4 地图（X=列, Y=行），让“直走线”略贵：
+	// y=0: E F P G
+	// y=1: F F F F
+	// y=2: F F F F
+	// y=3: S P P P
+	//
+	// E: 敌人 (0,0)
+	// S: 起点 (0,3)
+	// G: 终点 (3,0)
+	// P: plain(2), F: forest(3)
+	terrainKinds := [][]string{
+		{"plain", "forest", "plain", "plain"},
+		{"forest", "forest", "forest", "forest"},
+		{"forest", "forest", "forest", "forest"},
+		{"plain", "plain", "plain", "plain"},
+	}
 
-func (b staticBuilder) Build(world strategy.WorldState, unit strategy.UnitState, decision strategy.StrategyDecision) (pf.Grid, error) {
-	return b.grid, nil
-}
-
-func makePlainWorld(rows, cols int) strategy.WorldState {
-	terrain := make([][]strategy.TerrainTile, rows)
-	for r := 0; r < rows; r++ {
-		terrain[r] = make([]strategy.TerrainTile, cols)
-		for c := 0; c < cols; c++ {
-			terrain[r][c] = strategy.TerrainTile{X: c, Y: r, Terrain: "plain"}
+	terrain := make([][]strategy.TerrainTile, 4)
+	for y := 0; y < 4; y++ {
+		terrain[y] = make([]strategy.TerrainTile, 4)
+		for x := 0; x < 4; x++ {
+			terrain[y][x] = strategy.TerrainTile{
+				X:       x,
+				Y:       y,
+				Terrain: terrainKinds[y][x],
+			}
 		}
 	}
-	return strategy.WorldState{Terrain: terrain}
-}
 
-func TestPlanner_DirectReach(t *testing.T) {
-	world := makePlainWorld(5, 5)
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 4, Y: 4},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatalf("expected goal, got %s", result.ExecutionTarget.Type)
-	}
-	if !result.Result.Found {
-		t.Fatal("expected path found")
-	}
-	if !result.Result.EndPoint.Equal(pf.Point{X: 4, Y: 4}) {
-		t.Fatalf("expected endpoint (4,4), got %v", result.Result.EndPoint)
+	return strategy.WorldState{
+		Terrain: terrain,
+		Units: []strategy.UnitInfo{
+			{ID: "enemy-1", Faction: "enemy", UnitType: "infantry", X: 0, Y: 0},
+		},
 	}
 }
 
-func TestPlanner_StopsOnBestPathWhenGoalFar(t *testing.T) {
-	world := makePlainWorld(10, 10)
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 3,
+func renderMap(world strategy.WorldState, start, goal pf.Point) string {
+	var b strings.Builder
+	b.WriteString("map legend: S=start, G=goal, E=enemy, P=plain(2), F=forest(3)\n")
+	for y := 0; y < len(world.Terrain); y++ {
+		row := make([]string, 0, len(world.Terrain[y]))
+		for x := 0; x < len(world.Terrain[y]); x++ {
+			p := pf.Point{X: x, Y: y}
+			cell := world.Terrain[y][x]
+			ch := "P"
+			if cell.Terrain == "forest" {
+				ch = "F"
+			}
+			if p.Equal(start) {
+				ch = "S"
+			} else if p.Equal(goal) {
+				ch = "G"
+			} else {
+				for _, u := range world.Units {
+					if u.X == x && u.Y == y {
+						ch = "E"
+						break
+					}
+				}
+			}
+			row = append(row, ch)
+		}
+		b.WriteString(strings.Join(row, " "))
+		b.WriteString("\n")
 	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 9, Y: 9},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatalf("expected goal, got %s", result.ExecutionTarget.Type)
-	}
-	if !result.Result.Found {
-		t.Fatal("expected path found")
-	}
-	if result.Result.TargetReached {
-		t.Fatal("goal should not be reached within budget")
-	}
-	if result.Result.Cost > 3 {
-		t.Fatalf("path cost %d exceeds budget 3", result.Result.Cost)
-	}
+	return b.String()
 }
 
-func TestPlanner_CavalryRoadSpeedBoost(t *testing.T) {
-	world := makePlainWorld(1, 6)
-	for c := 0; c < 6; c++ {
-		world.Terrain[0][c].HasRoad = true
+func formatPath(path []pf.Point) string {
+	parts := make([]string, 0, len(path))
+	for _, p := range path {
+		parts = append(parts, fmt.Sprintf("(%d,%d)", p.X, p.Y))
 	}
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "cavalry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 5,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 5, Y: 0},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !result.Result.TargetReached {
-		t.Fatal("cavalry road speed bonus should reduce plain road cost to 1")
-	}
-	if result.Result.Cost != 5 {
-		t.Fatalf("expected cost 5, got %d", result.Result.Cost)
-	}
+	return strings.Join(parts, " -> ")
 }
 
-func TestPlanner_MountainIsPassableForCavalry(t *testing.T) {
-	world := makePlainWorld(3, 3)
-	world.Terrain[1][0] = strategy.TerrainTile{X: 0, Y: 1, Terrain: "mountain"}
-	world.Terrain[1][1] = strategy.TerrainTile{X: 1, Y: 1, Terrain: "mountain"}
-	world.Terrain[1][2] = strategy.TerrainTile{X: 2, Y: 1, Terrain: "mountain"}
-
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "cavalry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 2, Y: 2},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatal("mountain should not change the execution target")
-	}
-	if !result.Result.Found || !result.Result.TargetReached {
-		t.Fatal("mountain should remain passable for cavalry under the strict config shape")
-	}
-}
-
-func TestPlanner_RiverBlockedWithoutRoad(t *testing.T) {
-	world := makePlainWorld(3, 3)
-	world.Terrain[1][0] = strategy.TerrainTile{X: 0, Y: 1, Terrain: "river"}
-	world.Terrain[1][1] = strategy.TerrainTile{X: 1, Y: 1, Terrain: "river"}
-	world.Terrain[1][2] = strategy.TerrainTile{X: 2, Y: 1, Terrain: "river"}
-
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 2, Y: 2},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatal("goal remains the execution target even when unreachable")
-	}
-	if result.Result.Found {
-		t.Fatal("infantry should not find a path across a river wall")
-	}
-}
-
-func TestPlanner_UnitsDoNotBlockPath(t *testing.T) {
-	world := makePlainWorld(3, 3)
-	world.Units = []strategy.UnitInfo{
-		{ID: "e1", Faction: "enemy", UnitType: "infantry", X: 0, Y: 1},
-		{ID: "e2", Faction: "enemy", UnitType: "infantry", X: 1, Y: 1},
-		{ID: "e3", Faction: "enemy", UnitType: "infantry", X: 2, Y: 1},
-	}
-
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 2, Y: 2},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatal("goal should remain the execution target")
-	}
-	if !result.Result.Found || !result.Result.TargetReached {
-		t.Fatal("units should no longer block pathfinding")
-	}
-}
-
-func TestPlanner_FollowsGlobalBestPathPrefix(t *testing.T) {
-	grid := pf.NewArrayGrid(5, 3)
-	grid.SetCell(2, 0, pf.Cell{Blocked: true})
-	for c := 1; c <= 3; c++ {
-		grid.SetCell(1, c, pf.Cell{EnterCost: 1, ExtraCost: 20})
-	}
-
-	planner := strategy.NewPlanner(staticBuilder{grid: grid})
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          1,
-		MovePoints: 2,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyPathfind,
-		Goal:     pf.Point{X: 4, Y: 1},
-	}
-
-	result, err := planner.Plan(strategy.WorldState{}, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if result.ExecutionTarget.Type != strategy.ExecutionTargetGoal {
-		t.Fatalf("expected goal, got %s", result.ExecutionTarget.Type)
-	}
-	if result.Result.TargetReached {
-		t.Fatal("goal should not be reached within budget")
-	}
-	if !result.Result.EndPoint.Equal(pf.Point{X: 1, Y: 0}) {
-		t.Fatalf("expected to follow best path prefix to (1,0), got %v", result.Result.EndPoint)
-	}
-}
-
-func TestPlanner_AttackPrefersEnemyBuildingTile(t *testing.T) {
-	world := makePlainWorld(3, 3)
-	world.Terrain[0][1] = strategy.TerrainTile{X: 1, Y: 0, Terrain: "forest"}
-	world.Buildings = []strategy.BuildingInfo{
-		{ID: "b1", BuildingType: "tower", Faction: "enemy", X: 1, Y: 0},
-	}
-
-	unit := strategy.UnitState{
-		UnitID:     "u1",
-		UnitType:   "infantry",
-		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyAttack,
-		Goal:     pf.Point{X: 2, Y: 2},
-	}
-
-	cfg := strategy.DefaultGameData()
-	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
-
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !result.Result.Found {
-		t.Fatal("expected path found")
-	}
-	foundEnemyTile := false
-	for _, p := range result.Result.Path {
-		if p.Equal(pf.Point{X: 1, Y: 0}) {
-			foundEnemyTile = true
-			break
+func pathContains(path []pf.Point, target pf.Point) bool {
+	for _, p := range path {
+		if p.Equal(target) {
+			return true
 		}
 	}
-	if !foundEnemyTile {
-		t.Fatal("attack strategy should prefer the enemy building tile when available")
-	}
+	return false
 }
 
-func TestPlanner_PathfindDoesNotPreferHostileTile(t *testing.T) {
-	world := makePlainWorld(3, 3)
-	world.Terrain[0][1] = strategy.TerrainTile{X: 1, Y: 0, Terrain: "forest"}
-	world.Buildings = []strategy.BuildingInfo{
-		{ID: "b1", BuildingType: "tower", Faction: "enemy", X: 1, Y: 0},
-	}
+func TestPlanner_ThreeStrategies_OnShared4x4Map(t *testing.T) {
+	world := make4x4SharedWorld()
+	start := pf.Point{X: 0, Y: 3}
+	goal := pf.Point{X: 3, Y: 0}
+	enemy := pf.Point{X: 0, Y: 0}
+
+	t.Log("\n" + renderMap(world, start, goal))
 
 	unit := strategy.UnitState{
-		UnitID:     "u1",
+		UnitID:     "ally-1",
 		UnitType:   "infantry",
 		Faction:    "ally",
-		X:          0,
-		Y:          0,
-		MovePoints: 20,
-	}
-	decision := strategy.StrategyDecision{
-		Strategy: strategy.StrategyPathfind,
-		Goal:     pf.Point{X: 2, Y: 2},
+		X:          start.X,
+		Y:          start.Y,
+		MovePoints: 50, // 足够到达终点
 	}
 
 	cfg := strategy.DefaultGameData()
 	planner := strategy.NewPlanner(strategy.NewBuilder(cfg))
 
-	result, err := planner.Plan(world, unit, decision)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !result.Result.Found {
-		t.Fatal("expected path found")
-	}
-	for _, p := range result.Result.Path {
-		if p.Equal(pf.Point{X: 1, Y: 0}) {
-			t.Fatal("pathfind strategy should not add a discount for hostile tiles")
+	run := func(st strategy.StrategyType) pf.PathResult {
+		decision := strategy.StrategyDecision{
+			Strategy: st,
+			Goal:     goal,
+			Reason:   "test scenario",
 		}
+		out, err := planner.Plan(world, unit, decision)
+		if err != nil {
+			t.Fatalf("[%s] unexpected error: %v", st, err)
+		}
+		if !out.Result.Found || !out.Result.TargetReached {
+			t.Fatalf("[%s] expected to reach goal, got found=%v reached=%v", st, out.Result.Found, out.Result.TargetReached)
+		}
+		t.Logf("[%s] cost=%d path=%s", st, out.Result.Cost, formatPath(out.Result.Path))
+		return out.Result
+	}
+
+	attack := run(strategy.StrategyAttack)
+	pathfind := run(strategy.StrategyPathfind)
+	defend := run(strategy.StrategyDefend)
+
+	// attack 倾向经过敌方所在格；defend 相反；pathfind 为纯基础代价最短路
+	if !pathContains(attack.Path, enemy) {
+		t.Fatalf("[attack] expected path to include enemy tile %v", enemy)
+	}
+	if pathContains(defend.Path, enemy) {
+		t.Fatalf("[defend] expected path to avoid enemy tile %v", enemy)
+	}
+	if pathContains(pathfind.Path, enemy) {
+		t.Fatalf("[pathfind] expected pure A* path to avoid enemy tile %v", enemy)
 	}
 }

@@ -68,8 +68,7 @@ func (b *Builder) strategyExtraCost(decision StrategyDecision, p pf.Point, hosti
 	case StrategyPathfind:
 		return 0
 	case StrategyDefend:
-		dist := pf.Manhattan(p, decision.Goal)
-		if dist > 4 {
+		if hostilePoints[p] {
 			return 2
 		}
 	}
