@@ -37,7 +37,7 @@ make gen
 
 生成结果：
 - `server/internal/gen/proto/` → Go 代码
-- `client/Assets/Generated/Protocol/` → Unity C# 代码
+- `client/Assets/Scripts/Runtime/Protocol/` → Unity C# 代码
 
 ### 启动服务端
 
