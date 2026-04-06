@@ -4,27 +4,40 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"log/slog"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 var chatSessions = sync.Map{}
 
-func GenerateSessionId() string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		return ""
-	}
+var fallbackNonce atomic.Uint64
 
-	// return fmt.Sprintf("%s%d", hex.EncodeToString(b), time.Now().UnixNano())
-	return hex.EncodeToString(b)
+// GenerateSessionId 生成会话 ID。优先使用 crypto/rand；若失败则使用时间戳 + 进程内单调计数器
+// 作为非空 fallback，并返回包装后的错误供调用方记录（sessionId 仍可用于继续流程）。
+func GenerateSessionId() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		id := fmt.Sprintf("fb-%d-%d", time.Now().UnixNano(), fallbackNonce.Add(1))
+		slog.Warn("GenerateSessionId: crypto/rand 失败，已使用 fallback", "err", err, "sessionId", id)
+		return id, fmt.Errorf("crypto/rand: %w", err)
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func SetChatSession(sessionId string, session context.CancelFunc) {
+	if sessionId == "" {
+		return
+	}
 	chatSessions.Store(sessionId, session)
 }
 
 func GetChatSession(sessionId string) context.CancelFunc {
+	if sessionId == "" {
+		return nil
+	}
 	cancelFunc, ok := chatSessions.Load(sessionId)
 	if ok {
 		return cancelFunc.(context.CancelFunc)
@@ -34,5 +47,8 @@ func GetChatSession(sessionId string) context.CancelFunc {
 }
 
 func RemoveChatSession(sessionId string) {
+	if sessionId == "" {
+		return
+	}
 	chatSessions.Delete(sessionId)
 }
