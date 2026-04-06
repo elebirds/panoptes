@@ -132,8 +132,10 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	onConnect := h.onConnect
 	h.mu.RUnlock()
 	if onConnect != nil {
+		// 使用请求的 context，允许调用方通过超时/取消控制初始化逻辑
+		ctx := r.Context()
 		go func() {
-			if err := onConnect(context.Background(), playerID); err != nil {
+			if err := onConnect(ctx, playerID); err != nil {
 				slog.Warn("WebSocket 连接后初始化失败", "玩家ID", playerID, "错误", err)
 			}
 		}()
