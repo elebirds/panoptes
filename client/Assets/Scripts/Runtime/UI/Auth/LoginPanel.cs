@@ -1,15 +1,15 @@
-/*************************************************
+﻿/*************************************************
  * Project: Panoptes
  * File: LoginPanel.cs
  * Author: Panoptes Team
- * Date: 2026-04-04
- * Description: Login panel placeholder.
+ * Date: 2026-04-05
+ * Description: Login Panel Logics.
  *************************************************/
 
 using System;
-using TMPro;
 using Panoptes.Runtime.App;
 using Panoptes.Runtime.Service;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,114 +17,70 @@ namespace Panoptes.Runtime.UI.Auth
 {
     public sealed class LoginPanel : MonoBehaviour
     {
-        [Header("Tabs")]
-        [SerializeField] private Button loginTab;
-        [SerializeField] private Button registerTab;
-
-        [Header("Forms")]
-        [SerializeField] private GameObject loginForm;
-        [SerializeField] private GameObject registerForm;
-
-        [Header("Login")]
-        [SerializeField] private TMP_InputField loginUsernameField;
-        [SerializeField] private TMP_InputField loginPasswordField;
-        [SerializeField] private Button loginButton;
-        [SerializeField] private TextMeshProUGUI loginErrorText;
-
-        [Header("Register")]
-        [SerializeField] private TMP_InputField registerUsernameField;
-        [SerializeField] private TMP_InputField registerPasswordField;
-        [SerializeField] private TMP_InputField registerConfirmPasswordField;
-        [SerializeField] private Button registerButton;
-        [SerializeField] private TextMeshProUGUI registerErrorText;
-
+        public TMP_InputField usernameInput;
+        public TMP_InputField passwordInput;
+        
+        public Button loginButton;
+        public Button registerButton;
+        
         private AuthService _authService;
-        private Color _loginErrorOriginalColor;
+
+
+        private string Username => usernameInput != null ? usernameInput.text.Trim() : string.Empty;
+        private string Password => passwordInput != null ? passwordInput.text : string.Empty;
 
         private void Awake()
         {
             _authService = new AuthService();
-
-            if (loginErrorText != null)
-            {
-                _loginErrorOriginalColor = loginErrorText.color;
-            }
-
-            loginTab?.onClick.AddListener(SwitchToLoginTab);
-            registerTab?.onClick.AddListener(SwitchToRegisterTab);
-            loginButton?.onClick.AddListener(OnClickLogin);
-            registerButton?.onClick.AddListener(OnClickRegister);
+            loginButton.onClick.AddListener(OnClickLogin);
+            registerButton.onClick.AddListener(OnClickRegister);
         }
 
-        private void Start()
+        private void SetButtonsInteractable(bool value)
         {
-            HideAllErrors();
-            SwitchToLoginTab();
+            loginButton.interactable = value;
+            registerButton.interactable = value;
         }
 
-        private void OnDestroy()
+        private bool IsValid(bool showTip)
         {
-            loginTab?.onClick.RemoveListener(SwitchToLoginTab);
-            registerTab?.onClick.RemoveListener(SwitchToRegisterTab);
-            loginButton?.onClick.RemoveListener(OnClickLogin);
-            registerButton?.onClick.RemoveListener(OnClickRegister);
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+            {
+                if (showTip)
+                {
+                    ShowTip("请输入用户名和密码", false);
+                }
+                // TODO: 显示提示
+                return false;
+            }
+            // TODO: 其他的用户名、密码规则
+            return true;
         }
 
-        private void SwitchToLoginTab()
+        private void ShowTip(string message, bool success)
         {
-            if (loginForm != null)
-            {
-                loginForm.SetActive(true);
-            }
-
-            if (registerForm != null)
-            {
-                registerForm.SetActive(false);
-            }
-
-            HideAllErrors();
+            Debug.Log(message);
         }
-
-        private void SwitchToRegisterTab()
-        {
-            if (loginForm != null)
-            {
-                loginForm.SetActive(false);
-            }
-
-            if (registerForm != null)
-            {
-                registerForm.SetActive(true);
-            }
-
-            HideAllErrors();
-        }
-
+        
         private async void OnClickLogin()
         {
-            var username = loginUsernameField != null ? loginUsernameField.text.Trim() : string.Empty;
-            var password = loginPasswordField != null ? loginPasswordField.text : string.Empty;
-
-            HideAllErrors();
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            if (!IsValid(true))
             {
-                ShowLoginMessage("请输入用户名和密码", false);
                 return;
             }
-
-            SetButtonsInteractable(false);
             try
             {
-                var result = await _authService.LoginAsync(username, password);
+                SetButtonsInteractable(false);
+                var result = await _authService.LoginAsync(Username, Password);
                 if (!result.Success)
                 {
-                    ShowLoginMessage(MapErrorCode(result.ErrorCode), false);
+                    ShowTip(MapErrorCode(result.ErrorCode), false);
                     return;
                 }
 
                 if (SessionManager.Instance == null)
                 {
-                    ShowLoginMessage("系统未初始化", false);
+                    ShowTip("系统未初始化", false);
                     return;
                 }
 
@@ -132,7 +88,7 @@ namespace Panoptes.Runtime.UI.Auth
 
                 if (AppManager.Instance == null)
                 {
-                    ShowLoginMessage("系统未初始化", false);
+                    ShowTip("系统未初始化", false);
                     return;
                 }
 
@@ -141,7 +97,7 @@ namespace Panoptes.Runtime.UI.Auth
             catch (Exception e)
             {
                 Debug.LogError($"[LoginPanel] Login failed: {e}");
-                ShowLoginMessage("服务器错误，请稍后重试", false);
+                ShowTip("服务器错误，请稍后重试", false);
             }
             finally
             {
@@ -151,109 +107,34 @@ namespace Panoptes.Runtime.UI.Auth
 
         private async void OnClickRegister()
         {
-            var username = registerUsernameField != null ? registerUsernameField.text.Trim() : string.Empty;
-            var password = registerPasswordField != null ? registerPasswordField.text : string.Empty;
-            var confirmPassword = registerConfirmPasswordField != null
-                ? registerConfirmPasswordField.text
-                : string.Empty;
-
-            HideAllErrors();
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            if (!IsValid(true))
             {
-                ShowRegisterMessage("请输入用户名和密码");
                 return;
             }
 
-            if (!string.Equals(password, confirmPassword, StringComparison.Ordinal))
-            {
-                ShowRegisterMessage("两次密码输入不一致");
-                return;
-            }
-
-            SetButtonsInteractable(false);
             try
             {
-                var result = await _authService.RegisterAsync(username, password);
+                SetButtonsInteractable(false);
+                var result = await _authService.RegisterAsync(Username, Password);
                 if (!result.Success)
                 {
-                    ShowRegisterMessage(MapErrorCode(result.ErrorCode));
+                    ShowTip(MapErrorCode(result.ErrorCode), false);
+                    SetButtonsInteractable(true);
                     return;
                 }
 
-                SwitchToLoginTab();
-                ShowLoginMessage("注册成功，请登录", true);
+                ShowTip("注册成功，请登录", true);
             }
             catch (Exception e)
             {
                 Debug.LogError($"[LoginPanel] Register failed: {e}");
-                ShowRegisterMessage("服务器错误，请稍后重试");
+                ShowTip("服务器错误，请稍后重试" + e.Message, false);
             }
             finally
             {
                 SetButtonsInteractable(true);
             }
         }
-
-        private void SetButtonsInteractable(bool interactable)
-        {
-            if (loginTab != null)
-            {
-                loginTab.interactable = interactable;
-            }
-
-            if (registerTab != null)
-            {
-                registerTab.interactable = interactable;
-            }
-
-            if (loginButton != null)
-            {
-                loginButton.interactable = interactable;
-            }
-
-            if (registerButton != null)
-            {
-                registerButton.interactable = interactable;
-            }
-        }
-
-        private void HideAllErrors()
-        {
-            if (loginErrorText != null)
-            {
-                loginErrorText.gameObject.SetActive(false);
-                loginErrorText.color = _loginErrorOriginalColor;
-            }
-
-            if (registerErrorText != null)
-            {
-                registerErrorText.gameObject.SetActive(false);
-            }
-        }
-
-        private void ShowLoginMessage(string text, bool isSuccess)
-        {
-            if (loginErrorText == null)
-            {
-                return;
-            }
-
-            loginErrorText.text = text;
-            loginErrorText.color = isSuccess ? new Color(0.16f, 0.62f, 0.28f, 1f) : _loginErrorOriginalColor;
-            loginErrorText.gameObject.SetActive(true);
-        }
-
-        private void ShowRegisterMessage(string text)
-        {
-            if (registerErrorText == null)
-            {
-                return;
-            }
-
-            registerErrorText.text = text;
-            registerErrorText.gameObject.SetActive(true);
-        }
-
         private static string MapErrorCode(string code)
         {
             return code switch

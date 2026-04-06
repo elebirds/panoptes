@@ -77,6 +77,8 @@ namespace Panoptes.Runtime.Service
 
             await SendRequestAsync(request);
             var responseText = request.downloadHandler?.text ?? string.Empty;
+            
+            Debug.Log(responseText);
 
             var isSuccess =
                 request.result == UnityWebRequest.Result.Success &&
