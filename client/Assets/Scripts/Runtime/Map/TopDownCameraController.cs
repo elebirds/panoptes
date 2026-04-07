@@ -129,6 +129,11 @@ namespace Panoptes.Runtime.Map
             boundsPadding = padding;
         }
 
+        public float GetBoundsPadding()
+        {
+            return boundsPadding;
+        }
+
         public void SnapTargetToCurrentPosition()
         {
             _targetPosition = transform.position;

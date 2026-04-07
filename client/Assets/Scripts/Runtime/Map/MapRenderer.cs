@@ -7,6 +7,7 @@
  *************************************************/
 
 using System.Collections.Generic;
+using Panoptes.Runtime.App;
 using Panoptes.Runtime.Cache;
 using UnityEngine;
 using ProtoNodeView = Panoptes.Protocol.V1.NodeView;
@@ -82,6 +83,11 @@ namespace Panoptes.Runtime.Map
         [SerializeField] private bool spawnDebugUnitsWhenNoUnits = true;
         [SerializeField] private string[] debugFactions = { "blue", "red", "green", "yellow" };
 
+        [Header("Camera Bounds Sync")]
+        [SerializeField] private bool autoSyncCameraBoundsFromMap = true;
+        [SerializeField] private bool overrideCameraBoundsPadding = false;
+        [SerializeField] private float cameraBoundsPadding = 0f;
+
         [Header("Debug Generation (Local Only)")]
         [SerializeField] private bool generateDebugMapOnStart = true;
         [SerializeField] private int debugMapWidth = 20;
@@ -118,35 +124,42 @@ namespace Panoptes.Runtime.Map
 
         private void OnEnable()
         {
-            SubscribeServerMapConfig();
+            // Intentionally no-op:
+            // Map build source is backend pushed game state only.
         }
 
         private void OnDisable()
         {
-            UnsubscribeServerMapConfig();
+            // Intentionally no-op:
+            // Map build source is backend pushed game state only.
         }
 
         private void Start()
         {
+            if (!ShouldBuildOnStart())
+            {
+                return;
+            }
+
             EnsureRuntimeControllers();
-
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
-            {
-                return;
-            }
-
-            if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
-            {
-                return;
-            }
-
-            if (generateDebugMapOnStart)
-            {
-                BuildDebugMap();
-                return;
-            }
-
             RebuildMap();
+        }
+
+        private static bool ShouldBuildOnStart()
+        {
+            var cache = GameStateCache.Instance;
+            if (cache != null && cache.Nodes != null && cache.Nodes.Count > 0)
+            {
+                return true;
+            }
+
+            var app = AppManager.Instance;
+            if (app != null && app.State != AppState.Game)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static void EnsureRuntimeControllers()
@@ -156,32 +169,30 @@ namespace Panoptes.Runtime.Map
                 var go = new GameObject("MapInputHandler");
                 go.AddComponent<MapInputHandler>();
             }
+
+            var cam = Camera.main;
+            if (cam != null && cam.GetComponent<TopDownCameraController>() == null)
+            {
+                cam.gameObject.AddComponent<TopDownCameraController>();
+            }
         }
 
         public void RebuildMap()
         {
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
-            {
-                return;
-            }
-
-            if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
-            {
-                return;
-            }
-
-            if (generateDebugMapOnStart)
-            {
-                BuildDebugMap();
-                return;
-            }
-
             if (GameStateCache.Instance == null)
             {
-                Debug.LogWarning("[MapRenderer] GameStateCache is missing.");
+                Debug.LogError("[MapRenderer] Cannot build map: GameStateCache is missing.");
                 return;
             }
 
+            if (GameStateCache.Instance.Nodes == null || GameStateCache.Instance.Nodes.Count == 0)
+            {
+                Debug.LogError("[MapRenderer] Cannot build map: backend node list is empty.");
+                return;
+            }
+
+            Debug.Log($"[MapRenderer] Rebuild from backend nodes: {GameStateCache.Instance.Nodes.Count}");
+            PrepareRuntimeRoots();
             BuildFromNodes(GameStateCache.Instance.Nodes.Values);
         }
 
@@ -524,6 +535,7 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
+            PrepareRuntimeRoots();
             ClearMap();
 
             foreach (var node in nodes)
@@ -703,6 +715,25 @@ namespace Panoptes.Runtime.Map
             return unitsRoot;
         }
 
+        private void PrepareRuntimeRoots()
+        {
+            var tileRoot = EnsureTilesRoot();
+            if (tileRoot != null)
+            {
+                tileRoot.position = Vector3.zero;
+                tileRoot.rotation = Quaternion.identity;
+                tileRoot.localScale = Vector3.one;
+            }
+
+            var unitRoot = EnsureUnitsRoot();
+            if (unitRoot != null)
+            {
+                unitRoot.position = Vector3.zero;
+                unitRoot.rotation = Quaternion.identity;
+                unitRoot.localScale = Vector3.one;
+            }
+        }
+
         private void ClearMap()
         {
             foreach (var pair in _tileViews)
@@ -770,22 +801,69 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
+            EnsureGameplayCameraPose(cam);
             var center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
             var camPos = cam.transform.position;
 
             var cameraController = cam.GetComponent<TopDownCameraController>();
-            if (cameraController != null)
+            if (cameraController != null && autoSyncCameraBoundsFromMap)
             {
-                cameraController.SetWorldBounds(minX, maxX, minZ, maxZ, 0f);
+                var padding = overrideCameraBoundsPadding
+                    ? cameraBoundsPadding
+                    : cameraController.GetBoundsPadding();
+                cameraController.SetWorldBounds(minX, maxX, minZ, maxZ, padding);
             }
 
             if (cam.orthographic)
             {
-                cam.transform.position = new Vector3(center.x, camPos.y, center.z - 10f);
+                // Orthographic top-down usually looks down Y axis.
+                // Keep height and snap XZ to map center.
+                if (Mathf.Abs(cam.transform.forward.y) > 0.5f)
+                {
+                    cam.transform.position = new Vector3(center.x, camPos.y, center.z);
+                }
+                else
+                {
+                    cam.transform.position = new Vector3(center.x, camPos.y, center.z - 10f);
+                }
             }
             else
             {
                 cam.transform.position = new Vector3(center.x, camPos.y, center.z - 6f);
+            }
+
+            // Keep camera controller target in sync after programmatic camera move,
+            // otherwise controller may pull camera back to stale position (e.g. 0,0,0).
+            if (cameraController != null)
+            {
+                cameraController.SnapTargetToCurrentPosition();
+            }
+        }
+
+        private static void EnsureGameplayCameraPose(Camera cam)
+        {
+            if (cam == null)
+            {
+                return;
+            }
+
+            var forwardYAbs = Mathf.Abs(cam.transform.forward.y);
+            var looksStraightForward = forwardYAbs < 0.2f;
+            if (!looksStraightForward)
+            {
+                return;
+            }
+
+            // Safety net for broken scene camera setup:
+            // switch to a usable angled 3D camera that can see XZ tiles.
+            cam.orthographic = false;
+            cam.fieldOfView = Mathf.Clamp(cam.fieldOfView, 35f, 60f);
+            cam.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
+
+            var pos = cam.transform.position;
+            if (pos.y < 2f)
+            {
+                cam.transform.position = new Vector3(pos.x, 3.4f, pos.z);
             }
         }
 

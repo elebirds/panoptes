@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7174156853418636960
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 402690011362783199}
+  - component: {fileID: 1674404301750755110}
+  - component: {fileID: 6969378267617571268}
+  m_Layer: 0
+  m_Name: MapManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &402690011362783199
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7174156853418636960}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.28444, y: 0.1, z: -0.68653}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1674404301750755110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7174156853418636960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 350c15fecd71b2d4392615766e662b61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.MapRenderer
+  useJsonMapOnStart: 1
+  startupMapJson: {fileID: 4900000, guid: 95fd26583a440d149b594d9ffad2fabc, type: 3}
+  autoFillMissingJsonTiles: 0
+  preferServerPushedMapConfig: 1
+  serverMapConfigKey: mapconfig
+  listenServerMapConfigUpdates: 1
+  nodeTilePrefab: {fileID: 5107247747950518977, guid: 65c27a253136f5543ad363e4d250a016, type: 3}
+  tilesRoot: {fileID: 0}
+  tileSize: 1
+  unitPrefab: {fileID: 0}
+  unitsRoot: {fileID: 0}
+  spawnDebugUnitsWhenNoUnits: 1
+  debugFactions:
+  - blue
+  - red
+  - green
+  - yellow
+  generateDebugMapOnStart: 1
+  debugMapWidth: 20
+  debugMapHeight: 20
+  farmSpawnRate: 0.07
+  barracksSpawnRate: 0.04
+  randomSeed: 20260405
+--- !u!114 &6969378267617571268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7174156853418636960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fe91ebaf64baee4189e656cfa77e21f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.MapInputHandler
+  inputCamera: {fileID: 0}
+  raycastMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  raycastDistance: 200
+  moveRange: 4
+  moveHighlightColor: {r: 0.35, g: 1, b: 0.45, a: 0.9}
+  onlyControlOwnUnits: 1
+  buildValidColor: {r: 0.35, g: 1, b: 0.35, a: 0.92}
+  buildInvalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.92}
+  buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
+  logInvalidBuildClick: 1
+  localOwnerIdOverride: 
+  autoCreateCornerCityZones: 1
+  cornerInset: 2
+  cityZones: []

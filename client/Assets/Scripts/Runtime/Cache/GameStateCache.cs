@@ -93,7 +93,9 @@ namespace Panoptes.Runtime.Cache
         {
             TokensLeft = tokensLeft;
             if (MyPlayer != null)
+            {
                 MyPlayer.TokensLeft = tokensLeft;
+            }
             OnStateChanged?.Invoke();
         }
 
@@ -106,28 +108,6 @@ namespace Panoptes.Runtime.Cache
 
             _nodes[node.Id] = node;
             OnStateChanged?.Invoke();
-        }
-
-        public NodeView GetNode(string nodeId)
-        {
-            _nodes.TryGetValue(nodeId, out var node);
-
-            if (Panoptes.Runtime.Map.MapRenderer.Instance != null)
-            {
-                Panoptes.Runtime.Map.MapRenderer.Instance.RebuildMap();
-            }
-        }
-
-        public void UpdateTokens(int tokensLeft)
-        {
-            TokensLeft = tokensLeft;
-            if (MyPlayer != null)
-                MyPlayer.TokensLeft = tokensLeft;
-        }
-
-        public void UpdateNode(NodeView node)
-        {
-            _nodes[node.Id] = node;
         }
 
         public NodeView GetNode(string nodeId)

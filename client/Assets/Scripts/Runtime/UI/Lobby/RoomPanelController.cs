@@ -22,6 +22,8 @@ namespace Panoptes.Runtime.UI.Lobby
         [SerializeField] private Button readyButton;
         [SerializeField] private Button leaveButton;
         [SerializeField] private TextMeshProUGUI statusText;
+        [Header("Local Test Override")]
+        [SerializeField] private bool forceEnableAddBotInClient = false;
 
         private LobbyService _lobbySvc;
         private RoomCache _cache;
@@ -213,6 +215,7 @@ namespace Panoptes.Runtime.UI.Lobby
         {
             if (!CanAddBot())
             {
+                Debug.LogWarning("[RoomPanel] AddBot blocked by local conditions (host/devMode/status/playerCount).");
                 return;
             }
 
@@ -365,8 +368,7 @@ namespace Panoptes.Runtime.UI.Lobby
 
             var visible = _cache != null &&
                           _cache.IsHost &&
-                          _runtimeConfig != null &&
-                          _runtimeConfig.DevMode;
+                          IsClientDevModeEnabled();
             addBotButton.gameObject.SetActive(visible);
             addBotButton.interactable = visible && CanAddBot();
         }
@@ -385,12 +387,12 @@ namespace Panoptes.Runtime.UI.Lobby
 
         private bool CanAddBot()
         {
-            if (_cache == null || _runtimeConfig == null)
+            if (_cache == null)
             {
                 return false;
             }
 
-            if (!_runtimeConfig.DevMode || !_cache.IsHost)
+            if (!IsClientDevModeEnabled() || !_cache.IsHost)
             {
                 return false;
             }
@@ -411,6 +413,16 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             return _cache.GetBotCount() < _cache.MaxPlayers - 1;
+        }
+
+        private bool IsClientDevModeEnabled()
+        {
+            if (forceEnableAddBotInClient)
+            {
+                return true;
+            }
+
+            return _runtimeConfig != null && _runtimeConfig.DevMode;
         }
 
         private bool CanStartGame()
