@@ -23,6 +23,9 @@ namespace Panoptes.Runtime.UI.Lobby
         [SerializeField] private Button leaveButton;
         [SerializeField] private TextMeshProUGUI statusText;
 
+        [Header("Local Test")]
+        [SerializeField] private bool forceEnableAddBotInClient = true;
+
         private LobbyService _lobbySvc;
         private RoomCache _cache;
         private ClientRuntimeConfigCache _runtimeConfig;
@@ -365,8 +368,7 @@ namespace Panoptes.Runtime.UI.Lobby
 
             var visible = _cache != null &&
                           _cache.IsHost &&
-                          _runtimeConfig != null &&
-                          _runtimeConfig.DevMode;
+                          IsAddBotFeatureEnabled();
             addBotButton.gameObject.SetActive(visible);
             addBotButton.interactable = visible && CanAddBot();
         }
@@ -385,12 +387,12 @@ namespace Panoptes.Runtime.UI.Lobby
 
         private bool CanAddBot()
         {
-            if (_cache == null || _runtimeConfig == null)
+            if (_cache == null)
             {
                 return false;
             }
 
-            if (!_runtimeConfig.DevMode || !_cache.IsHost)
+            if (!IsAddBotFeatureEnabled() || !_cache.IsHost)
             {
                 return false;
             }
@@ -411,6 +413,12 @@ namespace Panoptes.Runtime.UI.Lobby
             }
 
             return _cache.GetBotCount() < _cache.MaxPlayers - 1;
+        }
+
+        private bool IsAddBotFeatureEnabled()
+        {
+            var serverDevMode = _runtimeConfig != null && _runtimeConfig.DevMode;
+            return serverDevMode || forceEnableAddBotInClient;
         }
 
         private bool CanStartGame()
