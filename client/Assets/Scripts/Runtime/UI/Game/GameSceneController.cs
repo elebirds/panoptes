@@ -1,18 +1,22 @@
 using Panoptes.Runtime.Cache;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Panoptes.Runtime.UI.Game
 {
     public sealed class GameSceneController : MonoBehaviour
     {
         [SerializeField] private TextMeshProUGUI statusText;
+        [SerializeField] private bool hideFullscreenBackgroundOnGameScene = true;
+        [SerializeField] private string fullscreenBackgroundObjectName = "Background";
 
         private GameStateCache _cache;
 
         private void Awake()
         {
             _cache = GameStateCache.Instance;
+            HideFullscreenBackgroundIfNeeded();
         }
 
         private void OnEnable()
@@ -57,6 +61,35 @@ namespace Panoptes.Runtime.UI.Game
             {
                 Debug.Log($"[GameScene] {summary}");
             }
+        }
+
+        private void HideFullscreenBackgroundIfNeeded()
+        {
+            if (!hideFullscreenBackgroundOnGameScene)
+            {
+                return;
+            }
+
+            var canvas = statusText != null ? statusText.canvas : null;
+            var root = canvas != null ? canvas.transform : transform;
+            if (root == null)
+            {
+                return;
+            }
+
+            var target = root.Find(fullscreenBackgroundObjectName);
+            if (target == null)
+            {
+                return;
+            }
+
+            var image = target.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = false;
+            }
+
+            target.gameObject.SetActive(false);
         }
     }
 }
