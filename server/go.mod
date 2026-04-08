@@ -13,6 +13,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/openai/openai-go v1.12.0
 	github.com/redis/go-redis/v9 v9.18.0
+	github.com/yohamta/donburi v1.15.7
 	golang.org/x/crypto v0.49.0
 	google.golang.org/protobuf v1.36.11
 )
@@ -27,7 +28,6 @@ require (
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	github.com/yohamta/donburi v1.15.7 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
