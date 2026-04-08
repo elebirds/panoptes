@@ -1,0 +1,356 @@
+package datagen
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
+	repoRoot := t.TempDir()
+	writeFixtureRepo(t, repoRoot)
+
+	if err := Generate(Options{RepoRoot: repoRoot}); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/resources.schema.json"), `"ore"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message ResourceBag")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogManifest")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/map_catalog.proto"), "message MapCatalogEntry")
+	assertFileContains(t, filepath.Join(repoRoot, "server/internal/staticdata/generated/resource_keys_gen.go"), "ResourceOre")
+	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated/ResourceKeys.g.cs"), "ResourceOre")
+	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Resources/Data/catalog.bundle.json"), `"default_map_id": "default"`)
+}
+
+func TestGenerateCompilesNoiseBackedMapDefinition(t *testing.T) {
+	repoRoot := t.TempDir()
+	writeFixtureRepo(t, repoRoot)
+	if err := os.WriteFile(filepath.Join(repoRoot, "data/content/maps/default/definition.json"), []byte(`{
+  "meta": {
+    "id": "default",
+    "name": "测试地图",
+    "width": 4,
+    "height": 4,
+    "default_terrain": "plain",
+    "tags": ["generated"]
+  },
+  "generator": {
+    "type": "noise",
+    "seed": 7,
+    "terrain_bands": [
+      { "max": 0.35, "terrain": "river" },
+      { "max": 0.60, "terrain": "forest" },
+      { "max": 1.0, "terrain": "plain" }
+    ]
+  },
+  "terrain_patches": [],
+  "node_overrides": [],
+  "features": {
+    "resource_points": [],
+    "roads": [],
+    "named_nodes": [],
+    "central_points": []
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 0, "y": 0 },
+    { "slot": 1, "x": 3, "y": 3 }
+  ]
+}`), 0o600); err != nil {
+		t.Fatalf("WriteFile(map definition) error = %v", err)
+	}
+
+	if err := Generate(Options{RepoRoot: repoRoot}); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	raw, err := os.ReadFile(filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"))
+	if err != nil {
+		t.Fatalf("ReadFile(runtime map) error = %v", err)
+	}
+
+	text := string(raw)
+	if !strings.Contains(text, `"terrain": "river"`) && !strings.Contains(text, `"terrain": "forest"`) {
+		t.Fatalf("runtime map should contain generated non-default terrain, got %s", text)
+	}
+}
+
+func TestGenerateCarriesPrebuiltOwnerAndBuildingIntoRuntimeMap(t *testing.T) {
+	repoRoot := t.TempDir()
+	writeFixtureRepo(t, repoRoot)
+	if err := os.WriteFile(filepath.Join(repoRoot, "data/content/maps/default/definition.json"), []byte(`{
+  "meta": {
+    "id": "default",
+    "name": "测试地图",
+    "width": 2,
+    "height": 2,
+    "default_terrain": "plain",
+    "tags": ["legacy"]
+  },
+  "terrain_patches": [],
+  "node_overrides": [
+    {
+      "x": 1,
+      "y": 1,
+      "owner": "green",
+      "owner_slot": 0,
+      "building_type": "farm",
+      "building_hp": 77
+    }
+  ],
+  "features": {
+    "resource_points": [],
+    "roads": [],
+    "named_nodes": [],
+    "central_points": []
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 1, "y": 1 }
+  ]
+}`), 0o600); err != nil {
+		t.Fatalf("WriteFile(map definition) error = %v", err)
+	}
+
+	if err := Generate(Options{RepoRoot: repoRoot}); err != nil {
+		t.Fatalf("Generate() error = %v", err)
+	}
+
+	raw, err := os.ReadFile(filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"))
+	if err != nil {
+		t.Fatalf("ReadFile(runtime map) error = %v", err)
+	}
+
+	text := string(raw)
+	for _, want := range []string{`"owner": "green"`, `"owner_slot": 0`, `"building_type": "farm"`, `"building_hp": 77`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("runtime map missing %s:\n%s", want, text)
+		}
+	}
+}
+
+func writeFixtureRepo(t *testing.T, repoRoot string) {
+	t.Helper()
+
+	files := map[string]string{
+		"data/registry/manifest.json": `{
+  "schema_version": "2026-04-06",
+  "content_version": "2026-04-06.alpha",
+  "default_locale": "zh-CN",
+  "default_map_id": "default"
+}`,
+		"data/registry/resources.json": `{
+  "resources": [
+    {
+      "key": "ore",
+      "display_name": "矿石",
+      "description": "基础矿物",
+      "icon_key": "resource_ore",
+      "sort_order": 10,
+      "proto_number": 1,
+      "visible_in_hud": true
+    },
+    {
+      "key": "food",
+      "display_name": "粮食",
+      "description": "人口与军队消耗",
+      "icon_key": "resource_food",
+      "sort_order": 20,
+      "proto_number": 2,
+      "visible_in_hud": true
+    }
+  ]
+}`,
+		"data/content/units/units.json": `{
+  "units": [
+    {
+      "id": "infantry",
+      "class": "melee",
+      "max_hp": 30,
+      "attack": 10,
+      "attack_range": 1,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": { "ore": 1, "food": 1 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true }
+    }
+  ]
+}`,
+		"data/content/buildings/buildings.json": `{
+  "buildings": [
+    {
+      "id": "farm",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "food",
+      "build_cost": { "food": 1 },
+      "upkeep": {},
+      "production": { "input": {}, "output": { "food": 2 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    }
+  ]
+}`,
+		"data/content/terrains/terrains.json": `{
+  "terrains": [
+    {
+      "id": "plain",
+      "move_cost_no_road": 2,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "forest",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.2,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "river",
+      "move_cost_no_road": 99,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": true,
+      "passable_with_road": true,
+      "passable": false,
+      "buildable": false
+    }
+  ]
+}`,
+		"data/content/rules/rules.json": `{
+  "turn_time_limit_domestic": 15,
+  "turn_time_limit_combat": 20,
+  "tokens_per_turn": 3,
+  "tokens_recuperation_bonus": 1,
+  "max_turns": 30,
+  "castle_base_hp": 100,
+  "safe_zone_radius": 4,
+  "occupy_turns": 1,
+  "build_points_per_turn": 10,
+  "build_points_max": 30
+}`,
+		"data/content/ministers/ministers.json": `{
+  "pool": [
+    {
+      "id": "m001",
+      "name": "李猛",
+      "role": "military",
+      "ability": 8,
+      "personality": "aggressive",
+      "personality_desc": "果敢激进",
+      "loyalty": 7,
+      "ambition": 6
+    }
+  ]
+}`,
+		"data/content/maps/default/definition.json": `{
+  "meta": {
+    "id": "default",
+    "name": "标准地图",
+    "width": 2,
+    "height": 2,
+    "default_terrain": "plain",
+    "tags": ["pvp"]
+  },
+  "terrain_patches": [
+    {
+      "kind": "point",
+      "terrain": "forest",
+      "points": [{ "x": 1, "y": 0 }]
+    }
+  ],
+  "node_overrides": [
+    {
+      "id": "B2",
+      "x": 1,
+      "y": 1,
+      "terrain": "forest",
+      "has_road": true
+    }
+  ],
+  "features": {
+    "resource_points": [
+      { "x": 0, "y": 1, "resource_type": "food", "node_name": "粮仓" }
+    ],
+    "roads": [
+      { "points": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }] }
+    ],
+    "named_nodes": [
+      { "x": 1, "y": 1, "name": "林地" }
+    ],
+    "central_points": [{ "x": 1, "y": 1 }]
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 0, "y": 0 },
+    { "slot": 1, "x": 1, "y": 1 }
+  ]
+}`,
+		"data/ui/catalogs/resources.json": `{
+  "resources": [
+    { "id": "ore", "name": "矿石", "description": "基础矿物", "icon_key": "resource_ore", "sort_order": 10, "tags": ["base"] },
+    { "id": "food", "name": "粮食", "description": "补给与人口", "icon_key": "resource_food", "sort_order": 20, "tags": ["base"] }
+  ]
+}`,
+		"data/ui/catalogs/units.json": `{
+  "units": [
+    { "id": "infantry", "name": "步兵", "description": "均衡近战单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 10, "tags": ["frontline"] }
+  ]
+}`,
+		"data/ui/catalogs/buildings.json": `{
+  "buildings": [
+    { "id": "farm", "name": "农场", "description": "基础粮食产出建筑", "icon_key": "building_farm", "prefab_key": "Farm", "sort_order": 10, "tags": ["eco"] }
+  ]
+}`,
+		"data/ui/catalogs/terrains.json": `{
+  "terrains": [
+    { "id": "plain", "name": "平原", "description": "标准地块", "icon_key": "terrain_plain", "material_key": "M_Plain", "sort_order": 10, "tags": ["ground"] },
+    { "id": "forest", "name": "森林", "description": "高防御地块", "icon_key": "terrain_forest", "material_key": "M_Forest", "sort_order": 20, "tags": ["ground"] },
+    { "id": "river", "name": "河流", "description": "难以通行", "icon_key": "terrain_river", "material_key": "M_River", "sort_order": 30, "tags": ["ground"] }
+  ]
+}`,
+		"data/ui/catalogs/maps/default.json": `{
+  "id": "default",
+  "name": "标准地图",
+  "description": "默认对战地图",
+  "thumbnail_key": "map_default",
+  "legend": [
+    { "id": "road", "name": "道路", "icon_key": "marker_road" },
+    { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" }
+  ]
+}`,
+	}
+
+	for rel, content := range files {
+		path := filepath.Join(repoRoot, rel)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("MkdirAll(%q) error = %v", path, err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatalf("WriteFile(%q) error = %v", path, err)
+		}
+	}
+}
+
+func assertFileContains(t *testing.T, path string, want string) {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", path, err)
+	}
+	if !strings.Contains(string(raw), want) {
+		t.Fatalf("%q does not contain %q:\n%s", path, want, string(raw))
+	}
+}

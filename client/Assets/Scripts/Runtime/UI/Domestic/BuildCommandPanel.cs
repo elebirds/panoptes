@@ -118,7 +118,7 @@ namespace Panoptes.Runtime.UI.Domestic
         private readonly List<UnityAction> _boundActions = new();
         private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
         private Coroutine _emblemLoadRoutine;
-        private ConfigCache _configCache;
+        private StaticCatalogCache _catalogCache;
 
         private void OnEnable()
         {
@@ -415,34 +415,24 @@ namespace Panoptes.Runtime.UI.Domestic
                 return;
             }
 
-            _configCache = ConfigCache.EnsureInstance();
-            if (_configCache != null)
+            _catalogCache = StaticCatalogCache.EnsureInstance();
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated += OnServerConfigUpdated;
+                _catalogCache.CatalogChanged += OnServerConfigUpdated;
             }
         }
 
         private void UnsubscribeServerConfig()
         {
-            if (_configCache != null)
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated -= OnServerConfigUpdated;
-                _configCache = null;
+                _catalogCache.CatalogChanged -= OnServerConfigUpdated;
+                _catalogCache = null;
             }
         }
 
-        private void OnServerConfigUpdated(string key)
+        private void OnServerConfigUpdated()
         {
-            if (!preferServerPushedConfig)
-            {
-                return;
-            }
-
-            if (!string.Equals(NormalizeToken(key), NormalizeToken(serverConfigKey), StringComparison.Ordinal))
-            {
-                return;
-            }
-
             LoadBuildConfig();
             BindButtons();
         }
@@ -455,7 +445,7 @@ namespace Panoptes.Runtime.UI.Domestic
                 return;
             }
 
-            if (preferServerPushedConfig && TryLoadBuildConfigFromCache())
+            if (TryLoadBuildConfigFromStaticCatalog())
             {
                 return;
             }
@@ -478,21 +468,33 @@ namespace Panoptes.Runtime.UI.Domestic
             ParseBuildConfigText(source.text);
         }
 
-        private bool TryLoadBuildConfigFromCache()
+        private bool TryLoadBuildConfigFromStaticCatalog()
         {
-            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
-            var key = NormalizeToken(serverConfigKey);
-            if (cache == null || string.IsNullOrEmpty(key))
+            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
+            if (cache == null || cache.Buildings == null || cache.Buildings.Count == 0)
             {
                 return false;
             }
 
-            if (!cache.TryGetJson(key, out var json) || string.IsNullOrWhiteSpace(json))
+            foreach (var pair in cache.Buildings)
             {
-                return false;
+                var building = pair.Value;
+                if (building == null || string.IsNullOrWhiteSpace(building.id))
+                {
+                    continue;
+                }
+
+                _buildConfigById[NormalizeToken(building.id)] = new BuildConfigEntry
+                {
+                    id = building.id,
+                    name = building.name,
+                    description = building.description,
+                    icon_key = building.icon_key,
+                    placement_rule = building.placement_rule
+                };
             }
 
-            return ParseBuildConfigText(json);
+            return _buildConfigById.Count > 0;
         }
 
         private bool ParseBuildConfigText(string jsonText)

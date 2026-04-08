@@ -39,6 +39,18 @@ make gen
 - `server/internal/gen/proto/` → Go 代码
 - `client/Assets/Scripts/Runtime/Protocol/` → Unity C# 代码
 
+### 一键生成静态数据
+
+```bash
+make data-gen
+```
+
+数据加载链路：
+- 作者源只维护在根 `data/registry`、`data/content`、`data/ui`
+- `make data-gen` 将其编译为 `data/generated/server/` 和 `client/Assets/Resources/Data/`
+- 服务端启动时从 `DATA_ROOT/generated/server` 加载静态目录到 `staticdata.Default()`
+- 客户端启动时从 `Resources/Data/` 加载本地静态目录，并用服务端下发的 `MsgStaticCatalogManifest` 做版本握手
+
 ### 启动服务端
 
 ```bash
@@ -67,12 +79,13 @@ panoptes/
 ├── server/            # Go 服务端
 │   ├── cmd/server/    # 启动入口
 │   ├── internal/      # 内部实现
-│   └── data/          # 游戏数值配置
+│   └── cmd/datagen/   # 静态数据生成入口
+├── data/              # 静态数据作者源与生成产物
 └── client/            # Unity 客户端
     └── Assets/
         ├── Scripts/
         ├── Scenes/
-        └── Generated/ # 自动生成，不要手动修改
+        └── Resources/Data/ # 生成的静态目录 bundle
 ```
 
 ---
@@ -85,7 +98,7 @@ panoptes/
 Go 1.22 · WebSocket · ECS（donburi）· Redis · PostgreSQL · Anthropic API · Protobuf
 ```
 
-- **ECS + Data-Driven**：游戏状态用 ECS 管理，所有数值从 `gamedata.json` 读取
+- **ECS + Data-Driven**：游戏状态用 ECS 管理，所有静态数据从根 `data/` 作者源生成
 - **Event Sourcing**：Engine 层纯函数产生事件，统一 Apply 修改状态
 - **AI 部长**：服务端异步调用 LLM API，部长决策返回结构化 JSON 直接执行
 - **Transport 抽象**：WebSocket 现在，gRPC 将来，业务代码零修改
@@ -154,7 +167,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 ### 修改游戏数值
 
-只改 `server/data/gamedata.json`，不改代码。
+只改根 `data/registry`、`data/content`、`data/ui`，不改业务代码。
 
 ---
 

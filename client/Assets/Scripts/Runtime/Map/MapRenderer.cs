@@ -7,6 +7,7 @@
  *************************************************/
 
 using System.Collections.Generic;
+using Panoptes.Runtime.App;
 using Panoptes.Runtime.Cache;
 using UnityEngine;
 using ProtoNodeView = Panoptes.Protocol.V1.NodeView;
@@ -99,7 +100,7 @@ namespace Panoptes.Runtime.Map
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
 
         private readonly List<ProtoUnitView> _jsonUnits = new();
-        private ConfigCache _configCache;
+        private StaticCatalogCache _catalogCache;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -128,25 +129,30 @@ namespace Panoptes.Runtime.Map
 
         private void Start()
         {
+            if (!ShouldBuildOnStart())
+            {
+                return;
+            }
+
             EnsureRuntimeControllers();
-
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
-            {
-                return;
-            }
-
-            if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
-            {
-                return;
-            }
-
-            if (generateDebugMapOnStart)
-            {
-                BuildDebugMap();
-                return;
-            }
-
             RebuildMap();
+        }
+
+        private static bool ShouldBuildOnStart()
+        {
+            var cache = GameStateCache.Instance;
+            if (cache != null && cache.Nodes != null && cache.Nodes.Count > 0)
+            {
+                return true;
+            }
+
+            var app = AppManager.Instance;
+            if (app != null && app.State != AppState.Game)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static void EnsureRuntimeControllers()
@@ -156,33 +162,36 @@ namespace Panoptes.Runtime.Map
                 var go = new GameObject("MapInputHandler");
                 go.AddComponent<MapInputHandler>();
             }
+
+            var cam = Camera.main;
+            if (cam != null && cam.GetComponent<TopDownCameraController>() == null)
+            {
+                cam.gameObject.AddComponent<TopDownCameraController>();
+            }
         }
 
         public void RebuildMap()
         {
-            if (preferServerPushedMapConfig && TryLoadMapFromConfigCache())
-            {
-                return;
-            }
-
-            if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonString(startupMapJson.text))
-            {
-                return;
-            }
-
-            if (generateDebugMapOnStart)
-            {
-                BuildDebugMap();
-                return;
-            }
-
             if (GameStateCache.Instance == null)
             {
-                Debug.LogWarning("[MapRenderer] GameStateCache is missing.");
+                Debug.LogError("[MapRenderer] Cannot build map: GameStateCache is missing.");
                 return;
             }
 
-            BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+            if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
+            {
+                Debug.Log($"[MapRenderer] Rebuild from backend nodes: {GameStateCache.Instance.Nodes.Count}");
+                PrepareRuntimeRoots();
+                BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+                return;
+            }
+
+            Debug.Log("[MapRenderer] Backend nodes empty, falling back to static catalog.");
+            EnsureRuntimeControllers();
+            if (!TryLoadMapFromStaticCatalog())
+            {
+                Debug.LogWarning("[MapRenderer] Static catalog map not available yet.");
+            }
         }
 
         private void SubscribeServerMapConfig()
@@ -192,52 +201,75 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
-            _configCache = ConfigCache.EnsureInstance();
-            if (_configCache != null)
+            _catalogCache = StaticCatalogCache.EnsureInstance();
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated += OnServerMapConfigUpdated;
+                _catalogCache.CatalogChanged += OnServerMapCatalogChanged;
             }
         }
 
         private void UnsubscribeServerMapConfig()
         {
-            if (_configCache != null)
+            if (_catalogCache != null)
             {
-                _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
-                _configCache = null;
+                _catalogCache.CatalogChanged -= OnServerMapCatalogChanged;
+                _catalogCache = null;
             }
         }
 
-        private void OnServerMapConfigUpdated(string configKey)
+        private void OnServerMapCatalogChanged()
         {
-            if (!preferServerPushedMapConfig)
+            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
             {
                 return;
             }
-
-            if (!string.Equals(NormalizeToken(configKey), NormalizeToken(serverMapConfigKey), System.StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            TryLoadMapFromConfigCache();
+            TryLoadMapFromStaticCatalog();
         }
 
-        private bool TryLoadMapFromConfigCache()
+        private bool TryLoadMapFromStaticCatalog()
         {
-            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
-            var key = NormalizeToken(serverMapConfigKey);
-            if (cache == null || string.IsNullOrEmpty(key))
+            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
+            if (cache == null)
             {
                 return false;
             }
 
-            if (!cache.TryGetJson(key, out var mapJson) || string.IsNullOrWhiteSpace(mapJson))
+            if (!cache.TryGetDefaultMap(out var mapBundle) || mapBundle?.nodes == null || mapBundle.nodes.Length == 0)
             {
                 return false;
             }
 
-            return LoadMapFromJsonString(mapJson);
+            var nodes = new List<ProtoNodeView>(mapBundle.nodes.Length);
+            for (var i = 0; i < mapBundle.nodes.Length; i++)
+            {
+                var node = mapBundle.nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                var buildingType = NormalizeToken(node.building_type);
+                nodes.Add(new ProtoNodeView
+                {
+                    Id = string.IsNullOrWhiteSpace(node.id) ? $"N_{node.x}_{node.y}" : node.id.Trim(),
+                    Pos = new ProtoPosition { X = node.x, Y = node.y },
+                    Terrain = NormalizeToken(node.terrain),
+                    HasRoad = node.has_road,
+                    IsResourcePoint = node.is_resource_point,
+                    ResourceType = NormalizeToken(node.resource_type),
+                    Owner = NormalizeToken(node.owner),
+                    BuildingType = buildingType,
+                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp)
+                });
+            }
+
+            if (nodes.Count == 0)
+            {
+                return false;
+            }
+
+            BuildFromNodes(nodes);
+            return true;
         }
 
         public bool LoadMapFromJsonString(string json)
@@ -524,6 +556,7 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
+            PrepareRuntimeRoots();
             ClearMap();
 
             foreach (var node in nodes)
@@ -544,6 +577,25 @@ namespace Panoptes.Runtime.Map
 
             FocusCameraToCenter();
             RebuildUnitsForCurrentSource();
+        }
+
+        private void PrepareRuntimeRoots()
+        {
+            var tileRoot = EnsureTilesRoot();
+            if (tileRoot != null)
+            {
+                tileRoot.position = Vector3.zero;
+                tileRoot.rotation = Quaternion.identity;
+                tileRoot.localScale = Vector3.one;
+            }
+
+            var unitRoot = EnsureUnitsRoot();
+            if (unitRoot != null)
+            {
+                unitRoot.position = Vector3.zero;
+                unitRoot.rotation = Quaternion.identity;
+                unitRoot.localScale = Vector3.one;
+            }
         }
 
         private void RebuildUnitsForCurrentSource()
@@ -770,22 +822,57 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
+            EnsureGameplayCameraPose(cam);
             var center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
             var camPos = cam.transform.position;
 
             var cameraController = cam.GetComponent<TopDownCameraController>();
-            if (cameraController != null)
-            {
-                cameraController.SetWorldBounds(minX, maxX, minZ, maxZ, 0f);
-            }
+            cameraController?.SetWorldBounds(minX, maxX, minZ, maxZ);
 
             if (cam.orthographic)
             {
-                cam.transform.position = new Vector3(center.x, camPos.y, center.z - 10f);
+                if (Mathf.Abs(cam.transform.forward.y) > 0.5f)
+                {
+                    cam.transform.position = new Vector3(center.x, camPos.y, center.z);
+                }
+                else
+                {
+                    cam.transform.position = new Vector3(center.x, camPos.y, center.z - 10f);
+                }
             }
             else
             {
                 cam.transform.position = new Vector3(center.x, camPos.y, center.z - 6f);
+            }
+
+            if (cameraController != null)
+            {
+                cameraController.SnapTargetToCurrentPosition();
+            }
+        }
+
+        private static void EnsureGameplayCameraPose(Camera cam)
+        {
+            if (cam == null)
+            {
+                return;
+            }
+
+            var forwardYAbs = Mathf.Abs(cam.transform.forward.y);
+            var looksStraightForward = forwardYAbs < 0.2f;
+            if (!looksStraightForward)
+            {
+                return;
+            }
+
+            cam.orthographic = false;
+            cam.fieldOfView = Mathf.Clamp(cam.fieldOfView, 35f, 60f);
+            cam.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
+
+            var pos = cam.transform.position;
+            if (pos.y < 2f)
+            {
+                cam.transform.position = new Vector3(pos.x, 3.4f, pos.z);
             }
         }
 

@@ -1,0 +1,58 @@
+{
+  "resources": [
+    {
+      "key": "ore",
+      "display_name": "矿石",
+      "description": "基础矿物资源。",
+      "icon_key": "resource_ore",
+      "sort_order": 10,
+      "proto_number": 1,
+      "visible_in_hud": true
+    },
+    {
+      "key": "wood",
+      "display_name": "木材",
+      "description": "木料与加工原料。",
+      "icon_key": "resource_wood",
+      "sort_order": 20,
+      "proto_number": 2,
+      "visible_in_hud": true
+    },
+    {
+      "key": "food",
+      "display_name": "粮食",
+      "description": "人口与军队补给。",
+      "icon_key": "resource_food",
+      "sort_order": 30,
+      "proto_number": 3,
+      "visible_in_hud": true
+    },
+    {
+      "key": "refined_ore",
+      "display_name": "精炼矿",
+      "description": "高阶军用矿材。",
+      "icon_key": "resource_refined_ore",
+      "sort_order": 40,
+      "proto_number": 4,
+      "visible_in_hud": true
+    },
+    {
+      "key": "engineer_material",
+      "display_name": "工程材料",
+      "description": "工程营与特殊建筑材料。",
+      "icon_key": "resource_engineer_material",
+      "sort_order": 50,
+      "proto_number": 5,
+      "visible_in_hud": true
+    },
+    {
+      "key": "build_points",
+      "display_name": "建造点",
+      "description": "每回合建筑行动额度。",
+      "icon_key": "resource_build_points",
+      "sort_order": 60,
+      "proto_number": 6,
+      "visible_in_hud": true
+    }
+  ]
+}

@@ -109,17 +109,19 @@ panoptes/
 │   │   └── internal/gen/sqlc/
 │   │
 │   ├── data/
-│   │   ├── gamedata.json          # 数值配置（唯一数值来源）
-│   │   ├── gamedata.schema.json   # JSON Schema（自动生成+手工维护）
-│   │   └── maps/
-│   │       └── default.json       # 固定地图数据
+│   ├── data/
+│   │   ├── registry/              # 唯一作者源：注册表与投影规则
+│   │   ├── content/               # 玩法内容分领域 JSON
+│   │   ├── ui/                    # 展示元数据与本地化
+│   │   ├── schema/                # 生成的 JSON Schema
+│   │   └── generated/server/      # 服务端运行时 bundle
 │   │
 │   ├── internal/
 │   │   ├── gen/proto/             # 自动生成，禁止手动修改
 │   │   ├── config/
-│   │   │   ├── config.go          # 所有配置结构体
-│   │   │   ├── gamedata.go        # GameData结构体定义
-│   │   │   └── loader.go          # 加载+校验gamedata.json
+│   │   │   ├── config.go          # 环境变量与进程配置
+│   │   │   └── env.go             # 加载 env + staticdata
+│   │   ├── staticdata/            # 静态目录加载与只读查询
 │   │   ├── transport/
 │   │   │   ├── interface.go       # Transport interface定义
 │   │   │   ├── websocket/
@@ -226,6 +228,60 @@ lint:
 	go vet ./...
 ```
 
+### 静态数据生成与加载
+
+当前静态数据采用“作者源”和“运行时 bundle”分离模型。
+
+作者源目录：
+- `data/registry/`：注册表、manifest、动态资源定义
+- `data/content/`：单位、建筑、地形、规则、地图等玩法内容
+- `data/ui/`：展示层元数据与本地化
+
+生成命令：
+
+```bash
+make data-gen
+make data-validate
+```
+
+生成结果：
+- `data/generated/server/`：服务端运行时静态目录
+- `client/Assets/Resources/Data/`：客户端本地静态目录
+- `data/schema/`：生成的 JSON Schema
+- `protocol/data_types.proto`、`protocol/data_catalog.proto`、`protocol/map_catalog.proto`
+
+服务端运行时加载链路固定为：
+
+```text
+data/registry + data/content + data/ui
+  -> server/cmd/datagen
+  -> data/generated/server/
+  -> config.Load()
+  -> staticdata.LoadDir(DATA_ROOT/generated/server)
+  -> staticdata.SetDefault(catalog)
+  -> game/domain/ecs/engine 通过 staticdata.Default() 只读访问
+```
+
+禁止业务层直接读取 `data/content/*.json` 或 `data/generated/server/*.json`；统一通过 `staticdata.Default()` 查询。
+
+对局启动时的数据流固定为：
+
+```text
+GameRoom.Start()
+  -> staticdata.Default()
+  -> manifest.default_map_id 或 cfg.MapID
+  -> maploader.LoadMap()
+  -> maploader.InitWorldFromMap()
+  -> domain.NewGameState()
+```
+
+其中 `InitWorldFromMap()` 负责把 `MapRuntimeBundle` 展开为 ECS 世界，包括：
+- 创建所有节点 Entity
+- 应用道路、资源点、命名点
+- 解析预置 owner / owner_slot
+- 创建预置建筑并写入节点 owner
+- 维护 `node_id -> Entity` 索引
+
 ---
 
 ## 4. 架构原则
@@ -263,7 +319,7 @@ func (s *SiegeSystem) Run(world donburi.World) { world.Entry(...).HP -= 10 }
 
 ### 原则四：Config是唯一数值来源
 
-兵种攻击力、建筑消耗、地形系数等所有数值只从`config.Data`读取，禁止在代码中硬编码数值常量。
+兵种攻击力、建筑消耗、地形系数等所有数值只从`staticdata.Default()`读取，禁止在代码中硬编码数值常量。
 
 ### 原则五：每个System文件不超过150行
 
@@ -1493,7 +1549,7 @@ JWT_SECRET=your-secret-key
 JWT_EXPIRATION=86400
 
 # 游戏数据
-GAMEDATA_PATH=data/gamedata.json
+DATA_ROOT=../data
 MAP_PATH=data/maps/default.json
 ```
 
@@ -1507,7 +1563,7 @@ MAP_PATH=data/maps/default.json
 Step 1：基础框架（Day 1）
   - go.mod，依赖安装
   - buf generate跑通，三端代码生成验证
-  - config加载（gamedata.json + 环境变量）
+  - config加载（环境变量）+ staticdata加载（generated bundle）
   - WebSocket Hub能连接，Envelope消息收发正常
   - 硬编码两个测试账号（alice/bob），JWT生成和校验
   - 手动房间号加入（不做匹配队列）
@@ -1548,7 +1604,7 @@ Step 6：联调和修复（Day 6）
   - 胜负判定和MsgGameOver
 
 Step 7：打磨（Day 7）
-  - 数值调整（只改gamedata.json）
+  - 数值调整（只改根 `data/` 作者源）
   - 超时边界情况处理
   - 错误处理完善
   - Demo录制准备

@@ -25,22 +25,17 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cgxjb21tb24ucHJvdG8SEXBhbm9wdGVzLnByb3RvLnYxIiYKCFBvc2l0aW9u",
-            "EgwKAXgYASABKAVSAXgSDAoBeRgCIAEoBVIBeSK2AQoJUmVzb3VyY2VzEhAK",
-            "A29yZRgBIAEoBVIDb3JlEhIKBHdvb2QYAiABKAVSBHdvb2QSEgoEZm9vZBgD",
-            "IAEoBVIEZm9vZBIfCgtyZWZpbmVkX29yZRgEIAEoBVIKcmVmaW5lZE9yZRIr",
-            "ChFlbmdpbmVlcl9tYXRlcmlhbBgFIAEoBVIQZW5naW5lZXJNYXRlcmlhbBIh",
-            "CgxidWlsZF9wb2ludHMYBiABKAVSC2J1aWxkUG9pbnRzIj0KDUVycm9yUmVz",
-            "cG9uc2USEgoEY29kZRgBIAEoCVIEY29kZRIYCgdtZXNzYWdlGAIgASgJUgdt",
-            "ZXNzYWdlIjMKFk1zZ0NsaWVudFJ1bnRpbWVDb25maWcSGQoIZGV2X21vZGUY",
-            "ASABKAhSB2Rldk1vZGUiOAoIRW52ZWxvcGUSEgoEdHlwZRgBIAEoCVIEdHlw",
-            "ZRIYCgdwYXlsb2FkGAIgASgJUgdwYXlsb2FkQlNaOmdpdGh1Yi5jb20vZWxl",
-            "YmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGq",
-            "AhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "EgwKAXgYASABKAVSAXgSDAoBeRgCIAEoBVIBeSI9Cg1FcnJvclJlc3BvbnNl",
+            "EhIKBGNvZGUYASABKAlSBGNvZGUSGAoHbWVzc2FnZRgCIAEoCVIHbWVzc2Fn",
+            "ZSIzChZNc2dDbGllbnRSdW50aW1lQ29uZmlnEhkKCGRldl9tb2RlGAEgASgI",
+            "UgdkZXZNb2RlIjgKCEVudmVsb3BlEhIKBHR5cGUYASABKAlSBHR5cGUSGAoH",
+            "cGF5bG9hZBgCIAEoCVIHcGF5bG9hZEJTWjpnaXRodWIuY29tL2VsZWJpcmRz",
+            "L3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIUUGFu",
+            "b3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Position), global::Panoptes.Protocol.V1.Position.Parser, new[]{ "X", "Y" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Resources), global::Panoptes.Protocol.V1.Resources.Parser, new[]{ "Ore", "Wood", "Food", "RefinedOre", "EngineerMaterial", "BuildPoints" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ErrorResponse), global::Panoptes.Protocol.V1.ErrorResponse.Parser, new[]{ "Code", "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgClientRuntimeConfig), global::Panoptes.Protocol.V1.MsgClientRuntimeConfig.Parser, new[]{ "DevMode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Envelope), global::Panoptes.Protocol.V1.Envelope.Parser, new[]{ "Type", "Payload" }, null, null, null, null)
@@ -286,389 +281,6 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class Resources : pb::IMessage<Resources>
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      , pb::IBufferMessage
-  #endif
-  {
-    private static readonly pb::MessageParser<Resources> _parser = new pb::MessageParser<Resources>(() => new Resources());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<Resources> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[1]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public Resources() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public Resources(Resources other) : this() {
-      ore_ = other.ore_;
-      wood_ = other.wood_;
-      food_ = other.food_;
-      refinedOre_ = other.refinedOre_;
-      engineerMaterial_ = other.engineerMaterial_;
-      buildPoints_ = other.buildPoints_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public Resources Clone() {
-      return new Resources(this);
-    }
-
-    /// <summary>Field number for the "ore" field.</summary>
-    public const int OreFieldNumber = 1;
-    private int ore_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Ore {
-      get { return ore_; }
-      set {
-        ore_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "wood" field.</summary>
-    public const int WoodFieldNumber = 2;
-    private int wood_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Wood {
-      get { return wood_; }
-      set {
-        wood_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "food" field.</summary>
-    public const int FoodFieldNumber = 3;
-    private int food_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Food {
-      get { return food_; }
-      set {
-        food_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "refined_ore" field.</summary>
-    public const int RefinedOreFieldNumber = 4;
-    private int refinedOre_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int RefinedOre {
-      get { return refinedOre_; }
-      set {
-        refinedOre_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "engineer_material" field.</summary>
-    public const int EngineerMaterialFieldNumber = 5;
-    private int engineerMaterial_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int EngineerMaterial {
-      get { return engineerMaterial_; }
-      set {
-        engineerMaterial_ = value;
-      }
-    }
-
-    /// <summary>Field number for the "build_points" field.</summary>
-    public const int BuildPointsFieldNumber = 6;
-    private int buildPoints_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int BuildPoints {
-      get { return buildPoints_; }
-      set {
-        buildPoints_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override bool Equals(object other) {
-      return Equals(other as Resources);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(Resources other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Ore != other.Ore) return false;
-      if (Wood != other.Wood) return false;
-      if (Food != other.Food) return false;
-      if (RefinedOre != other.RefinedOre) return false;
-      if (EngineerMaterial != other.EngineerMaterial) return false;
-      if (BuildPoints != other.BuildPoints) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Ore != 0) hash ^= Ore.GetHashCode();
-      if (Wood != 0) hash ^= Wood.GetHashCode();
-      if (Food != 0) hash ^= Food.GetHashCode();
-      if (RefinedOre != 0) hash ^= RefinedOre.GetHashCode();
-      if (EngineerMaterial != 0) hash ^= EngineerMaterial.GetHashCode();
-      if (BuildPoints != 0) hash ^= BuildPoints.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void WriteTo(pb::CodedOutputStream output) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      output.WriteRawMessage(this);
-    #else
-      if (Ore != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Ore);
-      }
-      if (Wood != 0) {
-        output.WriteRawTag(16);
-        output.WriteInt32(Wood);
-      }
-      if (Food != 0) {
-        output.WriteRawTag(24);
-        output.WriteInt32(Food);
-      }
-      if (RefinedOre != 0) {
-        output.WriteRawTag(32);
-        output.WriteInt32(RefinedOre);
-      }
-      if (EngineerMaterial != 0) {
-        output.WriteRawTag(40);
-        output.WriteInt32(EngineerMaterial);
-      }
-      if (BuildPoints != 0) {
-        output.WriteRawTag(48);
-        output.WriteInt32(BuildPoints);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Ore != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Ore);
-      }
-      if (Wood != 0) {
-        output.WriteRawTag(16);
-        output.WriteInt32(Wood);
-      }
-      if (Food != 0) {
-        output.WriteRawTag(24);
-        output.WriteInt32(Food);
-      }
-      if (RefinedOre != 0) {
-        output.WriteRawTag(32);
-        output.WriteInt32(RefinedOre);
-      }
-      if (EngineerMaterial != 0) {
-        output.WriteRawTag(40);
-        output.WriteInt32(EngineerMaterial);
-      }
-      if (BuildPoints != 0) {
-        output.WriteRawTag(48);
-        output.WriteInt32(BuildPoints);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(ref output);
-      }
-    }
-    #endif
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int CalculateSize() {
-      int size = 0;
-      if (Ore != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Ore);
-      }
-      if (Wood != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Wood);
-      }
-      if (Food != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Food);
-      }
-      if (RefinedOre != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RefinedOre);
-      }
-      if (EngineerMaterial != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(EngineerMaterial);
-      }
-      if (BuildPoints != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(BuildPoints);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(Resources other) {
-      if (other == null) {
-        return;
-      }
-      if (other.Ore != 0) {
-        Ore = other.Ore;
-      }
-      if (other.Wood != 0) {
-        Wood = other.Wood;
-      }
-      if (other.Food != 0) {
-        Food = other.Food;
-      }
-      if (other.RefinedOre != 0) {
-        RefinedOre = other.RefinedOre;
-      }
-      if (other.EngineerMaterial != 0) {
-        EngineerMaterial = other.EngineerMaterial;
-      }
-      if (other.BuildPoints != 0) {
-        BuildPoints = other.BuildPoints;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(pb::CodedInputStream input) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      input.ReadRawMessage(this);
-    #else
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 8: {
-            Ore = input.ReadInt32();
-            break;
-          }
-          case 16: {
-            Wood = input.ReadInt32();
-            break;
-          }
-          case 24: {
-            Food = input.ReadInt32();
-            break;
-          }
-          case 32: {
-            RefinedOre = input.ReadInt32();
-            break;
-          }
-          case 40: {
-            EngineerMaterial = input.ReadInt32();
-            break;
-          }
-          case 48: {
-            BuildPoints = input.ReadInt32();
-            break;
-          }
-        }
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
-            break;
-          case 8: {
-            Ore = input.ReadInt32();
-            break;
-          }
-          case 16: {
-            Wood = input.ReadInt32();
-            break;
-          }
-          case 24: {
-            Food = input.ReadInt32();
-            break;
-          }
-          case 32: {
-            RefinedOre = input.ReadInt32();
-            break;
-          }
-          case 40: {
-            EngineerMaterial = input.ReadInt32();
-            break;
-          }
-          case 48: {
-            BuildPoints = input.ReadInt32();
-            break;
-          }
-        }
-      }
-    }
-    #endif
-
-  }
-
-  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ErrorResponse : pb::IMessage<ErrorResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -683,7 +295,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -918,7 +530,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1120,7 +732,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Panoptes.Protocol.V1.CommonReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

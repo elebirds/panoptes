@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
+	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
 )
@@ -37,12 +39,11 @@ func (t *stubTransport) Stream(playerID string, msgs <-chan proto.Message) error
 var _ transport.GameTransport = (*stubTransport)(nil)
 
 func TestHumanPlayerNotifyTurnSendsPhaseMessages(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TurnTimeLimitDomestic: 12, TurnTimeLimitCombat: 18, TokensPerTurn: 3},
+	}))
 	tp := newStubTransport()
-	room := NewRoom("game-1", nil, tp, &config.Config{
-		TurnTimeLimitDomestic: 12,
-		TurnTimeLimitCombat:   18,
-		TokensPerTurn:         3,
-	})
+	room := NewRoom("game-1", nil, tp, &config.Config{})
 	room.Turn = 7
 
 	player := NewHumanPlayer("player-1", "alice", tp)
@@ -76,12 +77,40 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	Registry = NewGameRoomRegistry()
 	defer func() { Registry = previousRegistry }()
 
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-06",
+			ContentVersion: "test",
+			BundleHash:     "bundle-hash",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "default",
+		},
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			BuildPointsPerTurn: 10,
+			SafeZoneRadius:     4,
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "测试地图",
+		Width:  20,
+		Height: 20,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 2, Y: 10},
+			{Slot: 1, X: 17, Y: 10},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "spawn_p1", X: 2, Y: 10, Terrain: "plain"},
+			{ID: "spawn_p2", X: 17, Y: 10, Terrain: "plain"},
+			{ID: "K10", X: 10, Y: 9, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", NodeName: "龙脊"},
+		},
+		NamedNodes: map[string]string{"K10": "龙脊"},
+		CentralPoints: []string{"K10"},
+	}))
+
 	tp := newStubTransport()
-	cfg := &config.Config{
-		TurnTimeLimitDomestic: 2,
-		TurnTimeLimitCombat:   2,
-		TokensPerTurn:         3,
-	}
+	cfg := &config.Config{MapID: "default"}
 	room := NewRoom(
 		"game-1",
 		[]Player{
@@ -95,25 +124,38 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	go room.Start()
 
 	waitFor(t, time.Second, func() bool {
-		return len(tp.sent["player-1"]) >= 2
+		return len(tp.sent["player-1"]) >= 3
 	})
 
 	if _, ok := Registry.GetRoomByPlayerID("player-1"); !ok {
 		t.Fatalf("registry missing player room")
 	}
 
-	initMsg, ok := tp.sent["player-1"][0].(*pb.MsgGameInit)
+	if _, ok := tp.sent["player-1"][0].(*pb.MsgStaticCatalogManifest); !ok {
+		t.Fatalf("manifest type = %T", tp.sent["player-1"][0])
+	}
+
+	initMsg, ok := tp.sent["player-1"][1].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("init type = %T", tp.sent["player-1"][0])
+		t.Fatalf("init type = %T", tp.sent["player-1"][1])
 	}
 	if initMsg.GetYourPlayerId() != "player-1" {
 		t.Fatalf("your player id = %q", initMsg.GetYourPlayerId())
 	}
-	if len(initMsg.GetNodes()) != 5 {
+	if len(initMsg.GetNodes()) != 3 {
 		t.Fatalf("nodes len = %d", len(initMsg.GetNodes()))
+	}
+	if initMsg.GetMapWidth() != 20 || initMsg.GetMapHeight() != 20 {
+		t.Fatalf("map size = %dx%d", initMsg.GetMapWidth(), initMsg.GetMapHeight())
 	}
 	if initMsg.GetMyPlayer().GetTokensLeft() != 3 {
 		t.Fatalf("tokens left = %d", initMsg.GetMyPlayer().GetTokensLeft())
+	}
+	if initMsg.GetMyPlayer().GetMainCastleHp() != 100 {
+		t.Fatalf("main castle hp = %d", initMsg.GetMyPlayer().GetMainCastleHp())
+	}
+	if room.state == nil || room.state.Map == nil {
+		t.Fatalf("state not initialized")
 	}
 
 	room.OnHumanSubmitDomestic("player-1")
@@ -146,6 +188,32 @@ func TestRegistryRegisterAndUnregister(t *testing.T) {
 	registry.Unregister("game-1")
 	if _, ok := registry.GetRoomByPlayerID("bot_abcdwxyz"); ok {
 		t.Fatalf("registry should remove bot mapping")
+	}
+}
+
+func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
+	got := toProtoResourceBag(domain.ResourceBag{
+		domain.ResourceOre:            3,
+		domain.ResourceWood:           4,
+		domain.ResourceFood:           5,
+		domain.ResourceRefinedOre:     6,
+		domain.ResourceEngineerMat:    7,
+		domain.ResourceBuildPoints:    8,
+		domain.ResourceKey("crystal"): 99,
+	})
+
+	items := make(map[string]int32, len(got.GetItems()))
+	for _, item := range got.GetItems() {
+		items[item.GetKey()] = item.GetAmount()
+	}
+	if items["ore"] != 3 || items["wood"] != 4 || items["food"] != 5 {
+		t.Fatalf("basic proto resources = %#v", items)
+	}
+	if items["refined_ore"] != 6 || items["engineer_material"] != 7 || items["build_points"] != 8 {
+		t.Fatalf("advanced proto resources = %#v", items)
+	}
+	if items["crystal"] != 99 {
+		t.Fatalf("custom resource missing = %#v", items)
 	}
 }
 

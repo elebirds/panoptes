@@ -111,28 +111,6 @@ namespace Panoptes.Runtime.Cache
         public NodeView GetNode(string nodeId)
         {
             _nodes.TryGetValue(nodeId, out var node);
-
-            if (Panoptes.Runtime.Map.MapRenderer.Instance != null)
-            {
-                Panoptes.Runtime.Map.MapRenderer.Instance.RebuildMap();
-            }
-        }
-
-        public void UpdateTokens(int tokensLeft)
-        {
-            TokensLeft = tokensLeft;
-            if (MyPlayer != null)
-                MyPlayer.TokensLeft = tokensLeft;
-        }
-
-        public void UpdateNode(NodeView node)
-        {
-            _nodes[node.Id] = node;
-        }
-
-        public NodeView GetNode(string nodeId)
-        {
-            _nodes.TryGetValue(nodeId, out var node);
             return node;
         }
 

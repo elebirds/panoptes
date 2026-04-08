@@ -1,0 +1,44 @@
+{
+  "terrains": [
+    {
+      "id": "plain",
+      "move_cost_no_road": 2,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "mountain",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.3,
+      "attack_penalty": 0.2,
+      "blocks_cavalry": true,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": false
+    },
+    {
+      "id": "forest",
+      "move_cost_no_road": 3,
+      "defense_bonus": 0.2,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": false,
+      "passable_with_road": false,
+      "passable": true,
+      "buildable": true
+    },
+    {
+      "id": "river",
+      "move_cost_no_road": 99,
+      "defense_bonus": 0.0,
+      "attack_penalty": 0.0,
+      "blocks_cavalry": true,
+      "passable_with_road": true,
+      "passable": false,
+      "buildable": false
+    }
+  ]
+}

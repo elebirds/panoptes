@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+import "data_types.proto";
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message UnitCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string prefab_key = 5;
+}
+
+message BuildingCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string prefab_key = 5;
+}
+
+message TerrainCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string material_key = 5;
+}
+
+message StaticCatalogSnapshot {
+  StaticCatalogManifest manifest = 1;
+  repeated ResourceDescriptor resources = 2;
+  repeated UnitCatalogEntry units = 3;
+  repeated BuildingCatalogEntry buildings = 4;
+  repeated TerrainCatalogEntry terrains = 5;
+}
+
+message MsgStaticCatalogManifest {
+  StaticCatalogManifest manifest = 1;
+}
+
+message MsgStaticCatalogSnapshot {
+  StaticCatalogSnapshot snapshot = 1;
+}

@@ -3,6 +3,7 @@ syntax = "proto3";
 package panoptes.proto.v1;
 
 import "common.proto";
+import "data_types.proto";
 import "game_state.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
@@ -88,7 +89,7 @@ message MinisterActionItem {
 
 message MsgDomesticSettlement {
   repeated DomesticChange changes = 1;
-  Resources my_resources_after = 2;
+  ResourceBag my_resources_after = 2;
 }
 
 message DomesticChange {
