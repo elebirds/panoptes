@@ -1,0 +1,8 @@
+{
+  "terrains": [
+    { "id": "plain", "name": "平原", "description": "标准地块。", "icon_key": "terrain_plain", "material_key": "M_Ground_Lit", "sort_order": 10, "tags": ["ground"] },
+    { "id": "mountain", "name": "山地", "description": "高防御地形。", "icon_key": "terrain_mountain", "material_key": "M_Ground_Mountain_Lit", "sort_order": 20, "tags": ["ground"] },
+    { "id": "forest", "name": "森林", "description": "适合伏击的地形。", "icon_key": "terrain_forest", "material_key": "M_Ground_Forest_Lit", "sort_order": 30, "tags": ["ground"] },
+    { "id": "river", "name": "河流", "description": "难以通行。", "icon_key": "terrain_river", "material_key": "M_Ground_River_Lit", "sort_order": 40, "tags": ["ground"] }
+  ]
+}

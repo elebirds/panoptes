@@ -25,48 +25,48 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cg5kb21lc3RpYy5wcm90bxIRcGFub3B0ZXMucHJvdG8udjEaDGNvbW1vbi5w",
-            "cm90bxoQZ2FtZV9zdGF0ZS5wcm90byImCgxNc2dTZXRQb2xpY3kSFgoGcG9s",
-            "aWN5GAEgASgJUgZwb2xpY3kiVQoUTXNnTWluaXN0ZXJEaXJlY3RpdmUSIwoN",
-            "bWluaXN0ZXJfcm9sZRgBIAEoCVIMbWluaXN0ZXJSb2xlEhgKB2NvbnRlbnQY",
-            "AiABKAlSB2NvbnRlbnQiTQoNTXNnVG9rZW5CdWlsZBIXCgdub2RlX2lkGAEg",
-            "ASgJUgZub2RlSWQSIwoNYnVpbGRpbmdfdHlwZRgCIAEoCVIMYnVpbGRpbmdU",
-            "eXBlIikKDk1zZ1Rva2VuUmV2ZWFsEhcKB25vZGVfaWQYASABKAlSBm5vZGVJ",
-            "ZCIrCgxNc2dUb2tlblZldG8SGwoJYWN0aW9uX2lkGAEgASgJUghhY3Rpb25J",
-            "ZCKHAQoSTXNnVG9rZW5BZGp1c3RGbG93EhsKCWZyb21fbm9kZRgBIAEoCVII",
-            "ZnJvbU5vZGUSFwoHdG9fbm9kZRgCIAEoCVIGdG9Ob2RlEiMKDXJlc291cmNl",
-            "X3R5cGUYAyABKAlSDHJlc291cmNlVHlwZRIWCgZhbW91bnQYBCABKAVSBmFt",
-            "b3VudCJ/CgxNc2dCdWlsZFJvYWQSGwoJZnJvbV9ub2RlGAEgASgJUghmcm9t",
-            "Tm9kZRIXCgd0b19ub2RlGAIgASgJUgZ0b05vZGUSOQoJd2F5cG9pbnRzGAMg",
-            "AygLMhsucGFub3B0ZXMucHJvdG8udjEuUG9zaXRpb25SCXdheXBvaW50cyIT",
-            "ChFNc2dTdWJtaXREb21lc3RpYyKEAQoVTXNnRG9tZXN0aWNQaGFzZVN0YXJ0",
-            "EhgKB3RpbWVvdXQYASABKAVSB3RpbWVvdXQSEgoEdHVybhgCIAEoBVIEdHVy",
-            "bhIWCgZ0b2tlbnMYAyABKAVSBnRva2VucxIlCg5jdXJyZW50X3BvbGljeRgE",
-            "IAEoCVINY3VycmVudFBvbGljeSKCAQoOTXNnVG9rZW5SZXN1bHQSGAoHc3Vj",
-            "Y2VzcxgBIAEoCFIHc3VjY2VzcxIWCgZhY3Rpb24YAiABKAlSBmFjdGlvbhIf",
-            "Cgt0b2tlbnNfbGVmdBgDIAEoBVIKdG9rZW5zTGVmdBIdCgplcnJvcl9jb2Rl",
-            "GAQgASgJUgllcnJvckNvZGUihwEKD01zZ1JldmVhbFJlc3VsdBIXCgdub2Rl",
-            "X2lkGAEgASgJUgZub2RlSWQSOgoKdHJ1ZV9zdGF0ZRgCIAEoCzIbLnBhbm9w",
-            "dGVzLnByb3RvLnYxLk5vZGVWaWV3Ugl0cnVlU3RhdGUSHwoLdG9rZW5zX2xl",
-            "ZnQYAyABKAVSCnRva2Vuc0xlZnQipQEKEU1zZ01pbmlzdGVyQWN0aW9uEhoK",
-            "CG1pbmlzdGVyGAEgASgJUghtaW5pc3RlchIbCglhY3Rpb25faWQYAiABKAlS",
-            "CGFjdGlvbklkEj8KB2FjdGlvbnMYAyADKAsyJS5wYW5vcHRlcy5wcm90by52",
-            "MS5NaW5pc3RlckFjdGlvbkl0ZW1SB2FjdGlvbnMSFgoGcmVwb3J0GAQgASgJ",
-            "UgZyZXBvcnQirgEKEk1pbmlzdGVyQWN0aW9uSXRlbRISCgR0eXBlGAEgASgJ",
-            "UgR0eXBlEkkKBnBhcmFtcxgCIAMoCzIxLnBhbm9wdGVzLnByb3RvLnYxLk1p",
-            "bmlzdGVyQWN0aW9uSXRlbS5QYXJhbXNFbnRyeVIGcGFyYW1zGjkKC1BhcmFt",
-            "c0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1",
-            "ZToCOAEioAEKFU1zZ0RvbWVzdGljU2V0dGxlbWVudBI7CgdjaGFuZ2VzGAEg",
-            "AygLMiEucGFub3B0ZXMucHJvdG8udjEuRG9tZXN0aWNDaGFuZ2VSB2NoYW5n",
-            "ZXMSSgoSbXlfcmVzb3VyY2VzX2FmdGVyGAIgASgLMhwucGFub3B0ZXMucHJv",
-            "dG8udjEuUmVzb3VyY2VzUhBteVJlc291cmNlc0FmdGVyIp4BCg5Eb21lc3Rp",
-            "Y0NoYW5nZRISCgR0eXBlGAEgASgJUgR0eXBlEj8KBGRhdGEYAiADKAsyKy5w",
-            "YW5vcHRlcy5wcm90by52MS5Eb21lc3RpY0NoYW5nZS5EYXRhRW50cnlSBGRh",
-            "dGEaNwoJRGF0YUVudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIg",
-            "ASgJUgV2YWx1ZToCOAFCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRl",
-            "cy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlBy",
-            "b3RvY29sLlYxYgZwcm90bzM="));
+            "cm90bxoQZGF0YV90eXBlcy5wcm90bxoQZ2FtZV9zdGF0ZS5wcm90byImCgxN",
+            "c2dTZXRQb2xpY3kSFgoGcG9saWN5GAEgASgJUgZwb2xpY3kiVQoUTXNnTWlu",
+            "aXN0ZXJEaXJlY3RpdmUSIwoNbWluaXN0ZXJfcm9sZRgBIAEoCVIMbWluaXN0",
+            "ZXJSb2xlEhgKB2NvbnRlbnQYAiABKAlSB2NvbnRlbnQiTQoNTXNnVG9rZW5C",
+            "dWlsZBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSIwoNYnVpbGRpbmdfdHlw",
+            "ZRgCIAEoCVIMYnVpbGRpbmdUeXBlIikKDk1zZ1Rva2VuUmV2ZWFsEhcKB25v",
+            "ZGVfaWQYASABKAlSBm5vZGVJZCIrCgxNc2dUb2tlblZldG8SGwoJYWN0aW9u",
+            "X2lkGAEgASgJUghhY3Rpb25JZCKHAQoSTXNnVG9rZW5BZGp1c3RGbG93EhsK",
+            "CWZyb21fbm9kZRgBIAEoCVIIZnJvbU5vZGUSFwoHdG9fbm9kZRgCIAEoCVIG",
+            "dG9Ob2RlEiMKDXJlc291cmNlX3R5cGUYAyABKAlSDHJlc291cmNlVHlwZRIW",
+            "CgZhbW91bnQYBCABKAVSBmFtb3VudCJ/CgxNc2dCdWlsZFJvYWQSGwoJZnJv",
+            "bV9ub2RlGAEgASgJUghmcm9tTm9kZRIXCgd0b19ub2RlGAIgASgJUgZ0b05v",
+            "ZGUSOQoJd2F5cG9pbnRzGAMgAygLMhsucGFub3B0ZXMucHJvdG8udjEuUG9z",
+            "aXRpb25SCXdheXBvaW50cyITChFNc2dTdWJtaXREb21lc3RpYyKEAQoVTXNn",
+            "RG9tZXN0aWNQaGFzZVN0YXJ0EhgKB3RpbWVvdXQYASABKAVSB3RpbWVvdXQS",
+            "EgoEdHVybhgCIAEoBVIEdHVybhIWCgZ0b2tlbnMYAyABKAVSBnRva2VucxIl",
+            "Cg5jdXJyZW50X3BvbGljeRgEIAEoCVINY3VycmVudFBvbGljeSKCAQoOTXNn",
+            "VG9rZW5SZXN1bHQSGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIWCgZhY3Rp",
+            "b24YAiABKAlSBmFjdGlvbhIfCgt0b2tlbnNfbGVmdBgDIAEoBVIKdG9rZW5z",
+            "TGVmdBIdCgplcnJvcl9jb2RlGAQgASgJUgllcnJvckNvZGUihwEKD01zZ1Jl",
+            "dmVhbFJlc3VsdBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSOgoKdHJ1ZV9z",
+            "dGF0ZRgCIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLk5vZGVWaWV3Ugl0cnVl",
+            "U3RhdGUSHwoLdG9rZW5zX2xlZnQYAyABKAVSCnRva2Vuc0xlZnQipQEKEU1z",
+            "Z01pbmlzdGVyQWN0aW9uEhoKCG1pbmlzdGVyGAEgASgJUghtaW5pc3RlchIb",
+            "CglhY3Rpb25faWQYAiABKAlSCGFjdGlvbklkEj8KB2FjdGlvbnMYAyADKAsy",
+            "JS5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlckFjdGlvbkl0ZW1SB2FjdGlv",
+            "bnMSFgoGcmVwb3J0GAQgASgJUgZyZXBvcnQirgEKEk1pbmlzdGVyQWN0aW9u",
+            "SXRlbRISCgR0eXBlGAEgASgJUgR0eXBlEkkKBnBhcmFtcxgCIAMoCzIxLnBh",
+            "bm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyQWN0aW9uSXRlbS5QYXJhbXNFbnRy",
+            "eVIGcGFyYW1zGjkKC1BhcmFtc0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQK",
+            "BXZhbHVlGAIgASgJUgV2YWx1ZToCOAEiogEKFU1zZ0RvbWVzdGljU2V0dGxl",
+            "bWVudBI7CgdjaGFuZ2VzGAEgAygLMiEucGFub3B0ZXMucHJvdG8udjEuRG9t",
+            "ZXN0aWNDaGFuZ2VSB2NoYW5nZXMSTAoSbXlfcmVzb3VyY2VzX2FmdGVyGAIg",
+            "ASgLMh4ucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSEG15UmVzb3Vy",
+            "Y2VzQWZ0ZXIingEKDkRvbWVzdGljQ2hhbmdlEhIKBHR5cGUYASABKAlSBHR5",
+            "cGUSPwoEZGF0YRgCIAMoCzIrLnBhbm9wdGVzLnByb3RvLnYxLkRvbWVzdGlj",
+            "Q2hhbmdlLkRhdGFFbnRyeVIEZGF0YRo3CglEYXRhRW50cnkSEAoDa2V5GAEg",
+            "ASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AUJTWjpnaXRodWIu",
+            "Y29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtw",
+            "cm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetPolicy), global::Panoptes.Protocol.V1.MsgSetPolicy.Parser, new[]{ "Policy" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterDirective), global::Panoptes.Protocol.V1.MsgMinisterDirective.Parser, new[]{ "MinisterRole", "Content" }, null, null, null, null),
@@ -3380,10 +3380,10 @@ namespace Panoptes.Protocol.V1 {
 
     /// <summary>Field number for the "my_resources_after" field.</summary>
     public const int MyResourcesAfterFieldNumber = 2;
-    private global::Panoptes.Protocol.V1.Resources myResourcesAfter_;
+    private global::Panoptes.Protocol.V1.ResourceBag myResourcesAfter_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Panoptes.Protocol.V1.Resources MyResourcesAfter {
+    public global::Panoptes.Protocol.V1.ResourceBag MyResourcesAfter {
       get { return myResourcesAfter_; }
       set {
         myResourcesAfter_ = value;
@@ -3483,7 +3483,7 @@ namespace Panoptes.Protocol.V1 {
       changes_.Add(other.changes_);
       if (other.myResourcesAfter_ != null) {
         if (myResourcesAfter_ == null) {
-          MyResourcesAfter = new global::Panoptes.Protocol.V1.Resources();
+          MyResourcesAfter = new global::Panoptes.Protocol.V1.ResourceBag();
         }
         MyResourcesAfter.MergeFrom(other.MyResourcesAfter);
       }
@@ -3512,7 +3512,7 @@ namespace Panoptes.Protocol.V1 {
           }
           case 18: {
             if (myResourcesAfter_ == null) {
-              MyResourcesAfter = new global::Panoptes.Protocol.V1.Resources();
+              MyResourcesAfter = new global::Panoptes.Protocol.V1.ResourceBag();
             }
             input.ReadMessage(MyResourcesAfter);
             break;
@@ -3542,7 +3542,7 @@ namespace Panoptes.Protocol.V1 {
           }
           case 18: {
             if (myResourcesAfter_ == null) {
-              MyResourcesAfter = new global::Panoptes.Protocol.V1.Resources();
+              MyResourcesAfter = new global::Panoptes.Protocol.V1.ResourceBag();
             }
             input.ReadMessage(MyResourcesAfter);
             break;

@@ -1,7 +1,13 @@
-.PHONY: gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
+.PHONY: data-gen data-validate gen proto-gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
+
+data-gen:
+	cd server && go run ./cmd/datagen
+
+data-validate:
+	cd server && go run ./cmd/datagen -validate
 
 # Generate code for both server (Go) and client (C#)
-gen: proto-gen db-sqlc
+gen: data-gen proto-gen db-sqlc
 
 proto-gen:
 	cd protocol && buf generate

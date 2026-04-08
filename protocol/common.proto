@@ -10,15 +10,6 @@ message Position {
   int32 y = 2;
 }
 
-message Resources {
-  int32 ore = 1;
-  int32 wood = 2;
-  int32 food = 3;
-  int32 refined_ore = 4;
-  int32 engineer_material = 5;
-  int32 build_points = 6;
-}
-
 message ErrorResponse {
   string code = 1;
   string message = 2;

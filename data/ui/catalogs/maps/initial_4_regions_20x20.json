@@ -1,0 +1,23 @@
+{
+  "id": "initial_4_regions_20x20",
+  "name": "经典四域",
+  "description": "由旧版 init 地图迁移而来的四人经典地图，保留道路、资源点与预置据点布局。",
+  "thumbnail_key": "map_initial_4_regions_20x20",
+  "legend": [
+    {
+      "id": "road",
+      "name": "道路",
+      "icon_key": "marker_road"
+    },
+    {
+      "id": "resource_point",
+      "name": "资源点",
+      "icon_key": "marker_resource"
+    },
+    {
+      "id": "stronghold",
+      "name": "预置据点",
+      "icon_key": "marker_stronghold"
+    }
+  ]
+}

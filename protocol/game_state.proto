@@ -3,6 +3,7 @@ syntax = "proto3";
 package panoptes.proto.v1;
 
 import "common.proto";
+import "data_types.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
@@ -35,7 +36,7 @@ message UnitView {
 message PlayerView {
   string id = 1;
   string username = 2;
-  Resources resources = 3;
+  ResourceBag resources = 3;
   int32 tokens_left = 4;
   string current_policy = 5;
   int32 main_castle_hp = 6;

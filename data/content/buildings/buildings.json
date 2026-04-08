@@ -1,0 +1,148 @@
+{
+  "buildings": [
+    {
+      "id": "farm",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "food",
+      "build_cost": { "build_points": 2 },
+      "upkeep": {},
+      "production": { "input": {}, "output": { "food": 2 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "mine",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "ore",
+      "build_cost": { "build_points": 3 },
+      "upkeep": {},
+      "production": { "input": {}, "output": { "ore": 2 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 90, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "lumber",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "wood",
+      "build_cost": { "build_points": 2 },
+      "upkeep": {},
+      "production": { "input": {}, "output": { "wood": 2 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "granary",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 2, "wood": 2 },
+      "upkeep": {},
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": [],
+      "combat": { "max_hp": 90, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "smelter",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 3, "ore": 2 },
+      "upkeep": {},
+      "production": { "input": { "ore": 2 }, "output": { "refined_ore": 1 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 100, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "workshop",
+      "category": "production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 3, "wood": 2 },
+      "upkeep": {},
+      "production": { "input": { "wood": 2 }, "output": { "engineer_material": 1 }, "cycle_turns": 1 },
+      "produces_units": [],
+      "combat": { "max_hp": 100, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "barracks",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 3, "ore": 1 },
+      "upkeep": { "food": 1 },
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": ["infantry", "archer"],
+      "combat": { "max_hp": 120, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "stable",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 4, "refined_ore": 1 },
+      "upkeep": { "food": 2 },
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": ["cavalry"],
+      "combat": { "max_hp": 120, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "engineer_camp",
+      "category": "military_production",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 4, "engineer_material": 1 },
+      "upkeep": { "food": 1 },
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": ["siege", "saboteur"],
+      "combat": { "max_hp": 110, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "wall",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 3, "ore": 2 },
+      "upkeep": {},
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": [],
+      "combat": { "max_hp": 50, "attack_per_turn": 0, "range": 0, "wall_level": 3, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "tower",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 2, "wood": 2 },
+      "upkeep": { "food": 1 },
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": [],
+      "combat": { "max_hp": 70, "attack_per_turn": 8, "range": 2, "wall_level": 0, "towers": 1 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    },
+    {
+      "id": "watchtower",
+      "category": "military",
+      "placement_rule": "city_only",
+      "required_resource_type": "",
+      "build_cost": { "build_points": 1 },
+      "upkeep": {},
+      "production": { "input": {}, "output": {}, "cycle_turns": 0 },
+      "produces_units": [],
+      "combat": { "max_hp": 60, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    }
+  ]
+}
