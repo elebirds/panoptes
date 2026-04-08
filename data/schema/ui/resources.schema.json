@@ -9,18 +9,14 @@
           "description": {
             "type": "string"
           },
-          "display_name": {
-            "type": "string"
-          },
           "icon_key": {
             "type": "string"
           },
-          "key": {
+          "id": {
             "type": "string"
           },
-          "proto_number": {
-            "minimum": 1,
-            "type": "integer"
+          "name": {
+            "type": "string"
           },
           "sort_order": {
             "minimum": 0,
@@ -31,19 +27,15 @@
               "type": "string"
             },
             "type": "array"
-          },
-          "visible_in_hud": {
-            "type": "boolean"
           }
         },
         "required": [
-          "key",
-          "display_name",
+          "id",
+          "name",
           "description",
           "icon_key",
           "sort_order",
-          "proto_number",
-          "visible_in_hud"
+          "tags"
         ],
         "type": "object"
       },

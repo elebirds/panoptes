@@ -1,0 +1,437 @@
+{
+  "$defs": {
+    "grid_point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "type": "object"
+    },
+    "map_generator": {
+      "additionalProperties": false,
+      "properties": {
+        "seed": {
+          "type": "integer"
+        },
+        "terrain_bands": {
+          "items": {
+            "$ref": "#/$defs/terrain_band"
+          },
+          "type": "array"
+        },
+        "type": {
+          "enum": [
+            "noise"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "seed"
+      ],
+      "type": "object"
+    },
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "spawn_point": {
+      "additionalProperties": false,
+      "properties": {
+        "slot": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "x": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "slot",
+        "x",
+        "y"
+      ],
+      "type": "object"
+    },
+    "terrain_band": {
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "terrain": {
+          "enum": [
+            "forest",
+            "mountain",
+            "plain",
+            "river"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "max",
+        "terrain"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "features": {
+      "additionalProperties": false,
+      "properties": {
+        "central_points": {
+          "items": {
+            "$ref": "#/$defs/grid_point"
+          },
+          "type": "array"
+        },
+        "named_nodes": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "x": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "resource_points": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "node_name": {
+                "type": "string"
+              },
+              "resource_type": {
+                "enum": [
+                  "build_points",
+                  "engineer_material",
+                  "food",
+                  "ore",
+                  "refined_ore",
+                  "wood"
+                ],
+                "type": "string"
+              },
+              "x": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "resource_type"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "roads": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "points": {
+                "items": {
+                  "$ref": "#/$defs/grid_point"
+                },
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "points"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "resource_points",
+        "roads",
+        "named_nodes",
+        "central_points"
+      ],
+      "type": "object"
+    },
+    "generator": {
+      "$ref": "#/$defs/map_generator"
+    },
+    "meta": {
+      "additionalProperties": false,
+      "properties": {
+        "default_terrain": {
+          "enum": [
+            "forest",
+            "mountain",
+            "plain",
+            "river"
+          ],
+          "type": "string"
+        },
+        "height": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "width": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "width",
+        "height",
+        "default_terrain"
+      ],
+      "type": "object"
+    },
+    "node_overrides": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "building_hp": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "building_type": {
+            "type": "string"
+          },
+          "has_road": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_resource_point": {
+            "type": "boolean"
+          },
+          "node_name": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "owner_slot": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "resource_type": {
+            "enum": [
+              "build_points",
+              "engineer_material",
+              "food",
+              "ore",
+              "refined_ore",
+              "wood"
+            ],
+            "type": "string"
+          },
+          "terrain": {
+            "enum": [
+              "forest",
+              "mountain",
+              "plain",
+              "river"
+            ],
+            "type": "string"
+          },
+          "x": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "y": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "spawn_points": {
+      "items": {
+        "$ref": "#/$defs/spawn_point"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "terrain_patches": {
+      "items": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "point"
+                ],
+                "type": "string"
+              },
+              "points": {
+                "items": {
+                  "$ref": "#/$defs/grid_point"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "terrain": {
+                "enum": [
+                  "forest",
+                  "mountain",
+                  "plain",
+                  "river"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "terrain",
+              "points"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "height": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "rect"
+                ],
+                "type": "string"
+              },
+              "terrain": {
+                "enum": [
+                  "forest",
+                  "mountain",
+                  "plain",
+                  "river"
+                ],
+                "type": "string"
+              },
+              "width": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "x": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "kind",
+              "terrain",
+              "x",
+              "y",
+              "width",
+              "height"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "meta",
+    "terrain_patches",
+    "node_overrides",
+    "features",
+    "spawn_points"
+  ],
+  "type": "object"
+}

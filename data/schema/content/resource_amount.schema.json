@@ -1,37 +1,36 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "additionalProperties": false,
-  "properties": {
-    "build_points": {
-      "minimum": 0,
-      "title": "建造点",
-      "type": "integer"
-    },
-    "engineer_material": {
-      "minimum": 0,
-      "title": "工程材料",
-      "type": "integer"
-    },
-    "food": {
-      "minimum": 0,
-      "title": "粮食",
-      "type": "integer"
-    },
-    "ore": {
-      "minimum": 0,
-      "title": "矿石",
-      "type": "integer"
-    },
-    "refined_ore": {
-      "minimum": 0,
-      "title": "精炼矿",
-      "type": "integer"
-    },
-    "wood": {
-      "minimum": 0,
-      "title": "木材",
-      "type": "integer"
+  "$defs": {
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
     }
   },
-  "type": "object"
+  "$ref": "#/$defs/resource_amount",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

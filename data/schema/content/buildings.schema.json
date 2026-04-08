@@ -1,0 +1,185 @@
+{
+  "$defs": {
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "buildings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "build_cost": {
+            "$ref": "#/$defs/resource_amount"
+          },
+          "category": {
+            "enum": [
+              "production",
+              "military_production",
+              "military"
+            ],
+            "type": "string"
+          },
+          "combat": {
+            "additionalProperties": false,
+            "properties": {
+              "attack_per_turn": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "max_hp": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "range": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "towers": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "wall_level": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "max_hp",
+              "attack_per_turn",
+              "range",
+              "wall_level",
+              "towers"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "limits": {
+            "additionalProperties": false,
+            "properties": {
+              "max_per_node": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "max_per_player": {
+                "minimum": -1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "max_per_node",
+              "max_per_player"
+            ],
+            "type": "object"
+          },
+          "placement_rule": {
+            "enum": [
+              "resource_only",
+              "city_only"
+            ],
+            "type": "string"
+          },
+          "produces_units": {
+            "items": {
+              "enum": [
+                "archer",
+                "cavalry",
+                "infantry",
+                "saboteur",
+                "siege"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "production": {
+            "additionalProperties": false,
+            "properties": {
+              "cycle_turns": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "input": {
+                "$ref": "#/$defs/resource_amount"
+              },
+              "output": {
+                "$ref": "#/$defs/resource_amount"
+              }
+            },
+            "required": [
+              "input",
+              "output",
+              "cycle_turns"
+            ],
+            "type": "object"
+          },
+          "required_resource_type": {
+            "enum": [
+              "build_points",
+              "engineer_material",
+              "food",
+              "ore",
+              "refined_ore",
+              "wood",
+              ""
+            ],
+            "type": "string"
+          },
+          "upkeep": {
+            "$ref": "#/$defs/resource_amount"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "placement_rule",
+          "required_resource_type",
+          "build_cost",
+          "upkeep",
+          "production",
+          "produces_units",
+          "combat",
+          "limits"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "buildings"
+  ],
+  "type": "object"
+}

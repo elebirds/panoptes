@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "build_points_max": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "build_points_per_turn": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "castle_base_hp": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "max_turns": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "occupy_turns": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "safe_zone_radius": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tokens_per_turn": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tokens_recuperation_bonus": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "turn_time_limit_combat": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "turn_time_limit_domestic": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "turn_time_limit_domestic",
+    "turn_time_limit_combat",
+    "tokens_per_turn",
+    "tokens_recuperation_bonus",
+    "max_turns",
+    "castle_base_hp",
+    "safe_zone_radius",
+    "occupy_turns",
+    "build_points_per_turn",
+    "build_points_max"
+  ],
+  "type": "object"
+}
