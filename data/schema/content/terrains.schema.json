@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "terrains": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attack_penalty": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "blocks_cavalry": {
+            "type": "boolean"
+          },
+          "buildable": {
+            "type": "boolean"
+          },
+          "defense_bonus": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "move_cost_no_road": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "passable": {
+            "type": "boolean"
+          },
+          "passable_with_road": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "move_cost_no_road",
+          "defense_bonus",
+          "attack_penalty",
+          "blocks_cavalry",
+          "passable_with_road",
+          "passable",
+          "buildable"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "terrains"
+  ],
+  "type": "object"
+}

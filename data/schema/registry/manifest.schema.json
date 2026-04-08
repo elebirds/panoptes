@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bundle_hash": {
+      "type": "string"
+    },
+    "content_version": {
+      "type": "string"
+    },
+    "default_locale": {
+      "type": "string"
+    },
+    "default_map_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "content_version",
+    "default_locale",
+    "default_map_id"
+  ],
+  "type": "object"
+}

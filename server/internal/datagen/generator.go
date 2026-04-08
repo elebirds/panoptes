@@ -18,109 +18,67 @@ type Options struct {
 }
 
 func Validate(opts Options) error {
-	_, _, err := loadAndCompile(opts)
+	_, _, _, err := loadAndCompile(opts)
 	return err
 }
 
 func Generate(opts Options) error {
-	bundle, maps, err := loadAndCompile(opts)
+	bundle, maps, schemas, err := loadAndCompile(opts)
 	if err != nil {
 		return err
 	}
-	return emitGeneratedFiles(opts.RepoRoot, bundle, maps)
+	return emitGeneratedFiles(opts.RepoRoot, bundle, maps, schemas)
 }
 
-func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticdata.MapRuntimeBundle, error) {
+func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticdata.MapRuntimeBundle, schemaSet, error) {
 	if opts.RepoRoot == "" {
-		return staticdata.CatalogBundle{}, nil, fmt.Errorf("repo root is required")
+		return staticdata.CatalogBundle{}, nil, nil, fmt.Errorf("repo root is required")
 	}
 
-	manifest, err := readJSON[staticdata.Manifest](filepath.Join(opts.RepoRoot, "data/registry/manifest.json"))
+	authored, err := loadAuthoredData(opts.RepoRoot)
 	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
+		return staticdata.CatalogBundle{}, nil, nil, err
 	}
-	resourcesFile, err := readJSON[struct {
-		Resources []staticdata.ResourceDescriptor `json:"resources"`
-	}](filepath.Join(opts.RepoRoot, "data/registry/resources.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	unitsContent, err := readJSON[struct {
-		Units []staticdata.UnitDefinition `json:"units"`
-	}](filepath.Join(opts.RepoRoot, "data/content/units/units.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	buildingsContent, err := readJSON[struct {
-		Buildings []staticdata.BuildingDefinition `json:"buildings"`
-	}](filepath.Join(opts.RepoRoot, "data/content/buildings/buildings.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	terrainsContent, err := readJSON[struct {
-		Terrains []staticdata.TerrainDefinition `json:"terrains"`
-	}](filepath.Join(opts.RepoRoot, "data/content/terrains/terrains.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	rules, err := readJSON[staticdata.Rules](filepath.Join(opts.RepoRoot, "data/content/rules/rules.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	ministersContent, err := readJSON[struct {
-		Pool []staticdata.Minister `json:"pool"`
-	}](filepath.Join(opts.RepoRoot, "data/content/ministers/ministers.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	resourceUI, err := readJSON[staticdata.ResourceCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/resources.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	unitUI, err := readJSON[staticdata.UnitCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/units.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	buildingUI, err := readJSON[staticdata.BuildingCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/buildings.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
-	}
-	terrainUI, err := readJSON[staticdata.TerrainCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/terrains.json"))
-	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
+	schemas := buildAuthoringSchemas(buildAuthoringSchemaContext(
+		authored.Resources.Value.Resources,
+		authored.Units.Value.Units,
+		authored.Terrains.Value.Terrains,
+	))
+	if err := validateAuthoredSources(authored, schemas); err != nil {
+		return staticdata.CatalogBundle{}, nil, nil, err
 	}
 
-	mergeUI(resourcesFile.Resources, resourceUI)
-	mergeUnitUI(unitsContent.Units, unitUI)
-	mergeBuildingUI(buildingsContent.Buildings, buildingUI)
-	mergeTerrainUI(terrainsContent.Terrains, terrainUI)
+	mergeUI(authored.Resources.Value.Resources, authored.ResourceUI.Value)
+	mergeUnitUI(authored.Units.Value.Units, authored.UnitUI.Value)
+	mergeBuildingUI(authored.Buildings.Value.Buildings, authored.BuildingUI.Value)
+	mergeTerrainUI(authored.Terrains.Value.Terrains, authored.TerrainUI.Value)
 
 	maps, entries, err := compileMaps(opts.RepoRoot)
 	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
+		return staticdata.CatalogBundle{}, nil, nil, err
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:  manifest,
-		Resources: resourcesFile.Resources,
-		Units:     unitsContent.Units,
-		Buildings: buildingsContent.Buildings,
-		Terrains:  terrainsContent.Terrains,
-		Rules:     rules,
-		Ministers: ministersContent.Pool,
+		Manifest:  authored.Manifest.Value,
+		Resources: authored.Resources.Value.Resources,
+		Units:     authored.Units.Value.Units,
+		Buildings: authored.Buildings.Value.Buildings,
+		Terrains:  authored.Terrains.Value.Terrains,
+		Rules:     authored.Rules.Value,
+		Ministers: authored.Ministers.Value.Pool,
 		Maps:      entries,
 	}
 
 	hash, err := computeBundleHash(bundle, maps)
 	if err != nil {
-		return staticdata.CatalogBundle{}, nil, err
+		return staticdata.CatalogBundle{}, nil, nil, err
 	}
 	bundle.Manifest.BundleHash = hash
 
-	return bundle, maps, nil
+	return bundle, maps, schemas, nil
 }
 
-func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps map[string]*staticdata.MapRuntimeBundle) error {
+func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps map[string]*staticdata.MapRuntimeBundle, schemas schemaSet) error {
 	serverGen := filepath.Join(repoRoot, "data/generated/server")
 	clientData := filepath.Join(repoRoot, "client/Assets/Resources/Data")
 	schemaDir := filepath.Join(repoRoot, "data/schema")
@@ -135,7 +93,9 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 		filepath.Join(clientData, "maps"),
 		filepath.Join(schemaDir, "registry"),
 		filepath.Join(schemaDir, "content"),
+		filepath.Join(schemaDir, "content", "maps"),
 		filepath.Join(schemaDir, "ui"),
+		filepath.Join(schemaDir, "ui", "maps"),
 		serverGoGen,
 		clientCodeGen,
 		protocolDir,
@@ -144,6 +104,9 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("mkdir %q: %w", dir, err)
 		}
+	}
+	if err := removeLegacyGeneratedFiles(schemaDir); err != nil {
+		return err
 	}
 
 	if err := writePrettyJSON(filepath.Join(serverGen, "catalog.bundle.json"), bundle); err != nil {
@@ -161,7 +124,7 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 		}
 	}
 
-	if err := emitSchemas(schemaDir, bundle.Resources); err != nil {
+	if err := emitSchemas(schemaDir, schemas); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(protocolDir, "data_types.proto"), []byte(renderDataTypesProto()), 0o600); err != nil {
@@ -183,31 +146,22 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 	return nil
 }
 
-func emitSchemas(schemaDir string, resources []staticdata.ResourceDescriptor) error {
-	props := make(map[string]any, len(resources))
-	for _, resource := range resources {
-		props[resource.Key] = map[string]any{
-			"type": "integer",
-			"minimum": 0,
-			"title": resource.DisplayName,
+func removeLegacyGeneratedFiles(schemaDir string) error {
+	legacyFiles := []string{
+		filepath.Join(schemaDir, "ui", "resource_catalog.schema.json"),
+	}
+	for _, path := range legacyFiles {
+		err := os.Remove(path)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("remove legacy generated file %q: %w", path, err)
 		}
 	}
-	schema := map[string]any{
-		"$schema": "https://json-schema.org/draft/2020-12/schema",
-		"type": "object",
-		"properties": props,
-		"additionalProperties": false,
-	}
-	files := map[string]any{
-		filepath.Join(schemaDir, "registry/resources.schema.json"): schema,
-		filepath.Join(schemaDir, "content/resource_amount.schema.json"): schema,
-		filepath.Join(schemaDir, "ui/resource_catalog.schema.json"): map[string]any{
-			"$schema": "https://json-schema.org/draft/2020-12/schema",
-			"type": "object",
-		},
-	}
-	for path, value := range files {
-		if err := writePrettyJSON(path, value); err != nil {
+	return nil
+}
+
+func emitSchemas(schemaDir string, schemas schemaSet) error {
+	for rel, value := range schemas {
+		if err := writePrettyJSON(filepath.Join(schemaDir, rel), value); err != nil {
 			return err
 		}
 	}
@@ -261,13 +215,13 @@ func compileMaps(repoRoot string) (map[string]*staticdata.MapRuntimeBundle, []st
 		runtime := compileMapDefinition(def)
 		bundles[mapID] = runtime
 		catalogEntries = append(catalogEntries, staticdata.MapCatalogEntry{
-			ID: mapID,
-			Name: ui.Name,
-			Description: ui.Description,
+			ID:           mapID,
+			Name:         ui.Name,
+			Description:  ui.Description,
 			ThumbnailKey: ui.ThumbnailKey,
-			Width: runtime.Width,
-			Height: runtime.Height,
-			Tags: runtime.Tags,
+			Width:        runtime.Width,
+			Height:       runtime.Height,
+			Tags:         runtime.Tags,
 		})
 	}
 	sort.Slice(catalogEntries, func(i, j int) bool { return catalogEntries[i].ID < catalogEntries[j].ID })
@@ -280,9 +234,9 @@ func compileMapDefinition(def staticdata.MapDefinition) *staticdata.MapRuntimeBu
 	for y := 0; y < def.Meta.Height; y++ {
 		for x := 0; x < def.Meta.Width; x++ {
 			node := staticdata.MapRuntimeNode{
-				ID: coordinateNodeID(x, y),
-				X: x,
-				Y: y,
+				ID:      coordinateNodeID(x, y),
+				X:       x,
+				Y:       y,
 				Terrain: def.Meta.DefaultTerrain,
 			}
 			index[[2]int{x, y}] = len(nodes)
@@ -363,15 +317,15 @@ func compileMapDefinition(def staticdata.MapDefinition) *staticdata.MapRuntimeBu
 	}
 
 	return &staticdata.MapRuntimeBundle{
-		ID: def.Meta.ID,
-		Name: def.Meta.Name,
-		Width: def.Meta.Width,
-		Height: def.Meta.Height,
-		Nodes: nodes,
-		SpawnPoints: def.SpawnPoints,
-		NamedNodes: namedNodes,
+		ID:            def.Meta.ID,
+		Name:          def.Meta.Name,
+		Width:         def.Meta.Width,
+		Height:        def.Meta.Height,
+		Nodes:         nodes,
+		SpawnPoints:   def.SpawnPoints,
+		NamedNodes:    namedNodes,
 		CentralPoints: centralPoints,
-		Tags: def.Meta.Tags,
+		Tags:          def.Meta.Tags,
 	}
 }
 
@@ -437,19 +391,19 @@ func excelColumn(x int) string {
 
 func mergeUI(resources []staticdata.ResourceDescriptor, ui staticdata.ResourceCatalogUIFile) {
 	uiByID := make(map[string]struct {
-		Name string
+		Name        string
 		Description string
-		IconKey string
-		SortOrder int
-		Tags []string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
 	}, len(ui.Resources))
 	for _, entry := range ui.Resources {
 		uiByID[entry.ID] = struct {
-			Name string
+			Name        string
 			Description string
-			IconKey string
-			SortOrder int
-			Tags []string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
 		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
 	}
 	for i := range resources {
@@ -465,21 +419,21 @@ func mergeUI(resources []staticdata.ResourceDescriptor, ui staticdata.ResourceCa
 
 func mergeUnitUI(units []staticdata.UnitDefinition, ui staticdata.UnitCatalogUIFile) {
 	uiByID := make(map[string]struct {
-		Name string
+		Name        string
 		Description string
-		IconKey string
-		PrefabKey string
-		SortOrder int
-		Tags []string
+		IconKey     string
+		PrefabKey   string
+		SortOrder   int
+		Tags        []string
 	}, len(ui.Units))
 	for _, entry := range ui.Units {
 		uiByID[entry.ID] = struct {
-			Name string
+			Name        string
 			Description string
-			IconKey string
-			PrefabKey string
-			SortOrder int
-			Tags []string
+			IconKey     string
+			PrefabKey   string
+			SortOrder   int
+			Tags        []string
 		}{entry.Name, entry.Description, entry.IconKey, entry.PrefabKey, entry.SortOrder, entry.Tags}
 	}
 	for i := range units {
@@ -496,21 +450,21 @@ func mergeUnitUI(units []staticdata.UnitDefinition, ui staticdata.UnitCatalogUIF
 
 func mergeBuildingUI(buildings []staticdata.BuildingDefinition, ui staticdata.BuildingCatalogUIFile) {
 	uiByID := make(map[string]struct {
-		Name string
+		Name        string
 		Description string
-		IconKey string
-		PrefabKey string
-		SortOrder int
-		Tags []string
+		IconKey     string
+		PrefabKey   string
+		SortOrder   int
+		Tags        []string
 	}, len(ui.Buildings))
 	for _, entry := range ui.Buildings {
 		uiByID[entry.ID] = struct {
-			Name string
+			Name        string
 			Description string
-			IconKey string
-			PrefabKey string
-			SortOrder int
-			Tags []string
+			IconKey     string
+			PrefabKey   string
+			SortOrder   int
+			Tags        []string
 		}{entry.Name, entry.Description, entry.IconKey, entry.PrefabKey, entry.SortOrder, entry.Tags}
 	}
 	for i := range buildings {
@@ -527,21 +481,21 @@ func mergeBuildingUI(buildings []staticdata.BuildingDefinition, ui staticdata.Bu
 
 func mergeTerrainUI(terrains []staticdata.TerrainDefinition, ui staticdata.TerrainCatalogUIFile) {
 	uiByID := make(map[string]struct {
-		Name string
+		Name        string
 		Description string
-		IconKey string
+		IconKey     string
 		MaterialKey string
-		SortOrder int
-		Tags []string
+		SortOrder   int
+		Tags        []string
 	}, len(ui.Terrains))
 	for _, entry := range ui.Terrains {
 		uiByID[entry.ID] = struct {
-			Name string
+			Name        string
 			Description string
-			IconKey string
+			IconKey     string
 			MaterialKey string
-			SortOrder int
-			Tags []string
+			SortOrder   int
+			Tags        []string
 		}{entry.Name, entry.Description, entry.IconKey, entry.MaterialKey, entry.SortOrder, entry.Tags}
 	}
 	for i := range terrains {

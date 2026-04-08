@@ -15,7 +15,33 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		t.Fatalf("Generate() error = %v", err)
 	}
 
-	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/resources.schema.json"), `"ore"`)
+	for _, rel := range []string{
+		"data/schema/registry/manifest.schema.json",
+		"data/schema/registry/resources.schema.json",
+		"data/schema/content/units.schema.json",
+		"data/schema/content/buildings.schema.json",
+		"data/schema/content/terrains.schema.json",
+		"data/schema/content/rules.schema.json",
+		"data/schema/content/ministers.schema.json",
+		"data/schema/content/maps/definition.schema.json",
+		"data/schema/content/resource_amount.schema.json",
+		"data/schema/ui/resources.schema.json",
+		"data/schema/ui/units.schema.json",
+		"data/schema/ui/buildings.schema.json",
+		"data/schema/ui/terrains.schema.json",
+		"data/schema/ui/maps/catalog.schema.json",
+	} {
+		if _, err := os.Stat(filepath.Join(repoRoot, rel)); err != nil {
+			t.Fatalf("expected generated schema %q: %v", rel, err)
+		}
+	}
+
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/resource_amount.schema.json"), `"ore"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/manifest.schema.json"), `"additionalProperties": false`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/units.schema.json"), `"additionalProperties": false`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"infantry"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message ResourceBag")
@@ -128,6 +154,155 @@ func TestGenerateCarriesPrebuiltOwnerAndBuildingIntoRuntimeMap(t *testing.T) {
 		if !strings.Contains(text, want) {
 			t.Fatalf("runtime map missing %s:\n%s", want, text)
 		}
+	}
+}
+
+func TestGenerateRejectsInvalidAuthoringSources(t *testing.T) {
+	tests := []struct {
+		name         string
+		relPath      string
+		content      string
+		wantPath     string
+		wantContains []string
+	}{
+		{
+			name:    "manifest missing default_map_id",
+			relPath: "data/registry/manifest.json",
+			content: `{
+  "schema_version": "2026-04-06",
+  "content_version": "2026-04-06.alpha",
+  "default_locale": "zh-CN"
+}`,
+			wantPath:     "data/registry/manifest.json",
+			wantContains: []string{"default_map_id"},
+		},
+		{
+			name:    "resources reject unknown field",
+			relPath: "data/registry/resources.json",
+			content: `{
+  "resources": [
+    {
+      "key": "ore",
+      "display_name": "矿石",
+      "description": "基础矿物",
+      "icon_key": "resource_ore",
+      "sort_order": 10,
+      "proto_number": 1,
+      "visible_in_hud": true,
+      "unexpected": "boom"
+    }
+  ]
+}`,
+			wantPath:     "data/registry/resources.json",
+			wantContains: []string{"unexpected"},
+		},
+		{
+			name:    "units reject unregistered resource key",
+			relPath: "data/content/units/units.json",
+			content: `{
+  "units": [
+    {
+      "id": "infantry",
+      "class": "melee",
+      "max_hp": 30,
+      "attack": 10,
+      "attack_range": 1,
+      "move_range": 2,
+      "vision_range": 3,
+      "train_cost": { "gold": 1 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true }
+    }
+  ]
+}`,
+			wantPath:     "data/content/units/units.json",
+			wantContains: []string{"gold"},
+		},
+		{
+			name:    "buildings reject unknown produced unit",
+			relPath: "data/content/buildings/buildings.json",
+			content: `{
+  "buildings": [
+    {
+      "id": "farm",
+      "category": "production",
+      "placement_rule": "resource_only",
+      "required_resource_type": "food",
+      "build_cost": { "food": 1 },
+      "upkeep": {},
+      "production": { "input": {}, "output": { "food": 2 }, "cycle_turns": 1 },
+      "produces_units": ["ghost"],
+      "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
+      "limits": { "max_per_node": 1, "max_per_player": -1 }
+    }
+  ]
+}`,
+			wantPath:     "data/content/buildings/buildings.json",
+			wantContains: []string{"ghost"},
+		},
+		{
+			name:    "maps reject unknown default terrain",
+			relPath: "data/content/maps/default/definition.json",
+			content: `{
+  "meta": {
+    "id": "default",
+    "name": "测试地图",
+    "width": 2,
+    "height": 2,
+    "default_terrain": "lava",
+    "tags": ["pvp"]
+  },
+  "terrain_patches": [],
+  "node_overrides": [],
+  "features": {
+    "resource_points": [],
+    "roads": [],
+    "named_nodes": [],
+    "central_points": []
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 0, "y": 0 }
+  ]
+}`,
+			wantPath:     "data/content/maps/default/definition.json",
+			wantContains: []string{"lava"},
+		},
+		{
+			name:    "map ui rejects missing thumbnail key",
+			relPath: "data/ui/catalogs/maps/default.json",
+			content: `{
+  "id": "default",
+  "name": "标准地图",
+  "description": "默认对战地图",
+  "legend": [
+    { "id": "road", "name": "道路", "icon_key": "marker_road" }
+  ]
+}`,
+			wantPath:     "data/ui/catalogs/maps/default.json",
+			wantContains: []string{"thumbnail_key"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repoRoot := t.TempDir()
+			writeFixtureRepo(t, repoRoot)
+			writeRepoFile(t, repoRoot, tc.relPath, tc.content)
+
+			err := Generate(Options{RepoRoot: repoRoot})
+			if err == nil {
+				t.Fatalf("Generate() error = nil, want validation failure")
+			}
+			if !strings.Contains(err.Error(), tc.wantPath) {
+				t.Fatalf("Generate() error = %v, want path %q", err, tc.wantPath)
+			}
+			for _, want := range tc.wantContains {
+				if !strings.Contains(err.Error(), want) {
+					t.Fatalf("Generate() error = %v, want substring %q", err, want)
+				}
+			}
+		})
 	}
 }
 
@@ -334,13 +509,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
 	}
 
 	for rel, content := range files {
-		path := filepath.Join(repoRoot, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatalf("MkdirAll(%q) error = %v", path, err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatalf("WriteFile(%q) error = %v", path, err)
-		}
+		writeRepoFile(t, repoRoot, rel, content)
 	}
 }
 
@@ -352,5 +521,17 @@ func assertFileContains(t *testing.T, path string, want string) {
 	}
 	if !strings.Contains(string(raw), want) {
 		t.Fatalf("%q does not contain %q:\n%s", path, want, string(raw))
+	}
+}
+
+func writeRepoFile(t *testing.T, repoRoot string, rel string, content string) {
+	t.Helper()
+
+	path := filepath.Join(repoRoot, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("MkdirAll(%q) error = %v", path, err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", path, err)
 	}
 }

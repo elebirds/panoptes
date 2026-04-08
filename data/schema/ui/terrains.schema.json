@@ -2,25 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "resources": {
+    "terrains": {
       "items": {
         "additionalProperties": false,
         "properties": {
           "description": {
             "type": "string"
           },
-          "display_name": {
-            "type": "string"
-          },
           "icon_key": {
             "type": "string"
           },
-          "key": {
+          "id": {
             "type": "string"
           },
-          "proto_number": {
-            "minimum": 1,
-            "type": "integer"
+          "material_key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
           },
           "sort_order": {
             "minimum": 0,
@@ -31,19 +30,16 @@
               "type": "string"
             },
             "type": "array"
-          },
-          "visible_in_hud": {
-            "type": "boolean"
           }
         },
         "required": [
-          "key",
-          "display_name",
+          "id",
+          "name",
           "description",
           "icon_key",
+          "material_key",
           "sort_order",
-          "proto_number",
-          "visible_in_hud"
+          "tags"
         ],
         "type": "object"
       },
@@ -52,7 +48,7 @@
     }
   },
   "required": [
-    "resources"
+    "terrains"
   ],
   "type": "object"
 }

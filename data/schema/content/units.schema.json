@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "units": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attack": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "attack_range": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "charge_bonus": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "class": {
+            "type": "string"
+          },
+          "flags": {
+            "additionalProperties": false,
+            "properties": {
+              "can_capture": {
+                "type": "boolean"
+              },
+              "can_destroy_road": {
+                "type": "boolean"
+              },
+              "can_siege": {
+                "type": "boolean"
+              },
+              "destroy_multiplier": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "siege_multiplier": {
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "can_siege",
+              "can_destroy_road",
+              "can_capture"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "max_hp": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "move_range": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "multipliers": {
+            "additionalProperties": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "road_speed_bonus": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "train_cost": {
+            "$ref": "#/$defs/resource_amount"
+          },
+          "upkeep": {
+            "$ref": "#/$defs/resource_amount"
+          },
+          "vision_range": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "class",
+          "max_hp",
+          "attack",
+          "attack_range",
+          "move_range",
+          "vision_range",
+          "train_cost",
+          "upkeep",
+          "multipliers",
+          "flags"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "units"
+  ],
+  "type": "object"
+}
