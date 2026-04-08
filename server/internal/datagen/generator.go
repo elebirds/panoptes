@@ -17,64 +17,77 @@ type Options struct {
 	RepoRoot string
 }
 
+func Validate(opts Options) error {
+	_, _, err := loadAndCompile(opts)
+	return err
+}
+
 func Generate(opts Options) error {
+	bundle, maps, err := loadAndCompile(opts)
+	if err != nil {
+		return err
+	}
+	return emitGeneratedFiles(opts.RepoRoot, bundle, maps)
+}
+
+func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticdata.MapRuntimeBundle, error) {
 	if opts.RepoRoot == "" {
-		return fmt.Errorf("repo root is required")
+		return staticdata.CatalogBundle{}, nil, fmt.Errorf("repo root is required")
 	}
 
 	manifest, err := readJSON[staticdata.Manifest](filepath.Join(opts.RepoRoot, "data/registry/manifest.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	resourcesFile, err := readJSON[struct {
 		Resources []staticdata.ResourceDescriptor `json:"resources"`
 	}](filepath.Join(opts.RepoRoot, "data/registry/resources.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	unitsContent, err := readJSON[struct {
 		Units []staticdata.UnitDefinition `json:"units"`
 	}](filepath.Join(opts.RepoRoot, "data/content/units/units.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	buildingsContent, err := readJSON[struct {
 		Buildings []staticdata.BuildingDefinition `json:"buildings"`
 	}](filepath.Join(opts.RepoRoot, "data/content/buildings/buildings.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	terrainsContent, err := readJSON[struct {
 		Terrains []staticdata.TerrainDefinition `json:"terrains"`
 	}](filepath.Join(opts.RepoRoot, "data/content/terrains/terrains.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	rules, err := readJSON[staticdata.Rules](filepath.Join(opts.RepoRoot, "data/content/rules/rules.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	ministersContent, err := readJSON[struct {
 		Pool []staticdata.Minister `json:"pool"`
 	}](filepath.Join(opts.RepoRoot, "data/content/ministers/ministers.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	resourceUI, err := readJSON[staticdata.ResourceCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/resources.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	unitUI, err := readJSON[staticdata.UnitCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/units.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	buildingUI, err := readJSON[staticdata.BuildingCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/buildings.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	terrainUI, err := readJSON[staticdata.TerrainCatalogUIFile](filepath.Join(opts.RepoRoot, "data/ui/catalogs/terrains.json"))
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 
 	mergeUI(resourcesFile.Resources, resourceUI)
@@ -84,30 +97,27 @@ func Generate(opts Options) error {
 
 	maps, entries, err := compileMaps(opts.RepoRoot)
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest: manifest,
+		Manifest:  manifest,
 		Resources: resourcesFile.Resources,
-		Units: unitsContent.Units,
+		Units:     unitsContent.Units,
 		Buildings: buildingsContent.Buildings,
-		Terrains: terrainsContent.Terrains,
-		Rules: rules,
+		Terrains:  terrainsContent.Terrains,
+		Rules:     rules,
 		Ministers: ministersContent.Pool,
-		Maps: entries,
+		Maps:      entries,
 	}
 
 	hash, err := computeBundleHash(bundle, maps)
 	if err != nil {
-		return err
+		return staticdata.CatalogBundle{}, nil, err
 	}
 	bundle.Manifest.BundleHash = hash
 
-	if err := emitGeneratedFiles(opts.RepoRoot, bundle, maps); err != nil {
-		return err
-	}
-	return nil
+	return bundle, maps, nil
 }
 
 func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps map[string]*staticdata.MapRuntimeBundle) error {

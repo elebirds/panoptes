@@ -22,12 +22,13 @@ func LoadMap(catalog *staticdata.Catalog, mapID string) (*staticdata.MapRuntimeB
 
 func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle, playerIDs []string) *domain.MapData {
 	mapData := &domain.MapData{
-		ID:          mapFile.ID,
-		Width:       mapFile.Width,
-		Height:      mapFile.Height,
-		SpawnPoints: make(map[int]domain.Position, len(mapFile.SpawnPoints)),
-		NamedNodes:  make(map[string]string, len(mapFile.NamedNodes)),
-		NodeIndex:   make(map[string]donburi.Entity, len(mapFile.Nodes)),
+		ID:           mapFile.ID,
+		Width:        mapFile.Width,
+		Height:       mapFile.Height,
+		SpawnPoints:  make(map[int]domain.Position, len(mapFile.SpawnPoints)),
+		PlayerSpawns: make(map[string]domain.Position, len(mapFile.SpawnPoints)),
+		NamedNodes:   make(map[string]string, len(mapFile.NamedNodes)),
+		NodeIndex:    make(map[string]donburi.Entity, len(mapFile.Nodes)),
 	}
 
 	spawnOwners := make(map[domain.Position]string, len(mapFile.SpawnPoints))
@@ -36,6 +37,7 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 		mapData.SpawnPoints[spawn.Slot] = pos
 		if spawn.Slot < len(playerIDs) {
 			spawnOwners[pos] = playerIDs[spawn.Slot]
+			mapData.PlayerSpawns[playerIDs[spawn.Slot]] = pos
 		}
 	}
 	for nodeID, name := range mapFile.NamedNodes {

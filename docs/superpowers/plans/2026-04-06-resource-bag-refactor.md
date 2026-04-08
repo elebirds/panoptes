@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 将服务端内部资源模型改为动态 `ResourceBag`，同时保持 proto 对外 `Resources` 不变。
+**Goal:** 将资源模型改为动态 `ResourceBag`，包括服务端内部表示和 proto 协议层，客户端同步更新以使用 `ResourceBag` 替代固定字段的 `Resources`。
 
-**Architecture:** `config` 使用动态 map 读取所有成本/产出配置，`domain` 使用 `ResourceKey` + `ResourceBag` 作为内部统一资源表示，`game` 在 WebSocket/proto 边界把内部资源袋投影回固定 `pb.Resources`。这样内部扩展资源只需改配置和结算逻辑，客户端协议保持稳定。
+**Architecture:** `config` 使用动态 map 读取所有成本/产出配置，`domain` 使用 `ResourceKey` + `ResourceBag` 作为内部统一资源表示，`game` 在 WebSocket/proto 边界直接使用 `pb.ResourceBag`（而非固定字段的 `pb.Resources`）。客户端通过 `ResourceBag.items` 列表展示动态资源，内部扩展资源只需改配置、协议和结算逻辑，无需修改客户端固定字段。
 
 **Tech Stack:** Go 1.26, standard library JSON, protobuf
 

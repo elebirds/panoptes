@@ -119,12 +119,12 @@ namespace Panoptes.Runtime.Map
 
         private void OnEnable()
         {
-            // Map source is backend pushed game state only.
+            SubscribeServerMapConfig();
         }
 
         private void OnDisable()
         {
-            // Map source is backend pushed game state only.
+            UnsubscribeServerMapConfig();
         }
 
         private void Start()
@@ -178,15 +178,20 @@ namespace Panoptes.Runtime.Map
                 return;
             }
 
-            if (GameStateCache.Instance.Nodes == null || GameStateCache.Instance.Nodes.Count == 0)
+            if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
             {
-                Debug.LogError("[MapRenderer] Cannot build map: backend node list is empty.");
+                Debug.Log($"[MapRenderer] Rebuild from backend nodes: {GameStateCache.Instance.Nodes.Count}");
+                PrepareRuntimeRoots();
+                BuildFromNodes(GameStateCache.Instance.Nodes.Values);
                 return;
             }
 
-            Debug.Log($"[MapRenderer] Rebuild from backend nodes: {GameStateCache.Instance.Nodes.Count}");
-            PrepareRuntimeRoots();
-            BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+            Debug.Log("[MapRenderer] Backend nodes empty, falling back to static catalog.");
+            EnsureRuntimeControllers();
+            if (!TryLoadMapFromStaticCatalog())
+            {
+                Debug.LogWarning("[MapRenderer] Static catalog map not available yet.");
+            }
         }
 
         private void SubscribeServerMapConfig()
@@ -821,8 +826,8 @@ namespace Panoptes.Runtime.Map
             var center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
             var camPos = cam.transform.position;
 
-            // Keep bounds from TopDownCameraController inspector settings.
             var cameraController = cam.GetComponent<TopDownCameraController>();
+            cameraController?.SetWorldBounds(minX, maxX, minZ, maxZ);
 
             if (cam.orthographic)
             {

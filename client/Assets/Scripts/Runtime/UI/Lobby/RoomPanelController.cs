@@ -24,7 +24,7 @@ namespace Panoptes.Runtime.UI.Lobby
         [SerializeField] private TextMeshProUGUI statusText;
 
         [Header("Local Test")]
-        [SerializeField] private bool forceEnableAddBotInClient = true;
+        [SerializeField] private bool forceEnableAddBotInClient = false;
 
         private LobbyService _lobbySvc;
         private RoomCache _cache;
