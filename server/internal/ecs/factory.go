@@ -76,17 +76,14 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 		panic(fmt.Sprintf("unknown building type: %s", buildingType))
 	}
 
-	entity := world.Create(BuildingC)
-	buildingEntry := world.Entry(entity)
 	comp := BuildingComp{
-		Type:  domain.BuildingType(buildingType),
-		HP:    cfg.Combat.MaxHP,
-		MaxHP: cfg.Combat.MaxHP,
-		Owner: owner,
+		Type:      domain.BuildingType(buildingType),
+		HP:        cfg.Combat.MaxHP,
+		MaxHP:     cfg.Combat.MaxHP,
+		Owner:     owner,
 		WallLevel: cfg.Combat.WallLevel,
-		Towers: cfg.Combat.Towers,
+		Towers:    cfg.Combat.Towers,
 	}
-	BuildingC.SetValue(buildingEntry, comp)
 
 	if nodeEntry != nil {
 		if !nodeEntry.HasComponent(BuildingC) {
@@ -95,7 +92,11 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 		BuildingC.SetValue(nodeEntry, comp)
 		node := NodeC.Get(nodeEntry)
 		node.Owner = owner
+		return nodeEntry.Entity()
 	}
 
+	entity := world.Create(BuildingC)
+	buildingEntry := world.Entry(entity)
+	BuildingC.SetValue(buildingEntry, comp)
 	return entity
 }

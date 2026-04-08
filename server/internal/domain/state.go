@@ -34,12 +34,13 @@ type WarZone struct {
 }
 
 type MapData struct {
-	ID          string
-	Width       int
-	Height      int
-	SpawnPoints map[int]Position
-	NamedNodes  map[string]string
-	NodeIndex   map[string]donburi.Entity
+	ID           string
+	Width        int
+	Height       int
+	SpawnPoints  map[int]Position
+	PlayerSpawns map[string]Position
+	NamedNodes   map[string]string
+	NodeIndex    map[string]donburi.Entity
 }
 
 func NewGameState(gameID string, playerIDs []string, usernames []string, mapData *MapData) *GameState {

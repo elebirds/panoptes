@@ -275,7 +275,7 @@ func (r *GameRoom) buildNodeViews(playerID string) []*pb.NodeView {
 			HasRoad:         node.HasRoad,
 			IsResourcePoint: node.IsResource,
 			ResourceType:    node.ResourceType,
-			IsSafeZone:      domain.IsInSafeZone(r.state.World, domain.Position{X: pos.X, Y: pos.Y}, playerID),
+			IsSafeZone:      domain.IsInSafeZone(r.state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
 		}
 		if entry.HasComponent(ecs.BuildingC) {
 			building := ecs.BuildingC.Get(entry)

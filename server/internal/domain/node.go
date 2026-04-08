@@ -71,13 +71,15 @@ func GetNodesByOwner(world donburi.World, ownerID string) []*donburi.Entry {
 	return nodes
 }
 
-func IsInSafeZone(world donburi.World, pos Position, ownerID string) bool {
-	nodes := GetNodesByOwner(world, ownerID)
-	if len(nodes) == 0 {
+func IsInSafeZone(state *GameState, pos Position, ownerID string) bool {
+	if state == nil || state.Map == nil {
 		return false
 	}
-	castlePos := Position{X: PositionC.Get(nodes[0]).X, Y: PositionC.Get(nodes[0]).Y}
-	return pos.DistanceTo(castlePos) <= staticdata.Default().Rules().SafeZoneRadius
+	spawnPos, ok := state.Map.PlayerSpawns[ownerID]
+	if !ok {
+		return false
+	}
+	return pos.DistanceTo(spawnPos) <= staticdata.Default().Rules().SafeZoneRadius
 }
 
 func findNodeByID(world donburi.World, nodeID string) (*donburi.Entry, bool) {
