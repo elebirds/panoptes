@@ -1,4 +1,5 @@
 using Panoptes.Runtime.Cache;
+using Panoptes.Runtime.Action;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,8 +22,11 @@ namespace Panoptes.Runtime.UI.Game
 
         private void OnEnable()
         {
+            _cache = GameStateCache.Instance;
+
             if (_cache != null)
             {
+                GameAction.Initialize(_cache);
                 _cache.OnStateChanged += RefreshFromCache;
             }
         }
@@ -38,6 +42,8 @@ namespace Panoptes.Runtime.UI.Game
             {
                 _cache.OnStateChanged -= RefreshFromCache;
             }
+
+            GameAction.Dispose();
         }
 
         public void RefreshFromCache()
