@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/elebirds/panoptes/internal/auth"
+	"github.com/elebirds/panoptes/internal/debug"
 	"github.com/elebirds/panoptes/internal/game"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/lobby"
@@ -20,6 +21,7 @@ func (a *App) buildServer() *http.Server {
 	authSvc := auth.NewService(userStore, a.cfg.JWTSecret, a.cfg.JWTExpiration)
 
 	wsHub := wstransport.NewHub(a.cfg.JWTSecret)
+	wsHub.SetMessageLogger(debug.NewMessageLogger(a.cfg.DevMode))
 	a.gameTransport = wstransport.NewTransport(wsHub)
 
 	lobbyStore := redistore.NewLobbyStore(a.infra.redisClient)

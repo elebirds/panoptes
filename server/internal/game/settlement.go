@@ -1,6 +1,9 @@
 package game
 
-import "github.com/elebirds/panoptes/internal/engine"
+import (
+	"github.com/elebirds/panoptes/internal/debug"
+	"github.com/elebirds/panoptes/internal/engine"
+)
 
 // RunDomesticSettlement executes all domestic systems and broadcasts results.
 func RunDomesticSettlement(room *GameRoom) {
@@ -15,6 +18,9 @@ func RunDomesticSettlement(room *GameRoom) {
 	events := pipeline.Run(room.state.World, room.state)
 
 	room.broadcastSettlement("domestic", events)
+	if room.cfg != nil && room.cfg.DevMode {
+		debug.DumpGameStateSummary(room.state)
+	}
 	room.checkGameOver()
 
 	room.state.PendingBuilds = room.state.PendingBuilds[:0]
@@ -32,6 +38,9 @@ func RunCombatSettlement(room *GameRoom) {
 	events := pipeline.Run(room.state.World, room.state)
 
 	room.broadcastSettlement("combat", events)
+	if room.cfg != nil && room.cfg.DevMode {
+		debug.DumpGameStateSummary(room.state)
+	}
 	room.checkGameOver()
 
 	room.state.PendingConflicts = room.state.PendingConflicts[:0]

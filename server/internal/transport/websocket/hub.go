@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/elebirds/panoptes/internal/debug"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	"github.com/gorilla/websocket"
 )
@@ -32,6 +33,7 @@ type Hub struct {
 	router    *Router
 	leaveRoom LeaveRoomFunc
 	onConnect ConnectFunc
+	logger    *debug.MessageLogger
 }
 
 func NewHub(jwtSecret string) *Hub {
@@ -96,6 +98,7 @@ func (h *Hub) Run(ctx context.Context) {
 			h.mu.RUnlock()
 
 			for _, client := range clients {
+				h.logOutgoing(client.playerID, msg.data)
 				if err := client.Send(msg.data); err != nil {
 					slog.Warn("WebSocket 广播失败", "玩家ID", client.playerID, "错误", err)
 				}
@@ -156,6 +159,7 @@ func (h *Hub) SendToPlayer(playerID string, data []byte) error {
 	if client == nil {
 		return errors.New("client not connected")
 	}
+	h.logOutgoing(playerID, data)
 	return client.Send(data)
 }
 
@@ -182,6 +186,12 @@ func (h *Hub) SetConnectFunc(fn ConnectFunc) {
 	h.onConnect = fn
 }
 
+func (h *Hub) SetMessageLogger(logger *debug.MessageLogger) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.logger = logger
+}
+
 func (h *Hub) SetRoom(playerID, roomID string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -189,4 +199,24 @@ func (h *Hub) SetRoom(playerID, roomID string) {
 	if client, ok := h.clients[playerID]; ok {
 		client.roomID = roomID
 	}
+}
+
+func (h *Hub) logIncoming(playerID string, msgType string, payload string) {
+	h.mu.RLock()
+	logger := h.logger
+	h.mu.RUnlock()
+	if logger == nil {
+		return
+	}
+	logger.LogIncoming(playerID, msgType, payload)
+}
+
+func (h *Hub) logOutgoing(playerID string, data []byte) {
+	h.mu.RLock()
+	logger := h.logger
+	h.mu.RUnlock()
+	if logger == nil {
+		return
+	}
+	logger.LogOutgoing(playerID, data)
 }

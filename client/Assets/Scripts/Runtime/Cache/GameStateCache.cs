@@ -108,6 +108,97 @@ namespace Panoptes.Runtime.Cache
             OnStateChanged?.Invoke();
         }
 
+        public void ApplyDomesticPhaseStart(MsgDomesticPhaseStart msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            Turn = msg.Turn;
+            Phase = "domestic";
+            TokensLeft = msg.Tokens;
+            if (MyPlayer != null)
+            {
+                MyPlayer.TokensLeft = msg.Tokens;
+            }
+
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyCombatPhaseStart(MsgCombatPhaseStart msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            Phase = "combat";
+            TokensLeft = msg.Tokens;
+            if (MyPlayer != null)
+            {
+                MyPlayer.TokensLeft = msg.Tokens;
+            }
+
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyDomesticSettlement(MsgDomesticSettlement msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (MyPlayer != null && msg.MyResourcesAfter != null)
+            {
+                MyPlayer.Resources = msg.MyResourcesAfter.Clone();
+            }
+
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyCombatSettlement(MsgCombatSettlement msg)
+        {
+            if (msg == null || msg.Events == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < msg.Events.Count; i++)
+            {
+                var evt = msg.Events[i];
+                if (evt == null)
+                {
+                    continue;
+                }
+
+                switch (evt.DataCase)
+                {
+                    case CombatEvent.DataOneofCase.UnitMove:
+                        ApplyUnitMove(evt.UnitMove);
+                        break;
+                    case CombatEvent.DataOneofCase.UnitDamaged:
+                        ApplyUnitDamaged(evt.UnitDamaged);
+                        break;
+                    case CombatEvent.DataOneofCase.UnitDied:
+                        ApplyUnitDied(evt.UnitDied);
+                        break;
+                    case CombatEvent.DataOneofCase.CastleDamaged:
+                        ApplyCastleDamaged(evt.CastleDamaged);
+                        break;
+                    case CombatEvent.DataOneofCase.CastleDestroyed:
+                        ApplyCastleDestroyed(evt.CastleDestroyed);
+                        break;
+                    case CombatEvent.DataOneofCase.BuildingDamaged:
+                        ApplyBuildingDamaged(evt.BuildingDamaged);
+                        break;
+                }
+            }
+
+            OnStateChanged?.Invoke();
+        }
+
         public NodeView GetNode(string nodeId)
         {
             _nodes.TryGetValue(nodeId, out var node);
@@ -118,6 +209,91 @@ namespace Panoptes.Runtime.Cache
         {
             _units.TryGetValue(unitId, out var unit);
             return unit;
+        }
+
+        private void ApplyUnitMove(UnitMoveEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return;
+            }
+
+            if (!_units.TryGetValue(evt.UnitId, out var unit) || unit == null || evt.To == null)
+            {
+                return;
+            }
+
+            unit.Pos = new Position { X = evt.To.X, Y = evt.To.Y };
+        }
+
+        private void ApplyUnitDamaged(UnitDamagedEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return;
+            }
+
+            if (!_units.TryGetValue(evt.UnitId, out var unit) || unit == null)
+            {
+                return;
+            }
+
+            unit.Hp = evt.HpAfter;
+        }
+
+        private void ApplyUnitDied(UnitDiedEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return;
+            }
+
+            _units.Remove(evt.UnitId);
+        }
+
+        private void ApplyCastleDamaged(CastleDamagedEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
+            {
+                return;
+            }
+
+            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
+            {
+                node.BuildingHp = evt.HpAfter;
+            }
+
+            if (MyPlayer != null)
+            {
+                MyPlayer.MainCastleHp = Math.Max(0, evt.HpAfter);
+            }
+        }
+
+        private void ApplyCastleDestroyed(CastleDestroyedEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
+            {
+                return;
+            }
+
+            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
+            {
+                node.BuildingHp = 0;
+                node.Owner = evt.ConquerorFaction;
+            }
+        }
+
+        private void ApplyBuildingDamaged(BuildingDamagedEvent evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
+            {
+                return;
+            }
+
+            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
+            {
+                node.BuildingHp = evt.HpAfter;
+            }
         }
 
         public void Clear()
