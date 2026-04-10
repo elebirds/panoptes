@@ -1,8 +1,7 @@
 using System;
 using System.IO;
 using NUnit.Framework;
-using Panoptes.Protocol.V1;
-using Panoptes.Runtime.UI.Game;
+using Panoptes.Presentation.UI.Game;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -10,21 +9,21 @@ namespace Panoptes.Tests.EditMode.Lobby
 {
     public sealed class ClientRuntimeIntegrationTests
     {
-        private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/App/AppManager.cs");
-        private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Service/LobbyService.cs");
-        private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/UI/Lobby/LobbySceneController.cs");
+        private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Service/LobbyService.cs");
+        private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
 
         [TearDown]
         public void TearDown()
         {
-            DestroySingleton("Panoptes.Runtime.Cache.ClientRuntimeConfigCache, Panoptes.Runtime");
-            DestroySingleton("Panoptes.Runtime.Cache.GameStateCache, Panoptes.Runtime");
+            DestroySingleton("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Application.Cache.GameStateCache, Panoptes.Core");
         }
 
         [Test]
         public void ClientRuntimeConfigCache_ShouldDefaultToFalse_AndRaiseChangeEvent()
         {
-            var cacheType = Type.GetType("Panoptes.Runtime.Cache.ClientRuntimeConfigCache, Panoptes.Runtime")
+            var cacheType = Type.GetType("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core")
                             ?? throw new AssertionException("ClientRuntimeConfigCache 类型不存在。");
             var cacheObject = new GameObject("ClientRuntimeConfigCache");
             var cache = cacheObject.AddComponent(cacheType);
@@ -36,8 +35,12 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             Assert.That(GetProperty<bool>(cache, cacheType, "DevMode"), Is.False);
 
-            var msg = new MsgClientRuntimeConfig { DevMode = true };
-            cacheType.GetMethod("Apply")?.Invoke(cache, new object[] { msg });
+            var msgType = Type.GetType("Panoptes.Protocol.V1.MsgClientRuntimeConfig, Panoptes.Protocol")
+                          ?? throw new AssertionException("MsgClientRuntimeConfig 类型不存在。");
+            var msg = Activator.CreateInstance(msgType)
+                      ?? throw new AssertionException("无法创建 MsgClientRuntimeConfig。");
+            msgType.GetProperty("DevMode")?.SetValue(msg, true);
+            cacheType.GetMethod("Apply")?.Invoke(cache, new[] { msg });
 
             Assert.That(GetProperty<bool>(cache, cacheType, "DevMode"), Is.True);
             Assert.That(changedCount, Is.EqualTo(1));
@@ -52,19 +55,29 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void GameStateCache_ShouldRaiseStateChanged_WhenGameInitAppliedAndCleared()
         {
             var cacheObject = new GameObject("GameStateCache");
-            var cache = cacheObject.AddComponent<Panoptes.Runtime.Cache.GameStateCache>();
+            var cache = cacheObject.AddComponent<Panoptes.Core.Application.Cache.GameStateCache>();
 
             var changedCount = 0;
             cache.OnStateChanged += () => changedCount++;
 
-            cache.ApplyGameInit(new MsgGameInit
-            {
-                GameId = "game-1",
-                YourPlayerId = "player-1",
-                Turn = 1,
-                Phase = "domestic",
-                MyPlayer = new PlayerView { TokensLeft = 3 },
-            });
+            var gameInitType = Type.GetType("Panoptes.Protocol.V1.MsgGameInit, Panoptes.Protocol")
+                               ?? throw new AssertionException("MsgGameInit 类型不存在。");
+            var playerViewType = Type.GetType("Panoptes.Protocol.V1.PlayerView, Panoptes.Protocol")
+                                ?? throw new AssertionException("PlayerView 类型不存在。");
+            var gameInit = Activator.CreateInstance(gameInitType)
+                           ?? throw new AssertionException("无法创建 MsgGameInit。");
+            var playerView = Activator.CreateInstance(playerViewType)
+                            ?? throw new AssertionException("无法创建 PlayerView。");
+
+            gameInitType.GetProperty("GameId")?.SetValue(gameInit, "game-1");
+            gameInitType.GetProperty("YourPlayerId")?.SetValue(gameInit, "player-1");
+            gameInitType.GetProperty("Turn")?.SetValue(gameInit, 1);
+            gameInitType.GetProperty("Phase")?.SetValue(gameInit, "domestic");
+            playerViewType.GetProperty("TokensLeft")?.SetValue(playerView, 3);
+            gameInitType.GetProperty("MyPlayer")?.SetValue(gameInit, playerView);
+
+            var applyMethod = typeof(Panoptes.Core.Application.Cache.GameStateCache).GetMethod("ApplyGameInit");
+            applyMethod?.Invoke(cache, new[] { gameInit });
 
             Assert.That(cache.GameID, Is.EqualTo("game-1"));
             Assert.That(cache.MyPlayerID, Is.EqualTo("player-1"));
@@ -97,7 +110,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_lobbyScenePath), Is.True, "LobbySceneController.cs 不存在。");
 
             var content = File.ReadAllText(_lobbyScenePath);
-            StringAssert.Contains("Register<MsgPlayerKicked>(\"MsgPlayerKicked\", OnPlayerKicked)", content);
+            StringAssert.Contains("_cache.OnPlayerKicked += OnPlayerKicked;", content);
         }
 
         [Test]
@@ -108,6 +121,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
             StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
+            StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
@@ -120,8 +134,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void GameSceneController_ShouldRenderWaitingStateWithoutWarning_WhenCacheIsEmpty()
         {
             var cacheObject = new GameObject("GameStateCache");
-            var cache = cacheObject.AddComponent<Panoptes.Runtime.Cache.GameStateCache>();
-            SetSingletonInstance(typeof(Panoptes.Runtime.Cache.GameStateCache), cache);
+            var cache = cacheObject.AddComponent<Panoptes.Core.Application.Cache.GameStateCache>();
+            SetSingletonInstance(typeof(Panoptes.Core.Application.Cache.GameStateCache), cache);
 
             var controllerObject = new GameObject("GameSceneController");
             var controller = controllerObject.AddComponent<GameSceneController>();

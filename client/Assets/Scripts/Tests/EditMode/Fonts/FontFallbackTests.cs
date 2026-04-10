@@ -5,7 +5,7 @@ namespace Panoptes.Tests.EditMode.Fonts
 {
     public sealed class FontFallbackTests
     {
-        private readonly string _loadingOverlayPath = Path.GetFullPath("Assets/Scripts/Runtime/UI/Common/LoadingOverlay.cs");
+        private readonly string _loadingOverlayPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Common/LoadingOverlay.cs");
 
         [Test]
         public void TmpSettings_ShouldConfigureGlobalFallbackFonts()
@@ -62,12 +62,12 @@ namespace Panoptes.Tests.EditMode.Fonts
         [Test]
         public void LobbySceneController_ShouldRegisterRoomStateHandler()
         {
-            var sourcePath = Path.GetFullPath("Assets/Scripts/Runtime/UI/Lobby/LobbySceneController.cs");
+            var sourcePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
             Assert.That(File.Exists(sourcePath), Is.True, "LobbySceneController.cs 不存在。");
 
             var content = File.ReadAllText(sourcePath);
-            StringAssert.Contains("Register<MsgRoomState>(\"MsgRoomState\", OnRoomState)", content,
-                "Canvas 层控制器必须接住第一条房间状态，避免 RoomPanel 默认隐藏时丢失 MsgRoomState。");
+            StringAssert.Contains("_cache.OnRoomStateChanged += OnRoomState;", content,
+                "Canvas 层控制器必须订阅 RoomCache 房间状态事件，避免 RoomPanel 默认隐藏时丢失首帧状态。");
         }
 
         [Test]
@@ -77,7 +77,7 @@ namespace Panoptes.Tests.EditMode.Fonts
             Assert.That(File.Exists(scenePath), Is.True, "Lobby.unity 不存在。");
 
             var content = File.ReadAllText(scenePath);
-            StringAssert.Contains("Panoptes.Runtime.UI.Lobby.LobbySceneController", content,
+            StringAssert.Contains("Panoptes.Presentation.UI.Lobby.LobbySceneController", content,
                 "Lobby 场景的 Canvas 必须挂载 LobbySceneController。");
         }
 
@@ -112,7 +112,7 @@ namespace Panoptes.Tests.EditMode.Fonts
             Assert.That(File.Exists(scenePath), Is.True, "Game.unity 不存在。");
 
             var content = File.ReadAllText(scenePath);
-            StringAssert.Contains("Panoptes.Runtime.UI.Game.GameSceneController", content,
+            StringAssert.Contains("Panoptes.Presentation.UI.Game.GameSceneController", content,
                 "Game 场景必须挂载 GameSceneController。");
             StringAssert.Contains("m_Name: StatusText", content,
                 "Game 场景必须包含状态占位文本。");

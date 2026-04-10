@@ -1,0 +1,6 @@
+{
+  "name": "Panoptes.Core",
+  "rootNamespace": "Panoptes.Core",
+  "references": ["Panoptes.Protocol", "colyseus.nativewebsocket"],
+  "autoReferenced": false
+}
