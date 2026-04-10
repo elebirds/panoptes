@@ -8,8 +8,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Panoptes.Protocol.V1;
+using Panoptes.Runtime.Data.Generated;
+using Panoptes.Runtime.Events;
 
 namespace Panoptes.Runtime.Cache
 {
@@ -20,8 +23,8 @@ namespace Panoptes.Runtime.Cache
         // 基本信息
         public string GameID { get; private set; }
         public string MyPlayerID { get; private set; }
-        public int Turn { get; private set; }
-        public string Phase { get; private set; }
+        public int Turn { get; set; }
+        public string Phase { get; set; }
         public int MapWidth { get; private set; }
         public int MapHeight { get; private set; }
 
@@ -42,8 +45,25 @@ namespace Panoptes.Runtime.Cache
 
         // 令牌
         public int TokensLeft { get; private set; }
+        public int EnemyCastleHP { get; private set; }
+        public int EnemyMaxCastleHP { get; private set; }
 
         public event Action OnStateChanged;
+
+        public event Action<PhaseChangedEvent> OnPhaseChanged;
+        public event Action<ResourcesChangedEvent> OnResourcesChanged;
+        public event Action<TokensChangedEvent> OnTokensChanged;
+        public event Action<NodeChangedEvent> OnNodeChanged;
+        public event Action<UnitsChangedEvent> OnUnitsChanged;
+        public event Action<CastleHPChangedEvent> OnCastleHPChanged;
+        public event Action<DomesticSettledEvent> OnDomesticSettled;
+        public event Action<CombatSettledEvent> OnCombatSettled;
+        public event Action<MinisterChunkEvent> OnMinisterChunk;
+        public event Action<MinisterMetricsEvent> OnMinisterMetrics;
+        public event Action<MinisterActionEvent> OnMinisterAction;
+        public event Action<TokenResultEvent> OnTokenResult;
+        public event Action<RevealResultEvent> OnRevealResult;
+        public event Action<GameOverEvent> OnGameOver;
 
         void Awake()
         {
@@ -84,16 +104,78 @@ namespace Panoptes.Runtime.Cache
 
             _ministers.Clear();
             _ministers.AddRange(msg.Ministers);
+            EnemyCastleHP = 0;
+            EnemyMaxCastleHP = 0;
+
+            var currentResources = SnapshotResources(MyPlayer?.Resources);
 
             Debug.Log($"[Cache] GameInit applied: {_nodes.Count} nodes, {_units.Count} units");
+
+            Fire(OnPhaseChanged, new PhaseChangedEvent
+            {
+                Turn = Turn,
+                Phase = Phase,
+                TimeoutSeconds = 0,
+                TokensLeft = TokensLeft
+            }, nameof(OnPhaseChanged));
+
+            Fire(OnResourcesChanged, new ResourcesChangedEvent
+            {
+                Resources = currentResources,
+                Delta = new Resources()
+            }, nameof(OnResourcesChanged));
+
+            Fire(OnTokensChanged, new TokensChangedEvent
+            {
+                TokensLeft = TokensLeft,
+                Action = "recharge"
+            }, nameof(OnTokensChanged));
+
+            Fire(OnUnitsChanged, new UnitsChangedEvent
+            {
+                Added = _units.Values.ToList(),
+                RemovedIDs = new List<string>(),
+                Moved = new List<UnitView>()
+            }, nameof(OnUnitsChanged));
+
+            foreach (var node in _nodes.Values)
+            {
+                Fire(OnNodeChanged, new NodeChangedEvent
+                {
+                    NodeID = node.Id,
+                    Node = node,
+                    ChangeType = "init"
+                }, nameof(OnNodeChanged));
+            }
+
+            Fire(OnCastleHPChanged, new CastleHPChangedEvent
+            {
+                MyHP = MyPlayer != null ? MyPlayer.MainCastleHp : 0,
+                MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
+                EnemyHP = EnemyCastleHP,
+                EnemyMaxHP = EnemyMaxCastleHP,
+                MyDelta = 0,
+                EnemyDelta = 0
+            }, nameof(OnCastleHPChanged));
+
             OnStateChanged?.Invoke();
         }
 
         public void UpdateTokens(int tokensLeft)
         {
+            var old = TokensLeft;
             TokensLeft = tokensLeft;
             if (MyPlayer != null)
+            {
                 MyPlayer.TokensLeft = tokensLeft;
+            }
+
+            Fire(OnTokensChanged, new TokensChangedEvent
+            {
+                TokensLeft = tokensLeft,
+                Action = tokensLeft > old ? "recharge" : "consume"
+            }, nameof(OnTokensChanged));
+
             OnStateChanged?.Invoke();
         }
 
@@ -105,6 +187,14 @@ namespace Panoptes.Runtime.Cache
             }
 
             _nodes[node.Id] = node;
+
+            Fire(OnNodeChanged, new NodeChangedEvent
+            {
+                NodeID = node.Id,
+                Node = node,
+                ChangeType = "reveal"
+            }, nameof(OnNodeChanged));
+
             OnStateChanged?.Invoke();
         }
 
@@ -117,11 +207,15 @@ namespace Panoptes.Runtime.Cache
 
             Turn = msg.Turn;
             Phase = "domestic";
-            TokensLeft = msg.Tokens;
-            if (MyPlayer != null)
+            UpdateTokens(msg.Tokens);
+
+            Fire(OnPhaseChanged, new PhaseChangedEvent
             {
-                MyPlayer.TokensLeft = msg.Tokens;
-            }
+                Turn = msg.Turn,
+                Phase = "domestic",
+                TimeoutSeconds = msg.Timeout,
+                TokensLeft = msg.Tokens
+            }, nameof(OnPhaseChanged));
 
             OnStateChanged?.Invoke();
         }
@@ -134,11 +228,15 @@ namespace Panoptes.Runtime.Cache
             }
 
             Phase = "combat";
-            TokensLeft = msg.Tokens;
-            if (MyPlayer != null)
+            UpdateTokens(msg.Tokens);
+
+            Fire(OnPhaseChanged, new PhaseChangedEvent
             {
-                MyPlayer.TokensLeft = msg.Tokens;
-            }
+                Turn = Turn,
+                Phase = "combat",
+                TimeoutSeconds = msg.Timeout,
+                TokensLeft = msg.Tokens
+            }, nameof(OnPhaseChanged));
 
             OnStateChanged?.Invoke();
         }
@@ -150,10 +248,60 @@ namespace Panoptes.Runtime.Cache
                 return;
             }
 
+            var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
+
             if (MyPlayer != null && msg.MyResourcesAfter != null)
             {
                 MyPlayer.Resources = msg.MyResourcesAfter.Clone();
             }
+
+            var builtNodeIDs = msg.Changes
+                .Where(c => c != null && c.Type == "building_built")
+                .Select(c =>
+                {
+                    if (c.Data != null && c.Data.TryGetValue("node_id", out var nodeId))
+                    {
+                        return nodeId;
+                    }
+
+                    return string.Empty;
+                })
+                .Where(id => !string.IsNullOrEmpty(id))
+                .ToList();
+
+            foreach (var change in msg.Changes)
+            {
+                if (change == null || change.Data == null)
+                {
+                    continue;
+                }
+
+                if (change.Data.TryGetValue("node_id", out var nodeId) &&
+                    !string.IsNullOrWhiteSpace(nodeId) &&
+                    _nodes.TryGetValue(nodeId, out var node))
+                {
+                    Fire(OnNodeChanged, new NodeChangedEvent
+                    {
+                        NodeID = nodeId,
+                        Node = node,
+                        ChangeType = change.Type
+                    }, nameof(OnNodeChanged));
+                }
+            }
+
+            var resourcesAfter = SnapshotResources(MyPlayer?.Resources);
+            Fire(OnResourcesChanged, new ResourcesChangedEvent
+            {
+                Resources = resourcesAfter,
+                Delta = ComputeResourceDelta(resourcesBefore, resourcesAfter)
+            }, nameof(OnResourcesChanged));
+
+            Fire(OnDomesticSettled, new DomesticSettledEvent
+            {
+                Raw = msg,
+                ResourcesAfter = resourcesAfter,
+                BuiltNodeIDs = builtNodeIDs
+            }, nameof(OnDomesticSettled));
 
             OnStateChanged?.Invoke();
         }
@@ -164,6 +312,9 @@ namespace Panoptes.Runtime.Cache
             {
                 return;
             }
+
+            var myHpBefore = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
+            var enemyHpBefore = EnemyCastleHP;
 
             for (var i = 0; i < msg.Events.Count; i++)
             {
@@ -195,6 +346,60 @@ namespace Panoptes.Runtime.Cache
                         break;
                 }
             }
+
+            var movedIDs = msg.Events
+                .Where(e => e != null && e.DataCase == CombatEvent.DataOneofCase.UnitMove && e.UnitMove != null)
+                .Select(e => e.UnitMove.UnitId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+
+            var deadIDs = msg.Events
+                .Where(e => e != null && e.DataCase == CombatEvent.DataOneofCase.UnitDied && e.UnitDied != null)
+                .Select(e => e.UnitDied.UnitId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+
+            var castleDamaged = msg.Events
+                .Any(e => e != null && e.DataCase == CombatEvent.DataOneofCase.CastleDamaged);
+
+            if (castleDamaged)
+            {
+                var myHpAfter = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
+                var enemyHpAfter = EnemyCastleHP;
+                Fire(OnCastleHPChanged, new CastleHPChangedEvent
+                {
+                    MyHP = myHpAfter,
+                    MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
+                    EnemyHP = enemyHpAfter,
+                    EnemyMaxHP = EnemyMaxCastleHP,
+                    MyDelta = myHpAfter - myHpBefore,
+                    EnemyDelta = enemyHpAfter - enemyHpBefore
+                }, nameof(OnCastleHPChanged));
+            }
+
+            var movedUnits = new List<UnitView>();
+            foreach (var movedID in movedIDs)
+            {
+                if (_units.TryGetValue(movedID, out var moved) && moved != null)
+                {
+                    movedUnits.Add(moved);
+                }
+            }
+
+            Fire(OnUnitsChanged, new UnitsChangedEvent
+            {
+                Added = new List<UnitView>(),
+                RemovedIDs = deadIDs,
+                Moved = movedUnits
+            }, nameof(OnUnitsChanged));
+
+            Fire(OnCombatSettled, new CombatSettledEvent
+            {
+                Raw = msg,
+                MovedUnitIDs = movedIDs,
+                DeadUnitIDs = deadIDs,
+                CastleDamaged = castleDamaged
+            }, nameof(OnCombatSettled));
 
             OnStateChanged?.Invoke();
         }
@@ -258,14 +463,32 @@ namespace Panoptes.Runtime.Cache
                 return;
             }
 
+            var isMyCastle = false;
+
             if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
             {
                 node.BuildingHp = evt.HpAfter;
+                var owner = node.Owner;
+                if (!string.IsNullOrWhiteSpace(owner))
+                {
+                    var selfID = MyPlayerID;
+                    var selfPlayerID = MyPlayer != null ? MyPlayer.Id : string.Empty;
+                    isMyCastle = string.Equals(owner, selfID, StringComparison.Ordinal) ||
+                                 string.Equals(owner, selfPlayerID, StringComparison.Ordinal);
+                }
             }
 
-            if (MyPlayer != null)
+            if (isMyCastle)
             {
-                MyPlayer.MainCastleHp = Math.Max(0, evt.HpAfter);
+                if (MyPlayer != null)
+                {
+                    MyPlayer.MainCastleHp = Math.Max(0, evt.HpAfter);
+                }
+            }
+            else
+            {
+                EnemyCastleHP = Math.Max(0, evt.HpAfter);
+                EnemyMaxCastleHP = Math.Max(EnemyMaxCastleHP, EnemyCastleHP);
             }
         }
 
@@ -278,8 +501,24 @@ namespace Panoptes.Runtime.Cache
 
             if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
             {
+                var selfID = MyPlayerID;
+                var selfPlayerID = MyPlayer != null ? MyPlayer.Id : string.Empty;
+                var isMyCastle = string.Equals(node.Owner, selfID, StringComparison.Ordinal) ||
+                                 string.Equals(node.Owner, selfPlayerID, StringComparison.Ordinal);
+
                 node.BuildingHp = 0;
                 node.Owner = evt.ConquerorFaction;
+                if (isMyCastle)
+                {
+                    if (MyPlayer != null)
+                    {
+                        MyPlayer.MainCastleHp = 0;
+                    }
+                }
+                else
+                {
+                    EnemyCastleHP = 0;
+                }
             }
         }
 
@@ -309,7 +548,116 @@ namespace Panoptes.Runtime.Cache
             MyPlayer = null;
             _ministers.Clear();
             TokensLeft = 0;
+            EnemyCastleHP = 0;
+            EnemyMaxCastleHP = 0;
             OnStateChanged?.Invoke();
+        }
+
+        public void PublishPhaseChanged(PhaseChangedEvent evtArgs)
+        {
+            Fire(OnPhaseChanged, evtArgs, nameof(OnPhaseChanged));
+        }
+
+        public void PublishMinisterChunk(MinisterChunkEvent evtArgs)
+        {
+            Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
+        }
+
+        public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs)
+        {
+            Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
+        }
+
+        public void PublishMinisterAction(MinisterActionEvent evtArgs)
+        {
+            Fire(OnMinisterAction, evtArgs, nameof(OnMinisterAction));
+        }
+
+        public void PublishTokenResult(TokenResultEvent evtArgs)
+        {
+            Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
+        }
+
+        public void PublishRevealResult(RevealResultEvent evtArgs)
+        {
+            Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
+        }
+
+        public void PublishGameOver(GameOverEvent evtArgs)
+        {
+            Fire(OnGameOver, evtArgs, nameof(OnGameOver));
+        }
+
+        private void Fire<T>(Action<T> evt, T args, string evtName)
+        {
+            if (evt == null)
+            {
+                return;
+            }
+
+            try
+            {
+                evt.Invoke(args);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Cache] 事件 {evtName} 触发异常: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private Resources ComputeResourceDelta(Resources before, Resources after)
+        {
+            return new Resources
+            {
+                Ore = after.Ore - before.Ore,
+                Wood = after.Wood - before.Wood,
+                Food = after.Food - before.Food,
+                RefinedOre = after.RefinedOre - before.RefinedOre,
+                EngineerMaterial = after.EngineerMaterial - before.EngineerMaterial,
+                BuildPoints = after.BuildPoints - before.BuildPoints
+            };
+        }
+
+        private Resources SnapshotResources(ResourceBag bag)
+        {
+            var resources = new Resources();
+            if (bag == null || bag.Items == null)
+            {
+                return resources;
+            }
+
+            for (var i = 0; i < bag.Items.Count; i++)
+            {
+                var item = bag.Items[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                switch (item.Key)
+                {
+                    case ResourceKeys.ResourceOre:
+                        resources.Ore = item.Amount;
+                        break;
+                    case ResourceKeys.ResourceWood:
+                        resources.Wood = item.Amount;
+                        break;
+                    case ResourceKeys.ResourceFood:
+                        resources.Food = item.Amount;
+                        break;
+                    case ResourceKeys.ResourceRefinedOre:
+                        resources.RefinedOre = item.Amount;
+                        break;
+                    case ResourceKeys.ResourceEngineerMaterial:
+                        resources.EngineerMaterial = item.Amount;
+                        break;
+                    case ResourceKeys.ResourceBuildPoints:
+                        resources.BuildPoints = item.Amount;
+                        break;
+                }
+            }
+
+            return resources;
         }
     }
 }
