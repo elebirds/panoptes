@@ -81,7 +81,7 @@ Google.Protobuf                Protobuf C#运行时
 ### 生成代码
 
 ```
-Assets/Scripts/Runtime/Protocol/  从服务端 buf generate 生成的 C# 代码
+Assets/Scripts/Protocol/          从服务端 buf generate 生成的 C# 代码
                                   不手动修改，与服务端 proto 同步
 ```
 
@@ -95,77 +95,49 @@ panoptes-client/
 │   │
 │   ├── Scripts/
 │   │   │
-│   │   ├── Runtime/Protocol/          # 自动生成，禁止手动修改
+│   │   ├── Protocol/                  # Panoptes.Protocol.asmdef（自动生成，禁止手动修改）
 │   │   │   ├── Common.cs
 │   │   │   ├── Auth.cs
 │   │   │   ├── Lobby.cs
 │   │   │   ├── GameState.cs
 │   │   │   ├── Domestic.cs
 │   │   │   ├── Combat.cs
-│   │   │   └── Minister.cs
+│   │   │   ├── Minister.cs
+│   │   │   ├── DataCatalog.cs
+│   │   │   └── MapCatalog.cs
 │   │   │
-│   │   ├── Network/
-│   │   │   ├── NetworkManager.cs      # WebSocket连接管理，单例
-│   │   │   ├── MessageDispatcher.cs   # Envelope路由到对应Handler
-│   │   │   └── MessageSender.cs       # 打包Envelope发送的工具类
+│   │   ├── Runtime/
+│   │   │   ├── Core/                  # Panoptes.Core.asmdef
+│   │   │   │   ├── Foundation/
+│   │   │   │   │   ├── Domain/        # DTO（NodeDto/UnitDto/ResourceDto/SettlementDto/...）
+│   │   │   │   │   └── Events/        # GameEvents（仅暴露 DTO）
+│   │   │   │   ├── Infrastructure/
+│   │   │   │   │   ├── Network/       # NetworkManager/MessageDispatcher/MessageSender
+│   │   │   │   │   ├── Mapper/        # NodeMapper/UnitMapper/MinisterMapper/SettlementMapper
+│   │   │   │   │   ├── Service/       # AuthService/LobbyService/SessionManager
+│   │   │   │   │   └── Debug/         # 调试组件
+│   │   │   │   └── Application/
+│   │   │   │       ├── Cache/         # GameStateCache/StaticCatalogCache/RoomCache
+│   │   │   │       ├── Handler/       # GameMessageHandler/LobbyMessageHandler
+│   │   │   │       ├── Intents/       # GameIntents（原 GameAction）
+│   │   │   │       └── App/           # AppManager/SceneLoader/Config
+│   │   │   │
+│   │   │   └── Presentation/          # Panoptes.Presentation.asmdef
+│   │   │       ├── Map/
+│   │   │       ├── Animation/
+│   │   │       └── UI/
+│   │   │           ├── Auth/
+│   │   │           ├── Lobby/
+│   │   │           ├── HUD/
+│   │   │           ├── Domestic/
+│   │   │           ├── Combat/
+│   │   │           ├── Minister/
+│   │   │           ├── Game/
+│   │   │           └── Common/
 │   │   │
-│   │   ├── Cache/
-│   │   │   ├── GameStateCache.cs      # 服务端状态的本地镜像，单例
-│   │   │   ├── NodeCache.cs           # 节点数据缓存
-│   │   │   └── UnitCache.cs           # 单位数据缓存
-│   │   │
-│   │   ├── Map/
-│   │   │   ├── MapRenderer.cs         # 地图格子渲染管理
-│   │   │   ├── NodeView.cs            # 单个格子的视觉表现
-│   │   │   ├── UnitView.cs            # 单个单位的视觉表现
-│   │   │   ├── RoadRenderer.cs        # 道路渲染
-│   │   │   └── MapInputHandler.cs     # 地图格子点击交互
-│   │   │
-│   │   ├── UI/
-│   │   │   ├── HUD/
-│   │   │   │   ├── ResourceHUD.cs     # 资源/建造点数显示
-│   │   │   │   ├── TokenHUD.cs        # 令牌显示
-│   │   │   │   ├── TurnHUD.cs         # 回合/阶段/计时器显示
-│   │   │   │   └── CastleHPBar.cs     # 双方主城血条
-│   │   │   │
-│   │   │   ├── Minister/
-│   │   │   │   ├── MinisterPanel.cs   # 部长汇报面板（流式文字）
-│   │   │   │   ├── MetricsPanel.cs    # 数值轨显示
-│   │   │   │   └── ActionCard.cs      # 部长自主行动通知卡片
-│   │   │   │
-│   │   │   ├── Domestic/
-│   │   │   │   ├── BuildMenu.cs       # 建造菜单
-│   │   │   │   ├── PolicyPanel.cs     # 国策选择面板
-│   │   │   │   ├── DirectivePanel.cs  # 专项指示输入面板
-│   │   │   │   └── TokenActionBar.cs  # 令牌操作快捷栏
-│   │   │   │
-│   │   │   ├── Combat/
-│   │   │   │   ├── WarZonePanel.cs    # 战区划定和指令面板
-│   │   │   │   ├── OrderReviewPanel.cs # 部长指令审阅面板
-│   │   │   │   └── MicroPanel.cs      # 微操窗口
-│   │   │   │
-│   │   │   ├── Lobby/
-│   │   │   │   ├── LobbyPanel.cs      # 大厅房间面板
-│   │   │   │   └── RoomPanel.cs       # 房间等待面板
-│   │   │   │
-│   │   │   ├── Auth/
-│   │   │   │   └── LoginPanel.cs      # 登录面板
-│   │   │   │
-│   │   │   └── Common/
-│   │   │       ├── LoadingOverlay.cs  # 全屏加载遮罩
-│   │   │       ├── ErrorToast.cs      # 错误提示Toast
-│   │   │       └── ConfirmDialog.cs   # 通用确认对话框
-│   │   │
-│   │   ├── Animation/
-│   │   │   ├── AnimationQueue.cs      # 战斗动画队列管理
-│   │   │   ├── UnitMoveAnim.cs        # 单位移动动画
-│   │   │   ├── CombatAnim.cs          # 战斗动画
-│   │   │   └── CastleDamageAnim.cs    # 主城受损动画
-│   │   │
-│   │   └── App/
-│   │       ├── AppManager.cs          # 全局状态机（Login/Lobby/Game）
-│   │       ├── SceneLoader.cs         # 场景切换管理
-│   │       └── Config.cs              # 客户端配置（服务器地址等）
+│   │   └── Tests/
+│   │       ├── EditMode/              # Panoptes.Tests.EditMode.asmdef
+│   │       └── PlayMode/              # Panoptes.Tests.PlayMode.asmdef
 │   │
 │   ├── Scenes/
 │   │   ├── Boot.unity                 # 启动场景，初始化单例
@@ -197,6 +169,18 @@ panoptes-client/
 └── Packages/
     └── manifest.json
 ```
+
+asmdef 边界约束（当前实现）：
+
+```text
+Panoptes.Protocol      rootNamespace: Panoptes.Protocol.V1
+Panoptes.Core          引用 Panoptes.Protocol
+Panoptes.Presentation  仅引用 Panoptes.Core，不引用 Panoptes.Protocol
+
+=> Presentation 层不得直接使用 Panoptes.Protocol.V1 类型
+=> 协议类型通过 Core 的 DTO + Mapper 在边界内完成转换
+```
+
 
 ---
 
@@ -913,7 +897,7 @@ public class UnitMoveAnim : MonoBehaviour
 Step 1：项目基础（Day 1）
   - Unity项目创建，URP配置
   - NativeWebSocket和Protobuf插件导入
-  - 运行根目录 `make gen`，同步更新 `Assets/Scripts/Runtime/Protocol/`
+    - 运行根目录 `make gen`，同步更新 `Assets/Scripts/Protocol/`
   - Boot场景，单例初始化
   - NetworkManager：连接，发送，接收，主线程回调
   - MessageDispatcher：Envelope路由骨架
@@ -1008,6 +992,8 @@ public static (int x, int y) WorldToGrid(Vector3 worldPos)
 ---
 
 ## 附录：错误码列表
+
+若有不足，可继续增加。
 
 服务端返回的`error_code`字段枚举，客户端对应显示：
 
