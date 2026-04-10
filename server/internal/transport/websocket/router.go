@@ -147,8 +147,51 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 			return
 		}
 		room.OnHumanSubmitCombat(playerID)
+	case "MsgSetPolicy",
+		"MsgTokenBuild",
+		"MsgTokenReveal",
+		"MsgMinisterDirective",
+		"MsgSetWarZone",
+		"MsgWarZoneDirective",
+		"MsgTokenVetoCombat",
+		"MsgTokenMicro":
+		if r.gameRooms == nil {
+			r.sendGameNotFound(sender)
+			return
+		}
+		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
+		if !ok {
+			r.sendGameNotFound(sender)
+			return
+		}
+		handler, ok := room.(interface {
+			OnHumanMessage(playerID, msgType string, payload []byte) error
+		})
+		if !ok {
+			r.sendLobbyError(sender, errors.New("room message handler unavailable"))
+			return
+		}
+		if err := handler.OnHumanMessage(playerID, envelope.GetType(), []byte(envelope.GetPayload())); err != nil {
+			r.sendLobbyError(sender, err)
+			return
+		}
 	default:
 		slog.Warn("未知的 WebSocket 消息类型", "玩家ID", playerID, "类型", envelope.GetType())
+	}
+}
+
+func (r *Router) sendGameNotFound(sender Sender) {
+	if sender == nil {
+		return
+	}
+	msg := &pb.MsgLobbyError{Code: "game_not_found", Message: "game room not found"}
+	data, err := marshalEnvelope(msg)
+	if err != nil {
+		slog.Warn("序列化 game_not_found 失败", "错误", err)
+		return
+	}
+	if err := sender.Send(data); err != nil {
+		slog.Warn("发送 game_not_found 失败", "错误", err)
 	}
 }
 

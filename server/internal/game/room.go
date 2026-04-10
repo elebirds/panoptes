@@ -2,14 +2,19 @@ package game
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"reflect"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	"github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/event"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	gamephase "github.com/elebirds/panoptes/internal/game/phase"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"github.com/yohamta/donburi"
@@ -26,6 +31,15 @@ type GameRoom struct {
 	submitCh  chan string
 	cancelFn  context.CancelFunc
 	state     *domain.GameState
+
+	currentPhase       gamephase.Phase
+	pendingBuilds      []domain.BuildOrder
+	ministerDirectives map[string]string
+	combatDirectives   map[string][]gamephase.WarZoneDirective
+	vetoUnits          map[string]map[string]bool
+	microOrders        map[string]map[string]string
+	router             any
+	ministerEngine     *minister.MinisterEngine
 }
 
 type Room = GameRoom
@@ -38,7 +52,13 @@ func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config
 		Players:   players,
 		cfg:       cfg,
 		transport: t,
-		submitCh:  make(chan string, len(players)*4+1),
+		submitCh:  make(chan string, len(players)*4+16),
+		pendingBuilds:      make([]domain.BuildOrder, 0),
+		ministerDirectives: make(map[string]string),
+		combatDirectives:   make(map[string][]gamephase.WarZoneDirective),
+		vetoUnits:          make(map[string]map[string]bool),
+		microOrders:        make(map[string]map[string]string),
+		ministerEngine:     minister.NewMinisterEngine(nil),
 	}
 }
 
@@ -82,78 +102,71 @@ func (r *GameRoom) runLoop() {
 	ctx, cancel := context.WithCancel(context.Background())
 	r.cancelFn = cancel
 	defer Registry.Unregister(r.ID)
-
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		r.notifyTurnStart(ctx)
-		r.waitAllSubmit(ctx)
-		if ctx.Err() != nil {
-			return
-		}
-		r.settle()
-		r.advancePhase()
-	}
-}
-
-func (r *GameRoom) notifyTurnStart(ctx context.Context) {
-	for _, player := range r.Players {
-		player.NotifyTurn(ctx, r, r.Phase)
-	}
-}
-
-func (r *GameRoom) waitAllSubmit(ctx context.Context) {
-	submitted := make(map[string]bool, len(r.Players))
 	rules := staticdata.Default().Rules()
-	timeout := time.Duration(rules.TurnTimeLimitDomestic) * time.Second
-	if r.Phase == "combat" {
-		timeout = time.Duration(rules.TurnTimeLimitCombat) * time.Second
+	domesticTimeoutSec := rules.TurnTimeLimitDomestic
+	if domesticTimeoutSec <= 0 {
+		domesticTimeoutSec = 15
+	}
+	combatTimeoutSec := rules.TurnTimeLimitCombat
+	if combatTimeoutSec <= 0 {
+		combatTimeoutSec = 20
 	}
 
+	for !r.state.IsOver {
+		if ctx.Err() != nil {
+			return
+		}
+		if r.ministerEngine != nil {
+			r.ministerEngine.GenerateReports(ctx, r)
+		}
+
+		r.currentPhase = &gamephase.DomesticPhase{}
+		r.Phase = "domestic"
+		r.state.Phase = "domestic"
+		r.currentPhase.Enter(r)
+		r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
+		RunDomesticSettlement(r)
+		if r.state.IsOver {
+			break
+		}
+
+		r.currentPhase = &gamephase.CombatPhase{}
+		r.Phase = "combat"
+		r.state.Phase = "combat"
+		r.currentPhase.Enter(r)
+		r.waitAllSubmit(time.Duration(combatTimeoutSec) * time.Second)
+		RunCombatSettlement(r)
+
+		r.state.Turn++
+		r.Turn = r.state.Turn
+		if rules.MaxTurns > 0 && r.state.Turn > rules.MaxTurns {
+			r.handleDraw()
+			break
+		}
+	}
+}
+
+func (r *GameRoom) waitAllSubmit(timeout time.Duration) {
+	submitted := make(map[string]bool, len(r.Players))
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
 	for {
 		select {
 		case playerID := <-r.submitCh:
+			if playerID == "timeout" {
+				return
+			}
 			submitted[playerID] = true
-			if len(submitted) == len(r.Players) {
+			if len(submitted) >= len(r.Players) {
 				return
 			}
 		case <-timer.C:
-			missing := make([]string, 0, len(r.Players)-len(submitted))
-			for _, player := range r.Players {
-				if !submitted[player.PlayerID()] {
-					missing = append(missing, player.PlayerID())
-				}
+			if r.currentPhase != nil {
+				r.currentPhase.Timeout(r)
 			}
-			slog.Warn("玩家提交超时", "room_id", r.ID, "turn", r.Turn, "phase", r.Phase, "missing_players", missing)
-			return
-		case <-ctx.Done():
 			return
 		}
-	}
-}
-
-func (r *GameRoom) settle() {
-	slog.Info("回合结算", "turn", r.Turn, "phase", r.Phase)
-	// TODO: 接入真实 Pipeline 结算，替换当前日志占位逻辑。
-}
-
-func (r *GameRoom) advancePhase() {
-	switch r.Phase {
-	case "domestic":
-		r.Phase = "combat"
-	case "combat":
-		r.Phase = "domestic"
-		r.Turn++
-	default:
-		r.Phase = "domestic"
-	}
-	if r.state != nil {
-		r.state.Phase = r.Phase
-		r.state.Turn = r.Turn
 	}
 }
 
@@ -171,6 +184,177 @@ func (r *GameRoom) OnHumanSubmitDomestic(playerID string) {
 
 func (r *GameRoom) OnHumanSubmitCombat(playerID string) {
 	r.submitCombat(playerID)
+}
+
+func (r *GameRoom) OnHumanMessage(playerID, msgType string, payload []byte) error {
+	if r.currentPhase == nil {
+		return fmt.Errorf("phase not initialized")
+	}
+	return r.currentPhase.HandleMessage(r, playerID, msgType, payload)
+}
+
+func (r *GameRoom) State() *domain.GameState {
+	return r.state
+}
+
+func (r *GameRoom) PlayerIDs() []string {
+	ids := make([]string, 0, len(r.Players))
+	for _, p := range r.Players {
+		ids = append(ids, p.PlayerID())
+	}
+	return ids
+}
+
+func (r *GameRoom) NotifyTurn(phase string) {
+	ctx := context.Background()
+	for _, player := range r.Players {
+		player.NotifyTurn(ctx, r, phase)
+	}
+}
+
+func (r *GameRoom) Submit(playerID string) {
+	r.submitCh <- playerID
+}
+
+func (r *GameRoom) SendToPlayer(playerID string, msg proto.Message) error {
+	for _, player := range r.Players {
+		if player.PlayerID() == playerID {
+			return player.Send(msg)
+		}
+	}
+	return fmt.Errorf("player %s not found", playerID)
+}
+
+func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
+	r.pendingBuilds = append(r.pendingBuilds, order)
+}
+
+func (r *GameRoom) SetMinisterDirective(playerID string, directive string) {
+	r.ministerDirectives[playerID] = directive
+}
+
+func (r *GameRoom) SetWarDirectives(playerID string, directives []gamephase.WarZoneDirective) {
+	r.combatDirectives[playerID] = directives
+}
+
+func (r *GameRoom) SetVetoUnit(playerID string, unitID string) {
+	if _, ok := r.vetoUnits[playerID]; !ok {
+		r.vetoUnits[playerID] = make(map[string]bool)
+	}
+	r.vetoUnits[playerID][unitID] = true
+}
+
+func (r *GameRoom) SetMicroOrder(playerID string, unitID string, targetNode string) {
+	if _, ok := r.microOrders[playerID]; !ok {
+		r.microOrders[playerID] = make(map[string]string)
+	}
+	r.microOrders[playerID][unitID] = targetNode
+}
+
+func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
+	nodeEntry, ok := r.state.GetNode(nodeID)
+	if !ok {
+		return nil
+	}
+	return r.buildNodeView(nodeEntry, viewerID)
+}
+
+func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
+	return r.state.GetNode(nodeID)
+}
+
+func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
+	if phase == "combat" {
+		combatEvents := make([]*pb.CombatEvent, 0, len(events))
+		for _, e := range events {
+			if payload := e.ClientPayload(); payload != nil {
+				combatEvents = append(combatEvents, payload)
+			}
+		}
+		r.Broadcast(&pb.MsgCombatSettlement{Events: combatEvents})
+		return
+	}
+
+	changes := make([]*pb.DomesticChange, 0, len(events))
+	for _, e := range events {
+		eventType := reflect.TypeOf(e)
+		typeName := "unknown"
+		if eventType != nil {
+			typeName = eventType.Name()
+		}
+		changes = append(changes, &pb.DomesticChange{Type: typeName, Data: map[string]string{"detail": e.String()}})
+	}
+
+	for _, player := range r.Players {
+		if player.IsBot() {
+			continue
+		}
+		playerState := r.state.Players[player.PlayerID()]
+		msg := &pb.MsgDomesticSettlement{Changes: changes}
+		if playerState != nil {
+			msg.MyResourcesAfter = toProtoResourceBag(playerState.Resources)
+		}
+		_ = player.Send(msg)
+	}
+}
+
+func (r *GameRoom) checkGameOver() {
+	if r.state == nil || !r.state.IsOver {
+		return
+	}
+	msg := &pb.MsgGameOver{WinnerId: r.state.WinnerID, Reason: r.state.OverReason, Narrative: r.state.Narrative}
+	r.Broadcast(msg)
+	Registry.Unregister(r.ID)
+	if r.cancelFn != nil {
+		r.cancelFn()
+	}
+}
+
+func (r *GameRoom) handleDraw() {
+	r.state.IsOver = true
+	r.state.WinnerID = ""
+	r.state.OverReason = "timeout_draw"
+	r.Broadcast(&pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"})
+	Registry.Unregister(r.ID)
+	if r.cancelFn != nil {
+		r.cancelFn()
+	}
+}
+
+func (r *GameRoom) applyMoveOrdersToWorld() {
+	for playerID, orders := range r.microOrders {
+		for unitID, targetNode := range orders {
+			if r.vetoUnits[playerID][unitID] {
+				continue
+			}
+			targetEntry, ok := r.state.GetNode(targetNode)
+			if !ok {
+				continue
+			}
+			pos := ecs.PositionC.Get(targetEntry)
+			r.setMoveIntent(unitID, domain.Position{X: pos.X, Y: pos.Y})
+		}
+	}
+
+	for _, order := range r.state.MinisterMoveOrders {
+		if r.vetoUnits[order.PlayerID][order.UnitID] {
+			continue
+		}
+		r.setMoveIntent(order.UnitID, order.Target)
+	}
+}
+
+func (r *GameRoom) setMoveIntent(unitID string, target domain.Position) {
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID != unitID {
+			return
+		}
+		if !entry.HasComponent(ecs.MoveIntentC) {
+			entry.AddComponent(ecs.MoveIntentC)
+		}
+		ecs.MoveIntentC.SetValue(entry, ecs.MoveIntentComp{Target: target})
+	})
 }
 
 func (r *GameRoom) Broadcast(msg proto.Message) {
@@ -252,40 +436,44 @@ func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
 func (r *GameRoom) buildNodeViews(playerID string) []*pb.NodeView {
 	nodes := make([]*pb.NodeView, 0, ecs.AllNodes(r.state.World).Count(r.state.World))
 	ecs.AllNodes(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
-		node := ecs.NodeC.Get(entry)
-		pos := ecs.PositionC.Get(entry)
-		unitsByFaction := domain.UnitsByFactionAtNode(r.state.World, domain.Position{X: pos.X, Y: pos.Y})
-
-		myCount := len(unitsByFaction[playerID])
-		enemyCount := 0
-		for faction, units := range unitsByFaction {
-			if faction == playerID {
-				continue
-			}
-			enemyCount += len(units)
-		}
-
-		view := &pb.NodeView{
-			Id:              node.ID,
-			Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
-			Terrain:         string(node.Terrain),
-			Owner:           node.Owner,
-			MyUnitCount:     int32(myCount),
-			EnemyUnitCount:  int32(enemyCount),
-			HasRoad:         node.HasRoad,
-			IsResourcePoint: node.IsResource,
-			ResourceType:    node.ResourceType,
-			IsSafeZone:      domain.IsInSafeZone(r.state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
-		}
-		if entry.HasComponent(ecs.BuildingC) {
-			building := ecs.BuildingC.Get(entry)
-			view.BuildingType = string(building.Type)
-			view.BuildingHp = int32(building.HP)
-			view.WallLevel = int32(building.WallLevel)
-		}
-		nodes = append(nodes, view)
+		nodes = append(nodes, r.buildNodeView(entry, playerID))
 	})
 	return nodes
+}
+
+func (r *GameRoom) buildNodeView(entry *donburi.Entry, playerID string) *pb.NodeView {
+	node := ecs.NodeC.Get(entry)
+	pos := ecs.PositionC.Get(entry)
+	unitsByFaction := domain.UnitsByFactionAtNode(r.state.World, domain.Position{X: pos.X, Y: pos.Y})
+
+	myCount := len(unitsByFaction[playerID])
+	enemyCount := 0
+	for faction, units := range unitsByFaction {
+		if faction == playerID {
+			continue
+		}
+		enemyCount += len(units)
+	}
+
+	view := &pb.NodeView{
+		Id:              node.ID,
+		Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Terrain:         string(node.Terrain),
+		Owner:           node.Owner,
+		MyUnitCount:     int32(myCount),
+		EnemyUnitCount:  int32(enemyCount),
+		HasRoad:         node.HasRoad,
+		IsResourcePoint: node.IsResource,
+		ResourceType:    node.ResourceType,
+		IsSafeZone:      domain.IsInSafeZone(r.state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
+	}
+	if entry.HasComponent(ecs.BuildingC) {
+		building := ecs.BuildingC.Get(entry)
+		view.BuildingType = string(building.Type)
+		view.BuildingHp = int32(building.HP)
+		view.WallLevel = int32(building.WallLevel)
+	}
+	return view
 }
 
 func (r *GameRoom) buildUnitViews() []*pb.UnitView {

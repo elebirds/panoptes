@@ -9,10 +9,20 @@ type GameState struct {
 	GameID    string
 	Turn      int
 	Phase     string
+	IsOver    bool
+	WinnerID  string
+	OverReason string
+	Narrative string
 	World     donburi.World
 	Map       *MapData
 	Players   map[string]*PlayerState
 	NodeIndex map[string]donburi.Entity
+
+	PendingBuilds       []BuildOrder
+	MinisterBuildOrders []BuildOrder
+	MinisterMoveOrders  []MoveOrder
+	PendingMoves        []PendingMove
+	PendingConflicts    []Conflict
 }
 
 type PlayerState struct {
@@ -41,6 +51,35 @@ type MapData struct {
 	PlayerSpawns map[string]Position
 	NamedNodes   map[string]string
 	NodeIndex    map[string]donburi.Entity
+}
+
+type BuildOrder struct {
+	PlayerID     string
+	NodeID       string
+	BuildingType string
+}
+
+type MoveOrder struct {
+	PlayerID string
+	UnitID   string
+	Target   Position
+}
+
+type Conflict struct {
+	UnitAID      string
+	UnitBID      string
+	Location     Position
+	ConflictType string
+	TimeStep     int
+	MaxSpeed     int
+}
+
+type PendingMove struct {
+	UnitID    string
+	Faction   string
+	Speed     int
+	Path      []Position
+	Timestamp int
 }
 
 func NewGameState(gameID string, playerIDs []string, usernames []string, mapData *MapData) *GameState {
