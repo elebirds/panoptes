@@ -60,7 +60,9 @@ panoptes/                          # Monorepo 根目录
 │
 └── client/                        # Unity 客户端
     ├── Assets/
-    │   ├── Scripts/Runtime/Protocol/ # buf generate 生成，禁止手动修改
+    │   ├── Scripts/Protocol/         # buf generate 生成，禁止手动修改
+    │   ├── Scripts/Runtime/Core/     # 客户端 Core 层
+    │   ├── Scripts/Runtime/Presentation/ # 客户端 Presentation 层
     │   ├── Scripts/
     │   ├── Scenes/
     │   ├── Prefabs/
@@ -73,7 +75,7 @@ panoptes/                          # Monorepo 根目录
 ## 绝对禁止（任何情况下都不得违反）
 
 ```
-❌ 在 `server/internal/gen/proto/` 或 `client/Assets/Scripts/Runtime/Protocol/` 下手动修改生成文件
+❌ 在 `server/internal/gen/proto/` 或 `client/Assets/Scripts/Protocol/` 下手动修改生成文件
 ❌ 在 engine/ 的 System 里直接修改游戏状态（必须通过 Event）
 ❌ 在 transport/websocket/ 里 import game 包
 ❌ 在 game/ 里 import transport/websocket 包
@@ -144,7 +146,7 @@ panoptes/                          # Monorepo 根目录
 # 1. 修改 protocol/*.proto
 # 2. 在根目录执行
 make gen
-# 3. 提交 `server/internal/gen/proto/` 和 `client/Assets/Scripts/Runtime/Protocol/` 下的变更
+# 3. 提交 `server/internal/gen/proto/` 和 `client/Assets/Scripts/Protocol/` 下的变更
 ```
 
 禁止只改一端的生成代码而不改 proto 源文件。

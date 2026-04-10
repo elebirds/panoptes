@@ -1,0 +1,11 @@
+{
+  "name": "Panoptes.Presentation",
+  "rootNamespace": "Panoptes.Presentation",
+  "references": [
+    "Panoptes.Core",
+
+    "Unity.InputSystem",
+    "Unity.TextMeshPro"
+  ],
+  "autoReferenced": false
+}
