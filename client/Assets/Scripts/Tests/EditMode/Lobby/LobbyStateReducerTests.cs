@@ -1,6 +1,6 @@
 using System;
 using NUnit.Framework;
-using Panoptes.Runtime.Service;
+using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
 
 namespace Panoptes.Tests.EditMode.Lobby
@@ -26,7 +26,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                 UnityEngine.Object.DestroyImmediate(_sessionObject);
             }
 
-            var roomCacheType = Type.GetType("Panoptes.Runtime.Cache.RoomCache, Panoptes.Runtime");
+            var roomCacheType = Type.GetType("Panoptes.Core.Application.Cache.RoomCache, Panoptes.Core");
             if (roomCacheType == null)
             {
                 return;
@@ -115,7 +115,7 @@ namespace Panoptes.Tests.EditMode.Lobby
 
         private static Type RequireRoomCacheType()
         {
-            return Type.GetType("Panoptes.Runtime.Cache.RoomCache, Panoptes.Runtime")
+                        return Type.GetType("Panoptes.Core.Application.Cache.RoomCache, Panoptes.Core")
                    ?? throw new AssertionException("RoomCache 类型不存在。");
         }
 
@@ -127,7 +127,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             int maxPlayers,
             params object[] players)
         {
-            var roomStateType = Type.GetType("Panoptes.Protocol.V1.MsgRoomState, Panoptes.Runtime")
+            var roomStateType = Type.GetType("Panoptes.Protocol.V1.MsgRoomState, Panoptes.Protocol")
                                 ?? throw new AssertionException("MsgRoomState 类型不存在。");
             var roomState = Activator.CreateInstance(roomStateType)
                             ?? throw new AssertionException("无法创建 MsgRoomState。");
@@ -150,7 +150,7 @@ namespace Panoptes.Tests.EditMode.Lobby
 
         private static object CreatePlayer(string playerId, string username, bool isReady, bool isHost, bool isBot)
         {
-            var roomPlayerType = Type.GetType("Panoptes.Protocol.V1.RoomPlayer, Panoptes.Runtime")
+            var roomPlayerType = Type.GetType("Panoptes.Protocol.V1.RoomPlayer, Panoptes.Protocol")
                                  ?? throw new AssertionException("RoomPlayer 类型不存在。");
             var player = Activator.CreateInstance(roomPlayerType)
                          ?? throw new AssertionException("无法创建 RoomPlayer。");

@@ -1,0 +1,6 @@
+{
+  "name": "Panoptes.Protocol",
+  "rootNamespace": "Panoptes.Protocol.V1",
+  "references": ["Google.Protobuf"],
+  "autoReferenced": false
+}
