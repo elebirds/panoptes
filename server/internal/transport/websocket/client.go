@@ -41,6 +41,10 @@ func (c *Client) readPump() {
 			continue
 		}
 
+		if c.hub != nil {
+			c.hub.logIncoming(c.playerID, envelope.GetType(), envelope.GetPayload())
+		}
+
 		Route(c, c.playerID, envelope)
 	}
 }

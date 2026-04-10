@@ -7,6 +7,7 @@
  *************************************************/
 
 
+using System;
 using Google.Protobuf;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ namespace Panoptes.Runtime.Network
 {
     public static class MessageSender
     {
+        public static event Action<string, IMessage> OnSendIntercepted;
+
         public static void Send<T>(T message) where T : IMessage<T>
         {
             if (message == null)
@@ -21,6 +24,8 @@ namespace Panoptes.Runtime.Network
                 Debug.LogWarning("[MessageSender] Send ignored: message is null.");
                 return;
             }
+
+            OnSendIntercepted?.Invoke(typeof(T).Name, message);
 
             var network = NetworkManager.Instance;
             if (network == null)

@@ -17,9 +17,12 @@ namespace Panoptes.Runtime.Network
     public class MessageDispatcher : MonoBehaviour
     {
         public static MessageDispatcher Instance { get; private set; }
+        public event Action<Envelope> OnDispatching;
 
         // message type -> handlers
         private readonly Dictionary<string, List<Action<string>>> _handlers =
+            new(StringComparer.Ordinal);
+        private readonly Dictionary<string, Dictionary<Delegate, Action<string>>> _typedHandlerWrappers =
             new(StringComparer.Ordinal);
         private readonly JsonParser _jsonParser =
             new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
@@ -39,7 +42,12 @@ namespace Panoptes.Runtime.Network
         public void Register<T>(string messageType, Action<T> handler)
             where T : IMessage<T>, new()
         {
-            RegisterRaw(messageType, payloadJson =>
+            if (string.IsNullOrWhiteSpace(messageType) || handler == null)
+            {
+                return;
+            }
+
+            Action<string> wrapper = payloadJson =>
             {
                 try
                 {
@@ -51,7 +59,16 @@ namespace Panoptes.Runtime.Network
                 {
                     Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e}");
                 }
-            });
+            };
+
+            if (!_typedHandlerWrappers.TryGetValue(messageType, out var wrappers))
+            {
+                wrappers = new Dictionary<Delegate, Action<string>>();
+                _typedHandlerWrappers[messageType] = wrappers;
+            }
+
+            wrappers[handler] = wrapper;
+            RegisterRaw(messageType, wrapper);
         }
 
         // Register raw payload handler (Envelope.Payload JSON string)
@@ -86,6 +103,52 @@ namespace Panoptes.Runtime.Network
             }
 
             _handlers.Remove(messageType);
+            _typedHandlerWrappers.Remove(messageType);
+        }
+
+        public void Unregister<T>(string messageType, Action<T> handler)
+            where T : IMessage<T>, new()
+        {
+            if (string.IsNullOrWhiteSpace(messageType) || handler == null)
+            {
+                return;
+            }
+
+            if (!_typedHandlerWrappers.TryGetValue(messageType, out var wrappers))
+            {
+                return;
+            }
+
+            if (!wrappers.TryGetValue(handler, out var wrapper))
+            {
+                return;
+            }
+
+            UnregisterRaw(messageType, wrapper);
+            wrappers.Remove(handler);
+            if (wrappers.Count == 0)
+            {
+                _typedHandlerWrappers.Remove(messageType);
+            }
+        }
+
+        public void UnregisterRaw(string messageType, Action<string> handler)
+        {
+            if (string.IsNullOrWhiteSpace(messageType) || handler == null)
+            {
+                return;
+            }
+
+            if (!_handlers.TryGetValue(messageType, out var list))
+            {
+                return;
+            }
+
+            list.Remove(handler);
+            if (list.Count == 0)
+            {
+                _handlers.Remove(messageType);
+            }
         }
 
         public void Dispatch(Envelope envelope)
@@ -95,6 +158,8 @@ namespace Panoptes.Runtime.Network
                 Debug.LogWarning("[Dispatcher] Received null envelope.");
                 return;
             }
+
+            OnDispatching?.Invoke(envelope);
 
             if (_handlers.TryGetValue(envelope.Type, out var handlers) && handlers != null && handlers.Count > 0)
             {
