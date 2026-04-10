@@ -1,18 +1,5 @@
 {
   "name": "Panoptes.Tests.PlayMode",
-  "references": [
-    "Panoptes"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": false,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false,
-  "optionalUnityReferences": [
-    "TestAssemblies"
-  ]
+  "references": ["Panoptes.Core", "Panoptes.Presentation", "UnityEngine.TestRunner"],
+  "autoReferenced": false
 }

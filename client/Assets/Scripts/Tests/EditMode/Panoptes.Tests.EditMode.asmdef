@@ -1,20 +1,11 @@
 {
   "name": "Panoptes.Tests.EditMode",
   "references": [
-    "Panoptes.Runtime"
+    "Panoptes.Core", 
+    "Panoptes.Presentation",
+    "UnityEngine.TestRunner", 
+    "UnityEditor.TestRunner"
   ],
-  "includePlatforms": [
-    "Editor"
-  ],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": false,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false,
-  "optionalUnityReferences": [
-    "TestAssemblies"
-  ]
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
 }

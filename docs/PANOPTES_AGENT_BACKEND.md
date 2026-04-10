@@ -203,7 +203,7 @@ panoptes/
 │   │           └── lobby_store.go # LobbyStore Redis实现
 │
 └── client/
-    └── Assets/Scripts/Runtime/Protocol/ # buf generate 输出的 C# 协议代码
+    └── Assets/Scripts/Protocol/ # buf generate 输出的 C# 协议代码
 ```
 
 ### Makefile命令
@@ -346,7 +346,7 @@ plugins:
     out: ../server/internal/gen/proto
     opt: paths=source_relative
   - plugin: csharp
-    out: ../client/Assets/Scripts/Runtime/Protocol
+    out: ../client/Assets/Scripts/Protocol
 ```
 
 ### common.proto
@@ -355,7 +355,7 @@ plugins:
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 message Position {
   int32 x = 1;
@@ -390,7 +390,7 @@ message Envelope {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 客户端→服务端
 message MsgRegister {
@@ -422,7 +422,7 @@ message MsgAuthError {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 客户端→服务端
 message MsgCreateRoom {
@@ -473,7 +473,7 @@ message MsgLobbyError {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 import "common.proto";
 
@@ -557,7 +557,7 @@ message MsgGameOver {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 import "common.proto";
 
@@ -655,7 +655,7 @@ message DomesticChange {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 import "common.proto";
 
@@ -787,7 +787,7 @@ message BuildingDamagedEvent {
 syntax = "proto3";
 package panoptes.proto.v1;
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 部长汇报（流式，多条chunk）
 message MsgMinisterReportChunk {
