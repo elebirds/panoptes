@@ -19,6 +19,14 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Renderer[] tintRenderers;
         [SerializeField] private GameObject selectedRing;
         [Range(0f, 1f)] [SerializeField] private float factionTintStrength = 0.35f;
+        
+        [Header("Animation")]
+        [SerializeField] private Animator animator;
+        [SerializeField] private Transform visualRoot;
+        [SerializeField] private SquadUnitVisualController squadVisualController;
+        [SerializeField] private string movingBoolParam = "isMoving";
+        [SerializeField] private string speedFloatParam = "moveSpeed";
+        [SerializeField] private float rotateLerpSpeed = 18f;
 
         [Header("Movement")]
         [SerializeField] private float moveArcHeight = 0.08f;
@@ -29,6 +37,8 @@ namespace Panoptes.Presentation.Map
         public int HitPoints { get; private set; }
         public int MaxHitPoints { get; private set; }
         public Vector2Int GridPos { get; private set; }
+        private int _movingBoolHash;
+        private int _speedFloatHash;
 
         private void Awake()
         {
@@ -36,6 +46,29 @@ namespace Panoptes.Presentation.Map
             {
                 tintRenderers = GetComponentsInChildren<Renderer>(true);
             }
+            
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>(true);
+            }
+
+            if (visualRoot == null)
+            {
+                visualRoot = transform;
+            }
+
+            if (squadVisualController == null)
+            {
+                squadVisualController = GetComponentInChildren<SquadUnitVisualController>(true);
+            }
+
+            if (squadVisualController != null)
+            {
+                squadVisualController.RefreshMembers();
+            }
+
+            _movingBoolHash = string.IsNullOrWhiteSpace(movingBoolParam) ? 0 : Animator.StringToHash(movingBoolParam);
+            _speedFloatHash = string.IsNullOrWhiteSpace(speedFloatParam) ? 0 : Animator.StringToHash(speedFloatParam);
 
             if (GetComponent<Collider>() == null)
             {
@@ -62,6 +95,10 @@ namespace Panoptes.Presentation.Map
             name = string.IsNullOrEmpty(UnitId) ? "Unit" : $"Unit_{UnitId}";
 
             ApplyFactionTint();
+            if (squadVisualController != null)
+            {
+                squadVisualController.OnUnitBound(UnitId, UnitType, Faction);
+            }
         }
 
         public void SetGridPosition(Vector2Int gridPos)
@@ -83,6 +120,8 @@ namespace Panoptes.Presentation.Map
 
             var start = transform.position;
             var elapsed = 0f;
+            var moveDir = destination - start;
+            SetMovingVisual(true, 1f, moveDir);
 
             while (elapsed < duration)
             {
@@ -96,10 +135,48 @@ namespace Panoptes.Presentation.Map
                 }
 
                 transform.position = pos;
+                SetMovingVisual(true, 1f, destination - transform.position);
                 yield return null;
             }
 
             transform.position = destination;
+            SetMovingVisual(false, 0f, Vector3.zero);
+        }
+
+        public void SetMovingVisual(bool isMoving, float normalizedSpeed, Vector3 worldMoveDirection)
+        {
+            if (animator != null)
+            {
+                if (_movingBoolHash != 0)
+                {
+                    animator.SetBool(_movingBoolHash, isMoving);
+                }
+
+                if (_speedFloatHash != 0)
+                {
+                    animator.SetFloat(_speedFloatHash, Mathf.Max(0f, normalizedSpeed));
+                }
+            }
+
+            if (squadVisualController != null)
+            {
+                squadVisualController.ApplyMoveState(isMoving, normalizedSpeed);
+            }
+
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var flatDir = worldMoveDirection;
+            flatDir.y = 0f;
+            if (flatDir.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            var targetRot = Quaternion.LookRotation(flatDir.normalized, Vector3.up);
+            visualRoot.rotation = Quaternion.Slerp(visualRoot.rotation, targetRot, Time.deltaTime * Mathf.Max(0f, rotateLerpSpeed));
         }
 
         private void ApplyFactionTint()

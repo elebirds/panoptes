@@ -38,6 +38,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Material mountainMaterial;
         [SerializeField] private Material forestMaterial;
         [SerializeField] private Material riverMaterial;
+        [SerializeField] private Material snowMaterial;
+        [SerializeField] private Material forbiddenMaterial;
 
         [Header("Resource")]
         [SerializeField] private ResourcePointView resourcePointPrefab;
@@ -298,7 +300,13 @@ namespace Panoptes.Presentation.Map
                 case "forest":
                     return forestMaterial;
                 case "river":
+                case "water":
                     return riverMaterial;
+                case "snow":
+                    return snowMaterial != null ? snowMaterial : plainMaterial;
+                case "forbidden":
+                case "blocked":
+                    return forbiddenMaterial != null ? forbiddenMaterial : mountainMaterial;
                 default:
                     return plainMaterial;
             }

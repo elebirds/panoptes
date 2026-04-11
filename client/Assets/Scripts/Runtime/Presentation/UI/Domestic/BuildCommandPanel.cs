@@ -37,6 +37,10 @@ namespace Panoptes.Presentation.UI.Domestic
             Wall = 6,
             Tower = 7,
             Watchtower = 8,
+            Archery = 9,
+            Blacksmith = 10,
+            Lumberyard = 11,
+            Engineer = 12,
             Custom = 100
         }
 
@@ -98,6 +102,21 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private MapInputHandler mapInputHandler;
         [SerializeField] private bool autoFindMapInputHandler = true;
         [SerializeField] private BuildButtonBinding[] buildButtons;
+        [SerializeField] private bool autoGenerateBuildButtons = true;
+        [SerializeField] private Transform buildButtonsRoot;
+        [SerializeField] private bool cloneTemplateButtons = true;
+        [SerializeField] private string[] runtimeBuildOrder =
+        {
+            "farm",
+            "lumberyard",
+            "smelter",
+            "engineer",
+            "workshop",
+            "archery",
+            "blacksmith",
+            "tower",
+            "watchtower"
+        };
         [SerializeField] private Button cancelButton;
         [SerializeField] private BuildTooltipView tooltipView;
 
@@ -208,17 +227,19 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             UnbindButtons();
 
-            if (buildButtons != null)
+            var effectiveButtons = GetEffectiveBuildButtons();
+            if (effectiveButtons != null)
             {
-                for (int i = 0; i < buildButtons.Length; i++)
+                for (int i = 0; i < effectiveButtons.Length; i++)
                 {
-                    var binding = buildButtons[i];
+                    var binding = effectiveButtons[i];
                     if (binding.button == null)
                     {
                         continue;
                     }
 
-                    var buildingType = ResolveBuildingTypeToken(binding);
+                    var requestedType = ResolveBuildingTypeToken(binding);
+                    var buildingType = ResolveConfiguredBuildingType(requestedType);
                     var configEntry = GetBuildConfigEntry(buildingType);
                     var rule = ResolveBuildRule(binding.rule, configEntry);
                     UnityAction action = () => TriggerBuild(buildingType, rule);
@@ -238,6 +259,225 @@ namespace Panoptes.Presentation.UI.Domestic
                 cancelButton.onClick.AddListener(cancelAction);
                 _boundButtons.Add(cancelButton);
                 _boundActions.Add(cancelAction);
+            }
+        }
+
+        private BuildButtonBinding[] GetEffectiveBuildButtons()
+        {
+            if (!autoGenerateBuildButtons)
+            {
+                return buildButtons;
+            }
+
+            var root = ResolveBuildButtonsRoot();
+            if (root == null)
+            {
+                return buildButtons;
+            }
+
+            var buttons = CollectButtons(root);
+            if (buttons.Count == 0)
+            {
+                return buildButtons;
+            }
+
+            var buildOrder = runtimeBuildOrder;
+            if (buildOrder == null || buildOrder.Length == 0)
+            {
+                return buildButtons;
+            }
+
+            if (cloneTemplateButtons && buttons.Count < buildOrder.Length)
+            {
+                ExpandButtons(root, buttons, buildOrder.Length);
+                buttons = CollectButtons(root);
+            }
+
+            var count = Mathf.Min(buttons.Count, buildOrder.Length);
+            if (count <= 0)
+            {
+                return buildButtons;
+            }
+
+            var generated = new BuildButtonBinding[count];
+            for (int i = 0; i < count; i++)
+            {
+                var button = buttons[i];
+                generated[i] = new BuildButtonBinding
+                {
+                    button = button,
+                    iconImage = ResolveIconImage(button),
+                    labelText = ResolveLabelText(button),
+                    fallbackIcon = null,
+                    buildingType = BuildingType.Custom,
+                    customBuildingType = NormalizeToken(buildOrder[i]),
+                    tooltipText = string.Empty,
+                    rule = ResolveDefaultRule(buildOrder[i])
+                };
+            }
+
+            return generated;
+        }
+
+        private Transform ResolveBuildButtonsRoot()
+        {
+            if (buildButtonsRoot != null)
+            {
+                return buildButtonsRoot;
+            }
+
+            if (buildContentRoot != null)
+            {
+                var grid = buildContentRoot.transform.Find("BuildGrid");
+                if (grid != null)
+                {
+                    buildButtonsRoot = grid;
+                    return buildButtonsRoot;
+                }
+
+                buildButtonsRoot = buildContentRoot.transform;
+                return buildButtonsRoot;
+            }
+
+            return null;
+        }
+
+        private static List<Button> CollectButtons(Transform root)
+        {
+            var result = new List<Button>(16);
+            if (root == null)
+            {
+                return result;
+            }
+
+            CollectButtonsRecursive(root, result);
+
+            return result;
+        }
+
+        private static void CollectButtonsRecursive(Transform node, List<Button> result)
+        {
+            if (node == null || result == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < node.childCount; i++)
+            {
+                var child = node.GetChild(i);
+                if (child == null)
+                {
+                    continue;
+                }
+
+                var button = child.GetComponent<Button>();
+                if (button != null)
+                {
+                    result.Add(button);
+                }
+
+                if (child.childCount > 0)
+                {
+                    CollectButtonsRecursive(child, result);
+                }
+            }
+        }
+
+        private static void ExpandButtons(Transform root, List<Button> buttons, int targetCount)
+        {
+            if (root == null || buttons == null || buttons.Count == 0 || targetCount <= buttons.Count)
+            {
+                return;
+            }
+
+            var template = buttons[0];
+            if (template == null)
+            {
+                return;
+            }
+
+            while (buttons.Count < targetCount)
+            {
+                var clone = Instantiate(template.gameObject, root, false);
+                clone.name = $"BuildBtn_{buttons.Count + 1}";
+                var cloneButton = clone.GetComponent<Button>();
+                if (cloneButton == null)
+                {
+                    cloneButton = clone.GetComponentInChildren<Button>(true);
+                }
+
+                if (cloneButton != null)
+                {
+                    buttons.Add(cloneButton);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        private static Image ResolveIconImage(Button button)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            var icon = button.transform.Find("Icon");
+            if (icon != null)
+            {
+                var image = icon.GetComponent<Image>();
+                if (image != null)
+                {
+                    return image;
+                }
+            }
+
+            var images = button.GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                if (images[i] != null && images[i].gameObject != button.gameObject)
+                {
+                    return images[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static TMP_Text ResolveLabelText(Button button)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            var label = button.transform.Find("Label");
+            if (label != null)
+            {
+                var text = label.GetComponent<TMP_Text>();
+                if (text != null)
+                {
+                    return text;
+                }
+            }
+
+            return button.GetComponentInChildren<TMP_Text>(true);
+        }
+
+        private static BuildRule ResolveDefaultRule(string buildingType)
+        {
+            switch (NormalizeToken(buildingType))
+            {
+                case "farm":
+                case "lumberyard":
+                case "smelter":
+                case "mine":
+                case "lumber":
+                    return BuildRule.ResourceOnly;
+                default:
+                    return BuildRule.CityOnly;
             }
         }
 
@@ -550,8 +790,46 @@ namespace Panoptes.Presentation.UI.Domestic
                 return null;
             }
 
-            _buildConfigById.TryGetValue(key, out var entry);
-            return entry;
+            if (_buildConfigById.TryGetValue(key, out var entry))
+            {
+                return entry;
+            }
+
+            var aliases = GetAliasKeys(key);
+            for (int i = 0; i < aliases.Length; i++)
+            {
+                if (_buildConfigById.TryGetValue(aliases[i], out entry))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        private string ResolveConfiguredBuildingType(string buildingType)
+        {
+            var key = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(key))
+            {
+                return string.Empty;
+            }
+
+            if (_buildConfigById.ContainsKey(key))
+            {
+                return key;
+            }
+
+            var aliases = GetAliasKeys(key);
+            for (int i = 0; i < aliases.Length; i++)
+            {
+                if (_buildConfigById.ContainsKey(aliases[i]))
+                {
+                    return aliases[i];
+                }
+            }
+
+            return key;
         }
 
         private BuildRule ResolveBuildRule(BuildRule fallback, BuildConfigEntry entry)
@@ -680,6 +958,30 @@ namespace Panoptes.Presentation.UI.Domestic
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
+        private static string[] GetAliasKeys(string key)
+        {
+            switch (NormalizeToken(key))
+            {
+                case "lumberyard":
+                    return new[] { "lumber" };
+                case "lumber":
+                    return new[] { "lumberyard" };
+                case "engineer":
+                    return new[] { "engineer_camp" };
+                case "engineer_camp":
+                    return new[] { "engineer" };
+                case "archery":
+                    return new[] { "barracks" };
+                case "barracks":
+                    return new[] { "archery" };
+                case "blacksmith":
+                case "backsmith":
+                    return new[] { "workshop" };
+                default:
+                    return System.Array.Empty<string>();
+            }
+        }
+
         private static string ResolveBuildingTypeToken(BuildButtonBinding binding)
         {
             switch (binding.buildingType)
@@ -688,6 +990,8 @@ namespace Panoptes.Presentation.UI.Domestic
                     return "mine";
                 case BuildingType.Farm:
                     return "farm";
+                case BuildingType.Lumberyard:
+                    return "lumberyard";
                 case BuildingType.Smelter:
                     return "smelter";
                 case BuildingType.Workshop:
@@ -696,12 +1000,18 @@ namespace Panoptes.Presentation.UI.Domestic
                     return "barracks";
                 case BuildingType.EngineerCamp:
                     return "engineer_camp";
+                case BuildingType.Engineer:
+                    return "engineer";
                 case BuildingType.Wall:
                     return "wall";
                 case BuildingType.Tower:
                     return "tower";
                 case BuildingType.Watchtower:
                     return "watchtower";
+                case BuildingType.Archery:
+                    return "archery";
+                case BuildingType.Blacksmith:
+                    return "blacksmith";
                 case BuildingType.Custom:
                     return NormalizeToken(binding.customBuildingType);
                 default:

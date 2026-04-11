@@ -27,6 +27,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             var startUnitPos = unitView.transform.position;
+            var initialDir = targetWorldPos - startUnitPos;
             Vector3 camOffset = Vector3.zero;
             var camStartPos = Vector3.zero;
 
@@ -38,6 +39,8 @@ namespace Panoptes.Presentation.Animation
 
             duration = Mathf.Max(0.01f, duration);
             var elapsed = 0f;
+            unitView.SetMovingVisual(true, 1f, initialDir);
+            var prevPos = startUnitPos;
 
             while (elapsed < duration)
             {
@@ -47,6 +50,8 @@ namespace Panoptes.Presentation.Animation
                 // Move unit.
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;
+                unitView.SetMovingVisual(true, 1f, unitPos - prevPos);
+                prevPos = unitPos;
 
                 // Follow camera using the unit's original relative offset.
                 if (followCameraEnabled && followCamera != null)
@@ -58,6 +63,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             unitView.transform.position = targetWorldPos;
+            unitView.SetMovingVisual(false, 0f, Vector3.zero);
             if (followCameraEnabled && followCamera != null)
             {
                 followCamera.transform.position = targetWorldPos + camOffset;

@@ -43,6 +43,11 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float maxFov = 60f;
         [SerializeField] private float minHeight = 8f;
         [SerializeField] private float maxHeight = 40f;
+        
+        [Header("Start Pose Guard")]
+        [SerializeField] private bool autoFixInvalidStartPose = true;
+        [SerializeField] private float fallbackStartHeight = 14f;
+        [SerializeField] private float fallbackStartPitch = 50f;
 
         [Header("Bounds")]
         [SerializeField] private bool clampToBounds = true;
@@ -76,6 +81,7 @@ namespace Panoptes.Presentation.Map
         private void OnEnable()
         {
             EnsureZoomRanges();
+            ApplyStartPoseGuard();
             _targetPosition = transform.position;
             ClampCurrentZoomToRange();
         }
@@ -127,6 +133,11 @@ namespace Panoptes.Presentation.Map
             xBounds = new Vector2(minX, maxX);
             zBounds = new Vector2(minZ, maxZ);
             boundsPadding = padding;
+        }
+
+        public void SetBoundsGroundY(float y)
+        {
+            boundsGroundY = y;
         }
 
         public void SnapTargetToCurrentPosition()
@@ -343,6 +354,39 @@ namespace Panoptes.Presentation.Map
                     Mathf.Clamp(_targetPosition.y, minHeight, maxHeight),
                     _targetPosition.z);
             }
+        }
+
+        private void ApplyStartPoseGuard()
+        {
+            if (!autoFixInvalidStartPose || _camera == null || _camera.orthographic)
+            {
+                return;
+            }
+
+            var pos = transform.position;
+            var euler = transform.eulerAngles;
+            var changed = false;
+
+            if (pos.y <= 0.01f)
+            {
+                pos.y = Mathf.Clamp(fallbackStartHeight, minHeight, maxHeight);
+                changed = true;
+            }
+
+            // Scene/default camera rotation (pitch almost 0) causes horizon/black view in top-down map.
+            if (Mathf.Abs(transform.forward.y) < 0.05f)
+            {
+                euler.x = fallbackStartPitch;
+                euler.z = 0f;
+                changed = true;
+            }
+
+            if (!changed)
+            {
+                return;
+            }
+
+            transform.SetPositionAndRotation(pos, Quaternion.Euler(euler));
         }
 
         private Vector3 GetDragPanDelta()
@@ -628,6 +672,7 @@ namespace Panoptes.Presentation.Map
         private void OnValidate()
         {
             EnsureZoomRanges();
+            fallbackStartHeight = Mathf.Max(0.1f, fallbackStartHeight);
         }
 
         private void OnDrawGizmosSelected()
