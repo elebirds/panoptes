@@ -432,6 +432,26 @@ namespace Panoptes.Core.Application.Cache
             return unit;
         }
 
+        public void UpsertRuntimeUnit(UnitDto unit)
+        {
+            if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
+            {
+                return;
+            }
+
+            _units[unit.Id] = unit;
+        }
+
+        public void RemoveRuntimeUnit(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return;
+            }
+
+            _units.Remove(unitId);
+        }
+
         private void ApplyUnitMove(UnitMoveEvent evt)
         {
             if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))

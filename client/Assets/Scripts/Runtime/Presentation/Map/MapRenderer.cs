@@ -69,11 +69,29 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool preferServerPushedMapConfig = true;
         [SerializeField] private string serverMapConfigKey = "mapconfig";
         [SerializeField] private bool listenServerMapConfigUpdates = true;
+        
+        [Header("Runtime Helpers")]
+        [SerializeField] private bool autoEnsureRuntimeControllers = true;
+        [SerializeField] private bool autoFocusCameraOnMapBuild = false;
+        [SerializeField] private bool autoApplyCameraBoundsOnMapBuild = false;
+        [SerializeField] private bool autoForceGameplayCameraPoseOnMapBuild = false;
 
         [Header("Prefab")]
         [SerializeField] private NodeView nodeTilePrefab;
         [SerializeField] private Transform tilesRoot;
         [SerializeField] private float tileSize = 1f;
+        
+        [Header("Terrain Elevation")]
+        [SerializeField] private bool applyTerrainElevation = false;
+        [SerializeField] private float plainElevation = 0f;
+        [SerializeField] private float forestElevation = 0.06f;
+        [SerializeField] private float mountainElevation = 0.28f;
+        [SerializeField] private float riverElevation = -0.1f;
+        [SerializeField] private float snowElevation = 0.1f;
+        [SerializeField] private float forbiddenElevation = 0.2f;
+        [SerializeField] private bool applyElevationNoise = true;
+        [SerializeField] private float elevationNoiseAmplitude = 0.02f;
+        [SerializeField] private float elevationNoiseScale = 0.15f;
 
         [Header("Units")]
         [SerializeField] private UnitView unitPrefab;
@@ -85,8 +103,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool generateDebugMapOnStart = true;
         [SerializeField] private int debugMapWidth = 20;
         [SerializeField] private int debugMapHeight = 20;
-        [Range(0f, 1f)] [SerializeField] private float farmSpawnRate = 0.07f;
-        [Range(0f, 1f)] [SerializeField] private float barracksSpawnRate = 0.04f;
+        [SerializeField] private int debugBuildingsPerType = 2;
+        [Range(0f, 1f)] [SerializeField] private float debugExtraBuildingSpawnRate = 0.04f;
         [SerializeField] private int randomSeed = 20260405;
 
         private readonly Dictionary<string, NodeView> _tileViews = new();
@@ -132,7 +150,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureRuntimeControllers();
+            if (autoEnsureRuntimeControllers)
+            {
+                EnsureRuntimeControllers();
+            }
             RebuildMap();
         }
 
@@ -166,6 +187,12 @@ namespace Panoptes.Presentation.Map
             {
                 cam.gameObject.AddComponent<TopDownCameraController>();
             }
+
+            if (UnityEngine.Object.FindAnyObjectByType<DebugUnitSpawnHotkey>() == null)
+            {
+                var go = new GameObject("DebugUnitSpawnHotkey");
+                go.AddComponent<DebugUnitSpawnHotkey>();
+            }
         }
 
         public void RebuildMap()
@@ -185,11 +212,23 @@ namespace Panoptes.Presentation.Map
             }
 
             Debug.Log("[MapRenderer] Backend nodes empty, falling back to static catalog.");
-            EnsureRuntimeControllers();
-            if (!TryLoadMapFromStaticCatalog())
+            if (autoEnsureRuntimeControllers)
             {
-                Debug.LogWarning("[MapRenderer] Static catalog map not available yet.");
+                EnsureRuntimeControllers();
             }
+            if (TryLoadMapFromStaticCatalog())
+            {
+                return;
+            }
+
+            if (generateDebugMapOnStart)
+            {
+                Debug.LogWarning("[MapRenderer] Static catalog unavailable, generate local debug map.");
+                BuildDebugMap();
+                return;
+            }
+
+            Debug.LogWarning("[MapRenderer] Static catalog map not available yet.");
         }
 
         private void SubscribeServerMapConfig()
@@ -343,6 +382,46 @@ namespace Panoptes.Presentation.Map
             return _unitViews.TryGetValue(unitId, out unitView) && unitView != null;
         }
 
+        public bool TrySpawnRuntimeUnit(UnitDto unit, bool replaceIfExists = false, bool updateCache = true)
+        {
+            return TrySpawnUnitInternal(unit, replaceIfExists, updateCache);
+        }
+
+        public bool RemoveRuntimeUnit(string unitId, bool updateCache = true)
+        {
+            if (string.IsNullOrEmpty(unitId))
+            {
+                return false;
+            }
+
+            if (!_unitViews.TryGetValue(unitId, out var unitView) || unitView == null)
+            {
+                return false;
+            }
+
+            if (_unitNodeById.TryGetValue(unitId, out var oldNodeId) &&
+                _unitsByNodeId.TryGetValue(oldNodeId, out var oldSet))
+            {
+                oldSet.Remove(unitId);
+            }
+
+            if (UnitCache.Instance != null)
+            {
+                UnitCache.Instance.Unregister(unitView);
+            }
+
+            Destroy(unitView.gameObject);
+            _unitViews.Remove(unitId);
+            _unitNodeById.Remove(unitId);
+
+            if (updateCache && GameStateCache.Instance != null)
+            {
+                GameStateCache.Instance.RemoveRuntimeUnit(unitId);
+            }
+
+            return true;
+        }
+
         public bool IsNodeResourcePoint(string nodeId)
         {
             return TryGetNodeState(nodeId, out var state) && state.IsResourcePoint;
@@ -474,6 +553,55 @@ namespace Panoptes.Presentation.Map
             return new Vector3(x * tileSize, 0f, y * tileSize);
         }
 
+        private Vector3 GridToWorldWithTerrain(int x, int y, string terrain)
+        {
+            if (!applyTerrainElevation)
+            {
+                return GridToWorld(x, y);
+            }
+
+            var elevation = GetTerrainElevation(terrain, x, y);
+            return new Vector3(x * tileSize, elevation, y * tileSize);
+        }
+
+        private float GetTerrainElevation(string terrain, int x, int y)
+        {
+            float value;
+            switch (NormalizeToken(terrain))
+            {
+                case "forest":
+                    value = forestElevation;
+                    break;
+                case "mountain":
+                    value = mountainElevation;
+                    break;
+                case "river":
+                case "water":
+                    value = riverElevation;
+                    break;
+                case "snow":
+                    value = snowElevation;
+                    break;
+                case "forbidden":
+                case "blocked":
+                    value = forbiddenElevation;
+                    break;
+                default:
+                    value = plainElevation;
+                    break;
+            }
+
+            if (!applyElevationNoise || elevationNoiseAmplitude <= 0.0001f)
+            {
+                return value;
+            }
+
+            var nx = (x + randomSeed * 0.137f) * Mathf.Max(0.0001f, elevationNoiseScale);
+            var ny = (y - randomSeed * 0.173f) * Mathf.Max(0.0001f, elevationNoiseScale);
+            var noise = Mathf.PerlinNoise(nx, ny) * 2f - 1f;
+            return value + noise * elevationNoiseAmplitude;
+        }
+
         private void BuildDebugMap()
         {
             _jsonUnits.Clear();
@@ -492,7 +620,6 @@ namespace Panoptes.Presentation.Map
                 {
                     var nodeId = $"N_{x}_{y}";
                     var terrain = RollTerrain(rng);
-                    var buildingType = RollBuildingType(rng, terrain);
 
                     var node = new NodeDto
                     {
@@ -500,8 +627,8 @@ namespace Panoptes.Presentation.Map
                         X = x,
                         Y = y,
                         Terrain = terrain,
-                        BuildingType = buildingType,
-                        BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : 100,
+                        BuildingType = string.Empty,
+                        BuildingHp = 0,
                         Owner = string.Empty,
                         HasRoad = false,
                         IsResourcePoint = false,
@@ -512,6 +639,7 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
+            PlaceDebugBuildings(nodes, rng);
             return nodes;
         }
 
@@ -524,25 +652,163 @@ namespace Panoptes.Presentation.Map
             return "plain";
         }
 
-        private string RollBuildingType(System.Random rng, string terrain)
+        private void PlaceDebugBuildings(List<NodeDto> nodes, System.Random rng)
         {
-            if (terrain == "river" || terrain == "mountain")
+            if (nodes == null || nodes.Count == 0)
             {
-                return string.Empty;
+                return;
             }
 
-            var roll = rng.NextDouble();
-            if (roll < farmSpawnRate)
+            var requiredTypes = new[]
             {
-                return "farm";
+                "farm",
+                "lumberyard",
+                "smelter",
+                "engineer",
+                "workshop",
+                "archery",
+                "barracks",
+                "blacksmith",
+                "tower",
+                "watchtower"
+            };
+
+            var perType = Mathf.Max(1, debugBuildingsPerType);
+            for (int i = 0; i < requiredTypes.Length; i++)
+            {
+                PlaceDebugBuildingType(nodes, rng, requiredTypes[i], perType);
             }
 
-            if (roll < farmSpawnRate + barracksSpawnRate)
+            for (int i = 0; i < nodes.Count; i++)
             {
-                return "barracks";
+                var node = nodes[i];
+                if (node == null || !string.IsNullOrEmpty(node.BuildingType))
+                {
+                    continue;
+                }
+
+                if (!IsBuildableTerrainForDebug(node.Terrain))
+                {
+                    continue;
+                }
+
+                if (rng.NextDouble() > debugExtraBuildingSpawnRate)
+                {
+                    continue;
+                }
+
+                var randomType = requiredTypes[rng.Next(requiredTypes.Length)];
+                if (CanPlaceDebugBuilding(node, randomType))
+                {
+                    ApplyDebugBuilding(node, randomType, rng);
+                }
+            }
+        }
+
+        private void PlaceDebugBuildingType(List<NodeDto> nodes, System.Random rng, string buildingType, int count)
+        {
+            if (nodes == null || nodes.Count == 0 || count <= 0)
+            {
+                return;
             }
 
-            return string.Empty;
+            var target = Mathf.Max(1, count);
+            var placed = 0;
+            var maxAttempts = Mathf.Max(nodes.Count * 4, 64);
+            var attempts = 0;
+
+            while (placed < target && attempts < maxAttempts)
+            {
+                attempts++;
+                var node = nodes[rng.Next(nodes.Count)];
+                if (!CanPlaceDebugBuilding(node, buildingType))
+                {
+                    continue;
+                }
+
+                ApplyDebugBuilding(node, buildingType, rng);
+                placed++;
+            }
+        }
+
+        private static bool CanPlaceDebugBuilding(NodeDto node, string buildingType)
+        {
+            if (node == null || string.IsNullOrEmpty(buildingType))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(node.BuildingType))
+            {
+                return false;
+            }
+
+            return IsBuildableTerrainForDebug(node.Terrain);
+        }
+
+        private static bool IsBuildableTerrainForDebug(string terrain)
+        {
+            var normalized = NormalizeToken(terrain);
+            return normalized != "river"
+                   && normalized != "water"
+                   && normalized != "forbidden"
+                   && normalized != "blocked";
+        }
+
+        private static void ApplyDebugBuilding(NodeDto node, string buildingType, System.Random rng)
+        {
+            node.BuildingType = buildingType;
+            node.BuildingHp = 100;
+
+            if (IsResourceBuilding(buildingType))
+            {
+                node.IsResourcePoint = true;
+                node.ResourceType = GetResourceTypeForBuilding(buildingType);
+            }
+            else if (!node.IsResourcePoint)
+            {
+                node.ResourceType = string.Empty;
+            }
+
+            node.Owner = GetDebugOwner(rng);
+        }
+
+        private static bool IsResourceBuilding(string buildingType)
+        {
+            switch (NormalizeToken(buildingType))
+            {
+                case "farm":
+                case "lumberyard":
+                case "smelter":
+                case "mine":
+                case "lumber":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string GetResourceTypeForBuilding(string buildingType)
+        {
+            switch (NormalizeToken(buildingType))
+            {
+                case "farm":
+                    return "food";
+                case "lumberyard":
+                case "lumber":
+                    return "wood";
+                case "smelter":
+                case "mine":
+                    return "ore";
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string GetDebugOwner(System.Random rng)
+        {
+            var owners = new[] { "blue", "red", "green", "yellow" };
+            return owners[rng.Next(owners.Length)];
         }
 
         private void BuildFromNodes(IEnumerable<NodeDto> nodes)
@@ -564,7 +830,7 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var tile = Instantiate(nodeTilePrefab, EnsureTilesRoot(), false);
-                tile.transform.localPosition = GridToWorld(node.X, node.Y);
+                tile.transform.localPosition = GridToWorldWithTerrain(node.X, node.Y, node.Terrain);
                 tile.Bind(node);
 
                 _tileViews[node.Id] = tile;
@@ -572,7 +838,10 @@ namespace Panoptes.Presentation.Map
                 _nodeStates[node.Id] = node;
             }
 
-            FocusCameraToCenter();
+            if (autoFocusCameraOnMapBuild)
+            {
+                FocusCameraToCenter();
+            }
             RebuildUnitsForCurrentSource();
         }
 
@@ -676,36 +945,69 @@ namespace Panoptes.Presentation.Map
 
             foreach (var unit in units)
             {
-                if (unit == null || string.IsNullOrEmpty(unit.Id))
+                if (unit == null)
                 {
                     continue;
                 }
 
-                var gridPos = new Vector2Int(unit.X, unit.Y);
-                if (!TryGetNodeViewByGrid(gridPos, out var nodeView) || nodeView == null)
-                {
-                    continue;
-                }
-
-                var instance = CreateUnitInstance();
-                instance.transform.SetParent(EnsureUnitsRoot(), false);
-                var worldPos = nodeView.UnitAnchor != null
-                    ? nodeView.UnitAnchor.position
-                    : nodeView.transform.position + Vector3.up * 0.2f;
-                instance.Bind(unit, worldPos);
-
-                _unitViews[unit.Id] = instance;
-                _unitNodeById[unit.Id] = nodeView.NodeId;
-
-                if (!_unitsByNodeId.TryGetValue(nodeView.NodeId, out var set))
-                {
-                    set = new HashSet<string>();
-                    _unitsByNodeId[nodeView.NodeId] = set;
-                }
-                set.Add(unit.Id);
-
-                unitCache?.Register(instance);
+                TrySpawnUnitInternal(unit, false, false, unitCache);
             }
+        }
+
+        private bool TrySpawnUnitInternal(UnitDto unit, bool replaceIfExists, bool updateCache, UnitCache unitCacheOverride = null)
+        {
+            if (unit == null || string.IsNullOrEmpty(unit.Id))
+            {
+                return false;
+            }
+
+            if (_unitViews.ContainsKey(unit.Id))
+            {
+                if (!replaceIfExists)
+                {
+                    return false;
+                }
+
+                RemoveRuntimeUnit(unit.Id, updateCache);
+            }
+
+            var gridPos = new Vector2Int(unit.X, unit.Y);
+            if (!TryGetNodeViewByGrid(gridPos, out var nodeView) || nodeView == null)
+            {
+                return false;
+            }
+
+            var instance = CreateUnitInstance();
+            instance.transform.SetParent(EnsureUnitsRoot(), false);
+            var worldPos = nodeView.UnitAnchor != null
+                ? nodeView.UnitAnchor.position
+                : nodeView.transform.position + Vector3.up * 0.2f;
+            instance.Bind(unit, worldPos);
+
+            _unitViews[unit.Id] = instance;
+            _unitNodeById[unit.Id] = nodeView.NodeId;
+
+            if (!_unitsByNodeId.TryGetValue(nodeView.NodeId, out var set))
+            {
+                set = new HashSet<string>();
+                _unitsByNodeId[nodeView.NodeId] = set;
+            }
+            set.Add(unit.Id);
+
+            var unitCache = unitCacheOverride != null ? unitCacheOverride : UnitCache.Instance;
+            if (unitCache == null)
+            {
+                var cacheGo = new GameObject("UnitCache");
+                unitCache = cacheGo.AddComponent<UnitCache>();
+            }
+            unitCache.Register(instance);
+
+            if (updateCache && GameStateCache.Instance != null)
+            {
+                GameStateCache.Instance.UpsertRuntimeUnit(unit);
+            }
+
+            return true;
         }
 
         private UnitView CreateUnitInstance()
@@ -820,12 +1122,19 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureGameplayCameraPose(cam);
+            if (autoForceGameplayCameraPoseOnMapBuild)
+            {
+                EnsureGameplayCameraPose(cam);
+            }
             var center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
             var camPos = cam.transform.position;
 
             var cameraController = cam.GetComponent<TopDownCameraController>();
-            cameraController?.SetWorldBounds(minX, maxX, minZ, maxZ);
+            if (autoApplyCameraBoundsOnMapBuild)
+            {
+                cameraController?.SetWorldBounds(minX, maxX, minZ, maxZ);
+                cameraController?.SetBoundsGroundY(plainElevation);
+            }
 
             if (cam.orthographic)
             {

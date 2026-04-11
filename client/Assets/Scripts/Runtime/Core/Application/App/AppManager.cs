@@ -37,8 +37,8 @@ namespace Panoptes.Core.Application.App
         [SerializeField] private string gameSceneName = "Game";
 
         [Header("Local Test")]
-        [SerializeField] private bool bypassLoginForLocalTest = false;
-        [SerializeField] private string localTestSceneName = "MapEditor";
+        [SerializeField] private bool bypassLoginForLocalTest = true;
+        [SerializeField] private string localTestSceneName = "Game";
         [SerializeField] private AppState localTestState = AppState.Game;
         [SerializeField] private bool logLocalTestBypass = true;
 

@@ -7,12 +7,14 @@
  *************************************************/
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -59,11 +61,21 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Camera inputCamera;
         [SerializeField] private LayerMask raycastMask = ~0;
         [SerializeField] private float raycastDistance = 200f;
+        
+        [Header("Input Gate")]
+        [SerializeField] private float modeSwitchInputBlockSeconds = 0.12f;
 
         [Header("Move")]
         [SerializeField] private int moveRange = 4;
         [SerializeField] private Color moveHighlightColor = new Color(0.35f, 1f, 0.45f, 0.9f);
         [SerializeField] private bool onlyControlOwnUnits = true;
+
+        [Header("Move Preview Ghost")]
+        [SerializeField] private bool enableMovePreviewGhost = true;
+        [SerializeField] private Color movePreviewGhostColor = new Color(0.35f, 1f, 0.45f, 0.72f);
+        [SerializeField] private float movePreviewTravelDuration = 0.22f;
+        [SerializeField] private float movePreviewArcHeight = 0.12f;
+        [SerializeField] private float movePreviewTargetYOffset = 0.02f;
 
         [Header("Build")]
         [SerializeField] private Color buildValidColor = new Color(0.35f, 1f, 0.35f, 0.92f);
@@ -77,6 +89,7 @@ namespace Panoptes.Presentation.Map
 
         private readonly HashSet<string> _highlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
+        private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
 
         private Mode _mode = Mode.None;
         private UnitView _selectedUnit;
@@ -86,6 +99,12 @@ namespace Panoptes.Presentation.Map
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
         private bool _cacheEventsSubscribed;
+        private float _ignoreInputUntilTime;
+        private readonly List<RaycastResult> _uiRaycastResults = new();
+
+        private sealed class MoveGhostTag : MonoBehaviour
+        {
+        }
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuilds;
 
@@ -115,6 +134,7 @@ namespace Panoptes.Presentation.Map
         private void OnDisable()
         {
             UnsubscribeCacheEvents();
+            ClearAllMovePreviews();
         }
 
         private void Update()
@@ -130,6 +150,11 @@ namespace Panoptes.Presentation.Map
             }
 
             if (inputCamera == null || !HasMouse())
+            {
+                return;
+            }
+            
+            if (Time.unscaledTime < _ignoreInputUntilTime)
             {
                 return;
             }
@@ -171,6 +196,7 @@ namespace Panoptes.Presentation.Map
             ExitBuildMode();
             ClearMoveSelection();
             ClearNodeHighlights();
+            BlockInputAfterModeSwitch();
         }
 
         public void ApplyBackendMoveCommand(string unitId, string targetNodeId, bool enqueue = true, bool followCamera = true)
@@ -179,6 +205,8 @@ namespace Panoptes.Presentation.Map
             {
                 return;
             }
+
+            RemoveMovePreview(unitId);
 
             if (enqueue)
             {
@@ -232,6 +260,7 @@ namespace Panoptes.Presentation.Map
             _mode = Mode.Build;
             _buildType = NormalizeToken(buildingType);
             _buildRule = rule;
+            BlockInputAfterModeSwitch();
 
             ClearMoveSelection();
             ClearNodeHighlights();
@@ -342,6 +371,17 @@ namespace Panoptes.Presentation.Map
             if (GetRightMouseButtonDown())
             {
                 ExitBuildMode();
+                return;
+            }
+            
+            if (IsPointerOverUI())
+            {
+                if (_hoverNode != null)
+                {
+                    _hoverNode.SetHighlightVisible(false);
+                }
+                _hoverNode = null;
+                DestroyHoverGhost();
                 return;
             }
 
@@ -555,6 +595,7 @@ namespace Panoptes.Presentation.Map
 
         private void SendMoveCommand(string unitId, string targetNodeId)
         {
+            CreateOrUpdateMovePreview(unitId, targetNodeId);
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
         }
@@ -719,6 +760,11 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
+            if (hit.collider.GetComponentInParent<MoveGhostTag>() != null)
+            {
+                return false;
+            }
+
             unitView = hit.collider.GetComponentInParent<UnitView>();
             return unitView != null;
         }
@@ -738,7 +784,35 @@ namespace Panoptes.Presentation.Map
 
         private bool IsPointerOverUI()
         {
-            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (EventSystem.current == null)
+            {
+                return false;
+            }
+            
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                return true;
+            }
+
+#if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null && EventSystem.current.IsPointerOverGameObject(Mouse.current.deviceId))
+            {
+                return true;
+            }
+#endif
+
+            _uiRaycastResults.Clear();
+            var eventData = new PointerEventData(EventSystem.current)
+            {
+                position = GetMousePosition()
+            };
+            EventSystem.current.RaycastAll(eventData, _uiRaycastResults);
+            return _uiRaycastResults.Count > 0;
+        }
+
+        private void BlockInputAfterModeSwitch()
+        {
+            _ignoreInputUntilTime = Time.unscaledTime + Mathf.Max(0f, modeSwitchInputBlockSeconds);
         }
 
         private bool HasMouse()
@@ -778,6 +852,213 @@ namespace Panoptes.Presentation.Map
 #else
             return Input.GetMouseButtonDown(1);
 #endif
+        }
+
+        private void CreateOrUpdateMovePreview(string unitId, string targetNodeId)
+        {
+            if (!enableMovePreviewGhost || string.IsNullOrEmpty(unitId) || string.IsNullOrEmpty(targetNodeId))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            if (!map.TryGetUnitView(unitId, out var sourceUnit) || sourceUnit == null)
+            {
+                return;
+            }
+
+            if (!map.TryGetNodeView(targetNodeId, out var targetNode) || targetNode == null)
+            {
+                return;
+            }
+
+            RemoveMovePreview(unitId);
+
+            var ghost = Instantiate(sourceUnit.gameObject);
+            ghost.name = $"MoveGhost_{unitId}";
+            ghost.transform.SetParent(map.transform, true);
+            ghost.transform.position = sourceUnit.transform.position;
+            ghost.transform.rotation = sourceUnit.transform.rotation;
+            ghost.AddComponent<MoveGhostTag>();
+
+            DisableBehavioursAndColliders(ghost);
+            ApplyGhostVisual(ghost);
+
+            _movePreviewByUnitId[unitId] = ghost;
+
+            var destination = targetNode.UnitAnchor != null
+                ? targetNode.UnitAnchor.position
+                : targetNode.transform.position + Vector3.up * 0.2f;
+            destination.y += movePreviewTargetYOffset;
+
+            StartCoroutine(AnimateMovePreview(ghost, destination));
+        }
+
+        private IEnumerator AnimateMovePreview(GameObject ghost, Vector3 destination)
+        {
+            if (ghost == null)
+            {
+                yield break;
+            }
+
+            var start = ghost.transform.position;
+            var duration = Mathf.Max(0.01f, movePreviewTravelDuration);
+            var elapsed = 0f;
+
+            while (elapsed < duration && ghost != null)
+            {
+                elapsed += Time.deltaTime;
+                var t = Mathf.Clamp01(elapsed / duration);
+                var pos = Vector3.Lerp(start, destination, t);
+                if (movePreviewArcHeight > 0.0001f)
+                {
+                    pos.y += Mathf.Sin(t * Mathf.PI) * movePreviewArcHeight;
+                }
+
+                ghost.transform.position = pos;
+                yield return null;
+            }
+
+            if (ghost != null)
+            {
+                ghost.transform.position = destination;
+            }
+        }
+
+        private void ApplyGhostVisual(GameObject ghostRoot)
+        {
+            if (ghostRoot == null)
+            {
+                return;
+            }
+
+            var renderers = ghostRoot.GetComponentsInChildren<Renderer>(true);
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+
+                var mats = renderer.sharedMaterials;
+                if (mats == null || mats.Length == 0)
+                {
+                    continue;
+                }
+
+                for (var m = 0; m < mats.Length; m++)
+                {
+                    var block = new MaterialPropertyBlock();
+                    renderer.GetPropertyBlock(block, m);
+                    block.SetColor("_BaseColor", movePreviewGhostColor);
+                    block.SetColor("_Color", movePreviewGhostColor);
+                    renderer.SetPropertyBlock(block, m);
+                }
+            }
+        }
+
+        private static void DisableBehavioursAndColliders(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var ignoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
+            if (ignoreRaycastLayer >= 0)
+            {
+                SetLayerRecursively(root.transform, ignoreRaycastLayer);
+            }
+
+            var behaviours = root.GetComponentsInChildren<MonoBehaviour>(true);
+            for (var i = 0; i < behaviours.Length; i++)
+            {
+                var behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                behaviour.enabled = false;
+            }
+
+            var animators = root.GetComponentsInChildren<Animator>(true);
+            for (var i = 0; i < animators.Length; i++)
+            {
+                var animator = animators[i];
+                if (animator != null)
+                {
+                    animator.enabled = false;
+                }
+            }
+
+            var colliders = root.GetComponentsInChildren<Collider>(true);
+            for (var i = 0; i < colliders.Length; i++)
+            {
+                var collider = colliders[i];
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
+            }
+        }
+
+        private static void SetLayerRecursively(Transform node, int layer)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            node.gameObject.layer = layer;
+            for (var i = 0; i < node.childCount; i++)
+            {
+                SetLayerRecursively(node.GetChild(i), layer);
+            }
+        }
+
+        private void RemoveMovePreview(string unitId)
+        {
+            if (string.IsNullOrEmpty(unitId))
+            {
+                return;
+            }
+
+            if (!_movePreviewByUnitId.TryGetValue(unitId, out var preview) || preview == null)
+            {
+                _movePreviewByUnitId.Remove(unitId);
+                return;
+            }
+
+            Destroy(preview);
+            _movePreviewByUnitId.Remove(unitId);
+        }
+
+        private void ClearAllMovePreviews()
+        {
+            if (_movePreviewByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _movePreviewByUnitId)
+            {
+                if (pair.Value != null)
+                {
+                    Destroy(pair.Value);
+                }
+            }
+
+            _movePreviewByUnitId.Clear();
         }
     }
 }

@@ -345,7 +345,7 @@ MonoBehaviour:
   nodeTilePrefab: {fileID: 5107247747950518977, guid: 65c27a253136f5543ad363e4d250a016, type: 3}
   tilesRoot: {fileID: 1603561843}
   tileSize: 1
-  unitPrefab: {fileID: 0}
+  unitPrefab: {fileID: 2543617744029182237, guid: c62de7012de6a204f84af87700818f13, type: 3}
   unitsRoot: {fileID: 0}
   spawnDebugUnitsWhenNoUnits: 1
   debugFactions:

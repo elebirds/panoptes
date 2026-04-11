@@ -2125,10 +2125,23 @@ MonoBehaviour:
     customBuildingType: 
     tooltipText: 
     rule: 2
+  autoGenerateBuildButtons: 1
+  buildButtonsRoot: {fileID: 12980594901124859}
+  cloneTemplateButtons: 1
+  runtimeBuildOrder:
+  - farm
+  - lumberyard
+  - smelter
+  - engineer
+  - workshop
+  - archery
+  - blacksmith
+  - tower
+  - watchtower
   cancelButton: {fileID: 0}
   tooltipView: {fileID: 4526657185174305782}
   applyConfigToButtons: 1
-  useConfigPlacementRule: 1
+  useConfigPlacementRule: 0
   preferServerPushedConfig: 1
   serverConfigKey: buildconfig
   listenServerConfigUpdates: 1

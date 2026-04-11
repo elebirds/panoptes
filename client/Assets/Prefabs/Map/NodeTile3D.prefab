@@ -395,20 +395,43 @@ MonoBehaviour:
   groundRenderer: {fileID: 5171557245648721043}
   roadOverlay: {fileID: 1084501715393880173}
   highlight: {fileID: 5053331373000196553}
+  highlightRenderer: {fileID: 7324592989746014251}
   resourceAnchor: {fileID: 1697120485641667070}
   buildingAnchor: {fileID: 7505964873251956980}
   unitAnchor: {fileID: 7253903450159226267}
-  plainMaterial: {fileID: 2100000, guid: 6a5245c39ecaefc4eb307202d173a56f, type: 2}
-  mountainMaterial: {fileID: 2100000, guid: 1281d8d480ad53c46a518201d99198e0, type: 2}
-  forestMaterial: {fileID: 2100000, guid: f9485d5a168614743a33360749626610, type: 2}
-  riverMaterial: {fileID: 2100000, guid: 4505ca735e91fa2439d0ec62d43f9121, type: 2}
+  plainMaterial: {fileID: 2100000, guid: 05b34cc807a500743b0bde3f6ef0008b, type: 2}
+  mountainMaterial: {fileID: 2100000, guid: 16f15eb689c24f549ab6104b3129b7ed, type: 2}
+  forestMaterial: {fileID: 2100000, guid: 4c17f0e5a517f6749a9f3d074d97991b, type: 2}
+  riverMaterial: {fileID: 2100000, guid: 345acf9adfebf52428a39e1bca56d064, type: 2}
+  snowMaterial: {fileID: 2100000, guid: 1a15864e9df76954896ee9052c40a2df, type: 2}
+  forbiddenMaterial: {fileID: 2100000, guid: b7bf6875babdece4e917c05bed703971, type: 2}
   resourcePointPrefab: {fileID: 6119559488442800000, guid: a53b34b039682fa4a9d4ed3ecdfd9549, type: 3}
   defaultBuildingPrefab: {fileID: 8465135733123450000, guid: 36fe37ddaca302d4d9a1fd34eebd5b1e, type: 3}
   buildingPrefabs:
   - buildingType: farm
     prefab: {fileID: 8465135733123450000, guid: 36fe37ddaca302d4d9a1fd34eebd5b1e, type: 3}
+  - buildingType: lumberyard
+    prefab: {fileID: 8465135733123450000, guid: d72d9ee662b098b49a0452d4b4bfb86b, type: 3}
+  - buildingType: smelter
+    prefab: {fileID: 8465135733123450000, guid: c68dddccf4eadcd4f969c4f10a37e8f8, type: 3}
+  - buildingType: engineer
+    prefab: {fileID: 8465135733123450000, guid: a65ceb593cd33df4da1b3672745b5bb7, type: 3}
+  - buildingType: engineer_camp
+    prefab: {fileID: 8465135733123450000, guid: a65ceb593cd33df4da1b3672745b5bb7, type: 3}
+  - buildingType: workshop
+    prefab: {fileID: 5066956172554334073, guid: 34165ad219ad413499db4162f95f1ae1, type: 3}
+  - buildingType: archery
+    prefab: {fileID: 8128368472388323613, guid: 5faf8a8eb6e14df490e0af05e724cbac, type: 3}
+  - buildingType: tower
+    prefab: {fileID: 8465135733123450000, guid: 8355141156ce37a4898e312e8573c47c, type: 3}
+  - buildingType: watchtower
+    prefab: {fileID: 8465135733123450000, guid: d70c6c18fccb02942a59aba621b4c560, type: 3}
   - buildingType: barracks
     prefab: {fileID: 7443026781934560000, guid: b3c0749b5f6a90d4d82a116d035abce7, type: 3}
+  - buildingType: blacksmith
+    prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
+  - buildingType: backsmith
+    prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
 --- !u!1 &5706546515238586262
 GameObject:
   m_ObjectHideFlags: 0

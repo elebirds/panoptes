@@ -161,16 +161,24 @@ namespace Panoptes.Presentation.Map
 
         private void ApplyOwnerTint(Color color)
         {
-            if (ownerTintRenderers == null || ownerTintRenderers.Length == 0)
+            EnsureAllRenderers();
+
+            Renderer[] renderersToTint = ownerTintRenderers;
+            if (renderersToTint == null || renderersToTint.Length == 0)
+            {
+                renderersToTint = _allRenderers;
+            }
+
+            if (renderersToTint == null || renderersToTint.Length == 0)
             {
                 return;
             }
 
             var finalColor = Color.Lerp(Color.white, color, ownerTintStrength);
 
-            for (int i = 0; i < ownerTintRenderers.Length; i++)
+            for (int i = 0; i < renderersToTint.Length; i++)
             {
-                var renderer = ownerTintRenderers[i];
+                var renderer = renderersToTint[i];
                 if (renderer == null)
                 {
                     continue;
@@ -231,7 +239,8 @@ namespace Panoptes.Presentation.Map
                         return true;
                     }
                 }
-                return false;
+                // Fallback to keyword matching when explicit indices don't match
+                // the imported model's material layout.
             }
 
             var materialName = material != null ? material.name : string.Empty;
