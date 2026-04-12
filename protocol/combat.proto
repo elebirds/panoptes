@@ -3,7 +3,6 @@ syntax = "proto3";
 package panoptes.proto.v1;
 
 import "common.proto";
-import "game_state.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
@@ -30,6 +29,13 @@ message MsgTokenVetoCombat {
 message MsgTokenMicro {
   string unit_id = 1;
   string target_node = 2;
+}
+
+message MsgCombatOrder {
+  string unit_id = 1;
+  string action = 2;
+  string target_node_id = 3;
+  string target_unit_id = 4;
 }
 
 message MsgSubmitCombat {}

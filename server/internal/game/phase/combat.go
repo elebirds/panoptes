@@ -90,6 +90,20 @@ func (p *CombatPhase) HandleMessage(room Room, playerID string, msgType string, 
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: true, Action: "micro", TokensLeft: int32(playerState.TokensLeft)})
 		return nil
 
+	case "MsgCombatOrder":
+		msg := &pb.MsgCombatOrder{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		room.SetCombatOrder(domain.CombatOrder{
+			PlayerID:     playerID,
+			UnitID:       msg.GetUnitId(),
+			Action:       domain.CombatAction(msg.GetAction()),
+			TargetNodeID: msg.GetTargetNodeId(),
+			TargetUnitID: msg.GetTargetUnitId(),
+		})
+		return nil
+
 	case "MsgSubmitCombat":
 		room.Submit(playerID)
 		p.submitted[playerID] = true

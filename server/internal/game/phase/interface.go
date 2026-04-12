@@ -17,6 +17,7 @@ type Room interface {
 	SetWarDirectives(playerID string, directives []WarZoneDirective)
 	SetVetoUnit(playerID string, unitID string)
 	SetMicroOrder(playerID string, unitID string, targetNode string)
+	SetCombatOrder(order domain.CombatOrder)
 	BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView
 	NodeByID(nodeID string) (*donburi.Entry, bool)
 }
