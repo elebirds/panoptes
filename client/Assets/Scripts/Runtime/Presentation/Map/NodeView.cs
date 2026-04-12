@@ -53,6 +53,8 @@ namespace Panoptes.Presentation.Map
         public Transform UnitAnchor => unitAnchor;
         public Transform ResourceAnchor => resourceAnchor;
         public Transform BuildingAnchor => buildingAnchor;
+        public BuildingView BuildingInstance => _buildingInstance;
+        public string BuildingType => _buildingType;
 
         private ResourcePointView _resourceInstance;
         private string _resourceType = string.Empty;

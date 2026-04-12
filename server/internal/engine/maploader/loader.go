@@ -57,7 +57,9 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 		ecs.NodeC.Get(entry).NodeName = node.NodeName
 		pos := domain.Position{X: node.X, Y: node.Y}
 		owner := resolveNodeOwner(node, pos, playerIDs, spawnOwners)
+		territoryOwner := resolveTerritoryOwner(node, pos, playerIDs, spawnOwners)
 		ecs.NodeC.Get(entry).Owner = owner
+		ecs.NodeC.Get(entry).TerritoryOwner = territoryOwner
 		ecs.NodeC.Get(entry).HasRoad = node.HasRoad
 		if node.BuildingType != "" {
 			ecs.CreateBuilding(world, node.BuildingType, owner, entry)
@@ -75,6 +77,28 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 }
 
 func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+	if node.OwnerSlot != nil {
+		slot := *node.OwnerSlot
+		if slot >= 0 && slot < len(playerIDs) {
+			return playerIDs[slot]
+		}
+	}
+	if node.Owner != "" {
+		return node.Owner
+	}
+	return spawnOwners[pos]
+}
+
+func resolveTerritoryOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+	if node.TerritoryOwnerSlot != nil {
+		slot := *node.TerritoryOwnerSlot
+		if slot >= 0 && slot < len(playerIDs) {
+			return playerIDs[slot]
+		}
+	}
+	if node.TerritoryOwner != "" {
+		return node.TerritoryOwner
+	}
 	if node.OwnerSlot != nil {
 		slot := *node.OwnerSlot
 		if slot >= 0 && slot < len(playerIDs) {

@@ -88,7 +88,7 @@ MonoBehaviour:
   idleStateName: infantry_01_idle
   moveStateName: infantry_03_run
   stateCrossFadeSeconds: 0.08
-  applyAppearanceOnBind: 1
+  applyAppearanceOnBind: 0
   bodyVariantIndex: 0
   headVariantIndex: 0
   weaponVariantIndex: -1

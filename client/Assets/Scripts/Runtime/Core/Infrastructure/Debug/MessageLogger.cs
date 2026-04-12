@@ -24,6 +24,7 @@ namespace Panoptes.DebugTools
         public event Action OnNewEntry;
 
         private const int MaxEntries = 100;
+        [SerializeField] private bool mirrorEntriesToUnityConsole = true;
         private readonly JsonParser _jsonParser =
             new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
@@ -149,10 +150,11 @@ namespace Panoptes.DebugTools
 
         private void AddEntry(string direction, string msgType, string summary)
         {
+            var timestamp = Time.time.ToString("F2");
             Entries.Add(new LogEntry
             {
                 Direction = direction,
-                Timestamp = Time.time.ToString("F2"),
+                Timestamp = timestamp,
                 MsgType = msgType,
                 Summary = summary
             });
@@ -162,7 +164,30 @@ namespace Panoptes.DebugTools
                 Entries.RemoveAt(0);
             }
 
+            MirrorToUnityConsole(direction, timestamp, msgType, summary);
             OnNewEntry?.Invoke();
+        }
+
+        private void MirrorToUnityConsole(string direction, string timestamp, string msgType, string summary)
+        {
+            if (!mirrorEntriesToUnityConsole)
+            {
+                return;
+            }
+
+            var text = $"[DebugPanel/{direction}] t={timestamp} type={msgType} summary={summary}";
+            switch (direction)
+            {
+                case "ERR":
+                    Debug.LogError(text);
+                    break;
+                case "OUT":
+                    Debug.Log(text);
+                    break;
+                default:
+                    Debug.Log(text);
+                    break;
+            }
         }
 
         private string BuildIncomingSummary(Envelope envelope)

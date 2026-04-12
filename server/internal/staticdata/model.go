@@ -171,6 +171,8 @@ type NodeOverride struct {
 	NodeName string `json:"node_name,omitempty"`
 	Owner string `json:"owner,omitempty"`
 	OwnerSlot *int `json:"owner_slot,omitempty"`
+	TerritoryOwner string `json:"territory_owner,omitempty"`
+	TerritoryOwnerSlot *int `json:"territory_owner_slot,omitempty"`
 	BuildingType string `json:"building_type,omitempty"`
 	BuildingHP int `json:"building_hp,omitempty"`
 }
@@ -244,6 +246,8 @@ type MapRuntimeNode struct {
 	NodeName string `json:"node_name,omitempty"`
 	Owner string `json:"owner,omitempty"`
 	OwnerSlot *int `json:"owner_slot,omitempty"`
+	TerritoryOwner string `json:"territory_owner,omitempty"`
+	TerritoryOwnerSlot *int `json:"territory_owner_slot,omitempty"`
 	BuildingType string `json:"building_type,omitempty"`
 	BuildingHP int `json:"building_hp,omitempty"`
 }

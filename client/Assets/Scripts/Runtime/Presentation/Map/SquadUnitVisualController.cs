@@ -383,17 +383,144 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            _variantBuffer.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
-            var resolvedIndex = Mathf.Abs(variantIndex) % _variantBuffer.Count;
+            if (!ShouldGroupByVariantFamilies(prefixes))
+            {
+                _variantBuffer.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
+                var resolvedIndex = Mathf.Abs(variantIndex) % _variantBuffer.Count;
 
+                for (var i = 0; i < _variantBuffer.Count; i++)
+                {
+                    var go = _variantBuffer[i];
+                    if (go != null)
+                    {
+                        go.SetActive(i == resolvedIndex);
+                    }
+                }
+
+                return;
+            }
+
+            // For TT_RTS customizable meshes (e.g. Body_01a...Body_01e), choose one option
+            // per body/head group instead of enabling only one mesh globally.
+            var grouped = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
             for (var i = 0; i < _variantBuffer.Count; i++)
             {
                 var go = _variantBuffer[i];
-                if (go != null)
+                if (go == null)
                 {
-                    go.SetActive(i == resolvedIndex);
+                    continue;
+                }
+
+                var groupKey = TryBuildVariantGroupKey(go.name, prefixes, out var key)
+                    ? key
+                    : NormalizeToken(go.name);
+
+                if (!grouped.TryGetValue(groupKey, out var list))
+                {
+                    list = new List<GameObject>(8);
+                    grouped[groupKey] = list;
+                }
+
+                list.Add(go);
+            }
+
+            foreach (var pair in grouped)
+            {
+                var list = pair.Value;
+                if (list == null || list.Count == 0)
+                {
+                    continue;
+                }
+
+                list.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
+                var resolvedIndex = Mathf.Abs(variantIndex) % list.Count;
+                for (var i = 0; i < list.Count; i++)
+                {
+                    var go = list[i];
+                    if (go != null)
+                    {
+                        go.SetActive(i == resolvedIndex);
+                    }
                 }
             }
+        }
+
+        private static bool ShouldGroupByVariantFamilies(string[] prefixes)
+        {
+            if (prefixes == null || prefixes.Length == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < prefixes.Length; i++)
+            {
+                var prefix = NormalizeToken(prefixes[i]);
+                if (prefix == "body_" || prefix == "head_")
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryBuildVariantGroupKey(string rawName, string[] prefixes, out string groupKey)
+        {
+            groupKey = string.Empty;
+            if (string.IsNullOrWhiteSpace(rawName) || prefixes == null || prefixes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(rawName);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < prefixes.Length; i++)
+            {
+                var prefix = NormalizeToken(prefixes[i]);
+                if (string.IsNullOrEmpty(prefix) || !normalized.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var suffix = normalized.Substring(prefix.Length);
+                if (suffix.Length < 2)
+                {
+                    groupKey = normalized;
+                    return true;
+                }
+
+                var last = suffix[suffix.Length - 1];
+                if (!char.IsLetter(last))
+                {
+                    groupKey = normalized;
+                    return true;
+                }
+
+                var hasDigitBeforeLast = false;
+                for (var s = 0; s < suffix.Length - 1; s++)
+                {
+                    if (char.IsDigit(suffix[s]))
+                    {
+                        hasDigitBeforeLast = true;
+                        break;
+                    }
+                }
+
+                if (!hasDigitBeforeLast)
+                {
+                    groupKey = normalized;
+                    return true;
+                }
+
+                groupKey = prefix + suffix.Substring(0, suffix.Length - 1);
+                return true;
+            }
+
+            return false;
         }
 
         private static bool NameStartsWithAny(string name, string[] prefixes)

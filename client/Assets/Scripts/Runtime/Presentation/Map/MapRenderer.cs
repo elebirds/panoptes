@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.UI.HUD;
 using UnityEngine;
 
 namespace Panoptes.Presentation.Map
@@ -208,6 +209,12 @@ namespace Panoptes.Presentation.Map
             {
                 var go = new GameObject("DebugUnitSpawnHotkey");
                 go.AddComponent<DebugUnitSpawnHotkey>();
+            }
+
+            if (UnityEngine.Object.FindAnyObjectByType<CastleHpBarOverlayController>() == null)
+            {
+                var go = new GameObject("CastleHpBarOverlayController");
+                go.AddComponent<CastleHpBarOverlayController>();
             }
         }
 
@@ -459,6 +466,11 @@ namespace Panoptes.Presentation.Map
             }
 
             return string.Equals(territoryOwner, NormalizeToken(ownerId), System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool IsNodeInSafeZone(string nodeId)
+        {
+            return TryGetNodeState(nodeId, out var nodeState) && nodeState.IsSafeZone;
         }
 
         public bool TryGetNodeIdByGrid(Vector2Int gridPos, out string nodeId)

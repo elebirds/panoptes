@@ -22,7 +22,7 @@ func TestLoadMapAndInitWorldFromMap(t *testing.T) {
 			{ID: "A1", X: 0, Y: 0, Terrain: "mountain"},
 			{ID: "K10", X: 10, Y: 9, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", NodeName: "龙脊"},
 		},
-		NamedNodes: map[string]string{"K10": "龙脊"},
+		NamedNodes:    map[string]string{"K10": "龙脊"},
 		CentralPoints: []string{"K10"},
 	})
 
@@ -94,14 +94,14 @@ func TestInitWorldFromMapCreatesPrebuiltStructures(t *testing.T) {
 		Height: 4,
 		Nodes: []staticdata.MapRuntimeNode{
 			{
-				ID:          "B2",
-				X:           1,
-				Y:           1,
-				Terrain:     "plain",
-				HasRoad:     true,
-				Owner:       "green",
+				ID:           "B2",
+				X:            1,
+				Y:            1,
+				Terrain:      "plain",
+				HasRoad:      true,
+				Owner:        "green",
 				BuildingType: "barracks",
-				BuildingHP:  90,
+				BuildingHP:   90,
 			},
 		},
 		NamedNodes: map[string]string{},
@@ -163,10 +163,50 @@ func TestInitWorldFromMapResolvesOwnerSlotToPlayerID(t *testing.T) {
 	if node.Owner != "player-2" {
 		t.Fatalf("resolved owner = %q", node.Owner)
 	}
+	if node.TerritoryOwner != "player-2" {
+		t.Fatalf("resolved territory owner = %q", node.TerritoryOwner)
+	}
 
 	building := ecs.BuildingC.Get(entry)
 	if building.Owner != "player-2" || building.HP != 80 || building.MaxHP != 80 {
 		t.Fatalf("building = %#v", building)
+	}
+}
+
+func TestInitWorldFromMapResolvesTerritoryOwnerSlotToPlayerID(t *testing.T) {
+	world := donburi.NewWorld()
+	mapFile := &staticdata.MapRuntimeBundle{
+		ID:     "legacy",
+		Width:  4,
+		Height: 4,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 0, Y: 0},
+			{Slot: 1, X: 2, Y: 2},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{
+				ID:                 "D4",
+				X:                  3,
+				Y:                  3,
+				Terrain:            "plain",
+				Owner:              "yellow",
+				OwnerSlot:          intPtr(1),
+				TerritoryOwner:     "green",
+				TerritoryOwnerSlot: intPtr(0),
+			},
+		},
+		NamedNodes: map[string]string{},
+	}
+
+	mapData := InitWorldFromMap(world, mapFile, []string{"player-1", "player-2"})
+	entry := world.Entry(mapData.NodeIndex["D4"])
+	node := ecs.NodeC.Get(entry)
+
+	if node.Owner != "player-2" {
+		t.Fatalf("resolved owner = %q", node.Owner)
+	}
+	if node.TerritoryOwner != "player-1" {
+		t.Fatalf("resolved territory owner = %q", node.TerritoryOwner)
 	}
 }
 
