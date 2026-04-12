@@ -44,12 +44,7 @@ func NewDomesticPipeline() *Pipeline {
 
 func NewCombatPipeline() *Pipeline {
 	return NewPipeline(
-		&combat.MovementSystem{},
-		&combat.ConflictSystem{},
-		&combat.BattleSystem{},
-		&combat.SiegeSystem{},
-		&combat.RangedSystem{},
-		&combat.DestroySystem{},
+		combat.NewSingleStepResolver(),
 		&combat.CombatUpkeepSystem{},
 	)
 }

@@ -37,17 +37,26 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		panic(fmt.Sprintf("unknown unit type: %s", unitType))
 	}
 
-	entity := world.Create(PositionC, UnitStatsC)
+	entity := world.Create(PositionC, UnitStatsC, UnitCapabilitiesC)
 	entry := world.Entry(entity)
 	PositionC.SetValue(entry, PositionComp{X: pos.X, Y: pos.Y})
 	UnitStatsC.SetValue(entry, UnitStatsComp{
-		ID:      uuid.NewString(),
-		Faction: faction,
-		Type:    domain.UnitType(unitType),
-		HP:      cfg.MaxHP,
-		MaxHP:   cfg.MaxHP,
-		Attack:  cfg.Attack,
-		Speed:   cfg.MoveRange,
+		ID:          uuid.NewString(),
+		Faction:     faction,
+		Type:        domain.UnitType(unitType),
+		HP:          cfg.MaxHP,
+		MaxHP:       cfg.MaxHP,
+		Attack:      cfg.Attack,
+		AttackRange: cfg.AttackRange,
+		Speed:       cfg.MoveRange,
+	})
+	UnitCapabilitiesC.SetValue(entry, UnitCapabilitiesComp{
+		Civilian:    cfg.Class == "civilian",
+		Melee:       cfg.Class != "civilian" && cfg.AttackRange <= 1,
+		Ranged:      cfg.AttackRange > 1,
+		Charge:      cfg.ChargeBonus > 0,
+		Siege:       cfg.Flags.CanSiege,
+		DestroyRoad: cfg.Flags.CanDestroyRoad,
 	})
 
 	if cfg.Flags.CanSiege {
@@ -62,7 +71,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		entry.AddComponent(RangedAbilityC)
 		RangedAbilityC.SetValue(entry, RangedAbilityComp{Range: cfg.AttackRange})
 	}
-	if unitType == string(domain.UnitTypeCavalry) {
+	if cfg.ChargeBonus > 0 {
 		entry.AddComponent(ChargeAbilityC)
 		ChargeAbilityC.SetValue(entry, ChargeAbilityComp{BonusMultiplier: cfg.ChargeBonus})
 	}

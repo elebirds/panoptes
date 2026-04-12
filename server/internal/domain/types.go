@@ -17,9 +17,11 @@ const (
 type UnitType string
 
 const (
-	UnitTypeInfantry UnitType = "infantry"
+	UnitTypeSettler  UnitType = "settler"
+	UnitTypeWarrior  UnitType = "warrior"
 	UnitTypeArcher   UnitType = "archer"
 	UnitTypeCavalry  UnitType = "cavalry"
+	UnitTypeInfantry UnitType = "infantry"
 	UnitTypeSiege    UnitType = "siege"
 	UnitTypeSaboteur UnitType = "saboteur"
 )
