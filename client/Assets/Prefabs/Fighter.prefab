@@ -49,6 +49,17 @@ MonoBehaviour:
   tintRenderers: []
   selectedRing: {fileID: 0}
   factionTintStrength: 0.35
+  autoCollectTintRenderers: 1
+  tintKeyRenderersOnly: 1
+  autoTintRendererLimit: 8
+  tintRendererNameKeywords:
+  - body
+  - head
+  - weapon
+  - shield
+  - helmet
+  - cape
+  - cloak
   animator: {fileID: 0}
   visualRoot: {fileID: 1891556011690125795}
   squadVisualController: {fileID: 1068862902278019449}
@@ -73,15 +84,15 @@ MonoBehaviour:
   members: []
   movingBoolParam: isMoving
   speedFloatParam: moveSpeed
-  useStateFallbackWhenNoParams: 0
-  idleStateName: Idle
-  moveStateName: Run
+  useStateFallbackWhenNoParams: 1
+  idleStateName: infantry_01_idle
+  moveStateName: infantry_03_run
   stateCrossFadeSeconds: 0.08
-  applyAppearanceOnBind: 0
-  bodyVariantIndex: -1
-  headVariantIndex: -1
+  applyAppearanceOnBind: 1
+  bodyVariantIndex: 0
+  headVariantIndex: 0
   weaponVariantIndex: -1
-  randomizeVariantPerMember: 0
+  randomizeVariantPerMember: 1
   bodyNamePrefixes:
   - body_
   headNamePrefixes:
@@ -97,6 +108,65 @@ MonoBehaviour:
   - staff_
   - hammer_
   - shield_
+  applyRoleVariantOnBind: 1
+  unarmedAnimatorController: {fileID: 9100000, guid: fe48054f229548f6a8c0bee9adaa221e, type: 2}
+  swordAnimatorController: {fileID: 9100000, guid: 479260ab31514dfdbe5aa6024fb0296c, type: 2}
+  bowAnimatorController: {fileID: 9100000, guid: d60abd852ed940f491677180577b06a1, type: 2}
+  unarmedIdleState: infantry_01_idle
+  unarmedMoveState: infantry_03_run
+  swordIdleState: twohanded_01_idle
+  swordMoveState: twohanded_03_run
+  bowIdleState: archer_01_idle
+  bowMoveState: archer_03_run
+  unarmedUnitTypeAliases:
+  - unarmed
+  - infantry
+  - fighter_basic
+  - fighter
+  - militia
+  swordUnitTypeAliases:
+  - sword
+  - swordsman
+  - melee
+  - fighter_sword
+  bowUnitTypeAliases:
+  - bow
+  - archer
+  - ranged
+  - fighter_bow
+  enforceSingleWeaponVisual: 1
+  weaponObjectPrefixes:
+  - weapon_
+  - w_
+  - sword_
+  - bow_
+  - crossbow_
+  - spear_
+  - halberd_
+  - staff_
+  - hammer_
+  - shield_
+  - l_sword_
+  swordWeaponNameKeywords:
+  - sword
+  - sabre
+  - katana
+  - dagger
+  - axe
+  - mace
+  - maul
+  - hammer
+  - club
+  - staff
+  - halberd
+  - spear
+  - shield
+  bowWeaponNameKeywords:
+  - bow
+  - crossbow
+  - recurve
+  - long_bow
+  - short_bow
 --- !u!1 &8500603318785294919
 GameObject:
   m_ObjectHideFlags: 0

@@ -92,6 +92,7 @@ namespace Panoptes.Core.Application.Cache
             public string resource_type;
             public string node_name;
             public string owner;
+            public string territory_owner;
             public string building_type;
             public int building_hp;
         }

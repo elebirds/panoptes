@@ -6,8 +6,11 @@
  * Description: Runtime unit visual + movement.
  *************************************************/
 
+using System;
+using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 
@@ -19,6 +22,24 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Renderer[] tintRenderers;
         [SerializeField] private GameObject selectedRing;
         [Range(0f, 1f)] [SerializeField] private float factionTintStrength = 0.35f;
+        [SerializeField] private bool autoCollectTintRenderers = true;
+        [SerializeField] private bool tintKeyRenderersOnly = true;
+        [SerializeField] private int autoTintRendererLimit = 8;
+        [SerializeField] private string[] tintRendererNameKeywords =
+        {
+            "body",
+            "head",
+            "weapon",
+            "shield",
+            "helmet",
+            "cape",
+            "cloak"
+        };
+
+        [Header("Render Budget")]
+        [SerializeField] private bool disableCastShadows = true;
+        [SerializeField] private bool disableReceiveShadows = true;
+        [SerializeField] private bool disableSkinnedUpdateWhenOffscreen = true;
         
         [Header("Animation")]
         [SerializeField] private Animator animator;
@@ -37,14 +58,15 @@ namespace Panoptes.Presentation.Map
         public int HitPoints { get; private set; }
         public int MaxHitPoints { get; private set; }
         public Vector2Int GridPos { get; private set; }
+        public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
         private int _movingBoolHash;
         private int _speedFloatHash;
 
         private void Awake()
         {
-            if (tintRenderers == null || tintRenderers.Length == 0)
+            if ((tintRenderers == null || tintRenderers.Length == 0) && autoCollectTintRenderers)
             {
-                tintRenderers = GetComponentsInChildren<Renderer>(true);
+                tintRenderers = CollectAutoTintRenderers();
             }
             
             if (animator == null)
@@ -66,6 +88,8 @@ namespace Panoptes.Presentation.Map
             {
                 squadVisualController.RefreshMembers();
             }
+
+            ApplyRenderBudget();
 
             _movingBoolHash = string.IsNullOrWhiteSpace(movingBoolParam) ? 0 : Animator.StringToHash(movingBoolParam);
             _speedFloatHash = string.IsNullOrWhiteSpace(speedFloatParam) ? 0 : Animator.StringToHash(speedFloatParam);
@@ -212,6 +236,128 @@ namespace Panoptes.Presentation.Map
                     renderer.SetPropertyBlock(block, i);
                 }
             }
+        }
+
+        private void ApplyRenderBudget()
+        {
+            var renderers = GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (disableCastShadows)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                }
+
+                if (disableReceiveShadows)
+                {
+                    renderer.receiveShadows = false;
+                }
+
+                if (!disableSkinnedUpdateWhenOffscreen)
+                {
+                    continue;
+                }
+
+                if (renderer is SkinnedMeshRenderer skinned)
+                {
+                    skinned.updateWhenOffscreen = false;
+                }
+            }
+        }
+
+        private Renderer[] CollectAutoTintRenderers()
+        {
+            var all = GetComponentsInChildren<Renderer>(true);
+            if (all == null || all.Length == 0)
+            {
+                return Array.Empty<Renderer>();
+            }
+
+            if (!tintKeyRenderersOnly)
+            {
+                return all;
+            }
+
+            var selected = new List<Renderer>(Mathf.Clamp(autoTintRendererLimit, 1, 64));
+            var visited = new HashSet<int>();
+            var limit = Mathf.Max(1, autoTintRendererLimit);
+
+            for (var i = 0; i < all.Length; i++)
+            {
+                var renderer = all[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (!visited.Add(renderer.GetInstanceID()))
+                {
+                    continue;
+                }
+
+                if (!IsKeyTintRenderer(renderer))
+                {
+                    continue;
+                }
+
+                selected.Add(renderer);
+                if (selected.Count >= limit)
+                {
+                    break;
+                }
+            }
+
+            if (selected.Count > 0)
+            {
+                return selected.ToArray();
+            }
+
+            // Fallback: keep at least one renderer tinted if no keyword matched.
+            selected.Add(all[0]);
+            return selected.ToArray();
+        }
+
+        private bool IsKeyTintRenderer(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return false;
+            }
+
+            if (tintRendererNameKeywords == null || tintRendererNameKeywords.Length == 0)
+            {
+                return true;
+            }
+
+            var rendererName = renderer.name ?? string.Empty;
+            var objectName = renderer.gameObject != null ? renderer.gameObject.name : string.Empty;
+            for (var i = 0; i < tintRendererNameKeywords.Length; i++)
+            {
+                var key = tintRendererNameKeywords[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (rendererName.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    objectName.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Color ResolveFactionColor(string faction)

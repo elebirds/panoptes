@@ -314,11 +314,12 @@ namespace Panoptes.Presentation.Map
 
         private BuildingView GetBuildingPrefab(string buildingType)
         {
+            var lookupKey = NormalizeBuildingTypeKey(buildingType);
             if (buildingPrefabs != null)
             {
                 for (int i = 0; i < buildingPrefabs.Length; i++)
                 {
-                    if (NormalizeToken(buildingPrefabs[i].buildingType) == buildingType)
+                    if (NormalizeBuildingTypeKey(buildingPrefabs[i].buildingType) == lookupKey)
                     {
                         return buildingPrefabs[i].prefab;
                     }
@@ -330,7 +331,25 @@ namespace Panoptes.Presentation.Map
 
         public BuildingView ResolveBuildingPrefab(string buildingType)
         {
-            return GetBuildingPrefab(NormalizeToken(buildingType));
+            return GetBuildingPrefab(NormalizeBuildingTypeKey(buildingType));
+        }
+
+        private static string NormalizeBuildingTypeKey(string value)
+        {
+            var token = NormalizeToken(value);
+            switch (token)
+            {
+                case "atktower":
+                    return "tower";
+                case "viewtower":
+                    return "watchtower";
+                case "lumber":
+                    return "lumberyard";
+                case "engineer_camp":
+                    return "engineer";
+                default:
+                    return token;
+            }
         }
 
         private static string NormalizeToken(string value)

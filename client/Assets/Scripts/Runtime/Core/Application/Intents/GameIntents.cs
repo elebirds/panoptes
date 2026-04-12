@@ -27,6 +27,8 @@ namespace Panoptes.Core.Application.Intents
         private static GameStateCache _cache;
         private static LockSource _lockSource = LockSource.None;
 
+        public static event Action DomesticSubmitRequested;
+
         public static void Initialize(GameStateCache cache)
         {
             if (cache == null)
@@ -160,6 +162,7 @@ namespace Panoptes.Core.Application.Intents
             _lockSource = LockSource.Domestic;
             MessageSender.Send(new MsgSubmitDomestic());
             Debug.Log("[GameIntents] SubmitDomestic");
+            DomesticSubmitRequested?.Invoke();
         }
 
         public static void SetWarZone(List<string> nodeIds)

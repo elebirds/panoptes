@@ -9,6 +9,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Panoptes.Presentation.Map
 {
@@ -53,7 +54,34 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string[] headNamePrefixes = { "head_" };
         [SerializeField] private string[] weaponNamePrefixes = { "weapon_", "w_", "sword_", "bow_", "crossbow_", "spear_", "halberd_", "staff_", "hammer_", "shield_" };
 
+        [Header("Unit Role Variant")]
+        [SerializeField] private bool applyRoleVariantOnBind = true;
+        [SerializeField] private RuntimeAnimatorController unarmedAnimatorController;
+        [SerializeField] private RuntimeAnimatorController swordAnimatorController;
+        [SerializeField] private RuntimeAnimatorController bowAnimatorController;
+        [SerializeField] private string unarmedIdleState = "infantry_01_idle";
+        [SerializeField] private string unarmedMoveState = "infantry_03_run";
+        [SerializeField] private string swordIdleState = "twohanded_01_idle";
+        [SerializeField] private string swordMoveState = "twohanded_03_run";
+        [SerializeField] private string bowIdleState = "archer_01_idle";
+        [SerializeField] private string bowMoveState = "archer_03_run";
+        [SerializeField] private string[] unarmedUnitTypeAliases = { "unarmed", "infantry", "fighter_basic", "fighter", "militia" };
+        [SerializeField] private string[] swordUnitTypeAliases = { "sword", "swordsman", "melee", "fighter_sword" };
+        [SerializeField] private string[] bowUnitTypeAliases = { "bow", "archer", "ranged", "fighter_bow" };
+        [SerializeField] private bool enforceSingleWeaponVisual = true;
+        [SerializeField] private string[] weaponObjectPrefixes = { "weapon_", "w_", "sword_", "bow_", "crossbow_", "spear_", "halberd_", "staff_", "hammer_", "shield_", "l_sword_" };
+        [SerializeField] private string[] swordWeaponNameKeywords = { "sword", "sabre", "katana", "dagger", "axe", "mace", "maul", "hammer", "club", "staff", "halberd", "spear", "shield" };
+        [SerializeField] private string[] bowWeaponNameKeywords = { "bow", "crossbow", "recurve", "long_bow", "short_bow" };
+
+        [Header("Render Budget")]
+        [SerializeField] private bool applyRenderBudgetOnBind = false;
+        [SerializeField] private int maxVisibleRenderersPerMember = 6;
+        [SerializeField] private bool disableCastShadows = true;
+        [SerializeField] private bool disableReceiveShadows = true;
+        [SerializeField] private string[] rendererPriorityKeywords = { "body", "head", "weapon", "shield", "helmet", "cape", "cloak" };
+
         private readonly List<GameObject> _variantBuffer = new();
+        private readonly List<GameObject> _weaponBuffer = new();
 
         public bool HasAnimators
         {
@@ -141,13 +169,21 @@ namespace Panoptes.Presentation.Map
 
         public void OnUnitBound(string unitId, string unitType, string faction)
         {
-            if (!applyAppearanceOnBind)
+            var seed = string.Concat(unitId ?? string.Empty, "|", unitType ?? string.Empty, "|", faction ?? string.Empty);
+            if (applyAppearanceOnBind)
             {
-                return;
+                ApplyAppearance(seed);
             }
 
-            var seed = string.Concat(unitId ?? string.Empty, "|", unitType ?? string.Empty, "|", faction ?? string.Empty);
-            ApplyAppearance(seed);
+            if (applyRoleVariantOnBind)
+            {
+                ApplyRoleVariant(ResolveRoleVariant(unitType));
+            }
+
+            if (applyRenderBudgetOnBind)
+            {
+                ApplyRenderBudget();
+            }
         }
 
         public void ApplyAppearance(string seed)
@@ -281,6 +317,21 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                var hasController = member.animator.runtimeAnimatorController != null;
+                if (!hasController)
+                {
+                    member.moveBoolHash = moveBoolHash;
+                    member.moveSpeedHash = speedHash;
+                    member.hasMoveBoolParam = false;
+                    member.hasMoveSpeedParam = false;
+                    member.idleStateHash = idleHash;
+                    member.moveStateHash = moveHash;
+                    member.hasIdleState = false;
+                    member.hasMoveState = false;
+                    member.isMoveStatePlaying = false;
+                    continue;
+                }
+
                 member.moveBoolHash = moveBoolHash;
                 member.moveSpeedHash = speedHash;
                 member.hasMoveBoolParam = moveBoolHash != 0
@@ -371,7 +422,7 @@ namespace Panoptes.Presentation.Map
 
         private static bool HasAnimatorParameter(Animator animator, int hash, AnimatorControllerParameterType type)
         {
-            if (animator == null || animator.parameters == null)
+            if (animator == null || animator.runtimeAnimatorController == null || animator.parameters == null)
             {
                 return false;
             }
@@ -388,6 +439,308 @@ namespace Panoptes.Presentation.Map
             return false;
         }
 
+        private enum UnitRoleVariant
+        {
+            Unarmed = 0,
+            Sword = 1,
+            Bow = 2
+        }
+
+        private UnitRoleVariant ResolveRoleVariant(string unitType)
+        {
+            if (MatchesAlias(unitType, bowUnitTypeAliases))
+            {
+                return UnitRoleVariant.Bow;
+            }
+
+            if (MatchesAlias(unitType, swordUnitTypeAliases))
+            {
+                return UnitRoleVariant.Sword;
+            }
+
+            if (MatchesAlias(unitType, unarmedUnitTypeAliases))
+            {
+                return UnitRoleVariant.Unarmed;
+            }
+
+            return UnitRoleVariant.Unarmed;
+        }
+
+        private static bool MatchesAlias(string unitType, string[] aliases)
+        {
+            if (aliases == null || aliases.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(unitType);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < aliases.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(aliases[i]), StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ApplyRoleVariant(UnitRoleVariant variant)
+        {
+            RuntimeAnimatorController controller;
+            string idleState;
+            string moveState;
+
+            switch (variant)
+            {
+                case UnitRoleVariant.Bow:
+                    controller = bowAnimatorController;
+                    idleState = bowIdleState;
+                    moveState = bowMoveState;
+                    break;
+                case UnitRoleVariant.Sword:
+                    controller = swordAnimatorController;
+                    idleState = swordIdleState;
+                    moveState = swordMoveState;
+                    break;
+                default:
+                    controller = unarmedAnimatorController;
+                    idleState = unarmedIdleState;
+                    moveState = unarmedMoveState;
+                    break;
+            }
+
+            ApplyAnimatorController(controller, idleState, moveState);
+            ApplyWeaponVisualByRole(variant);
+        }
+
+        private void ApplyAnimatorController(RuntimeAnimatorController controller, string idleState, string moveState)
+        {
+            var changedController = false;
+
+            if (members != null)
+            {
+                for (var i = 0; i < members.Length; i++)
+                {
+                    var member = members[i];
+                    if (member == null || member.animator == null)
+                    {
+                        continue;
+                    }
+
+                    if (controller != null && member.animator.runtimeAnimatorController != controller)
+                    {
+                        member.animator.runtimeAnimatorController = controller;
+                        member.animator.Rebind();
+                        member.animator.Update(0f);
+                        changedController = true;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(idleState))
+            {
+                idleStateName = idleState;
+            }
+
+            if (!string.IsNullOrWhiteSpace(moveState))
+            {
+                moveStateName = moveState;
+            }
+
+            if (changedController)
+            {
+                BindAnimators();
+            }
+            else
+            {
+                // Ensure hashes/states are refreshed if only state names changed.
+                BindAnimators();
+            }
+        }
+
+        private void ApplyWeaponVisualByRole(UnitRoleVariant variant)
+        {
+            if (members == null || members.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.root == null)
+                {
+                    continue;
+                }
+
+                ApplyWeaponVisualForMember(member.root, variant);
+            }
+        }
+
+        private void ApplyWeaponVisualForMember(Transform memberRoot, UnitRoleVariant variant)
+        {
+            _weaponBuffer.Clear();
+            CollectWeaponObjects(memberRoot, _weaponBuffer);
+            if (_weaponBuffer.Count == 0)
+            {
+                return;
+            }
+
+            GameObject selectedWeapon = null;
+            if (variant == UnitRoleVariant.Sword)
+            {
+                selectedWeapon = SelectWeaponByKeywords(_weaponBuffer, swordWeaponNameKeywords, null);
+                if (selectedWeapon == null)
+                {
+                    selectedWeapon = SelectWeaponByKeywords(_weaponBuffer, null, bowWeaponNameKeywords);
+                }
+            }
+            else if (variant == UnitRoleVariant.Bow)
+            {
+                selectedWeapon = SelectWeaponByKeywords(_weaponBuffer, bowWeaponNameKeywords, null);
+            }
+
+            for (var i = 0; i < _weaponBuffer.Count; i++)
+            {
+                var go = _weaponBuffer[i];
+                if (go == null)
+                {
+                    continue;
+                }
+
+                var shouldEnable = selectedWeapon != null && ReferenceEquals(go, selectedWeapon);
+                if (!enforceSingleWeaponVisual)
+                {
+                    shouldEnable = variant == UnitRoleVariant.Unarmed
+                        ? false
+                        : ShouldEnableByRoleLoose(go.name, variant);
+                }
+
+                if (go.activeSelf != shouldEnable)
+                {
+                    go.SetActive(shouldEnable);
+                }
+            }
+        }
+
+        private static bool ShouldEnableByRoleLoose(string objectName, UnitRoleVariant variant)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(objectName);
+            if (variant == UnitRoleVariant.Bow)
+            {
+                return normalized.Contains("bow") || normalized.Contains("crossbow");
+            }
+
+            if (variant == UnitRoleVariant.Sword)
+            {
+                return !normalized.Contains("bow") && !normalized.Contains("crossbow");
+            }
+
+            return false;
+        }
+
+        private void CollectWeaponObjects(Transform root, List<GameObject> result)
+        {
+            if (root == null || result == null)
+            {
+                return;
+            }
+
+            var visited = new HashSet<int>();
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                var t = transforms[i];
+                if (t == null || t == root)
+                {
+                    continue;
+                }
+
+                var go = t.gameObject;
+                if (go == null || !visited.Add(go.GetInstanceID()))
+                {
+                    continue;
+                }
+
+                if (!NameStartsWithAny(go.name, weaponObjectPrefixes))
+                {
+                    continue;
+                }
+
+                result.Add(go);
+            }
+        }
+
+        private static GameObject SelectWeaponByKeywords(List<GameObject> candidates, string[] includeKeywords, string[] excludeKeywords)
+        {
+            if (candidates == null || candidates.Count == 0)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < candidates.Count; i++)
+            {
+                var go = candidates[i];
+                if (go == null)
+                {
+                    continue;
+                }
+
+                var normalized = NormalizeToken(go.name);
+                if (HasAnyKeyword(normalized, excludeKeywords))
+                {
+                    continue;
+                }
+
+                if (includeKeywords == null || includeKeywords.Length == 0 || HasAnyKeyword(normalized, includeKeywords))
+                {
+                    return go;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasAnyKeyword(string text, string[] keywords)
+        {
+            if (string.IsNullOrEmpty(text) || keywords == null || keywords.Length == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < keywords.Length; i++)
+            {
+                var key = NormalizeToken(keywords[i]);
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
+                if (text.Contains(key))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string NormalizeToken(string value)
+        {
+            return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
         private static uint StableHash(string value)
         {
             unchecked
@@ -402,6 +755,126 @@ namespace Panoptes.Presentation.Map
                 }
                 return hash;
             }
+        }
+
+        private void ApplyRenderBudget()
+        {
+            if (members == null || members.Length == 0)
+            {
+                return;
+            }
+
+            var cap = Mathf.Max(1, maxVisibleRenderersPerMember);
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.root == null)
+                {
+                    continue;
+                }
+
+                ApplyMemberRenderBudget(member.root, cap);
+            }
+        }
+
+        private void ApplyMemberRenderBudget(Transform memberRoot, int rendererCap)
+        {
+            var renderers = memberRoot.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return;
+            }
+
+            var scored = new List<(Renderer renderer, int score)>(renderers.Length);
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (renderer.gameObject == null || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                var score = CalculateRendererScore(renderer);
+                scored.Add((renderer, score));
+            }
+
+            scored.Sort((a, b) => b.score.CompareTo(a.score));
+            var keepSet = new HashSet<int>();
+            for (var i = 0; i < scored.Count && i < rendererCap; i++)
+            {
+                var renderer = scored[i].renderer;
+                if (renderer != null)
+                {
+                    keepSet.Add(renderer.GetInstanceID());
+                }
+            }
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var keep = keepSet.Contains(renderer.GetInstanceID());
+                renderer.enabled = keep;
+
+                if (!keep)
+                {
+                    continue;
+                }
+
+                if (disableCastShadows)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                }
+
+                if (disableReceiveShadows)
+                {
+                    renderer.receiveShadows = false;
+                }
+            }
+        }
+
+        private int CalculateRendererScore(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return int.MinValue;
+            }
+
+            var score = 0;
+            var normalizedName = NormalizeToken(renderer.name);
+            var goName = renderer.gameObject != null ? NormalizeToken(renderer.gameObject.name) : string.Empty;
+            if (rendererPriorityKeywords != null)
+            {
+                for (var i = 0; i < rendererPriorityKeywords.Length; i++)
+                {
+                    var key = NormalizeToken(rendererPriorityKeywords[i]);
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        continue;
+                    }
+
+                    if (normalizedName.Contains(key) || goName.Contains(key))
+                    {
+                        score += 100 - i;
+                    }
+                }
+            }
+
+            if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
+            {
+                score += Mathf.Clamp(skinned.sharedMesh.vertexCount / 500, 0, 120);
+            }
+
+            return score;
         }
     }
 }
