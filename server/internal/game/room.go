@@ -123,28 +123,31 @@ func (r *GameRoom) runLoop() {
 		}
 
 		r.currentPhase = &gamephase.DomesticPhase{}
-		r.Phase = "domestic"
-		r.state.Phase = "domestic"
+		r.setPhase(domain.PhaseDomesticPlanning)
 		r.currentPhase.Enter(r)
 		r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
+		r.setPhase(domain.PhaseDomesticResolving)
 		RunDomesticSettlement(r)
 		if r.state.IsOver {
 			break
 		}
 
 		r.currentPhase = &gamephase.CombatPhase{}
-		r.Phase = "combat"
-		r.state.Phase = "combat"
+		r.setPhase(domain.PhaseCombatPlanning)
 		r.currentPhase.Enter(r)
 		r.waitAllSubmit(time.Duration(combatTimeoutSec) * time.Second)
+		r.setPhase(domain.PhaseCombatResolving)
 		RunCombatSettlement(r)
+		if r.state.IsOver {
+			break
+		}
 
-		r.state.Turn++
-		r.Turn = r.state.Turn
-		if rules.MaxTurns > 0 && r.state.Turn > rules.MaxTurns {
+		if rules.MaxTurns > 0 && r.state.Turn >= rules.MaxTurns {
 			r.handleDraw()
 			break
 		}
+		r.state.Turn++
+		r.Turn = r.state.Turn
 	}
 }
 
@@ -181,16 +184,36 @@ func (r *GameRoom) submitCombat(playerID string) {
 }
 
 func (r *GameRoom) OnHumanSubmitDomestic(playerID string) {
-	r.submitDomestic(playerID)
+	if err := r.OnHumanSubmitDomesticChecked(playerID); err != nil {
+		slog.Warn("忽略非内政阶段提交", "room_id", r.ID, "player_id", playerID, "phase", r.Phase, "error", err)
+	}
 }
 
 func (r *GameRoom) OnHumanSubmitCombat(playerID string) {
+	if err := r.OnHumanSubmitCombatChecked(playerID); err != nil {
+		slog.Warn("忽略非战斗阶段提交", "room_id", r.ID, "player_id", playerID, "phase", r.Phase, "error", err)
+	}
+}
+
+func (r *GameRoom) OnHumanSubmitDomesticChecked(playerID string) error {
+	if !r.isPhase(domain.PhaseDomesticPlanning) {
+		return ErrPhaseMismatch
+	}
+	r.submitDomestic(playerID)
+	return nil
+}
+
+func (r *GameRoom) OnHumanSubmitCombatChecked(playerID string) error {
+	if !r.isPhase(domain.PhaseCombatPlanning) {
+		return ErrPhaseMismatch
+	}
 	r.submitCombat(playerID)
+	return nil
 }
 
 func (r *GameRoom) OnHumanMessage(playerID, msgType string, payload []byte) error {
-	if r.currentPhase == nil {
-		return fmt.Errorf("phase not initialized")
+	if r.currentPhase == nil || !r.isMessageAllowed(msgType) {
+		return ErrPhaseMismatch
 	}
 	return r.currentPhase.HandleMessage(r, playerID, msgType, payload)
 }
@@ -283,14 +306,23 @@ func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
 }
 
 func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
-	if phase == "combat" {
+	if phase == domain.PhaseCombatResolving.String() {
 		combatEvents := make([]*pb.CombatEvent, 0, len(events))
 		for _, e := range events {
 			if payload := e.ClientPayload(); payload != nil {
 				combatEvents = append(combatEvents, payload)
 			}
 		}
-		r.Broadcast(&pb.MsgCombatSettlement{Events: combatEvents})
+		nextPhase := domain.PhaseDomesticPlanning.String()
+		if r.shouldStopAfterCombatSettlement() {
+			nextPhase = ""
+		}
+		r.Broadcast(&pb.MsgCombatSettlement{
+			Events:    combatEvents,
+			Turn:      int32(r.state.Turn),
+			Phase:     phase,
+			NextPhase: nextPhase,
+		})
 		return
 	}
 
@@ -309,12 +341,64 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 			continue
 		}
 		playerState := r.state.Players[player.PlayerID()]
-		msg := &pb.MsgDomesticSettlement{Changes: changes}
+		nextPhase := domain.PhaseCombatPlanning.String()
+		if r.state.IsOver {
+			nextPhase = ""
+		}
+		msg := &pb.MsgDomesticSettlement{
+			Changes:   changes,
+			Turn:      int32(r.state.Turn),
+			Phase:     phase,
+			NextPhase: nextPhase,
+		}
 		if playerState != nil {
 			msg.MyResourcesAfter = toProtoResourceBag(playerState.Resources)
 		}
 		_ = player.Send(msg)
 	}
+}
+
+func (r *GameRoom) setPhase(phase domain.TurnPhase) {
+	r.Phase = phase.String()
+	if r.state != nil {
+		r.state.Phase = phase.String()
+	}
+}
+
+func (r *GameRoom) isPhase(phase domain.TurnPhase) bool {
+	if r == nil || r.state == nil {
+		return false
+	}
+	return r.state.Phase == phase.String()
+}
+
+func (r *GameRoom) isMessageAllowed(msgType string) bool {
+	if r == nil || r.state == nil {
+		return false
+	}
+
+	switch r.state.Phase {
+	case domain.PhaseDomesticPlanning.String():
+		switch msgType {
+		case "MsgSetPolicy", "MsgTokenBuild", "MsgTokenReveal", "MsgMinisterDirective", "MsgSubmitDomestic":
+			return true
+		}
+	case domain.PhaseCombatPlanning.String():
+		switch msgType {
+		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgSubmitCombat":
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *GameRoom) shouldStopAfterCombatSettlement() bool {
+	if r == nil || r.state == nil || r.state.IsOver {
+		return true
+	}
+	rules := staticdata.Default().Rules()
+	return rules.MaxTurns > 0 && r.state.Turn >= rules.MaxTurns
 }
 
 func (r *GameRoom) checkGameOver() {

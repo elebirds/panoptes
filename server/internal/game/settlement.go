@@ -2,6 +2,7 @@ package game
 
 import (
 	"github.com/elebirds/panoptes/internal/debug"
+	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
 )
 
@@ -17,7 +18,7 @@ func RunDomesticSettlement(room *GameRoom) {
 	pipeline := engine.NewDomesticPipeline()
 	events := pipeline.Run(room.state.World, room.state)
 
-	room.broadcastSettlement("domestic", events)
+	room.broadcastSettlement(domain.PhaseDomesticResolving.String(), events)
 	if room.cfg != nil && room.cfg.DevMode {
 		debug.DumpGameStateSummary(room.state)
 	}
@@ -37,7 +38,7 @@ func RunCombatSettlement(room *GameRoom) {
 	pipeline := engine.NewCombatPipeline()
 	events := pipeline.Run(room.state.World, room.state)
 
-	room.broadcastSettlement("combat", events)
+	room.broadcastSettlement(domain.PhaseCombatResolving.String(), events)
 	if room.cfg != nil && room.cfg.DevMode {
 		debug.DumpGameStateSummary(room.state)
 	}

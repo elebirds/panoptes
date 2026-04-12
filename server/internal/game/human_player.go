@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
@@ -43,16 +44,26 @@ func (p *HumanPlayer) Send(msg proto.Message) error {
 func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 	rules := staticdata.Default().Rules()
 	switch phase {
-	case "domestic":
+	case domain.PhaseDomesticPlanning.String():
+		currentPolicy := ""
+		if room != nil && room.state != nil {
+			if playerState := room.state.Players[p.playerID]; playerState != nil {
+				currentPolicy = string(playerState.Policy)
+			}
+		}
 		_ = p.Send(&pb.MsgDomesticPhaseStart{
-			Timeout: int32(rules.TurnTimeLimitDomestic),
-			Turn:    int32(room.Turn),
-			Tokens:  int32(rules.TokensPerTurn),
+			Timeout:       int32(rules.TurnTimeLimitDomestic),
+			Turn:          int32(room.Turn),
+			Tokens:        int32(rules.TokensPerTurn),
+			CurrentPolicy: currentPolicy,
+			Phase:         phase,
 		})
-	case "combat":
+	case domain.PhaseCombatPlanning.String():
 		_ = p.Send(&pb.MsgCombatPhaseStart{
 			Timeout: int32(rules.TurnTimeLimitCombat),
 			Tokens:  int32(rules.TokensPerTurn),
+			Turn:    int32(room.Turn),
+			Phase:   phase,
 		})
 	default:
 		slog.Warn("未知阶段通知", "phase", phase, "player_id", p.playerID)

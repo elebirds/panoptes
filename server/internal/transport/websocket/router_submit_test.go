@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/auth"
@@ -22,6 +23,22 @@ func (r *stubGameRoom) OnHumanSubmitDomestic(playerID string) {
 
 func (r *stubGameRoom) OnHumanSubmitCombat(playerID string) {
 	r.combat = append(r.combat, playerID)
+}
+
+type stubGameRoomWithSubmitError struct {
+	stubGameRoom
+	domesticErr error
+	combatErr   error
+}
+
+func (r *stubGameRoomWithSubmitError) OnHumanSubmitDomesticChecked(playerID string) error {
+	r.domestic = append(r.domestic, playerID)
+	return r.domesticErr
+}
+
+func (r *stubGameRoomWithSubmitError) OnHumanSubmitCombatChecked(playerID string) error {
+	r.combat = append(r.combat, playerID)
+	return r.combatErr
 }
 
 type stubGameRoomRegistry struct {
@@ -108,5 +125,41 @@ func TestRouterRouteSubmitMessages(t *testing.T) {
 	}
 	if len(room.combat) != 1 || room.combat[0] != "player-1" {
 		t.Fatalf("combat submits = %#v", room.combat)
+	}
+}
+
+func TestRouterRouteSubmitMessageReturnsGameErrorResponse(t *testing.T) {
+	store := newRouterStore()
+	transport := newRouterTransport()
+	authSvc := auth.NewService(&routerUserStore{users: map[string]*auth.User{}}, "secret", 60)
+	room := &stubGameRoomWithSubmitError{
+		combatErr: errors.New("phase_mismatch"),
+	}
+	router := NewRouter(lobby.NewService(store, transport, authSvc, 4, false), &stubGameRoomRegistry{
+		room: room,
+		ok:   true,
+	})
+
+	sender := &captureSender{}
+	router.Route(sender, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+
+	if len(sender.payloads) != 1 {
+		t.Fatalf("sender payload count = %d", len(sender.payloads))
+	}
+
+	envelope := &pb.Envelope{}
+	if err := protojson.Unmarshal(sender.payloads[0], envelope); err != nil {
+		t.Fatalf("Unmarshal envelope error = %v", err)
+	}
+	if envelope.GetType() != "ErrorResponse" {
+		t.Fatalf("envelope type = %q", envelope.GetType())
+	}
+
+	msg := &pb.ErrorResponse{}
+	if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
+		t.Fatalf("Unmarshal payload error = %v", err)
+	}
+	if msg.GetCode() != "phase_mismatch" {
+		t.Fatalf("error code = %q", msg.GetCode())
 	}
 }

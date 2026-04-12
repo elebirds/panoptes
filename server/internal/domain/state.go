@@ -87,7 +87,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 	state := &GameState{
 		GameID:              gameID,
 		Turn:                1,
-		Phase:               "domestic",
+		Phase:               PhaseDomesticPlanning.String(),
 		World:               donburi.NewWorld(),
 		Map:                 mapData,
 		Players:             make(map[string]*PlayerState, len(playerIDs)),
