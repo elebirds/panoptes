@@ -73,7 +73,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useJsonMapOnStart = false;
         [SerializeField] private TextAsset startupMapJson;
         [SerializeField] private bool autoFillMissingJsonTiles = false;
-        [SerializeField] private bool preferLocalMapWhenBackendHasNoTerritory = true;
+        [SerializeField] private bool preferLocalMapWhenBackendHasNoTerritory = false;
         [SerializeField] private string localFallbackMapResourcePath = "Data/maps/default.runtime";
         [SerializeField] private bool preferServerPushedMapConfig = true;
         [SerializeField] private string serverMapConfigKey = "mapconfig";
@@ -105,11 +105,11 @@ namespace Panoptes.Presentation.Map
         [Header("Units")]
         [SerializeField] private UnitView unitPrefab;
         [SerializeField] private Transform unitsRoot;
-        [SerializeField] private bool spawnDebugUnitsWhenNoUnits = true;
+        [SerializeField] private bool spawnDebugUnitsWhenNoUnits = false;
         [SerializeField] private string[] debugFactions = { "blue", "red", "green", "yellow" };
 
         [Header("Debug Generation (Local Only)")]
-        [SerializeField] private bool generateDebugMapOnStart = true;
+        [SerializeField] private bool generateDebugMapOnStart = false;
         [SerializeField] private int debugMapWidth = 30;
         [SerializeField] private int debugMapHeight = 30;
         [SerializeField] private int debugBuildingsPerType = 2;
