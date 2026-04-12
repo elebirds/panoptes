@@ -12,6 +12,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Service/LobbyService.cs");
         private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
+        private readonly string _lobbyPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbyPanelController.cs");
+        private readonly string _roomPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/RoomPanelController.cs");
 
         [TearDown]
         public void TearDown()
@@ -122,12 +124,57 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
             StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
             StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
+            StringAssert.Contains("EnsureOptionalErrorToast(managers);", content);
+            StringAssert.Contains("EnsureOptionalConfirmDialog(managers);", content);
+            StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", content,
+                "通用弹层应优先从 prefab 资源实例化，而不是继续直接挂在 Managers 上。");
+            StringAssert.Contains("Instantiate(prefab)", content,
+                "通用弹层应生成为独立根对象，而不是继续复用 Managers 树。");
+            StringAssert.Contains("overlayObject.transform.SetParent(null, false);", content,
+                "通用弹层必须与 Managers 脱离父子关系，避开 LoadingOverlay 的 CanvasGroup。");
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
             Assert.That(transitionIndex, Is.GreaterThan(applyIndex), "AppManager 必须在 ApplyGameInit 之后再切换 Game 场景。");
+        }
+
+        [Test]
+        public void LobbyPanelController_ShouldRouteErrorsAndSuccessThroughErrorToast()
+        {
+            Assert.That(File.Exists(_lobbyPanelControllerPath), Is.True, "LobbyPanelController.cs 不存在。");
+
+            var content = File.ReadAllText(_lobbyPanelControllerPath);
+            StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
+            StringAssert.Contains("ErrorToast.Instance", content,
+                "大厅面板应优先通过 ErrorToast 展示错误/成功提示。");
+            StringAssert.Contains("ShowToast(message, false);", content,
+                "大厅错误提示应走 ErrorToast。");
+            StringAssert.Contains("ShowToast($\"房间已创建，邀请码：{roomCode}\", true);", content,
+                "创建房间成功后应给出 toast 反馈。");
+        }
+
+        [Test]
+        public void RoomPanelController_ShouldUseConfirmDialog_ForLeaveKickAndStartGame()
+        {
+            Assert.That(File.Exists(_roomPanelControllerPath), Is.True, "RoomPanelController.cs 不存在。");
+
+            var content = File.ReadAllText(_roomPanelControllerPath);
+            StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
+            StringAssert.Contains("ConfirmDialog.Instance", content,
+                "房间敏感操作应优先通过 ConfirmDialog 二次确认。");
+            StringAssert.Contains("ShowConfirmation(", content);
+            StringAssert.Contains("\"开始游戏\"", content,
+                "开始游戏前应弹确认框。");
+            StringAssert.Contains("\"离开房间\"", content,
+                "离开房间前应弹确认框。");
+            StringAssert.Contains("\"移出玩家\"", content,
+                "踢人前应弹确认框。");
+            StringAssert.Contains("ShowToast(\"确认面板未就绪，请稍后重试\", false);", content,
+                "ConfirmDialog 缺失时应保守降级并提示用户。");
+            Assert.That(content, Does.Not.Contain("onConfirm?.Invoke();"),
+                "ConfirmDialog 缺失时不应直接执行敏感操作。");
         }
 
         [Test]

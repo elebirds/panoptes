@@ -88,23 +88,41 @@ namespace Panoptes.Core.Application.App
         private static void EnsureOptionalErrorToast(GameObject owner)
         {
             var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ErrorToast, Panoptes.Presentation");
-            if (overlayType == null || owner.GetComponent(overlayType) != null)
-            {
-                return;
-            }
-
-            owner.AddComponent(overlayType);
+            EnsureOptionalOverlayPrefab(owner, overlayType, "ErrorToast", "Prefabs/UI/ErrorToast");
         }
 
         private static void EnsureOptionalConfirmDialog(GameObject owner)
         {
             var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ConfirmDialog, Panoptes.Presentation");
-            if (overlayType == null || owner.GetComponent(overlayType) != null)
+            EnsureOptionalOverlayPrefab(owner, overlayType, "ConfirmDialog", "Prefabs/UI/ConfirmDialog");
+        }
+
+        // LoadingOverlay 直接挂在 Managers 上，因此其他通用弹层必须作为独立根对象存在，
+        // 否则会被 Managers 上的 CanvasGroup 一起隐藏。
+        private static void EnsureOptionalOverlayPrefab(GameObject owner, Type overlayType, string objectName, string resourcePath)
+        {
+            if (overlayType == null || owner == null)
             {
                 return;
             }
 
-            owner.AddComponent(overlayType);
+            var existing = GameObject.Find(objectName);
+            if (existing != null && existing.GetComponent(overlayType) != null)
+            {
+                return;
+            }
+
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[AppManager] Missing overlay prefab at Resources/{resourcePath}.prefab");
+                return;
+            }
+
+            var overlayObject = UnityEngine.Object.Instantiate(prefab);
+            overlayObject.name = objectName;
+            overlayObject.transform.SetParent(null, false);
+            overlayObject.transform.localScale = Vector3.one;
         }
 
         void Awake()

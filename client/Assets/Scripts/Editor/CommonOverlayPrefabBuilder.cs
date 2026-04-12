@@ -59,6 +59,7 @@ namespace Panoptes.Editor
                 var toast = root.AddComponent<ErrorToast>();
                 toast.EditorRebuildUiForPrefab();
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                NormalizePrefabRootTransform(prefabPath);
             }
             finally
             {
@@ -81,6 +82,7 @@ namespace Panoptes.Editor
                 var dialog = root.AddComponent<ConfirmDialog>();
                 dialog.EditorRebuildUiForPrefab();
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                NormalizePrefabRootTransform(prefabPath);
             }
             finally
             {
@@ -121,6 +123,29 @@ namespace Panoptes.Editor
             {
                 Directory.CreateDirectory(folder);
             }
+        }
+
+        // Unity 在某些版本里会把独立 RectTransform prefab 根节点重新写成 0 缩放；
+        // 这里在保存后再对资产做一次归一化，避免运行时实例化出来整体不可见。
+        private static void NormalizePrefabRootTransform(string prefabPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null || prefab.transform is not RectTransform rectTransform)
+            {
+                return;
+            }
+
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = Vector2.zero;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            rectTransform.localScale = Vector3.one;
+            rectTransform.localRotation = Quaternion.identity;
+            EditorUtility.SetDirty(prefab);
+            PrefabUtility.SavePrefabAsset(prefab);
         }
     }
 }

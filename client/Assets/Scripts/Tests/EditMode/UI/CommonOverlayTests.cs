@@ -3,6 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Presentation.UI.Common;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,249 +11,267 @@ namespace Panoptes.Tests.EditMode.UI
 {
     public sealed class CommonOverlayTests
     {
+        private const string BuilderTypeName = "Panoptes.Editor.CommonOverlayPrefabBuilder, Panoptes.Editor";
+        private const string ErrorToastRuntimePath = "Assets/Resources/Prefabs/UI/ErrorToast.prefab";
+        private const string ConfirmDialogRuntimePath = "Assets/Resources/Prefabs/UI/ConfirmDialog.prefab";
+
+        [SetUp]
+        public void SetUp()
+        {
+            InvokeBuilder("RebuildPrefabs");
+            AssetDatabase.Refresh();
+        }
+
         [TearDown]
         public void TearDown()
         {
             DestroySingleton<ErrorToast>();
             DestroySingleton<ConfirmDialog>();
+            DestroySingleton<LoadingOverlay>();
+            DestroyNamedObject("Managers");
+            DestroyNamedObject("ErrorToast");
+            DestroyNamedObject("ConfirmDialog");
         }
 
         [Test]
-        public void ErrorToast_Show_ShouldCreateToastRootAndMessage_AndAssignDefaultTmpFont()
+        public void ErrorToast_Show_ShouldRenderMessageAndAssignDefaultTmpFont()
         {
             Assert.That(TMP_Settings.defaultFontAsset, Is.Not.Null, "TMP 默认字体未配置。");
 
-            var host = new GameObject("ErrorToastHost");
+            var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                host.hideFlags = HideFlags.HideAndDontSave;
-                var toast = host.AddComponent<ErrorToast>();
+                toast.Show("资源不足", false);
 
-                InvokePublicMethod(toast, "Show", "资源不足", false);
-
-                var canvasGroup = host.GetComponent<CanvasGroup>();
-                Assert.That(canvasGroup, Is.Not.Null, "ErrorToast 必须自动挂载 CanvasGroup。");
+                var canvasGroup = toast.GetComponent<CanvasGroup>();
+                Assert.That(canvasGroup, Is.Not.Null);
                 Assert.That(canvasGroup.alpha, Is.EqualTo(1f));
                 Assert.That(canvasGroup.blocksRaycasts, Is.False);
 
-                var toastRoot = host.transform.Find("ToastRoot");
-                Assert.That(toastRoot, Is.Not.Null, "ErrorToast 缺少稳定节点 ToastRoot。");
-
-                var message = toastRoot.Find("Message")?.GetComponent<TextMeshProUGUI>();
-                Assert.That(message, Is.Not.Null, "ErrorToast 缺少稳定节点 Message。");
+                var toastRoot = toast.transform.Find("ToastRoot");
+                var message = toastRoot?.Find("Message")?.GetComponent<TextMeshProUGUI>();
+                Assert.That(message, Is.Not.Null);
                 Assert.That(message.text, Is.EqualTo("资源不足"));
-                Assert.That(message.font, Is.EqualTo(TMP_Settings.defaultFontAsset),
-                    "ErrorToast 运行时创建的 TMP 文本必须显式绑定 TMP 默认字体。");
+                Assert.That(message.font, Is.EqualTo(TMP_Settings.defaultFontAsset));
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(toast.gameObject);
             }
         }
 
         [Test]
         public void ErrorToast_Hide_ShouldHideCanvasGroup()
         {
-            var host = new GameObject("ErrorToastHost");
+            var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                host.hideFlags = HideFlags.HideAndDontSave;
-                var toast = host.AddComponent<ErrorToast>();
+                toast.Show("需要隐藏", false);
+                toast.Hide();
 
-                InvokePublicMethod(toast, "Show", "需要隐藏", false);
-                InvokePublicMethod(toast, "Hide");
-
-                var canvasGroup = host.GetComponent<CanvasGroup>();
-                Assert.That(canvasGroup, Is.Not.Null, "ErrorToast 必须自动挂载 CanvasGroup。");
-                Assert.That(canvasGroup.alpha, Is.EqualTo(0f), "Hide 后应不可见。");
-                Assert.That(canvasGroup.blocksRaycasts, Is.False, "Toast 不应阻挡射线。");
+                var canvasGroup = toast.GetComponent<CanvasGroup>();
+                Assert.That(canvasGroup, Is.Not.Null);
+                Assert.That(canvasGroup.alpha, Is.EqualTo(0f));
+                Assert.That(canvasGroup.blocksRaycasts, Is.False);
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(toast.gameObject);
             }
         }
 
         [Test]
-        public void ErrorToast_Show_ShouldPopulateDistinctVisualState_ForErrorAndSuccess()
+        public void ErrorToast_Show_ShouldUseDistinctVisualState_ForErrorAndSuccess()
         {
-            var host = new GameObject("ErrorToastHost");
+            var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                host.hideFlags = HideFlags.HideAndDontSave;
-                var toast = host.AddComponent<ErrorToast>();
-
-                InvokePublicMethod(toast, "Show", "第一次提示", false);
-                var toastRoot = host.transform.Find("ToastRoot");
-                var background = toastRoot?.GetComponent<Image>();
-                Assert.That(background, Is.Not.Null, "ToastRoot 必须带背景 Image。");
+                toast.Show("第一次提示", false);
+                var background = toast.transform.Find("ToastRoot")?.GetComponent<Image>();
+                Assert.That(background, Is.Not.Null);
                 var errorColor = background.color;
-                Assert.That(errorColor.a, Is.GreaterThan(0f), "错误态背景不应为空视觉。");
+                Assert.That(background.sprite, Is.Not.Null);
+                Assert.That(background.type, Is.EqualTo(Image.Type.Sliced));
 
-                InvokePublicMethod(toast, "Show", "第二次提示", true);
+                toast.Show("第二次提示", true);
 
-                var message = toastRoot?.Find("Message")?.GetComponent<TextMeshProUGUI>();
+                var message = toast.transform.Find("ToastRoot/Message")?.GetComponent<TextMeshProUGUI>();
                 Assert.That(message, Is.Not.Null);
-                Assert.That(message.text, Is.EqualTo("第二次提示"),
-                    "重复 Show 时必须覆盖当前 toast 内容。");
-                Assert.That(background.color, Is.Not.EqualTo(errorColor),
-                    "success 视觉分支必须与错误分支不同。");
-                Assert.That(background.color.a, Is.GreaterThan(0f), "成功态背景不应为空视觉。");
+                Assert.That(message.text, Is.EqualTo("第二次提示"));
+                Assert.That(background.color, Is.Not.EqualTo(errorColor));
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(toast.gameObject);
             }
         }
 
         [Test]
-        public void ConfirmDialog_Show_ShouldCreateRequiredNodes_AndAssignDefaultTmpFonts()
+        public void ConfirmDialog_Show_ShouldRenderRequiredNodes_AndAssignDefaultTmpFonts()
         {
             Assert.That(TMP_Settings.defaultFontAsset, Is.Not.Null, "TMP 默认字体未配置。");
 
-            var host = new GameObject("ConfirmDialogHost");
+            var dialog = InstantiateOverlayPrefab<ConfirmDialog>(ConfirmDialogRuntimePath);
             try
             {
-                host.hideFlags = HideFlags.HideAndDontSave;
-                var dialog = host.AddComponent<ConfirmDialog>();
+                dialog.Show("确认退出", "离开当前房间？", null, null);
 
-                InvokePublicMethod(dialog, "Show", "确认退出", "离开当前房间？", null, null);
-
-                var canvasGroup = host.GetComponent<CanvasGroup>();
-                Assert.That(canvasGroup, Is.Not.Null, "ConfirmDialog 必须自动挂载 CanvasGroup。");
+                var canvasGroup = dialog.GetComponent<CanvasGroup>();
+                Assert.That(canvasGroup, Is.Not.Null);
                 Assert.That(canvasGroup.alpha, Is.EqualTo(1f));
                 Assert.That(canvasGroup.blocksRaycasts, Is.True);
 
-                Assert.That(host.transform.Find("Mask"), Is.Not.Null, "ConfirmDialog 缺少稳定节点 Mask。");
-                var panelRoot = host.transform.Find("PanelRoot");
-                Assert.That(panelRoot, Is.Not.Null, "ConfirmDialog 缺少稳定节点 PanelRoot。");
-                Assert.That(panelRoot.Find("ConfirmButton"), Is.Not.Null, "ConfirmDialog 缺少 ConfirmButton。");
-                Assert.That(panelRoot.Find("CancelButton"), Is.Not.Null, "ConfirmDialog 缺少 CancelButton。");
+                var panelRoot = dialog.transform.Find("PanelRoot");
+                Assert.That(dialog.transform.Find("Mask"), Is.Not.Null);
+                Assert.That(panelRoot, Is.Not.Null);
+                Assert.That(panelRoot.Find("ConfirmButton"), Is.Not.Null);
+                Assert.That(panelRoot.Find("CancelButton"), Is.Not.Null);
 
                 var title = panelRoot.Find("TitleText")?.GetComponent<TextMeshProUGUI>();
                 var message = panelRoot.Find("MessageText")?.GetComponent<TextMeshProUGUI>();
-                Assert.That(title, Is.Not.Null, "ConfirmDialog 缺少 TitleText。");
-                Assert.That(message, Is.Not.Null, "ConfirmDialog 缺少 MessageText。");
+                var panelBackground = panelRoot.GetComponent<Image>();
+
+                Assert.That(title, Is.Not.Null);
+                Assert.That(message, Is.Not.Null);
                 Assert.That(title.text, Is.EqualTo("确认退出"));
                 Assert.That(message.text, Is.EqualTo("离开当前房间？"));
+                Assert.That(panelBackground, Is.Not.Null);
+                Assert.That(panelBackground.sprite, Is.Not.Null);
+                Assert.That(panelBackground.type, Is.EqualTo(Image.Type.Sliced));
 
-                foreach (var text in host.GetComponentsInChildren<TextMeshProUGUI>(true))
+                foreach (var text in dialog.GetComponentsInChildren<TextMeshProUGUI>(true))
                 {
-                    Assert.That(text.font, Is.EqualTo(TMP_Settings.defaultFontAsset),
-                        $"动态创建的 TMP 文本 {text.name} 必须显式绑定 TMP 默认字体。");
+                    Assert.That(text.font, Is.EqualTo(TMP_Settings.defaultFontAsset));
                 }
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(dialog.gameObject);
             }
         }
 
         [Test]
         public void ConfirmDialog_Buttons_ShouldInvokeMatchingCallbacks_AndHideDialog()
         {
-            var host = new GameObject("ConfirmDialogHost");
+            var dialog = InstantiateOverlayPrefab<ConfirmDialog>(ConfirmDialogRuntimePath);
             try
             {
-                host.hideFlags = HideFlags.HideAndDontSave;
-                var dialog = host.AddComponent<ConfirmDialog>();
                 var confirmCount = 0;
                 var cancelCount = 0;
 
-                InvokePublicMethod(dialog, "Show", "确认", "是否继续？",
-                    new Action(() => confirmCount++),
-                    new Action(() => cancelCount++));
+                dialog.Show("确认", "是否继续？",
+                    () => confirmCount++,
+                    () => cancelCount++);
 
-                var panelRoot = host.transform.Find("PanelRoot");
+                var panelRoot = dialog.transform.Find("PanelRoot");
                 Assert.That(panelRoot, Is.Not.Null);
 
                 panelRoot.Find("ConfirmButton")?.GetComponent<Button>().onClick.Invoke();
                 Assert.That(confirmCount, Is.EqualTo(1));
                 Assert.That(cancelCount, Is.EqualTo(0));
-                AssertCanvasHidden(host, "点击确认后对话框必须隐藏。");
+                AssertCanvasHidden(dialog.gameObject);
 
-                InvokePublicMethod(dialog, "Show", "确认", "是否继续？",
-                    new Action(() => confirmCount += 10),
-                    new Action(() => cancelCount += 10));
+                dialog.Show("确认", "是否继续？",
+                    () => confirmCount += 10,
+                    () => cancelCount += 10);
                 panelRoot.Find("CancelButton")?.GetComponent<Button>().onClick.Invoke();
-                Assert.That(confirmCount, Is.EqualTo(1), "取消不应触发确认回调。");
-                Assert.That(cancelCount, Is.EqualTo(10), "Show 之后必须覆盖为最新回调。");
-                AssertCanvasHidden(host, "点击取消后对话框必须隐藏。");
+                Assert.That(confirmCount, Is.EqualTo(1));
+                Assert.That(cancelCount, Is.EqualTo(10));
+                AssertCanvasHidden(dialog.gameObject);
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(host);
+                UnityEngine.Object.DestroyImmediate(dialog.gameObject);
             }
         }
 
-        private static void AssertCanvasHidden(GameObject host, string message)
+        [Test]
+        public void AppManager_Bootstrap_ShouldPlaceCommonOverlays_OutsideManagersCanvasGroup()
+        {
+            var managers = new GameObject("Managers");
+            try
+            {
+                managers.hideFlags = HideFlags.HideAndDontSave;
+                managers.AddComponent<CanvasGroup>().alpha = 0f;
+
+                InvokePrivateStaticMethod(
+                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
+                    "EnsureOptionalErrorToast",
+                    managers);
+                InvokePrivateStaticMethod(
+                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
+                    "EnsureOptionalConfirmDialog",
+                    managers);
+
+                var toastObject = GameObject.Find("ErrorToast");
+                var dialogObject = GameObject.Find("ConfirmDialog");
+                Assert.That(toastObject, Is.Not.Null);
+                Assert.That(dialogObject, Is.Not.Null);
+
+                var toast = toastObject.GetComponent<ErrorToast>();
+                var dialog = dialogObject.GetComponent<ConfirmDialog>();
+                InvokeLifecycle(toast, "Awake");
+                InvokeLifecycle(dialog, "Awake");
+
+                Assert.That(ErrorToast.Instance, Is.SameAs(toast));
+                Assert.That(ConfirmDialog.Instance, Is.SameAs(dialog));
+                Assert.That(toast.transform.parent, Is.Null);
+                Assert.That(dialog.transform.parent, Is.Null);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(managers);
+            }
+        }
+
+        private static T InstantiateOverlayPrefab<T>(string assetPath) where T : Component
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            Assert.That(prefab, Is.Not.Null, $"{assetPath} 不存在。");
+
+            var instance = UnityEngine.Object.Instantiate(prefab);
+            instance.hideFlags = HideFlags.HideAndDontSave;
+            var component = instance.GetComponent<T>();
+            Assert.That(component, Is.Not.Null, $"{assetPath} 缺少 {typeof(T).Name}。");
+            InvokeLifecycle(component, "Awake");
+            return component;
+        }
+
+        private static void AssertCanvasHidden(GameObject host)
         {
             var canvasGroup = host.GetComponent<CanvasGroup>();
-            Assert.That(canvasGroup, Is.Not.Null, message);
-            Assert.That(canvasGroup.alpha, Is.EqualTo(0f), message);
-            Assert.That(canvasGroup.blocksRaycasts, Is.False, message);
+            Assert.That(canvasGroup, Is.Not.Null);
+            Assert.That(canvasGroup.alpha, Is.EqualTo(0f));
+            Assert.That(canvasGroup.blocksRaycasts, Is.False);
         }
 
-        private static object InvokePublicMethod(Component component, string methodName, params object[] args)
+        private static void InvokeBuilder(string methodName, BindingFlags flags = BindingFlags.Static | BindingFlags.Public)
         {
-            var method = ResolveMethod(component.GetType(), methodName, args);
-            Assert.That(method, Is.Not.Null,
-                $"{component.GetType().Name} 必须公开方法 {FormatMethodSignature(methodName, args)}。");
+            var builderType = Type.GetType(BuilderTypeName);
+            Assert.That(builderType, Is.Not.Null);
 
-            return method.Invoke(component, args);
+            var method = builderType.GetMethod(methodName, flags);
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(null, null);
         }
 
-        private static MethodInfo ResolveMethod(Type type, string methodName, object[] args)
+        private static object InvokePrivateStaticMethod(string typeName, string methodName, params object[] args)
         {
-            foreach (var method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public))
-            {
-                if (method.Name != methodName)
-                {
-                    continue;
-                }
+            var type = Type.GetType(typeName);
+            Assert.That(type, Is.Not.Null, $"{typeName} 类型不存在。");
 
-                var parameters = method.GetParameters();
-                if (parameters.Length != args.Length)
-                {
-                    continue;
-                }
-
-                var matched = true;
-                for (var i = 0; i < parameters.Length; i++)
-                {
-                    var parameterType = parameters[i].ParameterType;
-                    var argument = args[i];
-                    if (argument == null)
-                    {
-                        if (parameterType.IsValueType && Nullable.GetUnderlyingType(parameterType) == null)
-                        {
-                            matched = false;
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    if (!parameterType.IsInstanceOfType(argument) && argument.GetType() != parameterType)
-                    {
-                        matched = false;
-                        break;
-                    }
-                }
-
-                if (matched)
-                {
-                    return method;
-                }
-            }
-
-            return null;
+            var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"{typeName} 缺少私有静态方法 {methodName}。");
+            return method.Invoke(null, args);
         }
 
-        private static string FormatMethodSignature(string methodName, object[] args)
+        private static void InvokeLifecycle(Component component, string methodName)
         {
-            var formattedArgs = Array.ConvertAll(args, arg => arg?.GetType().Name ?? "null");
-            return $"{methodName}({string.Join(", ", formattedArgs)})";
+            var method = component.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"{component.GetType().Name} 缺少生命周期方法 {methodName}。");
+            method.Invoke(component, null);
         }
 
         private static void DestroySingleton<T>() where T : Component
@@ -266,6 +285,15 @@ namespace Panoptes.Tests.EditMode.UI
             var field = typeof(T).GetField("<Instance>k__BackingField",
                 BindingFlags.Static | BindingFlags.NonPublic);
             field?.SetValue(null, null);
+        }
+
+        private static void DestroyNamedObject(string objectName)
+        {
+            var found = GameObject.Find(objectName);
+            if (found != null)
+            {
+                UnityEngine.Object.DestroyImmediate(found);
+            }
         }
     }
 }

@@ -16,6 +16,10 @@ using UnityEditor;
 
 namespace Panoptes.Presentation.UI.Common
 {
+    [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(CanvasScaler))]
+    [RequireComponent(typeof(GraphicRaycaster))]
+    [RequireComponent(typeof(CanvasGroup))]
     public sealed class ErrorToast : MonoBehaviour
     {
         public static ErrorToast Instance { get; private set; }
@@ -25,10 +29,8 @@ namespace Panoptes.Presentation.UI.Common
         [SerializeField] private Image toastBackground;
         [SerializeField] private TextMeshProUGUI messageText;
         [SerializeField] private float defaultDuration = 2.4f;
-        [SerializeField] private bool autoBuildFallbackUi = true;
-        [SerializeField] private bool autoBindByName = true;
-        [SerializeField] private Color errorBackgroundColor = new(0.36f, 0.12f, 0.12f, 0.95f);
-        [SerializeField] private Color successBackgroundColor = new(0.12f, 0.32f, 0.22f, 0.95f);
+        [SerializeField] private Color errorBackgroundColor = new(0.33f, 0.12f, 0.12f, 0.84f);
+        [SerializeField] private Color successBackgroundColor = new(0.11f, 0.30f, 0.22f, 0.82f);
         [SerializeField] private Color messageColor = Color.white;
 
         private Coroutine _hideCoroutine;
@@ -47,7 +49,8 @@ namespace Panoptes.Presentation.UI.Common
                 DontDestroyOnLoad(gameObject);
             }
 
-            EnsureUiReady();
+            ConfigureCanvas();
+            ApplyVisualStyle();
             Hide();
         }
 
@@ -59,32 +62,27 @@ namespace Panoptes.Presentation.UI.Common
             }
         }
 
+        // 业务侧只传文案和语义，不关心 prefab 层级。
         public void Show(string message, bool success)
         {
             Show(message, success, -1f);
         }
 
-        public void Show(string message, bool success = false, float duration = -1f)
+        // duration < 0 时使用默认值；重复调用会覆盖上一条提示。
+        public void Show(string message, bool success, float duration)
         {
-            EnsureUiReady();
-
-            if (messageText != null)
+            if (!HasValidReferences())
             {
-                messageText.text = message ?? string.Empty;
-                messageText.color = messageColor;
+                Debug.LogError("[ErrorToast] Missing serialized references on prefab.");
+                return;
             }
 
-            if (toastBackground != null)
-            {
-                toastBackground.color = success ? successBackgroundColor : errorBackgroundColor;
-            }
-
-            if (canvasGroup != null)
-            {
-                canvasGroup.alpha = 1f;
-                canvasGroup.blocksRaycasts = false;
-                canvasGroup.interactable = false;
-            }
+            messageText.text = message ?? string.Empty;
+            messageText.color = messageColor;
+            toastBackground.color = success ? successBackgroundColor : errorBackgroundColor;
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
 
             StopHideCoroutine();
             var targetDuration = duration > 0f ? duration : defaultDuration;
@@ -97,13 +95,72 @@ namespace Panoptes.Presentation.UI.Common
         public void Hide()
         {
             StopHideCoroutine();
-
-            if (canvasGroup != null)
+            if (canvasGroup == null)
             {
-                canvasGroup.alpha = 0f;
-                canvasGroup.blocksRaycasts = false;
-                canvasGroup.interactable = false;
+                return;
             }
+
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.interactable = false;
+        }
+
+        private void ConfigureCanvas()
+        {
+            var rootRect = transform as RectTransform;
+            if (rootRect != null)
+            {
+                rootRect.anchorMin = Vector2.zero;
+                rootRect.anchorMax = Vector2.one;
+                rootRect.pivot = new Vector2(0.5f, 0.5f);
+                rootRect.anchoredPosition = Vector2.zero;
+                rootRect.sizeDelta = Vector2.zero;
+                rootRect.offsetMin = Vector2.zero;
+                rootRect.offsetMax = Vector2.zero;
+                rootRect.localScale = Vector3.one;
+                rootRect.localRotation = Quaternion.identity;
+            }
+
+            var canvas = GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 950;
+
+            var scaler = GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            canvasGroup ??= GetComponent<CanvasGroup>();
+        }
+
+        private bool HasValidReferences()
+        {
+            return canvasGroup != null
+                   && toastRoot != null
+                   && toastBackground != null
+                   && messageText != null;
+        }
+
+        private void ApplyVisualStyle()
+        {
+            if (!HasValidReferences())
+            {
+                return;
+            }
+
+            toastBackground.sprite = RoundedRectSpriteCache.GetSprite(64, 18);
+            toastBackground.type = Image.Type.Sliced;
+            toastBackground.pixelsPerUnitMultiplier = 1f;
+            toastBackground.raycastTarget = false;
+            toastBackground.color = errorBackgroundColor;
+
+            messageText.font = TMP_Settings.defaultFontAsset;
+            messageText.fontSize = 27f;
+            messageText.color = messageColor;
+            messageText.alignment = TextAlignmentOptions.Center;
+            messageText.textWrappingMode = TextWrappingModes.Normal;
+            messageText.raycastTarget = false;
         }
 
         private IEnumerator HideAfterDelay(float duration)
@@ -123,146 +180,41 @@ namespace Panoptes.Presentation.UI.Common
             _hideCoroutine = null;
         }
 
-        private void EnsureUiReady()
+#if UNITY_EDITOR
+        // Prefab 是 ErrorToast 的唯一结构来源。
+        // 运行时代码不再补结构，因此这里需要一次性把引用和样式全部建完整。
+        public void EditorRebuildUiForPrefab()
         {
-            EnsureCanvas();
-            EnsureCanvasGroup();
-
-            if (autoBindByName)
+            for (var i = transform.childCount - 1; i >= 0; i--)
             {
-                TryBindByName();
+                DestroyImmediate(transform.GetChild(i).gameObject);
             }
 
-            if (autoBuildFallbackUi && !HasEssentialReferences())
-            {
-                BuildFallbackUi();
-                TryBindByName();
-            }
-        }
+            ConfigureCanvas();
 
-        private void EnsureCanvas()
-        {
-            var canvas = GetComponent<Canvas>();
-            if (canvas == null)
-            {
-                canvas = gameObject.AddComponent<Canvas>();
-            }
+            toastRoot = CreateUiObject(
+                "ToastRoot",
+                transform,
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(-300f, -148f),
+                new Vector2(300f, -68f));
+            toastBackground = toastRoot.gameObject.AddComponent<Image>();
 
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 950;
+            var messageRoot = CreateUiObject(
+                "Message",
+                toastRoot,
+                Vector2.zero,
+                Vector2.one,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(18f, 12f),
+                new Vector2(-18f, -12f));
+            messageText = messageRoot.gameObject.AddComponent<TextMeshProUGUI>();
 
-            if (GetComponent<CanvasScaler>() == null)
-            {
-                var scaler = gameObject.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920f, 1080f);
-                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-                scaler.matchWidthOrHeight = 0.5f;
-            }
-
-            if (GetComponent<GraphicRaycaster>() == null)
-            {
-                gameObject.AddComponent<GraphicRaycaster>();
-            }
-        }
-
-        private void EnsureCanvasGroup()
-        {
-            if (canvasGroup == null)
-            {
-                canvasGroup = GetComponent<CanvasGroup>();
-                if (canvasGroup == null)
-                {
-                    canvasGroup = gameObject.AddComponent<CanvasGroup>();
-                }
-            }
-        }
-
-        private bool HasEssentialReferences()
-        {
-            return toastRoot != null && toastBackground != null && messageText != null;
-        }
-
-        private void TryBindByName()
-        {
-            if (toastRoot == null)
-            {
-                var foundRoot = transform.Find("ToastRoot");
-                toastRoot = foundRoot as RectTransform;
-            }
-
-            if (toastBackground == null && toastRoot != null)
-            {
-                toastBackground = toastRoot.GetComponent<Image>();
-            }
-
-            if (messageText == null && toastRoot != null)
-            {
-                var foundMessage = toastRoot.Find("Message");
-                messageText = foundMessage != null ? foundMessage.GetComponent<TextMeshProUGUI>() : null;
-            }
-        }
-
-        private void BuildFallbackUi()
-        {
-            if (toastRoot == null)
-            {
-                toastRoot = CreateUiObject(
-                    "ToastRoot",
-                    transform,
-                    new Vector2(0.5f, 1f),
-                    new Vector2(0.5f, 1f),
-                    new Vector2(0.5f, 1f),
-                    new Vector2(-300f, -148f),
-                    new Vector2(300f, -68f));
-            }
-
-            toastBackground = toastRoot.GetComponent<Image>();
-            if (toastBackground == null)
-            {
-                toastBackground = toastRoot.gameObject.AddComponent<Image>();
-            }
-            toastBackground.color = errorBackgroundColor;
-            toastBackground.raycastTarget = false;
-
-            var message = toastRoot.Find("Message") as RectTransform;
-            if (message == null)
-            {
-                message = CreateUiObject(
-                    "Message",
-                    toastRoot,
-                    Vector2.zero,
-                    Vector2.one,
-                    new Vector2(0.5f, 0.5f),
-                    new Vector2(18f, 12f),
-                    new Vector2(-18f, -12f));
-                messageText = message.gameObject.AddComponent<TextMeshProUGUI>();
-            }
-            else if (messageText == null)
-            {
-                messageText = message.GetComponent<TextMeshProUGUI>();
-                if (messageText == null)
-                {
-                    messageText = message.gameObject.AddComponent<TextMeshProUGUI>();
-                }
-            }
-
-            ConfigureMessageText(messageText);
-        }
-
-        private void ConfigureMessageText(TextMeshProUGUI text)
-        {
-            if (text == null)
-            {
-                return;
-            }
-
-            text.font = TMP_Settings.defaultFontAsset;
-            text.fontSize = 28f;
-            text.color = messageColor;
-            text.alignment = TextAlignmentOptions.Center;
-            text.enableWordWrapping = true;
-            text.raycastTarget = false;
+            ApplyVisualStyle();
+            Hide();
+            EditorUtility.SetDirty(gameObject);
         }
 
         private static RectTransform CreateUiObject(
@@ -283,31 +235,9 @@ namespace Panoptes.Presentation.UI.Common
             rect.pivot = pivot;
             rect.offsetMin = offsetMin;
             rect.offsetMax = offsetMax;
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
             return rect;
-        }
-
-#if UNITY_EDITOR
-        public void EditorRebuildUiForPrefab()
-        {
-            for (var i = transform.childCount - 1; i >= 0; i--)
-            {
-                var child = transform.GetChild(i);
-                if (child != null)
-                {
-                    DestroyImmediate(child.gameObject);
-                }
-            }
-
-            canvasGroup = null;
-            toastRoot = null;
-            toastBackground = null;
-            messageText = null;
-            autoBindByName = true;
-            autoBuildFallbackUi = true;
-
-            EnsureUiReady();
-            Hide();
-            EditorUtility.SetDirty(gameObject);
         }
 #endif
     }
