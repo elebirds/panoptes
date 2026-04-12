@@ -36,55 +36,58 @@ namespace Panoptes.Protocol.V1 {
             "T3JkZXISFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElkEhYKBmFjdGlvbhgCIAEo",
             "CVIGYWN0aW9uEiQKDnRhcmdldF9ub2RlX2lkGAMgASgJUgx0YXJnZXROb2Rl",
             "SWQSJAoOdGFyZ2V0X3VuaXRfaWQYBCABKAlSDHRhcmdldFVuaXRJZCIRCg9N",
-            "c2dTdWJtaXRDb21iYXQiRwoTTXNnQ29tYmF0UGhhc2VTdGFydBIYCgd0aW1l",
-            "b3V0GAEgASgFUgd0aW1lb3V0EhYKBnRva2VucxgCIAEoBVIGdG9rZW5zIkkK",
-            "Fk1zZ01pbmlzdGVyQ29tYmF0Q2h1bmsSFAoFY2h1bmsYASABKAlSBWNodW5r",
-            "EhkKCGlzX2ZpbmFsGAIgASgIUgdpc0ZpbmFsIk8KF01zZ01pbmlzdGVyQ29t",
-            "YmF0T3JkZXJzEjQKBm9yZGVycxgBIAMoCzIcLnBhbm9wdGVzLnByb3RvLnYx",
-            "LlVuaXRPcmRlclIGb3JkZXJzInUKCVVuaXRPcmRlchIXCgd1bml0X2lkGAEg",
-            "ASgJUgZ1bml0SWQSFgoGYWN0aW9uGAIgASgJUgZhY3Rpb24SHwoLdGFyZ2V0",
-            "X25vZGUYAyABKAlSCnRhcmdldE5vZGUSFgoGcmVhc29uGAQgASgJUgZyZWFz",
-            "b24iTQoTTXNnQ29tYmF0U2V0dGxlbWVudBI2CgZldmVudHMYASADKAsyHi5w",
-            "YW5vcHRlcy5wcm90by52MS5Db21iYXRFdmVudFIGZXZlbnRzIoEFCgtDb21i",
-            "YXRFdmVudBISCgR0eXBlGAEgASgJUgR0eXBlEj8KCXVuaXRfbW92ZRgCIAEo",
-            "CzIgLnBhbm9wdGVzLnByb3RvLnYxLlVuaXRNb3ZlRXZlbnRIAFIIdW5pdE1v",
-            "dmUSSAoMdW5pdF9kYW1hZ2VkGAMgASgLMiMucGFub3B0ZXMucHJvdG8udjEu",
-            "VW5pdERhbWFnZWRFdmVudEgAUgt1bml0RGFtYWdlZBI/Cgl1bml0X2RpZWQY",
-            "BCABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Vbml0RGllZEV2ZW50SABSCHVu",
-            "aXREaWVkEk4KDmNhc3RsZV9kYW1hZ2VkGAUgASgLMiUucGFub3B0ZXMucHJv",
-            "dG8udjEuQ2FzdGxlRGFtYWdlZEV2ZW50SABSDWNhc3RsZURhbWFnZWQSVAoQ",
-            "Y2FzdGxlX2Rlc3Ryb3llZBgGIAEoCzInLnBhbm9wdGVzLnByb3RvLnYxLkNh",
-            "c3RsZURlc3Ryb3llZEV2ZW50SABSD2Nhc3RsZURlc3Ryb3llZBI+Cghjb25m",
-            "bGljdBgHIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLkNvbmZsaWN0RXZlbnRI",
-            "AFIIY29uZmxpY3QSTgoOcm9hZF9kZXN0cm95ZWQYCCABKAsyJS5wYW5vcHRl",
-            "cy5wcm90by52MS5Sb2FkRGVzdHJveWVkRXZlbnRIAFINcm9hZERlc3Ryb3ll",
-            "ZBJUChBidWlsZGluZ19kYW1hZ2VkGAkgASgLMicucGFub3B0ZXMucHJvdG8u",
-            "djEuQnVpbGRpbmdEYW1hZ2VkRXZlbnRIAFIPYnVpbGRpbmdEYW1hZ2VkQgYK",
-            "BGRhdGEipAEKDVVuaXRNb3ZlRXZlbnQSFwoHdW5pdF9pZBgBIAEoCVIGdW5p",
-            "dElkEi8KBGZyb20YAiABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb3NpdGlv",
-            "blIEZnJvbRIrCgJ0bxgDIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0",
-            "aW9uUgJ0bxIcCgl0aW1lc3RhbXAYBCABKAVSCXRpbWVzdGFtcCJ2ChBVbml0",
-            "RGFtYWdlZEV2ZW50EhcKB3VuaXRfaWQYASABKAlSBnVuaXRJZBIWCgZkYW1h",
-            "Z2UYAiABKAVSBmRhbWFnZRIZCghocF9hZnRlchgDIAEoBVIHaHBBZnRlchIW",
-            "CgZzb3VyY2UYBCABKAlSBnNvdXJjZSJ0Cg1Vbml0RGllZEV2ZW50EhcKB3Vu",
-            "aXRfaWQYASABKAlSBnVuaXRJZBIbCglraWxsZXJfaWQYAiABKAlSCGtpbGxl",
-            "cklkEi0KA3BvcxgDIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9u",
-            "UgNwb3MigQEKEkNhc3RsZURhbWFnZWRFdmVudBIXCgdub2RlX2lkGAEgASgJ",
-            "UgZub2RlSWQSFgoGZGFtYWdlGAIgASgFUgZkYW1hZ2USGQoIaHBfYWZ0ZXIY",
-            "AyABKAVSB2hwQWZ0ZXISHwoLYXR0YWNrZXJfaWQYBCABKAlSCmF0dGFja2Vy",
-            "SWQiXAoUQ2FzdGxlRGVzdHJveWVkRXZlbnQSFwoHbm9kZV9pZBgBIAEoCVIG",
-            "bm9kZUlkEisKEWNvbnF1ZXJvcl9mYWN0aW9uGAIgASgJUhBjb25xdWVyb3JG",
-            "YWN0aW9uIqUBCg1Db25mbGljdEV2ZW50EhoKCXVuaXRfYV9pZBgBIAEoCVIH",
-            "dW5pdEFJZBIaCgl1bml0X2JfaWQYAiABKAlSB3VuaXRCSWQSNwoIbG9jYXRp",
-            "b24YAyABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb3NpdGlvblIIbG9jYXRp",
-            "b24SIwoNY29uZmxpY3RfdHlwZRgEIAEoCVIMY29uZmxpY3RUeXBlIm0KElJv",
-            "YWREZXN0cm95ZWRFdmVudBIbCglmcm9tX25vZGUYASABKAlSCGZyb21Ob2Rl",
-            "EhcKB3RvX25vZGUYAiABKAlSBnRvTm9kZRIhCgxkZXN0cm95ZXJfaWQYAyAB",
-            "KAlSC2Rlc3Ryb3llcklkImIKFEJ1aWxkaW5nRGFtYWdlZEV2ZW50EhcKB25v",
-            "ZGVfaWQYASABKAlSBm5vZGVJZBIWCgZkYW1hZ2UYAiABKAVSBmRhbWFnZRIZ",
-            "CghocF9hZnRlchgDIAEoBVIHaHBBZnRlckJTWjpnaXRodWIuY29tL2VsZWJp",
-            "cmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIU",
-            "UGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "c2dTdWJtaXRDb21iYXQicQoTTXNnQ29tYmF0UGhhc2VTdGFydBIYCgd0aW1l",
+            "b3V0GAEgASgFUgd0aW1lb3V0EhYKBnRva2VucxgCIAEoBVIGdG9rZW5zEhIK",
+            "BHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlIkkKFk1z",
+            "Z01pbmlzdGVyQ29tYmF0Q2h1bmsSFAoFY2h1bmsYASABKAlSBWNodW5rEhkK",
+            "CGlzX2ZpbmFsGAIgASgIUgdpc0ZpbmFsIk8KF01zZ01pbmlzdGVyQ29tYmF0",
+            "T3JkZXJzEjQKBm9yZGVycxgBIAMoCzIcLnBhbm9wdGVzLnByb3RvLnYxLlVu",
+            "aXRPcmRlclIGb3JkZXJzInUKCVVuaXRPcmRlchIXCgd1bml0X2lkGAEgASgJ",
+            "UgZ1bml0SWQSFgoGYWN0aW9uGAIgASgJUgZhY3Rpb24SHwoLdGFyZ2V0X25v",
+            "ZGUYAyABKAlSCnRhcmdldE5vZGUSFgoGcmVhc29uGAQgASgJUgZyZWFzb24i",
+            "lgEKE01zZ0NvbWJhdFNldHRsZW1lbnQSNgoGZXZlbnRzGAEgAygLMh4ucGFu",
+            "b3B0ZXMucHJvdG8udjEuQ29tYmF0RXZlbnRSBmV2ZW50cxISCgR0dXJuGAIg",
+            "ASgFUgR0dXJuEhQKBXBoYXNlGAMgASgJUgVwaGFzZRIdCgpuZXh0X3BoYXNl",
+            "GAQgASgJUgluZXh0UGhhc2UigQUKC0NvbWJhdEV2ZW50EhIKBHR5cGUYASAB",
+            "KAlSBHR5cGUSPwoJdW5pdF9tb3ZlGAIgASgLMiAucGFub3B0ZXMucHJvdG8u",
+            "djEuVW5pdE1vdmVFdmVudEgAUgh1bml0TW92ZRJICgx1bml0X2RhbWFnZWQY",
+            "AyABKAsyIy5wYW5vcHRlcy5wcm90by52MS5Vbml0RGFtYWdlZEV2ZW50SABS",
+            "C3VuaXREYW1hZ2VkEj8KCXVuaXRfZGllZBgEIAEoCzIgLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLlVuaXREaWVkRXZlbnRIAFIIdW5pdERpZWQSTgoOY2FzdGxlX2Rh",
+            "bWFnZWQYBSABKAsyJS5wYW5vcHRlcy5wcm90by52MS5DYXN0bGVEYW1hZ2Vk",
+            "RXZlbnRIAFINY2FzdGxlRGFtYWdlZBJUChBjYXN0bGVfZGVzdHJveWVkGAYg",
+            "ASgLMicucGFub3B0ZXMucHJvdG8udjEuQ2FzdGxlRGVzdHJveWVkRXZlbnRI",
+            "AFIPY2FzdGxlRGVzdHJveWVkEj4KCGNvbmZsaWN0GAcgASgLMiAucGFub3B0",
+            "ZXMucHJvdG8udjEuQ29uZmxpY3RFdmVudEgAUghjb25mbGljdBJOCg5yb2Fk",
+            "X2Rlc3Ryb3llZBgIIAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLlJvYWREZXN0",
+            "cm95ZWRFdmVudEgAUg1yb2FkRGVzdHJveWVkElQKEGJ1aWxkaW5nX2RhbWFn",
+            "ZWQYCSABKAsyJy5wYW5vcHRlcy5wcm90by52MS5CdWlsZGluZ0RhbWFnZWRF",
+            "dmVudEgAUg9idWlsZGluZ0RhbWFnZWRCBgoEZGF0YSKkAQoNVW5pdE1vdmVF",
+            "dmVudBIXCgd1bml0X2lkGAEgASgJUgZ1bml0SWQSLwoEZnJvbRgCIAEoCzIb",
+            "LnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgRmcm9tEisKAnRvGAMgASgL",
+            "MhsucGFub3B0ZXMucHJvdG8udjEuUG9zaXRpb25SAnRvEhwKCXRpbWVzdGFt",
+            "cBgEIAEoBVIJdGltZXN0YW1wInYKEFVuaXREYW1hZ2VkRXZlbnQSFwoHdW5p",
+            "dF9pZBgBIAEoCVIGdW5pdElkEhYKBmRhbWFnZRgCIAEoBVIGZGFtYWdlEhkK",
+            "CGhwX2FmdGVyGAMgASgFUgdocEFmdGVyEhYKBnNvdXJjZRgEIAEoCVIGc291",
+            "cmNlInQKDVVuaXREaWVkRXZlbnQSFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElk",
+            "EhsKCWtpbGxlcl9pZBgCIAEoCVIIa2lsbGVySWQSLQoDcG9zGAMgASgLMhsu",
+            "cGFub3B0ZXMucHJvdG8udjEuUG9zaXRpb25SA3BvcyKBAQoSQ2FzdGxlRGFt",
+            "YWdlZEV2ZW50EhcKB25vZGVfaWQYASABKAlSBm5vZGVJZBIWCgZkYW1hZ2UY",
+            "AiABKAVSBmRhbWFnZRIZCghocF9hZnRlchgDIAEoBVIHaHBBZnRlchIfCgth",
+            "dHRhY2tlcl9pZBgEIAEoCVIKYXR0YWNrZXJJZCJcChRDYXN0bGVEZXN0cm95",
+            "ZWRFdmVudBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSKwoRY29ucXVlcm9y",
+            "X2ZhY3Rpb24YAiABKAlSEGNvbnF1ZXJvckZhY3Rpb24ipQEKDUNvbmZsaWN0",
+            "RXZlbnQSGgoJdW5pdF9hX2lkGAEgASgJUgd1bml0QUlkEhoKCXVuaXRfYl9p",
+            "ZBgCIAEoCVIHdW5pdEJJZBI3Cghsb2NhdGlvbhgDIAEoCzIbLnBhbm9wdGVz",
+            "LnByb3RvLnYxLlBvc2l0aW9uUghsb2NhdGlvbhIjCg1jb25mbGljdF90eXBl",
+            "GAQgASgJUgxjb25mbGljdFR5cGUibQoSUm9hZERlc3Ryb3llZEV2ZW50EhsK",
+            "CWZyb21fbm9kZRgBIAEoCVIIZnJvbU5vZGUSFwoHdG9fbm9kZRgCIAEoCVIG",
+            "dG9Ob2RlEiEKDGRlc3Ryb3llcl9pZBgDIAEoCVILZGVzdHJveWVySWQiYgoU",
+            "QnVpbGRpbmdEYW1hZ2VkRXZlbnQSFwoHbm9kZV9pZBgBIAEoCVIGbm9kZUlk",
+            "EhYKBmRhbWFnZRgCIAEoBVIGZGFtYWdlEhkKCGhwX2FmdGVyGAMgASgFUgdo",
+            "cEFmdGVyQlNaOmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJu",
+            "YWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5W",
+            "MWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -94,11 +97,11 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTokenMicro), global::Panoptes.Protocol.V1.MsgTokenMicro.Parser, new[]{ "UnitId", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatOrder), global::Panoptes.Protocol.V1.MsgCombatOrder.Parser, new[]{ "UnitId", "Action", "TargetNodeId", "TargetUnitId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSubmitCombat), global::Panoptes.Protocol.V1.MsgSubmitCombat.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatPhaseStart), global::Panoptes.Protocol.V1.MsgCombatPhaseStart.Parser, new[]{ "Timeout", "Tokens" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatPhaseStart), global::Panoptes.Protocol.V1.MsgCombatPhaseStart.Parser, new[]{ "Timeout", "Tokens", "Turn", "Phase" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterCombatChunk), global::Panoptes.Protocol.V1.MsgMinisterCombatChunk.Parser, new[]{ "Chunk", "IsFinal" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterCombatOrders), global::Panoptes.Protocol.V1.MsgMinisterCombatOrders.Parser, new[]{ "Orders" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitOrder), global::Panoptes.Protocol.V1.UnitOrder.Parser, new[]{ "UnitId", "Action", "TargetNode", "Reason" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatSettlement), global::Panoptes.Protocol.V1.MsgCombatSettlement.Parser, new[]{ "Events" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatSettlement), global::Panoptes.Protocol.V1.MsgCombatSettlement.Parser, new[]{ "Events", "Turn", "Phase", "NextPhase" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.CombatEvent), global::Panoptes.Protocol.V1.CombatEvent.Parser, new[]{ "Type", "UnitMove", "UnitDamaged", "UnitDied", "CastleDamaged", "CastleDestroyed", "Conflict", "RoadDestroyed", "BuildingDamaged" }, new[]{ "Data" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitMoveEvent), global::Panoptes.Protocol.V1.UnitMoveEvent.Parser, new[]{ "UnitId", "From", "To", "Timestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitDamagedEvent), global::Panoptes.Protocol.V1.UnitDamagedEvent.Parser, new[]{ "UnitId", "Damage", "HpAfter", "Source" }, null, null, null, null),
@@ -1604,6 +1607,8 @@ namespace Panoptes.Protocol.V1 {
     public MsgCombatPhaseStart(MsgCombatPhaseStart other) : this() {
       timeout_ = other.timeout_;
       tokens_ = other.tokens_;
+      turn_ = other.turn_;
+      phase_ = other.phase_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1637,6 +1642,30 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "turn" field.</summary>
+    public const int TurnFieldNumber = 3;
+    private int turn_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Turn {
+      get { return turn_; }
+      set {
+        turn_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "phase" field.</summary>
+    public const int PhaseFieldNumber = 4;
+    private string phase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Phase {
+      get { return phase_; }
+      set {
+        phase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1654,6 +1683,8 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Timeout != other.Timeout) return false;
       if (Tokens != other.Tokens) return false;
+      if (Turn != other.Turn) return false;
+      if (Phase != other.Phase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1663,6 +1694,8 @@ namespace Panoptes.Protocol.V1 {
       int hash = 1;
       if (Timeout != 0) hash ^= Timeout.GetHashCode();
       if (Tokens != 0) hash ^= Tokens.GetHashCode();
+      if (Turn != 0) hash ^= Turn.GetHashCode();
+      if (Phase.Length != 0) hash ^= Phase.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1689,6 +1722,14 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(16);
         output.WriteInt32(Tokens);
       }
+      if (Turn != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Phase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1707,6 +1748,14 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(16);
         output.WriteInt32(Tokens);
       }
+      if (Turn != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Phase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1722,6 +1771,12 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Tokens != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(Tokens);
+      }
+      if (Turn != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Turn);
+      }
+      if (Phase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Phase);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1740,6 +1795,12 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.Tokens != 0) {
         Tokens = other.Tokens;
+      }
+      if (other.Turn != 0) {
+        Turn = other.Turn;
+      }
+      if (other.Phase.Length != 0) {
+        Phase = other.Phase;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1768,6 +1829,14 @@ namespace Panoptes.Protocol.V1 {
             Tokens = input.ReadInt32();
             break;
           }
+          case 24: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 34: {
+            Phase = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -1793,6 +1862,14 @@ namespace Panoptes.Protocol.V1 {
           }
           case 16: {
             Tokens = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 34: {
+            Phase = input.ReadString();
             break;
           }
         }
@@ -2581,6 +2658,9 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public MsgCombatSettlement(MsgCombatSettlement other) : this() {
       events_ = other.events_.Clone();
+      turn_ = other.turn_;
+      phase_ = other.phase_;
+      nextPhase_ = other.nextPhase_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2601,6 +2681,42 @@ namespace Panoptes.Protocol.V1 {
       get { return events_; }
     }
 
+    /// <summary>Field number for the "turn" field.</summary>
+    public const int TurnFieldNumber = 2;
+    private int turn_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Turn {
+      get { return turn_; }
+      set {
+        turn_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "phase" field.</summary>
+    public const int PhaseFieldNumber = 3;
+    private string phase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Phase {
+      get { return phase_; }
+      set {
+        phase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "next_phase" field.</summary>
+    public const int NextPhaseFieldNumber = 4;
+    private string nextPhase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string NextPhase {
+      get { return nextPhase_; }
+      set {
+        nextPhase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -2617,6 +2733,9 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if(!events_.Equals(other.events_)) return false;
+      if (Turn != other.Turn) return false;
+      if (Phase != other.Phase) return false;
+      if (NextPhase != other.NextPhase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2625,6 +2744,9 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       hash ^= events_.GetHashCode();
+      if (Turn != 0) hash ^= Turn.GetHashCode();
+      if (Phase.Length != 0) hash ^= Phase.GetHashCode();
+      if (NextPhase.Length != 0) hash ^= NextPhase.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2644,6 +2766,18 @@ namespace Panoptes.Protocol.V1 {
       output.WriteRawMessage(this);
     #else
       events_.WriteTo(output, _repeated_events_codec);
+      if (Turn != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(NextPhase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2655,6 +2789,18 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
       events_.WriteTo(ref output, _repeated_events_codec);
+      if (Turn != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(NextPhase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2666,6 +2812,15 @@ namespace Panoptes.Protocol.V1 {
     public int CalculateSize() {
       int size = 0;
       size += events_.CalculateSize(_repeated_events_codec);
+      if (Turn != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Turn);
+      }
+      if (Phase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(NextPhase);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2679,6 +2834,15 @@ namespace Panoptes.Protocol.V1 {
         return;
       }
       events_.Add(other.events_);
+      if (other.Turn != 0) {
+        Turn = other.Turn;
+      }
+      if (other.Phase.Length != 0) {
+        Phase = other.Phase;
+      }
+      if (other.NextPhase.Length != 0) {
+        NextPhase = other.NextPhase;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2702,6 +2866,18 @@ namespace Panoptes.Protocol.V1 {
             events_.AddEntriesFrom(input, _repeated_events_codec);
             break;
           }
+          case 16: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 26: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 34: {
+            NextPhase = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -2723,6 +2899,18 @@ namespace Panoptes.Protocol.V1 {
             break;
           case 10: {
             events_.AddEntriesFrom(ref input, _repeated_events_codec);
+            break;
+          }
+          case 16: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 26: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 34: {
+            NextPhase = input.ReadString();
             break;
           }
         }

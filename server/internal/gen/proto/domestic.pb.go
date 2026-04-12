@@ -429,6 +429,7 @@ type MsgDomesticPhaseStart struct {
 	Turn          int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
 	Tokens        int32                  `protobuf:"varint,3,opt,name=tokens,proto3" json:"tokens,omitempty"`
 	CurrentPolicy string                 `protobuf:"bytes,4,opt,name=current_policy,json=currentPolicy,proto3" json:"current_policy,omitempty"`
+	Phase         string                 `protobuf:"bytes,5,opt,name=phase,proto3" json:"phase,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -487,6 +488,13 @@ func (x *MsgDomesticPhaseStart) GetTokens() int32 {
 func (x *MsgDomesticPhaseStart) GetCurrentPolicy() string {
 	if x != nil {
 		return x.CurrentPolicy
+	}
+	return ""
+}
+
+func (x *MsgDomesticPhaseStart) GetPhase() string {
+	if x != nil {
+		return x.Phase
 	}
 	return ""
 }
@@ -744,6 +752,9 @@ type MsgDomesticSettlement struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Changes          []*DomesticChange      `protobuf:"bytes,1,rep,name=changes,proto3" json:"changes,omitempty"`
 	MyResourcesAfter *ResourceBag           `protobuf:"bytes,2,opt,name=my_resources_after,json=myResourcesAfter,proto3" json:"my_resources_after,omitempty"`
+	Turn             int32                  `protobuf:"varint,3,opt,name=turn,proto3" json:"turn,omitempty"`
+	Phase            string                 `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
+	NextPhase        string                 `protobuf:"bytes,5,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -790,6 +801,27 @@ func (x *MsgDomesticSettlement) GetMyResourcesAfter() *ResourceBag {
 		return x.MyResourcesAfter
 	}
 	return nil
+}
+
+func (x *MsgDomesticSettlement) GetTurn() int32 {
+	if x != nil {
+		return x.Turn
+	}
+	return 0
+}
+
+func (x *MsgDomesticSettlement) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *MsgDomesticSettlement) GetNextPhase() string {
+	if x != nil {
+		return x.NextPhase
+	}
+	return ""
 }
 
 type DomesticChange struct {
@@ -870,12 +902,13 @@ const file_domestic_proto_rawDesc = "" +
 	"\tfrom_node\x18\x01 \x01(\tR\bfromNode\x12\x17\n" +
 	"\ato_node\x18\x02 \x01(\tR\x06toNode\x129\n" +
 	"\twaypoints\x18\x03 \x03(\v2\x1b.panoptes.proto.v1.PositionR\twaypoints\"\x13\n" +
-	"\x11MsgSubmitDomestic\"\x84\x01\n" +
+	"\x11MsgSubmitDomestic\"\x9a\x01\n" +
 	"\x15MsgDomesticPhaseStart\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x12\n" +
 	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x16\n" +
 	"\x06tokens\x18\x03 \x01(\x05R\x06tokens\x12%\n" +
-	"\x0ecurrent_policy\x18\x04 \x01(\tR\rcurrentPolicy\"\x82\x01\n" +
+	"\x0ecurrent_policy\x18\x04 \x01(\tR\rcurrentPolicy\x12\x14\n" +
+	"\x05phase\x18\x05 \x01(\tR\x05phase\"\x82\x01\n" +
 	"\x0eMsgTokenResult\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x16\n" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1f\n" +
@@ -899,10 +932,14 @@ const file_domestic_proto_rawDesc = "" +
 	"\x06params\x18\x02 \x03(\v21.panoptes.proto.v1.MinisterActionItem.ParamsEntryR\x06params\x1a9\n" +
 	"\vParamsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa2\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x01\n" +
 	"\x15MsgDomesticSettlement\x12;\n" +
 	"\achanges\x18\x01 \x03(\v2!.panoptes.proto.v1.DomesticChangeR\achanges\x12L\n" +
-	"\x12my_resources_after\x18\x02 \x01(\v2\x1e.panoptes.proto.v1.ResourceBagR\x10myResourcesAfter\"\x9e\x01\n" +
+	"\x12my_resources_after\x18\x02 \x01(\v2\x1e.panoptes.proto.v1.ResourceBagR\x10myResourcesAfter\x12\x12\n" +
+	"\x04turn\x18\x03 \x01(\x05R\x04turn\x12\x14\n" +
+	"\x05phase\x18\x04 \x01(\tR\x05phase\x12\x1d\n" +
+	"\n" +
+	"next_phase\x18\x05 \x01(\tR\tnextPhase\"\x9e\x01\n" +
 	"\x0eDomesticChange\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12?\n" +
 	"\x04data\x18\x02 \x03(\v2+.panoptes.proto.v1.DomesticChange.DataEntryR\x04data\x1a7\n" +
