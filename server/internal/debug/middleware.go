@@ -85,10 +85,26 @@ func (l *MessageLogger) resolveOutgoingSnapshot(playerID string, msgType string,
 		msg := &pb.MsgDomesticPhaseStart{}
 		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
 			turn = msg.GetTurn()
-			phase = "domestic"
+			phase = msg.GetPhase()
 		}
 	case "MsgCombatPhaseStart":
-		phase = "combat"
+		msg := &pb.MsgCombatPhaseStart{}
+		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
+			turn = msg.GetTurn()
+			phase = msg.GetPhase()
+		}
+	case "MsgDomesticSettlement":
+		msg := &pb.MsgDomesticSettlement{}
+		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
+			turn = msg.GetTurn()
+			phase = msg.GetPhase()
+		}
+	case "MsgCombatSettlement":
+		msg := &pb.MsgCombatSettlement{}
+		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
+			turn = msg.GetTurn()
+			phase = msg.GetPhase()
+		}
 	}
 
 	l.storeSnapshot(playerID, playerSnapshot{turn: turn, phase: phase})

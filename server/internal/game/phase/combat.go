@@ -14,13 +14,13 @@ type CombatPhase struct {
 	submitCh   chan string
 }
 
-func (p *CombatPhase) Name() string { return "combat" }
+func (p *CombatPhase) Name() string { return domain.PhaseCombatPlanning.String() }
 
 func (p *CombatPhase) Enter(room Room) {
 	p.submitted = map[string]bool{}
 	p.directives = map[string][]WarZoneDirective{}
 	p.submitCh = make(chan string, 16)
-	room.NotifyTurn("combat")
+	room.NotifyTurn(domain.PhaseCombatPlanning.String())
 }
 
 func (p *CombatPhase) HandleMessage(room Room, playerID string, msgType string, payload []byte) error {
