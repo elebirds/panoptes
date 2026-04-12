@@ -1138,7 +1138,7 @@ namespace Panoptes.Presentation.Map
                 {
                     Id = $"U_DEBUG_{i + 1}",
                     Owner = faction,
-                    Type = "infantry",
+                    Type = "warrior",
                     Hp = 100,
                     MaxHp = 100,
                     X = p.x,
@@ -1712,7 +1712,7 @@ namespace Panoptes.Presentation.Map
                 {
                     Id = string.IsNullOrWhiteSpace(src.id) ? $"U_{src.x}_{src.y}_{i}" : src.id.Trim(),
                     Owner = (src.faction ?? string.Empty).Trim(),
-                    Type = string.IsNullOrWhiteSpace(src.unitType) ? "infantry" : src.unitType.Trim(),
+                    Type = string.IsNullOrWhiteSpace(src.unitType) ? "warrior" : src.unitType.Trim(),
                     Hp = Mathf.Max(0, src.hp),
                     MaxHp = Mathf.Max(1, src.maxHp),
                     X = src.x,

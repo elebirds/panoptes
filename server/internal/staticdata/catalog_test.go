@@ -30,9 +30,9 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 		t.Fatalf("resource display_name = %q", resource.DisplayName)
 	}
 
-	unit, ok := catalog.GetUnit("infantry")
+	unit, ok := catalog.GetUnit("warrior")
 	if !ok {
-		t.Fatalf("GetUnit(infantry) missing")
+		t.Fatalf("GetUnit(warrior) missing")
 	}
 	if unit.TrainCost["ore"] != 1 || unit.TrainCost["food"] != 1 {
 		t.Fatalf("unit train_cost = %#v", unit.TrainCost)
@@ -114,7 +114,7 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
 		"data/content/units/units.json": `{
   "units": [
     {
-      "id": "infantry",
+      "id": "warrior",
       "class": "melee",
       "max_hp": 30,
       "attack": 10,
@@ -234,10 +234,10 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
     { "slot": 1, "x": 1, "y": 1 }
   ]
 }`,
-		"data/ui/catalogs/resources.json": `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
-		"data/ui/catalogs/units.json": `{"units":[{"id":"infantry","name":"步兵","description":"均衡近战单位","icon_key":"unit_infantry","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
-		"data/ui/catalogs/buildings.json": `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
-		"data/ui/catalogs/terrains.json": `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
+		"data/ui/catalogs/resources.json":    `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
+		"data/ui/catalogs/units.json":        `{"units":[{"id":"warrior","name":"勇士","description":"基础近战战斗单位","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
+		"data/ui/catalogs/buildings.json":    `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
+		"data/ui/catalogs/terrains.json":     `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
 		"data/ui/catalogs/maps/default.json": `{"id":"default","name":"标准地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
 	}
 	for rel, content := range files {

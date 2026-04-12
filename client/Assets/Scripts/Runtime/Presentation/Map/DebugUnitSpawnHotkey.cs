@@ -29,7 +29,7 @@ namespace Panoptes.Presentation.Map
 
         [Header("Spawn")]
         [SerializeField] private int spawnCount = 8;
-        [SerializeField] private string unitType = "fighter";
+        [SerializeField] private string unitType = "warrior";
         [SerializeField] private int hp = 100;
         [SerializeField] private int maxHp = 100;
         [SerializeField] private string ownerIdOverride = string.Empty;
@@ -130,7 +130,7 @@ namespace Panoptes.Presentation.Map
                 var unit = new UnitDto
                 {
                     Id = $"U_LOCAL_{_spawnSerial++}",
-                    Type = string.IsNullOrWhiteSpace(unitType) ? "fighter" : unitType.Trim().ToLowerInvariant(),
+                    Type = string.IsNullOrWhiteSpace(unitType) ? "warrior" : unitType.Trim().ToLowerInvariant(),
                     Owner = ownerId,
                     X = node.GridPos.x,
                     Y = node.GridPos.y,

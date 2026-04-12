@@ -4,7 +4,7 @@
     "content_version": "2026-04-06.v2",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "b7675f6f31d14819b8a297852a4864e1884406b18f253859cf06e4954cf6f6a2"
+    "bundle_hash": "8f7433c997e81464c5861f9b3e36078046ef7ee726863ee5e7e15cdca1406076"
   },
   "resources": [
     {
@@ -82,10 +82,41 @@
   ],
   "units": [
     {
-      "id": "infantry",
-      "name": "步兵",
-      "description": "均衡近战单位。",
-      "icon_key": "unit_infantry",
+      "id": "settler",
+      "name": "开拓者",
+      "description": "平民单位，可用于建立据点。",
+      "icon_key": "unit_settler",
+      "prefab_key": "Settler",
+      "class": "civilian",
+      "max_hp": 12,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 2,
+      "vision_range": 2,
+      "train_cost": {
+        "food": 2,
+        "wood": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 10,
+      "tags": [
+        "civilian",
+        "expansion"
+      ]
+    },
+    {
+      "id": "warrior",
+      "name": "勇士",
+      "description": "基础近战战斗单位。",
+      "icon_key": "unit_warrior",
       "prefab_key": "Infantry",
       "class": "melee",
       "max_hp": 30,
@@ -100,23 +131,22 @@
       "upkeep": {
         "food": 1
       },
-      "multipliers": {
-        "saboteur": 1.5
-      },
+      "multipliers": {},
       "flags": {
         "can_siege": false,
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 10,
+      "sort_order": 11,
       "tags": [
-        "frontline"
+        "frontline",
+        "melee"
       ]
     },
     {
       "id": "archer",
-      "name": "弓手",
-      "description": "远程压制单位。",
+      "name": "弓箭手",
+      "description": "基础远程战斗单位。",
       "icon_key": "unit_archer",
       "prefab_key": "Archer",
       "class": "ranged",
@@ -140,7 +170,7 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 11,
+      "sort_order": 12,
       "tags": [
         "ranged"
       ]
@@ -148,7 +178,7 @@
     {
       "id": "cavalry",
       "name": "骑兵",
-      "description": "高速机动单位。",
+      "description": "高速机动单位，可执行冲锋。",
       "icon_key": "unit_cavalry",
       "prefab_key": "Cavalry",
       "class": "mobile",
@@ -165,7 +195,7 @@
         "food": 2
       },
       "multipliers": {
-        "infantry": 1.5
+        "warrior": 1.5
       },
       "road_speed_bonus": 1,
       "charge_bonus": 1.5,
@@ -174,72 +204,10 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 12,
+      "sort_order": 13,
       "tags": [
         "flank",
         "charge"
-      ]
-    },
-    {
-      "id": "siege",
-      "name": "攻城兵",
-      "description": "擅长攻击建筑与主城。",
-      "icon_key": "unit_siege",
-      "prefab_key": "Siege",
-      "class": "siege",
-      "max_hp": 35,
-      "attack": 5,
-      "attack_range": 1,
-      "move_range": 1,
-      "vision_range": 3,
-      "train_cost": {
-        "food": 1,
-        "refined_ore": 2
-      },
-      "upkeep": {
-        "food": 1
-      },
-      "multipliers": {},
-      "flags": {
-        "can_siege": true,
-        "siege_multiplier": 3,
-        "can_destroy_road": false,
-        "can_capture": true
-      },
-      "sort_order": 13,
-      "tags": [
-        "anti_building"
-      ]
-    },
-    {
-      "id": "saboteur",
-      "name": "破坏兵",
-      "description": "擅长破坏道路与工事。",
-      "icon_key": "unit_saboteur",
-      "prefab_key": "Saboteur",
-      "class": "special",
-      "max_hp": 20,
-      "attack": 5,
-      "attack_range": 1,
-      "move_range": 2,
-      "vision_range": 3,
-      "train_cost": {
-        "ore": 1,
-        "wood": 1
-      },
-      "upkeep": {
-        "food": 1
-      },
-      "multipliers": {},
-      "flags": {
-        "can_siege": false,
-        "can_destroy_road": true,
-        "destroy_multiplier": 3,
-        "can_capture": true
-      },
-      "sort_order": 14,
-      "tags": [
-        "special"
       ]
     }
   ],
@@ -498,7 +466,7 @@
         "cycle_turns": 0
       },
       "produces_units": [
-        "infantry",
+        "warrior",
         "archer"
       ],
       "combat": {
@@ -581,8 +549,7 @@
         "cycle_turns": 0
       },
       "produces_units": [
-        "siege",
-        "saboteur"
+        "settler"
       ],
       "combat": {
         "max_hp": 110,
@@ -835,8 +802,8 @@
       "name": "中原",
       "description": "标准双人对战地图。",
       "thumbnail_key": "map_default",
-      "width": 30,
-      "height": 30,
+      "width": 20,
+      "height": 20,
       "tags": [
         "default",
         "pvp"
