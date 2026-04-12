@@ -970,8 +970,12 @@ namespace Panoptes.Presentation.UI.Domestic
 
             if (requireLocalOwnership)
             {
-                var localPlayerId = ResolveLocalPlayerId();
-                if (string.IsNullOrEmpty(node.Owner) || !string.Equals(node.Owner, localPlayerId, StringComparison.Ordinal))
+                var localPlayerId = Normalize(ResolveLocalPlayerId());
+                var owner = Normalize(node.Owner);
+                var territoryOwner = Normalize(node.TerritoryOwner);
+                var ownerMatch = !string.IsNullOrEmpty(owner) && string.Equals(owner, localPlayerId, StringComparison.Ordinal);
+                var territoryOwnerMatch = !string.IsNullOrEmpty(territoryOwner) && string.Equals(territoryOwner, localPlayerId, StringComparison.Ordinal);
+                if (!ownerMatch && !territoryOwnerMatch)
                 {
                     return false;
                 }

@@ -699,8 +699,7 @@ MonoBehaviour:
   buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
   logInvalidBuildClick: 1
   localOwnerIdOverride: 
-  preferTerritoryForCityRule: 1
-  fallbackToLegacyCityZones: 1
+  useSafeZoneFallbackForCityPlacement: 1
   territoryOnlyBuildingTypes:
   - engineer
   - workshop
@@ -926,6 +925,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ea8cc249febc4b1588f2c5d50ff0b92, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.DebugTools.MessageLogger
+  mirrorEntriesToUnityConsole: 1
 --- !u!4 &1773285524
 Transform:
   m_ObjectHideFlags: 0
@@ -1082,6 +1082,9 @@ MonoBehaviour:
   enableDragPan: 1
   invertDrag: 1
   dragPanSpeed: 0.02
+  enableKeyboardPan: 1
+  enableArrowKeyPan: 1
+  keyboardPanSpeed: 14
   enableEdgeScroll: 1
   edgeScrollWhileDragging: 0
   edgeThreshold: 24
@@ -1089,13 +1092,24 @@ MonoBehaviour:
   moveSmoothTime: 0.08
   scrollZoomSpeed: 4
   inputSystemScrollScale: 0.01
+  scrollZoomMultiplier: 5
+  scrollSensitivity: 2
+  maxZoomStepPerFrame: 1.2
+  invertScrollDirection: 0
   perspectiveZoomByFov: 1
+  alsoDollyWhenPerspectiveZoomByFov: 1
+  perspectiveDollySpeed: 2.2
   minOrthoSize: 5
   maxOrthoSize: 28
   minFov: 25
   maxFov: 60
   minHeight: 8
   maxHeight: 40
+  enableZoomTiltInPerspective: 1
+  keepGroundFocusWhenTilt: 1
+  farZoomPitch: 58
+  nearZoomPitch: 24
+  tiltSmoothTime: 0.12
   autoFixInvalidStartPose: 1
   fallbackStartHeight: 7.5
   fallbackStartPitch: 50

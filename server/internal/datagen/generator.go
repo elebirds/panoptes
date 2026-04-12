@@ -300,6 +300,13 @@ func compileMapDefinition(def staticdata.MapDefinition) *staticdata.MapRuntimeBu
 				slot := *override.OwnerSlot
 				nodes[idx].OwnerSlot = &slot
 			}
+			if override.TerritoryOwner != "" {
+				nodes[idx].TerritoryOwner = override.TerritoryOwner
+			}
+			if override.TerritoryOwnerSlot != nil {
+				slot := *override.TerritoryOwnerSlot
+				nodes[idx].TerritoryOwnerSlot = &slot
+			}
 			if override.BuildingType != "" {
 				nodes[idx].BuildingType = override.BuildingType
 			}

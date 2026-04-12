@@ -123,6 +123,8 @@ func TestGenerateCarriesPrebuiltOwnerAndBuildingIntoRuntimeMap(t *testing.T) {
       "y": 1,
       "owner": "green",
       "owner_slot": 0,
+      "territory_owner": "blue",
+      "territory_owner_slot": 1,
       "building_type": "farm",
       "building_hp": 77
     }
@@ -150,7 +152,14 @@ func TestGenerateCarriesPrebuiltOwnerAndBuildingIntoRuntimeMap(t *testing.T) {
 	}
 
 	text := string(raw)
-	for _, want := range []string{`"owner": "green"`, `"owner_slot": 0`, `"building_type": "farm"`, `"building_hp": 77`} {
+	for _, want := range []string{
+		`"owner": "green"`,
+		`"owner_slot": 0`,
+		`"territory_owner": "blue"`,
+		`"territory_owner_slot": 1`,
+		`"building_type": "farm"`,
+		`"building_hp": 77`,
+	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("runtime map missing %s:\n%s", want, text)
 		}

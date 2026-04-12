@@ -16,5 +16,6 @@ namespace Panoptes.Core.Domain
         public string Terrain;
         public bool IsResourcePoint;
         public string ResourceType;
+        public bool IsSafeZone;
     }
 }

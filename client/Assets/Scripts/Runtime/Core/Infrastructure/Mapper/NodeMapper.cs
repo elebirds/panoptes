@@ -29,6 +29,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Terrain = view.Terrain,
                 IsResourcePoint = view.IsResourcePoint,
                 ResourceType = view.ResourceType,
+                IsSafeZone = view.IsSafeZone,
             };
         }
     }

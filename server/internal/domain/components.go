@@ -7,13 +7,14 @@ type PositionComp struct {
 }
 
 type NodeComp struct {
-	ID           string
-	Terrain      Terrain
-	Owner        string
-	HasRoad      bool
-	IsResource   bool
-	ResourceType string
-	NodeName     string
+	ID             string
+	Terrain        Terrain
+	Owner          string
+	TerritoryOwner string
+	HasRoad        bool
+	IsResource     bool
+	ResourceType   string
+	NodeName       string
 }
 
 type BuildingComp struct {

@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3303210597913559520}
+  - component: {fileID: 8465135733123450000}
   m_Layer: 0
   m_Name: Castle
   m_TagString: Untagged
@@ -32,6 +33,48 @@ Transform:
   - {fileID: 8522636688648183104}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8465135733123450000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5712392936719629861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9d9615020d8958499357da6adf912c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.BuildingView
+  buildingType: castle
+  ownerTintRenderers: []
+  tintOnlyMatchingMaterials: 1
+  tintMaterialIndices: 05000000
+  tintMaterialNameKeywords:
+  - roof
+  - tile
+  - top
+  tintShaderNameKeywords:
+  - roof
+  damagedMark: {fileID: 0}
+  selectedRing: {fileID: 0}
+  neutralOwnerColor: {r: 1, g: 1, b: 1, a: 1}
+  friendlyOwnerColor: {r: 0.26, g: 0.78, b: 1, a: 1}
+  enemyOwnerColor: {r: 1, g: 0.35, b: 0.35, a: 1}
+  ownerTintStrength: 0.45
+  useHashedColorWhenNoMyPlayerId: 0
+  defaultGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.9}
+  ghostTintStrength: 0.85
+  lowHitPointThreshold: 30
+  defaultCastleMaxHp: 200
+  enableCastleHpBar: 0
+  castleHpBarWidth: 1.8
+  castleHpBarHeight: 0.2
+  castleHpBarVerticalPadding: 0.35
+  castleHpBarScreenScale: 0.001
+  castleHpBarMinScale: 0.0035
+  castleHpBarMaxScale: 0.016
+  castleHpBarFillColor: {r: 0.2, g: 0.95, b: 0.35, a: 1}
+  castleHpBarBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.9}
 --- !u!1 &6787967239105697608
 GameObject:
   m_ObjectHideFlags: 0

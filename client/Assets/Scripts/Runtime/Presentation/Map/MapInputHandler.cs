@@ -91,8 +91,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
         [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
-        [SerializeField] private bool preferTerritoryForCityRule = true;
-        [SerializeField] private bool fallbackToLegacyCityZones = true;
+        [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
         [SerializeField] private string[] territoryOnlyBuildingTypes =
         {
             "castle",
@@ -370,11 +369,6 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (!CanPlaceCityBuilding(node.NodeId))
-            {
-                return false;
-            }
-
             ResolveCastleProductionPanel();
             if (castleProductionPanel == null)
             {
@@ -382,8 +376,13 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            castleProductionPanel.OpenForCastle(node.NodeId);
-            return true;
+            var opened = castleProductionPanel.OpenForCastle(node.NodeId);
+            if (!opened)
+            {
+                Debug.LogWarning($"[MapInputHandler] Castle panel rejected open request. node={node.NodeId}");
+            }
+
+            return opened;
         }
 
         private void SelectUnit(UnitView unit)
@@ -612,12 +611,18 @@ namespace Panoptes.Presentation.Map
 
         private bool CanPlaceCityBuilding(string nodeId)
         {
-            if (preferTerritoryForCityRule && IsInsideLocalTerritory(nodeId))
+            if (IsInsideLocalTerritory(nodeId))
             {
                 return true;
             }
 
-            return fallbackToLegacyCityZones && IsInsideLocalCityZone(nodeId);
+            if (!useSafeZoneFallbackForCityPlacement)
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            return map != null && map.IsNodeInSafeZone(nodeId);
         }
 
         private bool IsInsideLocalTerritory(string nodeId)
@@ -950,11 +955,19 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var ownerId = GetLocalOwnerId();
+            var ownerId = NormalizeToken(GetLocalOwnerId());
             var map = MapRenderer.Instance;
             if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
             {
-                return !string.IsNullOrEmpty(mapNode.Owner) && string.Equals(mapNode.Owner, ownerId, StringComparison.Ordinal);
+                var owner = NormalizeToken(mapNode.Owner);
+                var territoryOwner = NormalizeToken(mapNode.TerritoryOwner);
+                if ((!string.IsNullOrEmpty(owner) && string.Equals(owner, ownerId, StringComparison.Ordinal))
+                    || (!string.IsNullOrEmpty(territoryOwner) && string.Equals(territoryOwner, ownerId, StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+
+                return useSafeZoneFallbackForCityPlacement && mapNode.IsSafeZone;
             }
 
             if (GameStateCache.Instance == null)
@@ -968,7 +981,15 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return !string.IsNullOrEmpty(cacheNode.Owner) && string.Equals(cacheNode.Owner, ownerId, StringComparison.Ordinal);
+            var cacheOwner = NormalizeToken(cacheNode.Owner);
+            var cacheTerritoryOwner = NormalizeToken(cacheNode.TerritoryOwner);
+            if ((!string.IsNullOrEmpty(cacheOwner) && string.Equals(cacheOwner, ownerId, StringComparison.Ordinal))
+                || (!string.IsNullOrEmpty(cacheTerritoryOwner) && string.Equals(cacheTerritoryOwner, ownerId, StringComparison.Ordinal)))
+            {
+                return true;
+            }
+
+            return useSafeZoneFallbackForCityPlacement && cacheNode.IsSafeZone;
         }
 
         private bool CanControlUnit(UnitView unit)
