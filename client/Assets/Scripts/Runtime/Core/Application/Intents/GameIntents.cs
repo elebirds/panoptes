@@ -204,18 +204,46 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgTokenMicro
-            {
-                UnitId = unitId ?? string.Empty,
-                TargetNode = targetNodeId ?? string.Empty
-            };
-            MessageSender.Send(msg);
+            SendCombatOrder(unitId, "move", targetNodeId, null);
             Debug.Log("[GameIntents] MoveUnit");
         }
 
         public static void MicroUnit(string unitId, string targetNodeId)
         {
             MoveUnit(unitId, targetNodeId);
+        }
+
+        public static void AttackUnit(string unitId, string targetUnitId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            SendCombatOrder(unitId, "attack", null, targetUnitId);
+            Debug.Log("[GameIntents] AttackUnit");
+        }
+
+        public static void HoldUnit(string unitId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            SendCombatOrder(unitId, "hold", null, null);
+            Debug.Log("[GameIntents] HoldUnit");
+        }
+
+        public static void ChargeUnit(string unitId, string targetNodeId, string targetUnitId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            SendCombatOrder(unitId, "charge", targetNodeId, targetUnitId);
+            Debug.Log("[GameIntents] ChargeUnit");
         }
 
         public static void SubmitCombat()
@@ -309,6 +337,18 @@ namespace Panoptes.Core.Application.Intents
                 action_id = actionId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
+        }
+
+        private static void SendCombatOrder(string unitId, string action, string targetNodeId, string targetUnitId)
+        {
+            var msg = new MsgCombatOrder
+            {
+                UnitId = unitId ?? string.Empty,
+                Action = action ?? string.Empty,
+                TargetNodeId = targetNodeId ?? string.Empty,
+                TargetUnitId = targetUnitId ?? string.Empty
+            };
+            MessageSender.Send(msg);
         }
     }
 }

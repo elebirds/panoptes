@@ -33,7 +33,7 @@ func RunCombatSettlement(room *GameRoom) {
 		return
 	}
 
-	room.applyMoveOrdersToWorld()
+	room.prepareCombatOrders()
 	pipeline := engine.NewCombatPipeline()
 	events := pipeline.Run(room.state.World, room.state)
 
@@ -45,4 +45,6 @@ func RunCombatSettlement(room *GameRoom) {
 
 	room.state.PendingConflicts = room.state.PendingConflicts[:0]
 	room.state.MinisterMoveOrders = room.state.MinisterMoveOrders[:0]
+	clear(room.state.PendingCombatOrders)
+	clear(room.combatOrders)
 }

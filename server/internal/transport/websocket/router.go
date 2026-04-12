@@ -154,7 +154,8 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		"MsgSetWarZone",
 		"MsgWarZoneDirective",
 		"MsgTokenVetoCombat",
-		"MsgTokenMicro":
+		"MsgTokenMicro",
+		"MsgCombatOrder":
 		if r.gameRooms == nil {
 			r.sendGameNotFound(sender)
 			return

@@ -13,8 +13,8 @@ import (
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	"github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/event"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	gamephase "github.com/elebirds/panoptes/internal/game/phase"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
 	"github.com/yohamta/donburi"
@@ -36,6 +36,7 @@ type GameRoom struct {
 	pendingBuilds      []domain.BuildOrder
 	ministerDirectives map[string]string
 	combatDirectives   map[string][]gamephase.WarZoneDirective
+	combatOrders       map[string]domain.CombatOrder
 	vetoUnits          map[string]map[string]bool
 	microOrders        map[string]map[string]string
 	router             any
@@ -48,14 +49,15 @@ var _ transport.GameRoom = (*GameRoom)(nil)
 
 func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config) *GameRoom {
 	return &GameRoom{
-		ID:        id,
-		Players:   players,
-		cfg:       cfg,
-		transport: t,
-		submitCh:  make(chan string, len(players)*4+16),
+		ID:                 id,
+		Players:            players,
+		cfg:                cfg,
+		transport:          t,
+		submitCh:           make(chan string, len(players)*4+16),
 		pendingBuilds:      make([]domain.BuildOrder, 0),
 		ministerDirectives: make(map[string]string),
 		combatDirectives:   make(map[string][]gamephase.WarZoneDirective),
+		combatOrders:       make(map[string]domain.CombatOrder),
 		vetoUnits:          make(map[string]map[string]bool),
 		microOrders:        make(map[string]map[string]string),
 		ministerEngine:     minister.NewMinisterEngine(nil),
@@ -249,6 +251,23 @@ func (r *GameRoom) SetMicroOrder(playerID string, unitID string, targetNode stri
 		r.microOrders[playerID] = make(map[string]string)
 	}
 	r.microOrders[playerID][unitID] = targetNode
+	r.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     playerID,
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: targetNode,
+	})
+}
+
+func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
+	order = order.Normalized()
+	if order.UnitID == "" {
+		return
+	}
+	if order.PlayerID == "" {
+		order.PlayerID = r.playerIDForUnit(order.UnitID)
+	}
+	r.combatOrders[order.UnitID] = order
 }
 
 func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
@@ -321,26 +340,30 @@ func (r *GameRoom) handleDraw() {
 	}
 }
 
-func (r *GameRoom) applyMoveOrdersToWorld() {
-	for playerID, orders := range r.microOrders {
-		for unitID, targetNode := range orders {
-			if r.vetoUnits[playerID][unitID] {
-				continue
-			}
-			targetEntry, ok := r.state.GetNode(targetNode)
-			if !ok {
-				continue
-			}
-			pos := ecs.PositionC.Get(targetEntry)
-			r.setMoveIntent(unitID, domain.Position{X: pos.X, Y: pos.Y})
+func (r *GameRoom) prepareCombatOrders() {
+	if r.state.PendingCombatOrders == nil {
+		r.state.PendingCombatOrders = make(map[string]domain.CombatOrder)
+	}
+	clear(r.state.PendingCombatOrders)
+
+	for _, order := range r.state.MinisterMoveOrders {
+		if r.isVetoed(order.PlayerID, order.UnitID) {
+			continue
+		}
+		targetNodeID := r.nodeIDAt(order.Target)
+		r.state.PendingCombatOrders[order.UnitID] = domain.CombatOrder{
+			PlayerID:     order.PlayerID,
+			UnitID:       order.UnitID,
+			Action:       domain.CombatActionMove,
+			TargetNodeID: targetNodeID,
 		}
 	}
 
-	for _, order := range r.state.MinisterMoveOrders {
-		if r.vetoUnits[order.PlayerID][order.UnitID] {
+	for unitID, order := range r.combatOrders {
+		if r.isVetoed(order.PlayerID, unitID) {
 			continue
 		}
-		r.setMoveIntent(order.UnitID, order.Target)
+		r.state.PendingCombatOrders[unitID] = order.Normalized()
 	}
 }
 
@@ -355,6 +378,34 @@ func (r *GameRoom) setMoveIntent(unitID string, target domain.Position) {
 		}
 		ecs.MoveIntentC.SetValue(entry, ecs.MoveIntentComp{Target: target})
 	})
+}
+
+func (r *GameRoom) isVetoed(playerID string, unitID string) bool {
+	if vetoes, ok := r.vetoUnits[playerID]; ok {
+		return vetoes[unitID]
+	}
+	return false
+}
+
+func (r *GameRoom) nodeIDAt(pos domain.Position) string {
+	if entry, ok := domain.GetNodeAt(r.state.World, pos); ok {
+		return ecs.NodeC.Get(entry).ID
+	}
+	return ""
+}
+
+func (r *GameRoom) playerIDForUnit(unitID string) string {
+	var playerID string
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if playerID != "" {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID == unitID {
+			playerID = stats.Faction
+		}
+	})
+	return playerID
 }
 
 func (r *GameRoom) Broadcast(msg proto.Message) {

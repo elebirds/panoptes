@@ -238,6 +238,74 @@ func (x *MsgTokenMicro) GetTargetNode() string {
 	return ""
 }
 
+type MsgCombatOrder struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UnitId        string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	Action        string                 `protobuf:"bytes,2,opt,name=action,proto3" json:"action,omitempty"`
+	TargetNodeId  string                 `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
+	TargetUnitId  string                 `protobuf:"bytes,4,opt,name=target_unit_id,json=targetUnitId,proto3" json:"target_unit_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgCombatOrder) Reset() {
+	*x = MsgCombatOrder{}
+	mi := &file_combat_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgCombatOrder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCombatOrder) ProtoMessage() {}
+
+func (x *MsgCombatOrder) ProtoReflect() protoreflect.Message {
+	mi := &file_combat_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgCombatOrder.ProtoReflect.Descriptor instead.
+func (*MsgCombatOrder) Descriptor() ([]byte, []int) {
+	return file_combat_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MsgCombatOrder) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *MsgCombatOrder) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *MsgCombatOrder) GetTargetNodeId() string {
+	if x != nil {
+		return x.TargetNodeId
+	}
+	return ""
+}
+
+func (x *MsgCombatOrder) GetTargetUnitId() string {
+	if x != nil {
+		return x.TargetUnitId
+	}
+	return ""
+}
+
 type MsgSubmitCombat struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -246,7 +314,7 @@ type MsgSubmitCombat struct {
 
 func (x *MsgSubmitCombat) Reset() {
 	*x = MsgSubmitCombat{}
-	mi := &file_combat_proto_msgTypes[4]
+	mi := &file_combat_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -258,7 +326,7 @@ func (x *MsgSubmitCombat) String() string {
 func (*MsgSubmitCombat) ProtoMessage() {}
 
 func (x *MsgSubmitCombat) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[4]
+	mi := &file_combat_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,7 +339,7 @@ func (x *MsgSubmitCombat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSubmitCombat.ProtoReflect.Descriptor instead.
 func (*MsgSubmitCombat) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{4}
+	return file_combat_proto_rawDescGZIP(), []int{5}
 }
 
 type MsgCombatPhaseStart struct {
@@ -284,7 +352,7 @@ type MsgCombatPhaseStart struct {
 
 func (x *MsgCombatPhaseStart) Reset() {
 	*x = MsgCombatPhaseStart{}
-	mi := &file_combat_proto_msgTypes[5]
+	mi := &file_combat_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -296,7 +364,7 @@ func (x *MsgCombatPhaseStart) String() string {
 func (*MsgCombatPhaseStart) ProtoMessage() {}
 
 func (x *MsgCombatPhaseStart) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[5]
+	mi := &file_combat_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -309,7 +377,7 @@ func (x *MsgCombatPhaseStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgCombatPhaseStart.ProtoReflect.Descriptor instead.
 func (*MsgCombatPhaseStart) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{5}
+	return file_combat_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MsgCombatPhaseStart) GetTimeout() int32 {
@@ -337,7 +405,7 @@ type MsgMinisterCombatChunk struct {
 
 func (x *MsgMinisterCombatChunk) Reset() {
 	*x = MsgMinisterCombatChunk{}
-	mi := &file_combat_proto_msgTypes[6]
+	mi := &file_combat_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -349,7 +417,7 @@ func (x *MsgMinisterCombatChunk) String() string {
 func (*MsgMinisterCombatChunk) ProtoMessage() {}
 
 func (x *MsgMinisterCombatChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[6]
+	mi := &file_combat_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -362,7 +430,7 @@ func (x *MsgMinisterCombatChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgMinisterCombatChunk.ProtoReflect.Descriptor instead.
 func (*MsgMinisterCombatChunk) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{6}
+	return file_combat_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MsgMinisterCombatChunk) GetChunk() string {
@@ -389,7 +457,7 @@ type MsgMinisterCombatOrders struct {
 
 func (x *MsgMinisterCombatOrders) Reset() {
 	*x = MsgMinisterCombatOrders{}
-	mi := &file_combat_proto_msgTypes[7]
+	mi := &file_combat_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +469,7 @@ func (x *MsgMinisterCombatOrders) String() string {
 func (*MsgMinisterCombatOrders) ProtoMessage() {}
 
 func (x *MsgMinisterCombatOrders) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[7]
+	mi := &file_combat_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +482,7 @@ func (x *MsgMinisterCombatOrders) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgMinisterCombatOrders.ProtoReflect.Descriptor instead.
 func (*MsgMinisterCombatOrders) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{7}
+	return file_combat_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MsgMinisterCombatOrders) GetOrders() []*UnitOrder {
@@ -436,7 +504,7 @@ type UnitOrder struct {
 
 func (x *UnitOrder) Reset() {
 	*x = UnitOrder{}
-	mi := &file_combat_proto_msgTypes[8]
+	mi := &file_combat_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -448,7 +516,7 @@ func (x *UnitOrder) String() string {
 func (*UnitOrder) ProtoMessage() {}
 
 func (x *UnitOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[8]
+	mi := &file_combat_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +529,7 @@ func (x *UnitOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitOrder.ProtoReflect.Descriptor instead.
 func (*UnitOrder) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{8}
+	return file_combat_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UnitOrder) GetUnitId() string {
@@ -502,7 +570,7 @@ type MsgCombatSettlement struct {
 
 func (x *MsgCombatSettlement) Reset() {
 	*x = MsgCombatSettlement{}
-	mi := &file_combat_proto_msgTypes[9]
+	mi := &file_combat_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -514,7 +582,7 @@ func (x *MsgCombatSettlement) String() string {
 func (*MsgCombatSettlement) ProtoMessage() {}
 
 func (x *MsgCombatSettlement) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[9]
+	mi := &file_combat_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -527,7 +595,7 @@ func (x *MsgCombatSettlement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgCombatSettlement.ProtoReflect.Descriptor instead.
 func (*MsgCombatSettlement) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{9}
+	return file_combat_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MsgCombatSettlement) GetEvents() []*CombatEvent {
@@ -557,7 +625,7 @@ type CombatEvent struct {
 
 func (x *CombatEvent) Reset() {
 	*x = CombatEvent{}
-	mi := &file_combat_proto_msgTypes[10]
+	mi := &file_combat_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -569,7 +637,7 @@ func (x *CombatEvent) String() string {
 func (*CombatEvent) ProtoMessage() {}
 
 func (x *CombatEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[10]
+	mi := &file_combat_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -582,7 +650,7 @@ func (x *CombatEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CombatEvent.ProtoReflect.Descriptor instead.
 func (*CombatEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{10}
+	return file_combat_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CombatEvent) GetType() string {
@@ -735,7 +803,7 @@ type UnitMoveEvent struct {
 
 func (x *UnitMoveEvent) Reset() {
 	*x = UnitMoveEvent{}
-	mi := &file_combat_proto_msgTypes[11]
+	mi := &file_combat_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -747,7 +815,7 @@ func (x *UnitMoveEvent) String() string {
 func (*UnitMoveEvent) ProtoMessage() {}
 
 func (x *UnitMoveEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[11]
+	mi := &file_combat_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -760,7 +828,7 @@ func (x *UnitMoveEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitMoveEvent.ProtoReflect.Descriptor instead.
 func (*UnitMoveEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{11}
+	return file_combat_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UnitMoveEvent) GetUnitId() string {
@@ -803,7 +871,7 @@ type UnitDamagedEvent struct {
 
 func (x *UnitDamagedEvent) Reset() {
 	*x = UnitDamagedEvent{}
-	mi := &file_combat_proto_msgTypes[12]
+	mi := &file_combat_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -815,7 +883,7 @@ func (x *UnitDamagedEvent) String() string {
 func (*UnitDamagedEvent) ProtoMessage() {}
 
 func (x *UnitDamagedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[12]
+	mi := &file_combat_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -828,7 +896,7 @@ func (x *UnitDamagedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitDamagedEvent.ProtoReflect.Descriptor instead.
 func (*UnitDamagedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{12}
+	return file_combat_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UnitDamagedEvent) GetUnitId() string {
@@ -870,7 +938,7 @@ type UnitDiedEvent struct {
 
 func (x *UnitDiedEvent) Reset() {
 	*x = UnitDiedEvent{}
-	mi := &file_combat_proto_msgTypes[13]
+	mi := &file_combat_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -882,7 +950,7 @@ func (x *UnitDiedEvent) String() string {
 func (*UnitDiedEvent) ProtoMessage() {}
 
 func (x *UnitDiedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[13]
+	mi := &file_combat_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -895,7 +963,7 @@ func (x *UnitDiedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitDiedEvent.ProtoReflect.Descriptor instead.
 func (*UnitDiedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{13}
+	return file_combat_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *UnitDiedEvent) GetUnitId() string {
@@ -931,7 +999,7 @@ type CastleDamagedEvent struct {
 
 func (x *CastleDamagedEvent) Reset() {
 	*x = CastleDamagedEvent{}
-	mi := &file_combat_proto_msgTypes[14]
+	mi := &file_combat_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +1011,7 @@ func (x *CastleDamagedEvent) String() string {
 func (*CastleDamagedEvent) ProtoMessage() {}
 
 func (x *CastleDamagedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[14]
+	mi := &file_combat_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -956,7 +1024,7 @@ func (x *CastleDamagedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CastleDamagedEvent.ProtoReflect.Descriptor instead.
 func (*CastleDamagedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{14}
+	return file_combat_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CastleDamagedEvent) GetNodeId() string {
@@ -997,7 +1065,7 @@ type CastleDestroyedEvent struct {
 
 func (x *CastleDestroyedEvent) Reset() {
 	*x = CastleDestroyedEvent{}
-	mi := &file_combat_proto_msgTypes[15]
+	mi := &file_combat_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1077,7 @@ func (x *CastleDestroyedEvent) String() string {
 func (*CastleDestroyedEvent) ProtoMessage() {}
 
 func (x *CastleDestroyedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[15]
+	mi := &file_combat_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1090,7 @@ func (x *CastleDestroyedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CastleDestroyedEvent.ProtoReflect.Descriptor instead.
 func (*CastleDestroyedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{15}
+	return file_combat_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CastleDestroyedEvent) GetNodeId() string {
@@ -1051,7 +1119,7 @@ type ConflictEvent struct {
 
 func (x *ConflictEvent) Reset() {
 	*x = ConflictEvent{}
-	mi := &file_combat_proto_msgTypes[16]
+	mi := &file_combat_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1063,7 +1131,7 @@ func (x *ConflictEvent) String() string {
 func (*ConflictEvent) ProtoMessage() {}
 
 func (x *ConflictEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[16]
+	mi := &file_combat_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1076,7 +1144,7 @@ func (x *ConflictEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConflictEvent.ProtoReflect.Descriptor instead.
 func (*ConflictEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{16}
+	return file_combat_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ConflictEvent) GetUnitAId() string {
@@ -1118,7 +1186,7 @@ type RoadDestroyedEvent struct {
 
 func (x *RoadDestroyedEvent) Reset() {
 	*x = RoadDestroyedEvent{}
-	mi := &file_combat_proto_msgTypes[17]
+	mi := &file_combat_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1130,7 +1198,7 @@ func (x *RoadDestroyedEvent) String() string {
 func (*RoadDestroyedEvent) ProtoMessage() {}
 
 func (x *RoadDestroyedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[17]
+	mi := &file_combat_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1143,7 +1211,7 @@ func (x *RoadDestroyedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoadDestroyedEvent.ProtoReflect.Descriptor instead.
 func (*RoadDestroyedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{17}
+	return file_combat_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RoadDestroyedEvent) GetFromNode() string {
@@ -1178,7 +1246,7 @@ type BuildingDamagedEvent struct {
 
 func (x *BuildingDamagedEvent) Reset() {
 	*x = BuildingDamagedEvent{}
-	mi := &file_combat_proto_msgTypes[18]
+	mi := &file_combat_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1190,7 +1258,7 @@ func (x *BuildingDamagedEvent) String() string {
 func (*BuildingDamagedEvent) ProtoMessage() {}
 
 func (x *BuildingDamagedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_combat_proto_msgTypes[18]
+	mi := &file_combat_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1203,7 +1271,7 @@ func (x *BuildingDamagedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildingDamagedEvent.ProtoReflect.Descriptor instead.
 func (*BuildingDamagedEvent) Descriptor() ([]byte, []int) {
-	return file_combat_proto_rawDescGZIP(), []int{18}
+	return file_combat_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *BuildingDamagedEvent) GetNodeId() string {
@@ -1231,7 +1299,7 @@ var File_combat_proto protoreflect.FileDescriptor
 
 const file_combat_proto_rawDesc = "" +
 	"\n" +
-	"\fcombat.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10game_state.proto\"W\n" +
+	"\fcombat.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"W\n" +
 	"\rMsgSetWarZone\x12\x17\n" +
 	"\azone_id\x18\x01 \x01(\tR\x06zoneId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -1247,7 +1315,12 @@ const file_combat_proto_rawDesc = "" +
 	"\rMsgTokenMicro\x12\x17\n" +
 	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12\x1f\n" +
 	"\vtarget_node\x18\x02 \x01(\tR\n" +
-	"targetNode\"\x11\n" +
+	"targetNode\"\x8d\x01\n" +
+	"\x0eMsgCombatOrder\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\x12$\n" +
+	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x12$\n" +
+	"\x0etarget_unit_id\x18\x04 \x01(\tR\ftargetUnitId\"\x11\n" +
 	"\x0fMsgSubmitCombat\"G\n" +
 	"\x13MsgCombatPhaseStart\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x16\n" +
@@ -1325,44 +1398,45 @@ func file_combat_proto_rawDescGZIP() []byte {
 	return file_combat_proto_rawDescData
 }
 
-var file_combat_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_combat_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_combat_proto_goTypes = []any{
 	(*MsgSetWarZone)(nil),           // 0: panoptes.proto.v1.MsgSetWarZone
 	(*MsgWarZoneDirective)(nil),     // 1: panoptes.proto.v1.MsgWarZoneDirective
 	(*MsgTokenVetoCombat)(nil),      // 2: panoptes.proto.v1.MsgTokenVetoCombat
 	(*MsgTokenMicro)(nil),           // 3: panoptes.proto.v1.MsgTokenMicro
-	(*MsgSubmitCombat)(nil),         // 4: panoptes.proto.v1.MsgSubmitCombat
-	(*MsgCombatPhaseStart)(nil),     // 5: panoptes.proto.v1.MsgCombatPhaseStart
-	(*MsgMinisterCombatChunk)(nil),  // 6: panoptes.proto.v1.MsgMinisterCombatChunk
-	(*MsgMinisterCombatOrders)(nil), // 7: panoptes.proto.v1.MsgMinisterCombatOrders
-	(*UnitOrder)(nil),               // 8: panoptes.proto.v1.UnitOrder
-	(*MsgCombatSettlement)(nil),     // 9: panoptes.proto.v1.MsgCombatSettlement
-	(*CombatEvent)(nil),             // 10: panoptes.proto.v1.CombatEvent
-	(*UnitMoveEvent)(nil),           // 11: panoptes.proto.v1.UnitMoveEvent
-	(*UnitDamagedEvent)(nil),        // 12: panoptes.proto.v1.UnitDamagedEvent
-	(*UnitDiedEvent)(nil),           // 13: panoptes.proto.v1.UnitDiedEvent
-	(*CastleDamagedEvent)(nil),      // 14: panoptes.proto.v1.CastleDamagedEvent
-	(*CastleDestroyedEvent)(nil),    // 15: panoptes.proto.v1.CastleDestroyedEvent
-	(*ConflictEvent)(nil),           // 16: panoptes.proto.v1.ConflictEvent
-	(*RoadDestroyedEvent)(nil),      // 17: panoptes.proto.v1.RoadDestroyedEvent
-	(*BuildingDamagedEvent)(nil),    // 18: panoptes.proto.v1.BuildingDamagedEvent
-	(*Position)(nil),                // 19: panoptes.proto.v1.Position
+	(*MsgCombatOrder)(nil),          // 4: panoptes.proto.v1.MsgCombatOrder
+	(*MsgSubmitCombat)(nil),         // 5: panoptes.proto.v1.MsgSubmitCombat
+	(*MsgCombatPhaseStart)(nil),     // 6: panoptes.proto.v1.MsgCombatPhaseStart
+	(*MsgMinisterCombatChunk)(nil),  // 7: panoptes.proto.v1.MsgMinisterCombatChunk
+	(*MsgMinisterCombatOrders)(nil), // 8: panoptes.proto.v1.MsgMinisterCombatOrders
+	(*UnitOrder)(nil),               // 9: panoptes.proto.v1.UnitOrder
+	(*MsgCombatSettlement)(nil),     // 10: panoptes.proto.v1.MsgCombatSettlement
+	(*CombatEvent)(nil),             // 11: panoptes.proto.v1.CombatEvent
+	(*UnitMoveEvent)(nil),           // 12: panoptes.proto.v1.UnitMoveEvent
+	(*UnitDamagedEvent)(nil),        // 13: panoptes.proto.v1.UnitDamagedEvent
+	(*UnitDiedEvent)(nil),           // 14: panoptes.proto.v1.UnitDiedEvent
+	(*CastleDamagedEvent)(nil),      // 15: panoptes.proto.v1.CastleDamagedEvent
+	(*CastleDestroyedEvent)(nil),    // 16: panoptes.proto.v1.CastleDestroyedEvent
+	(*ConflictEvent)(nil),           // 17: panoptes.proto.v1.ConflictEvent
+	(*RoadDestroyedEvent)(nil),      // 18: panoptes.proto.v1.RoadDestroyedEvent
+	(*BuildingDamagedEvent)(nil),    // 19: panoptes.proto.v1.BuildingDamagedEvent
+	(*Position)(nil),                // 20: panoptes.proto.v1.Position
 }
 var file_combat_proto_depIdxs = []int32{
-	8,  // 0: panoptes.proto.v1.MsgMinisterCombatOrders.orders:type_name -> panoptes.proto.v1.UnitOrder
-	10, // 1: panoptes.proto.v1.MsgCombatSettlement.events:type_name -> panoptes.proto.v1.CombatEvent
-	11, // 2: panoptes.proto.v1.CombatEvent.unit_move:type_name -> panoptes.proto.v1.UnitMoveEvent
-	12, // 3: panoptes.proto.v1.CombatEvent.unit_damaged:type_name -> panoptes.proto.v1.UnitDamagedEvent
-	13, // 4: panoptes.proto.v1.CombatEvent.unit_died:type_name -> panoptes.proto.v1.UnitDiedEvent
-	14, // 5: panoptes.proto.v1.CombatEvent.castle_damaged:type_name -> panoptes.proto.v1.CastleDamagedEvent
-	15, // 6: panoptes.proto.v1.CombatEvent.castle_destroyed:type_name -> panoptes.proto.v1.CastleDestroyedEvent
-	16, // 7: panoptes.proto.v1.CombatEvent.conflict:type_name -> panoptes.proto.v1.ConflictEvent
-	17, // 8: panoptes.proto.v1.CombatEvent.road_destroyed:type_name -> panoptes.proto.v1.RoadDestroyedEvent
-	18, // 9: panoptes.proto.v1.CombatEvent.building_damaged:type_name -> panoptes.proto.v1.BuildingDamagedEvent
-	19, // 10: panoptes.proto.v1.UnitMoveEvent.from:type_name -> panoptes.proto.v1.Position
-	19, // 11: panoptes.proto.v1.UnitMoveEvent.to:type_name -> panoptes.proto.v1.Position
-	19, // 12: panoptes.proto.v1.UnitDiedEvent.pos:type_name -> panoptes.proto.v1.Position
-	19, // 13: panoptes.proto.v1.ConflictEvent.location:type_name -> panoptes.proto.v1.Position
+	9,  // 0: panoptes.proto.v1.MsgMinisterCombatOrders.orders:type_name -> panoptes.proto.v1.UnitOrder
+	11, // 1: panoptes.proto.v1.MsgCombatSettlement.events:type_name -> panoptes.proto.v1.CombatEvent
+	12, // 2: panoptes.proto.v1.CombatEvent.unit_move:type_name -> panoptes.proto.v1.UnitMoveEvent
+	13, // 3: panoptes.proto.v1.CombatEvent.unit_damaged:type_name -> panoptes.proto.v1.UnitDamagedEvent
+	14, // 4: panoptes.proto.v1.CombatEvent.unit_died:type_name -> panoptes.proto.v1.UnitDiedEvent
+	15, // 5: panoptes.proto.v1.CombatEvent.castle_damaged:type_name -> panoptes.proto.v1.CastleDamagedEvent
+	16, // 6: panoptes.proto.v1.CombatEvent.castle_destroyed:type_name -> panoptes.proto.v1.CastleDestroyedEvent
+	17, // 7: panoptes.proto.v1.CombatEvent.conflict:type_name -> panoptes.proto.v1.ConflictEvent
+	18, // 8: panoptes.proto.v1.CombatEvent.road_destroyed:type_name -> panoptes.proto.v1.RoadDestroyedEvent
+	19, // 9: panoptes.proto.v1.CombatEvent.building_damaged:type_name -> panoptes.proto.v1.BuildingDamagedEvent
+	20, // 10: panoptes.proto.v1.UnitMoveEvent.from:type_name -> panoptes.proto.v1.Position
+	20, // 11: panoptes.proto.v1.UnitMoveEvent.to:type_name -> panoptes.proto.v1.Position
+	20, // 12: panoptes.proto.v1.UnitDiedEvent.pos:type_name -> panoptes.proto.v1.Position
+	20, // 13: panoptes.proto.v1.ConflictEvent.location:type_name -> panoptes.proto.v1.Position
 	14, // [14:14] is the sub-list for method output_type
 	14, // [14:14] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
@@ -1376,9 +1450,8 @@ func file_combat_proto_init() {
 		return
 	}
 	file_common_proto_init()
-	file_game_state_proto_init()
 	file_combat_proto_msgTypes[1].OneofWrappers = []any{}
-	file_combat_proto_msgTypes[10].OneofWrappers = []any{
+	file_combat_proto_msgTypes[11].OneofWrappers = []any{
 		(*CombatEvent_UnitMove)(nil),
 		(*CombatEvent_UnitDamaged)(nil),
 		(*CombatEvent_UnitDied)(nil),
@@ -1394,7 +1467,7 @@ func file_combat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_combat_proto_rawDesc), len(file_combat_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
