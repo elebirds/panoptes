@@ -74,7 +74,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             gameInitType.GetProperty("GameId")?.SetValue(gameInit, "game-1");
             gameInitType.GetProperty("YourPlayerId")?.SetValue(gameInit, "player-1");
             gameInitType.GetProperty("Turn")?.SetValue(gameInit, 1);
-            gameInitType.GetProperty("Phase")?.SetValue(gameInit, "domestic");
+            gameInitType.GetProperty("Phase")?.SetValue(gameInit, "domestic_planning");
             playerViewType.GetProperty("TokensLeft")?.SetValue(playerView, 3);
             gameInitType.GetProperty("MyPlayer")?.SetValue(gameInit, playerView);
 

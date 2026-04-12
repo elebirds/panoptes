@@ -24,9 +24,10 @@ namespace Panoptes.Core.Application.Cache
         public string GameID { get; private set; }
         public string MyPlayerID { get; private set; }
         public int Turn { get; set; }
-        public string Phase { get; set; }
+        public string Phase { get; private set; }
         public int MapWidth { get; private set; }
         public int MapHeight { get; private set; }
+        public bool IsGameOver { get; private set; }
 
         private readonly Dictionary<string, NodeDto> _nodes = new();
         public IReadOnlyDictionary<string, NodeDto> Nodes => _nodes;
@@ -59,6 +60,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<TokenResultEvent> OnTokenResult;
         public event Action<RevealResultEvent> OnRevealResult;
         public event Action<GameOverEvent> OnGameOver;
+        public event Action<GameErrorEvent> OnGameError;
 
         private void Awake()
         {
@@ -82,9 +84,10 @@ namespace Panoptes.Core.Application.Cache
             GameID = msg.GameId;
             MyPlayerID = msg.YourPlayerId;
             Turn = msg.Turn;
-            Phase = msg.Phase;
+            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticPlanning);
             MapWidth = msg.MapWidth;
             MapHeight = msg.MapHeight;
+            IsGameOver = false;
 
             _nodes.Clear();
             foreach (var node in msg.Nodes)
@@ -118,13 +121,7 @@ namespace Panoptes.Core.Application.Cache
 
             var currentResources = SnapshotResources(MyPlayer?.Resources);
 
-            Fire(OnPhaseChanged, new PhaseChangedEvent
-            {
-                Turn = Turn,
-                Phase = Phase,
-                TimeoutSeconds = 0,
-                TokensLeft = TokensLeft
-            }, nameof(OnPhaseChanged));
+            PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
 
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
@@ -213,16 +210,9 @@ namespace Panoptes.Core.Application.Cache
             }
 
             Turn = msg.Turn;
-            Phase = "domestic";
+            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticPlanning);
             UpdateTokens(msg.Tokens);
-
-            Fire(OnPhaseChanged, new PhaseChangedEvent
-            {
-                Turn = msg.Turn,
-                Phase = "domestic",
-                TimeoutSeconds = msg.Timeout,
-                TokensLeft = msg.Tokens
-            }, nameof(OnPhaseChanged));
+            PublishPhaseState(msg.Turn, Phase, msg.Timeout, msg.Tokens, string.Empty);
 
             OnStateChanged?.Invoke();
         }
@@ -234,16 +224,10 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
-            Phase = "combat";
+            Turn = msg.Turn > 0 ? msg.Turn : Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.CombatPlanning);
             UpdateTokens(msg.Tokens);
-
-            Fire(OnPhaseChanged, new PhaseChangedEvent
-            {
-                Turn = Turn,
-                Phase = "combat",
-                TimeoutSeconds = msg.Timeout,
-                TokensLeft = msg.Tokens
-            }, nameof(OnPhaseChanged));
+            PublishPhaseState(Turn, Phase, msg.Timeout, msg.Tokens, string.Empty);
 
             OnStateChanged?.Invoke();
         }
@@ -254,6 +238,9 @@ namespace Panoptes.Core.Application.Cache
             {
                 return;
             }
+
+            Turn = msg.Turn > 0 ? msg.Turn : Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticResolving);
 
             var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
 
@@ -329,6 +316,8 @@ namespace Panoptes.Core.Application.Cache
                 BuiltNodeIDs = settlement?.BuiltNodeIDs ?? new List<string>()
             }, nameof(OnDomesticSettled));
 
+            PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
+
             OnStateChanged?.Invoke();
         }
 
@@ -338,6 +327,9 @@ namespace Panoptes.Core.Application.Cache
             {
                 return;
             }
+
+            Turn = msg.Turn > 0 ? msg.Turn : Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.CombatResolving);
 
             var myHpBefore = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
             var enemyHpBefore = EnemyCastleHP;
@@ -416,6 +408,30 @@ namespace Panoptes.Core.Application.Cache
                 DeadUnitIDs = deadIDs,
                 CastleDamaged = castleDamaged
             }, nameof(OnCombatSettled));
+
+            PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
+
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyGameOver(MsgGameOver msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            IsGameOver = true;
+
+            var isWinner = string.Equals(msg.WinnerId, MyPlayerID, StringComparison.Ordinal) ||
+                           string.Equals(msg.WinnerId, MyPlayer != null ? MyPlayer.Id : string.Empty, StringComparison.Ordinal);
+            Fire(OnGameOver, new GameOverEvent
+            {
+                WinnerID = msg.WinnerId,
+                Reason = msg.Reason,
+                Narrative = msg.Narrative,
+                IsWinner = isWinner
+            }, nameof(OnGameOver));
 
             OnStateChanged?.Invoke();
         }
@@ -580,6 +596,7 @@ namespace Panoptes.Core.Application.Cache
             Phase = string.Empty;
             MapWidth = 0;
             MapHeight = 0;
+            IsGameOver = false;
             _nodes.Clear();
             _units.Clear();
             MyPlayer = null;
@@ -623,6 +640,11 @@ namespace Panoptes.Core.Application.Cache
         public void PublishGameOver(GameOverEvent evtArgs)
         {
             Fire(OnGameOver, evtArgs, nameof(OnGameOver));
+        }
+
+        public void PublishGameError(GameErrorEvent evtArgs)
+        {
+            Fire(OnGameError, evtArgs, nameof(OnGameError));
         }
 
         private void Fire<T>(Action<T> evt, T args, string evtName)
@@ -695,6 +717,24 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return resources;
+        }
+
+        private void PublishPhaseState(int turn, string phase, int timeoutSeconds, int tokensLeft, string nextPhase)
+        {
+            Fire(OnPhaseChanged, new PhaseChangedEvent
+            {
+                Turn = turn,
+                Phase = phase,
+                TimeoutSeconds = timeoutSeconds,
+                TokensLeft = tokensLeft,
+                NextPhase = nextPhase,
+                IsInteractive = GamePhases.IsPlanning(phase) && !IsGameOver
+            }, nameof(OnPhaseChanged));
+        }
+
+        private static string NormalizePhase(string phase, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(phase) ? fallback : phase;
         }
     }
 }
