@@ -39,7 +39,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/resource_amount.schema.json"), `"ore"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/manifest.schema.json"), `"additionalProperties": false`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/units.schema.json"), `"additionalProperties": false`)
-	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"infantry"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"warrior"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
@@ -48,7 +48,7 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogManifest")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/map_catalog.proto"), "message MapCatalogEntry")
 	assertFileContains(t, filepath.Join(repoRoot, "server/internal/staticdata/generated/resource_keys_gen.go"), "ResourceOre")
-	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated/ResourceKeys.g.cs"), "ResourceOre")
+	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Core/Foundation/Domain/ResourceKeys.g.cs"), "ResourceOre")
 	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Resources/Data/catalog.bundle.json"), `"default_map_id": "default"`)
 }
 
@@ -211,7 +211,7 @@ func TestGenerateRejectsInvalidAuthoringSources(t *testing.T) {
 			content: `{
   "units": [
     {
-      "id": "infantry",
+      "id": "warrior",
       "class": "melee",
       "max_hp": 30,
       "attack": 10,
@@ -350,7 +350,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
 		"data/content/units/units.json": `{
   "units": [
     {
-      "id": "infantry",
+      "id": "warrior",
       "class": "melee",
       "max_hp": 30,
       "attack": 10,
@@ -490,7 +490,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
 }`,
 		"data/ui/catalogs/units.json": `{
   "units": [
-    { "id": "infantry", "name": "步兵", "description": "均衡近战单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 10, "tags": ["frontline"] }
+    { "id": "warrior", "name": "勇士", "description": "基础近战战斗单位", "icon_key": "unit_warrior", "prefab_key": "Infantry", "sort_order": 10, "tags": ["frontline"] }
   ]
 }`,
 		"data/ui/catalogs/buildings.json": `{

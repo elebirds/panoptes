@@ -83,7 +83,7 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 	clientData := filepath.Join(repoRoot, "client/Assets/Resources/Data")
 	schemaDir := filepath.Join(repoRoot, "data/schema")
 	serverGoGen := filepath.Join(repoRoot, "server/internal/staticdata/generated")
-	clientCodeGen := filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated")
+	clientCodeGen := filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Core/Foundation/Domain")
 	protocolDir := filepath.Join(repoRoot, "protocol")
 
 	dirs := []string{
@@ -105,7 +105,7 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 			return fmt.Errorf("mkdir %q: %w", dir, err)
 		}
 	}
-	if err := removeLegacyGeneratedFiles(schemaDir); err != nil {
+	if err := removeLegacyGeneratedFiles(repoRoot, schemaDir); err != nil {
 		return err
 	}
 
@@ -146,9 +146,13 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 	return nil
 }
 
-func removeLegacyGeneratedFiles(schemaDir string) error {
+func removeLegacyGeneratedFiles(repoRoot string, schemaDir string) error {
 	legacyFiles := []string{
 		filepath.Join(schemaDir, "ui", "resource_catalog.schema.json"),
+		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated/ResourceKeys.g.cs"),
+		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated/ResourceKeys.g.cs.meta"),
+		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated.meta"),
+		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data.meta"),
 	}
 	for _, path := range legacyFiles {
 		err := os.Remove(path)
@@ -156,6 +160,8 @@ func removeLegacyGeneratedFiles(schemaDir string) error {
 			return fmt.Errorf("remove legacy generated file %q: %w", path, err)
 		}
 	}
+	_ = os.Remove(filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated"))
+	_ = os.Remove(filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data"))
 	return nil
 }
 
@@ -644,7 +650,7 @@ func renderGoResourceKeys(bundle staticdata.CatalogBundle) string {
 
 func renderCSharpResourceKeys(bundle staticdata.CatalogBundle) string {
 	builder := &strings.Builder{}
-	builder.WriteString("namespace Panoptes.Runtime.Data.Generated\n{\n    public static class ResourceKeys\n    {\n")
+	builder.WriteString("namespace Panoptes.Core.Domain\n{\n    public static class ResourceKeys\n    {\n")
 	for _, resource := range bundle.Resources {
 		builder.WriteString(fmt.Sprintf("        public const string Resource%s = \"%s\";\n", exportedIdentifier(resource.Key), resource.Key))
 	}
