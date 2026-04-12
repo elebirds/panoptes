@@ -13,6 +13,7 @@ using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.UI.Domestic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
@@ -76,6 +77,13 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float movePreviewTravelDuration = 0.22f;
         [SerializeField] private float movePreviewArcHeight = 0.12f;
         [SerializeField] private float movePreviewTargetYOffset = 0.02f;
+        [SerializeField] private bool movePreviewUseLightweightProxy = true;
+        [SerializeField] private bool movePreviewAlwaysMatchUnitVisual = true;
+        [SerializeField] private Vector3 movePreviewProxyScale = new Vector3(0.34f, 0.72f, 0.34f);
+        [SerializeField] private float movePreviewProxyYOffset = 0.36f;
+        [SerializeField] private bool movePreviewProxyCastShadow = false;
+        [Range(0f, 1f)] [SerializeField] private float movePreviewTintStrength = 0.28f;
+        [SerializeField] private bool movePreviewKeepTextureColor = true;
 
         [Header("Build")]
         [SerializeField] private Color buildValidColor = new Color(0.35f, 1f, 0.35f, 0.92f);
@@ -83,13 +91,40 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
         [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
+        [SerializeField] private bool preferTerritoryForCityRule = true;
+        [SerializeField] private bool fallbackToLegacyCityZones = true;
+        [SerializeField] private string[] territoryOnlyBuildingTypes =
+        {
+            "castle",
+            "engineer",
+            "engineer_camp",
+            "workshop",
+            "archery",
+            "barracks",
+            "blacksmith"
+        };
+        [SerializeField] private string[] globalPlacementBuildingTypes =
+        {
+            "tower",
+            "atktower",
+            "watchtower",
+            "viewtower"
+        };
+        [SerializeField] private bool disallowManualCastlePlacement = true;
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
         [SerializeField] private CityZone[] cityZones;
 
+        [Header("Castle Panel")]
+        [SerializeField] private CastleProductionPanel castleProductionPanel;
+        [SerializeField] private bool autoFindCastleProductionPanel = true;
+        [SerializeField] private bool autoSpawnCastleProductionPanelIfMissing = true;
+        [SerializeField] private string castleProductionPanelResourcesPath = "Prefabs/UI/CastleProductionPanel";
+
         private readonly HashSet<string> _highlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
+        private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
         private UnitView _selectedUnit;
@@ -124,6 +159,8 @@ namespace Panoptes.Presentation.Map
             {
                 inputCamera = Camera.main;
             }
+
+            ResolveCastleProductionPanel();
         }
 
         private void OnEnable()
@@ -135,6 +172,7 @@ namespace Panoptes.Presentation.Map
         {
             UnsubscribeCacheEvents();
             ClearAllMovePreviews();
+            DisposeMovePreviewProxyMaterial();
         }
 
         private void Update()
@@ -168,6 +206,11 @@ namespace Panoptes.Presentation.Map
             if (GetLeftMouseButtonDown())
             {
                 if (IsPointerOverUI())
+                {
+                    return;
+                }
+
+                if (TryOpenCastlePanelFromClick())
                 {
                     return;
                 }
@@ -257,8 +300,15 @@ namespace Panoptes.Presentation.Map
 
         private void EnterBuildPlacement(string buildingType, BuildPlacementRule rule)
         {
-            _mode = Mode.Build;
             _buildType = NormalizeToken(buildingType);
+            if (disallowManualCastlePlacement && string.Equals(_buildType, "castle", StringComparison.Ordinal))
+            {
+                Debug.Log("[MapInputHandler] Castle is pre-placed by map config and cannot be manually built.");
+                ExitBuildMode();
+                return;
+            }
+
+            _mode = Mode.Build;
             _buildRule = rule;
             BlockInputAfterModeSwitch();
 
@@ -301,6 +351,39 @@ namespace Panoptes.Presentation.Map
             }
 
             ClearMoveSelection();
+        }
+
+        private bool TryOpenCastlePanelFromClick()
+        {
+            if (!TryRaycastNode(out var node))
+            {
+                return false;
+            }
+
+            if (!IsCastleNode(node.NodeId))
+            {
+                return false;
+            }
+
+            if (!IsCastleOwnedByLocalPlayer(node.NodeId))
+            {
+                return false;
+            }
+
+            if (!CanPlaceCityBuilding(node.NodeId))
+            {
+                return false;
+            }
+
+            ResolveCastleProductionPanel();
+            if (castleProductionPanel == null)
+            {
+                Debug.LogWarning($"[MapInputHandler] Castle clicked but CastleProductionPanel is missing. node={node.NodeId}");
+                return false;
+            }
+
+            castleProductionPanel.OpenForCastle(node.NodeId);
+            return true;
         }
 
         private void SelectUnit(UnitView unit)
@@ -358,6 +441,42 @@ namespace Panoptes.Presentation.Map
 
             _selectedUnit = null;
             ClearNodeHighlights();
+        }
+
+        private void ResolveCastleProductionPanel()
+        {
+            if (castleProductionPanel != null || !autoFindCastleProductionPanel)
+            {
+                return;
+            }
+
+            castleProductionPanel = UnityEngine.Object.FindAnyObjectByType<CastleProductionPanel>();
+            if (castleProductionPanel != null || !autoSpawnCastleProductionPanelIfMissing)
+            {
+                return;
+            }
+
+            var prefab = Resources.Load<CastleProductionPanel>(castleProductionPanelResourcesPath);
+            Transform parent = null;
+            var anyCanvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
+            if (anyCanvas != null)
+            {
+                parent = anyCanvas.transform;
+            }
+
+            if (prefab != null)
+            {
+                castleProductionPanel = Instantiate(prefab, parent, false);
+                return;
+            }
+
+            // Last fallback: create an empty controller object.
+            var go = new GameObject("CastleProductionPanel", typeof(RectTransform));
+            if (parent != null)
+            {
+                go.transform.SetParent(parent, false);
+            }
+            castleProductionPanel = go.AddComponent<CastleProductionPanel>();
         }
 
         private void UpdateBuildMode()
@@ -470,15 +589,88 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
+            if (IsTerritoryOnlyBuildingType(_buildType) && !CanPlaceCityBuilding(nodeId))
+            {
+                return false;
+            }
+
+            if (IsGlobalPlacementBuildingType(_buildType))
+            {
+                return true;
+            }
+
             switch (_buildRule)
             {
                 case BuildPlacementRule.ResourceOnly:
                     return map.IsNodeResourcePoint(nodeId);
                 case BuildPlacementRule.CityOnly:
-                    return IsInsideLocalCityZone(nodeId);
+                    return CanPlaceCityBuilding(nodeId);
                 default:
                     return true;
             }
+        }
+
+        private bool CanPlaceCityBuilding(string nodeId)
+        {
+            if (preferTerritoryForCityRule && IsInsideLocalTerritory(nodeId))
+            {
+                return true;
+            }
+
+            return fallbackToLegacyCityZones && IsInsideLocalCityZone(nodeId);
+        }
+
+        private bool IsInsideLocalTerritory(string nodeId)
+        {
+            var map = MapRenderer.Instance;
+            if (map == null || string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            return map.IsNodeInTerritory(nodeId, GetLocalOwnerId());
+        }
+
+        private bool IsTerritoryOnlyBuildingType(string buildingType)
+        {
+            if (string.IsNullOrWhiteSpace(buildingType) ||
+                territoryOnlyBuildingTypes == null ||
+                territoryOnlyBuildingTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(buildingType);
+            for (int i = 0; i < territoryOnlyBuildingTypes.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(territoryOnlyBuildingTypes[i]), StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsGlobalPlacementBuildingType(string buildingType)
+        {
+            if (string.IsNullOrWhiteSpace(buildingType) ||
+                globalPlacementBuildingTypes == null ||
+                globalPlacementBuildingTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(buildingType);
+            for (int i = 0; i < globalPlacementBuildingTypes.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(globalPlacementBuildingTypes[i]), StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool IsInsideLocalCityZone(string nodeId)
@@ -729,6 +921,56 @@ namespace Panoptes.Presentation.Map
             return "blue";
         }
 
+        private bool IsCastleNode(string nodeId)
+        {
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
+            {
+                return string.Equals(NormalizeToken(mapNode.BuildingType), "castle", StringComparison.Ordinal);
+            }
+
+            if (GameStateCache.Instance == null)
+            {
+                return false;
+            }
+
+            var cacheNode = GameStateCache.Instance.GetNode(nodeId);
+            return cacheNode != null && string.Equals(NormalizeToken(cacheNode.BuildingType), "castle", StringComparison.Ordinal);
+        }
+
+        private bool IsCastleOwnedByLocalPlayer(string nodeId)
+        {
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            var ownerId = GetLocalOwnerId();
+            var map = MapRenderer.Instance;
+            if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
+            {
+                return !string.IsNullOrEmpty(mapNode.Owner) && string.Equals(mapNode.Owner, ownerId, StringComparison.Ordinal);
+            }
+
+            if (GameStateCache.Instance == null)
+            {
+                return false;
+            }
+
+            var cacheNode = GameStateCache.Instance.GetNode(nodeId);
+            if (cacheNode == null)
+            {
+                return false;
+            }
+
+            return !string.IsNullOrEmpty(cacheNode.Owner) && string.Equals(cacheNode.Owner, ownerId, StringComparison.Ordinal);
+        }
+
         private bool CanControlUnit(UnitView unit)
         {
             if (unit == null)
@@ -879,15 +1121,32 @@ namespace Panoptes.Presentation.Map
 
             RemoveMovePreview(unitId);
 
-            var ghost = Instantiate(sourceUnit.gameObject);
+            var ghost = CreateMovePreviewObject(sourceUnit);
+            if (ghost == null)
+            {
+                return;
+            }
+
             ghost.name = $"MoveGhost_{unitId}";
             ghost.transform.SetParent(map.transform, true);
-            ghost.transform.position = sourceUnit.transform.position;
-            ghost.transform.rotation = sourceUnit.transform.rotation;
             ghost.AddComponent<MoveGhostTag>();
 
-            DisableBehavioursAndColliders(ghost);
-            ApplyGhostVisual(ghost);
+            var useProxy = ShouldUseLightweightProxy(sourceUnit);
+            if (useProxy)
+            {
+                var ignoreRaycastLayer = LayerMask.NameToLayer("Ignore Raycast");
+                if (ignoreRaycastLayer >= 0)
+                {
+                    SetLayerRecursively(ghost.transform, ignoreRaycastLayer);
+                }
+                ApplyGhostVisual(ghost);
+            }
+            else
+            {
+                DisableBehavioursAndColliders(ghost, keepAnimators: true);
+                ApplyGhostVisual(ghost);
+                SetGhostMoveState(ghost, isMoving: true, normalizedSpeed: 1f);
+            }
 
             _movePreviewByUnitId[unitId] = ghost;
 
@@ -897,6 +1156,127 @@ namespace Panoptes.Presentation.Map
             destination.y += movePreviewTargetYOffset;
 
             StartCoroutine(AnimateMovePreview(ghost, destination));
+        }
+
+        private bool ShouldUseLightweightProxy(UnitView sourceUnit)
+        {
+            if (!movePreviewUseLightweightProxy)
+            {
+                return false;
+            }
+
+            if (movePreviewAlwaysMatchUnitVisual)
+            {
+                return false;
+            }
+
+            return sourceUnit == null;
+        }
+
+        private GameObject CreateMovePreviewObject(UnitView sourceUnit)
+        {
+            if (sourceUnit == null)
+            {
+                return null;
+            }
+
+            if (!ShouldUseLightweightProxy(sourceUnit))
+            {
+                var sourceVisualRoot = sourceUnit.VisualRoot;
+                var sourceObject = sourceVisualRoot != null ? sourceVisualRoot.gameObject : sourceUnit.gameObject;
+                var clone = Instantiate(sourceObject);
+                clone.transform.position = sourceObject.transform.position;
+                clone.transform.rotation = sourceObject.transform.rotation;
+                return clone;
+            }
+
+            var proxy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            proxy.transform.position = sourceUnit.transform.position + Vector3.up * movePreviewProxyYOffset;
+            proxy.transform.rotation = sourceUnit.transform.rotation;
+            proxy.transform.localScale = movePreviewProxyScale;
+
+            var collider = proxy.GetComponent<Collider>();
+            if (collider != null)
+            {
+                Destroy(collider);
+            }
+
+            var renderer = proxy.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.sharedMaterial = GetOrCreateMovePreviewProxyMaterial();
+                renderer.shadowCastingMode = movePreviewProxyCastShadow ? ShadowCastingMode.On : ShadowCastingMode.Off;
+                renderer.receiveShadows = movePreviewProxyCastShadow;
+            }
+
+            return proxy;
+        }
+
+        private Material GetOrCreateMovePreviewProxyMaterial()
+        {
+            if (_movePreviewProxyMaterial != null)
+            {
+                return _movePreviewProxyMaterial;
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Sprites/Default");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            _movePreviewProxyMaterial = new Material(shader);
+            _movePreviewProxyMaterial.name = "MovePreviewProxyMat_Runtime";
+            _movePreviewProxyMaterial.hideFlags = HideFlags.DontSave;
+
+            if (_movePreviewProxyMaterial.HasProperty("_Surface"))
+            {
+                _movePreviewProxyMaterial.SetFloat("_Surface", 1f);
+            }
+
+            if (_movePreviewProxyMaterial.HasProperty("_Blend"))
+            {
+                _movePreviewProxyMaterial.SetFloat("_Blend", 0f);
+            }
+
+            if (_movePreviewProxyMaterial.HasProperty("_SrcBlend"))
+            {
+                _movePreviewProxyMaterial.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            }
+
+            if (_movePreviewProxyMaterial.HasProperty("_DstBlend"))
+            {
+                _movePreviewProxyMaterial.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            }
+
+            if (_movePreviewProxyMaterial.HasProperty("_ZWrite"))
+            {
+                _movePreviewProxyMaterial.SetFloat("_ZWrite", 0f);
+            }
+
+            _movePreviewProxyMaterial.renderQueue = (int)RenderQueue.Transparent;
+            return _movePreviewProxyMaterial;
+        }
+
+        private void DisposeMovePreviewProxyMaterial()
+        {
+            if (_movePreviewProxyMaterial == null)
+            {
+                return;
+            }
+
+            Destroy(_movePreviewProxyMaterial);
+            _movePreviewProxyMaterial = null;
         }
 
         private IEnumerator AnimateMovePreview(GameObject ghost, Vector3 destination)
@@ -920,6 +1300,16 @@ namespace Panoptes.Presentation.Map
                     pos.y += Mathf.Sin(t * Mathf.PI) * movePreviewArcHeight;
                 }
 
+                var moveDir = destination - ghost.transform.position;
+                moveDir.y = 0f;
+                if (moveDir.sqrMagnitude > 0.0001f)
+                {
+                    ghost.transform.rotation = Quaternion.Slerp(
+                        ghost.transform.rotation,
+                        Quaternion.LookRotation(moveDir.normalized, Vector3.up),
+                        Time.deltaTime * 18f);
+                }
+
                 ghost.transform.position = pos;
                 yield return null;
             }
@@ -927,6 +1317,7 @@ namespace Panoptes.Presentation.Map
             if (ghost != null)
             {
                 ghost.transform.position = destination;
+                SetGhostMoveState(ghost, isMoving: false, normalizedSpeed: 0f);
             }
         }
 
@@ -959,14 +1350,17 @@ namespace Panoptes.Presentation.Map
                 {
                     var block = new MaterialPropertyBlock();
                     renderer.GetPropertyBlock(block, m);
-                    block.SetColor("_BaseColor", movePreviewGhostColor);
-                    block.SetColor("_Color", movePreviewGhostColor);
+                    var ghostColor = movePreviewKeepTextureColor
+                        ? new Color(1f, 1f, 1f, movePreviewGhostColor.a)
+                        : Color.Lerp(Color.white, movePreviewGhostColor, movePreviewTintStrength);
+                    block.SetColor("_BaseColor", ghostColor);
+                    block.SetColor("_Color", ghostColor);
                     renderer.SetPropertyBlock(block, m);
                 }
             }
         }
 
-        private static void DisableBehavioursAndColliders(GameObject root)
+        private static void DisableBehavioursAndColliders(GameObject root, bool keepAnimators)
         {
             if (root == null)
             {
@@ -997,7 +1391,8 @@ namespace Panoptes.Presentation.Map
                 var animator = animators[i];
                 if (animator != null)
                 {
-                    animator.enabled = false;
+                    animator.enabled = keepAnimators;
+                    animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 }
             }
 
@@ -1010,6 +1405,54 @@ namespace Panoptes.Presentation.Map
                     collider.enabled = false;
                 }
             }
+        }
+
+        private static void SetGhostMoveState(GameObject ghostRoot, bool isMoving, float normalizedSpeed)
+        {
+            if (ghostRoot == null)
+            {
+                return;
+            }
+
+            var animators = ghostRoot.GetComponentsInChildren<Animator>(true);
+            for (var i = 0; i < animators.Length; i++)
+            {
+                var animator = animators[i];
+                if (animator == null)
+                {
+                    continue;
+                }
+
+                if (HasAnimatorParameter(animator, "isMoving", AnimatorControllerParameterType.Bool))
+                {
+                    animator.SetBool("isMoving", isMoving);
+                }
+
+                if (HasAnimatorParameter(animator, "moveSpeed", AnimatorControllerParameterType.Float))
+                {
+                    animator.SetFloat("moveSpeed", Mathf.Max(0f, normalizedSpeed));
+                }
+            }
+        }
+
+        private static bool HasAnimatorParameter(Animator animator, string paramName, AnimatorControllerParameterType type)
+        {
+            if (animator == null || animator.runtimeAnimatorController == null || string.IsNullOrWhiteSpace(paramName) || animator.parameters == null)
+            {
+                return false;
+            }
+
+            var hash = Animator.StringToHash(paramName);
+            var parameters = animator.parameters;
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].nameHash == hash && parameters[i].type == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void SetLayerRecursively(Transform node, int layer)

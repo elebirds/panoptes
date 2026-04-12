@@ -41,11 +41,18 @@ namespace Panoptes.Presentation.Map
             public int y;
             public string terrain;
             public bool hasRoad;
+            public bool has_road;
             public bool isResourcePoint;
+            public bool is_resource_point;
             public string resourceType;
+            public string resource_type;
             public string buildingType;
+            public string building_type;
             public int buildingHp;
+            public int building_hp;
             public string owner;
+            public string territoryOwner;
+            public string territory_owner;
         }
 
         [System.Serializable]
@@ -66,6 +73,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useJsonMapOnStart = false;
         [SerializeField] private TextAsset startupMapJson;
         [SerializeField] private bool autoFillMissingJsonTiles = false;
+        [SerializeField] private bool preferLocalMapWhenBackendHasNoTerritory = true;
+        [SerializeField] private string localFallbackMapResourcePath = "Data/maps/default.runtime";
         [SerializeField] private bool preferServerPushedMapConfig = true;
         [SerializeField] private string serverMapConfigKey = "mapconfig";
         [SerializeField] private bool listenServerMapConfigUpdates = true;
@@ -101,11 +110,18 @@ namespace Panoptes.Presentation.Map
 
         [Header("Debug Generation (Local Only)")]
         [SerializeField] private bool generateDebugMapOnStart = true;
-        [SerializeField] private int debugMapWidth = 20;
-        [SerializeField] private int debugMapHeight = 20;
+        [SerializeField] private int debugMapWidth = 30;
+        [SerializeField] private int debugMapHeight = 30;
         [SerializeField] private int debugBuildingsPerType = 2;
         [Range(0f, 1f)] [SerializeField] private float debugExtraBuildingSpawnRate = 0.04f;
         [SerializeField] private int randomSeed = 20260405;
+
+        [Header("Resource Points")]
+        [SerializeField] private bool autoInjectResourcePointsWhenSparse = true;
+        [SerializeField] private int minimumResourcePoints = 18;
+
+        private const int DebugMapSize = 30;
+        private const int DebugTerritorySize = 3;
 
         private readonly Dictionary<string, NodeView> _tileViews = new();
         private readonly Dictionary<Vector2Int, NodeView> _tileViewsByGrid = new();
@@ -205,9 +221,19 @@ namespace Panoptes.Presentation.Map
 
             if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
             {
-                Debug.Log($"[MapRenderer] Rebuild from backend nodes: {GameStateCache.Instance.Nodes.Count}");
+                var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
+                Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
+
+                if (preferLocalMapWhenBackendHasNoTerritory &&
+                    !HasSufficientTerritoryAndCastles(backendNodes) &&
+                    TryLoadMapFromLocalFallback())
+                {
+                    Debug.Log("[MapRenderer] Backend map missing territory/castle layout. Switched to local fallback map.");
+                    return;
+                }
+
                 PrepareRuntimeRoots();
-                BuildFromNodes(GameStateCache.Instance.Nodes.Values);
+                BuildFromNodes(backendNodes);
                 return;
             }
 
@@ -296,6 +322,7 @@ namespace Panoptes.Presentation.Map
                     IsResourcePoint = node.is_resource_point,
                     ResourceType = NormalizeToken(node.resource_type),
                     Owner = NormalizeToken(node.owner),
+                    TerritoryOwner = NormalizeToken(node.territory_owner),
                     BuildingType = buildingType,
                     BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp)
                 });
@@ -308,6 +335,53 @@ namespace Panoptes.Presentation.Map
 
             BuildFromNodes(nodes);
             return true;
+        }
+
+        private bool TryLoadMapFromLocalFallback()
+        {
+            if (string.IsNullOrWhiteSpace(localFallbackMapResourcePath))
+            {
+                return false;
+            }
+
+            var asset = Resources.Load<TextAsset>(localFallbackMapResourcePath.Trim());
+            if (asset == null)
+            {
+                return false;
+            }
+
+            return LoadMapFromJsonAsset(asset);
+        }
+
+        private static bool HasSufficientTerritoryAndCastles(List<NodeDto> nodes)
+        {
+            if (nodes == null || nodes.Count == 0)
+            {
+                return false;
+            }
+
+            var hasTerritory = false;
+            var castleCount = 0;
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(node.TerritoryOwner))
+                {
+                    hasTerritory = true;
+                }
+
+                if (string.Equals(NormalizeToken(node.BuildingType), "castle", System.StringComparison.Ordinal))
+                {
+                    castleCount++;
+                }
+            }
+
+            return hasTerritory && castleCount >= 4;
         }
 
         public bool LoadMapFromJsonString(string json)
@@ -363,6 +437,28 @@ namespace Panoptes.Presentation.Map
         public bool TryGetNodeState(string nodeId, out NodeDto nodeState)
         {
             return _nodeStates.TryGetValue(nodeId, out nodeState) && nodeState != null;
+        }
+
+        public bool TryGetNodeTerritoryOwner(string nodeId, out string territoryOwner)
+        {
+            territoryOwner = string.Empty;
+            if (!TryGetNodeState(nodeId, out var nodeState))
+            {
+                return false;
+            }
+
+            territoryOwner = NormalizeToken(nodeState.TerritoryOwner);
+            return !string.IsNullOrEmpty(territoryOwner);
+        }
+
+        public bool IsNodeInTerritory(string nodeId, string ownerId)
+        {
+            if (!TryGetNodeTerritoryOwner(nodeId, out var territoryOwner))
+            {
+                return false;
+            }
+
+            return string.Equals(territoryOwner, NormalizeToken(ownerId), System.StringComparison.OrdinalIgnoreCase);
         }
 
         public bool TryGetNodeIdByGrid(Vector2Int gridPos, out string nodeId)
@@ -611,12 +707,14 @@ namespace Panoptes.Presentation.Map
 
         private List<NodeDto> CreateDebugNodes()
         {
-            var nodes = new List<NodeDto>(debugMapWidth * debugMapHeight);
+            var mapWidth = Mathf.Max(DebugMapSize, debugMapWidth);
+            var mapHeight = Mathf.Max(DebugMapSize, debugMapHeight);
+            var nodes = new List<NodeDto>(mapWidth * mapHeight);
             var rng = new System.Random(randomSeed);
 
-            for (var y = 0; y < debugMapHeight; y++)
+            for (var y = 0; y < mapHeight; y++)
             {
-                for (var x = 0; x < debugMapWidth; x++)
+                for (var x = 0; x < mapWidth; x++)
                 {
                     var nodeId = $"N_{x}_{y}";
                     var terrain = RollTerrain(rng);
@@ -630,6 +728,7 @@ namespace Panoptes.Presentation.Map
                         BuildingType = string.Empty,
                         BuildingHp = 0,
                         Owner = string.Empty,
+                        TerritoryOwner = string.Empty,
                         HasRoad = false,
                         IsResourcePoint = false,
                         ResourceType = string.Empty
@@ -639,8 +738,98 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
+            ApplyDebugTerritories(nodes, mapWidth, mapHeight);
             PlaceDebugBuildings(nodes, rng);
             return nodes;
+        }
+
+        private void ApplyDebugTerritories(List<NodeDto> nodes, int mapWidth, int mapHeight)
+        {
+            if (nodes == null || nodes.Count == 0)
+            {
+                return;
+            }
+
+            var centers = GetDebugTerritoryCenters(mapWidth, mapHeight);
+            var owners = GetDebugTerritoryOwners();
+            var territorySizeHalf = Mathf.Max(1, DebugTerritorySize / 2);
+
+            for (var i = 0; i < centers.Length && i < owners.Length; i++)
+            {
+                var center = centers[i];
+                var owner = NormalizeToken(owners[i]);
+                if (string.IsNullOrEmpty(owner))
+                {
+                    continue;
+                }
+
+                for (var y = center.y - territorySizeHalf; y <= center.y + territorySizeHalf; y++)
+                {
+                    for (var x = center.x - territorySizeHalf; x <= center.x + territorySizeHalf; x++)
+                    {
+                        if (!TryGetDebugNode(nodes, mapWidth, mapHeight, x, y, out var node) || node == null)
+                        {
+                            continue;
+                        }
+
+                        node.TerritoryOwner = owner;
+                        node.Terrain = "plain";
+                        node.HasRoad = true;
+                        node.Owner = string.IsNullOrEmpty(node.Owner) ? string.Empty : node.Owner;
+                        node.IsResourcePoint = false;
+                        node.ResourceType = string.Empty;
+                        node.BuildingType = string.Empty;
+                        node.BuildingHp = 0;
+                    }
+                }
+
+                if (TryGetDebugNode(nodes, mapWidth, mapHeight, center.x, center.y, out var castleNode) && castleNode != null)
+                {
+                    castleNode.TerritoryOwner = owner;
+                    castleNode.Owner = owner;
+                    castleNode.BuildingType = "castle";
+                    castleNode.BuildingHp = 200;
+                }
+            }
+        }
+
+        private static Vector2Int[] GetDebugTerritoryCenters(int mapWidth, int mapHeight)
+        {
+            var leftCenterX = Mathf.Clamp(5, 1, Mathf.Max(1, mapWidth - 2));
+            var rightCenterX = Mathf.Clamp(mapWidth - 6, 1, Mathf.Max(1, mapWidth - 2));
+            var topCenterY = Mathf.Clamp(5, 1, Mathf.Max(1, mapHeight - 2));
+            var bottomCenterY = Mathf.Clamp(mapHeight - 6, 1, Mathf.Max(1, mapHeight - 2));
+
+            return new[]
+            {
+                new Vector2Int(leftCenterX, topCenterY),
+                new Vector2Int(rightCenterX, topCenterY),
+                new Vector2Int(leftCenterX, bottomCenterY),
+                new Vector2Int(rightCenterX, bottomCenterY)
+            };
+        }
+
+        private static string[] GetDebugTerritoryOwners()
+        {
+            return new[] { "blue", "red", "green", "yellow" };
+        }
+
+        private static bool TryGetDebugNode(List<NodeDto> nodes, int mapWidth, int mapHeight, int x, int y, out NodeDto node)
+        {
+            node = null;
+            if (nodes == null || x < 0 || y < 0 || x >= mapWidth || y >= mapHeight)
+            {
+                return false;
+            }
+
+            var index = y * mapWidth + x;
+            if (index < 0 || index >= nodes.Count)
+            {
+                return false;
+            }
+
+            node = nodes[index];
+            return node != null;
         }
 
         private string RollTerrain(System.Random rng)
@@ -743,6 +932,11 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
+            if (!string.IsNullOrEmpty(node.TerritoryOwner))
+            {
+                return false;
+            }
+
             return IsBuildableTerrainForDebug(node.Terrain);
         }
 
@@ -822,9 +1016,23 @@ namespace Panoptes.Presentation.Map
             PrepareRuntimeRoots();
             ClearMap();
 
-            foreach (var node in nodes)
+            var nodeList = new List<NodeDto>();
+            if (nodes != null)
             {
-                if (node == null || string.IsNullOrEmpty(node.Id))
+                foreach (var node in nodes)
+                {
+                    if (node != null)
+                    {
+                        nodeList.Add(node);
+                    }
+                }
+            }
+
+            EnsureMinimumResourcePoints(nodeList);
+
+            foreach (var node in nodeList)
+            {
+                if (string.IsNullOrEmpty(node.Id))
                 {
                     continue;
                 }
@@ -951,6 +1159,131 @@ namespace Panoptes.Presentation.Map
                 }
 
                 TrySpawnUnitInternal(unit, false, false, unitCache);
+            }
+        }
+
+        private void EnsureMinimumResourcePoints(List<NodeDto> nodes)
+        {
+            if (!autoInjectResourcePointsWhenSparse || nodes == null || nodes.Count == 0)
+            {
+                return;
+            }
+
+            var target = Mathf.Max(0, minimumResourcePoints);
+            if (target <= 0)
+            {
+                return;
+            }
+
+            var current = 0;
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                if (node != null && node.IsResourcePoint)
+                {
+                    current++;
+                }
+            }
+
+            if (current >= target)
+            {
+                return;
+            }
+
+            var outsideTerritory = new List<NodeDto>();
+            var insideTerritory = new List<NodeDto>();
+
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                if (!CanInjectResourcePoint(node))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(node.TerritoryOwner))
+                {
+                    outsideTerritory.Add(node);
+                }
+                else
+                {
+                    insideTerritory.Add(node);
+                }
+            }
+
+            var rng = new System.Random(randomSeed ^ (nodes.Count * 31 + current * 131));
+            var injected = 0;
+            while (current + injected < target)
+            {
+                var selected = TakeRandomNode(outsideTerritory, rng);
+                if (selected == null)
+                {
+                    selected = TakeRandomNode(insideTerritory, rng);
+                }
+
+                if (selected == null)
+                {
+                    break;
+                }
+
+                selected.IsResourcePoint = true;
+                selected.ResourceType = ResolveInjectedResourceType(current + injected);
+                injected++;
+            }
+
+            if (injected > 0)
+            {
+                Debug.Log($"[MapRenderer] Injected {injected} resource points (current={current + injected}, target={target}).");
+            }
+        }
+
+        private static bool CanInjectResourcePoint(NodeDto node)
+        {
+            if (node == null)
+            {
+                return false;
+            }
+
+            if (node.IsResourcePoint)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(node.BuildingType))
+            {
+                return false;
+            }
+
+            var terrain = NormalizeToken(node.Terrain);
+            return terrain != "river"
+                   && terrain != "water"
+                   && terrain != "forbidden"
+                   && terrain != "blocked";
+        }
+
+        private static NodeDto TakeRandomNode(List<NodeDto> list, System.Random rng)
+        {
+            if (list == null || list.Count == 0 || rng == null)
+            {
+                return null;
+            }
+
+            var index = rng.Next(list.Count);
+            var node = list[index];
+            list.RemoveAt(index);
+            return node;
+        }
+
+        private static string ResolveInjectedResourceType(int index)
+        {
+            switch (index % 3)
+            {
+                case 1:
+                    return "wood";
+                case 2:
+                    return "ore";
+                default:
+                    return "food";
             }
         }
 
@@ -1305,9 +1638,26 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var buildingType = NormalizeToken(jsonNode.buildingType);
+                if (string.IsNullOrEmpty(buildingType))
+                {
+                    buildingType = NormalizeToken(jsonNode.building_type);
+                }
+
                 var resourceType = NormalizeToken(jsonNode.resourceType);
+                if (string.IsNullOrEmpty(resourceType))
+                {
+                    resourceType = NormalizeToken(jsonNode.resource_type);
+                }
+
+                var hasRoad = jsonNode.hasRoad || jsonNode.has_road;
+                var isResourcePoint = jsonNode.isResourcePoint || jsonNode.is_resource_point || !string.IsNullOrEmpty(resourceType);
                 var hasBuilding = !string.IsNullOrEmpty(buildingType);
-                var isResourcePoint = jsonNode.isResourcePoint || !string.IsNullOrEmpty(resourceType);
+                var buildingHp = jsonNode.buildingHp > 0 ? jsonNode.buildingHp : jsonNode.building_hp;
+                var territoryOwner = NormalizeToken(jsonNode.territoryOwner);
+                if (string.IsNullOrEmpty(territoryOwner))
+                {
+                    territoryOwner = NormalizeToken(jsonNode.territory_owner);
+                }
 
                 var node = new NodeDto
                 {
@@ -1315,12 +1665,13 @@ namespace Panoptes.Presentation.Map
                     X = jsonNode.x,
                     Y = jsonNode.y,
                     Terrain = terrain,
-                    HasRoad = jsonNode.hasRoad,
+                    HasRoad = hasRoad,
                     IsResourcePoint = isResourcePoint,
                     ResourceType = isResourcePoint ? resourceType : string.Empty,
                     BuildingType = buildingType,
-                    BuildingHp = hasBuilding ? (jsonNode.buildingHp > 0 ? jsonNode.buildingHp : 100) : 0,
-                    Owner = (jsonNode.owner ?? string.Empty).Trim()
+                    BuildingHp = hasBuilding ? (buildingHp > 0 ? buildingHp : 100) : 0,
+                    Owner = (jsonNode.owner ?? string.Empty).Trim(),
+                    TerritoryOwner = territoryOwner
                 };
 
                 result.Add(node);
