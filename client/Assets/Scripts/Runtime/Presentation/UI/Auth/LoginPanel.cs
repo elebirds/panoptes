@@ -9,6 +9,7 @@
 using System;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,7 +60,19 @@ namespace Panoptes.Presentation.UI.Auth
 
         private void ShowTip(string message, bool success)
         {
-            Debug.Log(message);
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(message, success);
+                return;
+            }
+
+            if (success)
+            {
+                Debug.Log(message);
+                return;
+            }
+
+            Debug.LogWarning(message);
         }
         
         private async void OnClickLogin()
