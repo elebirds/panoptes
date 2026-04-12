@@ -6,21 +6,22 @@ import (
 )
 
 type GameState struct {
-	GameID    string
-	Turn      int
-	Phase     string
-	IsOver    bool
-	WinnerID  string
+	GameID     string
+	Turn       int
+	Phase      string
+	IsOver     bool
+	WinnerID   string
 	OverReason string
-	Narrative string
-	World     donburi.World
-	Map       *MapData
-	Players   map[string]*PlayerState
-	NodeIndex map[string]donburi.Entity
+	Narrative  string
+	World      donburi.World
+	Map        *MapData
+	Players    map[string]*PlayerState
+	NodeIndex  map[string]donburi.Entity
 
 	PendingBuilds       []BuildOrder
 	MinisterBuildOrders []BuildOrder
 	MinisterMoveOrders  []MoveOrder
+	PendingCombatOrders map[string]CombatOrder
 	PendingMoves        []PendingMove
 	PendingConflicts    []Conflict
 }
@@ -84,13 +85,14 @@ type PendingMove struct {
 
 func NewGameState(gameID string, playerIDs []string, usernames []string, mapData *MapData) *GameState {
 	state := &GameState{
-		GameID:    gameID,
-		Turn:      1,
-		Phase:     "domestic",
-		World:     donburi.NewWorld(),
-		Map:       mapData,
-		Players:   make(map[string]*PlayerState, len(playerIDs)),
-		NodeIndex: make(map[string]donburi.Entity),
+		GameID:              gameID,
+		Turn:                1,
+		Phase:               "domestic",
+		World:               donburi.NewWorld(),
+		Map:                 mapData,
+		Players:             make(map[string]*PlayerState, len(playerIDs)),
+		NodeIndex:           make(map[string]donburi.Entity),
+		PendingCombatOrders: make(map[string]CombatOrder),
 	}
 
 	if mapData != nil && mapData.NodeIndex != nil {
