@@ -59,6 +59,7 @@ message MsgDomesticPhaseStart {
   int32 turn = 2;
   int32 tokens = 3;
   string current_policy = 4;
+  string phase = 5;
 }
 
 message MsgTokenResult {
@@ -90,6 +91,9 @@ message MinisterActionItem {
 message MsgDomesticSettlement {
   repeated DomesticChange changes = 1;
   ResourceBag my_resources_after = 2;
+  int32 turn = 3;
+  string phase = 4;
+  string next_phase = 5;
 }
 
 message DomesticChange {

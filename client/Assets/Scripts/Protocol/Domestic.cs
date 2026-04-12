@@ -38,33 +38,35 @@ namespace Panoptes.Protocol.V1 {
             "CgZhbW91bnQYBCABKAVSBmFtb3VudCJ/CgxNc2dCdWlsZFJvYWQSGwoJZnJv",
             "bV9ub2RlGAEgASgJUghmcm9tTm9kZRIXCgd0b19ub2RlGAIgASgJUgZ0b05v",
             "ZGUSOQoJd2F5cG9pbnRzGAMgAygLMhsucGFub3B0ZXMucHJvdG8udjEuUG9z",
-            "aXRpb25SCXdheXBvaW50cyITChFNc2dTdWJtaXREb21lc3RpYyKEAQoVTXNn",
+            "aXRpb25SCXdheXBvaW50cyITChFNc2dTdWJtaXREb21lc3RpYyKaAQoVTXNn",
             "RG9tZXN0aWNQaGFzZVN0YXJ0EhgKB3RpbWVvdXQYASABKAVSB3RpbWVvdXQS",
             "EgoEdHVybhgCIAEoBVIEdHVybhIWCgZ0b2tlbnMYAyABKAVSBnRva2VucxIl",
-            "Cg5jdXJyZW50X3BvbGljeRgEIAEoCVINY3VycmVudFBvbGljeSKCAQoOTXNn",
-            "VG9rZW5SZXN1bHQSGAoHc3VjY2VzcxgBIAEoCFIHc3VjY2VzcxIWCgZhY3Rp",
-            "b24YAiABKAlSBmFjdGlvbhIfCgt0b2tlbnNfbGVmdBgDIAEoBVIKdG9rZW5z",
-            "TGVmdBIdCgplcnJvcl9jb2RlGAQgASgJUgllcnJvckNvZGUihwEKD01zZ1Jl",
-            "dmVhbFJlc3VsdBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSOgoKdHJ1ZV9z",
-            "dGF0ZRgCIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLk5vZGVWaWV3Ugl0cnVl",
-            "U3RhdGUSHwoLdG9rZW5zX2xlZnQYAyABKAVSCnRva2Vuc0xlZnQipQEKEU1z",
-            "Z01pbmlzdGVyQWN0aW9uEhoKCG1pbmlzdGVyGAEgASgJUghtaW5pc3RlchIb",
-            "CglhY3Rpb25faWQYAiABKAlSCGFjdGlvbklkEj8KB2FjdGlvbnMYAyADKAsy",
-            "JS5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlckFjdGlvbkl0ZW1SB2FjdGlv",
-            "bnMSFgoGcmVwb3J0GAQgASgJUgZyZXBvcnQirgEKEk1pbmlzdGVyQWN0aW9u",
-            "SXRlbRISCgR0eXBlGAEgASgJUgR0eXBlEkkKBnBhcmFtcxgCIAMoCzIxLnBh",
-            "bm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyQWN0aW9uSXRlbS5QYXJhbXNFbnRy",
-            "eVIGcGFyYW1zGjkKC1BhcmFtc0VudHJ5EhAKA2tleRgBIAEoCVIDa2V5EhQK",
-            "BXZhbHVlGAIgASgJUgV2YWx1ZToCOAEiogEKFU1zZ0RvbWVzdGljU2V0dGxl",
-            "bWVudBI7CgdjaGFuZ2VzGAEgAygLMiEucGFub3B0ZXMucHJvdG8udjEuRG9t",
-            "ZXN0aWNDaGFuZ2VSB2NoYW5nZXMSTAoSbXlfcmVzb3VyY2VzX2FmdGVyGAIg",
-            "ASgLMh4ucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSEG15UmVzb3Vy",
-            "Y2VzQWZ0ZXIingEKDkRvbWVzdGljQ2hhbmdlEhIKBHR5cGUYASABKAlSBHR5",
-            "cGUSPwoEZGF0YRgCIAMoCzIrLnBhbm9wdGVzLnByb3RvLnYxLkRvbWVzdGlj",
-            "Q2hhbmdlLkRhdGFFbnRyeVIEZGF0YRo3CglEYXRhRW50cnkSEAoDa2V5GAEg",
-            "ASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AUJTWjpnaXRodWIu",
-            "Y29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtw",
-            "cm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "Cg5jdXJyZW50X3BvbGljeRgEIAEoCVINY3VycmVudFBvbGljeRIUCgVwaGFz",
+            "ZRgFIAEoCVIFcGhhc2UiggEKDk1zZ1Rva2VuUmVzdWx0EhgKB3N1Y2Nlc3MY",
+            "ASABKAhSB3N1Y2Nlc3MSFgoGYWN0aW9uGAIgASgJUgZhY3Rpb24SHwoLdG9r",
+            "ZW5zX2xlZnQYAyABKAVSCnRva2Vuc0xlZnQSHQoKZXJyb3JfY29kZRgEIAEo",
+            "CVIJZXJyb3JDb2RlIocBCg9Nc2dSZXZlYWxSZXN1bHQSFwoHbm9kZV9pZBgB",
+            "IAEoCVIGbm9kZUlkEjoKCnRydWVfc3RhdGUYAiABKAsyGy5wYW5vcHRlcy5w",
+            "cm90by52MS5Ob2RlVmlld1IJdHJ1ZVN0YXRlEh8KC3Rva2Vuc19sZWZ0GAMg",
+            "ASgFUgp0b2tlbnNMZWZ0IqUBChFNc2dNaW5pc3RlckFjdGlvbhIaCghtaW5p",
+            "c3RlchgBIAEoCVIIbWluaXN0ZXISGwoJYWN0aW9uX2lkGAIgASgJUghhY3Rp",
+            "b25JZBI/CgdhY3Rpb25zGAMgAygLMiUucGFub3B0ZXMucHJvdG8udjEuTWlu",
+            "aXN0ZXJBY3Rpb25JdGVtUgdhY3Rpb25zEhYKBnJlcG9ydBgEIAEoCVIGcmVw",
+            "b3J0Iq4BChJNaW5pc3RlckFjdGlvbkl0ZW0SEgoEdHlwZRgBIAEoCVIEdHlw",
+            "ZRJJCgZwYXJhbXMYAiADKAsyMS5wYW5vcHRlcy5wcm90by52MS5NaW5pc3Rl",
+            "ckFjdGlvbkl0ZW0uUGFyYW1zRW50cnlSBnBhcmFtcxo5CgtQYXJhbXNFbnRy",
+            "eRIQCgNrZXkYASABKAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgB",
+            "IusBChVNc2dEb21lc3RpY1NldHRsZW1lbnQSOwoHY2hhbmdlcxgBIAMoCzIh",
+            "LnBhbm9wdGVzLnByb3RvLnYxLkRvbWVzdGljQ2hhbmdlUgdjaGFuZ2VzEkwK",
+            "Em15X3Jlc291cmNlc19hZnRlchgCIAEoCzIeLnBhbm9wdGVzLnByb3RvLnYx",
+            "LlJlc291cmNlQmFnUhBteVJlc291cmNlc0FmdGVyEhIKBHR1cm4YAyABKAVS",
+            "BHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlEh0KCm5leHRfcGhhc2UYBSAB",
+            "KAlSCW5leHRQaGFzZSKeAQoORG9tZXN0aWNDaGFuZ2USEgoEdHlwZRgBIAEo",
+            "CVIEdHlwZRI/CgRkYXRhGAIgAygLMisucGFub3B0ZXMucHJvdG8udjEuRG9t",
+            "ZXN0aWNDaGFuZ2UuRGF0YUVudHJ5UgRkYXRhGjcKCURhdGFFbnRyeRIQCgNr",
+            "ZXkYASABKAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgBQlNaOmdp",
+            "dGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3Rv",
+            "L3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -76,12 +78,12 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTokenAdjustFlow), global::Panoptes.Protocol.V1.MsgTokenAdjustFlow.Parser, new[]{ "FromNode", "ToNode", "ResourceType", "Amount" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgBuildRoad), global::Panoptes.Protocol.V1.MsgBuildRoad.Parser, new[]{ "FromNode", "ToNode", "Waypoints" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSubmitDomestic), global::Panoptes.Protocol.V1.MsgSubmitDomestic.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgDomesticPhaseStart), global::Panoptes.Protocol.V1.MsgDomesticPhaseStart.Parser, new[]{ "Timeout", "Turn", "Tokens", "CurrentPolicy" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgDomesticPhaseStart), global::Panoptes.Protocol.V1.MsgDomesticPhaseStart.Parser, new[]{ "Timeout", "Turn", "Tokens", "CurrentPolicy", "Phase" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTokenResult), global::Panoptes.Protocol.V1.MsgTokenResult.Parser, new[]{ "Success", "Action", "TokensLeft", "ErrorCode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgRevealResult), global::Panoptes.Protocol.V1.MsgRevealResult.Parser, new[]{ "NodeId", "TrueState", "TokensLeft" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterAction), global::Panoptes.Protocol.V1.MsgMinisterAction.Parser, new[]{ "Minister", "ActionId", "Actions", "Report" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterActionItem), global::Panoptes.Protocol.V1.MinisterActionItem.Parser, new[]{ "Type", "Params" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgDomesticSettlement), global::Panoptes.Protocol.V1.MsgDomesticSettlement.Parser, new[]{ "Changes", "MyResourcesAfter" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgDomesticSettlement), global::Panoptes.Protocol.V1.MsgDomesticSettlement.Parser, new[]{ "Changes", "MyResourcesAfter", "Turn", "Phase", "NextPhase" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomesticChange), global::Panoptes.Protocol.V1.DomesticChange.Parser, new[]{ "Type", "Data" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, })
           }));
     }
@@ -1930,6 +1932,7 @@ namespace Panoptes.Protocol.V1 {
       turn_ = other.turn_;
       tokens_ = other.tokens_;
       currentPolicy_ = other.currentPolicy_;
+      phase_ = other.phase_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1987,6 +1990,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "phase" field.</summary>
+    public const int PhaseFieldNumber = 5;
+    private string phase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Phase {
+      get { return phase_; }
+      set {
+        phase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -2006,6 +2021,7 @@ namespace Panoptes.Protocol.V1 {
       if (Turn != other.Turn) return false;
       if (Tokens != other.Tokens) return false;
       if (CurrentPolicy != other.CurrentPolicy) return false;
+      if (Phase != other.Phase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2017,6 +2033,7 @@ namespace Panoptes.Protocol.V1 {
       if (Turn != 0) hash ^= Turn.GetHashCode();
       if (Tokens != 0) hash ^= Tokens.GetHashCode();
       if (CurrentPolicy.Length != 0) hash ^= CurrentPolicy.GetHashCode();
+      if (Phase.Length != 0) hash ^= Phase.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2051,6 +2068,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(34);
         output.WriteString(CurrentPolicy);
       }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Phase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2077,6 +2098,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(34);
         output.WriteString(CurrentPolicy);
       }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Phase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2098,6 +2123,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (CurrentPolicy.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(CurrentPolicy);
+      }
+      if (Phase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Phase);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -2122,6 +2150,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.CurrentPolicy.Length != 0) {
         CurrentPolicy = other.CurrentPolicy;
+      }
+      if (other.Phase.Length != 0) {
+        Phase = other.Phase;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -2158,6 +2189,10 @@ namespace Panoptes.Protocol.V1 {
             CurrentPolicy = input.ReadString();
             break;
           }
+          case 42: {
+            Phase = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -2191,6 +2226,10 @@ namespace Panoptes.Protocol.V1 {
           }
           case 34: {
             CurrentPolicy = input.ReadString();
+            break;
+          }
+          case 42: {
+            Phase = input.ReadString();
             break;
           }
         }
@@ -3358,6 +3397,9 @@ namespace Panoptes.Protocol.V1 {
     public MsgDomesticSettlement(MsgDomesticSettlement other) : this() {
       changes_ = other.changes_.Clone();
       myResourcesAfter_ = other.myResourcesAfter_ != null ? other.myResourcesAfter_.Clone() : null;
+      turn_ = other.turn_;
+      phase_ = other.phase_;
+      nextPhase_ = other.nextPhase_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3390,6 +3432,42 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "turn" field.</summary>
+    public const int TurnFieldNumber = 3;
+    private int turn_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Turn {
+      get { return turn_; }
+      set {
+        turn_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "phase" field.</summary>
+    public const int PhaseFieldNumber = 4;
+    private string phase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Phase {
+      get { return phase_; }
+      set {
+        phase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "next_phase" field.</summary>
+    public const int NextPhaseFieldNumber = 5;
+    private string nextPhase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string NextPhase {
+      get { return nextPhase_; }
+      set {
+        nextPhase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -3407,6 +3485,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if(!changes_.Equals(other.changes_)) return false;
       if (!object.Equals(MyResourcesAfter, other.MyResourcesAfter)) return false;
+      if (Turn != other.Turn) return false;
+      if (Phase != other.Phase) return false;
+      if (NextPhase != other.NextPhase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3416,6 +3497,9 @@ namespace Panoptes.Protocol.V1 {
       int hash = 1;
       hash ^= changes_.GetHashCode();
       if (myResourcesAfter_ != null) hash ^= MyResourcesAfter.GetHashCode();
+      if (Turn != 0) hash ^= Turn.GetHashCode();
+      if (Phase.Length != 0) hash ^= Phase.GetHashCode();
+      if (NextPhase.Length != 0) hash ^= NextPhase.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3439,6 +3523,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteMessage(MyResourcesAfter);
       }
+      if (Turn != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(NextPhase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3454,6 +3550,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(18);
         output.WriteMessage(MyResourcesAfter);
       }
+      if (Turn != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(NextPhase);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3467,6 +3575,15 @@ namespace Panoptes.Protocol.V1 {
       size += changes_.CalculateSize(_repeated_changes_codec);
       if (myResourcesAfter_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MyResourcesAfter);
+      }
+      if (Turn != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Turn);
+      }
+      if (Phase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Phase);
+      }
+      if (NextPhase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(NextPhase);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3486,6 +3603,15 @@ namespace Panoptes.Protocol.V1 {
           MyResourcesAfter = new global::Panoptes.Protocol.V1.ResourceBag();
         }
         MyResourcesAfter.MergeFrom(other.MyResourcesAfter);
+      }
+      if (other.Turn != 0) {
+        Turn = other.Turn;
+      }
+      if (other.Phase.Length != 0) {
+        Phase = other.Phase;
+      }
+      if (other.NextPhase.Length != 0) {
+        NextPhase = other.NextPhase;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -3517,6 +3643,18 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(MyResourcesAfter);
             break;
           }
+          case 24: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 34: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 42: {
+            NextPhase = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -3545,6 +3683,18 @@ namespace Panoptes.Protocol.V1 {
               MyResourcesAfter = new global::Panoptes.Protocol.V1.ResourceBag();
             }
             input.ReadMessage(MyResourcesAfter);
+            break;
+          }
+          case 24: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 34: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 42: {
+            NextPhase = input.ReadString();
             break;
           }
         }
