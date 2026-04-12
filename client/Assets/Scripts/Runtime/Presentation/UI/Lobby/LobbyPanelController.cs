@@ -1,5 +1,6 @@
 using System.Collections;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,6 +53,8 @@ namespace Panoptes.Presentation.UI.Lobby
 
         public void ShowError(string message)
         {
+            ShowToast(message, false);
+
             if (errorText == null)
             {
                 return;
@@ -63,6 +66,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         public void HandleRoomCreated(string roomId, string roomCode)
         {
+            ShowToast($"房间已创建，邀请码：{roomCode}", true);
             Debug.Log($"[LobbyPanel] Room created: {roomId} / {roomCode}");
         }
 
@@ -188,6 +192,25 @@ namespace Panoptes.Presentation.UI.Lobby
 
             errorText.text = string.Empty;
             errorText.gameObject.SetActive(false);
+        }
+
+        // 大厅页统一通过这个入口抛出轻提示。
+        // 这样既能复用全局 toast，也保留了没有 overlay 实例时的日志降级。
+        private static void ShowToast(string message, bool success)
+        {
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(message, success);
+                return;
+            }
+
+            if (success)
+            {
+                Debug.Log(message);
+                return;
+            }
+
+            Debug.LogWarning(message);
         }
 
         private static string MapLobbyError(string code)

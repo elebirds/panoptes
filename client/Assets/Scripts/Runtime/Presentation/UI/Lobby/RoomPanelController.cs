@@ -3,6 +3,7 @@ using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -190,6 +191,8 @@ namespace Panoptes.Presentation.UI.Lobby
                 return;
             }
 
+            ShowToast(MapLobbyError(code), false);
+
             if (statusText != null)
             {
                 statusText.text = MapLobbyError(code);
@@ -228,16 +231,29 @@ namespace Panoptes.Presentation.UI.Lobby
                 return;
             }
 
-            _lobbySvc.StartGame();
+            ShowConfirmation(
+                "开始游戏",
+                "确认以当前准备状态开始游戏吗？",
+                () => _lobbySvc.StartGame());
         }
 
         private void OnClickLeave()
         {
-            StopCountdown();
-            _isWaitingForGameInit = false;
-            _lobbySvc.LeaveRoom();
-            RoomCache.Instance?.Clear();
-            _sceneController?.ShowLobbyPanel();
+            var message = _cache != null && _cache.IsHost
+                ? "你是房主，离开后当前房间会解散。确认离开吗？"
+                : "确认离开当前房间吗？";
+
+            ShowConfirmation(
+                "离开房间",
+                message,
+                () =>
+                {
+                    StopCountdown();
+                    _isWaitingForGameInit = false;
+                    _lobbySvc.LeaveRoom();
+                    RoomCache.Instance?.Clear();
+                    _sceneController?.ShowLobbyPanel();
+                });
         }
 
         private void RebuildPlayerSlots()
@@ -328,6 +344,7 @@ namespace Panoptes.Presentation.UI.Lobby
             StopCountdown();
             _isWaitingForGameInit = false;
             StopStatusReset();
+            ShowToast($"{(string.IsNullOrWhiteSpace(username) ? "你" : username)}已被移出房间", false);
             if (statusText != null)
             {
                 statusText.text = $"{(string.IsNullOrWhiteSpace(username) ? "你" : username)}已被移出房间";
@@ -458,7 +475,64 @@ namespace Panoptes.Presentation.UI.Lobby
                 return;
             }
 
-            _lobbySvc.KickPlayer(playerId);
+            var username = ResolvePlayerDisplayName(playerId);
+            var message = string.IsNullOrWhiteSpace(username)
+                ? "确认将这名玩家移出房间吗？"
+                : $"确认将 {username} 移出房间吗？";
+
+            ShowConfirmation(
+                "移出玩家",
+                message,
+                () => _lobbySvc.KickPlayer(playerId));
+        }
+
+        // 房间里的敏感操作都先走这里，避免开始游戏/离开房间/踢人散落着各写一套确认逻辑。
+        private void ShowConfirmation(string title, string message, System.Action onConfirm)
+        {
+            if (ConfirmDialog.Instance != null)
+            {
+                ConfirmDialog.Instance.Show(title, message, onConfirm, null);
+                return;
+            }
+
+            Debug.LogWarning($"[RoomPanelController] ConfirmDialog is unavailable for action: {title}");
+            ShowToast("确认面板未就绪，请稍后重试", false);
+        }
+
+        // 房间面板只负责把事件转成提示，不直接关心 toast 是通过 prefab 还是运行时补 UI 出来的。
+        private static void ShowToast(string message, bool success)
+        {
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(message, success);
+                return;
+            }
+
+            if (success)
+            {
+                Debug.Log(message);
+                return;
+            }
+
+            Debug.LogWarning(message);
+        }
+
+        private string ResolvePlayerDisplayName(string playerId)
+        {
+            if (_cache == null || string.IsNullOrWhiteSpace(playerId))
+            {
+                return string.Empty;
+            }
+
+            foreach (var player in _cache.Players)
+            {
+                if (player != null && player.PlayerId == playerId)
+                {
+                    return player.Username ?? string.Empty;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

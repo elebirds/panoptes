@@ -55,7 +55,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 27
+  m_fontSizeBase: 27
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -146,11 +146,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5216597221555341587}
-  - component: {fileID: 4150940456970486699}
   - component: {fileID: 4440446706329121905}
   - component: {fileID: 6909753524915190580}
   - component: {fileID: 8276356161409485634}
   - component: {fileID: 6301885769474113910}
+  - component: {fileID: 4150940456970486699}
   m_Layer: 0
   m_Name: ErrorToast
   m_TagString: Untagged
@@ -167,39 +167,17 @@ RectTransform:
   m_GameObject: {fileID: 2471234696038604597}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7526971438743819117}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
---- !u!114 &4150940456970486699
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2471234696038604597}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66c08efbc3755294f868c3a93a199c99, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Common.ErrorToast
-  canvasGroup: {fileID: 6301885769474113910}
-  toastRoot: {fileID: 7526971438743819117}
-  toastBackground: {fileID: 6597181591291222227}
-  messageText: {fileID: 6690880742543357880}
-  defaultDuration: 2.4
-  autoBuildFallbackUi: 1
-  autoBindByName: 1
-  errorBackgroundColor: {r: 0.36, g: 0.12, b: 0.12, a: 0.95}
-  successBackgroundColor: {r: 0.12, g: 0.32, b: 0.22, a: 0.95}
-  messageColor: {r: 1, g: 1, b: 1, a: 1}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &4440446706329121905
 Canvas:
   m_ObjectHideFlags: 0
@@ -234,7 +212,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
@@ -257,7 +235,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -276,6 +254,26 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &4150940456970486699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2471234696038604597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66c08efbc3755294f868c3a93a199c99, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Common.ErrorToast
+  canvasGroup: {fileID: 6301885769474113910}
+  toastRoot: {fileID: 7526971438743819117}
+  toastBackground: {fileID: 6597181591291222227}
+  messageText: {fileID: 6690880742543357880}
+  defaultDuration: 2.4
+  errorBackgroundColor: {r: 0.33, g: 0.12, b: 0.12, a: 0.84}
+  successBackgroundColor: {r: 0.11, g: 0.3, b: 0.22, a: 0.82}
+  messageColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &6799822286073193797
 GameObject:
   m_ObjectHideFlags: 0
@@ -332,10 +330,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.36, g: 0.12, b: 0.12, a: 0.95}
+  m_Color: {r: 0.33, g: 0.12, b: 0.12, a: 0.84}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -343,7 +341,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4

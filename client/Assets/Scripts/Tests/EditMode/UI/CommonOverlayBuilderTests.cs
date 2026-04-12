@@ -39,6 +39,8 @@ namespace Panoptes.Tests.EditMode.UI
             Assert.That(prefab, Is.Not.Null, $"{assetPath} 不存在。");
             Assert.That(prefab.GetComponent(componentType), Is.Not.Null,
                 $"{assetPath} 根节点必须挂载 {componentType.Name}。");
+            Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one),
+                $"{assetPath} 根节点缩放必须保持为 (1,1,1)，否则运行时会整体不可见。");
 
             foreach (var nodePath in nodePaths)
             {
