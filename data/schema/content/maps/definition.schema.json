@@ -316,6 +316,13 @@
             ],
             "type": "string"
           },
+          "territory_owner": {
+            "type": "string"
+          },
+          "territory_owner_slot": {
+            "minimum": 0,
+            "type": "integer"
+          },
           "x": {
             "minimum": 0,
             "type": "integer"
