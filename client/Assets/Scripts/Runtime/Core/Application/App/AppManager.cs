@@ -62,6 +62,8 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<GameStateCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
             EnsureOptionalLoadingOverlay(managers);
+            EnsureOptionalErrorToast(managers);
+            EnsureOptionalConfirmDialog(managers);
         }
 
         private static void EnsureComponent<T>(GameObject owner) where T : Component
@@ -75,6 +77,28 @@ namespace Panoptes.Core.Application.App
         private static void EnsureOptionalLoadingOverlay(GameObject owner)
         {
             var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.LoadingOverlay, Panoptes.Presentation");
+            if (overlayType == null || owner.GetComponent(overlayType) != null)
+            {
+                return;
+            }
+
+            owner.AddComponent(overlayType);
+        }
+
+        private static void EnsureOptionalErrorToast(GameObject owner)
+        {
+            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ErrorToast, Panoptes.Presentation");
+            if (overlayType == null || owner.GetComponent(overlayType) != null)
+            {
+                return;
+            }
+
+            owner.AddComponent(overlayType);
+        }
+
+        private static void EnsureOptionalConfirmDialog(GameObject owner)
+        {
+            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ConfirmDialog, Panoptes.Presentation");
             if (overlayType == null || owner.GetComponent(overlayType) != null)
             {
                 return;

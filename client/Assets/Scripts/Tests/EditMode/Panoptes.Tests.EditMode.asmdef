@@ -3,6 +3,7 @@
   "references": [
     "Panoptes.Core", 
     "Panoptes.Presentation",
+    "Unity.TextMeshPro",
     "UnityEngine.TestRunner", 
     "UnityEditor.TestRunner"
   ],
