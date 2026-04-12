@@ -623,6 +623,8 @@ MonoBehaviour:
   useJsonMapOnStart: 0
   startupMapJson: {fileID: 0}
   autoFillMissingJsonTiles: 0
+  preferLocalMapWhenBackendHasNoTerritory: 1
+  localFallbackMapResourcePath: Data/maps/default.runtime
   preferServerPushedMapConfig: 1
   serverMapConfigKey: mapconfig
   listenServerMapConfigUpdates: 1
@@ -657,6 +659,8 @@ MonoBehaviour:
   debugBuildingsPerType: 2
   debugExtraBuildingSpawnRate: 0.04
   randomSeed: 20260405
+  autoInjectResourcePointsWhenSparse: 1
+  minimumResourcePoints: 18
 --- !u!114 &990100004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -683,14 +687,40 @@ MonoBehaviour:
   movePreviewTravelDuration: 0.22
   movePreviewArcHeight: 0.12
   movePreviewTargetYOffset: 0.02
+  movePreviewUseLightweightProxy: 1
+  movePreviewAlwaysMatchUnitVisual: 1
+  movePreviewProxyScale: {x: 0.34, y: 0.72, z: 0.34}
+  movePreviewProxyYOffset: 0.36
+  movePreviewProxyCastShadow: 0
+  movePreviewTintStrength: 0.28
+  movePreviewKeepTextureColor: 1
   buildValidColor: {r: 0.35, g: 1, b: 0.35, a: 0.92}
   buildInvalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.92}
   buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
   logInvalidBuildClick: 1
   localOwnerIdOverride: 
+  preferTerritoryForCityRule: 1
+  fallbackToLegacyCityZones: 1
+  territoryOnlyBuildingTypes:
+  - engineer
+  - workshop
+  - archery
+  - barracks
+  - blacksmith
+  - castle
+  globalPlacementBuildingTypes:
+  - tower
+  - atktower
+  - watchtower
+  - viewtower
+  disallowManualCastlePlacement: 1
   autoCreateCornerCityZones: 1
   cornerInset: 2
   cityZones: []
+  castleProductionPanel: {fileID: 0}
+  autoFindCastleProductionPanel: 1
+  autoSpawnCastleProductionPanelIfMissing: 1
+  castleProductionPanelResourcesPath: Prefabs/UI/CastleProductionPanel
 --- !u!1 &1440719628
 GameObject:
   m_ObjectHideFlags: 0
@@ -1070,8 +1100,8 @@ MonoBehaviour:
   fallbackStartHeight: 7.5
   fallbackStartPitch: 50
   clampToBounds: 1
-  xBounds: {x: -5, y: 25}
-  zBounds: {x: -5, y: 25}
+  xBounds: {x: -5, y: 50}
+  zBounds: {x: -5, y: 50}
   boundsPadding: 0
   boundsLeftPadding: 0
   boundsRightPadding: 0
