@@ -17,7 +17,7 @@ namespace Panoptes.Core.Infrastructure.Network
     {
         public static event Action<string, IMessage> OnSendIntercepted;
 
-        public static void Send<T>(T message) where T : IMessage<T>
+        public static void Send(IMessage message)
         {
             if (message == null)
             {
@@ -25,16 +25,21 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            OnSendIntercepted?.Invoke(typeof(T).Name, message);
+            OnSendIntercepted?.Invoke(message.Descriptor.Name, message);
 
             var network = NetworkManager.Instance;
             if (network == null)
             {
-                Debug.LogWarning($"[MessageSender] Send ignored: NetworkManager.Instance is null for {typeof(T).Name}.");
+                Debug.LogWarning($"[MessageSender] Send ignored: NetworkManager.Instance is null for {message.Descriptor.Name}.");
                 return;
             }
 
             network.Send(message);
+        }
+
+        public static void Send<T>(T message) where T : IMessage<T>
+        {
+            Send((IMessage)message);
         }
     }
 }
