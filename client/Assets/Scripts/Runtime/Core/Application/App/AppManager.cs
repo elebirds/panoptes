@@ -63,7 +63,9 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
+            EnsureComponent<CombatDraftCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
+            EnsureComponent<GameMessageHandler>(managers);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureComponent<DebugPanel>(managers);
 #endif

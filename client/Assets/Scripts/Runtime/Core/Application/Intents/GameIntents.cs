@@ -208,6 +208,23 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] MoveUnit");
         }
 
+        public static void PreviewCombatMove(string requestId, string unitId, string targetNodeId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgCombatPathPreviewRequest
+            {
+                RequestId = requestId ?? string.Empty,
+                UnitId = unitId ?? string.Empty,
+                Action = "move",
+                TargetNodeId = targetNodeId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+        }
+
         public static void MicroUnit(string unitId, string targetNodeId)
         {
             MoveUnit(unitId, targetNodeId);

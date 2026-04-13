@@ -34,6 +34,7 @@ namespace Panoptes.DebugTools
                 ["MsgTokenVetoCombat"] = payload => Parse<MsgTokenVetoCombat>(payload),
                 ["MsgTokenMicro"] = payload => Parse<MsgTokenMicro>(payload),
                 ["MsgCombatOrder"] = payload => Parse<MsgCombatOrder>(payload),
+                ["MsgCombatPathPreviewRequest"] = payload => Parse<MsgCombatPathPreviewRequest>(payload),
                 ["MsgSubmitCombat"] = payload => Parse<MsgSubmitCombat>(payload),
             };
 
@@ -42,6 +43,7 @@ namespace Panoptes.DebugTools
             "MsgAddBot",
             "MsgBuildRoad",
             "MsgCombatOrder",
+            "MsgCombatPathPreviewRequest",
             "MsgCreateRoom",
             "MsgJoinRoom",
             "MsgKickPlayer",
@@ -114,6 +116,7 @@ namespace Panoptes.DebugTools
                 "MsgTokenVetoCombat" => "{\n  \"unitId\": \"unit-1\"\n}",
                 "MsgTokenMicro" => "{\n  \"unitId\": \"unit-1\",\n  \"targetNodeId\": \"node-b\"\n}",
                 "MsgCombatOrder" => "{\n  \"unitId\": \"unit-1\",\n  \"action\": \"move\",\n  \"targetNodeId\": \"node-b\"\n}",
+                "MsgCombatPathPreviewRequest" => "{\n  \"requestId\": \"preview-1\",\n  \"unitId\": \"unit-1\",\n  \"action\": \"move\",\n  \"targetNodeId\": \"node-b\"\n}",
                 "MsgMinisterDirective" => "{\n  \"ministerRole\": \"domestic\",\n  \"content\": \"{}\"\n}",
                 _ => "{}"
             };
