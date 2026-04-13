@@ -25,6 +25,12 @@ message MsgMinisterDirective {
 message MsgTokenBuild {
   string node_id = 1;
   string building_type = 2;
+  string castle_id = 3;
+}
+
+message MsgTokenExpandTerritory {
+  string unit_id = 1;
+  string center_node_id = 2; // optional, empty = unit current node
 }
 
 message MsgTokenReveal {
@@ -94,6 +100,17 @@ message MsgDomesticSettlement {
   int32 turn = 3;
   string phase = 4;
   string next_phase = 5;
+}
+
+message MsgTerritoryExpanded {
+  bool success = 1;
+  string error_code = 2;
+  string player_id = 3;
+  string unit_id = 4;
+  string center_node_id = 5;
+  string barracks_node_id = 6;
+  repeated NodeView updated_nodes = 7;
+  repeated string removed_unit_ids = 8;
 }
 
 message DomesticChange {

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
@@ -12,6 +15,7 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	"github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/engine/production"
 	"github.com/elebirds/panoptes/internal/event"
 	gamephase "github.com/elebirds/panoptes/internal/game/phase"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -32,15 +36,23 @@ type GameRoom struct {
 	cancelFn  context.CancelFunc
 	state     *domain.GameState
 
-	currentPhase       gamephase.Phase
-	pendingBuilds      []domain.BuildOrder
-	ministerDirectives map[string]string
-	combatDirectives   map[string][]gamephase.WarZoneDirective
-	combatOrders       map[string]domain.CombatOrder
-	vetoUnits          map[string]map[string]bool
-	microOrders        map[string]map[string]string
-	router             any
-	ministerEngine     *minister.MinisterEngine
+	currentPhase            gamephase.Phase
+	pendingBuilds           []domain.BuildOrder
+	ministerDirectives      map[string]string
+	combatDirectives        map[string][]gamephase.WarZoneDirective
+	combatOrders            map[string]domain.CombatOrder
+	combatDeployOrders      map[string]pendingTerritoryDeploy
+	pendingTerritoryDeploys map[string]pendingTerritoryDeploy
+	vetoUnits               map[string]map[string]bool
+	microOrders             map[string]map[string]string
+	router                  any
+	ministerEngine          *minister.MinisterEngine
+}
+
+type pendingTerritoryDeploy struct {
+	PlayerID     string
+	UnitID       string
+	CenterNodeID string
 }
 
 type Room = GameRoom
@@ -49,18 +61,20 @@ var _ transport.GameRoom = (*GameRoom)(nil)
 
 func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config) *GameRoom {
 	return &GameRoom{
-		ID:                 id,
-		Players:            players,
-		cfg:                cfg,
-		transport:          t,
-		submitCh:           make(chan string, len(players)*4+16),
-		pendingBuilds:      make([]domain.BuildOrder, 0),
-		ministerDirectives: make(map[string]string),
-		combatDirectives:   make(map[string][]gamephase.WarZoneDirective),
-		combatOrders:       make(map[string]domain.CombatOrder),
-		vetoUnits:          make(map[string]map[string]bool),
-		microOrders:        make(map[string]map[string]string),
-		ministerEngine:     minister.NewMinisterEngine(nil),
+		ID:                      id,
+		Players:                 players,
+		cfg:                     cfg,
+		transport:               t,
+		submitCh:                make(chan string, len(players)*4+16),
+		pendingBuilds:           make([]domain.BuildOrder, 0),
+		ministerDirectives:      make(map[string]string),
+		combatDirectives:        make(map[string][]gamephase.WarZoneDirective),
+		combatOrders:            make(map[string]domain.CombatOrder),
+		combatDeployOrders:      make(map[string]pendingTerritoryDeploy),
+		pendingTerritoryDeploys: make(map[string]pendingTerritoryDeploy),
+		vetoUnits:               make(map[string]map[string]bool),
+		microOrders:             make(map[string]map[string]string),
+		ministerEngine:          minister.NewMinisterEngine(nil),
 	}
 }
 
@@ -70,7 +84,7 @@ func (r *GameRoom) Start() {
 	if mapID == "" {
 		mapID = catalog.DefaultMapID()
 	}
-	mapFile, err := maploader.LoadMap(catalog, mapID)
+	baseMap, err := maploader.LoadMap(catalog, mapID)
 	if err != nil {
 		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
 		return
@@ -79,14 +93,28 @@ func (r *GameRoom) Start() {
 	world := donburi.NewWorld()
 	playerIDs := r.humanPlayerIDs()
 	usernames := r.humanUsernames()
-	mapData := maploader.InitWorldFromMap(world, mapFile, playerIDs)
+	seed := time.Now().UnixNano()
+	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
+	if runtimeMap == nil {
+		slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
+		return
+	}
+	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
+	r.spawnInitialBaseVehicles()
+	r.grantDevStartingResources()
+	r.initializeCastleStates()
 
 	r.Turn = r.state.Turn
 	r.Phase = r.state.Phase
 
-	slog.Info("地图加载成功", "room_id", r.ID, "map_id", mapFile.ID, "nodes", len(mapFile.Nodes))
+	slog.Info("map initialized",
+		"room_id", r.ID,
+		"base_map_id", baseMap.ID,
+		"runtime_map_id", runtimeMap.ID,
+		"seed", seed,
+		"nodes", len(runtimeMap.Nodes))
 
 	for _, player := range r.Players {
 		if player.IsBot() {
@@ -98,6 +126,141 @@ func (r *GameRoom) Start() {
 
 	Registry.Register(r)
 	go r.runLoop()
+}
+
+func (r *GameRoom) spawnInitialBaseVehicles() {
+	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
+		return
+	}
+
+	for playerID := range r.state.Players {
+		if strings.TrimSpace(playerID) == "" {
+			continue
+		}
+
+		if hasTerritoryExpansionUnit(r.state.World, playerID) {
+			continue
+		}
+
+		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
+		if !ok {
+			continue
+		}
+
+		entity := ecs.CreateUnit(r.state.World, string(domain.UnitTypeSettler), playerID, spawnPos)
+		if !r.state.World.Valid(entity) {
+			slog.Warn("spawn base vehicle failed: invalid entity", "room_id", r.ID, "player_id", playerID)
+		}
+	}
+}
+
+func hasTerritoryExpansionUnit(world donburi.World, playerID string) bool {
+	found := false
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found || entry == nil {
+			return
+		}
+
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction != playerID {
+			return
+		}
+
+		switch strings.ToLower(strings.TrimSpace(string(stats.Type))) {
+		case "settler", "pioneer", "expander", "engineer":
+			found = true
+		}
+	})
+	return found
+}
+
+func (r *GameRoom) grantDevStartingResources() {
+	if r == nil || r.state == nil || r.cfg == nil || !r.cfg.DevMode {
+		return
+	}
+
+	for _, player := range r.state.Players {
+		if player == nil {
+			continue
+		}
+		player.Resources.Set(domain.ResourceOre, 200)
+		player.Resources.Set(domain.ResourceWood, 200)
+		player.Resources.Set(domain.ResourceFood, 200)
+		player.Resources.Set(domain.ResourceRefinedOre, 100)
+		player.Resources.Set(domain.ResourceEngineerMat, 100)
+	}
+}
+
+func (r *GameRoom) initializeCastleStates() {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return
+	}
+
+	primaryCastleByPlayer := make(map[string]string, len(r.state.Players))
+	if r.state.Map != nil {
+		for playerID, spawnPos := range r.state.Map.PlayerSpawns {
+			entry, ok := domain.GetNodeAt(r.state.World, spawnPos)
+			if !ok || entry == nil || !entry.HasComponent(ecs.BuildingC) {
+				continue
+			}
+
+			building := ecs.BuildingC.Get(entry)
+			if !strings.EqualFold(string(building.Type), "castle") {
+				continue
+			}
+
+			primaryCastleByPlayer[playerID] = ecs.NodeC.Get(entry).ID
+		}
+	}
+
+	ecs.NodesWithBuilding(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+
+		building := ecs.BuildingC.Get(entry)
+		if !strings.EqualFold(string(building.Type), "castle") {
+			return
+		}
+
+		node := ecs.NodeC.Get(entry)
+		playerID := strings.TrimSpace(building.Owner)
+		if playerID == "" {
+			playerID = strings.TrimSpace(node.Owner)
+		}
+		if playerID == "" {
+			playerID = strings.TrimSpace(node.TerritoryOwner)
+		}
+		if playerID == "" {
+			return
+		}
+
+		r.state.EnsureCastleState(playerID, node.ID)
+	})
+
+	for playerID, playerState := range r.state.Players {
+		if playerState == nil || len(playerState.Castles) == 0 {
+			continue
+		}
+
+		primaryCastleID := strings.TrimSpace(primaryCastleByPlayer[playerID])
+		if primaryCastleID == "" {
+			for castleID := range playerState.Castles {
+				primaryCastleID = castleID
+				break
+			}
+		}
+		if primaryCastleID == "" {
+			continue
+		}
+
+		castle := playerState.Castles[primaryCastleID]
+		if castle == nil || !castle.Resources.IsZero() {
+			continue
+		}
+
+		castle.Resources = playerState.Resources.Clone()
+	}
 }
 
 func (r *GameRoom) runLoop() {
@@ -124,6 +287,8 @@ func (r *GameRoom) runLoop() {
 
 		r.currentPhase = &gamephase.DomesticPhase{}
 		r.setPhase(domain.PhaseDomesticPlanning)
+		r.applyPendingTerritoryDeploys()
+		r.applyQueuedBuildOrdersAtDomesticStart()
 		r.currentPhase.Enter(r)
 		r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
 		r.setPhase(domain.PhaseDomesticResolving)
@@ -241,6 +406,10 @@ func (r *GameRoom) Submit(playerID string) {
 	r.submitCh <- playerID
 }
 
+func (r *GameRoom) IsDevMode() bool {
+	return r != nil && r.cfg != nil && r.cfg.DevMode
+}
+
 func (r *GameRoom) SendToPlayer(playerID string, msg proto.Message) error {
 	for _, player := range r.Players {
 		if player.PlayerID() == playerID {
@@ -290,6 +459,27 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 	if order.PlayerID == "" {
 		order.PlayerID = r.playerIDForUnit(order.UnitID)
 	}
+
+	if strings.EqualFold(string(order.Action), string(domain.CombatActionDeploy)) {
+		centerNodeID := strings.TrimSpace(order.TargetNodeID)
+		if moveOrder, ok := r.combatOrders[order.UnitID]; ok &&
+			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
+			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
+		}
+		r.combatDeployOrders[order.UnitID] = pendingTerritoryDeploy{
+			PlayerID:     strings.TrimSpace(order.PlayerID),
+			UnitID:       strings.TrimSpace(order.UnitID),
+			CenterNodeID: centerNodeID,
+		}
+		return
+	}
+
+	if strings.EqualFold(string(order.Action), string(domain.CombatActionMove)) {
+		// New move intent overrides and cancels a previously queued deploy intent
+		// for the same unit within the same combat planning window.
+		delete(r.combatDeployOrders, order.UnitID)
+	}
+
 	r.combatOrders[order.UnitID] = order
 	r.syncActiveMarchWithOrder(order)
 }
@@ -329,12 +519,7 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 
 	changes := make([]*pb.DomesticChange, 0, len(events))
 	for _, e := range events {
-		eventType := reflect.TypeOf(e)
-		typeName := "unknown"
-		if eventType != nil {
-			typeName = eventType.Name()
-		}
-		changes = append(changes, &pb.DomesticChange{Type: typeName, Data: map[string]string{"detail": e.String()}})
+		changes = append(changes, toDomesticChange(e))
 	}
 
 	for _, player := range r.Players {
@@ -347,7 +532,10 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 			nextPhase = ""
 		}
 		msg := &pb.MsgDomesticSettlement{
-			Changes:   changes,
+			// 在常规 domestic changes 之外，为当前玩家额外附加自己的城堡资源快照。
+			// 这里复用现有 DomesticChange 通道下发 castle_resource_snapshot，
+			// 避免仅为了资源看板新增一轮 proto 结构改造。
+			Changes:   appendCastleResourceSnapshots(changes, playerState),
 			Turn:      int32(r.state.Turn),
 			Phase:     phase,
 			NextPhase: nextPhase,
@@ -357,6 +545,111 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 		}
 		_ = player.Send(msg)
 	}
+}
+
+// appendCastleResourceSnapshots appends one snapshot change per castle.
+//
+// 这些快照面向客户端资源看板消费，描述的是“本次结算完成后，每座城堡当前的
+// 资源状态”。由于消息是按玩家分别发送的，所以这里只附加当前玩家自己名下的
+// 城堡资源，而不会广播其他玩家的细节。
+func appendCastleResourceSnapshots(base []*pb.DomesticChange, playerState *domain.PlayerState) []*pb.DomesticChange {
+	if playerState == nil || len(playerState.Castles) == 0 {
+		return base
+	}
+
+	changes := make([]*pb.DomesticChange, 0, len(base)+len(playerState.Castles))
+	changes = append(changes, base...)
+
+	castleIDs := make([]string, 0, len(playerState.Castles))
+	for castleID := range playerState.Castles {
+		if strings.TrimSpace(castleID) != "" {
+			castleIDs = append(castleIDs, strings.TrimSpace(castleID))
+		}
+	}
+	sort.Strings(castleIDs)
+
+	for _, castleID := range castleIDs {
+		castle := playerState.Castles[castleID]
+		if castle == nil {
+			continue
+		}
+		resources := castle.Resources
+		if resources == nil {
+			resources = domain.NewResourceBag()
+		}
+		data := map[string]string{
+			"castle_id":         castleID,
+			"ore":               strconv.Itoa(resources.Get(domain.ResourceOre)),
+			"wood":              strconv.Itoa(resources.Get(domain.ResourceWood)),
+			"food":              strconv.Itoa(resources.Get(domain.ResourceFood)),
+			"refined_ore":       strconv.Itoa(resources.Get(domain.ResourceRefinedOre)),
+			"engineer_material": strconv.Itoa(resources.Get(domain.ResourceEngineerMat)),
+			"build_points":      strconv.Itoa(resources.Get(domain.ResourceBuildPoints)),
+		}
+		changes = append(changes, &pb.DomesticChange{
+			Type: "castle_resource_snapshot",
+			Data: data,
+		})
+	}
+
+	return changes
+}
+
+func toDomesticChange(e event.Event) *pb.DomesticChange {
+	if e == nil {
+		return &pb.DomesticChange{
+			Type: "unknown",
+			Data: map[string]string{},
+		}
+	}
+
+	switch evt := e.(type) {
+	case event.BuildingBuiltEvent:
+		hp := resolveBuiltBuildingHP(evt.BuildingType)
+		return &pb.DomesticChange{
+			Type: "building_built",
+			Data: map[string]string{
+				"node_id":       strings.TrimSpace(evt.NodeID),
+				"building_type": strings.TrimSpace(evt.BuildingType),
+				"owner":         strings.TrimSpace(evt.Owner),
+				"castle_id":     strings.TrimSpace(evt.CastleID),
+				"building_hp":   strconv.Itoa(hp),
+			},
+		}
+	}
+
+	eventType := reflect.TypeOf(e)
+	typeName := "unknown"
+	if eventType != nil {
+		typeName = eventType.Name()
+	}
+	return &pb.DomesticChange{
+		Type: typeName,
+		Data: map[string]string{
+			"detail": e.String(),
+		},
+	}
+}
+
+func resolveBuiltBuildingHP(buildingType string) int {
+	const fallback = 100
+
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return fallback
+	}
+
+	if cfg, ok := catalog.GetBuilding(strings.TrimSpace(buildingType)); ok && cfg.Combat.MaxHP > 0 {
+		return cfg.Combat.MaxHP
+	}
+
+	if strings.EqualFold(strings.TrimSpace(buildingType), "castle") {
+		if hp := catalog.Rules().CastleBaseHP; hp > 0 {
+			return hp
+		}
+	}
+
+	return fallback
 }
 
 func (r *GameRoom) setPhase(phase domain.TurnPhase) {
@@ -462,6 +755,84 @@ func (r *GameRoom) prepareCombatOrders() {
 		}
 		r.state.PendingCombatOrders[unitID] = order.Normalized()
 	}
+}
+
+func (r *GameRoom) collectPendingTerritoryDeploysFromCombatOrders() {
+	for unitID, deployOrder := range r.combatDeployOrders {
+		if r.isVetoed(deployOrder.PlayerID, unitID) {
+			continue
+		}
+
+		playerID := strings.TrimSpace(deployOrder.PlayerID)
+		if playerID == "" {
+			playerID = strings.TrimSpace(r.playerIDForUnit(unitID))
+		}
+		if playerID == "" {
+			continue
+		}
+
+		centerNodeID := strings.TrimSpace(deployOrder.CenterNodeID)
+		if moveOrder, ok := r.state.PendingCombatOrders[unitID]; ok &&
+			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
+			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
+		}
+
+		r.pendingTerritoryDeploys[unitID] = pendingTerritoryDeploy{
+			PlayerID:     playerID,
+			UnitID:       strings.TrimSpace(unitID),
+			CenterNodeID: centerNodeID,
+		}
+	}
+}
+
+func (r *GameRoom) applyPendingTerritoryDeploys() {
+	if len(r.pendingTerritoryDeploys) == 0 {
+		return
+	}
+
+	for unitID, order := range r.pendingTerritoryDeploys {
+		if order.PlayerID == "" || order.UnitID == "" {
+			delete(r.pendingTerritoryDeploys, unitID)
+			continue
+		}
+
+		if err := gamephase.ApplyTerritoryExpansion(r, order.PlayerID, order.UnitID, order.CenterNodeID); err != nil {
+			slog.Warn("deploy territory expansion failed", "room_id", r.ID, "player_id", order.PlayerID, "unit_id", order.UnitID, "error", err)
+		}
+		delete(r.pendingTerritoryDeploys, unitID)
+	}
+}
+
+func (r *GameRoom) applyQueuedBuildOrdersAtDomesticStart() {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return
+	}
+	if len(r.pendingBuilds) == 0 {
+		return
+	}
+
+	if r.state.PendingBuilds == nil {
+		r.state.PendingBuilds = make([]domain.BuildOrder, 0, len(r.pendingBuilds))
+	} else {
+		r.state.PendingBuilds = r.state.PendingBuilds[:0]
+	}
+	r.state.PendingBuilds = append(r.state.PendingBuilds, r.pendingBuilds...)
+	r.pendingBuilds = r.pendingBuilds[:0]
+
+	buildSystem := production.BuildSystem{}
+	events := buildSystem.Run(r.state.World, r.state)
+	for _, evt := range events {
+		if evt == nil {
+			continue
+		}
+		evt.Apply(r.state.World, r.state)
+	}
+
+	if len(events) > 0 {
+		r.broadcastSettlement(domain.PhaseDomesticPlanning.String(), events)
+	}
+
+	r.state.PendingBuilds = r.state.PendingBuilds[:0]
 }
 
 func (r *GameRoom) setMoveIntent(unitID string, target domain.Position) {
@@ -608,6 +979,7 @@ func (r *GameRoom) buildNodeView(entry *donburi.Entry, playerID string) *pb.Node
 		Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
 		Terrain:         string(node.Terrain),
 		Owner:           node.Owner,
+		TerritoryOwner:  node.TerritoryOwner,
 		MyUnitCount:     int32(myCount),
 		EnemyUnitCount:  int32(enemyCount),
 		HasRoad:         node.HasRoad,

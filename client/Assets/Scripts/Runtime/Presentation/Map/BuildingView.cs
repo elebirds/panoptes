@@ -42,7 +42,7 @@ namespace Panoptes.Presentation.Map
 
         [Header("Damage Threshold")]
         [SerializeField] private int lowHitPointThreshold = 30;
-        [SerializeField] private int defaultCastleMaxHp = 200;
+        [SerializeField] private int defaultCastleMaxHp = 100;
 
         [Header("Castle HP Bar")]
         [SerializeField] private bool enableCastleHpBar = true;
@@ -115,10 +115,11 @@ namespace Panoptes.Presentation.Map
             }
             else if (MaxHitPoints <= 0)
             {
-                // Keep first valid HP value as fallback max so ratio can be shown.
-                if (IsCastleBuildingType())
+                // When protocol doesn't provide max HP, treat first observed HP as max to avoid fake half-HP display.
+                // If current HP is zero (e.g. transient state), fallback to castle default.
+                if (IsCastleBuildingType() && HitPoints <= 0)
                 {
-                    MaxHitPoints = Mathf.Max(1, Mathf.Max(defaultCastleMaxHp, HitPoints));
+                    MaxHitPoints = Mathf.Max(1, defaultCastleMaxHp);
                 }
                 else
                 {

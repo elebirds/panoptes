@@ -12,8 +12,11 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.UI.Domestic;
+using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.EventSystems;
@@ -74,6 +77,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float modeSwitchInputBlockSeconds = 0.12f;
 
         [Header("Combat Preview")]
+        [SerializeField] private int moveRange = 4;
         [SerializeField] private Color moveHighlightColor = new Color(0.35f, 1f, 0.45f, 0.9f);
         [SerializeField] private Color moveFirstTurnColor = new Color(1f, 0.85f, 0.3f, 0.95f);
         [SerializeField] private Color moveFutureTurnColor = new Color(0.35f, 0.75f, 1f, 0.95f);
@@ -81,6 +85,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float movePreviewRequestThrottleSeconds = 0.1f;
         [SerializeField] private float moveTurnMarkerHeight = 0.65f;
         [SerializeField] private bool onlyControlOwnUnits = true;
+        [SerializeField] private Color movePathArrowColor = new Color(0.35f, 1f, 0.45f, 0.92f);
+        [SerializeField] private Color movePathDestinationColor = new Color(0.25f, 0.95f, 0.55f, 0.95f);
 
         [Header("Move Preview Ghost")]
         [SerializeField] private bool enableMovePreviewGhost = true;
@@ -100,6 +106,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color buildValidColor = new Color(0.35f, 1f, 0.35f, 0.92f);
         [SerializeField] private Color buildInvalidColor = new Color(1f, 0.3f, 0.3f, 0.92f);
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
+        [SerializeField] private Color territoryHighlightColor = new Color(0.28f, 0.72f, 1f, 0.72f);
         [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
@@ -125,6 +132,15 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private int cornerInset = 2;
         [SerializeField] private CityZone[] cityZones;
 
+        [Header("Deploy")]
+        [SerializeField] private string[] territoryExpansionUnitTypes =
+        {
+            "settler",
+            "pioneer",
+            "expander",
+            "engineer"
+        };
+
         [Header("Castle Panel")]
         [SerializeField] private CastleProductionPanel castleProductionPanel;
         [SerializeField] private bool autoFindCastleProductionPanel = true;
@@ -133,8 +149,14 @@ namespace Panoptes.Presentation.Map
 
         private readonly HashSet<string> _highlightNodeIds = new();
         private readonly Dictionary<string, GameObject> _moveTurnMarkers = new();
+        private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
+        private readonly Queue<string> _pendingBuildTokenNodeQueue = new();
+        private readonly Dictionary<string, string> _pendingDeployGhostNodeByUnitId = new();
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
+        private readonly HashSet<string> _pendingMoveUnitIds = new();
+        private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
+        private readonly Dictionary<string, List<string>> _movePathNodeIdsByUnitId = new();
         private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
@@ -142,6 +164,7 @@ namespace Panoptes.Presentation.Map
         private UnitView _selectedUnit;
         private BuildPlacementRule _buildRule;
         private string _buildType = string.Empty;
+        private string _activeBuildCastleId = string.Empty;
         private NodeView _hoverNode;
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
@@ -152,6 +175,9 @@ namespace Panoptes.Presentation.Map
         private int _movePreviewRequestSequence;
         private string _hoverPreviewNodeId = string.Empty;
         private readonly List<RaycastResult> _uiRaycastResults = new();
+        private UnitInfoPanelController _unitInfoPanelController;
+        private UnitView _buildingInfoProxy;
+        private StaticCatalogCache _staticCatalogCache;
 
         private sealed class MoveGhostTag : MonoBehaviour
         {
@@ -165,6 +191,8 @@ namespace Panoptes.Presentation.Map
         public event Action<string, string> MoveCommandSent;
         public event Action<string, string> BuildCommandSent;
         public event Action CombatSelectionChanged;
+        public event Action<UnitView> UnitSelectionChanged;
+        public event Action NonBuildingMapClicked;
 
         private void Awake()
         {
@@ -195,7 +223,16 @@ namespace Panoptes.Presentation.Map
             UnsubscribeDraftCacheEvents();
             ClearMovePreviewState();
             ClearAllMovePreviews();
+            ClearAllMovePathMarkers();
             DisposeMovePreviewProxyMaterial();
+            _pendingBuildTokenNodeQueue.Clear();
+            ClearAllPendingDeployGhosts();
+            ClearTerritoryHighlights();
+            if (_buildingInfoProxy != null)
+            {
+                Destroy(_buildingInfoProxy.gameObject);
+                _buildingInfoProxy = null;
+            }
         }
 
         private void Update()
@@ -235,11 +272,13 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
-                if (TryOpenCastlePanelFromClick())
+                if (TryOpenBuildingInfoFromClick())
                 {
                     return;
                 }
 
+                ClearTerritoryHighlights();
+                NonBuildingMapClicked?.Invoke();
                 HandleCombatSelectionClick();
             }
 
@@ -262,6 +301,11 @@ namespace Panoptes.Presentation.Map
         public void EnterBuildPlacementCity(string buildingType)
         {
             EnterBuildPlacement(buildingType, BuildPlacementRule.CityOnly);
+        }
+
+        public void SetBuildCastleContext(string castleNodeId)
+        {
+            _activeBuildCastleId = string.IsNullOrWhiteSpace(castleNodeId) ? string.Empty : castleNodeId.Trim();
         }
 
         public void CancelCurrentMode()
@@ -335,6 +379,65 @@ namespace Panoptes.Presentation.Map
             NotifyCombatSelectionChanged();
         }
 
+        public bool RequestExpandTerritoryForSelectedUnit()
+        {
+            if (_selectedUnit == null)
+            {
+                return false;
+            }
+
+            var centerNodeId = ResolveExpandCenterNodeId(_selectedUnit.UnitId, _selectedUnit.GridPos);
+            if (!TryValidateTerritoryExpandRequest(_selectedUnit.UnitId, centerNodeId, out var validationError))
+            {
+                ClearPendingDeployCastleGhostForUnit(_selectedUnit.UnitId);
+                ShowUserError(validationError);
+                return false;
+            }
+
+            ShowPendingDeployCastleGhost(_selectedUnit.UnitId, centerNodeId);
+            GameIntents.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
+            var phase = _cache != null ? _cache.Phase : string.Empty;
+            Debug.Log($"[MapInputHandler] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
+            return true;
+        }
+
+        public bool RequestExpandTerritory(string unitId, string centerNodeId = null)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            var resolvedCenterNodeId = centerNodeId;
+            if (string.IsNullOrWhiteSpace(resolvedCenterNodeId))
+            {
+                resolvedCenterNodeId = ResolveExpandCenterNodeId(unitId, default);
+            }
+
+            if (!TryValidateTerritoryExpandRequest(unitId, resolvedCenterNodeId, out var validationError))
+            {
+                ClearPendingDeployCastleGhostForUnit(unitId);
+                ShowUserError(validationError);
+                return false;
+            }
+
+            ShowPendingDeployCastleGhost(unitId, resolvedCenterNodeId);
+            GameIntents.ExpandTerritory(unitId, resolvedCenterNodeId);
+            var phase = _cache != null ? _cache.Phase : string.Empty;
+            Debug.Log($"[MapInputHandler] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
+            return true;
+        }
+
+        public bool IsUnitMovePending(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            return _pendingMoveUnitIds.Contains(unitId.Trim());
+        }
+
         public void ApplyBackendMoveCommand(string unitId, string targetNodeId, bool enqueue = true, bool followCamera = true)
         {
             if (string.IsNullOrEmpty(unitId) || string.IsNullOrEmpty(targetNodeId))
@@ -393,7 +496,7 @@ namespace Panoptes.Presentation.Map
 
         private void EnterBuildPlacement(string buildingType, BuildPlacementRule rule)
         {
-            _buildType = NormalizeToken(buildingType);
+            _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
             if (disallowManualCastlePlacement && string.Equals(_buildType, "castle", StringComparison.Ordinal))
             {
                 Debug.Log("[MapInputHandler] Castle is pre-placed by map config and cannot be manually built.");
@@ -412,13 +515,11 @@ namespace Panoptes.Presentation.Map
 
         private void ExitBuildMode()
         {
-            if (_hoverNode != null)
-            {
-                _hoverNode.SetHighlightVisible(false);
-            }
+            RestoreNodeHighlightAfterHover(_hoverNode);
 
             _mode = Mode.None;
             _buildType = string.Empty;
+            _activeBuildCastleId = string.Empty;
             _hoverNode = null;
             DestroyHoverGhost();
         }
@@ -434,6 +535,11 @@ namespace Panoptes.Presentation.Map
                 }
 
                 SelectUnit(unit);
+                return;
+            }
+
+            if (!IsCombatPhase())
+            {
                 return;
             }
 
@@ -598,37 +704,86 @@ namespace Panoptes.Presentation.Map
                    StaticCatalogCache.Instance.TryGetUnit(_selectedUnit.UnitType, out entry);
         }
 
-        private bool TryOpenCastlePanelFromClick()
+        private bool TryOpenBuildingInfoFromClick()
         {
             if (!TryRaycastNode(out var node))
             {
                 return false;
             }
 
-            if (!IsCastleNode(node.NodeId))
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetNodeState(node.NodeId, out var nodeState) || nodeState == null)
             {
                 return false;
             }
 
-            if (!IsCastleOwnedByLocalPlayer(node.NodeId))
+            var buildingType = NormalizeToken(nodeState.BuildingType);
+            if (string.IsNullOrEmpty(buildingType))
             {
                 return false;
             }
 
-            ResolveCastleProductionPanel();
-            if (castleProductionPanel == null)
+            if (string.Equals(buildingType, "castle", StringComparison.Ordinal))
             {
-                Debug.LogWarning($"[MapInputHandler] Castle clicked but CastleProductionPanel is missing. node={node.NodeId}");
+                HighlightTerritoryForNode(nodeState);
+            }
+            else
+            {
+                ClearTerritoryHighlights();
+            }
+
+            var proxy = GetOrCreateBuildingInfoProxy(node, nodeState);
+            if (proxy == null)
+            {
                 return false;
             }
 
-            var opened = castleProductionPanel.OpenForCastle(node.NodeId);
-            if (!opened)
+            ClearMoveSelection(false);
+            NotifyUnitSelectionChanged(proxy);
+            NotifyUnitInfoPanel(proxy);
+            return true;
+        }
+
+        private UnitView GetOrCreateBuildingInfoProxy(NodeView nodeView, NodeDto nodeState)
+        {
+            if (nodeView == null || nodeState == null)
             {
-                Debug.LogWarning($"[MapInputHandler] Castle panel rejected open request. node={node.NodeId}");
+                return null;
             }
 
-            return opened;
+            if (_buildingInfoProxy == null)
+            {
+                var proxyGo = new GameObject("BuildingInfoProxy");
+                _buildingInfoProxy = proxyGo.AddComponent<UnitView>();
+                proxyGo.hideFlags = HideFlags.DontSave;
+            }
+
+            var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : 100;
+            var unit = new UnitDto
+            {
+                Id = nodeState.Id ?? string.Empty,
+                Type = NormalizeToken(nodeState.BuildingType),
+                Owner = !string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.Owner : nodeState.TerritoryOwner,
+                X = nodeState.X,
+                Y = nodeState.Y,
+                Hp = hp,
+                MaxHp = Mathf.Max(1, hp)
+            };
+
+            var worldPos = nodeView.BuildingAnchor != null
+                ? nodeView.BuildingAnchor.position
+                : nodeView.transform.position;
+
+            _buildingInfoProxy.gameObject.SetActive(true);
+            _buildingInfoProxy.Bind(unit, worldPos);
+            _buildingInfoProxy.SetSelected(false);
+            var collider = _buildingInfoProxy.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+            _buildingInfoProxy.gameObject.SetActive(false);
+            return _buildingInfoProxy;
         }
 
         private void SelectUnit(UnitView unit)
@@ -638,27 +793,107 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (onlyControlOwnUnits && !CanControlUnit(unit))
-            {
-                return;
-            }
+            var canControl = !onlyControlOwnUnits || CanControlUnit(unit);
 
-            ClearMoveSelection();
+            ClearTerritoryHighlights();
+            ClearMoveSelection(false);
             _selectedUnit = unit;
             _selectedUnit.SetSelected(true);
             _combatActionMode = CombatActionMode.None;
             ClearMovePreviewState();
             NotifyCombatSelectionChanged();
+            NotifyUnitSelectionChanged(_selectedUnit);
+            NotifyUnitInfoPanel(_selectedUnit);
+
+            if (!canControl || !IsCombatPhase())
+            {
+                ClearNodeHighlights();
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            foreach (var pair in map.TileViews)
+            {
+                var node = pair.Value;
+                if (node == null || node.GridPos == _selectedUnit.GridPos)
+                {
+                    continue;
+                }
+
+                if (!map.IsNodePassableForMove(node.NodeId))
+                {
+                    continue;
+                }
+
+                var dist = Mathf.Abs(node.GridPos.x - _selectedUnit.GridPos.x) + Mathf.Abs(node.GridPos.y - _selectedUnit.GridPos.y);
+                if (dist > moveRange)
+                {
+                    continue;
+                }
+
+                node.SetHighlight(true, moveHighlightColor);
+                _highlightNodeIds.Add(node.NodeId);
+            }
         }
 
-        private void ClearMoveSelection()
+        private void ClearMoveSelection(bool notify = true)
         {
+            var changed = _selectedUnit != null;
             if (_selectedUnit != null)
             {
                 _selectedUnit.SetSelected(false);
             }
 
             _selectedUnit = null;
+            ClearNodeHighlights();
+
+            if (notify && changed)
+            {
+                NotifyUnitSelectionChanged(null);
+            }
+
+            if (changed)
+            {
+                NotifyUnitInfoPanel(null);
+            }
+        }
+
+        private void NotifyUnitSelectionChanged(UnitView unit)
+        {
+            try
+            {
+                UnitSelectionChanged?.Invoke(unit);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[MapInputHandler] UnitSelectionChanged callback failed: {ex.Message}");
+            }
+        }
+
+        private void NotifyUnitInfoPanel(UnitView unit)
+        {
+            if (_unitInfoPanelController == null)
+            {
+                _unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
+            }
+
+            if (_unitInfoPanelController == null)
+            {
+                return;
+            }
+
+            if (unit == null)
+            {
+                _unitInfoPanelController.Close();
+                return;
+            }
+
+            _unitInfoPanelController.OpenForUnit(unit);
         }
 
         private void ResolveCastleProductionPanel()
@@ -713,10 +948,7 @@ namespace Panoptes.Presentation.Map
             
             if (IsPointerOverUI())
             {
-                if (_hoverNode != null)
-                {
-                    _hoverNode.SetHighlightVisible(false);
-                }
+                RestoreNodeHighlightAfterHover(_hoverNode);
                 _hoverNode = null;
                 DestroyHoverGhost();
                 return;
@@ -725,10 +957,7 @@ namespace Panoptes.Presentation.Map
             var hasNode = TryRaycastNode(out var node);
             if (!hasNode)
             {
-                if (_hoverNode != null)
-                {
-                    _hoverNode.SetHighlightVisible(false);
-                }
+                RestoreNodeHighlightAfterHover(_hoverNode);
                 _hoverNode = null;
                 DestroyHoverGhost();
 
@@ -744,10 +973,7 @@ namespace Panoptes.Presentation.Map
 
             if (_hoverNode != node)
             {
-                if (_hoverNode != null)
-                {
-                    _hoverNode.SetHighlightVisible(false);
-                }
+                RestoreNodeHighlightAfterHover(_hoverNode);
 
                 _hoverNode = node;
                 RecreateHoverGhost(node);
@@ -780,16 +1006,17 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var ownerId = GetLocalOwnerId();
-                map.ApplyBuildingPlacement(node.NodeId, _buildType, ownerId, true, 100, buildPlacedGhostColor);
+                var backendBuildingType = ResolveBackendBuildingType(_buildType);
+                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
                 _pendingBuilds.Add(new PendingBuildRecord
                 {
-                    buildingType = _buildType,
+                    buildingType = backendBuildingType,
                     nodeId = node.NodeId,
                     ownerId = ownerId,
                     isGhost = true
                 });
 
-                SendBuildCommand(_buildType, node.NodeId);
+                SendBuildCommand(backendBuildingType, node.NodeId);
                 ExitBuildMode();
             }
         }
@@ -802,17 +1029,37 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
+            if (HasPendingBuild(nodeId))
+            {
+                return false;
+            }
+
             if (!map.IsNodeBuildBaseAvailable(nodeId))
             {
                 return false;
             }
 
-            if (IsTerritoryOnlyBuildingType(_buildType) && !CanPlaceCityBuilding(nodeId))
+            var backendBuildingType = ResolveBackendBuildingType(_buildType);
+            if (TryGetServerPlacementRule(backendBuildingType, out var placementRule, out var requiredResourceType))
+            {
+                switch (placementRule)
+                {
+                    case "resource_only":
+                        return map.IsNodeResourcePoint(nodeId)
+                               && IsNodeResourceTypeMatch(nodeId, requiredResourceType);
+                    case "city_only":
+                        return CanPlaceCityBuilding(nodeId);
+                    case "any_terrain":
+                        return true;
+                }
+            }
+
+            if (IsTerritoryOnlyBuildingType(backendBuildingType) && !CanPlaceCityBuilding(nodeId))
             {
                 return false;
             }
 
-            if (IsGlobalPlacementBuildingType(_buildType))
+            if (IsGlobalPlacementBuildingType(backendBuildingType))
             {
                 return true;
             }
@@ -830,18 +1077,24 @@ namespace Panoptes.Presentation.Map
 
         private bool CanPlaceCityBuilding(string nodeId)
         {
-            if (IsInsideLocalTerritory(nodeId))
+            return IsInsideLocalTerritory(nodeId);
+        }
+
+        private bool IsNodeResourceTypeMatch(string nodeId, string requiredResourceType)
+        {
+            var required = NormalizeToken(requiredResourceType);
+            if (string.IsNullOrEmpty(required))
             {
                 return true;
             }
 
-            if (!useSafeZoneFallbackForCityPlacement)
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetNodeState(nodeId, out var node) || node == null)
             {
                 return false;
             }
 
-            var map = MapRenderer.Instance;
-            return map != null && map.IsNodeInSafeZone(nodeId);
+            return string.Equals(NormalizeToken(node.ResourceType), required, StringComparison.Ordinal);
         }
 
         private bool IsInsideLocalTerritory(string nodeId)
@@ -852,7 +1105,19 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return map.IsNodeInTerritory(nodeId, GetLocalOwnerId());
+            if (!map.TryGetNodeState(nodeId, out var node) || node == null)
+            {
+                return false;
+            }
+
+            var ownerId = NormalizeToken(GetLocalOwnerId());
+            var territoryOwner = NormalizeToken(node.TerritoryOwner);
+            if (string.IsNullOrEmpty(territoryOwner))
+            {
+                return false;
+            }
+
+            return string.Equals(territoryOwner, ownerId, StringComparison.Ordinal);
         }
 
         private bool IsTerritoryOnlyBuildingType(string buildingType)
@@ -1003,7 +1268,14 @@ namespace Panoptes.Presentation.Map
             {
                 if (map.TryGetNodeView(nodeId, out var node))
                 {
-                    node.SetHighlightVisible(false);
+                    if (_territoryHighlightNodeIds.Contains(nodeId))
+                    {
+                        node.SetHighlight(true, territoryHighlightColor);
+                    }
+                    else
+                    {
+                        node.SetHighlightVisible(false);
+                    }
                 }
             }
 
@@ -1011,15 +1283,135 @@ namespace Panoptes.Presentation.Map
             ClearMoveTurnMarkers();
         }
 
+        private void RestoreNodeHighlightAfterHover(NodeView node)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            var nodeId = node.NodeId;
+            if (!string.IsNullOrWhiteSpace(nodeId) && _territoryHighlightNodeIds.Contains(nodeId))
+            {
+                node.SetHighlight(true, territoryHighlightColor);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(nodeId) && _highlightNodeIds.Contains(nodeId))
+            {
+                node.SetHighlight(true, moveHighlightColor);
+                return;
+            }
+
+            node.SetHighlightVisible(false);
+        }
+
+        private void HighlightTerritoryForNode(NodeDto centerNode)
+        {
+            ClearTerritoryHighlights();
+
+            var map = MapRenderer.Instance;
+            if (map == null || centerNode == null || map.TileViews == null || map.TileViews.Count == 0)
+            {
+                return;
+            }
+
+            var owner = NormalizeToken(centerNode.TerritoryOwner);
+            if (string.IsNullOrEmpty(owner))
+            {
+                // Fallback for compatibility: if territory_owner is absent on center node, do not highlight.
+                return;
+            }
+
+            foreach (var pair in map.TileViews)
+            {
+                var nodeId = pair.Key;
+                var nodeView = pair.Value;
+                if (string.IsNullOrWhiteSpace(nodeId) || nodeView == null)
+                {
+                    continue;
+                }
+
+                if (!map.TryGetNodeState(nodeId, out var nodeState) || nodeState == null)
+                {
+                    continue;
+                }
+
+                var territoryOwner = NormalizeToken(nodeState.TerritoryOwner);
+                if (string.IsNullOrEmpty(territoryOwner))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(territoryOwner, owner, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                nodeView.SetHighlight(true, territoryHighlightColor);
+                _territoryHighlightNodeIds.Add(nodeId);
+            }
+        }
+
+        private void ClearTerritoryHighlights()
+        {
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                _territoryHighlightNodeIds.Clear();
+                return;
+            }
+
+            foreach (var nodeId in _territoryHighlightNodeIds)
+            {
+                if (string.IsNullOrWhiteSpace(nodeId))
+                {
+                    continue;
+                }
+
+                if (map.TryGetNodeView(nodeId, out var nodeView) && nodeView != null)
+                {
+                    if (_highlightNodeIds.Contains(nodeId))
+                    {
+                        nodeView.SetHighlight(true, moveHighlightColor);
+                    }
+                    else
+                    {
+                        nodeView.SetHighlightVisible(false);
+                    }
+                }
+            }
+
+            _territoryHighlightNodeIds.Clear();
+        }
+
         private void SendMoveCommand(string unitId, string targetNodeId)
         {
+            if (!string.IsNullOrWhiteSpace(unitId))
+            {
+                var normalizedUnitId = unitId.Trim();
+                // Move command should cancel any pending deploy intent for the same unit.
+                ClearPendingDeployCastleGhostForUnit(normalizedUnitId);
+                _pendingMoveUnitIds.Add(normalizedUnitId);
+                _pendingMoveTargetNodeByUnitId[normalizedUnitId] = targetNodeId ?? string.Empty;
+            }
+
+            RemoveMovePreview(unitId);
+            ApplyMovePathPreviewMarkers(unitId, targetNodeId);
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
+            ClearNodeHighlights();
         }
 
         private void SendBuildCommand(string buildingType, string nodeId)
         {
-            GameIntents.BuildToken(nodeId, buildingType);
+            buildingType = ResolveBackendBuildingType(buildingType);
+            if (!string.IsNullOrWhiteSpace(nodeId))
+            {
+                _pendingBuildTokenNodeQueue.Enqueue(nodeId.Trim());
+            }
+
+            GameIntents.BuildToken(nodeId, buildingType, _activeBuildCastleId);
             BuildCommandSent?.Invoke(buildingType, nodeId);
         }
 
@@ -1039,6 +1431,9 @@ namespace Panoptes.Presentation.Map
 
             _cache.OnCombatSettled += OnCombatSettled;
             _cache.OnDomesticSettled += OnDomesticSettled;
+            _cache.OnNodeChanged += OnNodeChanged;
+            _cache.OnUnitsChanged += OnUnitsChanged;
+            _cache.OnTokenResult += OnTokenResult;
             _cacheEventsSubscribed = true;
         }
 
@@ -1065,6 +1460,9 @@ namespace Panoptes.Presentation.Map
             {
                 _cache.OnCombatSettled -= OnCombatSettled;
                 _cache.OnDomesticSettled -= OnDomesticSettled;
+                _cache.OnNodeChanged -= OnNodeChanged;
+                _cache.OnUnitsChanged -= OnUnitsChanged;
+                _cache.OnTokenResult -= OnTokenResult;
             }
 
             _cache = null;
@@ -1085,31 +1483,192 @@ namespace Panoptes.Presentation.Map
         private void OnCombatSettled(CombatSettledEvent settledEvent)
         {
             ClearCombatSelection();
-        }
-
-        private void OnDomesticSettled(DomesticSettledEvent e)
-        {
-            var builtNodeIds = e?.Settlement?.BuiltNodeIDs;
-            if (builtNodeIds == null || builtNodeIds.Count == 0)
+            var events = settledEvent?.Settlement?.Events;
+            if (events == null || events.Count == 0)
             {
                 return;
             }
 
-            for (int i = 0; i < builtNodeIds.Count; i++)
+            for (int i = 0; i < events.Count; i++)
             {
-                var nodeId = builtNodeIds[i];
-                if (string.IsNullOrEmpty(nodeId) || GameStateCache.Instance == null)
+                var eventItem = events[i];
+                if (eventItem == null || eventItem.Type != "unit_move")
                 {
                     continue;
                 }
 
-                var node = GameStateCache.Instance.GetNode(nodeId);
-                if (node == null || string.IsNullOrEmpty(node.BuildingType))
+                if (!string.IsNullOrWhiteSpace(eventItem.UnitId))
+                {
+                    var normalizedUnitId = eventItem.UnitId.Trim();
+                    _pendingMoveUnitIds.Remove(normalizedUnitId);
+                    _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
+                    ClearMovePathMarkersForUnit(normalizedUnitId);
+                }
+
+                if (MapRenderer.Instance == null)
                 {
                     continue;
                 }
 
-                ApplyBackendBuildCommand(node.BuildingType, nodeId, false, node.Owner, node.BuildingHp);
+                var grid = new Vector2Int(eventItem.ToX, eventItem.ToY);
+                if (!MapRenderer.Instance.TryGetNodeIdByGrid(grid, out var targetNodeId))
+                {
+                    continue;
+                }
+
+                ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true);
+            }
+        }
+
+        private void OnDomesticSettled(DomesticSettledEvent e)
+        {
+            _pendingMoveUnitIds.Clear();
+            _pendingMoveTargetNodeByUnitId.Clear();
+            _pendingBuildTokenNodeQueue.Clear();
+            ClearAllMovePathMarkers();
+
+            var builtBuildings = e?.Settlement?.BuiltBuildings;
+            if (builtBuildings == null || builtBuildings.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < builtBuildings.Count; i++)
+            {
+                var built = builtBuildings[i];
+                if (built == null || string.IsNullOrWhiteSpace(built.NodeId) || string.IsNullOrWhiteSpace(built.BuildingType))
+                {
+                    continue;
+                }
+
+                var hp = built.BuildingHp > 0 ? built.BuildingHp : 100;
+                ApplyBackendBuildCommand(
+                    built.BuildingType,
+                    built.NodeId,
+                    false,
+                    built.OwnerId,
+                    hp);
+            }
+        }
+
+        private void OnTokenResult(TokenResultEvent e)
+        {
+            if (e == null)
+            {
+                return;
+            }
+
+            var action = NormalizeToken(e.Action);
+            if (string.Equals(action, "expand_territory", StringComparison.Ordinal))
+            {
+                if (!e.Success)
+                {
+                    ClearAllPendingDeployGhosts();
+                }
+                return;
+            }
+
+            if (!string.Equals(action, "build", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            string nodeId = null;
+            if (_pendingBuildTokenNodeQueue.Count > 0)
+            {
+                nodeId = _pendingBuildTokenNodeQueue.Dequeue();
+            }
+
+            if (e.Success)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                nodeId = GetLastPendingBuildNodeId();
+            }
+
+            RollbackPendingBuild(nodeId);
+        }
+
+        private void OnNodeChanged(NodeChangedEvent evt)
+        {
+            if (evt == null || evt.Node == null || string.IsNullOrWhiteSpace(evt.NodeID))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            map.ApplyNodeSnapshot(evt.Node);
+            TryResolvePendingDeployGhostByNode(evt.NodeID, evt.Node);
+            if (map.TryGetNodeView(evt.NodeID, out var nodeView) && nodeView != null)
+            {
+                if (_territoryHighlightNodeIds.Contains(evt.NodeID))
+                {
+                    nodeView.SetHighlight(true, territoryHighlightColor);
+                }
+                else if (_highlightNodeIds.Contains(evt.NodeID))
+                {
+                    nodeView.SetHighlight(true, moveHighlightColor);
+                }
+            }
+        }
+
+        private void OnUnitsChanged(UnitsChangedEvent evt)
+        {
+            if (evt == null)
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            if (evt.RemovedIDs != null)
+            {
+                for (var i = 0; i < evt.RemovedIDs.Count; i++)
+                {
+                    var removedId = evt.RemovedIDs[i];
+                    if (string.IsNullOrWhiteSpace(removedId))
+                    {
+                        continue;
+                    }
+
+                    map.RemoveRuntimeUnit(removedId, false);
+                    RemoveMovePreview(removedId);
+                    var normalizedRemovedId = removedId.Trim();
+                    _pendingMoveUnitIds.Remove(normalizedRemovedId);
+                    _pendingMoveTargetNodeByUnitId.Remove(normalizedRemovedId);
+                    ClearMovePathMarkersForUnit(normalizedRemovedId);
+                    ClearPendingDeployCastleGhostForUnit(normalizedRemovedId);
+                    if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
+                    {
+                        ClearMoveSelection();
+                    }
+                }
+            }
+
+            if (evt.Added != null)
+            {
+                for (var i = 0; i < evt.Added.Count; i++)
+                {
+                    var added = evt.Added[i];
+                    if (added == null)
+                    {
+                        continue;
+                    }
+
+                    map.TrySpawnRuntimeUnit(added, true, false);
+                }
             }
         }
 
@@ -1132,6 +1691,62 @@ namespace Panoptes.Presentation.Map
                     _pendingBuilds.RemoveAt(i);
                 }
             }
+        }
+
+        private string GetLastPendingBuildNodeId()
+        {
+            if (_pendingBuilds == null || _pendingBuilds.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            for (var i = _pendingBuilds.Count - 1; i >= 0; i--)
+            {
+                var nodeId = _pendingBuilds[i].nodeId;
+                if (!string.IsNullOrWhiteSpace(nodeId))
+                {
+                    return nodeId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private void RollbackPendingBuild(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            nodeId = nodeId.Trim();
+            RemovePendingBuild(nodeId);
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
+        }
+
+        private bool HasPendingBuild(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _pendingBuilds.Count; i++)
+            {
+                if (string.Equals(_pendingBuilds[i].nodeId, nodeId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private string GetLocalOwnerId()
@@ -1355,7 +1970,38 @@ namespace Panoptes.Presentation.Map
             }
 
             var localOwner = GetLocalOwnerId();
-            return string.Equals(unit.Faction, localOwner, StringComparison.Ordinal);
+            return string.Equals(NormalizeToken(unit.Faction), NormalizeToken(localOwner), StringComparison.Ordinal);
+        }
+
+        private bool IsCombatPhase()
+        {
+            var phase = _cache != null ? _cache.Phase : string.Empty;
+            if (string.IsNullOrWhiteSpace(phase) && GameStateCache.Instance != null)
+            {
+                phase = GameStateCache.Instance.Phase;
+            }
+
+            var normalized = NormalizeToken(phase);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            if (string.Equals(normalized, "combat", StringComparison.Ordinal) ||
+                string.Equals(normalized, NormalizeToken(GamePhases.CombatPlanning), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            // Compatibility with merged/new phase naming variants.
+            if (normalized.IndexOf("combat", StringComparison.Ordinal) >= 0 &&
+                (normalized.IndexOf("planning", StringComparison.Ordinal) >= 0 ||
+                 normalized.IndexOf("deploy", StringComparison.Ordinal) >= 0))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryRaycastNode(out NodeView nodeView)
@@ -1395,6 +2041,280 @@ namespace Panoptes.Presentation.Map
             return Physics.Raycast(ray, out hit, raycastDistance, raycastMask, QueryTriggerInteraction.Ignore);
         }
 
+        private static string ResolveNodeIdByGrid(Vector2Int gridPos)
+        {
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return string.Empty;
+            }
+
+            return map.TryGetNodeIdByGrid(gridPos, out var nodeId) ? nodeId : string.Empty;
+        }
+
+        private string ResolveBackendBuildingType(string buildingType)
+        {
+            var normalized = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return string.Empty;
+            }
+
+            if (TryGetBuildingConfig(normalized, out var entry, out var resolvedId) && entry != null)
+            {
+                return NormalizeToken(string.IsNullOrWhiteSpace(entry.id) ? resolvedId : entry.id);
+            }
+
+            return normalized;
+        }
+
+        private bool TryGetServerPlacementRule(string buildingType, out string placementRule, out string requiredResourceType)
+        {
+            placementRule = string.Empty;
+            requiredResourceType = string.Empty;
+
+            if (!TryGetBuildingConfig(buildingType, out var entry, out _ ) || entry == null)
+            {
+                return false;
+            }
+
+            placementRule = NormalizeToken(entry.placement_rule);
+            requiredResourceType = NormalizeToken(entry.required_resource_type);
+            return !string.IsNullOrEmpty(placementRule);
+        }
+
+        private bool TryGetBuildingConfig(string buildingType, out StaticCatalogCache.BuildingEntryJson entry, out string resolvedId)
+        {
+            entry = null;
+            resolvedId = string.Empty;
+
+            var key = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(key))
+            {
+                return false;
+            }
+
+            var cache = ResolveStaticCatalogCache();
+            if (cache == null)
+            {
+                return false;
+            }
+
+            if (cache.TryGetBuilding(key, out entry) && entry != null)
+            {
+                resolvedId = key;
+                return true;
+            }
+
+            var aliases = GetBuildingAliasKeys(key);
+            for (var i = 0; i < aliases.Length; i++)
+            {
+                var alias = aliases[i];
+                if (string.IsNullOrWhiteSpace(alias))
+                {
+                    continue;
+                }
+
+                if (cache.TryGetBuilding(alias, out entry) && entry != null)
+                {
+                    resolvedId = alias;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private StaticCatalogCache ResolveStaticCatalogCache()
+        {
+            if (_staticCatalogCache != null)
+            {
+                return _staticCatalogCache;
+            }
+
+            _staticCatalogCache = StaticCatalogCache.Instance;
+            if (_staticCatalogCache == null)
+            {
+                _staticCatalogCache = StaticCatalogCache.EnsureInstance();
+            }
+
+            return _staticCatalogCache;
+        }
+
+        private static string[] GetBuildingAliasKeys(string key)
+        {
+            switch (NormalizeToken(key))
+            {
+                case "lumberyard":
+                    return new[] { "lumber" };
+                case "lumber":
+                    return new[] { "lumberyard" };
+                case "engineer":
+                    return new[] { "engineer_camp" };
+                case "engineer_camp":
+                    return new[] { "engineer" };
+                case "archery":
+                    return new[] { "barracks" };
+                case "barracks":
+                    return new[] { "archery" };
+                case "blacksmith":
+                case "backsmith":
+                    return new[] { "workshop" };
+                default:
+                    return Array.Empty<string>();
+            }
+        }
+
+        private void ShowPendingDeployCastleGhost(string unitId, string centerNodeId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            var normalizedNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
+            if (string.IsNullOrEmpty(normalizedUnitId) || string.IsNullOrEmpty(normalizedNodeId))
+            {
+                return;
+            }
+
+            if (_pendingDeployGhostNodeByUnitId.TryGetValue(normalizedUnitId, out var oldNodeId)
+                && !string.IsNullOrWhiteSpace(oldNodeId)
+                && !string.Equals(oldNodeId, normalizedNodeId, StringComparison.Ordinal))
+            {
+                TryClearPendingDeployGhostNode(oldNodeId);
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(normalizedNodeId, "castle", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
+            _pendingDeployGhostNodeByUnitId[normalizedUnitId] = normalizedNodeId;
+        }
+
+        private void ClearPendingDeployCastleGhostForUnit(string unitId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            if (!_pendingDeployGhostNodeByUnitId.TryGetValue(normalizedUnitId, out var nodeId))
+            {
+                return;
+            }
+
+            _pendingDeployGhostNodeByUnitId.Remove(normalizedUnitId);
+            TryClearPendingDeployGhostNode(nodeId);
+        }
+
+        private void ClearAllPendingDeployGhosts()
+        {
+            if (_pendingDeployGhostNodeByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            var nodeIDs = new HashSet<string>(_pendingDeployGhostNodeByUnitId.Values);
+            _pendingDeployGhostNodeByUnitId.Clear();
+
+            foreach (var nodeId in nodeIDs)
+            {
+                TryClearPendingDeployGhostNode(nodeId);
+            }
+        }
+
+        private void TryClearPendingDeployGhostNode(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            // Keep real buildings intact; only clear stale ghost markers.
+            if (map.TryGetNodeState(nodeId, out var state) && state != null &&
+                !string.IsNullOrWhiteSpace(state.BuildingType))
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(nodeId.Trim(), string.Empty, string.Empty, false, 0);
+        }
+
+        private void TryResolvePendingDeployGhostByNode(string nodeId, NodeDto node)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) || node == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(node.BuildingType))
+            {
+                return;
+            }
+
+            if (_pendingDeployGhostNodeByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            var normalizedNodeId = nodeId.Trim();
+            string unitIdToRemove = null;
+            foreach (var pair in _pendingDeployGhostNodeByUnitId)
+            {
+                if (string.Equals(pair.Value, normalizedNodeId, StringComparison.Ordinal))
+                {
+                    unitIdToRemove = pair.Key;
+                    break;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(unitIdToRemove))
+            {
+                _pendingDeployGhostNodeByUnitId.Remove(unitIdToRemove);
+            }
+        }
+
+        private string ResolveExpandCenterNodeId(string unitId, Vector2Int fallbackGrid)
+        {
+            var normalizedUnitId = string.IsNullOrWhiteSpace(unitId) ? string.Empty : unitId.Trim();
+            if (!string.IsNullOrEmpty(normalizedUnitId)
+                && _pendingMoveTargetNodeByUnitId.TryGetValue(normalizedUnitId, out var pendingNodeId)
+                && !string.IsNullOrWhiteSpace(pendingNodeId))
+            {
+                return pendingNodeId;
+            }
+
+            if (MapRenderer.Instance != null
+                && !string.IsNullOrEmpty(normalizedUnitId)
+                && MapRenderer.Instance.TryGetUnitView(normalizedUnitId, out var unitView)
+                && unitView != null)
+            {
+                var fromView = ResolveNodeIdByGrid(unitView.GridPos);
+                if (!string.IsNullOrWhiteSpace(fromView))
+                {
+                    return fromView;
+                }
+            }
+
+            if (fallbackGrid != default)
+            {
+                var fromFallback = ResolveNodeIdByGrid(fallbackGrid);
+                if (!string.IsNullOrWhiteSpace(fromFallback))
+                {
+                    return fromFallback;
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
@@ -1411,6 +2331,115 @@ namespace Panoptes.Presentation.Map
             for (var i = 0; i < entry.tags.Length; i++)
             {
                 if (string.Equals(NormalizeToken(entry.tags[i]), normalized, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryValidateTerritoryExpandRequest(string unitId, string centerNodeId, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                errorMessage = "Deploy failed: map is not initialized.";
+                return false;
+            }
+
+            var normalizedUnitId = string.IsNullOrWhiteSpace(unitId) ? string.Empty : unitId.Trim();
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                errorMessage = "Deploy failed: unit id is empty.";
+                return false;
+            }
+
+            if (!map.TryGetUnitView(normalizedUnitId, out var unitView) || unitView == null)
+            {
+                errorMessage = "Deploy failed: settler unit not found.";
+                return false;
+            }
+
+            if (!CanControlUnit(unitView))
+            {
+                errorMessage = "Deploy failed: only your own settler can deploy.";
+                return false;
+            }
+
+            if (!IsTerritoryExpansionUnitType(unitView.UnitType))
+            {
+                errorMessage = "Deploy failed: this unit type cannot expand territory.";
+                return false;
+            }
+
+            var normalizedCenterNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
+            if (string.IsNullOrEmpty(normalizedCenterNodeId))
+            {
+                errorMessage = "Deploy failed: invalid target node.";
+                return false;
+            }
+
+            if (!map.TryGetNodeView(normalizedCenterNodeId, out var centerNode) || centerNode == null)
+            {
+                errorMessage = "Cannot deploy here: target node does not exist.";
+                return false;
+            }
+
+            var centerGrid = centerNode.GridPos;
+            for (var dy = -1; dy <= 1; dy++)
+            {
+                for (var dx = -1; dx <= 1; dx++)
+                {
+                    var grid = new Vector2Int(centerGrid.x + dx, centerGrid.y + dy);
+                    if (!map.TryGetNodeViewByGrid(grid, out var node) || node == null)
+                    {
+                        errorMessage = "Cannot deploy here: 3x3 territory is out of map bounds.";
+                        return false;
+                    }
+
+                    if (!map.TryGetNodeState(node.NodeId, out var nodeState) || nodeState == null)
+                    {
+                        errorMessage = "Cannot deploy here: target node state is unavailable.";
+                        return false;
+                    }
+
+                    if (nodeState.IsResourcePoint)
+                    {
+                        errorMessage = "Cannot deploy here: 3x3 territory contains resource points.";
+                        return false;
+                    }
+
+                    var buildingType = NormalizeToken(nodeState.BuildingType);
+                    if (!string.IsNullOrEmpty(buildingType))
+                    {
+                        // Allow already-expanded center castle only for idempotent retry.
+                        var allowCenterCastle = dx == 0 && dy == 0 && string.Equals(buildingType, "castle", StringComparison.Ordinal);
+                        if (!allowCenterCastle)
+                        {
+                            errorMessage = "Cannot deploy here: 3x3 territory contains existing buildings.";
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private bool IsTerritoryExpansionUnitType(string unitType)
+        {
+            if (string.IsNullOrWhiteSpace(unitType) || territoryExpansionUnitTypes == null || territoryExpansionUnitTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(unitType);
+            for (var i = 0; i < territoryExpansionUnitTypes.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(territoryExpansionUnitTypes[i]), StringComparison.Ordinal))
                 {
                     return true;
                 }
@@ -1438,6 +2467,22 @@ namespace Panoptes.Presentation.Map
         private void NotifyCombatSelectionChanged()
         {
             CombatSelectionChanged?.Invoke();
+        }
+
+        private static void ShowUserError(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(message, false);
+                return;
+            }
+
+            Debug.LogWarning($"[MapInputHandler] {message}");
         }
 
         private bool IsPointerOverUI()
@@ -1900,6 +2945,224 @@ namespace Panoptes.Presentation.Map
 
             Destroy(preview);
             _movePreviewByUnitId.Remove(unitId);
+        }
+
+        private void ApplyMovePathPreviewMarkers(string unitId, string targetNodeId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            ClearMovePathMarkersForUnit(normalizedUnitId);
+
+            var map = MapRenderer.Instance;
+            if (map == null || string.IsNullOrWhiteSpace(targetNodeId))
+            {
+                return;
+            }
+
+            if (!map.TryGetUnitView(unitId, out var unitView) || unitView == null)
+            {
+                return;
+            }
+
+            if (!map.TryGetNodeView(targetNodeId, out var targetNode) || targetNode == null)
+            {
+                return;
+            }
+
+            var path = BuildMovePath(unitView.GridPos, targetNode.GridPos);
+            if (path == null || path.Count < 2)
+            {
+                return;
+            }
+
+            var usedNodeIds = new List<string>(path.Count);
+            for (var i = 1; i < path.Count; i++)
+            {
+                var node = path[i];
+                if (node == null || string.IsNullOrWhiteSpace(node.NodeId))
+                {
+                    continue;
+                }
+
+                if (i == path.Count - 1)
+                {
+                    node.ShowMovePathDestination(movePathDestinationColor);
+                }
+                else
+                {
+                    var nextNode = path[i + 1];
+                    if (nextNode == null)
+                    {
+                        continue;
+                    }
+
+                    var dir = nextNode.GridPos - node.GridPos;
+                    node.ShowMovePathArrow(dir, movePathArrowColor);
+                }
+
+                usedNodeIds.Add(node.NodeId);
+            }
+
+            if (usedNodeIds.Count > 0)
+            {
+                _movePathNodeIdsByUnitId[normalizedUnitId] = usedNodeIds;
+            }
+        }
+
+        private List<NodeView> BuildMovePath(Vector2Int start, Vector2Int goal)
+        {
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return null;
+            }
+
+            if (start == goal)
+            {
+                if (map.TryGetNodeViewByGrid(start, out var sameNode) && sameNode != null)
+                {
+                    return new List<NodeView> { sameNode };
+                }
+
+                return null;
+            }
+
+            var queue = new Queue<Vector2Int>();
+            var visited = new HashSet<Vector2Int>();
+            var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+            queue.Enqueue(start);
+            visited.Add(start);
+
+            var directions = new[]
+            {
+                new Vector2Int(1, 0),
+                new Vector2Int(-1, 0),
+                new Vector2Int(0, 1),
+                new Vector2Int(0, -1)
+            };
+
+            var reached = false;
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current == goal)
+                {
+                    reached = true;
+                    break;
+                }
+
+                for (var i = 0; i < directions.Length; i++)
+                {
+                    var next = current + directions[i];
+                    if (visited.Contains(next))
+                    {
+                        continue;
+                    }
+
+                    var distanceFromStart = Mathf.Abs(next.x - start.x) + Mathf.Abs(next.y - start.y);
+                    if (distanceFromStart > moveRange)
+                    {
+                        continue;
+                    }
+
+                    if (!map.TryGetNodeViewByGrid(next, out var nextNode) || nextNode == null)
+                    {
+                        continue;
+                    }
+
+                    if (next != goal && !map.IsNodePassableForMove(nextNode.NodeId))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(next);
+                    cameFrom[next] = current;
+                    queue.Enqueue(next);
+                }
+            }
+
+            if (!reached)
+            {
+                return null;
+            }
+
+            var gridPath = new List<Vector2Int> { goal };
+            var walker = goal;
+            while (walker != start)
+            {
+                if (!cameFrom.TryGetValue(walker, out var parent))
+                {
+                    return null;
+                }
+
+                walker = parent;
+                gridPath.Add(walker);
+            }
+            gridPath.Reverse();
+
+            var nodePath = new List<NodeView>(gridPath.Count);
+            for (var i = 0; i < gridPath.Count; i++)
+            {
+                if (map.TryGetNodeViewByGrid(gridPath[i], out var node) && node != null)
+                {
+                    nodePath.Add(node);
+                }
+            }
+
+            return nodePath;
+        }
+
+        private void ClearMovePathMarkersForUnit(string unitId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            if (!_movePathNodeIdsByUnitId.TryGetValue(normalizedUnitId, out var nodeIds) || nodeIds == null)
+            {
+                _movePathNodeIdsByUnitId.Remove(normalizedUnitId);
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map != null)
+            {
+                for (var i = 0; i < nodeIds.Count; i++)
+                {
+                    var nodeId = nodeIds[i];
+                    if (string.IsNullOrWhiteSpace(nodeId))
+                    {
+                        continue;
+                    }
+
+                    if (map.TryGetNodeView(nodeId, out var node) && node != null)
+                    {
+                        node.ClearMovePathMarker();
+                    }
+                }
+            }
+
+            _movePathNodeIdsByUnitId.Remove(normalizedUnitId);
+        }
+
+        private void ClearAllMovePathMarkers()
+        {
+            if (_movePathNodeIdsByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            var keys = new List<string>(_movePathNodeIdsByUnitId.Keys);
+            for (var i = 0; i < keys.Count; i++)
+            {
+                ClearMovePathMarkersForUnit(keys[i]);
+            }
         }
 
         private void ClearAllMovePreviews()

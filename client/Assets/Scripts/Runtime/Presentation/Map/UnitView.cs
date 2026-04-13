@@ -18,6 +18,13 @@ namespace Panoptes.Presentation.Map
 {
     public sealed class UnitView : MonoBehaviour
     {
+        public enum UnitAnimationCommand
+        {
+            Idle = 0,
+            Move = 1,
+            Attack = 2
+        }
+
         [Header("Visual")]
         [SerializeField] private Renderer[] tintRenderers;
         [SerializeField] private GameObject selectedRing;
@@ -40,6 +47,10 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool disableCastShadows = true;
         [SerializeField] private bool disableReceiveShadows = true;
         [SerializeField] private bool disableSkinnedUpdateWhenOffscreen = true;
+        [SerializeField] private bool enableBaseVehicleRenderQualityOverride = true;
+        [SerializeField] private bool baseVehicleCastShadows = true;
+        [SerializeField] private bool baseVehicleReceiveShadows = true;
+        [SerializeField] private string[] baseVehicleUnitTypeAliases = { "settler", "pioneer", "expander", "engineer" };
         
         [Header("Animation")]
         [SerializeField] private Animator animator;
@@ -47,10 +58,22 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private SquadUnitVisualController squadVisualController;
         [SerializeField] private string movingBoolParam = "isMoving";
         [SerializeField] private string speedFloatParam = "moveSpeed";
+        [SerializeField] private string attackTriggerParam = "attack";
+        [SerializeField] private string idleStateName = "Idle";
+        [SerializeField] private bool forceIdleAnimation = true;
+        [SerializeField] private bool forceIdleAnimationOnBind = true;
         [SerializeField] private float rotateLerpSpeed = 18f;
 
         [Header("Movement")]
         [SerializeField] private float moveArcHeight = 0.08f;
+
+        [Header("Selection Beam")]
+        [SerializeField] private bool useSelectionBeam = true;
+        [SerializeField] private bool autoCreateSelectionBeam = true;
+        [SerializeField] private Transform selectionBeamRoot;
+        [SerializeField] private float selectionBeamHeight = 1.5f;
+        [SerializeField] private float selectionBeamRadius = 0.22f;
+        [SerializeField] private Color selectionBeamColor = new Color(0.45f, 0.95f, 0.55f, 0.35f);
 
         public string UnitId { get; private set; } = string.Empty;
         public string Faction { get; private set; } = string.Empty;
@@ -61,6 +84,11 @@ namespace Panoptes.Presentation.Map
         public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
         private int _movingBoolHash;
         private int _speedFloatHash;
+        private int _attackTriggerHash;
+        private int _idleStateHash;
+        private Renderer _selectionBeamRenderer;
+        private Material _selectionBeamMaterial;
+        private MaterialPropertyBlock _selectionBeamBlock;
 
         private void Awake()
         {
@@ -93,6 +121,9 @@ namespace Panoptes.Presentation.Map
 
             _movingBoolHash = string.IsNullOrWhiteSpace(movingBoolParam) ? 0 : Animator.StringToHash(movingBoolParam);
             _speedFloatHash = string.IsNullOrWhiteSpace(speedFloatParam) ? 0 : Animator.StringToHash(speedFloatParam);
+            _attackTriggerHash = string.IsNullOrWhiteSpace(attackTriggerParam) ? 0 : Animator.StringToHash(attackTriggerParam);
+            _idleStateHash = string.IsNullOrWhiteSpace(idleStateName) ? 0 : Animator.StringToHash(idleStateName);
+            EnsureSelectionBeam();
 
             if (GetComponent<Collider>() == null)
             {
@@ -123,6 +154,17 @@ namespace Panoptes.Presentation.Map
             {
                 squadVisualController.OnUnitBound(UnitId, UnitType, Faction);
             }
+
+            if (forceIdleAnimationOnBind)
+            {
+                SetForceIdleAnimation(true);
+            }
+            else if (forceIdleAnimation)
+            {
+                PlayIdleAnimation();
+            }
+
+            ApplyRenderBudgetForCurrentUnitType();
         }
 
         public void SetGridPosition(Vector2Int gridPos)
@@ -135,6 +177,11 @@ namespace Panoptes.Presentation.Map
             if (selectedRing != null)
             {
                 selectedRing.SetActive(selected);
+            }
+
+            if (_selectionBeamRenderer != null)
+            {
+                _selectionBeamRenderer.gameObject.SetActive(selected);
             }
         }
 
@@ -169,22 +216,29 @@ namespace Panoptes.Presentation.Map
 
         public void SetMovingVisual(bool isMoving, float normalizedSpeed, Vector3 worldMoveDirection)
         {
-            if (animator != null)
+            if (forceIdleAnimation)
             {
-                if (_movingBoolHash != 0)
-                {
-                    animator.SetBool(_movingBoolHash, isMoving);
-                }
-
-                if (_speedFloatHash != 0)
-                {
-                    animator.SetFloat(_speedFloatHash, Mathf.Max(0f, normalizedSpeed));
-                }
+                PlayIdleAnimation();
             }
-
-            if (squadVisualController != null)
+            else
             {
-                squadVisualController.ApplyMoveState(isMoving, normalizedSpeed);
+                if (animator != null)
+                {
+                    if (_movingBoolHash != 0)
+                    {
+                        animator.SetBool(_movingBoolHash, isMoving);
+                    }
+
+                    if (_speedFloatHash != 0)
+                    {
+                        animator.SetFloat(_speedFloatHash, Mathf.Max(0f, normalizedSpeed));
+                    }
+                }
+
+                if (squadVisualController != null)
+                {
+                    squadVisualController.ApplyMoveState(isMoving, normalizedSpeed);
+                }
             }
 
             if (visualRoot == null)
@@ -201,6 +255,91 @@ namespace Panoptes.Presentation.Map
 
             var targetRot = Quaternion.LookRotation(flatDir.normalized, Vector3.up);
             visualRoot.rotation = Quaternion.Slerp(visualRoot.rotation, targetRot, Time.deltaTime * Mathf.Max(0f, rotateLerpSpeed));
+        }
+
+        public void SetForceIdleAnimation(bool enabled)
+        {
+            forceIdleAnimation = enabled;
+            if (forceIdleAnimation)
+            {
+                PlayIdleAnimation();
+            }
+        }
+
+        public void ApplyAnimationCommand(UnitAnimationCommand command, float normalizedSpeed = 1f, Vector3 worldMoveDirection = default)
+        {
+            switch (command)
+            {
+                case UnitAnimationCommand.Attack:
+                    PlayAttackAnimation();
+                    break;
+                case UnitAnimationCommand.Move:
+                    SetMovingVisual(true, normalizedSpeed, worldMoveDirection);
+                    break;
+                default:
+                    PlayIdleAnimation();
+                    break;
+            }
+        }
+
+        public void PlayIdleAnimation()
+        {
+            if (animator != null)
+            {
+                if (_movingBoolHash != 0)
+                {
+                    animator.SetBool(_movingBoolHash, false);
+                }
+
+                if (_speedFloatHash != 0)
+                {
+                    animator.SetFloat(_speedFloatHash, 0f);
+                }
+
+                if (_idleStateHash != 0 && animator.runtimeAnimatorController != null && animator.HasState(0, _idleStateHash))
+                {
+                    var state = animator.GetCurrentAnimatorStateInfo(0);
+                    if (state.shortNameHash != _idleStateHash && state.fullPathHash != _idleStateHash)
+                    {
+                        animator.CrossFade(_idleStateHash, 0.05f, 0);
+                    }
+                }
+                else if (animator.runtimeAnimatorController != null)
+                {
+                    animator.Rebind();
+                    animator.Update(0f);
+                }
+            }
+
+            if (squadVisualController != null)
+            {
+                squadVisualController.ForceIdlePose();
+            }
+        }
+
+        public bool PlayAttackAnimation()
+        {
+            if (forceIdleAnimation)
+            {
+                return false;
+            }
+
+            var played = false;
+            if (animator != null && animator.runtimeAnimatorController != null)
+            {
+                if (_attackTriggerHash != 0 && HasAnimatorParameter(animator, _attackTriggerHash, AnimatorControllerParameterType.Trigger))
+                {
+                    animator.SetTrigger(_attackTriggerHash);
+                    played = true;
+                }
+            }
+
+            if (squadVisualController != null)
+            {
+                played = squadVisualController.PlayAttackAnimation() || played;
+            }
+
+            return played;
         }
 
         private void ApplyFactionTint()
@@ -272,6 +411,46 @@ namespace Panoptes.Presentation.Map
                 if (renderer is SkinnedMeshRenderer skinned)
                 {
                     skinned.updateWhenOffscreen = false;
+                }
+            }
+        }
+
+        private void ApplyRenderBudgetForCurrentUnitType()
+        {
+            var renderers = GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return;
+            }
+
+            var isBaseVehicle = enableBaseVehicleRenderQualityOverride && IsBaseVehicleUnitType(UnitType);
+            var shouldDisableCast = disableCastShadows && !isBaseVehicle;
+            var shouldDisableReceive = disableReceiveShadows && !isBaseVehicle;
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (shouldDisableCast)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                }
+                else if (isBaseVehicle && baseVehicleCastShadows)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.On;
+                }
+
+                if (shouldDisableReceive)
+                {
+                    renderer.receiveShadows = false;
+                }
+                else if (isBaseVehicle && baseVehicleReceiveShadows)
+                {
+                    renderer.receiveShadows = true;
                 }
             }
         }
@@ -386,6 +565,165 @@ namespace Panoptes.Presentation.Map
 
                 var hue = (hash % 360u) / 360f;
                 return Color.HSVToRGB(hue, 0.45f, 0.95f);
+            }
+        }
+
+        private static bool HasAnimatorParameter(Animator targetAnimator, int hash, AnimatorControllerParameterType type)
+        {
+            if (targetAnimator == null || targetAnimator.runtimeAnimatorController == null || targetAnimator.parameters == null)
+            {
+                return false;
+            }
+
+            var parameters = targetAnimator.parameters;
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].nameHash == hash && parameters[i].type == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsBaseVehicleUnitType(string unitType)
+        {
+            if (string.IsNullOrWhiteSpace(unitType) || baseVehicleUnitTypeAliases == null || baseVehicleUnitTypeAliases.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = (unitType ?? string.Empty).Trim().ToLowerInvariant();
+            for (var i = 0; i < baseVehicleUnitTypeAliases.Length; i++)
+            {
+                var alias = (baseVehicleUnitTypeAliases[i] ?? string.Empty).Trim().ToLowerInvariant();
+                if (string.IsNullOrEmpty(alias))
+                {
+                    continue;
+                }
+
+                if (string.Equals(normalized, alias, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void EnsureSelectionBeam()
+        {
+            if (!useSelectionBeam)
+            {
+                return;
+            }
+
+            if (selectionBeamRoot == null && autoCreateSelectionBeam)
+            {
+                var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                beam.name = "SelectedBeam";
+                beam.transform.SetParent(transform, false);
+                beam.transform.localPosition = new Vector3(0f, selectionBeamHeight * 0.5f, 0f);
+                beam.transform.localScale = new Vector3(selectionBeamRadius, selectionBeamHeight * 0.5f, selectionBeamRadius);
+
+                var collider = beam.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    Destroy(collider);
+                }
+
+                selectionBeamRoot = beam.transform;
+                _selectionBeamRenderer = beam.GetComponent<Renderer>();
+            }
+            else if (selectionBeamRoot != null)
+            {
+                _selectionBeamRenderer = selectionBeamRoot.GetComponentInChildren<Renderer>(true);
+            }
+
+            if (_selectionBeamRenderer == null)
+            {
+                return;
+            }
+
+            _selectionBeamMaterial = CreateSelectionBeamMaterial();
+            if (_selectionBeamMaterial != null)
+            {
+                _selectionBeamRenderer.sharedMaterial = _selectionBeamMaterial;
+            }
+
+            if (_selectionBeamBlock == null)
+            {
+                _selectionBeamBlock = new MaterialPropertyBlock();
+            }
+            _selectionBeamRenderer.GetPropertyBlock(_selectionBeamBlock);
+            _selectionBeamBlock.SetColor("_BaseColor", selectionBeamColor);
+            _selectionBeamBlock.SetColor("_Color", selectionBeamColor);
+            _selectionBeamRenderer.SetPropertyBlock(_selectionBeamBlock);
+            _selectionBeamRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            _selectionBeamRenderer.receiveShadows = false;
+            _selectionBeamRenderer.gameObject.SetActive(false);
+        }
+
+        private Material CreateSelectionBeamMaterial()
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            var material = new Material(shader)
+            {
+                name = "UnitSelectionBeamMat_Runtime",
+                hideFlags = HideFlags.DontSave
+            };
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+
+            if (material.HasProperty("_Blend"))
+            {
+                material.SetFloat("_Blend", 0f);
+            }
+
+            if (material.HasProperty("_SrcBlend"))
+            {
+                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            }
+
+            if (material.HasProperty("_DstBlend"))
+            {
+                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            }
+
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetFloat("_ZWrite", 0f);
+            }
+
+            material.renderQueue = (int)RenderQueue.Transparent;
+            return material;
+        }
+
+        private void OnDestroy()
+        {
+            if (_selectionBeamMaterial != null)
+            {
+                Destroy(_selectionBeamMaterial);
+                _selectionBeamMaterial = null;
             }
         }
     }

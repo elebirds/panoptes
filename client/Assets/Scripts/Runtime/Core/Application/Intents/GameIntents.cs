@@ -24,6 +24,21 @@ namespace Panoptes.Core.Application.Intents
             public string action_id;
         }
 
+        [Serializable]
+        private sealed class ExpandTerritoryPayload
+        {
+            public string unit_id;
+            public string center_node_id;
+        }
+
+        [Serializable]
+        private sealed class TokenBuildPayload
+        {
+            public string castle_id;
+            public string node_id;
+            public string building_type;
+        }
+
         private static GameStateCache _cache;
         private static LockSource _lockSource = LockSource.None;
 
@@ -81,10 +96,24 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetPolicy");
         }
 
-        public static void BuildToken(string nodeId, string buildingType)
+        public static void BuildToken(string nodeId, string buildingType, string castleId = null)
         {
             if (ActionLock.IsLocked)
             {
+                return;
+            }
+
+            var normalizedCastleId = castleId ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(normalizedCastleId))
+            {
+                var payload = new TokenBuildPayload
+                {
+                    castle_id = normalizedCastleId,
+                    node_id = nodeId ?? string.Empty,
+                    building_type = buildingType ?? string.Empty
+                };
+                MessageSender.SendRaw("MsgTokenBuild", JsonUtility.ToJson(payload));
+                Debug.Log("[GameIntents] BuildToken");
                 return;
             }
 
@@ -95,6 +124,39 @@ namespace Panoptes.Core.Application.Intents
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] BuildToken");
+        }
+
+        public static void ExpandTerritory(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            if (IsCombatPhase())
+            {
+                DeployTerritoryUnit(unitId, centerNodeId);
+                return;
+            }
+
+            var payload = new ExpandTerritoryPayload
+            {
+                unit_id = unitId ?? string.Empty,
+                center_node_id = centerNodeId ?? string.Empty
+            };
+            MessageSender.SendRaw("MsgTokenExpandTerritory", JsonUtility.ToJson(payload));
+            Debug.Log("[GameIntents] ExpandTerritory");
+        }
+
+        public static void DeployTerritoryUnit(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            SendCombatOrder(unitId, "deploy", centerNodeId, null);
+            Debug.Log("[GameIntents] DeployTerritoryUnit");
         }
 
         public static void RevealToken(string nodeId)
@@ -354,6 +416,25 @@ namespace Panoptes.Core.Application.Intents
                 action_id = actionId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
+        }
+
+        private static bool IsCombatPhase()
+        {
+            var cache = _cache ?? GameStateCache.Instance;
+            if (cache == null)
+            {
+                return false;
+            }
+
+            var phase = (cache.Phase ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(phase))
+            {
+                return false;
+            }
+
+            // Compatibility: old "combat" + new phase-state names like "combat_planning".
+            return string.Equals(phase, "combat", StringComparison.Ordinal)
+                   || phase.IndexOf("combat", StringComparison.Ordinal) >= 0;
         }
 
         private static void SendCombatOrder(string unitId, string action, string targetNodeId, string targetUnitId)

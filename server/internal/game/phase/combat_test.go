@@ -85,6 +85,7 @@ type combatPhaseRoomStub struct {
 func (r *combatPhaseRoomStub) State() *domain.GameState { return r.state }
 func (r *combatPhaseRoomStub) NotifyTurn(string)        {}
 func (r *combatPhaseRoomStub) Submit(string)            {}
+func (r *combatPhaseRoomStub) IsDevMode() bool          { return false }
 func (r *combatPhaseRoomStub) QueueBuildOrder(domain.BuildOrder) {
 }
 func (r *combatPhaseRoomStub) SetMinisterDirective(string, string) {}
