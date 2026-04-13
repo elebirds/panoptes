@@ -15,24 +15,28 @@ type BuildingBuiltEvent struct {
 	NodeID       string
 	BuildingType string
 	Owner        string
+	CastleID     string
 	Cost         domain.ResourceBag
 }
 
+// Apply creates the building and charges the castle that issued the build.
+//
+// 这里的关键变化是：建造成本不再默认从玩家公共资源池扣除，而是优先从
+// BuildOrder 绑定的 CastleID 对应资源池扣除，这样城堡看板上的数字会和
+// “哪个城堡造了这个建筑”保持一致。
 func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {
 		return
 	}
-	ecs.CreateBuilding(world, e.BuildingType, e.Owner, nodeEntry)
-	if playerState, ok := state.Players[e.Owner]; ok {
-		playerState.Resources = playerState.Resources.Sub(e.Cost)
-	}
+	ecs.CreateBuilding(world, e.BuildingType, e.Owner, e.CastleID, nodeEntry)
+	state.ConsumeResources(e.Owner, e.CastleID, e.Cost)
 }
 
 func (e BuildingBuiltEvent) ClientPayload() *pb.CombatEvent { return nil }
 
 func (e BuildingBuiltEvent) String() string {
-	return fmt.Sprintf("BuildingBuiltEvent node=%s type=%s owner=%s", e.NodeID, e.BuildingType, e.Owner)
+	return fmt.Sprintf("BuildingBuiltEvent node=%s type=%s owner=%s castle=%s", e.NodeID, e.BuildingType, e.Owner, e.CastleID)
 }
 
 type ResourceProducedEvent struct {
@@ -40,20 +44,22 @@ type ResourceProducedEvent struct {
 	ResourceType string
 	Amount       int
 	Owner        string
+	CastleID     string
 }
 
+// Apply settles one resource delta into the castle-scoped resource model.
+//
+// Amount 可以是正数（产出）也可以是负数（upkeep 扣费）。当 CastleID 非空时，
+// 资源直接落入对应城堡；随后会同步回 player.Resources 聚合视图，兼容仍然只
+// 读取玩家总资源的消息与前端逻辑。
 func (e ResourceProducedEvent) Apply(_ donburi.World, state *domain.GameState) {
-	playerState, ok := state.Players[e.Owner]
-	if !ok {
-		return
-	}
-	playerState.Resources.AddAmount(domain.ResourceKey(e.ResourceType), e.Amount)
+	state.AddResourceToCastle(e.Owner, e.CastleID, domain.ResourceKey(e.ResourceType), e.Amount)
 }
 
 func (e ResourceProducedEvent) ClientPayload() *pb.CombatEvent { return nil }
 
 func (e ResourceProducedEvent) String() string {
-	return fmt.Sprintf("ResourceProducedEvent node=%s owner=%s %s=+%d", e.NodeID, e.Owner, e.ResourceType, e.Amount)
+	return fmt.Sprintf("ResourceProducedEvent node=%s owner=%s castle=%s %s=+%d", e.NodeID, e.Owner, e.CastleID, e.ResourceType, e.Amount)
 }
 
 type ResourceFlowedEvent struct {
@@ -77,6 +83,10 @@ type RoadBuiltEvent struct {
 	Cost     int
 }
 
+// Apply spends build points through the shared castle aggregate path.
+//
+// 道路当前还没有绑定明确的 castleID，所以这里走“玩家全部城堡总池扣费”的
+// 兼容分支。这样至少能保证玩家总资源和城堡看板汇总结果一致。
 func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	fromEntry, okFrom := findNodeByID(world, state, e.FromNode)
 	toEntry, okTo := findNodeByID(world, state, e.ToNode)
@@ -109,9 +119,7 @@ func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 			markRoadAt(world, domain.Position{X: x, Y: y})
 		}
 	}
-	if playerState, ok := state.Players[e.Owner]; ok {
-		playerState.Resources.AddAmount(domain.ResourceBuildPoints, -e.Cost)
-	}
+	state.ConsumeResources(e.Owner, "", domain.ResourceBag{domain.ResourceBuildPoints: e.Cost})
 }
 
 func (e RoadBuiltEvent) ClientPayload() *pb.CombatEvent { return nil }
@@ -124,20 +132,22 @@ type UnitProducedEvent struct {
 	NodeID   string
 	UnitType string
 	Faction  string
+	CastleID string
 	Count    int
 	Cost     domain.ResourceBag
 }
 
+// Apply spawns units and charges the military production cost to the
+// originating castle.
+//
+// 这让兵营/马厩等建筑的生产输入可以和建筑归属的城堡资源池绑定，避免多个
+// 城堡之间错误共用一份军事生产成本。
 func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {
 		return
 	}
-	if len(e.Cost) > 0 {
-		if playerState, ok := state.Players[e.Faction]; ok {
-			playerState.Resources = playerState.Resources.Sub(e.Cost)
-		}
-	}
+	state.ConsumeResources(e.Faction, e.CastleID, e.Cost)
 	pos := ecs.PositionC.Get(nodeEntry)
 	for i := 0; i < e.Count; i++ {
 		ecs.CreateUnit(world, e.UnitType, e.Faction, domain.Position{X: pos.X, Y: pos.Y})
@@ -147,7 +157,7 @@ func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 func (e UnitProducedEvent) ClientPayload() *pb.CombatEvent { return nil }
 
 func (e UnitProducedEvent) String() string {
-	return fmt.Sprintf("UnitProducedEvent node=%s type=%s count=%d", e.NodeID, e.UnitType, e.Count)
+	return fmt.Sprintf("UnitProducedEvent node=%s type=%s castle=%s count=%d", e.NodeID, e.UnitType, e.CastleID, e.Count)
 }
 
 type BuildPointsRechargedEvent struct {
@@ -155,17 +165,14 @@ type BuildPointsRechargedEvent struct {
 	Amount   int
 }
 
+// Apply recharges build points per castle and then refreshes the player-level
+// aggregate.
+//
+// 过去 build_points 更接近玩家级资源；改造后它会在每个城堡资源池内分别回充，
+// 从而让资源看板展示的是“每座城堡剩余多少建造点”。
 func (e BuildPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState) {
-	playerState, ok := state.Players[e.PlayerID]
-	if !ok {
-		return
-	}
 	maxVal := staticdata.Default().Rules().BuildPointsMax
-	next := playerState.Resources.Get(domain.ResourceBuildPoints) + e.Amount
-	if next > maxVal {
-		next = maxVal
-	}
-	playerState.Resources.Set(domain.ResourceBuildPoints, next)
+	state.RechargeBuildPoints(e.PlayerID, e.Amount, maxVal)
 }
 
 func (e BuildPointsRechargedEvent) ClientPayload() *pb.CombatEvent { return nil }
@@ -175,20 +182,20 @@ func (e BuildPointsRechargedEvent) String() string {
 }
 
 type UpkeepPaidEvent struct {
-	PlayerID      string
-	FoodConsumed  int
+	PlayerID     string
+	FoodConsumed int
 }
 
+// Apply settles combat food upkeep through the castle aggregate path.
+//
+// 战斗补给目前仍然没有精确到某一座城堡，因此这里从玩家全部城堡的总资源中扣除。
+// 扣完后若总粮食为 0，则继续触发饥饿逻辑。
 func (e UpkeepPaidEvent) Apply(world donburi.World, state *domain.GameState) {
 	playerState, ok := state.Players[e.PlayerID]
 	if !ok {
 		return
 	}
-	foodAfter := playerState.Resources.Get(domain.ResourceFood) - e.FoodConsumed
-	if foodAfter < 0 {
-		foodAfter = 0
-	}
-	playerState.Resources.Set(domain.ResourceFood, foodAfter)
+	state.ConsumeResources(e.PlayerID, "", domain.ResourceBag{domain.ResourceFood: e.FoodConsumed})
 	if playerState.Resources.Get(domain.ResourceFood) == 0 {
 		markFactionStarving(world, e.PlayerID)
 	}
@@ -201,8 +208,8 @@ func (e UpkeepPaidEvent) String() string {
 }
 
 type UnitStarvingEvent struct {
-	UnitID         string
-	DamagePerTurn  int
+	UnitID        string
+	DamagePerTurn int
 }
 
 func (e UnitStarvingEvent) Apply(world donburi.World, state *domain.GameState) {

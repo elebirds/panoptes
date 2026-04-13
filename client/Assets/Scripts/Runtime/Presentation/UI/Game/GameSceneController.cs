@@ -137,6 +137,7 @@ namespace Panoptes.Presentation.UI.Game
 
             EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
             EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
+            EnsureComponent<CastleResourceBoardHUD>(canvas.transform, "CastleResourceBoardHUD");
             EnsureComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay");
         }
 

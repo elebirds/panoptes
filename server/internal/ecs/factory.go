@@ -108,7 +108,7 @@ func fallbackUnitDefinition(unitType string) (staticdata.UnitDefinition, bool) {
 	}
 }
 
-func CreateBuilding(world donburi.World, buildingType string, owner string, nodeEntry *donburi.Entry) donburi.Entity {
+func CreateBuilding(world donburi.World, buildingType string, owner string, castleID string, nodeEntry *donburi.Entry) donburi.Entity {
 	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
 		fallback, hasFallback := fallbackBuildingDefinition(buildingType)
@@ -123,6 +123,7 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 		HP:        cfg.Combat.MaxHP,
 		MaxHP:     cfg.Combat.MaxHP,
 		Owner:     owner,
+		CastleID:  castleID,
 		WallLevel: cfg.Combat.WallLevel,
 		Towers:    cfg.Combat.Towers,
 	}

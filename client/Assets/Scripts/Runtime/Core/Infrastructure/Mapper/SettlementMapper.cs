@@ -39,6 +39,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                     }
 
                     var ownerId = ReadString(change.Data, "owner", "owner_id", "ownerId");
+                    var castleId = ReadString(change.Data, "castle_id", "castleId");
                     var hp = ReadInt(change.Data, 100, "building_hp", "hp_after", "hp");
 
                     builtBuildings.Add(new DomesticBuildResultDto
@@ -46,6 +47,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                         NodeId = nodeId,
                         BuildingType = buildingType,
                         OwnerId = ownerId,
+                        CastleId = castleId,
                         BuildingHp = hp
                     });
                     builtNodeIDs.Add(nodeId);

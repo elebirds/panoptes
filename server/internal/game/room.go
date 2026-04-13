@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -103,6 +104,7 @@ func (r *GameRoom) Start() {
 	r.state.World = world
 	r.spawnInitialBaseVehicles()
 	r.grantDevStartingResources()
+	r.initializeCastleStates()
 
 	r.Turn = r.state.Turn
 	r.Phase = r.state.Phase
@@ -186,6 +188,78 @@ func (r *GameRoom) grantDevStartingResources() {
 		player.Resources.Set(domain.ResourceFood, 200)
 		player.Resources.Set(domain.ResourceRefinedOre, 100)
 		player.Resources.Set(domain.ResourceEngineerMat, 100)
+	}
+}
+
+func (r *GameRoom) initializeCastleStates() {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return
+	}
+
+	primaryCastleByPlayer := make(map[string]string, len(r.state.Players))
+	if r.state.Map != nil {
+		for playerID, spawnPos := range r.state.Map.PlayerSpawns {
+			entry, ok := domain.GetNodeAt(r.state.World, spawnPos)
+			if !ok || entry == nil || !entry.HasComponent(ecs.BuildingC) {
+				continue
+			}
+
+			building := ecs.BuildingC.Get(entry)
+			if !strings.EqualFold(string(building.Type), "castle") {
+				continue
+			}
+
+			primaryCastleByPlayer[playerID] = ecs.NodeC.Get(entry).ID
+		}
+	}
+
+	ecs.NodesWithBuilding(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+
+		building := ecs.BuildingC.Get(entry)
+		if !strings.EqualFold(string(building.Type), "castle") {
+			return
+		}
+
+		node := ecs.NodeC.Get(entry)
+		playerID := strings.TrimSpace(building.Owner)
+		if playerID == "" {
+			playerID = strings.TrimSpace(node.Owner)
+		}
+		if playerID == "" {
+			playerID = strings.TrimSpace(node.TerritoryOwner)
+		}
+		if playerID == "" {
+			return
+		}
+
+		r.state.EnsureCastleState(playerID, node.ID)
+	})
+
+	for playerID, playerState := range r.state.Players {
+		if playerState == nil || len(playerState.Castles) == 0 {
+			continue
+		}
+
+		primaryCastleID := strings.TrimSpace(primaryCastleByPlayer[playerID])
+		if primaryCastleID == "" {
+			for castleID := range playerState.Castles {
+				primaryCastleID = castleID
+				break
+			}
+		}
+		if primaryCastleID == "" {
+			continue
+		}
+
+		castle := playerState.Castles[primaryCastleID]
+		if castle == nil || !castle.Resources.IsZero() {
+			continue
+		}
+
+		castle.Resources = playerState.Resources.Clone()
 	}
 }
 
@@ -458,7 +532,10 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 			nextPhase = ""
 		}
 		msg := &pb.MsgDomesticSettlement{
-			Changes:   changes,
+			// 在常规 domestic changes 之外，为当前玩家额外附加自己的城堡资源快照。
+			// 这里复用现有 DomesticChange 通道下发 castle_resource_snapshot，
+			// 避免仅为了资源看板新增一轮 proto 结构改造。
+			Changes:   appendCastleResourceSnapshots(changes, playerState),
 			Turn:      int32(r.state.Turn),
 			Phase:     phase,
 			NextPhase: nextPhase,
@@ -468,6 +545,54 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 		}
 		_ = player.Send(msg)
 	}
+}
+
+// appendCastleResourceSnapshots appends one snapshot change per castle.
+//
+// 这些快照面向客户端资源看板消费，描述的是“本次结算完成后，每座城堡当前的
+// 资源状态”。由于消息是按玩家分别发送的，所以这里只附加当前玩家自己名下的
+// 城堡资源，而不会广播其他玩家的细节。
+func appendCastleResourceSnapshots(base []*pb.DomesticChange, playerState *domain.PlayerState) []*pb.DomesticChange {
+	if playerState == nil || len(playerState.Castles) == 0 {
+		return base
+	}
+
+	changes := make([]*pb.DomesticChange, 0, len(base)+len(playerState.Castles))
+	changes = append(changes, base...)
+
+	castleIDs := make([]string, 0, len(playerState.Castles))
+	for castleID := range playerState.Castles {
+		if strings.TrimSpace(castleID) != "" {
+			castleIDs = append(castleIDs, strings.TrimSpace(castleID))
+		}
+	}
+	sort.Strings(castleIDs)
+
+	for _, castleID := range castleIDs {
+		castle := playerState.Castles[castleID]
+		if castle == nil {
+			continue
+		}
+		resources := castle.Resources
+		if resources == nil {
+			resources = domain.NewResourceBag()
+		}
+		data := map[string]string{
+			"castle_id":         castleID,
+			"ore":               strconv.Itoa(resources.Get(domain.ResourceOre)),
+			"wood":              strconv.Itoa(resources.Get(domain.ResourceWood)),
+			"food":              strconv.Itoa(resources.Get(domain.ResourceFood)),
+			"refined_ore":       strconv.Itoa(resources.Get(domain.ResourceRefinedOre)),
+			"engineer_material": strconv.Itoa(resources.Get(domain.ResourceEngineerMat)),
+			"build_points":      strconv.Itoa(resources.Get(domain.ResourceBuildPoints)),
+		}
+		changes = append(changes, &pb.DomesticChange{
+			Type: "castle_resource_snapshot",
+			Data: data,
+		})
+	}
+
+	return changes
 }
 
 func toDomesticChange(e event.Event) *pb.DomesticChange {
@@ -487,6 +612,7 @@ func toDomesticChange(e event.Event) *pb.DomesticChange {
 				"node_id":       strings.TrimSpace(evt.NodeID),
 				"building_type": strings.TrimSpace(evt.BuildingType),
 				"owner":         strings.TrimSpace(evt.Owner),
+				"castle_id":     strings.TrimSpace(evt.CastleID),
 				"building_hp":   strconv.Itoa(hp),
 			},
 		}

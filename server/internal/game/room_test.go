@@ -8,10 +8,13 @@ import (
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/event"
 	gamephase "github.com/elebirds/panoptes/internal/game/phase"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -265,6 +268,109 @@ func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
 	}
 	if items["crystal"] != 99 {
 		t.Fatalf("custom resource missing = %#v", items)
+	}
+}
+
+func TestToDomesticChangeIncludesCastleIDForBuiltBuilding(t *testing.T) {
+	change := toDomesticChange(event.BuildingBuiltEvent{
+		NodeID:       "node-7",
+		BuildingType: "farm",
+		Owner:        "player-1",
+		CastleID:     "castle-a",
+	})
+
+	if change == nil {
+		t.Fatalf("change is nil")
+	}
+	if got := change.GetData()["castle_id"]; got != "castle-a" {
+		t.Fatalf("castle_id = %q", got)
+	}
+}
+
+func TestInitializeCastleStatesSeedsPrimaryCastleResources(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			BuildPointsPerTurn: 10,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "castle", Category: "city", Combat: staticdata.BuildingCombat{MaxHP: 100}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "castle-a", X: 2, Y: 3, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
+	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "castle", "player-1", "castle-a", nodeEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID: "default",
+		PlayerSpawns: map[string]domain.Position{
+			"player-1": {X: 2, Y: 3},
+		},
+		NodeIndex: map[string]donburi.Entity{
+			"castle-a": nodeEntity,
+		},
+	})
+	state.World = world
+
+	room := NewRoom("game-1", nil, newStubTransport(), &config.Config{})
+	room.state = state
+
+	room.initializeCastleStates()
+
+	player := room.state.Players["player-1"]
+	if player == nil {
+		t.Fatalf("player missing")
+	}
+	castle := player.Castles["castle-a"]
+	if castle == nil {
+		t.Fatalf("primary castle state missing")
+	}
+	if castle.OwnerID != "player-1" {
+		t.Fatalf("castle owner = %q", castle.OwnerID)
+	}
+	if castle.Resources.Get(domain.ResourceBuildPoints) != player.Resources.Get(domain.ResourceBuildPoints) {
+		t.Fatalf("castle build points = %d, player build points = %d", castle.Resources.Get(domain.ResourceBuildPoints), player.Resources.Get(domain.ResourceBuildPoints))
+	}
+}
+
+func TestAppendCastleResourceSnapshotsIncludesOwnedCastleResources(t *testing.T) {
+	player := &domain.PlayerState{
+		PlayerID:  "player-1",
+		Resources: domain.NewResourceBag(),
+		Castles: map[string]*domain.CastleState{
+			"castle-a": {
+				CastleID: "castle-a",
+				OwnerID:  "player-1",
+				Resources: domain.ResourceBag{
+					domain.ResourceFood:        7,
+					domain.ResourceWood:        4,
+					domain.ResourceBuildPoints: 3,
+				},
+			},
+		},
+	}
+
+	changes := appendCastleResourceSnapshots([]*pb.DomesticChange{
+		{Type: "building_built", Data: map[string]string{"node_id": "node-1"}},
+	}, player)
+
+	if len(changes) != 2 {
+		t.Fatalf("changes len = %d", len(changes))
+	}
+	snapshot := changes[1]
+	if snapshot.GetType() != "castle_resource_snapshot" {
+		t.Fatalf("snapshot type = %q", snapshot.GetType())
+	}
+	if snapshot.GetData()["castle_id"] != "castle-a" {
+		t.Fatalf("castle_id = %q", snapshot.GetData()["castle_id"])
+	}
+	if snapshot.GetData()["food"] != "7" || snapshot.GetData()["wood"] != "4" || snapshot.GetData()["build_points"] != "3" {
+		t.Fatalf("snapshot data = %#v", snapshot.GetData())
 	}
 }
 
