@@ -61,11 +61,6 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
 			return nil
 		}
-		pos := ecs.PositionC.Get(nodeEntry)
-		if !domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID) {
-			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "outside_safe_zone"})
-			return nil
-		}
 		if nodeEntry.HasComponent(ecs.BuildingC) {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "building_exists"})
 			return nil
@@ -75,8 +70,18 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
 			return nil
 		}
+		nodeComp := ecs.NodeC.Get(nodeEntry)
+		if errCode := validateBuildPlacement(nodeComp, cfg, playerID); errCode != "" {
+			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{
+				Success:    false,
+				Action:     "build",
+				TokensLeft: int32(playerState.TokensLeft),
+				ErrorCode:  errCode,
+			})
+			return nil
+		}
 		cost := toResourceBag(cfg.BuildCost)
-		if !playerState.Resources.CanAfford(cost) {
+		if !playerState.Resources.CanAfford(cost) && !room.IsDevMode() {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "insufficient_resources"})
 			return nil
 		}
@@ -134,4 +139,38 @@ func toResourceBag(amounts map[string]int) domain.ResourceBag {
 		bag.Set(domain.ResourceKey(key), value)
 	}
 	return bag
+}
+
+func validateBuildPlacement(node *ecs.NodeComp, cfg staticdata.BuildingDefinition, playerID string) string {
+	if node == nil {
+		return "invalid_target"
+	}
+
+	terrainID := normalizeToken(string(node.Terrain))
+	if terrainID != "" {
+		if terrain, ok := staticdata.Default().GetTerrain(terrainID); ok && !terrain.Buildable {
+			return "terrain_not_buildable"
+		}
+	}
+
+	rule := normalizeToken(cfg.PlacementRule)
+	switch rule {
+	case "city_only":
+		player := normalizeToken(playerID)
+		territoryOwner := normalizeToken(node.TerritoryOwner)
+		owner := normalizeToken(node.Owner)
+		if territoryOwner != player && owner != player {
+			return "outside_territory"
+		}
+	case "resource_only":
+		if !node.IsResource {
+			return "resource_only_required"
+		}
+		required := normalizeToken(cfg.RequiredResourceType)
+		if required != "" && normalizeToken(node.ResourceType) != required {
+			return "resource_type_mismatch"
+		}
+	}
+
+	return ""
 }

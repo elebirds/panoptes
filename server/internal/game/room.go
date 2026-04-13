@@ -83,7 +83,7 @@ func (r *GameRoom) Start() {
 	if mapID == "" {
 		mapID = catalog.DefaultMapID()
 	}
-	mapFile, err := maploader.LoadMap(catalog, mapID)
+	baseMap, err := maploader.LoadMap(catalog, mapID)
 	if err != nil {
 		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
 		return
@@ -92,14 +92,27 @@ func (r *GameRoom) Start() {
 	world := donburi.NewWorld()
 	playerIDs := r.humanPlayerIDs()
 	usernames := r.humanUsernames()
-	mapData := maploader.InitWorldFromMap(world, mapFile, playerIDs)
+	seed := time.Now().UnixNano()
+	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
+	if runtimeMap == nil {
+		slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
+		return
+	}
+	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
+	r.spawnInitialBaseVehicles()
+	r.grantDevStartingResources()
 
 	r.Turn = r.state.Turn
 	r.Phase = r.state.Phase
 
-	slog.Info("地图加载成功", "room_id", r.ID, "map_id", mapFile.ID, "nodes", len(mapFile.Nodes))
+	slog.Info("map initialized",
+		"room_id", r.ID,
+		"base_map_id", baseMap.ID,
+		"runtime_map_id", runtimeMap.ID,
+		"seed", seed,
+		"nodes", len(runtimeMap.Nodes))
 
 	for _, player := range r.Players {
 		if player.IsBot() {
@@ -111,6 +124,69 @@ func (r *GameRoom) Start() {
 
 	Registry.Register(r)
 	go r.runLoop()
+}
+
+func (r *GameRoom) spawnInitialBaseVehicles() {
+	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
+		return
+	}
+
+	for playerID := range r.state.Players {
+		if strings.TrimSpace(playerID) == "" {
+			continue
+		}
+
+		if hasTerritoryExpansionUnit(r.state.World, playerID) {
+			continue
+		}
+
+		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
+		if !ok {
+			continue
+		}
+
+		entity := ecs.CreateUnit(r.state.World, string(domain.UnitTypeSettler), playerID, spawnPos)
+		if !r.state.World.Valid(entity) {
+			slog.Warn("spawn base vehicle failed: invalid entity", "room_id", r.ID, "player_id", playerID)
+		}
+	}
+}
+
+func hasTerritoryExpansionUnit(world donburi.World, playerID string) bool {
+	found := false
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found || entry == nil {
+			return
+		}
+
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction != playerID {
+			return
+		}
+
+		switch strings.ToLower(strings.TrimSpace(string(stats.Type))) {
+		case "settler", "pioneer", "expander", "engineer":
+			found = true
+		}
+	})
+	return found
+}
+
+func (r *GameRoom) grantDevStartingResources() {
+	if r == nil || r.state == nil || r.cfg == nil || !r.cfg.DevMode {
+		return
+	}
+
+	for _, player := range r.state.Players {
+		if player == nil {
+			continue
+		}
+		player.Resources.Set(domain.ResourceOre, 200)
+		player.Resources.Set(domain.ResourceWood, 200)
+		player.Resources.Set(domain.ResourceFood, 200)
+		player.Resources.Set(domain.ResourceRefinedOre, 100)
+		player.Resources.Set(domain.ResourceEngineerMat, 100)
+	}
 }
 
 func (r *GameRoom) runLoop() {
@@ -254,6 +330,10 @@ func (r *GameRoom) NotifyTurn(phase string) {
 
 func (r *GameRoom) Submit(playerID string) {
 	r.submitCh <- playerID
+}
+
+func (r *GameRoom) IsDevMode() bool {
+	return r != nil && r.cfg != nil && r.cfg.DevMode
 }
 
 func (r *GameRoom) SendToPlayer(playerID string, msg proto.Message) error {

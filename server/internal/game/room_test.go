@@ -154,11 +154,12 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	if initMsg.GetPhase() != "domestic_planning" {
 		t.Fatalf("init phase = %q", initMsg.GetPhase())
 	}
-	if len(initMsg.GetNodes()) != 3 {
-		t.Fatalf("nodes len = %d", len(initMsg.GetNodes()))
-	}
 	if initMsg.GetMapWidth() != 20 || initMsg.GetMapHeight() != 20 {
 		t.Fatalf("map size = %dx%d", initMsg.GetMapWidth(), initMsg.GetMapHeight())
+	}
+	expectedNodeCount := int(initMsg.GetMapWidth() * initMsg.GetMapHeight())
+	if len(initMsg.GetNodes()) != expectedNodeCount {
+		t.Fatalf("nodes len = %d, expected = %d", len(initMsg.GetNodes()), expectedNodeCount)
 	}
 	if initMsg.GetMyPlayer().GetTokensLeft() != 3 {
 		t.Fatalf("tokens left = %d", initMsg.GetMyPlayer().GetTokensLeft())
