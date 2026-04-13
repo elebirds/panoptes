@@ -1,10 +1,8 @@
 package combat
 
 import (
-	"github.com/elebirds/panoptes/internal/algo/pathfinding"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/yohamta/donburi"
 )
 
 type PathPlanningPhase struct{}
@@ -85,22 +83,17 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		return plan
 	}
 
-	grid := planningGrid{world: ctx.World, allowedGoal: goal}
-	path, ok := pathfinding.FindPath(grid, unit.Position, goal)
+	path, ok := ctx.RoutePlanner.FindPath(ctx.World, unit.Position, goal, unit.Movement)
 	if !ok || len(path) == 0 {
 		return plan
 	}
 
-	limit := unit.MoveRange
-	if limit < 1 {
-		limit = 1
-	}
-	if len(path) > limit+1 {
-		path = path[:limit+1]
-	}
-
 	plan.Path = path
-	candidateIndex := len(path) - 1
+	candidate, fallback := ctx.TurnPlanner.Reachable(ctx.World, path, unit.Movement)
+	candidateIndex := indexOfPosition(path, candidate)
+	if candidateIndex < 0 {
+		candidateIndex = 0
+	}
 	for i := 1; i < len(path); i++ {
 		source, blocked := ctx.BlockRule.SourceFor(ctx, unit, path[i])
 		if !blocked {
@@ -120,6 +113,8 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 	plan.Candidate = path[candidateIndex]
 	if candidateIndex > 0 {
 		plan.Fallback = path[candidateIndex-1]
+	} else {
+		plan.Fallback = fallback
 	}
 	// 没找到合法接敌目标时，charge 自动退化为普通 move。
 	if plan.Action == domain.CombatActionCharge && plan.ChargeTargetID == "" {
@@ -128,51 +123,13 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 	return plan
 }
 
-type planningGrid struct {
-	world       donburi.World
-	allowedGoal domain.Position
-}
-
-func (g planningGrid) InBounds(pos domain.Position) bool {
-	_, ok := domain.GetNodeAt(g.world, pos)
-	return ok
-}
-
-func (g planningGrid) Neighbors(pos domain.Position) []domain.Position {
-	neighbors := pos.Neighbors()
-	out := make([]domain.Position, 0, len(neighbors))
-	for _, next := range neighbors {
-		if g.InBounds(next) {
-			out = append(out, next)
+func indexOfPosition(path []domain.Position, target domain.Position) int {
+	for i, pos := range path {
+		if pos == target {
+			return i
 		}
 	}
-	return out
-}
-
-func (g planningGrid) Cost(_, to domain.Position) int {
-	entry, ok := domain.GetNodeAt(g.world, to)
-	if !ok {
-		return 99
-	}
-	node := ecs.NodeC.Get(entry)
-	if node.HasRoad {
-		return 1
-	}
-	return 2
-}
-
-func (g planningGrid) IsBlocked(pos domain.Position) bool {
-	// 这里的 blocked 只处理地图本身不可通行地形。
-	// 敌方占位阻断由 BlockRule 在路径结果上二次裁切，以保留“目标点可达但会被阻断”的信息。
-	if pos == g.allowedGoal {
-		return false
-	}
-	entry, ok := domain.GetNodeAt(g.world, pos)
-	if !ok {
-		return true
-	}
-	node := ecs.NodeC.Get(entry)
-	return node.Terrain == domain.TerrainRiver && !node.HasRoad
+	return -1
 }
 
 func resolveTargetNode(ctx *ResolutionContext, nodeID string) domain.Position {

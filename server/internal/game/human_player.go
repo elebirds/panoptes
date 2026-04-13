@@ -65,6 +65,12 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 			Turn:    int32(room.Turn),
 			Phase:   phase,
 		})
+		if room != nil {
+			snapshot := room.buildCombatOrdersSnapshot(p.playerID)
+			snapshot.Turn = int32(room.Turn)
+			snapshot.Phase = phase
+			_ = p.Send(snapshot)
+		}
 	default:
 		slog.Warn("未知阶段通知", "phase", phase, "player_id", p.playerID)
 	}
