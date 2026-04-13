@@ -2,7 +2,9 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
+using Panoptes.Presentation.UI.Combat;
 using Panoptes.Presentation.UI.HUD;
 using TMPro;
 using UnityEngine;
@@ -137,7 +139,10 @@ namespace Panoptes.Presentation.UI.Game
 
             EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
             EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
+            EnsureComponent<MicroPanel>(canvas.transform, "MicroPanel");
+            EnsureComponent<OrderReviewPanel>(canvas.transform, "OrderReviewPanel");
             EnsureComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay");
+            EnsureRuntimeComponent<CombatPlaybackController>("CombatPlaybackController");
         }
 
         private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
@@ -154,6 +159,18 @@ namespace Panoptes.Presentation.UI.Game
             {
                 go.AddComponent<T>();
             }
+        }
+
+        private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
+        {
+            var existing = UnityEngine.Object.FindAnyObjectByType<T>();
+            if (existing != null)
+            {
+                return;
+            }
+
+            var go = new GameObject(objectName);
+            go.AddComponent<T>();
         }
 
         private static void ShowToast(string message, bool success)
