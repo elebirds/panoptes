@@ -35,6 +35,9 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, UnitDto> _units = new();
         public IReadOnlyDictionary<string, UnitDto> Units => _units;
 
+        private readonly Dictionary<string, List<CastleBuiltBuildingDto>> _castleBuiltBuildings = new();
+        private readonly Dictionary<string, ResourceDto> _castleResources = new();
+
         public PlayerView MyPlayer { get; private set; }
 
         private readonly List<MinisterView> _ministers = new();
@@ -111,8 +114,12 @@ namespace Panoptes.Core.Application.Cache
                 _units[unit.Id] = UnitMapper.ToDto(unit);
             }
 
+            _castleBuiltBuildings.Clear();
+            _castleResources.Clear();
+
             MyPlayer = msg.MyPlayer;
             TokensLeft = msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : 0;
+            SeedCastleResourcesFromInit();
 
             _ministers.Clear();
             _ministers.AddRange(msg.Ministers);
@@ -250,6 +257,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             var settlement = SettlementMapper.ToDto(msg);
+            TrackCastleBuiltBuildings(settlement);
+            ApplyCastleResourceSnapshots(msg);
 
             if (settlement != null && settlement.ChangedNodeIDs != null)
             {
@@ -448,6 +457,30 @@ namespace Panoptes.Core.Application.Cache
             return unit;
         }
 
+        public IReadOnlyList<CastleBuiltBuildingDto> GetBuildingsBuiltByCastle(string castleId)
+        {
+            if (string.IsNullOrWhiteSpace(castleId))
+            {
+                return Array.Empty<CastleBuiltBuildingDto>();
+            }
+
+            return _castleBuiltBuildings.TryGetValue(castleId.Trim(), out var buildings)
+                ? buildings
+                : Array.Empty<CastleBuiltBuildingDto>();
+        }
+
+        public ResourceDto GetCastleResources(string castleId)
+        {
+            if (string.IsNullOrWhiteSpace(castleId))
+            {
+                return new ResourceDto();
+            }
+
+            return _castleResources.TryGetValue(castleId.Trim(), out var resources) && resources != null
+                ? CloneResources(resources)
+                : new ResourceDto();
+        }
+
         public void UpsertRuntimeUnit(UnitDto unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
@@ -599,6 +632,8 @@ namespace Panoptes.Core.Application.Cache
             IsGameOver = false;
             _nodes.Clear();
             _units.Clear();
+            _castleBuiltBuildings.Clear();
+            _castleResources.Clear();
             MyPlayer = null;
             _ministers.Clear();
             TokensLeft = 0;
@@ -678,6 +713,115 @@ namespace Panoptes.Core.Application.Cache
             };
         }
 
+        private void TrackCastleBuiltBuildings(DomesticSettlementDto settlement)
+        {
+            if (settlement?.BuiltBuildings == null || settlement.BuiltBuildings.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < settlement.BuiltBuildings.Count; i++)
+            {
+                var built = settlement.BuiltBuildings[i];
+                if (built == null || string.IsNullOrWhiteSpace(built.CastleId) || string.IsNullOrWhiteSpace(built.BuildingType))
+                {
+                    continue;
+                }
+
+                var castleId = built.CastleId.Trim();
+                if (!_castleBuiltBuildings.TryGetValue(castleId, out var buildings))
+                {
+                    buildings = new List<CastleBuiltBuildingDto>();
+                    _castleBuiltBuildings[castleId] = buildings;
+                }
+
+                var record = new CastleBuiltBuildingDto
+                {
+                    NodeId = built.NodeId?.Trim() ?? string.Empty,
+                    BuildingType = built.BuildingType.Trim(),
+                    X = 0,
+                    Y = 0,
+                    HasCoordinates = false
+                };
+
+                if (!string.IsNullOrWhiteSpace(record.NodeId) && _nodes.TryGetValue(record.NodeId, out var node) && node != null)
+                {
+                    record.X = node.X;
+                    record.Y = node.Y;
+                    record.HasCoordinates = true;
+                }
+
+                buildings.Add(record);
+            }
+        }
+
+        private void SeedCastleResourcesFromInit()
+        {
+            _castleResources.Clear();
+
+            var playerId = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
+            if (string.IsNullOrWhiteSpace(playerId))
+            {
+                return;
+            }
+
+            var ownedCastleIds = new List<string>();
+            foreach (var pair in _nodes)
+            {
+                var node = pair.Value;
+                if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                if (!string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var owner = NormalizePlayerId(node.Owner, node.TerritoryOwner);
+                if (!string.Equals(owner, playerId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                ownedCastleIds.Add(node.Id.Trim());
+            }
+
+            ownedCastleIds.Sort(StringComparer.Ordinal);
+            for (var i = 0; i < ownedCastleIds.Count; i++)
+            {
+                _castleResources[ownedCastleIds[i]] = i == 0
+                    ? SnapshotResources(MyPlayer?.Resources)
+                    : new ResourceDto();
+            }
+        }
+
+        private void ApplyCastleResourceSnapshots(MsgDomesticSettlement msg)
+        {
+            if (msg == null || msg.Changes == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < msg.Changes.Count; i++)
+            {
+                var change = msg.Changes[i];
+                if (change == null || change.Data == null ||
+                    !string.Equals(change.Type, "castle_resource_snapshot", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (!change.Data.TryGetValue("castle_id", out var castleId) || string.IsNullOrWhiteSpace(castleId))
+                {
+                    continue;
+                }
+
+                _castleResources[castleId.Trim()] = SnapshotResources(change.Data);
+            }
+        }
+
         private static ResourceDto SnapshotResources(ResourceBag bag)
         {
             var resources = new ResourceDto();
@@ -718,6 +862,61 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return resources;
+        }
+
+        private static ResourceDto SnapshotResources(IDictionary<string, string> data)
+        {
+            var resources = new ResourceDto();
+            if (data == null)
+            {
+                return resources;
+            }
+
+            resources.Ore = ReadInt(data, "ore");
+            resources.Wood = ReadInt(data, "wood");
+            resources.Food = ReadInt(data, "food");
+            resources.RefinedOre = ReadInt(data, "refined_ore");
+            resources.EngineerMaterial = ReadInt(data, "engineer_material");
+            resources.BuildPoints = ReadInt(data, "build_points");
+            return resources;
+        }
+
+        private static int ReadInt(IDictionary<string, string> data, string key)
+        {
+            return data.TryGetValue(key, out var value) && int.TryParse(value, out var amount)
+                ? amount
+                : 0;
+        }
+
+        private static string NormalizePlayerId(params string[] candidates)
+        {
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(candidates[i]))
+                {
+                    return candidates[i].Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static ResourceDto CloneResources(ResourceDto source)
+        {
+            if (source == null)
+            {
+                return new ResourceDto();
+            }
+
+            return new ResourceDto
+            {
+                Ore = source.Ore,
+                Wood = source.Wood,
+                Food = source.Food,
+                RefinedOre = source.RefinedOre,
+                EngineerMaterial = source.EngineerMaterial,
+                BuildPoints = source.BuildPoints
+            };
         }
 
         private void PublishPhaseState(int turn, string phase, int timeoutSeconds, int tokensLeft, string nextPhase)

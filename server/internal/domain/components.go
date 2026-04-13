@@ -23,6 +23,7 @@ type BuildingComp struct {
 	MaxHP     int
 	WallLevel int
 	Owner     string
+	CastleID  string
 	Towers    int
 }
 

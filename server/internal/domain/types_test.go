@@ -200,10 +200,44 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	if player.MainCastleHP != 100 {
 		t.Fatalf("MainCastleHP = %d", player.MainCastleHP)
 	}
+	if player.Castles == nil {
+		t.Fatalf("Castles is nil")
+	}
+	if len(player.Castles) != 0 {
+		t.Fatalf("Castles len = %d", len(player.Castles))
+	}
 	if state.NodeIndex == nil {
 		t.Fatalf("NodeIndex is nil")
 	}
 	if _, ok := state.GetNode("missing"); ok {
 		t.Fatalf("GetNode() should miss")
+	}
+}
+
+func TestEnsureCastleStateCreatesBucket(t *testing.T) {
+	state := &GameState{
+		Players: map[string]*PlayerState{
+			"player-1": {
+				PlayerID: "player-1",
+				Castles:  map[string]*CastleState{},
+			},
+		},
+	}
+
+	castle := state.EnsureCastleState("player-1", "castle-a")
+	if castle == nil {
+		t.Fatalf("castle state is nil")
+	}
+	if castle.CastleID != "castle-a" || castle.NodeID != "castle-a" {
+		t.Fatalf("castle = %#v", castle)
+	}
+	if castle.OwnerID != "player-1" {
+		t.Fatalf("owner = %q", castle.OwnerID)
+	}
+	if castle.Resources == nil {
+		t.Fatalf("resources is nil")
+	}
+	if state.Players["player-1"].Castles["castle-a"] == nil {
+		t.Fatalf("castle was not stored")
 	}
 }

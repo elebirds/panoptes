@@ -9,6 +9,7 @@ const (
 	CombatActionAttack CombatAction = "attack"
 	CombatActionHold   CombatAction = "hold"
 	CombatActionCharge CombatAction = "charge"
+	CombatActionDeploy CombatAction = "deploy"
 )
 
 // CombatOrder 是人类手操、未来 AI 部长、脚本驱动共用的统一战斗意图。

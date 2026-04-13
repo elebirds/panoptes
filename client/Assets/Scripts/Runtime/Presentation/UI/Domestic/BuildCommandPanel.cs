@@ -138,6 +138,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
+        private string _activeCastleNodeId = string.Empty;
 
         private void OnEnable()
         {
@@ -178,7 +179,30 @@ namespace Panoptes.Presentation.UI.Domestic
         public void CancelPlacement()
         {
             ResolveMapInputHandler();
+            mapInputHandler?.SetBuildCastleContext(string.Empty);
             mapInputHandler?.CancelCurrentMode();
+        }
+
+        public void SetCastleContext(string castleNodeId)
+        {
+            _activeCastleNodeId = (castleNodeId ?? string.Empty).Trim();
+            ResolveMapInputHandler();
+            mapInputHandler?.SetBuildCastleContext(_activeCastleNodeId);
+        }
+
+        public void ClearCastleContext()
+        {
+            _activeCastleNodeId = string.Empty;
+            ResolveMapInputHandler();
+            mapInputHandler?.SetBuildCastleContext(string.Empty);
+        }
+
+        public void SetCancelButtonVisible(bool visible)
+        {
+            if (cancelButton != null)
+            {
+                cancelButton.gameObject.SetActive(visible);
+            }
         }
 
         public void SelectGovernanceMode()
@@ -551,6 +575,8 @@ namespace Panoptes.Presentation.UI.Domestic
                 Debug.LogWarning("[BuildCommandPanel] Building type is empty.");
                 return;
             }
+
+            mapInputHandler.SetBuildCastleContext(_activeCastleNodeId);
 
             switch (rule)
             {

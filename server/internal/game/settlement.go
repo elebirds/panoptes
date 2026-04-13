@@ -12,9 +12,6 @@ func RunDomesticSettlement(room *GameRoom) {
 		return
 	}
 
-	room.state.PendingBuilds = append(room.state.PendingBuilds, room.pendingBuilds...)
-	room.pendingBuilds = room.pendingBuilds[:0]
-
 	pipeline := engine.NewDomesticPipeline()
 	events := pipeline.Run(room.state.World, room.state)
 
@@ -44,9 +41,11 @@ func RunCombatSettlement(room *GameRoom) {
 		debug.DumpGameStateSummary(room.state)
 	}
 	room.checkGameOver()
+	room.collectPendingTerritoryDeploysFromCombatOrders()
 
 	room.state.PendingConflicts = room.state.PendingConflicts[:0]
 	room.state.MinisterMoveOrders = room.state.MinisterMoveOrders[:0]
 	clear(room.state.PendingCombatOrders)
 	clear(room.combatOrders)
+	clear(room.combatDeployOrders)
 }

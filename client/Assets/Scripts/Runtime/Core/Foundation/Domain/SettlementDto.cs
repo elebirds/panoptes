@@ -34,10 +34,29 @@ namespace Panoptes.Core.Domain
         public List<MarchTurnStopDto> TurnStops;
     }
 
+    public class DomesticBuildResultDto
+    {
+        public string NodeId;
+        public string BuildingType;
+        public string OwnerId;
+        public string CastleId;
+        public int BuildingHp;
+    }
+
+    public class CastleBuiltBuildingDto
+    {
+        public string NodeId;
+        public string BuildingType;
+        public int X;
+        public int Y;
+        public bool HasCoordinates;
+    }
+
     public class DomesticSettlementDto
     {
         public List<string> BuiltNodeIDs;
         public List<string> ChangedNodeIDs;
+        public List<DomesticBuildResultDto> BuiltBuildings;
     }
 
     public class CombatSettlementDto

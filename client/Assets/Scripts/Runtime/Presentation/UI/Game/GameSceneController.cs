@@ -141,6 +141,7 @@ namespace Panoptes.Presentation.UI.Game
             EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
             EnsureComponent<MicroPanel>(canvas.transform, "MicroPanel");
             EnsureComponent<OrderReviewPanel>(canvas.transform, "OrderReviewPanel");
+            EnsureComponent<ResourceHUD>(canvas.transform, "ResourceHUD");
             EnsureComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay");
             EnsureRuntimeComponent<CombatPlaybackController>("CombatPlaybackController");
         }

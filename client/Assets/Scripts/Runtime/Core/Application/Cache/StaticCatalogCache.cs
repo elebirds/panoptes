@@ -45,6 +45,7 @@ namespace Panoptes.Core.Application.Cache
             public string icon_key;
             public string prefab_key;
             public string placement_rule;
+            public string required_resource_type;
             public int sort_order;
         }
 
