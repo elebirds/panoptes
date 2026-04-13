@@ -118,32 +118,48 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 	case "MsgSubmitDomestic":
 		msg := &pb.MsgSubmitDomestic{}
 		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
-			r.sendLobbyError(sender, err)
+			r.sendGameError(sender, errors.New("invalid_request"))
 			return
 		}
 		if r.gameRooms == nil {
-			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			r.sendGameNotFound(sender)
 			return
 		}
 		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
 		if !ok {
-			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			r.sendGameNotFound(sender)
+			return
+		}
+		if submitter, ok := room.(interface {
+			OnHumanSubmitDomesticChecked(playerID string) error
+		}); ok {
+			if err := submitter.OnHumanSubmitDomesticChecked(playerID); err != nil {
+				r.sendGameError(sender, err)
+			}
 			return
 		}
 		room.OnHumanSubmitDomestic(playerID)
 	case "MsgSubmitCombat":
 		msg := &pb.MsgSubmitCombat{}
 		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
-			r.sendLobbyError(sender, err)
+			r.sendGameError(sender, errors.New("invalid_request"))
 			return
 		}
 		if r.gameRooms == nil {
-			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			r.sendGameNotFound(sender)
 			return
 		}
 		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
 		if !ok {
-			r.sendLobbyError(sender, lobby.ErrRoomNotFound)
+			r.sendGameNotFound(sender)
+			return
+		}
+		if submitter, ok := room.(interface {
+			OnHumanSubmitCombatChecked(playerID string) error
+		}); ok {
+			if err := submitter.OnHumanSubmitCombatChecked(playerID); err != nil {
+				r.sendGameError(sender, err)
+			}
 			return
 		}
 		room.OnHumanSubmitCombat(playerID)
@@ -170,11 +186,11 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 			OnHumanMessage(playerID, msgType string, payload []byte) error
 		})
 		if !ok {
-			r.sendLobbyError(sender, errors.New("room message handler unavailable"))
+			r.sendGameError(sender, errors.New("internal_error"))
 			return
 		}
 		if err := handler.OnHumanMessage(playerID, envelope.GetType(), []byte(envelope.GetPayload())); err != nil {
-			r.sendLobbyError(sender, err)
+			r.sendGameError(sender, err)
 			return
 		}
 	default:
@@ -183,18 +199,7 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 }
 
 func (r *Router) sendGameNotFound(sender Sender) {
-	if sender == nil {
-		return
-	}
-	msg := &pb.MsgLobbyError{Code: "game_not_found", Message: "game room not found"}
-	data, err := marshalEnvelope(msg)
-	if err != nil {
-		slog.Warn("序列化 game_not_found 失败", "错误", err)
-		return
-	}
-	if err := sender.Send(data); err != nil {
-		slog.Warn("发送 game_not_found 失败", "错误", err)
-	}
+	r.sendGameError(sender, errors.New("game_not_found"))
 }
 
 func (r *Router) sendLobbyError(sender Sender, err error) {
@@ -217,6 +222,26 @@ func (r *Router) sendLobbyError(sender Sender, err error) {
 	}
 }
 
+func (r *Router) sendGameError(sender Sender, err error) {
+	if sender == nil || err == nil {
+		return
+	}
+
+	msg := &pb.ErrorResponse{
+		Code:    mapGameErrorCode(err),
+		Message: err.Error(),
+	}
+
+	data, marshalErr := marshalEnvelope(msg)
+	if marshalErr != nil {
+		slog.Warn("序列化游戏错误消息失败", "错误", marshalErr)
+		return
+	}
+	if sendErr := sender.Send(data); sendErr != nil {
+		slog.Warn("发送游戏错误消息失败", "错误", sendErr)
+	}
+}
+
 func mapLobbyErrorCode(err error) string {
 	switch {
 	case errors.Is(err, lobby.ErrRoomFull):
@@ -233,6 +258,21 @@ func mapLobbyErrorCode(err error) string {
 		return "invalid_status"
 	case errors.Is(err, lobby.ErrInvalidPlayers):
 		return "invalid_player_count"
+	default:
+		return "internal_error"
+	}
+}
+
+func mapGameErrorCode(err error) string {
+	switch err.Error() {
+	case "invalid_request":
+		return "invalid_request"
+	case "phase_mismatch":
+		return "phase_mismatch"
+	case "game_not_found":
+		return "game_not_found"
+	case "unauthorized":
+		return "unauthorized"
 	default:
 		return "internal_error"
 	}

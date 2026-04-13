@@ -9,6 +9,8 @@ namespace Panoptes.Core.Events
         public string Phase;
         public int TimeoutSeconds;
         public int TokensLeft;
+        public string NextPhase;
+        public bool IsInteractive;
     }
 
     public class ResourcesChangedEvent
@@ -103,5 +105,11 @@ namespace Panoptes.Core.Events
         public string Reason;
         public string Narrative;
         public bool IsWinner;
+    }
+
+    public class GameErrorEvent
+    {
+        public string Code;
+        public string Message;
     }
 }

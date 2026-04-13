@@ -2,6 +2,8 @@
 using Panoptes.DebugTools;
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
@@ -138,18 +140,18 @@ namespace Panoptes.DebugTools
             var col = 0;
             var row = 0;
 
-            // Debug-only bypass: these buttons intentionally send protocol messages directly.
-            // Production gameplay actions should go through GameIntents.
-
-            DrawButton(x, y, col, row, buttonWidth, buttonHeight, gapX, gapY, "提交内政", () =>
-            {
-                MessageSender.Send(new MsgSubmitDomestic());
-            });
+            DrawButton(x, y, col, row, buttonWidth, buttonHeight, gapX, gapY, "推进当前阶段", SubmitCurrentPhase);
             NextCell(ref col, ref row);
 
             DrawButton(x, y, col, row, buttonWidth, buttonHeight, gapX, gapY, "提交战斗", () =>
             {
-                MessageSender.Send(new MsgSubmitCombat());
+                SubmitCombatDebug();
+            });
+            NextCell(ref col, ref row);
+
+            DrawButton(x, y, col, row, buttonWidth, buttonHeight, gapX, gapY, "提交内政", () =>
+            {
+                SubmitDomesticDebug();
             });
             NextCell(ref col, ref row);
 
@@ -205,6 +207,50 @@ namespace Panoptes.DebugTools
             });
 
             return y + (row + 1) * (buttonHeight + gapY);
+        }
+
+        private static void SubmitCurrentPhase()
+        {
+            var phase = GameStateCache.Instance != null ? GameStateCache.Instance.Phase : string.Empty;
+            switch (phase)
+            {
+                case GamePhases.DomesticPlanning:
+                    SubmitDomesticDebug();
+                    return;
+                case GamePhases.CombatPlanning:
+                    SubmitCombatDebug();
+                    return;
+                default:
+                    Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
+                    return;
+            }
+        }
+
+        private static void SubmitDomesticDebug()
+        {
+            if (GameIntentsIsReady())
+            {
+                GameIntents.SubmitDomestic();
+                return;
+            }
+
+            MessageSender.Send(new MsgSubmitDomestic());
+        }
+
+        private static void SubmitCombatDebug()
+        {
+            if (GameIntentsIsReady())
+            {
+                GameIntents.SubmitCombat();
+                return;
+            }
+
+            MessageSender.Send(new MsgSubmitCombat());
+        }
+
+        private static bool GameIntentsIsReady()
+        {
+            return GameStateCache.Instance != null;
         }
 
         private static void DrawButton(
