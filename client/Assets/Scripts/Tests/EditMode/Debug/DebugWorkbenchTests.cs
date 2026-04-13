@@ -11,7 +11,7 @@ namespace Panoptes.Tests.EditMode.Debug
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
 
         [Test]
-        public void DebugTabRegistry_ShouldExposeDefaultFiveTabs()
+        public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
         {
             var registryType = Type.GetType("Panoptes.DebugTools.DebugTabRegistry, Panoptes.Core")
                                ?? throw new AssertionException("DebugTabRegistry 类型不存在。");
@@ -23,7 +23,7 @@ namespace Panoptes.Tests.EditMode.Debug
                        ?? throw new AssertionException("CreateDefaultTabs 必须返回可枚举集合。");
 
             var count = 0;
-            var titles = new string[5];
+            var titles = new string[6];
             foreach (var tab in tabs)
             {
                 var tabType = tab.GetType();
@@ -36,9 +36,9 @@ namespace Panoptes.Tests.EditMode.Debug
                 count++;
             }
 
-            Assert.That(count, Is.EqualTo(5), "首版应固定提供 5 个基础 Tab。");
+            Assert.That(count, Is.EqualTo(6), "当前默认应提供 6 个调试 Tab。");
             CollectionAssert.AreEqual(
-                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game" },
+                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game", "GameIntents" },
                 titles);
         }
 
@@ -82,6 +82,35 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<DebugPanel>(managers);", content,
                 "多 Tab DebugPanel 应从 Managers 全局挂载，覆盖 Login/Lobby/Game。");
+        }
+
+        [Test]
+        public void DebugActionCatalog_ShouldExposeConvenientSectionAndActionFactories()
+        {
+            var catalogType = Type.GetType("Panoptes.DebugTools.DebugActionCatalog, Panoptes.Core")
+                              ?? throw new AssertionException("DebugActionCatalog 类型不存在。");
+
+            Assert.That(catalogType.GetMethod("Section", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static),
+                Is.Not.Null,
+                "应提供 Section 工厂，方便组织一组调试动作。");
+            Assert.That(catalogType.GetMethod("Action", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static),
+                Is.Not.Null,
+                "应提供 Action 工厂，方便新增单个调试动作。");
+        }
+
+        [Test]
+        public void DebugTabRegistry_ShouldKeepOverviewScrollable_AndProvideGameIntentsTab()
+        {
+            var path = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugTabRegistry.cs");
+            Assert.That(File.Exists(path), Is.True, "DebugTabRegistry.cs 不存在。");
+
+            var content = File.ReadAllText(path);
+            StringAssert.Contains("GUILayout.BeginScrollView", content,
+                "总览页应支持滚动，避免内容增多后被截断。");
+            StringAssert.Contains("ProgressBar(", content,
+                "总览页应提供进度条摘要视图。");
+            StringAssert.Contains("GameIntentsDebugTab", content,
+                "调试工作台应提供独立的 GameIntents 面板。");
         }
     }
 }

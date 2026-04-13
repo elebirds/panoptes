@@ -21,7 +21,57 @@ namespace Panoptes.DebugTools
                 new RawSenderDebugTab(),
                 new LobbyDebugTab(),
                 new GameDebugTab(),
+                new GameIntentsDebugTab(),
             };
+        }
+    }
+
+    public sealed class DebugActionDescriptor
+    {
+        public DebugActionDescriptor(
+            string label,
+            Action execute,
+            string hint,
+            Func<DebugPanelContext, bool> canExecute)
+        {
+            Label = label ?? string.Empty;
+            Execute = execute;
+            Hint = hint ?? string.Empty;
+            CanExecute = canExecute;
+        }
+
+        public string Label { get; }
+        public Action Execute { get; }
+        public string Hint { get; }
+        public Func<DebugPanelContext, bool> CanExecute { get; }
+    }
+
+    public sealed class DebugActionSection
+    {
+        public DebugActionSection(string title, IReadOnlyList<DebugActionDescriptor> actions)
+        {
+            Title = title ?? string.Empty;
+            Actions = actions ?? Array.Empty<DebugActionDescriptor>();
+        }
+
+        public string Title { get; }
+        public IReadOnlyList<DebugActionDescriptor> Actions { get; }
+    }
+
+    public static class DebugActionCatalog
+    {
+        public static DebugActionSection Section(string title, params DebugActionDescriptor[] actions)
+        {
+            return new(title, actions ?? Array.Empty<DebugActionDescriptor>());
+        }
+
+        public static DebugActionDescriptor Action(
+            string label,
+            Action execute,
+            string hint = "",
+            Func<DebugPanelContext, bool> canExecute = null)
+        {
+            return new(label, execute, hint, canExecute);
         }
     }
 
@@ -46,6 +96,22 @@ namespace Panoptes.DebugTools
             GUILayout.Box(string.IsNullOrWhiteSpace(message) ? "暂无数据" : message, GUILayout.ExpandWidth(true));
         }
 
+        public static void ProgressBar(string label, float value, float maxValue, Color fillColor)
+        {
+            var safeMax = Mathf.Max(1f, maxValue);
+            var ratio = Mathf.Clamp01(value / safeMax);
+            var rect = GUILayoutUtility.GetRect(18f, 18f, GUILayout.ExpandWidth(true));
+            GUI.Box(rect, string.Empty);
+
+            var fillRect = new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * ratio, rect.height - 4f);
+            var previous = GUI.color;
+            GUI.color = fillColor;
+            GUI.Box(fillRect, string.Empty);
+            GUI.color = previous;
+
+            GUI.Label(rect, $"{label}  {Mathf.RoundToInt(value)}/{Mathf.RoundToInt(safeMax)}");
+        }
+
         public static string DirectionLabel(string direction)
         {
             return direction switch
@@ -59,6 +125,8 @@ namespace Panoptes.DebugTools
 
     internal sealed class OverviewDebugTab : IDebugTab
     {
+        private Vector2 _scroll;
+
         public string Id => "overview";
         public string Title => "总览";
 
@@ -71,7 +139,15 @@ namespace Panoptes.DebugTools
         public void Draw(DebugPanelContext context, Rect rect)
         {
             GUILayout.BeginArea(rect);
+            _scroll = GUILayout.BeginScrollView(_scroll);
 
+            DebugGuiUtil.Section("进度摘要");
+            var appProgress = GetAppProgress(context);
+            DebugGuiUtil.ProgressBar("应用阶段", appProgress.current, appProgress.max, new Color(0.42f, 0.76f, 1f));
+            var roomProgress = GetRoomProgress(context);
+            DebugGuiUtil.ProgressBar("房间人数", roomProgress.current, roomProgress.max, new Color(0.48f, 0.92f, 0.58f));
+
+            GUILayout.Space(6f);
             DebugGuiUtil.Section("应用态");
             DebugGuiUtil.KeyValue("Scene", context.SceneName);
             DebugGuiUtil.KeyValue("AppState", context.CurrentAppState.HasValue ? context.CurrentAppState.Value.ToString() : "-");
@@ -100,7 +176,36 @@ namespace Panoptes.DebugTools
             DebugGuiUtil.KeyValue("Nodes", game != null ? game.Nodes.Count.ToString() : string.Empty);
             DebugGuiUtil.KeyValue("Units", game != null ? game.Units.Count.ToString() : string.Empty);
 
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
+        }
+
+        private static (float current, float max) GetAppProgress(DebugPanelContext context)
+        {
+            if (!context.CurrentAppState.HasValue)
+            {
+                return (0f, 4f);
+            }
+
+            return context.CurrentAppState.Value switch
+            {
+                Panoptes.Core.Application.App.AppState.Initializing => (1f, 4f),
+                Panoptes.Core.Application.App.AppState.Login => (2f, 4f),
+                Panoptes.Core.Application.App.AppState.Lobby => (3f, 4f),
+                Panoptes.Core.Application.App.AppState.Game => (4f, 4f),
+                _ => (0f, 4f)
+            };
+        }
+
+        private static (float current, float max) GetRoomProgress(DebugPanelContext context)
+        {
+            var room = context.Room;
+            if (room == null || room.MaxPlayers <= 0)
+            {
+                return (0f, 1f);
+            }
+
+            return (room.Players.Count, room.MaxPlayers);
         }
     }
 
@@ -503,6 +608,7 @@ namespace Panoptes.DebugTools
 
     internal sealed class GameDebugTab : IDebugTab
     {
+        private Vector2 _scroll;
         private string _buildNodeId = "res_food";
         private string _buildingType = "farm";
         private string _revealNodeId = "res_food";
@@ -534,6 +640,7 @@ namespace Panoptes.DebugTools
             var cache = context.GameState;
 
             GUILayout.BeginArea(rect);
+            _scroll = GUILayout.BeginScrollView(_scroll);
 
             DebugGuiUtil.Section("阶段状态");
             DebugGuiUtil.KeyValue("GameID", cache.GameID);
@@ -661,6 +768,14 @@ namespace Panoptes.DebugTools
             }
             GUILayout.EndHorizontal();
 
+            DebugGuiUtil.Section("缓存快照");
+            DebugGuiUtil.KeyValue("MyPlayerID", cache.MyPlayerID);
+            DebugGuiUtil.KeyValue("EnemyCastleHP", cache.EnemyCastleHP.ToString());
+            DebugGuiUtil.KeyValue("EnemyMaxHP", cache.EnemyMaxCastleHP.ToString());
+            DebugGuiUtil.KeyValue("Nodes", cache.Nodes.Count.ToString());
+            DebugGuiUtil.KeyValue("Units", cache.Units.Count.ToString());
+
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -695,6 +810,145 @@ namespace Panoptes.DebugTools
                 {
                     yield return trimmed;
                 }
+            }
+        }
+    }
+
+    internal sealed class GameIntentsDebugTab : IDebugTab
+    {
+        private Vector2 _scroll;
+        private IReadOnlyList<DebugActionSection> _sections;
+
+        public string Id => "game-intents";
+        public string Title => "GameIntents";
+
+        public bool IsAvailable(DebugPanelContext context, out string reason)
+        {
+            if (context.GameState == null || string.IsNullOrWhiteSpace(context.GameState.GameID))
+            {
+                reason = "等待 MsgGameInit 后再使用 GameIntents 调试页。";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
+        }
+
+        public void Draw(DebugPanelContext context, Rect rect)
+        {
+            _sections ??= BuildSections();
+
+            GUILayout.BeginArea(rect);
+            _scroll = GUILayout.BeginScrollView(_scroll);
+
+            foreach (var section in _sections)
+            {
+                DebugGuiUtil.Section(section.Title);
+                DrawSection(section, context);
+            }
+
+            GUILayout.EndScrollView();
+            GUILayout.EndArea();
+        }
+
+        private static IReadOnlyList<DebugActionSection> BuildSections()
+        {
+            return new[]
+            {
+                DebugActionCatalog.Section(
+                    "阶段提交",
+                    DebugActionCatalog.Action("推进当前阶段", SubmitCurrentPhase, "按当前 phase 自动选择提交内政或战斗。"),
+                    DebugActionCatalog.Action("提交内政", GameIntents.SubmitDomestic),
+                    DebugActionCatalog.Action("提交战斗", GameIntents.SubmitCombat)),
+                DebugActionCatalog.Section(
+                    "国策",
+                    DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("ready_for_war")),
+                    DebugActionCatalog.Action("设置休养国策", () => GameIntents.SetPolicy("recuperation"))),
+                DebugActionCatalog.Section(
+                    "令牌高频操作",
+                    DebugActionCatalog.Action("粮点建农场", () => GameIntents.BuildToken("res_food", "farm")),
+                    DebugActionCatalog.Action("矿点建矿山", () => GameIntents.BuildToken("res_ore", "mine")),
+                    DebugActionCatalog.Action("侦察粮点", () => GameIntents.RevealToken("res_food"))),
+                DebugActionCatalog.Section(
+                    "战区",
+                    DebugActionCatalog.Action("设置北线战区", SendDefaultWarZone),
+                    DebugActionCatalog.Action("北线进攻", () => MessageSender.Send(new MsgWarZoneDirective
+                    {
+                        ZoneId = "zone1",
+                        Directive = "attack"
+                    }))),
+                DebugActionCatalog.Section(
+                    "战斗微操",
+                    DebugActionCatalog.Action("Unit-1 Move Node-B", () => GameIntents.MoveUnit("unit-1", "node-b")),
+                    DebugActionCatalog.Action("Unit-1 Attack Unit-2", () => GameIntents.AttackUnit("unit-1", "unit-2")),
+                    DebugActionCatalog.Action("Unit-1 Hold", () => GameIntents.HoldUnit("unit-1"))),
+            };
+        }
+
+        private static void DrawSection(DebugActionSection section, DebugPanelContext context)
+        {
+            const int columns = 3;
+            var index = 0;
+            while (index < section.Actions.Count)
+            {
+                GUILayout.BeginHorizontal();
+                for (var column = 0; column < columns && index < section.Actions.Count; column++, index++)
+                {
+                    var action = section.Actions[index];
+                    DrawActionButton(action, context);
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.Space(4f);
+            }
+        }
+
+        private static void DrawActionButton(DebugActionDescriptor action, DebugPanelContext context)
+        {
+            var enabled = action.CanExecute == null || action.CanExecute(context);
+            using (new GUILayout.VerticalScope(GUILayout.Width(220f)))
+            {
+                GUI.enabled = enabled;
+                if (GUILayout.Button(action.Label, GUILayout.Height(28f)))
+                {
+                    action.Execute?.Invoke();
+                }
+                GUI.enabled = true;
+
+                if (!string.IsNullOrWhiteSpace(action.Hint))
+                {
+                    GUILayout.Label(action.Hint, GUILayout.Height(32f));
+                }
+            }
+        }
+
+        private static void SendDefaultWarZone()
+        {
+            var message = new MsgSetWarZone
+            {
+                ZoneId = "zone1",
+                Name = "北线"
+            };
+            message.NodeIds.Add("res_ore");
+            MessageSender.Send(message);
+        }
+
+        private static void SubmitCurrentPhase()
+        {
+            var phase = Panoptes.Core.Application.Cache.GameStateCache.Instance != null
+                ? Panoptes.Core.Application.Cache.GameStateCache.Instance.Phase
+                : string.Empty;
+
+            switch (phase)
+            {
+                case GamePhases.DomesticPlanning:
+                    GameIntents.SubmitDomestic();
+                    return;
+                case GamePhases.CombatPlanning:
+                    GameIntents.SubmitCombat();
+                    return;
+                default:
+                    Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
+                    return;
             }
         }
     }
