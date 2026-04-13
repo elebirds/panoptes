@@ -126,6 +126,8 @@ namespace Panoptes.Presentation.Map
         private readonly HashSet<string> _highlightNodeIds = new();
         private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
+        private readonly Queue<string> _pendingBuildTokenNodeQueue = new();
+        private readonly Dictionary<string, string> _pendingDeployGhostNodeByUnitId = new();
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
         private readonly HashSet<string> _pendingMoveUnitIds = new();
         private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
@@ -143,6 +145,7 @@ namespace Panoptes.Presentation.Map
         private readonly List<RaycastResult> _uiRaycastResults = new();
         private UnitInfoPanelController _unitInfoPanelController;
         private UnitView _buildingInfoProxy;
+        private StaticCatalogCache _staticCatalogCache;
 
         private sealed class MoveGhostTag : MonoBehaviour
         {
@@ -181,6 +184,8 @@ namespace Panoptes.Presentation.Map
             UnsubscribeCacheEvents();
             ClearAllMovePreviews();
             DisposeMovePreviewProxyMaterial();
+            _pendingBuildTokenNodeQueue.Clear();
+            ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
             if (_buildingInfoProxy != null)
             {
@@ -266,6 +271,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var centerNodeId = ResolveExpandCenterNodeId(_selectedUnit.UnitId, _selectedUnit.GridPos);
+            ShowPendingDeployCastleGhost(_selectedUnit.UnitId, centerNodeId);
             GameIntents.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapInputHandler] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
@@ -285,6 +291,7 @@ namespace Panoptes.Presentation.Map
                 resolvedCenterNodeId = ResolveExpandCenterNodeId(unitId, default);
             }
 
+            ShowPendingDeployCastleGhost(unitId, resolvedCenterNodeId);
             GameIntents.ExpandTerritory(unitId, resolvedCenterNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapInputHandler] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
@@ -359,7 +366,7 @@ namespace Panoptes.Presentation.Map
 
         private void EnterBuildPlacement(string buildingType, BuildPlacementRule rule)
         {
-            _buildType = NormalizeToken(buildingType);
+            _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
             if (disallowManualCastlePlacement && string.Equals(_buildType, "castle", StringComparison.Ordinal))
             {
                 Debug.Log("[MapInputHandler] Castle is pre-placed by map config and cannot be manually built.");
@@ -712,16 +719,17 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var ownerId = GetLocalOwnerId();
-                map.ApplyBuildingPlacement(node.NodeId, _buildType, ownerId, true, 100, buildPlacedGhostColor);
+                var backendBuildingType = ResolveBackendBuildingType(_buildType);
+                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
                 _pendingBuilds.Add(new PendingBuildRecord
                 {
-                    buildingType = _buildType,
+                    buildingType = backendBuildingType,
                     nodeId = node.NodeId,
                     ownerId = ownerId,
                     isGhost = true
                 });
 
-                SendBuildCommand(_buildType, node.NodeId);
+                SendBuildCommand(backendBuildingType, node.NodeId);
                 ExitBuildMode();
             }
         }
@@ -744,12 +752,27 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (IsTerritoryOnlyBuildingType(_buildType) && !CanPlaceCityBuilding(nodeId))
+            var backendBuildingType = ResolveBackendBuildingType(_buildType);
+            if (TryGetServerPlacementRule(backendBuildingType, out var placementRule, out var requiredResourceType))
+            {
+                switch (placementRule)
+                {
+                    case "resource_only":
+                        return map.IsNodeResourcePoint(nodeId)
+                               && IsNodeResourceTypeMatch(nodeId, requiredResourceType);
+                    case "city_only":
+                        return CanPlaceCityBuilding(nodeId);
+                    case "any_terrain":
+                        return true;
+                }
+            }
+
+            if (IsTerritoryOnlyBuildingType(backendBuildingType) && !CanPlaceCityBuilding(nodeId))
             {
                 return false;
             }
 
-            if (IsGlobalPlacementBuildingType(_buildType))
+            if (IsGlobalPlacementBuildingType(backendBuildingType))
             {
                 return true;
             }
@@ -768,6 +791,23 @@ namespace Panoptes.Presentation.Map
         private bool CanPlaceCityBuilding(string nodeId)
         {
             return IsInsideLocalTerritory(nodeId);
+        }
+
+        private bool IsNodeResourceTypeMatch(string nodeId, string requiredResourceType)
+        {
+            var required = NormalizeToken(requiredResourceType);
+            if (string.IsNullOrEmpty(required))
+            {
+                return true;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetNodeState(nodeId, out var node) || node == null)
+            {
+                return false;
+            }
+
+            return string.Equals(NormalizeToken(node.ResourceType), required, StringComparison.Ordinal);
         }
 
         private bool IsInsideLocalTerritory(string nodeId)
@@ -1063,6 +1103,7 @@ namespace Panoptes.Presentation.Map
                 var normalizedUnitId = unitId.Trim();
                 _pendingMoveUnitIds.Add(normalizedUnitId);
                 _pendingMoveTargetNodeByUnitId[normalizedUnitId] = targetNodeId ?? string.Empty;
+                UpdatePendingDeployCastleGhostPosition(normalizedUnitId, targetNodeId);
             }
 
             CreateOrUpdateMovePreview(unitId, targetNodeId);
@@ -1073,6 +1114,12 @@ namespace Panoptes.Presentation.Map
 
         private void SendBuildCommand(string buildingType, string nodeId)
         {
+            buildingType = ResolveBackendBuildingType(buildingType);
+            if (!string.IsNullOrWhiteSpace(nodeId))
+            {
+                _pendingBuildTokenNodeQueue.Enqueue(nodeId.Trim());
+            }
+
             GameIntents.BuildToken(nodeId, buildingType);
             BuildCommandSent?.Invoke(buildingType, nodeId);
         }
@@ -1094,6 +1141,7 @@ namespace Panoptes.Presentation.Map
             _cache.OnDomesticSettled += OnDomesticSettled;
             _cache.OnNodeChanged += OnNodeChanged;
             _cache.OnUnitsChanged += OnUnitsChanged;
+            _cache.OnTokenResult += OnTokenResult;
             _cacheEventsSubscribed = true;
         }
 
@@ -1110,6 +1158,7 @@ namespace Panoptes.Presentation.Map
                 _cache.OnDomesticSettled -= OnDomesticSettled;
                 _cache.OnNodeChanged -= OnNodeChanged;
                 _cache.OnUnitsChanged -= OnUnitsChanged;
+                _cache.OnTokenResult -= OnTokenResult;
             }
 
             _cache = null;
@@ -1158,6 +1207,7 @@ namespace Panoptes.Presentation.Map
         {
             _pendingMoveUnitIds.Clear();
             _pendingMoveTargetNodeByUnitId.Clear();
+            _pendingBuildTokenNodeQueue.Clear();
 
             var builtBuildings = e?.Settlement?.BuiltBuildings;
             if (builtBuildings == null || builtBuildings.Count == 0)
@@ -1183,6 +1233,38 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void OnTokenResult(TokenResultEvent e)
+        {
+            if (e == null)
+            {
+                return;
+            }
+
+            var action = NormalizeToken(e.Action);
+            if (!string.Equals(action, "build", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            string nodeId = null;
+            if (_pendingBuildTokenNodeQueue.Count > 0)
+            {
+                nodeId = _pendingBuildTokenNodeQueue.Dequeue();
+            }
+
+            if (e.Success)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                nodeId = GetLastPendingBuildNodeId();
+            }
+
+            RollbackPendingBuild(nodeId);
+        }
+
         private void OnNodeChanged(NodeChangedEvent evt)
         {
             if (evt == null || evt.Node == null || string.IsNullOrWhiteSpace(evt.NodeID))
@@ -1197,6 +1279,7 @@ namespace Panoptes.Presentation.Map
             }
 
             map.ApplyNodeSnapshot(evt.Node);
+            TryResolvePendingDeployGhostByNode(evt.NodeID, evt.Node);
             if (map.TryGetNodeView(evt.NodeID, out var nodeView) && nodeView != null)
             {
                 if (_territoryHighlightNodeIds.Contains(evt.NodeID))
@@ -1238,6 +1321,7 @@ namespace Panoptes.Presentation.Map
                     var normalizedRemovedId = removedId.Trim();
                     _pendingMoveUnitIds.Remove(normalizedRemovedId);
                     _pendingMoveTargetNodeByUnitId.Remove(normalizedRemovedId);
+                    ClearPendingDeployCastleGhostForUnit(normalizedRemovedId);
                     if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
                     {
                         ClearMoveSelection();
@@ -1274,6 +1358,44 @@ namespace Panoptes.Presentation.Map
                     _pendingBuilds.RemoveAt(i);
                 }
             }
+        }
+
+        private string GetLastPendingBuildNodeId()
+        {
+            if (_pendingBuilds == null || _pendingBuilds.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            for (var i = _pendingBuilds.Count - 1; i >= 0; i--)
+            {
+                var nodeId = _pendingBuilds[i].nodeId;
+                if (!string.IsNullOrWhiteSpace(nodeId))
+                {
+                    return nodeId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private void RollbackPendingBuild(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            nodeId = nodeId.Trim();
+            RemovePendingBuild(nodeId);
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
         }
 
         private bool HasPendingBuild(string nodeId)
@@ -1463,6 +1585,251 @@ namespace Panoptes.Presentation.Map
             }
 
             return map.TryGetNodeIdByGrid(gridPos, out var nodeId) ? nodeId : string.Empty;
+        }
+
+        private string ResolveBackendBuildingType(string buildingType)
+        {
+            var normalized = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return string.Empty;
+            }
+
+            if (TryGetBuildingConfig(normalized, out var entry, out var resolvedId) && entry != null)
+            {
+                return NormalizeToken(string.IsNullOrWhiteSpace(entry.id) ? resolvedId : entry.id);
+            }
+
+            return normalized;
+        }
+
+        private bool TryGetServerPlacementRule(string buildingType, out string placementRule, out string requiredResourceType)
+        {
+            placementRule = string.Empty;
+            requiredResourceType = string.Empty;
+
+            if (!TryGetBuildingConfig(buildingType, out var entry, out _ ) || entry == null)
+            {
+                return false;
+            }
+
+            placementRule = NormalizeToken(entry.placement_rule);
+            requiredResourceType = NormalizeToken(entry.required_resource_type);
+            return !string.IsNullOrEmpty(placementRule);
+        }
+
+        private bool TryGetBuildingConfig(string buildingType, out StaticCatalogCache.BuildingEntryJson entry, out string resolvedId)
+        {
+            entry = null;
+            resolvedId = string.Empty;
+
+            var key = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(key))
+            {
+                return false;
+            }
+
+            var cache = ResolveStaticCatalogCache();
+            if (cache == null)
+            {
+                return false;
+            }
+
+            if (cache.TryGetBuilding(key, out entry) && entry != null)
+            {
+                resolvedId = key;
+                return true;
+            }
+
+            var aliases = GetBuildingAliasKeys(key);
+            for (var i = 0; i < aliases.Length; i++)
+            {
+                var alias = aliases[i];
+                if (string.IsNullOrWhiteSpace(alias))
+                {
+                    continue;
+                }
+
+                if (cache.TryGetBuilding(alias, out entry) && entry != null)
+                {
+                    resolvedId = alias;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private StaticCatalogCache ResolveStaticCatalogCache()
+        {
+            if (_staticCatalogCache != null)
+            {
+                return _staticCatalogCache;
+            }
+
+            _staticCatalogCache = StaticCatalogCache.Instance;
+            if (_staticCatalogCache == null)
+            {
+                _staticCatalogCache = StaticCatalogCache.EnsureInstance();
+            }
+
+            return _staticCatalogCache;
+        }
+
+        private static string[] GetBuildingAliasKeys(string key)
+        {
+            switch (NormalizeToken(key))
+            {
+                case "lumberyard":
+                    return new[] { "lumber" };
+                case "lumber":
+                    return new[] { "lumberyard" };
+                case "engineer":
+                    return new[] { "engineer_camp" };
+                case "engineer_camp":
+                    return new[] { "engineer" };
+                case "archery":
+                    return new[] { "barracks" };
+                case "barracks":
+                    return new[] { "archery" };
+                case "blacksmith":
+                case "backsmith":
+                    return new[] { "workshop" };
+                default:
+                    return Array.Empty<string>();
+            }
+        }
+
+        private void ShowPendingDeployCastleGhost(string unitId, string centerNodeId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            var normalizedNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
+            if (string.IsNullOrEmpty(normalizedUnitId) || string.IsNullOrEmpty(normalizedNodeId))
+            {
+                return;
+            }
+
+            if (_pendingDeployGhostNodeByUnitId.TryGetValue(normalizedUnitId, out var oldNodeId)
+                && !string.IsNullOrWhiteSpace(oldNodeId)
+                && !string.Equals(oldNodeId, normalizedNodeId, StringComparison.Ordinal))
+            {
+                TryClearPendingDeployGhostNode(oldNodeId);
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(normalizedNodeId, "castle", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
+            _pendingDeployGhostNodeByUnitId[normalizedUnitId] = normalizedNodeId;
+        }
+
+        private void UpdatePendingDeployCastleGhostPosition(string unitId, string targetNodeId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            if (!_pendingDeployGhostNodeByUnitId.ContainsKey(normalizedUnitId))
+            {
+                return;
+            }
+
+            ShowPendingDeployCastleGhost(normalizedUnitId, targetNodeId);
+        }
+
+        private void ClearPendingDeployCastleGhostForUnit(string unitId)
+        {
+            var normalizedUnitId = NormalizeToken(unitId);
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            if (!_pendingDeployGhostNodeByUnitId.TryGetValue(normalizedUnitId, out var nodeId))
+            {
+                return;
+            }
+
+            _pendingDeployGhostNodeByUnitId.Remove(normalizedUnitId);
+            TryClearPendingDeployGhostNode(nodeId);
+        }
+
+        private void ClearAllPendingDeployGhosts()
+        {
+            if (_pendingDeployGhostNodeByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            var nodeIDs = new HashSet<string>(_pendingDeployGhostNodeByUnitId.Values);
+            _pendingDeployGhostNodeByUnitId.Clear();
+
+            foreach (var nodeId in nodeIDs)
+            {
+                TryClearPendingDeployGhostNode(nodeId);
+            }
+        }
+
+        private void TryClearPendingDeployGhostNode(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            // Keep real buildings intact; only clear stale ghost markers.
+            if (map.TryGetNodeState(nodeId, out var state) && state != null &&
+                !string.IsNullOrWhiteSpace(state.BuildingType))
+            {
+                return;
+            }
+
+            map.ApplyBuildingPlacement(nodeId.Trim(), string.Empty, string.Empty, false, 0);
+        }
+
+        private void TryResolvePendingDeployGhostByNode(string nodeId, NodeDto node)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) || node == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(node.BuildingType))
+            {
+                return;
+            }
+
+            if (_pendingDeployGhostNodeByUnitId.Count == 0)
+            {
+                return;
+            }
+
+            var normalizedNodeId = nodeId.Trim();
+            string unitIdToRemove = null;
+            foreach (var pair in _pendingDeployGhostNodeByUnitId)
+            {
+                if (string.Equals(pair.Value, normalizedNodeId, StringComparison.Ordinal))
+                {
+                    unitIdToRemove = pair.Key;
+                    break;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(unitIdToRemove))
+            {
+                _pendingDeployGhostNodeByUnitId.Remove(unitIdToRemove);
+            }
         }
 
         private string ResolveExpandCenterNodeId(string unitId, Vector2Int fallbackGrid)
