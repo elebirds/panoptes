@@ -35,6 +35,7 @@ namespace Panoptes.Presentation.UI.Game
                 _cache.OnStateChanged += RefreshFromCache;
                 _cache.OnGameError += OnGameError;
                 _cache.OnTokenResult += OnTokenResult;
+                _cache.OnGameOver += OnGameOver;
             }
         }
 
@@ -50,6 +51,7 @@ namespace Panoptes.Presentation.UI.Game
                 _cache.OnStateChanged -= RefreshFromCache;
                 _cache.OnGameError -= OnGameError;
                 _cache.OnTokenResult -= OnTokenResult;
+                _cache.OnGameOver -= OnGameOver;
             }
 
             GameIntents.Dispose();
@@ -98,6 +100,14 @@ namespace Panoptes.Presentation.UI.Game
             ShowToast(MapGameError(evt.ErrorCode), false);
         }
 
+        private void OnGameOver(GameOverEvent _)
+        {
+            if (statusText != null)
+            {
+                statusText.gameObject.SetActive(false);
+            }
+        }
+
         private void HideFullscreenBackgroundIfNeeded()
         {
             if (!hideFullscreenBackgroundOnGameScene)
@@ -138,7 +148,7 @@ namespace Panoptes.Presentation.UI.Game
             EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
             EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
             EnsureComponent<ResourceHUD>(canvas.transform, "ResourceHUD");
-            EnsureComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay");
+            EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
         }
 
         private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
@@ -155,6 +165,31 @@ namespace Panoptes.Presentation.UI.Game
             {
                 go.AddComponent<T>();
             }
+        }
+
+        private static void EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
+        {
+            var existing = parent.Find(objectName);
+            if (existing != null && existing.GetComponent<T>() != null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resourcesPath))
+            {
+                var prefab = Resources.Load<GameObject>(resourcesPath.Trim());
+                if (prefab != null)
+                {
+                    var instance = Object.Instantiate(prefab, parent, false);
+                    instance.name = objectName;
+                    if (instance.GetComponent<T>() != null)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            EnsureComponent<T>(parent, objectName);
         }
 
         private static void ShowToast(string message, bool success)

@@ -434,15 +434,81 @@ namespace Panoptes.Core.Application.Cache
 
             var isWinner = string.Equals(msg.WinnerId, MyPlayerID, StringComparison.Ordinal) ||
                            string.Equals(msg.WinnerId, MyPlayer != null ? MyPlayer.Id : string.Empty, StringComparison.Ordinal);
+            var loserId = ResolveLikelyLoserId(msg.WinnerId, isWinner);
             Fire(OnGameOver, new GameOverEvent
             {
                 WinnerID = msg.WinnerId,
+                LoserID = loserId,
                 Reason = msg.Reason,
                 Narrative = msg.Narrative,
                 IsWinner = isWinner
             }, nameof(OnGameOver));
 
             OnStateChanged?.Invoke();
+        }
+
+        private string ResolveLikelyLoserId(string winnerId, bool isWinner)
+        {
+            var winner = NormalizePlayerId(winnerId);
+            var self = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
+            if (!isWinner && !string.IsNullOrWhiteSpace(self))
+            {
+                return self;
+            }
+
+            var candidates = new HashSet<string>(StringComparer.Ordinal);
+            if (!string.IsNullOrWhiteSpace(self))
+            {
+                candidates.Add(self);
+            }
+
+            foreach (var pair in _nodes)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                var owner = NormalizePlayerId(pair.Value.Owner);
+                var territoryOwner = NormalizePlayerId(pair.Value.TerritoryOwner);
+                if (!string.IsNullOrWhiteSpace(owner))
+                {
+                    candidates.Add(owner);
+                }
+                if (!string.IsNullOrWhiteSpace(territoryOwner))
+                {
+                    candidates.Add(territoryOwner);
+                }
+            }
+
+            foreach (var pair in _units)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                var owner = NormalizePlayerId(pair.Value.Owner);
+                if (!string.IsNullOrWhiteSpace(owner))
+                {
+                    candidates.Add(owner);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(winner))
+            {
+                candidates.Remove(winner);
+            }
+
+            foreach (var id in candidates)
+            {
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    return id;
+                }
+            }
+
+            return string.Empty;
         }
 
         public NodeDto GetNode(string nodeId)
