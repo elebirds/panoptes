@@ -399,7 +399,7 @@ MonoBehaviour:
   resourceAnchor: {fileID: 1697120485641667070}
   buildingAnchor: {fileID: 7505964873251956980}
   unitAnchor: {fileID: 7253903450159226267}
-  plainMaterial: {fileID: 2100000, guid: 05b34cc807a500743b0bde3f6ef0008b, type: 2}
+  plainMaterial: {fileID: 2100000, guid: b7bf6875babdece4e917c05bed703971, type: 2}
   mountainMaterial: {fileID: 2100000, guid: 16f15eb689c24f549ab6104b3129b7ed, type: 2}
   forestMaterial: {fileID: 2100000, guid: 4c17f0e5a517f6749a9f3d074d97991b, type: 2}
   riverMaterial: {fileID: 2100000, guid: 345acf9adfebf52428a39e1bca56d064, type: 2}
@@ -432,6 +432,12 @@ MonoBehaviour:
     prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
   - buildingType: backsmith
     prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
+  autoCreateMoveMarker: 1
+  moveMarkerY: 0.13
+  moveArrowScale: {x: 0.12, y: 0.01, z: 0.42}
+  moveArrowHeadScale: 0.15
+  moveDestinationScale: 0.24
+  moveMarkerDefaultColor: {r: 0.35, g: 1, b: 0.45, a: 0.9}
 --- !u!1 &5706546515238586262
 GameObject:
   m_ObjectHideFlags: 0

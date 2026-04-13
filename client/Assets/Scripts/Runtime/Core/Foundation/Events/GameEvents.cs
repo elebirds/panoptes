@@ -102,6 +102,7 @@ namespace Panoptes.Core.Events
     public class GameOverEvent
     {
         public string WinnerID;
+        public string LoserID;
         public string Reason;
         public string Narrative;
         public bool IsWinner;
