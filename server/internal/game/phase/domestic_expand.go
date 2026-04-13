@@ -157,8 +157,9 @@ func (p *DomesticPhase) handleExpandTerritory(room Room, state *domain.GameState
 		node.Owner = playerID
 	}
 
-	setBuildingOnNode(centerEntry, "castle", playerID)
-	setBuildingOnNode(barracksEntry, "barracks", playerID)
+	setBuildingOnNode(centerEntry, "castle", playerID, centerNodeID)
+	setBuildingOnNode(barracksEntry, "barracks", playerID, centerNodeID)
+	state.EnsureCastleState(playerID, centerNodeID)
 
 	centerPos := ecs.PositionC.Get(centerEntry)
 	world := state.World
@@ -268,7 +269,7 @@ func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.En
 	return nil, ""
 }
 
-func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string) {
+func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, castleID string) {
 	if nodeEntry == nil {
 		return
 	}
@@ -280,6 +281,7 @@ func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string) {
 		MaxHP:     maxHP,
 		WallLevel: wallLevel,
 		Owner:     owner,
+		CastleID:  castleID,
 		Towers:    towers,
 	}
 

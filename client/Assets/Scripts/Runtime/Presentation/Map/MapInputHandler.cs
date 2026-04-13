@@ -137,6 +137,7 @@ namespace Panoptes.Presentation.Map
         private UnitView _selectedUnit;
         private BuildPlacementRule _buildRule;
         private string _buildType = string.Empty;
+        private string _activeBuildCastleId = string.Empty;
         private NodeView _hoverNode;
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
@@ -253,6 +254,11 @@ namespace Panoptes.Presentation.Map
         public void EnterBuildPlacementCity(string buildingType)
         {
             EnterBuildPlacement(buildingType, BuildPlacementRule.CityOnly);
+        }
+
+        public void SetBuildCastleContext(string castleNodeId)
+        {
+            _activeBuildCastleId = string.IsNullOrWhiteSpace(castleNodeId) ? string.Empty : castleNodeId.Trim();
         }
 
         public void CancelCurrentMode()
@@ -390,6 +396,7 @@ namespace Panoptes.Presentation.Map
 
             _mode = Mode.None;
             _buildType = string.Empty;
+            _activeBuildCastleId = string.Empty;
             _hoverNode = null;
             DestroyHoverGhost();
             ClearNodeHighlights();
@@ -1120,7 +1127,7 @@ namespace Panoptes.Presentation.Map
                 _pendingBuildTokenNodeQueue.Enqueue(nodeId.Trim());
             }
 
-            GameIntents.BuildToken(nodeId, buildingType);
+            GameIntents.BuildToken(nodeId, buildingType, _activeBuildCastleId);
             BuildCommandSent?.Invoke(buildingType, nodeId);
         }
 

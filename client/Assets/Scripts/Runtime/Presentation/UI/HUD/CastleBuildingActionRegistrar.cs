@@ -255,7 +255,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnBuildActionClicked(UnitView unit)
         {
-            if (!TryResolveCastleNodeId(unit, out _))
+            if (!TryResolveCastleNodeId(unit, out var nodeId))
             {
                 return;
             }
@@ -265,6 +265,11 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 Debug.LogWarning("[CastleBuildingActionRegistrar] BuildPanelSlideToggle missing.");
                 return;
+            }
+
+            if (buildCommandPanel != null)
+            {
+                buildCommandPanel.SetCastleContext(nodeId);
             }
 
             if (_buildPanelOpen && !buildPanelSlideToggle.IsCollapsed)
@@ -304,6 +309,11 @@ namespace Panoptes.Presentation.UI.HUD
                 buildPanelSlideToggle.Collapse();
             }
             _buildPanelOpen = false;
+
+            if (buildCommandPanel != null)
+            {
+                buildCommandPanel.ClearCastleContext();
+            }
 
             if (resetUnitInfoOffset && unitInfoPanelController != null)
             {

@@ -7,7 +7,17 @@ namespace Panoptes.Core.Domain
         public string NodeId;
         public string BuildingType;
         public string OwnerId;
+        public string CastleId;
         public int BuildingHp;
+    }
+
+    public class CastleBuiltBuildingDto
+    {
+        public string NodeId;
+        public string BuildingType;
+        public int X;
+        public int Y;
+        public bool HasCoordinates;
     }
 
     public class DomesticSettlementDto

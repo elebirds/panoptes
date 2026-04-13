@@ -25,6 +25,7 @@ message MsgMinisterDirective {
 message MsgTokenBuild {
   string node_id = 1;
   string building_type = 2;
+  string castle_id = 3;
 }
 
 message MsgTokenExpandTerritory {

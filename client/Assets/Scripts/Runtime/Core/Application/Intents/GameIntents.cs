@@ -31,6 +31,14 @@ namespace Panoptes.Core.Application.Intents
             public string center_node_id;
         }
 
+        [Serializable]
+        private sealed class TokenBuildPayload
+        {
+            public string castle_id;
+            public string node_id;
+            public string building_type;
+        }
+
         private static GameStateCache _cache;
         private static LockSource _lockSource = LockSource.None;
 
@@ -88,10 +96,24 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetPolicy");
         }
 
-        public static void BuildToken(string nodeId, string buildingType)
+        public static void BuildToken(string nodeId, string buildingType, string castleId = null)
         {
             if (ActionLock.IsLocked)
             {
+                return;
+            }
+
+            var normalizedCastleId = castleId ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(normalizedCastleId))
+            {
+                var payload = new TokenBuildPayload
+                {
+                    castle_id = normalizedCastleId,
+                    node_id = nodeId ?? string.Empty,
+                    building_type = buildingType ?? string.Empty
+                };
+                MessageSender.SendRaw("MsgTokenBuild", JsonUtility.ToJson(payload));
+                Debug.Log("[GameIntents] BuildToken");
                 return;
             }
 
