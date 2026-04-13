@@ -604,6 +604,7 @@ namespace Panoptes.Core.Application.Cache
             TokensLeft = 0;
             EnemyCastleHP = 0;
             EnemyMaxCastleHP = 0;
+            CombatDraftCache.Instance?.ClearAll();
             OnStateChanged?.Invoke();
         }
 
