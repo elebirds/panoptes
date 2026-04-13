@@ -48,6 +48,27 @@ type DamageResolver interface {
 	Ranged(ctx *ResolutionContext, attackerID, defenderID string, pos domain.Position) int
 }
 
+// TerrainCostPolicy 负责解释静态地形在移动层面的语义。
+// 未来若要加入科技、天气、地块改良，只需要替换这里，不必改 A* 或结算主流程。
+type TerrainCostPolicy interface {
+	StepCost(world donburi.World, pos domain.Position, profile domain.MovementProfile) int
+	IsBlocked(world donburi.World, pos domain.Position, profile domain.MovementProfile) bool
+}
+
+// RoutePlanner 处理战略层的加权寻路与路线摘要。
+// 持久行军预览和单步 WEGO 的移动规划共用同一个 planner。
+type RoutePlanner interface {
+	FindPath(world donburi.World, start, goal domain.Position, profile domain.MovementProfile) ([]domain.Position, bool)
+	BuildPreview(world donburi.World, state *domain.GameState, unitID, destinationNodeID string) (domain.RoutePreview, bool)
+}
+
+// TurnSegmentPlanner 负责把整条路径切成“每回合能走到哪”。
+// 这样 V1 持久行军和未来多时间步模拟都能复用同一套分段逻辑。
+type TurnSegmentPlanner interface {
+	Reachable(world donburi.World, path []domain.Position, profile domain.MovementProfile) (candidate domain.Position, fallback domain.Position)
+	BuildStops(world donburi.World, path []domain.Position, profile domain.MovementProfile) []domain.Position
+}
+
 // SnapshotUnit 是战斗回合起点的只读视图。
 // 后续阶段只读取快照，不直接回头读 ECS 当前状态，以保证结算确定性。
 type SnapshotUnit struct {
@@ -60,6 +81,7 @@ type SnapshotUnit struct {
 	Attack       int
 	AttackRange  int
 	MoveRange    int
+	Movement     domain.MovementProfile
 	Capabilities domain.UnitCapabilities
 	Order        domain.CombatOrder
 }
@@ -114,6 +136,8 @@ type ResolutionContext struct {
 	ConflictDetectors []ConflictDetector
 	RetaliationPolicy RetaliationPolicy
 	DamageResolver    DamageResolver
+	RoutePlanner      RoutePlanner
+	TurnPlanner       TurnSegmentPlanner
 }
 
 func (ctx *ResolutionContext) UnitIDs() []string {

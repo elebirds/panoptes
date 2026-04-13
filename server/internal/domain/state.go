@@ -22,6 +22,7 @@ type GameState struct {
 	MinisterBuildOrders []BuildOrder
 	MinisterMoveOrders  []MoveOrder
 	PendingCombatOrders map[string]CombatOrder
+	ActiveMarches       map[string]ActiveMarch
 	PendingMoves        []PendingMove
 	PendingConflicts    []Conflict
 }
@@ -93,6 +94,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		Players:             make(map[string]*PlayerState, len(playerIDs)),
 		NodeIndex:           make(map[string]donburi.Entity),
 		PendingCombatOrders: make(map[string]CombatOrder),
+		ActiveMarches:       make(map[string]ActiveMarch),
 	}
 
 	if mapData != nil && mapData.NodeIndex != nil {

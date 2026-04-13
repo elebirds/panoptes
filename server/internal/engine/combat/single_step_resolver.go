@@ -47,6 +47,8 @@ func (r *SingleStepResolver) Resolve(world donburi.World, state *domain.GameStat
 		ConflictDetectors: []ConflictDetector{EdgeConflictDetector{}, NodeConflictDetector{}},
 		RetaliationPolicy: DefaultRetaliationPolicy{},
 		DamageResolver:    DefaultDamageResolver{},
+		RoutePlanner:      NewWeightedRoutePlanner(DefaultTerrainCostPolicy{}),
+		TurnPlanner:       DefaultTurnSegmentPlanner{CostPolicy: DefaultTerrainCostPolicy{}},
 	}
 
 	for _, phase := range r.phases {

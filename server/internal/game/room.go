@@ -291,6 +291,7 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 		order.PlayerID = r.playerIDForUnit(order.UnitID)
 	}
 	r.combatOrders[order.UnitID] = order
+	r.syncActiveMarchWithOrder(order)
 }
 
 func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
@@ -385,7 +386,7 @@ func (r *GameRoom) isMessageAllowed(msgType string) bool {
 		}
 	case domain.PhaseCombatPlanning.String():
 		switch msgType {
-		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgSubmitCombat":
+		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgCombatPathPreviewRequest", "MsgSubmitCombat":
 			return true
 		}
 	}
@@ -429,6 +430,18 @@ func (r *GameRoom) prepareCombatOrders() {
 		r.state.PendingCombatOrders = make(map[string]domain.CombatOrder)
 	}
 	clear(r.state.PendingCombatOrders)
+
+	for unitID, march := range r.state.ActiveMarches {
+		if r.isVetoed(march.PlayerID, unitID) {
+			continue
+		}
+		r.state.PendingCombatOrders[unitID] = domain.CombatOrder{
+			PlayerID:     march.PlayerID,
+			UnitID:       unitID,
+			Action:       domain.CombatActionMove,
+			TargetNodeID: march.DestinationNodeID,
+		}
+	}
 
 	for _, order := range r.state.MinisterMoveOrders {
 		if r.isVetoed(order.PlayerID, order.UnitID) {

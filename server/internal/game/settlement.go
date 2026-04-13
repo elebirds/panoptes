@@ -37,6 +37,7 @@ func RunCombatSettlement(room *GameRoom) {
 	room.prepareCombatOrders()
 	pipeline := engine.NewCombatPipeline()
 	events := pipeline.Run(room.state.World, room.state)
+	room.refreshActiveMarchesAfterSettlement()
 
 	room.broadcastSettlement(domain.PhaseCombatResolving.String(), events)
 	if room.cfg != nil && room.cfg.DevMode {

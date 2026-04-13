@@ -160,6 +160,12 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
 		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", MoveCostNoRoad: 2, Passable: true},
+			{ID: "forest", MoveCostNoRoad: 3, Passable: true},
+			{ID: "mountain", MoveCostNoRoad: 3, Passable: true, BlocksCavalry: true},
+			{ID: "river", MoveCostNoRoad: 99, Passable: false, PassableWithRoad: true, BlocksCavalry: true},
+		},
 	}))
 
 	world := donburi.NewWorld()

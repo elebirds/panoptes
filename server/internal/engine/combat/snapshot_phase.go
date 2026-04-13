@@ -44,6 +44,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 			Attack:       stats.Attack,
 			AttackRange:  stats.AttackRange,
 			MoveRange:    stats.Speed,
+			Movement:     buildMovementProfile(stats.Type, caps, stats.Speed),
 			Capabilities: caps,
 			Order:        order,
 		}
