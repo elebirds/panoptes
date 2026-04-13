@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: ea3e2e5871dbb1145ac9ee1100cef7ac, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -887,6 +887,8 @@ MonoBehaviour:
   moveRange: 4
   moveHighlightColor: {r: 0.35, g: 1, b: 0.45, a: 0.9}
   onlyControlOwnUnits: 1
+  movePathArrowColor: {r: 0.35, g: 1, b: 0.45, a: 0.92}
+  movePathDestinationColor: {r: 0.25, g: 0.95, b: 0.55, a: 0.95}
   enableMovePreviewGhost: 1
   movePreviewGhostColor: {r: 0.35, g: 1, b: 0.45, a: 0.72}
   movePreviewTravelDuration: 0.22
@@ -902,6 +904,7 @@ MonoBehaviour:
   buildValidColor: {r: 0.35, g: 1, b: 0.35, a: 0.92}
   buildInvalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.92}
   buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
+  territoryHighlightColor: {r: 0.28, g: 0.72, b: 1, a: 0.72}
   logInvalidBuildClick: 1
   localOwnerIdOverride: 
   useSafeZoneFallbackForCityPlacement: 1
@@ -921,6 +924,11 @@ MonoBehaviour:
   autoCreateCornerCityZones: 1
   cornerInset: 2
   cityZones: []
+  territoryExpansionUnitTypes:
+  - settler
+  - pioneer
+  - expander
+  - engineer
   castleProductionPanel: {fileID: 0}
   autoFindCastleProductionPanel: 1
   autoSpawnCastleProductionPanelIfMissing: 1
