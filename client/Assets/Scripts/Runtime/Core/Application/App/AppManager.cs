@@ -11,6 +11,9 @@ using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Panoptes.DebugTools;
+#endif
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -61,6 +64,9 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            EnsureComponent<DebugPanel>(managers);
+#endif
             EnsureOptionalLoadingOverlay(managers);
             EnsureOptionalErrorToast(managers);
             EnsureOptionalConfirmDialog(managers);

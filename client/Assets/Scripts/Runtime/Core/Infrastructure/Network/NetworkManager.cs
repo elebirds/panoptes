@@ -127,7 +127,7 @@ namespace Panoptes.Core.Infrastructure.Network
             _ = DisconnectInternalAsync();
         }
 
-        public void Send<T>(T message) where T : IMessage<T>
+        public void Send(IMessage message)
         {
             if (!IsConnected)
             {
@@ -145,6 +145,11 @@ namespace Panoptes.Core.Infrastructure.Network
             var bytes = Encoding.UTF8.GetBytes(envelopeJson);
             _ws.Send(bytes);
             OnEnvelopeSent?.Invoke(envelope);
+        }
+
+        public void Send<T>(T message) where T : IMessage<T>
+        {
+            Send((IMessage)message);
         }
 
         private void ProcessMessage(byte[] data)
