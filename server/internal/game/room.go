@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"reflect"
+	"strconv"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
@@ -12,6 +14,7 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	"github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/engine/production"
 	"github.com/elebirds/panoptes/internal/event"
 	gamephase "github.com/elebirds/panoptes/internal/game/phase"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -32,15 +35,23 @@ type GameRoom struct {
 	cancelFn  context.CancelFunc
 	state     *domain.GameState
 
-	currentPhase       gamephase.Phase
-	pendingBuilds      []domain.BuildOrder
-	ministerDirectives map[string]string
-	combatDirectives   map[string][]gamephase.WarZoneDirective
-	combatOrders       map[string]domain.CombatOrder
-	vetoUnits          map[string]map[string]bool
-	microOrders        map[string]map[string]string
-	router             any
-	ministerEngine     *minister.MinisterEngine
+	currentPhase            gamephase.Phase
+	pendingBuilds           []domain.BuildOrder
+	ministerDirectives      map[string]string
+	combatDirectives        map[string][]gamephase.WarZoneDirective
+	combatOrders            map[string]domain.CombatOrder
+	combatDeployOrders      map[string]pendingTerritoryDeploy
+	pendingTerritoryDeploys map[string]pendingTerritoryDeploy
+	vetoUnits               map[string]map[string]bool
+	microOrders             map[string]map[string]string
+	router                  any
+	ministerEngine          *minister.MinisterEngine
+}
+
+type pendingTerritoryDeploy struct {
+	PlayerID     string
+	UnitID       string
+	CenterNodeID string
 }
 
 type Room = GameRoom
@@ -49,18 +60,20 @@ var _ transport.GameRoom = (*GameRoom)(nil)
 
 func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config) *GameRoom {
 	return &GameRoom{
-		ID:                 id,
-		Players:            players,
-		cfg:                cfg,
-		transport:          t,
-		submitCh:           make(chan string, len(players)*4+16),
-		pendingBuilds:      make([]domain.BuildOrder, 0),
-		ministerDirectives: make(map[string]string),
-		combatDirectives:   make(map[string][]gamephase.WarZoneDirective),
-		combatOrders:       make(map[string]domain.CombatOrder),
-		vetoUnits:          make(map[string]map[string]bool),
-		microOrders:        make(map[string]map[string]string),
-		ministerEngine:     minister.NewMinisterEngine(nil),
+		ID:                      id,
+		Players:                 players,
+		cfg:                     cfg,
+		transport:               t,
+		submitCh:                make(chan string, len(players)*4+16),
+		pendingBuilds:           make([]domain.BuildOrder, 0),
+		ministerDirectives:      make(map[string]string),
+		combatDirectives:        make(map[string][]gamephase.WarZoneDirective),
+		combatOrders:            make(map[string]domain.CombatOrder),
+		combatDeployOrders:      make(map[string]pendingTerritoryDeploy),
+		pendingTerritoryDeploys: make(map[string]pendingTerritoryDeploy),
+		vetoUnits:               make(map[string]map[string]bool),
+		microOrders:             make(map[string]map[string]string),
+		ministerEngine:          minister.NewMinisterEngine(nil),
 	}
 }
 
@@ -70,7 +83,7 @@ func (r *GameRoom) Start() {
 	if mapID == "" {
 		mapID = catalog.DefaultMapID()
 	}
-	mapFile, err := maploader.LoadMap(catalog, mapID)
+	baseMap, err := maploader.LoadMap(catalog, mapID)
 	if err != nil {
 		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
 		return
@@ -79,14 +92,28 @@ func (r *GameRoom) Start() {
 	world := donburi.NewWorld()
 	playerIDs := r.humanPlayerIDs()
 	usernames := r.humanUsernames()
-	mapData := maploader.InitWorldFromMap(world, mapFile, playerIDs)
+	seed := time.Now().UnixNano()
+	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
+	if runtimeMap == nil {
+		slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
+		return
+	}
+	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
 
 	r.Turn = r.state.Turn
 	r.Phase = r.state.Phase
+	r.spawnInitialBaseVehicles()
 
-	slog.Info("地图加载成功", "room_id", r.ID, "map_id", mapFile.ID, "nodes", len(mapFile.Nodes))
+	slog.Info("map initialized",
+		"room_id", r.ID,
+		"base_map_id", baseMap.ID,
+		"runtime_map_id", runtimeMap.ID,
+		"seed", seed,
+		"nodes", len(runtimeMap.Nodes),
+		"spawns", len(runtimeMap.SpawnPoints),
+	)
 
 	for _, player := range r.Players {
 		if player.IsBot() {
@@ -98,6 +125,54 @@ func (r *GameRoom) Start() {
 
 	Registry.Register(r)
 	go r.runLoop()
+}
+
+func (r *GameRoom) spawnInitialBaseVehicles() {
+	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
+		return
+	}
+
+	for playerID := range r.state.Players {
+		if strings.TrimSpace(playerID) == "" {
+			continue
+		}
+
+		if hasTerritoryExpansionUnit(r.state.World, playerID) {
+			continue
+		}
+
+		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
+		if !ok {
+			slog.Warn("spawn base vehicle skipped: missing player spawn", "room_id", r.ID, "player_id", playerID)
+			continue
+		}
+
+		entity := ecs.CreateUnit(r.state.World, string(domain.UnitTypeSettler), playerID, spawnPos)
+		if !r.state.World.Valid(entity) {
+			slog.Warn("spawn base vehicle failed: invalid entity", "room_id", r.ID, "player_id", playerID)
+			continue
+		}
+	}
+}
+
+func hasTerritoryExpansionUnit(world donburi.World, playerID string) bool {
+	found := false
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found || entry == nil {
+			return
+		}
+
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction != playerID {
+			return
+		}
+
+		switch strings.ToLower(strings.TrimSpace(string(stats.Type))) {
+		case "settler", "pioneer", "expander", "engineer":
+			found = true
+		}
+	})
+	return found
 }
 
 func (r *GameRoom) runLoop() {
@@ -122,14 +197,16 @@ func (r *GameRoom) runLoop() {
 			r.ministerEngine.GenerateReports(ctx, r)
 		}
 
-		r.currentPhase = &gamephase.DomesticPhase{}
-		r.Phase = "domestic"
-		r.state.Phase = "domestic"
-		r.currentPhase.Enter(r)
-		r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
-		RunDomesticSettlement(r)
-		if r.state.IsOver {
-			break
+			r.Phase = "domestic"
+			r.state.Phase = "domestic"
+			r.currentPhase = &gamephase.DomesticPhase{}
+			r.currentPhase.Enter(r)
+			r.applyPendingTerritoryDeploys()
+			r.applyQueuedBuildOrdersAtDomesticStart()
+			r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
+			RunDomesticSettlement(r)
+			if r.state.IsOver {
+				break
 		}
 
 		r.currentPhase = &gamephase.CombatPhase{}
@@ -267,6 +344,30 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 	if order.PlayerID == "" {
 		order.PlayerID = r.playerIDForUnit(order.UnitID)
 	}
+
+	if strings.EqualFold(string(order.Action), string(domain.CombatActionDeploy)) {
+		centerNodeID := strings.TrimSpace(order.TargetNodeID)
+		// In combat phase, deploy should always follow the unit's final move target
+		// in the same round (if such a move exists).
+		if moveOrder, ok := r.combatOrders[order.UnitID]; ok &&
+			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
+			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
+		}
+		r.combatDeployOrders[order.UnitID] = pendingTerritoryDeploy{
+			PlayerID:     strings.TrimSpace(order.PlayerID),
+			UnitID:       strings.TrimSpace(order.UnitID),
+			CenterNodeID: centerNodeID,
+		}
+		return
+	}
+
+	if strings.EqualFold(string(order.Action), string(domain.CombatActionMove)) {
+		if deployOrder, ok := r.combatDeployOrders[order.UnitID]; ok {
+			deployOrder.CenterNodeID = strings.TrimSpace(order.TargetNodeID)
+			r.combatDeployOrders[order.UnitID] = deployOrder
+		}
+	}
+
 	r.combatOrders[order.UnitID] = order
 }
 
@@ -296,12 +397,7 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 
 	changes := make([]*pb.DomesticChange, 0, len(events))
 	for _, e := range events {
-		eventType := reflect.TypeOf(e)
-		typeName := "unknown"
-		if eventType != nil {
-			typeName = eventType.Name()
-		}
-		changes = append(changes, &pb.DomesticChange{Type: typeName, Data: map[string]string{"detail": e.String()}})
+		changes = append(changes, toDomesticChange(e))
 	}
 
 	for _, player := range r.Players {
@@ -315,6 +411,57 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 		}
 		_ = player.Send(msg)
 	}
+}
+
+func toDomesticChange(e event.Event) *pb.DomesticChange {
+	if e == nil {
+		return &pb.DomesticChange{
+			Type: "unknown",
+			Data: map[string]string{},
+		}
+	}
+
+	switch evt := e.(type) {
+	case event.BuildingBuiltEvent:
+		hp := resolveBuiltBuildingHP(evt.BuildingType)
+		return &pb.DomesticChange{
+			Type: "building_built",
+			Data: map[string]string{
+				"node_id":       strings.TrimSpace(evt.NodeID),
+				"building_type": strings.TrimSpace(evt.BuildingType),
+				"owner":         strings.TrimSpace(evt.Owner),
+				"building_hp":   strconv.Itoa(hp),
+			},
+		}
+	}
+
+	return &pb.DomesticChange{
+		Type: fmt.Sprintf("%T", e),
+		Data: map[string]string{
+			"detail": e.String(),
+		},
+	}
+}
+
+func resolveBuiltBuildingHP(buildingType string) int {
+	const fallback = 100
+
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return fallback
+	}
+
+	if cfg, ok := catalog.GetBuilding(strings.TrimSpace(buildingType)); ok && cfg.Combat.MaxHP > 0 {
+		return cfg.Combat.MaxHP
+	}
+
+	if strings.EqualFold(strings.TrimSpace(buildingType), "castle") {
+		if hp := catalog.Rules().CastleBaseHP; hp > 0 {
+			return hp
+		}
+	}
+
+	return fallback
 }
 
 func (r *GameRoom) checkGameOver() {
@@ -365,6 +512,117 @@ func (r *GameRoom) prepareCombatOrders() {
 		}
 		r.state.PendingCombatOrders[unitID] = order.Normalized()
 	}
+}
+
+func (r *GameRoom) collectPendingTerritoryDeploysFromCombatOrders() {
+	for unitID, deployOrder := range r.combatDeployOrders {
+		if r.isVetoed(deployOrder.PlayerID, unitID) {
+			continue
+		}
+
+		playerID := strings.TrimSpace(deployOrder.PlayerID)
+		if playerID == "" {
+			playerID = strings.TrimSpace(r.playerIDForUnit(unitID))
+		}
+		if playerID == "" {
+			continue
+		}
+
+		centerNodeID := strings.TrimSpace(deployOrder.CenterNodeID)
+		// Use final resolved move target as deploy center when available.
+		if moveOrder, ok := r.state.PendingCombatOrders[unitID]; ok &&
+			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
+			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
+		}
+
+		r.pendingTerritoryDeploys[unitID] = pendingTerritoryDeploy{
+			PlayerID:     playerID,
+			UnitID:       strings.TrimSpace(unitID),
+			CenterNodeID: centerNodeID,
+		}
+	}
+
+	for unitID, order := range r.combatOrders {
+		if r.isVetoed(order.PlayerID, unitID) {
+			continue
+		}
+		if !strings.EqualFold(string(order.Action), string(domain.CombatActionDeploy)) {
+			continue
+		}
+
+		playerID := strings.TrimSpace(order.PlayerID)
+		if playerID == "" {
+			playerID = strings.TrimSpace(r.playerIDForUnit(unitID))
+		}
+		if playerID == "" {
+			continue
+		}
+
+		r.pendingTerritoryDeploys[unitID] = pendingTerritoryDeploy{
+			PlayerID:     playerID,
+			UnitID:       strings.TrimSpace(unitID),
+			CenterNodeID: strings.TrimSpace(order.TargetNodeID),
+		}
+	}
+}
+
+func (r *GameRoom) applyPendingTerritoryDeploys() {
+	if len(r.pendingTerritoryDeploys) == 0 {
+		return
+	}
+
+	unitIDs := make([]string, 0, len(r.pendingTerritoryDeploys))
+	for unitID := range r.pendingTerritoryDeploys {
+		unitIDs = append(unitIDs, unitID)
+	}
+	sort.Strings(unitIDs)
+
+	for _, unitID := range unitIDs {
+		order := r.pendingTerritoryDeploys[unitID]
+		if order.PlayerID == "" || order.UnitID == "" {
+			delete(r.pendingTerritoryDeploys, unitID)
+			continue
+		}
+
+		if err := gamephase.ApplyTerritoryExpansion(r, order.PlayerID, order.UnitID, order.CenterNodeID); err != nil {
+			slog.Warn("deploy territory expansion failed", "room_id", r.ID, "player_id", order.PlayerID, "unit_id", order.UnitID, "error", err)
+		}
+		delete(r.pendingTerritoryDeploys, unitID)
+	}
+}
+
+func (r *GameRoom) applyQueuedBuildOrdersAtDomesticStart() {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return
+	}
+
+	if len(r.pendingBuilds) == 0 {
+		return
+	}
+
+	if r.state.PendingBuilds == nil {
+		r.state.PendingBuilds = make([]domain.BuildOrder, 0, len(r.pendingBuilds))
+	} else {
+		r.state.PendingBuilds = r.state.PendingBuilds[:0]
+	}
+
+	r.state.PendingBuilds = append(r.state.PendingBuilds, r.pendingBuilds...)
+	r.pendingBuilds = r.pendingBuilds[:0]
+
+	buildSystem := production.BuildSystem{}
+	events := buildSystem.Run(r.state.World, r.state)
+	for _, evt := range events {
+		if evt == nil {
+			continue
+		}
+		evt.Apply(r.state.World, r.state)
+	}
+
+	if len(events) > 0 {
+		r.broadcastSettlement("domestic", events)
+	}
+
+	r.state.PendingBuilds = r.state.PendingBuilds[:0]
 }
 
 func (r *GameRoom) setMoveIntent(unitID string, target domain.Position) {
@@ -511,6 +769,7 @@ func (r *GameRoom) buildNodeView(entry *donburi.Entry, playerID string) *pb.Node
 		Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
 		Terrain:         string(node.Terrain),
 		Owner:           node.Owner,
+		TerritoryOwner:  node.TerritoryOwner,
 		MyUnitCount:     int32(myCount),
 		EnemyUnitCount:  int32(enemyCount),
 		HasRoad:         node.HasRoad,

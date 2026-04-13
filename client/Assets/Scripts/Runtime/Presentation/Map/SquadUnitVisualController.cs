@@ -65,7 +65,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string swordMoveState = "twohanded_03_run";
         [SerializeField] private string bowIdleState = "archer_01_idle";
         [SerializeField] private string bowMoveState = "archer_03_run";
-        [SerializeField] private string[] unarmedUnitTypeAliases = { "unarmed", "settler", "civilian", "fighter_basic", "fighter", "militia" };
+        [SerializeField] private string[] unarmedUnitTypeAliases = { "unarmed", "settler", "civilian", "fighter_basic", "fighter", "militia", "pioneer", "expander", "engineer" };
         [SerializeField] private string[] swordUnitTypeAliases = { "sword", "swordsman", "melee", "fighter_sword", "warrior", "infantry", "cavalry" };
         [SerializeField] private string[] bowUnitTypeAliases = { "bow", "archer", "ranged", "fighter_bow" };
         [SerializeField] private bool enforceSingleWeaponVisual = true;

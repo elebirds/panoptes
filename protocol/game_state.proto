@@ -13,6 +13,7 @@ message NodeView {
   Position pos = 2;
   string terrain = 3; // "plain|mountain|forest|river"
   string owner = 4; // player_id or ""
+  string territory_owner = 14; // player_id or ""
   string building_type = 5; // "" if none
   int32 building_hp = 6;
   int32 wall_level = 7;

@@ -27,6 +27,11 @@ message MsgTokenBuild {
   string building_type = 2;
 }
 
+message MsgTokenExpandTerritory {
+  string unit_id = 1;
+  string center_node_id = 2; // optional, empty = unit current node
+}
+
 message MsgTokenReveal {
   string node_id = 1;
 }
@@ -90,6 +95,17 @@ message MinisterActionItem {
 message MsgDomesticSettlement {
   repeated DomesticChange changes = 1;
   ResourceBag my_resources_after = 2;
+}
+
+message MsgTerritoryExpanded {
+  bool success = 1;
+  string error_code = 2;
+  string player_id = 3;
+  string unit_id = 4;
+  string center_node_id = 5;
+  string barracks_node_id = 6;
+  repeated NodeView updated_nodes = 7;
+  repeated string removed_unit_ids = 8;
 }
 
 message DomesticChange {

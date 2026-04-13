@@ -24,6 +24,13 @@ namespace Panoptes.Core.Application.Intents
             public string action_id;
         }
 
+        [Serializable]
+        private sealed class ExpandTerritoryPayload
+        {
+            public string unit_id;
+            public string center_node_id;
+        }
+
         private static GameStateCache _cache;
         private static LockSource _lockSource = LockSource.None;
 
@@ -95,6 +102,39 @@ namespace Panoptes.Core.Application.Intents
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] BuildToken");
+        }
+
+        public static void ExpandTerritory(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            if (IsCombatPhase())
+            {
+                DeployTerritoryUnit(unitId, centerNodeId);
+                return;
+            }
+
+            var payload = new ExpandTerritoryPayload
+            {
+                unit_id = unitId ?? string.Empty,
+                center_node_id = centerNodeId ?? string.Empty
+            };
+            MessageSender.SendRaw("MsgTokenExpandTerritory", JsonUtility.ToJson(payload));
+            Debug.Log("[GameIntents] ExpandTerritory");
+        }
+
+        public static void DeployTerritoryUnit(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            SendCombatOrder(unitId, "deploy", centerNodeId, null);
+            Debug.Log("[GameIntents] DeployTerritoryUnit");
         }
 
         public static void RevealToken(string nodeId)
@@ -337,6 +377,13 @@ namespace Panoptes.Core.Application.Intents
                 action_id = actionId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
+        }
+
+        private static bool IsCombatPhase()
+        {
+            var cache = _cache ?? GameStateCache.Instance;
+            return cache != null &&
+                   string.Equals(cache.Phase, "combat", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SendCombatOrder(string unitId, string action, string targetNodeId, string targetUnitId)

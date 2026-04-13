@@ -149,6 +149,7 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		room.OnHumanSubmitCombat(playerID)
 	case "MsgSetPolicy",
 		"MsgTokenBuild",
+		"MsgTokenExpandTerritory",
 		"MsgTokenReveal",
 		"MsgMinisterDirective",
 		"MsgSetWarZone",

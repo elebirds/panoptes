@@ -85,7 +85,7 @@ namespace Panoptes.Presentation.Map
             SetTerrain(string.IsNullOrWhiteSpace(node.Terrain) ? node.Type : node.Terrain);
             SetRoadVisible(node.HasRoad);
             SetResource(node.IsResourcePoint, node.ResourceType);
-            SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, false);
+            SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, node.BuildingMaxHp, false);
             SetHighlightVisible(false);
         }
 
@@ -199,6 +199,14 @@ namespace Panoptes.Presentation.Map
         /// </summary>
         public void SetBuilding(string buildingType, string ownerId, int buildingHp, bool isGhost)
         {
+            SetBuilding(buildingType, ownerId, buildingHp, 0, isGhost);
+        }
+
+        /// <summary>
+        /// Update/clear building visual according to building_type with optional max HP.
+        /// </summary>
+        public void SetBuilding(string buildingType, string ownerId, int buildingHp, int buildingMaxHp, bool isGhost)
+        {
             var normalized = NormalizeToken(buildingType);
             if (string.IsNullOrEmpty(normalized))
             {
@@ -221,7 +229,7 @@ namespace Panoptes.Presentation.Map
             {
                 _buildingInstance.SetBuildingType(normalized);
                 _buildingInstance.SetOwner(ownerId);
-                _buildingInstance.SetHitPoints(buildingHp);
+                _buildingInstance.SetHitPoints(buildingHp, buildingMaxHp);
                 _buildingInstance.SetPlacementGhost(isGhost);
             }
 

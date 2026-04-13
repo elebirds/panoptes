@@ -76,7 +76,7 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 	return mapData
 }
 
-func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+func resolveNodeOwner(node staticdata.MapRuntimeNode, _ domain.Position, playerIDs []string, _ map[domain.Position]string) string {
 	if node.OwnerSlot != nil {
 		slot := *node.OwnerSlot
 		if slot >= 0 && slot < len(playerIDs) {
@@ -86,10 +86,10 @@ func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playe
 	if node.Owner != "" {
 		return node.Owner
 	}
-	return spawnOwners[pos]
+	return ""
 }
 
-func resolveTerritoryOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+func resolveTerritoryOwner(node staticdata.MapRuntimeNode, _ domain.Position, playerIDs []string, _ map[domain.Position]string) string {
 	if node.TerritoryOwnerSlot != nil {
 		slot := *node.TerritoryOwnerSlot
 		if slot >= 0 && slot < len(playerIDs) {
@@ -99,14 +99,5 @@ func resolveTerritoryOwner(node staticdata.MapRuntimeNode, pos domain.Position, 
 	if node.TerritoryOwner != "" {
 		return node.TerritoryOwner
 	}
-	if node.OwnerSlot != nil {
-		slot := *node.OwnerSlot
-		if slot >= 0 && slot < len(playerIDs) {
-			return playerIDs[slot]
-		}
-	}
-	if node.Owner != "" {
-		return node.Owner
-	}
-	return spawnOwners[pos]
+	return ""
 }

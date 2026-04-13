@@ -85,6 +85,9 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 		return nil
 
+	case "MsgTokenExpandTerritory":
+		return p.handleExpandTerritory(room, state, playerID, playerState, payload)
+
 	case "MsgTokenReveal":
 		msg := &pb.MsgTokenReveal{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {

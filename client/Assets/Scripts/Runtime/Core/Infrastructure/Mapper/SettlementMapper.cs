@@ -14,11 +14,43 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 return null;
             }
 
-            var builtNodeIDs = msg.Changes
-                .Where(c => c != null && c.Type == "building_built" && c.Data != null)
-                .Select(c => c.Data.TryGetValue("node_id", out var id) ? id : string.Empty)
-                .Where(id => !string.IsNullOrEmpty(id))
-                .ToList();
+            var builtBuildings = new List<DomesticBuildResultDto>();
+            var builtNodeIDs = new List<string>();
+            if (msg.Changes != null)
+            {
+                foreach (var change in msg.Changes)
+                {
+                    if (change == null || change.Data == null)
+                    {
+                        continue;
+                    }
+
+                    var type = NormalizeToken(change.Type);
+                    if (type != "building_built" && type != "buildingbuiltevent")
+                    {
+                        continue;
+                    }
+
+                    var nodeId = ReadString(change.Data, "node_id", "nodeId");
+                    var buildingType = NormalizeToken(ReadString(change.Data, "building_type", "buildingType"));
+                    if (string.IsNullOrWhiteSpace(nodeId) || string.IsNullOrWhiteSpace(buildingType))
+                    {
+                        continue;
+                    }
+
+                    var ownerId = ReadString(change.Data, "owner", "owner_id", "ownerId");
+                    var hp = ReadInt(change.Data, 100, "building_hp", "hp_after", "hp");
+
+                    builtBuildings.Add(new DomesticBuildResultDto
+                    {
+                        NodeId = nodeId,
+                        BuildingType = buildingType,
+                        OwnerId = ownerId,
+                        BuildingHp = hp
+                    });
+                    builtNodeIDs.Add(nodeId);
+                }
+            }
 
             var changedNodeIDs = msg.Changes
                 .Where(c => c != null && c.Data != null)
@@ -30,6 +62,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             {
                 BuiltNodeIDs = builtNodeIDs,
                 ChangedNodeIDs = changedNodeIDs,
+                BuiltBuildings = builtBuildings,
             };
         }
 
@@ -102,6 +135,64 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 CastleDamaged = events.Any(e => e.Type == "castle_damaged"),
                 Events = events,
             };
+        }
+
+        private static string NormalizeToken(string value)
+        {
+            return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static string ReadString(IDictionary<string, string> data, params string[] keys)
+        {
+            if (data == null || keys == null)
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (data.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static int ReadInt(IDictionary<string, string> data, int fallback, params string[] keys)
+        {
+            if (data == null || keys == null)
+            {
+                return fallback;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (!data.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+                {
+                    continue;
+                }
+
+                if (int.TryParse(raw.Trim(), out var value))
+                {
+                    return value;
+                }
+            }
+
+            return fallback;
         }
     }
 }

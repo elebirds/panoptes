@@ -34,7 +34,11 @@ func CreateNode(world donburi.World, mapNode MapNode) donburi.Entity {
 func CreateUnit(world donburi.World, unitType string, faction string, pos domain.Position) donburi.Entity {
 	cfg, ok := staticdata.Default().GetUnit(unitType)
 	if !ok {
-		panic(fmt.Sprintf("unknown unit type: %s", unitType))
+		fallback, hasFallback := fallbackUnitDefinition(unitType)
+		if !hasFallback {
+			panic(fmt.Sprintf("unknown unit type: %s", unitType))
+		}
+		cfg = fallback
 	}
 
 	entity := world.Create(PositionC, UnitStatsC, UnitCapabilitiesC)
@@ -79,10 +83,39 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 	return entity
 }
 
+func fallbackUnitDefinition(unitType string) (staticdata.UnitDefinition, bool) {
+	switch unitType {
+	case string(domain.UnitTypeSettler):
+		return staticdata.UnitDefinition{
+			ID:          string(domain.UnitTypeSettler),
+			Class:       "support",
+			MaxHP:       18,
+			Attack:      0,
+			AttackRange: 0,
+			MoveRange:   2,
+			VisionRange: 3,
+			TrainCost:   staticdata.ResourceAmounts{},
+			Upkeep:      staticdata.ResourceAmounts{},
+			Multipliers: map[string]float64{},
+			Flags: staticdata.UnitFlags{
+				CanSiege:       false,
+				CanDestroyRoad: false,
+				CanCapture:     false,
+			},
+		}, true
+	default:
+		return staticdata.UnitDefinition{}, false
+	}
+}
+
 func CreateBuilding(world donburi.World, buildingType string, owner string, nodeEntry *donburi.Entry) donburi.Entity {
 	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
-		panic(fmt.Sprintf("unknown building type: %s", buildingType))
+		fallback, hasFallback := fallbackBuildingDefinition(buildingType)
+		if !hasFallback {
+			panic(fmt.Sprintf("unknown building type: %s", buildingType))
+		}
+		cfg = fallback
 	}
 
 	comp := BuildingComp{
@@ -108,4 +141,22 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 	buildingEntry := world.Entry(entity)
 	BuildingC.SetValue(buildingEntry, comp)
 	return entity
+}
+
+func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {
+	switch buildingType {
+	case "castle":
+		castleHP := 100
+		if catalog := staticdata.Default(); catalog != nil {
+			castleHP = catalog.Rules().CastleBaseHP
+		}
+		return staticdata.BuildingDefinition{
+			ID: buildingType,
+			Combat: staticdata.BuildingCombat{
+				MaxHP: castleHP,
+			},
+		}, true
+	default:
+		return staticdata.BuildingDefinition{}, false
+	}
 }
