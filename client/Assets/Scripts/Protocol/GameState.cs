@@ -25,51 +25,52 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBnYW1lX3N0YXRlLnByb3RvEhFwYW5vcHRlcy5wcm90by52MRoMY29tbW9u",
-            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIroDCghOb2RlVmlldxIOCgJpZBgB",
+            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIuMDCghOb2RlVmlldxIOCgJpZBgB",
             "IAEoCVICaWQSLQoDcG9zGAIgASgLMhsucGFub3B0ZXMucHJvdG8udjEuUG9z",
             "aXRpb25SA3BvcxIYCgd0ZXJyYWluGAMgASgJUgd0ZXJyYWluEhQKBW93bmVy",
-            "GAQgASgJUgVvd25lchIjCg1idWlsZGluZ190eXBlGAUgASgJUgxidWlsZGlu",
-            "Z1R5cGUSHwoLYnVpbGRpbmdfaHAYBiABKAVSCmJ1aWxkaW5nSHASHQoKd2Fs",
-            "bF9sZXZlbBgHIAEoBVIJd2FsbExldmVsEiIKDW15X3VuaXRfY291bnQYCCAB",
-            "KAVSC215VW5pdENvdW50EigKEGVuZW15X3VuaXRfY291bnQYCSABKAVSDmVu",
-            "ZW15VW5pdENvdW50EhkKCGhhc19yb2FkGAogASgIUgdoYXNSb2FkEioKEWlz",
-            "X3Jlc291cmNlX3BvaW50GAsgASgIUg9pc1Jlc291cmNlUG9pbnQSIwoNcmVz",
-            "b3VyY2VfdHlwZRgMIAEoCVIMcmVzb3VyY2VUeXBlEiAKDGlzX3NhZmVfem9u",
-            "ZRgNIAEoCFIKaXNTYWZlWm9uZSKnAQoIVW5pdFZpZXcSDgoCaWQYASABKAlS",
-            "AmlkEhgKB2ZhY3Rpb24YAiABKAlSB2ZhY3Rpb24SGwoJdW5pdF90eXBlGAMg",
-            "ASgJUgh1bml0VHlwZRIOCgJocBgEIAEoBVICaHASFQoGbWF4X2hwGAUgASgF",
-            "UgVtYXhIcBItCgNwb3MYBiABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb3Np",
-            "dGlvblIDcG9zIsECCgpQbGF5ZXJWaWV3Eg4KAmlkGAEgASgJUgJpZBIaCgh1",
-            "c2VybmFtZRgCIAEoCVIIdXNlcm5hbWUSPAoJcmVzb3VyY2VzGAMgASgLMh4u",
-            "cGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSCXJlc291cmNlcxIfCgt0",
-            "b2tlbnNfbGVmdBgEIAEoBVIKdG9rZW5zTGVmdBIlCg5jdXJyZW50X3BvbGlj",
-            "eRgFIAEoCVINY3VycmVudFBvbGljeRIkCg5tYWluX2Nhc3RsZV9ocBgGIAEo",
-            "BVIMbWFpbkNhc3RsZUhwEiIKDW1heF9jYXN0bGVfaHAYByABKAVSC21heENh",
-            "c3RsZUhwEjcKCXdhcl96b25lcxgIIAMoCzIaLnBhbm9wdGVzLnByb3RvLnYx",
-            "LldhclpvbmVSCHdhclpvbmVzIocBCgdXYXJab25lEg4KAmlkGAEgASgJUgJp",
-            "ZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVfaWRzGAMgAygJUgdub2Rl",
-            "SWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0aXZlEh8KC3RhcmdldF9u",
-            "b2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlzdGVyVmlldxISCgRyb2xl",
-            "GAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5hbWUSGAoHYWJpbGl0eRgD",
-            "IAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgEIAEoCVILcGVyc29uYWxp",
-            "dHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASABKAlSBmdhbWVJZBIk",
-            "Cg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXllcklkEhIKBHR1cm4Y",
-            "AyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlEjEKBW5vZGVzGAUg",
-            "AygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdSBW5vZGVzEjEKBXVu",
-            "aXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5pdFZpZXdSBXVuaXRz",
-            "EjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLlBsYXll",
-            "clZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMoCzIfLnBhbm9wdGVz",
-            "LnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJzEhsKCW1hcF93aWR0",
-            "aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgKIAEoBVIJbWFwSGVp",
-            "Z2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9pZBgBIAEoCVIId2lubmVy",
-            "SWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJbmFycmF0aXZlGAMgASgJ",
-            "UgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9p",
-            "bnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3Rv",
-            "Y29sLlYxYgZwcm90bzM="));
+            "GAQgASgJUgVvd25lchInCg90ZXJyaXRvcnlfb3duZXIYDiABKAlSDnRlcnJp",
+            "dG9yeU93bmVyEiMKDWJ1aWxkaW5nX3R5cGUYBSABKAlSDGJ1aWxkaW5nVHlw",
+            "ZRIfCgtidWlsZGluZ19ocBgGIAEoBVIKYnVpbGRpbmdIcBIdCgp3YWxsX2xl",
+            "dmVsGAcgASgFUgl3YWxsTGV2ZWwSIgoNbXlfdW5pdF9jb3VudBgIIAEoBVIL",
+            "bXlVbml0Q291bnQSKAoQZW5lbXlfdW5pdF9jb3VudBgJIAEoBVIOZW5lbXlV",
+            "bml0Q291bnQSGQoIaGFzX3JvYWQYCiABKAhSB2hhc1JvYWQSKgoRaXNfcmVz",
+            "b3VyY2VfcG9pbnQYCyABKAhSD2lzUmVzb3VyY2VQb2ludBIjCg1yZXNvdXJj",
+            "ZV90eXBlGAwgASgJUgxyZXNvdXJjZVR5cGUSIAoMaXNfc2FmZV96b25lGA0g",
+            "ASgIUgppc1NhZmVab25lIqcBCghVbml0VmlldxIOCgJpZBgBIAEoCVICaWQS",
+            "GAoHZmFjdGlvbhgCIAEoCVIHZmFjdGlvbhIbCgl1bml0X3R5cGUYAyABKAlS",
+            "CHVuaXRUeXBlEg4KAmhwGAQgASgFUgJocBIVCgZtYXhfaHAYBSABKAVSBW1h",
+            "eEhwEi0KA3BvcxgGIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9u",
+            "UgNwb3MiwQIKClBsYXllclZpZXcSDgoCaWQYASABKAlSAmlkEhoKCHVzZXJu",
+            "YW1lGAIgASgJUgh1c2VybmFtZRI8CglyZXNvdXJjZXMYAyABKAsyHi5wYW5v",
+            "cHRlcy5wcm90by52MS5SZXNvdXJjZUJhZ1IJcmVzb3VyY2VzEh8KC3Rva2Vu",
+            "c19sZWZ0GAQgASgFUgp0b2tlbnNMZWZ0EiUKDmN1cnJlbnRfcG9saWN5GAUg",
+            "ASgJUg1jdXJyZW50UG9saWN5EiQKDm1haW5fY2FzdGxlX2hwGAYgASgFUgxt",
+            "YWluQ2FzdGxlSHASIgoNbWF4X2Nhc3RsZV9ocBgHIAEoBVILbWF4Q2FzdGxl",
+            "SHASNwoJd2FyX3pvbmVzGAggAygLMhoucGFub3B0ZXMucHJvdG8udjEuV2Fy",
+            "Wm9uZVIId2FyWm9uZXMihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlkEhIK",
+            "BG5hbWUYAiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJZHMS",
+            "HAoJZGlyZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUY",
+            "BSABKAlSCnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUYASAB",
+            "KAlSBHJvbGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMgASgF",
+            "UgdhYmlsaXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSKT",
+            "AwoLTXNnR2FtZUluaXQSFwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQKDnlv",
+            "dXJfcGxheWVyX2lkGAIgASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgDIAEo",
+            "BVIEdHVybhIUCgVwaGFzZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSADKAsy",
+            "Gy5wYW5vcHRlcy5wcm90by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5pdHMY",
+            "BiADKAsyGy5wYW5vcHRlcy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMSOgoJ",
+            "bXlfcGxheWVyGAcgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVyVmll",
+            "d1IIbXlQbGF5ZXISPQoJbWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMucHJv",
+            "dG8udjEuTWluaXN0ZXJWaWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRoGAkg",
+            "ASgFUghtYXBXaWR0aBIdCgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWlnaHQi",
+            "YAoLTXNnR2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJUgh3aW5uZXJJZBIW",
+            "CgZyZWFzb24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRpdmUYAyABKAlSCW5h",
+            "cnJhdGl2ZUJTWjpnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVy",
+            "bmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wu",
+            "VjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "Owner", "BuildingType", "BuildingHp", "WallLevel", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "Owner", "TerritoryOwner", "BuildingType", "BuildingHp", "WallLevel", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "TokensLeft", "CurrentPolicy", "MainCastleHp", "MaxCastleHp", "WarZones" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
@@ -121,6 +122,7 @@ namespace Panoptes.Protocol.V1 {
       pos_ = other.pos_ != null ? other.pos_.Clone() : null;
       terrain_ = other.terrain_;
       owner_ = other.owner_;
+      territoryOwner_ = other.territoryOwner_;
       buildingType_ = other.buildingType_;
       buildingHp_ = other.buildingHp_;
       wallLevel_ = other.wallLevel_;
@@ -190,6 +192,21 @@ namespace Panoptes.Protocol.V1 {
       get { return owner_; }
       set {
         owner_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "territory_owner" field.</summary>
+    public const int TerritoryOwnerFieldNumber = 14;
+    private string territoryOwner_ = "";
+    /// <summary>
+    /// player_id or ""
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TerritoryOwner {
+      get { return territoryOwner_; }
+      set {
+        territoryOwner_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -332,6 +349,7 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(Pos, other.Pos)) return false;
       if (Terrain != other.Terrain) return false;
       if (Owner != other.Owner) return false;
+      if (TerritoryOwner != other.TerritoryOwner) return false;
       if (BuildingType != other.BuildingType) return false;
       if (BuildingHp != other.BuildingHp) return false;
       if (WallLevel != other.WallLevel) return false;
@@ -352,6 +370,7 @@ namespace Panoptes.Protocol.V1 {
       if (pos_ != null) hash ^= Pos.GetHashCode();
       if (Terrain.Length != 0) hash ^= Terrain.GetHashCode();
       if (Owner.Length != 0) hash ^= Owner.GetHashCode();
+      if (TerritoryOwner.Length != 0) hash ^= TerritoryOwner.GetHashCode();
       if (BuildingType.Length != 0) hash ^= BuildingType.GetHashCode();
       if (BuildingHp != 0) hash ^= BuildingHp.GetHashCode();
       if (WallLevel != 0) hash ^= WallLevel.GetHashCode();
@@ -431,6 +450,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(104);
         output.WriteBool(IsSafeZone);
       }
+      if (TerritoryOwner.Length != 0) {
+        output.WriteRawTag(114);
+        output.WriteString(TerritoryOwner);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -493,6 +516,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(104);
         output.WriteBool(IsSafeZone);
       }
+      if (TerritoryOwner.Length != 0) {
+        output.WriteRawTag(114);
+        output.WriteString(TerritoryOwner);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -514,6 +541,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (Owner.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Owner);
+      }
+      if (TerritoryOwner.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TerritoryOwner);
       }
       if (BuildingType.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingType);
@@ -568,6 +598,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.Owner.Length != 0) {
         Owner = other.Owner;
+      }
+      if (other.TerritoryOwner.Length != 0) {
+        TerritoryOwner = other.TerritoryOwner;
       }
       if (other.BuildingType.Length != 0) {
         BuildingType = other.BuildingType;
@@ -670,6 +703,10 @@ namespace Panoptes.Protocol.V1 {
             IsSafeZone = input.ReadBool();
             break;
           }
+          case 114: {
+            TerritoryOwner = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -742,6 +779,10 @@ namespace Panoptes.Protocol.V1 {
           }
           case 104: {
             IsSafeZone = input.ReadBool();
+            break;
+          }
+          case 114: {
+            TerritoryOwner = input.ReadString();
             break;
           }
         }

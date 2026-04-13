@@ -181,6 +181,14 @@ namespace Panoptes.Presentation.UI.Domestic
             mapInputHandler?.CancelCurrentMode();
         }
 
+        public void SetCancelButtonVisible(bool visible)
+        {
+            if (cancelButton != null)
+            {
+                cancelButton.gameObject.SetActive(visible);
+            }
+        }
+
         public void SelectGovernanceMode()
         {
             SetMode(PanelMode.Governance, true);

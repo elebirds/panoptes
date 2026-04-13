@@ -177,6 +177,48 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        public bool FocusWorldPoint(Vector3 worldPoint, bool snapInstantly = true)
+        {
+            if (_camera == null)
+            {
+                _camera = GetComponent<Camera>();
+                if (_camera == null)
+                {
+                    _camera = Camera.main;
+                }
+            }
+
+            if (_camera == null)
+            {
+                return false;
+            }
+
+            var targetGroundPoint = new Vector3(worldPoint.x, boundsGroundY, worldPoint.z);
+            if (TryProjectViewportPointToGround(new Vector2(0.5f, 0.5f), Vector3.zero, out var currentCenterGround))
+            {
+                var delta = targetGroundPoint - currentCenterGround;
+                delta.y = 0f;
+                _targetPosition += delta;
+            }
+            else
+            {
+                _targetPosition = new Vector3(targetGroundPoint.x, _targetPosition.y, targetGroundPoint.z);
+            }
+
+            if (clampToBounds)
+            {
+                ApplyBounds(1f / 60f, true);
+            }
+
+            if (snapInstantly)
+            {
+                transform.position = _targetPosition;
+                _moveVelocity = Vector3.zero;
+            }
+
+            return true;
+        }
+
         // ===== Zoom Runtime API (for UI panel bindings) =====
         // Suggested slider convention: 0 = far, 1 = near.
         public void SetZoomNormalized(float normalized)

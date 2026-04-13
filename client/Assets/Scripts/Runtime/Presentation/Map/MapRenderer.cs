@@ -83,6 +83,7 @@ namespace Panoptes.Presentation.Map
         [Header("Runtime Helpers")]
         [SerializeField] private bool autoEnsureRuntimeControllers = true;
         [SerializeField] private bool autoFocusCameraOnMapBuild = false;
+        [SerializeField] private bool autoFocusCameraOnMyBaseVehicleOnMapBuild = true;
         [SerializeField] private bool autoApplyCameraBoundsOnMapBuild = false;
         [SerializeField] private bool autoForceGameplayCameraPoseOnMapBuild = false;
 
@@ -106,11 +107,16 @@ namespace Panoptes.Presentation.Map
         [Header("Units")]
         [SerializeField] private UnitView unitPrefab;
         [SerializeField] private Transform unitsRoot;
+        [SerializeField] private bool useDedicatedBaseVehiclePrefab = true;
+        [SerializeField] private string baseVehiclePrefabResourcePath = "Prefabs/Units/BaseVehicle";
+        [SerializeField] private string[] baseVehicleUnitTypes = { "settler", "pioneer", "expander", "engineer" };
         [SerializeField] private bool spawnDebugUnitsWhenNoUnits = false;
         [SerializeField] private string[] debugFactions = { "blue", "red", "green", "yellow" };
 
         [Header("Debug Generation (Local Only)")]
         [SerializeField] private bool generateDebugMapOnStart = false;
+        [SerializeField] private bool generateDebugTerritoriesOnStart = false;
+        [SerializeField] private bool generateDebugBuildingsOnStart = false;
         [SerializeField] private int debugMapWidth = 30;
         [SerializeField] private int debugMapHeight = 30;
         [SerializeField] private int debugBuildingsPerType = 2;
@@ -131,6 +137,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, UnitView> _unitViews = new();
         private readonly Dictionary<string, string> _unitNodeById = new();
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
+        private UnitView _baseVehiclePrefabCache;
 
         private readonly List<UnitDto> _jsonUnits = new();
         private StaticCatalogCache _catalogCache;
@@ -205,16 +212,41 @@ namespace Panoptes.Presentation.Map
                 cam.gameObject.AddComponent<TopDownCameraController>();
             }
 
-            if (UnityEngine.Object.FindAnyObjectByType<DebugUnitSpawnHotkey>() == null)
-            {
-                var go = new GameObject("DebugUnitSpawnHotkey");
-                go.AddComponent<DebugUnitSpawnHotkey>();
-            }
-
             if (UnityEngine.Object.FindAnyObjectByType<CastleHpBarOverlayController>() == null)
             {
                 var go = new GameObject("CastleHpBarOverlayController");
                 go.AddComponent<CastleHpBarOverlayController>();
+            }
+
+            var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
+            if (unitInfoPanel == null)
+            {
+                var canvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
+                var go = new GameObject(
+                    "UnitInfoPanel",
+                    typeof(RectTransform),
+                    typeof(UnitInfoActionRegistry),
+                    typeof(SettlerUnitActionRegistrar),
+                    typeof(CastleBuildingActionRegistrar),
+                    typeof(UnitInfoPanelController));
+                if (canvas != null)
+                {
+                    go.transform.SetParent(canvas.transform, false);
+                }
+                return;
+            }
+
+            if (unitInfoPanel.GetComponent<UnitInfoActionRegistry>() == null)
+            {
+                unitInfoPanel.gameObject.AddComponent<UnitInfoActionRegistry>();
+            }
+            if (unitInfoPanel.GetComponent<SettlerUnitActionRegistrar>() == null)
+            {
+                unitInfoPanel.gameObject.AddComponent<SettlerUnitActionRegistrar>();
+            }
+            if (unitInfoPanel.GetComponent<CastleBuildingActionRegistrar>() == null)
+            {
+                unitInfoPanel.gameObject.AddComponent<CastleBuildingActionRegistrar>();
             }
         }
 
@@ -231,37 +263,11 @@ namespace Panoptes.Presentation.Map
                 var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
                 Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
 
-                if (preferLocalMapWhenBackendHasNoTerritory &&
-                    !HasSufficientTerritoryAndCastles(backendNodes) &&
-                    TryLoadMapFromLocalFallback())
-                {
-                    Debug.Log("[MapRenderer] Backend map missing territory/castle layout. Switched to local fallback map.");
-                    return;
-                }
-
                 PrepareRuntimeRoots();
                 BuildFromNodes(backendNodes);
                 return;
             }
-
-            Debug.Log("[MapRenderer] Backend nodes empty, falling back to static catalog.");
-            if (autoEnsureRuntimeControllers)
-            {
-                EnsureRuntimeControllers();
-            }
-            if (TryLoadMapFromStaticCatalog())
-            {
-                return;
-            }
-
-            if (generateDebugMapOnStart)
-            {
-                Debug.LogWarning("[MapRenderer] Static catalog unavailable, generate local debug map.");
-                BuildDebugMap();
-                return;
-            }
-
-            Debug.LogWarning("[MapRenderer] Static catalog map not available yet.");
+            Debug.LogError("[MapRenderer] Cannot build map: backend node list is empty.");
         }
 
         private void SubscribeServerMapConfig()
@@ -293,7 +299,6 @@ namespace Panoptes.Presentation.Map
             {
                 return;
             }
-            TryLoadMapFromStaticCatalog();
         }
 
         private bool TryLoadMapFromStaticCatalog()
@@ -431,6 +436,23 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        public bool ApplyNodeSnapshot(NodeDto node)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(node.Id))
+            {
+                return false;
+            }
+
+            _nodeStates[node.Id] = node;
+
+            if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
+            {
+                view.Bind(node);
+            }
+
+            return true;
+        }
+
         public bool TryGetNodeView(string nodeId, out NodeView nodeView)
         {
             return _tileViews.TryGetValue(nodeId, out nodeView) && nodeView != null;
@@ -455,6 +477,11 @@ namespace Panoptes.Presentation.Map
             }
 
             territoryOwner = NormalizeToken(nodeState.TerritoryOwner);
+            if (string.IsNullOrEmpty(territoryOwner))
+            {
+                // Backward compatibility: old protocol may not send territory_owner.
+                territoryOwner = NormalizeToken(nodeState.Owner);
+            }
             return !string.IsNullOrEmpty(territoryOwner);
         }
 
@@ -566,11 +593,10 @@ namespace Panoptes.Presentation.Map
             if (isGhost)
             {
                 nodeView.SetBuildingGhost(buildingType, ownerId, ghostColor ?? new Color(0.6f, 1f, 0.6f, 0.9f));
+                return true;
             }
-            else
-            {
-                nodeView.SetBuilding(buildingType, ownerId, hp, false);
-            }
+
+            nodeView.SetBuilding(buildingType, ownerId, hp, false);
 
             if (_nodeStates.TryGetValue(nodeId, out var state) && state != null)
             {
@@ -750,8 +776,15 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            ApplyDebugTerritories(nodes, mapWidth, mapHeight);
-            PlaceDebugBuildings(nodes, rng);
+            if (generateDebugTerritoriesOnStart)
+            {
+                ApplyDebugTerritories(nodes, mapWidth, mapHeight);
+            }
+
+            if (generateDebugBuildingsOnStart)
+            {
+                PlaceDebugBuildings(nodes, rng);
+            }
             return nodes;
         }
 
@@ -848,8 +881,9 @@ namespace Panoptes.Presentation.Map
         {
             var r = rng.NextDouble();
             if (r < 0.08d) return "river";
-            if (r < 0.22d) return "forest";
-            if (r < 0.34d) return "mountain";
+            if (r < 0.24d) return "forest";
+            if (r < 0.40d) return "mountain";
+            if (r < 0.54d) return "snow";
             return "plain";
         }
 
@@ -1058,11 +1092,18 @@ namespace Panoptes.Presentation.Map
                 _nodeStates[node.Id] = node;
             }
 
-            if (autoFocusCameraOnMapBuild)
+            RebuildUnitsForCurrentSource();
+
+            var focusedOnBaseVehicle = false;
+            if (autoFocusCameraOnMyBaseVehicleOnMapBuild)
+            {
+                focusedOnBaseVehicle = TryFocusCameraOnMyBaseVehicle();
+            }
+
+            if (!focusedOnBaseVehicle && autoFocusCameraOnMapBuild)
             {
                 FocusCameraToCenter();
             }
-            RebuildUnitsForCurrentSource();
         }
 
         private void PrepareRuntimeRoots()
@@ -1322,7 +1363,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var instance = CreateUnitInstance();
+            var instance = CreateUnitInstance(unit);
             instance.transform.SetParent(EnsureUnitsRoot(), false);
             var worldPos = nodeView.UnitAnchor != null
                 ? nodeView.UnitAnchor.position
@@ -1355,8 +1396,14 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
-        private UnitView CreateUnitInstance()
+        private UnitView CreateUnitInstance(UnitDto unit)
         {
+            var dedicatedPrefab = ResolveDedicatedUnitPrefab(unit);
+            if (dedicatedPrefab != null)
+            {
+                return Instantiate(dedicatedPrefab);
+            }
+
             if (unitPrefab != null)
             {
                 return Instantiate(unitPrefab);
@@ -1372,6 +1419,46 @@ namespace Panoptes.Presentation.Map
                 view = go.AddComponent<UnitView>();
             }
             return view;
+        }
+
+        private UnitView ResolveDedicatedUnitPrefab(UnitDto unit)
+        {
+            if (!useDedicatedBaseVehiclePrefab || unit == null)
+            {
+                return null;
+            }
+
+            var unitType = NormalizeToken(unit.Type);
+            if (!IsBaseVehicleUnitType(unitType))
+            {
+                return null;
+            }
+
+            if (_baseVehiclePrefabCache == null && !string.IsNullOrWhiteSpace(baseVehiclePrefabResourcePath))
+            {
+                _baseVehiclePrefabCache = Resources.Load<UnitView>(baseVehiclePrefabResourcePath.Trim());
+            }
+
+            return _baseVehiclePrefabCache;
+        }
+
+        private bool IsBaseVehicleUnitType(string unitType)
+        {
+            if (string.IsNullOrWhiteSpace(unitType) || baseVehicleUnitTypes == null || baseVehicleUnitTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(unitType);
+            for (var i = 0; i < baseVehicleUnitTypes.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(baseVehicleUnitTypes[i]), System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Transform EnsureTilesRoot()
@@ -1501,6 +1588,102 @@ namespace Panoptes.Presentation.Map
             {
                 cameraController.SnapTargetToCurrentPosition();
             }
+        }
+
+        private bool TryFocusCameraOnMyBaseVehicle()
+        {
+            var cache = GameStateCache.Instance;
+            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID))
+            {
+                return false;
+            }
+
+            var myPlayerId = NormalizeToken(cache.MyPlayerID);
+            UnitView targetUnit = null;
+
+            foreach (var pair in _unitViews)
+            {
+                var unitView = pair.Value;
+                if (unitView == null)
+                {
+                    continue;
+                }
+
+                if (!string.Equals(NormalizeToken(unitView.Faction), myPlayerId, System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (!IsBaseVehicleUnitType(unitView.UnitType))
+                {
+                    continue;
+                }
+
+                targetUnit = unitView;
+                break;
+            }
+
+            if (targetUnit == null)
+            {
+                return false;
+            }
+
+            var cam = Camera.main;
+            if (cam == null)
+            {
+                return false;
+            }
+
+            if (autoForceGameplayCameraPoseOnMapBuild)
+            {
+                EnsureGameplayCameraPose(cam);
+            }
+
+            var targetPos = targetUnit.transform.position;
+            var cameraController = cam.GetComponent<TopDownCameraController>();
+            if (cameraController != null)
+            {
+                if (autoApplyCameraBoundsOnMapBuild && TryGetWorldBounds(out var minX, out var maxX, out var minZ, out var maxZ))
+                {
+                    cameraController.SetWorldBounds(minX, maxX, minZ, maxZ);
+                    cameraController.SetBoundsGroundY(plainElevation);
+                }
+
+                return cameraController.FocusWorldPoint(targetPos, true);
+            }
+
+            cam.transform.position = new Vector3(targetPos.x, cam.transform.position.y, targetPos.z);
+            return true;
+        }
+
+        private bool TryGetWorldBounds(out float minX, out float maxX, out float minZ, out float maxZ)
+        {
+            minX = float.MaxValue;
+            maxX = float.MinValue;
+            minZ = float.MaxValue;
+            maxZ = float.MinValue;
+
+            if (_tileViews.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var pair in _tileViews)
+            {
+                var tile = pair.Value;
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                var pos = tile.transform.position;
+                if (pos.x < minX) minX = pos.x;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.z < minZ) minZ = pos.z;
+                if (pos.z > maxZ) maxZ = pos.z;
+            }
+
+            return minX <= maxX && minZ <= maxZ;
         }
 
         private static void EnsureGameplayCameraPose(Camera cam)

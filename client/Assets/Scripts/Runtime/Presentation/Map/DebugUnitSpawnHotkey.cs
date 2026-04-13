@@ -19,7 +19,7 @@ namespace Panoptes.Presentation.Map
     public sealed class DebugUnitSpawnHotkey : MonoBehaviour
     {
         [Header("Switch")]
-        [SerializeField] private bool enableHotkey = true;
+        [SerializeField] private bool enableHotkey = false;
 
         [Header("Input")]
         [SerializeField] private KeyCode legacySpawnKey = KeyCode.X;

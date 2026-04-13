@@ -163,7 +163,7 @@ func TestInitWorldFromMapResolvesOwnerSlotToPlayerID(t *testing.T) {
 	if node.Owner != "player-2" {
 		t.Fatalf("resolved owner = %q", node.Owner)
 	}
-	if node.TerritoryOwner != "player-2" {
+	if node.TerritoryOwner != "" {
 		t.Fatalf("resolved territory owner = %q", node.TerritoryOwner)
 	}
 

@@ -48,6 +48,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private bool _positionsInitialized;
         private bool _moveButtonIndependently;
         private Coroutine _animRoutine;
+        public bool IsCollapsed => _isCollapsed;
 
         private void Awake()
         {
@@ -127,6 +128,55 @@ namespace Panoptes.Presentation.UI.Domestic
                 StopCoroutine(_animRoutine);
             }
             _animRoutine = StartCoroutine(AnimateTo(collapsed));
+        }
+
+        public void SetToggleButtonVisible(bool visible)
+        {
+            GameObject target = null;
+            if (toggleButtonRect != null)
+            {
+                target = toggleButtonRect.gameObject;
+            }
+            else if (toggleButton != null)
+            {
+                target = toggleButton.gameObject;
+            }
+
+            if (target == null)
+            {
+                return;
+            }
+
+            // If this component lives on the same object as the toggle button, do not SetActive(false),
+            // otherwise StartCoroutine in this component will fail while inactive.
+            if (ReferenceEquals(target, gameObject))
+            {
+                if (toggleButton != null)
+                {
+                    toggleButton.interactable = visible;
+                }
+
+                var canvasGroup = target.GetComponent<CanvasGroup>();
+                if (canvasGroup == null)
+                {
+                    canvasGroup = target.AddComponent<CanvasGroup>();
+                }
+                canvasGroup.alpha = visible ? 1f : 0f;
+                canvasGroup.interactable = visible;
+                canvasGroup.blocksRaycasts = visible;
+                return;
+            }
+
+            target.SetActive(visible);
+        }
+
+        public float GetPanelWidth()
+        {
+            if (buildPanelRoot == null)
+            {
+                return 0f;
+            }
+            return Mathf.Abs(buildPanelRoot.rect.width);
         }
 
         private void RecalculatePositions()

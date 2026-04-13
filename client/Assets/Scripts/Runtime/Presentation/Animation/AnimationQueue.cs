@@ -110,7 +110,10 @@ namespace Panoptes.Presentation.Animation
 
             yield return UnitMoveAnim.Play(unitView, target, moveDuration, camera, follow);
 
-            map.SetUnitNode(cmd.unitId, cmd.targetNodeId);
+            if (map.TryGetUnitView(cmd.unitId, out var stillAliveUnit) && stillAliveUnit != null)
+            {
+                map.SetUnitNode(cmd.unitId, cmd.targetNodeId);
+            }
 
             if (follow && lockManualCameraInputDuringFollow && camController != null)
             {

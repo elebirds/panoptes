@@ -39,18 +39,29 @@ namespace Panoptes.Presentation.Animation
 
             duration = Mathf.Max(0.01f, duration);
             var elapsed = 0f;
-            unitView.SetMovingVisual(true, 1f, initialDir);
+            if (unitView != null)
+            {
+                unitView.SetMovingVisual(true, 1f, initialDir);
+            }
             var prevPos = startUnitPos;
 
             while (elapsed < duration)
             {
+                if (unitView == null)
+                {
+                    yield break;
+                }
+
                 elapsed += Time.deltaTime;
                 var t = Mathf.Clamp01(elapsed / duration);
 
                 // Move unit.
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;
-                unitView.SetMovingVisual(true, 1f, unitPos - prevPos);
+                if (unitView != null)
+                {
+                    unitView.SetMovingVisual(true, 1f, unitPos - prevPos);
+                }
                 prevPos = unitPos;
 
                 // Follow camera using the unit's original relative offset.
@@ -60,6 +71,11 @@ namespace Panoptes.Presentation.Animation
                 }
 
                 yield return null;
+            }
+
+            if (unitView == null)
+            {
+                yield break;
             }
 
             unitView.transform.position = targetWorldPos;

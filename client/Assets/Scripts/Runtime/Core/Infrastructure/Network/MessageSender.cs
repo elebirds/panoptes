@@ -36,5 +36,17 @@ namespace Panoptes.Core.Infrastructure.Network
 
             network.Send(message);
         }
+
+        public static void SendRaw(string messageType, string payloadJson)
+        {
+            var network = NetworkManager.Instance;
+            if (network == null)
+            {
+                Debug.LogWarning($"[MessageSender] SendRaw ignored: NetworkManager.Instance is null for {messageType}.");
+                return;
+            }
+
+            network.SendRaw(messageType, payloadJson);
+        }
     }
 }

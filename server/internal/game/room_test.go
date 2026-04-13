@@ -105,7 +105,7 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 			{ID: "spawn_p2", X: 17, Y: 10, Terrain: "plain"},
 			{ID: "K10", X: 10, Y: 9, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", NodeName: "龙脊"},
 		},
-		NamedNodes: map[string]string{"K10": "龙脊"},
+		NamedNodes:    map[string]string{"K10": "龙脊"},
 		CentralPoints: []string{"K10"},
 	}))
 
@@ -142,8 +142,9 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	if initMsg.GetYourPlayerId() != "player-1" {
 		t.Fatalf("your player id = %q", initMsg.GetYourPlayerId())
 	}
-	if len(initMsg.GetNodes()) != 3 {
-		t.Fatalf("nodes len = %d", len(initMsg.GetNodes()))
+	expectedNodeCount := int(initMsg.GetMapWidth() * initMsg.GetMapHeight())
+	if len(initMsg.GetNodes()) != expectedNodeCount {
+		t.Fatalf("nodes len = %d, expected = %d", len(initMsg.GetNodes()), expectedNodeCount)
 	}
 	if initMsg.GetMapWidth() != 20 || initMsg.GetMapHeight() != 20 {
 		t.Fatalf("map size = %dx%d", initMsg.GetMapWidth(), initMsg.GetMapHeight())
@@ -214,6 +215,69 @@ func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
 	}
 	if items["crystal"] != 99 {
 		t.Fatalf("custom resource missing = %#v", items)
+	}
+}
+
+func TestSetCombatOrder_DeployDoesNotOverrideMoveOrder(t *testing.T) {
+	room := NewRoom("game-order-1", nil, newStubTransport(), &config.Config{})
+	unitID := "unit-1"
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: "N_10_10",
+	})
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID: "player-1",
+		UnitID:   unitID,
+		Action:   domain.CombatActionDeploy,
+	})
+
+	moveOrder, ok := room.combatOrders[unitID]
+	if !ok {
+		t.Fatalf("move order missing for %s", unitID)
+	}
+	if moveOrder.Action != domain.CombatActionMove {
+		t.Fatalf("move action = %s", moveOrder.Action)
+	}
+	if moveOrder.TargetNodeID != "N_10_10" {
+		t.Fatalf("move target = %s", moveOrder.TargetNodeID)
+	}
+
+	deployOrder, ok := room.combatDeployOrders[unitID]
+	if !ok {
+		t.Fatalf("deploy order missing for %s", unitID)
+	}
+	if deployOrder.CenterNodeID != "N_10_10" {
+		t.Fatalf("deploy center = %s", deployOrder.CenterNodeID)
+	}
+}
+
+func TestSetCombatOrder_MoveUpdatesQueuedDeployCenter(t *testing.T) {
+	room := NewRoom("game-order-2", nil, newStubTransport(), &config.Config{})
+	unitID := "unit-2"
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID: "player-1",
+		UnitID:   unitID,
+		Action:   domain.CombatActionDeploy,
+	})
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: "N_7_7",
+	})
+
+	deployOrder, ok := room.combatDeployOrders[unitID]
+	if !ok {
+		t.Fatalf("deploy order missing for %s", unitID)
+	}
+	if deployOrder.CenterNodeID != "N_7_7" {
+		t.Fatalf("deploy center = %s", deployOrder.CenterNodeID)
 	}
 }
 

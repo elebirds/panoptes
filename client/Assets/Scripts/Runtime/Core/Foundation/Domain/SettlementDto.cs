@@ -2,10 +2,19 @@ using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
+    public class DomesticBuildResultDto
+    {
+        public string NodeId;
+        public string BuildingType;
+        public string OwnerId;
+        public int BuildingHp;
+    }
+
     public class DomesticSettlementDto
     {
         public List<string> BuiltNodeIDs;
         public List<string> ChangedNodeIDs;
+        public List<DomesticBuildResultDto> BuiltBuildings;
     }
 
     public class CombatSettlementDto

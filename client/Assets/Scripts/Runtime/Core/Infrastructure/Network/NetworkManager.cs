@@ -147,6 +147,32 @@ namespace Panoptes.Core.Infrastructure.Network
             OnEnvelopeSent?.Invoke(envelope);
         }
 
+        public void SendRaw(string messageType, string payloadJson)
+        {
+            if (!IsConnected)
+            {
+                Debug.LogWarning("[Network] Not connected, dropping raw message");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(messageType))
+            {
+                Debug.LogWarning("[Network] SendRaw ignored: message type is empty.");
+                return;
+            }
+
+            var envelope = new Envelope
+            {
+                Type = messageType.Trim(),
+                Payload = string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson
+            };
+
+            var envelopeJson = JsonFormatter.Default.Format(envelope);
+            var bytes = Encoding.UTF8.GetBytes(envelopeJson);
+            _ws.Send(bytes);
+            OnEnvelopeSent?.Invoke(envelope);
+        }
+
         private void ProcessMessage(byte[] data)
         {
             try
