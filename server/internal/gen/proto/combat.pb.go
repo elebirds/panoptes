@@ -346,6 +346,8 @@ type MsgCombatPhaseStart struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	Tokens        int32                  `protobuf:"varint,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
+	Turn          int32                  `protobuf:"varint,3,opt,name=turn,proto3" json:"turn,omitempty"`
+	Phase         string                 `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -392,6 +394,20 @@ func (x *MsgCombatPhaseStart) GetTokens() int32 {
 		return x.Tokens
 	}
 	return 0
+}
+
+func (x *MsgCombatPhaseStart) GetTurn() int32 {
+	if x != nil {
+		return x.Turn
+	}
+	return 0
+}
+
+func (x *MsgCombatPhaseStart) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
 }
 
 // 部长战区拆解（流式推送，多条chunk）
@@ -564,6 +580,9 @@ func (x *UnitOrder) GetReason() string {
 type MsgCombatSettlement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Events        []*CombatEvent         `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	Turn          int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
+	Phase         string                 `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
+	NextPhase     string                 `protobuf:"bytes,4,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -603,6 +622,27 @@ func (x *MsgCombatSettlement) GetEvents() []*CombatEvent {
 		return x.Events
 	}
 	return nil
+}
+
+func (x *MsgCombatSettlement) GetTurn() int32 {
+	if x != nil {
+		return x.Turn
+	}
+	return 0
+}
+
+func (x *MsgCombatSettlement) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *MsgCombatSettlement) GetNextPhase() string {
+	if x != nil {
+		return x.NextPhase
+	}
+	return ""
 }
 
 type CombatEvent struct {
@@ -1321,10 +1361,12 @@ const file_combat_proto_rawDesc = "" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x12$\n" +
 	"\x0etarget_unit_id\x18\x04 \x01(\tR\ftargetUnitId\"\x11\n" +
-	"\x0fMsgSubmitCombat\"G\n" +
+	"\x0fMsgSubmitCombat\"q\n" +
 	"\x13MsgCombatPhaseStart\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x16\n" +
-	"\x06tokens\x18\x02 \x01(\x05R\x06tokens\"I\n" +
+	"\x06tokens\x18\x02 \x01(\x05R\x06tokens\x12\x12\n" +
+	"\x04turn\x18\x03 \x01(\x05R\x04turn\x12\x14\n" +
+	"\x05phase\x18\x04 \x01(\tR\x05phase\"I\n" +
 	"\x16MsgMinisterCombatChunk\x12\x14\n" +
 	"\x05chunk\x18\x01 \x01(\tR\x05chunk\x12\x19\n" +
 	"\bis_final\x18\x02 \x01(\bR\aisFinal\"O\n" +
@@ -1335,9 +1377,13 @@ const file_combat_proto_rawDesc = "" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1f\n" +
 	"\vtarget_node\x18\x03 \x01(\tR\n" +
 	"targetNode\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\"M\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x96\x01\n" +
 	"\x13MsgCombatSettlement\x126\n" +
-	"\x06events\x18\x01 \x03(\v2\x1e.panoptes.proto.v1.CombatEventR\x06events\"\x81\x05\n" +
+	"\x06events\x18\x01 \x03(\v2\x1e.panoptes.proto.v1.CombatEventR\x06events\x12\x12\n" +
+	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x14\n" +
+	"\x05phase\x18\x03 \x01(\tR\x05phase\x12\x1d\n" +
+	"\n" +
+	"next_phase\x18\x04 \x01(\tR\tnextPhase\"\x81\x05\n" +
 	"\vCombatEvent\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12?\n" +
 	"\tunit_move\x18\x02 \x01(\v2 .panoptes.proto.v1.UnitMoveEventH\x00R\bunitMove\x12H\n" +

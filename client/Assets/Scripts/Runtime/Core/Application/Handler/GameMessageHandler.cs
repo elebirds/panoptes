@@ -1,10 +1,7 @@
-using System;
-using System.Linq;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
-using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Protocol.V1;
 using UnityEngine;
 
@@ -42,6 +39,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
             dispatcher.Register<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
+            dispatcher.Register<ErrorResponse>("ErrorResponse", OnGameError);
 
             _registered = true;
         }
@@ -64,6 +62,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
             dispatcher.Unregister<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
+            dispatcher.Unregister<ErrorResponse>("ErrorResponse", OnGameError);
 
             _registered = false;
         }
@@ -76,21 +75,9 @@ namespace Panoptes.Core.Application.Handler
             }
 
             var cache = GameStateCache.Instance;
-            if (cache != null)
-            {
-                cache.Phase = "domestic";
-                cache.Turn = msg.Turn;
-                cache.UpdateTokens(msg.Tokens);
-                cache.PublishPhaseChanged(new PhaseChangedEvent
-                {
-                    Turn = msg.Turn,
-                    Phase = "domestic",
-                    TimeoutSeconds = msg.Timeout,
-                    TokensLeft = msg.Tokens
-                });
-            }
+            cache?.ApplyDomesticPhaseStart(msg);
 
-            Debug.Log($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens}");
+            Debug.Log($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}");
         }
 
         private static void OnCombatPhaseStart(MsgCombatPhaseStart msg)
@@ -101,20 +88,9 @@ namespace Panoptes.Core.Application.Handler
             }
 
             var cache = GameStateCache.Instance;
-            if (cache != null)
-            {
-                cache.Phase = "combat";
-                cache.UpdateTokens(msg.Tokens);
-                cache.PublishPhaseChanged(new PhaseChangedEvent
-                {
-                    Turn = cache.Turn,
-                    Phase = "combat",
-                    TimeoutSeconds = msg.Timeout,
-                    TokensLeft = msg.Tokens
-                });
-            }
+            cache?.ApplyCombatPhaseStart(msg);
 
-            Debug.Log($"[Game] 战斗阶段开始 timeout={msg.Timeout}s");
+            Debug.Log($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}");
         }
 
         private static void OnTokenResult(MsgTokenResult msg)
@@ -298,18 +274,26 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            var isWinner = SessionManager.Instance != null &&
-                           string.Equals(msg.WinnerId, SessionManager.Instance.PlayerID, StringComparison.Ordinal);
-            GameStateCache.Instance?.PublishGameOver(new GameOverEvent
-            {
-                WinnerID = msg.WinnerId,
-                Reason = msg.Reason,
-                Narrative = msg.Narrative,
-                IsWinner = isWinner
-            });
+            GameStateCache.Instance?.ApplyGameOver(msg);
 
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
             Debug.Log($"[Game] 叙事: {msg.Narrative}");
+        }
+
+        private static void OnGameError(ErrorResponse msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+            {
+                Code = msg.Code,
+                Message = msg.Message
+            });
+
+            Debug.LogWarning($"[Game] 游戏期错误 code={msg.Code} message={msg.Message}");
         }
 
         private static string JoinMap(Google.Protobuf.Collections.MapField<string, string> map)

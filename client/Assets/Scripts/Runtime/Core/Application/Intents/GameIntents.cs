@@ -335,38 +335,38 @@ namespace Panoptes.Core.Application.Intents
 
         private static void Subscribe(GameStateCache cache)
         {
-            cache.OnDomesticSettled += OnDomesticSettled;
-            cache.OnCombatSettled += OnCombatSettled;
+            cache.OnPhaseChanged += OnPhaseChanged;
+            cache.OnGameOver += OnGameOver;
         }
 
         private static void Unsubscribe(GameStateCache cache)
         {
-            cache.OnDomesticSettled -= OnDomesticSettled;
-            cache.OnCombatSettled -= OnCombatSettled;
+            cache.OnPhaseChanged -= OnPhaseChanged;
+            cache.OnGameOver -= OnGameOver;
         }
 
-        private static void OnDomesticSettled(DomesticSettledEvent _)
+        private static void OnPhaseChanged(PhaseChangedEvent evt)
         {
-            if (!ActionLock.IsLocked || _lockSource != LockSource.Domestic)
+            if (!ActionLock.IsLocked || evt == null || !evt.IsInteractive)
             {
                 return;
             }
 
             ActionLock.Release();
             _lockSource = LockSource.None;
-            Debug.Log("[GameIntents] DomesticSettled -> unlock");
+            Debug.Log($"[GameIntents] PhaseChanged -> unlock at {evt.Phase}");
         }
 
-        private static void OnCombatSettled(CombatSettledEvent _)
+        private static void OnGameOver(GameOverEvent _)
         {
-            if (!ActionLock.IsLocked || _lockSource != LockSource.Combat)
+            if (!ActionLock.IsLocked)
             {
                 return;
             }
 
             ActionLock.Release();
             _lockSource = LockSource.None;
-            Debug.Log("[GameIntents] CombatSettled -> unlock");
+            Debug.Log("[GameIntents] GameOver -> unlock");
         }
 
         private static string BuildMinisterDirectiveContent(string directiveType, string actionId)

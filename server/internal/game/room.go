@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strconv"
-	"sort"
 	"strings"
 	"time"
 
@@ -83,7 +83,7 @@ func (r *GameRoom) Start() {
 	if mapID == "" {
 		mapID = catalog.DefaultMapID()
 	}
-	baseMap, err := maploader.LoadMap(catalog, mapID)
+	mapFile, err := maploader.LoadMap(catalog, mapID)
 	if err != nil {
 		slog.Error("地图加载失败", "room_id", r.ID, "error", err)
 		return
@@ -92,28 +92,14 @@ func (r *GameRoom) Start() {
 	world := donburi.NewWorld()
 	playerIDs := r.humanPlayerIDs()
 	usernames := r.humanUsernames()
-	seed := time.Now().UnixNano()
-	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
-	if runtimeMap == nil {
-		slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
-		return
-	}
-	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
+	mapData := maploader.InitWorldFromMap(world, mapFile, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
 
 	r.Turn = r.state.Turn
 	r.Phase = r.state.Phase
-	r.spawnInitialBaseVehicles()
 
-	slog.Info("map initialized",
-		"room_id", r.ID,
-		"base_map_id", baseMap.ID,
-		"runtime_map_id", runtimeMap.ID,
-		"seed", seed,
-		"nodes", len(runtimeMap.Nodes),
-		"spawns", len(runtimeMap.SpawnPoints),
-	)
+	slog.Info("地图加载成功", "room_id", r.ID, "map_id", mapFile.ID, "nodes", len(mapFile.Nodes))
 
 	for _, player := range r.Players {
 		if player.IsBot() {
@@ -125,54 +111,6 @@ func (r *GameRoom) Start() {
 
 	Registry.Register(r)
 	go r.runLoop()
-}
-
-func (r *GameRoom) spawnInitialBaseVehicles() {
-	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
-		return
-	}
-
-	for playerID := range r.state.Players {
-		if strings.TrimSpace(playerID) == "" {
-			continue
-		}
-
-		if hasTerritoryExpansionUnit(r.state.World, playerID) {
-			continue
-		}
-
-		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
-		if !ok {
-			slog.Warn("spawn base vehicle skipped: missing player spawn", "room_id", r.ID, "player_id", playerID)
-			continue
-		}
-
-		entity := ecs.CreateUnit(r.state.World, string(domain.UnitTypeSettler), playerID, spawnPos)
-		if !r.state.World.Valid(entity) {
-			slog.Warn("spawn base vehicle failed: invalid entity", "room_id", r.ID, "player_id", playerID)
-			continue
-		}
-	}
-}
-
-func hasTerritoryExpansionUnit(world donburi.World, playerID string) bool {
-	found := false
-	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
-		if found || entry == nil {
-			return
-		}
-
-		stats := ecs.UnitStatsC.Get(entry)
-		if stats.Faction != playerID {
-			return
-		}
-
-		switch strings.ToLower(strings.TrimSpace(string(stats.Type))) {
-		case "settler", "pioneer", "expander", "engineer":
-			found = true
-		}
-	})
-	return found
 }
 
 func (r *GameRoom) runLoop() {
@@ -197,31 +135,34 @@ func (r *GameRoom) runLoop() {
 			r.ministerEngine.GenerateReports(ctx, r)
 		}
 
-			r.Phase = "domestic"
-			r.state.Phase = "domestic"
-			r.currentPhase = &gamephase.DomesticPhase{}
-			r.currentPhase.Enter(r)
-			r.applyPendingTerritoryDeploys()
-			r.applyQueuedBuildOrdersAtDomesticStart()
-			r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
-			RunDomesticSettlement(r)
-			if r.state.IsOver {
-				break
+		r.currentPhase = &gamephase.DomesticPhase{}
+		r.setPhase(domain.PhaseDomesticPlanning)
+		r.applyPendingTerritoryDeploys()
+		r.applyQueuedBuildOrdersAtDomesticStart()
+		r.currentPhase.Enter(r)
+		r.waitAllSubmit(time.Duration(domesticTimeoutSec) * time.Second)
+		r.setPhase(domain.PhaseDomesticResolving)
+		RunDomesticSettlement(r)
+		if r.state.IsOver {
+			break
 		}
 
 		r.currentPhase = &gamephase.CombatPhase{}
-		r.Phase = "combat"
-		r.state.Phase = "combat"
+		r.setPhase(domain.PhaseCombatPlanning)
 		r.currentPhase.Enter(r)
 		r.waitAllSubmit(time.Duration(combatTimeoutSec) * time.Second)
+		r.setPhase(domain.PhaseCombatResolving)
 		RunCombatSettlement(r)
+		if r.state.IsOver {
+			break
+		}
 
-		r.state.Turn++
-		r.Turn = r.state.Turn
-		if rules.MaxTurns > 0 && r.state.Turn > rules.MaxTurns {
+		if rules.MaxTurns > 0 && r.state.Turn >= rules.MaxTurns {
 			r.handleDraw()
 			break
 		}
+		r.state.Turn++
+		r.Turn = r.state.Turn
 	}
 }
 
@@ -258,16 +199,36 @@ func (r *GameRoom) submitCombat(playerID string) {
 }
 
 func (r *GameRoom) OnHumanSubmitDomestic(playerID string) {
-	r.submitDomestic(playerID)
+	if err := r.OnHumanSubmitDomesticChecked(playerID); err != nil {
+		slog.Warn("忽略非内政阶段提交", "room_id", r.ID, "player_id", playerID, "phase", r.Phase, "error", err)
+	}
 }
 
 func (r *GameRoom) OnHumanSubmitCombat(playerID string) {
+	if err := r.OnHumanSubmitCombatChecked(playerID); err != nil {
+		slog.Warn("忽略非战斗阶段提交", "room_id", r.ID, "player_id", playerID, "phase", r.Phase, "error", err)
+	}
+}
+
+func (r *GameRoom) OnHumanSubmitDomesticChecked(playerID string) error {
+	if !r.isPhase(domain.PhaseDomesticPlanning) {
+		return ErrPhaseMismatch
+	}
+	r.submitDomestic(playerID)
+	return nil
+}
+
+func (r *GameRoom) OnHumanSubmitCombatChecked(playerID string) error {
+	if !r.isPhase(domain.PhaseCombatPlanning) {
+		return ErrPhaseMismatch
+	}
 	r.submitCombat(playerID)
+	return nil
 }
 
 func (r *GameRoom) OnHumanMessage(playerID, msgType string, payload []byte) error {
-	if r.currentPhase == nil {
-		return fmt.Errorf("phase not initialized")
+	if r.currentPhase == nil || !r.isMessageAllowed(msgType) {
+		return ErrPhaseMismatch
 	}
 	return r.currentPhase.HandleMessage(r, playerID, msgType, payload)
 }
@@ -347,8 +308,6 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 
 	if strings.EqualFold(string(order.Action), string(domain.CombatActionDeploy)) {
 		centerNodeID := strings.TrimSpace(order.TargetNodeID)
-		// In combat phase, deploy should always follow the unit's final move target
-		// in the same round (if such a move exists).
 		if moveOrder, ok := r.combatOrders[order.UnitID]; ok &&
 			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
 			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
@@ -384,14 +343,23 @@ func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
 }
 
 func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
-	if phase == "combat" {
+	if phase == domain.PhaseCombatResolving.String() {
 		combatEvents := make([]*pb.CombatEvent, 0, len(events))
 		for _, e := range events {
 			if payload := e.ClientPayload(); payload != nil {
 				combatEvents = append(combatEvents, payload)
 			}
 		}
-		r.Broadcast(&pb.MsgCombatSettlement{Events: combatEvents})
+		nextPhase := domain.PhaseDomesticPlanning.String()
+		if r.shouldStopAfterCombatSettlement() {
+			nextPhase = ""
+		}
+		r.Broadcast(&pb.MsgCombatSettlement{
+			Events:    combatEvents,
+			Turn:      int32(r.state.Turn),
+			Phase:     phase,
+			NextPhase: nextPhase,
+		})
 		return
 	}
 
@@ -405,7 +373,16 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 			continue
 		}
 		playerState := r.state.Players[player.PlayerID()]
-		msg := &pb.MsgDomesticSettlement{Changes: changes}
+		nextPhase := domain.PhaseCombatPlanning.String()
+		if r.state.IsOver {
+			nextPhase = ""
+		}
+		msg := &pb.MsgDomesticSettlement{
+			Changes:   changes,
+			Turn:      int32(r.state.Turn),
+			Phase:     phase,
+			NextPhase: nextPhase,
+		}
 		if playerState != nil {
 			msg.MyResourcesAfter = toProtoResourceBag(playerState.Resources)
 		}
@@ -435,8 +412,13 @@ func toDomesticChange(e event.Event) *pb.DomesticChange {
 		}
 	}
 
+	eventType := reflect.TypeOf(e)
+	typeName := "unknown"
+	if eventType != nil {
+		typeName = eventType.Name()
+	}
 	return &pb.DomesticChange{
-		Type: fmt.Sprintf("%T", e),
+		Type: typeName,
 		Data: map[string]string{
 			"detail": e.String(),
 		},
@@ -462,6 +444,49 @@ func resolveBuiltBuildingHP(buildingType string) int {
 	}
 
 	return fallback
+}
+
+func (r *GameRoom) setPhase(phase domain.TurnPhase) {
+	r.Phase = phase.String()
+	if r.state != nil {
+		r.state.Phase = phase.String()
+	}
+}
+
+func (r *GameRoom) isPhase(phase domain.TurnPhase) bool {
+	if r == nil || r.state == nil {
+		return false
+	}
+	return r.state.Phase == phase.String()
+}
+
+func (r *GameRoom) isMessageAllowed(msgType string) bool {
+	if r == nil || r.state == nil {
+		return false
+	}
+
+	switch r.state.Phase {
+	case domain.PhaseDomesticPlanning.String():
+		switch msgType {
+		case "MsgSetPolicy", "MsgTokenBuild", "MsgTokenReveal", "MsgMinisterDirective", "MsgSubmitDomestic":
+			return true
+		}
+	case domain.PhaseCombatPlanning.String():
+		switch msgType {
+		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgSubmitCombat":
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *GameRoom) shouldStopAfterCombatSettlement() bool {
+	if r == nil || r.state == nil || r.state.IsOver {
+		return true
+	}
+	rules := staticdata.Default().Rules()
+	return rules.MaxTurns > 0 && r.state.Turn >= rules.MaxTurns
 }
 
 func (r *GameRoom) checkGameOver() {
@@ -529,7 +554,6 @@ func (r *GameRoom) collectPendingTerritoryDeploysFromCombatOrders() {
 		}
 
 		centerNodeID := strings.TrimSpace(deployOrder.CenterNodeID)
-		// Use final resolved move target as deploy center when available.
 		if moveOrder, ok := r.state.PendingCombatOrders[unitID]; ok &&
 			strings.EqualFold(string(moveOrder.Action), string(domain.CombatActionMove)) {
 			centerNodeID = strings.TrimSpace(moveOrder.TargetNodeID)
@@ -541,29 +565,6 @@ func (r *GameRoom) collectPendingTerritoryDeploysFromCombatOrders() {
 			CenterNodeID: centerNodeID,
 		}
 	}
-
-	for unitID, order := range r.combatOrders {
-		if r.isVetoed(order.PlayerID, unitID) {
-			continue
-		}
-		if !strings.EqualFold(string(order.Action), string(domain.CombatActionDeploy)) {
-			continue
-		}
-
-		playerID := strings.TrimSpace(order.PlayerID)
-		if playerID == "" {
-			playerID = strings.TrimSpace(r.playerIDForUnit(unitID))
-		}
-		if playerID == "" {
-			continue
-		}
-
-		r.pendingTerritoryDeploys[unitID] = pendingTerritoryDeploy{
-			PlayerID:     playerID,
-			UnitID:       strings.TrimSpace(unitID),
-			CenterNodeID: strings.TrimSpace(order.TargetNodeID),
-		}
-	}
 }
 
 func (r *GameRoom) applyPendingTerritoryDeploys() {
@@ -571,14 +572,7 @@ func (r *GameRoom) applyPendingTerritoryDeploys() {
 		return
 	}
 
-	unitIDs := make([]string, 0, len(r.pendingTerritoryDeploys))
-	for unitID := range r.pendingTerritoryDeploys {
-		unitIDs = append(unitIDs, unitID)
-	}
-	sort.Strings(unitIDs)
-
-	for _, unitID := range unitIDs {
-		order := r.pendingTerritoryDeploys[unitID]
+	for unitID, order := range r.pendingTerritoryDeploys {
 		if order.PlayerID == "" || order.UnitID == "" {
 			delete(r.pendingTerritoryDeploys, unitID)
 			continue
@@ -595,7 +589,6 @@ func (r *GameRoom) applyQueuedBuildOrdersAtDomesticStart() {
 	if r == nil || r.state == nil || r.state.World == nil {
 		return
 	}
-
 	if len(r.pendingBuilds) == 0 {
 		return
 	}
@@ -605,7 +598,6 @@ func (r *GameRoom) applyQueuedBuildOrdersAtDomesticStart() {
 	} else {
 		r.state.PendingBuilds = r.state.PendingBuilds[:0]
 	}
-
 	r.state.PendingBuilds = append(r.state.PendingBuilds, r.pendingBuilds...)
 	r.pendingBuilds = r.pendingBuilds[:0]
 
@@ -619,7 +611,7 @@ func (r *GameRoom) applyQueuedBuildOrdersAtDomesticStart() {
 	}
 
 	if len(events) > 0 {
-		r.broadcastSettlement("domestic", events)
+		r.broadcastSettlement(domain.PhaseDomesticPlanning.String(), events)
 	}
 
 	r.state.PendingBuilds = r.state.PendingBuilds[:0]

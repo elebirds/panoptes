@@ -16,7 +16,7 @@ type DomesticPhase struct {
 	submitCh  chan string
 }
 
-func (p *DomesticPhase) Name() string { return "domestic" }
+func (p *DomesticPhase) Name() string { return domain.PhaseDomesticPlanning.String() }
 
 func (p *DomesticPhase) Enter(room Room) {
 	p.submitted = map[string]bool{}
@@ -26,7 +26,7 @@ func (p *DomesticPhase) Enter(room Room) {
 	for _, player := range state.Players {
 		player.TokensLeft = rules.TokensPerTurn
 	}
-	room.NotifyTurn("domestic")
+	room.NotifyTurn(domain.PhaseDomesticPlanning.String())
 }
 
 func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string, payload []byte) error {

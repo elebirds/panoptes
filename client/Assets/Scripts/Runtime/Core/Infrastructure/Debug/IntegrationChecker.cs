@@ -85,7 +85,7 @@ namespace Panoptes.DebugTools
 
             _initChecked = true;
 
-            if (cache.Phase == "domestic" && cache.TokensLeft == 3)
+            if (cache.Phase == "domestic_planning" && cache.TokensLeft == 3)
             {
                 _domesticPhaseChecked = true;
             }
@@ -107,7 +107,7 @@ namespace Panoptes.DebugTools
                 yield break;
             }
 
-            if (cache.Phase != "domestic")
+            if (cache.Phase != "domestic_planning")
             {
                 Fail($"DomesticPhaseStart 后 Phase 异常: {cache.Phase}");
                 yield break;
