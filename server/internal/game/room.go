@@ -475,10 +475,9 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 	}
 
 	if strings.EqualFold(string(order.Action), string(domain.CombatActionMove)) {
-		if deployOrder, ok := r.combatDeployOrders[order.UnitID]; ok {
-			deployOrder.CenterNodeID = strings.TrimSpace(order.TargetNodeID)
-			r.combatDeployOrders[order.UnitID] = deployOrder
-		}
+		// New move intent overrides and cancels a previously queued deploy intent
+		// for the same unit within the same combat planning window.
+		delete(r.combatDeployOrders, order.UnitID)
 	}
 
 	r.combatOrders[order.UnitID] = order

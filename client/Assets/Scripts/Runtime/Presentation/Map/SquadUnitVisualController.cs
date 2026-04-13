@@ -29,6 +29,8 @@ namespace Panoptes.Presentation.Map
             [NonSerialized] public int moveStateHash;
             [NonSerialized] public bool hasIdleState;
             [NonSerialized] public bool hasMoveState;
+            [NonSerialized] public float lastIdleNormalizedTime;
+            [NonSerialized] public int idleStallFrames;
         }
 
         [Header("Members")]
@@ -39,10 +41,15 @@ namespace Panoptes.Presentation.Map
         [Header("Animation")]
         [SerializeField] private string movingBoolParam = "isMoving";
         [SerializeField] private string speedFloatParam = "moveSpeed";
+        [SerializeField] private string attackTriggerParam = "attack";
+        [SerializeField] private string attackStateName = "Attack";
         [SerializeField] private bool useStateFallbackWhenNoParams = false;
         [SerializeField] private string idleStateName = "Idle";
         [SerializeField] private string moveStateName = "Run";
         [SerializeField] private float stateCrossFadeSeconds = 0.08f;
+        [SerializeField] private bool manualIdleSamplingFallback = true;
+        [SerializeField] private int idleSamplingStallFrameThreshold = 10;
+        [SerializeField] private float idleSamplingPlaybackSpeed = 1f;
 
         [Header("Appearance")]
         [SerializeField] private bool applyAppearanceOnBind = false;
@@ -109,6 +116,11 @@ namespace Panoptes.Presentation.Map
             RefreshMembers();
         }
 
+        private void Update()
+        {
+            TickIdleAnimationFallback();
+        }
+
         public void RefreshMembers(bool forceAutoCollect = false)
         {
             if (formationRoot == null)
@@ -151,6 +163,11 @@ namespace Panoptes.Presentation.Map
 
                 if (!useStateFallbackWhenNoParams || member.hasMoveBoolParam || member.hasMoveSpeedParam)
                 {
+                    if (isMoving)
+                    {
+                        member.idleStallFrames = 0;
+                        member.lastIdleNormalizedTime = -1f;
+                    }
                     continue;
                 }
 
@@ -164,7 +181,93 @@ namespace Panoptes.Presentation.Map
                     member.animator.CrossFade(member.idleStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
                     member.isMoveStatePlaying = false;
                 }
+
+                if (isMoving)
+                {
+                    member.idleStallFrames = 0;
+                    member.lastIdleNormalizedTime = -1f;
+                }
             }
+        }
+
+        public void ForceIdlePose()
+        {
+            if (members == null || members.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.animator == null)
+                {
+                    continue;
+                }
+
+                if (member.hasMoveBoolParam)
+                {
+                    member.animator.SetBool(member.moveBoolHash, false);
+                }
+
+                if (member.hasMoveSpeedParam)
+                {
+                    member.animator.SetFloat(member.moveSpeedHash, 0f);
+                }
+
+                if (member.hasIdleState)
+                {
+                    var state = member.animator.GetCurrentAnimatorStateInfo(0);
+                    if (state.shortNameHash != member.idleStateHash && state.fullPathHash != member.idleStateHash)
+                    {
+                        member.animator.CrossFade(member.idleStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
+                    }
+                }
+                else
+                {
+                    // Fallback: if idle state hash doesn't exist, reset to controller default state.
+                    member.animator.Rebind();
+                    member.animator.Update(0f);
+                }
+
+                member.isMoveStatePlaying = false;
+            }
+        }
+
+        public bool PlayAttackAnimation()
+        {
+            if (members == null || members.Length == 0)
+            {
+                return false;
+            }
+
+            var played = false;
+            var attackTriggerHash = string.IsNullOrWhiteSpace(attackTriggerParam) ? 0 : Animator.StringToHash(attackTriggerParam);
+            var attackStateHash = string.IsNullOrWhiteSpace(attackStateName) ? 0 : Animator.StringToHash(attackStateName);
+
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.animator == null || member.animator.runtimeAnimatorController == null)
+                {
+                    continue;
+                }
+
+                if (attackTriggerHash != 0 && HasAnimatorParameter(member.animator, attackTriggerHash, AnimatorControllerParameterType.Trigger))
+                {
+                    member.animator.SetTrigger(attackTriggerHash);
+                    played = true;
+                    continue;
+                }
+
+                if (attackStateHash != 0 && member.animator.HasState(0, attackStateHash))
+                {
+                    member.animator.CrossFade(attackStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
+                    played = true;
+                }
+            }
+
+            return played;
         }
 
         public void OnUnitBound(string unitId, string unitType, string faction)
@@ -240,6 +343,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var collected = new List<MemberBinding>(8);
+            var seenAnimators = new HashSet<int>();
             for (var i = 0; i < formationRoot.childCount; i++)
             {
                 var child = formationRoot.GetChild(i);
@@ -248,17 +352,32 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var animator = child.GetComponentInChildren<Animator>(true);
-                if (animator == null)
+                // A formation child is often just a container ("Root"), so collect all animators below it.
+                var animators = child.GetComponentsInChildren<Animator>(true);
+                if (animators == null || animators.Length == 0)
                 {
                     continue;
                 }
 
-                collected.Add(new MemberBinding
+                for (var a = 0; a < animators.Length; a++)
                 {
-                    root = child,
-                    animator = animator
-                });
+                    var animator = animators[a];
+                    if (animator == null)
+                    {
+                        continue;
+                    }
+
+                    if (!seenAnimators.Add(animator.GetInstanceID()))
+                    {
+                        continue;
+                    }
+
+                    collected.Add(new MemberBinding
+                    {
+                        root = animator.transform,
+                        animator = animator
+                    });
+                }
             }
 
             if (collected.Count == 0)
@@ -268,6 +387,11 @@ namespace Panoptes.Presentation.Map
                 {
                     var animator = animators[i];
                     if (animator == null)
+                    {
+                        continue;
+                    }
+
+                    if (!seenAnimators.Add(animator.GetInstanceID()))
                     {
                         continue;
                     }
@@ -317,6 +441,9 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                member.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                member.animator.applyRootMotion = false;
+
                 var hasController = member.animator.runtimeAnimatorController != null;
                 if (!hasController)
                 {
@@ -343,6 +470,57 @@ namespace Panoptes.Presentation.Map
                 member.hasIdleState = idleHash != 0 && member.animator.HasState(0, idleHash);
                 member.hasMoveState = moveHash != 0 && member.animator.HasState(0, moveHash);
                 member.isMoveStatePlaying = false;
+                member.lastIdleNormalizedTime = -1f;
+                member.idleStallFrames = 0;
+            }
+        }
+
+        private void TickIdleAnimationFallback()
+        {
+            if (!manualIdleSamplingFallback || members == null || members.Length == 0)
+            {
+                return;
+            }
+
+            var threshold = Mathf.Max(1, idleSamplingStallFrameThreshold);
+            var playbackSpeed = Mathf.Max(0.01f, idleSamplingPlaybackSpeed);
+
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.animator == null || member.animator.runtimeAnimatorController == null || !member.hasIdleState)
+                {
+                    continue;
+                }
+
+                var state = member.animator.GetCurrentAnimatorStateInfo(0);
+                if (state.shortNameHash != member.idleStateHash && state.fullPathHash != member.idleStateHash)
+                {
+                    member.idleStallFrames = 0;
+                    member.lastIdleNormalizedTime = -1f;
+                    continue;
+                }
+
+                var normalized = state.normalizedTime;
+                if (member.lastIdleNormalizedTime >= 0f && Mathf.Abs(normalized - member.lastIdleNormalizedTime) < 0.00001f)
+                {
+                    member.idleStallFrames++;
+                }
+                else
+                {
+                    member.idleStallFrames = 0;
+                }
+
+                member.lastIdleNormalizedTime = normalized;
+                if (member.idleStallFrames < threshold)
+                {
+                    continue;
+                }
+
+                // Fallback path for import/runtime edge cases where idle state time freezes.
+                member.animator.Play(member.idleStateHash, 0, Mathf.Repeat(Time.unscaledTime * playbackSpeed, 1f));
+                member.animator.Update(0f);
+                member.idleStallFrames = 0;
             }
         }
 
