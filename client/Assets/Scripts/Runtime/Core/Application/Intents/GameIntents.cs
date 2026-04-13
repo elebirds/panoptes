@@ -382,8 +382,20 @@ namespace Panoptes.Core.Application.Intents
         private static bool IsCombatPhase()
         {
             var cache = _cache ?? GameStateCache.Instance;
-            return cache != null &&
-                   string.Equals(cache.Phase, "combat", StringComparison.OrdinalIgnoreCase);
+            if (cache == null)
+            {
+                return false;
+            }
+
+            var phase = (cache.Phase ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(phase))
+            {
+                return false;
+            }
+
+            // Compatibility: old "combat" + new phase-state names like "combat_planning".
+            return string.Equals(phase, "combat", StringComparison.Ordinal)
+                   || phase.IndexOf("combat", StringComparison.Ordinal) >= 0;
         }
 
         private static void SendCombatOrder(string unitId, string action, string targetNodeId, string targetUnitId)

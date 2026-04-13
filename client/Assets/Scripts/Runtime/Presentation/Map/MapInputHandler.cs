@@ -1394,7 +1394,27 @@ namespace Panoptes.Presentation.Map
                 phase = GameStateCache.Instance.Phase;
             }
 
-            return string.Equals(NormalizeToken(phase), "combat", StringComparison.Ordinal);
+            var normalized = NormalizeToken(phase);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            if (string.Equals(normalized, "combat", StringComparison.Ordinal) ||
+                string.Equals(normalized, NormalizeToken(GamePhases.CombatPlanning), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            // Compatibility with merged/new phase naming variants.
+            if (normalized.IndexOf("combat", StringComparison.Ordinal) >= 0 &&
+                (normalized.IndexOf("planning", StringComparison.Ordinal) >= 0 ||
+                 normalized.IndexOf("deploy", StringComparison.Ordinal) >= 0))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryRaycastNode(out NodeView nodeView)

@@ -12,6 +12,7 @@ type Room interface {
 	NotifyTurn(phase string)
 	Submit(playerID string)
 	SendToPlayer(playerID string, msg proto.Message) error
+	IsDevMode() bool
 	QueueBuildOrder(order domain.BuildOrder)
 	SetMinisterDirective(playerID string, directive string)
 	SetWarDirectives(playerID string, directives []WarZoneDirective)
