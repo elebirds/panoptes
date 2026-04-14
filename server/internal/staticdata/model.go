@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 定义静态数据目录在服务端运行时使用的数据模型。
+
 package staticdata
 
 type ResourceAmounts map[string]int
@@ -196,8 +202,6 @@ type TerrainDefinition struct {
 
 type Rules struct {
 	TurnTimeLimitPlanning   int `json:"turn_time_limit_planning"`
-	TurnTimeLimitDomestic   int `json:"turn_time_limit_domestic"`
-	TurnTimeLimitCombat     int `json:"turn_time_limit_combat"`
 	TokensPerTurn           int `json:"tokens_per_turn"`
 	TokensRecuperationBonus int `json:"tokens_recuperation_bonus"`
 	MaxTurns                int `json:"max_turns"`
@@ -209,13 +213,6 @@ type Rules struct {
 	TechPointsMax           int `json:"tech_points_max"`
 	BuildPointsPerTurn      int `json:"build_points_per_turn"`
 	BuildPointsMax          int `json:"build_points_max"`
-}
-
-func (r Rules) PlanningTimeoutSeconds() int {
-	if r.TurnTimeLimitPlanning > 0 {
-		return r.TurnTimeLimitPlanning
-	}
-	return r.TurnTimeLimitDomestic + r.TurnTimeLimitCombat
 }
 
 type Minister struct {

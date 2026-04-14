@@ -46,18 +46,13 @@
       "minimum": 0,
       "type": "integer"
     },
-    "turn_time_limit_combat": {
-      "minimum": 1,
-      "type": "integer"
-    },
-    "turn_time_limit_domestic": {
+    "turn_time_limit_planning": {
       "minimum": 1,
       "type": "integer"
     }
   },
   "required": [
-    "turn_time_limit_domestic",
-    "turn_time_limit_combat",
+    "turn_time_limit_planning",
     "tokens_per_turn",
     "tokens_recuperation_bonus",
     "max_turns",

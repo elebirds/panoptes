@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 构建作者源 JSON Schema，约束数据内容与 UI 目录输入格式。
+
 package datagen
 
 import (
@@ -341,8 +347,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 		filepath.Join("content", "rules.schema.json"): schemaDocument(
 			objectSchema(
 				map[string]any{
-					"turn_time_limit_domestic":  intSchema(map[string]any{"minimum": 1}),
-					"turn_time_limit_combat":    intSchema(map[string]any{"minimum": 1}),
+					"turn_time_limit_planning":  intSchema(map[string]any{"minimum": 1}),
 					"tokens_per_turn":           intSchema(map[string]any{"minimum": 0}),
 					"tokens_recuperation_bonus": intSchema(map[string]any{"minimum": 0}),
 					"max_turns":                 intSchema(map[string]any{"minimum": 1}),
@@ -356,7 +361,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 					"build_points_max":          intSchema(map[string]any{"minimum": 0}),
 				},
 				[]string{
-					"turn_time_limit_domestic", "turn_time_limit_combat", "tokens_per_turn",
+					"turn_time_limit_planning", "tokens_per_turn",
 					"tokens_recuperation_bonus", "max_turns", "castle_base_hp", "safe_zone_radius",
 					"occupy_turns", "starting_tech_points", "tech_points_per_turn", "tech_points_max",
 					"build_points_per_turn", "build_points_max",

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证服务端静态目录加载后的查询接口与规则读取结果。
+
 package staticdata_test
 
 import (
@@ -71,7 +77,7 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 
 	rules := catalog.Rules()
-	if rules.CastleBaseHP != 100 || rules.BuildPointsPerTurn != 10 || rules.TechPointsPerTurn != 1 {
+	if rules.CastleBaseHP != 100 || rules.BuildPointsPerTurn != 10 || rules.TechPointsPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
 		t.Fatalf("rules = %#v", rules)
 	}
 
@@ -212,8 +218,7 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
   ]
 }`,
 		"data/content/rules/rules.json": `{
-  "turn_time_limit_domestic": 15,
-  "turn_time_limit_combat": 20,
+  "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
   "tokens_recuperation_bonus": 1,
   "max_turns": 30,
