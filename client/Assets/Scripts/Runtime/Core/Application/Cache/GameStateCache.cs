@@ -2,8 +2,8 @@
  * Project: Panoptes
  * File: GameStateCache.cs
  * Author: Panoptes Team
- * Date: 2026-04-04
- * Description: Server-state mirror cache placeholder.
+ * Date: 2026-04-14
+ * Description: Mirrors server-authoritative game state for planning and settlement playback.
  *************************************************/
 
 using System;
@@ -23,7 +23,7 @@ namespace Panoptes.Core.Application.Cache
 
         public string GameID { get; private set; }
         public string MyPlayerID { get; private set; }
-        public int Turn { get; set; }
+        public int Turn { get; private set; }
         public string Phase { get; private set; }
         public int MapWidth { get; private set; }
         public int MapHeight { get; private set; }
@@ -48,18 +48,15 @@ namespace Panoptes.Core.Application.Cache
         public int EnemyMaxCastleHP { get; private set; }
 
         public event Action OnStateChanged;
-
         public event Action<PhaseChangedEvent> OnPhaseChanged;
         public event Action<ResourcesChangedEvent> OnResourcesChanged;
         public event Action<TokensChangedEvent> OnTokensChanged;
         public event Action<NodeChangedEvent> OnNodeChanged;
         public event Action<UnitsChangedEvent> OnUnitsChanged;
         public event Action<CastleHPChangedEvent> OnCastleHPChanged;
-        public event Action<DomesticSettledEvent> OnDomesticSettled;
-        public event Action<CombatSettledEvent> OnCombatSettled;
+        public event Action<TurnSettledEvent> OnTurnSettled;
         public event Action<MinisterChunkEvent> OnMinisterChunk;
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
-        public event Action<MinisterActionEvent> OnMinisterAction;
         public event Action<TokenResultEvent> OnTokenResult;
         public event Action<RevealResultEvent> OnRevealResult;
         public event Action<GameOverEvent> OnGameOver;
@@ -84,71 +81,62 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
-            GameID = msg.GameId;
-            MyPlayerID = msg.YourPlayerId;
+            GameID = msg.GameId ?? string.Empty;
+            MyPlayerID = msg.YourPlayerId ?? string.Empty;
             Turn = msg.Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticPlanning);
+            Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
             MapWidth = msg.MapWidth;
             MapHeight = msg.MapHeight;
             IsGameOver = false;
 
-            _nodes.Clear();
-            foreach (var node in msg.Nodes)
+            ReplaceNodes(msg.Nodes);
+            ReplaceUnits(msg.Units, publishChanges: false);
+            if (_nodes.Count > 0)
             {
-                if (node == null || string.IsNullOrWhiteSpace(node.Id))
-                {
-                    continue;
-                }
-
-                _nodes[node.Id] = NodeMapper.ToDto(node);
+                var firstNodeId = _nodes.Values.FirstOrDefault()?.Id ?? string.Empty;
+                Debug.Log($"[Game] 游戏初始化 turn={Turn} phase={Phase} nodes={_nodes.Count} first_node={firstNodeId}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Game] 游戏初始化缺少地图节点 turn={Turn} phase={Phase}");
             }
 
-            _units.Clear();
-            foreach (var unit in msg.Units)
-            {
-                if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
-                {
-                    continue;
-                }
+            MyPlayer = msg.MyPlayer?.Clone();
+            TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : 0;
 
-                _units[unit.Id] = UnitMapper.ToDto(unit);
+            _ministers.Clear();
+            if (msg.Ministers != null)
+            {
+                for (var i = 0; i < msg.Ministers.Count; i++)
+                {
+                    if (msg.Ministers[i] != null)
+                    {
+                        _ministers.Add(msg.Ministers[i].Clone());
+                    }
+                }
             }
 
             _castleBuiltBuildings.Clear();
-            _castleResources.Clear();
-
-            MyPlayer = msg.MyPlayer;
-            TokensLeft = msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : 0;
-            SeedCastleResourcesFromInit();
-
-            _ministers.Clear();
-            _ministers.AddRange(msg.Ministers);
-            EnemyCastleHP = 0;
-            EnemyMaxCastleHP = 0;
-
-            var currentResources = SnapshotResources(MyPlayer?.Resources);
+            SeedCastleResourcesFromCurrentState();
+            SynchronizeCastleState();
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
-
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
-                Resources = currentResources,
+                Resources = SnapshotResources(MyPlayer?.Resources),
                 Delta = new ResourceDto()
             }, nameof(OnResourcesChanged));
-
             Fire(OnTokensChanged, new TokensChangedEvent
             {
                 TokensLeft = TokensLeft,
                 Action = "recharge"
             }, nameof(OnTokensChanged));
-
             Fire(OnUnitsChanged, new UnitsChangedEvent
             {
-                Added = _units.Values.ToList(),
+                Added = _units.Values.Select(CloneUnitDto).ToList(),
                 RemovedIDs = new List<string>(),
                 Moved = new List<UnitDto>()
             }, nameof(OnUnitsChanged));
-
             foreach (var node in _nodes.Values)
             {
                 Fire(OnNodeChanged, new NodeChangedEvent
@@ -168,6 +156,132 @@ namespace Panoptes.Core.Application.Cache
                 MyDelta = 0,
                 EnemyDelta = 0
             }, nameof(OnCastleHPChanged));
+
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyPlanningStart(MsgPlanningStart msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            Turn = msg.Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
+            UpdateTokens(msg.Tokens);
+            var draftCache = PlanningDraftCache.EnsureInstance();
+            draftCache?.ClearAll();
+            if (msg.Snapshot != null)
+            {
+                draftCache?.ApplyPlanningSnapshot(msg.Snapshot);
+            }
+
+            PublishPhaseState(Turn, Phase, msg.Timeout, TokensLeft, string.Empty);
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyPlanningSnapshot(MsgPlanningSnapshot msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (msg.Turn > 0)
+            {
+                Turn = msg.Turn;
+            }
+
+            Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
+            PlanningDraftCache.EnsureInstance()?.ApplyPlanningSnapshot(msg);
+            PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyTurnSettlement(MsgTurnSettlement msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
+            var myHpBefore = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
+            var enemyHpBefore = EnemyCastleHP;
+            var oldUnits = CloneUnitMap(_units);
+
+            Turn = msg.Turn > 0 ? msg.Turn : Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.Resolving);
+
+            ReplaceNodes(msg.Nodes);
+            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits);
+
+            if (msg.MyPlayerAfter != null)
+            {
+                MyPlayer = msg.MyPlayerAfter.Clone();
+            }
+
+            TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
+            SeedCastleResourcesFromCurrentState();
+            SynchronizeCastleState();
+
+            var resourcesAfter = SnapshotResources(MyPlayer?.Resources);
+            Fire(OnResourcesChanged, new ResourcesChangedEvent
+            {
+                Resources = resourcesAfter,
+                Delta = ComputeResourceDelta(resourcesBefore, resourcesAfter)
+            }, nameof(OnResourcesChanged));
+
+            if (myHpBefore != (MyPlayer != null ? MyPlayer.MainCastleHp : 0) || enemyHpBefore != EnemyCastleHP)
+            {
+                Fire(OnCastleHPChanged, new CastleHPChangedEvent
+                {
+                    MyHP = MyPlayer != null ? MyPlayer.MainCastleHp : 0,
+                    MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
+                    EnemyHP = EnemyCastleHP,
+                    EnemyMaxHP = EnemyMaxCastleHP,
+                    MyDelta = (MyPlayer != null ? MyPlayer.MainCastleHp : 0) - myHpBefore,
+                    EnemyDelta = EnemyCastleHP - enemyHpBefore
+                }, nameof(OnCastleHPChanged));
+            }
+
+            var settlement = SettlementMapper.ToDto(msg);
+            TrackCastleBuiltBuildings(settlement);
+            PlanningDraftCache.Instance?.ClearAll();
+
+            Fire(OnTurnSettled, new TurnSettledEvent
+            {
+                Settlement = settlement,
+                ResourcesAfter = resourcesAfter,
+                BuiltNodeIDs = settlement?.BuiltNodeIDs ?? new List<string>(),
+                MovedUnitIDs = settlement?.MovedUnitIDs ?? unitChanges.Moved.Select(unit => unit.Id).ToList(),
+                DeadUnitIDs = settlement?.DeadUnitIDs ?? unitChanges.RemovedIDs,
+                CastleDamaged = settlement != null && settlement.CastleDamaged
+            }, nameof(OnTurnSettled));
+
+            PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
+            OnStateChanged?.Invoke();
+        }
+
+        public void ApplyGameOver(MsgGameOver msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            IsGameOver = true;
+            var isWinner = string.Equals(msg.WinnerId, MyPlayerID, StringComparison.Ordinal) ||
+                           string.Equals(msg.WinnerId, MyPlayer != null ? MyPlayer.Id : string.Empty, StringComparison.Ordinal);
+            Fire(OnGameOver, new GameOverEvent
+            {
+                WinnerID = msg.WinnerId,
+                LoserID = ResolveLikelyLoserId(msg.WinnerId, isWinner),
+                Reason = msg.Reason,
+                Narrative = msg.Narrative,
+                IsWinner = isWinner
+            }, nameof(OnGameOver));
 
             OnStateChanged?.Invoke();
         }
@@ -198,317 +312,13 @@ namespace Panoptes.Core.Application.Cache
             }
 
             _nodes[node.Id] = node;
-
             Fire(OnNodeChanged, new NodeChangedEvent
             {
                 NodeID = node.Id,
                 Node = node,
                 ChangeType = "reveal"
             }, nameof(OnNodeChanged));
-
             OnStateChanged?.Invoke();
-        }
-
-        public void ApplyDomesticPhaseStart(MsgDomesticPhaseStart msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            Turn = msg.Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticPlanning);
-            UpdateTokens(msg.Tokens);
-            PublishPhaseState(msg.Turn, Phase, msg.Timeout, msg.Tokens, string.Empty);
-
-            OnStateChanged?.Invoke();
-        }
-
-        public void ApplyCombatPhaseStart(MsgCombatPhaseStart msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            Turn = msg.Turn > 0 ? msg.Turn : Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.CombatPlanning);
-            UpdateTokens(msg.Tokens);
-            PublishPhaseState(Turn, Phase, msg.Timeout, msg.Tokens, string.Empty);
-
-            OnStateChanged?.Invoke();
-        }
-
-        public void ApplyDomesticSettlement(MsgDomesticSettlement msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            Turn = msg.Turn > 0 ? msg.Turn : Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.DomesticResolving);
-
-            var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
-
-            if (MyPlayer != null && msg.MyResourcesAfter != null)
-            {
-                MyPlayer.Resources = msg.MyResourcesAfter.Clone();
-            }
-
-            var settlement = SettlementMapper.ToDto(msg);
-            TrackCastleBuiltBuildings(settlement);
-            ApplyCastleResourceSnapshots(msg);
-
-            if (settlement != null && settlement.ChangedNodeIDs != null)
-            {
-                foreach (var nodeId in settlement.ChangedNodeIDs)
-                {
-                    if (string.IsNullOrWhiteSpace(nodeId) || !_nodes.TryGetValue(nodeId, out var node))
-                    {
-                        continue;
-                    }
-
-                    var changeType = "changed";
-                    var matchedChange = msg.Changes.FirstOrDefault(c => c != null && c.Data != null && c.Data.TryGetValue("node_id", out var id) && id == nodeId);
-                    if (matchedChange != null && !string.IsNullOrWhiteSpace(matchedChange.Type))
-                    {
-                        changeType = matchedChange.Type;
-
-                        if (matchedChange.Data != null)
-                        {
-                            if (matchedChange.Data.TryGetValue("building_type", out var buildingType) && !string.IsNullOrWhiteSpace(buildingType))
-                            {
-                                node.BuildingType = buildingType;
-                            }
-
-                            if (matchedChange.Data.TryGetValue("owner", out var owner) && !string.IsNullOrWhiteSpace(owner))
-                            {
-                                node.Owner = owner;
-                            }
-
-                            if (matchedChange.Data.TryGetValue("building_hp", out var hpText) && int.TryParse(hpText, out var hp))
-                            {
-                                node.BuildingHp = hp;
-                            }
-                            else if (matchedChange.Data.TryGetValue("hp_after", out hpText) && int.TryParse(hpText, out hp))
-                            {
-                                node.BuildingHp = hp;
-                            }
-                            else if (matchedChange.Data.TryGetValue("hp", out hpText) && int.TryParse(hpText, out hp))
-                            {
-                                node.BuildingHp = hp;
-                            }
-                        }
-                    }
-
-                    Fire(OnNodeChanged, new NodeChangedEvent
-                    {
-                        NodeID = nodeId,
-                        Node = node,
-                        ChangeType = changeType
-                    }, nameof(OnNodeChanged));
-                }
-            }
-
-            var resourcesAfter = SnapshotResources(MyPlayer?.Resources);
-            Fire(OnResourcesChanged, new ResourcesChangedEvent
-            {
-                Resources = resourcesAfter,
-                Delta = ComputeResourceDelta(resourcesBefore, resourcesAfter)
-            }, nameof(OnResourcesChanged));
-
-            Fire(OnDomesticSettled, new DomesticSettledEvent
-            {
-                Settlement = settlement,
-                ResourcesAfter = resourcesAfter,
-                BuiltNodeIDs = settlement?.BuiltNodeIDs ?? new List<string>()
-            }, nameof(OnDomesticSettled));
-
-            PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
-
-            OnStateChanged?.Invoke();
-        }
-
-        public void ApplyCombatSettlement(MsgCombatSettlement msg)
-        {
-            if (msg == null || msg.Events == null)
-            {
-                return;
-            }
-
-            Turn = msg.Turn > 0 ? msg.Turn : Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.CombatResolving);
-
-            var myHpBefore = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
-            var enemyHpBefore = EnemyCastleHP;
-
-            for (var i = 0; i < msg.Events.Count; i++)
-            {
-                var evt = msg.Events[i];
-                if (evt == null)
-                {
-                    continue;
-                }
-
-                switch (evt.DataCase)
-                {
-                    case CombatEvent.DataOneofCase.UnitMove:
-                        ApplyUnitMove(evt.UnitMove);
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDamaged:
-                        ApplyUnitDamaged(evt.UnitDamaged);
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDied:
-                        ApplyUnitDied(evt.UnitDied);
-                        break;
-                    case CombatEvent.DataOneofCase.CastleDamaged:
-                        ApplyCastleDamaged(evt.CastleDamaged);
-                        break;
-                    case CombatEvent.DataOneofCase.CastleDestroyed:
-                        ApplyCastleDestroyed(evt.CastleDestroyed);
-                        break;
-                    case CombatEvent.DataOneofCase.BuildingDamaged:
-                        ApplyBuildingDamaged(evt.BuildingDamaged);
-                        break;
-                }
-            }
-
-            var settlement = SettlementMapper.ToDto(msg);
-            var movedIDs = settlement?.MovedUnitIDs ?? new List<string>();
-            var deadIDs = settlement?.DeadUnitIDs ?? new List<string>();
-            var castleDamaged = settlement != null && settlement.CastleDamaged;
-
-            if (castleDamaged)
-            {
-                var myHpAfter = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
-                var enemyHpAfter = EnemyCastleHP;
-                Fire(OnCastleHPChanged, new CastleHPChangedEvent
-                {
-                    MyHP = myHpAfter,
-                    MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
-                    EnemyHP = enemyHpAfter,
-                    EnemyMaxHP = EnemyMaxCastleHP,
-                    MyDelta = myHpAfter - myHpBefore,
-                    EnemyDelta = enemyHpAfter - enemyHpBefore
-                }, nameof(OnCastleHPChanged));
-            }
-
-            var movedUnits = new List<UnitDto>();
-            foreach (var movedID in movedIDs)
-            {
-                if (_units.TryGetValue(movedID, out var moved) && moved != null)
-                {
-                    movedUnits.Add(moved);
-                }
-            }
-
-            Fire(OnUnitsChanged, new UnitsChangedEvent
-            {
-                Added = new List<UnitDto>(),
-                RemovedIDs = deadIDs,
-                Moved = movedUnits
-            }, nameof(OnUnitsChanged));
-
-            Fire(OnCombatSettled, new CombatSettledEvent
-            {
-                Settlement = settlement,
-                MovedUnitIDs = movedIDs,
-                DeadUnitIDs = deadIDs,
-                CastleDamaged = castleDamaged
-            }, nameof(OnCombatSettled));
-
-            PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
-
-            OnStateChanged?.Invoke();
-        }
-
-        public void ApplyGameOver(MsgGameOver msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            IsGameOver = true;
-
-            var isWinner = string.Equals(msg.WinnerId, MyPlayerID, StringComparison.Ordinal) ||
-                           string.Equals(msg.WinnerId, MyPlayer != null ? MyPlayer.Id : string.Empty, StringComparison.Ordinal);
-            var loserId = ResolveLikelyLoserId(msg.WinnerId, isWinner);
-            Fire(OnGameOver, new GameOverEvent
-            {
-                WinnerID = msg.WinnerId,
-                LoserID = loserId,
-                Reason = msg.Reason,
-                Narrative = msg.Narrative,
-                IsWinner = isWinner
-            }, nameof(OnGameOver));
-
-            OnStateChanged?.Invoke();
-        }
-
-        private string ResolveLikelyLoserId(string winnerId, bool isWinner)
-        {
-            var winner = NormalizePlayerId(winnerId);
-            var self = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
-            if (!isWinner && !string.IsNullOrWhiteSpace(self))
-            {
-                return self;
-            }
-
-            var candidates = new HashSet<string>(StringComparer.Ordinal);
-            if (!string.IsNullOrWhiteSpace(self))
-            {
-                candidates.Add(self);
-            }
-
-            foreach (var pair in _nodes)
-            {
-                if (pair.Value == null)
-                {
-                    continue;
-                }
-
-                var owner = NormalizePlayerId(pair.Value.Owner);
-                var territoryOwner = NormalizePlayerId(pair.Value.TerritoryOwner);
-                if (!string.IsNullOrWhiteSpace(owner))
-                {
-                    candidates.Add(owner);
-                }
-                if (!string.IsNullOrWhiteSpace(territoryOwner))
-                {
-                    candidates.Add(territoryOwner);
-                }
-            }
-
-            foreach (var pair in _units)
-            {
-                if (pair.Value == null)
-                {
-                    continue;
-                }
-
-                var owner = NormalizePlayerId(pair.Value.Owner);
-                if (!string.IsNullOrWhiteSpace(owner))
-                {
-                    candidates.Add(owner);
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(winner))
-            {
-                candidates.Remove(winner);
-            }
-
-            foreach (var id in candidates)
-            {
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    return id;
-                }
-            }
-
-            return string.Empty;
         }
 
         public NodeDto GetNode(string nodeId)
@@ -547,6 +357,11 @@ namespace Panoptes.Core.Application.Cache
                 : new ResourceDto();
         }
 
+        public ResourceDto GetMyResources()
+        {
+            return SnapshotResources(MyPlayer?.Resources);
+        }
+
         public void UpsertRuntimeUnit(UnitDto unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
@@ -567,126 +382,6 @@ namespace Panoptes.Core.Application.Cache
             _units.Remove(unitId);
         }
 
-        private void ApplyUnitMove(UnitMoveEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
-            {
-                return;
-            }
-
-            if (!_units.TryGetValue(evt.UnitId, out var unit) || unit == null || evt.To == null)
-            {
-                return;
-            }
-
-            unit.X = evt.To.X;
-            unit.Y = evt.To.Y;
-        }
-
-        private void ApplyUnitDamaged(UnitDamagedEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
-            {
-                return;
-            }
-
-            if (!_units.TryGetValue(evt.UnitId, out var unit) || unit == null)
-            {
-                return;
-            }
-
-            unit.Hp = evt.HpAfter;
-        }
-
-        private void ApplyUnitDied(UnitDiedEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
-            {
-                return;
-            }
-
-            _units.Remove(evt.UnitId);
-        }
-
-        private void ApplyCastleDamaged(CastleDamagedEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
-            {
-                return;
-            }
-
-            var isMyCastle = false;
-
-            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
-            {
-                node.BuildingHp = evt.HpAfter;
-                var owner = node.Owner;
-                if (!string.IsNullOrWhiteSpace(owner))
-                {
-                    var selfID = MyPlayerID;
-                    var selfPlayerID = MyPlayer != null ? MyPlayer.Id : string.Empty;
-                    isMyCastle = string.Equals(owner, selfID, StringComparison.Ordinal) ||
-                                 string.Equals(owner, selfPlayerID, StringComparison.Ordinal);
-                }
-            }
-
-            if (isMyCastle)
-            {
-                if (MyPlayer != null)
-                {
-                    MyPlayer.MainCastleHp = Math.Max(0, evt.HpAfter);
-                }
-            }
-            else
-            {
-                EnemyCastleHP = Math.Max(0, evt.HpAfter);
-                EnemyMaxCastleHP = Math.Max(EnemyMaxCastleHP, EnemyCastleHP);
-            }
-        }
-
-        private void ApplyCastleDestroyed(CastleDestroyedEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
-            {
-                return;
-            }
-
-            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
-            {
-                var selfID = MyPlayerID;
-                var selfPlayerID = MyPlayer != null ? MyPlayer.Id : string.Empty;
-                var isMyCastle = string.Equals(node.Owner, selfID, StringComparison.Ordinal) ||
-                                 string.Equals(node.Owner, selfPlayerID, StringComparison.Ordinal);
-
-                node.BuildingHp = 0;
-                node.Owner = evt.ConquerorFaction;
-                if (isMyCastle)
-                {
-                    if (MyPlayer != null)
-                    {
-                        MyPlayer.MainCastleHp = 0;
-                    }
-                }
-                else
-                {
-                    EnemyCastleHP = 0;
-                }
-            }
-        }
-
-        private void ApplyBuildingDamaged(BuildingDamagedEvent evt)
-        {
-            if (evt == null || string.IsNullOrWhiteSpace(evt.NodeId))
-            {
-                return;
-            }
-
-            if (_nodes.TryGetValue(evt.NodeId, out var node) && node != null)
-            {
-                node.BuildingHp = evt.HpAfter;
-            }
-        }
-
         public void Clear()
         {
             GameID = string.Empty;
@@ -700,86 +395,114 @@ namespace Panoptes.Core.Application.Cache
             _units.Clear();
             _castleBuiltBuildings.Clear();
             _castleResources.Clear();
-            MyPlayer = null;
             _ministers.Clear();
+            MyPlayer = null;
             TokensLeft = 0;
             EnemyCastleHP = 0;
             EnemyMaxCastleHP = 0;
-            CombatDraftCache.Instance?.ClearAll();
+            PlanningDraftCache.Instance?.ClearAll();
             OnStateChanged?.Invoke();
         }
 
-        public void PublishPhaseChanged(PhaseChangedEvent evtArgs)
+        public void PublishPhaseChanged(PhaseChangedEvent evtArgs) => Fire(OnPhaseChanged, evtArgs, nameof(OnPhaseChanged));
+        public void PublishMinisterChunk(MinisterChunkEvent evtArgs) => Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
+        public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs) => Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
+        public void PublishTokenResult(TokenResultEvent evtArgs) => Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
+        public void PublishRevealResult(RevealResultEvent evtArgs) => Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
+        public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
+        public void PublishGameError(GameErrorEvent evtArgs) => Fire(OnGameError, evtArgs, nameof(OnGameError));
+
+        private UnitsChangedEvent ReplaceUnits(System.Collections.Generic.IEnumerable<UnitView> units, bool publishChanges, IDictionary<string, UnitDto> previousUnits = null)
         {
-            Fire(OnPhaseChanged, evtArgs, nameof(OnPhaseChanged));
+            previousUnits ??= CloneUnitMap(_units);
+            var nextUnits = new Dictionary<string, UnitDto>();
+            if (units != null)
+            {
+                foreach (var unit in units)
+                {
+                    if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
+                    {
+                        continue;
+                    }
+
+                    nextUnits[unit.Id] = UnitMapper.ToDto(unit);
+                }
+            }
+
+            _units.Clear();
+            foreach (var pair in nextUnits)
+            {
+                _units[pair.Key] = pair.Value;
+            }
+
+            var added = new List<UnitDto>();
+            var moved = new List<UnitDto>();
+            var removed = new List<string>();
+
+            foreach (var pair in nextUnits)
+            {
+                if (!previousUnits.TryGetValue(pair.Key, out var oldUnit))
+                {
+                    added.Add(CloneUnitDto(pair.Value));
+                    continue;
+                }
+
+                if (oldUnit.X != pair.Value.X || oldUnit.Y != pair.Value.Y || oldUnit.Hp != pair.Value.Hp)
+                {
+                    moved.Add(CloneUnitDto(pair.Value));
+                }
+            }
+
+            foreach (var pair in previousUnits)
+            {
+                if (!nextUnits.ContainsKey(pair.Key))
+                {
+                    removed.Add(pair.Key);
+                }
+            }
+
+            var evt = new UnitsChangedEvent
+            {
+                Added = added,
+                RemovedIDs = removed,
+                Moved = moved
+            };
+
+            if (publishChanges)
+            {
+                Fire(OnUnitsChanged, evt, nameof(OnUnitsChanged));
+            }
+
+            return evt;
         }
 
-        public void PublishMinisterChunk(MinisterChunkEvent evtArgs)
+        private void ReplaceNodes(System.Collections.Generic.IEnumerable<NodeView> nodes)
         {
-            Fire(OnMinisterChunk, evtArgs, nameof(OnMinisterChunk));
-        }
-
-        public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs)
-        {
-            Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
-        }
-
-        public void PublishMinisterAction(MinisterActionEvent evtArgs)
-        {
-            Fire(OnMinisterAction, evtArgs, nameof(OnMinisterAction));
-        }
-
-        public void PublishTokenResult(TokenResultEvent evtArgs)
-        {
-            Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
-        }
-
-        public void PublishRevealResult(RevealResultEvent evtArgs)
-        {
-            Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
-        }
-
-        public void PublishGameOver(GameOverEvent evtArgs)
-        {
-            Fire(OnGameOver, evtArgs, nameof(OnGameOver));
-        }
-
-        public void PublishGameError(GameErrorEvent evtArgs)
-        {
-            Fire(OnGameError, evtArgs, nameof(OnGameError));
-        }
-
-        private void Fire<T>(Action<T> evt, T args, string evtName)
-        {
-            if (evt == null)
+            _nodes.Clear();
+            if (nodes == null)
             {
                 return;
             }
 
-            try
+            foreach (var node in nodes)
             {
-                evt.Invoke(args);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[Cache] 事件 {evtName} 触发异常: {e.Message}\n{e.StackTrace}");
+                if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                var dto = NodeMapper.ToDto(node);
+                _nodes[node.Id] = dto;
+                Fire(OnNodeChanged, new NodeChangedEvent
+                {
+                    NodeID = dto.Id,
+                    Node = dto,
+                    ChangeType = "settlement"
+                }, nameof(OnNodeChanged));
             }
         }
 
-        private static ResourceDto ComputeResourceDelta(ResourceDto before, ResourceDto after)
-        {
-            return new ResourceDto
-            {
-                Ore = after.Ore - before.Ore,
-                Wood = after.Wood - before.Wood,
-                Food = after.Food - before.Food,
-                RefinedOre = after.RefinedOre - before.RefinedOre,
-                EngineerMaterial = after.EngineerMaterial - before.EngineerMaterial,
-                BuildPoints = after.BuildPoints - before.BuildPoints
-            };
-        }
-
-        private void TrackCastleBuiltBuildings(DomesticSettlementDto settlement)
+        private void TrackCastleBuiltBuildings(TurnSettlementDto settlement)
         {
             if (settlement?.BuiltBuildings == null || settlement.BuiltBuildings.Count == 0)
             {
@@ -821,40 +544,23 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
-        private void SeedCastleResourcesFromInit()
+        private void SeedCastleResourcesFromCurrentState()
         {
             _castleResources.Clear();
-
             var playerId = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
             if (string.IsNullOrWhiteSpace(playerId))
             {
                 return;
             }
 
-            var ownedCastleIds = new List<string>();
-            foreach (var pair in _nodes)
-            {
-                var node = pair.Value;
-                if (node == null || string.IsNullOrWhiteSpace(node.Id))
-                {
-                    continue;
-                }
+            var ownedCastleIds = _nodes.Values
+                .Where(node => node != null &&
+                               string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase) &&
+                               string.Equals(NormalizePlayerId(node.Owner, node.TerritoryOwner), playerId, StringComparison.Ordinal))
+                .Select(node => node.Id)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToList();
 
-                if (!string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var owner = NormalizePlayerId(node.Owner, node.TerritoryOwner);
-                if (!string.Equals(owner, playerId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                ownedCastleIds.Add(node.Id.Trim());
-            }
-
-            ownedCastleIds.Sort(StringComparer.Ordinal);
             for (var i = 0; i < ownedCastleIds.Count; i++)
             {
                 _castleResources[ownedCastleIds[i]] = i == 0
@@ -863,29 +569,156 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
-        private void ApplyCastleResourceSnapshots(MsgDomesticSettlement msg)
+        private void SynchronizeCastleState()
         {
-            if (msg == null || msg.Changes == null)
+            var playerId = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
+            EnemyCastleHP = 0;
+            EnemyMaxCastleHP = 0;
+
+            foreach (var node in _nodes.Values)
+            {
+                if (node == null || !string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var owner = NormalizePlayerId(node.Owner, node.TerritoryOwner);
+                if (string.Equals(owner, playerId, StringComparison.Ordinal))
+                {
+                    if (MyPlayer != null)
+                    {
+                        MyPlayer.MainCastleHp = node.BuildingHp;
+                        if (MyPlayer.MaxCastleHp < node.BuildingHp)
+                        {
+                            MyPlayer.MaxCastleHp = node.BuildingHp;
+                        }
+                    }
+
+                    continue;
+                }
+
+                EnemyCastleHP = Math.Max(EnemyCastleHP, node.BuildingHp);
+                EnemyMaxCastleHP = Math.Max(EnemyMaxCastleHP, node.BuildingHp);
+            }
+        }
+
+        private string ResolveLikelyLoserId(string winnerId, bool isWinner)
+        {
+            var winner = NormalizePlayerId(winnerId);
+            var self = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
+            if (!isWinner && !string.IsNullOrWhiteSpace(self))
+            {
+                return self;
+            }
+
+            var candidates = new HashSet<string>(StringComparer.Ordinal);
+            if (!string.IsNullOrWhiteSpace(self))
+            {
+                candidates.Add(self);
+            }
+
+            foreach (var node in _nodes.Values)
+            {
+                var owner = NormalizePlayerId(node?.Owner, node?.TerritoryOwner);
+                if (!string.IsNullOrWhiteSpace(owner))
+                {
+                    candidates.Add(owner);
+                }
+            }
+
+            foreach (var unit in _units.Values)
+            {
+                var owner = NormalizePlayerId(unit?.Owner);
+                if (!string.IsNullOrWhiteSpace(owner))
+                {
+                    candidates.Add(owner);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(winner))
+            {
+                candidates.Remove(winner);
+            }
+
+            return candidates.FirstOrDefault(id => !string.IsNullOrWhiteSpace(id)) ?? string.Empty;
+        }
+
+        private void PublishPhaseState(int turn, string phase, int timeoutSeconds, int tokensLeft, string nextPhase)
+        {
+            Fire(OnPhaseChanged, new PhaseChangedEvent
+            {
+                Turn = turn,
+                Phase = phase,
+                TimeoutSeconds = timeoutSeconds,
+                TokensLeft = tokensLeft,
+                NextPhase = nextPhase,
+                IsInteractive = GamePhases.IsPlanning(phase) && !IsGameOver
+            }, nameof(OnPhaseChanged));
+        }
+
+        private void Fire<T>(Action<T> evt, T args, string evtName)
+        {
+            if (evt == null)
             {
                 return;
             }
 
-            for (var i = 0; i < msg.Changes.Count; i++)
+            try
             {
-                var change = msg.Changes[i];
-                if (change == null || change.Data == null ||
-                    !string.Equals(change.Type, "castle_resource_snapshot", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!change.Data.TryGetValue("castle_id", out var castleId) || string.IsNullOrWhiteSpace(castleId))
-                {
-                    continue;
-                }
-
-                _castleResources[castleId.Trim()] = SnapshotResources(change.Data);
+                evt.Invoke(args);
             }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Cache] 事件 {evtName} 触发异常: {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private static string NormalizePhase(string phase, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(phase) ? fallback : phase.Trim();
+        }
+
+        private static IDictionary<string, UnitDto> CloneUnitMap(IDictionary<string, UnitDto> source)
+        {
+            var clone = new Dictionary<string, UnitDto>();
+            foreach (var pair in source)
+            {
+                clone[pair.Key] = CloneUnitDto(pair.Value);
+            }
+
+            return clone;
+        }
+
+        private static UnitDto CloneUnitDto(UnitDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new UnitDto
+            {
+                Id = source.Id,
+                Type = source.Type,
+                Owner = source.Owner,
+                X = source.X,
+                Y = source.Y,
+                Hp = source.Hp,
+                MaxHp = source.MaxHp
+            };
+        }
+
+        private static ResourceDto ComputeResourceDelta(ResourceDto before, ResourceDto after)
+        {
+            return new ResourceDto
+            {
+                Ore = after.Ore - before.Ore,
+                Wood = after.Wood - before.Wood,
+                Food = after.Food - before.Food,
+                RefinedOre = after.RefinedOre - before.RefinedOre,
+                EngineerMaterial = after.EngineerMaterial - before.EngineerMaterial,
+                BuildPoints = after.BuildPoints - before.BuildPoints
+            };
         }
 
         private static ResourceDto SnapshotResources(ResourceBag bag)
@@ -930,43 +763,6 @@ namespace Panoptes.Core.Application.Cache
             return resources;
         }
 
-        private static ResourceDto SnapshotResources(IDictionary<string, string> data)
-        {
-            var resources = new ResourceDto();
-            if (data == null)
-            {
-                return resources;
-            }
-
-            resources.Ore = ReadInt(data, "ore");
-            resources.Wood = ReadInt(data, "wood");
-            resources.Food = ReadInt(data, "food");
-            resources.RefinedOre = ReadInt(data, "refined_ore");
-            resources.EngineerMaterial = ReadInt(data, "engineer_material");
-            resources.BuildPoints = ReadInt(data, "build_points");
-            return resources;
-        }
-
-        private static int ReadInt(IDictionary<string, string> data, string key)
-        {
-            return data.TryGetValue(key, out var value) && int.TryParse(value, out var amount)
-                ? amount
-                : 0;
-        }
-
-        private static string NormalizePlayerId(params string[] candidates)
-        {
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                if (!string.IsNullOrWhiteSpace(candidates[i]))
-                {
-                    return candidates[i].Trim();
-                }
-            }
-
-            return string.Empty;
-        }
-
         private static ResourceDto CloneResources(ResourceDto source)
         {
             if (source == null)
@@ -985,22 +781,17 @@ namespace Panoptes.Core.Application.Cache
             };
         }
 
-        private void PublishPhaseState(int turn, string phase, int timeoutSeconds, int tokensLeft, string nextPhase)
+        private static string NormalizePlayerId(params string[] candidates)
         {
-            Fire(OnPhaseChanged, new PhaseChangedEvent
+            for (var i = 0; i < candidates.Length; i++)
             {
-                Turn = turn,
-                Phase = phase,
-                TimeoutSeconds = timeoutSeconds,
-                TokensLeft = tokensLeft,
-                NextPhase = nextPhase,
-                IsInteractive = GamePhases.IsPlanning(phase) && !IsGameOver
-            }, nameof(OnPhaseChanged));
-        }
+                if (!string.IsNullOrWhiteSpace(candidates[i]))
+                {
+                    return candidates[i].Trim();
+                }
+            }
 
-        private static string NormalizePhase(string phase, string fallback)
-        {
-            return string.IsNullOrWhiteSpace(phase) ? fallback : phase;
+            return string.Empty;
         }
     }
 }

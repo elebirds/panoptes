@@ -14,6 +14,15 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
         private readonly string _lobbyPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbyPanelController.cs");
         private readonly string _roomPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/RoomPanelController.cs");
+        private readonly string _gamePhasesPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Foundation/Domain/GamePhases.cs");
+        private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
+        private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
+        private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
+        private readonly string _gameSceneAssetPath = Path.GetFullPath("Assets/Scenes/Game.unity");
+        private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
+        private readonly string _unitInfoPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs");
+        private readonly string _unitOrdersPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/UnitOrdersPanel.cs");
+        private readonly string _runtimeScriptsRoot = Path.GetFullPath("Assets/Scripts/Runtime");
 
         [TearDown]
         public void TearDown()
@@ -74,7 +83,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             gameInitType.GetProperty("GameId")?.SetValue(gameInit, "game-1");
             gameInitType.GetProperty("YourPlayerId")?.SetValue(gameInit, "player-1");
             gameInitType.GetProperty("Turn")?.SetValue(gameInit, 1);
-            gameInitType.GetProperty("Phase")?.SetValue(gameInit, "domestic_planning");
+            gameInitType.GetProperty("Phase")?.SetValue(gameInit, "planning");
             playerViewType.GetProperty("TokensLeft")?.SetValue(playerView, 3);
             gameInitType.GetProperty("MyPlayer")?.SetValue(gameInit, playerView);
 
@@ -123,6 +132,9 @@ namespace Panoptes.Tests.EditMode.Lobby
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
             StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
+            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content);
+            Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
+                "Managers 不应再挂载 CombatDraftCache。");
             StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
             StringAssert.Contains("EnsureOptionalErrorToast(managers);", content);
             StringAssert.Contains("EnsureOptionalConfirmDialog(managers);", content);
@@ -192,6 +204,142 @@ namespace Panoptes.Tests.EditMode.Lobby
             LogAssert.NoUnexpectedReceived();
             controller.RefreshFromCache();
             LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
+        public void GamePhases_ShouldOnlyExposePlanningAndResolving()
+        {
+            Assert.That(File.Exists(_gamePhasesPath), Is.True, "GamePhases.cs 不存在。");
+
+            var content = File.ReadAllText(_gamePhasesPath);
+            StringAssert.Contains("public const string Planning = \"planning\";", content);
+            StringAssert.Contains("public const string Resolving = \"resolving\";", content);
+            Assert.That(content, Does.Not.Contain("DomesticPlanning"));
+            Assert.That(content, Does.Not.Contain("CombatPlanning"));
+            Assert.That(content, Does.Not.Contain("DomesticResolving"));
+            Assert.That(content, Does.Not.Contain("CombatResolving"));
+        }
+
+        [Test]
+        public void GameSceneController_ShouldBootstrapUnifiedPlanningAndSettlementPresentation()
+        {
+            Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
+
+            var content = File.ReadAllText(_gameSceneControllerPath);
+            StringAssert.Contains("EnsureComponent<SettlementTimeline>(canvas.transform, \"SettlementTimeline\");", content);
+            StringAssert.Contains("EnsureComponent<TurnReportPanel>(canvas.transform, \"TurnReportPanel\");", content);
+            StringAssert.Contains("EnsureRuntimeComponent<SettlementPlaybackController>(\"SettlementPlaybackController\");", content);
+            Assert.That(content, Does.Not.Contain("EnsureComponent<StrategicPanel>"),
+                "Game 场景不应再装配 StrategicPanel。");
+            Assert.That(content, Does.Not.Contain("EnsureComponent<UnitOrdersPanel>"),
+                "Game 场景不应再装配独立 UnitOrdersPanel。");
+            Assert.That(content, Does.Not.Contain("MicroPanel"));
+            Assert.That(content, Does.Not.Contain("OrderReviewPanel"));
+            Assert.That(content, Does.Not.Contain("CombatPlaybackController"));
+        }
+
+        [Test]
+        public void MapInputHandler_ShouldOnlyIssueMoveOrders_FromAuthoritativePreview()
+        {
+            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_mapInputHandlerPath);
+            StringAssert.Contains("TryIssueAuthoritativeMoveOrder(node.NodeId)", content,
+                "移动点击应只通过服务端权威 preview 结果发单。");
+            StringAssert.Contains("TryGetCurrentMovePreview", content,
+                "MapInputHandler 应读取当前服务端 preview，而不是继续走本地规则。");
+            StringAssert.Contains("ResolveMovePreviewErrorMessage", content,
+                "无效 preview 应给出明确反馈。");
+            Assert.That(content, Does.Not.Contain("Backward-compatible quick move"),
+                "不应继续保留基于本地高亮的快速移动兼容壳。");
+            Assert.That(content, Does.Not.Contain("moveRange = 4"),
+                "不应继续使用本地固定移动范围假高亮。");
+        }
+
+        [Test]
+        public void MapRenderer_GameRuntime_ShouldNotFallbackToLocalOrConfiguredMaps()
+        {
+            Assert.That(File.Exists(_mapRendererPath), Is.True, "MapRenderer.cs 不存在。");
+
+            var content = File.ReadAllText(_mapRendererPath);
+            StringAssert.Contains("BuildBackendGameMap();", content,
+                "Game 运行态应通过单独的后端权威建图入口渲染地图。");
+            Assert.That(content, Does.Not.Contain("HasSufficientTerritoryAndCastles(backendNodes)"),
+                "Game 运行态不应再根据 territory/castle 完整度决定是否回退本地地图。");
+            Assert.That(content, Does.Not.Contain("if (TryLoadConfiguredMap())"),
+                "Game 运行态不应再尝试从配置或本地 fallback 地图建图。");
+        }
+
+        [Test]
+        public void GameScene_MapRendererConfig_ShouldDisableRuntimeFallback()
+        {
+            Assert.That(File.Exists(_gameSceneAssetPath), Is.True, "Game.unity 不存在。");
+
+            var content = File.ReadAllText(_gameSceneAssetPath);
+            Assert.That(content, Does.Not.Contain("preferLocalMapWhenBackendHasNoTerritory: 1"),
+                "Game 场景不应再启用 territory 不完整时的本地 fallback。");
+            Assert.That(content, Does.Not.Contain("preferServerPushedMapConfig: 1"),
+                "Game 场景运行时不应再从服务端配置或本地资源选择另一张地图。");
+        }
+
+        [Test]
+        public void StrategicPanel_RuntimeScript_ShouldBeRemoved_AfterCleanup()
+        {
+            Assert.That(File.Exists(_strategicPanelPath), Is.True, "StrategicPanel.cs 占位文件不存在。");
+
+            var content = File.ReadAllText(_strategicPanelPath);
+            Assert.That(content, Does.Not.Contain("class StrategicPanel"),
+                "StrategicPanel 后续要整体重构，当前不应继续保留运行时类型。");
+        }
+
+        [Test]
+        public void UnitInfoPanel_ShouldOwnPerUnitPlanningSummary_AndDirectOrderActions()
+        {
+            Assert.That(File.Exists(_unitInfoPanelPath), Is.True, "UnitInfoPanelController.cs 不存在。");
+
+            var content = File.ReadAllText(_unitInfoPanelPath);
+            StringAssert.Contains("PlanningDraftCache", content,
+                "UnitInfoPanel 应直接消费规划草稿缓存。");
+            StringAssert.Contains("GetOrdersInDisplayOrder", content,
+                "UnitInfoPanel 应展示当前规划中的单位命令摘要。");
+            StringAssert.Contains("BeginMoveSelection", content,
+                "UnitInfoPanel 应直接承载移动命令入口。");
+            StringAssert.Contains("BeginAttackSelection", content,
+                "UnitInfoPanel 应直接承载攻击命令入口。");
+            StringAssert.Contains("IssueHoldOrder", content,
+                "UnitInfoPanel 应直接承载待命命令入口。");
+            StringAssert.Contains("BeginChargeSelection", content,
+                "UnitInfoPanel 应直接承载冲锋命令入口。");
+        }
+
+        [Test]
+        public void UnitOrdersPanel_RuntimeScript_ShouldBeRemoved_AfterMerge()
+        {
+            Assert.That(File.Exists(_unitOrdersPanelPath), Is.True, "UnitOrdersPanel.cs 占位文件不存在。");
+
+            var content = File.ReadAllText(_unitOrdersPanelPath);
+            Assert.That(content, Does.Not.Contain("class UnitOrdersPanel"),
+                "UnitOrdersPanel 已并入 UnitInfoPanelController，不应继续保留独立运行时类型。");
+        }
+
+        [Test]
+        public void RuntimeScripts_ShouldNotUseDeprecatedUnityApis_ThatWereJustRemoved()
+        {
+            Assert.That(Directory.Exists(_runtimeScriptsRoot), Is.True, "Runtime 脚本目录不存在。");
+
+            var scriptPaths = Directory.GetFiles(_runtimeScriptsRoot, "*.cs", SearchOption.AllDirectories);
+            Assert.That(scriptPaths, Is.Not.Empty, "未找到 Runtime 脚本。");
+
+            foreach (var path in scriptPaths)
+            {
+                var content = File.ReadAllText(path);
+                Assert.That(content, Does.Not.Contain("enableWordWrapping"),
+                    $"已废弃的 TMP enableWordWrapping 不应再出现在 {path}。");
+                Assert.That(content, Does.Not.Contain("GetInstanceID("),
+                    $"已废弃的 GetInstanceID 不应再出现在 {path}。");
+                Assert.That(content, Does.Not.Contain("FindObjectsSortMode"),
+                    $"已废弃的 FindObjectsSortMode 重载不应再出现在 {path}。");
+            }
         }
 
         private static void DestroySingleton(string typeName)

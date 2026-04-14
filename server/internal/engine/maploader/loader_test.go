@@ -7,6 +7,8 @@
 package maploader
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/ecs"
@@ -83,6 +85,71 @@ func TestInitWorldFromMapSetsSafeZoneReadyData(t *testing.T) {
 	mapData := InitWorldFromMap(world, mapFile, []string{"player-1"})
 	if mapData.SpawnPoints[0].X != 2 || mapData.SpawnPoints[0].Y != 10 {
 		t.Fatalf("spawn = %#v", mapData.SpawnPoints[0])
+	}
+}
+
+func TestGenerateProceduralMapPreservesBaseNodeIDs(t *testing.T) {
+	base := &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "默认地图",
+		Width:  2,
+		Height: 2,
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain", NodeName: "西北"},
+			{ID: "B1", X: 1, Y: 0, Terrain: "plain"},
+			{ID: "A2", X: 0, Y: 1, Terrain: "plain"},
+			{ID: "B2", X: 1, Y: 1, Terrain: "plain", NodeName: "东南"},
+		},
+		NamedNodes:    map[string]string{"A1": "西北", "B2": "东南"},
+		CentralPoints: []string{"B2"},
+	}
+
+	runtime := GenerateProceduralMap(base, 2, 42)
+	if runtime == nil {
+		t.Fatalf("GenerateProceduralMap() returned nil")
+	}
+
+	gotIDs := make(map[string]struct{}, len(runtime.Nodes))
+	for _, node := range runtime.Nodes {
+		gotIDs[node.ID] = struct{}{}
+	}
+
+	for _, wantID := range []string{"A1", "B1", "A2", "B2"} {
+		if _, ok := gotIDs[wantID]; !ok {
+			t.Fatalf("generated node ids missing %q: %#v", wantID, gotIDs)
+		}
+	}
+	if _, ok := gotIDs["N_0_0"]; ok {
+		t.Fatalf("generated map should preserve base node ids, got fallback id N_0_0")
+	}
+	if runtime.NamedNodes["A1"] != "西北" || runtime.NamedNodes["B2"] != "东南" {
+		t.Fatalf("NamedNodes = %#v", runtime.NamedNodes)
+	}
+	if len(runtime.CentralPoints) != 1 || runtime.CentralPoints[0] != "B2" {
+		t.Fatalf("CentralPoints = %#v", runtime.CentralPoints)
+	}
+}
+
+func TestGenerateProceduralMapKeepsAuthorNodeIDs_ForGeneratedServerMap(t *testing.T) {
+	catalog, err := staticdata.LoadDir(filepath.Join("..", "..", "..", "..", "data", "generated", "server"))
+	if err != nil {
+		t.Fatalf("LoadDir() error = %v", err)
+	}
+
+	base, err := LoadMap(catalog, "initial_4_regions_20x20")
+	if err != nil {
+		t.Fatalf("LoadMap() error = %v", err)
+	}
+
+	runtime := GenerateProceduralMap(base, 4, 20260414)
+	if runtime == nil {
+		t.Fatalf("GenerateProceduralMap() returned nil")
+	}
+
+	for _, node := range runtime.Nodes {
+		if strings.HasPrefix(node.ID, "N_") {
+			t.Fatalf("generated runtime node id should preserve author id, got %q", node.ID)
+		}
 	}
 }
 

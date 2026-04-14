@@ -818,9 +818,9 @@ MonoBehaviour:
   useJsonMapOnStart: 0
   startupMapJson: {fileID: 0}
   autoFillMissingJsonTiles: 0
-  preferLocalMapWhenBackendHasNoTerritory: 1
-  localFallbackMapResourcePath: Data/maps/default.runtime
-  preferServerPushedMapConfig: 1
+  preferLocalMapWhenBackendHasNoTerritory: 0
+  localFallbackMapResourcePath: 
+  preferServerPushedMapConfig: 0
   serverMapConfigKey: mapconfig
   listenServerMapConfigUpdates: 1
   autoEnsureRuntimeControllers: 1
