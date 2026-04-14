@@ -63,43 +63,14 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSetResearchTarget setResearchTarget:
                     frame = PlanningFrame(new PlanningCommand { SetResearchTarget = setResearchTarget });
                     return true;
-                case MsgResearchTechnology researchTechnology:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        SetResearchTarget = new MsgSetResearchTarget
-                        {
-                            TechnologyId = researchTechnology.TechnologyId ?? string.Empty
-                        }
-                    });
-                    return true;
                 case MsgSetBuildingRecipe setBuildingRecipe:
                     frame = PlanningFrame(new PlanningCommand { SetBuildingRecipe = setBuildingRecipe });
                     return true;
                 case MsgBuildStructure buildStructure:
                     frame = PlanningFrame(new PlanningCommand { BuildStructure = buildStructure });
                     return true;
-                case MsgTokenBuild tokenBuild:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        BuildStructure = new MsgBuildStructure
-                        {
-                            NodeId = tokenBuild.NodeId ?? string.Empty,
-                            BuildingType = tokenBuild.BuildingType ?? string.Empty,
-                            CastleId = tokenBuild.CastleId ?? string.Empty
-                        }
-                    });
-                    return true;
                 case MsgRevealNode revealNode:
                     frame = PlanningFrame(new PlanningCommand { RevealNode = revealNode });
-                    return true;
-                case MsgTokenReveal tokenReveal:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        RevealNode = new MsgRevealNode
-                        {
-                            NodeId = tokenReveal.NodeId ?? string.Empty
-                        }
-                    });
                     return true;
                 case MsgSetWarZone setWarZone:
                     frame = PlanningFrame(new PlanningCommand { SetWarZone = setWarZone });
@@ -110,85 +81,17 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSetMinisterDirective setMinisterDirective:
                     frame = PlanningFrame(new PlanningCommand { SetMinisterDirective = setMinisterDirective });
                     return true;
-                case MsgMinisterDirective ministerDirective:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        SetMinisterDirective = new MsgSetMinisterDirective
-                        {
-                            MinisterRole = ministerDirective.MinisterRole ?? string.Empty,
-                            Content = ministerDirective.Content ?? string.Empty
-                        }
-                    });
-                    return true;
                 case MsgIssueUnitOrder issueUnitOrder:
                     frame = PlanningFrame(new PlanningCommand { IssueUnitOrder = issueUnitOrder });
                     return true;
                 case MsgCancelUnitOrder cancelUnitOrder:
                     frame = PlanningFrame(new PlanningCommand { CancelUnitOrder = cancelUnitOrder });
                     return true;
-                case MsgTokenVetoCombat vetoCombat:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        CancelUnitOrder = new MsgCancelUnitOrder
-                        {
-                            UnitId = vetoCombat.UnitId ?? string.Empty
-                        }
-                    });
-                    return true;
-                case MsgCombatOrder combatOrder:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        IssueUnitOrder = new MsgIssueUnitOrder
-                        {
-                            UnitId = combatOrder.UnitId ?? string.Empty,
-                            Action = combatOrder.Action ?? string.Empty,
-                            TargetNodeId = combatOrder.TargetNodeId ?? string.Empty,
-                            TargetUnitId = combatOrder.TargetUnitId ?? string.Empty
-                        }
-                    });
-                    return true;
-                case MsgTokenMicro tokenMicro:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        IssueUnitOrder = new MsgIssueUnitOrder
-                        {
-                            UnitId = tokenMicro.UnitId ?? string.Empty,
-                            Action = "move",
-                            TargetNodeId = tokenMicro.TargetNode ?? string.Empty
-                        }
-                    });
-                    return true;
-                case MsgTokenExpandTerritory expandTerritory:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        IssueUnitOrder = new MsgIssueUnitOrder
-                        {
-                            UnitId = expandTerritory.UnitId ?? string.Empty,
-                            Action = "settle_city",
-                            TargetNodeId = expandTerritory.CenterNodeId ?? string.Empty
-                        }
-                    });
-                    return true;
                 case MsgPlanningPathPreviewRequest planningPreview:
                     frame = PlanningFrame(new PlanningCommand { PlanningPathPreviewRequest = planningPreview });
                     return true;
-                case MsgCombatPathPreviewRequest combatPreview:
-                    frame = PlanningFrame(new PlanningCommand
-                    {
-                        PlanningPathPreviewRequest = new MsgPlanningPathPreviewRequest
-                        {
-                            RequestId = combatPreview.RequestId ?? string.Empty,
-                            UnitId = combatPreview.UnitId ?? string.Empty,
-                            Action = combatPreview.Action ?? string.Empty,
-                            TargetNodeId = combatPreview.TargetNodeId ?? string.Empty
-                        }
-                    });
-                    return true;
                 case MsgSubmitTurn submitTurn:
                     frame = PlanningFrame(new PlanningCommand { SubmitTurn = submitTurn });
-                    return true;
-                case MsgSubmitCombat:
-                    frame = PlanningFrame(new PlanningCommand { SubmitTurn = new MsgSubmitTurn() });
                     return true;
                 default:
                     error = $"unsupported outbound message type: {command.Descriptor.Name}";

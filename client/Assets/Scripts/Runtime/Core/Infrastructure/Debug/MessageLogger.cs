@@ -276,39 +276,21 @@ namespace Panoptes.DebugTools
 
         private static string BuildOutgoingSummary(string msgType, IMessage message)
         {
-            switch (message)
+            return message switch
             {
-                case MsgSetPolicy setPolicy:
-                    return $"policy={setPolicy.Policy}";
-                case MsgTokenBuild tokenBuild:
-                    return $"node={tokenBuild.NodeId} building={tokenBuild.BuildingType}";
-                case MsgBuildStructure buildStructure:
-                    return $"node={buildStructure.NodeId} building={buildStructure.BuildingType}";
-                case MsgTokenExpandTerritory expandTerritory:
-                    return $"unit={expandTerritory.UnitId} center={expandTerritory.CenterNodeId}";
-                case MsgTokenReveal tokenReveal:
-                    return $"node={tokenReveal.NodeId}";
-                case MsgRevealNode revealNode:
-                    return $"node={revealNode.NodeId}";
-                case MsgSetWarZone setWarZone:
-                    return $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}";
-                case MsgWarZoneDirective warZoneDirective:
-                    return $"zone={warZoneDirective.ZoneId} directive={warZoneDirective.Directive}";
-                case MsgCombatOrder combatOrder:
-                    return $"unit={combatOrder.UnitId} action={combatOrder.Action}";
-                case MsgIssueUnitOrder issueUnitOrder:
-                    return $"unit={issueUnitOrder.UnitId} action={issueUnitOrder.Action}";
-                case MsgPlanningPathPreviewRequest planningPreview:
-                    return $"request={planningPreview.RequestId} unit={planningPreview.UnitId} action={planningPreview.Action}";
-                case MsgCombatPathPreviewRequest combatPreview:
-                    return $"request={combatPreview.RequestId} unit={combatPreview.UnitId} action={combatPreview.Action}";
-                case MsgSetMinisterDirective setMinisterDirective:
-                    return $"minister={setMinisterDirective.MinisterRole}";
-                case MsgMinisterDirective ministerDirective:
-                    return $"minister={ministerDirective.MinisterRole}";
-                default:
-                    return msgType;
-            }
+                MsgSetPolicy setPolicy => $"policy={setPolicy.Policy}",
+                MsgBuildStructure buildStructure =>
+                    $"node={buildStructure.NodeId} building={buildStructure.BuildingType}",
+                MsgRevealNode revealNode => $"node={revealNode.NodeId}",
+                MsgSetWarZone setWarZone => $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}",
+                MsgWarZoneDirective warZoneDirective =>
+                    $"zone={warZoneDirective.ZoneId} directive={warZoneDirective.Directive}",
+                MsgIssueUnitOrder issueUnitOrder => $"unit={issueUnitOrder.UnitId} action={issueUnitOrder.Action}",
+                MsgPlanningPathPreviewRequest planningPreview =>
+                    $"request={planningPreview.RequestId} unit={planningPreview.UnitId} action={planningPreview.Action}",
+                MsgSetMinisterDirective setMinisterDirective => $"minister={setMinisterDirective.MinisterRole}",
+                _ => msgType
+            };
         }
     }
 }
