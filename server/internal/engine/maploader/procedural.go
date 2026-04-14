@@ -112,11 +112,13 @@ func GenerateProceduralMap(base *staticdata.MapRuntimeBundle, playerCount int, s
 	}
 
 	spawnPoints := pickSpawnPoints(rng, terrainGrid, width, height, resourceByPos, playerCount)
+	baseNodesByPos := indexBaseNodesByPos(base.Nodes)
 
 	nodes := make([]staticdata.MapRuntimeNode, 0, area)
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			p := mapPoint{X: x, Y: y}
+			sourceNode, hasSourceNode := baseNodesByPos[p]
 			resourceType := ""
 			isResource := false
 			if rt, ok := resourceByPos[p]; ok {
@@ -124,14 +126,24 @@ func GenerateProceduralMap(base *staticdata.MapRuntimeBundle, playerCount int, s
 				resourceType = rt
 			}
 
+			nodeID := makeNodeID(x, y)
+			nodeName := ""
+			if hasSourceNode {
+				if sourceNode.ID != "" {
+					nodeID = sourceNode.ID
+				}
+				nodeName = sourceNode.NodeName
+			}
+
 			nodes = append(nodes, staticdata.MapRuntimeNode{
-				ID:              makeNodeID(x, y),
+				ID:              nodeID,
 				X:               x,
 				Y:               y,
 				Terrain:         terrainGrid[y][x],
 				HasRoad:         false,
 				IsResourcePoint: isResource,
 				ResourceType:    resourceType,
+				NodeName:        nodeName,
 				Owner:           "",
 				TerritoryOwner:  "",
 				BuildingType:    "",
@@ -147,10 +159,29 @@ func GenerateProceduralMap(base *staticdata.MapRuntimeBundle, playerCount int, s
 		Height:        height,
 		Nodes:         nodes,
 		SpawnPoints:   spawnPoints,
-		NamedNodes:    map[string]string{},
-		CentralPoints: []string{},
+		NamedNodes:    cloneNamedNodes(base.NamedNodes),
+		CentralPoints: append([]string(nil), base.CentralPoints...),
 		Tags:          base.Tags,
 	}
+}
+
+func indexBaseNodesByPos(nodes []staticdata.MapRuntimeNode) map[mapPoint]staticdata.MapRuntimeNode {
+	index := make(map[mapPoint]staticdata.MapRuntimeNode, len(nodes))
+	for _, node := range nodes {
+		index[mapPoint{X: node.X, Y: node.Y}] = node
+	}
+	return index
+}
+
+func cloneNamedNodes(src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return map[string]string{}
+	}
+	dst := make(map[string]string, len(src))
+	for key, value := range src {
+		dst[key] = value
+	}
+	return dst
 }
 
 func makeNodeID(x, y int) string {
