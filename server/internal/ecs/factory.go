@@ -133,6 +133,19 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, cast
 			nodeEntry.AddComponent(BuildingC)
 		}
 		BuildingC.SetValue(nodeEntry, comp)
+		if cfg.DefaultRecipeID != "" {
+			if !nodeEntry.HasComponent(BuildingOperationC) {
+				nodeEntry.AddComponent(BuildingOperationC)
+			}
+			requiredTurns := 0
+			if recipe, ok := staticdata.Default().GetRecipe(cfg.DefaultRecipeID); ok {
+				requiredTurns = recipe.DurationTurns
+			}
+			BuildingOperationC.SetValue(nodeEntry, BuildingOperationComp{
+				SelectedRecipeID: cfg.DefaultRecipeID,
+				RequiredTurns:    requiredTurns,
+			})
+		}
 		node := NodeC.Get(nodeEntry)
 		node.Owner = owner
 		return nodeEntry.Entity()

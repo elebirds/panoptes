@@ -33,6 +33,8 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 			order = domain.CombatOrder{PlayerID: stats.Faction, UnitID: stats.ID, Action: domain.CombatActionHold}
 		}
 		order = order.Normalized()
+		attack := effectiveUnitAttack(ctx.State, stats.Faction, stats.Type, stats.Attack)
+		moveRange := effectiveUnitMoveRange(ctx.State, stats.Faction, stats.Type, stats.Speed)
 
 		unit := SnapshotUnit{
 			UnitID:       stats.ID,
@@ -41,10 +43,10 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 			Position:     domain.Position{X: pos.X, Y: pos.Y},
 			HP:           stats.HP,
 			MaxHP:        stats.MaxHP,
-			Attack:       stats.Attack,
+			Attack:       attack,
 			AttackRange:  stats.AttackRange,
-			MoveRange:    stats.Speed,
-			Movement:     buildMovementProfile(stats.Type, caps, stats.Speed),
+			MoveRange:    moveRange,
+			Movement:     buildMovementProfile(stats.Type, caps, moveRange),
 			Capabilities: caps,
 			Order:        order,
 		}

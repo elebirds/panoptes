@@ -34,7 +34,9 @@ func (s *DestroySystem) Run(world donburi.World, state *domain.GameState) []even
 			}
 			if nodeEntry.HasComponent(ecs.BuildingC) {
 				building := ecs.BuildingC.Get(nodeEntry)
-				dmg := int(math.Round(float64(stats.Attack) * ability.Multiplier))
+				attack := effectiveUnitAttack(state, stats.Faction, stats.Type, stats.Attack)
+				multiplier := effectiveUnitDestroyMultiplier(state, stats.Faction, stats.Type, ability.Multiplier)
+				dmg := int(math.Round(float64(attack) * multiplier))
 				if dmg < 1 {
 					dmg = 1
 				}

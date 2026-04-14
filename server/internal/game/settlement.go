@@ -22,6 +22,8 @@ func RunDomesticSettlement(room *GameRoom) {
 	room.checkGameOver()
 
 	room.state.PendingBuilds = room.state.PendingBuilds[:0]
+	room.state.PendingResearchOrders = room.state.PendingResearchOrders[:0]
+	room.state.PendingRecipeSelections = room.state.PendingRecipeSelections[:0]
 	room.state.MinisterBuildOrders = room.state.MinisterBuildOrders[:0]
 }
 

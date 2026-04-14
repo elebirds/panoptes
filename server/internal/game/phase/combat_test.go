@@ -88,6 +88,10 @@ func (r *combatPhaseRoomStub) Submit(string)            {}
 func (r *combatPhaseRoomStub) IsDevMode() bool          { return false }
 func (r *combatPhaseRoomStub) QueueBuildOrder(domain.BuildOrder) {
 }
+func (r *combatPhaseRoomStub) QueueResearchOrder(domain.ResearchOrder) {
+}
+func (r *combatPhaseRoomStub) QueueRecipeSelection(domain.RecipeSelectionOrder) {
+}
 func (r *combatPhaseRoomStub) SetMinisterDirective(string, string) {}
 func (r *combatPhaseRoomStub) SetWarDirectives(string, []WarZoneDirective) {
 }

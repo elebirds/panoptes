@@ -86,7 +86,8 @@ func (p WeightedRoutePlanner) BuildPreview(world donburi.World, state *domain.Ga
 	if entry.HasComponent(ecs.UnitCapabilitiesC) {
 		caps = *ecs.UnitCapabilitiesC.Get(entry)
 	}
-	profile := buildMovementProfile(stats.Type, caps, stats.Speed)
+	moveRange := effectiveUnitMoveRange(state, stats.Faction, stats.Type, stats.Speed)
+	profile := buildMovementProfile(stats.Type, caps, moveRange)
 	goalPos := ecs.PositionC.Get(targetEntry)
 	path, ok := p.FindPath(world, domain.Position{X: pos.X, Y: pos.Y}, domain.Position{X: goalPos.X, Y: goalPos.Y}, profile)
 	if !ok || len(path) == 0 {

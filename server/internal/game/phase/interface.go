@@ -14,6 +14,8 @@ type Room interface {
 	SendToPlayer(playerID string, msg proto.Message) error
 	IsDevMode() bool
 	QueueBuildOrder(order domain.BuildOrder)
+	QueueResearchOrder(order domain.ResearchOrder)
+	QueueRecipeSelection(order domain.RecipeSelectionOrder)
 	SetMinisterDirective(playerID string, directive string)
 	SetWarDirectives(playerID string, directives []WarZoneDirective)
 	SetVetoUnit(playerID string, unitID string)
