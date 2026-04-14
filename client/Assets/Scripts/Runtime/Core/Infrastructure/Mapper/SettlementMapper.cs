@@ -7,179 +7,127 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class SettlementMapper
     {
-        public static DomesticSettlementDto ToDto(MsgDomesticSettlement msg)
+        public static TurnSettlementDto ToDto(MsgTurnSettlement msg)
         {
             if (msg == null)
             {
                 return null;
             }
 
-            var builtBuildings = new List<DomesticBuildResultDto>();
-            var builtNodeIDs = new List<string>();
-            if (msg.Changes != null)
+            var sections = new List<SettlementSectionDto>();
+            var builtNodeIds = new List<string>();
+            var builtBuildings = new List<BuiltStructureDto>();
+            var movedUnitIds = new List<string>();
+            var deadUnitIds = new List<string>();
+            var castleDamaged = false;
+
+            for (var sectionIndex = 0; sectionIndex < msg.Sections.Count; sectionIndex++)
             {
-                foreach (var change in msg.Changes)
-                {
-                    if (change == null || change.Data == null)
-                    {
-                        continue;
-                    }
-
-                    var type = NormalizeToken(change.Type);
-                    if (type != "building_built" && type != "buildingbuiltevent")
-                    {
-                        continue;
-                    }
-
-                    var nodeId = ReadString(change.Data, "node_id", "nodeId");
-                    var buildingType = NormalizeToken(ReadString(change.Data, "building_type", "buildingType"));
-                    if (string.IsNullOrWhiteSpace(nodeId) || string.IsNullOrWhiteSpace(buildingType))
-                    {
-                        continue;
-                    }
-
-                    var ownerId = ReadString(change.Data, "owner", "owner_id", "ownerId");
-                    var castleId = ReadString(change.Data, "castle_id", "castleId");
-                    var hp = ReadInt(change.Data, 100, "building_hp", "hp_after", "hp");
-
-                    builtBuildings.Add(new DomesticBuildResultDto
-                    {
-                        NodeId = nodeId,
-                        BuildingType = buildingType,
-                        OwnerId = ownerId,
-                        CastleId = castleId,
-                        BuildingHp = hp
-                    });
-                    builtNodeIDs.Add(nodeId);
-                }
-            }
-
-            var changedNodeIDs = msg.Changes
-                .Where(c => c != null && c.Data != null)
-                .Select(c => c.Data.TryGetValue("node_id", out var id) ? id : string.Empty)
-                .Where(id => !string.IsNullOrEmpty(id))
-                .ToList();
-
-            return new DomesticSettlementDto
-            {
-                BuiltNodeIDs = builtNodeIDs,
-                ChangedNodeIDs = changedNodeIDs,
-                BuiltBuildings = builtBuildings,
-            };
-        }
-
-        public static CombatSettlementDto ToDto(MsgCombatSettlement msg)
-        {
-            if (msg == null)
-            {
-                return null;
-            }
-
-            var events = new List<CombatEventDto>();
-            for (var i = 0; i < msg.Events.Count; i++)
-            {
-                var evt = msg.Events[i];
-                if (evt == null)
+                var section = msg.Sections[sectionIndex];
+                if (section == null)
                 {
                     continue;
                 }
 
-                switch (evt.DataCase)
+                var sectionName = NormalizeToken(section.Section);
+                var events = new List<TurnEventDto>();
+                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                 {
-                    case CombatEvent.DataOneofCase.UnitMove when evt.UnitMove != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_move",
-                            Sequence = i,
-                            UnitId = evt.UnitMove.UnitId,
-                            FromX = evt.UnitMove.From?.X ?? 0,
-                            FromY = evt.UnitMove.From?.Y ?? 0,
-                            ToX = evt.UnitMove.To?.X ?? 0,
-                            ToY = evt.UnitMove.To?.Y ?? 0,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDamaged when evt.UnitDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_damaged",
-                            Sequence = i,
-                            UnitId = evt.UnitDamaged.UnitId,
-                            Damage = evt.UnitDamaged.Damage,
-                            HpAfter = evt.UnitDamaged.HpAfter,
-                            Source = evt.UnitDamaged.Source,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDied when evt.UnitDied != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_died",
-                            Sequence = i,
-                            UnitId = evt.UnitDied.UnitId,
-                            KillerId = evt.UnitDied.KillerId,
-                            PosX = evt.UnitDied.Pos?.X ?? 0,
-                            PosY = evt.UnitDied.Pos?.Y ?? 0,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.CastleDamaged when evt.CastleDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "castle_damaged",
-                            Sequence = i,
-                            NodeId = evt.CastleDamaged.NodeId,
-                            UnitId = evt.CastleDamaged.AttackerId,
-                            Damage = evt.CastleDamaged.Damage,
-                            HpAfter = evt.CastleDamaged.HpAfter,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.CastleDestroyed when evt.CastleDestroyed != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "castle_destroyed",
-                            Sequence = i,
-                            NodeId = evt.CastleDestroyed.NodeId,
-                            Source = evt.CastleDestroyed.ConquerorFaction,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.Conflict when evt.Conflict != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "conflict",
-                            Sequence = i,
-                            UnitId = evt.Conflict.UnitAId,
-                            EnemyUnitId = evt.Conflict.UnitBId,
-                            ConflictType = evt.Conflict.ConflictType,
-                            PosX = evt.Conflict.Location?.X ?? 0,
-                            PosY = evt.Conflict.Location?.Y ?? 0,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.RoadDestroyed when evt.RoadDestroyed != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "road_destroyed",
-                            Sequence = i,
-                            UnitId = evt.RoadDestroyed.DestroyerId,
-                            NodeId = $"{evt.RoadDestroyed.FromNode}->{evt.RoadDestroyed.ToNode}",
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.BuildingDamaged when evt.BuildingDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "building_damaged",
-                            Sequence = i,
-                            NodeId = evt.BuildingDamaged.NodeId,
-                            Damage = evt.BuildingDamaged.Damage,
-                            HpAfter = evt.BuildingDamaged.HpAfter,
-                        });
-                        break;
+                    var evt = MapEvent(section.Events[eventIndex], sectionName, eventIndex);
+                    if (evt == null)
+                    {
+                        continue;
+                    }
+
+                    events.Add(evt);
+
+                    switch (evt.Type)
+                    {
+                        case "building_built":
+                            if (!string.IsNullOrWhiteSpace(evt.NodeId))
+                            {
+                                builtNodeIds.Add(evt.NodeId);
+                            }
+
+                            builtBuildings.Add(new BuiltStructureDto
+                            {
+                                NodeId = evt.NodeId,
+                                BuildingType = ReadString(evt.Data, "building_type"),
+                                OwnerId = ReadString(evt.Data, "owner"),
+                                CastleId = ReadString(evt.Data, "castle_id"),
+                                BuildingHp = ReadInt(evt.Data, 100, "building_hp", "hp_after", "hp")
+                            });
+                            break;
+                        case "unit_moved":
+                            if (!string.IsNullOrWhiteSpace(evt.UnitId))
+                            {
+                                movedUnitIds.Add(evt.UnitId);
+                            }
+                            break;
+                        case "unit_died":
+                            if (!string.IsNullOrWhiteSpace(evt.UnitId))
+                            {
+                                deadUnitIds.Add(evt.UnitId);
+                            }
+                            break;
+                        case "castle_damaged":
+                            castleDamaged = true;
+                            break;
+                    }
                 }
+
+                sections.Add(new SettlementSectionDto
+                {
+                    Section = sectionName,
+                    Events = events
+                });
             }
 
-            return new CombatSettlementDto
+            return new TurnSettlementDto
             {
-                MovedUnitIDs = events.Where(e => e.Type == "unit_move").Select(e => e.UnitId).ToList(),
-                DeadUnitIDs = events.Where(e => e.Type == "unit_died").Select(e => e.UnitId).ToList(),
-                CastleDamaged = events.Any(e => e.Type == "castle_damaged"),
-                Events = events,
+                Phase = msg.Phase,
+                NextPhase = msg.NextPhase,
+                Sections = sections,
+                BuiltNodeIDs = builtNodeIds.Distinct().ToList(),
+                BuiltBuildings = builtBuildings,
+                MovedUnitIDs = movedUnitIds.Distinct().ToList(),
+                DeadUnitIDs = deadUnitIds.Distinct().ToList(),
+                CastleDamaged = castleDamaged
+            };
+        }
+
+        private static TurnEventDto MapEvent(TurnEvent evt, string section, int sequence)
+        {
+            if (evt == null)
+            {
+                return null;
+            }
+
+            var data = evt.Data != null
+                ? evt.Data.ToDictionary(pair => pair.Key, pair => pair.Value)
+                : new Dictionary<string, string>();
+
+            return new TurnEventDto
+            {
+                Section = section,
+                Type = NormalizeToken(evt.Type),
+                Data = data,
+                UnitId = ReadString(data, "unit_id", "attacker"),
+                TargetUnitId = ReadString(data, "target_unit_id"),
+                EnemyUnitId = ReadString(data, "enemy_unit_id", "unit_b_id"),
+                KillerId = ReadString(data, "killer_id"),
+                NodeId = ReadString(data, "node_id"),
+                Source = ReadString(data, "source", "owner", "player_id", "attacker", "faction"),
+                ConflictType = ReadString(data, "conflict_type"),
+                Damage = ReadInt(data, 0, "damage"),
+                HpAfter = ReadInt(data, 0, "hp_after", "building_hp"),
+                Sequence = sequence,
+                PosX = ReadInt(data, 0, "pos_x"),
+                PosY = ReadInt(data, 0, "pos_y"),
+                FromX = ReadInt(data, 0, "from_x"),
+                FromY = ReadInt(data, 0, "from_y"),
+                ToX = ReadInt(data, 0, "to_x"),
+                ToY = ReadInt(data, 0, "to_y")
             };
         }
 
@@ -227,14 +175,14 @@ namespace Panoptes.Core.Infrastructure.Mapper
                     continue;
                 }
 
-                if (!data.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
+                if (!data.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
                 {
                     continue;
                 }
 
-                if (int.TryParse(raw.Trim(), out var value))
+                if (int.TryParse(value, out var parsed))
                 {
-                    return value;
+                    return parsed;
                 }
             }
 

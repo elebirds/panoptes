@@ -343,7 +343,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var collected = new List<MemberBinding>(8);
-            var seenAnimators = new HashSet<int>();
+            var seenAnimators = new HashSet<Animator>();
             for (var i = 0; i < formationRoot.childCount; i++)
             {
                 var child = formationRoot.GetChild(i);
@@ -367,7 +367,7 @@ namespace Panoptes.Presentation.Map
                         continue;
                     }
 
-                    if (!seenAnimators.Add(animator.GetInstanceID()))
+                    if (!seenAnimators.Add(animator))
                     {
                         continue;
                     }
@@ -391,7 +391,7 @@ namespace Panoptes.Presentation.Map
                         continue;
                     }
 
-                    if (!seenAnimators.Add(animator.GetInstanceID()))
+                    if (!seenAnimators.Add(animator))
                     {
                         continue;
                     }
@@ -532,7 +532,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _variantBuffer.Clear();
-            var visited = new HashSet<int>();
+            var visited = new HashSet<GameObject>();
             var renderers = memberRoot.GetComponentsInChildren<Renderer>(true);
             for (var i = 0; i < renderers.Length; i++)
             {
@@ -548,7 +548,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (!visited.Add(go.GetInstanceID()))
+                if (!visited.Add(go))
                 {
                     continue;
                 }
@@ -962,7 +962,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var visited = new HashSet<int>();
+            var visited = new HashSet<GameObject>();
             var transforms = root.GetComponentsInChildren<Transform>(true);
             for (var i = 0; i < transforms.Length; i++)
             {
@@ -973,7 +973,7 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var go = t.gameObject;
-                if (go == null || !visited.Add(go.GetInstanceID()))
+                if (go == null || !visited.Add(go))
                 {
                     continue;
                 }
@@ -1109,13 +1109,13 @@ namespace Panoptes.Presentation.Map
             }
 
             scored.Sort((a, b) => b.score.CompareTo(a.score));
-            var keepSet = new HashSet<int>();
+            var keepSet = new HashSet<Renderer>();
             for (var i = 0; i < scored.Count && i < rendererCap; i++)
             {
                 var renderer = scored[i].renderer;
                 if (renderer != null)
                 {
-                    keepSet.Add(renderer.GetInstanceID());
+                    keepSet.Add(renderer);
                 }
             }
 
@@ -1127,7 +1127,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var keep = keepSet.Contains(renderer.GetInstanceID());
+                var keep = keepSet.Contains(renderer);
                 renderer.enabled = keep;
 
                 if (!keep)

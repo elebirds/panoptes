@@ -469,7 +469,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var selected = new List<Renderer>(Mathf.Clamp(autoTintRendererLimit, 1, 64));
-            var visited = new HashSet<int>();
+            var visited = new HashSet<Renderer>();
             var limit = Mathf.Max(1, autoTintRendererLimit);
 
             for (var i = 0; i < all.Length; i++)
@@ -480,7 +480,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (!visited.Add(renderer.GetInstanceID()))
+                if (!visited.Add(renderer))
                 {
                     continue;
                 }
