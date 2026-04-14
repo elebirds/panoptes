@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现部长引擎的引擎协调逻辑。
+
 package minister
 
 import (
@@ -19,7 +25,7 @@ import (
 type RuntimeRoom interface {
 	State() *domain.GameState
 	PlayerIDs() []string
-	SendToPlayer(playerID string, msg proto.Message) error
+	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 }
 
 type MinisterEngine struct {
@@ -63,7 +69,7 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "err", err)
 		return
 	}
-	if err := room.SendToPlayer(playerID, &pb.MsgMinisterMetrics{MinisterRole: profile.Role, Metrics: output.Metrics}); err != nil {
+	if err := room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterMetrics{MinisterRole: profile.Role, Metrics: output.Metrics}); err != nil {
 		slog.Warn("send minister metrics failed", "player_id", playerID, "role", profile.Role, "err", err)
 	}
 
@@ -75,7 +81,6 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 		MinisterRole: profile.Role,
 		PlayerID:     playerID,
 		ActionID:     output.ActionID,
-		Actions:      toProtoActions(output.Actions),
 		Report:       output.Report,
 	}.Apply(state.World, state)
 
@@ -85,7 +90,7 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom, playerID, role string, req llm.CompletionRequest) (string, bool) {
 	if e.llmClient == nil {
 		fallback := "目前局势稳定，建议优先巩固补给线并保持战区侦察。"
-		_ = room.SendToPlayer(playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
+		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
 		return fallbackJSON(fallback), true
 	}
 
@@ -95,7 +100,7 @@ func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom,
 	if err != nil {
 		slog.Warn("minister llm stream failed", "player_id", playerID, "role", role, "err", err)
 		fallback := "当前汇报链路拥堵，建议按既定国策稳步推进。"
-		_ = room.SendToPlayer(playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
+		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
 		return fallbackJSON(fallback), true
 	}
 
@@ -105,9 +110,9 @@ func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom,
 			continue
 		}
 		b.WriteString(chunk)
-		_ = room.SendToPlayer(playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: chunk, IsFinal: false})
+		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: chunk, IsFinal: false})
 	}
-	_ = room.SendToPlayer(playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: "", IsFinal: true})
+	_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: "", IsFinal: true})
 	return b.String(), true
 }
 
@@ -146,18 +151,6 @@ func pickProfiles() []MinisterProfile {
 
 func fallbackJSON(report string) string {
 	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
-}
-
-func toProtoActions(actions []MinisterActionItem) []*pb.MinisterActionItem {
-	out := make([]*pb.MinisterActionItem, 0, len(actions))
-	for _, a := range actions {
-		params := make(map[string]string, len(a.Params))
-		for k, v := range a.Params {
-			params[k] = fmt.Sprint(v)
-		}
-		out = append(out, &pb.MinisterActionItem{Type: a.Type, Params: params})
-	}
-	return out
 }
 
 type actionRoom struct {

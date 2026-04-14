@@ -7,101 +7,186 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class SettlementMapper
     {
-        public static DomesticSettlementDto ToDto(MsgDomesticSettlement msg)
+        public static TurnSettlementDto ToDto(MsgTurnSettlement msg)
         {
             if (msg == null)
             {
                 return null;
             }
 
-            var builtNodeIDs = msg.Changes
-                .Where(c => c != null && c.Type == "building_built" && c.Data != null)
-                .Select(c => c.Data.TryGetValue("node_id", out var id) ? id : string.Empty)
-                .Where(id => !string.IsNullOrEmpty(id))
-                .ToList();
+            var sections = new List<SettlementSectionDto>();
+            var builtNodeIds = new List<string>();
+            var builtBuildings = new List<BuiltStructureDto>();
+            var movedUnitIds = new List<string>();
+            var deadUnitIds = new List<string>();
+            var castleDamaged = false;
 
-            var changedNodeIDs = msg.Changes
-                .Where(c => c != null && c.Data != null)
-                .Select(c => c.Data.TryGetValue("node_id", out var id) ? id : string.Empty)
-                .Where(id => !string.IsNullOrEmpty(id))
-                .ToList();
-
-            return new DomesticSettlementDto
+            for (var sectionIndex = 0; sectionIndex < msg.Sections.Count; sectionIndex++)
             {
-                BuiltNodeIDs = builtNodeIDs,
-                ChangedNodeIDs = changedNodeIDs,
-            };
-        }
-
-        public static CombatSettlementDto ToDto(MsgCombatSettlement msg)
-        {
-            if (msg == null)
-            {
-                return null;
-            }
-
-            var events = new List<CombatEventDto>();
-            foreach (var evt in msg.Events)
-            {
-                if (evt == null)
+                var section = msg.Sections[sectionIndex];
+                if (section == null)
                 {
                     continue;
                 }
 
-                switch (evt.DataCase)
+                var sectionName = NormalizeToken(section.Section);
+                var events = new List<TurnEventDto>();
+                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                 {
-                    case CombatEvent.DataOneofCase.UnitMove when evt.UnitMove != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_move",
-                            UnitId = evt.UnitMove.UnitId,
-                            FromX = evt.UnitMove.From?.X ?? 0,
-                            FromY = evt.UnitMove.From?.Y ?? 0,
-                            ToX = evt.UnitMove.To?.X ?? 0,
-                            ToY = evt.UnitMove.To?.Y ?? 0,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDamaged when evt.UnitDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_damaged",
-                            UnitId = evt.UnitDamaged.UnitId,
-                            HpAfter = evt.UnitDamaged.HpAfter,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.UnitDied when evt.UnitDied != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "unit_died",
-                            UnitId = evt.UnitDied.UnitId,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.CastleDamaged when evt.CastleDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "castle_damaged",
-                            NodeId = evt.CastleDamaged.NodeId,
-                            HpAfter = evt.CastleDamaged.HpAfter,
-                        });
-                        break;
-                    case CombatEvent.DataOneofCase.BuildingDamaged when evt.BuildingDamaged != null:
-                        events.Add(new CombatEventDto
-                        {
-                            Type = "building_damaged",
-                            NodeId = evt.BuildingDamaged.NodeId,
-                            HpAfter = evt.BuildingDamaged.HpAfter,
-                        });
-                        break;
+                    var evt = MapEvent(section.Events[eventIndex], sectionName, eventIndex);
+                    if (evt == null)
+                    {
+                        continue;
+                    }
+
+                    events.Add(evt);
+
+                    switch (evt.Type)
+                    {
+                        case "building_built":
+                            if (!string.IsNullOrWhiteSpace(evt.NodeId))
+                            {
+                                builtNodeIds.Add(evt.NodeId);
+                            }
+
+                            builtBuildings.Add(new BuiltStructureDto
+                            {
+                                NodeId = evt.NodeId,
+                                BuildingType = ReadString(evt.Data, "building_type"),
+                                OwnerId = ReadString(evt.Data, "owner"),
+                                CastleId = ReadString(evt.Data, "castle_id"),
+                                BuildingHp = ReadInt(evt.Data, 100, "building_hp", "hp_after", "hp")
+                            });
+                            break;
+                        case "unit_moved":
+                            if (!string.IsNullOrWhiteSpace(evt.UnitId))
+                            {
+                                movedUnitIds.Add(evt.UnitId);
+                            }
+                            break;
+                        case "unit_died":
+                            if (!string.IsNullOrWhiteSpace(evt.UnitId))
+                            {
+                                deadUnitIds.Add(evt.UnitId);
+                            }
+                            break;
+                        case "castle_damaged":
+                            castleDamaged = true;
+                            break;
+                    }
+                }
+
+                sections.Add(new SettlementSectionDto
+                {
+                    Section = sectionName,
+                    Events = events
+                });
+            }
+
+            return new TurnSettlementDto
+            {
+                Phase = msg.Phase,
+                NextPhase = msg.NextPhase,
+                Sections = sections,
+                BuiltNodeIDs = builtNodeIds.Distinct().ToList(),
+                BuiltBuildings = builtBuildings,
+                MovedUnitIDs = movedUnitIds.Distinct().ToList(),
+                DeadUnitIDs = deadUnitIds.Distinct().ToList(),
+                CastleDamaged = castleDamaged
+            };
+        }
+
+        private static TurnEventDto MapEvent(TurnEvent evt, string section, int sequence)
+        {
+            if (evt == null)
+            {
+                return null;
+            }
+
+            var data = evt.Data != null
+                ? evt.Data.ToDictionary(pair => pair.Key, pair => pair.Value)
+                : new Dictionary<string, string>();
+
+            return new TurnEventDto
+            {
+                Section = section,
+                Type = NormalizeToken(evt.Type),
+                Data = data,
+                UnitId = ReadString(data, "unit_id", "attacker"),
+                TargetUnitId = ReadString(data, "target_unit_id"),
+                EnemyUnitId = ReadString(data, "enemy_unit_id", "unit_b_id"),
+                KillerId = ReadString(data, "killer_id"),
+                NodeId = ReadString(data, "node_id"),
+                Source = ReadString(data, "source", "owner", "player_id", "attacker", "faction"),
+                ConflictType = ReadString(data, "conflict_type"),
+                Damage = ReadInt(data, 0, "damage"),
+                HpAfter = ReadInt(data, 0, "hp_after", "building_hp"),
+                Sequence = sequence,
+                PosX = ReadInt(data, 0, "pos_x"),
+                PosY = ReadInt(data, 0, "pos_y"),
+                FromX = ReadInt(data, 0, "from_x"),
+                FromY = ReadInt(data, 0, "from_y"),
+                ToX = ReadInt(data, 0, "to_x"),
+                ToY = ReadInt(data, 0, "to_y")
+            };
+        }
+
+        private static string NormalizeToken(string value)
+        {
+            return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static string ReadString(IDictionary<string, string> data, params string[] keys)
+        {
+            if (data == null || keys == null)
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (data.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
                 }
             }
 
-            return new CombatSettlementDto
+            return string.Empty;
+        }
+
+        private static int ReadInt(IDictionary<string, string> data, int fallback, params string[] keys)
+        {
+            if (data == null || keys == null)
             {
-                MovedUnitIDs = events.Where(e => e.Type == "unit_move").Select(e => e.UnitId).ToList(),
-                DeadUnitIDs = events.Where(e => e.Type == "unit_died").Select(e => e.UnitId).ToList(),
-                CastleDamaged = events.Any(e => e.Type == "castle_damaged"),
-                Events = events,
-            };
+                return fallback;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (!data.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                if (int.TryParse(value, out var parsed))
+                {
+                    return parsed;
+                }
+            }
+
+            return fallback;
         }
     }
 }

@@ -9,8 +9,12 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using Panoptes.DebugTools;
+#endif
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -38,7 +42,7 @@ namespace Panoptes.Core.Application.App
 
         [Header("Local Test")]
         [SerializeField] private bool bypassLoginForLocalTest = false;
-        [SerializeField] private string localTestSceneName = "MapEditor";
+        [SerializeField] private string localTestSceneName = "Game";
         [SerializeField] private AppState localTestState = AppState.Game;
         [SerializeField] private bool logLocalTestBypass = true;
 
@@ -60,8 +64,15 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
+            EnsureComponent<PlanningDraftCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
+            EnsureComponent<GameMessageHandler>(managers);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            EnsureComponent<DebugPanel>(managers);
+#endif
             EnsureOptionalLoadingOverlay(managers);
+            EnsureOptionalErrorToast(managers);
+            EnsureOptionalConfirmDialog(managers);
         }
 
         private static void EnsureComponent<T>(GameObject owner) where T : Component
@@ -81,6 +92,46 @@ namespace Panoptes.Core.Application.App
             }
 
             owner.AddComponent(overlayType);
+        }
+
+        private static void EnsureOptionalErrorToast(GameObject owner)
+        {
+            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ErrorToast, Panoptes.Presentation");
+            EnsureOptionalOverlayPrefab(owner, overlayType, "ErrorToast", "Prefabs/UI/ErrorToast");
+        }
+
+        private static void EnsureOptionalConfirmDialog(GameObject owner)
+        {
+            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ConfirmDialog, Panoptes.Presentation");
+            EnsureOptionalOverlayPrefab(owner, overlayType, "ConfirmDialog", "Prefabs/UI/ConfirmDialog");
+        }
+
+        // LoadingOverlay 直接挂在 Managers 上，因此其他通用弹层必须作为独立根对象存在，
+        // 否则会被 Managers 上的 CanvasGroup 一起隐藏。
+        private static void EnsureOptionalOverlayPrefab(GameObject owner, Type overlayType, string objectName, string resourcePath)
+        {
+            if (overlayType == null || owner == null)
+            {
+                return;
+            }
+
+            var existing = GameObject.Find(objectName);
+            if (existing != null && existing.GetComponent(overlayType) != null)
+            {
+                return;
+            }
+
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[AppManager] Missing overlay prefab at Resources/{resourcePath}.prefab");
+                return;
+            }
+
+            var overlayObject = UnityEngine.Object.Instantiate(prefab);
+            overlayObject.name = objectName;
+            overlayObject.transform.SetParent(null, false);
+            overlayObject.transform.localScale = Vector3.one;
         }
 
         void Awake()
@@ -113,6 +164,7 @@ namespace Panoptes.Core.Application.App
                 MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
+                MessageDispatcher.Instance.Unregister("Problem");
             }
         }
 
@@ -161,6 +213,7 @@ namespace Panoptes.Core.Application.App
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
             MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+            MessageDispatcher.Instance.Register<Problem>("Problem", OnProblem);
         }
 
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
@@ -177,6 +230,33 @@ namespace Panoptes.Core.Application.App
         {
             GameStateCache.Instance?.ApplyGameInit(msg);
             TransitionTo(AppState.Game);
+        }
+
+        private void OnProblem(Problem problem)
+        {
+            var code = problem != null ? (problem.Code ?? string.Empty) : string.Empty;
+            var message = problem != null ? (problem.Message ?? string.Empty) : string.Empty;
+
+            switch (State)
+            {
+                case AppState.Lobby:
+                    RoomCache.Instance?.PublishLobbyError(new MsgLobbyError
+                    {
+                        Code = code,
+                        Message = message
+                    });
+                    break;
+                case AppState.Game:
+                    GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+                    {
+                        Code = code,
+                        Message = message
+                    });
+                    break;
+                default:
+                    Debug.LogWarning($"[AppManager] Problem received code={code} message={message}");
+                    break;
+            }
         }
 
         private async void EnsureRealtimeConnectionIfNeeded(AppState state)

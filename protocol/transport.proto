@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+import "auth.proto";
+import "common.proto";
+import "data_catalog.proto";
+import "game_state.proto";
+import "lobby.proto";
+import "minister.proto";
+import "orders.proto";
+import "settlement.proto";
+import "turn.proto";
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message CommandMeta {
+  string request_id = 1;
+  string trace_id = 2;
+  string client_version = 3;
+  repeated string capabilities = 4;
+}
+
+message EventMeta {
+  string request_id = 1;
+  string trace_id = 2;
+  int64 server_unix_millis = 3;
+}
+
+message ProblemDetail {
+  string path = 1;
+  string detail = 2;
+}
+
+message Problem {
+  string code = 1;
+  string message = 2;
+  repeated ProblemDetail details = 3;
+}
+
+message AuthCommand {
+  oneof body {
+    MsgRegister register = 1;
+    MsgLogin login = 2;
+  }
+}
+
+message LobbyCommand {
+  oneof body {
+    MsgCreateRoom create_room = 1;
+    MsgJoinRoom join_room = 2;
+    MsgLeaveRoom leave_room = 3;
+    MsgReadyUp ready_up = 4;
+    MsgAddBot add_bot = 5;
+    MsgStartGame start_game = 6;
+    MsgKickPlayer kick_player = 7;
+  }
+}
+
+message PlanningCommand {
+  oneof body {
+    MsgSetPolicy set_policy = 1;
+    MsgSetResearchTarget set_research_target = 2;
+    MsgSetBuildingRecipe set_building_recipe = 3;
+    MsgBuildStructure build_structure = 4;
+    MsgRevealNode reveal_node = 5;
+    MsgSetWarZone set_war_zone = 6;
+    MsgWarZoneDirective war_zone_directive = 7;
+    MsgSetMinisterDirective set_minister_directive = 8;
+    MsgIssueUnitOrder issue_unit_order = 9;
+    MsgCancelUnitOrder cancel_unit_order = 10;
+    MsgPlanningPathPreviewRequest planning_path_preview_request = 11;
+    MsgSubmitTurn submit_turn = 12;
+  }
+}
+
+message GameCommand {
+  oneof body {
+    PlanningCommand planning = 1;
+  }
+}
+
+message ClientFrame {
+  CommandMeta meta = 1;
+
+  oneof target {
+    AuthCommand auth = 10;
+    LobbyCommand lobby = 11;
+    GameCommand game = 12;
+  }
+}
+
+message AuthEvent {
+  oneof body {
+    MsgLoginSuccess login_success = 1;
+    MsgAuthError auth_error = 2;
+    MsgClientRuntimeConfig client_runtime_config = 3;
+  }
+}
+
+message LobbyEvent {
+  oneof body {
+    MsgRoomCreated room_created = 1;
+    MsgRoomState room_state = 2;
+    MsgGameStarting game_starting = 3;
+    MsgPlayerKicked player_kicked = 4;
+    MsgLobbyError lobby_error = 5;
+  }
+}
+
+message GameEvent {
+  oneof body {
+    MsgStaticCatalogManifest static_catalog_manifest = 1;
+    MsgStaticCatalogSnapshot static_catalog_snapshot = 2;
+    MsgGameInit game_init = 3;
+    MsgPlanningStart planning_start = 4;
+    MsgPlanningSnapshot planning_snapshot = 5;
+    MsgPlanningPathPreviewResponse planning_path_preview_response = 6;
+    MsgTokenResult token_result = 7;
+    MsgRevealResult reveal_result = 8;
+    MsgResearchResult research_result = 9;
+    MsgSetBuildingRecipeResult set_building_recipe_result = 10;
+    MsgTurnReport turn_report = 11;
+    MsgTurnSettlement turn_settlement = 12;
+    MsgGameOver game_over = 13;
+    MsgMinisterReportChunk minister_report_chunk = 14;
+    MsgMinisterMetrics minister_metrics = 15;
+  }
+}
+
+message ServerFrame {
+  EventMeta meta = 1;
+
+  oneof target {
+    AuthEvent auth = 10;
+    LobbyEvent lobby = 11;
+    GameEvent game = 12;
+    Problem problem = 13;
+  }
+}

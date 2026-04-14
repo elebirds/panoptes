@@ -134,7 +134,7 @@ namespace Panoptes.Presentation.UI.Common
             text.font = TMP_Settings.defaultFontAsset;
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 36f;
-            text.enableWordWrapping = true;
+            text.textWrappingMode = TextWrappingModes.Normal;
             text.color = Color.white;
 
             return text;

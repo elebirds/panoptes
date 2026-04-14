@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证ECS 适配层的实体工厂与默认装配。
+
 package ecs
 
 import (
@@ -89,7 +95,7 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	nodeEntity := CreateNode(world, MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 
-	building := world.Entry(CreateBuilding(world, "wall", "player-1", nodeEntry))
+	building := world.Entry(CreateBuilding(world, "wall", "player-1", "", nodeEntry))
 	comp := donburi.Get[BuildingComp](building, BuildingC)
 	if comp.Type != domain.BuildingTypeWall || comp.HP != 50 || comp.Owner != "player-1" {
 		t.Fatalf("Building = %#v", comp)
@@ -98,5 +104,23 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	node := donburi.Get[NodeComp](nodeEntry, NodeC)
 	if node.Owner != "player-1" {
 		t.Fatalf("node owner = %q", node.Owner)
+	}
+}
+
+func TestCreateBuildingStoresCastleID(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", Category: "production", Combat: staticdata.BuildingCombat{MaxHP: 40}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := CreateNode(world, MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+
+	building := world.Entry(CreateBuilding(world, "farm", "player-1", "castle-a", nodeEntry))
+	comp := donburi.Get[BuildingComp](building, BuildingC)
+	if comp.CastleID != "castle-a" {
+		t.Fatalf("castle id = %q", comp.CastleID)
 	}
 }

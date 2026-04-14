@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现单位结算引擎的攻城结算逻辑。
+
 package combat
 
 import (
@@ -31,7 +37,9 @@ func (s *SiegeSystem) Run(world donburi.World, state *domain.GameState) []event.
 
 		ability := ecs.SiegeAbilityC.Get(unitEntry)
 		wallReduction := math.Min(float64(building.WallLevel)*0.08, 0.75)
-		dmg := int(math.Round(float64(unit.Attack) * ability.Multiplier * (1 - wallReduction)))
+		attack := effectiveUnitAttack(state, unit.Faction, unit.Type, unit.Attack)
+		multiplier := effectiveUnitSiegeMultiplier(state, unit.Faction, unit.Type, ability.Multiplier)
+		dmg := int(math.Round(float64(attack) * multiplier * (1 - wallReduction)))
 		if dmg < 1 {
 			dmg = 1
 		}

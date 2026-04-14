@@ -13,6 +13,7 @@ message NodeView {
   Position pos = 2;
   string terrain = 3; // "plain|mountain|forest|river"
   string owner = 4; // player_id or ""
+  string territory_owner = 14; // player_id or ""
   string building_type = 5; // "" if none
   int32 building_hp = 6;
   int32 wall_level = 7;
@@ -22,6 +23,7 @@ message NodeView {
   bool is_resource_point = 11;
   string resource_type = 12; // "ore|wood|food"
   bool is_safe_zone = 13;
+  BuildingOperationView operation = 15;
 }
 
 message UnitView {
@@ -42,6 +44,22 @@ message PlayerView {
   int32 main_castle_hp = 6;
   int32 max_castle_hp = 7;
   repeated WarZone war_zones = 8;
+  PlayerResearchView research = 9;
+}
+
+message PlayerResearchView {
+  int32 tech_points = 1;
+  int32 tech_points_income = 2;
+  int32 tech_points_cap = 3;
+  repeated string unlocked_technology_ids = 4;
+}
+
+message BuildingOperationView {
+  string selected_recipe_id = 1;
+  int32 progress_turns = 2;
+  int32 required_turns = 3;
+  int32 delay_turns = 4;
+  string blocked_reason = 5;
 }
 
 message WarZone {

@@ -1,11 +1,17 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现WebSocket 传输层的消息传输逻辑。
+
 package websocket
 
 import (
+	"context"
 	"errors"
 
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/elebirds/panoptes/internal/transport/codec"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,12 +26,12 @@ func NewTransport(hub *Hub) *WSTransport {
 	return &WSTransport{hub: hub}
 }
 
-func (t *WSTransport) Send(playerID string, msg proto.Message) error {
+func (t *WSTransport) Send(ctx context.Context, playerID string, msg proto.Message) error {
 	if playerID == "" {
 		return errors.New("playerID is required")
 	}
 
-	data, err := marshalEnvelope(msg)
+	data, err := codec.EncodeServerMessage(msg, coretransport.EventMetaFromContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -33,12 +39,12 @@ func (t *WSTransport) Send(playerID string, msg proto.Message) error {
 	return t.hub.SendToPlayer(playerID, data)
 }
 
-func (t *WSTransport) Broadcast(roomID string, msg proto.Message) error {
+func (t *WSTransport) Broadcast(ctx context.Context, roomID string, msg proto.Message) error {
 	if roomID == "" {
 		return errors.New("roomID is required")
 	}
 
-	data, err := marshalEnvelope(msg)
+	data, err := codec.EncodeServerMessage(msg, coretransport.EventMetaFromContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -47,35 +53,11 @@ func (t *WSTransport) Broadcast(roomID string, msg proto.Message) error {
 	return nil
 }
 
-func (t *WSTransport) Stream(playerID string, msgs <-chan proto.Message) error {
+func (t *WSTransport) Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error {
 	for msg := range msgs {
-		if err := t.Send(playerID, msg); err != nil {
+		if err := t.Send(ctx, playerID, msg); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func marshalEnvelope(msg proto.Message) ([]byte, error) {
-	if msg == nil {
-		return nil, errors.New("message is nil")
-	}
-
-	payload, err := protojson.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	fullName := proto.MessageName(msg)
-	msgType := string(fullName.Name())
-	if msgType == "" {
-		msgType = string(fullName)
-	}
-
-	envelope := &pb.Envelope{
-		Type:    msgType,
-		Payload: string(payload),
-	}
-
-	return protojson.Marshal(envelope)
 }

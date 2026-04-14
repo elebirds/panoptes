@@ -1,19 +1,31 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现WebSocket 传输层的客户端连接适配。
+
 package websocket
 
 import (
 	"errors"
 	"log/slog"
 	"sync"
+	"time"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
+	"github.com/elebirds/panoptes/internal/transport/codec"
+	"github.com/elebirds/panoptes/internal/transport/inbound"
+	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/gorilla/websocket"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // Client represents a single websocket connection.
 type Client struct {
 	hub      *Hub
 	conn     *websocket.Conn
+	connectionID string
 	playerID string
 	roomID   string
 	send     chan []byte
@@ -35,17 +47,35 @@ func (c *Client) readPump() {
 			return
 		}
 
-		envelope := &pb.Envelope{}
-		if err := protojson.Unmarshal(message, envelope); err != nil {
+		frame, err := codec.DecodeClientFrame(message)
+		if err != nil {
 			slog.Warn("无效的 WebSocket 消息封包", "玩家ID", c.playerID, "错误", err)
+			c.sendProblem(nil, err)
 			continue
 		}
 
 		if c.hub != nil {
-			c.hub.logIncoming(c.playerID, envelope.GetType(), envelope.GetPayload())
+			c.hub.logIncoming(c.playerID, inboundMessageName(frame), string(message))
 		}
 
-		Route(c, c.playerID, envelope)
+		var dispatcher *inbound.Dispatcher
+		if c.hub != nil {
+			c.hub.mu.RLock()
+			dispatcher = c.hub.dispatcher
+			c.hub.mu.RUnlock()
+		}
+		if dispatcher == nil {
+			c.sendProblem(frame.GetMeta(), transportproblem.InternalError("dispatcher is not configured"))
+			continue
+		}
+		if err := dispatcher.Dispatch(cmddispatch.InboundContext{
+			PlayerID:     c.playerID,
+			ConnectionID: c.connectionID,
+			RequestID:    frame.GetMeta().GetRequestId(),
+			TraceID:      frame.GetMeta().GetTraceId(),
+		}, frame); err != nil {
+			c.sendProblem(frame.GetMeta(), err)
+		}
 	}
 }
 
@@ -88,5 +118,116 @@ func (c *Client) Send(data []byte) error {
 		return nil
 	default:
 		return errors.New("client send buffer is full")
+	}
+}
+
+func (c *Client) sendProblem(meta *pb.CommandMeta, err error) {
+	problem := problemFromError(err)
+	data, encodeErr := codec.EncodeServerMessage(problem, &pb.EventMeta{
+		RequestId:        meta.GetRequestId(),
+		TraceId:          meta.GetTraceId(),
+		ServerUnixMillis: time.Now().UnixMilli(),
+	})
+	if encodeErr != nil {
+		slog.Warn("编码 Problem 失败", "玩家ID", c.playerID, "错误", encodeErr)
+		return
+	}
+	if sendErr := c.Send(data); sendErr != nil {
+		slog.Warn("发送 Problem 失败", "玩家ID", c.playerID, "错误", sendErr)
+	}
+}
+
+func inboundMessageName(frame *pb.ClientFrame) string {
+	if frame == nil {
+		return "unknown"
+	}
+	switch target := frame.Target.(type) {
+	case *pb.ClientFrame_Auth:
+		if target.Auth == nil || target.Auth.Body == nil {
+			return "AuthCommand"
+		}
+		switch body := target.Auth.Body.(type) {
+		case *pb.AuthCommand_Register:
+			return commandBodyName(body.Register)
+		case *pb.AuthCommand_Login:
+			return commandBodyName(body.Login)
+		default:
+			return "AuthCommand"
+		}
+	case *pb.ClientFrame_Lobby:
+		if target.Lobby == nil || target.Lobby.Body == nil {
+			return "LobbyCommand"
+		}
+		switch body := target.Lobby.Body.(type) {
+		case *pb.LobbyCommand_CreateRoom:
+			return commandBodyName(body.CreateRoom)
+		case *pb.LobbyCommand_JoinRoom:
+			return commandBodyName(body.JoinRoom)
+		case *pb.LobbyCommand_LeaveRoom:
+			return commandBodyName(body.LeaveRoom)
+		case *pb.LobbyCommand_ReadyUp:
+			return commandBodyName(body.ReadyUp)
+		case *pb.LobbyCommand_AddBot:
+			return commandBodyName(body.AddBot)
+		case *pb.LobbyCommand_StartGame:
+			return commandBodyName(body.StartGame)
+		case *pb.LobbyCommand_KickPlayer:
+			return commandBodyName(body.KickPlayer)
+		default:
+			return "LobbyCommand"
+		}
+	case *pb.ClientFrame_Game:
+		return gameCommandName(target.Game)
+	default:
+		return "unknown"
+	}
+}
+
+func commandBodyName(body proto.Message) string {
+	if body == nil {
+		return "unknown"
+	}
+	return string(body.ProtoReflect().Descriptor().Name())
+}
+
+func gameCommandName(cmd *pb.GameCommand) string {
+	if cmd == nil || cmd.Body == nil {
+		return "unknown"
+	}
+	switch body := cmd.Body.(type) {
+	case *pb.GameCommand_Planning:
+		if body.Planning == nil || body.Planning.Body == nil {
+			return "PlanningCommand"
+		}
+		switch planning := body.Planning.Body.(type) {
+		case *pb.PlanningCommand_SetPolicy:
+			return commandBodyName(planning.SetPolicy)
+		case *pb.PlanningCommand_SetResearchTarget:
+			return commandBodyName(planning.SetResearchTarget)
+		case *pb.PlanningCommand_SetBuildingRecipe:
+			return commandBodyName(planning.SetBuildingRecipe)
+		case *pb.PlanningCommand_BuildStructure:
+			return commandBodyName(planning.BuildStructure)
+		case *pb.PlanningCommand_RevealNode:
+			return commandBodyName(planning.RevealNode)
+		case *pb.PlanningCommand_SetWarZone:
+			return commandBodyName(planning.SetWarZone)
+		case *pb.PlanningCommand_WarZoneDirective:
+			return commandBodyName(planning.WarZoneDirective)
+		case *pb.PlanningCommand_SetMinisterDirective:
+			return commandBodyName(planning.SetMinisterDirective)
+		case *pb.PlanningCommand_IssueUnitOrder:
+			return commandBodyName(planning.IssueUnitOrder)
+		case *pb.PlanningCommand_CancelUnitOrder:
+			return commandBodyName(planning.CancelUnitOrder)
+		case *pb.PlanningCommand_PlanningPathPreviewRequest:
+			return commandBodyName(planning.PlanningPathPreviewRequest)
+		case *pb.PlanningCommand_SubmitTurn:
+			return commandBodyName(planning.SubmitTurn)
+		default:
+			return "PlanningCommand"
+		}
+	default:
+		return "GameCommand"
 	}
 }

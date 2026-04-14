@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现游戏引擎的流水线编排逻辑。
+
 package engine
 
 import (
@@ -32,9 +38,11 @@ func (p *Pipeline) Run(world donburi.World, state *domain.GameState) []event.Eve
 	return allEvents
 }
 
-func NewDomesticPipeline() *Pipeline {
+func NewEconomyPipeline() *Pipeline {
 	return NewPipeline(
+		&production.ResearchSystem{},
 		&production.BuildSystem{},
+		&production.RecipeSystem{},
 		&production.FlowSystem{},
 		&production.ProductionSystem{},
 		&production.UpkeepSystem{},
@@ -42,14 +50,9 @@ func NewDomesticPipeline() *Pipeline {
 	)
 }
 
-func NewCombatPipeline() *Pipeline {
+func NewUnitResolutionPipeline() *Pipeline {
 	return NewPipeline(
-		&combat.MovementSystem{},
-		&combat.ConflictSystem{},
-		&combat.BattleSystem{},
-		&combat.SiegeSystem{},
-		&combat.RangedSystem{},
-		&combat.DestroySystem{},
+		combat.NewSingleStepResolver(),
 		&combat.CombatUpkeepSystem{},
 	)
 }

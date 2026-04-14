@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 定义领域模型的组件定义与装配映射。
+
 package domain
 
 import "github.com/yohamta/donburi"
@@ -7,13 +13,14 @@ type PositionComp struct {
 }
 
 type NodeComp struct {
-	ID           string
-	Terrain      Terrain
-	Owner        string
-	HasRoad      bool
-	IsResource   bool
-	ResourceType string
-	NodeName     string
+	ID             string
+	Terrain        Terrain
+	Owner          string
+	TerritoryOwner string
+	HasRoad        bool
+	IsResource     bool
+	ResourceType   string
+	NodeName       string
 }
 
 type BuildingComp struct {
@@ -22,18 +29,30 @@ type BuildingComp struct {
 	MaxHP     int
 	WallLevel int
 	Owner     string
+	CastleID  string
 	Towers    int
 }
 
-type UnitStatsComp struct {
-	ID      string
-	Faction string
-	Type    UnitType
-	HP      int
-	MaxHP   int
-	Attack  int
-	Speed   int
+type BuildingOperationComp struct {
+	SelectedRecipeID string
+	ProgressTurns    int
+	RequiredTurns    int
+	DelayTurns       int
+	BlockedReason    string
 }
+
+type UnitStatsComp struct {
+	ID          string
+	Faction     string
+	Type        UnitType
+	HP          int
+	MaxHP       int
+	Attack      int
+	AttackRange int
+	Speed       int
+}
+
+type UnitCapabilitiesComp = UnitCapabilities
 
 type MoveIntentComp struct {
 	Target Position
@@ -66,15 +85,17 @@ type StarvingComp struct {
 }
 
 var (
-	PositionC       = donburi.NewComponentType[PositionComp]()
-	NodeC           = donburi.NewComponentType[NodeComp]()
-	BuildingC       = donburi.NewComponentType[BuildingComp]()
-	UnitStatsC      = donburi.NewComponentType[UnitStatsComp]()
-	MoveIntentC     = donburi.NewComponentType[MoveIntentComp]()
-	SiegeAbilityC   = donburi.NewComponentType[SiegeAbilityComp]()
-	DestroyAbilityC = donburi.NewComponentType[DestroyAbilityComp]()
-	RangedAbilityC  = donburi.NewComponentType[RangedAbilityComp]()
-	ChargeAbilityC  = donburi.NewComponentType[ChargeAbilityComp]()
-	PoisonEffectC   = donburi.NewComponentType[PoisonEffectComp]()
-	StarvingC       = donburi.NewComponentType[StarvingComp]()
+	PositionC          = donburi.NewComponentType[PositionComp]()
+	NodeC              = donburi.NewComponentType[NodeComp]()
+	BuildingC          = donburi.NewComponentType[BuildingComp]()
+	BuildingOperationC = donburi.NewComponentType[BuildingOperationComp]()
+	UnitStatsC         = donburi.NewComponentType[UnitStatsComp]()
+	UnitCapabilitiesC  = donburi.NewComponentType[UnitCapabilitiesComp]()
+	MoveIntentC        = donburi.NewComponentType[MoveIntentComp]()
+	SiegeAbilityC      = donburi.NewComponentType[SiegeAbilityComp]()
+	DestroyAbilityC    = donburi.NewComponentType[DestroyAbilityComp]()
+	RangedAbilityC     = donburi.NewComponentType[RangedAbilityComp]()
+	ChargeAbilityC     = donburi.NewComponentType[ChargeAbilityComp]()
+	PoisonEffectC      = donburi.NewComponentType[PoisonEffectComp]()
+	StarvingC          = donburi.NewComponentType[StarvingComp]()
 )

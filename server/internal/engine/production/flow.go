@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现经济结算引擎的资源流动结算逻辑。
+
 package production
 
 import (
@@ -26,7 +32,16 @@ func (s *FlowSystem) Run(world donburi.World, state *domain.GameState) []event.E
 			if amount <= 0 {
 				continue
 			}
-			events = append(events, event.ResourceProducedEvent{NodeID: node.ID, ResourceType: resType, Amount: amount, Owner: building.Owner})
+			// 资源建筑的每回合产出沿用建筑上的 CastleID。
+			// 这样“哪个城堡建的资源建筑，资源就归哪个城堡”的规则会在系统层面
+			// 自然成立，而不需要再额外查询节点与城堡的映射关系。
+			events = append(events, event.ResourceProducedEvent{
+				NodeID:       node.ID,
+				ResourceType: resType,
+				Amount:       amount,
+				Owner:        building.Owner,
+				CastleID:     building.CastleID,
+			})
 			bag := domain.NewResourceBag()
 			bag.Set(domain.ResourceKey(resType), amount)
 			events = append(events, event.ResourceFlowedEvent{FromNodeID: node.ID, ToNodeID: node.ID, Resources: bag})

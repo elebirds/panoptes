@@ -41,8 +41,8 @@ namespace Panoptes.Core.Infrastructure.Network
         public event System.Action OnConnected;
         public event System.Action OnDisconnected;
         public event System.Action<string> OnError;
-        public event System.Action<Envelope> OnEnvelopeReceived;
-        public event System.Action<Envelope> OnEnvelopeSent;
+        public event System.Action<ServerFrame> OnFrameReceived;
+        public event System.Action<ClientFrame> OnFrameSent;
 
         void Awake()
         {
@@ -127,7 +127,7 @@ namespace Panoptes.Core.Infrastructure.Network
             _ = DisconnectInternalAsync();
         }
 
-        public void Send<T>(T message) where T : IMessage<T>
+        public void Send(IMessage message)
         {
             if (!IsConnected)
             {
@@ -135,16 +135,22 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            var envelope = new Envelope
+            if (!TransportFrames.TryCreateClientFrame(message, out var frame, out var error))
             {
-                Type = message.Descriptor.Name,
-                Payload = JsonFormatter.Default.Format(message)
-            };
+                Debug.LogError($"[Network] Failed to wrap outbound message {message.Descriptor.Name}: {error}");
+                OnError?.Invoke("invalid_request");
+                return;
+            }
 
-            var envelopeJson = JsonFormatter.Default.Format(envelope);
-            var bytes = Encoding.UTF8.GetBytes(envelopeJson);
+            var frameJson = JsonFormatter.Default.Format(frame);
+            var bytes = Encoding.UTF8.GetBytes(frameJson);
             _ws.Send(bytes);
-            OnEnvelopeSent?.Invoke(envelope);
+            OnFrameSent?.Invoke(frame);
+        }
+
+        public void Send<T>(T message) where T : IMessage<T>
+        {
+            Send((IMessage)message);
         }
 
         private void ProcessMessage(byte[] data)
@@ -152,8 +158,8 @@ namespace Panoptes.Core.Infrastructure.Network
             try
             {
                 var rawJson = Encoding.UTF8.GetString(data);
-                var envelope = _jsonParser.Parse<Envelope>(rawJson);
-                OnEnvelopeReceived?.Invoke(envelope);
+                var frame = _jsonParser.Parse<ServerFrame>(rawJson);
+                OnFrameReceived?.Invoke(frame);
 
                 if (MessageDispatcher.Instance == null)
                 {
@@ -161,7 +167,7 @@ namespace Panoptes.Core.Infrastructure.Network
                     return;
                 }
 
-                MessageDispatcher.Instance.Dispatch(envelope);
+                MessageDispatcher.Instance.Dispatch(frame);
             }
             catch (Exception e)
             {

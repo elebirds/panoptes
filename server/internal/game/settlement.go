@@ -1,48 +1,95 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现对局模块的回合结算编排逻辑。
+
 package game
 
 import (
+	"strings"
+
 	"github.com/elebirds/panoptes/internal/debug"
+	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 )
 
-// RunDomesticSettlement executes all domestic systems and broadcasts results.
-func RunDomesticSettlement(room *GameRoom) {
-	if room == nil || room.state == nil {
+// RunTurnResolution executes the unified Turn V2 resolving pipeline.
+func RunTurnResolution(room *GameRoom) {
+	if room == nil || room.State() == nil {
 		return
 	}
 
-	room.state.PendingBuilds = append(room.state.PendingBuilds, room.pendingBuilds...)
-	room.pendingBuilds = room.pendingBuilds[:0]
+	room.lockUnitResolutionOrders()
+	unitResolutionPipeline := engine.NewUnitResolutionPipeline()
+	unitEvents := unitResolutionPipeline.Run(room.State().World, room.State())
+	room.refreshActiveMarchesAfterSettlement()
+	mapEvents := room.applyPlannedMapActions()
+	economyPipeline := engine.NewEconomyPipeline()
+	economyEvents := economyPipeline.Run(room.State().World, room.State())
 
-	pipeline := engine.NewDomesticPipeline()
-	events := pipeline.Run(room.state.World, room.state)
-
-	room.broadcastSettlement("domestic", events)
-	if room.cfg != nil && room.cfg.DevMode {
-		debug.DumpGameStateSummary(room.state)
+	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)
+	if room.IsDevMode() {
+		debug.DumpGameStateSummary(room.State())
 	}
 	room.checkGameOver()
 
-	room.state.PendingBuilds = room.state.PendingBuilds[:0]
-	room.state.MinisterBuildOrders = room.state.MinisterBuildOrders[:0]
+	state := room.State()
+	clear(state.TurnRuntime.Resolving.UnitOrders)
+	state.TurnRuntime.Planning.BuildOrders = state.TurnRuntime.Planning.BuildOrders[:0]
+	state.TurnRuntime.Planning.ResearchOrders = state.TurnRuntime.Planning.ResearchOrders[:0]
+	state.TurnRuntime.Planning.RecipeSelections = state.TurnRuntime.Planning.RecipeSelections[:0]
+	state.TurnRuntime.Planning.MinisterBuilds = state.TurnRuntime.Planning.MinisterBuilds[:0]
+	state.TurnRuntime.Planning.MinisterMoves = state.TurnRuntime.Planning.MinisterMoves[:0]
+	state.TurnRuntime.Resolving.Conflicts = state.TurnRuntime.Resolving.Conflicts[:0]
+	clear(state.TurnRuntime.Planning.UnitOrders)
+	clear(state.TurnRuntime.Planning.MinisterDirectives)
+	clear(state.TurnRuntime.Planning.WarDirectives)
 }
 
-// RunCombatSettlement executes all combat systems and broadcasts results.
-func RunCombatSettlement(room *GameRoom) {
-	if room == nil || room.state == nil {
+func (r *GameRoom) lockUnitResolutionOrders() {
+	state := r.State()
+	if state == nil {
 		return
 	}
-
-	room.applyMoveOrdersToWorld()
-	pipeline := engine.NewCombatPipeline()
-	events := pipeline.Run(room.state.World, room.state)
-
-	room.broadcastSettlement("combat", events)
-	if room.cfg != nil && room.cfg.DevMode {
-		debug.DumpGameStateSummary(room.state)
+	if state.TurnRuntime.Resolving.UnitOrders == nil {
+		state.TurnRuntime.Resolving.UnitOrders = make(map[string]domain.UnitResolutionOrder)
 	}
-	room.checkGameOver()
+	clear(state.TurnRuntime.Resolving.UnitOrders)
 
-	room.state.PendingConflicts = room.state.PendingConflicts[:0]
-	room.state.MinisterMoveOrders = room.state.MinisterMoveOrders[:0]
+	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
+		state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
+			PlayerID:     march.PlayerID,
+			UnitID:       unitID,
+			Action:       domain.UnitResolutionActionMove,
+			TargetNodeID: march.DestinationNodeID,
+			PathNodeIDs:  append([]string(nil), march.LastPreview.PathNodeIDs...),
+		}
+	}
+
+	for unitID, directive := range state.TurnRuntime.Planning.UnitOrders {
+		order := gameorders.FromDirective(directive)
+		if resolutionOrder, ok := order.ToResolutionOrder(); ok {
+			if resolutionOrder.Action == domain.UnitResolutionActionMove {
+				if march, ok := state.TurnRuntime.Resolving.ActiveMarches[unitID]; ok && len(march.LastPreview.PathNodeIDs) > 0 {
+					resolutionOrder.TargetNodeID = march.DestinationNodeID
+					resolutionOrder.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
+				} else if preview, ok := r.buildRoutePreview(unitID, resolutionOrder.TargetNodeID); ok {
+					resolutionOrder.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
+				}
+			}
+			state.TurnRuntime.Resolving.UnitOrders[unitID] = resolutionOrder.Normalized()
+			continue
+		}
+
+		if gameorders.UnitAction(order.Action) == gameorders.ActionSettleCity && strings.TrimSpace(order.TargetNodeID) != "" {
+			state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
+				PlayerID:     order.PlayerID,
+				UnitID:       order.UnitID,
+				Action:       domain.UnitResolutionActionMove,
+				TargetNodeID: order.TargetNodeID,
+			}
+		}
+	}
 }

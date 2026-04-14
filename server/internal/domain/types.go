@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 定义领域模型的公共类型。
+
 package domain
 
 import (
@@ -17,9 +23,11 @@ const (
 type UnitType string
 
 const (
-	UnitTypeInfantry UnitType = "infantry"
+	UnitTypeSettler  UnitType = "settler"
+	UnitTypeWarrior  UnitType = "warrior"
 	UnitTypeArcher   UnitType = "archer"
 	UnitTypeCavalry  UnitType = "cavalry"
+	UnitTypeInfantry UnitType = "infantry"
 	UnitTypeSiege    UnitType = "siege"
 	UnitTypeSaboteur UnitType = "saboteur"
 )

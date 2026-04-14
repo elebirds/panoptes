@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现ECS 适配层的实体工厂与默认装配。
+
 package ecs
 
 import (
@@ -34,20 +40,33 @@ func CreateNode(world donburi.World, mapNode MapNode) donburi.Entity {
 func CreateUnit(world donburi.World, unitType string, faction string, pos domain.Position) donburi.Entity {
 	cfg, ok := staticdata.Default().GetUnit(unitType)
 	if !ok {
-		panic(fmt.Sprintf("unknown unit type: %s", unitType))
+		fallback, hasFallback := fallbackUnitDefinition(unitType)
+		if !hasFallback {
+			panic(fmt.Sprintf("unknown unit type: %s", unitType))
+		}
+		cfg = fallback
 	}
 
-	entity := world.Create(PositionC, UnitStatsC)
+	entity := world.Create(PositionC, UnitStatsC, UnitCapabilitiesC)
 	entry := world.Entry(entity)
 	PositionC.SetValue(entry, PositionComp{X: pos.X, Y: pos.Y})
 	UnitStatsC.SetValue(entry, UnitStatsComp{
-		ID:      uuid.NewString(),
-		Faction: faction,
-		Type:    domain.UnitType(unitType),
-		HP:      cfg.MaxHP,
-		MaxHP:   cfg.MaxHP,
-		Attack:  cfg.Attack,
-		Speed:   cfg.MoveRange,
+		ID:          uuid.NewString(),
+		Faction:     faction,
+		Type:        domain.UnitType(unitType),
+		HP:          cfg.MaxHP,
+		MaxHP:       cfg.MaxHP,
+		Attack:      cfg.Attack,
+		AttackRange: cfg.AttackRange,
+		Speed:       cfg.MoveRange,
+	})
+	UnitCapabilitiesC.SetValue(entry, UnitCapabilitiesComp{
+		Civilian:    cfg.Class == "civilian",
+		Melee:       cfg.Class != "civilian" && cfg.AttackRange <= 1,
+		Ranged:      cfg.AttackRange > 1,
+		Charge:      cfg.ChargeBonus > 0,
+		Siege:       cfg.Flags.CanSiege,
+		DestroyRoad: cfg.Flags.CanDestroyRoad,
 	})
 
 	if cfg.Flags.CanSiege {
@@ -62,7 +81,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		entry.AddComponent(RangedAbilityC)
 		RangedAbilityC.SetValue(entry, RangedAbilityComp{Range: cfg.AttackRange})
 	}
-	if unitType == string(domain.UnitTypeCavalry) {
+	if cfg.ChargeBonus > 0 {
 		entry.AddComponent(ChargeAbilityC)
 		ChargeAbilityC.SetValue(entry, ChargeAbilityComp{BonusMultiplier: cfg.ChargeBonus})
 	}
@@ -70,10 +89,39 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 	return entity
 }
 
-func CreateBuilding(world donburi.World, buildingType string, owner string, nodeEntry *donburi.Entry) donburi.Entity {
+func fallbackUnitDefinition(unitType string) (staticdata.UnitDefinition, bool) {
+	switch unitType {
+	case string(domain.UnitTypeSettler):
+		return staticdata.UnitDefinition{
+			ID:          string(domain.UnitTypeSettler),
+			Class:       "support",
+			MaxHP:       18,
+			Attack:      0,
+			AttackRange: 0,
+			MoveRange:   2,
+			VisionRange: 3,
+			TrainCost:   staticdata.ResourceAmounts{},
+			Upkeep:      staticdata.ResourceAmounts{},
+			Multipliers: map[string]float64{},
+			Flags: staticdata.UnitFlags{
+				CanSiege:       false,
+				CanDestroyRoad: false,
+				CanCapture:     false,
+			},
+		}, true
+	default:
+		return staticdata.UnitDefinition{}, false
+	}
+}
+
+func CreateBuilding(world donburi.World, buildingType string, owner string, castleID string, nodeEntry *donburi.Entry) donburi.Entity {
 	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
-		panic(fmt.Sprintf("unknown building type: %s", buildingType))
+		fallback, hasFallback := fallbackBuildingDefinition(buildingType)
+		if !hasFallback {
+			panic(fmt.Sprintf("unknown building type: %s", buildingType))
+		}
+		cfg = fallback
 	}
 
 	comp := BuildingComp{
@@ -81,6 +129,7 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 		HP:        cfg.Combat.MaxHP,
 		MaxHP:     cfg.Combat.MaxHP,
 		Owner:     owner,
+		CastleID:  castleID,
 		WallLevel: cfg.Combat.WallLevel,
 		Towers:    cfg.Combat.Towers,
 	}
@@ -90,6 +139,19 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 			nodeEntry.AddComponent(BuildingC)
 		}
 		BuildingC.SetValue(nodeEntry, comp)
+		if cfg.DefaultRecipeID != "" {
+			if !nodeEntry.HasComponent(BuildingOperationC) {
+				nodeEntry.AddComponent(BuildingOperationC)
+			}
+			requiredTurns := 0
+			if recipe, ok := staticdata.Default().GetRecipe(cfg.DefaultRecipeID); ok {
+				requiredTurns = recipe.DurationTurns
+			}
+			BuildingOperationC.SetValue(nodeEntry, BuildingOperationComp{
+				SelectedRecipeID: cfg.DefaultRecipeID,
+				RequiredTurns:    requiredTurns,
+			})
+		}
 		node := NodeC.Get(nodeEntry)
 		node.Owner = owner
 		return nodeEntry.Entity()
@@ -99,4 +161,22 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, node
 	buildingEntry := world.Entry(entity)
 	BuildingC.SetValue(buildingEntry, comp)
 	return entity
+}
+
+func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {
+	switch buildingType {
+	case "castle":
+		castleHP := 100
+		if catalog := staticdata.Default(); catalog != nil {
+			castleHP = catalog.Rules().CastleBaseHP
+		}
+		return staticdata.BuildingDefinition{
+			ID: buildingType,
+			Combat: staticdata.BuildingCombat{
+				MaxHP: castleHP,
+			},
+		}, true
+	default:
+		return staticdata.BuildingDefinition{}, false
+	}
 }

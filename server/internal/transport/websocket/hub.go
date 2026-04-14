@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现WebSocket 传输层的连接集线与广播协调。
+
 package websocket
 
 import (
@@ -9,6 +15,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/debug"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
+	"github.com/elebirds/panoptes/internal/transport/inbound"
 	"github.com/gorilla/websocket"
 )
 
@@ -30,7 +37,7 @@ type Hub struct {
 	jwtSecret string
 	upgrader  websocket.Upgrader
 	mu        sync.RWMutex
-	router    *Router
+	dispatcher *inbound.Dispatcher
 	leaveRoom LeaveRoomFunc
 	onConnect ConnectFunc
 	logger    *debug.MessageLogger
@@ -124,6 +131,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	client := &Client{
 		hub:      h,
 		conn:     conn,
+		connectionID: conn.RemoteAddr().String(),
 		playerID: playerID,
 		roomID:   "",
 		send:     make(chan []byte, 256),
@@ -167,11 +175,10 @@ func (h *Hub) BroadcastToRoom(roomID string, data []byte) {
 	h.broadcast <- broadcastMsg{roomID: roomID, data: data}
 }
 
-func (h *Hub) SetRouter(router *Router) {
+func (h *Hub) SetDispatcher(dispatcher *inbound.Dispatcher) {
 	h.mu.Lock()
-	h.router = router
+	h.dispatcher = dispatcher
 	h.mu.Unlock()
-	activeRouter.Store(router)
 }
 
 func (h *Hub) SetLeaveRoomFunc(fn LeaveRoomFunc) {

@@ -23,6 +23,25 @@ message BuildingCatalogEntry {
   string prefab_key = 5;
 }
 
+message TechnologyCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string branch = 5;
+  int32 tier = 6;
+  int32 tech_point_cost = 7;
+}
+
+message RecipeCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string building_id = 5;
+  int32 duration_turns = 6;
+}
+
 message TerrainCatalogEntry {
   string id = 1;
   string name = 2;
@@ -36,7 +55,9 @@ message StaticCatalogSnapshot {
   repeated ResourceDescriptor resources = 2;
   repeated UnitCatalogEntry units = 3;
   repeated BuildingCatalogEntry buildings = 4;
-  repeated TerrainCatalogEntry terrains = 5;
+  repeated TechnologyCatalogEntry technologies = 5;
+  repeated RecipeCatalogEntry recipes = 6;
+  repeated TerrainCatalogEntry terrains = 7;
 }
 
 message MsgStaticCatalogManifest {

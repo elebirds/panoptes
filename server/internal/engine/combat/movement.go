@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现单位结算引擎的移动结算逻辑。
+
 package combat
 
 import (
@@ -14,7 +20,7 @@ type MovementSystem struct{}
 
 func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
-	state.PendingMoves = state.PendingMoves[:0]
+	state.TurnRuntime.Resolving.PendingMoves = state.TurnRuntime.Resolving.PendingMoves[:0]
 
 	entries := make([]*donburi.Entry, 0)
 	ecs.UnitsWithMoveIntent(world).Each(world, func(entry *donburi.Entry) {
@@ -43,7 +49,7 @@ func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []eve
 			continue
 		}
 
-		maxStep := stats.Speed
+		maxStep := effectiveUnitMoveRange(state, stats.Faction, stats.Type, stats.Speed)
 		if maxStep < 1 {
 			maxStep = 1
 		}
@@ -54,10 +60,10 @@ func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []eve
 		movePath := append([]domain.Position(nil), path[:maxIndex+1]...)
 		to := movePath[len(movePath)-1]
 		events = append(events, event.UnitMovedEvent{UnitID: stats.ID, From: start, To: to, Timestamp: timestamp})
-		state.PendingMoves = append(state.PendingMoves, domain.PendingMove{
+		state.TurnRuntime.Resolving.PendingMoves = append(state.TurnRuntime.Resolving.PendingMoves, domain.PendingMove{
 			UnitID:    stats.ID,
 			Faction:   stats.Faction,
-			Speed:     stats.Speed,
+			Speed:     maxStep,
 			Path:      movePath,
 			Timestamp: timestamp,
 		})
