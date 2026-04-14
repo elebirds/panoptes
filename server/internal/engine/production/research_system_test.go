@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 验证经济结算流水线中的科研、配方、生产与补给规则。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证经济结算引擎的科研与经济流水线行为。
 
 package production_test
 

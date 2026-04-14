@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 验证服务端静态目录加载后的查询接口与规则读取结果。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证静态目录模块的目录加载与查询。
 
 package staticdata_test
 

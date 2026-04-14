@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 验证 Turn V2 人类玩家通知与统一规划阶段约束。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证回合协调模块的Turn V2 回合约束。
 
 package game
 

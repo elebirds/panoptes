@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 验证结算事件与经济事件的 Kind 标识保持稳定。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证事件模型的事件 Kind 标识。
 
 package event
 

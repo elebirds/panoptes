@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现部长引擎的输出解析逻辑。
+
 package minister
 
 import (
@@ -24,15 +30,15 @@ type MinisterActionItem struct {
 
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	var raw struct {
-		Report   string `json:"report"`
-		Metrics  []struct {
+		Report  string `json:"report"`
+		Metrics []struct {
 			Label      string `json:"label"`
 			Value      string `json:"value"`
 			Trend      string `json:"trend"`
 			Confidence string `json:"confidence"`
 			IsDelayed  bool   `json:"is_delayed"`
 		} `json:"metrics"`
-		Actions  []struct {
+		Actions []struct {
 			Type   string         `json:"type"`
 			Params map[string]any `json:"params"`
 		} `json:"actions"`

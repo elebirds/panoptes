@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 定义静态数据目录在服务端运行时使用的数据模型。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 定义静态目录模块的静态数据结构。
 
 package staticdata
 

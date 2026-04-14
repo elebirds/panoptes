@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 定义人类玩家适配器，负责把服务端状态转换为客户端回合通知。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现对局模块的人类玩家适配器。
 
 package game
 

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 定义领域模型的状态模型。
+
 package domain
 
 import (
@@ -9,17 +15,17 @@ import (
 )
 
 type GameState struct {
-	GameID     string
-	Turn       int
-	Phase      string
-	IsOver     bool
-	WinnerID   string
-	OverReason string
-	Narrative  string
-	World      donburi.World
-	Map        *MapData
-	Players    map[string]*PlayerState
-	NodeIndex  map[string]donburi.Entity
+	GameID      string
+	Turn        int
+	Phase       string
+	IsOver      bool
+	WinnerID    string
+	OverReason  string
+	Narrative   string
+	World       donburi.World
+	Map         *MapData
+	Players     map[string]*PlayerState
+	NodeIndex   map[string]donburi.Entity
 	TurnRuntime TurnRuntime
 }
 
