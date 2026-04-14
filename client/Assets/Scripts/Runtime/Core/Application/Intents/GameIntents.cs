@@ -10,13 +10,6 @@ namespace Panoptes.Core.Application.Intents
 {
     public static class GameIntents
     {
-        private enum LockSource
-        {
-            None,
-            Domestic,
-            Combat
-        }
-
         [Serializable]
         private sealed class MinisterDirectivePayload
         {
@@ -40,9 +33,7 @@ namespace Panoptes.Core.Application.Intents
         }
 
         private static GameStateCache _cache;
-        private static LockSource _lockSource = LockSource.None;
-
-        public static event Action DomesticSubmitRequested;
+        public static event Action TurnSubmitRequested;
 
         public static void Initialize(GameStateCache cache)
         {
@@ -64,7 +55,6 @@ namespace Panoptes.Core.Application.Intents
 
             _cache = cache;
             Subscribe(_cache);
-            _lockSource = LockSource.None;
             Debug.Log("[GameIntents] Initialize");
         }
 
@@ -76,7 +66,6 @@ namespace Panoptes.Core.Application.Intents
                 _cache = null;
             }
 
-            _lockSource = LockSource.None;
             ActionLock.Release();
             Debug.Log("[GameIntents] Dispose");
         }
@@ -213,7 +202,7 @@ namespace Panoptes.Core.Application.Intents
             AdjustFlow(fromNodeId, toNodeId, string.Empty, delta);
         }
 
-        public static void SubmitDomestic()
+        public static void SubmitTurn()
         {
             if (ActionLock.IsLocked)
             {
@@ -221,10 +210,9 @@ namespace Panoptes.Core.Application.Intents
             }
 
             ActionLock.Acquire();
-            _lockSource = LockSource.Domestic;
-            MessageSender.Send(new MsgSubmitDomestic());
-            Debug.Log("[GameIntents] SubmitDomestic");
-            DomesticSubmitRequested?.Invoke();
+            MessageSender.Send(new MsgSubmitTurn());
+            Debug.Log("[GameIntents] SubmitTurn");
+            TurnSubmitRequested?.Invoke();
         }
 
         public static void SetWarZone(List<string> nodeIds)
@@ -325,19 +313,6 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] ChargeUnit");
         }
 
-        public static void SubmitCombat()
-        {
-            if (ActionLock.IsLocked)
-            {
-                return;
-            }
-
-            ActionLock.Acquire();
-            _lockSource = LockSource.Combat;
-            MessageSender.Send(new MsgSubmitCombat());
-            Debug.Log("[GameIntents] SubmitCombat");
-        }
-
         public static void AcceptMinisterAction(string actionId)
         {
             if (ActionLock.IsLocked)
@@ -392,7 +367,6 @@ namespace Panoptes.Core.Application.Intents
             }
 
             ActionLock.Release();
-            _lockSource = LockSource.None;
             Debug.Log($"[GameIntents] PhaseChanged -> unlock at {evt.Phase}");
         }
 
@@ -404,7 +378,6 @@ namespace Panoptes.Core.Application.Intents
             }
 
             ActionLock.Release();
-            _lockSource = LockSource.None;
             Debug.Log("[GameIntents] GameOver -> unlock");
         }
 

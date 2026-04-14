@@ -51,7 +51,7 @@ namespace Panoptes.Tests.EditMode.Debug
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                                   ?? throw new AssertionException("缺少 TryCreateMessage 静态方法。");
 
-            var knownArgs = new object[] { "MsgSubmitDomestic", "{}", null, null };
+            var knownArgs = new object[] { "MsgSubmitTurn", "{}", null, null };
             var knownResult = (bool)tryCreateMethod.Invoke(null, knownArgs);
             Assert.That(knownResult, Is.True, "已知消息类型应可被解析。");
             Assert.That(knownArgs[2], Is.Not.Null, "解析成功时应返回消息实例。");

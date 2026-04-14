@@ -391,7 +391,7 @@ namespace Panoptes.DebugTools
             var state = context.State;
             if (string.IsNullOrWhiteSpace(state.RawMessageType))
             {
-                state.RawMessageType = "MsgSubmitDomestic";
+                state.RawMessageType = "MsgSubmitTurn";
             }
 
             if (string.IsNullOrWhiteSpace(state.RawPayloadJson))
@@ -654,14 +654,9 @@ namespace Panoptes.DebugTools
                 SubmitCurrentPhase(cache.Phase);
             }
 
-            if (GUILayout.Button("提交内政", GUILayout.Height(28f)))
+            if (GUILayout.Button("提交回合", GUILayout.Height(28f)))
             {
-                GameIntents.SubmitDomestic();
-            }
-
-            if (GUILayout.Button("提交战斗", GUILayout.Height(28f)))
-            {
-                GameIntents.SubmitCombat();
+                GameIntents.SubmitTurn();
             }
             GUILayout.EndHorizontal();
 
@@ -784,10 +779,9 @@ namespace Panoptes.DebugTools
             switch (phase)
             {
                 case GamePhases.DomesticPlanning:
-                    GameIntents.SubmitDomestic();
-                    return;
                 case GamePhases.CombatPlanning:
-                    GameIntents.SubmitCombat();
+                case "planning":
+                    GameIntents.SubmitTurn();
                     return;
                 default:
                     Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
@@ -857,9 +851,8 @@ namespace Panoptes.DebugTools
             {
                 DebugActionCatalog.Section(
                     "阶段提交",
-                    DebugActionCatalog.Action("推进当前阶段", SubmitCurrentPhase, "按当前 phase 自动选择提交内政或战斗。"),
-                    DebugActionCatalog.Action("提交内政", GameIntents.SubmitDomestic),
-                    DebugActionCatalog.Action("提交战斗", GameIntents.SubmitCombat)),
+                    DebugActionCatalog.Action("推进当前阶段", SubmitCurrentPhase, "按当前 phase 选择统一回合提交。"),
+                    DebugActionCatalog.Action("提交回合", GameIntents.SubmitTurn)),
                 DebugActionCatalog.Section(
                     "国策",
                     DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("ready_for_war")),
@@ -941,10 +934,9 @@ namespace Panoptes.DebugTools
             switch (phase)
             {
                 case GamePhases.DomesticPlanning:
-                    GameIntents.SubmitDomestic();
-                    return;
                 case GamePhases.CombatPlanning:
-                    GameIntents.SubmitCombat();
+                case "planning":
+                    GameIntents.SubmitTurn();
                     return;
                 default:
                     Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");

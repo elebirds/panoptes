@@ -394,13 +394,13 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void OnEnable()
         {
-            GameIntents.DomesticSubmitRequested += HandleDomesticSubmitRequested;
+            GameIntents.TurnSubmitRequested += HandleTurnSubmitRequested;
             RefreshFromCache();
         }
 
         private void OnDisable()
         {
-            GameIntents.DomesticSubmitRequested -= HandleDomesticSubmitRequested;
+            GameIntents.TurnSubmitRequested -= HandleTurnSubmitRequested;
             SaveSelection();
         }
 
@@ -801,7 +801,7 @@ namespace Panoptes.Presentation.UI.Domestic
             return null;
         }
 
-        private void HandleDomesticSubmitRequested()
+        private void HandleTurnSubmitRequested()
         {
             if (string.IsNullOrEmpty(_castleNodeId))
             {

@@ -11,7 +11,7 @@ namespace Panoptes.DebugTools
     {
         public sealed class SharedState
         {
-            public string RawMessageType = "MsgSubmitDomestic";
+            public string RawMessageType = "MsgSubmitTurn";
             public string RawPayloadJson = "{}";
             public string RawStatus = string.Empty;
             public bool RawStatusIsError;
@@ -38,7 +38,7 @@ namespace Panoptes.DebugTools
 
         public void OpenRawSenderDraft(string messageType, string payloadJson, string status)
         {
-            _state.RawMessageType = string.IsNullOrWhiteSpace(messageType) ? "MsgSubmitDomestic" : messageType.Trim();
+            _state.RawMessageType = string.IsNullOrWhiteSpace(messageType) ? "MsgSubmitTurn" : messageType.Trim();
             _state.RawPayloadJson = string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson;
             _state.RawStatus = status ?? string.Empty;
             _state.RawStatusIsError = false;
