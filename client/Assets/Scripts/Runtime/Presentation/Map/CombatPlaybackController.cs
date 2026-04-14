@@ -99,19 +99,11 @@ namespace Panoptes.Presentation.Map
                         break;
                 }
             }
-
             _playbackCoroutine = null;
         }
 
         private IEnumerator PlayMove(CombatEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetNodeIdByGrid(new Vector2Int(evt.ToX, evt.ToY), out var nodeId))
-            {
-                yield break;
-            }
-
-            MapInputHandler.Instance?.ApplyBackendMoveCommand(evt.UnitId, nodeId, true, true);
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, moveEventWaitSeconds));
         }
 

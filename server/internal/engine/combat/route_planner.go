@@ -97,6 +97,14 @@ func (p WeightedRoutePlanner) BuildPreview(world donburi.World, state *domain.Ga
 	return buildRoutePreview(world, path, profile, p.Turns), true
 }
 
+func (p WeightedRoutePlanner) BuildPreviewFromPathNodeIDs(world donburi.World, state *domain.GameState, unitID string, pathNodeIDs []string) (domain.RoutePreview, bool) {
+	path, profile, ok := resolvePreviewPathFromNodeIDs(world, state, unitID, pathNodeIDs)
+	if !ok || len(path) == 0 {
+		return domain.RoutePreview{}, false
+	}
+	return buildRoutePreview(world, path, profile, p.Turns), true
+}
+
 type DefaultTurnSegmentPlanner struct {
 	CostPolicy TerrainCostPolicy
 }
@@ -116,6 +124,33 @@ func (p DefaultTurnSegmentPlanner) Reachable(world donburi.World, path []domain.
 
 func (p DefaultTurnSegmentPlanner) BuildStops(world donburi.World, path []domain.Position, profile domain.MovementProfile) []domain.Position {
 	return buildTurnStops(world, path, profile, p.CostPolicy)
+}
+
+func resolvePreviewPathFromNodeIDs(world donburi.World, state *domain.GameState, unitID string, pathNodeIDs []string) ([]domain.Position, domain.MovementProfile, bool) {
+	entry, ok := findUnit(world, unitID)
+	if !ok || state == nil || len(pathNodeIDs) == 0 {
+		return nil, domain.MovementProfile{}, false
+	}
+
+	stats := ecs.UnitStatsC.Get(entry)
+	caps := domain.UnitCapabilities{}
+	if entry.HasComponent(ecs.UnitCapabilitiesC) {
+		caps = *ecs.UnitCapabilitiesC.Get(entry)
+	}
+	moveRange := effectiveUnitMoveRange(state, stats.Faction, stats.Type, stats.Speed)
+	profile := buildMovementProfile(stats.Type, caps, moveRange)
+
+	path := make([]domain.Position, 0, len(pathNodeIDs))
+	for _, nodeID := range pathNodeIDs {
+		nodeEntry, ok := state.GetNode(nodeID)
+		if !ok {
+			return nil, domain.MovementProfile{}, false
+		}
+		pos := ecs.PositionC.Get(nodeEntry)
+		path = append(path, domain.Position{X: pos.X, Y: pos.Y})
+	}
+
+	return path, profile, len(path) > 0
 }
 
 type weightedMovementGrid struct {

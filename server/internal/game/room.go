@@ -810,6 +810,7 @@ func (r *GameRoom) prepareCombatOrders() {
 			UnitID:       unitID,
 			Action:       domain.CombatActionMove,
 			TargetNodeID: march.DestinationNodeID,
+			PathNodeIDs:  append([]string(nil), march.LastPreview.PathNodeIDs...),
 		}
 	}
 
@@ -830,7 +831,16 @@ func (r *GameRoom) prepareCombatOrders() {
 		if r.isVetoed(order.PlayerID, unitID) {
 			continue
 		}
-		r.state.PendingCombatOrders[unitID] = order.Normalized()
+		normalized := order.Normalized()
+		if normalized.Action == domain.CombatActionMove {
+			if march, ok := r.state.ActiveMarches[unitID]; ok && len(march.LastPreview.PathNodeIDs) > 0 {
+				normalized.TargetNodeID = march.DestinationNodeID
+				normalized.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
+			} else if preview, ok := r.buildRoutePreview(unitID, normalized.TargetNodeID); ok {
+				normalized.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
+			}
+		}
+		r.state.PendingCombatOrders[unitID] = normalized
 	}
 }
 

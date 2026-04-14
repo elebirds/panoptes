@@ -313,6 +313,70 @@ func TestRunCombatSettlement_ActiveMarchContinuesUntilDestination(t *testing.T) 
 	}
 }
 
+func TestRunCombatSettlement_ActiveMarchKeepsOriginalPathAcrossTurns(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			BuildPointsPerTurn: 10,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", MoveCostNoRoad: 2, Passable: true},
+			{ID: "forest", MoveCostNoRoad: 4, Passable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "combat-room-path-persist-test",
+		Width:        5,
+		Height:       2,
+		SpawnPoints:  map[int]domain.Position{0: {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		NamedNodes:   map[string]string{},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	for y := 0; y < 2; y++ {
+		for x := 0; x < 5; x++ {
+			nodeID := roomTestNodeIDXY(x, y)
+			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			mapData.NodeIndex[nodeID] = entity
+		}
+	}
+
+	room := NewRoom("room-combat-persist", nil, newStubTransport(), &config.Config{})
+	room.state = domain.NewGameState("room-combat-persist", []string{"player-1"}, []string{"alice"}, mapData)
+	room.state.World = world
+
+	entry := world.Entry(ecs.CreateUnit(world, "warrior", "player-1", domain.Position{X: 0, Y: 0}))
+	unitID := ecs.UnitStatsC.Get(entry).ID
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: roomTestNodeIDXY(4, 0),
+	})
+
+	RunCombatSettlement(room)
+	if got := roomUnitPosition(t, room, unitID); got != (domain.Position{X: 2, Y: 0}) {
+		t.Fatalf("after first settlement position = %#v, want %#v", got, domain.Position{X: 2, Y: 0})
+	}
+
+	setNodeTerrainAndRoad(t, room, roomTestNodeIDXY(3, 0), "forest", false)
+	setNodeTerrainAndRoad(t, room, roomTestNodeIDXY(2, 1), "plain", true)
+	setNodeTerrainAndRoad(t, room, roomTestNodeIDXY(3, 1), "plain", true)
+	setNodeTerrainAndRoad(t, room, roomTestNodeIDXY(4, 1), "plain", true)
+
+	RunCombatSettlement(room)
+	if got := roomUnitPosition(t, room, unitID); got != (domain.Position{X: 4, Y: 0}) {
+		t.Fatalf("after second settlement position = %#v, want %#v", got, domain.Position{X: 4, Y: 0})
+	}
+}
+
 func TestHumanPlayerNotifyTurnCombatSendsOrdersSnapshot(t *testing.T) {
 	tp := newStubTransport()
 	room, unitID := newCombatRoomForTest(t)
@@ -442,6 +506,23 @@ func roomUnitPosition(t *testing.T, room *GameRoom, unitID string) domain.Positi
 
 func roomTestNodeID(x int) string {
 	return "N" + string(rune('0'+x)) + "_0"
+}
+
+func roomTestNodeIDXY(x int, y int) string {
+	return "N" + string(rune('0'+x)) + "_" + string(rune('0'+y))
+}
+
+func setNodeTerrainAndRoad(t *testing.T, room *GameRoom, nodeID string, terrain string, hasRoad bool) {
+	t.Helper()
+
+	entry, ok := room.state.GetNode(nodeID)
+	if !ok {
+		t.Fatalf("node %s not found", nodeID)
+	}
+	node := ecs.NodeC.Get(entry)
+	node.Terrain = domain.Terrain(terrain)
+	node.HasRoad = hasRoad
+	ecs.NodeC.SetValue(entry, *node)
 }
 
 func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {

@@ -6,6 +6,7 @@
  * Description: Sequential animation queue for runtime events.
  *************************************************/
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Panoptes.Presentation.Map;
@@ -20,6 +21,7 @@ namespace Panoptes.Presentation.Animation
             public string unitId;
             public string targetNodeId;
             public bool followCamera;
+            public List<string> pathNodeIds;
         }
 
         public static AnimationQueue Instance { get; private set; }
@@ -44,7 +46,7 @@ namespace Panoptes.Presentation.Animation
             DontDestroyOnLoad(gameObject);
         }
 
-        public void EnqueueUnitMove(string unitId, string targetNodeId, bool followCamera = true)
+        public void EnqueueUnitMove(string unitId, string targetNodeId, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
         {
             if (string.IsNullOrEmpty(unitId) || string.IsNullOrEmpty(targetNodeId))
             {
@@ -55,7 +57,8 @@ namespace Panoptes.Presentation.Animation
             {
                 unitId = unitId,
                 targetNodeId = targetNodeId,
-                followCamera = followCamera
+                followCamera = followCamera,
+                pathNodeIds = pathNodeIds != null ? new List<string>(pathNodeIds) : null
             });
 
             if (!_isPlayingUnitMoves)
@@ -108,7 +111,12 @@ namespace Panoptes.Presentation.Animation
                 ? nodeView.UnitAnchor.position
                 : nodeView.transform.position + Vector3.up * 0.2f;
 
-            yield return UnitMoveAnim.Play(unitView, target, moveDuration, camera, follow);
+            var waypoints = BuildWaypoints(map, unitView, cmd.targetNodeId, target, cmd.pathNodeIds);
+            var segmentDuration = Mathf.Max(0.05f, moveDuration / Mathf.Max(1, waypoints.Count));
+            for (var i = 0; i < waypoints.Count; i++)
+            {
+                yield return UnitMoveAnim.Play(unitView, waypoints[i], segmentDuration, camera, follow);
+            }
 
             if (map.TryGetUnitView(cmd.unitId, out var stillAliveUnit) && stillAliveUnit != null)
             {
@@ -120,6 +128,63 @@ namespace Panoptes.Presentation.Animation
                 camController.enabled = true;
                 camController.SnapTargetToCurrentPosition();
             }
+        }
+
+        private static List<Vector3> BuildWaypoints(MapRenderer map, UnitView unitView, string targetNodeId, Vector3 fallbackTarget, IReadOnlyList<string> pathNodeIds)
+        {
+            var waypoints = new List<Vector3>();
+            if (map == null || unitView == null)
+            {
+                return waypoints;
+            }
+
+            if (pathNodeIds != null && pathNodeIds.Count > 0)
+            {
+                var currentNodeId = string.Empty;
+                map.TryGetNodeIdByGrid(unitView.GridPos, out currentNodeId);
+
+                var startIndex = 0;
+                if (!string.IsNullOrWhiteSpace(currentNodeId))
+                {
+                    for (var i = 0; i < pathNodeIds.Count; i++)
+                    {
+                        if (string.Equals(pathNodeIds[i], currentNodeId, StringComparison.Ordinal))
+                        {
+                            startIndex = i + 1;
+                            break;
+                        }
+                    }
+                }
+
+                for (var i = startIndex; i < pathNodeIds.Count; i++)
+                {
+                    var nodeId = pathNodeIds[i];
+                    if (string.IsNullOrWhiteSpace(nodeId) || !map.TryGetNodeView(nodeId, out var pathNode) || pathNode == null)
+                    {
+                        continue;
+                    }
+
+                    var waypoint = pathNode.UnitAnchor != null
+                        ? pathNode.UnitAnchor.position
+                        : pathNode.transform.position + Vector3.up * 0.2f;
+                    if (waypoints.Count == 0 || Vector3.Distance(waypoints[waypoints.Count - 1], waypoint) > 0.001f)
+                    {
+                        waypoints.Add(waypoint);
+                    }
+
+                    if (string.Equals(nodeId, targetNodeId, StringComparison.Ordinal))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (waypoints.Count == 0 || Vector3.Distance(waypoints[waypoints.Count - 1], fallbackTarget) > 0.001f)
+            {
+                waypoints.Add(fallbackTarget);
+            }
+
+            return waypoints;
         }
     }
 }
