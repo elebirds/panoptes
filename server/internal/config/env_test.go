@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 验证环境配置加载会同步装配静态目录与默认对局配置。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证配置模块的环境变量加载与默认配置装配。
 
 package config
 

@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 协调统一 planning -> resolving 回合推进与提交等待逻辑。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现回合协调模块的回合推进协调逻辑。
 
 package turn
 

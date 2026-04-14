@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14
-// Description: 构建作者源 JSON Schema，约束数据内容与 UI 目录输入格式。
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 构建数据生成模块的作者源 Schema 构建逻辑。
 
 package datagen
 

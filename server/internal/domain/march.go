@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 定义领域模型的行军运行时模型。
+
 package domain
 
 // MovementProfile 把单位的机动属性从兵种配置里抽出来，
