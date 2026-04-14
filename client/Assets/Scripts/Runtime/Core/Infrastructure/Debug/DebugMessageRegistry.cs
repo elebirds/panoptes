@@ -28,14 +28,13 @@ namespace Panoptes.DebugTools
                 ["MsgTokenVeto"] = payload => Parse<MsgTokenVeto>(payload),
                 ["MsgTokenAdjustFlow"] = payload => Parse<MsgTokenAdjustFlow>(payload),
                 ["MsgBuildRoad"] = payload => Parse<MsgBuildRoad>(payload),
-                ["MsgSubmitDomestic"] = payload => Parse<MsgSubmitDomestic>(payload),
+                ["MsgSubmitTurn"] = payload => Parse<MsgSubmitTurn>(payload),
                 ["MsgSetWarZone"] = payload => Parse<MsgSetWarZone>(payload),
                 ["MsgWarZoneDirective"] = payload => Parse<MsgWarZoneDirective>(payload),
                 ["MsgTokenVetoCombat"] = payload => Parse<MsgTokenVetoCombat>(payload),
                 ["MsgTokenMicro"] = payload => Parse<MsgTokenMicro>(payload),
                 ["MsgCombatOrder"] = payload => Parse<MsgCombatOrder>(payload),
                 ["MsgCombatPathPreviewRequest"] = payload => Parse<MsgCombatPathPreviewRequest>(payload),
-                ["MsgSubmitCombat"] = payload => Parse<MsgSubmitCombat>(payload),
             };
 
         private static readonly string[] MessageTypes =
@@ -53,8 +52,7 @@ namespace Panoptes.DebugTools
             "MsgSetPolicy",
             "MsgSetWarZone",
             "MsgStartGame",
-            "MsgSubmitCombat",
-            "MsgSubmitDomestic",
+            "MsgSubmitTurn",
             "MsgTokenAdjustFlow",
             "MsgTokenBuild",
             "MsgTokenMicro",
