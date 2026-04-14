@@ -34,7 +34,9 @@ func (p *Pipeline) Run(world donburi.World, state *domain.GameState) []event.Eve
 
 func NewDomesticPipeline() *Pipeline {
 	return NewPipeline(
+		&production.ResearchSystem{},
 		&production.BuildSystem{},
+		&production.RecipeSystem{},
 		&production.FlowSystem{},
 		&production.ProductionSystem{},
 		&production.UpkeepSystem{},

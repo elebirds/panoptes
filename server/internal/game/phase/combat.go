@@ -3,8 +3,11 @@ package phase
 import (
 	"errors"
 
+	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/engine/combat"
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -102,6 +105,19 @@ func (p *CombatPhase) HandleMessage(room Room, playerID string, msgType string, 
 			TargetNodeID: msg.GetTargetNodeId(),
 			TargetUnitID: msg.GetTargetUnitId(),
 		})
+		if snapshotSender, ok := room.(interface {
+			SendCombatOrdersSnapshot(playerID string) error
+		}); ok {
+			_ = snapshotSender.SendCombatOrdersSnapshot(playerID)
+		}
+		return nil
+
+	case "MsgCombatPathPreviewRequest":
+		msg := &pb.MsgCombatPathPreviewRequest{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		_ = room.SendToPlayer(playerID, buildCombatPathPreviewResponse(room.State(), playerID, msg))
 		return nil
 
 	case "MsgSubmitCombat":
@@ -115,4 +131,67 @@ func (p *CombatPhase) HandleMessage(room Room, playerID string, msgType string, 
 
 func (p *CombatPhase) Timeout(room Room) {
 	room.Submit("timeout")
+}
+
+func buildCombatPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgCombatPathPreviewRequest) *pb.MsgCombatPathPreviewResponse {
+	resp := &pb.MsgCombatPathPreviewResponse{
+		RequestId:    msg.GetRequestId(),
+		UnitId:       msg.GetUnitId(),
+		Action:       msg.GetAction(),
+		TargetNodeId: msg.GetTargetNodeId(),
+		Valid:        false,
+	}
+	if state == nil || msg == nil {
+		resp.ErrorCode = "invalid_request"
+		return resp
+	}
+	if domain.CombatAction(msg.GetAction()) != domain.CombatActionMove {
+		resp.ErrorCode = "invalid_directive"
+		return resp
+	}
+	entry, ok := findPreviewUnit(state, msg.GetUnitId(), playerID)
+	if !ok {
+		resp.ErrorCode = "unit_not_found"
+		return resp
+	}
+	if _, ok := state.GetNode(msg.GetTargetNodeId()); !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
+	preview, ok := planner.BuildPreview(state.World, state, ecs.UnitStatsC.Get(entry).ID, msg.GetTargetNodeId())
+	if !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	resp.Valid = true
+	resp.PathNodeIds = append(resp.PathNodeIds, preview.PathNodeIDs...)
+	resp.FirstTurnNodeId = preview.FirstTurnNodeID
+	resp.TotalTurns = int32(preview.TotalTurns)
+	for _, stop := range preview.TurnStops {
+		resp.TurnStops = append(resp.TurnStops, &pb.MarchTurnStop{
+			TurnIndex: int32(stop.TurnIndex),
+			NodeId:    stop.NodeID,
+		})
+	}
+	return resp
+}
+
+func findPreviewUnit(state *domain.GameState, unitID string, ownerID string) (*donburi.Entry, bool) {
+	if state == nil || state.World == nil {
+		return nil, false
+	}
+	var found *donburi.Entry
+	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
+		if found != nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID == unitID && stats.Faction == ownerID {
+			found = entry
+		}
+	})
+	return found, found != nil
 }

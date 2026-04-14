@@ -38,6 +38,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgMinisterAction>("MsgMinisterAction", OnMinisterAction);
             dispatcher.Register<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
             dispatcher.Register<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
+            dispatcher.Register<MsgCombatOrdersSnapshot>("MsgCombatOrdersSnapshot", OnCombatOrdersSnapshot);
+            dispatcher.Register<MsgCombatPathPreviewResponse>("MsgCombatPathPreviewResponse", OnCombatPathPreviewResponse);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
             dispatcher.Register<ErrorResponse>("ErrorResponse", OnGameError);
 
@@ -61,6 +63,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgMinisterAction>("MsgMinisterAction", OnMinisterAction);
             dispatcher.Unregister<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
             dispatcher.Unregister<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
+            dispatcher.Unregister<MsgCombatOrdersSnapshot>("MsgCombatOrdersSnapshot", OnCombatOrdersSnapshot);
+            dispatcher.Unregister<MsgCombatPathPreviewResponse>("MsgCombatPathPreviewResponse", OnCombatPathPreviewResponse);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
             dispatcher.Unregister<ErrorResponse>("ErrorResponse", OnGameError);
 
@@ -76,8 +80,9 @@ namespace Panoptes.Core.Application.Handler
 
             var cache = GameStateCache.Instance;
             cache?.ApplyDomesticPhaseStart(msg);
+            CombatDraftCache.Instance?.ClearAll();
 
-            Debug.Log($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}");
+            Debug.Log(FormatPhaseStartLog($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
         private static void OnCombatPhaseStart(MsgCombatPhaseStart msg)
@@ -89,8 +94,9 @@ namespace Panoptes.Core.Application.Handler
 
             var cache = GameStateCache.Instance;
             cache?.ApplyCombatPhaseStart(msg);
+            CombatDraftCache.EnsureInstance()?.ClearPreview();
 
-            Debug.Log($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}");
+            Debug.Log(FormatPhaseStartLog($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}"));
         }
 
         private static void OnTokenResult(MsgTokenResult msg)
@@ -254,6 +260,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             GameStateCache.Instance?.ApplyCombatSettlement(msg);
+            CombatDraftCache.Instance?.ClearAll();
             Debug.Log($"[Game] 战斗结算 events={msg.Events.Count}");
             for (var i = 0; i < msg.Events.Count; i++)
             {
@@ -265,6 +272,16 @@ namespace Panoptes.Core.Application.Handler
 
                 Debug.Log($"  {evt.Type}");
             }
+        }
+
+        private static void OnCombatOrdersSnapshot(MsgCombatOrdersSnapshot msg)
+        {
+            CombatDraftCache.EnsureInstance()?.ApplyOrdersSnapshot(msg);
+        }
+
+        private static void OnCombatPathPreviewResponse(MsgCombatPathPreviewResponse msg)
+        {
+            CombatDraftCache.EnsureInstance()?.ApplyPreviewResponse(msg);
         }
 
         private static void OnGameOver(MsgGameOver msg)
@@ -294,6 +311,15 @@ namespace Panoptes.Core.Application.Handler
             });
 
             Debug.LogWarning($"[Game] 游戏期错误 code={msg.Code} message={msg.Message}");
+        }
+
+        private static string FormatPhaseStartLog(string text)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return Panoptes.DebugTools.MessageLogger.WrapPhaseStartColor(text);
+#else
+            return text;
+#endif
         }
 
         private static string JoinMap(Google.Protobuf.Collections.MapField<string, string> map)

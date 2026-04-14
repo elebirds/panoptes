@@ -27,6 +27,14 @@ type BuildingComp struct {
 	Towers    int
 }
 
+type BuildingOperationComp struct {
+	SelectedRecipeID string
+	ProgressTurns    int
+	RequiredTurns    int
+	DelayTurns       int
+	BlockedReason    string
+}
+
 type UnitStatsComp struct {
 	ID          string
 	Faction     string
@@ -71,16 +79,17 @@ type StarvingComp struct {
 }
 
 var (
-	PositionC         = donburi.NewComponentType[PositionComp]()
-	NodeC             = donburi.NewComponentType[NodeComp]()
-	BuildingC         = donburi.NewComponentType[BuildingComp]()
-	UnitStatsC        = donburi.NewComponentType[UnitStatsComp]()
-	UnitCapabilitiesC = donburi.NewComponentType[UnitCapabilitiesComp]()
-	MoveIntentC       = donburi.NewComponentType[MoveIntentComp]()
-	SiegeAbilityC     = donburi.NewComponentType[SiegeAbilityComp]()
-	DestroyAbilityC   = donburi.NewComponentType[DestroyAbilityComp]()
-	RangedAbilityC    = donburi.NewComponentType[RangedAbilityComp]()
-	ChargeAbilityC    = donburi.NewComponentType[ChargeAbilityComp]()
-	PoisonEffectC     = donburi.NewComponentType[PoisonEffectComp]()
-	StarvingC         = donburi.NewComponentType[StarvingComp]()
+	PositionC          = donburi.NewComponentType[PositionComp]()
+	NodeC              = donburi.NewComponentType[NodeComp]()
+	BuildingC          = donburi.NewComponentType[BuildingComp]()
+	BuildingOperationC = donburi.NewComponentType[BuildingOperationComp]()
+	UnitStatsC         = donburi.NewComponentType[UnitStatsComp]()
+	UnitCapabilitiesC  = donburi.NewComponentType[UnitCapabilitiesComp]()
+	MoveIntentC        = donburi.NewComponentType[MoveIntentComp]()
+	SiegeAbilityC      = donburi.NewComponentType[SiegeAbilityComp]()
+	DestroyAbilityC    = donburi.NewComponentType[DestroyAbilityComp]()
+	RangedAbilityC     = donburi.NewComponentType[RangedAbilityComp]()
+	ChargeAbilityC     = donburi.NewComponentType[ChargeAbilityComp]()
+	PoisonEffectC      = donburi.NewComponentType[PoisonEffectComp]()
+	StarvingC          = donburi.NewComponentType[StarvingComp]()
 )

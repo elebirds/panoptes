@@ -18,11 +18,14 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		if _, ok := state.Players[order.PlayerID]; !ok {
 			continue
 		}
+		if !state.IsBuildingUnlocked(order.PlayerID, order.BuildingType) {
+			continue
+		}
 		cfg, ok := staticdata.Default().GetBuilding(order.BuildingType)
 		if !ok {
 			continue
 		}
-		cost := toResourceBag(cfg.BuildCost)
+		cost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingBuildCost), order.BuildingType, toResourceBag(cfg.BuildCost))
 		if !state.CanAffordFromCastle(order.PlayerID, order.CastleID, cost) {
 			continue
 		}

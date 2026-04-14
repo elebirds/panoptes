@@ -7,6 +7,9 @@
   "castle_base_hp": 100,
   "safe_zone_radius": 4,
   "occupy_turns": 1,
+  "starting_tech_points": 2,
+  "tech_points_per_turn": 1,
+  "tech_points_max": 8,
   "build_points_per_turn": 10,
   "build_points_max": 30
 }

@@ -55,8 +55,15 @@ namespace Panoptes.Presentation.Map
         private enum Mode
         {
             None = 0,
+            Build = 1
+        }
+
+        public enum CombatActionMode
+        {
+            None = 0,
             Move = 1,
-            Build = 2
+            Attack = 2,
+            Charge = 3
         }
 
         public static MapInputHandler Instance { get; private set; }
@@ -69,9 +76,14 @@ namespace Panoptes.Presentation.Map
         [Header("Input Gate")]
         [SerializeField] private float modeSwitchInputBlockSeconds = 0.12f;
 
-        [Header("Move")]
+        [Header("Combat Preview")]
         [SerializeField] private int moveRange = 4;
         [SerializeField] private Color moveHighlightColor = new Color(0.35f, 1f, 0.45f, 0.9f);
+        [SerializeField] private Color moveFirstTurnColor = new Color(1f, 0.85f, 0.3f, 0.95f);
+        [SerializeField] private Color moveFutureTurnColor = new Color(0.35f, 0.75f, 1f, 0.95f);
+        [SerializeField] private Color moveInvalidColor = new Color(1f, 0.35f, 0.35f, 0.95f);
+        [SerializeField] private float movePreviewRequestThrottleSeconds = 0.1f;
+        [SerializeField] private float moveTurnMarkerHeight = 0.65f;
         [SerializeField] private bool onlyControlOwnUnits = true;
         [SerializeField] private Color movePathArrowColor = new Color(0.35f, 1f, 0.45f, 0.92f);
         [SerializeField] private Color movePathDestinationColor = new Color(0.25f, 0.95f, 0.55f, 0.95f);
@@ -136,6 +148,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string castleProductionPanelResourcesPath = "Prefabs/UI/CastleProductionPanel";
 
         private readonly HashSet<string> _highlightNodeIds = new();
+        private readonly Dictionary<string, GameObject> _moveTurnMarkers = new();
         private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
         private readonly Queue<string> _pendingBuildTokenNodeQueue = new();
@@ -147,6 +160,7 @@ namespace Panoptes.Presentation.Map
         private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
+        private CombatActionMode _combatActionMode = CombatActionMode.None;
         private UnitView _selectedUnit;
         private BuildPlacementRule _buildRule;
         private string _buildType = string.Empty;
@@ -154,8 +168,12 @@ namespace Panoptes.Presentation.Map
         private NodeView _hoverNode;
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
+        private CombatDraftCache _draftCache;
         private bool _cacheEventsSubscribed;
         private float _ignoreInputUntilTime;
+        private float _nextMovePreviewRequestAt;
+        private int _movePreviewRequestSequence;
+        private string _hoverPreviewNodeId = string.Empty;
         private readonly List<RaycastResult> _uiRaycastResults = new();
         private UnitInfoPanelController _unitInfoPanelController;
         private UnitView _buildingInfoProxy;
@@ -167,9 +185,12 @@ namespace Panoptes.Presentation.Map
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuilds;
         public UnitView SelectedUnit => _selectedUnit;
+        public CombatActionMode CurrentCombatActionMode => _combatActionMode;
+        public string CurrentCombatPrompt => GetCombatPrompt();
 
         public event Action<string, string> MoveCommandSent;
         public event Action<string, string> BuildCommandSent;
+        public event Action CombatSelectionChanged;
         public event Action<UnitView> UnitSelectionChanged;
         public event Action NonBuildingMapClicked;
 
@@ -186,16 +207,21 @@ namespace Panoptes.Presentation.Map
             {
                 inputCamera = Camera.main;
             }
+
+            ResolveCastleProductionPanel();
         }
 
         private void OnEnable()
         {
             SubscribeCacheEvents();
+            SubscribeDraftCacheEvents();
         }
 
         private void OnDisable()
         {
             UnsubscribeCacheEvents();
+            UnsubscribeDraftCacheEvents();
+            ClearMovePreviewState();
             ClearAllMovePreviews();
             ClearAllMovePathMarkers();
             DisposeMovePreviewProxyMaterial();
@@ -237,6 +263,8 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            UpdateCombatMode();
+
             if (GetLeftMouseButtonDown())
             {
                 if (IsPointerOverUI())
@@ -251,7 +279,12 @@ namespace Panoptes.Presentation.Map
 
                 ClearTerritoryHighlights();
                 NonBuildingMapClicked?.Invoke();
-                HandleMoveSelectionClick();
+                HandleCombatSelectionClick();
+            }
+
+            if (GetRightMouseButtonDown())
+            {
+                HandleCombatCancel();
             }
         }
 
@@ -278,9 +311,72 @@ namespace Panoptes.Presentation.Map
         public void CancelCurrentMode()
         {
             ExitBuildMode();
-            ClearMoveSelection();
-            ClearNodeHighlights();
+            ClearCombatSelection();
             BlockInputAfterModeSwitch();
+        }
+
+        public void BeginMoveSelection()
+        {
+            if (_selectedUnit == null)
+            {
+                return;
+            }
+
+            ExitBuildMode();
+            _combatActionMode = CombatActionMode.Move;
+            RefreshPreviewVisuals();
+            NotifyCombatSelectionChanged();
+            BlockInputAfterModeSwitch();
+        }
+
+        public void BeginAttackSelection()
+        {
+            if (_selectedUnit == null || !CanSelectedUnitAttack())
+            {
+                return;
+            }
+
+            ExitBuildMode();
+            ClearMovePreviewState();
+            _combatActionMode = CombatActionMode.Attack;
+            NotifyCombatSelectionChanged();
+            BlockInputAfterModeSwitch();
+        }
+
+        public void BeginChargeSelection()
+        {
+            if (_selectedUnit == null || !CanSelectedUnitCharge())
+            {
+                return;
+            }
+
+            ExitBuildMode();
+            ClearMovePreviewState();
+            _combatActionMode = CombatActionMode.Charge;
+            NotifyCombatSelectionChanged();
+            BlockInputAfterModeSwitch();
+        }
+
+        public void IssueHoldOrder()
+        {
+            if (_selectedUnit == null)
+            {
+                return;
+            }
+
+            ExitBuildMode();
+            ClearMovePreviewState();
+            _combatActionMode = CombatActionMode.None;
+            GameIntents.HoldUnit(_selectedUnit.UnitId);
+            NotifyCombatSelectionChanged();
+        }
+
+        public void ClearCombatSelection()
+        {
+            ClearMoveSelection();
+            ClearMovePreviewState();
+            _combatActionMode = CombatActionMode.None;
+            NotifyCombatSelectionChanged();
         }
 
         public bool RequestExpandTerritoryForSelectedUnit()
@@ -412,8 +508,7 @@ namespace Panoptes.Presentation.Map
             _buildRule = rule;
             BlockInputAfterModeSwitch();
 
-            ClearMoveSelection();
-            ClearNodeHighlights();
+            ClearCombatSelection();
             DestroyHoverGhost();
             EnsureCityZones();
         }
@@ -427,13 +522,18 @@ namespace Panoptes.Presentation.Map
             _activeBuildCastleId = string.Empty;
             _hoverNode = null;
             DestroyHoverGhost();
-            ClearNodeHighlights();
         }
 
-        private void HandleMoveSelectionClick()
+        private void HandleCombatSelectionClick()
         {
-            if (TryRaycastUnit(out var unit))
+            if (TryRaycastUnit(out var unit) && unit != null)
             {
+                if (IsHostileTarget(unit))
+                {
+                    TryIssueUnitTargetOrder(unit);
+                    return;
+                }
+
                 SelectUnit(unit);
                 return;
             }
@@ -443,16 +543,177 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_selectedUnit != null && TryRaycastNode(out var node))
+            if (_selectedUnit != null &&
+                TryRaycastNode(out var node) &&
+                node != null)
             {
-                if (_highlightNodeIds.Contains(node.NodeId))
+                if (!string.IsNullOrEmpty(node.NodeId))
                 {
-                    SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
-                    return;
+                    if (_combatActionMode == CombatActionMode.Move)
+                    {
+                        SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
+                        _combatActionMode = CombatActionMode.None;
+                        NotifyCombatSelectionChanged();
+                        return;
+                    }
+
+                    // Backward-compatible quick move: selected own unit + clicked a highlighted reachable tile.
+                    if (_combatActionMode == CombatActionMode.None &&
+                        CanControlUnit(_selectedUnit) &&
+                        _highlightNodeIds.Contains(node.NodeId))
+                    {
+                        SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
+                        NotifyCombatSelectionChanged();
+                        return;
+                    }
                 }
             }
 
-            ClearMoveSelection();
+            if (TryRaycastNode(out _))
+            {
+                return;
+            }
+
+            ClearCombatSelection();
+        }
+
+        private void UpdateCombatMode()
+        {
+            if (_selectedUnit == null || _combatActionMode != CombatActionMode.Move)
+            {
+                if (!string.IsNullOrEmpty(_hoverPreviewNodeId))
+                {
+                    ClearMovePreviewState();
+                }
+                return;
+            }
+
+            if (IsPointerOverUI())
+            {
+                ClearMovePreviewState();
+                return;
+            }
+
+            if (!TryRaycastNode(out var node) || node == null || string.IsNullOrEmpty(node.NodeId))
+            {
+                ClearMovePreviewState();
+                return;
+            }
+
+            if (string.Equals(_hoverPreviewNodeId, node.NodeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (Time.unscaledTime < _nextMovePreviewRequestAt)
+            {
+                return;
+            }
+
+            RequestMovePreview(node.NodeId);
+        }
+
+        private void HandleCombatCancel()
+        {
+            if (_mode == Mode.Build)
+            {
+                ExitBuildMode();
+                BlockInputAfterModeSwitch();
+                return;
+            }
+
+            if (_combatActionMode != CombatActionMode.None)
+            {
+                _combatActionMode = CombatActionMode.None;
+                ClearMovePreviewState();
+                NotifyCombatSelectionChanged();
+                BlockInputAfterModeSwitch();
+                return;
+            }
+
+            if (_selectedUnit != null)
+            {
+                ClearCombatSelection();
+                BlockInputAfterModeSwitch();
+            }
+        }
+
+        private void RequestMovePreview(string targetNodeId)
+        {
+            if (_selectedUnit == null || string.IsNullOrEmpty(targetNodeId))
+            {
+                return;
+            }
+
+            ClearNodeHighlights();
+            _hoverPreviewNodeId = targetNodeId;
+            _nextMovePreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, movePreviewRequestThrottleSeconds);
+            _movePreviewRequestSequence++;
+            var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
+            CombatDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, _selectedUnit.UnitId, "move", targetNodeId);
+            GameIntents.PreviewCombatMove(requestId, _selectedUnit.UnitId, targetNodeId);
+        }
+
+        private bool TryIssueUnitTargetOrder(UnitView targetUnit)
+        {
+            if (_selectedUnit == null || targetUnit == null)
+            {
+                return false;
+            }
+
+            switch (_combatActionMode)
+            {
+                case CombatActionMode.Attack:
+                    GameIntents.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId);
+                    _combatActionMode = CombatActionMode.None;
+                    NotifyCombatSelectionChanged();
+                    return true;
+                case CombatActionMode.Charge:
+                    var map = MapRenderer.Instance;
+                    if (map == null || !map.TryGetNodeIdByGrid(targetUnit.GridPos, out var targetNodeId))
+                    {
+                        return false;
+                    }
+                    GameIntents.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
+                    _combatActionMode = CombatActionMode.None;
+                    NotifyCombatSelectionChanged();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool IsHostileTarget(UnitView unit)
+        {
+            if (unit == null || _selectedUnit == null || unit == _selectedUnit)
+            {
+                return false;
+            }
+
+            if (_combatActionMode != CombatActionMode.Attack && _combatActionMode != CombatActionMode.Charge)
+            {
+                return false;
+            }
+
+            return !CanControlUnit(unit);
+        }
+
+        private bool CanSelectedUnitAttack()
+        {
+            return TryGetSelectedUnitCatalog(out var entry) && !HasTag(entry, "civilian");
+        }
+
+        private bool CanSelectedUnitCharge()
+        {
+            return TryGetSelectedUnitCatalog(out var entry) && HasTag(entry, "charge");
+        }
+
+        private bool TryGetSelectedUnitCatalog(out StaticCatalogCache.UnitEntryJson entry)
+        {
+            entry = null;
+            return _selectedUnit != null &&
+                   StaticCatalogCache.EnsureInstance() != null &&
+                   StaticCatalogCache.Instance.TryGetUnit(_selectedUnit.UnitType, out entry);
         }
 
         private bool TryOpenBuildingInfoFromClick()
@@ -550,6 +811,9 @@ namespace Panoptes.Presentation.Map
             ClearMoveSelection(false);
             _selectedUnit = unit;
             _selectedUnit.SetSelected(true);
+            _combatActionMode = CombatActionMode.None;
+            ClearMovePreviewState();
+            NotifyCombatSelectionChanged();
             NotifyUnitSelectionChanged(_selectedUnit);
             NotifyUnitInfoPanel(_selectedUnit);
 
@@ -1008,6 +1272,7 @@ namespace Panoptes.Presentation.Map
             if (map == null)
             {
                 _highlightNodeIds.Clear();
+                ClearMoveTurnMarkers();
                 return;
             }
 
@@ -1027,6 +1292,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _highlightNodeIds.Clear();
+            ClearMoveTurnMarkers();
         }
 
         private void RestoreNodeHighlightAfterHover(NodeView node)
@@ -1169,6 +1435,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _cache = GameStateCache.Instance;
+            _draftCache = CombatDraftCache.EnsureInstance();
             if (_cache == null)
             {
                 return;
@@ -1180,6 +1447,18 @@ namespace Panoptes.Presentation.Map
             _cache.OnUnitsChanged += OnUnitsChanged;
             _cache.OnTokenResult += OnTokenResult;
             _cacheEventsSubscribed = true;
+        }
+
+        private void SubscribeDraftCacheEvents()
+        {
+            _draftCache = CombatDraftCache.EnsureInstance();
+            if (_draftCache == null)
+            {
+                return;
+            }
+
+            _draftCache.PreviewChanged -= OnPreviewChanged;
+            _draftCache.PreviewChanged += OnPreviewChanged;
         }
 
         private void UnsubscribeCacheEvents()
@@ -1202,8 +1481,20 @@ namespace Panoptes.Presentation.Map
             _cacheEventsSubscribed = false;
         }
 
+        private void UnsubscribeDraftCacheEvents()
+        {
+            if (_draftCache == null)
+            {
+                return;
+            }
+
+            _draftCache.PreviewChanged -= OnPreviewChanged;
+            _draftCache = null;
+        }
+
         private void OnCombatSettled(CombatSettledEvent settledEvent)
         {
+            ClearCombatSelection();
             var events = settledEvent?.Settlement?.Events;
             if (events == null || events.Count == 0)
             {
@@ -1393,6 +1684,11 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void OnPreviewChanged()
+        {
+            RefreshPreviewVisuals();
+        }
+
         private void RemovePendingBuild(string nodeId)
         {
             if (string.IsNullOrEmpty(nodeId))
@@ -1478,6 +1774,138 @@ namespace Panoptes.Presentation.Map
             }
 
             return "blue";
+        }
+
+        private void RefreshPreviewVisuals()
+        {
+            ClearNodeHighlights();
+
+            var preview = CombatDraftCache.Instance != null ? CombatDraftCache.Instance.CurrentPreview : null;
+            if (preview == null || !preview.Valid)
+            {
+                if (!string.IsNullOrEmpty(_hoverPreviewNodeId) &&
+                    !string.IsNullOrEmpty(_selectedUnit?.UnitId) &&
+                    preview != null &&
+                    string.Equals(preview.UnitId, _selectedUnit.UnitId, StringComparison.Ordinal) &&
+                    string.Equals(preview.TargetNodeId, _hoverPreviewNodeId, StringComparison.Ordinal) &&
+                    MapRenderer.Instance != null &&
+                    MapRenderer.Instance.TryGetNodeView(_hoverPreviewNodeId, out var invalidNode))
+                {
+                    invalidNode.SetHighlight(true, moveInvalidColor);
+                    _highlightNodeIds.Add(_hoverPreviewNodeId);
+                }
+                return;
+            }
+
+            if (_selectedUnit == null ||
+                !string.Equals(preview.UnitId, _selectedUnit.UnitId, StringComparison.Ordinal) ||
+                !string.Equals(preview.TargetNodeId, _hoverPreviewNodeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            if (preview.PathNodeIds != null)
+            {
+                for (var i = 0; i < preview.PathNodeIds.Count; i++)
+                {
+                    var nodeId = preview.PathNodeIds[i];
+                    if (string.IsNullOrWhiteSpace(nodeId) || !map.TryGetNodeView(nodeId, out var node))
+                    {
+                        continue;
+                    }
+
+                    var color = string.Equals(nodeId, preview.FirstTurnNodeId, StringComparison.Ordinal)
+                        ? moveFirstTurnColor
+                        : moveHighlightColor;
+                    node.SetHighlight(true, color);
+                    _highlightNodeIds.Add(nodeId);
+                }
+            }
+
+            if (preview.TurnStops != null)
+            {
+                for (var i = 0; i < preview.TurnStops.Count; i++)
+                {
+                    var stop = preview.TurnStops[i];
+                    if (stop == null || string.IsNullOrWhiteSpace(stop.NodeId) || !map.TryGetNodeView(stop.NodeId, out var node))
+                    {
+                        continue;
+                    }
+
+                    node.SetHighlight(true, stop.TurnIndex <= 1 ? moveFirstTurnColor : moveFutureTurnColor);
+                    _highlightNodeIds.Add(stop.NodeId);
+                    if (stop.TurnIndex >= 2)
+                    {
+                        CreateMoveTurnMarker(stop.NodeId, node, stop.TurnIndex);
+                    }
+                }
+            }
+        }
+
+        private void ClearMovePreviewState()
+        {
+            var hadHover = !string.IsNullOrEmpty(_hoverPreviewNodeId);
+            _hoverPreviewNodeId = string.Empty;
+            var previewCache = CombatDraftCache.Instance;
+            if (hadHover || previewCache?.CurrentPreview != null)
+            {
+                previewCache?.ClearPreview();
+            }
+            ClearNodeHighlights();
+        }
+
+        private void CreateMoveTurnMarker(string nodeId, NodeView node, int turnIndex)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) || node == null)
+            {
+                return;
+            }
+
+            if (_moveTurnMarkers.TryGetValue(nodeId, out var existing) && existing != null)
+            {
+                var existingText = existing.GetComponent<TextMesh>();
+                if (existingText != null)
+                {
+                    existingText.text = turnIndex.ToString();
+                }
+                return;
+            }
+
+            var marker = new GameObject($"MoveTurnMarker_{nodeId}");
+            marker.transform.SetParent(transform, false);
+            marker.transform.position = (node.UnitAnchor != null ? node.UnitAnchor.position : node.transform.position) + Vector3.up * moveTurnMarkerHeight;
+            var text = marker.AddComponent<TextMesh>();
+            text.text = turnIndex.ToString();
+            text.characterSize = 0.18f;
+            text.fontSize = 42;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = moveFutureTurnColor;
+            _moveTurnMarkers[nodeId] = marker;
+        }
+
+        private void ClearMoveTurnMarkers()
+        {
+            if (_moveTurnMarkers.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _moveTurnMarkers)
+            {
+                if (pair.Value != null)
+                {
+                    Destroy(pair.Value);
+                }
+            }
+
+            _moveTurnMarkers.Clear();
         }
 
         private bool IsCastleNode(string nodeId)
@@ -1904,6 +2332,25 @@ namespace Panoptes.Presentation.Map
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
+        private static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
+        {
+            if (entry == null || entry.tags == null || string.IsNullOrWhiteSpace(tag))
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(tag);
+            for (var i = 0; i < entry.tags.Length; i++)
+            {
+                if (string.Equals(NormalizeToken(entry.tags[i]), normalized, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private bool TryValidateTerritoryExpandRequest(string unitId, string centerNodeId, out string errorMessage)
         {
             errorMessage = string.Empty;
@@ -2011,6 +2458,27 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private string GetCombatPrompt()
+        {
+            if (_selectedUnit == null)
+            {
+                return "点击己方单位开始下达命令";
+            }
+
+            return _combatActionMode switch
+            {
+                CombatActionMode.Move => "点击地图节点，发送持久行军目标",
+                CombatActionMode.Attack => "点击敌方单位，发送攻击命令",
+                CombatActionMode.Charge => "点击敌方单位，发送冲锋命令",
+                _ => "选择动作后再指定目标"
+            };
+        }
+
+        private void NotifyCombatSelectionChanged()
+        {
+            CombatSelectionChanged?.Invoke();
         }
 
         private static void ShowUserError(string message)

@@ -43,7 +43,7 @@ func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []eve
 			continue
 		}
 
-		maxStep := stats.Speed
+		maxStep := effectiveUnitMoveRange(state, stats.Faction, stats.Type, stats.Speed)
 		if maxStep < 1 {
 			maxStep = 1
 		}
@@ -57,7 +57,7 @@ func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []eve
 		state.PendingMoves = append(state.PendingMoves, domain.PendingMove{
 			UnitID:    stats.ID,
 			Faction:   stats.Faction,
-			Speed:     stats.Speed,
+			Speed:     maxStep,
 			Path:      movePath,
 			Timestamp: timestamp,
 		})

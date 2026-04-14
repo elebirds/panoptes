@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
@@ -16,6 +17,9 @@ namespace Panoptes.DebugTools
             public string Timestamp;
             public string MsgType;
             public string Summary;
+            public string PayloadJson;
+            public bool CanReplay;
+            public string Error;
         }
 
         public static MessageLogger Instance { get; private set; }
@@ -24,6 +28,10 @@ namespace Panoptes.DebugTools
         public event Action OnNewEntry;
 
         private const int MaxEntries = 100;
+        private const string ColorPhaseStart = "#6EEB83";
+        private const string ColorOutgoing = "#8FD3FF";
+        private const string ColorIncoming = "#FFD166";
+        private const string ColorError = "#FF7A7A";
         [SerializeField] private bool mirrorEntriesToUnityConsole = true;
         private readonly JsonParser _jsonParser =
             new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
@@ -130,7 +138,14 @@ namespace Panoptes.DebugTools
 
         private void OnSendIntercepted(string msgType, IMessage message)
         {
-            AddEntry("OUT", msgType, BuildOutgoingSummary(msgType, message));
+            var payloadJson = JsonFormatter.Default.Format(message);
+            AddEntry(
+                "OUT",
+                msgType,
+                BuildOutgoingSummary(msgType, message),
+                payloadJson,
+                DebugMessageRegistry.SupportsMessageType(msgType),
+                string.Empty);
         }
 
         private void OnDispatching(Envelope envelope)
@@ -140,15 +155,22 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            AddEntry("IN", envelope.Type, BuildIncomingSummary(envelope));
+            AddEntry(
+                "IN",
+                envelope.Type,
+                BuildIncomingSummary(envelope),
+                envelope.Payload ?? "{}",
+                DebugMessageRegistry.SupportsMessageType(envelope.Type),
+                string.Empty);
         }
 
         private void OnNetworkError(string err)
         {
-            AddEntry("ERR", "NetworkError", string.IsNullOrWhiteSpace(err) ? "unknown_error" : err);
+            var message = string.IsNullOrWhiteSpace(err) ? "unknown_error" : err;
+            AddEntry("ERR", "NetworkError", message, string.Empty, false, message);
         }
 
-        private void AddEntry(string direction, string msgType, string summary)
+        private void AddEntry(string direction, string msgType, string summary, string payloadJson, bool canReplay, string error)
         {
             var timestamp = Time.time.ToString("F2");
             Entries.Add(new LogEntry
@@ -156,7 +178,10 @@ namespace Panoptes.DebugTools
                 Direction = direction,
                 Timestamp = timestamp,
                 MsgType = msgType,
-                Summary = summary
+                Summary = summary,
+                PayloadJson = payloadJson ?? string.Empty,
+                CanReplay = canReplay,
+                Error = error ?? string.Empty
             });
 
             if (Entries.Count > MaxEntries)
@@ -164,11 +189,11 @@ namespace Panoptes.DebugTools
                 Entries.RemoveAt(0);
             }
 
-            MirrorToUnityConsole(direction, timestamp, msgType, summary);
+            MirrorToUnityConsole(direction, timestamp, msgType, summary, error);
             OnNewEntry?.Invoke();
         }
 
-        private void MirrorToUnityConsole(string direction, string timestamp, string msgType, string summary)
+        private void MirrorToUnityConsole(string direction, string timestamp, string msgType, string summary, string error)
         {
             if (!mirrorEntriesToUnityConsole)
             {
@@ -176,18 +201,41 @@ namespace Panoptes.DebugTools
             }
 
             var text = $"[DebugPanel/{direction}] t={timestamp} type={msgType} summary={summary}";
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                text = $"{text} error={error}";
+            }
+
             switch (direction)
             {
                 case "ERR":
-                    Debug.LogError(text);
+                    Debug.LogError(WrapColor(text, ColorError));
                     break;
                 case "OUT":
-                    Debug.Log(text);
+                    Debug.Log(WrapColor(text, ColorOutgoing));
+                    break;
+                case "IN":
+                    Debug.Log(WrapColor(text, ColorIncoming));
                     break;
                 default:
                     Debug.Log(text);
                     break;
             }
+        }
+
+        public static string WrapPhaseStartColor(string text)
+        {
+            return WrapColor(text, ColorPhaseStart);
+        }
+
+        private static string WrapColor(string text, string colorHex)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(colorHex))
+            {
+                return text ?? string.Empty;
+            }
+
+            return $"<color={colorHex}>{text}</color>";
         }
 
         private string BuildIncomingSummary(Envelope envelope)
@@ -298,3 +346,4 @@ namespace Panoptes.DebugTools
         }
     }
 }
+#endif

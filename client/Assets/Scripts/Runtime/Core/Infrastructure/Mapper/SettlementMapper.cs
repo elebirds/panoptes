@@ -76,8 +76,9 @@ namespace Panoptes.Core.Infrastructure.Mapper
             }
 
             var events = new List<CombatEventDto>();
-            foreach (var evt in msg.Events)
+            for (var i = 0; i < msg.Events.Count; i++)
             {
+                var evt = msg.Events[i];
                 if (evt == null)
                 {
                     continue;
@@ -89,6 +90,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                         events.Add(new CombatEventDto
                         {
                             Type = "unit_move",
+                            Sequence = i,
                             UnitId = evt.UnitMove.UnitId,
                             FromX = evt.UnitMove.From?.X ?? 0,
                             FromY = evt.UnitMove.From?.Y ?? 0,
@@ -100,30 +102,72 @@ namespace Panoptes.Core.Infrastructure.Mapper
                         events.Add(new CombatEventDto
                         {
                             Type = "unit_damaged",
+                            Sequence = i,
                             UnitId = evt.UnitDamaged.UnitId,
+                            Damage = evt.UnitDamaged.Damage,
                             HpAfter = evt.UnitDamaged.HpAfter,
+                            Source = evt.UnitDamaged.Source,
                         });
                         break;
                     case CombatEvent.DataOneofCase.UnitDied when evt.UnitDied != null:
                         events.Add(new CombatEventDto
                         {
                             Type = "unit_died",
+                            Sequence = i,
                             UnitId = evt.UnitDied.UnitId,
+                            KillerId = evt.UnitDied.KillerId,
+                            PosX = evt.UnitDied.Pos?.X ?? 0,
+                            PosY = evt.UnitDied.Pos?.Y ?? 0,
                         });
                         break;
                     case CombatEvent.DataOneofCase.CastleDamaged when evt.CastleDamaged != null:
                         events.Add(new CombatEventDto
                         {
                             Type = "castle_damaged",
+                            Sequence = i,
                             NodeId = evt.CastleDamaged.NodeId,
+                            UnitId = evt.CastleDamaged.AttackerId,
+                            Damage = evt.CastleDamaged.Damage,
                             HpAfter = evt.CastleDamaged.HpAfter,
+                        });
+                        break;
+                    case CombatEvent.DataOneofCase.CastleDestroyed when evt.CastleDestroyed != null:
+                        events.Add(new CombatEventDto
+                        {
+                            Type = "castle_destroyed",
+                            Sequence = i,
+                            NodeId = evt.CastleDestroyed.NodeId,
+                            Source = evt.CastleDestroyed.ConquerorFaction,
+                        });
+                        break;
+                    case CombatEvent.DataOneofCase.Conflict when evt.Conflict != null:
+                        events.Add(new CombatEventDto
+                        {
+                            Type = "conflict",
+                            Sequence = i,
+                            UnitId = evt.Conflict.UnitAId,
+                            EnemyUnitId = evt.Conflict.UnitBId,
+                            ConflictType = evt.Conflict.ConflictType,
+                            PosX = evt.Conflict.Location?.X ?? 0,
+                            PosY = evt.Conflict.Location?.Y ?? 0,
+                        });
+                        break;
+                    case CombatEvent.DataOneofCase.RoadDestroyed when evt.RoadDestroyed != null:
+                        events.Add(new CombatEventDto
+                        {
+                            Type = "road_destroyed",
+                            Sequence = i,
+                            UnitId = evt.RoadDestroyed.DestroyerId,
+                            NodeId = $"{evt.RoadDestroyed.FromNode}->{evt.RoadDestroyed.ToNode}",
                         });
                         break;
                     case CombatEvent.DataOneofCase.BuildingDamaged when evt.BuildingDamaged != null:
                         events.Add(new CombatEventDto
                         {
                             Type = "building_damaged",
+                            Sequence = i,
                             NodeId = evt.BuildingDamaged.NodeId,
+                            Damage = evt.BuildingDamaged.Damage,
                             HpAfter = evt.BuildingDamaged.HpAfter,
                         });
                         break;

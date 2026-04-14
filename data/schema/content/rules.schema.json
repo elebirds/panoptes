@@ -26,6 +26,18 @@
       "minimum": 0,
       "type": "integer"
     },
+    "starting_tech_points": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tech_points_max": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tech_points_per_turn": {
+      "minimum": 0,
+      "type": "integer"
+    },
     "tokens_per_turn": {
       "minimum": 0,
       "type": "integer"
@@ -52,6 +64,9 @@
     "castle_base_hp",
     "safe_zone_radius",
     "occupy_turns",
+    "starting_tech_points",
+    "tech_points_per_turn",
+    "tech_points_max",
     "build_points_per_turn",
     "build_points_max"
   ],

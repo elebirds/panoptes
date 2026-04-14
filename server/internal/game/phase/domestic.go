@@ -87,6 +87,22 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 		_ = room.SendToPlayer(playerID, &pb.MsgRevealResult{NodeId: msg.GetNodeId(), TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 		return nil
 
+	case "MsgResearchTechnology":
+		msg := &pb.MsgResearchTechnology{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: "", ErrorCode: "invalid_request"})
+			return err
+		}
+		return p.handleResearchRequest(room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
+
+	case "MsgSetBuildingRecipe":
+		msg := &pb.MsgSetBuildingRecipe{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, ErrorCode: "invalid_request"})
+			return err
+		}
+		return p.handleSetBuildingRecipe(room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
+
 	case "MsgMinisterDirective":
 		msg := &pb.MsgMinisterDirective{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {
@@ -101,6 +117,93 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 		return nil
 	}
 
+	return nil
+}
+
+func (p *DomesticPhase) handleResearchRequest(room Room, playerID string, playerState *domain.PlayerState, technologyID string) error {
+	if playerState == nil || technologyID == "" {
+		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_request"})
+		return nil
+	}
+
+	state := room.State()
+	tech, ok := staticdata.Default().GetTechnology(technologyID)
+	if !ok {
+		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_target"})
+		return nil
+	}
+	if playerState.Research.HasTechnology(technologyID) {
+		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
+		return nil
+	}
+	for _, order := range state.PendingResearchOrders {
+		if order.PlayerID == playerID && order.TechnologyID == technologyID {
+			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
+			return nil
+		}
+	}
+	if playerState.Research.TechPoints < tech.TechPointCost {
+		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "insufficient_resources"})
+		return nil
+	}
+	for _, prereq := range tech.Prerequisites {
+		if prereq.Type != "technology_unlocked" {
+			continue
+		}
+		if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
+			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
+			return nil
+		}
+	}
+
+	room.QueueResearchOrder(domain.ResearchOrder{PlayerID: playerID, TechnologyID: technologyID})
+	_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
+	return nil
+}
+
+func (p *DomesticPhase) handleSetBuildingRecipe(room Room, playerID string, nodeID string, recipeID string) error {
+	if nodeID == "" || recipeID == "" {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
+		return nil
+	}
+	nodeEntry, ok := room.NodeByID(nodeID)
+	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
+		return nil
+	}
+	recipe, ok := staticdata.Default().GetRecipe(recipeID)
+	if !ok {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
+		return nil
+	}
+	building := ecs.BuildingC.Get(nodeEntry)
+	node := ecs.NodeC.Get(nodeEntry)
+	if normalizeToken(building.Owner) != normalizeToken(playerID) && normalizeToken(node.Owner) != normalizeToken(playerID) && normalizeToken(node.TerritoryOwner) != normalizeToken(playerID) {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "unauthorized"})
+		return nil
+	}
+	cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
+	if !ok {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
+		return nil
+	}
+	allowed := false
+	for _, candidate := range cfg.RecipeIDs {
+		if candidate == recipeID {
+			allowed = true
+			break
+		}
+	}
+	if !allowed || recipe.BuildingID != string(building.Type) {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
+		return nil
+	}
+	if !room.State().IsRecipeUnlocked(playerID, recipeID) {
+		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
+		return nil
+	}
+	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
+	_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: true, NodeId: nodeID, RecipeId: recipeID})
 	return nil
 }
 
@@ -143,6 +246,10 @@ func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerSta
 	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
+		return nil
+	}
+	if !room.State().IsBuildingUnlocked(playerID, buildingType) {
+		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
 		return nil
 	}
 

@@ -1,0 +1,76 @@
+{
+  "recipes": [
+    {
+      "id": "farm_food",
+      "building_id": "farm",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "food": 2 } }
+    },
+    {
+      "id": "mine_ore",
+      "building_id": "mine",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "ore": 2 } }
+    },
+    {
+      "id": "lumber_wood",
+      "building_id": "lumber",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "wood": 2 } }
+    },
+    {
+      "id": "smelter_refined_ore",
+      "building_id": "smelter",
+      "cost": { "ore": 2 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "refined_ore": 1 } }
+    },
+    {
+      "id": "workshop_engineer_material",
+      "building_id": "workshop",
+      "cost": { "wood": 2 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "engineer_material": 1 } }
+    },
+    {
+      "id": "barracks_warrior",
+      "building_id": "barracks",
+      "cost": { "ore": 1, "food": 1 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "units": ["warrior"] }
+    },
+    {
+      "id": "barracks_archer",
+      "building_id": "barracks",
+      "cost": { "wood": 1, "food": 1 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "units": ["archer"] }
+    },
+    {
+      "id": "stable_cavalry",
+      "building_id": "stable",
+      "cost": { "refined_ore": 1, "food": 2 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "units": ["cavalry"] }
+    },
+    {
+      "id": "engineer_camp_settler",
+      "building_id": "engineer_camp",
+      "cost": { "food": 2, "wood": 1 },
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "units": ["settler"] }
+    }
+  ]
+}

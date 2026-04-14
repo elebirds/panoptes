@@ -42,6 +42,8 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	schemas := buildAuthoringSchemas(buildAuthoringSchemaContext(
 		authored.Resources.Value.Resources,
 		authored.Units.Value.Units,
+		authored.Buildings.Value.Buildings,
+		authored.Recipes.Value.Recipes,
 		authored.Terrains.Value.Terrains,
 	))
 	if err := validateAuthoredSources(authored, schemas); err != nil {
@@ -51,6 +53,8 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	mergeUI(authored.Resources.Value.Resources, authored.ResourceUI.Value)
 	mergeUnitUI(authored.Units.Value.Units, authored.UnitUI.Value)
 	mergeBuildingUI(authored.Buildings.Value.Buildings, authored.BuildingUI.Value)
+	mergeTechnologyUI(authored.Technologies.Value.Technologies, authored.TechnologyUI.Value)
+	mergeRecipeUI(authored.Recipes.Value.Recipes, authored.RecipeUI.Value)
 	mergeTerrainUI(authored.Terrains.Value.Terrains, authored.TerrainUI.Value)
 
 	maps, entries, err := compileMaps(opts.RepoRoot)
@@ -59,14 +63,16 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:  authored.Manifest.Value,
-		Resources: authored.Resources.Value.Resources,
-		Units:     authored.Units.Value.Units,
-		Buildings: authored.Buildings.Value.Buildings,
-		Terrains:  authored.Terrains.Value.Terrains,
-		Rules:     authored.Rules.Value,
-		Ministers: authored.Ministers.Value.Pool,
-		Maps:      entries,
+		Manifest:     authored.Manifest.Value,
+		Resources:    authored.Resources.Value.Resources,
+		Units:        authored.Units.Value.Units,
+		Buildings:    authored.Buildings.Value.Buildings,
+		Technologies: authored.Technologies.Value.Technologies,
+		Recipes:      authored.Recipes.Value.Recipes,
+		Terrains:     authored.Terrains.Value.Terrains,
+		Rules:        authored.Rules.Value,
+		Ministers:    authored.Ministers.Value.Pool,
+		Maps:         entries,
 	}
 
 	hash, err := computeBundleHash(bundle, maps)
@@ -492,6 +498,62 @@ func mergeBuildingUI(buildings []staticdata.BuildingDefinition, ui staticdata.Bu
 	}
 }
 
+func mergeTechnologyUI(technologies []staticdata.TechnologyDefinition, ui staticdata.TechnologyCatalogUIFile) {
+	uiByID := make(map[string]struct {
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
+	}, len(ui.Technologies))
+	for _, entry := range ui.Technologies {
+		uiByID[entry.ID] = struct {
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
+	}
+	for i := range technologies {
+		if entry, ok := uiByID[technologies[i].ID]; ok {
+			technologies[i].Name = entry.Name
+			technologies[i].Description = entry.Description
+			technologies[i].IconKey = entry.IconKey
+			technologies[i].SortOrder = entry.SortOrder
+			technologies[i].Tags = append([]string(nil), entry.Tags...)
+		}
+	}
+}
+
+func mergeRecipeUI(recipes []staticdata.RecipeDefinition, ui staticdata.RecipeCatalogUIFile) {
+	uiByID := make(map[string]struct {
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
+	}, len(ui.Recipes))
+	for _, entry := range ui.Recipes {
+		uiByID[entry.ID] = struct {
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
+	}
+	for i := range recipes {
+		if entry, ok := uiByID[recipes[i].ID]; ok {
+			recipes[i].Name = entry.Name
+			recipes[i].Description = entry.Description
+			recipes[i].IconKey = entry.IconKey
+			recipes[i].SortOrder = entry.SortOrder
+			recipes[i].Tags = append([]string(nil), entry.Tags...)
+		}
+	}
+}
+
 func mergeTerrainUI(terrains []staticdata.TerrainDefinition, ui staticdata.TerrainCatalogUIFile) {
 	uiByID := make(map[string]struct {
 		Name        string
@@ -585,6 +647,25 @@ message BuildingCatalogEntry {
   string prefab_key = 5;
 }
 
+message TechnologyCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string branch = 5;
+  int32 tier = 6;
+  int32 tech_point_cost = 7;
+}
+
+message RecipeCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string building_id = 5;
+  int32 duration_turns = 6;
+}
+
 message TerrainCatalogEntry {
   string id = 1;
   string name = 2;
@@ -598,7 +679,9 @@ message StaticCatalogSnapshot {
   repeated ResourceDescriptor resources = 2;
   repeated UnitCatalogEntry units = 3;
   repeated BuildingCatalogEntry buildings = 4;
-  repeated TerrainCatalogEntry terrains = 5;
+  repeated TechnologyCatalogEntry technologies = 5;
+  repeated RecipeCatalogEntry recipes = 6;
+  repeated TerrainCatalogEntry terrains = 7;
 }
 
 message MsgStaticCatalogManifest {

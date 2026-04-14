@@ -38,6 +38,13 @@ message MsgCombatOrder {
   string target_unit_id = 4;
 }
 
+message MsgCombatPathPreviewRequest {
+  string request_id = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+}
+
 message MsgSubmitCombat {}
 
 // ===== 服务端→客户端 =====
@@ -47,6 +54,41 @@ message MsgCombatPhaseStart {
   int32 tokens = 2;
   int32 turn = 3;
   string phase = 4;
+}
+
+message MarchTurnStop {
+  int32 turn_index = 1;
+  string node_id = 2;
+}
+
+message QueuedCombatOrder {
+  string unit_id = 1;
+  string action = 2;
+  string target_node_id = 3;
+  string target_unit_id = 4;
+  repeated string path_node_ids = 5;
+  string first_turn_node_id = 6;
+  int32 total_turns = 7;
+  repeated MarchTurnStop turn_stops = 8;
+}
+
+message MsgCombatOrdersSnapshot {
+  int32 turn = 1;
+  string phase = 2;
+  repeated QueuedCombatOrder orders = 3;
+}
+
+message MsgCombatPathPreviewResponse {
+  string request_id = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  bool valid = 5;
+  string error_code = 6;
+  repeated string path_node_ids = 7;
+  string first_turn_node_id = 8;
+  int32 total_turns = 9;
+  repeated MarchTurnStop turn_stops = 10;
 }
 
 // 部长战区拆解（流式推送，多条chunk）

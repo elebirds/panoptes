@@ -121,6 +121,7 @@ type MsgTokenBuild struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	BuildingType  string                 `protobuf:"bytes,2,opt,name=building_type,json=buildingType,proto3" json:"building_type,omitempty"`
+	CastleId      string                 `protobuf:"bytes,3,opt,name=castle_id,json=castleId,proto3" json:"castle_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -169,6 +170,65 @@ func (x *MsgTokenBuild) GetBuildingType() string {
 	return ""
 }
 
+func (x *MsgTokenBuild) GetCastleId() string {
+	if x != nil {
+		return x.CastleId
+	}
+	return ""
+}
+
+type MsgTokenExpandTerritory struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UnitId        string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	CenterNodeId  string                 `protobuf:"bytes,2,opt,name=center_node_id,json=centerNodeId,proto3" json:"center_node_id,omitempty"` // optional, empty = unit current node
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgTokenExpandTerritory) Reset() {
+	*x = MsgTokenExpandTerritory{}
+	mi := &file_domestic_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgTokenExpandTerritory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgTokenExpandTerritory) ProtoMessage() {}
+
+func (x *MsgTokenExpandTerritory) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgTokenExpandTerritory.ProtoReflect.Descriptor instead.
+func (*MsgTokenExpandTerritory) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MsgTokenExpandTerritory) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *MsgTokenExpandTerritory) GetCenterNodeId() string {
+	if x != nil {
+		return x.CenterNodeId
+	}
+	return ""
+}
+
 type MsgTokenReveal struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -178,7 +238,7 @@ type MsgTokenReveal struct {
 
 func (x *MsgTokenReveal) Reset() {
 	*x = MsgTokenReveal{}
-	mi := &file_domestic_proto_msgTypes[3]
+	mi := &file_domestic_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +250,7 @@ func (x *MsgTokenReveal) String() string {
 func (*MsgTokenReveal) ProtoMessage() {}
 
 func (x *MsgTokenReveal) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[3]
+	mi := &file_domestic_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,12 +263,108 @@ func (x *MsgTokenReveal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTokenReveal.ProtoReflect.Descriptor instead.
 func (*MsgTokenReveal) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{3}
+	return file_domestic_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MsgTokenReveal) GetNodeId() string {
 	if x != nil {
 		return x.NodeId
+	}
+	return ""
+}
+
+type MsgResearchTechnology struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TechnologyId  string                 `protobuf:"bytes,1,opt,name=technology_id,json=technologyId,proto3" json:"technology_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgResearchTechnology) Reset() {
+	*x = MsgResearchTechnology{}
+	mi := &file_domestic_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgResearchTechnology) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgResearchTechnology) ProtoMessage() {}
+
+func (x *MsgResearchTechnology) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgResearchTechnology.ProtoReflect.Descriptor instead.
+func (*MsgResearchTechnology) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MsgResearchTechnology) GetTechnologyId() string {
+	if x != nil {
+		return x.TechnologyId
+	}
+	return ""
+}
+
+type MsgSetBuildingRecipe struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	RecipeId      string                 `protobuf:"bytes,2,opt,name=recipe_id,json=recipeId,proto3" json:"recipe_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgSetBuildingRecipe) Reset() {
+	*x = MsgSetBuildingRecipe{}
+	mi := &file_domestic_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgSetBuildingRecipe) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetBuildingRecipe) ProtoMessage() {}
+
+func (x *MsgSetBuildingRecipe) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgSetBuildingRecipe.ProtoReflect.Descriptor instead.
+func (*MsgSetBuildingRecipe) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MsgSetBuildingRecipe) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *MsgSetBuildingRecipe) GetRecipeId() string {
+	if x != nil {
+		return x.RecipeId
 	}
 	return ""
 }
@@ -222,7 +378,7 @@ type MsgTokenVeto struct {
 
 func (x *MsgTokenVeto) Reset() {
 	*x = MsgTokenVeto{}
-	mi := &file_domestic_proto_msgTypes[4]
+	mi := &file_domestic_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -234,7 +390,7 @@ func (x *MsgTokenVeto) String() string {
 func (*MsgTokenVeto) ProtoMessage() {}
 
 func (x *MsgTokenVeto) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[4]
+	mi := &file_domestic_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -247,7 +403,7 @@ func (x *MsgTokenVeto) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTokenVeto.ProtoReflect.Descriptor instead.
 func (*MsgTokenVeto) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{4}
+	return file_domestic_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MsgTokenVeto) GetActionId() string {
@@ -269,7 +425,7 @@ type MsgTokenAdjustFlow struct {
 
 func (x *MsgTokenAdjustFlow) Reset() {
 	*x = MsgTokenAdjustFlow{}
-	mi := &file_domestic_proto_msgTypes[5]
+	mi := &file_domestic_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -281,7 +437,7 @@ func (x *MsgTokenAdjustFlow) String() string {
 func (*MsgTokenAdjustFlow) ProtoMessage() {}
 
 func (x *MsgTokenAdjustFlow) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[5]
+	mi := &file_domestic_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -294,7 +450,7 @@ func (x *MsgTokenAdjustFlow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTokenAdjustFlow.ProtoReflect.Descriptor instead.
 func (*MsgTokenAdjustFlow) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{5}
+	return file_domestic_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MsgTokenAdjustFlow) GetFromNode() string {
@@ -338,7 +494,7 @@ type MsgBuildRoad struct {
 
 func (x *MsgBuildRoad) Reset() {
 	*x = MsgBuildRoad{}
-	mi := &file_domestic_proto_msgTypes[6]
+	mi := &file_domestic_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -350,7 +506,7 @@ func (x *MsgBuildRoad) String() string {
 func (*MsgBuildRoad) ProtoMessage() {}
 
 func (x *MsgBuildRoad) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[6]
+	mi := &file_domestic_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -363,7 +519,7 @@ func (x *MsgBuildRoad) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildRoad.ProtoReflect.Descriptor instead.
 func (*MsgBuildRoad) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{6}
+	return file_domestic_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MsgBuildRoad) GetFromNode() string {
@@ -395,7 +551,7 @@ type MsgSubmitDomestic struct {
 
 func (x *MsgSubmitDomestic) Reset() {
 	*x = MsgSubmitDomestic{}
-	mi := &file_domestic_proto_msgTypes[7]
+	mi := &file_domestic_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +563,7 @@ func (x *MsgSubmitDomestic) String() string {
 func (*MsgSubmitDomestic) ProtoMessage() {}
 
 func (x *MsgSubmitDomestic) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[7]
+	mi := &file_domestic_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +576,7 @@ func (x *MsgSubmitDomestic) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSubmitDomestic.ProtoReflect.Descriptor instead.
 func (*MsgSubmitDomestic) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{7}
+	return file_domestic_proto_rawDescGZIP(), []int{10}
 }
 
 type MsgDomesticPhaseStart struct {
@@ -436,7 +592,7 @@ type MsgDomesticPhaseStart struct {
 
 func (x *MsgDomesticPhaseStart) Reset() {
 	*x = MsgDomesticPhaseStart{}
-	mi := &file_domestic_proto_msgTypes[8]
+	mi := &file_domestic_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -448,7 +604,7 @@ func (x *MsgDomesticPhaseStart) String() string {
 func (*MsgDomesticPhaseStart) ProtoMessage() {}
 
 func (x *MsgDomesticPhaseStart) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[8]
+	mi := &file_domestic_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +617,7 @@ func (x *MsgDomesticPhaseStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgDomesticPhaseStart.ProtoReflect.Descriptor instead.
 func (*MsgDomesticPhaseStart) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{8}
+	return file_domestic_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MsgDomesticPhaseStart) GetTimeout() int32 {
@@ -511,7 +667,7 @@ type MsgTokenResult struct {
 
 func (x *MsgTokenResult) Reset() {
 	*x = MsgTokenResult{}
-	mi := &file_domestic_proto_msgTypes[9]
+	mi := &file_domestic_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -523,7 +679,7 @@ func (x *MsgTokenResult) String() string {
 func (*MsgTokenResult) ProtoMessage() {}
 
 func (x *MsgTokenResult) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[9]
+	mi := &file_domestic_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -536,7 +692,7 @@ func (x *MsgTokenResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTokenResult.ProtoReflect.Descriptor instead.
 func (*MsgTokenResult) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{9}
+	return file_domestic_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MsgTokenResult) GetSuccess() bool {
@@ -578,7 +734,7 @@ type MsgRevealResult struct {
 
 func (x *MsgRevealResult) Reset() {
 	*x = MsgRevealResult{}
-	mi := &file_domestic_proto_msgTypes[10]
+	mi := &file_domestic_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -590,7 +746,7 @@ func (x *MsgRevealResult) String() string {
 func (*MsgRevealResult) ProtoMessage() {}
 
 func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[10]
+	mi := &file_domestic_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -603,7 +759,7 @@ func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRevealResult.ProtoReflect.Descriptor instead.
 func (*MsgRevealResult) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{10}
+	return file_domestic_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MsgRevealResult) GetNodeId() string {
@@ -639,7 +795,7 @@ type MsgMinisterAction struct {
 
 func (x *MsgMinisterAction) Reset() {
 	*x = MsgMinisterAction{}
-	mi := &file_domestic_proto_msgTypes[11]
+	mi := &file_domestic_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -651,7 +807,7 @@ func (x *MsgMinisterAction) String() string {
 func (*MsgMinisterAction) ProtoMessage() {}
 
 func (x *MsgMinisterAction) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[11]
+	mi := &file_domestic_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -664,7 +820,7 @@ func (x *MsgMinisterAction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgMinisterAction.ProtoReflect.Descriptor instead.
 func (*MsgMinisterAction) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{11}
+	return file_domestic_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MsgMinisterAction) GetMinister() string {
@@ -695,6 +851,134 @@ func (x *MsgMinisterAction) GetReport() string {
 	return ""
 }
 
+type MsgResearchResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	TechnologyId  string                 `protobuf:"bytes,2,opt,name=technology_id,json=technologyId,proto3" json:"technology_id,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgResearchResult) Reset() {
+	*x = MsgResearchResult{}
+	mi := &file_domestic_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgResearchResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgResearchResult) ProtoMessage() {}
+
+func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgResearchResult.ProtoReflect.Descriptor instead.
+func (*MsgResearchResult) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MsgResearchResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgResearchResult) GetTechnologyId() string {
+	if x != nil {
+		return x.TechnologyId
+	}
+	return ""
+}
+
+func (x *MsgResearchResult) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+type MsgSetBuildingRecipeResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	NodeId        string                 `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	RecipeId      string                 `protobuf:"bytes,3,opt,name=recipe_id,json=recipeId,proto3" json:"recipe_id,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,4,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgSetBuildingRecipeResult) Reset() {
+	*x = MsgSetBuildingRecipeResult{}
+	mi := &file_domestic_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgSetBuildingRecipeResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetBuildingRecipeResult) ProtoMessage() {}
+
+func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgSetBuildingRecipeResult.ProtoReflect.Descriptor instead.
+func (*MsgSetBuildingRecipeResult) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *MsgSetBuildingRecipeResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgSetBuildingRecipeResult) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *MsgSetBuildingRecipeResult) GetRecipeId() string {
+	if x != nil {
+		return x.RecipeId
+	}
+	return ""
+}
+
+func (x *MsgSetBuildingRecipeResult) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
 type MinisterActionItem struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Type  string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
@@ -706,7 +990,7 @@ type MinisterActionItem struct {
 
 func (x *MinisterActionItem) Reset() {
 	*x = MinisterActionItem{}
-	mi := &file_domestic_proto_msgTypes[12]
+	mi := &file_domestic_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -718,7 +1002,7 @@ func (x *MinisterActionItem) String() string {
 func (*MinisterActionItem) ProtoMessage() {}
 
 func (x *MinisterActionItem) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[12]
+	mi := &file_domestic_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -731,7 +1015,7 @@ func (x *MinisterActionItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MinisterActionItem.ProtoReflect.Descriptor instead.
 func (*MinisterActionItem) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{12}
+	return file_domestic_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MinisterActionItem) GetType() string {
@@ -755,13 +1039,14 @@ type MsgDomesticSettlement struct {
 	Turn             int32                  `protobuf:"varint,3,opt,name=turn,proto3" json:"turn,omitempty"`
 	Phase            string                 `protobuf:"bytes,4,opt,name=phase,proto3" json:"phase,omitempty"`
 	NextPhase        string                 `protobuf:"bytes,5,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
+	MyResearchAfter  *PlayerResearchView    `protobuf:"bytes,6,opt,name=my_research_after,json=myResearchAfter,proto3" json:"my_research_after,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MsgDomesticSettlement) Reset() {
 	*x = MsgDomesticSettlement{}
-	mi := &file_domestic_proto_msgTypes[13]
+	mi := &file_domestic_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -773,7 +1058,7 @@ func (x *MsgDomesticSettlement) String() string {
 func (*MsgDomesticSettlement) ProtoMessage() {}
 
 func (x *MsgDomesticSettlement) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[13]
+	mi := &file_domestic_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -786,7 +1071,7 @@ func (x *MsgDomesticSettlement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgDomesticSettlement.ProtoReflect.Descriptor instead.
 func (*MsgDomesticSettlement) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{13}
+	return file_domestic_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgDomesticSettlement) GetChanges() []*DomesticChange {
@@ -824,6 +1109,113 @@ func (x *MsgDomesticSettlement) GetNextPhase() string {
 	return ""
 }
 
+func (x *MsgDomesticSettlement) GetMyResearchAfter() *PlayerResearchView {
+	if x != nil {
+		return x.MyResearchAfter
+	}
+	return nil
+}
+
+type MsgTerritoryExpanded struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Success        bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorCode      string                 `protobuf:"bytes,2,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	PlayerId       string                 `protobuf:"bytes,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	UnitId         string                 `protobuf:"bytes,4,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	CenterNodeId   string                 `protobuf:"bytes,5,opt,name=center_node_id,json=centerNodeId,proto3" json:"center_node_id,omitempty"`
+	BarracksNodeId string                 `protobuf:"bytes,6,opt,name=barracks_node_id,json=barracksNodeId,proto3" json:"barracks_node_id,omitempty"`
+	UpdatedNodes   []*NodeView            `protobuf:"bytes,7,rep,name=updated_nodes,json=updatedNodes,proto3" json:"updated_nodes,omitempty"`
+	RemovedUnitIds []string               `protobuf:"bytes,8,rep,name=removed_unit_ids,json=removedUnitIds,proto3" json:"removed_unit_ids,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *MsgTerritoryExpanded) Reset() {
+	*x = MsgTerritoryExpanded{}
+	mi := &file_domestic_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgTerritoryExpanded) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgTerritoryExpanded) ProtoMessage() {}
+
+func (x *MsgTerritoryExpanded) ProtoReflect() protoreflect.Message {
+	mi := &file_domestic_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgTerritoryExpanded.ProtoReflect.Descriptor instead.
+func (*MsgTerritoryExpanded) Descriptor() ([]byte, []int) {
+	return file_domestic_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *MsgTerritoryExpanded) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgTerritoryExpanded) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *MsgTerritoryExpanded) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *MsgTerritoryExpanded) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *MsgTerritoryExpanded) GetCenterNodeId() string {
+	if x != nil {
+		return x.CenterNodeId
+	}
+	return ""
+}
+
+func (x *MsgTerritoryExpanded) GetBarracksNodeId() string {
+	if x != nil {
+		return x.BarracksNodeId
+	}
+	return ""
+}
+
+func (x *MsgTerritoryExpanded) GetUpdatedNodes() []*NodeView {
+	if x != nil {
+		return x.UpdatedNodes
+	}
+	return nil
+}
+
+func (x *MsgTerritoryExpanded) GetRemovedUnitIds() []string {
+	if x != nil {
+		return x.RemovedUnitIds
+	}
+	return nil
+}
+
 type DomesticChange struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
@@ -834,7 +1226,7 @@ type DomesticChange struct {
 
 func (x *DomesticChange) Reset() {
 	*x = DomesticChange{}
-	mi := &file_domestic_proto_msgTypes[14]
+	mi := &file_domestic_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +1238,7 @@ func (x *DomesticChange) String() string {
 func (*DomesticChange) ProtoMessage() {}
 
 func (x *DomesticChange) ProtoReflect() protoreflect.Message {
-	mi := &file_domestic_proto_msgTypes[14]
+	mi := &file_domestic_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +1251,7 @@ func (x *DomesticChange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DomesticChange.ProtoReflect.Descriptor instead.
 func (*DomesticChange) Descriptor() ([]byte, []int) {
-	return file_domestic_proto_rawDescGZIP(), []int{14}
+	return file_domestic_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *DomesticChange) GetType() string {
@@ -885,12 +1277,21 @@ const file_domestic_proto_rawDesc = "" +
 	"\x06policy\x18\x01 \x01(\tR\x06policy\"U\n" +
 	"\x14MsgMinisterDirective\x12#\n" +
 	"\rminister_role\x18\x01 \x01(\tR\fministerRole\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"M\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"j\n" +
 	"\rMsgTokenBuild\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12#\n" +
-	"\rbuilding_type\x18\x02 \x01(\tR\fbuildingType\")\n" +
+	"\rbuilding_type\x18\x02 \x01(\tR\fbuildingType\x12\x1b\n" +
+	"\tcastle_id\x18\x03 \x01(\tR\bcastleId\"X\n" +
+	"\x17MsgTokenExpandTerritory\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12$\n" +
+	"\x0ecenter_node_id\x18\x02 \x01(\tR\fcenterNodeId\")\n" +
 	"\x0eMsgTokenReveal\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"+\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"<\n" +
+	"\x15MsgResearchTechnology\x12#\n" +
+	"\rtechnology_id\x18\x01 \x01(\tR\ftechnologyId\"L\n" +
+	"\x14MsgSetBuildingRecipe\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1b\n" +
+	"\trecipe_id\x18\x02 \x01(\tR\brecipeId\"+\n" +
 	"\fMsgTokenVeto\x12\x1b\n" +
 	"\taction_id\x18\x01 \x01(\tR\bactionId\"\x87\x01\n" +
 	"\x12MsgTokenAdjustFlow\x12\x1b\n" +
@@ -926,20 +1327,42 @@ const file_domestic_proto_rawDesc = "" +
 	"\bminister\x18\x01 \x01(\tR\bminister\x12\x1b\n" +
 	"\taction_id\x18\x02 \x01(\tR\bactionId\x12?\n" +
 	"\aactions\x18\x03 \x03(\v2%.panoptes.proto.v1.MinisterActionItemR\aactions\x12\x16\n" +
-	"\x06report\x18\x04 \x01(\tR\x06report\"\xae\x01\n" +
+	"\x06report\x18\x04 \x01(\tR\x06report\"q\n" +
+	"\x11MsgResearchResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
+	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x03 \x01(\tR\terrorCode\"\x8b\x01\n" +
+	"\x1aMsgSetBuildingRecipeResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x17\n" +
+	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1b\n" +
+	"\trecipe_id\x18\x03 \x01(\tR\brecipeId\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x04 \x01(\tR\terrorCode\"\xae\x01\n" +
 	"\x12MinisterActionItem\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12I\n" +
 	"\x06params\x18\x02 \x03(\v21.panoptes.proto.v1.MinisterActionItem.ParamsEntryR\x06params\x1a9\n" +
 	"\vParamsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbe\x02\n" +
 	"\x15MsgDomesticSettlement\x12;\n" +
 	"\achanges\x18\x01 \x03(\v2!.panoptes.proto.v1.DomesticChangeR\achanges\x12L\n" +
 	"\x12my_resources_after\x18\x02 \x01(\v2\x1e.panoptes.proto.v1.ResourceBagR\x10myResourcesAfter\x12\x12\n" +
 	"\x04turn\x18\x03 \x01(\x05R\x04turn\x12\x14\n" +
 	"\x05phase\x18\x04 \x01(\tR\x05phase\x12\x1d\n" +
 	"\n" +
-	"next_phase\x18\x05 \x01(\tR\tnextPhase\"\x9e\x01\n" +
+	"next_phase\x18\x05 \x01(\tR\tnextPhase\x12Q\n" +
+	"\x11my_research_after\x18\x06 \x01(\v2%.panoptes.proto.v1.PlayerResearchViewR\x0fmyResearchAfter\"\xc1\x02\n" +
+	"\x14MsgTerritoryExpanded\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x02 \x01(\tR\terrorCode\x12\x1b\n" +
+	"\tplayer_id\x18\x03 \x01(\tR\bplayerId\x12\x17\n" +
+	"\aunit_id\x18\x04 \x01(\tR\x06unitId\x12$\n" +
+	"\x0ecenter_node_id\x18\x05 \x01(\tR\fcenterNodeId\x12(\n" +
+	"\x10barracks_node_id\x18\x06 \x01(\tR\x0ebarracksNodeId\x12@\n" +
+	"\rupdated_nodes\x18\a \x03(\v2\x1b.panoptes.proto.v1.NodeViewR\fupdatedNodes\x12(\n" +
+	"\x10removed_unit_ids\x18\b \x03(\tR\x0eremovedUnitIds\"\x9e\x01\n" +
 	"\x0eDomesticChange\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12?\n" +
 	"\x04data\x18\x02 \x03(\v2+.panoptes.proto.v1.DomesticChange.DataEntryR\x04data\x1a7\n" +
@@ -959,42 +1382,51 @@ func file_domestic_proto_rawDescGZIP() []byte {
 	return file_domestic_proto_rawDescData
 }
 
-var file_domestic_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_domestic_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_domestic_proto_goTypes = []any{
-	(*MsgSetPolicy)(nil),          // 0: panoptes.proto.v1.MsgSetPolicy
-	(*MsgMinisterDirective)(nil),  // 1: panoptes.proto.v1.MsgMinisterDirective
-	(*MsgTokenBuild)(nil),         // 2: panoptes.proto.v1.MsgTokenBuild
-	(*MsgTokenReveal)(nil),        // 3: panoptes.proto.v1.MsgTokenReveal
-	(*MsgTokenVeto)(nil),          // 4: panoptes.proto.v1.MsgTokenVeto
-	(*MsgTokenAdjustFlow)(nil),    // 5: panoptes.proto.v1.MsgTokenAdjustFlow
-	(*MsgBuildRoad)(nil),          // 6: panoptes.proto.v1.MsgBuildRoad
-	(*MsgSubmitDomestic)(nil),     // 7: panoptes.proto.v1.MsgSubmitDomestic
-	(*MsgDomesticPhaseStart)(nil), // 8: panoptes.proto.v1.MsgDomesticPhaseStart
-	(*MsgTokenResult)(nil),        // 9: panoptes.proto.v1.MsgTokenResult
-	(*MsgRevealResult)(nil),       // 10: panoptes.proto.v1.MsgRevealResult
-	(*MsgMinisterAction)(nil),     // 11: panoptes.proto.v1.MsgMinisterAction
-	(*MinisterActionItem)(nil),    // 12: panoptes.proto.v1.MinisterActionItem
-	(*MsgDomesticSettlement)(nil), // 13: panoptes.proto.v1.MsgDomesticSettlement
-	(*DomesticChange)(nil),        // 14: panoptes.proto.v1.DomesticChange
-	nil,                           // 15: panoptes.proto.v1.MinisterActionItem.ParamsEntry
-	nil,                           // 16: panoptes.proto.v1.DomesticChange.DataEntry
-	(*Position)(nil),              // 17: panoptes.proto.v1.Position
-	(*NodeView)(nil),              // 18: panoptes.proto.v1.NodeView
-	(*ResourceBag)(nil),           // 19: panoptes.proto.v1.ResourceBag
+	(*MsgSetPolicy)(nil),               // 0: panoptes.proto.v1.MsgSetPolicy
+	(*MsgMinisterDirective)(nil),       // 1: panoptes.proto.v1.MsgMinisterDirective
+	(*MsgTokenBuild)(nil),              // 2: panoptes.proto.v1.MsgTokenBuild
+	(*MsgTokenExpandTerritory)(nil),    // 3: panoptes.proto.v1.MsgTokenExpandTerritory
+	(*MsgTokenReveal)(nil),             // 4: panoptes.proto.v1.MsgTokenReveal
+	(*MsgResearchTechnology)(nil),      // 5: panoptes.proto.v1.MsgResearchTechnology
+	(*MsgSetBuildingRecipe)(nil),       // 6: panoptes.proto.v1.MsgSetBuildingRecipe
+	(*MsgTokenVeto)(nil),               // 7: panoptes.proto.v1.MsgTokenVeto
+	(*MsgTokenAdjustFlow)(nil),         // 8: panoptes.proto.v1.MsgTokenAdjustFlow
+	(*MsgBuildRoad)(nil),               // 9: panoptes.proto.v1.MsgBuildRoad
+	(*MsgSubmitDomestic)(nil),          // 10: panoptes.proto.v1.MsgSubmitDomestic
+	(*MsgDomesticPhaseStart)(nil),      // 11: panoptes.proto.v1.MsgDomesticPhaseStart
+	(*MsgTokenResult)(nil),             // 12: panoptes.proto.v1.MsgTokenResult
+	(*MsgRevealResult)(nil),            // 13: panoptes.proto.v1.MsgRevealResult
+	(*MsgMinisterAction)(nil),          // 14: panoptes.proto.v1.MsgMinisterAction
+	(*MsgResearchResult)(nil),          // 15: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetBuildingRecipeResult)(nil), // 16: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MinisterActionItem)(nil),         // 17: panoptes.proto.v1.MinisterActionItem
+	(*MsgDomesticSettlement)(nil),      // 18: panoptes.proto.v1.MsgDomesticSettlement
+	(*MsgTerritoryExpanded)(nil),       // 19: panoptes.proto.v1.MsgTerritoryExpanded
+	(*DomesticChange)(nil),             // 20: panoptes.proto.v1.DomesticChange
+	nil,                                // 21: panoptes.proto.v1.MinisterActionItem.ParamsEntry
+	nil,                                // 22: panoptes.proto.v1.DomesticChange.DataEntry
+	(*Position)(nil),                   // 23: panoptes.proto.v1.Position
+	(*NodeView)(nil),                   // 24: panoptes.proto.v1.NodeView
+	(*ResourceBag)(nil),                // 25: panoptes.proto.v1.ResourceBag
+	(*PlayerResearchView)(nil),         // 26: panoptes.proto.v1.PlayerResearchView
 }
 var file_domestic_proto_depIdxs = []int32{
-	17, // 0: panoptes.proto.v1.MsgBuildRoad.waypoints:type_name -> panoptes.proto.v1.Position
-	18, // 1: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
-	12, // 2: panoptes.proto.v1.MsgMinisterAction.actions:type_name -> panoptes.proto.v1.MinisterActionItem
-	15, // 3: panoptes.proto.v1.MinisterActionItem.params:type_name -> panoptes.proto.v1.MinisterActionItem.ParamsEntry
-	14, // 4: panoptes.proto.v1.MsgDomesticSettlement.changes:type_name -> panoptes.proto.v1.DomesticChange
-	19, // 5: panoptes.proto.v1.MsgDomesticSettlement.my_resources_after:type_name -> panoptes.proto.v1.ResourceBag
-	16, // 6: panoptes.proto.v1.DomesticChange.data:type_name -> panoptes.proto.v1.DomesticChange.DataEntry
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	23, // 0: panoptes.proto.v1.MsgBuildRoad.waypoints:type_name -> panoptes.proto.v1.Position
+	24, // 1: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
+	17, // 2: panoptes.proto.v1.MsgMinisterAction.actions:type_name -> panoptes.proto.v1.MinisterActionItem
+	21, // 3: panoptes.proto.v1.MinisterActionItem.params:type_name -> panoptes.proto.v1.MinisterActionItem.ParamsEntry
+	20, // 4: panoptes.proto.v1.MsgDomesticSettlement.changes:type_name -> panoptes.proto.v1.DomesticChange
+	25, // 5: panoptes.proto.v1.MsgDomesticSettlement.my_resources_after:type_name -> panoptes.proto.v1.ResourceBag
+	26, // 6: panoptes.proto.v1.MsgDomesticSettlement.my_research_after:type_name -> panoptes.proto.v1.PlayerResearchView
+	24, // 7: panoptes.proto.v1.MsgTerritoryExpanded.updated_nodes:type_name -> panoptes.proto.v1.NodeView
+	22, // 8: panoptes.proto.v1.DomesticChange.data:type_name -> panoptes.proto.v1.DomesticChange.DataEntry
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_domestic_proto_init() }
@@ -1011,7 +1443,7 @@ func file_domestic_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_domestic_proto_rawDesc), len(file_domestic_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

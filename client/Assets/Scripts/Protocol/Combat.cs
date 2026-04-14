@@ -35,59 +35,82 @@ namespace Panoptes.Protocol.V1 {
             "Cgt0YXJnZXRfbm9kZRgCIAEoCVIKdGFyZ2V0Tm9kZSKNAQoOTXNnQ29tYmF0",
             "T3JkZXISFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElkEhYKBmFjdGlvbhgCIAEo",
             "CVIGYWN0aW9uEiQKDnRhcmdldF9ub2RlX2lkGAMgASgJUgx0YXJnZXROb2Rl",
-            "SWQSJAoOdGFyZ2V0X3VuaXRfaWQYBCABKAlSDHRhcmdldFVuaXRJZCIRCg9N",
-            "c2dTdWJtaXRDb21iYXQicQoTTXNnQ29tYmF0UGhhc2VTdGFydBIYCgd0aW1l",
-            "b3V0GAEgASgFUgd0aW1lb3V0EhYKBnRva2VucxgCIAEoBVIGdG9rZW5zEhIK",
-            "BHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlIkkKFk1z",
-            "Z01pbmlzdGVyQ29tYmF0Q2h1bmsSFAoFY2h1bmsYASABKAlSBWNodW5rEhkK",
-            "CGlzX2ZpbmFsGAIgASgIUgdpc0ZpbmFsIk8KF01zZ01pbmlzdGVyQ29tYmF0",
-            "T3JkZXJzEjQKBm9yZGVycxgBIAMoCzIcLnBhbm9wdGVzLnByb3RvLnYxLlVu",
-            "aXRPcmRlclIGb3JkZXJzInUKCVVuaXRPcmRlchIXCgd1bml0X2lkGAEgASgJ",
-            "UgZ1bml0SWQSFgoGYWN0aW9uGAIgASgJUgZhY3Rpb24SHwoLdGFyZ2V0X25v",
-            "ZGUYAyABKAlSCnRhcmdldE5vZGUSFgoGcmVhc29uGAQgASgJUgZyZWFzb24i",
-            "lgEKE01zZ0NvbWJhdFNldHRsZW1lbnQSNgoGZXZlbnRzGAEgAygLMh4ucGFu",
-            "b3B0ZXMucHJvdG8udjEuQ29tYmF0RXZlbnRSBmV2ZW50cxISCgR0dXJuGAIg",
-            "ASgFUgR0dXJuEhQKBXBoYXNlGAMgASgJUgVwaGFzZRIdCgpuZXh0X3BoYXNl",
-            "GAQgASgJUgluZXh0UGhhc2UigQUKC0NvbWJhdEV2ZW50EhIKBHR5cGUYASAB",
-            "KAlSBHR5cGUSPwoJdW5pdF9tb3ZlGAIgASgLMiAucGFub3B0ZXMucHJvdG8u",
-            "djEuVW5pdE1vdmVFdmVudEgAUgh1bml0TW92ZRJICgx1bml0X2RhbWFnZWQY",
-            "AyABKAsyIy5wYW5vcHRlcy5wcm90by52MS5Vbml0RGFtYWdlZEV2ZW50SABS",
-            "C3VuaXREYW1hZ2VkEj8KCXVuaXRfZGllZBgEIAEoCzIgLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLlVuaXREaWVkRXZlbnRIAFIIdW5pdERpZWQSTgoOY2FzdGxlX2Rh",
-            "bWFnZWQYBSABKAsyJS5wYW5vcHRlcy5wcm90by52MS5DYXN0bGVEYW1hZ2Vk",
-            "RXZlbnRIAFINY2FzdGxlRGFtYWdlZBJUChBjYXN0bGVfZGVzdHJveWVkGAYg",
-            "ASgLMicucGFub3B0ZXMucHJvdG8udjEuQ2FzdGxlRGVzdHJveWVkRXZlbnRI",
-            "AFIPY2FzdGxlRGVzdHJveWVkEj4KCGNvbmZsaWN0GAcgASgLMiAucGFub3B0",
-            "ZXMucHJvdG8udjEuQ29uZmxpY3RFdmVudEgAUghjb25mbGljdBJOCg5yb2Fk",
-            "X2Rlc3Ryb3llZBgIIAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLlJvYWREZXN0",
-            "cm95ZWRFdmVudEgAUg1yb2FkRGVzdHJveWVkElQKEGJ1aWxkaW5nX2RhbWFn",
-            "ZWQYCSABKAsyJy5wYW5vcHRlcy5wcm90by52MS5CdWlsZGluZ0RhbWFnZWRF",
-            "dmVudEgAUg9idWlsZGluZ0RhbWFnZWRCBgoEZGF0YSKkAQoNVW5pdE1vdmVF",
-            "dmVudBIXCgd1bml0X2lkGAEgASgJUgZ1bml0SWQSLwoEZnJvbRgCIAEoCzIb",
-            "LnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgRmcm9tEisKAnRvGAMgASgL",
-            "MhsucGFub3B0ZXMucHJvdG8udjEuUG9zaXRpb25SAnRvEhwKCXRpbWVzdGFt",
-            "cBgEIAEoBVIJdGltZXN0YW1wInYKEFVuaXREYW1hZ2VkRXZlbnQSFwoHdW5p",
-            "dF9pZBgBIAEoCVIGdW5pdElkEhYKBmRhbWFnZRgCIAEoBVIGZGFtYWdlEhkK",
-            "CGhwX2FmdGVyGAMgASgFUgdocEFmdGVyEhYKBnNvdXJjZRgEIAEoCVIGc291",
-            "cmNlInQKDVVuaXREaWVkRXZlbnQSFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElk",
-            "EhsKCWtpbGxlcl9pZBgCIAEoCVIIa2lsbGVySWQSLQoDcG9zGAMgASgLMhsu",
-            "cGFub3B0ZXMucHJvdG8udjEuUG9zaXRpb25SA3BvcyKBAQoSQ2FzdGxlRGFt",
-            "YWdlZEV2ZW50EhcKB25vZGVfaWQYASABKAlSBm5vZGVJZBIWCgZkYW1hZ2UY",
-            "AiABKAVSBmRhbWFnZRIZCghocF9hZnRlchgDIAEoBVIHaHBBZnRlchIfCgth",
-            "dHRhY2tlcl9pZBgEIAEoCVIKYXR0YWNrZXJJZCJcChRDYXN0bGVEZXN0cm95",
-            "ZWRFdmVudBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSKwoRY29ucXVlcm9y",
-            "X2ZhY3Rpb24YAiABKAlSEGNvbnF1ZXJvckZhY3Rpb24ipQEKDUNvbmZsaWN0",
-            "RXZlbnQSGgoJdW5pdF9hX2lkGAEgASgJUgd1bml0QUlkEhoKCXVuaXRfYl9p",
-            "ZBgCIAEoCVIHdW5pdEJJZBI3Cghsb2NhdGlvbhgDIAEoCzIbLnBhbm9wdGVz",
-            "LnByb3RvLnYxLlBvc2l0aW9uUghsb2NhdGlvbhIjCg1jb25mbGljdF90eXBl",
-            "GAQgASgJUgxjb25mbGljdFR5cGUibQoSUm9hZERlc3Ryb3llZEV2ZW50EhsK",
-            "CWZyb21fbm9kZRgBIAEoCVIIZnJvbU5vZGUSFwoHdG9fbm9kZRgCIAEoCVIG",
-            "dG9Ob2RlEiEKDGRlc3Ryb3llcl9pZBgDIAEoCVILZGVzdHJveWVySWQiYgoU",
-            "QnVpbGRpbmdEYW1hZ2VkRXZlbnQSFwoHbm9kZV9pZBgBIAEoCVIGbm9kZUlk",
-            "EhYKBmRhbWFnZRgCIAEoBVIGZGFtYWdlEhkKCGhwX2FmdGVyGAMgASgFUgdo",
-            "cEFmdGVyQlNaOmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJu",
-            "YWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5W",
-            "MWIGcHJvdG8z"));
+            "SWQSJAoOdGFyZ2V0X3VuaXRfaWQYBCABKAlSDHRhcmdldFVuaXRJZCKTAQob",
+            "TXNnQ29tYmF0UGF0aFByZXZpZXdSZXF1ZXN0Eh0KCnJlcXVlc3RfaWQYASAB",
+            "KAlSCXJlcXVlc3RJZBIXCgd1bml0X2lkGAIgASgJUgZ1bml0SWQSFgoGYWN0",
+            "aW9uGAMgASgJUgZhY3Rpb24SJAoOdGFyZ2V0X25vZGVfaWQYBCABKAlSDHRh",
+            "cmdldE5vZGVJZCIRCg9Nc2dTdWJtaXRDb21iYXQicQoTTXNnQ29tYmF0UGhh",
+            "c2VTdGFydBIYCgd0aW1lb3V0GAEgASgFUgd0aW1lb3V0EhYKBnRva2VucxgC",
+            "IAEoBVIGdG9rZW5zEhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCAB",
+            "KAlSBXBoYXNlIkcKDU1hcmNoVHVyblN0b3ASHQoKdHVybl9pbmRleBgBIAEo",
+            "BVIJdHVybkluZGV4EhcKB25vZGVfaWQYAiABKAlSBm5vZGVJZCLDAgoRUXVl",
+            "dWVkQ29tYmF0T3JkZXISFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElkEhYKBmFj",
+            "dGlvbhgCIAEoCVIGYWN0aW9uEiQKDnRhcmdldF9ub2RlX2lkGAMgASgJUgx0",
+            "YXJnZXROb2RlSWQSJAoOdGFyZ2V0X3VuaXRfaWQYBCABKAlSDHRhcmdldFVu",
+            "aXRJZBIiCg1wYXRoX25vZGVfaWRzGAUgAygJUgtwYXRoTm9kZUlkcxIrChJm",
+            "aXJzdF90dXJuX25vZGVfaWQYBiABKAlSD2ZpcnN0VHVybk5vZGVJZBIfCgt0",
+            "b3RhbF90dXJucxgHIAEoBVIKdG90YWxUdXJucxI/Cgp0dXJuX3N0b3BzGAgg",
+            "AygLMiAucGFub3B0ZXMucHJvdG8udjEuTWFyY2hUdXJuU3RvcFIJdHVyblN0",
+            "b3BzIoEBChdNc2dDb21iYXRPcmRlcnNTbmFwc2hvdBISCgR0dXJuGAEgASgF",
+            "UgR0dXJuEhQKBXBoYXNlGAIgASgJUgVwaGFzZRI8CgZvcmRlcnMYAyADKAsy",
+            "JC5wYW5vcHRlcy5wcm90by52MS5RdWV1ZWRDb21iYXRPcmRlclIGb3JkZXJz",
+            "IvwCChxNc2dDb21iYXRQYXRoUHJldmlld1Jlc3BvbnNlEh0KCnJlcXVlc3Rf",
+            "aWQYASABKAlSCXJlcXVlc3RJZBIXCgd1bml0X2lkGAIgASgJUgZ1bml0SWQS",
+            "FgoGYWN0aW9uGAMgASgJUgZhY3Rpb24SJAoOdGFyZ2V0X25vZGVfaWQYBCAB",
+            "KAlSDHRhcmdldE5vZGVJZBIUCgV2YWxpZBgFIAEoCFIFdmFsaWQSHQoKZXJy",
+            "b3JfY29kZRgGIAEoCVIJZXJyb3JDb2RlEiIKDXBhdGhfbm9kZV9pZHMYByAD",
+            "KAlSC3BhdGhOb2RlSWRzEisKEmZpcnN0X3R1cm5fbm9kZV9pZBgIIAEoCVIP",
+            "Zmlyc3RUdXJuTm9kZUlkEh8KC3RvdGFsX3R1cm5zGAkgASgFUgp0b3RhbFR1",
+            "cm5zEj8KCnR1cm5fc3RvcHMYCiADKAsyIC5wYW5vcHRlcy5wcm90by52MS5N",
+            "YXJjaFR1cm5TdG9wUgl0dXJuU3RvcHMiSQoWTXNnTWluaXN0ZXJDb21iYXRD",
+            "aHVuaxIUCgVjaHVuaxgBIAEoCVIFY2h1bmsSGQoIaXNfZmluYWwYAiABKAhS",
+            "B2lzRmluYWwiTwoXTXNnTWluaXN0ZXJDb21iYXRPcmRlcnMSNAoGb3JkZXJz",
+            "GAEgAygLMhwucGFub3B0ZXMucHJvdG8udjEuVW5pdE9yZGVyUgZvcmRlcnMi",
+            "dQoJVW5pdE9yZGVyEhcKB3VuaXRfaWQYASABKAlSBnVuaXRJZBIWCgZhY3Rp",
+            "b24YAiABKAlSBmFjdGlvbhIfCgt0YXJnZXRfbm9kZRgDIAEoCVIKdGFyZ2V0",
+            "Tm9kZRIWCgZyZWFzb24YBCABKAlSBnJlYXNvbiKWAQoTTXNnQ29tYmF0U2V0",
+            "dGxlbWVudBI2CgZldmVudHMYASADKAsyHi5wYW5vcHRlcy5wcm90by52MS5D",
+            "b21iYXRFdmVudFIGZXZlbnRzEhIKBHR1cm4YAiABKAVSBHR1cm4SFAoFcGhh",
+            "c2UYAyABKAlSBXBoYXNlEh0KCm5leHRfcGhhc2UYBCABKAlSCW5leHRQaGFz",
+            "ZSKBBQoLQ29tYmF0RXZlbnQSEgoEdHlwZRgBIAEoCVIEdHlwZRI/Cgl1bml0",
+            "X21vdmUYAiABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Vbml0TW92ZUV2ZW50",
+            "SABSCHVuaXRNb3ZlEkgKDHVuaXRfZGFtYWdlZBgDIAEoCzIjLnBhbm9wdGVz",
+            "LnByb3RvLnYxLlVuaXREYW1hZ2VkRXZlbnRIAFILdW5pdERhbWFnZWQSPwoJ",
+            "dW5pdF9kaWVkGAQgASgLMiAucGFub3B0ZXMucHJvdG8udjEuVW5pdERpZWRF",
+            "dmVudEgAUgh1bml0RGllZBJOCg5jYXN0bGVfZGFtYWdlZBgFIAEoCzIlLnBh",
+            "bm9wdGVzLnByb3RvLnYxLkNhc3RsZURhbWFnZWRFdmVudEgAUg1jYXN0bGVE",
+            "YW1hZ2VkElQKEGNhc3RsZV9kZXN0cm95ZWQYBiABKAsyJy5wYW5vcHRlcy5w",
+            "cm90by52MS5DYXN0bGVEZXN0cm95ZWRFdmVudEgAUg9jYXN0bGVEZXN0cm95",
+            "ZWQSPgoIY29uZmxpY3QYByABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Db25m",
+            "bGljdEV2ZW50SABSCGNvbmZsaWN0Ek4KDnJvYWRfZGVzdHJveWVkGAggASgL",
+            "MiUucGFub3B0ZXMucHJvdG8udjEuUm9hZERlc3Ryb3llZEV2ZW50SABSDXJv",
+            "YWREZXN0cm95ZWQSVAoQYnVpbGRpbmdfZGFtYWdlZBgJIAEoCzInLnBhbm9w",
+            "dGVzLnByb3RvLnYxLkJ1aWxkaW5nRGFtYWdlZEV2ZW50SABSD2J1aWxkaW5n",
+            "RGFtYWdlZEIGCgRkYXRhIqQBCg1Vbml0TW92ZUV2ZW50EhcKB3VuaXRfaWQY",
+            "ASABKAlSBnVuaXRJZBIvCgRmcm9tGAIgASgLMhsucGFub3B0ZXMucHJvdG8u",
+            "djEuUG9zaXRpb25SBGZyb20SKwoCdG8YAyABKAsyGy5wYW5vcHRlcy5wcm90",
+            "by52MS5Qb3NpdGlvblICdG8SHAoJdGltZXN0YW1wGAQgASgFUgl0aW1lc3Rh",
+            "bXAidgoQVW5pdERhbWFnZWRFdmVudBIXCgd1bml0X2lkGAEgASgJUgZ1bml0",
+            "SWQSFgoGZGFtYWdlGAIgASgFUgZkYW1hZ2USGQoIaHBfYWZ0ZXIYAyABKAVS",
+            "B2hwQWZ0ZXISFgoGc291cmNlGAQgASgJUgZzb3VyY2UidAoNVW5pdERpZWRF",
+            "dmVudBIXCgd1bml0X2lkGAEgASgJUgZ1bml0SWQSGwoJa2lsbGVyX2lkGAIg",
+            "ASgJUghraWxsZXJJZBItCgNwb3MYAyABKAsyGy5wYW5vcHRlcy5wcm90by52",
+            "MS5Qb3NpdGlvblIDcG9zIoEBChJDYXN0bGVEYW1hZ2VkRXZlbnQSFwoHbm9k",
+            "ZV9pZBgBIAEoCVIGbm9kZUlkEhYKBmRhbWFnZRgCIAEoBVIGZGFtYWdlEhkK",
+            "CGhwX2FmdGVyGAMgASgFUgdocEFmdGVyEh8KC2F0dGFja2VyX2lkGAQgASgJ",
+            "UgphdHRhY2tlcklkIlwKFENhc3RsZURlc3Ryb3llZEV2ZW50EhcKB25vZGVf",
+            "aWQYASABKAlSBm5vZGVJZBIrChFjb25xdWVyb3JfZmFjdGlvbhgCIAEoCVIQ",
+            "Y29ucXVlcm9yRmFjdGlvbiKlAQoNQ29uZmxpY3RFdmVudBIaCgl1bml0X2Ff",
+            "aWQYASABKAlSB3VuaXRBSWQSGgoJdW5pdF9iX2lkGAIgASgJUgd1bml0Qklk",
+            "EjcKCGxvY2F0aW9uGAMgASgLMhsucGFub3B0ZXMucHJvdG8udjEuUG9zaXRp",
+            "b25SCGxvY2F0aW9uEiMKDWNvbmZsaWN0X3R5cGUYBCABKAlSDGNvbmZsaWN0",
+            "VHlwZSJtChJSb2FkRGVzdHJveWVkRXZlbnQSGwoJZnJvbV9ub2RlGAEgASgJ",
+            "Ughmcm9tTm9kZRIXCgd0b19ub2RlGAIgASgJUgZ0b05vZGUSIQoMZGVzdHJv",
+            "eWVyX2lkGAMgASgJUgtkZXN0cm95ZXJJZCJiChRCdWlsZGluZ0RhbWFnZWRF",
+            "dmVudBIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQSFgoGZGFtYWdlGAIgASgF",
+            "UgZkYW1hZ2USGQoIaHBfYWZ0ZXIYAyABKAVSB2hwQWZ0ZXJCU1o6Z2l0aHVi",
+            "LmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7",
+            "cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -96,8 +119,13 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTokenVetoCombat), global::Panoptes.Protocol.V1.MsgTokenVetoCombat.Parser, new[]{ "UnitId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTokenMicro), global::Panoptes.Protocol.V1.MsgTokenMicro.Parser, new[]{ "UnitId", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatOrder), global::Panoptes.Protocol.V1.MsgCombatOrder.Parser, new[]{ "UnitId", "Action", "TargetNodeId", "TargetUnitId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatPathPreviewRequest), global::Panoptes.Protocol.V1.MsgCombatPathPreviewRequest.Parser, new[]{ "RequestId", "UnitId", "Action", "TargetNodeId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSubmitCombat), global::Panoptes.Protocol.V1.MsgSubmitCombat.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatPhaseStart), global::Panoptes.Protocol.V1.MsgCombatPhaseStart.Parser, new[]{ "Timeout", "Tokens", "Turn", "Phase" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MarchTurnStop), global::Panoptes.Protocol.V1.MarchTurnStop.Parser, new[]{ "TurnIndex", "NodeId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.QueuedCombatOrder), global::Panoptes.Protocol.V1.QueuedCombatOrder.Parser, new[]{ "UnitId", "Action", "TargetNodeId", "TargetUnitId", "PathNodeIds", "FirstTurnNodeId", "TotalTurns", "TurnStops" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatOrdersSnapshot), global::Panoptes.Protocol.V1.MsgCombatOrdersSnapshot.Parser, new[]{ "Turn", "Phase", "Orders" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgCombatPathPreviewResponse), global::Panoptes.Protocol.V1.MsgCombatPathPreviewResponse.Parser, new[]{ "RequestId", "UnitId", "Action", "TargetNodeId", "Valid", "ErrorCode", "PathNodeIds", "FirstTurnNodeId", "TotalTurns", "TurnStops" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterCombatChunk), global::Panoptes.Protocol.V1.MsgMinisterCombatChunk.Parser, new[]{ "Chunk", "IsFinal" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgMinisterCombatOrders), global::Panoptes.Protocol.V1.MsgMinisterCombatOrders.Parser, new[]{ "Orders" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitOrder), global::Panoptes.Protocol.V1.UnitOrder.Parser, new[]{ "UnitId", "Action", "TargetNode", "Reason" }, null, null, null, null),
@@ -1410,6 +1438,315 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MsgCombatPathPreviewRequest : pb::IMessage<MsgCombatPathPreviewRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MsgCombatPathPreviewRequest> _parser = new pb::MessageParser<MsgCombatPathPreviewRequest>(() => new MsgCombatPathPreviewRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MsgCombatPathPreviewRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewRequest(MsgCombatPathPreviewRequest other) : this() {
+      requestId_ = other.requestId_;
+      unitId_ = other.unitId_;
+      action_ = other.action_;
+      targetNodeId_ = other.targetNodeId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewRequest Clone() {
+      return new MsgCombatPathPreviewRequest(this);
+    }
+
+    /// <summary>Field number for the "request_id" field.</summary>
+    public const int RequestIdFieldNumber = 1;
+    private string requestId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RequestId {
+      get { return requestId_; }
+      set {
+        requestId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "unit_id" field.</summary>
+    public const int UnitIdFieldNumber = 2;
+    private string unitId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UnitId {
+      get { return unitId_; }
+      set {
+        unitId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "action" field.</summary>
+    public const int ActionFieldNumber = 3;
+    private string action_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Action {
+      get { return action_; }
+      set {
+        action_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_node_id" field.</summary>
+    public const int TargetNodeIdFieldNumber = 4;
+    private string targetNodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetNodeId {
+      get { return targetNodeId_; }
+      set {
+        targetNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MsgCombatPathPreviewRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MsgCombatPathPreviewRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (RequestId != other.RequestId) return false;
+      if (UnitId != other.UnitId) return false;
+      if (Action != other.Action) return false;
+      if (TargetNodeId != other.TargetNodeId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (RequestId.Length != 0) hash ^= RequestId.GetHashCode();
+      if (UnitId.Length != 0) hash ^= UnitId.GetHashCode();
+      if (Action.Length != 0) hash ^= Action.GetHashCode();
+      if (TargetNodeId.Length != 0) hash ^= TargetNodeId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (RequestId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetNodeId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (RequestId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetNodeId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (RequestId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UnitId);
+      }
+      if (Action.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetNodeId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MsgCombatPathPreviewRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.RequestId.Length != 0) {
+        RequestId = other.RequestId;
+      }
+      if (other.UnitId.Length != 0) {
+        UnitId = other.UnitId;
+      }
+      if (other.Action.Length != 0) {
+        Action = other.Action;
+      }
+      if (other.TargetNodeId.Length != 0) {
+        TargetNodeId = other.TargetNodeId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            RequestId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 26: {
+            Action = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            RequestId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 26: {
+            Action = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MsgSubmitCombat : pb::IMessage<MsgSubmitCombat>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1424,7 +1761,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1585,7 +1922,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1879,6 +2216,1446 @@ namespace Panoptes.Protocol.V1 {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MarchTurnStop : pb::IMessage<MarchTurnStop>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MarchTurnStop> _parser = new pb::MessageParser<MarchTurnStop>(() => new MarchTurnStop());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MarchTurnStop> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[8]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MarchTurnStop() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MarchTurnStop(MarchTurnStop other) : this() {
+      turnIndex_ = other.turnIndex_;
+      nodeId_ = other.nodeId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MarchTurnStop Clone() {
+      return new MarchTurnStop(this);
+    }
+
+    /// <summary>Field number for the "turn_index" field.</summary>
+    public const int TurnIndexFieldNumber = 1;
+    private int turnIndex_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TurnIndex {
+      get { return turnIndex_; }
+      set {
+        turnIndex_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "node_id" field.</summary>
+    public const int NodeIdFieldNumber = 2;
+    private string nodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string NodeId {
+      get { return nodeId_; }
+      set {
+        nodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MarchTurnStop);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MarchTurnStop other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TurnIndex != other.TurnIndex) return false;
+      if (NodeId != other.NodeId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TurnIndex != 0) hash ^= TurnIndex.GetHashCode();
+      if (NodeId.Length != 0) hash ^= NodeId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (TurnIndex != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(TurnIndex);
+      }
+      if (NodeId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(NodeId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (TurnIndex != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(TurnIndex);
+      }
+      if (NodeId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(NodeId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (TurnIndex != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TurnIndex);
+      }
+      if (NodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(NodeId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MarchTurnStop other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TurnIndex != 0) {
+        TurnIndex = other.TurnIndex;
+      }
+      if (other.NodeId.Length != 0) {
+        NodeId = other.NodeId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            TurnIndex = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            NodeId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            TurnIndex = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            NodeId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class QueuedCombatOrder : pb::IMessage<QueuedCombatOrder>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<QueuedCombatOrder> _parser = new pb::MessageParser<QueuedCombatOrder>(() => new QueuedCombatOrder());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<QueuedCombatOrder> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public QueuedCombatOrder() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public QueuedCombatOrder(QueuedCombatOrder other) : this() {
+      unitId_ = other.unitId_;
+      action_ = other.action_;
+      targetNodeId_ = other.targetNodeId_;
+      targetUnitId_ = other.targetUnitId_;
+      pathNodeIds_ = other.pathNodeIds_.Clone();
+      firstTurnNodeId_ = other.firstTurnNodeId_;
+      totalTurns_ = other.totalTurns_;
+      turnStops_ = other.turnStops_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public QueuedCombatOrder Clone() {
+      return new QueuedCombatOrder(this);
+    }
+
+    /// <summary>Field number for the "unit_id" field.</summary>
+    public const int UnitIdFieldNumber = 1;
+    private string unitId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UnitId {
+      get { return unitId_; }
+      set {
+        unitId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "action" field.</summary>
+    public const int ActionFieldNumber = 2;
+    private string action_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Action {
+      get { return action_; }
+      set {
+        action_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_node_id" field.</summary>
+    public const int TargetNodeIdFieldNumber = 3;
+    private string targetNodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetNodeId {
+      get { return targetNodeId_; }
+      set {
+        targetNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_unit_id" field.</summary>
+    public const int TargetUnitIdFieldNumber = 4;
+    private string targetUnitId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetUnitId {
+      get { return targetUnitId_; }
+      set {
+        targetUnitId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "path_node_ids" field.</summary>
+    public const int PathNodeIdsFieldNumber = 5;
+    private static readonly pb::FieldCodec<string> _repeated_pathNodeIds_codec
+        = pb::FieldCodec.ForString(42);
+    private readonly pbc::RepeatedField<string> pathNodeIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> PathNodeIds {
+      get { return pathNodeIds_; }
+    }
+
+    /// <summary>Field number for the "first_turn_node_id" field.</summary>
+    public const int FirstTurnNodeIdFieldNumber = 6;
+    private string firstTurnNodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string FirstTurnNodeId {
+      get { return firstTurnNodeId_; }
+      set {
+        firstTurnNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "total_turns" field.</summary>
+    public const int TotalTurnsFieldNumber = 7;
+    private int totalTurns_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TotalTurns {
+      get { return totalTurns_; }
+      set {
+        totalTurns_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "turn_stops" field.</summary>
+    public const int TurnStopsFieldNumber = 8;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.MarchTurnStop> _repeated_turnStops_codec
+        = pb::FieldCodec.ForMessage(66, global::Panoptes.Protocol.V1.MarchTurnStop.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop> turnStops_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop> TurnStops {
+      get { return turnStops_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as QueuedCombatOrder);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(QueuedCombatOrder other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (UnitId != other.UnitId) return false;
+      if (Action != other.Action) return false;
+      if (TargetNodeId != other.TargetNodeId) return false;
+      if (TargetUnitId != other.TargetUnitId) return false;
+      if(!pathNodeIds_.Equals(other.pathNodeIds_)) return false;
+      if (FirstTurnNodeId != other.FirstTurnNodeId) return false;
+      if (TotalTurns != other.TotalTurns) return false;
+      if(!turnStops_.Equals(other.turnStops_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (UnitId.Length != 0) hash ^= UnitId.GetHashCode();
+      if (Action.Length != 0) hash ^= Action.GetHashCode();
+      if (TargetNodeId.Length != 0) hash ^= TargetNodeId.GetHashCode();
+      if (TargetUnitId.Length != 0) hash ^= TargetUnitId.GetHashCode();
+      hash ^= pathNodeIds_.GetHashCode();
+      if (FirstTurnNodeId.Length != 0) hash ^= FirstTurnNodeId.GetHashCode();
+      if (TotalTurns != 0) hash ^= TotalTurns.GetHashCode();
+      hash ^= turnStops_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetNodeId);
+      }
+      if (TargetUnitId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetUnitId);
+      }
+      pathNodeIds_.WriteTo(output, _repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(TotalTurns);
+      }
+      turnStops_.WriteTo(output, _repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(TargetNodeId);
+      }
+      if (TargetUnitId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetUnitId);
+      }
+      pathNodeIds_.WriteTo(ref output, _repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(TotalTurns);
+      }
+      turnStops_.WriteTo(ref output, _repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (UnitId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UnitId);
+      }
+      if (Action.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetNodeId);
+      }
+      if (TargetUnitId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetUnitId);
+      }
+      size += pathNodeIds_.CalculateSize(_repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TotalTurns);
+      }
+      size += turnStops_.CalculateSize(_repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(QueuedCombatOrder other) {
+      if (other == null) {
+        return;
+      }
+      if (other.UnitId.Length != 0) {
+        UnitId = other.UnitId;
+      }
+      if (other.Action.Length != 0) {
+        Action = other.Action;
+      }
+      if (other.TargetNodeId.Length != 0) {
+        TargetNodeId = other.TargetNodeId;
+      }
+      if (other.TargetUnitId.Length != 0) {
+        TargetUnitId = other.TargetUnitId;
+      }
+      pathNodeIds_.Add(other.pathNodeIds_);
+      if (other.FirstTurnNodeId.Length != 0) {
+        FirstTurnNodeId = other.FirstTurnNodeId;
+      }
+      if (other.TotalTurns != 0) {
+        TotalTurns = other.TotalTurns;
+      }
+      turnStops_.Add(other.turnStops_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 18: {
+            Action = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetUnitId = input.ReadString();
+            break;
+          }
+          case 42: {
+            pathNodeIds_.AddEntriesFrom(input, _repeated_pathNodeIds_codec);
+            break;
+          }
+          case 50: {
+            FirstTurnNodeId = input.ReadString();
+            break;
+          }
+          case 56: {
+            TotalTurns = input.ReadInt32();
+            break;
+          }
+          case 66: {
+            turnStops_.AddEntriesFrom(input, _repeated_turnStops_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 18: {
+            Action = input.ReadString();
+            break;
+          }
+          case 26: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetUnitId = input.ReadString();
+            break;
+          }
+          case 42: {
+            pathNodeIds_.AddEntriesFrom(ref input, _repeated_pathNodeIds_codec);
+            break;
+          }
+          case 50: {
+            FirstTurnNodeId = input.ReadString();
+            break;
+          }
+          case 56: {
+            TotalTurns = input.ReadInt32();
+            break;
+          }
+          case 66: {
+            turnStops_.AddEntriesFrom(ref input, _repeated_turnStops_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MsgCombatOrdersSnapshot : pb::IMessage<MsgCombatOrdersSnapshot>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MsgCombatOrdersSnapshot> _parser = new pb::MessageParser<MsgCombatOrdersSnapshot>(() => new MsgCombatOrdersSnapshot());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MsgCombatOrdersSnapshot> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[10]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatOrdersSnapshot() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatOrdersSnapshot(MsgCombatOrdersSnapshot other) : this() {
+      turn_ = other.turn_;
+      phase_ = other.phase_;
+      orders_ = other.orders_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatOrdersSnapshot Clone() {
+      return new MsgCombatOrdersSnapshot(this);
+    }
+
+    /// <summary>Field number for the "turn" field.</summary>
+    public const int TurnFieldNumber = 1;
+    private int turn_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Turn {
+      get { return turn_; }
+      set {
+        turn_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "phase" field.</summary>
+    public const int PhaseFieldNumber = 2;
+    private string phase_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Phase {
+      get { return phase_; }
+      set {
+        phase_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "orders" field.</summary>
+    public const int OrdersFieldNumber = 3;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.QueuedCombatOrder> _repeated_orders_codec
+        = pb::FieldCodec.ForMessage(26, global::Panoptes.Protocol.V1.QueuedCombatOrder.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.QueuedCombatOrder> orders_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.QueuedCombatOrder>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.QueuedCombatOrder> Orders {
+      get { return orders_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MsgCombatOrdersSnapshot);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MsgCombatOrdersSnapshot other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Turn != other.Turn) return false;
+      if (Phase != other.Phase) return false;
+      if(!orders_.Equals(other.orders_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Turn != 0) hash ^= Turn.GetHashCode();
+      if (Phase.Length != 0) hash ^= Phase.GetHashCode();
+      hash ^= orders_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Turn != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Phase);
+      }
+      orders_.WriteTo(output, _repeated_orders_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Turn != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Turn);
+      }
+      if (Phase.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Phase);
+      }
+      orders_.WriteTo(ref output, _repeated_orders_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Turn != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Turn);
+      }
+      if (Phase.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Phase);
+      }
+      size += orders_.CalculateSize(_repeated_orders_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MsgCombatOrdersSnapshot other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Turn != 0) {
+        Turn = other.Turn;
+      }
+      if (other.Phase.Length != 0) {
+        Phase = other.Phase;
+      }
+      orders_.Add(other.orders_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 26: {
+            orders_.AddEntriesFrom(input, _repeated_orders_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Turn = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            Phase = input.ReadString();
+            break;
+          }
+          case 26: {
+            orders_.AddEntriesFrom(ref input, _repeated_orders_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class MsgCombatPathPreviewResponse : pb::IMessage<MsgCombatPathPreviewResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<MsgCombatPathPreviewResponse> _parser = new pb::MessageParser<MsgCombatPathPreviewResponse>(() => new MsgCombatPathPreviewResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<MsgCombatPathPreviewResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[11]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewResponse(MsgCombatPathPreviewResponse other) : this() {
+      requestId_ = other.requestId_;
+      unitId_ = other.unitId_;
+      action_ = other.action_;
+      targetNodeId_ = other.targetNodeId_;
+      valid_ = other.valid_;
+      errorCode_ = other.errorCode_;
+      pathNodeIds_ = other.pathNodeIds_.Clone();
+      firstTurnNodeId_ = other.firstTurnNodeId_;
+      totalTurns_ = other.totalTurns_;
+      turnStops_ = other.turnStops_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public MsgCombatPathPreviewResponse Clone() {
+      return new MsgCombatPathPreviewResponse(this);
+    }
+
+    /// <summary>Field number for the "request_id" field.</summary>
+    public const int RequestIdFieldNumber = 1;
+    private string requestId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RequestId {
+      get { return requestId_; }
+      set {
+        requestId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "unit_id" field.</summary>
+    public const int UnitIdFieldNumber = 2;
+    private string unitId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string UnitId {
+      get { return unitId_; }
+      set {
+        unitId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "action" field.</summary>
+    public const int ActionFieldNumber = 3;
+    private string action_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Action {
+      get { return action_; }
+      set {
+        action_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "target_node_id" field.</summary>
+    public const int TargetNodeIdFieldNumber = 4;
+    private string targetNodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TargetNodeId {
+      get { return targetNodeId_; }
+      set {
+        targetNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "valid" field.</summary>
+    public const int ValidFieldNumber = 5;
+    private bool valid_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Valid {
+      get { return valid_; }
+      set {
+        valid_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "error_code" field.</summary>
+    public const int ErrorCodeFieldNumber = 6;
+    private string errorCode_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ErrorCode {
+      get { return errorCode_; }
+      set {
+        errorCode_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "path_node_ids" field.</summary>
+    public const int PathNodeIdsFieldNumber = 7;
+    private static readonly pb::FieldCodec<string> _repeated_pathNodeIds_codec
+        = pb::FieldCodec.ForString(58);
+    private readonly pbc::RepeatedField<string> pathNodeIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> PathNodeIds {
+      get { return pathNodeIds_; }
+    }
+
+    /// <summary>Field number for the "first_turn_node_id" field.</summary>
+    public const int FirstTurnNodeIdFieldNumber = 8;
+    private string firstTurnNodeId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string FirstTurnNodeId {
+      get { return firstTurnNodeId_; }
+      set {
+        firstTurnNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "total_turns" field.</summary>
+    public const int TotalTurnsFieldNumber = 9;
+    private int totalTurns_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TotalTurns {
+      get { return totalTurns_; }
+      set {
+        totalTurns_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "turn_stops" field.</summary>
+    public const int TurnStopsFieldNumber = 10;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.MarchTurnStop> _repeated_turnStops_codec
+        = pb::FieldCodec.ForMessage(82, global::Panoptes.Protocol.V1.MarchTurnStop.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop> turnStops_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.MarchTurnStop> TurnStops {
+      get { return turnStops_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as MsgCombatPathPreviewResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(MsgCombatPathPreviewResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (RequestId != other.RequestId) return false;
+      if (UnitId != other.UnitId) return false;
+      if (Action != other.Action) return false;
+      if (TargetNodeId != other.TargetNodeId) return false;
+      if (Valid != other.Valid) return false;
+      if (ErrorCode != other.ErrorCode) return false;
+      if(!pathNodeIds_.Equals(other.pathNodeIds_)) return false;
+      if (FirstTurnNodeId != other.FirstTurnNodeId) return false;
+      if (TotalTurns != other.TotalTurns) return false;
+      if(!turnStops_.Equals(other.turnStops_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (RequestId.Length != 0) hash ^= RequestId.GetHashCode();
+      if (UnitId.Length != 0) hash ^= UnitId.GetHashCode();
+      if (Action.Length != 0) hash ^= Action.GetHashCode();
+      if (TargetNodeId.Length != 0) hash ^= TargetNodeId.GetHashCode();
+      if (Valid != false) hash ^= Valid.GetHashCode();
+      if (ErrorCode.Length != 0) hash ^= ErrorCode.GetHashCode();
+      hash ^= pathNodeIds_.GetHashCode();
+      if (FirstTurnNodeId.Length != 0) hash ^= FirstTurnNodeId.GetHashCode();
+      if (TotalTurns != 0) hash ^= TotalTurns.GetHashCode();
+      hash ^= turnStops_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (RequestId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetNodeId);
+      }
+      if (Valid != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(Valid);
+      }
+      if (ErrorCode.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(ErrorCode);
+      }
+      pathNodeIds_.WriteTo(output, _repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(TotalTurns);
+      }
+      turnStops_.WriteTo(output, _repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (RequestId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(UnitId);
+      }
+      if (Action.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(TargetNodeId);
+      }
+      if (Valid != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(Valid);
+      }
+      if (ErrorCode.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(ErrorCode);
+      }
+      pathNodeIds_.WriteTo(ref output, _repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(TotalTurns);
+      }
+      turnStops_.WriteTo(ref output, _repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (RequestId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(RequestId);
+      }
+      if (UnitId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(UnitId);
+      }
+      if (Action.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Action);
+      }
+      if (TargetNodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetNodeId);
+      }
+      if (Valid != false) {
+        size += 1 + 1;
+      }
+      if (ErrorCode.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ErrorCode);
+      }
+      size += pathNodeIds_.CalculateSize(_repeated_pathNodeIds_codec);
+      if (FirstTurnNodeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(FirstTurnNodeId);
+      }
+      if (TotalTurns != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TotalTurns);
+      }
+      size += turnStops_.CalculateSize(_repeated_turnStops_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(MsgCombatPathPreviewResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.RequestId.Length != 0) {
+        RequestId = other.RequestId;
+      }
+      if (other.UnitId.Length != 0) {
+        UnitId = other.UnitId;
+      }
+      if (other.Action.Length != 0) {
+        Action = other.Action;
+      }
+      if (other.TargetNodeId.Length != 0) {
+        TargetNodeId = other.TargetNodeId;
+      }
+      if (other.Valid != false) {
+        Valid = other.Valid;
+      }
+      if (other.ErrorCode.Length != 0) {
+        ErrorCode = other.ErrorCode;
+      }
+      pathNodeIds_.Add(other.pathNodeIds_);
+      if (other.FirstTurnNodeId.Length != 0) {
+        FirstTurnNodeId = other.FirstTurnNodeId;
+      }
+      if (other.TotalTurns != 0) {
+        TotalTurns = other.TotalTurns;
+      }
+      turnStops_.Add(other.turnStops_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            RequestId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 26: {
+            Action = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+          case 40: {
+            Valid = input.ReadBool();
+            break;
+          }
+          case 50: {
+            ErrorCode = input.ReadString();
+            break;
+          }
+          case 58: {
+            pathNodeIds_.AddEntriesFrom(input, _repeated_pathNodeIds_codec);
+            break;
+          }
+          case 66: {
+            FirstTurnNodeId = input.ReadString();
+            break;
+          }
+          case 72: {
+            TotalTurns = input.ReadInt32();
+            break;
+          }
+          case 82: {
+            turnStops_.AddEntriesFrom(input, _repeated_turnStops_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            RequestId = input.ReadString();
+            break;
+          }
+          case 18: {
+            UnitId = input.ReadString();
+            break;
+          }
+          case 26: {
+            Action = input.ReadString();
+            break;
+          }
+          case 34: {
+            TargetNodeId = input.ReadString();
+            break;
+          }
+          case 40: {
+            Valid = input.ReadBool();
+            break;
+          }
+          case 50: {
+            ErrorCode = input.ReadString();
+            break;
+          }
+          case 58: {
+            pathNodeIds_.AddEntriesFrom(ref input, _repeated_pathNodeIds_codec);
+            break;
+          }
+          case 66: {
+            FirstTurnNodeId = input.ReadString();
+            break;
+          }
+          case 72: {
+            TotalTurns = input.ReadInt32();
+            break;
+          }
+          case 82: {
+            turnStops_.AddEntriesFrom(ref input, _repeated_turnStops_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   /// <summary>
   /// 部长战区拆解（流式推送，多条chunk）
   /// </summary>
@@ -1897,7 +3674,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2135,7 +3912,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2322,7 +4099,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2637,7 +4414,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2935,7 +4712,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3584,7 +5361,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[17]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3914,7 +5691,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4226,7 +6003,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[19]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4507,7 +6284,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[20]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4816,7 +6593,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[21]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5051,7 +6828,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[22]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5372,7 +7149,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[18]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[23]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5644,7 +7421,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[19]; }
+      get { return global::Panoptes.Protocol.V1.CombatReflection.Descriptor.MessageTypes[24]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

@@ -57,7 +57,7 @@ func TestHumanPlayerNotifyTurnSendsPhaseMessages(t *testing.T) {
 	player.NotifyTurn(context.Background(), room, "combat_planning")
 
 	msgs := tp.sent["player-1"]
-	if len(msgs) != 2 {
+	if len(msgs) != 3 {
 		t.Fatalf("send count = %d", len(msgs))
 	}
 
@@ -81,6 +81,14 @@ func TestHumanPlayerNotifyTurnSendsPhaseMessages(t *testing.T) {
 	}
 	if combat.GetPhase() != "combat_planning" {
 		t.Fatalf("combat phase = %q", combat.GetPhase())
+	}
+
+	snapshot, ok := msgs[2].(*pb.MsgCombatOrdersSnapshot)
+	if !ok {
+		t.Fatalf("combat snapshot type = %T", msgs[2])
+	}
+	if snapshot.GetTurn() != 7 || snapshot.GetPhase() != "combat_planning" {
+		t.Fatalf("combat snapshot payload = %#v", snapshot)
 	}
 }
 
@@ -227,6 +235,130 @@ func TestGameRoomRejectsOutOfPhaseMessages(t *testing.T) {
 	}
 }
 
+func TestGameRoom_SetCombatOrderUpdatesActiveMarches(t *testing.T) {
+	room, unitID := newCombatRoomForTest(t)
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: "N2_0",
+	})
+
+	march, ok := room.state.ActiveMarches[unitID]
+	if !ok {
+		t.Fatalf("ActiveMarches missing move order")
+	}
+	if march.DestinationNodeID != "N2_0" {
+		t.Fatalf("DestinationNodeID = %q, want %q", march.DestinationNodeID, "N2_0")
+	}
+
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID: "player-1",
+		UnitID:   unitID,
+		Action:   domain.CombatActionHold,
+	})
+
+	if _, ok := room.state.ActiveMarches[unitID]; ok {
+		t.Fatalf("ActiveMarch should be cleared by hold order")
+	}
+}
+
+func TestGameRoom_PrepareCombatOrdersUsesActiveMarches(t *testing.T) {
+	room, unitID := newCombatRoomForTest(t)
+	room.state.ActiveMarches[unitID] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            unitID,
+		Action:            domain.CombatActionMove,
+		DestinationNodeID: "N2_0",
+	}
+
+	room.prepareCombatOrders()
+
+	order, ok := room.state.PendingCombatOrders[unitID]
+	if !ok {
+		t.Fatalf("PendingCombatOrders missing active march order")
+	}
+	if order.Action != domain.CombatActionMove {
+		t.Fatalf("Action = %q, want %q", order.Action, domain.CombatActionMove)
+	}
+	if order.TargetNodeID != "N2_0" {
+		t.Fatalf("TargetNodeID = %q, want %q", order.TargetNodeID, "N2_0")
+	}
+}
+
+func TestRunCombatSettlement_ActiveMarchContinuesUntilDestination(t *testing.T) {
+	room, unitID := newCombatRoomForTestSize(t, 5)
+	room.SetCombatOrder(domain.CombatOrder{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       domain.CombatActionMove,
+		TargetNodeID: "N4_0",
+	})
+
+	RunCombatSettlement(room)
+	if got := roomUnitPosition(t, room, unitID); got != (domain.Position{X: 2, Y: 0}) {
+		t.Fatalf("after first settlement position = %#v, want %#v", got, domain.Position{X: 2, Y: 0})
+	}
+	if _, ok := room.state.ActiveMarches[unitID]; !ok {
+		t.Fatalf("ActiveMarch should remain after first settlement")
+	}
+
+	RunCombatSettlement(room)
+	if got := roomUnitPosition(t, room, unitID); got != (domain.Position{X: 4, Y: 0}) {
+		t.Fatalf("after second settlement position = %#v, want %#v", got, domain.Position{X: 4, Y: 0})
+	}
+	if _, ok := room.state.ActiveMarches[unitID]; ok {
+		t.Fatalf("ActiveMarch should clear after reaching destination")
+	}
+}
+
+func TestHumanPlayerNotifyTurnCombatSendsOrdersSnapshot(t *testing.T) {
+	tp := newStubTransport()
+	room, unitID := newCombatRoomForTest(t)
+	room.transport = tp
+	room.Turn = 4
+	room.state.ActiveMarches[unitID] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            unitID,
+		Action:            domain.CombatActionMove,
+		DestinationNodeID: "N2_0",
+		LastPreview: domain.RoutePreview{
+			PathNodeIDs:     []string{"N0_0", "N1_0", "N2_0"},
+			FirstTurnNodeID: "N2_0",
+			TotalTurns:      1,
+			TurnStops:       []domain.MarchTurnStop{{TurnIndex: 1, NodeID: "N2_0"}},
+		},
+	}
+
+	player := NewHumanPlayer("player-1", "alice", tp)
+	player.NotifyTurn(context.Background(), room, "combat_planning")
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) != 2 {
+		t.Fatalf("send count = %d, want 2", len(msgs))
+	}
+
+	if _, ok := msgs[0].(*pb.MsgCombatPhaseStart); !ok {
+		t.Fatalf("first message type = %T, want MsgCombatPhaseStart", msgs[0])
+	}
+
+	snapshot, ok := msgs[1].(*pb.MsgCombatOrdersSnapshot)
+	if !ok {
+		t.Fatalf("second message type = %T, want MsgCombatOrdersSnapshot", msgs[1])
+	}
+	if len(snapshot.GetOrders()) != 1 {
+		t.Fatalf("orders len = %d, want 1", len(snapshot.GetOrders()))
+	}
+	order := snapshot.GetOrders()[0]
+	if order.GetUnitId() != unitID {
+		t.Fatalf("unit id = %q, want %q", order.GetUnitId(), unitID)
+	}
+	if order.GetFirstTurnNodeId() != "N2_0" {
+		t.Fatalf("first_turn_node_id = %q, want %q", order.GetFirstTurnNodeId(), "N2_0")
+	}
+}
+
 func TestRegistryRegisterAndUnregister(t *testing.T) {
 	registry := NewGameRoomRegistry()
 	room := NewRoom("game-1", []Player{
@@ -243,6 +375,73 @@ func TestRegistryRegisterAndUnregister(t *testing.T) {
 	if _, ok := registry.GetRoomByPlayerID("bot_abcdwxyz"); ok {
 		t.Fatalf("registry should remove bot mapping")
 	}
+}
+
+func newCombatRoomForTest(t *testing.T) (*GameRoom, string) {
+	return newCombatRoomForTestSize(t, 3)
+}
+
+func newCombatRoomForTestSize(t *testing.T, width int) (*GameRoom, string) {
+	t.Helper()
+
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			BuildPointsPerTurn: 10,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", MoveCostNoRoad: 2, Passable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "combat-room-test",
+		Width:        width,
+		Height:       1,
+		SpawnPoints:  map[int]domain.Position{0: {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		NamedNodes:   map[string]string{},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	for x := 0; x < width; x++ {
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: roomTestNodeID(x), X: x, Y: 0, Terrain: "plain"})
+		mapData.NodeIndex[roomTestNodeID(x)] = entity
+	}
+
+	room := NewRoom("room-combat", nil, newStubTransport(), &config.Config{})
+	room.state = domain.NewGameState("room-combat", []string{"player-1"}, []string{"alice"}, mapData)
+	room.state.World = world
+
+	entry := world.Entry(ecs.CreateUnit(world, "warrior", "player-1", domain.Position{X: 0, Y: 0}))
+	unitID := ecs.UnitStatsC.Get(entry).ID
+	return room, unitID
+}
+
+func roomUnitPosition(t *testing.T, room *GameRoom, unitID string) domain.Position {
+	t.Helper()
+	var found domain.Position
+	ok := false
+	ecs.AllUnits(room.state.World).Each(room.state.World, func(entry *donburi.Entry) {
+		if ok || ecs.UnitStatsC.Get(entry).ID != unitID {
+			return
+		}
+		pos := ecs.PositionC.Get(entry)
+		found = domain.Position{X: pos.X, Y: pos.Y}
+		ok = true
+	})
+	if !ok {
+		t.Fatalf("unit %s not found", unitID)
+	}
+	return found
+}
+
+func roomTestNodeID(x int) string {
+	return "N" + string(rune('0'+x)) + "_0"
 }
 
 func TestToProtoResourcesMapsKnownKeysAndIgnoresUnknown(t *testing.T) {
@@ -371,6 +570,37 @@ func TestAppendCastleResourceSnapshotsIncludesOwnedCastleResources(t *testing.T)
 	}
 	if snapshot.GetData()["food"] != "7" || snapshot.GetData()["wood"] != "4" || snapshot.GetData()["build_points"] != "3" {
 		t.Fatalf("snapshot data = %#v", snapshot.GetData())
+	}
+}
+
+func TestBuildPlayerViewIncludesResearchState(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			StartingTechPoints: 1,
+			TechPointsPerTurn:  2,
+			TechPointsMax:      5,
+		},
+	}))
+
+	room := NewRoom("game-1", nil, newStubTransport(), &config.Config{})
+	room.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{})
+	room.state.Players["player-1"].Research.TechPoints = 4
+	room.state.Players["player-1"].Research.UnlockTechnology("agri_unlock_farm")
+
+	view := room.buildPlayerView("player-1")
+	if view.GetResearch() == nil {
+		t.Fatalf("research view is nil")
+	}
+	if view.GetResearch().GetTechPoints() != 4 {
+		t.Fatalf("tech_points = %d", view.GetResearch().GetTechPoints())
+	}
+	if view.GetResearch().GetTechPointsIncome() != 2 || view.GetResearch().GetTechPointsCap() != 5 {
+		t.Fatalf("research income/cap = %#v", view.GetResearch())
+	}
+	if len(view.GetResearch().GetUnlockedTechnologyIds()) != 1 || view.GetResearch().GetUnlockedTechnologyIds()[0] != "agri_unlock_farm" {
+		t.Fatalf("unlocked technologies = %#v", view.GetResearch().GetUnlockedTechnologyIds())
 	}
 }
 

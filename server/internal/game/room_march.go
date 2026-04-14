@@ -1,0 +1,168 @@
+package game
+
+import (
+	"sort"
+
+	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/engine/combat"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/yohamta/donburi"
+)
+
+func (r *GameRoom) syncActiveMarchWithOrder(order domain.CombatOrder) {
+	if r == nil || r.state == nil || order.UnitID == "" {
+		return
+	}
+
+	if order.Action != domain.CombatActionMove || order.TargetNodeID == "" {
+		delete(r.state.ActiveMarches, order.UnitID)
+		return
+	}
+
+	march := domain.ActiveMarch{
+		PlayerID:          order.PlayerID,
+		UnitID:            order.UnitID,
+		Action:            domain.CombatActionMove,
+		DestinationNodeID: order.TargetNodeID,
+	}
+	if preview, ok := r.buildRoutePreview(order.UnitID, order.TargetNodeID); ok {
+		march.LastPreview = preview
+	}
+	r.state.ActiveMarches[order.UnitID] = march
+}
+
+func (r *GameRoom) refreshActiveMarchesAfterSettlement() {
+	if r == nil || r.state == nil {
+		return
+	}
+
+	for unitID, march := range r.state.ActiveMarches {
+		entry, ok := r.findUnitByID(unitID)
+		if !ok {
+			delete(r.state.ActiveMarches, unitID)
+			continue
+		}
+		targetEntry, ok := r.state.GetNode(march.DestinationNodeID)
+		if !ok {
+			delete(r.state.ActiveMarches, unitID)
+			continue
+		}
+		pos := ecs.PositionC.Get(entry)
+		targetPos := ecs.PositionC.Get(targetEntry)
+		if pos.X == targetPos.X && pos.Y == targetPos.Y {
+			delete(r.state.ActiveMarches, unitID)
+			continue
+		}
+		if preview, ok := r.buildRoutePreview(unitID, march.DestinationNodeID); ok {
+			march.LastPreview = preview
+			r.state.ActiveMarches[unitID] = march
+			continue
+		}
+		delete(r.state.ActiveMarches, unitID)
+	}
+}
+
+func (r *GameRoom) buildRoutePreview(unitID string, destinationNodeID string) (domain.RoutePreview, bool) {
+	if r == nil || r.state == nil {
+		return domain.RoutePreview{}, false
+	}
+	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
+	return planner.BuildPreview(r.state.World, r.state, unitID, destinationNodeID)
+}
+
+func (r *GameRoom) SendCombatOrdersSnapshot(playerID string) error {
+	if r == nil {
+		return nil
+	}
+	return r.SendToPlayer(playerID, r.buildCombatOrdersSnapshot(playerID))
+}
+
+func (r *GameRoom) buildCombatOrdersSnapshot(playerID string) *pb.MsgCombatOrdersSnapshot {
+	msg := &pb.MsgCombatOrdersSnapshot{
+		Turn:  int32(r.Turn),
+		Phase: r.Phase,
+	}
+	if r == nil || r.state == nil || playerID == "" {
+		return msg
+	}
+
+	ordersByUnit := make(map[string]*pb.QueuedCombatOrder)
+	for unitID, march := range r.state.ActiveMarches {
+		if march.PlayerID != playerID {
+			continue
+		}
+		ordersByUnit[unitID] = queuedMoveOrder(unitID, march)
+	}
+	for unitID, order := range r.combatOrders {
+		if order.PlayerID != playerID {
+			continue
+		}
+		queued := &pb.QueuedCombatOrder{
+			UnitId:       unitID,
+			Action:       string(order.Action),
+			TargetNodeId: order.TargetNodeID,
+			TargetUnitId: order.TargetUnitID,
+		}
+		if order.Action == domain.CombatActionMove {
+			if march, ok := r.state.ActiveMarches[unitID]; ok {
+				queued = queuedMoveOrder(unitID, march)
+			} else if preview, ok := r.buildRoutePreview(unitID, order.TargetNodeID); ok {
+				queued.PathNodeIds = append(queued.PathNodeIds, preview.PathNodeIDs...)
+				queued.FirstTurnNodeId = preview.FirstTurnNodeID
+				queued.TotalTurns = int32(preview.TotalTurns)
+				queued.TurnStops = toProtoTurnStops(preview.TurnStops)
+			}
+		}
+		ordersByUnit[unitID] = queued
+	}
+
+	unitIDs := make([]string, 0, len(ordersByUnit))
+	for unitID := range ordersByUnit {
+		unitIDs = append(unitIDs, unitID)
+	}
+	sort.Strings(unitIDs)
+	for _, unitID := range unitIDs {
+		msg.Orders = append(msg.Orders, ordersByUnit[unitID])
+	}
+	return msg
+}
+
+func (r *GameRoom) findUnitByID(unitID string) (*donburi.Entry, bool) {
+	var found *donburi.Entry
+	if r == nil || r.state == nil {
+		return nil, false
+	}
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if found != nil {
+			return
+		}
+		if ecs.UnitStatsC.Get(entry).ID == unitID {
+			found = entry
+		}
+	})
+	return found, found != nil
+}
+
+func queuedMoveOrder(unitID string, march domain.ActiveMarch) *pb.QueuedCombatOrder {
+	return &pb.QueuedCombatOrder{
+		UnitId:          unitID,
+		Action:          string(domain.CombatActionMove),
+		TargetNodeId:    march.DestinationNodeID,
+		PathNodeIds:     append([]string(nil), march.LastPreview.PathNodeIDs...),
+		FirstTurnNodeId: march.LastPreview.FirstTurnNodeID,
+		TotalTurns:      int32(march.LastPreview.TotalTurns),
+		TurnStops:       toProtoTurnStops(march.LastPreview.TurnStops),
+	}
+}
+
+func toProtoTurnStops(stops []domain.MarchTurnStop) []*pb.MarchTurnStop {
+	out := make([]*pb.MarchTurnStop, 0, len(stops))
+	for _, stop := range stops {
+		out = append(out, &pb.MarchTurnStop{
+			TurnIndex: int32(stop.TurnIndex),
+			NodeId:    stop.NodeID,
+		})
+	}
+	return out
+}

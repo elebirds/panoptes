@@ -2,6 +2,38 @@ using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
+    public class MarchTurnStopDto
+    {
+        public int TurnIndex;
+        public string NodeId;
+    }
+
+    public class PathPreviewDto
+    {
+        public string RequestId;
+        public string UnitId;
+        public string Action;
+        public string TargetNodeId;
+        public bool Valid;
+        public string ErrorCode;
+        public List<string> PathNodeIds;
+        public string FirstTurnNodeId;
+        public int TotalTurns;
+        public List<MarchTurnStopDto> TurnStops;
+    }
+
+    public class QueuedCombatOrderDto
+    {
+        public string UnitId;
+        public string Action;
+        public string TargetNodeId;
+        public string TargetUnitId;
+        public List<string> PathNodeIds;
+        public string FirstTurnNodeId;
+        public int TotalTurns;
+        public List<MarchTurnStopDto> TurnStops;
+    }
+
     public class DomesticBuildResultDto
     {
         public string NodeId;
@@ -39,8 +71,17 @@ namespace Panoptes.Core.Domain
     {
         public string Type;
         public string UnitId;
+        public string TargetUnitId;
+        public string EnemyUnitId;
+        public string KillerId;
         public string NodeId;
+        public string Source;
+        public string ConflictType;
+        public int Damage;
         public int HpAfter;
+        public int Sequence;
+        public int PosX;
+        public int PosY;
         public int FromX;
         public int FromY;
         public int ToX;

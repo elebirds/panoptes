@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "recipes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "building_id": {
+            "enum": [
+              "barracks",
+              "engineer_camp",
+              "farm",
+              "granary",
+              "lumber",
+              "mine",
+              "smelter",
+              "stable",
+              "tower",
+              "wall",
+              "watchtower",
+              "workshop"
+            ],
+            "type": "string"
+          },
+          "cost": {
+            "$ref": "#/$defs/resource_amount"
+          },
+          "delay_penalty": {
+            "additionalProperties": false,
+            "properties": {
+              "mode": {
+                "enum": [
+                  "add_turns"
+                ],
+                "type": "string"
+              },
+              "value": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "mode",
+              "value"
+            ],
+            "type": "object"
+          },
+          "duration_turns": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "outputs": {
+            "additionalProperties": false,
+            "properties": {
+              "resources": {
+                "$ref": "#/$defs/resource_amount"
+              },
+              "units": {
+                "items": {
+                  "enum": [
+                    "archer",
+                    "cavalry",
+                    "settler",
+                    "warrior"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "building_id",
+          "cost",
+          "duration_turns",
+          "delay_penalty",
+          "outputs"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "recipes"
+  ],
+  "type": "object"
+}

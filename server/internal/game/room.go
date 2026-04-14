@@ -427,6 +427,20 @@ func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
 	r.pendingBuilds = append(r.pendingBuilds, order)
 }
 
+func (r *GameRoom) QueueResearchOrder(order domain.ResearchOrder) {
+	if r == nil || r.state == nil {
+		return
+	}
+	r.state.PendingResearchOrders = append(r.state.PendingResearchOrders, order)
+}
+
+func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
+	if r == nil || r.state == nil {
+		return
+	}
+	r.state.PendingRecipeSelections = append(r.state.PendingRecipeSelections, order)
+}
+
 func (r *GameRoom) SetMinisterDirective(playerID string, directive string) {
 	r.ministerDirectives[playerID] = directive
 }
@@ -485,6 +499,7 @@ func (r *GameRoom) SetCombatOrder(order domain.CombatOrder) {
 	}
 
 	r.combatOrders[order.UnitID] = order
+	r.syncActiveMarchWithOrder(order)
 }
 
 func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
@@ -545,6 +560,12 @@ func (r *GameRoom) broadcastSettlement(phase string, events []event.Event) {
 		}
 		if playerState != nil {
 			msg.MyResourcesAfter = toProtoResourceBag(playerState.Resources)
+			msg.MyResearchAfter = &pb.PlayerResearchView{
+				TechPoints:            int32(playerState.Research.TechPoints),
+				TechPointsIncome:      int32(r.state.EffectiveTechPointIncome(player.PlayerID())),
+				TechPointsCap:         int32(r.state.EffectiveTechPointCap(player.PlayerID())),
+				UnlockedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
+			}
 		}
 		_ = player.Send(msg)
 	}
@@ -619,6 +640,63 @@ func toDomesticChange(e event.Event) *pb.DomesticChange {
 				"building_hp":   strconv.Itoa(hp),
 			},
 		}
+	case event.TechnologyUnlockedEvent:
+		return &pb.DomesticChange{
+			Type: "technology_unlocked",
+			Data: map[string]string{
+				"player_id":     strings.TrimSpace(evt.PlayerID),
+				"technology_id": strings.TrimSpace(evt.TechnologyID),
+			},
+		}
+	case event.TechPointsRechargedEvent:
+		return &pb.DomesticChange{
+			Type: "tech_points_recharged",
+			Data: map[string]string{
+				"player_id": strings.TrimSpace(evt.PlayerID),
+				"amount":    strconv.Itoa(evt.Amount),
+			},
+		}
+	case event.RecipeSelectionChangedEvent:
+		return &pb.DomesticChange{
+			Type: "recipe_selected",
+			Data: map[string]string{
+				"node_id":   strings.TrimSpace(evt.NodeID),
+				"recipe_id": strings.TrimSpace(evt.RecipeID),
+			},
+		}
+	case event.RecipeProgressedEvent:
+		return &pb.DomesticChange{
+			Type: "recipe_progressed",
+			Data: map[string]string{
+				"node_id":        strings.TrimSpace(evt.NodeID),
+				"progress_turns": strconv.Itoa(evt.ProgressTurns),
+			},
+		}
+	case event.RecipeDelayedEvent:
+		return &pb.DomesticChange{
+			Type: "recipe_delayed",
+			Data: map[string]string{
+				"node_id":     strings.TrimSpace(evt.NodeID),
+				"delay_turns": strconv.Itoa(evt.DelayTurns),
+				"reason":      strings.TrimSpace(evt.Reason),
+			},
+		}
+	case event.RecipeCompletedEvent:
+		return &pb.DomesticChange{
+			Type: "recipe_completed",
+			Data: map[string]string{
+				"node_id": strings.TrimSpace(evt.NodeID),
+				"owner":   strings.TrimSpace(evt.Owner),
+			},
+		}
+	case event.TechnologyGrantAppliedEvent:
+		return &pb.DomesticChange{
+			Type: "technology_grant_applied",
+			Data: map[string]string{
+				"player_id":     strings.TrimSpace(evt.PlayerID),
+				"technology_id": strings.TrimSpace(evt.SourceTech),
+			},
+		}
 	}
 
 	eventType := reflect.TypeOf(e)
@@ -677,12 +755,12 @@ func (r *GameRoom) isMessageAllowed(msgType string) bool {
 	switch r.state.Phase {
 	case domain.PhaseDomesticPlanning.String():
 		switch msgType {
-		case "MsgSetPolicy", "MsgTokenBuild", "MsgTokenReveal", "MsgMinisterDirective", "MsgSubmitDomestic":
+		case "MsgSetPolicy", "MsgTokenBuild", "MsgTokenReveal", "MsgMinisterDirective", "MsgResearchTechnology", "MsgSetBuildingRecipe", "MsgSubmitDomestic":
 			return true
 		}
 	case domain.PhaseCombatPlanning.String():
 		switch msgType {
-		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgSubmitCombat":
+		case "MsgSetWarZone", "MsgWarZoneDirective", "MsgTokenVetoCombat", "MsgTokenMicro", "MsgCombatOrder", "MsgCombatPathPreviewRequest", "MsgSubmitCombat":
 			return true
 		}
 	}
@@ -726,6 +804,18 @@ func (r *GameRoom) prepareCombatOrders() {
 		r.state.PendingCombatOrders = make(map[string]domain.CombatOrder)
 	}
 	clear(r.state.PendingCombatOrders)
+
+	for unitID, march := range r.state.ActiveMarches {
+		if r.isVetoed(march.PlayerID, unitID) {
+			continue
+		}
+		r.state.PendingCombatOrders[unitID] = domain.CombatOrder{
+			PlayerID:     march.PlayerID,
+			UnitID:       unitID,
+			Action:       domain.CombatActionMove,
+			TargetNodeID: march.DestinationNodeID,
+		}
+	}
 
 	for _, order := range r.state.MinisterMoveOrders {
 		if r.isVetoed(order.PlayerID, order.UnitID) {
@@ -940,6 +1030,12 @@ func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {
 		MainCastleHp:  int32(playerState.MainCastleHP),
 		MaxCastleHp:   int32(staticdata.Default().Rules().CastleBaseHP),
 		WarZones:      warZones,
+		Research: &pb.PlayerResearchView{
+			TechPoints:            int32(playerState.Research.TechPoints),
+			TechPointsIncome:      int32(r.state.EffectiveTechPointIncome(playerID)),
+			TechPointsCap:         int32(r.state.EffectiveTechPointCap(playerID)),
+			UnlockedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
+		},
 	}
 }
 
@@ -978,6 +1074,16 @@ func (r *GameRoom) buildNodeView(entry *donburi.Entry, playerID string) *pb.Node
 		ResourceType:    node.ResourceType,
 		IsSafeZone:      domain.IsInSafeZone(r.state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
 	}
+	if entry.HasComponent(ecs.BuildingOperationC) {
+		operation := ecs.BuildingOperationC.Get(entry)
+		view.Operation = &pb.BuildingOperationView{
+			SelectedRecipeId: operation.SelectedRecipeID,
+			ProgressTurns:    int32(operation.ProgressTurns),
+			RequiredTurns:    int32(operation.RequiredTurns),
+			DelayTurns:       int32(operation.DelayTurns),
+			BlockedReason:    operation.BlockedReason,
+		}
+	}
 	if entry.HasComponent(ecs.BuildingC) {
 		building := ecs.BuildingC.Get(entry)
 		view.BuildingType = string(building.Type)
@@ -985,6 +1091,17 @@ func (r *GameRoom) buildNodeView(entry *donburi.Entry, playerID string) *pb.Node
 		view.WallLevel = int32(building.WallLevel)
 	}
 	return view
+}
+
+func sortedUnlockedTechnologyIDs(research domain.ResearchState) []string {
+	ids := make([]string, 0, len(research.UnlockedTechnologies))
+	for technologyID := range research.UnlockedTechnologies {
+		if strings.TrimSpace(technologyID) != "" {
+			ids = append(ids, strings.TrimSpace(technologyID))
+		}
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func (r *GameRoom) buildUnitViews() []*pb.UnitView {

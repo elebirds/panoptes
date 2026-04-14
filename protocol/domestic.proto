@@ -37,6 +37,15 @@ message MsgTokenReveal {
   string node_id = 1;
 }
 
+message MsgResearchTechnology {
+  string technology_id = 1;
+}
+
+message MsgSetBuildingRecipe {
+  string node_id = 1;
+  string recipe_id = 2;
+}
+
 message MsgTokenVeto {
   string action_id = 1;
 }
@@ -88,6 +97,19 @@ message MsgMinisterAction {
   string report = 4; // 叙事轨（LLM生成）
 }
 
+message MsgResearchResult {
+  bool success = 1;
+  string technology_id = 2;
+  string error_code = 3;
+}
+
+message MsgSetBuildingRecipeResult {
+  bool success = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+  string error_code = 4;
+}
+
 message MinisterActionItem {
   string type = 1;
   // "build|repair_road|move_units|redirect_flow"
@@ -100,6 +122,7 @@ message MsgDomesticSettlement {
   int32 turn = 3;
   string phase = 4;
   string next_phase = 5;
+  PlayerResearchView my_research_after = 6;
 }
 
 message MsgTerritoryExpanded {
