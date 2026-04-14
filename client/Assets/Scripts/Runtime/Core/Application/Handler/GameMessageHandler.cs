@@ -35,10 +35,11 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
+            dispatcher.Register<MsgResearchResult>("MsgResearchResult", OnResearchResult);
+            dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
-            dispatcher.Register<ErrorResponse>("ErrorResponse", OnGameError);
             _registered = true;
         }
 
@@ -56,10 +57,11 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
+            dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", OnResearchResult);
+            dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
-            dispatcher.Unregister<ErrorResponse>("ErrorResponse", OnGameError);
             _registered = false;
         }
 
@@ -160,6 +162,40 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
         }
 
+        private static void OnResearchResult(MsgResearchResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, msg.TechnologyId);
+                Debug.LogWarning($"[Game] 研究目标设置失败 tech={msg.TechnologyId} error={msg.ErrorCode}");
+                return;
+            }
+
+            Debug.Log($"[Game] 研究目标已设置 tech={msg.TechnologyId}");
+        }
+
+        private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, $"{msg.NodeId}:{msg.RecipeId}");
+                Debug.LogWarning($"[Game] 生产配方设置失败 node={msg.NodeId} recipe={msg.RecipeId} error={msg.ErrorCode}");
+                return;
+            }
+
+            Debug.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
+        }
+
         private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)
         {
             if (msg == null)
@@ -200,20 +236,13 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
         }
 
-        private static void OnGameError(ErrorResponse msg)
+        private static void PublishGameError(string code, string message)
         {
-            if (msg == null)
-            {
-                return;
-            }
-
             GameStateCache.Instance?.PublishGameError(new GameErrorEvent
             {
-                Code = msg.Code,
-                Message = msg.Message
+                Code = code ?? string.Empty,
+                Message = message ?? string.Empty
             });
-
-            Debug.LogWarning($"[Game] 游戏期错误 code={msg.Code} message={msg.Message}");
         }
 
         private static string FormatPhaseStartLog(string text)

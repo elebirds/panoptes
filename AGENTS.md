@@ -27,7 +27,7 @@ panoptes/                          # Monorepo 根目录
 ├── protocol/                      # Proto 定义（单一数据源）
 │   ├── buf.yaml
 │   ├── buf.gen.yaml
-│   ├── common.proto               # Envelope、Position
+│   ├── common.proto               # Position、MsgClientRuntimeConfig
 │   ├── data_types.proto           # ResourceBag、StaticCatalogManifest
 │   ├── data_catalog.proto         # 静态目录消息
 │   ├── map_catalog.proto          # 地图目录消息
@@ -84,7 +84,6 @@ panoptes/                          # Monorepo 根目录
 ❌ 在代码中硬编码任何游戏数值（必须从根 `data/` 作者源生成）
 ❌ 引入文档中未列出的第三方依赖
 ❌ 修改已定义的 proto 消息字段名或字段编号
-❌ 修改已定义的 Go interface 签名
 ❌ 修改已定义的消息类型名称字符串
 ```
 
@@ -126,19 +125,27 @@ panoptes/                          # Monorepo 根目录
 
 ## 协议规范
 
-### Envelope 格式
+### Transport V2 格式
 
-所有 WebSocket 消息使用 Envelope 包装，全程 protojson（明文 JSON）：
+所有 WebSocket 消息使用 `ClientFrame` / `ServerFrame`，全程 protojson（明文 JSON）：
 
 ```json
 {
-  "type": "MsgTokenBuild",
-  "payload": "{\"nodeId\":\"C3\",\"buildingType\":\"farm\"}"
+  "meta": { "requestId": "req-17" },
+  "game": {
+    "planning": {
+      "buildStructure": {
+        "nodeId": "C3",
+        "buildingType": "farm"
+      }
+    }
+  }
 }
 ```
 
-- `type`：消息类型名，等于 proto message 名称
-- `payload`：业务消息的 protojson 序列化结果（string，不是 bytes）
+- 入站：`ClientFrame.meta + oneof target { auth | lobby | game }`
+- 出站：`ServerFrame.meta + oneof target { auth | lobby | game | problem }`
+- `request_id` 由客户端生成并随命令发送，服务端在关联响应中回传
 
 ### 修改协议的唯一方式
 

@@ -100,7 +100,7 @@ func (c *Coordinator) SubmitChecked(playerID string) error {
 	return nil
 }
 
-func (c *Coordinator) HandleGameCommand(playerID string, cmd *pb.GameCommand) error {
+func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.GameCommand) error {
 	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
 		return ErrPhaseMismatch
 	}
@@ -108,7 +108,7 @@ func (c *Coordinator) HandleGameCommand(playerID string, cmd *pb.GameCommand) er
 		return ErrPhaseMismatch
 	}
 
-	return cmddispatch.DispatchGameCommand(cmddispatch.InboundContext{PlayerID: playerID}, cmd, gameCommandHandler{coordinator: c})
+	return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
 }
 
 type gameCommandHandler struct {
@@ -119,7 +119,7 @@ func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.Pla
 	if h.coordinator == nil {
 		return ErrPhaseMismatch
 	}
-	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx.PlayerID, cmd)
+	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
 }
 
 func (c *Coordinator) waitAllSubmit(timeout time.Duration) {

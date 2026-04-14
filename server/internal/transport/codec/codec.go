@@ -1,6 +1,8 @@
 package codec
 
 import (
+	"time"
+
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -107,13 +109,6 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_MinisterReportChunk{MinisterReportChunk: typed}}}
 	case *pb.MsgMinisterMetrics:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_MinisterMetrics{MinisterMetrics: typed}}}
-	case *pb.ErrorResponse:
-		frame.Target = &pb.ServerFrame_Problem{
-			Problem: &pb.Problem{
-				Code:    typed.GetCode(),
-				Message: typed.GetMessage(),
-			},
-		}
 	default:
 		return nil, transportproblem.InternalError("unsupported outbound message type")
 	}
@@ -134,8 +129,14 @@ func AsProblem(err error) (*pb.Problem, bool) {
 }
 
 func cloneEventMeta(meta *pb.EventMeta) *pb.EventMeta {
+	var cloned *pb.EventMeta
 	if meta == nil {
-		return &pb.EventMeta{}
+		cloned = &pb.EventMeta{}
+	} else {
+		cloned = proto.Clone(meta).(*pb.EventMeta)
 	}
-	return proto.Clone(meta).(*pb.EventMeta)
+	if cloned.GetServerUnixMillis() == 0 {
+		cloned.ServerUnixMillis = time.Now().UnixMilli()
+	}
+	return cloned
 }

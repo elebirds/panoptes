@@ -110,7 +110,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 ```
 
 - **纯展示层**：不包含任何游戏逻辑，所有状态以服务端为准
-- **Protobuf + protojson**：消息用 Envelope 包装，明文 JSON 传输，方便调试
+- **Protobuf + protojson**：消息统一使用 `ClientFrame` / `ServerFrame`，明文 JSON 传输，方便调试
 
 ---
 

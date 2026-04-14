@@ -10,18 +10,6 @@ message Position {
   int32 y = 2;
 }
 
-message ErrorResponse {
-  string code = 1;
-  string message = 2;
-}
-
 message MsgClientRuntimeConfig {
   bool dev_mode = 1;
-}
-
-// 所有WebSocket消息的外层包装
-// type用于路由，payload是对应消息的protojson序列化
-message Envelope {
-  string type = 1;
-  string payload = 2;
 }

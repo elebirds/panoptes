@@ -17,8 +17,8 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/lobby"
 	redistore "github.com/elebirds/panoptes/internal/store/redis"
-	"github.com/elebirds/panoptes/internal/transport/inbound"
 	httptransport "github.com/elebirds/panoptes/internal/transport/http"
+	"github.com/elebirds/panoptes/internal/transport/inbound"
 	wstransport "github.com/elebirds/panoptes/internal/transport/websocket"
 	"github.com/google/uuid"
 )
@@ -41,7 +41,7 @@ func (a *App) buildServer() *http.Server {
 	})
 	wsHub.SetLeaveRoomFunc(lobbySvc.LeaveRoom)
 	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
-		return a.gameTransport.Send(playerID, &pb.MsgClientRuntimeConfig{
+		return a.gameTransport.Send(ctx, playerID, &pb.MsgClientRuntimeConfig{
 			DevMode: a.cfg.DevMode,
 		})
 	})

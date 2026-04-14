@@ -72,7 +72,7 @@ func (r *GameRoom) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.Gam
 	if r == nil || r.coordinator == nil {
 		return ErrPhaseMismatch
 	}
-	if err := r.coordinator.HandleGameCommand(ctx.PlayerID, cmd); errors.Is(err, gameturn.ErrPhaseMismatch) {
+	if err := r.coordinator.HandleGameCommand(ctx, cmd); errors.Is(err, gameturn.ErrPhaseMismatch) {
 		return ErrPhaseMismatch
 	} else {
 		return err
@@ -110,11 +110,11 @@ func (r *GameRoom) IsDevMode() bool {
 	return r != nil && r.runtime != nil && r.runtime.IsDevMode()
 }
 
-func (r *GameRoom) SendToPlayer(playerID string, msg proto.Message) error {
+func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
 	if r == nil || r.runtime == nil {
 		return nil
 	}
-	return r.runtime.SendToPlayer(playerID, msg)
+	return r.runtime.SendToPlayer(ctx, playerID, msg)
 }
 
 func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
@@ -192,8 +192,8 @@ func (r *GameRoom) CancelUnitOrder(playerID string, unitID string) {
 	delete(state.TurnRuntime.Resolving.ActiveMarches, unitID)
 }
 
-func (r *GameRoom) SendPlanningSnapshot(playerID string) error {
-	return r.SendToPlayer(playerID, gamequery.BuildPlanningSnapshot(r.State(), playerID))
+func (r *GameRoom) SendPlanningSnapshot(ctx context.Context, playerID string) error {
+	return r.SendToPlayer(ctx, playerID, gamequery.BuildPlanningSnapshot(r.State(), playerID))
 }
 
 func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
@@ -240,13 +240,13 @@ func (r *GameRoom) broadcastTurnSettlement(unitEvents []event.Event, mapEvents [
 			mapEvents,
 			economyEvents,
 		)
-		_ = player.Send(msg)
+		_ = player.Send(context.Background(), msg)
 	}
 }
 
-func (r *GameRoom) Broadcast(msg proto.Message) {
+func (r *GameRoom) Broadcast(ctx context.Context, msg proto.Message) {
 	if r != nil && r.runtime != nil {
-		r.runtime.Broadcast(msg)
+		r.runtime.Broadcast(ctx, msg)
 	}
 }
 
@@ -281,7 +281,7 @@ func (r *GameRoom) checkGameOver() {
 		return
 	}
 	msg := &pb.MsgGameOver{WinnerId: state.WinnerID, Reason: state.OverReason, Narrative: state.Narrative}
-	r.Broadcast(msg)
+	r.Broadcast(context.Background(), msg)
 	Registry.Unregister(r.ID)
 	if r.runtime != nil {
 		r.runtime.Cancel()
@@ -296,7 +296,7 @@ func (r *GameRoom) handleDraw() {
 	state.IsOver = true
 	state.WinnerID = ""
 	state.OverReason = "timeout_draw"
-	r.Broadcast(&pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"})
+	r.Broadcast(context.Background(), &pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"})
 	Registry.Unregister(r.ID)
 	if r.runtime != nil {
 		r.runtime.Cancel()

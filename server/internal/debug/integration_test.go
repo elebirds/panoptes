@@ -7,6 +7,7 @@
 package debug_test
 
 import (
+	"context"
 	"os"
 	"sync"
 	"testing"
@@ -28,18 +29,18 @@ func newCaptureTransport() *captureTransport {
 	return &captureTransport{sent: make(map[string][]proto.Message)}
 }
 
-func (t *captureTransport) Send(playerID string, msg proto.Message) error {
+func (t *captureTransport) Send(_ context.Context, playerID string, msg proto.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.sent[playerID] = append(t.sent[playerID], msg)
 	return nil
 }
 
-func (t *captureTransport) Broadcast(string, proto.Message) error { return nil }
+func (t *captureTransport) Broadcast(context.Context, string, proto.Message) error { return nil }
 
-func (t *captureTransport) Stream(playerID string, msgs <-chan proto.Message) error {
+func (t *captureTransport) Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error {
 	for msg := range msgs {
-		if err := t.Send(playerID, msg); err != nil {
+		if err := t.Send(ctx, playerID, msg); err != nil {
 			return err
 		}
 	}

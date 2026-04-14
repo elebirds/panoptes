@@ -124,34 +124,34 @@ func newStubTransport() *stubTransport {
 	}
 }
 
-func (t *stubTransport) Send(playerID string, msg proto.Message) error {
+func (t *stubTransport) Send(_ context.Context, playerID string, msg proto.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.sent[playerID] = append(t.sent[playerID], msg)
 	return nil
 }
 
-func (t *stubTransport) Broadcast(roomID string, msg proto.Message) error {
+func (t *stubTransport) Broadcast(_ context.Context, roomID string, msg proto.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.broadcasts[roomID] = append(t.broadcasts[roomID], msg)
 	return nil
 }
 
-func (t *stubTransport) Stream(playerID string, msgs <-chan proto.Message) error {
+func (t *stubTransport) Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error {
 	for msg := range msgs {
-		if err := t.Send(playerID, msg); err != nil {
+		if err := t.Send(ctx, playerID, msg); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *botFailingTransport) Send(playerID string, msg proto.Message) error {
+func (t *botFailingTransport) Send(ctx context.Context, playerID string, msg proto.Message) error {
 	if len(playerID) >= 4 && playerID[:4] == "bot_" {
 		return errors.New("client not connected")
 	}
-	return t.stubTransport.Send(playerID, msg)
+	return t.stubTransport.Send(ctx, playerID, msg)
 }
 
 type stubUserStore struct {

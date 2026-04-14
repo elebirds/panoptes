@@ -3,9 +3,8 @@
  * File: MessageSender.cs
  * Author: Panoptes Team
  * Date: 2026-04-04
- * Description: Envelope send helper placeholder.
+ * Description: Typed Transport V2 send helper.
  *************************************************/
-
 
 using System;
 using Google.Protobuf;
@@ -40,18 +39,6 @@ namespace Panoptes.Core.Infrastructure.Network
         public static void Send<T>(T message) where T : IMessage<T>
         {
             Send((IMessage)message);
-        }
-
-        public static void SendRaw(string messageType, string payloadJson)
-        {
-            var network = NetworkManager.Instance;
-            if (network == null)
-            {
-                Debug.LogWarning($"[MessageSender] SendRaw ignored: NetworkManager.Instance is null for {messageType}.");
-                return;
-            }
-
-            network.SendRaw(messageType, payloadJson);
         }
     }
 }

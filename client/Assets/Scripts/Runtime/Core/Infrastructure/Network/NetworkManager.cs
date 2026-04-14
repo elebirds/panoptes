@@ -153,11 +153,6 @@ namespace Panoptes.Core.Infrastructure.Network
             Send((IMessage)message);
         }
 
-        public void SendRaw(string messageType, string payloadJson)
-        {
-            Debug.LogWarning($"[Network] SendRaw is not supported in Transport V2 for {messageType}.");
-        }
-
         private void ProcessMessage(byte[] data)
         {
             try

@@ -7,6 +7,7 @@
 package websocket
 
 import (
+	"context"
 	"errors"
 
 	coretransport "github.com/elebirds/panoptes/internal/transport"
@@ -25,12 +26,12 @@ func NewTransport(hub *Hub) *WSTransport {
 	return &WSTransport{hub: hub}
 }
 
-func (t *WSTransport) Send(playerID string, msg proto.Message) error {
+func (t *WSTransport) Send(ctx context.Context, playerID string, msg proto.Message) error {
 	if playerID == "" {
 		return errors.New("playerID is required")
 	}
 
-	data, err := codec.EncodeServerMessage(msg, nil)
+	data, err := codec.EncodeServerMessage(msg, coretransport.EventMetaFromContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -38,12 +39,12 @@ func (t *WSTransport) Send(playerID string, msg proto.Message) error {
 	return t.hub.SendToPlayer(playerID, data)
 }
 
-func (t *WSTransport) Broadcast(roomID string, msg proto.Message) error {
+func (t *WSTransport) Broadcast(ctx context.Context, roomID string, msg proto.Message) error {
 	if roomID == "" {
 		return errors.New("roomID is required")
 	}
 
-	data, err := codec.EncodeServerMessage(msg, nil)
+	data, err := codec.EncodeServerMessage(msg, coretransport.EventMetaFromContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -52,9 +53,9 @@ func (t *WSTransport) Broadcast(roomID string, msg proto.Message) error {
 	return nil
 }
 
-func (t *WSTransport) Stream(playerID string, msgs <-chan proto.Message) error {
+func (t *WSTransport) Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error {
 	for msg := range msgs {
-		if err := t.Send(playerID, msg); err != nil {
+		if err := t.Send(ctx, playerID, msg); err != nil {
 			return err
 		}
 	}
