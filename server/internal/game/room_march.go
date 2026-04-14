@@ -43,15 +43,25 @@ func (r *GameRoom) refreshActiveMarchesAfterSettlement() {
 			delete(r.state.ActiveMarches, unitID)
 			continue
 		}
+		currentPos := ecs.PositionC.Get(entry)
+		currentNodeID := r.nodeIDAt(domain.Position{X: currentPos.X, Y: currentPos.Y})
+		if currentNodeID == "" {
+			delete(r.state.ActiveMarches, unitID)
+			continue
+		}
 		targetEntry, ok := r.state.GetNode(march.DestinationNodeID)
 		if !ok {
 			delete(r.state.ActiveMarches, unitID)
 			continue
 		}
-		pos := ecs.PositionC.Get(entry)
 		targetPos := ecs.PositionC.Get(targetEntry)
-		if pos.X == targetPos.X && pos.Y == targetPos.Y {
+		if currentPos.X == targetPos.X && currentPos.Y == targetPos.Y {
 			delete(r.state.ActiveMarches, unitID)
+			continue
+		}
+		if preview, ok := r.advanceActiveMarchPreview(unitID, march, currentNodeID); ok {
+			march.LastPreview = preview
+			r.state.ActiveMarches[unitID] = march
 			continue
 		}
 		if preview, ok := r.buildRoutePreview(unitID, march.DestinationNodeID); ok {
@@ -69,6 +79,46 @@ func (r *GameRoom) buildRoutePreview(unitID string, destinationNodeID string) (d
 	}
 	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
 	return planner.BuildPreview(r.state.World, r.state, unitID, destinationNodeID)
+}
+
+func (r *GameRoom) buildRoutePreviewFromPathNodeIDs(unitID string, pathNodeIDs []string) (domain.RoutePreview, bool) {
+	if r == nil || r.state == nil {
+		return domain.RoutePreview{}, false
+	}
+	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
+	return planner.BuildPreviewFromPathNodeIDs(r.state.World, r.state, unitID, pathNodeIDs)
+}
+
+func (r *GameRoom) advanceActiveMarchPreview(unitID string, march domain.ActiveMarch, currentNodeID string) (domain.RoutePreview, bool) {
+	remainingPathNodeIDs, ok := trimMarchPathFromCurrentNode(march.LastPreview.PathNodeIDs, currentNodeID, march.DestinationNodeID)
+	if !ok {
+		return domain.RoutePreview{}, false
+	}
+	return r.buildRoutePreviewFromPathNodeIDs(unitID, remainingPathNodeIDs)
+}
+
+func trimMarchPathFromCurrentNode(pathNodeIDs []string, currentNodeID string, destinationNodeID string) ([]string, bool) {
+	if len(pathNodeIDs) == 0 || currentNodeID == "" || destinationNodeID == "" {
+		return nil, false
+	}
+
+	currentIdx := -1
+	destinationSeen := false
+	for i, nodeID := range pathNodeIDs {
+		if currentIdx < 0 && nodeID == currentNodeID {
+			currentIdx = i
+		}
+		if currentIdx >= 0 && nodeID == destinationNodeID {
+			destinationSeen = true
+			break
+		}
+	}
+	if currentIdx < 0 || !destinationSeen {
+		return nil, false
+	}
+
+	remaining := append([]string(nil), pathNodeIDs[currentIdx:]...)
+	return remaining, len(remaining) > 0
 }
 
 func (r *GameRoom) SendCombatOrdersSnapshot(playerID string) error {

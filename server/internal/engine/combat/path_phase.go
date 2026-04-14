@@ -83,7 +83,10 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		return plan
 	}
 
-	path, ok := ctx.RoutePlanner.FindPath(ctx.World, unit.Position, goal, unit.Movement)
+	path, ok := plannedOrderPath(ctx, unit)
+	if !ok {
+		path, ok = ctx.RoutePlanner.FindPath(ctx.World, unit.Position, goal, unit.Movement)
+	}
 	if !ok || len(path) == 0 {
 		return plan
 	}
@@ -121,6 +124,19 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		plan.Action = domain.CombatActionMove
 	}
 	return plan
+}
+
+func plannedOrderPath(ctx *ResolutionContext, unit SnapshotUnit) ([]domain.Position, bool) {
+	if ctx == nil || len(unit.Order.PathNodeIDs) == 0 {
+		return nil, false
+	}
+
+	path, _, ok := resolvePreviewPathFromNodeIDs(ctx.World, ctx.State, unit.UnitID, unit.Order.PathNodeIDs)
+	if !ok || len(path) == 0 || path[0] != unit.Position {
+		return nil, false
+	}
+
+	return path, true
 }
 
 func indexOfPosition(path []domain.Position, target domain.Position) int {

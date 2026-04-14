@@ -438,7 +438,7 @@ namespace Panoptes.Presentation.Map
             return _pendingMoveUnitIds.Contains(unitId.Trim());
         }
 
-        public void ApplyBackendMoveCommand(string unitId, string targetNodeId, bool enqueue = true, bool followCamera = true)
+        public void ApplyBackendMoveCommand(string unitId, string targetNodeId, bool enqueue = true, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
         {
             if (string.IsNullOrEmpty(unitId) || string.IsNullOrEmpty(targetNodeId))
             {
@@ -458,7 +458,7 @@ namespace Panoptes.Presentation.Map
 
                 if (queue != null)
                 {
-                    queue.EnqueueUnitMove(unitId, targetNodeId, followCamera);
+                    queue.EnqueueUnitMove(unitId, targetNodeId, followCamera, pathNodeIds);
                     return;
                 }
             }
@@ -1409,7 +1409,10 @@ namespace Panoptes.Presentation.Map
             }
 
             RemoveMovePreview(unitId);
-            ApplyMovePathPreviewMarkers(unitId, targetNodeId);
+            if (!TryApplyAuthoritativeMovePathMarkers(unitId, targetNodeId))
+            {
+                ClearMovePathMarkersForUnit(unitId);
+            }
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
             ClearNodeHighlights();
@@ -1459,6 +1462,9 @@ namespace Panoptes.Presentation.Map
 
             _draftCache.PreviewChanged -= OnPreviewChanged;
             _draftCache.PreviewChanged += OnPreviewChanged;
+            _draftCache.OrdersChanged -= OnOrdersChanged;
+            _draftCache.OrdersChanged += OnOrdersChanged;
+            RefreshQueuedMovePathMarkers();
         }
 
         private void UnsubscribeCacheEvents()
@@ -1489,6 +1495,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _draftCache.PreviewChanged -= OnPreviewChanged;
+            _draftCache.OrdersChanged -= OnOrdersChanged;
             _draftCache = null;
         }
 
@@ -1528,7 +1535,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true);
+                ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true, GetQueuedMovePathNodeIds(eventItem.UnitId));
             }
         }
 
@@ -1687,6 +1694,36 @@ namespace Panoptes.Presentation.Map
         private void OnPreviewChanged()
         {
             RefreshPreviewVisuals();
+        }
+
+        private void OnOrdersChanged()
+        {
+            RefreshQueuedMovePathMarkers();
+        }
+
+        private IReadOnlyList<string> GetQueuedMovePathNodeIds(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return null;
+            }
+
+            var draftCache = _draftCache ?? CombatDraftCache.Instance;
+            if (draftCache == null)
+            {
+                return null;
+            }
+
+            if (!draftCache.OrdersByUnitId.TryGetValue(unitId, out var order) ||
+                order == null ||
+                !string.Equals(order.Action, "move", StringComparison.Ordinal) ||
+                order.PathNodeIds == null ||
+                order.PathNodeIds.Count < 2)
+            {
+                return null;
+            }
+
+            return order.PathNodeIds;
         }
 
         private void RemovePendingBuild(string nodeId)
@@ -2959,39 +2996,100 @@ namespace Panoptes.Presentation.Map
             _movePreviewByUnitId.Remove(unitId);
         }
 
-        private void ApplyMovePathPreviewMarkers(string unitId, string targetNodeId)
+        private bool TryApplyAuthoritativeMovePathMarkers(string unitId, string targetNodeId)
+        {
+            var draftCache = CombatDraftCache.Instance;
+            if (draftCache == null)
+            {
+                return false;
+            }
+
+            var preview = draftCache.CurrentPreview;
+            if (preview != null &&
+                preview.Valid &&
+                string.Equals(preview.UnitId, unitId, StringComparison.Ordinal) &&
+                string.Equals(preview.TargetNodeId, targetNodeId, StringComparison.Ordinal) &&
+                ApplyMovePathMarkers(unitId, preview.PathNodeIds))
+            {
+                return true;
+            }
+
+            if (draftCache.OrdersByUnitId.TryGetValue(unitId, out var order) &&
+                order != null &&
+                string.Equals(order.Action, "move", StringComparison.Ordinal) &&
+                string.Equals(order.TargetNodeId, targetNodeId, StringComparison.Ordinal) &&
+                ApplyMovePathMarkers(unitId, order.PathNodeIds))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshQueuedMovePathMarkers()
+        {
+            ClearAllMovePathMarkers();
+
+            var draftCache = _draftCache ?? CombatDraftCache.Instance;
+            if (draftCache == null)
+            {
+                return;
+            }
+
+            foreach (var pair in draftCache.OrdersByUnitId)
+            {
+                var order = pair.Value;
+                if (order == null || !string.Equals(order.Action, "move", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                ApplyMovePathMarkers(order.UnitId, order.PathNodeIds);
+            }
+        }
+
+        private bool ApplyMovePathMarkers(string unitId, IReadOnlyList<string> pathNodeIds)
         {
             var normalizedUnitId = NormalizeToken(unitId);
             if (string.IsNullOrEmpty(normalizedUnitId))
             {
-                return;
+                return false;
             }
 
             ClearMovePathMarkersForUnit(normalizedUnitId);
 
+            if (pathNodeIds == null || pathNodeIds.Count < 2)
+            {
+                return false;
+            }
+
             var map = MapRenderer.Instance;
-            if (map == null || string.IsNullOrWhiteSpace(targetNodeId))
+            if (map == null)
             {
-                return;
+                return false;
             }
 
-            if (!map.TryGetUnitView(unitId, out var unitView) || unitView == null)
+            var path = new List<NodeView>(pathNodeIds.Count);
+            for (var i = 0; i < pathNodeIds.Count; i++)
             {
-                return;
+                var nodeId = pathNodeIds[i];
+                if (string.IsNullOrWhiteSpace(nodeId))
+                {
+                    continue;
+                }
+
+                if (map.TryGetNodeView(nodeId, out var node) && node != null)
+                {
+                    path.Add(node);
+                }
             }
 
-            if (!map.TryGetNodeView(targetNodeId, out var targetNode) || targetNode == null)
+            if (path.Count < 2)
             {
-                return;
+                return false;
             }
 
-            var path = BuildMovePath(unitView.GridPos, targetNode.GridPos);
-            if (path == null || path.Count < 2)
-            {
-                return;
-            }
-
-            var usedNodeIds = new List<string>(path.Count);
+            var usedNodeIds = new List<string>(path.Count - 1);
             for (var i = 1; i < path.Count; i++)
             {
                 var node = path[i];
@@ -3019,113 +3117,13 @@ namespace Panoptes.Presentation.Map
                 usedNodeIds.Add(node.NodeId);
             }
 
-            if (usedNodeIds.Count > 0)
+            if (usedNodeIds.Count == 0)
             {
-                _movePathNodeIdsByUnitId[normalizedUnitId] = usedNodeIds;
-            }
-        }
-
-        private List<NodeView> BuildMovePath(Vector2Int start, Vector2Int goal)
-        {
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return null;
+                return false;
             }
 
-            if (start == goal)
-            {
-                if (map.TryGetNodeViewByGrid(start, out var sameNode) && sameNode != null)
-                {
-                    return new List<NodeView> { sameNode };
-                }
-
-                return null;
-            }
-
-            var queue = new Queue<Vector2Int>();
-            var visited = new HashSet<Vector2Int>();
-            var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
-            queue.Enqueue(start);
-            visited.Add(start);
-
-            var directions = new[]
-            {
-                new Vector2Int(1, 0),
-                new Vector2Int(-1, 0),
-                new Vector2Int(0, 1),
-                new Vector2Int(0, -1)
-            };
-
-            var reached = false;
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (current == goal)
-                {
-                    reached = true;
-                    break;
-                }
-
-                for (var i = 0; i < directions.Length; i++)
-                {
-                    var next = current + directions[i];
-                    if (visited.Contains(next))
-                    {
-                        continue;
-                    }
-
-                    var distanceFromStart = Mathf.Abs(next.x - start.x) + Mathf.Abs(next.y - start.y);
-                    if (distanceFromStart > moveRange)
-                    {
-                        continue;
-                    }
-
-                    if (!map.TryGetNodeViewByGrid(next, out var nextNode) || nextNode == null)
-                    {
-                        continue;
-                    }
-
-                    if (next != goal && !map.IsNodePassableForMove(nextNode.NodeId))
-                    {
-                        continue;
-                    }
-
-                    visited.Add(next);
-                    cameFrom[next] = current;
-                    queue.Enqueue(next);
-                }
-            }
-
-            if (!reached)
-            {
-                return null;
-            }
-
-            var gridPath = new List<Vector2Int> { goal };
-            var walker = goal;
-            while (walker != start)
-            {
-                if (!cameFrom.TryGetValue(walker, out var parent))
-                {
-                    return null;
-                }
-
-                walker = parent;
-                gridPath.Add(walker);
-            }
-            gridPath.Reverse();
-
-            var nodePath = new List<NodeView>(gridPath.Count);
-            for (var i = 0; i < gridPath.Count; i++)
-            {
-                if (map.TryGetNodeViewByGrid(gridPath[i], out var node) && node != null)
-                {
-                    nodePath.Add(node);
-                }
-            }
-
-            return nodePath;
+            _movePathNodeIdsByUnitId[normalizedUnitId] = usedNodeIds;
+            return true;
         }
 
         private void ClearMovePathMarkersForUnit(string unitId)

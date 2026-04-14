@@ -20,6 +20,7 @@ type CombatOrder struct {
 	Action       CombatAction
 	TargetNodeID string
 	TargetUnitID string
+	PathNodeIDs  []string
 }
 
 func (o CombatOrder) Normalized() CombatOrder {
