@@ -1,14 +1,14 @@
 {
   "id": "default",
-  "name": "中原",
-  "width": 20,
-  "height": 20,
+  "name": "Emerald Frontier",
+  "width": 30,
+  "height": 30,
   "nodes": [
     {
       "id": "A1",
       "x": 0,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -16,7 +16,7 @@
       "id": "B1",
       "x": 1,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -24,7 +24,7 @@
       "id": "C1",
       "x": 2,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -32,7 +32,7 @@
       "id": "D1",
       "x": 3,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -40,7 +40,7 @@
       "id": "E1",
       "x": 4,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -48,7 +48,7 @@
       "id": "F1",
       "x": 5,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -56,15 +56,15 @@
       "id": "G1",
       "x": 6,
       "y": 0,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H1",
       "x": 7,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -72,7 +72,7 @@
       "id": "I1",
       "x": 8,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -80,7 +80,7 @@
       "id": "J1",
       "x": 9,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -88,7 +88,7 @@
       "id": "K1",
       "x": 10,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -112,7 +112,7 @@
       "id": "N1",
       "x": 13,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -120,7 +120,7 @@
       "id": "O1",
       "x": 14,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -160,7 +160,87 @@
       "id": "T1",
       "x": 19,
       "y": 0,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U1",
+      "x": 20,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V1",
+      "x": 21,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W1",
+      "x": 22,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X1",
+      "x": 23,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y1",
+      "x": 24,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z1",
+      "x": 25,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA1",
+      "x": 26,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB1",
+      "x": 27,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC1",
+      "x": 28,
+      "y": 0,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD1",
+      "x": 29,
+      "y": 0,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -168,7 +248,7 @@
       "id": "A2",
       "x": 0,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -176,7 +256,7 @@
       "id": "B2",
       "x": 1,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -184,7 +264,7 @@
       "id": "C2",
       "x": 2,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -192,7 +272,7 @@
       "id": "D2",
       "x": 3,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -200,7 +280,7 @@
       "id": "E2",
       "x": 4,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -208,7 +288,7 @@
       "id": "F2",
       "x": 5,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -216,15 +296,15 @@
       "id": "G2",
       "x": 6,
       "y": 1,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H2",
       "x": 7,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -232,7 +312,7 @@
       "id": "I2",
       "x": 8,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -240,7 +320,7 @@
       "id": "J2",
       "x": 9,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -248,7 +328,7 @@
       "id": "K2",
       "x": 10,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -272,7 +352,7 @@
       "id": "N2",
       "x": 13,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -280,7 +360,7 @@
       "id": "O2",
       "x": 14,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -320,7 +400,87 @@
       "id": "T2",
       "x": 19,
       "y": 1,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U2",
+      "x": 20,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V2",
+      "x": 21,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W2",
+      "x": 22,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X2",
+      "x": 23,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y2",
+      "x": 24,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z2",
+      "x": 25,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA2",
+      "x": 26,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB2",
+      "x": 27,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC2",
+      "x": 28,
+      "y": 1,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD2",
+      "x": 29,
+      "y": 1,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -328,7 +488,7 @@
       "id": "A3",
       "x": 0,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -336,7 +496,7 @@
       "id": "B3",
       "x": 1,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -344,7 +504,7 @@
       "id": "C3",
       "x": 2,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -352,7 +512,7 @@
       "id": "D3",
       "x": 3,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -360,7 +520,7 @@
       "id": "E3",
       "x": 4,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -368,7 +528,7 @@
       "id": "F3",
       "x": 5,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -376,15 +536,15 @@
       "id": "G3",
       "x": 6,
       "y": 2,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H3",
       "x": 7,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -392,7 +552,7 @@
       "id": "I3",
       "x": 8,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -400,7 +560,7 @@
       "id": "J3",
       "x": 9,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -408,7 +568,7 @@
       "id": "K3",
       "x": 10,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -432,7 +592,7 @@
       "id": "N3",
       "x": 13,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -440,7 +600,7 @@
       "id": "O3",
       "x": 14,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -480,7 +640,87 @@
       "id": "T3",
       "x": 19,
       "y": 2,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U3",
+      "x": 20,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V3",
+      "x": 21,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W3",
+      "x": 22,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X3",
+      "x": 23,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y3",
+      "x": 24,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z3",
+      "x": 25,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA3",
+      "x": 26,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB3",
+      "x": 27,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC3",
+      "x": 28,
+      "y": 2,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD3",
+      "x": 29,
+      "y": 2,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -488,7 +728,7 @@
       "id": "A4",
       "x": 0,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -496,7 +736,7 @@
       "id": "B4",
       "x": 1,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -504,7 +744,7 @@
       "id": "C4",
       "x": 2,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -512,7 +752,7 @@
       "id": "D4",
       "x": 3,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -520,7 +760,7 @@
       "id": "E4",
       "x": 4,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -528,7 +768,7 @@
       "id": "F4",
       "x": 5,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -536,15 +776,15 @@
       "id": "G4",
       "x": 6,
       "y": 3,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H4",
       "x": 7,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -552,7 +792,7 @@
       "id": "I4",
       "x": 8,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -560,7 +800,7 @@
       "id": "J4",
       "x": 9,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -568,7 +808,7 @@
       "id": "K4",
       "x": 10,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -592,7 +832,7 @@
       "id": "N4",
       "x": 13,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -600,7 +840,7 @@
       "id": "O4",
       "x": 14,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -640,7 +880,87 @@
       "id": "T4",
       "x": 19,
       "y": 3,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U4",
+      "x": 20,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V4",
+      "x": 21,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W4",
+      "x": 22,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X4",
+      "x": 23,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y4",
+      "x": 24,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z4",
+      "x": 25,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA4",
+      "x": 26,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB4",
+      "x": 27,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC4",
+      "x": 28,
+      "y": 3,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD4",
+      "x": 29,
+      "y": 3,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -648,7 +968,7 @@
       "id": "A5",
       "x": 0,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -656,16 +976,15 @@
       "id": "B5",
       "x": 1,
       "y": 4,
-      "terrain": "mountain",
+      "terrain": "forest",
       "has_road": false,
-      "is_resource_point": true,
-      "resource_type": "ore"
+      "is_resource_point": false
     },
     {
       "id": "C5",
       "x": 2,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -673,7 +992,7 @@
       "id": "D5",
       "x": 3,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -681,15 +1000,17 @@
       "id": "E5",
       "x": 4,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "food",
+      "node_name": "Amber Orchard"
     },
     {
       "id": "F5",
       "x": 5,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -697,15 +1018,15 @@
       "id": "G5",
       "x": 6,
       "y": 4,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H5",
       "x": 7,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -713,7 +1034,7 @@
       "id": "I5",
       "x": 8,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -721,7 +1042,7 @@
       "id": "J5",
       "x": 9,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -729,7 +1050,7 @@
       "id": "K5",
       "x": 10,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -753,7 +1074,7 @@
       "id": "N5",
       "x": 13,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -761,7 +1082,7 @@
       "id": "O5",
       "x": 14,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -801,7 +1122,89 @@
       "id": "T5",
       "x": 19,
       "y": 4,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U5",
+      "x": 20,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V5",
+      "x": 21,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "ore",
+      "node_name": "Iron Crest"
+    },
+    {
+      "id": "W5",
+      "x": 22,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X5",
+      "x": 23,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y5",
+      "x": 24,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z5",
+      "x": 25,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA5",
+      "x": 26,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB5",
+      "x": 27,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC5",
+      "x": 28,
+      "y": 4,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD5",
+      "x": 29,
+      "y": 4,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -809,7 +1212,7 @@
       "id": "A6",
       "x": 0,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -817,7 +1220,7 @@
       "id": "B6",
       "x": 1,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -825,7 +1228,7 @@
       "id": "C6",
       "x": 2,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -833,7 +1236,7 @@
       "id": "D6",
       "x": 3,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -841,7 +1244,7 @@
       "id": "E6",
       "x": 4,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -849,7 +1252,7 @@
       "id": "F6",
       "x": 5,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -857,15 +1260,15 @@
       "id": "G6",
       "x": 6,
       "y": 5,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H6",
       "x": 7,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -873,7 +1276,7 @@
       "id": "I6",
       "x": 8,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -881,7 +1284,7 @@
       "id": "J6",
       "x": 9,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -889,7 +1292,7 @@
       "id": "K6",
       "x": 10,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -905,7 +1308,7 @@
       "id": "M6",
       "x": 12,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -913,7 +1316,7 @@
       "id": "N6",
       "x": 13,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -961,7 +1364,87 @@
       "id": "T6",
       "x": 19,
       "y": 5,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U6",
+      "x": 20,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V6",
+      "x": 21,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W6",
+      "x": 22,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X6",
+      "x": 23,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y6",
+      "x": 24,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z6",
+      "x": 25,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA6",
+      "x": 26,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB6",
+      "x": 27,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC6",
+      "x": 28,
+      "y": 5,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD6",
+      "x": 29,
+      "y": 5,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -969,7 +1452,7 @@
       "id": "A7",
       "x": 0,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -977,7 +1460,7 @@
       "id": "B7",
       "x": 1,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -985,7 +1468,7 @@
       "id": "C7",
       "x": 2,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -993,7 +1476,7 @@
       "id": "D7",
       "x": 3,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1001,7 +1484,7 @@
       "id": "E7",
       "x": 4,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1009,7 +1492,7 @@
       "id": "F7",
       "x": 5,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1017,15 +1500,15 @@
       "id": "G7",
       "x": 6,
       "y": 6,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H7",
       "x": 7,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1033,15 +1516,17 @@
       "id": "I7",
       "x": 8,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Moss Timberline"
     },
     {
       "id": "J7",
       "x": 9,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1049,7 +1534,7 @@
       "id": "K7",
       "x": 10,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1065,7 +1550,7 @@
       "id": "M7",
       "x": 12,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1073,7 +1558,7 @@
       "id": "N7",
       "x": 13,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1121,7 +1606,87 @@
       "id": "T7",
       "x": 19,
       "y": 6,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U7",
+      "x": 20,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V7",
+      "x": 21,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W7",
+      "x": 22,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X7",
+      "x": 23,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y7",
+      "x": 24,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z7",
+      "x": 25,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA7",
+      "x": 26,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB7",
+      "x": 27,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC7",
+      "x": 28,
+      "y": 6,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD7",
+      "x": 29,
+      "y": 6,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1129,7 +1694,7 @@
       "id": "A8",
       "x": 0,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1137,7 +1702,7 @@
       "id": "B8",
       "x": 1,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1145,7 +1710,7 @@
       "id": "C8",
       "x": 2,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1153,7 +1718,7 @@
       "id": "D8",
       "x": 3,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1161,7 +1726,7 @@
       "id": "E8",
       "x": 4,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1169,7 +1734,7 @@
       "id": "F8",
       "x": 5,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1177,15 +1742,15 @@
       "id": "G8",
       "x": 6,
       "y": 7,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H8",
       "x": 7,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1193,7 +1758,7 @@
       "id": "I8",
       "x": 8,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1201,7 +1766,7 @@
       "id": "J8",
       "x": 9,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1209,7 +1774,7 @@
       "id": "K8",
       "x": 10,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1225,7 +1790,7 @@
       "id": "M8",
       "x": 12,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1233,7 +1798,7 @@
       "id": "N8",
       "x": 13,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1241,10 +1806,9 @@
       "id": "O8",
       "x": 14,
       "y": 7,
-      "terrain": "forest",
+      "terrain": "plain",
       "has_road": false,
-      "is_resource_point": true,
-      "resource_type": "wood"
+      "is_resource_point": false
     },
     {
       "id": "P8",
@@ -1282,7 +1846,89 @@
       "id": "T8",
       "x": 19,
       "y": 7,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U8",
+      "x": 20,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V8",
+      "x": 21,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W8",
+      "x": 22,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X8",
+      "x": 23,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y8",
+      "x": 24,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z8",
+      "x": 25,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA8",
+      "x": 26,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Pine Watch"
+    },
+    {
+      "id": "AB8",
+      "x": 27,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC8",
+      "x": 28,
+      "y": 7,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD8",
+      "x": 29,
+      "y": 7,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1290,88 +1936,89 @@
       "id": "A9",
       "x": 0,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "B9",
       "x": 1,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "C9",
       "x": 2,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "D9",
       "x": 3,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "E9",
       "x": 4,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "F9",
       "x": 5,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "G9",
       "x": 6,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
-      "is_resource_point": false
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false,
+      "node_name": "West Gate"
     },
     {
       "id": "H9",
       "x": 7,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "I9",
       "x": 8,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "J9",
       "x": 9,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "K9",
       "x": 10,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1379,23 +2026,23 @@
       "x": 11,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "M9",
       "x": 12,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "river",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "N9",
       "x": 13,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "river",
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1403,7 +2050,7 @@
       "x": 14,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1411,7 +2058,7 @@
       "x": 15,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1419,7 +2066,7 @@
       "x": 16,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1427,7 +2074,7 @@
       "x": 17,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1435,22 +2082,102 @@
       "x": 18,
       "y": 8,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "T9",
       "x": 19,
       "y": 8,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "U9",
+      "x": 20,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "V9",
+      "x": 21,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "W9",
+      "x": 22,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "X9",
+      "x": 23,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y9",
+      "x": 24,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z9",
+      "x": 25,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA9",
+      "x": 26,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB9",
+      "x": 27,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC9",
+      "x": 28,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD9",
+      "x": 29,
+      "y": 8,
+      "terrain": "mountain",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "A10",
       "x": 0,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1458,7 +2185,7 @@
       "id": "B10",
       "x": 1,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1466,7 +2193,7 @@
       "id": "C10",
       "x": 2,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1474,7 +2201,7 @@
       "id": "D10",
       "x": 3,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1482,7 +2209,7 @@
       "id": "E10",
       "x": 4,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1490,7 +2217,7 @@
       "id": "F10",
       "x": 5,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1498,15 +2225,15 @@
       "id": "G10",
       "x": 6,
       "y": 9,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "forest",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H10",
       "x": 7,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1514,7 +2241,7 @@
       "id": "I10",
       "x": 8,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1522,7 +2249,7 @@
       "id": "J10",
       "x": 9,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1530,11 +2257,9 @@
       "id": "K10",
       "x": 10,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "forest",
       "has_road": false,
-      "is_resource_point": true,
-      "resource_type": "food",
-      "node_name": "龙脊"
+      "is_resource_point": false
     },
     {
       "id": "L10",
@@ -1548,7 +2273,7 @@
       "id": "M10",
       "x": 12,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1556,7 +2281,7 @@
       "id": "N10",
       "x": 13,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1604,7 +2329,87 @@
       "id": "T10",
       "x": 19,
       "y": 9,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U10",
+      "x": 20,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V10",
+      "x": 21,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W10",
+      "x": 22,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X10",
+      "x": 23,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y10",
+      "x": 24,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z10",
+      "x": 25,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA10",
+      "x": 26,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB10",
+      "x": 27,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC10",
+      "x": 28,
+      "y": 9,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD10",
+      "x": 29,
+      "y": 9,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1661,7 +2466,7 @@
       "x": 6,
       "y": 10,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1724,7 +2529,7 @@
       "id": "O11",
       "x": 14,
       "y": 10,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1732,7 +2537,7 @@
       "id": "P11",
       "x": 15,
       "y": 10,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1764,7 +2569,87 @@
       "id": "T11",
       "x": 19,
       "y": 10,
-      "terrain": "plain",
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U11",
+      "x": 20,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V11",
+      "x": 21,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W11",
+      "x": 22,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X11",
+      "x": 23,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y11",
+      "x": 24,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z11",
+      "x": 25,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA11",
+      "x": 26,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB11",
+      "x": 27,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC11",
+      "x": 28,
+      "y": 10,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD11",
+      "x": 29,
+      "y": 10,
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1821,7 +2706,7 @@
       "x": 6,
       "y": 11,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -1884,7 +2769,7 @@
       "id": "O12",
       "x": 14,
       "y": 11,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1892,7 +2777,7 @@
       "id": "P12",
       "x": 15,
       "y": 11,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1929,6 +2814,86 @@
       "is_resource_point": false
     },
     {
+      "id": "U12",
+      "x": 20,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V12",
+      "x": 21,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W12",
+      "x": 22,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X12",
+      "x": 23,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y12",
+      "x": 24,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z12",
+      "x": 25,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA12",
+      "x": 26,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB12",
+      "x": 27,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC12",
+      "x": 28,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD12",
+      "x": 29,
+      "y": 11,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
       "id": "A13",
       "x": 0,
       "y": 12,
@@ -1958,7 +2923,9 @@
       "y": 12,
       "terrain": "plain",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "ore",
+      "node_name": "Rust Vein"
     },
     {
       "id": "E13",
@@ -1981,7 +2948,7 @@
       "x": 6,
       "y": 12,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2044,7 +3011,7 @@
       "id": "O13",
       "x": 14,
       "y": 12,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2052,7 +3019,7 @@
       "id": "P13",
       "x": 15,
       "y": 12,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2078,11 +3045,93 @@
       "y": 12,
       "terrain": "plain",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Willow Bank"
     },
     {
       "id": "T13",
       "x": 19,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U13",
+      "x": 20,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V13",
+      "x": 21,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W13",
+      "x": 22,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X13",
+      "x": 23,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y13",
+      "x": 24,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z13",
+      "x": 25,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA13",
+      "x": 26,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB13",
+      "x": 27,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC13",
+      "x": 28,
+      "y": 12,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD13",
+      "x": 29,
       "y": 12,
       "terrain": "plain",
       "has_road": false,
@@ -2141,7 +3190,7 @@
       "x": 6,
       "y": 13,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2188,7 +3237,7 @@
       "id": "M14",
       "x": 12,
       "y": 13,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2196,7 +3245,7 @@
       "id": "N14",
       "x": 13,
       "y": 13,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2204,7 +3253,7 @@
       "id": "O14",
       "x": 14,
       "y": 13,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2212,7 +3261,7 @@
       "id": "P14",
       "x": 15,
       "y": 13,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2220,7 +3269,7 @@
       "id": "Q14",
       "x": 16,
       "y": 13,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2243,6 +3292,88 @@
     {
       "id": "T14",
       "x": 19,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U14",
+      "x": 20,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V14",
+      "x": 21,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W14",
+      "x": 22,
+      "y": 13,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X14",
+      "x": 23,
+      "y": 13,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y14",
+      "x": 24,
+      "y": 13,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z14",
+      "x": 25,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA14",
+      "x": 26,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB14",
+      "x": 27,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "ore",
+      "node_name": "Obsidian Pit"
+    },
+    {
+      "id": "AC14",
+      "x": 28,
+      "y": 13,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD14",
+      "x": 29,
       "y": 13,
       "terrain": "plain",
       "has_road": false,
@@ -2301,7 +3432,7 @@
       "x": 6,
       "y": 14,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2326,7 +3457,9 @@
       "y": 14,
       "terrain": "plain",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "food",
+      "node_name": "Green Terrace"
     },
     {
       "id": "K15",
@@ -2348,7 +3481,7 @@
       "id": "M15",
       "x": 12,
       "y": 14,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2356,7 +3489,7 @@
       "id": "N15",
       "x": 13,
       "y": 14,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2364,15 +3497,16 @@
       "id": "O15",
       "x": 14,
       "y": 14,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": false,
+      "node_name": "Glass Ford"
     },
     {
       "id": "P15",
       "x": 15,
       "y": 14,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2380,7 +3514,7 @@
       "id": "Q15",
       "x": 16,
       "y": 14,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2403,6 +3537,87 @@
     {
       "id": "T15",
       "x": 19,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U15",
+      "x": 20,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V15",
+      "x": 21,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W15",
+      "x": 22,
+      "y": 14,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X15",
+      "x": 23,
+      "y": 14,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false,
+      "node_name": "Ash Crater"
+    },
+    {
+      "id": "Y15",
+      "x": 24,
+      "y": 14,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z15",
+      "x": 25,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA15",
+      "x": 26,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB15",
+      "x": 27,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC15",
+      "x": 28,
+      "y": 14,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD15",
+      "x": 29,
       "y": 14,
       "terrain": "plain",
       "has_road": false,
@@ -2461,7 +3676,7 @@
       "x": 6,
       "y": 15,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2508,7 +3723,7 @@
       "id": "M16",
       "x": 12,
       "y": 15,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2516,7 +3731,7 @@
       "id": "N16",
       "x": 13,
       "y": 15,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2524,7 +3739,7 @@
       "id": "O16",
       "x": 14,
       "y": 15,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2532,7 +3747,7 @@
       "id": "P16",
       "x": 15,
       "y": 15,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2540,7 +3755,7 @@
       "id": "Q16",
       "x": 16,
       "y": 15,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2563,6 +3778,86 @@
     {
       "id": "T16",
       "x": 19,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U16",
+      "x": 20,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V16",
+      "x": 21,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W16",
+      "x": 22,
+      "y": 15,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X16",
+      "x": 23,
+      "y": 15,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y16",
+      "x": 24,
+      "y": 15,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z16",
+      "x": 25,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA16",
+      "x": 26,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB16",
+      "x": 27,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC16",
+      "x": 28,
+      "y": 15,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD16",
+      "x": 29,
       "y": 15,
       "terrain": "plain",
       "has_road": false,
@@ -2621,7 +3916,7 @@
       "x": 6,
       "y": 16,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2676,7 +3971,7 @@
       "id": "N17",
       "x": 13,
       "y": 16,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2684,7 +3979,7 @@
       "id": "O17",
       "x": 14,
       "y": 16,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2723,6 +4018,86 @@
     {
       "id": "T17",
       "x": 19,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U17",
+      "x": 20,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V17",
+      "x": 21,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W17",
+      "x": 22,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X17",
+      "x": 23,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y17",
+      "x": 24,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z17",
+      "x": 25,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA17",
+      "x": 26,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB17",
+      "x": 27,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC17",
+      "x": 28,
+      "y": 16,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD17",
+      "x": 29,
       "y": 16,
       "terrain": "plain",
       "has_road": false,
@@ -2781,7 +4156,7 @@
       "x": 6,
       "y": 17,
       "terrain": "plain",
-      "has_road": false,
+      "has_road": true,
       "is_resource_point": false
     },
     {
@@ -2836,7 +4211,7 @@
       "id": "N18",
       "x": 13,
       "y": 17,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2844,7 +4219,7 @@
       "id": "O18",
       "x": 14,
       "y": 17,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2889,10 +4264,90 @@
       "is_resource_point": false
     },
     {
+      "id": "U18",
+      "x": 20,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V18",
+      "x": 21,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W18",
+      "x": 22,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X18",
+      "x": 23,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y18",
+      "x": 24,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z18",
+      "x": 25,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA18",
+      "x": 26,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB18",
+      "x": 27,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC18",
+      "x": 28,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD18",
+      "x": 29,
+      "y": 17,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
       "id": "A19",
       "x": 0,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2900,7 +4355,7 @@
       "id": "B19",
       "x": 1,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2908,7 +4363,7 @@
       "id": "C19",
       "x": 2,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2916,7 +4371,7 @@
       "id": "D19",
       "x": 3,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2924,7 +4379,7 @@
       "id": "E19",
       "x": 4,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2932,7 +4387,7 @@
       "id": "F19",
       "x": 5,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2940,15 +4395,15 @@
       "id": "G19",
       "x": 6,
       "y": 18,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "mountain",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H19",
       "x": 7,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2956,7 +4411,7 @@
       "id": "I19",
       "x": 8,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -2996,7 +4451,7 @@
       "id": "N19",
       "x": 13,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3004,7 +4459,7 @@
       "id": "O19",
       "x": 14,
       "y": 18,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3049,10 +4504,90 @@
       "is_resource_point": false
     },
     {
+      "id": "U19",
+      "x": 20,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V19",
+      "x": 21,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W19",
+      "x": 22,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X19",
+      "x": 23,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y19",
+      "x": 24,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z19",
+      "x": 25,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA19",
+      "x": 26,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB19",
+      "x": 27,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC19",
+      "x": 28,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD19",
+      "x": 29,
+      "y": 18,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
       "id": "A20",
       "x": 0,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3060,7 +4595,7 @@
       "id": "B20",
       "x": 1,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3068,7 +4603,7 @@
       "id": "C20",
       "x": 2,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3076,7 +4611,7 @@
       "id": "D20",
       "x": 3,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3084,7 +4619,7 @@
       "id": "E20",
       "x": 4,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3092,23 +4627,25 @@
       "id": "F20",
       "x": 5,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
-      "is_resource_point": false
+      "is_resource_point": true,
+      "resource_type": "food",
+      "node_name": "South Meadow"
     },
     {
       "id": "G20",
       "x": 6,
       "y": 19,
-      "terrain": "plain",
-      "has_road": false,
+      "terrain": "mountain",
+      "has_road": true,
       "is_resource_point": false
     },
     {
       "id": "H20",
       "x": 7,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3116,7 +4653,7 @@
       "id": "I20",
       "x": 8,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "mountain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3156,7 +4693,7 @@
       "id": "N20",
       "x": 13,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3164,7 +4701,7 @@
       "id": "O20",
       "x": 14,
       "y": 19,
-      "terrain": "plain",
+      "terrain": "river",
       "has_road": false,
       "is_resource_point": false
     },
@@ -3207,28 +4744,2556 @@
       "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
+    },
+    {
+      "id": "U20",
+      "x": 20,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V20",
+      "x": 21,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W20",
+      "x": 22,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X20",
+      "x": 23,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y20",
+      "x": 24,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z20",
+      "x": 25,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA20",
+      "x": 26,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB20",
+      "x": 27,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC20",
+      "x": 28,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD20",
+      "x": 29,
+      "y": 19,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A21",
+      "x": 0,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B21",
+      "x": 1,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C21",
+      "x": 2,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D21",
+      "x": 3,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E21",
+      "x": 4,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F21",
+      "x": 5,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G21",
+      "x": 6,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H21",
+      "x": 7,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I21",
+      "x": 8,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J21",
+      "x": 9,
+      "y": 20,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K21",
+      "x": 10,
+      "y": 20,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L21",
+      "x": 11,
+      "y": 20,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M21",
+      "x": 12,
+      "y": 20,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N21",
+      "x": 13,
+      "y": 20,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O21",
+      "x": 14,
+      "y": 20,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P21",
+      "x": 15,
+      "y": 20,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q21",
+      "x": 16,
+      "y": 20,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R21",
+      "x": 17,
+      "y": 20,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S21",
+      "x": 18,
+      "y": 20,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T21",
+      "x": 19,
+      "y": 20,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U21",
+      "x": 20,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V21",
+      "x": 21,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W21",
+      "x": 22,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X21",
+      "x": 23,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y21",
+      "x": 24,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z21",
+      "x": 25,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA21",
+      "x": 26,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB21",
+      "x": 27,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC21",
+      "x": 28,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD21",
+      "x": 29,
+      "y": 20,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A22",
+      "x": 0,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B22",
+      "x": 1,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C22",
+      "x": 2,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D22",
+      "x": 3,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E22",
+      "x": 4,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F22",
+      "x": 5,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G22",
+      "x": 6,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H22",
+      "x": 7,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I22",
+      "x": 8,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J22",
+      "x": 9,
+      "y": 21,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K22",
+      "x": 10,
+      "y": 21,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L22",
+      "x": 11,
+      "y": 21,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M22",
+      "x": 12,
+      "y": 21,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N22",
+      "x": 13,
+      "y": 21,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O22",
+      "x": 14,
+      "y": 21,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P22",
+      "x": 15,
+      "y": 21,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q22",
+      "x": 16,
+      "y": 21,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R22",
+      "x": 17,
+      "y": 21,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "ore",
+      "node_name": "Slate Core"
+    },
+    {
+      "id": "S22",
+      "x": 18,
+      "y": 21,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T22",
+      "x": 19,
+      "y": 21,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U22",
+      "x": 20,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V22",
+      "x": 21,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W22",
+      "x": 22,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X22",
+      "x": 23,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y22",
+      "x": 24,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z22",
+      "x": 25,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA22",
+      "x": 26,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB22",
+      "x": 27,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC22",
+      "x": 28,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD22",
+      "x": 29,
+      "y": 21,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A23",
+      "x": 0,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "B23",
+      "x": 1,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "C23",
+      "x": 2,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "D23",
+      "x": 3,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "E23",
+      "x": 4,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "F23",
+      "x": 5,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "G23",
+      "x": 6,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H23",
+      "x": 7,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "I23",
+      "x": 8,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "J23",
+      "x": 9,
+      "y": 22,
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "K23",
+      "x": 10,
+      "y": 22,
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "L23",
+      "x": 11,
+      "y": 22,
+      "terrain": "river",
+      "has_road": true,
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Cedar Run"
+    },
+    {
+      "id": "M23",
+      "x": 12,
+      "y": 22,
+      "terrain": "river",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "N23",
+      "x": 13,
+      "y": 22,
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "O23",
+      "x": 14,
+      "y": 22,
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "P23",
+      "x": 15,
+      "y": 22,
+      "terrain": "forest",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q23",
+      "x": 16,
+      "y": 22,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "R23",
+      "x": 17,
+      "y": 22,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "S23",
+      "x": 18,
+      "y": 22,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "T23",
+      "x": 19,
+      "y": 22,
+      "terrain": "plain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "U23",
+      "x": 20,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "V23",
+      "x": 21,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "W23",
+      "x": 22,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "X23",
+      "x": 23,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false,
+      "node_name": "East Spur"
+    },
+    {
+      "id": "Y23",
+      "x": 24,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z23",
+      "x": 25,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA23",
+      "x": 26,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB23",
+      "x": 27,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC23",
+      "x": 28,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD23",
+      "x": 29,
+      "y": 22,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "A24",
+      "x": 0,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B24",
+      "x": 1,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C24",
+      "x": 2,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D24",
+      "x": 3,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E24",
+      "x": 4,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F24",
+      "x": 5,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G24",
+      "x": 6,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H24",
+      "x": 7,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I24",
+      "x": 8,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J24",
+      "x": 9,
+      "y": 23,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K24",
+      "x": 10,
+      "y": 23,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L24",
+      "x": 11,
+      "y": 23,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M24",
+      "x": 12,
+      "y": 23,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N24",
+      "x": 13,
+      "y": 23,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O24",
+      "x": 14,
+      "y": 23,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P24",
+      "x": 15,
+      "y": 23,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q24",
+      "x": 16,
+      "y": 23,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R24",
+      "x": 17,
+      "y": 23,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S24",
+      "x": 18,
+      "y": 23,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T24",
+      "x": 19,
+      "y": 23,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U24",
+      "x": 20,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V24",
+      "x": 21,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W24",
+      "x": 22,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X24",
+      "x": 23,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y24",
+      "x": 24,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z24",
+      "x": 25,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "food",
+      "node_name": "Frost Grain"
+    },
+    {
+      "id": "AA24",
+      "x": 26,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB24",
+      "x": 27,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC24",
+      "x": 28,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD24",
+      "x": 29,
+      "y": 23,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A25",
+      "x": 0,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B25",
+      "x": 1,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C25",
+      "x": 2,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D25",
+      "x": 3,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E25",
+      "x": 4,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F25",
+      "x": 5,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G25",
+      "x": 6,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H25",
+      "x": 7,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I25",
+      "x": 8,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J25",
+      "x": 9,
+      "y": 24,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K25",
+      "x": 10,
+      "y": 24,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L25",
+      "x": 11,
+      "y": 24,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M25",
+      "x": 12,
+      "y": 24,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N25",
+      "x": 13,
+      "y": 24,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O25",
+      "x": 14,
+      "y": 24,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P25",
+      "x": 15,
+      "y": 24,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q25",
+      "x": 16,
+      "y": 24,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R25",
+      "x": 17,
+      "y": 24,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S25",
+      "x": 18,
+      "y": 24,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T25",
+      "x": 19,
+      "y": 24,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U25",
+      "x": 20,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V25",
+      "x": 21,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W25",
+      "x": 22,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X25",
+      "x": 23,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y25",
+      "x": 24,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z25",
+      "x": 25,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA25",
+      "x": 26,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB25",
+      "x": 27,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC25",
+      "x": 28,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD25",
+      "x": 29,
+      "y": 24,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A26",
+      "x": 0,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B26",
+      "x": 1,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C26",
+      "x": 2,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D26",
+      "x": 3,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E26",
+      "x": 4,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F26",
+      "x": 5,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G26",
+      "x": 6,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H26",
+      "x": 7,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I26",
+      "x": 8,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J26",
+      "x": 9,
+      "y": 25,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K26",
+      "x": 10,
+      "y": 25,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L26",
+      "x": 11,
+      "y": 25,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M26",
+      "x": 12,
+      "y": 25,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N26",
+      "x": 13,
+      "y": 25,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O26",
+      "x": 14,
+      "y": 25,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P26",
+      "x": 15,
+      "y": 25,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q26",
+      "x": 16,
+      "y": 25,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R26",
+      "x": 17,
+      "y": 25,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S26",
+      "x": 18,
+      "y": 25,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T26",
+      "x": 19,
+      "y": 25,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U26",
+      "x": 20,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V26",
+      "x": 21,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W26",
+      "x": 22,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X26",
+      "x": 23,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y26",
+      "x": 24,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z26",
+      "x": 25,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA26",
+      "x": 26,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB26",
+      "x": 27,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC26",
+      "x": 28,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD26",
+      "x": 29,
+      "y": 25,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A27",
+      "x": 0,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B27",
+      "x": 1,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C27",
+      "x": 2,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Old Grove"
+    },
+    {
+      "id": "D27",
+      "x": 3,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E27",
+      "x": 4,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F27",
+      "x": 5,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G27",
+      "x": 6,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H27",
+      "x": 7,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I27",
+      "x": 8,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J27",
+      "x": 9,
+      "y": 26,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K27",
+      "x": 10,
+      "y": 26,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L27",
+      "x": 11,
+      "y": 26,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M27",
+      "x": 12,
+      "y": 26,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N27",
+      "x": 13,
+      "y": 26,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O27",
+      "x": 14,
+      "y": 26,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P27",
+      "x": 15,
+      "y": 26,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "food",
+      "node_name": "Delta Orchard"
+    },
+    {
+      "id": "Q27",
+      "x": 16,
+      "y": 26,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R27",
+      "x": 17,
+      "y": 26,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S27",
+      "x": 18,
+      "y": 26,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T27",
+      "x": 19,
+      "y": 26,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U27",
+      "x": 20,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V27",
+      "x": 21,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W27",
+      "x": 22,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X27",
+      "x": 23,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y27",
+      "x": 24,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z27",
+      "x": 25,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA27",
+      "x": 26,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB27",
+      "x": 27,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC27",
+      "x": 28,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD27",
+      "x": 29,
+      "y": 26,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A28",
+      "x": 0,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B28",
+      "x": 1,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C28",
+      "x": 2,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D28",
+      "x": 3,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E28",
+      "x": 4,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F28",
+      "x": 5,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G28",
+      "x": 6,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H28",
+      "x": 7,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I28",
+      "x": 8,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "ore",
+      "node_name": "Red Fault"
+    },
+    {
+      "id": "J28",
+      "x": 9,
+      "y": 27,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K28",
+      "x": 10,
+      "y": 27,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L28",
+      "x": 11,
+      "y": 27,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M28",
+      "x": 12,
+      "y": 27,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N28",
+      "x": 13,
+      "y": 27,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O28",
+      "x": 14,
+      "y": 27,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P28",
+      "x": 15,
+      "y": 27,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q28",
+      "x": 16,
+      "y": 27,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R28",
+      "x": 17,
+      "y": 27,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S28",
+      "x": 18,
+      "y": 27,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T28",
+      "x": 19,
+      "y": 27,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U28",
+      "x": 20,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V28",
+      "x": 21,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W28",
+      "x": 22,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X28",
+      "x": 23,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y28",
+      "x": 24,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z28",
+      "x": 25,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA28",
+      "x": 26,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB28",
+      "x": 27,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": true,
+      "resource_type": "wood",
+      "node_name": "Snow Timber"
+    },
+    {
+      "id": "AC28",
+      "x": 28,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD28",
+      "x": 29,
+      "y": 27,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A29",
+      "x": 0,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B29",
+      "x": 1,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C29",
+      "x": 2,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D29",
+      "x": 3,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E29",
+      "x": 4,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F29",
+      "x": 5,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G29",
+      "x": 6,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H29",
+      "x": 7,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I29",
+      "x": 8,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J29",
+      "x": 9,
+      "y": 28,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K29",
+      "x": 10,
+      "y": 28,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L29",
+      "x": 11,
+      "y": 28,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M29",
+      "x": 12,
+      "y": 28,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N29",
+      "x": 13,
+      "y": 28,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O29",
+      "x": 14,
+      "y": 28,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P29",
+      "x": 15,
+      "y": 28,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q29",
+      "x": 16,
+      "y": 28,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R29",
+      "x": 17,
+      "y": 28,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S29",
+      "x": 18,
+      "y": 28,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T29",
+      "x": 19,
+      "y": 28,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U29",
+      "x": 20,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V29",
+      "x": 21,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W29",
+      "x": 22,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X29",
+      "x": 23,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y29",
+      "x": 24,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z29",
+      "x": 25,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA29",
+      "x": 26,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB29",
+      "x": 27,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC29",
+      "x": 28,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD29",
+      "x": 29,
+      "y": 28,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "A30",
+      "x": 0,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "B30",
+      "x": 1,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "C30",
+      "x": 2,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "D30",
+      "x": 3,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "E30",
+      "x": 4,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "F30",
+      "x": 5,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "G30",
+      "x": 6,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "H30",
+      "x": 7,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "I30",
+      "x": 8,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "J30",
+      "x": 9,
+      "y": 29,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "K30",
+      "x": 10,
+      "y": 29,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "L30",
+      "x": 11,
+      "y": 29,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "M30",
+      "x": 12,
+      "y": 29,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "N30",
+      "x": 13,
+      "y": 29,
+      "terrain": "river",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "O30",
+      "x": 14,
+      "y": 29,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "P30",
+      "x": 15,
+      "y": 29,
+      "terrain": "forest",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Q30",
+      "x": 16,
+      "y": 29,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "R30",
+      "x": 17,
+      "y": 29,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "S30",
+      "x": 18,
+      "y": 29,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "T30",
+      "x": 19,
+      "y": 29,
+      "terrain": "plain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "U30",
+      "x": 20,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "V30",
+      "x": 21,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "W30",
+      "x": 22,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "X30",
+      "x": 23,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": true,
+      "is_resource_point": false
+    },
+    {
+      "id": "Y30",
+      "x": 24,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "Z30",
+      "x": 25,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AA30",
+      "x": 26,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AB30",
+      "x": 27,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AC30",
+      "x": 28,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
+    },
+    {
+      "id": "AD30",
+      "x": 29,
+      "y": 29,
+      "terrain": "mountain",
+      "has_road": false,
+      "is_resource_point": false
     }
   ],
   "spawn_points": [
     {
       "slot": 0,
-      "x": 2,
-      "y": 10
+      "x": 3,
+      "y": 3
     },
     {
       "slot": 1,
-      "x": 17,
-      "y": 10
+      "x": 26,
+      "y": 26
+    },
+    {
+      "slot": 2,
+      "x": 26,
+      "y": 3
+    },
+    {
+      "slot": 3,
+      "x": 3,
+      "y": 26
     }
   ],
   "named_nodes": {
-    "K10": "龙脊"
+    "AA8": "Pine Watch",
+    "AB14": "Obsidian Pit",
+    "AB28": "Snow Timber",
+    "C27": "Old Grove",
+    "D13": "Rust Vein",
+    "E5": "Amber Orchard",
+    "F20": "South Meadow",
+    "G9": "West Gate",
+    "I28": "Red Fault",
+    "I7": "Moss Timberline",
+    "J15": "Green Terrace",
+    "L23": "Cedar Run",
+    "O15": "Glass Ford",
+    "P27": "Delta Orchard",
+    "R22": "Slate Core",
+    "S13": "Willow Bank",
+    "V5": "Iron Crest",
+    "X15": "Ash Crater",
+    "X23": "East Spur",
+    "Z24": "Frost Grain"
   },
   "central_points": [
-    "K10"
+    "O15",
+    "N15",
+    "O16"
   ],
   "tags": [
     "default",
-    "pvp"
+    "pvp",
+    "showcase",
+    "fixed"
   ]
 }

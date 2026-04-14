@@ -122,7 +122,7 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 	}))
 
 	tp := newStubTransport()
-	cfg := &config.Config{MapID: "default"}
+	cfg := &config.Config{MapID: "default", UseProceduralMap: true}
 	room := NewRoom(
 		"game-1",
 		[]Player{

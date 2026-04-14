@@ -94,10 +94,13 @@ func (r *GameRoom) Start() {
 	playerIDs := r.humanPlayerIDs()
 	usernames := r.humanUsernames()
 	seed := time.Now().UnixNano()
-	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
-	if runtimeMap == nil {
-		slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
-		return
+	runtimeMap := baseMap
+	if r.cfg != nil && r.cfg.UseProceduralMap {
+		runtimeMap = maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
+		if runtimeMap == nil {
+			slog.Error("procedural map generation failed", "room_id", r.ID, "map_id", mapID)
+			return
+		}
 	}
 	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
@@ -113,6 +116,7 @@ func (r *GameRoom) Start() {
 		"room_id", r.ID,
 		"base_map_id", baseMap.ID,
 		"runtime_map_id", runtimeMap.ID,
+		"use_procedural_map", r.cfg != nil && r.cfg.UseProceduralMap,
 		"seed", seed,
 		"nodes", len(runtimeMap.Nodes))
 
