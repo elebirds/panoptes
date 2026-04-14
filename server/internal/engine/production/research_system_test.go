@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证经济结算流水线中的科研、配方、生产与补给规则。
+
 package production_test
 
 import (
@@ -10,7 +16,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-func TestDomesticPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
+func TestEconomyPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -69,7 +75,7 @@ func TestDomesticPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
 
 	events := engine.NewEconomyPipeline().Run(world, state)
 	if len(events) == 0 {
-		t.Fatalf("expected domestic events")
+		t.Fatalf("expected economy events")
 	}
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should remain unavailable until next turn")
@@ -82,7 +88,7 @@ func TestDomesticPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
+func TestEconomyPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -140,7 +146,7 @@ func TestDomesticPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineRecipeAddsDelayWhenResourcesMissing(t *testing.T) {
+func TestEconomyPipelineRecipeAddsDelayWhenResourcesMissing(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -198,7 +204,7 @@ func TestDomesticPipelineRecipeAddsDelayWhenResourcesMissing(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineBuildAppliesBuildingCostModifier(t *testing.T) {
+func TestEconomyPipelineBuildAppliesBuildingCostModifier(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -259,7 +265,7 @@ func TestDomesticPipelineBuildAppliesBuildingCostModifier(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineRecipeAppliesOutputModifier(t *testing.T) {
+func TestEconomyPipelineRecipeAppliesOutputModifier(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -324,7 +330,7 @@ func TestDomesticPipelineRecipeAppliesOutputModifier(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineRecipeConsumesCostAndProducesUnit(t *testing.T) {
+func TestEconomyPipelineRecipeConsumesCostAndProducesUnit(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -385,7 +391,7 @@ func TestDomesticPipelineRecipeConsumesCostAndProducesUnit(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
+func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,
@@ -431,7 +437,7 @@ func TestDomesticPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}
 }
 
-func TestDomesticPipelineRechargeAppliesTechIncomeModifierNextTurn(t *testing.T) {
+func TestEconomyPipelineRechargeAppliesTechIncomeModifierNextTurn(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:      3,

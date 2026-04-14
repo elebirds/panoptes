@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证结算事件与经济事件的 Kind 标识保持稳定。
+
 package event
 
 import (
@@ -6,7 +12,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 )
 
-func TestCombatEventKinds(t *testing.T) {
+func TestResolutionEventKinds(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -35,7 +41,7 @@ func TestCombatEventKinds(t *testing.T) {
 	}
 }
 
-func TestProductionEventKinds(t *testing.T) {
+func TestEconomyEventKinds(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {

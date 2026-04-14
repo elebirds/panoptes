@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证 WebSocket 路由对 Turn V2 提交与错误分发的处理。
+
 package websocket
 
 import (
@@ -119,7 +125,7 @@ func TestRouterRouteSubmitMessages(t *testing.T) {
 	}
 }
 
-func TestRouterRouteLegacySubmitMessagesAreIgnored(t *testing.T) {
+func TestRouterRouteUnknownSubmitMessageIsIgnored(t *testing.T) {
 	store := newRouterStore()
 	transport := newRouterTransport()
 	authSvc := auth.NewService(&routerUserStore{users: map[string]*auth.User{}}, "secret", 60)
@@ -129,11 +135,10 @@ func TestRouterRouteLegacySubmitMessagesAreIgnored(t *testing.T) {
 		ok:   true,
 	})
 
-	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitDomestic", Payload: "{}"})
-	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitUnknown", Payload: "{}"})
 
 	if len(room.submits) != 0 {
-		t.Fatalf("legacy submit should not route, got %#v", room.submits)
+		t.Fatalf("unknown submit should not route, got %#v", room.submits)
 	}
 }
 
