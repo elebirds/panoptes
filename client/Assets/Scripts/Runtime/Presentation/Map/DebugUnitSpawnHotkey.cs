@@ -22,7 +22,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool enableHotkey = false;
 
         [Header("Input")]
+#if !ENABLE_INPUT_SYSTEM
         [SerializeField] private KeyCode legacySpawnKey = KeyCode.X;
+#endif
 #if ENABLE_INPUT_SYSTEM
         [SerializeField] private Key spawnKey = Key.X;
 #endif
