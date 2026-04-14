@@ -1,8 +1,9 @@
-using System.Collections;
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
+using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
+using Panoptes.Core.Infrastructure.Network;
 using UnityEngine;
+using System.Collections;
 
 namespace Panoptes.DebugTools
 {
@@ -10,8 +11,8 @@ namespace Panoptes.DebugTools
     {
         private bool _registered;
         private bool _initChecked;
-        private bool _planningChecked;
-        private bool _settlementChecked;
+        private bool _planningPhaseChecked;
+        private bool _turnSettlementChecked;
         private bool _allPassedLogged;
         private bool _failed;
 
@@ -81,18 +82,19 @@ namespace Panoptes.DebugTools
             }
 
             _initChecked = true;
-            if (cache.Phase == "planning" && cache.TokensLeft == 3)
+
+            if (cache.Phase == GamePhases.Planning && cache.TokensLeft == 3)
             {
-                _planningChecked = true;
+                _planningPhaseChecked = true;
             }
         }
 
-        private void OnPlanningStart(MsgPlanningStart _)
+        private void OnPlanningStart(MsgPlanningStart msg)
         {
-            StartCoroutine(ValidatePlanningStartNextFrame());
+            StartCoroutine(ValidatePlanningPhaseNextFrame());
         }
 
-        private IEnumerator ValidatePlanningStartNextFrame()
+        private IEnumerator ValidatePlanningPhaseNextFrame()
         {
             yield return null;
 
@@ -103,13 +105,19 @@ namespace Panoptes.DebugTools
                 yield break;
             }
 
-            if (cache.Phase != "planning")
+            if (cache.Phase != GamePhases.Planning)
             {
                 Fail($"PlanningStart 后 Phase 异常: {cache.Phase}");
                 yield break;
             }
 
-            _planningChecked = true;
+            if (cache.TokensLeft != 3)
+            {
+                Fail($"PlanningStart 后 TokensLeft 异常: {cache.TokensLeft}");
+                yield break;
+            }
+
+            _planningPhaseChecked = true;
             TryFinalize();
         }
 
@@ -117,13 +125,7 @@ namespace Panoptes.DebugTools
         {
             try
             {
-                if (msg == null || msg.Sections == null)
-                {
-                    Fail("TurnSettlement 为空");
-                    return;
-                }
-
-                _settlementChecked = true;
+                _turnSettlementChecked = true;
                 Debug.Log("[Check] ✓ TurnSettlement 处理正常");
                 TryFinalize();
             }
@@ -140,10 +142,10 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            if (_initChecked && _planningChecked && _settlementChecked)
+            if (_initChecked && _planningPhaseChecked && _turnSettlementChecked)
             {
                 _allPassedLogged = true;
-                Debug.Log("[Integration] ✓ 所有检查通过，Turn V2 链路正常");
+                Debug.Log("[Integration] ✓ 所有检查通过，回合链路正常");
             }
         }
 

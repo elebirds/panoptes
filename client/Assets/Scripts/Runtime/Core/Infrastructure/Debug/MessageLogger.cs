@@ -33,8 +33,6 @@ namespace Panoptes.DebugTools
         private const string ColorIncoming = "#FFD166";
         private const string ColorError = "#FF7A7A";
         [SerializeField] private bool mirrorEntriesToUnityConsole = true;
-        private readonly JsonParser _jsonParser =
-            new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
 
         private bool _senderHooked;
         private MessageDispatcher _dispatcher;
@@ -148,19 +146,19 @@ namespace Panoptes.DebugTools
                 string.Empty);
         }
 
-        private void OnDispatching(Envelope envelope)
+        private void OnDispatching(MessageDispatcher.DispatchEntry entry)
         {
-            if (envelope == null)
+            if (entry.Message == null)
             {
                 return;
             }
 
             AddEntry(
                 "IN",
-                envelope.Type,
-                BuildIncomingSummary(envelope),
-                envelope.Payload ?? "{}",
-                DebugMessageRegistry.SupportsMessageType(envelope.Type),
+                entry.MessageType,
+                BuildIncomingSummary(entry),
+                entry.PayloadJson,
+                DebugMessageRegistry.SupportsMessageType(entry.MessageType),
                 string.Empty);
         }
 
@@ -238,65 +236,42 @@ namespace Panoptes.DebugTools
             return $"<color={colorHex}>{text}</color>";
         }
 
-        private string BuildIncomingSummary(Envelope envelope)
+        private static string BuildIncomingSummary(MessageDispatcher.DispatchEntry entry)
         {
-            var payload = envelope.Payload ?? "{}";
-            switch (envelope.Type)
+            switch (entry.Message)
             {
-                case "MsgPlanningStart":
-                    if (TryParse(payload, out MsgPlanningStart planningStart))
-                    {
-                        return $"turn={planningStart.Turn} timeout={planningStart.Timeout} tokens={planningStart.Tokens}";
-                    }
-                    break;
-                case "MsgPlanningSnapshot":
-                    if (TryParse(payload, out MsgPlanningSnapshot planningSnapshot))
-                    {
-                        return $"turn={planningSnapshot.Turn} unit_orders={planningSnapshot.UnitOrders.Count}";
-                    }
-                    break;
-                case "MsgTokenResult":
-                    if (TryParse(payload, out MsgTokenResult tokenResult))
-                    {
-                        return $"success={tokenResult.Success} tokens_left={tokenResult.TokensLeft} error={tokenResult.ErrorCode}";
-                    }
-                    break;
-                case "MsgRevealResult":
-                    if (TryParse(payload, out MsgRevealResult reveal))
-                    {
-                        var owner = reveal.TrueState != null ? reveal.TrueState.Owner : string.Empty;
-                        var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingType : string.Empty;
-                        return $"node={reveal.NodeId} owner={owner} building={buildingType}";
-                    }
-                    break;
-                case "MsgMinisterReportChunk":
-                    if (TryParse(payload, out MsgMinisterReportChunk reportChunk))
-                    {
-                        var chunkLen = reportChunk.Chunk == null ? 0 : reportChunk.Chunk.Length;
-                        return $"role={reportChunk.MinisterRole} chunk_len={chunkLen} final={reportChunk.IsFinal}";
-                    }
-                    break;
-                case "MsgMinisterMetrics":
-                    if (TryParse(payload, out MsgMinisterMetrics metrics))
-                    {
-                        return $"role={metrics.MinisterRole} metrics_count={metrics.Metrics.Count}";
-                    }
-                    break;
-                case "MsgTurnSettlement":
-                    if (TryParse(payload, out MsgTurnSettlement turnSettlement))
-                    {
-                        return $"turn={turnSettlement.Turn} sections={turnSettlement.Sections.Count} next_phase={turnSettlement.NextPhase}";
-                    }
-                    break;
-                case "MsgGameOver":
-                    if (TryParse(payload, out MsgGameOver gameOver))
-                    {
-                        return $"winner={gameOver.WinnerId} reason={gameOver.Reason}";
-                    }
-                    break;
+                case MsgPlanningStart planningStart:
+                    return $"turn={planningStart.Turn} timeout={planningStart.Timeout} tokens={planningStart.Tokens}";
+                case MsgPlanningSnapshot planningSnapshot:
+                    return $"turn={planningSnapshot.Turn} unit_orders={planningSnapshot.UnitOrders.Count}";
+                case MsgPlanningPathPreviewResponse preview:
+                    return $"request={preview.RequestId} valid={preview.Valid} path_nodes={preview.PathNodeIds.Count}";
+                case MsgTokenResult tokenResult:
+                    return $"success={tokenResult.Success} tokens_left={tokenResult.TokensLeft} error={tokenResult.ErrorCode}";
+                case MsgRevealResult reveal:
+                    var owner = reveal.TrueState != null ? reveal.TrueState.Owner : string.Empty;
+                    var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingType : string.Empty;
+                    return $"node={reveal.NodeId} owner={owner} building={buildingType}";
+                case MsgResearchResult research:
+                    return $"success={research.Success} tech={research.TechnologyId} error={research.ErrorCode}";
+                case MsgSetBuildingRecipeResult recipe:
+                    return $"success={recipe.Success} node={recipe.NodeId} recipe={recipe.RecipeId}";
+                case MsgMinisterReportChunk reportChunk:
+                    var chunkLen = reportChunk.Chunk == null ? 0 : reportChunk.Chunk.Length;
+                    return $"role={reportChunk.MinisterRole} chunk_len={chunkLen} final={reportChunk.IsFinal}";
+                case MsgMinisterMetrics metrics:
+                    return $"role={metrics.MinisterRole} metrics_count={metrics.Metrics.Count}";
+                case MsgTurnReport turnReport:
+                    return $"turn={turnReport.Turn} summary_len={(turnReport.Summary ?? string.Empty).Length}";
+                case MsgTurnSettlement turnSettlement:
+                    return $"turn={turnSettlement.Turn} sections={turnSettlement.Sections.Count} next_phase={turnSettlement.NextPhase}";
+                case MsgGameOver gameOver:
+                    return $"winner={gameOver.WinnerId} reason={gameOver.Reason}";
+                case Problem problem:
+                    return $"code={problem.Code} message={problem.Message}";
             }
 
-            return envelope.Type;
+            return entry.MessageType;
         }
 
         private static string BuildOutgoingSummary(string msgType, IMessage message)
@@ -305,33 +280,34 @@ namespace Panoptes.DebugTools
             {
                 case MsgSetPolicy setPolicy:
                     return $"policy={setPolicy.Policy}";
+                case MsgTokenBuild tokenBuild:
+                    return $"node={tokenBuild.NodeId} building={tokenBuild.BuildingType}";
                 case MsgBuildStructure buildStructure:
                     return $"node={buildStructure.NodeId} building={buildStructure.BuildingType}";
+                case MsgTokenExpandTerritory expandTerritory:
+                    return $"unit={expandTerritory.UnitId} center={expandTerritory.CenterNodeId}";
+                case MsgTokenReveal tokenReveal:
+                    return $"node={tokenReveal.NodeId}";
                 case MsgRevealNode revealNode:
                     return $"node={revealNode.NodeId}";
                 case MsgSetWarZone setWarZone:
                     return $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}";
-                case MsgWarZoneDirective directive:
-                    return $"zone={directive.ZoneId} directive={directive.Directive}";
-                case MsgIssueUnitOrder issueOrder:
-                    return $"unit={issueOrder.UnitId} action={issueOrder.Action} node={issueOrder.TargetNodeId}";
+                case MsgWarZoneDirective warZoneDirective:
+                    return $"zone={warZoneDirective.ZoneId} directive={warZoneDirective.Directive}";
+                case MsgCombatOrder combatOrder:
+                    return $"unit={combatOrder.UnitId} action={combatOrder.Action}";
+                case MsgIssueUnitOrder issueUnitOrder:
+                    return $"unit={issueUnitOrder.UnitId} action={issueUnitOrder.Action}";
+                case MsgPlanningPathPreviewRequest planningPreview:
+                    return $"request={planningPreview.RequestId} unit={planningPreview.UnitId} action={planningPreview.Action}";
+                case MsgCombatPathPreviewRequest combatPreview:
+                    return $"request={combatPreview.RequestId} unit={combatPreview.UnitId} action={combatPreview.Action}";
+                case MsgSetMinisterDirective setMinisterDirective:
+                    return $"minister={setMinisterDirective.MinisterRole}";
+                case MsgMinisterDirective ministerDirective:
+                    return $"minister={ministerDirective.MinisterRole}";
                 default:
                     return msgType;
-            }
-        }
-
-        private bool TryParse<T>(string payload, out T message)
-            where T : IMessage<T>, new()
-        {
-            try
-            {
-                message = _jsonParser.Parse<T>(payload);
-                return true;
-            }
-            catch
-            {
-                message = default;
-                return false;
             }
         }
     }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using UnityEngine;
@@ -78,14 +77,14 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgBuildStructure
+            var msg = new MsgTokenBuild
             {
                 NodeId = nodeId ?? string.Empty,
                 BuildingType = buildingType ?? string.Empty,
                 CastleId = castleId ?? string.Empty
             };
             MessageSender.Send(msg);
-            Debug.Log("[GameIntents] BuildStructure");
+            Debug.Log("[GameIntents] BuildToken");
         }
 
         public static void ExpandTerritory(string unitId, string centerNodeId = null)
@@ -95,7 +94,18 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "settle_city", centerNodeId, null, null);
+            if (IsCombatPhase())
+            {
+                DeployTerritoryUnit(unitId, centerNodeId);
+                return;
+            }
+
+            var msg = new MsgTokenExpandTerritory
+            {
+                UnitId = unitId ?? string.Empty,
+                CenterNodeId = centerNodeId ?? string.Empty
+            };
+            MessageSender.Send(msg);
             Debug.Log("[GameIntents] ExpandTerritory");
         }
 
@@ -106,7 +116,7 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "settle_city", centerNodeId, null, null);
+            SendCombatOrder(unitId, "deploy", centerNodeId, null);
             Debug.Log("[GameIntents] DeployTerritoryUnit");
         }
 
@@ -117,12 +127,51 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgRevealNode
+            var msg = new MsgTokenReveal
             {
                 NodeId = nodeId ?? string.Empty
             };
             MessageSender.Send(msg);
-            Debug.Log("[GameIntents] RevealNode");
+            Debug.Log("[GameIntents] RevealToken");
+        }
+
+        public static void VetoToken(string actionId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgTokenVeto
+            {
+                ActionId = actionId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+            Debug.Log("[GameIntents] VetoToken");
+        }
+
+        public static void AdjustFlow(string fromNodeId, string toNodeId, string resourceType, int delta)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgTokenAdjustFlow
+            {
+                FromNode = fromNodeId ?? string.Empty,
+                ToNode = toNodeId ?? string.Empty,
+                ResourceType = resourceType ?? string.Empty,
+                Amount = delta
+            };
+            MessageSender.Send(msg);
+            Debug.Log("[GameIntents] AdjustFlow");
+        }
+
+        public static void AdjustFlow(string fromNodeId, string toNodeId, int delta)
+        {
+            Debug.LogWarning("[GameIntents] AdjustFlow called without resourceType, sending empty resource_type.");
+            AdjustFlow(fromNodeId, toNodeId, string.Empty, delta);
         }
 
         public static void SubmitTurn()
@@ -138,6 +187,11 @@ namespace Panoptes.Core.Application.Intents
             TurnSubmitRequested?.Invoke();
         }
 
+        public static void SubmitCombat()
+        {
+            SubmitTurn();
+        }
+
         public static void SetWarZone(List<string> nodeIds)
         {
             if (ActionLock.IsLocked)
@@ -145,11 +199,7 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgSetWarZone
-            {
-                ZoneId = "frontline",
-                Name = "Frontline"
-            };
+            var msg = new MsgSetWarZone();
             if (nodeIds != null)
             {
                 msg.NodeIds.AddRange(nodeIds);
@@ -159,6 +209,21 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetWarZone");
         }
 
+        public static void VetoCombat(string unitId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgTokenVetoCombat
+            {
+                UnitId = unitId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+            Debug.Log("[GameIntents] VetoCombat");
+        }
+
         public static void MoveUnit(string unitId, string targetNodeId)
         {
             if (ActionLock.IsLocked)
@@ -166,18 +231,18 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "move", targetNodeId, null, null);
+            SendCombatOrder(unitId, "move", targetNodeId, null);
             Debug.Log("[GameIntents] MoveUnit");
         }
 
-        public static void PreviewMove(string requestId, string unitId, string targetNodeId)
+        public static void PreviewCombatMove(string requestId, string unitId, string targetNodeId)
         {
             if (ActionLock.IsLocked)
             {
                 return;
             }
 
-            var msg = new MsgPlanningPathPreviewRequest
+            var msg = new MsgCombatPathPreviewRequest
             {
                 RequestId = requestId ?? string.Empty,
                 UnitId = unitId ?? string.Empty,
@@ -185,6 +250,11 @@ namespace Panoptes.Core.Application.Intents
                 TargetNodeId = targetNodeId ?? string.Empty
             };
             MessageSender.Send(msg);
+        }
+
+        public static void PreviewMove(string requestId, string unitId, string targetNodeId)
+        {
+            PreviewCombatMove(requestId, unitId, targetNodeId);
         }
 
         public static void MicroUnit(string unitId, string targetNodeId)
@@ -199,7 +269,7 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "attack", null, targetUnitId, null);
+            SendCombatOrder(unitId, "attack", null, targetUnitId);
             Debug.Log("[GameIntents] AttackUnit");
         }
 
@@ -210,7 +280,7 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "hold", null, null, null);
+            SendCombatOrder(unitId, "hold", null, null);
             Debug.Log("[GameIntents] HoldUnit");
         }
 
@@ -221,7 +291,7 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            IssueUnitOrder(unitId, "charge", targetNodeId, targetUnitId, null);
+            SendCombatOrder(unitId, "charge", targetNodeId, targetUnitId);
             Debug.Log("[GameIntents] ChargeUnit");
         }
 
@@ -232,12 +302,13 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgSetMinisterDirective
+            var msg = new MsgMinisterDirective
             {
                 MinisterRole = string.Empty,
                 Content = BuildMinisterDirectiveContent("accept", actionId)
             };
             MessageSender.Send(msg);
+            Debug.LogWarning("[GameIntents] MinisterDirective encoding pending protocol confirmation, using JSON content payload.");
             Debug.Log("[GameIntents] AcceptMinisterAction");
         }
 
@@ -248,12 +319,13 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgSetMinisterDirective
+            var msg = new MsgMinisterDirective
             {
                 MinisterRole = string.Empty,
                 Content = BuildMinisterDirectiveContent("reject", actionId)
             };
             MessageSender.Send(msg);
+            Debug.LogWarning("[GameIntents] MinisterDirective encoding pending protocol confirmation, using JSON content payload.");
             Debug.Log("[GameIntents] RejectMinisterAction");
         }
 
@@ -301,15 +373,33 @@ namespace Panoptes.Core.Application.Intents
             return JsonUtility.ToJson(payload);
         }
 
-        private static void IssueUnitOrder(string unitId, string action, string targetNodeId, string targetUnitId, string secondaryNodeId)
+        private static bool IsCombatPhase()
         {
-            var msg = new MsgIssueUnitOrder
+            var cache = _cache ?? GameStateCache.Instance;
+            if (cache == null)
+            {
+                return false;
+            }
+
+            var phase = (cache.Phase ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrEmpty(phase))
+            {
+                return false;
+            }
+
+            // Compatibility: old "combat" + new phase-state names like "combat_planning".
+            return string.Equals(phase, "combat", StringComparison.Ordinal)
+                   || phase.IndexOf("combat", StringComparison.Ordinal) >= 0;
+        }
+
+        private static void SendCombatOrder(string unitId, string action, string targetNodeId, string targetUnitId)
+        {
+            var msg = new MsgCombatOrder
             {
                 UnitId = unitId ?? string.Empty,
                 Action = action ?? string.Empty,
                 TargetNodeId = targetNodeId ?? string.Empty,
-                TargetUnitId = targetUnitId ?? string.Empty,
-                SecondaryNodeId = secondaryNodeId ?? string.Empty
+                TargetUnitId = targetUnitId ?? string.Empty
             };
             MessageSender.Send(msg);
         }
