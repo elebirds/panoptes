@@ -1,6 +1,13 @@
 # 政策科技树设计文档
 
-> 版本：v0.2 | 状态：草稿
+> 状态：已废弃，仅保留存档与历史讨论价值。
+> 替代文档：
+> - `docs/gdd/2026-04-15-panoptes-gdd-v1-structured.md` 第 12 章
+> - `docs/gdd/2026-04-15-panoptes-gdd-v1-detailed.md` 第 9 章
+> - `docs/2026-04-15-panoptes-gdd-v1-implementation-plan.md` Task 15
+> 说明：本文将政策与科技树强耦合，并采用旧版单系统表述；当前正式设计已改为“科技系统与政策系统分离，部分制度候选由科技解锁”的双层结构。
+
+> 版本：v0.2 | 状态：历史草稿
 
 ---
 
