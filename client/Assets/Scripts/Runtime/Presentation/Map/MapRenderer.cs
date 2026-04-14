@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
 using UnityEngine;
 
@@ -141,6 +142,7 @@ namespace Panoptes.Presentation.Map
 
         private readonly List<UnitDto> _jsonUnits = new();
         private StaticCatalogCache _catalogCache;
+        private ConfigCache _configCache;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -159,6 +161,11 @@ namespace Panoptes.Presentation.Map
 
         private void OnEnable()
         {
+            if (IsGameRuntime())
+            {
+                return;
+            }
+
             SubscribeServerMapConfig();
         }
 
@@ -174,10 +181,41 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (generateDebugMapOnStart)
+            {
+                if (autoEnsureRuntimeControllers)
+                {
+                    EnsureRuntimeControllers();
+                }
+
+                BuildDebugMap();
+                return;
+            }
+
+            if (IsGameRuntime())
+            {
+                if (!BuildBackendGameMap())
+                {
+                    return;
+                }
+
+                if (autoEnsureRuntimeControllers)
+                {
+                    EnsureRuntimeControllers();
+                }
+                return;
+            }
+
             if (autoEnsureRuntimeControllers)
             {
                 EnsureRuntimeControllers();
             }
+
+            if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonAsset(startupMapJson))
+            {
+                return;
+            }
+
             RebuildMap();
         }
 
@@ -227,7 +265,6 @@ namespace Panoptes.Presentation.Map
                     typeof(RectTransform),
                     typeof(UnitInfoActionRegistry),
                     typeof(SettlerUnitActionRegistrar),
-                    typeof(CastleBuildingActionRegistrar),
                     typeof(UnitInfoPanelController));
                 if (canvas != null)
                 {
@@ -244,10 +281,6 @@ namespace Panoptes.Presentation.Map
             {
                 unitInfoPanel.gameObject.AddComponent<SettlerUnitActionRegistrar>();
             }
-            if (unitInfoPanel.GetComponent<CastleBuildingActionRegistrar>() == null)
-            {
-                unitInfoPanel.gameObject.AddComponent<CastleBuildingActionRegistrar>();
-            }
         }
 
         public void RebuildMap()
@@ -258,16 +291,60 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (IsGameRuntime())
+            {
+                BuildBackendGameMap();
+                return;
+            }
+
             if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
             {
                 var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
-                Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
+                if (!preferLocalMapWhenBackendHasNoTerritory || HasToolSceneTerritorySnapshot(backendNodes))
+                {
+                    Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
+                    PrepareRuntimeRoots();
+                    BuildFromNodes(backendNodes);
+                    return;
+                }
+            }
 
+            if (TryLoadToolSceneConfiguredMap())
+            {
+                return;
+            }
+
+            if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
+            {
+                var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
+                Debug.LogWarning($"[MapRenderer] Using backend nodes despite incomplete territory snapshot: {backendNodes.Count}");
                 PrepareRuntimeRoots();
                 BuildFromNodes(backendNodes);
                 return;
             }
-            Debug.LogError("[MapRenderer] Cannot build map: backend node list is empty.");
+
+            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or fallback map available.");
+        }
+
+        private bool BuildBackendGameMap()
+        {
+            var cache = GameStateCache.Instance;
+            if (cache == null)
+            {
+                ReportBackendGameMapFailure("GameStateCache 未就绪，无法渲染服务端地图。");
+                return false;
+            }
+
+            if (cache.Nodes == null || cache.Nodes.Count == 0)
+            {
+                ReportBackendGameMapFailure("服务端未下发地图节点，无法进入对局。");
+                return false;
+            }
+
+            var backendNodes = new List<NodeDto>(cache.Nodes.Values);
+            Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
+            BuildFromNodes(backendNodes);
+            return true;
         }
 
         private void SubscribeServerMapConfig()
@@ -282,6 +359,12 @@ namespace Panoptes.Presentation.Map
             {
                 _catalogCache.CatalogChanged += OnServerMapCatalogChanged;
             }
+
+            _configCache = ConfigCache.EnsureInstance();
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated += OnServerMapConfigUpdated;
+            }
         }
 
         private void UnsubscribeServerMapConfig()
@@ -291,17 +374,82 @@ namespace Panoptes.Presentation.Map
                 _catalogCache.CatalogChanged -= OnServerMapCatalogChanged;
                 _catalogCache = null;
             }
+
+            if (_configCache != null)
+            {
+                _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
+                _configCache = null;
+            }
         }
 
         private void OnServerMapCatalogChanged()
         {
+            if (IsGameRuntime())
+            {
+                return;
+            }
+
             if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
             {
                 return;
             }
+
+            RebuildMap();
         }
 
-        private bool TryLoadMapFromStaticCatalog()
+        private void OnServerMapConfigUpdated(string key)
+        {
+            if (IsGameRuntime())
+            {
+                return;
+            }
+
+            if (!listenServerMapConfigUpdates ||
+                !string.Equals(NormalizeToken(key), NormalizeToken(serverMapConfigKey), System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
+            {
+                return;
+            }
+
+            RebuildMap();
+        }
+
+        private bool TryLoadToolSceneConfiguredMap()
+        {
+            if (preferServerPushedMapConfig && TryLoadToolSceneMapFromServerConfig())
+            {
+                return true;
+            }
+
+            if (TryLoadToolSceneMapFromStaticCatalog())
+            {
+                return true;
+            }
+
+            return TryLoadToolSceneMapFromLocalFallback();
+        }
+
+        private bool TryLoadToolSceneMapFromServerConfig()
+        {
+            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
+            if (cache == null || string.IsNullOrWhiteSpace(serverMapConfigKey))
+            {
+                return false;
+            }
+
+            if (!cache.TryGetJson(serverMapConfigKey.Trim(), out var json) || string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            return LoadMapFromJsonString(json);
+        }
+
+        private bool TryLoadToolSceneMapFromStaticCatalog()
         {
             var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
             if (cache == null)
@@ -349,7 +497,7 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
-        private bool TryLoadMapFromLocalFallback()
+        private bool TryLoadToolSceneMapFromLocalFallback()
         {
             if (string.IsNullOrWhiteSpace(localFallbackMapResourcePath))
             {
@@ -365,7 +513,44 @@ namespace Panoptes.Presentation.Map
             return LoadMapFromJsonAsset(asset);
         }
 
-        private static bool HasSufficientTerritoryAndCastles(List<NodeDto> nodes)
+        private void ReportBackendGameMapFailure(string message)
+        {
+            ClearMap();
+            ClearUnits();
+            DisableGameplayInput();
+
+            var resolvedMessage = string.IsNullOrWhiteSpace(message)
+                ? "服务端地图加载失败。"
+                : message.Trim();
+            Debug.LogError($"[MapRenderer] {resolvedMessage}");
+
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(resolvedMessage, false);
+            }
+        }
+
+        private static void DisableGameplayInput()
+        {
+            var inputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+            if (inputHandler != null)
+            {
+                inputHandler.enabled = false;
+            }
+
+            var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
+            if (unitInfoPanel != null)
+            {
+                unitInfoPanel.gameObject.SetActive(false);
+            }
+        }
+
+        private static bool IsGameRuntime()
+        {
+            return AppManager.Instance != null && AppManager.Instance.State == AppState.Game;
+        }
+
+        private static bool HasToolSceneTerritorySnapshot(List<NodeDto> nodes)
         {
             if (nodes == null || nodes.Count == 0)
             {
