@@ -29,20 +29,16 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            dispatcher.Register<MsgDomesticPhaseStart>("MsgDomesticPhaseStart", OnDomesticPhaseStart);
-            dispatcher.Register<MsgCombatPhaseStart>("MsgCombatPhaseStart", OnCombatPhaseStart);
+            dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+            dispatcher.Register<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
+            dispatcher.Register<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
+            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
-            dispatcher.Register<MsgMinisterAction>("MsgMinisterAction", OnMinisterAction);
-            dispatcher.Register<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
-            dispatcher.Register<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
-            dispatcher.Register<MsgCombatOrdersSnapshot>("MsgCombatOrdersSnapshot", OnCombatOrdersSnapshot);
-            dispatcher.Register<MsgCombatPathPreviewResponse>("MsgCombatPathPreviewResponse", OnCombatPathPreviewResponse);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
             dispatcher.Register<ErrorResponse>("ErrorResponse", OnGameError);
-
             _registered = true;
         }
 
@@ -54,49 +50,69 @@ namespace Panoptes.Core.Application.Handler
             }
 
             var dispatcher = MessageDispatcher.Instance;
-            dispatcher.Unregister<MsgDomesticPhaseStart>("MsgDomesticPhaseStart", OnDomesticPhaseStart);
-            dispatcher.Unregister<MsgCombatPhaseStart>("MsgCombatPhaseStart", OnCombatPhaseStart);
+            dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+            dispatcher.Unregister<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
+            dispatcher.Unregister<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
+            dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
-            dispatcher.Unregister<MsgMinisterAction>("MsgMinisterAction", OnMinisterAction);
-            dispatcher.Unregister<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
-            dispatcher.Unregister<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
-            dispatcher.Unregister<MsgCombatOrdersSnapshot>("MsgCombatOrdersSnapshot", OnCombatOrdersSnapshot);
-            dispatcher.Unregister<MsgCombatPathPreviewResponse>("MsgCombatPathPreviewResponse", OnCombatPathPreviewResponse);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
             dispatcher.Unregister<ErrorResponse>("ErrorResponse", OnGameError);
-
             _registered = false;
         }
 
-        private static void OnDomesticPhaseStart(MsgDomesticPhaseStart msg)
+        private static void OnPlanningStart(MsgPlanningStart msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
-            cache?.ApplyDomesticPhaseStart(msg);
-            CombatDraftCache.Instance?.ClearAll();
-
-            Debug.Log(FormatPhaseStartLog($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
+            GameStateCache.Instance?.ApplyPlanningStart(msg);
+            Debug.Log(FormatPhaseStartLog($"[Game] 规划阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
-        private static void OnCombatPhaseStart(MsgCombatPhaseStart msg)
+        private static void OnPlanningSnapshot(MsgPlanningSnapshot msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
-            cache?.ApplyCombatPhaseStart(msg);
-            CombatDraftCache.EnsureInstance()?.ClearPreview();
+            GameStateCache.Instance?.ApplyPlanningSnapshot(msg);
+            Debug.Log($"[Game] 规划快照 turn={msg.Turn} phase={msg.Phase} unit_orders={msg.UnitOrders.Count}");
+        }
 
-            Debug.Log(FormatPhaseStartLog($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}"));
+        private static void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
+        {
+            PlanningDraftCache.EnsureInstance()?.ApplyPreviewResponse(msg);
+            if (msg != null)
+            {
+                Debug.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
+            }
+        }
+
+        private static void OnTurnSettlement(MsgTurnSettlement msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            GameStateCache.Instance?.ApplyTurnSettlement(msg);
+            Debug.Log($"[Game] 回合结算 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} sections={msg.Sections.Count}");
+            for (var i = 0; i < msg.Sections.Count; i++)
+            {
+                var section = msg.Sections[i];
+                if (section == null)
+                {
+                    continue;
+                }
+
+                Debug.Log($"  section={section.Section} events={section.Events.Count}");
+            }
         }
 
         private static void OnTokenResult(MsgTokenResult msg)
@@ -110,11 +126,11 @@ namespace Panoptes.Core.Application.Handler
             if (msg.Success)
             {
                 cache?.UpdateTokens(msg.TokensLeft);
-                Debug.Log($"[Game] 令牌操作成功 action={msg.Action} tokens_left={msg.TokensLeft}");
+                Debug.Log($"[Game] 指令成功 action={msg.Action} tokens_left={msg.TokensLeft}");
             }
             else
             {
-                Debug.LogWarning($"[Game] 令牌操作失败 error={msg.ErrorCode}");
+                Debug.LogWarning($"[Game] 指令失败 error={msg.ErrorCode}");
             }
 
             cache?.PublishTokenResult(new TokenResultEvent
@@ -141,10 +157,7 @@ namespace Panoptes.Core.Application.Handler
                 NodeID = msg.NodeId,
                 TrueState = trueState
             });
-
-            var owner = msg.TrueState != null ? msg.TrueState.Owner : string.Empty;
-            var buildingType = msg.TrueState != null ? msg.TrueState.BuildingType : string.Empty;
-            Debug.Log($"[Game] 节点真实状态 id={msg.NodeId} owner={owner} building={buildingType}");
+            Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
         }
 
         private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)
@@ -154,27 +167,12 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            if (msg.IsFinal)
-            {
-                GameStateCache.Instance?.PublishMinisterChunk(new MinisterChunkEvent
-                {
-                    MinisterRole = msg.MinisterRole,
-                    Chunk = msg.Chunk,
-                    IsFinal = true
-                });
-                Debug.Log($"[Minister] {msg.MinisterRole} 汇报完成");
-                return;
-            }
-
-            var chunk = msg.Chunk ?? string.Empty;
-            var preview = chunk.Length <= 50 ? chunk : chunk.Substring(0, 50);
             GameStateCache.Instance?.PublishMinisterChunk(new MinisterChunkEvent
             {
                 MinisterRole = msg.MinisterRole,
                 Chunk = msg.Chunk,
-                IsFinal = false
+                IsFinal = msg.IsFinal
             });
-            Debug.Log($"[Minister] {msg.MinisterRole} chunk: {preview}...");
         }
 
         private static void OnMinisterMetrics(MsgMinisterMetrics msg)
@@ -189,99 +187,6 @@ namespace Panoptes.Core.Application.Handler
                 MinisterRole = msg.MinisterRole,
                 Metrics = MinisterMapper.ToDtoList(msg.Metrics)
             });
-
-            Debug.Log($"[Minister] {msg.MinisterRole} 数值轨 count={msg.Metrics.Count}");
-            for (var i = 0; i < msg.Metrics.Count; i++)
-            {
-                var metric = msg.Metrics[i];
-                if (metric == null)
-                {
-                    continue;
-                }
-
-                Debug.Log($"  {metric.Label}: {metric.Value} trend={metric.Trend} confidence={metric.Confidence}");
-            }
-        }
-
-        private static void OnMinisterAction(MsgMinisterAction msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            GameStateCache.Instance?.PublishMinisterAction(new MinisterActionEvent
-            {
-                MinisterRole = msg.Minister,
-                ActionID = msg.ActionId,
-                Actions = MinisterMapper.ToDtoList(msg.Actions),
-                Report = msg.Report
-            });
-
-            Debug.Log($"[Minister] {msg.Minister} 自主行动 action_id={msg.ActionId} actions={msg.Actions.Count}");
-            for (var i = 0; i < msg.Actions.Count; i++)
-            {
-                var action = msg.Actions[i];
-                if (action == null)
-                {
-                    continue;
-                }
-
-                Debug.Log($"  action={action.Type} params={JoinMap(action.Params)}");
-            }
-        }
-
-        private static void OnDomesticSettlement(MsgDomesticSettlement msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            GameStateCache.Instance?.ApplyDomesticSettlement(msg);
-            Debug.Log($"[Game] 内政结算 changes={msg.Changes.Count}");
-            for (var i = 0; i < msg.Changes.Count; i++)
-            {
-                var change = msg.Changes[i];
-                if (change == null)
-                {
-                    continue;
-                }
-
-                Debug.Log($"  {change.Type}: {JoinMap(change.Data)}");
-            }
-        }
-
-        private static void OnCombatSettlement(MsgCombatSettlement msg)
-        {
-            if (msg == null)
-            {
-                return;
-            }
-
-            GameStateCache.Instance?.ApplyCombatSettlement(msg);
-            CombatDraftCache.Instance?.ClearAll();
-            Debug.Log($"[Game] 战斗结算 events={msg.Events.Count}");
-            for (var i = 0; i < msg.Events.Count; i++)
-            {
-                var evt = msg.Events[i];
-                if (evt == null)
-                {
-                    continue;
-                }
-
-                Debug.Log($"  {evt.Type}");
-            }
-        }
-
-        private static void OnCombatOrdersSnapshot(MsgCombatOrdersSnapshot msg)
-        {
-            CombatDraftCache.EnsureInstance()?.ApplyOrdersSnapshot(msg);
-        }
-
-        private static void OnCombatPathPreviewResponse(MsgCombatPathPreviewResponse msg)
-        {
-            CombatDraftCache.EnsureInstance()?.ApplyPreviewResponse(msg);
         }
 
         private static void OnGameOver(MsgGameOver msg)
@@ -292,9 +197,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             GameStateCache.Instance?.ApplyGameOver(msg);
-
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
-            Debug.Log($"[Game] 叙事: {msg.Narrative}");
         }
 
         private static void OnGameError(ErrorResponse msg)
@@ -320,23 +223,6 @@ namespace Panoptes.Core.Application.Handler
 #else
             return text;
 #endif
-        }
-
-        private static string JoinMap(Google.Protobuf.Collections.MapField<string, string> map)
-        {
-            if (map == null || map.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            var pairs = new string[map.Count];
-            var index = 0;
-            foreach (var pair in map)
-            {
-                pairs[index++] = $"{pair.Key}={pair.Value}";
-            }
-
-            return string.Join(",", pairs);
         }
     }
 }

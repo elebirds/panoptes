@@ -25,7 +25,7 @@ namespace Panoptes.Presentation.Map
             string unitId,
             string targetNodeId,
             PathPreviewDto preview,
-            IReadOnlyDictionary<string, QueuedCombatOrderDto> ordersByUnitId,
+            IReadOnlyDictionary<string, QueuedUnitOrderDto> ordersByUnitId,
             Color arrowColor,
             Color destinationColor)
         {
@@ -52,7 +52,7 @@ namespace Panoptes.Presentation.Map
         }
 
         public void RefreshQueuedMovePathMarkers(
-            IReadOnlyDictionary<string, QueuedCombatOrderDto> ordersByUnitId,
+            IReadOnlyDictionary<string, QueuedUnitOrderDto> ordersByUnitId,
             Color arrowColor,
             Color destinationColor)
         {
