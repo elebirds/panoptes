@@ -13,6 +13,7 @@ type Config struct {
 	DevMode   bool   `env:"DEV_MODE" envDefault:"false"`
 	DataRoot  string `env:"DATA_ROOT" envDefault:"../data"`
 	MapID     string `env:"MAP_ID" envDefault:""`
+	UseProceduralMap bool `env:"USE_PROCEDURAL_MAP" envDefault:"false"`
 
 	// PostgreSQL 配置
 	PostgresDSN string `env:"POSTGRES_DSN" envDefault:"postgres://panoptes:panoptes_dev@localhost:5432/panoptes?sslmode=disable"`
