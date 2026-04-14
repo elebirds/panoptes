@@ -148,7 +148,6 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string castleProductionPanelResourcesPath = "Prefabs/UI/CastleProductionPanel";
 
         private readonly HashSet<string> _highlightNodeIds = new();
-        private readonly Dictionary<string, GameObject> _moveTurnMarkers = new();
         private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
         private readonly Queue<string> _pendingBuildTokenNodeQueue = new();
@@ -156,7 +155,6 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
         private readonly HashSet<string> _pendingMoveUnitIds = new();
         private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
-        private readonly Dictionary<string, List<string>> _movePathNodeIdsByUnitId = new();
         private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
@@ -169,6 +167,8 @@ namespace Panoptes.Presentation.Map
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
         private CombatDraftCache _draftCache;
+        private MovePathOverlayController _movePathOverlay;
+        private MovePreviewOverlayController _movePreviewOverlay;
         private bool _cacheEventsSubscribed;
         private float _ignoreInputUntilTime;
         private float _nextMovePreviewRequestAt;
@@ -208,6 +208,8 @@ namespace Panoptes.Presentation.Map
                 inputCamera = Camera.main;
             }
 
+            _movePathOverlay = new MovePathOverlayController(transform);
+            _movePreviewOverlay = new MovePreviewOverlayController(transform);
             ResolveCastleProductionPanel();
         }
 
@@ -223,7 +225,8 @@ namespace Panoptes.Presentation.Map
             UnsubscribeDraftCacheEvents();
             ClearMovePreviewState();
             ClearAllMovePreviews();
-            ClearAllMovePathMarkers();
+            _movePathOverlay?.ClearAllMovePathMarkers();
+            _movePreviewOverlay?.ClearPreview();
             DisposeMovePreviewProxyMaterial();
             _pendingBuildTokenNodeQueue.Clear();
             ClearAllPendingDeployGhosts();
@@ -1272,7 +1275,7 @@ namespace Panoptes.Presentation.Map
             if (map == null)
             {
                 _highlightNodeIds.Clear();
-                ClearMoveTurnMarkers();
+                _movePreviewOverlay?.ClearPreview(RestoreTerritoryHighlightAfterPreviewOverlayClear);
                 return;
             }
 
@@ -1292,7 +1295,23 @@ namespace Panoptes.Presentation.Map
             }
 
             _highlightNodeIds.Clear();
-            ClearMoveTurnMarkers();
+            _movePreviewOverlay?.ClearPreview(RestoreTerritoryHighlightAfterPreviewOverlayClear);
+        }
+
+        private bool RestoreTerritoryHighlightAfterPreviewOverlayClear(string nodeId, NodeView node)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            if (_territoryHighlightNodeIds.Contains(nodeId))
+            {
+                node.SetHighlight(true, territoryHighlightColor);
+                return true;
+            }
+
+            return false;
         }
 
         private void RestoreNodeHighlightAfterHover(NodeView node)
@@ -1312,6 +1331,11 @@ namespace Panoptes.Presentation.Map
             if (!string.IsNullOrWhiteSpace(nodeId) && _highlightNodeIds.Contains(nodeId))
             {
                 node.SetHighlight(true, moveHighlightColor);
+                return;
+            }
+
+            if (_movePreviewOverlay != null && _movePreviewOverlay.TryRestorePreviewHighlight(nodeId, node))
+            {
                 return;
             }
 
@@ -1387,6 +1411,9 @@ namespace Panoptes.Presentation.Map
                     {
                         nodeView.SetHighlight(true, moveHighlightColor);
                     }
+                    else if (_movePreviewOverlay != null && _movePreviewOverlay.TryRestorePreviewHighlight(nodeId, nodeView))
+                    {
+                    }
                     else
                     {
                         nodeView.SetHighlightVisible(false);
@@ -1411,7 +1438,7 @@ namespace Panoptes.Presentation.Map
             RemoveMovePreview(unitId);
             if (!TryApplyAuthoritativeMovePathMarkers(unitId, targetNodeId))
             {
-                ClearMovePathMarkersForUnit(unitId);
+                _movePathOverlay?.ClearMovePathMarkersForUnit(unitId);
             }
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
@@ -1455,6 +1482,9 @@ namespace Panoptes.Presentation.Map
         private void SubscribeDraftCacheEvents()
         {
             _draftCache = CombatDraftCache.EnsureInstance();
+            _movePathOverlay ??= new MovePathOverlayController(transform);
+            _movePreviewOverlay ??= new MovePreviewOverlayController(transform);
+            _movePreviewOverlay.SetHostTransform(transform);
             if (_draftCache == null)
             {
                 return;
@@ -1521,7 +1551,7 @@ namespace Panoptes.Presentation.Map
                     var normalizedUnitId = eventItem.UnitId.Trim();
                     _pendingMoveUnitIds.Remove(normalizedUnitId);
                     _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
-                    ClearMovePathMarkersForUnit(normalizedUnitId);
+                    _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedUnitId);
                 }
 
                 if (MapRenderer.Instance == null)
@@ -1544,7 +1574,7 @@ namespace Panoptes.Presentation.Map
             _pendingMoveUnitIds.Clear();
             _pendingMoveTargetNodeByUnitId.Clear();
             _pendingBuildTokenNodeQueue.Clear();
-            ClearAllMovePathMarkers();
+            _movePathOverlay?.ClearAllMovePathMarkers();
 
             var builtBuildings = e?.Settlement?.BuiltBuildings;
             if (builtBuildings == null || builtBuildings.Count == 0)
@@ -1636,6 +1666,9 @@ namespace Panoptes.Presentation.Map
                 {
                     nodeView.SetHighlight(true, moveHighlightColor);
                 }
+                else if (_movePreviewOverlay != null && _movePreviewOverlay.TryRestorePreviewHighlight(evt.NodeID, nodeView))
+                {
+                }
             }
         }
 
@@ -1667,7 +1700,7 @@ namespace Panoptes.Presentation.Map
                     var normalizedRemovedId = removedId.Trim();
                     _pendingMoveUnitIds.Remove(normalizedRemovedId);
                     _pendingMoveTargetNodeByUnitId.Remove(normalizedRemovedId);
-                    ClearMovePathMarkersForUnit(normalizedRemovedId);
+                    _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedRemovedId);
                     ClearPendingDeployCastleGhostForUnit(normalizedRemovedId);
                     if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
                     {
@@ -1825,11 +1858,9 @@ namespace Panoptes.Presentation.Map
                     preview != null &&
                     string.Equals(preview.UnitId, _selectedUnit.UnitId, StringComparison.Ordinal) &&
                     string.Equals(preview.TargetNodeId, _hoverPreviewNodeId, StringComparison.Ordinal) &&
-                    MapRenderer.Instance != null &&
-                    MapRenderer.Instance.TryGetNodeView(_hoverPreviewNodeId, out var invalidNode))
+                    MapRenderer.Instance != null)
                 {
-                    invalidNode.SetHighlight(true, moveInvalidColor);
-                    _highlightNodeIds.Add(_hoverPreviewNodeId);
+                    _movePreviewOverlay?.ShowInvalidPreview(_hoverPreviewNodeId, moveInvalidColor);
                 }
                 return;
             }
@@ -1846,43 +1877,7 @@ namespace Panoptes.Presentation.Map
             {
                 return;
             }
-
-            if (preview.PathNodeIds != null)
-            {
-                for (var i = 0; i < preview.PathNodeIds.Count; i++)
-                {
-                    var nodeId = preview.PathNodeIds[i];
-                    if (string.IsNullOrWhiteSpace(nodeId) || !map.TryGetNodeView(nodeId, out var node))
-                    {
-                        continue;
-                    }
-
-                    var color = string.Equals(nodeId, preview.FirstTurnNodeId, StringComparison.Ordinal)
-                        ? moveFirstTurnColor
-                        : moveHighlightColor;
-                    node.SetHighlight(true, color);
-                    _highlightNodeIds.Add(nodeId);
-                }
-            }
-
-            if (preview.TurnStops != null)
-            {
-                for (var i = 0; i < preview.TurnStops.Count; i++)
-                {
-                    var stop = preview.TurnStops[i];
-                    if (stop == null || string.IsNullOrWhiteSpace(stop.NodeId) || !map.TryGetNodeView(stop.NodeId, out var node))
-                    {
-                        continue;
-                    }
-
-                    node.SetHighlight(true, stop.TurnIndex <= 1 ? moveFirstTurnColor : moveFutureTurnColor);
-                    _highlightNodeIds.Add(stop.NodeId);
-                    if (stop.TurnIndex >= 2)
-                    {
-                        CreateMoveTurnMarker(stop.NodeId, node, stop.TurnIndex);
-                    }
-                }
-            }
+            _movePreviewOverlay?.ShowPreview(preview, moveHighlightColor, moveFirstTurnColor, moveFutureTurnColor, moveTurnMarkerHeight);
         }
 
         private void ClearMovePreviewState()
@@ -1895,54 +1890,6 @@ namespace Panoptes.Presentation.Map
                 previewCache?.ClearPreview();
             }
             ClearNodeHighlights();
-        }
-
-        private void CreateMoveTurnMarker(string nodeId, NodeView node, int turnIndex)
-        {
-            if (string.IsNullOrWhiteSpace(nodeId) || node == null)
-            {
-                return;
-            }
-
-            if (_moveTurnMarkers.TryGetValue(nodeId, out var existing) && existing != null)
-            {
-                var existingText = existing.GetComponent<TextMesh>();
-                if (existingText != null)
-                {
-                    existingText.text = turnIndex.ToString();
-                }
-                return;
-            }
-
-            var marker = new GameObject($"MoveTurnMarker_{nodeId}");
-            marker.transform.SetParent(transform, false);
-            marker.transform.position = (node.UnitAnchor != null ? node.UnitAnchor.position : node.transform.position) + Vector3.up * moveTurnMarkerHeight;
-            var text = marker.AddComponent<TextMesh>();
-            text.text = turnIndex.ToString();
-            text.characterSize = 0.18f;
-            text.fontSize = 42;
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.color = moveFutureTurnColor;
-            _moveTurnMarkers[nodeId] = marker;
-        }
-
-        private void ClearMoveTurnMarkers()
-        {
-            if (_moveTurnMarkers.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var pair in _moveTurnMarkers)
-            {
-                if (pair.Value != null)
-                {
-                    Destroy(pair.Value);
-                }
-            }
-
-            _moveTurnMarkers.Clear();
         }
 
         private bool IsCastleNode(string nodeId)
@@ -3004,175 +2951,29 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var preview = draftCache.CurrentPreview;
-            if (preview != null &&
-                preview.Valid &&
-                string.Equals(preview.UnitId, unitId, StringComparison.Ordinal) &&
-                string.Equals(preview.TargetNodeId, targetNodeId, StringComparison.Ordinal) &&
-                ApplyMovePathMarkers(unitId, preview.PathNodeIds))
-            {
-                return true;
-            }
-
-            if (draftCache.OrdersByUnitId.TryGetValue(unitId, out var order) &&
-                order != null &&
-                string.Equals(order.Action, "move", StringComparison.Ordinal) &&
-                string.Equals(order.TargetNodeId, targetNodeId, StringComparison.Ordinal) &&
-                ApplyMovePathMarkers(unitId, order.PathNodeIds))
-            {
-                return true;
-            }
-
-            return false;
+            return _movePathOverlay != null &&
+                   _movePathOverlay.TryApplyAuthoritativeMovePathMarkers(
+                       unitId,
+                       targetNodeId,
+                       draftCache.CurrentPreview,
+                       draftCache.OrdersByUnitId,
+                       movePathArrowColor,
+                       movePathDestinationColor);
         }
 
         private void RefreshQueuedMovePathMarkers()
         {
-            ClearAllMovePathMarkers();
-
             var draftCache = _draftCache ?? CombatDraftCache.Instance;
             if (draftCache == null)
             {
+                _movePathOverlay?.ClearAllMovePathMarkers();
                 return;
             }
 
-            foreach (var pair in draftCache.OrdersByUnitId)
-            {
-                var order = pair.Value;
-                if (order == null || !string.Equals(order.Action, "move", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                ApplyMovePathMarkers(order.UnitId, order.PathNodeIds);
-            }
-        }
-
-        private bool ApplyMovePathMarkers(string unitId, IReadOnlyList<string> pathNodeIds)
-        {
-            var normalizedUnitId = NormalizeToken(unitId);
-            if (string.IsNullOrEmpty(normalizedUnitId))
-            {
-                return false;
-            }
-
-            ClearMovePathMarkersForUnit(normalizedUnitId);
-
-            if (pathNodeIds == null || pathNodeIds.Count < 2)
-            {
-                return false;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return false;
-            }
-
-            var path = new List<NodeView>(pathNodeIds.Count);
-            for (var i = 0; i < pathNodeIds.Count; i++)
-            {
-                var nodeId = pathNodeIds[i];
-                if (string.IsNullOrWhiteSpace(nodeId))
-                {
-                    continue;
-                }
-
-                if (map.TryGetNodeView(nodeId, out var node) && node != null)
-                {
-                    path.Add(node);
-                }
-            }
-
-            if (path.Count < 2)
-            {
-                return false;
-            }
-
-            var usedNodeIds = new List<string>(path.Count - 1);
-            for (var i = 1; i < path.Count; i++)
-            {
-                var node = path[i];
-                if (node == null || string.IsNullOrWhiteSpace(node.NodeId))
-                {
-                    continue;
-                }
-
-                if (i == path.Count - 1)
-                {
-                    node.ShowMovePathDestination(movePathDestinationColor);
-                }
-                else
-                {
-                    var nextNode = path[i + 1];
-                    if (nextNode == null)
-                    {
-                        continue;
-                    }
-
-                    var dir = nextNode.GridPos - node.GridPos;
-                    node.ShowMovePathArrow(dir, movePathArrowColor);
-                }
-
-                usedNodeIds.Add(node.NodeId);
-            }
-
-            if (usedNodeIds.Count == 0)
-            {
-                return false;
-            }
-
-            _movePathNodeIdsByUnitId[normalizedUnitId] = usedNodeIds;
-            return true;
-        }
-
-        private void ClearMovePathMarkersForUnit(string unitId)
-        {
-            var normalizedUnitId = NormalizeToken(unitId);
-            if (string.IsNullOrEmpty(normalizedUnitId))
-            {
-                return;
-            }
-
-            if (!_movePathNodeIdsByUnitId.TryGetValue(normalizedUnitId, out var nodeIds) || nodeIds == null)
-            {
-                _movePathNodeIdsByUnitId.Remove(normalizedUnitId);
-                return;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map != null)
-            {
-                for (var i = 0; i < nodeIds.Count; i++)
-                {
-                    var nodeId = nodeIds[i];
-                    if (string.IsNullOrWhiteSpace(nodeId))
-                    {
-                        continue;
-                    }
-
-                    if (map.TryGetNodeView(nodeId, out var node) && node != null)
-                    {
-                        node.ClearMovePathMarker();
-                    }
-                }
-            }
-
-            _movePathNodeIdsByUnitId.Remove(normalizedUnitId);
-        }
-
-        private void ClearAllMovePathMarkers()
-        {
-            if (_movePathNodeIdsByUnitId.Count == 0)
-            {
-                return;
-            }
-
-            var keys = new List<string>(_movePathNodeIdsByUnitId.Keys);
-            for (var i = 0; i < keys.Count; i++)
-            {
-                ClearMovePathMarkersForUnit(keys[i]);
-            }
+            _movePathOverlay?.RefreshQueuedMovePathMarkers(
+                draftCache.OrdersByUnitId,
+                movePathArrowColor,
+                movePathDestinationColor);
         }
 
         private void ClearAllMovePreviews()
