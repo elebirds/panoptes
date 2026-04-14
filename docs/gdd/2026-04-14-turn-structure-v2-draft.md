@@ -1,6 +1,11 @@
 # Panoptes 回合结构 V2 草案
 
-> 废弃说明：本草案已被 `docs/TURN_V2_REFACTOR_PLAN.md` 取代。本文保留用于记录讨论过程，不再作为实施基线。
+> 状态：已废弃，仅保留存档与讨论过程。
+> 替代文档：
+> - `docs/TURN_V2_REFACTOR_PLAN.md`
+> - `docs/gdd/2026-04-15-panoptes-gdd-v1-structured.md` 第 5 章
+> - `docs/2026-04-15-panoptes-gdd-v1-implementation-plan.md`
+> 说明：本文是回合结构讨论稿，正式裁决与实施顺序已迁移到上述文档。
 
 > 状态：讨论稿  
 > 日期：2026-04-14  

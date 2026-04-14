@@ -1,6 +1,11 @@
 # 游戏设计文档（GDD）
 
-> 废弃说明：本文整体保留，但其中第 16 章及所有基于“内政阶段 / 战斗阶段”双主阶段的描述已被 `docs/TURN_V2_REFACTOR_PLAN.md` 取代，不再作为实施依据。
+> 状态：已废弃，仅保留存档与历史讨论价值。
+> 替代文档：
+> - `docs/gdd/2026-04-15-panoptes-gdd-v1.md`
+> - `docs/gdd/2026-04-15-panoptes-gdd-v1-structured.md`
+> - `docs/2026-04-15-panoptes-gdd-v1-implementation-plan.md`
+> 说明：本文基于旧版项目名、旧版系统边界和旧版双阶段时序撰写，不再作为当前设计或实施依据。
 
 ## 项目代号：EMINENCE
 ### 版本：0.1 | 日期：2026-04-04
