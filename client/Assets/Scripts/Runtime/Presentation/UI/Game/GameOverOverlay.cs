@@ -157,7 +157,7 @@ namespace Panoptes.Presentation.UI.Game
             winnerIdText ??= EnsureText("WinnerIDText", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -156f), new Vector2(740f, 34f), 21f, FontStyles.Bold, TextAlignmentOptions.Center);
             loserIdText ??= EnsureText("LoserIDText", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -194f), new Vector2(740f, 34f), 21f, FontStyles.Bold, TextAlignmentOptions.Center);
             narrativeText ??= EnsureText("Narrative", panelRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -244f), new Vector2(740f, 150f), 22f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            narrativeText.enableWordWrapping = true;
+            narrativeText.textWrappingMode = TextWrappingModes.Normal;
 
             backToBuildRoomButton ??= EnsureButton("BackToBuildRoomButton", panelRoot, "返回建造房间", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(320f, 56f));
         }

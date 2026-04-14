@@ -9,6 +9,7 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -63,7 +64,7 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
-            EnsureComponent<CombatDraftCache>(managers);
+            EnsureComponent<PlanningDraftCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
             EnsureComponent<GameMessageHandler>(managers);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -163,6 +164,7 @@ namespace Panoptes.Core.Application.App
                 MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
+                MessageDispatcher.Instance.Unregister("Problem");
             }
         }
 
@@ -211,6 +213,7 @@ namespace Panoptes.Core.Application.App
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
             MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+            MessageDispatcher.Instance.Register<Problem>("Problem", OnProblem);
         }
 
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
@@ -227,6 +230,33 @@ namespace Panoptes.Core.Application.App
         {
             GameStateCache.Instance?.ApplyGameInit(msg);
             TransitionTo(AppState.Game);
+        }
+
+        private void OnProblem(Problem problem)
+        {
+            var code = problem != null ? (problem.Code ?? string.Empty) : string.Empty;
+            var message = problem != null ? (problem.Message ?? string.Empty) : string.Empty;
+
+            switch (State)
+            {
+                case AppState.Lobby:
+                    RoomCache.Instance?.PublishLobbyError(new MsgLobbyError
+                    {
+                        Code = code,
+                        Message = message
+                    });
+                    break;
+                case AppState.Game:
+                    GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+                    {
+                        Code = code,
+                        Message = message
+                    });
+                    break;
+                default:
+                    Debug.LogWarning($"[AppManager] Problem received code={code} message={message}");
+                    break;
+            }
         }
 
         private async void EnsureRealtimeConnectionIfNeeded(AppState state)

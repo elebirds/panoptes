@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
 using TMPro;
@@ -29,8 +31,15 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TMP_Text unitNameText;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMP_Text hpValueText;
+        [SerializeField] private TMP_Text planningPromptText;
+        [SerializeField] private TMP_Text queuedOrderText;
         [SerializeField] private RectTransform actionButtonsRoot;
+        [SerializeField] private RectTransform directOrderButtonsRoot;
         [SerializeField] private ActionButtonSlot[] actionButtons;
+        [SerializeField] private Button moveButton;
+        [SerializeField] private Button attackButton;
+        [SerializeField] private Button holdButton;
+        [SerializeField] private Button chargeButton;
         [SerializeField] private UnitInfoActionRegistry actionRegistry;
         [SerializeField] private MapInputHandler mapInputHandler;
 
@@ -65,6 +74,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Vector2 _externalOffset;
         private bool _isOpen;
         private bool _unitSelectionSubscribed;
+        private PlanningDraftCache _draftCache;
         private static Sprite _fallbackButtonSprite;
         private static Texture2D _fallbackButtonTexture;
         public UnitView CurrentUnit => _currentUnit;
@@ -89,6 +99,8 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 RepairActionButtonLayoutAndVisuals();
             }
+            BindDirectOrderButtons();
+            _draftCache = PlanningDraftCache.EnsureInstance();
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
         }
@@ -104,7 +116,16 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 cache.OnUnitsChanged += OnUnitsChanged;
                 cache.OnPhaseChanged += OnPhaseChanged;
+                cache.OnGameOver += OnGameOver;
             }
+
+            _draftCache = PlanningDraftCache.EnsureInstance();
+            if (_draftCache != null)
+            {
+                _draftCache.OrdersChanged += OnOrdersChanged;
+            }
+
+            ActionLock.OnChanged += OnActionLockChanged;
         }
 
         private void OnDisable()
@@ -117,7 +138,15 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 cache.OnUnitsChanged -= OnUnitsChanged;
                 cache.OnPhaseChanged -= OnPhaseChanged;
+                cache.OnGameOver -= OnGameOver;
             }
+
+            if (_draftCache != null)
+            {
+                _draftCache.OrdersChanged -= OnOrdersChanged;
+            }
+
+            ActionLock.OnChanged -= OnActionLockChanged;
         }
 
         private void LateUpdate()
@@ -125,6 +154,11 @@ namespace Panoptes.Presentation.UI.HUD
             if (!_unitSelectionSubscribed || mapInputHandler == null)
             {
                 TrySubscribeUnitSelection();
+            }
+
+            if (_draftCache == null)
+            {
+                _draftCache = PlanningDraftCache.EnsureInstance();
             }
 
             if (actionRegistry == null)
@@ -143,8 +177,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _currentUnit = unit;
-            RefreshUnitView();
-            RefreshActionButtons();
+            RefreshSelectionUi();
             AnimateVisibility(true);
         }
 
@@ -208,6 +241,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             RefreshUnitHpFromCache();
+            RefreshPlanningUi();
         }
 
         private void OnPhaseChanged(PhaseChangedEvent _)
@@ -217,7 +251,37 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            RefreshActionButtons();
+            RefreshSelectionUi();
+        }
+
+        private void OnGameOver(GameOverEvent _)
+        {
+            if (_currentUnit == null || !_isOpen)
+            {
+                return;
+            }
+
+            RefreshSelectionUi();
+        }
+
+        private void OnOrdersChanged()
+        {
+            if (_currentUnit == null || !_isOpen)
+            {
+                return;
+            }
+
+            RefreshPlanningUi();
+        }
+
+        private void OnActionLockChanged(bool _)
+        {
+            if (_currentUnit == null || !_isOpen)
+            {
+                return;
+            }
+
+            RefreshPlanningUi();
         }
 
         private void OnActionRegistryChanged()
@@ -228,6 +292,13 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             RefreshActionButtons();
+        }
+
+        private void RefreshSelectionUi()
+        {
+            RefreshUnitView();
+            RefreshActionButtons();
+            RefreshPlanningUi();
         }
 
         private void RefreshUnitView()
@@ -350,11 +421,189 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private void BindDirectOrderButtons()
+        {
+            if (moveButton != null)
+            {
+                moveButton.onClick.RemoveAllListeners();
+                moveButton.onClick.AddListener(() => mapInputHandler?.BeginMoveSelection());
+            }
+
+            if (attackButton != null)
+            {
+                attackButton.onClick.RemoveAllListeners();
+                attackButton.onClick.AddListener(() => mapInputHandler?.BeginAttackSelection());
+            }
+
+            if (holdButton != null)
+            {
+                holdButton.onClick.RemoveAllListeners();
+                holdButton.onClick.AddListener(() => mapInputHandler?.IssueHoldOrder());
+            }
+
+            if (chargeButton != null)
+            {
+                chargeButton.onClick.RemoveAllListeners();
+                chargeButton.onClick.AddListener(() => mapInputHandler?.BeginChargeSelection());
+            }
+        }
+
+        private void RefreshPlanningUi()
+        {
+            if (planningPromptText == null || queuedOrderText == null)
+            {
+                return;
+            }
+
+            var interactive = IsInteractivePlanning();
+            var controllable = IsCurrentUnitControllable();
+
+            if (directOrderButtonsRoot != null)
+            {
+                directOrderButtonsRoot.gameObject.SetActive(interactive && controllable);
+            }
+
+            if (!interactive)
+            {
+                planningPromptText.text = "等待规划阶段";
+                queuedOrderText.text = "当前不可提交单位命令";
+                SetDirectOrderButtonState(moveButton, "移动", false, true);
+                SetDirectOrderButtonState(attackButton, "攻击", false, false);
+                SetDirectOrderButtonState(holdButton, "待命", false, true);
+                SetDirectOrderButtonState(chargeButton, "冲锋", false, false);
+                return;
+            }
+
+            if (!controllable)
+            {
+                planningPromptText.text = "只能对己方单位下达命令";
+                queuedOrderText.text = "该单位不接受本地规划草稿";
+                SetDirectOrderButtonState(moveButton, "移动", false, true);
+                SetDirectOrderButtonState(attackButton, "攻击", false, false);
+                SetDirectOrderButtonState(holdButton, "待命", false, true);
+                SetDirectOrderButtonState(chargeButton, "冲锋", false, false);
+                return;
+            }
+
+            planningPromptText.text = mapInputHandler != null ? mapInputHandler.CurrentCombatPrompt : "选择动作";
+            queuedOrderText.text = BuildOrdersSummary();
+            var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
+            SetDirectOrderButtonState(moveButton, "移动", true, true);
+            SetDirectOrderButtonState(attackButton, "攻击", true, CanSelectedUnitAttack(unitType));
+            SetDirectOrderButtonState(holdButton, "待命", true, true);
+            SetDirectOrderButtonState(chargeButton, "冲锋", true, CanSelectedUnitCharge(unitType));
+        }
+
+        private bool IsInteractivePlanning()
+        {
+            var cache = GameStateCache.Instance;
+            return cache != null && GamePhases.IsPlanning(cache.Phase) && !cache.IsGameOver;
+        }
+
+        private bool IsCurrentUnitControllable()
+        {
+            var cache = GameStateCache.Instance;
+            return _currentUnit != null &&
+                   cache != null &&
+                   !string.IsNullOrWhiteSpace(cache.MyPlayerID) &&
+                   string.Equals(cache.MyPlayerID, _currentUnit.Faction, StringComparison.Ordinal);
+        }
+
+        private bool CanSelectedUnitAttack(string unitType)
+        {
+            return TryGetUnitCatalog(unitType, out var entry) && !HasTag(entry, "civilian");
+        }
+
+        private bool CanSelectedUnitCharge(string unitType)
+        {
+            return TryGetUnitCatalog(unitType, out var entry) && HasTag(entry, "charge");
+        }
+
+        private bool TryGetUnitCatalog(string unitType, out StaticCatalogCache.UnitEntryJson entry)
+        {
+            entry = null;
+            return !string.IsNullOrWhiteSpace(unitType) &&
+                   StaticCatalogCache.EnsureInstance() != null &&
+                   StaticCatalogCache.Instance.TryGetUnit(unitType, out entry);
+        }
+
+        private string BuildOrdersSummary()
+        {
+            if (_draftCache == null)
+            {
+                return "等待服务器同步规划快照";
+            }
+
+            var orders = _draftCache.GetOrdersInDisplayOrder();
+            for (var i = 0; i < orders.Count; i++)
+            {
+                var order = orders[i];
+                if (order == null || !string.Equals(order.UnitId, _currentUnit != null ? _currentUnit.UnitId : string.Empty, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                return DescribeOrder(order);
+            }
+
+            return "该单位当前没有待提交命令";
+        }
+
+        private static string DescribeOrder(QueuedUnitOrderDto order)
+        {
+            return order.Action switch
+            {
+                "move" => $"{order.UnitId} -> 行军至 {FallbackText(order.TargetNodeId, "目标节点")}，预计 {Mathf.Max(1, order.TotalTurns)} 回合",
+                "attack" => $"{order.UnitId} -> 攻击 {FallbackText(order.TargetUnitId, "目标单位")}",
+                "charge" => $"{order.UnitId} -> 冲锋 {FallbackText(order.TargetUnitId, order.TargetNodeId)}",
+                "hold" => $"{order.UnitId} -> 待命",
+                "settle_city" => $"{order.UnitId} -> 坐城 {FallbackText(order.TargetNodeId, "目标节点")}",
+                _ => $"{order.UnitId} -> {FallbackText(order.Action, "未知动作")}"
+            };
+        }
+
+        private static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
+        {
+            if (entry?.tags == null || string.IsNullOrWhiteSpace(tag))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < entry.tags.Length; i++)
+            {
+                if (string.Equals(entry.tags[i], tag, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string FallbackText(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.gameObject.SetActive(visible);
+            button.interactable = visible && interactable && !ActionLock.IsLocked;
+            var text = button.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+            {
+                text.text = label;
+            }
+        }
+
         private static void EnsureActionProvidersRegistered()
         {
-            var providers = UnityEngine.Object.FindObjectsByType<UnitInfoActionProviderBase>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            var providers = UnityEngine.Object.FindObjectsByType<UnitInfoActionProviderBase>(FindObjectsInactive.Include);
             if (providers == null || providers.Length == 0)
             {
                 return;
@@ -404,6 +653,8 @@ namespace Panoptes.Presentation.UI.HUD
                     mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
                 }
             }
+
+            _draftCache ??= PlanningDraftCache.EnsureInstance();
         }
 
         private void TrySubscribeActionRegistry()
@@ -450,6 +701,8 @@ namespace Panoptes.Presentation.UI.HUD
 
             mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
             mapInputHandler.UnitSelectionChanged += OnUnitSelectionChanged;
+            mapInputHandler.CombatSelectionChanged -= RefreshPlanningUi;
+            mapInputHandler.CombatSelectionChanged += RefreshPlanningUi;
             _unitSelectionSubscribed = true;
         }
 
@@ -458,6 +711,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (mapInputHandler != null)
             {
                 mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
+                mapInputHandler.CombatSelectionChanged -= RefreshPlanningUi;
             }
 
             _unitSelectionSubscribed = false;
@@ -465,7 +719,21 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureDefaultLayout()
         {
-            if (panelBackground != null && unitIcon != null && unitNameText != null && hpSlider != null && actionButtonsRoot != null && actionButtons != null && actionButtons.Length > 0)
+            if (panelBackground != null &&
+                unitIcon != null &&
+                unitNameText != null &&
+                hpSlider != null &&
+                hpValueText != null &&
+                planningPromptText != null &&
+                queuedOrderText != null &&
+                actionButtonsRoot != null &&
+                directOrderButtonsRoot != null &&
+                moveButton != null &&
+                attackButton != null &&
+                holdButton != null &&
+                chargeButton != null &&
+                actionButtons != null &&
+                actionButtons.Length > 0)
             {
                 return;
             }
@@ -485,7 +753,7 @@ namespace Panoptes.Presentation.UI.HUD
             panelRoot.anchorMin = new Vector2(1f, 0f);
             panelRoot.anchorMax = new Vector2(1f, 0f);
             panelRoot.pivot = new Vector2(1f, 0f);
-            panelRoot.sizeDelta = new Vector2(420f, 170f);
+            panelRoot.sizeDelta = new Vector2(420f, 280f);
 
             if (panelBackground == null)
             {
@@ -520,6 +788,17 @@ namespace Panoptes.Presentation.UI.HUD
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
 
+            if (directOrderButtonsRoot == null)
+            {
+                var directRoot = EnsureChild("DirectOrderButtons");
+                directOrderButtonsRoot = directRoot;
+                directOrderButtonsRoot.anchorMin = new Vector2(0f, 1f);
+                directOrderButtonsRoot.anchorMax = new Vector2(0f, 1f);
+                directOrderButtonsRoot.pivot = new Vector2(0f, 1f);
+                directOrderButtonsRoot.anchoredPosition = new Vector2(14f, -52f);
+                directOrderButtonsRoot.sizeDelta = new Vector2(190f, 72f);
+            }
+
             if (unitIcon == null)
             {
                 var iconRT = EnsureChild("UnitIcon");
@@ -547,6 +826,34 @@ namespace Panoptes.Presentation.UI.HUD
                 nameRT.sizeDelta = new Vector2(280f, 32f);
                 unitNameText.fontSize = 24f;
                 unitNameText.alignment = TextAlignmentOptions.Left;
+            }
+
+            if (planningPromptText == null)
+            {
+                var promptRT = EnsureChild("PlanningPrompt");
+                planningPromptText = CreateTmpText(promptRT, "选择动作");
+                promptRT.anchorMin = new Vector2(0f, 1f);
+                promptRT.anchorMax = new Vector2(0f, 1f);
+                promptRT.pivot = new Vector2(0f, 1f);
+                promptRT.anchoredPosition = new Vector2(102f, -84f);
+                promptRT.sizeDelta = new Vector2(286f, 24f);
+                planningPromptText.fontSize = 16f;
+                planningPromptText.alignment = TextAlignmentOptions.Left;
+            }
+
+            if (queuedOrderText == null)
+            {
+                var orderRT = EnsureChild("QueuedOrderText");
+                queuedOrderText = CreateTmpText(orderRT, "该单位当前没有待提交命令");
+                orderRT.anchorMin = new Vector2(0f, 1f);
+                orderRT.anchorMax = new Vector2(0f, 1f);
+                orderRT.pivot = new Vector2(0f, 1f);
+                orderRT.anchoredPosition = new Vector2(102f, -114f);
+                orderRT.sizeDelta = new Vector2(286f, 74f);
+                queuedOrderText.fontSize = 15f;
+                queuedOrderText.alignment = TextAlignmentOptions.TopLeft;
+                queuedOrderText.textWrappingMode = TextWrappingModes.Normal;
+                queuedOrderText.overflowMode = TextOverflowModes.Ellipsis;
             }
 
             if (hpSlider == null)
@@ -582,11 +889,17 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 actionButtons = new[]
                 {
-                    BuildDefaultButtonSlot("expand_territory", "Expand"),
+                    BuildDefaultButtonSlot("settle_city", "坐城"),
                     BuildDefaultButtonSlot("action_2", "Action2"),
                     BuildDefaultButtonSlot("action_3", "Action3")
                 };
             }
+
+            moveButton ??= CreateDirectOrderButton("MoveButton", "移动", new Vector2(0f, 0f), new Vector2(88f, 30f));
+            attackButton ??= CreateDirectOrderButton("AttackButton", "攻击", new Vector2(98f, 0f), new Vector2(88f, 30f));
+            holdButton ??= CreateDirectOrderButton("HoldButton", "待命", new Vector2(0f, -38f), new Vector2(88f, 30f));
+            chargeButton ??= CreateDirectOrderButton("ChargeButton", "冲锋", new Vector2(98f, -38f), new Vector2(88f, 30f));
+            BindDirectOrderButtons();
         }
 
         private void ResolveAnchoredPositions()
@@ -703,6 +1016,48 @@ namespace Panoptes.Presentation.UI.HUD
                 button = button,
                 label = labelText
             };
+        }
+
+        private Button CreateDirectOrderButton(string objectName, string label, Vector2 anchoredPosition, Vector2 size)
+        {
+            var buttonRect = EnsureChild(objectName);
+            buttonRect.SetParent(directOrderButtonsRoot, false);
+            buttonRect.anchorMin = new Vector2(0f, 1f);
+            buttonRect.anchorMax = new Vector2(0f, 1f);
+            buttonRect.pivot = new Vector2(0f, 1f);
+            buttonRect.anchoredPosition = anchoredPosition;
+            buttonRect.sizeDelta = size;
+
+            var image = buttonRect.GetComponent<Image>();
+            if (image == null)
+            {
+                image = buttonRect.gameObject.AddComponent<Image>();
+            }
+
+            image.color = defaultActionButtonColor;
+            if (image.sprite == null)
+            {
+                image.sprite = GetFallbackButtonSprite();
+            }
+
+            var button = buttonRect.GetComponent<Button>();
+            if (button == null)
+            {
+                button = buttonRect.gameObject.AddComponent<Button>();
+            }
+
+            var labelRect = buttonRect.Find("Label") as RectTransform;
+            if (labelRect == null)
+            {
+                labelRect = new GameObject("Label", typeof(RectTransform)).GetComponent<RectTransform>();
+                labelRect.SetParent(buttonRect, false);
+            }
+
+            StretchToParent(labelRect, new Vector2(4f, 2f), new Vector2(-4f, -2f));
+            var labelText = CreateTmpText(labelRect, label);
+            labelText.alignment = TextAlignmentOptions.Center;
+            labelText.fontSize = 15f;
+            return button;
         }
 
         private void RepairActionButtonLayoutAndVisuals()
@@ -889,7 +1244,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
             text.text = initialText ?? string.Empty;
             text.color = Color.white;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Truncate;
             if (TMP_Settings.defaultFontAsset != null)
             {
