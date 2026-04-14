@@ -10,6 +10,7 @@ namespace Panoptes.Tests.EditMode.Debug
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
+        private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
 
         [Test]
         public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
@@ -73,6 +74,34 @@ namespace Panoptes.Tests.EditMode.Debug
             Assert.That(entryType.GetField("PayloadJson"), Is.Not.Null, "日志项必须保留原始 payload。");
             Assert.That(entryType.GetField("CanReplay"), Is.Not.Null, "日志项必须标记是否可重发。");
             Assert.That(entryType.GetField("Error"), Is.Not.Null, "日志项必须支持错误信息。");
+        }
+
+        [Test]
+        public void MessageLogger_ShouldConsumeTypedDispatchEntries_InsteadOfLegacyEnvelope()
+        {
+            Assert.That(File.Exists(_messageLoggerPath), Is.True, "MessageLogger.cs 不存在。");
+
+            var content = File.ReadAllText(_messageLoggerPath);
+            StringAssert.Contains("OnDispatching(MessageDispatcher.DispatchEntry entry)", content,
+                "MessageLogger 必须消费 typed DispatchEntry。");
+            Assert.That(content, Does.Not.Contain("OnDispatching(Envelope envelope)"),
+                "MessageLogger 不应继续依赖旧 Envelope 入站模型。");
+            Assert.That(content, Does.Not.Contain("JsonParser"),
+                "MessageLogger 不应为入站日志再次手动 protojson 反序列化。");
+        }
+
+        [Test]
+        public void MessageLogger_ShouldSummarizeTransportV2Messages()
+        {
+            Assert.That(File.Exists(_messageLoggerPath), Is.True, "MessageLogger.cs 不存在。");
+
+            var content = File.ReadAllText(_messageLoggerPath);
+            StringAssert.Contains("case Problem problem:", content,
+                "入站日志应支持统一 Problem 摘要。");
+            StringAssert.Contains("case MsgCombatOrder combatOrder:", content,
+                "出站日志应支持 CombatOrder 摘要。");
+            StringAssert.Contains("case MsgCombatPathPreviewRequest combatPreview:", content,
+                "出站日志应支持 CombatPathPreviewRequest 摘要。");
         }
 
         [Test]
