@@ -18,10 +18,10 @@ type ResolutionPhase interface {
 	Apply(ctx *ResolutionContext)
 }
 
-// OrderResolver 负责把统一 CombatOrder 解释为可执行的本回合计划。
+// OrderResolver 负责把统一 UnitResolutionOrder 解释为可执行的本回合计划。
 // move/attack/hold/charge 分开实现，避免一个大函数里写满动作分支。
 type OrderResolver interface {
-	Action() domain.CombatAction
+	Action() domain.UnitResolutionAction
 	Plan(ctx *ResolutionContext, unit SnapshotUnit) *OrderPlan
 }
 
@@ -83,7 +83,7 @@ type SnapshotUnit struct {
 	MoveRange    int
 	Movement     domain.MovementProfile
 	Capabilities domain.UnitCapabilities
-	Order        domain.CombatOrder
+	Order        domain.UnitResolutionOrder
 }
 
 // BlockSource 记录阻断来源，既能表达敌方单位，也能表达敌方建筑/城堡。
@@ -107,7 +107,7 @@ type CombatSnapshot struct {
 // 它只描述候选落点、回退落点、潜在攻击目标，不直接改世界状态。
 type OrderPlan struct {
 	UnitID         string
-	Action         domain.CombatAction
+	Action         domain.UnitResolutionAction
 	Start          domain.Position
 	Path           []domain.Position
 	Candidate      domain.Position
@@ -131,7 +131,7 @@ type ResolutionContext struct {
 	EdgeConflictUnits map[string]bool
 	NodeConflictUnits map[string]bool
 	Events            []event.Event
-	OrderResolvers    map[domain.CombatAction]OrderResolver
+	OrderResolvers    map[domain.UnitResolutionAction]OrderResolver
 	BlockRule         BlockRule
 	ConflictDetectors []ConflictDetector
 	RetaliationPolicy RetaliationPolicy

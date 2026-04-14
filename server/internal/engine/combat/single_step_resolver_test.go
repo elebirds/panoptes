@@ -15,9 +15,9 @@ func TestSingleStepResolver_BlockedByEnemyStartPositionEvenIfEnemyMovesAway(t *t
 	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	enemyID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.CombatActionMove, TargetNodeID: "N2_0"},
-		enemyID:    {PlayerID: "player-b", UnitID: enemyID, Action: domain.CombatActionMove, TargetNodeID: "N3_0"},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
+		enemyID:    {PlayerID: "player-b", UnitID: enemyID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N3_0"},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -37,9 +37,9 @@ func TestSingleStepResolver_EdgeConflictStopsBothUnits(t *testing.T) {
 	leftID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	rightID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		leftID:  {PlayerID: "player-a", UnitID: leftID, Action: domain.CombatActionMove, TargetNodeID: "N1_0"},
-		rightID: {PlayerID: "player-b", UnitID: rightID, Action: domain.CombatActionMove, TargetNodeID: "N0_0"},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		leftID:  {PlayerID: "player-a", UnitID: leftID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_0"},
+		rightID: {PlayerID: "player-b", UnitID: rightID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N0_0"},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -62,9 +62,9 @@ func TestSingleStepResolver_AttackMissesWhenTargetSuccessfullyMovesAway(t *testi
 	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	targetID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.CombatActionAttack, TargetUnitID: targetID},
-		targetID:   {PlayerID: "player-b", UnitID: targetID, Action: domain.CombatActionMove, TargetNodeID: "N2_0"},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionAttack, TargetUnitID: targetID},
+		targetID:   {PlayerID: "player-b", UnitID: targetID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -84,9 +84,9 @@ func TestSingleStepResolver_AttackHitsAndRetaliatesWhenMoveBlocked(t *testing.T)
 	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	targetID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.CombatActionAttack, TargetUnitID: targetID},
-		targetID:   {PlayerID: "player-b", UnitID: targetID, Action: domain.CombatActionMove, TargetNodeID: "N0_0"},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionAttack, TargetUnitID: targetID},
+		targetID:   {PlayerID: "player-b", UnitID: targetID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N0_0"},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -107,8 +107,8 @@ func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 	blockerID := spawnTestUnit(state.World, "warrior", "player-b", 2, 0)
 	rearID := spawnTestUnit(state.World, "archer", "player-b", 3, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		cavalryID: {PlayerID: "player-a", UnitID: cavalryID, Action: domain.CombatActionCharge, TargetNodeID: "N3_0", TargetUnitID: rearID},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		cavalryID: {PlayerID: "player-a", UnitID: cavalryID, Action: domain.UnitResolutionActionCharge, TargetNodeID: "N3_0", TargetUnitID: rearID},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -131,9 +131,9 @@ func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 	warriorID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	settlerID := spawnTestUnit(state.World, "settler", "player-b", 1, 0)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		warriorID: {PlayerID: "player-a", UnitID: warriorID, Action: domain.CombatActionAttack, TargetUnitID: settlerID},
-		settlerID: {PlayerID: "player-b", UnitID: settlerID, Action: domain.CombatActionHold},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		warriorID: {PlayerID: "player-a", UnitID: warriorID, Action: domain.UnitResolutionActionAttack, TargetUnitID: settlerID},
+		settlerID: {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
 	}
 
 	resolver := NewSingleStepResolver()

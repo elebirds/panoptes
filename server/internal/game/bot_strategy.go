@@ -27,9 +27,9 @@ func (s *RandomStrategy) DecideAndSubmit(ctx context.Context, room *Room, phase 
 	case domain.PhasePlanning.String():
 		select {
 		case <-time.After(500 * time.Millisecond):
-			room.submitTurn(playerID)
+			room.Submit(playerID)
 		case <-ctx.Done():
-			room.submitTurn(playerID)
+			room.Submit(playerID)
 		}
 	}
 }

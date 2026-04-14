@@ -28,9 +28,9 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		}
 
 		// 快照阶段就把缺省指令归一成 hold，避免后续阶段重复兜底。
-		order, ok := ctx.State.PendingCombatOrders[stats.ID]
+		order, ok := ctx.State.TurnRuntime.Resolving.UnitOrders[stats.ID]
 		if !ok {
-			order = domain.CombatOrder{PlayerID: stats.Faction, UnitID: stats.ID, Action: domain.CombatActionHold}
+			order = domain.UnitResolutionOrder{PlayerID: stats.Faction, UnitID: stats.ID, Action: domain.UnitResolutionActionHold}
 		}
 		order = order.Normalized()
 		attack := effectiveUnitAttack(ctx.State, stats.Faction, stats.Type, stats.Attack)

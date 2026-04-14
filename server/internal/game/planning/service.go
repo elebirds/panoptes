@@ -16,12 +16,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type WarZoneDirective struct {
-	ZoneID     string
-	Directive  string
-	TargetNode string
-}
-
 type Session interface {
 	State() *domain.GameState
 	Submit(playerID string)
@@ -31,7 +25,7 @@ type Session interface {
 	QueueResearchOrder(order domain.ResearchOrder)
 	QueueRecipeSelection(order domain.RecipeSelectionOrder)
 	SetMinisterDirective(playerID string, directive string)
-	SetWarDirectives(playerID string, directives []WarZoneDirective)
+	SetWarDirectives(playerID string, directives []domain.WarZoneDirective)
 	SetUnitOrder(order gameorders.UnitOrder)
 	CancelUnitOrder(playerID string, unitID string)
 	SendPlanningSnapshot(playerID string) error
@@ -39,12 +33,22 @@ type Session interface {
 	NodeByID(nodeID string) (*donburi.Entry, bool)
 }
 
-type Service struct {
-	directives map[string][]WarZoneDirective
-}
+type Service struct{}
 
 func (s *Service) Enter(room Session) {
-	s.directives = map[string][]WarZoneDirective{}
+	if room == nil || room.State() == nil {
+		return
+	}
+	planning := &room.State().TurnRuntime.Planning
+	if planning.MinisterDirectives == nil {
+		planning.MinisterDirectives = make(map[string]string)
+	}
+	if planning.WarDirectives == nil {
+		planning.WarDirectives = make(map[string][]domain.WarZoneDirective)
+	}
+	if planning.UnitOrders == nil {
+		planning.UnitOrders = make(map[string]domain.UnitDirective)
+	}
 }
 
 func (s *Service) HandleMessage(room Session, playerID string, msgType string, payload []byte) error {
@@ -136,9 +140,9 @@ func (s *Service) HandleMessage(room Session, playerID string, msgType string, p
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			return err
 		}
-		d := WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()}
-		s.directives[playerID] = append(s.directives[playerID], d)
-		room.SetWarDirectives(playerID, s.directives[playerID])
+		directives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
+		directives = append(directives, domain.WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()})
+		room.SetWarDirectives(playerID, directives)
 		_ = room.SendPlanningSnapshot(playerID)
 		return nil
 	case "MsgIssueUnitOrder":
@@ -208,7 +212,7 @@ func (s *Service) handleResearchRequest(room Session, playerID string, playerSta
 		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
 		return nil
 	}
-	for _, order := range state.PendingResearchOrders {
+	for _, order := range state.TurnRuntime.Planning.ResearchOrders {
 		if order.PlayerID == playerID && order.TechnologyID == technologyID {
 			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
 			return nil

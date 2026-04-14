@@ -80,7 +80,7 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 	if state == nil {
 		return
 	}
-	for _, selection := range state.PendingRecipeSelections {
+	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
 		if !state.IsRecipeUnlocked(selection.PlayerID, selection.RecipeID) {
 			continue
 		}

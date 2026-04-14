@@ -15,7 +15,7 @@ type BattleSystem struct{}
 func (s *BattleSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	hpAfter := make(map[string]int)
 	events := make([]event.Event, 0)
-	for _, conflict := range state.PendingConflicts {
+	for _, conflict := range state.TurnRuntime.Resolving.Conflicts {
 		aEntry, okA := findUnit(world, conflict.UnitAID)
 		bEntry, okB := findUnit(world, conflict.UnitBID)
 		if !okA || !okB {

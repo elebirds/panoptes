@@ -13,14 +13,15 @@ import (
 )
 
 func (r *GameRoom) applyPlannedMapActions() []*pb.TurnEvent {
-	if r == nil || r.state == nil {
+	state := r.State()
+	if r == nil || state == nil {
 		return nil
 	}
 	events := make([]*pb.TurnEvent, 0)
-	for _, order := range r.plannedUnitOrders {
-		switch order.Action {
+	for _, directive := range state.TurnRuntime.Planning.UnitOrders {
+		switch gameorders.UnitAction(directive.Action) {
 		case gameorders.ActionSettleCity:
-			if evt, ok := r.applySettleCityOrder(order); ok {
+			if evt, ok := r.applySettleCityOrder(directive); ok {
 				events = append(events, evt)
 			}
 		}
@@ -28,11 +29,11 @@ func (r *GameRoom) applyPlannedMapActions() []*pb.TurnEvent {
 	return events
 }
 
-func (r *GameRoom) applySettleCityOrder(order gameorders.UnitOrder) (*pb.TurnEvent, bool) {
-	if r == nil || r.state == nil {
+func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEvent, bool) {
+	state := r.State()
+	if r == nil || state == nil {
 		return nil, false
 	}
-	state := r.state
 	unitEntry, ok := findUnitEntryByID(state.World, order.UnitID)
 	if !ok {
 		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "unit_not_found"}}, true

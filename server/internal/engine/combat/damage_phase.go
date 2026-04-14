@@ -31,9 +31,9 @@ func (DamagePhase) Apply(ctx *ResolutionContext) {
 			continue
 		}
 		switch plan.Action {
-		case domain.CombatActionAttack:
+		case domain.UnitResolutionActionAttack:
 			resolveExplicitAttack(ctx, unit, plan)
-		case domain.CombatActionCharge:
+		case domain.UnitResolutionActionCharge:
 			resolveChargeAttack(ctx, unit, plan)
 		}
 	}

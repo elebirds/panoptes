@@ -60,14 +60,14 @@ func TestDomesticPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
 		},
 	})
 	state.World = world
-	state.PendingResearchOrders = []domain.ResearchOrder{
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
 		{PlayerID: "player-1", TechnologyID: "agri_unlock_farm"},
 	}
-	state.PendingBuilds = []domain.BuildOrder{
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
 		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
 	}
 
-	events := engine.NewDomesticPipeline().Run(world, state)
+	events := engine.NewEconomyPipeline().Run(world, state)
 	if len(events) == 0 {
 		t.Fatalf("expected domestic events")
 	}
@@ -129,7 +129,7 @@ func TestDomesticPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 2 {
 		t.Fatalf("food after recipe = %d, want 2", got)
@@ -187,7 +187,7 @@ func TestDomesticPipelineRecipeAddsDelayWhenResourcesMissing(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("smelter")
 	state.Players["player-1"].Research.UnlockRecipe("smelter_refined_ore")
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	operation := ecs.BuildingOperationC.Get(nodeEntry)
 	if operation.DelayTurns != 2 {
@@ -250,9 +250,9 @@ func TestDomesticPipelineBuildAppliesBuildingCostModifier(t *testing.T) {
 	state.Players["player-1"].Research.UnlockTechnology("construction_discount")
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
-	state.PendingBuilds = []domain.BuildOrder{{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"}}
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"}}
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if !nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should be created after discounted cost")
@@ -317,7 +317,7 @@ func TestDomesticPipelineRecipeAppliesOutputModifier(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
 		t.Fatalf("food after modified recipe = %d, want 3", got)
@@ -375,7 +375,7 @@ func TestDomesticPipelineRecipeConsumesCostAndProducesUnit(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("barracks")
 	state.Players["player-1"].Research.UnlockRecipe("train_warrior")
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
 		t.Fatalf("food after training = %d, want 0", got)
@@ -419,9 +419,9 @@ func TestDomesticPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 		NodeIndex: map[string]donburi.Entity{"C1": nodeEntity},
 	})
 	state.World = world
-	state.PendingResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "mil_bonus"}}
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "mil_bonus"}}
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
 		t.Fatalf("food after grant = %d, want 3", got)
@@ -455,15 +455,15 @@ func TestDomesticPipelineRechargeAppliesTechIncomeModifierNextTurn(t *testing.T)
 	world := donburi.NewWorld()
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.World = world
-	state.PendingResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "research_boost"}}
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "research_boost"}}
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Research.TechPoints; got != 1 {
 		t.Fatalf("tech_points after unlock turn = %d, want 1", got)
 	}
 
-	engine.NewDomesticPipeline().Run(world, state)
+	engine.NewEconomyPipeline().Run(world, state)
 
 	if got := state.Players["player-1"].Research.TechPoints; got != 4 {
 		t.Fatalf("tech_points after next-turn modified recharge = %d, want 4", got)

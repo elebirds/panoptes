@@ -14,7 +14,7 @@ type MovementSystem struct{}
 
 func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
-	state.PendingMoves = state.PendingMoves[:0]
+	state.TurnRuntime.Resolving.PendingMoves = state.TurnRuntime.Resolving.PendingMoves[:0]
 
 	entries := make([]*donburi.Entry, 0)
 	ecs.UnitsWithMoveIntent(world).Each(world, func(entry *donburi.Entry) {
@@ -54,7 +54,7 @@ func (s *MovementSystem) Run(world donburi.World, state *domain.GameState) []eve
 		movePath := append([]domain.Position(nil), path[:maxIndex+1]...)
 		to := movePath[len(movePath)-1]
 		events = append(events, event.UnitMovedEvent{UnitID: stats.ID, From: start, To: to, Timestamp: timestamp})
-		state.PendingMoves = append(state.PendingMoves, domain.PendingMove{
+		state.TurnRuntime.Resolving.PendingMoves = append(state.TurnRuntime.Resolving.PendingMoves, domain.PendingMove{
 			UnitID:    stats.ID,
 			Faction:   stats.Faction,
 			Speed:     maxStep,

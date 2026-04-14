@@ -195,6 +195,7 @@ type TerrainDefinition struct {
 }
 
 type Rules struct {
+	TurnTimeLimitPlanning   int `json:"turn_time_limit_planning"`
 	TurnTimeLimitDomestic   int `json:"turn_time_limit_domestic"`
 	TurnTimeLimitCombat     int `json:"turn_time_limit_combat"`
 	TokensPerTurn           int `json:"tokens_per_turn"`
@@ -208,6 +209,13 @@ type Rules struct {
 	TechPointsMax           int `json:"tech_points_max"`
 	BuildPointsPerTurn      int `json:"build_points_per_turn"`
 	BuildPointsMax          int `json:"build_points_max"`
+}
+
+func (r Rules) PlanningTimeoutSeconds() int {
+	if r.TurnTimeLimitPlanning > 0 {
+		return r.TurnTimeLimitPlanning
+	}
+	return r.TurnTimeLimitDomestic + r.TurnTimeLimitCombat
 }
 
 type Minister struct {

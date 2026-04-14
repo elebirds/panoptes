@@ -20,16 +20,47 @@ type GameState struct {
 	Map        *MapData
 	Players    map[string]*PlayerState
 	NodeIndex  map[string]donburi.Entity
+	TurnRuntime TurnRuntime
+}
 
-	PendingBuilds           []BuildOrder
-	PendingResearchOrders   []ResearchOrder
-	PendingRecipeSelections []RecipeSelectionOrder
-	MinisterBuildOrders     []BuildOrder
-	MinisterMoveOrders      []MoveOrder
-	PendingCombatOrders     map[string]CombatOrder
-	ActiveMarches           map[string]ActiveMarch
-	PendingMoves            []PendingMove
-	PendingConflicts        []Conflict
+type TurnRuntime struct {
+	Planning  PlanningInputs
+	Resolving ResolvingState
+}
+
+type PlanningInputs struct {
+	BuildOrders        []BuildOrder
+	ResearchOrders     []ResearchOrder
+	RecipeSelections   []RecipeSelectionOrder
+	MinisterBuilds     []BuildOrder
+	MinisterMoves      []MoveOrder
+	MinisterDirectives map[string]string
+	WarDirectives      map[string][]WarZoneDirective
+	UnitOrders         map[string]UnitDirective
+}
+
+type ResolvingState struct {
+	UnitOrders    map[string]UnitResolutionOrder
+	ActiveMarches map[string]ActiveMarch
+	PendingMoves  []PendingMove
+	Conflicts     []Conflict
+}
+
+type WarZoneDirective struct {
+	ZoneID     string
+	Directive  string
+	TargetNode string
+}
+
+type UnitDirective struct {
+	PlayerID        string
+	UnitID          string
+	Action          string
+	TargetNodeID    string
+	TargetUnitID    string
+	SecondaryNodeID string
+	Params          map[string]string
+	PathNodeIDs     []string
 }
 
 type PlayerState struct {
@@ -310,15 +341,24 @@ type PendingMove struct {
 
 func NewGameState(gameID string, playerIDs []string, usernames []string, mapData *MapData) *GameState {
 	state := &GameState{
-		GameID:              gameID,
-		Turn:                1,
-		Phase:               PhasePlanning.String(),
-		World:               donburi.NewWorld(),
-		Map:                 mapData,
-		Players:             make(map[string]*PlayerState, len(playerIDs)),
-		NodeIndex:           make(map[string]donburi.Entity),
-		PendingCombatOrders: make(map[string]CombatOrder),
-		ActiveMarches:       make(map[string]ActiveMarch),
+		GameID:    gameID,
+		Turn:      1,
+		Phase:     PhasePlanning.String(),
+		World:     donburi.NewWorld(),
+		Map:       mapData,
+		Players:   make(map[string]*PlayerState, len(playerIDs)),
+		NodeIndex: make(map[string]donburi.Entity),
+		TurnRuntime: TurnRuntime{
+			Planning: PlanningInputs{
+				MinisterDirectives: make(map[string]string),
+				WarDirectives:      make(map[string][]WarZoneDirective),
+				UnitOrders:         make(map[string]UnitDirective),
+			},
+			Resolving: ResolvingState{
+				UnitOrders:    make(map[string]UnitResolutionOrder),
+				ActiveMarches: make(map[string]ActiveMarch),
+			},
+		},
 	}
 
 	if mapData != nil && mapData.NodeIndex != nil {

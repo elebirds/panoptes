@@ -36,7 +36,7 @@ type RoutePreview struct {
 type ActiveMarch struct {
 	PlayerID          string
 	UnitID            string
-	Action            CombatAction
+	Action            UnitResolutionAction
 	DestinationNodeID string
 	LastPreview       RoutePreview
 }

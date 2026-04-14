@@ -32,7 +32,7 @@ func (p *Pipeline) Run(world donburi.World, state *domain.GameState) []event.Eve
 	return allEvents
 }
 
-func NewDomesticPipeline() *Pipeline {
+func NewEconomyPipeline() *Pipeline {
 	return NewPipeline(
 		&production.ResearchSystem{},
 		&production.BuildSystem{},
@@ -44,7 +44,7 @@ func NewDomesticPipeline() *Pipeline {
 	)
 }
 
-func NewCombatPipeline() *Pipeline {
+func NewUnitResolutionPipeline() *Pipeline {
 	return NewPipeline(
 		combat.NewSingleStepResolver(),
 		&combat.CombatUpkeepSystem{},
