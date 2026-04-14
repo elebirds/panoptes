@@ -15,7 +15,9 @@ import (
 	"github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/game/session"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 )
 
 var ErrPhaseMismatch = errors.New("phase_mismatch")
@@ -98,11 +100,26 @@ func (c *Coordinator) SubmitChecked(playerID string) error {
 	return nil
 }
 
-func (c *Coordinator) HandleMessage(playerID, msgType string, payload []byte) error {
-	if c.runtime == nil || c.runtime.State() == nil || !c.isMessageAllowed(msgType) {
+func (c *Coordinator) HandleGameCommand(playerID string, cmd *pb.GameCommand) error {
+	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
 		return ErrPhaseMismatch
 	}
-	return c.planningService.HandleMessage(c.host, playerID, msgType, payload)
+	if c.runtime.State().Phase != domain.PhasePlanning.String() {
+		return ErrPhaseMismatch
+	}
+
+	return cmddispatch.DispatchGameCommand(cmddispatch.InboundContext{PlayerID: playerID}, cmd, gameCommandHandler{coordinator: c})
+}
+
+type gameCommandHandler struct {
+	coordinator *Coordinator
+}
+
+func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
+	if h.coordinator == nil {
+		return ErrPhaseMismatch
+	}
+	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx.PlayerID, cmd)
 }
 
 func (c *Coordinator) waitAllSubmit(timeout time.Duration) {
@@ -127,31 +144,4 @@ func (c *Coordinator) waitAllSubmit(timeout time.Duration) {
 			return
 		}
 	}
-}
-
-func (c *Coordinator) isMessageAllowed(msgType string) bool {
-	if c.runtime == nil || c.runtime.State() == nil {
-		return false
-	}
-
-	switch c.runtime.State().Phase {
-	case domain.PhasePlanning.String():
-		switch msgType {
-		case "MsgSetPolicy",
-			"MsgBuildStructure",
-			"MsgRevealNode",
-			"MsgSetMinisterDirective",
-			"MsgSetResearchTarget",
-			"MsgSetBuildingRecipe",
-			"MsgSetWarZone",
-			"MsgWarZoneDirective",
-			"MsgIssueUnitOrder",
-			"MsgCancelUnitOrder",
-			"MsgPlanningPathPreviewRequest",
-			"MsgSubmitTurn":
-			return true
-		}
-	}
-
-	return false
 }

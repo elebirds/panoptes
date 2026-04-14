@@ -24,6 +24,7 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
@@ -67,32 +68,11 @@ func (r *GameRoom) Start() {
 	go r.coordinator.Start()
 }
 
-func (r *GameRoom) OnHumanSubmitTurn(playerID string) {
-	if err := r.OnHumanSubmitTurnChecked(playerID); err != nil {
-		phase := ""
-		if state := r.State(); state != nil {
-			phase = state.Phase
-		}
-		slog.Warn("忽略非规划阶段提交", "room_id", r.ID, "player_id", playerID, "phase", phase, "error", err)
-	}
-}
-
-func (r *GameRoom) OnHumanSubmitTurnChecked(playerID string) error {
+func (r *GameRoom) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.GameCommand) error {
 	if r == nil || r.coordinator == nil {
 		return ErrPhaseMismatch
 	}
-	if err := r.coordinator.SubmitChecked(playerID); errors.Is(err, gameturn.ErrPhaseMismatch) {
-		return ErrPhaseMismatch
-	} else {
-		return err
-	}
-}
-
-func (r *GameRoom) OnHumanMessage(playerID, msgType string, payload []byte) error {
-	if r == nil || r.coordinator == nil {
-		return ErrPhaseMismatch
-	}
-	if err := r.coordinator.HandleMessage(playerID, msgType, payload); errors.Is(err, gameturn.ErrPhaseMismatch) {
+	if err := r.coordinator.HandleGameCommand(ctx.PlayerID, cmd); errors.Is(err, gameturn.ErrPhaseMismatch) {
 		return ErrPhaseMismatch
 	} else {
 		return err

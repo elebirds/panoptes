@@ -16,6 +16,7 @@ import (
 	gameturn "github.com/elebirds/panoptes/internal/game/turn"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -126,10 +127,26 @@ func TestGameRoomRejectsActionsOutsidePlanning(t *testing.T) {
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 	room.State().Phase = domain.PhaseResolving.String()
 
-	if err := room.OnHumanSubmitTurnChecked("player-1"); err != ErrPhaseMismatch {
+	if err := room.HandleGameCommand(cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.GameCommand{
+		Body: &pb.GameCommand_Planning{
+			Planning: &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_SubmitTurn{
+					SubmitTurn: &pb.MsgSubmitTurn{},
+				},
+			},
+		},
+	}); err != ErrPhaseMismatch {
 		t.Fatalf("submit error = %v, want %v", err, ErrPhaseMismatch)
 	}
-	if err := room.OnHumanMessage("player-1", "MsgSetPolicy", nil); err != ErrPhaseMismatch {
+	if err := room.HandleGameCommand(cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.GameCommand{
+		Body: &pb.GameCommand_Planning{
+			Planning: &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_SetPolicy{
+					SetPolicy: &pb.MsgSetPolicy{},
+				},
+			},
+		},
+	}); err != ErrPhaseMismatch {
 		t.Fatalf("message error = %v, want %v", err, ErrPhaseMismatch)
 	}
 }

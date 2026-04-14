@@ -133,7 +133,7 @@ func TestRoundTrip(t *testing.T) {
 	})
 	t.Log("✓ MsgMinisterReportChunk 流式推送（多条）")
 
-	room.OnHumanSubmitTurn("player-1")
+	room.Submit("player-1")
 	waitFor(t, 3*time.Second, func() bool {
 		msg, ok := findMessage[*pb.MsgTurnSettlement](tp.snapshot("player-1"))
 		return ok && msg.GetPhase() == "resolving"

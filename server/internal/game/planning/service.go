@@ -18,7 +18,6 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -57,7 +56,7 @@ func (s *Service) Enter(room Session) {
 	}
 }
 
-func (s *Service) HandleMessage(room Session, playerID string, msgType string, payload []byte) error {
+func (s *Service) HandleCommand(room Session, playerID string, cmd *pb.PlanningCommand) error {
 	state := room.State()
 	if state == nil {
 		return errors.New("state is nil")
@@ -66,29 +65,21 @@ func (s *Service) HandleMessage(room Session, playerID string, msgType string, p
 	if !ok || playerState == nil {
 		return errors.New("player not found")
 	}
+	if cmd == nil || cmd.Body == nil {
+		return errors.New("planning command is nil")
+	}
 
-	switch msgType {
-	case "MsgSetPolicy":
-		msg := &pb.MsgSetPolicy{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	switch body := cmd.Body.(type) {
+	case *pb.PlanningCommand_SetPolicy:
+		msg := body.SetPolicy
 		playerState.Policy = domain.Policy(msg.GetPolicy())
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: true, Action: "set_policy", TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-	case "MsgBuildStructure":
-		msg := &pb.MsgBuildStructure{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_request"})
-			return err
-		}
+	case *pb.PlanningCommand_BuildStructure:
+		msg := body.BuildStructure
 		return s.handleBuildRequest(room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingType(), msg.GetCastleId())
-	case "MsgRevealNode":
-		msg := &pb.MsgRevealNode{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_request"})
-			return err
-		}
+	case *pb.PlanningCommand_RevealNode:
+		msg := body.RevealNode
 		if playerState.TokensLeft <= 0 {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
 			return nil
@@ -101,32 +92,18 @@ func (s *Service) HandleMessage(room Session, playerID string, msgType string, p
 		playerState.TokensLeft--
 		_ = room.SendToPlayer(playerID, &pb.MsgRevealResult{NodeId: msg.GetNodeId(), TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-	case "MsgSetResearchTarget":
-		msg := &pb.MsgSetResearchTarget{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: "", ErrorCode: "invalid_request"})
-			return err
-		}
+	case *pb.PlanningCommand_SetResearchTarget:
+		msg := body.SetResearchTarget
 		return s.handleResearchRequest(room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
-	case "MsgSetBuildingRecipe":
-		msg := &pb.MsgSetBuildingRecipe{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, ErrorCode: "invalid_request"})
-			return err
-		}
+	case *pb.PlanningCommand_SetBuildingRecipe:
+		msg := body.SetBuildingRecipe
 		return s.handleSetBuildingRecipe(room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
-	case "MsgSetMinisterDirective":
-		msg := &pb.MsgSetMinisterDirective{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_SetMinisterDirective:
+		msg := body.SetMinisterDirective
 		room.SetMinisterDirective(playerID, msg.GetContent())
 		return nil
-	case "MsgSetWarZone":
-		msg := &pb.MsgSetWarZone{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_SetWarZone:
+		msg := body.SetWarZone
 		updated := false
 		for _, zone := range playerState.WarZones {
 			if zone.ID == msg.GetZoneId() {
@@ -141,21 +118,15 @@ func (s *Service) HandleMessage(room Session, playerID string, msgType string, p
 		}
 		_ = room.SendPlanningSnapshot(playerID)
 		return nil
-	case "MsgWarZoneDirective":
-		msg := &pb.MsgWarZoneDirective{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_WarZoneDirective:
+		msg := body.WarZoneDirective
 		directives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
 		directives = append(directives, domain.WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()})
 		room.SetWarDirectives(playerID, directives)
 		_ = room.SendPlanningSnapshot(playerID)
 		return nil
-	case "MsgIssueUnitOrder":
-		msg := &pb.MsgIssueUnitOrder{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_IssueUnitOrder:
+		msg := body.IssueUnitOrder
 		order := gameorders.UnitOrder{
 			PlayerID:        playerID,
 			UnitID:          strings.TrimSpace(msg.GetUnitId()),
@@ -168,22 +139,16 @@ func (s *Service) HandleMessage(room Session, playerID string, msgType string, p
 		room.SetUnitOrder(order)
 		_ = room.SendPlanningSnapshot(playerID)
 		return nil
-	case "MsgCancelUnitOrder":
-		msg := &pb.MsgCancelUnitOrder{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_CancelUnitOrder:
+		msg := body.CancelUnitOrder
 		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
 		_ = room.SendPlanningSnapshot(playerID)
 		return nil
-	case "MsgPlanningPathPreviewRequest":
-		msg := &pb.MsgPlanningPathPreviewRequest{}
-		if err := protojson.Unmarshal(payload, msg); err != nil {
-			return err
-		}
+	case *pb.PlanningCommand_PlanningPathPreviewRequest:
+		msg := body.PlanningPathPreviewRequest
 		_ = room.SendToPlayer(playerID, buildPlanningPathPreviewResponse(room.State(), playerID, msg))
 		return nil
-	case "MsgSubmitTurn":
+	case *pb.PlanningCommand_SubmitTurn:
 		room.Submit(playerID)
 		return nil
 	}

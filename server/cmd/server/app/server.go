@@ -17,6 +17,7 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/lobby"
 	redistore "github.com/elebirds/panoptes/internal/store/redis"
+	"github.com/elebirds/panoptes/internal/transport/inbound"
 	httptransport "github.com/elebirds/panoptes/internal/transport/http"
 	wstransport "github.com/elebirds/panoptes/internal/transport/websocket"
 	"github.com/google/uuid"
@@ -34,8 +35,10 @@ func (a *App) buildServer() *http.Server {
 	lobbySvc := lobby.NewService(lobbyStore, a.gameTransport, authSvc, a.cfg.DefaultMaxPlayers, a.cfg.DevMode)
 	lobbySvc.SetGameStartCallback(a.onGameStart)
 
-	router := wstransport.NewRouter(lobbySvc, game.Registry)
-	wsHub.SetRouter(router)
+	wsHub.SetDispatcher(&inbound.Dispatcher{
+		Lobby: lobby.NewCommandHandler(lobbySvc),
+		Game:  game.NewRegistryCommandHandler(game.Registry),
+	})
 	wsHub.SetLeaveRoomFunc(lobbySvc.LeaveRoom)
 	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
 		return a.gameTransport.Send(playerID, &pb.MsgClientRuntimeConfig{

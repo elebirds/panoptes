@@ -9,9 +9,8 @@ package websocket
 import (
 	"errors"
 
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/elebirds/panoptes/internal/transport/codec"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -31,7 +30,7 @@ func (t *WSTransport) Send(playerID string, msg proto.Message) error {
 		return errors.New("playerID is required")
 	}
 
-	data, err := marshalEnvelope(msg)
+	data, err := codec.EncodeServerMessage(msg, nil)
 	if err != nil {
 		return err
 	}
@@ -44,7 +43,7 @@ func (t *WSTransport) Broadcast(roomID string, msg proto.Message) error {
 		return errors.New("roomID is required")
 	}
 
-	data, err := marshalEnvelope(msg)
+	data, err := codec.EncodeServerMessage(msg, nil)
 	if err != nil {
 		return err
 	}
@@ -60,28 +59,4 @@ func (t *WSTransport) Stream(playerID string, msgs <-chan proto.Message) error {
 		}
 	}
 	return nil
-}
-
-func marshalEnvelope(msg proto.Message) ([]byte, error) {
-	if msg == nil {
-		return nil, errors.New("message is nil")
-	}
-
-	payload, err := protojson.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
-
-	fullName := proto.MessageName(msg)
-	msgType := string(fullName.Name())
-	if msgType == "" {
-		msgType = string(fullName)
-	}
-
-	envelope := &pb.Envelope{
-		Type:    msgType,
-		Payload: string(payload),
-	}
-
-	return protojson.Marshal(envelope)
 }
