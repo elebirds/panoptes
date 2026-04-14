@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
-  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
-  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 1
-  m_AmbientMode: 3
+  m_AmbientSkyColor: {r: 0.24, g: 0.28, b: 0.35, a: 1}
+  m_AmbientEquatorColor: {r: 0.13, g: 0.15, b: 0.19, a: 1}
+  m_AmbientGroundColor: {r: 0.06, g: 0.07, b: 0.1, a: 1}
+  m_AmbientIntensity: 0.62
+  m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: cc258e41745ef0947891a3ba2799a3a3, type: 2}
   m_HaloStrength: 0.5
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 1
-  m_ReflectionIntensity: 1
+  m_ReflectionIntensity: 0.72
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1693350156}
   m_UseRadianceAmbientProbe: 0
@@ -867,6 +867,7 @@ MonoBehaviour:
   autoInjectResourcePointsWhenSparse: 1
   minimumResourcePoints: 18
   autoSpawnTerrainDecorations: 1
+  autoSpawnMapBackdrop: 1
 --- !u!114 &990100004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1328,8 +1329,8 @@ MonoBehaviour:
   fallbackStartHeight: 7.5
   fallbackStartPitch: 50
   clampToBounds: 1
-  xBounds: {x: -5, y: 50}
-  zBounds: {x: -5, y: 50}
+  xBounds: {x: -12.8, y: 31.6}
+  zBounds: {x: -1.1, y: 28.5}
   boundsPadding: 0
   boundsLeftPadding: 0
   boundsRightPadding: 0
