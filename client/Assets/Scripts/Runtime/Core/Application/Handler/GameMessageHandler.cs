@@ -82,7 +82,7 @@ namespace Panoptes.Core.Application.Handler
             cache?.ApplyDomesticPhaseStart(msg);
             CombatDraftCache.Instance?.ClearAll();
 
-            Debug.Log($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}");
+            Debug.Log(FormatPhaseStartLog($"[Game] 内政阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
         private static void OnCombatPhaseStart(MsgCombatPhaseStart msg)
@@ -96,7 +96,7 @@ namespace Panoptes.Core.Application.Handler
             cache?.ApplyCombatPhaseStart(msg);
             CombatDraftCache.EnsureInstance()?.ClearPreview();
 
-            Debug.Log($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}");
+            Debug.Log(FormatPhaseStartLog($"[Game] 战斗阶段开始 turn={msg.Turn} timeout={msg.Timeout}s phase={msg.Phase}"));
         }
 
         private static void OnTokenResult(MsgTokenResult msg)
@@ -311,6 +311,15 @@ namespace Panoptes.Core.Application.Handler
             });
 
             Debug.LogWarning($"[Game] 游戏期错误 code={msg.Code} message={msg.Message}");
+        }
+
+        private static string FormatPhaseStartLog(string text)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return Panoptes.DebugTools.MessageLogger.WrapPhaseStartColor(text);
+#else
+            return text;
+#endif
         }
 
         private static string JoinMap(Google.Protobuf.Collections.MapField<string, string> map)

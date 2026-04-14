@@ -544,16 +544,28 @@ namespace Panoptes.Presentation.Map
             }
 
             if (_selectedUnit != null &&
-                _combatActionMode == CombatActionMode.Move &&
                 TryRaycastNode(out var node) &&
                 node != null)
             {
                 if (!string.IsNullOrEmpty(node.NodeId))
                 {
-                    SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
-                    _combatActionMode = CombatActionMode.None;
-                    NotifyCombatSelectionChanged();
-                    return;
+                    if (_combatActionMode == CombatActionMode.Move)
+                    {
+                        SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
+                        _combatActionMode = CombatActionMode.None;
+                        NotifyCombatSelectionChanged();
+                        return;
+                    }
+
+                    // Backward-compatible quick move: selected own unit + clicked a highlighted reachable tile.
+                    if (_combatActionMode == CombatActionMode.None &&
+                        CanControlUnit(_selectedUnit) &&
+                        _highlightNodeIds.Contains(node.NodeId))
+                    {
+                        SendMoveCommand(_selectedUnit.UnitId, node.NodeId);
+                        NotifyCombatSelectionChanged();
+                        return;
+                    }
                 }
             }
 

@@ -28,6 +28,10 @@ namespace Panoptes.DebugTools
         public event Action OnNewEntry;
 
         private const int MaxEntries = 100;
+        private const string ColorPhaseStart = "#6EEB83";
+        private const string ColorOutgoing = "#8FD3FF";
+        private const string ColorIncoming = "#FFD166";
+        private const string ColorError = "#FF7A7A";
         [SerializeField] private bool mirrorEntriesToUnityConsole = true;
         private readonly JsonParser _jsonParser =
             new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
@@ -201,18 +205,37 @@ namespace Panoptes.DebugTools
             {
                 text = $"{text} error={error}";
             }
+
             switch (direction)
             {
                 case "ERR":
-                    Debug.LogError(text);
+                    Debug.LogError(WrapColor(text, ColorError));
                     break;
                 case "OUT":
-                    Debug.Log(text);
+                    Debug.Log(WrapColor(text, ColorOutgoing));
+                    break;
+                case "IN":
+                    Debug.Log(WrapColor(text, ColorIncoming));
                     break;
                 default:
                     Debug.Log(text);
                     break;
             }
+        }
+
+        public static string WrapPhaseStartColor(string text)
+        {
+            return WrapColor(text, ColorPhaseStart);
+        }
+
+        private static string WrapColor(string text, string colorHex)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(colorHex))
+            {
+                return text ?? string.Empty;
+            }
+
+            return $"<color={colorHex}>{text}</color>";
         }
 
         private string BuildIncomingSummary(Envelope envelope)
