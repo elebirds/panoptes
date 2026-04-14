@@ -12,8 +12,8 @@ type GameTransport interface {
 
 // GameRoom 是运行中的对局房间最小提交接口。
 type GameRoom interface {
-	OnHumanSubmitDomestic(playerID string)
-	OnHumanSubmitCombat(playerID string)
+	OnHumanSubmitTurn(playerID string)
+	OnHumanMessage(playerID, msgType string, payload []byte) error
 }
 
 // GameRoomRegistry 是运行中对局房间的最小查询接口。

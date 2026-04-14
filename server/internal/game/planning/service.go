@@ -1,4 +1,4 @@
-package phase
+package planning
 
 import (
 	"encoding/json"
@@ -7,43 +7,53 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/event"
+	"github.com/elebirds/panoptes/internal/engine/combat"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
-type DomesticPhase struct {
-	submitted map[string]bool
-	submitCh  chan string
+type WarZoneDirective struct {
+	ZoneID     string
+	Directive  string
+	TargetNode string
 }
 
-type tokenBuildPayload struct {
-	CastleID      string `json:"castle_id"`
-	CastleId      string `json:"castleId"`
-	NodeID        string `json:"node_id"`
-	NodeId        string `json:"nodeId"`
-	BuildingType  string `json:"building_type"`
-	BuildingType2 string `json:"buildingType"`
+type Session interface {
+	State() *domain.GameState
+	Submit(playerID string)
+	SendToPlayer(playerID string, msg proto.Message) error
+	IsDevMode() bool
+	QueueBuildOrder(order domain.BuildOrder)
+	QueueResearchOrder(order domain.ResearchOrder)
+	QueueRecipeSelection(order domain.RecipeSelectionOrder)
+	SetMinisterDirective(playerID string, directive string)
+	SetWarDirectives(playerID string, directives []WarZoneDirective)
+	SetUnitOrder(order gameorders.UnitOrder)
+	CancelUnitOrder(playerID string, unitID string)
+	SendPlanningSnapshot(playerID string) error
+	BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView
+	NodeByID(nodeID string) (*donburi.Entry, bool)
 }
 
-func (p *DomesticPhase) Name() string { return domain.PhaseDomesticPlanning.String() }
+type Service struct {
+	directives map[string][]WarZoneDirective
+}
 
-func (p *DomesticPhase) Enter(room Room) {
-	p.submitted = map[string]bool{}
-	p.submitCh = make(chan string, 16)
+func (s *Service) Enter(room Session) {
+	s.directives = map[string][]WarZoneDirective{}
+}
+
+func (s *Service) HandleMessage(room Session, playerID string, msgType string, payload []byte) error {
 	state := room.State()
-	rules := staticdata.Default().Rules()
-	for _, player := range state.Players {
-		player.TokensLeft = rules.TokensPerTurn
+	if state == nil {
+		return errors.New("state is nil")
 	}
-	room.NotifyTurn(domain.PhaseDomesticPlanning.String())
-}
-
-func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string, payload []byte) error {
-	state := room.State()
 	playerState, ok := state.Players[playerID]
-	if !ok {
+	if !ok || playerState == nil {
 		return errors.New("player not found")
 	}
 
@@ -53,23 +63,18 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			return err
 		}
-		event.PolicyChangedEvent{PlayerID: playerID, OldPolicy: string(playerState.Policy), NewPolicy: msg.GetPolicy()}.Apply(state.World, state)
+		playerState.Policy = domain.Policy(msg.GetPolicy())
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: true, Action: "set_policy", TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-
-	case "MsgTokenBuild":
-		req := &tokenBuildPayload{}
-		if err := json.Unmarshal(payload, req); err != nil {
+	case "MsgBuildStructure":
+		msg := &pb.MsgBuildStructure{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_request"})
 			return err
 		}
-		return p.handleBuildRequest(room, playerID, playerState, firstNonEmpty(req.NodeID, req.NodeId), firstNonEmpty(req.BuildingType, req.BuildingType2), firstNonEmpty(req.CastleID, req.CastleId))
-
-	case "MsgTokenExpandTerritory":
-		return p.handleExpandTerritory(room, state, playerID, playerState, payload)
-
-	case "MsgTokenReveal":
-		msg := &pb.MsgTokenReveal{}
+		return s.handleBuildRequest(room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingType(), msg.GetCastleId())
+	case "MsgRevealNode":
+		msg := &pb.MsgRevealNode{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_request"})
 			return err
@@ -86,41 +91,108 @@ func (p *DomesticPhase) HandleMessage(room Room, playerID string, msgType string
 		playerState.TokensLeft--
 		_ = room.SendToPlayer(playerID, &pb.MsgRevealResult{NodeId: msg.GetNodeId(), TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-
-	case "MsgResearchTechnology":
-		msg := &pb.MsgResearchTechnology{}
+	case "MsgSetResearchTarget":
+		msg := &pb.MsgSetResearchTarget{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: "", ErrorCode: "invalid_request"})
 			return err
 		}
-		return p.handleResearchRequest(room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
-
+		return s.handleResearchRequest(room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
 	case "MsgSetBuildingRecipe":
 		msg := &pb.MsgSetBuildingRecipe{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, ErrorCode: "invalid_request"})
 			return err
 		}
-		return p.handleSetBuildingRecipe(room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
-
-	case "MsgMinisterDirective":
-		msg := &pb.MsgMinisterDirective{}
+		return s.handleSetBuildingRecipe(room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
+	case "MsgSetMinisterDirective":
+		msg := &pb.MsgSetMinisterDirective{}
 		if err := protojson.Unmarshal(payload, msg); err != nil {
 			return err
 		}
 		room.SetMinisterDirective(playerID, msg.GetContent())
 		return nil
-
-	case "MsgSubmitDomestic":
+	case "MsgSetWarZone":
+		msg := &pb.MsgSetWarZone{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		updated := false
+		for _, zone := range playerState.WarZones {
+			if zone.ID == msg.GetZoneId() {
+				zone.Name = msg.GetName()
+				zone.NodeIDs = msg.GetNodeIds()
+				updated = true
+				break
+			}
+		}
+		if !updated {
+			playerState.WarZones = append(playerState.WarZones, &domain.WarZone{ID: msg.GetZoneId(), Name: msg.GetName(), NodeIDs: msg.GetNodeIds()})
+		}
+		_ = room.SendPlanningSnapshot(playerID)
+		return nil
+	case "MsgWarZoneDirective":
+		msg := &pb.MsgWarZoneDirective{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		d := WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()}
+		s.directives[playerID] = append(s.directives[playerID], d)
+		room.SetWarDirectives(playerID, s.directives[playerID])
+		_ = room.SendPlanningSnapshot(playerID)
+		return nil
+	case "MsgIssueUnitOrder":
+		msg := &pb.MsgIssueUnitOrder{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		order := gameorders.UnitOrder{
+			PlayerID:        playerID,
+			UnitID:          strings.TrimSpace(msg.GetUnitId()),
+			Action:          gameorders.UnitAction(strings.TrimSpace(msg.GetAction())),
+			TargetNodeID:    strings.TrimSpace(msg.GetTargetNodeId()),
+			TargetUnitID:    strings.TrimSpace(msg.GetTargetUnitId()),
+			SecondaryNodeID: strings.TrimSpace(msg.GetSecondaryNodeId()),
+			Params:          cloneParams(msg.GetParams()),
+		}
+		room.SetUnitOrder(order)
+		_ = room.SendPlanningSnapshot(playerID)
+		return nil
+	case "MsgCancelUnitOrder":
+		msg := &pb.MsgCancelUnitOrder{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
+		_ = room.SendPlanningSnapshot(playerID)
+		return nil
+	case "MsgPlanningPathPreviewRequest":
+		msg := &pb.MsgPlanningPathPreviewRequest{}
+		if err := protojson.Unmarshal(payload, msg); err != nil {
+			return err
+		}
+		_ = room.SendToPlayer(playerID, buildPlanningPathPreviewResponse(room.State(), playerID, msg))
+		return nil
+	case "MsgSubmitTurn":
 		room.Submit(playerID)
-		p.submitted[playerID] = true
 		return nil
 	}
 
 	return nil
 }
 
-func (p *DomesticPhase) handleResearchRequest(room Room, playerID string, playerState *domain.PlayerState, technologyID string) error {
+func cloneParams(src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return nil
+	}
+	dst := make(map[string]string, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
+}
+
+func (s *Service) handleResearchRequest(room Session, playerID string, playerState *domain.PlayerState, technologyID string) error {
 	if playerState == nil || technologyID == "" {
 		_ = room.SendToPlayer(playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_request"})
 		return nil
@@ -161,7 +233,7 @@ func (p *DomesticPhase) handleResearchRequest(room Room, playerID string, player
 	return nil
 }
 
-func (p *DomesticPhase) handleSetBuildingRecipe(room Room, playerID string, nodeID string, recipeID string) error {
+func (s *Service) handleSetBuildingRecipe(room Session, playerID string, nodeID string, recipeID string) error {
 	if nodeID == "" || recipeID == "" {
 		_ = room.SendToPlayer(playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
 		return nil
@@ -207,23 +279,10 @@ func (p *DomesticPhase) handleSetBuildingRecipe(room Room, playerID string, node
 	return nil
 }
 
-func (p *DomesticPhase) Timeout(room Room) {
-	room.Submit("timeout")
-}
-
-func toResourceBag(amounts map[string]int) domain.ResourceBag {
-	bag := domain.NewResourceBag()
-	for key, value := range amounts {
-		bag.Set(domain.ResourceKey(key), value)
-	}
-	return bag
-}
-
-func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, castleID string) error {
+func (s *Service) handleBuildRequest(room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, castleID string) error {
 	if playerState == nil {
 		return errors.New("player not found")
 	}
-
 	nodeID = strings.TrimSpace(nodeID)
 	buildingType = strings.TrimSpace(buildingType)
 	castleID = strings.TrimSpace(castleID)
@@ -232,7 +291,6 @@ func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerSta
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
 		return nil
 	}
-
 	nodeEntry, ok := room.NodeByID(nodeID)
 	if !ok {
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
@@ -252,7 +310,6 @@ func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerSta
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
 		return nil
 	}
-
 	if castleID != "" {
 		if errCode := validateCastleContext(room, playerID, castleID); errCode != "" {
 			_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: errCode})
@@ -262,19 +319,15 @@ func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerSta
 
 	nodeComp := ecs.NodeC.Get(nodeEntry)
 	if errCode := validateBuildPlacement(nodeComp, cfg, playerID); errCode != "" {
-		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{
-			Success:    false,
-			Action:     "build",
-			TokensLeft: int32(playerState.TokensLeft),
-			ErrorCode:  errCode,
-		})
+		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: errCode})
 		return nil
 	}
 
-	cost := toResourceBag(cfg.BuildCost)
-	// 建造资源校验改为按 castleID 对应资源池判断。
-	// 这样客户端看到的城堡资源看板，和“这个城堡当前还能不能继续建造”
-	// 使用的是同一套结算口径。
+	cost, err := domain.ResourceBagFromAmounts(cfg.BuildCost)
+	if err != nil {
+		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
+		return nil
+	}
 	if !room.State().CanAffordFromCastle(playerID, castleID, cost) && !room.IsDevMode() {
 		_ = room.SendToPlayer(playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "insufficient_resources"})
 		return nil
@@ -286,7 +339,7 @@ func (p *DomesticPhase) handleBuildRequest(room Room, playerID string, playerSta
 	return nil
 }
 
-func validateCastleContext(room Room, playerID string, castleID string) string {
+func validateCastleContext(room Session, playerID string, castleID string) string {
 	castleID = strings.TrimSpace(castleID)
 	if castleID == "" {
 		return "invalid_request"
@@ -296,26 +349,14 @@ func validateCastleContext(room Room, playerID string, castleID string) string {
 	if !ok || !castleEntry.HasComponent(ecs.BuildingC) {
 		return "invalid_target"
 	}
-
 	building := ecs.BuildingC.Get(castleEntry)
 	if normalizeToken(string(building.Type)) != "castle" {
 		return "invalid_target"
 	}
-
 	node := ecs.NodeC.Get(castleEntry)
 	player := normalizeToken(playerID)
 	if normalizeToken(building.Owner) != player && normalizeToken(node.Owner) != player && normalizeToken(node.TerritoryOwner) != player {
 		return "unauthorized"
-	}
-
-	return ""
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, value := range values {
-		if strings.TrimSpace(value) != "" {
-			return strings.TrimSpace(value)
-		}
 	}
 	return ""
 }
@@ -324,14 +365,12 @@ func validateBuildPlacement(node *ecs.NodeComp, cfg staticdata.BuildingDefinitio
 	if node == nil {
 		return "invalid_target"
 	}
-
 	terrainID := normalizeToken(string(node.Terrain))
 	if terrainID != "" {
 		if terrain, ok := staticdata.Default().GetTerrain(terrainID); ok && !terrain.Buildable {
 			return "terrain_not_buildable"
 		}
 	}
-
 	rule := normalizeToken(cfg.PlacementRule)
 	switch rule {
 	case "city_only":
@@ -350,6 +389,81 @@ func validateBuildPlacement(node *ecs.NodeComp, cfg staticdata.BuildingDefinitio
 			return "resource_type_mismatch"
 		}
 	}
-
 	return ""
+}
+
+func normalizeToken(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {
+	resp := &pb.MsgPlanningPathPreviewResponse{
+		RequestId:    msg.GetRequestId(),
+		UnitId:       msg.GetUnitId(),
+		Action:       msg.GetAction(),
+		TargetNodeId: msg.GetTargetNodeId(),
+		Valid:        false,
+	}
+	if state == nil || msg == nil {
+		resp.ErrorCode = "invalid_request"
+		return resp
+	}
+	if gameorders.UnitAction(msg.GetAction()) != gameorders.ActionMove {
+		resp.ErrorCode = "invalid_directive"
+		return resp
+	}
+	entry, ok := findPreviewUnit(state, msg.GetUnitId(), playerID)
+	if !ok {
+		resp.ErrorCode = "unit_not_found"
+		return resp
+	}
+	if _, ok := state.GetNode(msg.GetTargetNodeId()); !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
+	preview, ok := planner.BuildPreview(state.World, state, ecs.UnitStatsC.Get(entry).ID, msg.GetTargetNodeId())
+	if !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	resp.Valid = true
+	resp.PathNodeIds = append(resp.PathNodeIds, preview.PathNodeIDs...)
+	resp.FirstTurnNodeId = preview.FirstTurnNodeID
+	resp.TotalTurns = int32(preview.TotalTurns)
+	for _, stop := range preview.TurnStops {
+		resp.TurnStops = append(resp.TurnStops, &pb.MarchTurnStop{
+			TurnIndex: int32(stop.TurnIndex),
+			NodeId:    stop.NodeID,
+		})
+	}
+	return resp
+}
+
+func findPreviewUnit(state *domain.GameState, unitID string, ownerID string) (*donburi.Entry, bool) {
+	if state == nil || state.World == nil {
+		return nil, false
+	}
+	var found *donburi.Entry
+	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
+		if found != nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID == unitID && stats.Faction == ownerID {
+			found = entry
+		}
+	})
+	return found, found != nil
+}
+
+type expandPayload struct {
+	UnitID       string `json:"unit_id"`
+	CenterNodeID string `json:"center_node_id"`
+}
+
+func MarshalExpandParams(unitID, centerNodeID string) ([]byte, error) {
+	return json.Marshal(expandPayload{UnitID: unitID, CenterNodeID: centerNodeID})
 }

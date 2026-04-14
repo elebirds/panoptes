@@ -5,7 +5,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/yohamta/donburi"
 )
 
@@ -29,7 +28,7 @@ func (e RecipeSelectionChangedEvent) Apply(world donburi.World, state *domain.Ga
 	})
 }
 
-func (e RecipeSelectionChangedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e RecipeSelectionChangedEvent) Kind() string { return "recipe_selected" }
 
 func (e RecipeSelectionChangedEvent) String() string {
 	return fmt.Sprintf("RecipeSelectionChangedEvent node=%s recipe=%s", e.NodeID, e.RecipeID)
@@ -55,7 +54,7 @@ func (e RecipeDelayedEvent) Apply(world donburi.World, state *domain.GameState) 
 	ecs.BuildingOperationC.SetValue(entry, *operation)
 }
 
-func (e RecipeDelayedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e RecipeDelayedEvent) Kind() string { return "recipe_delayed" }
 
 func (e RecipeDelayedEvent) String() string {
 	return fmt.Sprintf("RecipeDelayedEvent node=%s delay=%d reason=%s", e.NodeID, e.DelayTurns, e.Reason)
@@ -80,7 +79,7 @@ func (e RecipeProgressedEvent) Apply(world donburi.World, state *domain.GameStat
 	ecs.BuildingOperationC.SetValue(entry, *operation)
 }
 
-func (e RecipeProgressedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e RecipeProgressedEvent) Kind() string { return "recipe_progressed" }
 
 func (e RecipeProgressedEvent) String() string {
 	return fmt.Sprintf("RecipeProgressedEvent node=%s progress=%d", e.NodeID, e.ProgressTurns)
@@ -122,7 +121,7 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 	}
 }
 
-func (e RecipeCompletedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e RecipeCompletedEvent) Kind() string { return "recipe_completed" }
 
 func (e RecipeCompletedEvent) String() string {
 	return fmt.Sprintf("RecipeCompletedEvent node=%s owner=%s", e.NodeID, e.Owner)

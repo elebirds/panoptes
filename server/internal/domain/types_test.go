@@ -171,7 +171,7 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	if state.Turn != 1 {
 		t.Fatalf("Turn = %d", state.Turn)
 	}
-	if state.Phase != "domestic_planning" {
+	if state.Phase != PhasePlanning.String() {
 		t.Fatalf("Phase = %q", state.Phase)
 	}
 	if state.World == nil {

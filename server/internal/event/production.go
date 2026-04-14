@@ -6,7 +6,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
@@ -33,7 +32,7 @@ func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) 
 	state.ConsumeResources(e.Owner, e.CastleID, e.Cost)
 }
 
-func (e BuildingBuiltEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e BuildingBuiltEvent) Kind() string { return "building_built" }
 
 func (e BuildingBuiltEvent) String() string {
 	return fmt.Sprintf("BuildingBuiltEvent node=%s type=%s owner=%s castle=%s", e.NodeID, e.BuildingType, e.Owner, e.CastleID)
@@ -56,7 +55,7 @@ func (e ResourceProducedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.AddResourceToCastle(e.Owner, e.CastleID, domain.ResourceKey(e.ResourceType), e.Amount)
 }
 
-func (e ResourceProducedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e ResourceProducedEvent) Kind() string { return "resource_produced" }
 
 func (e ResourceProducedEvent) String() string {
 	return fmt.Sprintf("ResourceProducedEvent node=%s owner=%s castle=%s %s=+%d", e.NodeID, e.Owner, e.CastleID, e.ResourceType, e.Amount)
@@ -70,7 +69,7 @@ type ResourceFlowedEvent struct {
 
 func (e ResourceFlowedEvent) Apply(donburi.World, *domain.GameState) {}
 
-func (e ResourceFlowedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e ResourceFlowedEvent) Kind() string { return "resource_flowed" }
 
 func (e ResourceFlowedEvent) String() string {
 	return fmt.Sprintf("ResourceFlowedEvent from=%s to=%s", e.FromNodeID, e.ToNodeID)
@@ -122,7 +121,7 @@ func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	state.ConsumeResources(e.Owner, "", domain.ResourceBag{domain.ResourceBuildPoints: e.Cost})
 }
 
-func (e RoadBuiltEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e RoadBuiltEvent) Kind() string { return "road_built" }
 
 func (e RoadBuiltEvent) String() string {
 	return fmt.Sprintf("RoadBuiltEvent %s->%s owner=%s cost=%d", e.FromNode, e.ToNode, e.Owner, e.Cost)
@@ -154,7 +153,7 @@ func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 	}
 }
 
-func (e UnitProducedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e UnitProducedEvent) Kind() string { return "unit_produced" }
 
 func (e UnitProducedEvent) String() string {
 	return fmt.Sprintf("UnitProducedEvent node=%s type=%s castle=%s count=%d", e.NodeID, e.UnitType, e.CastleID, e.Count)
@@ -175,7 +174,7 @@ func (e BuildPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameStat
 	state.RechargeBuildPoints(e.PlayerID, e.Amount, maxVal)
 }
 
-func (e BuildPointsRechargedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e BuildPointsRechargedEvent) Kind() string { return "build_points_recharged" }
 
 func (e BuildPointsRechargedEvent) String() string {
 	return fmt.Sprintf("BuildPointsRechargedEvent player=%s amount=%d", e.PlayerID, e.Amount)
@@ -201,7 +200,7 @@ func (e UpkeepPaidEvent) Apply(world donburi.World, state *domain.GameState) {
 	}
 }
 
-func (e UpkeepPaidEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e UpkeepPaidEvent) Kind() string { return "upkeep_paid" }
 
 func (e UpkeepPaidEvent) String() string {
 	return fmt.Sprintf("UpkeepPaidEvent player=%s food=%d", e.PlayerID, e.FoodConsumed)
@@ -232,9 +231,7 @@ func (e UnitStarvingEvent) Apply(world donburi.World, state *domain.GameState) {
 	}
 }
 
-func (e UnitStarvingEvent) ClientPayload() *pb.CombatEvent {
-	return UnitDamagedEvent{UnitID: e.UnitID, Damage: e.DamagePerTurn, HPAfter: 0, Source: "upkeep"}.ClientPayload()
-}
+func (e UnitStarvingEvent) Kind() string { return "unit_starving" }
 
 func (e UnitStarvingEvent) String() string {
 	return fmt.Sprintf("UnitStarvingEvent unit=%s damage=%d", e.UnitID, e.DamagePerTurn)
@@ -247,7 +244,7 @@ type BuildingDeactivatedEvent struct {
 
 func (e BuildingDeactivatedEvent) Apply(donburi.World, *domain.GameState) {}
 
-func (e BuildingDeactivatedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e BuildingDeactivatedEvent) Kind() string { return "building_deactivated" }
 
 func (e BuildingDeactivatedEvent) String() string {
 	return fmt.Sprintf("BuildingDeactivatedEvent node=%s reason=%s", e.NodeID, e.Reason)

@@ -118,35 +118,27 @@ func TestRoundTrip(t *testing.T) {
 	t.Log("✓ MsgGameInit 包含非空 Nodes 列表")
 
 	waitFor(t, 2*time.Second, func() bool {
-		msg, ok := findMessage[*pb.MsgDomesticPhaseStart](tp.snapshot("player-1"))
+		msg, ok := findMessage[*pb.MsgPlanningStart](tp.snapshot("player-1"))
 		return ok && msg.GetTurn() == initMsg.GetTurn() && msg.GetTokens() == 3
 	})
-	t.Log("✓ MsgDomesticPhaseStart 包含正确 Turn 和 Tokens")
+	t.Log("✓ MsgPlanningStart 包含正确 Turn 和 Tokens")
 
 	waitFor(t, 2*time.Second, func() bool {
 		return countMessage[*pb.MsgMinisterReportChunk](tp.snapshot("player-1")) >= 2
 	})
 	t.Log("✓ MsgMinisterReportChunk 流式推送（多条）")
 
-	room.OnHumanSubmitDomestic("player-1")
+	room.OnHumanSubmitTurn("player-1")
 	waitFor(t, 3*time.Second, func() bool {
-		_, ok := findMessage[*pb.MsgDomesticSettlement](tp.snapshot("player-1"))
-		return ok
+		msg, ok := findMessage[*pb.MsgTurnSettlement](tp.snapshot("player-1"))
+		return ok && msg.GetPhase() == "resolving"
 	})
-	t.Log("✓ MsgDomesticSettlement 在双方提交后推送")
+	t.Log("✓ MsgTurnSettlement 在双方提交后推送")
 
 	waitFor(t, 2*time.Second, func() bool {
-		_, ok := findMessage[*pb.MsgCombatPhaseStart](tp.snapshot("player-1"))
-		return ok
+		return countMessage[*pb.MsgPlanningStart](tp.snapshot("player-1")) >= 2
 	})
-	t.Log("✓ MsgCombatPhaseStart 在内政结算后推送")
-
-	room.OnHumanSubmitCombat("player-1")
-	waitFor(t, 3*time.Second, func() bool {
-		_, ok := findMessage[*pb.MsgCombatSettlement](tp.snapshot("player-1"))
-		return ok
-	})
-	t.Log("✓ MsgCombatSettlement 在双方提交后推送")
+	t.Log("✓ 结算后进入下一回合 planning")
 
 	startTurn := initMsg.GetTurn()
 	waitFor(t, 3*time.Second, func() bool {

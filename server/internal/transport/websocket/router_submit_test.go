@@ -13,32 +13,27 @@ import (
 )
 
 type stubGameRoom struct {
-	domestic []string
-	combat   []string
+	submits  []string
+	messages []string
 }
 
-func (r *stubGameRoom) OnHumanSubmitDomestic(playerID string) {
-	r.domestic = append(r.domestic, playerID)
+func (r *stubGameRoom) OnHumanSubmitTurn(playerID string) {
+	r.submits = append(r.submits, playerID)
 }
 
-func (r *stubGameRoom) OnHumanSubmitCombat(playerID string) {
-	r.combat = append(r.combat, playerID)
+func (r *stubGameRoom) OnHumanMessage(_ string, msgType string, _ []byte) error {
+	r.messages = append(r.messages, msgType)
+	return nil
 }
 
 type stubGameRoomWithSubmitError struct {
 	stubGameRoom
-	domesticErr error
-	combatErr   error
+	submitErr error
 }
 
-func (r *stubGameRoomWithSubmitError) OnHumanSubmitDomesticChecked(playerID string) error {
-	r.domestic = append(r.domestic, playerID)
-	return r.domesticErr
-}
-
-func (r *stubGameRoomWithSubmitError) OnHumanSubmitCombatChecked(playerID string) error {
-	r.combat = append(r.combat, playerID)
-	return r.combatErr
+func (r *stubGameRoomWithSubmitError) OnHumanSubmitTurnChecked(playerID string) error {
+	r.submits = append(r.submits, playerID)
+	return r.submitErr
 }
 
 type stubGameRoomRegistry struct {
@@ -117,23 +112,37 @@ func TestRouterRouteSubmitMessages(t *testing.T) {
 		ok:   true,
 	})
 
-	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitDomestic", Payload: "{}"})
-	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitTurn", Payload: "{}"})
 
-	if len(room.domestic) != 1 || room.domestic[0] != "player-1" {
-		t.Fatalf("domestic submits = %#v", room.domestic)
-	}
-	if len(room.combat) != 1 || room.combat[0] != "player-1" {
-		t.Fatalf("combat submits = %#v", room.combat)
+	if len(room.submits) != 1 || room.submits[0] != "player-1" {
+		t.Fatalf("submits = %#v", room.submits)
 	}
 }
 
-func TestRouterRouteSubmitMessageReturnsGameErrorResponse(t *testing.T) {
+func TestRouterRouteLegacySubmitMessagesAreIgnored(t *testing.T) {
+	store := newRouterStore()
+	transport := newRouterTransport()
+	authSvc := auth.NewService(&routerUserStore{users: map[string]*auth.User{}}, "secret", 60)
+	room := &stubGameRoom{}
+	router := NewRouter(lobby.NewService(store, transport, authSvc, 4, false), &stubGameRoomRegistry{
+		room: room,
+		ok:   true,
+	})
+
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitDomestic", Payload: "{}"})
+	router.Route(&captureSender{}, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+
+	if len(room.submits) != 0 {
+		t.Fatalf("legacy submit should not route, got %#v", room.submits)
+	}
+}
+
+func TestRouterRouteSubmitTurnReturnsGameErrorResponse(t *testing.T) {
 	store := newRouterStore()
 	transport := newRouterTransport()
 	authSvc := auth.NewService(&routerUserStore{users: map[string]*auth.User{}}, "secret", 60)
 	room := &stubGameRoomWithSubmitError{
-		combatErr: errors.New("phase_mismatch"),
+		submitErr: errors.New("phase_mismatch"),
 	}
 	router := NewRouter(lobby.NewService(store, transport, authSvc, 4, false), &stubGameRoomRegistry{
 		room: room,
@@ -141,7 +150,7 @@ func TestRouterRouteSubmitMessageReturnsGameErrorResponse(t *testing.T) {
 	})
 
 	sender := &captureSender{}
-	router.Route(sender, "player-1", &pb.Envelope{Type: "MsgSubmitCombat", Payload: "{}"})
+	router.Route(sender, "player-1", &pb.Envelope{Type: "MsgSubmitTurn", Payload: "{}"})
 
 	if len(sender.payloads) != 1 {
 		t.Fatalf("sender payload count = %d", len(sender.payloads))
