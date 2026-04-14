@@ -13,10 +13,10 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 	if state == nil {
 		return nil
 	}
-	events := make([]event.Event, 0, len(state.PendingResearchOrders))
+	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.ResearchOrders))
 	spentByPlayer := make(map[string]int)
 
-	for _, order := range state.PendingResearchOrders {
+	for _, order := range state.TurnRuntime.Planning.ResearchOrders {
 		playerState, ok := state.Players[order.PlayerID]
 		if !ok || playerState == nil {
 			continue

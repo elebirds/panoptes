@@ -75,7 +75,7 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 			if nodeID == "" || buildingType == "" {
 				continue
 			}
-			state.MinisterBuildOrders = append(state.MinisterBuildOrders, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
+			state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
 		case "repair_road":
 			fromNode, _ := asString(action.Params["from_node"])
 			toNode, _ := asString(action.Params["to_node"])
@@ -93,7 +93,7 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 			}
 			p := ecs.PositionC.Get(nodeEntry)
 			pos := domain.Position{X: p.X, Y: p.Y}
-			state.MinisterMoveOrders = append(state.MinisterMoveOrders, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
+			state.TurnRuntime.Planning.MinisterMoves = append(state.TurnRuntime.Planning.MinisterMoves, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
 		case "redirect_flow":
 			// redirect_flow 暂时只记录，不直接修改持久配置。
 		default:

@@ -12,10 +12,10 @@ type ConflictSystem struct{}
 
 func (s *ConflictSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	conflicts := make([]domain.Conflict, 0)
-	for i := 0; i < len(state.PendingMoves); i++ {
-		for j := i + 1; j < len(state.PendingMoves); j++ {
-			a := state.PendingMoves[i]
-			b := state.PendingMoves[j]
+	for i := 0; i < len(state.TurnRuntime.Resolving.PendingMoves); i++ {
+		for j := i + 1; j < len(state.TurnRuntime.Resolving.PendingMoves); j++ {
+			a := state.TurnRuntime.Resolving.PendingMoves[i]
+			b := state.TurnRuntime.Resolving.PendingMoves[j]
 			if a.Faction == b.Faction {
 				continue
 			}
@@ -38,7 +38,7 @@ func (s *ConflictSystem) Run(world donburi.World, state *domain.GameState) []eve
 		return conflicts[i].UnitBID < conflicts[j].UnitBID
 	})
 
-	state.PendingConflicts = conflicts
+	state.TurnRuntime.Resolving.Conflicts = conflicts
 	events := make([]event.Event, 0, len(conflicts))
 	for _, c := range conflicts {
 		events = append(events, event.ConflictResolvedEvent{

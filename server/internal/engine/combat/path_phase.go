@@ -20,13 +20,13 @@ func (PathPlanningPhase) Apply(ctx *ResolutionContext) {
 
 type HoldResolver struct{}
 
-func (HoldResolver) Action() domain.CombatAction { return domain.CombatActionHold }
+func (HoldResolver) Action() domain.UnitResolutionAction { return domain.UnitResolutionActionHold }
 
 func (HoldResolver) Plan(_ *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 	// hold 不移动，但仍然产出标准化计划，后续冲突/伤害阶段就不需要区分“有没有计划”。
 	return &OrderPlan{
 		UnitID:    unit.UnitID,
-		Action:    domain.CombatActionHold,
+		Action:    domain.UnitResolutionActionHold,
 		Start:     unit.Position,
 		Path:      []domain.Position{unit.Position},
 		Candidate: unit.Position,
@@ -36,7 +36,7 @@ func (HoldResolver) Plan(_ *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 
 type MoveResolver struct{}
 
-func (MoveResolver) Action() domain.CombatAction { return domain.CombatActionMove }
+func (MoveResolver) Action() domain.UnitResolutionAction { return domain.UnitResolutionActionMove }
 
 func (MoveResolver) Plan(ctx *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 	return planMovement(ctx, unit, resolveTargetNode(ctx, unit.Order.TargetNodeID), false)
@@ -44,13 +44,13 @@ func (MoveResolver) Plan(ctx *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 
 type AttackResolver struct{}
 
-func (AttackResolver) Action() domain.CombatAction { return domain.CombatActionAttack }
+func (AttackResolver) Action() domain.UnitResolutionAction { return domain.UnitResolutionActionAttack }
 
 func (AttackResolver) Plan(_ *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 	// attack 的位移计划固定为原地，实际是否命中留到伤害窗口按最终位置判定。
 	return &OrderPlan{
 		UnitID:         unit.UnitID,
-		Action:         domain.CombatActionAttack,
+		Action:         domain.UnitResolutionActionAttack,
 		Start:          unit.Position,
 		Path:           []domain.Position{unit.Position},
 		Candidate:      unit.Position,
@@ -61,7 +61,7 @@ func (AttackResolver) Plan(_ *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 
 type ChargeResolver struct{}
 
-func (ChargeResolver) Action() domain.CombatAction { return domain.CombatActionCharge }
+func (ChargeResolver) Action() domain.UnitResolutionAction { return domain.UnitResolutionActionCharge }
 
 func (ChargeResolver) Plan(ctx *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 	goal := resolveChargeGoal(ctx, unit.Order)
@@ -120,8 +120,8 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		plan.Fallback = fallback
 	}
 	// 没找到合法接敌目标时，charge 自动退化为普通 move。
-	if plan.Action == domain.CombatActionCharge && plan.ChargeTargetID == "" {
-		plan.Action = domain.CombatActionMove
+	if plan.Action == domain.UnitResolutionActionCharge && plan.ChargeTargetID == "" {
+		plan.Action = domain.UnitResolutionActionMove
 	}
 	return plan
 }
@@ -157,7 +157,7 @@ func resolveTargetNode(ctx *ResolutionContext, nodeID string) domain.Position {
 	return domain.Position{X: pos.X, Y: pos.Y}
 }
 
-func resolveChargeGoal(ctx *ResolutionContext, order domain.CombatOrder) domain.Position {
+func resolveChargeGoal(ctx *ResolutionContext, order domain.UnitResolutionOrder) domain.Position {
 	// charge 优先支持“指定目标单位”，这样后续接 AI 或前端锁定目标时不需要改协议。
 	if order.TargetUnitID != "" {
 		if unit, ok := ctx.Snapshot.Units[order.TargetUnitID]; ok {

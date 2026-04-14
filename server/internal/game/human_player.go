@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/elebirds/panoptes/internal/domain"
+	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
@@ -47,26 +48,25 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		return
 	}
 	rules := staticdata.Default().Rules()
-	timeout := rules.TurnTimeLimitDomestic + rules.TurnTimeLimitCombat
+	timeout := rules.PlanningTimeoutSeconds()
 	if timeout <= 0 {
 		timeout = 35
 	}
 	currentPolicy := ""
-	if room != nil && room.state != nil {
-		if playerState := room.state.Players[p.playerID]; playerState != nil {
+	if room != nil && room.State() != nil {
+		if playerState := room.State().Players[p.playerID]; playerState != nil {
 			currentPolicy = string(playerState.Policy)
 		}
 	}
 	msg := &pb.MsgPlanningStart{
 		Timeout:       int32(timeout),
-		Turn:          int32(room.Turn),
 		Tokens:        int32(rules.TokensPerTurn),
 		CurrentPolicy: currentPolicy,
 		Phase:         phase,
 	}
-	if room != nil {
-		snapshot := room.buildPlanningSnapshot(p.playerID)
-		snapshot.Turn = int32(room.Turn)
+	if room != nil && room.State() != nil {
+		msg.Turn = int32(room.State().Turn)
+		snapshot := gamequery.BuildPlanningSnapshot(room.State(), p.playerID)
 		snapshot.Phase = phase
 		msg.Snapshot = snapshot
 	}

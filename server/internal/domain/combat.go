@@ -1,31 +1,30 @@
 package domain
 
-// CombatAction 是结算引擎识别的最小动作集合。
+// UnitResolutionAction 是 resolving 链识别的最小单位动作集合。
 // 这里故意只保留“意图层”语义，避免把具体兵种规则硬编码进指令本身。
-type CombatAction string
+type UnitResolutionAction string
 
 const (
-	CombatActionMove   CombatAction = "move"
-	CombatActionAttack CombatAction = "attack"
-	CombatActionHold   CombatAction = "hold"
-	CombatActionCharge CombatAction = "charge"
-	CombatActionDeploy CombatAction = "deploy"
+	UnitResolutionActionMove   UnitResolutionAction = "move"
+	UnitResolutionActionAttack UnitResolutionAction = "attack"
+	UnitResolutionActionHold   UnitResolutionAction = "hold"
+	UnitResolutionActionCharge UnitResolutionAction = "charge"
 )
 
-// CombatOrder 是人类手操、未来 AI 部长、脚本驱动共用的统一战斗意图。
+// UnitResolutionOrder 是人类手操、未来 AI 部长、脚本驱动共用的统一单位 resolving 意图。
 // 结算层只认识这份结构，不关心命令来源，从而保证后续可复用。
-type CombatOrder struct {
+type UnitResolutionOrder struct {
 	PlayerID     string
 	UnitID       string
-	Action       CombatAction
+	Action       UnitResolutionAction
 	TargetNodeID string
 	TargetUnitID string
 	PathNodeIDs  []string
 }
 
-func (o CombatOrder) Normalized() CombatOrder {
+func (o UnitResolutionOrder) Normalized() UnitResolutionOrder {
 	if o.Action == "" {
-		o.Action = CombatActionHold
+		o.Action = UnitResolutionActionHold
 	}
 	return o
 }

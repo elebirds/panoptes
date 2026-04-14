@@ -72,8 +72,8 @@ func TestSingleStepResolver_MoveBudgetUsesTerrainCost(t *testing.T) {
 	unitID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
 	setNodeTerrain(t, state, "N1_0", "forest", false)
 
-	state.PendingCombatOrders = map[string]domain.CombatOrder{
-		unitID: {PlayerID: "player-a", UnitID: unitID, Action: domain.CombatActionMove, TargetNodeID: "N3_0"},
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		unitID: {PlayerID: "player-a", UnitID: unitID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N3_0"},
 	}
 
 	resolver := NewSingleStepResolver()

@@ -6,6 +6,8 @@ import (
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	gamesession "github.com/elebirds/panoptes/internal/game/session"
+	gameturn "github.com/elebirds/panoptes/internal/game/turn"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"google.golang.org/protobuf/proto"
@@ -44,10 +46,11 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 
 	tp := newStubTransport()
 	room := NewRoom("game-1", nil, tp, &config.Config{})
-	room.Turn = 7
-	room.Phase = domain.PhasePlanning.String()
-	room.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{})
-	room.state.Phase = domain.PhasePlanning.String()
+	room.runtime = nil
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.runtime.State().Turn = 7
+	room.runtime.State().Phase = domain.PhasePlanning.String()
 
 	player := NewHumanPlayer("player-1", "alice", tp)
 	player.NotifyTurn(context.Background(), room, domain.PhasePlanning.String())
@@ -75,12 +78,49 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	}
 }
 
+func TestHumanPlayerNotifyTurnPrefersUnifiedPlanningTimeout(t *testing.T) {
+	t.Parallel()
+
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning: 21,
+			TurnTimeLimitDomestic: 12,
+			TurnTimeLimitCombat:   18,
+			TokensPerTurn:         3,
+		},
+	}))
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.runtime.State().Turn = 3
+	room.runtime.State().Phase = domain.PhasePlanning.String()
+
+	player := NewHumanPlayer("player-1", "alice", tp)
+	player.NotifyTurn(context.Background(), room, domain.PhasePlanning.String())
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) != 1 {
+		t.Fatalf("send count = %d, want 1", len(msgs))
+	}
+
+	start, ok := msgs[0].(*pb.MsgPlanningStart)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgPlanningStart", msgs[0])
+	}
+	if start.GetTimeout() != 21 {
+		t.Fatalf("timeout = %d, want 21", start.GetTimeout())
+	}
+}
+
 func TestGameRoomRejectsActionsOutsidePlanning(t *testing.T) {
 	t.Parallel()
 
 	room := NewRoom("game-1", nil, newStubTransport(), &config.Config{})
-	room.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{})
-	room.setPhase(domain.PhaseResolving)
+	room.runtime = newTestRuntime("game-1", newStubTransport())
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhaseResolving.String()
 
 	if err := room.OnHumanSubmitTurnChecked("player-1"); err != ErrPhaseMismatch {
 		t.Fatalf("submit error = %v, want %v", err, ErrPhaseMismatch)
@@ -88,4 +128,11 @@ func TestGameRoomRejectsActionsOutsidePlanning(t *testing.T) {
 	if err := room.OnHumanMessage("player-1", "MsgSetPolicy", nil); err != ErrPhaseMismatch {
 		t.Fatalf("message error = %v, want %v", err, ErrPhaseMismatch)
 	}
+}
+
+func newTestRuntime(gameID string, tp *stubTransport) *gamesession.Runtime {
+	runtime := gamesession.NewRuntime(gameID, nil, tp, &config.Config{})
+	state := domain.NewGameState(gameID, []string{"player-1"}, []string{"alice"}, &domain.MapData{})
+	runtime.SetState(state)
+	return runtime
 }

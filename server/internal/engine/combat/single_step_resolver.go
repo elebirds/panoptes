@@ -37,11 +37,11 @@ func (r *SingleStepResolver) Resolve(world donburi.World, state *domain.GameStat
 		DeadUnits:         make(map[string]bool),
 		EdgeConflictUnits: make(map[string]bool),
 		NodeConflictUnits: make(map[string]bool),
-		OrderResolvers: map[domain.CombatAction]OrderResolver{
-			domain.CombatActionMove:   MoveResolver{},
-			domain.CombatActionAttack: AttackResolver{},
-			domain.CombatActionHold:   HoldResolver{},
-			domain.CombatActionCharge: ChargeResolver{},
+		OrderResolvers: map[domain.UnitResolutionAction]OrderResolver{
+			domain.UnitResolutionActionMove:   MoveResolver{},
+			domain.UnitResolutionActionAttack: AttackResolver{},
+			domain.UnitResolutionActionHold:   HoldResolver{},
+			domain.UnitResolutionActionCharge: ChargeResolver{},
 		},
 		BlockRule:         StaticSnapshotBlockRule{},
 		ConflictDetectors: []ConflictDetector{EdgeConflictDetector{}, NodeConflictDetector{}},

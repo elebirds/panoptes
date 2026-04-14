@@ -1,51 +1,89 @@
 package game
 
 import (
+	"strings"
+
 	"github.com/elebirds/panoptes/internal/debug"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 )
 
 // RunTurnResolution executes the unified Turn V2 resolving pipeline.
 func RunTurnResolution(room *GameRoom) {
-	if room == nil || room.state == nil {
+	if room == nil || room.State() == nil {
 		return
 	}
 
-	room.syncPendingBuildOrders()
-	room.prepareCombatOrders()
-	combatPipeline := engine.NewCombatPipeline()
-	unitEvents := combatPipeline.Run(room.state.World, room.state)
+	room.lockUnitResolutionOrders()
+	unitResolutionPipeline := engine.NewUnitResolutionPipeline()
+	unitEvents := unitResolutionPipeline.Run(room.State().World, room.State())
 	room.refreshActiveMarchesAfterSettlement()
 	mapEvents := room.applyPlannedMapActions()
-	economyPipeline := engine.NewDomesticPipeline()
-	economyEvents := economyPipeline.Run(room.state.World, room.state)
+	economyPipeline := engine.NewEconomyPipeline()
+	economyEvents := economyPipeline.Run(room.State().World, room.State())
 
 	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)
-	if room.cfg != nil && room.cfg.DevMode {
-		debug.DumpGameStateSummary(room.state)
+	if room.IsDevMode() {
+		debug.DumpGameStateSummary(room.State())
 	}
 	room.checkGameOver()
 
-	clear(room.state.PendingCombatOrders)
-	room.state.PendingBuilds = room.state.PendingBuilds[:0]
-	room.state.PendingResearchOrders = room.state.PendingResearchOrders[:0]
-	room.state.PendingRecipeSelections = room.state.PendingRecipeSelections[:0]
-	room.state.MinisterBuildOrders = room.state.MinisterBuildOrders[:0]
-	room.state.PendingConflicts = room.state.PendingConflicts[:0]
-	room.state.MinisterMoveOrders = room.state.MinisterMoveOrders[:0]
-	clear(room.plannedUnitOrders)
+	state := room.State()
+	clear(state.TurnRuntime.Resolving.UnitOrders)
+	state.TurnRuntime.Planning.BuildOrders = state.TurnRuntime.Planning.BuildOrders[:0]
+	state.TurnRuntime.Planning.ResearchOrders = state.TurnRuntime.Planning.ResearchOrders[:0]
+	state.TurnRuntime.Planning.RecipeSelections = state.TurnRuntime.Planning.RecipeSelections[:0]
+	state.TurnRuntime.Planning.MinisterBuilds = state.TurnRuntime.Planning.MinisterBuilds[:0]
+	state.TurnRuntime.Planning.MinisterMoves = state.TurnRuntime.Planning.MinisterMoves[:0]
+	state.TurnRuntime.Resolving.Conflicts = state.TurnRuntime.Resolving.Conflicts[:0]
+	clear(state.TurnRuntime.Planning.UnitOrders)
+	clear(state.TurnRuntime.Planning.MinisterDirectives)
+	clear(state.TurnRuntime.Planning.WarDirectives)
 }
 
-func (r *GameRoom) syncPendingBuildOrders() {
-	if r == nil || r.state == nil {
+func (r *GameRoom) lockUnitResolutionOrders() {
+	state := r.State()
+	if state == nil {
 		return
 	}
-	if r.state.PendingBuilds == nil {
-		r.state.PendingBuilds = make([]domain.BuildOrder, 0, len(r.pendingBuilds))
-	} else {
-		r.state.PendingBuilds = r.state.PendingBuilds[:0]
+	if state.TurnRuntime.Resolving.UnitOrders == nil {
+		state.TurnRuntime.Resolving.UnitOrders = make(map[string]domain.UnitResolutionOrder)
 	}
-	r.state.PendingBuilds = append(r.state.PendingBuilds, r.pendingBuilds...)
-	r.pendingBuilds = r.pendingBuilds[:0]
+	clear(state.TurnRuntime.Resolving.UnitOrders)
+
+	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
+		state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
+			PlayerID:     march.PlayerID,
+			UnitID:       unitID,
+			Action:       domain.UnitResolutionActionMove,
+			TargetNodeID: march.DestinationNodeID,
+			PathNodeIDs:  append([]string(nil), march.LastPreview.PathNodeIDs...),
+		}
+	}
+
+	for unitID, directive := range state.TurnRuntime.Planning.UnitOrders {
+		order := gameorders.FromDirective(directive)
+		if resolutionOrder, ok := order.ToResolutionOrder(); ok {
+			if resolutionOrder.Action == domain.UnitResolutionActionMove {
+				if march, ok := state.TurnRuntime.Resolving.ActiveMarches[unitID]; ok && len(march.LastPreview.PathNodeIDs) > 0 {
+					resolutionOrder.TargetNodeID = march.DestinationNodeID
+					resolutionOrder.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
+				} else if preview, ok := r.buildRoutePreview(unitID, resolutionOrder.TargetNodeID); ok {
+					resolutionOrder.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
+				}
+			}
+			state.TurnRuntime.Resolving.UnitOrders[unitID] = resolutionOrder.Normalized()
+			continue
+		}
+
+		if gameorders.UnitAction(order.Action) == gameorders.ActionSettleCity && strings.TrimSpace(order.TargetNodeID) != "" {
+			state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
+				PlayerID:     order.PlayerID,
+				UnitID:       order.UnitID,
+				Action:       domain.UnitResolutionActionMove,
+				TargetNodeID: order.TargetNodeID,
+			}
+		}
+	}
 }

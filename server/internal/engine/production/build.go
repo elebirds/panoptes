@@ -11,8 +11,8 @@ type BuildSystem struct{}
 
 func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
-	orders := append([]domain.BuildOrder{}, state.PendingBuilds...)
-	orders = append(orders, state.MinisterBuildOrders...)
+	orders := append([]domain.BuildOrder{}, state.TurnRuntime.Planning.BuildOrders...)
+	orders = append(orders, state.TurnRuntime.Planning.MinisterBuilds...)
 
 	for _, order := range orders {
 		if _, ok := state.Players[order.PlayerID]; !ok {

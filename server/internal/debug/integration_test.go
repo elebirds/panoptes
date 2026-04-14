@@ -142,7 +142,7 @@ func TestRoundTrip(t *testing.T) {
 
 	startTurn := initMsg.GetTurn()
 	waitFor(t, 3*time.Second, func() bool {
-		return int32(room.Turn) > startTurn
+		return room.State() != nil && int32(room.State().Turn) > startTurn
 	})
 	t.Log("✓ Turn 正确递增")
 }
