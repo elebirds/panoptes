@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现调试支持模块的中间件逻辑。
+
 package debug
 
 import (
@@ -6,6 +12,7 @@ import (
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 type playerSnapshot struct {
@@ -35,8 +42,8 @@ func (l *MessageLogger) LogOutgoing(playerID string, raw []byte) {
 		return
 	}
 
-	envelope := &pb.Envelope{}
-	if err := l.jsonOpts.Unmarshal(raw, envelope); err != nil {
+	frame := &pb.ServerFrame{}
+	if err := l.jsonOpts.Unmarshal(raw, frame); err != nil {
 		slog.Debug("→ 推送消息",
 			"player_id", playerID,
 			"type", "unknown",
@@ -47,13 +54,31 @@ func (l *MessageLogger) LogOutgoing(playerID string, raw []byte) {
 		return
 	}
 
-	turn, phase := l.resolveOutgoingSnapshot(playerID, envelope.GetType(), envelope.GetPayload())
+	msgType, payload, ok := outgoingMessage(frame)
+	if !ok {
+		slog.Debug("→ 推送消息",
+			"player_id", playerID,
+			"type", "unknown",
+			"turn", int32(0),
+			"phase", "",
+			"payload_size", len(raw),
+		)
+		return
+	}
+
+	turn, phase := l.resolveOutgoingSnapshot(playerID, payload)
+	payloadSize := len(raw)
+	if payload != nil {
+		if encoded, err := protojson.Marshal(payload); err == nil {
+			payloadSize = len(encoded)
+		}
+	}
 	slog.Debug("→ 推送消息",
 		"player_id", playerID,
-		"type", envelope.GetType(),
+		"type", msgType,
 		"turn", turn,
 		"phase", phase,
-		"payload_size", len(envelope.GetPayload()),
+		"payload_size", payloadSize,
 	)
 }
 
@@ -69,30 +94,102 @@ func (l *MessageLogger) LogIncoming(playerID string, msgType string, payloadJSON
 	)
 }
 
-func (l *MessageLogger) resolveOutgoingSnapshot(playerID string, msgType string, payload string) (int32, string) {
+func (l *MessageLogger) resolveOutgoingSnapshot(playerID string, msg proto.Message) (int32, string) {
 	prev := l.snapshot(playerID)
 	turn := prev.turn
 	phase := prev.phase
 
-	switch msgType {
-	case "MsgGameInit":
-		msg := &pb.MsgGameInit{}
-		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
-			turn = msg.GetTurn()
-			phase = msg.GetPhase()
-		}
-	case "MsgDomesticPhaseStart":
-		msg := &pb.MsgDomesticPhaseStart{}
-		if err := l.jsonOpts.Unmarshal([]byte(payload), msg); err == nil {
-			turn = msg.GetTurn()
-			phase = "domestic"
-		}
-	case "MsgCombatPhaseStart":
-		phase = "combat"
+	switch typed := msg.(type) {
+	case *pb.MsgGameInit:
+		turn = typed.GetTurn()
+		phase = typed.GetPhase()
+	case *pb.MsgPlanningStart:
+		turn = typed.GetTurn()
+		phase = typed.GetPhase()
+	case *pb.MsgTurnSettlement:
+		turn = typed.GetTurn()
+		phase = typed.GetPhase()
 	}
 
 	l.storeSnapshot(playerID, playerSnapshot{turn: turn, phase: phase})
 	return turn, phase
+}
+
+func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
+	if frame == nil {
+		return "", nil, false
+	}
+
+	switch target := frame.Target.(type) {
+	case *pb.ServerFrame_Auth:
+		if target.Auth == nil || target.Auth.Body == nil {
+			return "AuthEvent", nil, false
+		}
+		switch body := target.Auth.Body.(type) {
+		case *pb.AuthEvent_LoginSuccess:
+			return "MsgLoginSuccess", body.LoginSuccess, true
+		case *pb.AuthEvent_AuthError:
+			return "MsgAuthError", body.AuthError, true
+		case *pb.AuthEvent_ClientRuntimeConfig:
+			return "MsgClientRuntimeConfig", body.ClientRuntimeConfig, true
+		}
+	case *pb.ServerFrame_Lobby:
+		if target.Lobby == nil || target.Lobby.Body == nil {
+			return "LobbyEvent", nil, false
+		}
+		switch body := target.Lobby.Body.(type) {
+		case *pb.LobbyEvent_RoomCreated:
+			return "MsgRoomCreated", body.RoomCreated, true
+		case *pb.LobbyEvent_RoomState:
+			return "MsgRoomState", body.RoomState, true
+		case *pb.LobbyEvent_GameStarting:
+			return "MsgGameStarting", body.GameStarting, true
+		case *pb.LobbyEvent_PlayerKicked:
+			return "MsgPlayerKicked", body.PlayerKicked, true
+		case *pb.LobbyEvent_LobbyError:
+			return "MsgLobbyError", body.LobbyError, true
+		}
+	case *pb.ServerFrame_Game:
+		if target.Game == nil || target.Game.Body == nil {
+			return "GameEvent", nil, false
+		}
+		switch body := target.Game.Body.(type) {
+		case *pb.GameEvent_StaticCatalogManifest:
+			return "MsgStaticCatalogManifest", body.StaticCatalogManifest, true
+		case *pb.GameEvent_StaticCatalogSnapshot:
+			return "MsgStaticCatalogSnapshot", body.StaticCatalogSnapshot, true
+		case *pb.GameEvent_GameInit:
+			return "MsgGameInit", body.GameInit, true
+		case *pb.GameEvent_PlanningStart:
+			return "MsgPlanningStart", body.PlanningStart, true
+		case *pb.GameEvent_PlanningSnapshot:
+			return "MsgPlanningSnapshot", body.PlanningSnapshot, true
+		case *pb.GameEvent_PlanningPathPreviewResponse:
+			return "MsgPlanningPathPreviewResponse", body.PlanningPathPreviewResponse, true
+		case *pb.GameEvent_TokenResult:
+			return "MsgTokenResult", body.TokenResult, true
+		case *pb.GameEvent_RevealResult:
+			return "MsgRevealResult", body.RevealResult, true
+		case *pb.GameEvent_ResearchResult:
+			return "MsgResearchResult", body.ResearchResult, true
+		case *pb.GameEvent_SetBuildingRecipeResult:
+			return "MsgSetBuildingRecipeResult", body.SetBuildingRecipeResult, true
+		case *pb.GameEvent_TurnReport:
+			return "MsgTurnReport", body.TurnReport, true
+		case *pb.GameEvent_TurnSettlement:
+			return "MsgTurnSettlement", body.TurnSettlement, true
+		case *pb.GameEvent_GameOver:
+			return "MsgGameOver", body.GameOver, true
+		case *pb.GameEvent_MinisterReportChunk:
+			return "MsgMinisterReportChunk", body.MinisterReportChunk, true
+		case *pb.GameEvent_MinisterMetrics:
+			return "MsgMinisterMetrics", body.MinisterMetrics, true
+		}
+	case *pb.ServerFrame_Problem:
+		return "Problem", target.Problem, target.Problem != nil
+	}
+
+	return "", nil, false
 }
 
 func (l *MessageLogger) snapshot(playerID string) playerSnapshot {

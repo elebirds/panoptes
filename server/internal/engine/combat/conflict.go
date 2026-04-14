@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现单位结算引擎的冲突解析辅助逻辑。
+
 package combat
 
 import (
@@ -12,10 +18,10 @@ type ConflictSystem struct{}
 
 func (s *ConflictSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	conflicts := make([]domain.Conflict, 0)
-	for i := 0; i < len(state.PendingMoves); i++ {
-		for j := i + 1; j < len(state.PendingMoves); j++ {
-			a := state.PendingMoves[i]
-			b := state.PendingMoves[j]
+	for i := 0; i < len(state.TurnRuntime.Resolving.PendingMoves); i++ {
+		for j := i + 1; j < len(state.TurnRuntime.Resolving.PendingMoves); j++ {
+			a := state.TurnRuntime.Resolving.PendingMoves[i]
+			b := state.TurnRuntime.Resolving.PendingMoves[j]
 			if a.Faction == b.Faction {
 				continue
 			}
@@ -38,7 +44,7 @@ func (s *ConflictSystem) Run(world donburi.World, state *domain.GameState) []eve
 		return conflicts[i].UnitBID < conflicts[j].UnitBID
 	})
 
-	state.PendingConflicts = conflicts
+	state.TurnRuntime.Resolving.Conflicts = conflicts
 	events := make([]event.Event, 0, len(conflicts))
 	for _, c := range conflicts {
 		events = append(events, event.ConflictResolvedEvent{

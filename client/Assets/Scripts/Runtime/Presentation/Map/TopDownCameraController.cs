@@ -24,8 +24,13 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool invertDrag = true;
         [SerializeField] private float dragPanSpeed = 0.02f; // world units per pixel
 
+        [Header("Pan - Keyboard")]
+        [SerializeField] private bool enableKeyboardPan = true;
+        [SerializeField] private bool enableArrowKeyPan = true;
+        [SerializeField] private float keyboardPanSpeed = 14f; // world units / second
+
         [Header("Pan - Edge Scroll")]
-        [SerializeField] private bool enableEdgeScroll = true;
+        [SerializeField] private bool enableEdgeScroll = false;
         [SerializeField] private bool edgeScrollWhileDragging = false;
         [SerializeField] private float edgeThreshold = 24f; // px
         [SerializeField] private float edgePanSpeed = 14f;  // world units / second
@@ -36,13 +41,31 @@ namespace Panoptes.Presentation.Map
         [Header("Zoom")]
         [SerializeField] private float scrollZoomSpeed = 4f;
         [SerializeField] private float inputSystemScrollScale = 0.01f;
+        [SerializeField] private float scrollZoomMultiplier = 3f;
+        [SerializeField] private float scrollSensitivity = 2f;
+        [SerializeField] private float maxZoomStepPerFrame = 1.2f;
+        [SerializeField] private bool invertScrollDirection = false;
         [SerializeField] private bool perspectiveZoomByFov = true;
+        [SerializeField] private bool alsoDollyWhenPerspectiveZoomByFov = true;
+        [SerializeField] private float perspectiveDollySpeed = 2.2f;
         [SerializeField] private float minOrthoSize = 5f;
         [SerializeField] private float maxOrthoSize = 28f;
         [SerializeField] private float minFov = 25f;
         [SerializeField] private float maxFov = 60f;
-        [SerializeField] private float minHeight = 8f;
-        [SerializeField] private float maxHeight = 40f;
+        [SerializeField] private float minHeight = 1.5f;
+        [SerializeField] private float maxHeight = 60f;
+
+        [Header("Zoom - Perspective Tilt")]
+        [SerializeField] private bool enableZoomTiltInPerspective = true;
+        [SerializeField] private bool keepGroundFocusWhenTilt = true;
+        [SerializeField] private float farZoomPitch = 58f;
+        [SerializeField] private float nearZoomPitch = 24f;
+        [SerializeField] private float tiltSmoothTime = 0.12f;
+        
+        [Header("Start Pose Guard")]
+        [SerializeField] private bool autoFixInvalidStartPose = true;
+        [SerializeField] private float fallbackStartHeight = 14f;
+        [SerializeField] private float fallbackStartPitch = 50f;
 
         [Header("Bounds")]
         [SerializeField] private bool clampToBounds = true;
@@ -60,6 +83,7 @@ namespace Panoptes.Presentation.Map
         private Camera _camera;
         private Vector3 _targetPosition;
         private Vector3 _moveVelocity;
+        private float _tiltPitchVelocity;
         private bool _dragging;
         private Vector3 _lastMousePosition;
         private bool _hasMouse;
@@ -76,6 +100,7 @@ namespace Panoptes.Presentation.Map
         private void OnEnable()
         {
             EnsureZoomRanges();
+            ApplyStartPoseGuard();
             _targetPosition = transform.position;
             ClampCurrentZoomToRange();
         }
@@ -102,10 +127,12 @@ namespace Panoptes.Presentation.Map
             EnsureZoomRanges();
             ClampCurrentZoomToRange();
             HandleZoom();
+            HandlePerspectiveZoomTilt(dt);
 
             var dragDelta = GetDragPanDelta();
+            var keyboardDelta = GetKeyboardPanDelta(dt);
             var edgeDelta = GetEdgePanDelta(dt);
-            var panDelta = dragDelta + edgeDelta;
+            var panDelta = dragDelta + keyboardDelta + edgeDelta;
             _targetPosition += panDelta;
 
             if (clampToBounds)
@@ -129,6 +156,11 @@ namespace Panoptes.Presentation.Map
             boundsPadding = padding;
         }
 
+        public void SetBoundsGroundY(float y)
+        {
+            boundsGroundY = y;
+        }
+
         public void SnapTargetToCurrentPosition()
         {
             _targetPosition = transform.position;
@@ -143,6 +175,48 @@ namespace Panoptes.Presentation.Map
                 transform.position = position;
                 _moveVelocity = Vector3.zero;
             }
+        }
+
+        public bool FocusWorldPoint(Vector3 worldPoint, bool snapInstantly = true)
+        {
+            if (_camera == null)
+            {
+                _camera = GetComponent<Camera>();
+                if (_camera == null)
+                {
+                    _camera = Camera.main;
+                }
+            }
+
+            if (_camera == null)
+            {
+                return false;
+            }
+
+            var targetGroundPoint = new Vector3(worldPoint.x, boundsGroundY, worldPoint.z);
+            if (TryProjectViewportPointToGround(new Vector2(0.5f, 0.5f), Vector3.zero, out var currentCenterGround))
+            {
+                var delta = targetGroundPoint - currentCenterGround;
+                delta.y = 0f;
+                _targetPosition += delta;
+            }
+            else
+            {
+                _targetPosition = new Vector3(targetGroundPoint.x, _targetPosition.y, targetGroundPoint.z);
+            }
+
+            if (clampToBounds)
+            {
+                ApplyBounds(1f / 60f, true);
+            }
+
+            if (snapInstantly)
+            {
+                transform.position = _targetPosition;
+                _moveVelocity = Vector3.zero;
+            }
+
+            return true;
         }
 
         // ===== Zoom Runtime API (for UI panel bindings) =====
@@ -218,10 +292,51 @@ namespace Panoptes.Presentation.Map
             inputSystemScrollScale = Mathf.Max(0f, value);
         }
 
+        public void SetScrollZoomMultiplier(float value)
+        {
+            scrollZoomMultiplier = Mathf.Max(0f, value);
+        }
+
+        public void SetInvertScrollDirection(bool enabled)
+        {
+            invertScrollDirection = enabled;
+        }
+
         public void SetPerspectiveZoomByFov(bool enabled)
         {
             perspectiveZoomByFov = enabled;
             ClampCurrentZoomToRange();
+        }
+
+        public void SetAlsoDollyWhenPerspectiveZoomByFov(bool enabled)
+        {
+            alsoDollyWhenPerspectiveZoomByFov = enabled;
+        }
+
+        public void SetPerspectiveDollySpeed(float value)
+        {
+            perspectiveDollySpeed = Mathf.Max(0f, value);
+        }
+
+        public void SetZoomTiltEnabled(bool enabled)
+        {
+            enableZoomTiltInPerspective = enabled;
+        }
+
+        public void SetZoomTiltPitchRange(float farPitchValue, float nearPitchValue)
+        {
+            farZoomPitch = Mathf.Clamp(farPitchValue, -89f, 89f);
+            nearZoomPitch = Mathf.Clamp(nearPitchValue, -89f, 89f);
+        }
+
+        public void SetZoomTiltSmoothTime(float value)
+        {
+            tiltSmoothTime = Mathf.Max(0.01f, value);
+        }
+
+        public void SetKeepGroundFocusWhenTilt(bool enabled)
+        {
+            keepGroundFocusWhenTilt = enabled;
         }
 
         public void SetMinOrthoSize(float value)
@@ -268,36 +383,129 @@ namespace Panoptes.Presentation.Map
 
         private void HandleZoom()
         {
-            var scroll = GetScrollDeltaY();
-            if (Mathf.Abs(scroll) <= 0.0001f)
+            var rawScroll = GetScrollDeltaY();
+            if (Mathf.Abs(rawScroll) <= 0.0001f)
+            {
+                return;
+            }
+
+            // Normalize wheel burst values (Windows often reports +/-120) into stable per-frame input.
+            var normalizedScroll = Mathf.Clamp(rawScroll, -1f, 1f);
+            var zoomDelta = normalizedScroll * scrollZoomMultiplier * Mathf.Max(0f, scrollSensitivity) * (invertScrollDirection ? -1f : 1f);
+            zoomDelta = Mathf.Clamp(zoomDelta, -Mathf.Max(0.01f, maxZoomStepPerFrame), Mathf.Max(0.01f, maxZoomStepPerFrame));
+            if (Mathf.Abs(zoomDelta) <= 0.0001f)
             {
                 return;
             }
 
             if (_camera.orthographic)
             {
-                _camera.orthographicSize = Mathf.Clamp(
-                    _camera.orthographicSize - scroll * scrollZoomSpeed,
-                    minOrthoSize,
-                    maxOrthoSize);
+                var current = _camera.orthographicSize;
+                var next = Mathf.Clamp(current - zoomDelta * scrollZoomSpeed, minOrthoSize, maxOrthoSize);
+                if (Mathf.Abs(next - current) <= 0.0001f)
+                {
+                    return;
+                }
+
+                _camera.orthographicSize = next;
                 return;
             }
 
             if (perspectiveZoomByFov)
             {
-                _camera.fieldOfView = Mathf.Clamp(
-                    _camera.fieldOfView - scroll * scrollZoomSpeed,
-                    minFov,
-                    maxFov);
+                var currentFov = _camera.fieldOfView;
+                var nextFov = Mathf.Clamp(currentFov - zoomDelta * scrollZoomSpeed, minFov, maxFov);
+                var appliedFovDelta = currentFov - nextFov;
+                var hasFovChange = Mathf.Abs(appliedFovDelta) > 0.0001f;
+                if (hasFovChange)
+                {
+                    _camera.fieldOfView = nextFov;
+                }
+
+                if (alsoDollyWhenPerspectiveZoomByFov && perspectiveDollySpeed > 0f)
+                {
+                    // If FOV is clamped, still allow a controlled dolly so forward scroll doesn't "die".
+                    var appliedZoomDelta = hasFovChange
+                        ? (appliedFovDelta / Mathf.Max(0.0001f, scrollZoomSpeed))
+                        : zoomDelta;
+                    var desiredMove = transform.forward * (appliedZoomDelta * perspectiveDollySpeed);
+
+                    var currentY = _targetPosition.y;
+                    var desiredY = currentY + desiredMove.y;
+                    var clampedY = Mathf.Clamp(desiredY, minHeight, maxHeight);
+                    var yDenom = desiredY - currentY;
+                    var yRatio = Mathf.Abs(yDenom) > 0.0001f
+                        ? Mathf.Clamp01((clampedY - currentY) / yDenom)
+                        : 1f;
+
+                    _targetPosition += desiredMove * yRatio;
+                    _targetPosition = new Vector3(_targetPosition.x, clampedY, _targetPosition.z);
+                }
+
+                if (!hasFovChange)
+                {
+                    // FOV reached boundary and no dolly effect available: hard-stop.
+                    return;
+                }
+
+                return;
             }
-            else
+
+            // Alternate perspective zoom: move camera along Y.
+            var targetY = _targetPosition.y;
+            var desiredTargetY = targetY + (-zoomDelta * scrollZoomSpeed);
+            var nextTargetY = Mathf.Clamp(desiredTargetY, minHeight, maxHeight);
+            if (Mathf.Abs(nextTargetY - targetY) <= 0.0001f)
             {
-                // Alternate perspective zoom: move camera along Y.
-                _targetPosition += Vector3.up * (-scroll * scrollZoomSpeed);
-                _targetPosition = new Vector3(
-                    _targetPosition.x,
-                    Mathf.Clamp(_targetPosition.y, minHeight, maxHeight),
-                    _targetPosition.z);
+                // At zoom limit: block.
+                return;
+            }
+
+            _targetPosition = new Vector3(_targetPosition.x, nextTargetY, _targetPosition.z);
+        }
+
+        private void HandlePerspectiveZoomTilt(float dt)
+        {
+            if (_camera == null || _camera.orthographic || !enableZoomTiltInPerspective)
+            {
+                return;
+            }
+
+            var currentEuler = transform.eulerAngles;
+            var currentPitch = NormalizeAngle180(currentEuler.x);
+            var targetPitch = Mathf.Lerp(farZoomPitch, nearZoomPitch, GetZoomNormalized());
+            var nextPitch = Mathf.SmoothDampAngle(
+                currentPitch,
+                targetPitch,
+                ref _tiltPitchVelocity,
+                Mathf.Max(0.01f, tiltSmoothTime),
+                Mathf.Infinity,
+                dt);
+
+            if (Mathf.Abs(Mathf.DeltaAngle(currentPitch, nextPitch)) < 0.01f)
+            {
+                return;
+            }
+
+            var yaw = currentEuler.y;
+            var previousRotation = transform.rotation;
+            var nextRotation = Quaternion.Euler(nextPitch, yaw, 0f);
+
+            Vector3 focusBefore = default;
+            var hasFocus = false;
+            if (keepGroundFocusWhenTilt)
+            {
+                hasFocus = TryProjectCameraForwardToGround(transform.position, previousRotation, out focusBefore);
+            }
+
+            transform.rotation = nextRotation;
+
+            if (hasFocus && TryProjectCameraForwardToGround(transform.position, nextRotation, out var focusAfter))
+            {
+                var correction = focusBefore - focusAfter;
+                correction.y = 0f;
+                transform.position += correction;
+                _targetPosition += correction;
             }
         }
 
@@ -345,6 +553,39 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void ApplyStartPoseGuard()
+        {
+            if (!autoFixInvalidStartPose || _camera == null || _camera.orthographic)
+            {
+                return;
+            }
+
+            var pos = transform.position;
+            var euler = transform.eulerAngles;
+            var changed = false;
+
+            if (pos.y <= 0.01f)
+            {
+                pos.y = Mathf.Clamp(fallbackStartHeight, minHeight, maxHeight);
+                changed = true;
+            }
+
+            // Scene/default camera rotation (pitch almost 0) causes horizon/black view in top-down map.
+            if (Mathf.Abs(transform.forward.y) < 0.05f)
+            {
+                euler.x = fallbackStartPitch;
+                euler.z = 0f;
+                changed = true;
+            }
+
+            if (!changed)
+            {
+                return;
+            }
+
+            transform.SetPositionAndRotation(pos, Quaternion.Euler(euler));
+        }
+
         private Vector3 GetDragPanDelta()
         {
             if (!enableDragPan)
@@ -352,12 +593,12 @@ namespace Panoptes.Presentation.Map
                 return Vector3.zero;
             }
 
-            if (GetLeftMouseButtonDown())
+            if (GetPanMouseButtonDown())
             {
                 _dragging = true;
                 _lastMousePosition = GetMousePosition();
             }
-            else if (GetLeftMouseButtonUp())
+            else if (GetPanMouseButtonUp())
             {
                 _dragging = false;
             }
@@ -391,6 +632,45 @@ namespace Panoptes.Presentation.Map
             var directionSign = invertDrag ? -1f : 1f;
             // Reduce drag pan speed to half for finer control.
             return (right * delta.x + forward * delta.y) * directionSign * dragPanSpeed * 0.5f;
+        }
+
+        private Vector3 GetKeyboardPanDelta(float dt)
+        {
+            if (!enableKeyboardPan || dt <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            var horizontal = GetHorizontalAxis();
+            var vertical = GetVerticalAxis();
+            var input = new Vector2(horizontal, vertical);
+            if (input.sqrMagnitude < 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            if (input.sqrMagnitude > 1f)
+            {
+                input.Normalize();
+            }
+
+            var right = transform.right;
+            right.y = 0f;
+            if (right.sqrMagnitude < 0.0001f)
+            {
+                right = Vector3.right;
+            }
+            right.Normalize();
+
+            var forward = transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+            forward.Normalize();
+
+            return (right * input.x + forward * input.y) * (keyboardPanSpeed * dt);
         }
 
         private Vector3 GetEdgePanDelta(float dt)
@@ -569,6 +849,40 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
+        private bool TryProjectCameraForwardToGround(Vector3 origin, Quaternion rotation, out Vector3 point)
+        {
+            var direction = rotation * Vector3.forward;
+            if (Mathf.Abs(direction.y) < 0.00001f)
+            {
+                point = Vector3.zero;
+                return false;
+            }
+
+            var t = (boundsGroundY - origin.y) / direction.y;
+            if (t < 0f)
+            {
+                point = Vector3.zero;
+                return false;
+            }
+
+            point = origin + direction * t;
+            return true;
+        }
+
+        private static float NormalizeAngle180(float angle)
+        {
+            var normalized = angle % 360f;
+            if (normalized > 180f)
+            {
+                normalized -= 360f;
+            }
+            if (normalized < -180f)
+            {
+                normalized += 360f;
+            }
+            return normalized;
+        }
+
         private bool HasMouse()
         {
 #if ENABLE_INPUT_SYSTEM
@@ -604,23 +918,97 @@ namespace Panoptes.Presentation.Map
 #endif
         }
 
-        private bool GetLeftMouseButtonDown()
+        private bool GetPanMouseButtonDown()
         {
 #if ENABLE_INPUT_SYSTEM
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.wasPressedThisFrame;
+            return mouse != null && mouse.middleButton.wasPressedThisFrame;
 #else
-            return Input.GetMouseButtonDown(0);
+            return Input.GetMouseButtonDown(2);
 #endif
         }
 
-        private bool GetLeftMouseButtonUp()
+        private bool GetPanMouseButtonUp()
         {
 #if ENABLE_INPUT_SYSTEM
             var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.wasReleasedThisFrame;
+            return mouse != null && mouse.middleButton.wasReleasedThisFrame;
 #else
-            return Input.GetMouseButtonUp(0);
+            return Input.GetMouseButtonUp(2);
+#endif
+        }
+
+        private float GetHorizontalAxis()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return 0f;
+            }
+
+            float value = 0f;
+            if (keyboard.aKey.isPressed || (enableArrowKeyPan && keyboard.leftArrowKey.isPressed))
+            {
+                value -= 1f;
+            }
+
+            if (keyboard.dKey.isPressed || (enableArrowKeyPan && keyboard.rightArrowKey.isPressed))
+            {
+                value += 1f;
+            }
+
+            return Mathf.Clamp(value, -1f, 1f);
+#else
+            float value = 0f;
+            if (Input.GetKey(KeyCode.A) || (enableArrowKeyPan && Input.GetKey(KeyCode.LeftArrow)))
+            {
+                value -= 1f;
+            }
+
+            if (Input.GetKey(KeyCode.D) || (enableArrowKeyPan && Input.GetKey(KeyCode.RightArrow)))
+            {
+                value += 1f;
+            }
+
+            return Mathf.Clamp(value, -1f, 1f);
+#endif
+        }
+
+        private float GetVerticalAxis()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return 0f;
+            }
+
+            float value = 0f;
+            if (keyboard.sKey.isPressed || (enableArrowKeyPan && keyboard.downArrowKey.isPressed))
+            {
+                value -= 1f;
+            }
+
+            if (keyboard.wKey.isPressed || (enableArrowKeyPan && keyboard.upArrowKey.isPressed))
+            {
+                value += 1f;
+            }
+
+            return Mathf.Clamp(value, -1f, 1f);
+#else
+            float value = 0f;
+            if (Input.GetKey(KeyCode.S) || (enableArrowKeyPan && Input.GetKey(KeyCode.DownArrow)))
+            {
+                value -= 1f;
+            }
+
+            if (Input.GetKey(KeyCode.W) || (enableArrowKeyPan && Input.GetKey(KeyCode.UpArrow)))
+            {
+                value += 1f;
+            }
+
+            return Mathf.Clamp(value, -1f, 1f);
 #endif
         }
 
@@ -628,6 +1016,14 @@ namespace Panoptes.Presentation.Map
         private void OnValidate()
         {
             EnsureZoomRanges();
+            scrollZoomMultiplier = Mathf.Max(0f, scrollZoomMultiplier);
+            scrollSensitivity = Mathf.Max(0f, scrollSensitivity);
+            maxZoomStepPerFrame = Mathf.Max(0.01f, maxZoomStepPerFrame);
+            perspectiveDollySpeed = Mathf.Max(0f, perspectiveDollySpeed);
+            tiltSmoothTime = Mathf.Max(0.01f, tiltSmoothTime);
+            farZoomPitch = Mathf.Clamp(farZoomPitch, -89f, 89f);
+            nearZoomPitch = Mathf.Clamp(nearZoomPitch, -89f, 89f);
+            fallbackStartHeight = Mathf.Max(0.1f, fallbackStartHeight);
         }
 
         private void OnDrawGizmosSelected()

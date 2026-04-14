@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using UnityEngine;
@@ -10,13 +11,6 @@ namespace Panoptes.Core.Application.Intents
 {
     public static class GameIntents
     {
-        private enum LockSource
-        {
-            None,
-            Domestic,
-            Combat
-        }
-
         [Serializable]
         private sealed class MinisterDirectivePayload
         {
@@ -25,7 +19,7 @@ namespace Panoptes.Core.Application.Intents
         }
 
         private static GameStateCache _cache;
-        private static LockSource _lockSource = LockSource.None;
+        public static event Action TurnSubmitRequested;
 
         public static void Initialize(GameStateCache cache)
         {
@@ -47,7 +41,6 @@ namespace Panoptes.Core.Application.Intents
 
             _cache = cache;
             Subscribe(_cache);
-            _lockSource = LockSource.None;
             Debug.Log("[GameIntents] Initialize");
         }
 
@@ -59,7 +52,6 @@ namespace Panoptes.Core.Application.Intents
                 _cache = null;
             }
 
-            _lockSource = LockSource.None;
             ActionLock.Release();
             Debug.Log("[GameIntents] Dispose");
         }
@@ -79,20 +71,43 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetPolicy");
         }
 
-        public static void BuildToken(string nodeId, string buildingType)
+        public static void BuildToken(string nodeId, string buildingType, string castleId = null)
         {
             if (ActionLock.IsLocked)
             {
                 return;
             }
 
-            var msg = new MsgTokenBuild
+            var msg = new MsgBuildStructure
             {
                 NodeId = nodeId ?? string.Empty,
-                BuildingType = buildingType ?? string.Empty
+                BuildingType = buildingType ?? string.Empty,
+                CastleId = castleId ?? string.Empty
             };
             MessageSender.Send(msg);
-            Debug.Log("[GameIntents] BuildToken");
+            Debug.Log("[GameIntents] BuildStructure");
+        }
+
+        public static void ExpandTerritory(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            IssueUnitOrder(unitId, "settle_city", centerNodeId, null, null);
+            Debug.Log("[GameIntents] ExpandTerritory");
+        }
+
+        public static void DeployTerritoryUnit(string unitId, string centerNodeId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            IssueUnitOrder(unitId, "settle_city", centerNodeId, null, null);
+            Debug.Log("[GameIntents] DeployTerritoryUnit");
         }
 
         public static void RevealToken(string nodeId)
@@ -102,54 +117,15 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgTokenReveal
+            var msg = new MsgRevealNode
             {
                 NodeId = nodeId ?? string.Empty
             };
             MessageSender.Send(msg);
-            Debug.Log("[GameIntents] RevealToken");
+            Debug.Log("[GameIntents] RevealNode");
         }
 
-        public static void VetoToken(string actionId)
-        {
-            if (ActionLock.IsLocked)
-            {
-                return;
-            }
-
-            var msg = new MsgTokenVeto
-            {
-                ActionId = actionId ?? string.Empty
-            };
-            MessageSender.Send(msg);
-            Debug.Log("[GameIntents] VetoToken");
-        }
-
-        public static void AdjustFlow(string fromNodeId, string toNodeId, string resourceType, int delta)
-        {
-            if (ActionLock.IsLocked)
-            {
-                return;
-            }
-
-            var msg = new MsgTokenAdjustFlow
-            {
-                FromNode = fromNodeId ?? string.Empty,
-                ToNode = toNodeId ?? string.Empty,
-                ResourceType = resourceType ?? string.Empty,
-                Amount = delta
-            };
-            MessageSender.Send(msg);
-            Debug.Log("[GameIntents] AdjustFlow");
-        }
-
-        public static void AdjustFlow(string fromNodeId, string toNodeId, int delta)
-        {
-            Debug.LogWarning("[GameIntents] AdjustFlow called without resourceType, sending empty resource_type.");
-            AdjustFlow(fromNodeId, toNodeId, string.Empty, delta);
-        }
-
-        public static void SubmitDomestic()
+        public static void SubmitTurn()
         {
             if (ActionLock.IsLocked)
             {
@@ -157,9 +133,9 @@ namespace Panoptes.Core.Application.Intents
             }
 
             ActionLock.Acquire();
-            _lockSource = LockSource.Domestic;
-            MessageSender.Send(new MsgSubmitDomestic());
-            Debug.Log("[GameIntents] SubmitDomestic");
+            MessageSender.Send(new MsgSubmitTurn());
+            Debug.Log("[GameIntents] SubmitTurn");
+            TurnSubmitRequested?.Invoke();
         }
 
         public static void SetWarZone(List<string> nodeIds)
@@ -169,7 +145,11 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgSetWarZone();
+            var msg = new MsgSetWarZone
+            {
+                ZoneId = "frontline",
+                Name = "Frontline"
+            };
             if (nodeIds != null)
             {
                 msg.NodeIds.AddRange(nodeIds);
@@ -179,21 +159,6 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetWarZone");
         }
 
-        public static void VetoCombat(string unitId)
-        {
-            if (ActionLock.IsLocked)
-            {
-                return;
-            }
-
-            var msg = new MsgTokenVetoCombat
-            {
-                UnitId = unitId ?? string.Empty
-            };
-            MessageSender.Send(msg);
-            Debug.Log("[GameIntents] VetoCombat");
-        }
-
         public static void MoveUnit(string unitId, string targetNodeId)
         {
             if (ActionLock.IsLocked)
@@ -201,13 +166,25 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgTokenMicro
+            IssueUnitOrder(unitId, "move", targetNodeId, null, null);
+            Debug.Log("[GameIntents] MoveUnit");
+        }
+
+        public static void PreviewMove(string requestId, string unitId, string targetNodeId)
+        {
+            if (ActionLock.IsLocked)
             {
+                return;
+            }
+
+            var msg = new MsgPlanningPathPreviewRequest
+            {
+                RequestId = requestId ?? string.Empty,
                 UnitId = unitId ?? string.Empty,
-                TargetNode = targetNodeId ?? string.Empty
+                Action = "move",
+                TargetNodeId = targetNodeId ?? string.Empty
             };
             MessageSender.Send(msg);
-            Debug.Log("[GameIntents] MoveUnit");
         }
 
         public static void MicroUnit(string unitId, string targetNodeId)
@@ -215,17 +192,37 @@ namespace Panoptes.Core.Application.Intents
             MoveUnit(unitId, targetNodeId);
         }
 
-        public static void SubmitCombat()
+        public static void AttackUnit(string unitId, string targetUnitId)
         {
             if (ActionLock.IsLocked)
             {
                 return;
             }
 
-            ActionLock.Acquire();
-            _lockSource = LockSource.Combat;
-            MessageSender.Send(new MsgSubmitCombat());
-            Debug.Log("[GameIntents] SubmitCombat");
+            IssueUnitOrder(unitId, "attack", null, targetUnitId, null);
+            Debug.Log("[GameIntents] AttackUnit");
+        }
+
+        public static void HoldUnit(string unitId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            IssueUnitOrder(unitId, "hold", null, null, null);
+            Debug.Log("[GameIntents] HoldUnit");
+        }
+
+        public static void ChargeUnit(string unitId, string targetNodeId, string targetUnitId = null)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            IssueUnitOrder(unitId, "charge", targetNodeId, targetUnitId, null);
+            Debug.Log("[GameIntents] ChargeUnit");
         }
 
         public static void AcceptMinisterAction(string actionId)
@@ -235,13 +232,12 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgMinisterDirective
+            var msg = new MsgSetMinisterDirective
             {
                 MinisterRole = string.Empty,
                 Content = BuildMinisterDirectiveContent("accept", actionId)
             };
             MessageSender.Send(msg);
-            Debug.LogWarning("[GameIntents] MinisterDirective encoding pending protocol confirmation, using JSON content payload.");
             Debug.Log("[GameIntents] AcceptMinisterAction");
         }
 
@@ -252,50 +248,47 @@ namespace Panoptes.Core.Application.Intents
                 return;
             }
 
-            var msg = new MsgMinisterDirective
+            var msg = new MsgSetMinisterDirective
             {
                 MinisterRole = string.Empty,
                 Content = BuildMinisterDirectiveContent("reject", actionId)
             };
             MessageSender.Send(msg);
-            Debug.LogWarning("[GameIntents] MinisterDirective encoding pending protocol confirmation, using JSON content payload.");
             Debug.Log("[GameIntents] RejectMinisterAction");
         }
 
         private static void Subscribe(GameStateCache cache)
         {
-            cache.OnDomesticSettled += OnDomesticSettled;
-            cache.OnCombatSettled += OnCombatSettled;
+            cache.OnPhaseChanged += OnPhaseChanged;
+            cache.OnGameOver += OnGameOver;
         }
 
         private static void Unsubscribe(GameStateCache cache)
         {
-            cache.OnDomesticSettled -= OnDomesticSettled;
-            cache.OnCombatSettled -= OnCombatSettled;
+            cache.OnPhaseChanged -= OnPhaseChanged;
+            cache.OnGameOver -= OnGameOver;
         }
 
-        private static void OnDomesticSettled(DomesticSettledEvent _)
+        private static void OnPhaseChanged(PhaseChangedEvent evt)
         {
-            if (!ActionLock.IsLocked || _lockSource != LockSource.Domestic)
+            if (!ActionLock.IsLocked || evt == null || !evt.IsInteractive)
             {
                 return;
             }
 
             ActionLock.Release();
-            _lockSource = LockSource.None;
-            Debug.Log("[GameIntents] DomesticSettled -> unlock");
+            Debug.Log($"[GameIntents] PhaseChanged -> unlock at {evt.Phase}");
         }
 
-        private static void OnCombatSettled(CombatSettledEvent _)
+        private static void OnGameOver(GameOverEvent _)
         {
-            if (!ActionLock.IsLocked || _lockSource != LockSource.Combat)
+            if (!ActionLock.IsLocked)
             {
                 return;
             }
 
             ActionLock.Release();
-            _lockSource = LockSource.None;
-            Debug.Log("[GameIntents] CombatSettled -> unlock");
+            Debug.Log("[GameIntents] GameOver -> unlock");
         }
 
         private static string BuildMinisterDirectiveContent(string directiveType, string actionId)
@@ -306,6 +299,19 @@ namespace Panoptes.Core.Application.Intents
                 action_id = actionId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
+        }
+
+        private static void IssueUnitOrder(string unitId, string action, string targetNodeId, string targetUnitId, string secondaryNodeId)
+        {
+            var msg = new MsgIssueUnitOrder
+            {
+                UnitId = unitId ?? string.Empty,
+                Action = action ?? string.Empty,
+                TargetNodeId = targetNodeId ?? string.Empty,
+                TargetUnitId = targetUnitId ?? string.Empty,
+                SecondaryNodeId = secondaryNodeId ?? string.Empty
+            };
+            MessageSender.Send(msg);
         }
     }
 }

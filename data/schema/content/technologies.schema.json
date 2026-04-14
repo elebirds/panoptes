@@ -1,0 +1,232 @@
+{
+  "$defs": {
+    "resource_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "build_points": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "engineer_material": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "food": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "refined_ore": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "wood": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "technologies": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "branch": {
+            "type": "string"
+          },
+          "effects": {
+            "items": {
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "target_id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "unlock_building"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target_id"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "target_id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "unlock_recipe"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "target_id"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "modifier_type": {
+                      "enum": [
+                        "flat",
+                        "percent",
+                        "multiplier"
+                      ],
+                      "type": "string"
+                    },
+                    "resource_key": {
+                      "enum": [
+                        "build_points",
+                        "engineer_material",
+                        "food",
+                        "ore",
+                        "refined_ore",
+                        "wood",
+                        ""
+                      ],
+                      "type": "string"
+                    },
+                    "target_id": {
+                      "type": "string"
+                    },
+                    "trigger": {
+                      "enum": [
+                        "building.build_cost",
+                        "recipe.input",
+                        "recipe.output",
+                        "recipe.duration",
+                        "recipe.delay_penalty",
+                        "unit.attack",
+                        "unit.move_range",
+                        "unit.siege_multiplier",
+                        "unit.destroy_multiplier",
+                        "player.tech_point_income",
+                        "player.tech_point_cap"
+                      ],
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": [
+                        "modifier"
+                      ],
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "trigger",
+                    "modifier_type",
+                    "value"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "grant_resources": {
+                      "$ref": "#/$defs/resource_amount"
+                    },
+                    "grant_units": {
+                      "items": {
+                        "enum": [
+                          "archer",
+                          "cavalry",
+                          "settler",
+                          "warrior"
+                        ],
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "type": {
+                      "enum": [
+                        "grant"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "id": {
+            "type": "string"
+          },
+          "prerequisites": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "target_id": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "technology_unlocked"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "target_id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "tech_point_cost": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tier": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "branch",
+          "tier",
+          "tech_point_cost",
+          "prerequisites",
+          "effects"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "technologies"
+  ],
+  "type": "object"
+}

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 验证静态目录模块的目录加载与查询。
+
 package staticdata_test
 
 import (
@@ -30,9 +36,9 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 		t.Fatalf("resource display_name = %q", resource.DisplayName)
 	}
 
-	unit, ok := catalog.GetUnit("infantry")
+	unit, ok := catalog.GetUnit("warrior")
 	if !ok {
-		t.Fatalf("GetUnit(infantry) missing")
+		t.Fatalf("GetUnit(warrior) missing")
 	}
 	if unit.TrainCost["ore"] != 1 || unit.TrainCost["food"] != 1 {
 		t.Fatalf("unit train_cost = %#v", unit.TrainCost)
@@ -42,8 +48,24 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	if !ok {
 		t.Fatalf("GetBuilding(farm) missing")
 	}
-	if building.Production.Output["food"] != 2 {
-		t.Fatalf("building output = %#v", building.Production.Output)
+	if building.DefaultRecipeID != "farm_food" {
+		t.Fatalf("building default recipe = %q", building.DefaultRecipeID)
+	}
+
+	technology, ok := catalog.GetTechnology("agri_unlock_farm")
+	if !ok {
+		t.Fatalf("GetTechnology(agri_unlock_farm) missing")
+	}
+	if technology.TechPointCost != 1 || len(technology.Effects) != 2 {
+		t.Fatalf("technology = %#v", technology)
+	}
+
+	recipe, ok := catalog.GetRecipe("farm_food")
+	if !ok {
+		t.Fatalf("GetRecipe(farm_food) missing")
+	}
+	if recipe.Outputs.Resources["food"] != 2 {
+		t.Fatalf("recipe output = %#v", recipe.Outputs.Resources)
 	}
 
 	terrain, ok := catalog.GetTerrain("forest")
@@ -55,7 +77,7 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 
 	rules := catalog.Rules()
-	if rules.CastleBaseHP != 100 || rules.BuildPointsPerTurn != 10 {
+	if rules.CastleBaseHP != 100 || rules.BuildPointsPerTurn != 10 || rules.TechPointsPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
 		t.Fatalf("rules = %#v", rules)
 	}
 
@@ -114,7 +136,7 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
 		"data/content/units/units.json": `{
   "units": [
     {
-      "id": "infantry",
+      "id": "warrior",
       "class": "melee",
       "max_hp": 30,
       "attack": 10,
@@ -137,10 +159,37 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
       "required_resource_type": "food",
       "build_cost": { "food": 1 },
       "upkeep": {},
-      "production": { "input": {}, "output": { "food": 2 }, "cycle_turns": 1 },
-      "produces_units": [],
+      "recipe_ids": ["farm_food"],
+      "default_recipe_id": "farm_food",
       "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
       "limits": { "max_per_node": 1, "max_per_player": -1 }
+    }
+  ]
+}`,
+		"data/content/technologies/technologies.json": `{
+  "technologies": [
+    {
+      "id": "agri_unlock_farm",
+      "branch": "agriculture",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        { "type": "unlock_building", "target_id": "farm" },
+        { "type": "unlock_recipe", "target_id": "farm_food" }
+      ]
+    }
+  ]
+}`,
+		"data/content/recipes/recipes.json": `{
+  "recipes": [
+    {
+      "id": "farm_food",
+      "building_id": "farm",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "food": 2 } }
     }
   ]
 }`,
@@ -169,14 +218,16 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
   ]
 }`,
 		"data/content/rules/rules.json": `{
-  "turn_time_limit_domestic": 15,
-  "turn_time_limit_combat": 20,
+  "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
   "tokens_recuperation_bonus": 1,
   "max_turns": 30,
   "castle_base_hp": 100,
   "safe_zone_radius": 4,
   "occupy_turns": 1,
+  "starting_tech_points": 1,
+  "tech_points_per_turn": 1,
+  "tech_points_max": 5,
   "build_points_per_turn": 10,
   "build_points_max": 30
 }`,
@@ -234,10 +285,12 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
     { "slot": 1, "x": 1, "y": 1 }
   ]
 }`,
-		"data/ui/catalogs/resources.json": `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
-		"data/ui/catalogs/units.json": `{"units":[{"id":"infantry","name":"步兵","description":"均衡近战单位","icon_key":"unit_infantry","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
-		"data/ui/catalogs/buildings.json": `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
-		"data/ui/catalogs/terrains.json": `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
+		"data/ui/catalogs/resources.json":    `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
+		"data/ui/catalogs/units.json":        `{"units":[{"id":"warrior","name":"勇士","description":"基础近战战斗单位","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
+		"data/ui/catalogs/buildings.json":    `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
+		"data/ui/catalogs/technologies.json": `{"technologies":[{"id":"agri_unlock_farm","name":"开垦令","description":"解锁农场","icon_key":"tech_agri_unlock_farm","sort_order":10,"tags":["agriculture"]}]}`,
+		"data/ui/catalogs/recipes.json":      `{"recipes":[{"id":"farm_food","name":"基础农耕","description":"产出粮食","icon_key":"recipe_farm_food","sort_order":10,"tags":["food"]}]}`,
+		"data/ui/catalogs/terrains.json":     `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
 		"data/ui/catalogs/maps/default.json": `{"id":"default","name":"标准地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
 	}
 	for rel, content := range files {

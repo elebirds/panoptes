@@ -1,0 +1,13 @@
+{
+  "recipes": [
+    { "id": "farm_food", "name": "基础农耕", "description": "稳定产出粮食。", "icon_key": "recipe_farm_food", "sort_order": 10, "tags": ["food"] },
+    { "id": "mine_ore", "name": "基础采矿", "description": "稳定产出矿石。", "icon_key": "recipe_mine_ore", "sort_order": 11, "tags": ["ore"] },
+    { "id": "lumber_wood", "name": "基础伐木", "description": "稳定产出木材。", "icon_key": "recipe_lumber_wood", "sort_order": 12, "tags": ["wood"] },
+    { "id": "smelter_refined_ore", "name": "矿石冶炼", "description": "将矿石精炼为精炼矿。", "icon_key": "recipe_smelter_refined_ore", "sort_order": 20, "tags": ["refine"] },
+    { "id": "workshop_engineer_material", "name": "工程加工", "description": "将木材加工为工程材料。", "icon_key": "recipe_workshop_engineer_material", "sort_order": 21, "tags": ["craft"] },
+    { "id": "barracks_warrior", "name": "训练勇士", "description": "训练基础近战单位。", "icon_key": "recipe_barracks_warrior", "sort_order": 30, "tags": ["military"] },
+    { "id": "barracks_archer", "name": "训练弓箭手", "description": "训练基础远程单位。", "icon_key": "recipe_barracks_archer", "sort_order": 31, "tags": ["military"] },
+    { "id": "stable_cavalry", "name": "训练骑兵", "description": "训练高速骑兵。", "icon_key": "recipe_stable_cavalry", "sort_order": 32, "tags": ["military"] },
+    { "id": "engineer_camp_settler", "name": "训练开拓者", "description": "训练扩张单位。", "icon_key": "recipe_engineer_camp_settler", "sort_order": 33, "tags": ["military"] }
+  ]
+}

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现地图加载引擎的地图加载逻辑。
+
 package maploader
 
 import (
@@ -57,10 +63,16 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 		ecs.NodeC.Get(entry).NodeName = node.NodeName
 		pos := domain.Position{X: node.X, Y: node.Y}
 		owner := resolveNodeOwner(node, pos, playerIDs, spawnOwners)
+		territoryOwner := resolveTerritoryOwner(node, pos, playerIDs, spawnOwners)
 		ecs.NodeC.Get(entry).Owner = owner
+		ecs.NodeC.Get(entry).TerritoryOwner = territoryOwner
 		ecs.NodeC.Get(entry).HasRoad = node.HasRoad
 		if node.BuildingType != "" {
-			ecs.CreateBuilding(world, node.BuildingType, owner, entry)
+			castleID := ""
+			if node.BuildingType == "castle" {
+				castleID = node.ID
+			}
+			ecs.CreateBuilding(world, node.BuildingType, owner, castleID, entry)
 			if node.BuildingHP > 0 {
 				building := ecs.BuildingC.Get(entry)
 				if node.BuildingHP < building.MaxHP {
@@ -74,7 +86,7 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 	return mapData
 }
 
-func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playerIDs []string, spawnOwners map[domain.Position]string) string {
+func resolveNodeOwner(node staticdata.MapRuntimeNode, _ domain.Position, playerIDs []string, _ map[domain.Position]string) string {
 	if node.OwnerSlot != nil {
 		slot := *node.OwnerSlot
 		if slot >= 0 && slot < len(playerIDs) {
@@ -84,5 +96,18 @@ func resolveNodeOwner(node staticdata.MapRuntimeNode, pos domain.Position, playe
 	if node.Owner != "" {
 		return node.Owner
 	}
-	return spawnOwners[pos]
+	return ""
+}
+
+func resolveTerritoryOwner(node staticdata.MapRuntimeNode, _ domain.Position, playerIDs []string, _ map[domain.Position]string) string {
+	if node.TerritoryOwnerSlot != nil {
+		slot := *node.TerritoryOwnerSlot
+		if slot >= 0 && slot < len(playerIDs) {
+			return playerIDs[slot]
+		}
+	}
+	if node.TerritoryOwner != "" {
+		return node.TerritoryOwner
+	}
+	return ""
 }

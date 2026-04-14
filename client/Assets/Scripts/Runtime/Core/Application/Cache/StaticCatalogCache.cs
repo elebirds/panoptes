@@ -45,7 +45,27 @@ namespace Panoptes.Core.Application.Cache
             public string icon_key;
             public string prefab_key;
             public string placement_rule;
+            public string required_resource_type;
             public int sort_order;
+        }
+
+        [Serializable]
+        public sealed class UnitEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string prefab_key;
+            public string @class;
+            public int max_hp;
+            public int attack;
+            public int attack_range;
+            public int move_range;
+            public int vision_range;
+            public int road_speed_bonus;
+            public float charge_bonus;
+            public string[] tags;
         }
 
         [Serializable]
@@ -56,7 +76,12 @@ namespace Panoptes.Core.Application.Cache
             public string description;
             public string icon_key;
             public string material_key;
+            public int move_cost_no_road;
+            public bool passable;
+            public bool passable_with_road;
+            public bool blocks_cavalry;
             public int sort_order;
+            public string[] tags;
         }
 
         [Serializable]
@@ -75,6 +100,7 @@ namespace Panoptes.Core.Application.Cache
         {
             public ManifestJson manifest;
             public ResourceEntryJson[] resources;
+            public UnitEntryJson[] units;
             public BuildingEntryJson[] buildings;
             public TerrainEntryJson[] terrains;
             public MapEntryJson[] maps;
@@ -92,6 +118,7 @@ namespace Panoptes.Core.Application.Cache
             public string resource_type;
             public string node_name;
             public string owner;
+            public string territory_owner;
             public string building_type;
             public int building_hp;
         }
@@ -116,6 +143,7 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, MapEntryJson> _mapsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ResourceEntryJson> _resourcesByKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, TerrainEntryJson> _terrainsById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, UnitEntryJson> _unitsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapRuntimeBundleJson> _mapBundleCache = new(StringComparer.OrdinalIgnoreCase);
 
         public ManifestJson LocalManifest { get; private set; }
@@ -124,6 +152,8 @@ namespace Panoptes.Core.Application.Cache
 
         public IReadOnlyDictionary<string, BuildingEntryJson> Buildings => _buildingsById;
         public IReadOnlyDictionary<string, ResourceEntryJson> Resources => _resourcesByKey;
+        public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
+        public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
 
         private void Awake()
         {
@@ -190,6 +220,7 @@ namespace Panoptes.Core.Application.Cache
 
             LocalManifest = parsed.manifest;
             RebuildIndex(_resourcesByKey, parsed.resources, entry => entry != null ? entry.key : string.Empty);
+            RebuildIndex(_unitsById, parsed.units, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_buildingsById, parsed.buildings, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
@@ -219,6 +250,16 @@ namespace Panoptes.Core.Application.Cache
         public bool TryGetBuilding(string buildingId, out BuildingEntryJson entry)
         {
             return _buildingsById.TryGetValue(Normalize(buildingId), out entry);
+        }
+
+        public bool TryGetTerrain(string terrainId, out TerrainEntryJson entry)
+        {
+            return _terrainsById.TryGetValue(Normalize(terrainId), out entry);
+        }
+
+        public bool TryGetUnit(string unitId, out UnitEntryJson entry)
+        {
+            return _unitsById.TryGetValue(Normalize(unitId), out entry);
         }
 
         public bool TryGetDefaultMap(out MapRuntimeBundleJson bundle)

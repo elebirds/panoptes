@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现大厅模块的服务编排逻辑。
+
 package lobby
 
 import (
@@ -11,7 +17,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/auth"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
-	"github.com/elebirds/panoptes/internal/transport"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,7 +33,7 @@ const (
 
 type LobbyService struct {
 	store         LobbyStore
-	gameTransport transport.GameTransport
+	gameTransport coretransport.GameTransport
 	authSvc       *auth.Service
 	defaultMax    int
 	devMode       bool
@@ -37,7 +43,7 @@ type LobbyService struct {
 	countdownDelay time.Duration
 }
 
-func NewService(store LobbyStore, gameTransport transport.GameTransport, authSvc *auth.Service, defaultMax int, devMode bool) *LobbyService {
+func NewService(store LobbyStore, gameTransport coretransport.GameTransport, authSvc *auth.Service, defaultMax int, devMode bool) *LobbyService {
 	if defaultMax < minPlayers || defaultMax > maxPlayers {
 		defaultMax = minPlayers
 	}
@@ -81,14 +87,14 @@ func (s *LobbyService) CreateRoom(ctx context.Context, hostID string, name strin
 		return err
 	}
 
-	if err := s.sendToPlayer(hostID, &pb.MsgRoomCreated{
+	if err := s.sendToPlayer(ctx, hostID, &pb.MsgRoomCreated{
 		RoomId:   room.ID,
 		RoomCode: room.Code,
 	}); err != nil {
 		return err
 	}
 
-	return s.sendRoomState(room)
+	return s.sendRoomState(ctx, room)
 }
 
 func (s *LobbyService) JoinRoom(ctx context.Context, playerID string, code string) error {
@@ -120,7 +126,7 @@ func (s *LobbyService) JoinRoom(ctx context.Context, playerID string, code strin
 		return err
 	}
 
-	return s.sendRoomState(room)
+	return s.sendRoomState(ctx, room)
 }
 
 func (s *LobbyService) LeaveRoom(ctx context.Context, playerID string) error {
@@ -134,7 +140,7 @@ func (s *LobbyService) LeaveRoom(ctx context.Context, playerID string) error {
 		if err := s.store.DeleteRoom(ctx, room.ID); err != nil {
 			return err
 		}
-		s.sendToRoomPlayers(room, &pb.MsgLobbyError{
+		s.sendToRoomPlayers(ctx, room, &pb.MsgLobbyError{
 			Code:    "room_dissolved",
 			Message: "room dissolved",
 		})
@@ -152,7 +158,7 @@ func (s *LobbyService) LeaveRoom(ctx context.Context, playerID string) error {
 		return err
 	}
 
-	return s.sendRoomState(room)
+	return s.sendRoomState(ctx, room)
 }
 
 func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
@@ -182,7 +188,7 @@ func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
 	if err := s.store.UpdateRoom(ctx, room); err != nil {
 		return err
 	}
-	if err := s.sendRoomState(room); err != nil {
+	if err := s.sendRoomState(ctx, room); err != nil {
 		return err
 	}
 	return nil
@@ -210,7 +216,7 @@ func (s *LobbyService) AddBot(ctx context.Context, operatorID string) error {
 		return err
 	}
 
-	return s.sendRoomState(room)
+	return s.sendRoomState(ctx, room)
 }
 
 func (s *LobbyService) StartGame(ctx context.Context, operatorID string) error {
@@ -230,7 +236,7 @@ func (s *LobbyService) StartGame(ctx context.Context, operatorID string) error {
 	if err := s.store.UpdateRoom(ctx, room); err != nil {
 		return err
 	}
-	if err := s.sendRoomState(room); err != nil {
+	if err := s.sendRoomState(ctx, room); err != nil {
 		return err
 	}
 
@@ -258,7 +264,7 @@ func (s *LobbyService) KickPlayer(ctx context.Context, operatorID, targetID stri
 		return err
 	}
 	if kicked != nil && !kicked.IsBot {
-		if err := s.sendToPlayer(kicked.PlayerID, &pb.MsgPlayerKicked{
+		if err := s.sendToPlayer(ctx, kicked.PlayerID, &pb.MsgPlayerKicked{
 			PlayerId: kicked.PlayerID,
 			Username: kicked.Username,
 		}); err != nil {
@@ -266,7 +272,7 @@ func (s *LobbyService) KickPlayer(ctx context.Context, operatorID, targetID stri
 		}
 	}
 
-	return s.sendRoomState(room)
+	return s.sendRoomState(ctx, room)
 }
 
 func (s *LobbyService) SetGameStartCallback(fn func(room *Room)) {
@@ -279,7 +285,7 @@ func (s *LobbyService) startCountdown(ctx context.Context, room *Room) {
 	roomCopy := cloneRoomValue(room)
 
 	go func() {
-		s.sendToRoomPlayers(roomCopy, &pb.MsgGameStarting{Countdown: countdownSeconds})
+		s.sendToRoomPlayers(context.Background(), roomCopy, &pb.MsgGameStarting{Countdown: countdownSeconds})
 
 		timer := time.NewTimer(s.countdownDelay)
 		defer timer.Stop()
@@ -318,25 +324,25 @@ func (s *LobbyService) startCountdown(ctx context.Context, room *Room) {
 	}()
 }
 
-func (s *LobbyService) sendRoomState(room *Room) error {
-	return s.sendToRoomPlayers(room, room.ToProto())
+func (s *LobbyService) sendRoomState(ctx context.Context, room *Room) error {
+	return s.sendToRoomPlayers(ctx, room, room.ToProto())
 }
 
-func (s *LobbyService) sendToRoomPlayers(room *Room, msg proto.Message) error {
+func (s *LobbyService) sendToRoomPlayers(ctx context.Context, room *Room, msg proto.Message) error {
 	var firstErr error
 	for _, player := range room.Players {
 		if player.IsBot {
 			continue
 		}
-		if err := s.sendToPlayer(player.PlayerID, msg); err != nil && firstErr == nil {
+		if err := s.sendToPlayer(ctx, player.PlayerID, msg); err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
 	return firstErr
 }
 
-func (s *LobbyService) sendToPlayer(playerID string, msg proto.Message) error {
-	if err := s.gameTransport.Send(playerID, msg); err != nil {
+func (s *LobbyService) sendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
+	if err := s.gameTransport.Send(ctx, playerID, msg); err != nil {
 		return fmt.Errorf("send to player %s: %w", playerID, err)
 	}
 	return nil

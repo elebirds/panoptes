@@ -1,8 +1,8 @@
-using Panoptes.Protocol.V1;
+using System.Collections;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Network;
+using Panoptes.Protocol.V1;
 using UnityEngine;
-using System.Collections;
 
 namespace Panoptes.DebugTools
 {
@@ -10,9 +10,8 @@ namespace Panoptes.DebugTools
     {
         private bool _registered;
         private bool _initChecked;
-        private bool _domesticPhaseChecked;
-        private bool _domesticSettlementChecked;
-        private bool _combatSettlementChecked;
+        private bool _planningChecked;
+        private bool _settlementChecked;
         private bool _allPassedLogged;
         private bool _failed;
 
@@ -36,9 +35,8 @@ namespace Panoptes.DebugTools
             }
 
             var dispatcher = MessageDispatcher.Instance;
-            dispatcher.Register<MsgDomesticPhaseStart>("MsgDomesticPhaseStart", OnDomesticPhaseStart);
-            dispatcher.Register<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
-            dispatcher.Register<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
+            dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             _registered = true;
         }
 
@@ -50,9 +48,8 @@ namespace Panoptes.DebugTools
             }
 
             var dispatcher = MessageDispatcher.Instance;
-            dispatcher.Unregister<MsgDomesticPhaseStart>("MsgDomesticPhaseStart", OnDomesticPhaseStart);
-            dispatcher.Unregister<MsgDomesticSettlement>("MsgDomesticSettlement", OnDomesticSettlement);
-            dispatcher.Unregister<MsgCombatSettlement>("MsgCombatSettlement", OnCombatSettlement);
+            dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+            dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             _registered = false;
         }
 
@@ -84,70 +81,55 @@ namespace Panoptes.DebugTools
             }
 
             _initChecked = true;
-
-            if (cache.Phase == "domestic" && cache.TokensLeft == 3)
+            if (cache.Phase == "planning" && cache.TokensLeft == 3)
             {
-                _domesticPhaseChecked = true;
+                _planningChecked = true;
             }
         }
 
-        private void OnDomesticPhaseStart(MsgDomesticPhaseStart msg)
+        private void OnPlanningStart(MsgPlanningStart _)
         {
-            StartCoroutine(ValidateDomesticPhaseNextFrame());
+            StartCoroutine(ValidatePlanningStartNextFrame());
         }
 
-        private IEnumerator ValidateDomesticPhaseNextFrame()
+        private IEnumerator ValidatePlanningStartNextFrame()
         {
             yield return null;
 
             var cache = GameStateCache.Instance;
             if (cache == null)
             {
-                Fail("DomesticPhaseStart 时 GameStateCache 不存在");
+                Fail("PlanningStart 时 GameStateCache 不存在");
                 yield break;
             }
 
-            if (cache.Phase != "domestic")
+            if (cache.Phase != "planning")
             {
-                Fail($"DomesticPhaseStart 后 Phase 异常: {cache.Phase}");
+                Fail($"PlanningStart 后 Phase 异常: {cache.Phase}");
                 yield break;
             }
 
-            if (cache.TokensLeft != 3)
-            {
-                Fail($"DomesticPhaseStart 后 TokensLeft 异常: {cache.TokensLeft}");
-                yield break;
-            }
-
-            _domesticPhaseChecked = true;
+            _planningChecked = true;
             TryFinalize();
         }
 
-        private void OnDomesticSettlement(MsgDomesticSettlement msg)
+        private void OnTurnSettlement(MsgTurnSettlement msg)
         {
             try
             {
-                _domesticSettlementChecked = true;
-                Debug.Log("[Check] ✓ DomesticSettlement 处理正常");
-                TryFinalize();
-            }
-            catch (System.Exception e)
-            {
-                Fail($"DomesticSettlement 处理异常: {e.Message}");
-            }
-        }
+                if (msg == null || msg.Sections == null)
+                {
+                    Fail("TurnSettlement 为空");
+                    return;
+                }
 
-        private void OnCombatSettlement(MsgCombatSettlement msg)
-        {
-            try
-            {
-                _combatSettlementChecked = true;
-                Debug.Log("[Check] ✓ CombatSettlement 处理正常");
+                _settlementChecked = true;
+                Debug.Log("[Check] ✓ TurnSettlement 处理正常");
                 TryFinalize();
             }
             catch (System.Exception e)
             {
-                Fail($"CombatSettlement 处理异常: {e.Message}");
+                Fail($"TurnSettlement 处理异常: {e.Message}");
             }
         }
 
@@ -158,10 +140,10 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            if (_initChecked && _domesticPhaseChecked && _domesticSettlementChecked && _combatSettlementChecked)
+            if (_initChecked && _planningChecked && _settlementChecked)
             {
                 _allPassedLogged = true;
-                Debug.Log("[Integration] ✓ 所有检查通过，回合链路正常");
+                Debug.Log("[Integration] ✓ 所有检查通过，Turn V2 链路正常");
             }
         }
 

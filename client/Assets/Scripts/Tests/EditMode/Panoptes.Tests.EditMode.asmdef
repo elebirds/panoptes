@@ -2,7 +2,9 @@
   "name": "Panoptes.Tests.EditMode",
   "references": [
     "Panoptes.Core", 
+    "Panoptes.Protocol",
     "Panoptes.Presentation",
+    "Unity.TextMeshPro",
     "UnityEngine.TestRunner", 
     "UnityEditor.TestRunner"
   ],

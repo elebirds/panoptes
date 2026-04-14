@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+import "common.proto";
+import "game_state.proto";
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message MsgPlanningStart {
+  int32 timeout = 1;
+  int32 turn = 2;
+  int32 tokens = 3;
+  string phase = 4;
+  string current_policy = 5;
+  MsgPlanningSnapshot snapshot = 6;
+  repeated MinisterDraftView minister_drafts = 7;
+}
+
+message MinisterDraftView {
+  string minister_role = 1;
+  string json_payload = 2;
+  bool available = 3;
+}
+
+message MarchTurnStop {
+  int32 turn_index = 1;
+  string node_id = 2;
+}
+
+message QueuedUnitOrder {
+  string unit_id = 1;
+  string action = 2;
+  string target_node_id = 3;
+  string target_unit_id = 4;
+  string secondary_node_id = 5;
+  map<string, string> params = 6;
+  repeated string path_node_ids = 7;
+  string first_turn_node_id = 8;
+  int32 total_turns = 9;
+  repeated MarchTurnStop turn_stops = 10;
+}
+
+message MsgPlanningSnapshot {
+  int32 turn = 1;
+  string phase = 2;
+  repeated QueuedUnitOrder unit_orders = 3;
+  repeated WarZone war_zones = 4;
+  repeated MinisterDraftView minister_drafts = 5;
+}
+
+message MsgPlanningPathPreviewResponse {
+  string request_id = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  bool valid = 5;
+  string error_code = 6;
+  repeated string path_node_ids = 7;
+  string first_turn_node_id = 8;
+  int32 total_turns = 9;
+  repeated MarchTurnStop turn_stops = 10;
+}
+
+message MsgTokenResult {
+  bool success = 1;
+  string action = 2;
+  int32 tokens_left = 3;
+  string error_code = 4;
+}
+
+message MsgRevealResult {
+  string node_id = 1;
+  NodeView true_state = 2;
+  int32 tokens_left = 3;
+}
+
+message MsgResearchResult {
+  bool success = 1;
+  string technology_id = 2;
+  string error_code = 3;
+}
+
+message MsgSetBuildingRecipeResult {
+  bool success = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+  string error_code = 4;
+}
+
+message MsgTurnReport {
+  int32 turn = 1;
+  string summary = 2;
+}

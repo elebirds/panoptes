@@ -1,5 +1,11 @@
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
+using Panoptes.Core.Events;
+using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Common;
+using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Turn;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +24,7 @@ namespace Panoptes.Presentation.UI.Game
         {
             _cache = GameStateCache.Instance;
             HideFullscreenBackgroundIfNeeded();
+            EnsurePresentationHelpers();
         }
 
         private void OnEnable()
@@ -28,6 +35,9 @@ namespace Panoptes.Presentation.UI.Game
             {
                 GameIntents.Initialize(_cache);
                 _cache.OnStateChanged += RefreshFromCache;
+                _cache.OnGameError += OnGameError;
+                _cache.OnTokenResult += OnTokenResult;
+                _cache.OnGameOver += OnGameOver;
             }
         }
 
@@ -41,6 +51,9 @@ namespace Panoptes.Presentation.UI.Game
             if (_cache != null)
             {
                 _cache.OnStateChanged -= RefreshFromCache;
+                _cache.OnGameError -= OnGameError;
+                _cache.OnTokenResult -= OnTokenResult;
+                _cache.OnGameOver -= OnGameOver;
             }
 
             GameIntents.Dispose();
@@ -57,7 +70,7 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            var summary = $"Game {_cache.GameID}\n玩家 {_cache.MyPlayerID}\n回合 {_cache.Turn} / {_cache.Phase}\n地图 {_cache.MapWidth}x{_cache.MapHeight}";
+            var summary = $"Game {_cache.GameID}\n玩家 {_cache.MyPlayerID}\n回合 {_cache.Turn} / {GamePhases.ToDisplayText(_cache.Phase)}\n地图 {_cache.MapWidth}x{_cache.MapHeight}";
             if (statusText != null)
             {
                 statusText.text = summary;
@@ -66,6 +79,34 @@ namespace Panoptes.Presentation.UI.Game
             if (Debug.isDebugBuild)
             {
                 Debug.Log($"[GameScene] {summary}");
+            }
+        }
+
+        private void OnGameError(GameErrorEvent evt)
+        {
+            if (evt == null)
+            {
+                return;
+            }
+
+            ShowToast(MapGameError(evt.Code), false);
+        }
+
+        private void OnTokenResult(TokenResultEvent evt)
+        {
+            if (evt == null || evt.Success || string.IsNullOrWhiteSpace(evt.ErrorCode))
+            {
+                return;
+            }
+
+            ShowToast(MapGameError(evt.ErrorCode), false);
+        }
+
+        private void OnGameOver(GameOverEvent _)
+        {
+            if (statusText != null)
+            {
+                statusText.gameObject.SetActive(false);
             }
         }
 
@@ -96,6 +137,106 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             target.gameObject.SetActive(false);
+        }
+
+        private void EnsurePresentationHelpers()
+        {
+            var canvas = statusText != null ? statusText.canvas : GetComponentInChildren<Canvas>(true);
+            if (canvas == null)
+            {
+                return;
+            }
+
+            EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
+            EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
+            EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline");
+            EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel");
+            EnsureComponent<ResourceHUD>(canvas.transform, "ResourceHUD");
+            EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
+            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
+        }
+
+        private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
+        {
+            var existing = parent.Find(objectName);
+            if (existing != null && existing.GetComponent<T>() != null)
+            {
+                return;
+            }
+
+            var go = existing != null ? existing.gameObject : new GameObject(objectName, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            if (go.GetComponent<T>() == null)
+            {
+                go.AddComponent<T>();
+            }
+        }
+
+        private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
+        {
+            var existing = UnityEngine.Object.FindAnyObjectByType<T>();
+            if (existing != null)
+            {
+                return;
+            }
+
+            var go = new GameObject(objectName);
+            go.AddComponent<T>();
+        }
+
+        private static void EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
+        {
+            var existing = parent.Find(objectName);
+            if (existing != null && existing.GetComponent<T>() != null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resourcesPath))
+            {
+                var prefab = Resources.Load<GameObject>(resourcesPath.Trim());
+                if (prefab != null)
+                {
+                    var instance = Object.Instantiate(prefab, parent, false);
+                    instance.name = objectName;
+                    if (instance.GetComponent<T>() != null)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            EnsureComponent<T>(parent, objectName);
+        }
+
+        private static void ShowToast(string message, bool success)
+        {
+            if (ErrorToast.Instance != null)
+            {
+                ErrorToast.Instance.Show(message, success);
+                return;
+            }
+
+            if (success)
+            {
+                Debug.Log($"[GameScene] {message}");
+                return;
+            }
+
+            Debug.LogWarning($"[GameScene] {message}");
+        }
+
+        private static string MapGameError(string code)
+        {
+            return code switch
+            {
+                "phase_mismatch" => "当前阶段不支持此操作",
+                "game_not_found" => "当前对局不存在",
+                "invalid_request" => "请求格式错误",
+                "unauthorized" => "请重新登录",
+                "internal_error" => "服务器错误，请稍后重试",
+                _ => string.IsNullOrWhiteSpace(code) ? "未知错误" : code
+            };
         }
     }
 }

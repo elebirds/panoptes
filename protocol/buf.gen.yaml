@@ -1,9 +1,9 @@
 version: v2
-clean: true
+clean: false
 plugins:
   - local: protoc-gen-go
     out: ../server/internal/gen/proto
     opt:
       - paths=source_relative
   - protoc_builtin: csharp
-    out: ../client/Assets/Scripts/Runtime/Protocol
+    out: ../client/Assets/Scripts/Protocol

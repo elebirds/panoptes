@@ -7,6 +7,7 @@ namespace Panoptes.Core.Domain
         public int Y;
         public string Type;
         public string Owner;
+        public string TerritoryOwner;
         public string BuildingType;
         public int BuildingHp;
         public int BuildingMaxHp;
@@ -15,5 +16,6 @@ namespace Panoptes.Core.Domain
         public string Terrain;
         public bool IsResourcePoint;
         public string ResourceType;
+        public bool IsSafeZone;
     }
 }

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现服务端应用装配的服务启动与生命周期管理。
+
 package app
 
 import (
@@ -12,6 +18,7 @@ import (
 	"github.com/elebirds/panoptes/internal/lobby"
 	redistore "github.com/elebirds/panoptes/internal/store/redis"
 	httptransport "github.com/elebirds/panoptes/internal/transport/http"
+	"github.com/elebirds/panoptes/internal/transport/inbound"
 	wstransport "github.com/elebirds/panoptes/internal/transport/websocket"
 	"github.com/google/uuid"
 )
@@ -28,11 +35,13 @@ func (a *App) buildServer() *http.Server {
 	lobbySvc := lobby.NewService(lobbyStore, a.gameTransport, authSvc, a.cfg.DefaultMaxPlayers, a.cfg.DevMode)
 	lobbySvc.SetGameStartCallback(a.onGameStart)
 
-	router := wstransport.NewRouter(lobbySvc, game.Registry)
-	wsHub.SetRouter(router)
+	wsHub.SetDispatcher(&inbound.Dispatcher{
+		Lobby: lobby.NewCommandHandler(lobbySvc),
+		Game:  game.NewRegistryCommandHandler(game.Registry),
+	})
 	wsHub.SetLeaveRoomFunc(lobbySvc.LeaveRoom)
 	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
-		return a.gameTransport.Send(playerID, &pb.MsgClientRuntimeConfig{
+		return a.gameTransport.Send(ctx, playerID, &pb.MsgClientRuntimeConfig{
 			DevMode: a.cfg.DevMode,
 		})
 	})

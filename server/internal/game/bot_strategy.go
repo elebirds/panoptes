@@ -1,8 +1,16 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现对局模块的机器人策略。
+
 package game
 
 import (
 	"context"
 	"time"
+
+	"github.com/elebirds/panoptes/internal/domain"
 )
 
 type botPlayerIDKey struct{}
@@ -22,21 +30,12 @@ func (s *RandomStrategy) DecideAndSubmit(ctx context.Context, room *Room, phase 
 	}
 
 	switch phase {
-	case "domestic":
+	case domain.PhasePlanning.String():
 		select {
 		case <-time.After(500 * time.Millisecond):
-			room.submitDomestic(playerID)
+			room.Submit(playerID)
 		case <-ctx.Done():
-			room.submitDomestic(playerID)
+			room.Submit(playerID)
 		}
-	case "combat":
-		select {
-		case <-time.After(time.Second):
-			room.submitCombat(playerID)
-		case <-ctx.Done():
-			room.submitCombat(playerID)
-		}
-	default:
-		room.submitDomestic(playerID)
 	}
 }

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现寻路算法模块的A* 寻路算法实现。
+
 package pathfinding
 
 import (
@@ -23,7 +29,7 @@ type node struct {
 
 type priorityQueue []*node
 
-func (pq priorityQueue) Len() int { return len(pq) }
+func (pq priorityQueue) Len() int           { return len(pq) }
 func (pq priorityQueue) Less(i, j int) bool { return pq[i].priority < pq[j].priority }
 func (pq priorityQueue) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]

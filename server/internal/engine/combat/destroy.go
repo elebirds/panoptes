@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现单位结算引擎的破坏结算逻辑。
+
 package combat
 
 import (
@@ -34,7 +40,9 @@ func (s *DestroySystem) Run(world donburi.World, state *domain.GameState) []even
 			}
 			if nodeEntry.HasComponent(ecs.BuildingC) {
 				building := ecs.BuildingC.Get(nodeEntry)
-				dmg := int(math.Round(float64(stats.Attack) * ability.Multiplier))
+				attack := effectiveUnitAttack(state, stats.Faction, stats.Type, stats.Attack)
+				multiplier := effectiveUnitDestroyMultiplier(state, stats.Faction, stats.Type, ability.Multiplier)
+				dmg := int(math.Round(float64(attack) * multiplier))
 				if dmg < 1 {
 					dmg = 1
 				}

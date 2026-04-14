@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现事件模型的单位结算事件与领域类型。
+
 package event
 
 import (
@@ -5,15 +11,14 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/yohamta/donburi"
 )
 
 type UnitMovedEvent struct {
-	UnitID     string
-	From       domain.Position
-	To         domain.Position
-	Timestamp  int
+	UnitID    string
+	From      domain.Position
+	To        domain.Position
+	Timestamp int
 }
 
 func (e UnitMovedEvent) Apply(world donburi.World, _ *domain.GameState) {
@@ -26,27 +31,17 @@ func (e UnitMovedEvent) Apply(world donburi.World, _ *domain.GameState) {
 	pos.Y = e.To.Y
 }
 
-func (e UnitMovedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "unit_move",
-		Data: &pb.CombatEvent_UnitMove{UnitMove: &pb.UnitMoveEvent{
-			UnitId:    e.UnitID,
-			From:      toProtoPosition(e.From),
-			To:        toProtoPosition(e.To),
-			Timestamp: int32(e.Timestamp),
-		}},
-	}
-}
+func (e UnitMovedEvent) Kind() string { return "unit_moved" }
 
 func (e UnitMovedEvent) String() string {
 	return fmt.Sprintf("UnitMovedEvent unit=%s from=(%d,%d) to=(%d,%d)", e.UnitID, e.From.X, e.From.Y, e.To.X, e.To.Y)
 }
 
 type UnitDamagedEvent struct {
-	UnitID   string
-	Damage   int
-	HPAfter  int
-	Source   string
+	UnitID  string
+	Damage  int
+	HPAfter int
+	Source  string
 }
 
 func (e UnitDamagedEvent) Apply(world donburi.World, _ *domain.GameState) {
@@ -58,26 +53,16 @@ func (e UnitDamagedEvent) Apply(world donburi.World, _ *domain.GameState) {
 	stats.HP = e.HPAfter
 }
 
-func (e UnitDamagedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "unit_damaged",
-		Data: &pb.CombatEvent_UnitDamaged{UnitDamaged: &pb.UnitDamagedEvent{
-			UnitId:  e.UnitID,
-			Damage:  int32(e.Damage),
-			HpAfter: int32(e.HPAfter),
-			Source:  e.Source,
-		}},
-	}
-}
+func (e UnitDamagedEvent) Kind() string { return "unit_damaged" }
 
 func (e UnitDamagedEvent) String() string {
 	return fmt.Sprintf("UnitDamagedEvent unit=%s dmg=%d hp_after=%d source=%s", e.UnitID, e.Damage, e.HPAfter, e.Source)
 }
 
 type UnitDiedEvent struct {
-	UnitID    string
-	KillerID  string
-	Pos       domain.Position
+	UnitID   string
+	KillerID string
+	Pos      domain.Position
 }
 
 func (e UnitDiedEvent) Apply(world donburi.World, _ *domain.GameState) {
@@ -88,26 +73,17 @@ func (e UnitDiedEvent) Apply(world donburi.World, _ *domain.GameState) {
 	world.Remove(entry.Entity())
 }
 
-func (e UnitDiedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "unit_died",
-		Data: &pb.CombatEvent_UnitDied{UnitDied: &pb.UnitDiedEvent{
-			UnitId:   e.UnitID,
-			KillerId: e.KillerID,
-			Pos:      toProtoPosition(e.Pos),
-		}},
-	}
-}
+func (e UnitDiedEvent) Kind() string { return "unit_died" }
 
 func (e UnitDiedEvent) String() string {
 	return fmt.Sprintf("UnitDiedEvent unit=%s killer=%s", e.UnitID, e.KillerID)
 }
 
 type CastleDamagedEvent struct {
-	NodeID      string
-	Damage      int
-	HPAfter     int
-	AttackerID  string
+	NodeID     string
+	Damage     int
+	HPAfter    int
+	AttackerID string
 }
 
 func (e CastleDamagedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -122,25 +98,15 @@ func (e CastleDamagedEvent) Apply(world donburi.World, state *domain.GameState) 
 	}
 }
 
-func (e CastleDamagedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "castle_damaged",
-		Data: &pb.CombatEvent_CastleDamaged{CastleDamaged: &pb.CastleDamagedEvent{
-			NodeId:     e.NodeID,
-			Damage:     int32(e.Damage),
-			HpAfter:    int32(e.HPAfter),
-			AttackerId: e.AttackerID,
-		}},
-	}
-}
+func (e CastleDamagedEvent) Kind() string { return "castle_damaged" }
 
 func (e CastleDamagedEvent) String() string {
 	return fmt.Sprintf("CastleDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
 }
 
 type CastleDestroyedEvent struct {
-	NodeID            string
-	ConquerorFaction  string
+	NodeID           string
+	ConquerorFaction string
 }
 
 func (e CastleDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -158,15 +124,7 @@ func (e CastleDestroyedEvent) Apply(world donburi.World, state *domain.GameState
 	state.OverReason = "castle_destroyed"
 }
 
-func (e CastleDestroyedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "castle_destroyed",
-		Data: &pb.CombatEvent_CastleDestroyed{CastleDestroyed: &pb.CastleDestroyedEvent{
-			NodeId:           e.NodeID,
-			ConquerorFaction: e.ConquerorFaction,
-		}},
-	}
-}
+func (e CastleDestroyedEvent) Kind() string { return "castle_destroyed" }
 
 func (e CastleDestroyedEvent) String() string {
 	return fmt.Sprintf("CastleDestroyedEvent node=%s conqueror=%s", e.NodeID, e.ConquerorFaction)
@@ -189,25 +147,16 @@ func (e RoadDestroyedEvent) Apply(world donburi.World, state *domain.GameState) 
 	}
 }
 
-func (e RoadDestroyedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "road_destroyed",
-		Data: &pb.CombatEvent_RoadDestroyed{RoadDestroyed: &pb.RoadDestroyedEvent{
-			FromNode:    e.FromNode,
-			ToNode:      e.ToNode,
-			DestroyerId: e.DestroyerID,
-		}},
-	}
-}
+func (e RoadDestroyedEvent) Kind() string { return "road_destroyed" }
 
 func (e RoadDestroyedEvent) String() string {
 	return fmt.Sprintf("RoadDestroyedEvent %s->%s by=%s", e.FromNode, e.ToNode, e.DestroyerID)
 }
 
 type BuildingDamagedEvent struct {
-	NodeID   string
-	Damage   int
-	HPAfter  int
+	NodeID  string
+	Damage  int
+	HPAfter int
 }
 
 func (e BuildingDamagedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -219,16 +168,7 @@ func (e BuildingDamagedEvent) Apply(world donburi.World, state *domain.GameState
 	building.HP = e.HPAfter
 }
 
-func (e BuildingDamagedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "building_damaged",
-		Data: &pb.CombatEvent_BuildingDamaged{BuildingDamaged: &pb.BuildingDamagedEvent{
-			NodeId:  e.NodeID,
-			Damage:  int32(e.Damage),
-			HpAfter: int32(e.HPAfter),
-		}},
-	}
-}
+func (e BuildingDamagedEvent) Kind() string { return "building_damaged" }
 
 func (e BuildingDamagedEvent) String() string {
 	return fmt.Sprintf("BuildingDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
@@ -243,24 +183,10 @@ type ConflictResolvedEvent struct {
 
 func (e ConflictResolvedEvent) Apply(donburi.World, *domain.GameState) {}
 
-func (e ConflictResolvedEvent) ClientPayload() *pb.CombatEvent {
-	return &pb.CombatEvent{
-		Type: "conflict",
-		Data: &pb.CombatEvent_Conflict{Conflict: &pb.ConflictEvent{
-			UnitAId:      e.UnitAID,
-			UnitBId:      e.UnitBID,
-			Location:     toProtoPosition(e.Location),
-			ConflictType: e.ConflictType,
-		}},
-	}
-}
+func (e ConflictResolvedEvent) Kind() string { return "conflict" }
 
 func (e ConflictResolvedEvent) String() string {
 	return fmt.Sprintf("ConflictResolvedEvent a=%s b=%s type=%s", e.UnitAID, e.UnitBID, e.ConflictType)
-}
-
-func toProtoPosition(pos domain.Position) *pb.Position {
-	return &pb.Position{X: int32(pos.X), Y: int32(pos.Y)}
 }
 
 func findUnitByID(world donburi.World, unitID string) (*donburi.Entry, bool) {

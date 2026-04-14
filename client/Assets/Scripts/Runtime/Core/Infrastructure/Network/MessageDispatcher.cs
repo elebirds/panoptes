@@ -3,7 +3,7 @@
  * File: MessageDispatcher.cs
  * Author: Panoptes Team
  * Date: 2026-04-04
- * Description: Envelope message dispatcher.
+ * Description: Typed ServerFrame message dispatcher.
  *************************************************/
 
 using System;
@@ -16,16 +16,31 @@ namespace Panoptes.Core.Infrastructure.Network
 {
     public class MessageDispatcher : MonoBehaviour
     {
-        public static MessageDispatcher Instance { get; private set; }
-        public event Action<Envelope> OnDispatching;
+        public readonly struct DispatchEntry
+        {
+            public DispatchEntry(ServerFrame frame, string messageType, IMessage message, string payloadJson)
+            {
+                Frame = frame;
+                MessageType = messageType ?? string.Empty;
+                Message = message;
+                PayloadJson = payloadJson ?? "{}";
+            }
 
-        // message type -> handlers
-        private readonly Dictionary<string, List<Action<string>>> _handlers =
+            public ServerFrame Frame { get; }
+            public string MessageType { get; }
+            public IMessage Message { get; }
+            public string PayloadJson { get; }
+        }
+
+        public static MessageDispatcher Instance { get; private set; }
+        public event Action<DispatchEntry> OnDispatching;
+
+        private readonly Dictionary<string, List<Action<IMessage>>> _typedHandlers =
             new(StringComparer.Ordinal);
-        private readonly Dictionary<string, Dictionary<Delegate, Action<string>>> _typedHandlerWrappers =
+        private readonly Dictionary<string, Dictionary<Delegate, Action<IMessage>>> _typedHandlerWrappers =
             new(StringComparer.Ordinal);
-        private readonly JsonParser _jsonParser =
-            new(JsonParser.Settings.Default.WithIgnoreUnknownFields(true));
+        private readonly Dictionary<string, List<Action<string>>> _rawHandlers =
+            new(StringComparer.Ordinal);
 
         private void Awake()
         {
@@ -47,31 +62,43 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            Action<string> wrapper = payloadJson =>
+            Action<IMessage> wrapper = message =>
             {
-                try
+                if (message is T typed)
                 {
-                    var json = string.IsNullOrWhiteSpace(payloadJson) ? "{}" : payloadJson;
-                    var msg = _jsonParser.Parse<T>(json);
-                    handler(msg);
+                    handler(typed);
+                    return;
                 }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[Dispatcher] Failed to parse {messageType}: {e}");
-                }
+
+                Debug.LogError($"[Dispatcher] Message type mismatch for {messageType}: {message?.GetType().Name ?? "null"}");
             };
 
             if (!_typedHandlerWrappers.TryGetValue(messageType, out var wrappers))
             {
-                wrappers = new Dictionary<Delegate, Action<string>>();
+                wrappers = new Dictionary<Delegate, Action<IMessage>>();
                 _typedHandlerWrappers[messageType] = wrappers;
             }
 
             wrappers[handler] = wrapper;
-            RegisterRaw(messageType, wrapper);
+            RegisterTyped(messageType, wrapper);
         }
 
-        // Register raw payload handler (Envelope.Payload JSON string)
+        private void RegisterTyped(string messageType, Action<IMessage> handler)
+        {
+            if (string.IsNullOrWhiteSpace(messageType) || handler == null)
+            {
+                return;
+            }
+
+            if (!_typedHandlers.TryGetValue(messageType, out var list))
+            {
+                list = new List<Action<IMessage>>();
+                _typedHandlers[messageType] = list;
+            }
+
+            list.Add(handler);
+        }
+
         public void RegisterRaw(string messageType, Action<string> handler)
         {
             if (string.IsNullOrWhiteSpace(messageType))
@@ -86,10 +113,10 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            if (!_handlers.TryGetValue(messageType, out var list))
+            if (!_rawHandlers.TryGetValue(messageType, out var list))
             {
                 list = new List<Action<string>>();
-                _handlers[messageType] = list;
+                _rawHandlers[messageType] = list;
             }
 
             list.Add(handler);
@@ -102,7 +129,8 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            _handlers.Remove(messageType);
+            _typedHandlers.Remove(messageType);
+            _rawHandlers.Remove(messageType);
             _typedHandlerWrappers.Remove(messageType);
         }
 
@@ -124,11 +152,30 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            UnregisterRaw(messageType, wrapper);
+            UnregisterTyped(messageType, wrapper);
             wrappers.Remove(handler);
             if (wrappers.Count == 0)
             {
                 _typedHandlerWrappers.Remove(messageType);
+            }
+        }
+
+        private void UnregisterTyped(string messageType, Action<IMessage> handler)
+        {
+            if (string.IsNullOrWhiteSpace(messageType) || handler == null)
+            {
+                return;
+            }
+
+            if (!_typedHandlers.TryGetValue(messageType, out var list))
+            {
+                return;
+            }
+
+            list.Remove(handler);
+            if (list.Count == 0)
+            {
+                _typedHandlers.Remove(messageType);
             }
         }
 
@@ -139,7 +186,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            if (!_handlers.TryGetValue(messageType, out var list))
+            if (!_rawHandlers.TryGetValue(messageType, out var list))
             {
                 return;
             }
@@ -147,38 +194,66 @@ namespace Panoptes.Core.Infrastructure.Network
             list.Remove(handler);
             if (list.Count == 0)
             {
-                _handlers.Remove(messageType);
+                _rawHandlers.Remove(messageType);
             }
         }
 
-        public void Dispatch(Envelope envelope)
+        public void Dispatch(ServerFrame frame)
         {
-            if (envelope == null)
+            if (frame == null)
             {
-                Debug.LogWarning("[Dispatcher] Received null envelope.");
+                Debug.LogWarning("[Dispatcher] Received null server frame.");
                 return;
             }
 
-            OnDispatching?.Invoke(envelope);
-
-            if (_handlers.TryGetValue(envelope.Type, out var handlers) && handlers != null && handlers.Count > 0)
+            if (!TransportFrames.TryExtract(frame, out var message, out var messageType, out var payloadJson))
             {
-                var snapshot = handlers.ToArray();
+                Debug.LogWarning("[Dispatcher] Failed to extract payload from ServerFrame.");
+                return;
+            }
+
+            var entry = new DispatchEntry(frame, messageType, message, payloadJson);
+            OnDispatching?.Invoke(entry);
+
+            var hasRawHandlers = _rawHandlers.TryGetValue(messageType, out var rawHandlers) &&
+                                 rawHandlers != null &&
+                                 rawHandlers.Count > 0;
+            if (hasRawHandlers)
+            {
+                var snapshot = rawHandlers.ToArray();
                 for (int i = 0; i < snapshot.Length; i++)
                 {
                     try
                     {
-                        snapshot[i]?.Invoke(envelope.Payload);
+                        snapshot[i]?.Invoke(payloadJson);
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[Dispatcher] Handler failed for {envelope.Type}: {e}");
+                        Debug.LogError($"[Dispatcher] Raw handler failed for {messageType}: {e}");
                     }
                 }
             }
-            else
+
+            if (_typedHandlers.TryGetValue(messageType, out var typedHandlers) && typedHandlers != null && typedHandlers.Count > 0)
             {
-                Debug.LogWarning($"[Dispatcher] No handler for: {envelope.Type}");
+                var snapshot = typedHandlers.ToArray();
+                for (int i = 0; i < snapshot.Length; i++)
+                {
+                    try
+                    {
+                        snapshot[i]?.Invoke(message);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[Dispatcher] Typed handler failed for {messageType}: {e}");
+                    }
+                }
+                return;
+            }
+
+            if (!hasRawHandlers)
+            {
+                Debug.LogWarning($"[Dispatcher] No handler for: {messageType}");
             }
         }
     }

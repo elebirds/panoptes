@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现静态目录模块的目录加载与查询。
+
 package staticdata
 
 import (
@@ -9,17 +15,19 @@ import (
 )
 
 type Catalog struct {
-	bundle CatalogBundle
-	resources map[string]ResourceDescriptor
-	units map[string]UnitDefinition
-	buildings map[string]BuildingDefinition
-	terrains map[string]TerrainDefinition
-	maps map[string]*MapRuntimeBundle
+	bundle       CatalogBundle
+	resources    map[string]ResourceDescriptor
+	units        map[string]UnitDefinition
+	buildings    map[string]BuildingDefinition
+	technologies map[string]TechnologyDefinition
+	recipes      map[string]RecipeDefinition
+	terrains     map[string]TerrainDefinition
+	maps         map[string]*MapRuntimeBundle
 }
 
 var (
 	defaultCatalogMu sync.RWMutex
-	defaultCatalog *Catalog
+	defaultCatalog   *Catalog
 )
 
 func SetDefault(c *Catalog) {
@@ -65,12 +73,14 @@ func LoadDir(dir string) (*Catalog, error) {
 
 func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	catalog := &Catalog{
-		bundle:    bundle,
-		resources: make(map[string]ResourceDescriptor, len(bundle.Resources)),
-		units:     make(map[string]UnitDefinition, len(bundle.Units)),
-		buildings: make(map[string]BuildingDefinition, len(bundle.Buildings)),
-		terrains:  make(map[string]TerrainDefinition, len(bundle.Terrains)),
-		maps:      make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
+		bundle:       bundle,
+		resources:    make(map[string]ResourceDescriptor, len(bundle.Resources)),
+		units:        make(map[string]UnitDefinition, len(bundle.Units)),
+		buildings:    make(map[string]BuildingDefinition, len(bundle.Buildings)),
+		technologies: make(map[string]TechnologyDefinition, len(bundle.Technologies)),
+		recipes:      make(map[string]RecipeDefinition, len(bundle.Recipes)),
+		terrains:     make(map[string]TerrainDefinition, len(bundle.Terrains)),
+		maps:         make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
 	}
 
 	for _, resource := range bundle.Resources {
@@ -81,6 +91,12 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 	for _, building := range bundle.Buildings {
 		catalog.buildings[building.ID] = building
+	}
+	for _, technology := range bundle.Technologies {
+		catalog.technologies[technology.ID] = technology
+	}
+	for _, recipe := range bundle.Recipes {
+		catalog.recipes[recipe.ID] = recipe
 	}
 	for _, terrain := range bundle.Terrains {
 		catalog.terrains[terrain.ID] = terrain
@@ -133,6 +149,22 @@ func (c *Catalog) GetBuilding(id string) (BuildingDefinition, bool) {
 	}
 	building, ok := c.buildings[id]
 	return building, ok
+}
+
+func (c *Catalog) GetTechnology(id string) (TechnologyDefinition, bool) {
+	if c == nil {
+		return TechnologyDefinition{}, false
+	}
+	technology, ok := c.technologies[id]
+	return technology, ok
+}
+
+func (c *Catalog) GetRecipe(id string) (RecipeDefinition, bool) {
+	if c == nil {
+		return RecipeDefinition{}, false
+	}
+	recipe, ok := c.recipes[id]
+	return recipe, ok
 }
 
 func (c *Catalog) GetTerrain(id string) (TerrainDefinition, bool) {

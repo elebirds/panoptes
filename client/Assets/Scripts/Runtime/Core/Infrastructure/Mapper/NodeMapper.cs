@@ -1,3 +1,4 @@
+using System;
 using Panoptes.Core.Domain;
 using Panoptes.Protocol.V1;
 
@@ -20,6 +21,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 // TODO: Keep Type for backward compatibility with older consumers. 这个地方后续需要重修，现在先这样搞兼容。
                 Type = view.Terrain,
                 Owner = view.Owner,
+                TerritoryOwner = string.IsNullOrWhiteSpace(view.TerritoryOwner) ? view.Owner : view.TerritoryOwner,
                 BuildingType = view.BuildingType,
                 BuildingHp = view.BuildingHp,
                 BuildingMaxHp = view.BuildingHp,
@@ -28,6 +30,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Terrain = view.Terrain,
                 IsResourcePoint = view.IsResourcePoint,
                 ResourceType = view.ResourceType,
+                IsSafeZone = view.IsSafeZone,
             };
         }
     }

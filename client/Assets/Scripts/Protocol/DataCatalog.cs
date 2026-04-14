@@ -32,31 +32,46 @@ namespace Panoptes.Protocol.V1 {
             "Z0VudHJ5Eg4KAmlkGAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEiAK",
             "C2Rlc2NyaXB0aW9uGAMgASgJUgtkZXNjcmlwdGlvbhIZCghpY29uX2tleRgE",
             "IAEoCVIHaWNvbktleRIdCgpwcmVmYWJfa2V5GAUgASgJUglwcmVmYWJLZXki",
-            "mQEKE1RlcnJhaW5DYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIKBG5h",
-            "bWUYAiABKAlSBG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0",
-            "aW9uEhkKCGljb25fa2V5GAQgASgJUgdpY29uS2V5EiEKDG1hdGVyaWFsX2tl",
-            "eRgFIAEoCVILbWF0ZXJpYWxLZXki6AIKFVN0YXRpY0NhdGFsb2dTbmFwc2hv",
-            "dBJECghtYW5pZmVzdBgBIAEoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlN0YXRp",
-            "Y0NhdGFsb2dNYW5pZmVzdFIIbWFuaWZlc3QSQwoJcmVzb3VyY2VzGAIgAygL",
-            "MiUucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VEZXNjcmlwdG9yUglyZXNv",
-            "dXJjZXMSOQoFdW5pdHMYAyADKAsyIy5wYW5vcHRlcy5wcm90by52MS5Vbml0",
-            "Q2F0YWxvZ0VudHJ5UgV1bml0cxJFCglidWlsZGluZ3MYBCADKAsyJy5wYW5v",
-            "cHRlcy5wcm90by52MS5CdWlsZGluZ0NhdGFsb2dFbnRyeVIJYnVpbGRpbmdz",
-            "EkIKCHRlcnJhaW5zGAUgAygLMiYucGFub3B0ZXMucHJvdG8udjEuVGVycmFp",
-            "bkNhdGFsb2dFbnRyeVIIdGVycmFpbnMiYAoYTXNnU3RhdGljQ2F0YWxvZ01h",
-            "bmlmZXN0EkQKCG1hbmlmZXN0GAEgASgLMigucGFub3B0ZXMucHJvdG8udjEu",
-            "U3RhdGljQ2F0YWxvZ01hbmlmZXN0UghtYW5pZmVzdCJgChhNc2dTdGF0aWND",
-            "YXRhbG9nU25hcHNob3QSRAoIc25hcHNob3QYASABKAsyKC5wYW5vcHRlcy5w",
-            "cm90by52MS5TdGF0aWNDYXRhbG9nU25hcHNob3RSCHNuYXBzaG90QlNaOmdp",
-            "dGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3Rv",
-            "L3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "zQEKFlRlY2hub2xvZ3lDYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIK",
+            "BG5hbWUYAiABKAlSBG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2Ny",
+            "aXB0aW9uEhkKCGljb25fa2V5GAQgASgJUgdpY29uS2V5EhYKBmJyYW5jaBgF",
+            "IAEoCVIGYnJhbmNoEhIKBHRpZXIYBiABKAVSBHRpZXISJgoPdGVjaF9wb2lu",
+            "dF9jb3N0GAcgASgFUg10ZWNoUG9pbnRDb3N0Ir0BChJSZWNpcGVDYXRhbG9n",
+            "RW50cnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlSBG5hbWUSIAoL",
+            "ZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0aW9uEhkKCGljb25fa2V5GAQg",
+            "ASgJUgdpY29uS2V5Eh8KC2J1aWxkaW5nX2lkGAUgASgJUgpidWlsZGluZ0lk",
+            "EiUKDmR1cmF0aW9uX3R1cm5zGAYgASgFUg1kdXJhdGlvblR1cm5zIpkBChNU",
+            "ZXJyYWluQ2F0YWxvZ0VudHJ5Eg4KAmlkGAEgASgJUgJpZBISCgRuYW1lGAIg",
+            "ASgJUgRuYW1lEiAKC2Rlc2NyaXB0aW9uGAMgASgJUgtkZXNjcmlwdGlvbhIZ",
+            "CghpY29uX2tleRgEIAEoCVIHaWNvbktleRIhCgxtYXRlcmlhbF9rZXkYBSAB",
+            "KAlSC21hdGVyaWFsS2V5IvgDChVTdGF0aWNDYXRhbG9nU25hcHNob3QSRAoI",
+            "bWFuaWZlc3QYASABKAsyKC5wYW5vcHRlcy5wcm90by52MS5TdGF0aWNDYXRh",
+            "bG9nTWFuaWZlc3RSCG1hbmlmZXN0EkMKCXJlc291cmNlcxgCIAMoCzIlLnBh",
+            "bm9wdGVzLnByb3RvLnYxLlJlc291cmNlRGVzY3JpcHRvclIJcmVzb3VyY2Vz",
+            "EjkKBXVuaXRzGAMgAygLMiMucGFub3B0ZXMucHJvdG8udjEuVW5pdENhdGFs",
+            "b2dFbnRyeVIFdW5pdHMSRQoJYnVpbGRpbmdzGAQgAygLMicucGFub3B0ZXMu",
+            "cHJvdG8udjEuQnVpbGRpbmdDYXRhbG9nRW50cnlSCWJ1aWxkaW5ncxJNCgx0",
+            "ZWNobm9sb2dpZXMYBSADKAsyKS5wYW5vcHRlcy5wcm90by52MS5UZWNobm9s",
+            "b2d5Q2F0YWxvZ0VudHJ5Ugx0ZWNobm9sb2dpZXMSPwoHcmVjaXBlcxgGIAMo",
+            "CzIlLnBhbm9wdGVzLnByb3RvLnYxLlJlY2lwZUNhdGFsb2dFbnRyeVIHcmVj",
+            "aXBlcxJCCgh0ZXJyYWlucxgHIAMoCzImLnBhbm9wdGVzLnByb3RvLnYxLlRl",
+            "cnJhaW5DYXRhbG9nRW50cnlSCHRlcnJhaW5zImAKGE1zZ1N0YXRpY0NhdGFs",
+            "b2dNYW5pZmVzdBJECghtYW5pZmVzdBgBIAEoCzIoLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLlN0YXRpY0NhdGFsb2dNYW5pZmVzdFIIbWFuaWZlc3QiYAoYTXNnU3Rh",
+            "dGljQ2F0YWxvZ1NuYXBzaG90EkQKCHNuYXBzaG90GAEgASgLMigucGFub3B0",
+            "ZXMucHJvdG8udjEuU3RhdGljQ2F0YWxvZ1NuYXBzaG90UghzbmFwc2hvdEJT",
+            "WjpnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9w",
+            "cm90by92MTtwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3Rv",
+            "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitCatalogEntry), global::Panoptes.Protocol.V1.UnitCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "PrefabKey" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingCatalogEntry), global::Panoptes.Protocol.V1.BuildingCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "PrefabKey" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.TechnologyCatalogEntry), global::Panoptes.Protocol.V1.TechnologyCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "Branch", "Tier", "TechPointCost" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.RecipeCatalogEntry), global::Panoptes.Protocol.V1.RecipeCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "BuildingId", "DurationTurns" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.TerrainCatalogEntry), global::Panoptes.Protocol.V1.TerrainCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "MaterialKey" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogSnapshot), global::Panoptes.Protocol.V1.StaticCatalogSnapshot.Parser, new[]{ "Manifest", "Resources", "Units", "Buildings", "Terrains" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogSnapshot), global::Panoptes.Protocol.V1.StaticCatalogSnapshot.Parser, new[]{ "Manifest", "Resources", "Units", "Buildings", "Technologies", "Recipes", "Terrains" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgStaticCatalogManifest), global::Panoptes.Protocol.V1.MsgStaticCatalogManifest.Parser, new[]{ "Manifest" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgStaticCatalogSnapshot), global::Panoptes.Protocol.V1.MsgStaticCatalogSnapshot.Parser, new[]{ "Snapshot" }, null, null, null, null)
           }));
@@ -337,11 +352,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -376,11 +387,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -683,11 +690,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -722,11 +725,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -758,6 +757,793 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class TechnologyCatalogEntry : pb::IMessage<TechnologyCatalogEntry>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<TechnologyCatalogEntry> _parser = new pb::MessageParser<TechnologyCatalogEntry>(() => new TechnologyCatalogEntry());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<TechnologyCatalogEntry> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TechnologyCatalogEntry() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TechnologyCatalogEntry(TechnologyCatalogEntry other) : this() {
+      id_ = other.id_;
+      name_ = other.name_;
+      description_ = other.description_;
+      iconKey_ = other.iconKey_;
+      branch_ = other.branch_;
+      tier_ = other.tier_;
+      techPointCost_ = other.techPointCost_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public TechnologyCatalogEntry Clone() {
+      return new TechnologyCatalogEntry(this);
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 2;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "description" field.</summary>
+    public const int DescriptionFieldNumber = 3;
+    private string description_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Description {
+      get { return description_; }
+      set {
+        description_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "icon_key" field.</summary>
+    public const int IconKeyFieldNumber = 4;
+    private string iconKey_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string IconKey {
+      get { return iconKey_; }
+      set {
+        iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "branch" field.</summary>
+    public const int BranchFieldNumber = 5;
+    private string branch_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Branch {
+      get { return branch_; }
+      set {
+        branch_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "tier" field.</summary>
+    public const int TierFieldNumber = 6;
+    private int tier_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Tier {
+      get { return tier_; }
+      set {
+        tier_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "tech_point_cost" field.</summary>
+    public const int TechPointCostFieldNumber = 7;
+    private int techPointCost_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TechPointCost {
+      get { return techPointCost_; }
+      set {
+        techPointCost_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as TechnologyCatalogEntry);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(TechnologyCatalogEntry other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Id != other.Id) return false;
+      if (Name != other.Name) return false;
+      if (Description != other.Description) return false;
+      if (IconKey != other.IconKey) return false;
+      if (Branch != other.Branch) return false;
+      if (Tier != other.Tier) return false;
+      if (TechPointCost != other.TechPointCost) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (Description.Length != 0) hash ^= Description.GetHashCode();
+      if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+      if (Branch.Length != 0) hash ^= Branch.GetHashCode();
+      if (Tier != 0) hash ^= Tier.GetHashCode();
+      if (TechPointCost != 0) hash ^= TechPointCost.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Description);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (Branch.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Branch);
+      }
+      if (Tier != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Tier);
+      }
+      if (TechPointCost != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(TechPointCost);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Description);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (Branch.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Branch);
+      }
+      if (Tier != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Tier);
+      }
+      if (TechPointCost != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(TechPointCost);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (Description.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Description);
+      }
+      if (IconKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+      }
+      if (Branch.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Branch);
+      }
+      if (Tier != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Tier);
+      }
+      if (TechPointCost != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TechPointCost);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(TechnologyCatalogEntry other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      if (other.Description.Length != 0) {
+        Description = other.Description;
+      }
+      if (other.IconKey.Length != 0) {
+        IconKey = other.IconKey;
+      }
+      if (other.Branch.Length != 0) {
+        Branch = other.Branch;
+      }
+      if (other.Tier != 0) {
+        Tier = other.Tier;
+      }
+      if (other.TechPointCost != 0) {
+        TechPointCost = other.TechPointCost;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            Name = input.ReadString();
+            break;
+          }
+          case 26: {
+            Description = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            Branch = input.ReadString();
+            break;
+          }
+          case 48: {
+            Tier = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            TechPointCost = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            Name = input.ReadString();
+            break;
+          }
+          case 26: {
+            Description = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            Branch = input.ReadString();
+            break;
+          }
+          case 48: {
+            Tier = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            TechPointCost = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class RecipeCatalogEntry : pb::IMessage<RecipeCatalogEntry>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<RecipeCatalogEntry> _parser = new pb::MessageParser<RecipeCatalogEntry>(() => new RecipeCatalogEntry());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<RecipeCatalogEntry> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public RecipeCatalogEntry() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public RecipeCatalogEntry(RecipeCatalogEntry other) : this() {
+      id_ = other.id_;
+      name_ = other.name_;
+      description_ = other.description_;
+      iconKey_ = other.iconKey_;
+      buildingId_ = other.buildingId_;
+      durationTurns_ = other.durationTurns_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public RecipeCatalogEntry Clone() {
+      return new RecipeCatalogEntry(this);
+    }
+
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 1;
+    private string id_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Id {
+      get { return id_; }
+      set {
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "name" field.</summary>
+    public const int NameFieldNumber = 2;
+    private string name_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Name {
+      get { return name_; }
+      set {
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "description" field.</summary>
+    public const int DescriptionFieldNumber = 3;
+    private string description_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Description {
+      get { return description_; }
+      set {
+        description_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "icon_key" field.</summary>
+    public const int IconKeyFieldNumber = 4;
+    private string iconKey_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string IconKey {
+      get { return iconKey_; }
+      set {
+        iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "building_id" field.</summary>
+    public const int BuildingIdFieldNumber = 5;
+    private string buildingId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string BuildingId {
+      get { return buildingId_; }
+      set {
+        buildingId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "duration_turns" field.</summary>
+    public const int DurationTurnsFieldNumber = 6;
+    private int durationTurns_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int DurationTurns {
+      get { return durationTurns_; }
+      set {
+        durationTurns_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as RecipeCatalogEntry);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(RecipeCatalogEntry other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Id != other.Id) return false;
+      if (Name != other.Name) return false;
+      if (Description != other.Description) return false;
+      if (IconKey != other.IconKey) return false;
+      if (BuildingId != other.BuildingId) return false;
+      if (DurationTurns != other.DurationTurns) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (Description.Length != 0) hash ^= Description.GetHashCode();
+      if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+      if (BuildingId.Length != 0) hash ^= BuildingId.GetHashCode();
+      if (DurationTurns != 0) hash ^= DurationTurns.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Description);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (BuildingId.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(BuildingId);
+      }
+      if (DurationTurns != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(DurationTurns);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Id.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Id);
+      }
+      if (Name.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Name);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Description);
+      }
+      if (IconKey.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(IconKey);
+      }
+      if (BuildingId.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(BuildingId);
+      }
+      if (DurationTurns != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(DurationTurns);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
+      }
+      if (Description.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Description);
+      }
+      if (IconKey.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+      }
+      if (BuildingId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingId);
+      }
+      if (DurationTurns != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(DurationTurns);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(RecipeCatalogEntry other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Id.Length != 0) {
+        Id = other.Id;
+      }
+      if (other.Name.Length != 0) {
+        Name = other.Name;
+      }
+      if (other.Description.Length != 0) {
+        Description = other.Description;
+      }
+      if (other.IconKey.Length != 0) {
+        IconKey = other.IconKey;
+      }
+      if (other.BuildingId.Length != 0) {
+        BuildingId = other.BuildingId;
+      }
+      if (other.DurationTurns != 0) {
+        DurationTurns = other.DurationTurns;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            Name = input.ReadString();
+            break;
+          }
+          case 26: {
+            Description = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            BuildingId = input.ReadString();
+            break;
+          }
+          case 48: {
+            DurationTurns = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Id = input.ReadString();
+            break;
+          }
+          case 18: {
+            Name = input.ReadString();
+            break;
+          }
+          case 26: {
+            Description = input.ReadString();
+            break;
+          }
+          case 34: {
+            IconKey = input.ReadString();
+            break;
+          }
+          case 42: {
+            BuildingId = input.ReadString();
+            break;
+          }
+          case 48: {
+            DurationTurns = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class TerrainCatalogEntry : pb::IMessage<TerrainCatalogEntry>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -772,7 +1558,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1029,11 +1815,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1068,11 +1850,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1118,7 +1896,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1142,6 +1920,8 @@ namespace Panoptes.Protocol.V1 {
       resources_ = other.resources_.Clone();
       units_ = other.units_.Clone();
       buildings_ = other.buildings_.Clone();
+      technologies_ = other.technologies_.Clone();
+      recipes_ = other.recipes_.Clone();
       terrains_ = other.terrains_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -1197,10 +1977,32 @@ namespace Panoptes.Protocol.V1 {
       get { return buildings_; }
     }
 
+    /// <summary>Field number for the "technologies" field.</summary>
+    public const int TechnologiesFieldNumber = 5;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.TechnologyCatalogEntry> _repeated_technologies_codec
+        = pb::FieldCodec.ForMessage(42, global::Panoptes.Protocol.V1.TechnologyCatalogEntry.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.TechnologyCatalogEntry> technologies_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.TechnologyCatalogEntry>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.TechnologyCatalogEntry> Technologies {
+      get { return technologies_; }
+    }
+
+    /// <summary>Field number for the "recipes" field.</summary>
+    public const int RecipesFieldNumber = 6;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.RecipeCatalogEntry> _repeated_recipes_codec
+        = pb::FieldCodec.ForMessage(50, global::Panoptes.Protocol.V1.RecipeCatalogEntry.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.RecipeCatalogEntry> recipes_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.RecipeCatalogEntry>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.RecipeCatalogEntry> Recipes {
+      get { return recipes_; }
+    }
+
     /// <summary>Field number for the "terrains" field.</summary>
-    public const int TerrainsFieldNumber = 5;
+    public const int TerrainsFieldNumber = 7;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.TerrainCatalogEntry> _repeated_terrains_codec
-        = pb::FieldCodec.ForMessage(42, global::Panoptes.Protocol.V1.TerrainCatalogEntry.Parser);
+        = pb::FieldCodec.ForMessage(58, global::Panoptes.Protocol.V1.TerrainCatalogEntry.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.TerrainCatalogEntry> terrains_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.TerrainCatalogEntry>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1227,6 +2029,8 @@ namespace Panoptes.Protocol.V1 {
       if(!resources_.Equals(other.resources_)) return false;
       if(!units_.Equals(other.units_)) return false;
       if(!buildings_.Equals(other.buildings_)) return false;
+      if(!technologies_.Equals(other.technologies_)) return false;
+      if(!recipes_.Equals(other.recipes_)) return false;
       if(!terrains_.Equals(other.terrains_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -1239,6 +2043,8 @@ namespace Panoptes.Protocol.V1 {
       hash ^= resources_.GetHashCode();
       hash ^= units_.GetHashCode();
       hash ^= buildings_.GetHashCode();
+      hash ^= technologies_.GetHashCode();
+      hash ^= recipes_.GetHashCode();
       hash ^= terrains_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -1265,6 +2071,8 @@ namespace Panoptes.Protocol.V1 {
       resources_.WriteTo(output, _repeated_resources_codec);
       units_.WriteTo(output, _repeated_units_codec);
       buildings_.WriteTo(output, _repeated_buildings_codec);
+      technologies_.WriteTo(output, _repeated_technologies_codec);
+      recipes_.WriteTo(output, _repeated_recipes_codec);
       terrains_.WriteTo(output, _repeated_terrains_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1283,6 +2091,8 @@ namespace Panoptes.Protocol.V1 {
       resources_.WriteTo(ref output, _repeated_resources_codec);
       units_.WriteTo(ref output, _repeated_units_codec);
       buildings_.WriteTo(ref output, _repeated_buildings_codec);
+      technologies_.WriteTo(ref output, _repeated_technologies_codec);
+      recipes_.WriteTo(ref output, _repeated_recipes_codec);
       terrains_.WriteTo(ref output, _repeated_terrains_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1300,6 +2110,8 @@ namespace Panoptes.Protocol.V1 {
       size += resources_.CalculateSize(_repeated_resources_codec);
       size += units_.CalculateSize(_repeated_units_codec);
       size += buildings_.CalculateSize(_repeated_buildings_codec);
+      size += technologies_.CalculateSize(_repeated_technologies_codec);
+      size += recipes_.CalculateSize(_repeated_recipes_codec);
       size += terrains_.CalculateSize(_repeated_terrains_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1322,6 +2134,8 @@ namespace Panoptes.Protocol.V1 {
       resources_.Add(other.resources_);
       units_.Add(other.units_);
       buildings_.Add(other.buildings_);
+      technologies_.Add(other.technologies_);
+      recipes_.Add(other.recipes_);
       terrains_.Add(other.terrains_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1334,11 +2148,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1362,6 +2172,14 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 42: {
+            technologies_.AddEntriesFrom(input, _repeated_technologies_codec);
+            break;
+          }
+          case 50: {
+            recipes_.AddEntriesFrom(input, _repeated_recipes_codec);
+            break;
+          }
+          case 58: {
             terrains_.AddEntriesFrom(input, _repeated_terrains_codec);
             break;
           }
@@ -1376,11 +2194,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1404,6 +2218,14 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 42: {
+            technologies_.AddEntriesFrom(ref input, _repeated_technologies_codec);
+            break;
+          }
+          case 50: {
+            recipes_.AddEntriesFrom(ref input, _repeated_recipes_codec);
+            break;
+          }
+          case 58: {
             terrains_.AddEntriesFrom(ref input, _repeated_terrains_codec);
             break;
           }
@@ -1429,7 +2251,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1573,11 +2395,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1599,11 +2417,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1636,7 +2450,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1780,11 +2594,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1806,11 +2616,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

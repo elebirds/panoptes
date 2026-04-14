@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace Panoptes.Tests.EditMode.Fonts
@@ -6,6 +7,8 @@ namespace Panoptes.Tests.EditMode.Fonts
     public sealed class FontFallbackTests
     {
         private readonly string _loadingOverlayPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Common/LoadingOverlay.cs");
+        private readonly string _errorToastPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Common/ErrorToast.cs");
+        private readonly string _confirmDialogPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Common/ConfirmDialog.cs");
 
         [Test]
         public void TmpSettings_ShouldConfigureGlobalFallbackFonts()
@@ -126,6 +129,26 @@ namespace Panoptes.Tests.EditMode.Fonts
             var content = File.ReadAllText(_loadingOverlayPath);
             StringAssert.Contains("text.font = TMP_Settings.defaultFontAsset;", content,
                 "LoadingOverlay 动态创建 TextMeshProUGUI 时必须显式绑定默认字体。");
+        }
+
+        [Test]
+        public void ErrorToast_ShouldAssignTmpFont_WhenCreatingRuntimeMessageText()
+        {
+            Assert.That(File.Exists(_errorToastPath), Is.True, "ErrorToast.cs 不存在。");
+
+            var content = File.ReadAllText(_errorToastPath);
+            Assert.That(Regex.IsMatch(content, @"\.font\s*=\s*TMP_Settings\.defaultFontAsset\s*;"), Is.True,
+                "ErrorToast 动态创建 TextMeshProUGUI 时必须显式绑定默认字体。");
+        }
+
+        [Test]
+        public void ConfirmDialog_ShouldAssignTmpFont_WhenCreatingRuntimeTexts()
+        {
+            Assert.That(File.Exists(_confirmDialogPath), Is.True, "ConfirmDialog.cs 不存在。");
+
+            var content = File.ReadAllText(_confirmDialogPath);
+            Assert.That(Regex.Matches(content, @"\.font\s*=\s*TMP_Settings\.defaultFontAsset\s*;").Count, Is.GreaterThanOrEqualTo(2),
+                "ConfirmDialog 动态创建 TextMeshProUGUI 时必须显式绑定默认字体。");
         }
     }
 }

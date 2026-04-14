@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14 18:45:09 +0800
+// Description: 实现部长引擎的输出解析逻辑。
+
 package minister
 
 import (
@@ -24,15 +30,15 @@ type MinisterActionItem struct {
 
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	var raw struct {
-		Report   string `json:"report"`
-		Metrics  []struct {
+		Report  string `json:"report"`
+		Metrics []struct {
 			Label      string `json:"label"`
 			Value      string `json:"value"`
 			Trend      string `json:"trend"`
 			Confidence string `json:"confidence"`
 			IsDelayed  bool   `json:"is_delayed"`
 		} `json:"metrics"`
-		Actions  []struct {
+		Actions []struct {
 			Type   string         `json:"type"`
 			Params map[string]any `json:"params"`
 		} `json:"actions"`
@@ -75,7 +81,7 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 			if nodeID == "" || buildingType == "" {
 				continue
 			}
-			state.MinisterBuildOrders = append(state.MinisterBuildOrders, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
+			state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
 		case "repair_road":
 			fromNode, _ := asString(action.Params["from_node"])
 			toNode, _ := asString(action.Params["to_node"])
@@ -93,7 +99,7 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 			}
 			p := ecs.PositionC.Get(nodeEntry)
 			pos := domain.Position{X: p.X, Y: p.Y}
-			state.MinisterMoveOrders = append(state.MinisterMoveOrders, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
+			state.TurnRuntime.Planning.MinisterMoves = append(state.TurnRuntime.Planning.MinisterMoves, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
 		case "redirect_flow":
 			// redirect_flow 暂时只记录，不直接修改持久配置。
 		default:
