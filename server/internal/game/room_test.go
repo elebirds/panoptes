@@ -573,6 +573,37 @@ func TestAppendCastleResourceSnapshotsIncludesOwnedCastleResources(t *testing.T)
 	}
 }
 
+func TestBuildPlayerViewIncludesResearchState(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:      3,
+			CastleBaseHP:       100,
+			StartingTechPoints: 1,
+			TechPointsPerTurn:  2,
+			TechPointsMax:      5,
+		},
+	}))
+
+	room := NewRoom("game-1", nil, newStubTransport(), &config.Config{})
+	room.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{})
+	room.state.Players["player-1"].Research.TechPoints = 4
+	room.state.Players["player-1"].Research.UnlockTechnology("agri_unlock_farm")
+
+	view := room.buildPlayerView("player-1")
+	if view.GetResearch() == nil {
+		t.Fatalf("research view is nil")
+	}
+	if view.GetResearch().GetTechPoints() != 4 {
+		t.Fatalf("tech_points = %d", view.GetResearch().GetTechPoints())
+	}
+	if view.GetResearch().GetTechPointsIncome() != 2 || view.GetResearch().GetTechPointsCap() != 5 {
+		t.Fatalf("research income/cap = %#v", view.GetResearch())
+	}
+	if len(view.GetResearch().GetUnlockedTechnologyIds()) != 1 || view.GetResearch().GetUnlockedTechnologyIds()[0] != "agri_unlock_farm" {
+		t.Fatalf("unlocked technologies = %#v", view.GetResearch().GetUnlockedTechnologyIds())
+	}
+}
+
 func waitFor(t *testing.T, timeout time.Duration, fn func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
