@@ -1,5 +1,6 @@
 # Panoptes — 后端开发指南（Agent版）
 
+> Turn V2 覆盖说明：凡与统一 `planning/resolving` 回合模型、Turn V2 协议、Turn V2 服务端结构冲突之处，以 `docs/TURN_V2_REFACTOR_PLAN.md` 为准。
 > 本文档是后端开发的唯一权威参考。所有架构决策、接口定义、数据结构均已在此固定。
 > Agent开发时以本文档为准，不得自行更改已定义的结构、命名、接口。
 > 未定义的细节可自行实现，但必须符合本文档的架构原则。
