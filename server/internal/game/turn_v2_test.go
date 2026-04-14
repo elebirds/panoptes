@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证 Turn V2 人类玩家通知与统一规划阶段约束。
+
 package game
 
 import (
@@ -41,7 +47,7 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	t.Parallel()
 
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{TurnTimeLimitDomestic: 12, TurnTimeLimitCombat: 18, TokensPerTurn: 3},
+		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
 	}))
 
 	tp := newStubTransport()
@@ -84,8 +90,6 @@ func TestHumanPlayerNotifyTurnPrefersUnifiedPlanningTimeout(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TurnTimeLimitPlanning: 21,
-			TurnTimeLimitDomestic: 12,
-			TurnTimeLimitCombat:   18,
 			TokensPerTurn:         3,
 		},
 	}))

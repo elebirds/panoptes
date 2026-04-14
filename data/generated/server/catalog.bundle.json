@@ -4,7 +4,7 @@
     "content_version": "2026-04-06.v2",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "b33088e20030a8945df4624edbc4ec14c1affe55e2aa14b90d2c522a7f135515"
+    "bundle_hash": "559874e13d8668a315a19beba0fea0010d244fb9f9bbff86d10a747162d9e648"
   },
   "resources": [
     {
@@ -1247,8 +1247,7 @@
     }
   ],
   "rules": {
-    "turn_time_limit_domestic": 60,
-    "turn_time_limit_combat": 60,
+    "turn_time_limit_planning": 120,
     "tokens_per_turn": 3,
     "tokens_recuperation_bonus": 1,
     "max_turns": 30,

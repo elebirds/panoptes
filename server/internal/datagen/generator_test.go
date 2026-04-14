@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 验证数据生成器会产出 schema、bundle 和共享代码。
+
 package datagen
 
 import (
@@ -533,8 +539,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
   ]
 }`,
 		"data/content/rules/rules.json": `{
-  "turn_time_limit_domestic": 15,
-  "turn_time_limit_combat": 20,
+  "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
   "tokens_recuperation_bonus": 1,
   "max_turns": 30,

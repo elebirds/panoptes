@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 协调统一 planning -> resolving 回合推进与提交等待逻辑。
+
 package turn
 
 import (
@@ -49,10 +55,7 @@ func (c *Coordinator) Start() {
 	c.runtime.SetCancelFunc(cancel)
 
 	rules := staticdata.Default().Rules()
-	planningTimeoutSec := rules.PlanningTimeoutSeconds()
-	if planningTimeoutSec <= 0 {
-		planningTimeoutSec = 35
-	}
+	planningTimeoutSec := rules.TurnTimeLimitPlanning
 
 	for !c.runtime.State().IsOver {
 		if ctx.Err() != nil {

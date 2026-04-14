@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 提供本地联调用的 Turn V2 调试集成测试入口。
+
 package debug_test
 
 import (
@@ -67,8 +73,7 @@ func TestRoundTrip(t *testing.T) {
 			DefaultMapID:   "default",
 		},
 		Rules: staticdata.Rules{
-			TurnTimeLimitDomestic: 5,
-			TurnTimeLimitCombat:   5,
+			TurnTimeLimitPlanning: 10,
 			TokensPerTurn:         3,
 			MaxTurns:              2,
 			CastleBaseHP:          100,

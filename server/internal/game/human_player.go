@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-14
+// Description: 定义人类玩家适配器，负责把服务端状态转换为客户端回合通知。
+
 package game
 
 import (
@@ -48,10 +54,6 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		return
 	}
 	rules := staticdata.Default().Rules()
-	timeout := rules.PlanningTimeoutSeconds()
-	if timeout <= 0 {
-		timeout = 35
-	}
 	currentPolicy := ""
 	if room != nil && room.State() != nil {
 		if playerState := room.State().Players[p.playerID]; playerState != nil {
@@ -59,7 +61,7 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		}
 	}
 	msg := &pb.MsgPlanningStart{
-		Timeout:       int32(timeout),
+		Timeout:       int32(rules.TurnTimeLimitPlanning),
 		Tokens:        int32(rules.TokensPerTurn),
 		CurrentPolicy: currentPolicy,
 		Phase:         phase,
