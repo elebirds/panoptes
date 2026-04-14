@@ -10,6 +10,7 @@ PROTO_GEN_PATHS = \
 	--path game_state.proto \
 	--path minister.proto \
 	--path orders.proto \
+	--path transport.proto \
 	--path turn.proto \
 	--path settlement.proto
 
@@ -24,6 +25,7 @@ gen: data-gen proto-gen db-sqlc
 
 proto-gen:
 	cd protocol && buf generate $(PROTO_GEN_PATHS)
+	cd server && go run ./cmd/transportdispatchgen
 
 # Run the Go backend
 server:
