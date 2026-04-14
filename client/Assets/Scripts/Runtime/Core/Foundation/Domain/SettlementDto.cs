@@ -2,13 +2,13 @@ using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
-    public class MarchTurnStopDto
+    public sealed class MarchTurnStopDto
     {
         public int TurnIndex;
         public string NodeId;
     }
 
-    public class PathPreviewDto
+    public sealed class PathPreviewDto
     {
         public string RequestId;
         public string UnitId;
@@ -22,19 +22,21 @@ namespace Panoptes.Core.Domain
         public List<MarchTurnStopDto> TurnStops;
     }
 
-    public class QueuedCombatOrderDto
+    public sealed class QueuedUnitOrderDto
     {
         public string UnitId;
         public string Action;
         public string TargetNodeId;
         public string TargetUnitId;
+        public string SecondaryNodeId;
+        public Dictionary<string, string> Params;
         public List<string> PathNodeIds;
         public string FirstTurnNodeId;
         public int TotalTurns;
         public List<MarchTurnStopDto> TurnStops;
     }
 
-    public class DomesticBuildResultDto
+    public sealed class BuiltStructureDto
     {
         public string NodeId;
         public string BuildingType;
@@ -43,7 +45,7 @@ namespace Panoptes.Core.Domain
         public int BuildingHp;
     }
 
-    public class CastleBuiltBuildingDto
+    public sealed class CastleBuiltBuildingDto
     {
         public string NodeId;
         public string BuildingType;
@@ -52,24 +54,29 @@ namespace Panoptes.Core.Domain
         public bool HasCoordinates;
     }
 
-    public class DomesticSettlementDto
+    public sealed class SettlementSectionDto
     {
-        public List<string> BuiltNodeIDs;
-        public List<string> ChangedNodeIDs;
-        public List<DomesticBuildResultDto> BuiltBuildings;
+        public string Section;
+        public List<TurnEventDto> Events;
     }
 
-    public class CombatSettlementDto
+    public sealed class TurnSettlementDto
     {
+        public string Phase;
+        public string NextPhase;
+        public List<SettlementSectionDto> Sections;
+        public List<string> BuiltNodeIDs;
+        public List<BuiltStructureDto> BuiltBuildings;
         public List<string> MovedUnitIDs;
         public List<string> DeadUnitIDs;
         public bool CastleDamaged;
-        public List<CombatEventDto> Events;
     }
 
-    public class CombatEventDto
+    public sealed class TurnEventDto
     {
+        public string Section;
         public string Type;
+        public Dictionary<string, string> Data;
         public string UnitId;
         public string TargetUnitId;
         public string EnemyUnitId;

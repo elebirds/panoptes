@@ -243,16 +243,16 @@ namespace Panoptes.DebugTools
             var payload = envelope.Payload ?? "{}";
             switch (envelope.Type)
             {
-                case "MsgDomesticPhaseStart":
-                    if (TryParse(payload, out MsgDomesticPhaseStart domesticStart))
+                case "MsgPlanningStart":
+                    if (TryParse(payload, out MsgPlanningStart planningStart))
                     {
-                        return $"turn={domesticStart.Turn} timeout={domesticStart.Timeout} tokens={domesticStart.Tokens}";
+                        return $"turn={planningStart.Turn} timeout={planningStart.Timeout} tokens={planningStart.Tokens}";
                     }
                     break;
-                case "MsgCombatPhaseStart":
-                    if (TryParse(payload, out MsgCombatPhaseStart combatStart))
+                case "MsgPlanningSnapshot":
+                    if (TryParse(payload, out MsgPlanningSnapshot planningSnapshot))
                     {
-                        return $"turn=0 timeout={combatStart.Timeout}";
+                        return $"turn={planningSnapshot.Turn} unit_orders={planningSnapshot.UnitOrders.Count}";
                     }
                     break;
                 case "MsgTokenResult":
@@ -282,22 +282,10 @@ namespace Panoptes.DebugTools
                         return $"role={metrics.MinisterRole} metrics_count={metrics.Metrics.Count}";
                     }
                     break;
-                case "MsgMinisterAction":
-                    if (TryParse(payload, out MsgMinisterAction action))
+                case "MsgTurnSettlement":
+                    if (TryParse(payload, out MsgTurnSettlement turnSettlement))
                     {
-                        return $"role={action.Minister} actions_count={action.Actions.Count}";
-                    }
-                    break;
-                case "MsgDomesticSettlement":
-                    if (TryParse(payload, out MsgDomesticSettlement domesticSettlement))
-                    {
-                        return $"changes_count={domesticSettlement.Changes.Count}";
-                    }
-                    break;
-                case "MsgCombatSettlement":
-                    if (TryParse(payload, out MsgCombatSettlement combatSettlement))
-                    {
-                        return $"events_count={combatSettlement.Events.Count}";
+                        return $"turn={turnSettlement.Turn} sections={turnSettlement.Sections.Count} next_phase={turnSettlement.NextPhase}";
                     }
                     break;
                 case "MsgGameOver":
@@ -317,14 +305,16 @@ namespace Panoptes.DebugTools
             {
                 case MsgSetPolicy setPolicy:
                     return $"policy={setPolicy.Policy}";
-                case MsgTokenBuild tokenBuild:
-                    return $"node={tokenBuild.NodeId} building={tokenBuild.BuildingType}";
-                case MsgTokenReveal tokenReveal:
-                    return $"node={tokenReveal.NodeId}";
+                case MsgBuildStructure buildStructure:
+                    return $"node={buildStructure.NodeId} building={buildStructure.BuildingType}";
+                case MsgRevealNode revealNode:
+                    return $"node={revealNode.NodeId}";
                 case MsgSetWarZone setWarZone:
                     return $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}";
                 case MsgWarZoneDirective directive:
                     return $"zone={directive.ZoneId} directive={directive.Directive}";
+                case MsgIssueUnitOrder issueOrder:
+                    return $"unit={issueOrder.UnitId} action={issueOrder.Action} node={issueOrder.TargetNodeId}";
                 default:
                     return msgType;
             }

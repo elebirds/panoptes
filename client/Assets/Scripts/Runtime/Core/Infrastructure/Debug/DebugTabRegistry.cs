@@ -778,9 +778,7 @@ namespace Panoptes.DebugTools
         {
             switch (phase)
             {
-                case GamePhases.DomesticPlanning:
-                case GamePhases.CombatPlanning:
-                case "planning":
+                case GamePhases.Planning:
                     GameIntents.SubmitTurn();
                     return;
                 default:
@@ -933,9 +931,7 @@ namespace Panoptes.DebugTools
 
             switch (phase)
             {
-                case GamePhases.DomesticPlanning:
-                case GamePhases.CombatPlanning:
-                case "planning":
+                case GamePhases.Planning:
                     GameIntents.SubmitTurn();
                     return;
                 default:

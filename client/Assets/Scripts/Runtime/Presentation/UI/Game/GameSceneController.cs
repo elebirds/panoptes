@@ -4,8 +4,8 @@ using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
-using Panoptes.Presentation.UI.Combat;
 using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Turn;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -149,11 +149,11 @@ namespace Panoptes.Presentation.UI.Game
 
             EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
             EnsureComponent<TokenHUD>(canvas.transform, "TokenHUD");
-            EnsureComponent<MicroPanel>(canvas.transform, "MicroPanel");
-            EnsureComponent<OrderReviewPanel>(canvas.transform, "OrderReviewPanel");
+            EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline");
+            EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel");
             EnsureComponent<ResourceHUD>(canvas.transform, "ResourceHUD");
             EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
-            EnsureRuntimeComponent<CombatPlaybackController>("CombatPlaybackController");
+            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
         }
 
         private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
@@ -175,6 +175,7 @@ namespace Panoptes.Presentation.UI.Game
         private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
         {
             var existing = UnityEngine.Object.FindAnyObjectByType<T>();
+            if (existing != null)
             {
                 return;
             }
