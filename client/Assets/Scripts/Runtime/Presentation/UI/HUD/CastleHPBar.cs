@@ -9,6 +9,9 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -43,6 +46,9 @@ namespace Panoptes.Presentation.UI.HUD
 
         private static readonly Color TransparentWhite = new Color(1f, 1f, 1f, 0f);
         private static Sprite _defaultUiSprite;
+#if UNITY_EDITOR
+        private bool _editorRefreshQueued;
+#endif
 
         private void Awake()
         {
@@ -106,19 +112,31 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void ApplyStyle()
         {
-            SetName(defaultDisplayName);
-            SetFactionColor(defaultFactionColor);
-            SetBarColors(hpBarBackgroundColor, hpBarFillColor);
-            SetHpRatio(1f);
-
             if (nameText != null)
             {
+                nameText.text = string.IsNullOrWhiteSpace(defaultDisplayName) ? "Castle" : defaultDisplayName;
                 nameText.color = nameColor;
                 nameText.fontSize = Mathf.Max(10f, nameFontSize);
                 nameText.fontStyle = nameFontStyle;
                 nameText.enableAutoSizing = false;
-                nameText.enableWordWrapping = false;
+                nameText.textWrappingMode = TextWrappingModes.NoWrap;
                 nameText.extraPadding = true;
+            }
+
+            if (factionPlateImage != null)
+            {
+                factionPlateImage.color = defaultFactionColor;
+            }
+
+            if (hpBarBackgroundImage != null)
+            {
+                hpBarBackgroundImage.color = hpBarBackgroundColor;
+            }
+
+            if (hpBarFillImage != null)
+            {
+                hpBarFillImage.color = hpBarFillColor;
+                hpBarFillImage.fillAmount = 1f;
             }
         }
 
@@ -291,7 +309,7 @@ namespace Panoptes.Presentation.UI.HUD
             tmp.text = "Castle";
             tmp.fontSize = 16f;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.raycastTarget = false;
             return tmp;
         }
@@ -302,8 +320,44 @@ namespace Panoptes.Presentation.UI.HUD
             canvasDynamicPixelsPerUnit = Mathf.Max(1f, canvasDynamicPixelsPerUnit);
             canvasReferencePixelsPerUnit = Mathf.Max(1f, canvasReferencePixelsPerUnit);
             nameFontSize = Mathf.Max(10f, nameFontSize);
-            EnsureRuntimeUi();
+            if (Application.isPlaying)
+            {
+                EnsureRuntimeUi();
+                ApplyStyle();
+                return;
+            }
+
+            QueueEditorRefresh();
+        }
+
+        private void QueueEditorRefresh()
+        {
+            if (_editorRefreshQueued)
+            {
+                return;
+            }
+
+            _editorRefreshQueued = true;
+            EditorApplication.delayCall += PerformEditorRefresh;
+        }
+
+        private void PerformEditorRefresh()
+        {
+            if (this == null)
+            {
+                return;
+            }
+
+            _editorRefreshQueued = false;
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            EnsureHierarchy();
+            ApplyLayout();
             ApplyStyle();
+            EditorUtility.SetDirty(this);
         }
 #endif
     }

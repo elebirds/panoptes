@@ -6,14 +6,14 @@ using UnityEngine;
 namespace Panoptes.Presentation.UI.HUD
 {
     /// <summary>
-    /// Registers the territory-expansion action for base vehicle unit types.
+    /// Registers the city-settlement action for settler-like units during planning.
     /// </summary>
     public sealed class SettlerUnitActionRegistrar : UnitInfoActionProviderBase
     {
         [SerializeField] private MapInputHandler mapInputHandler;
-        [SerializeField] private string actionId = "expand_territory";
-        [SerializeField] private string actionLabel = "Deploy";
-        [SerializeField] private bool combatPhaseOnly = true;
+        [SerializeField] private string actionId = "settle_city";
+        [SerializeField] private string actionLabel = "坐城";
+        [SerializeField] private bool planningPhaseOnly = true;
         [SerializeField] private string[] supportedUnitTypes = { "settler", "pioneer", "expander", "engineer" };
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
@@ -71,10 +71,10 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            if (combatPhaseOnly)
+            if (planningPhaseOnly)
             {
                 var cache = GameStateCache.Instance;
-                if (cache == null || !IsCombatPhase(cache.Phase))
+                if (cache == null || !IsPlanningPhase(cache.Phase))
                 {
                     return false;
                 }
@@ -102,7 +102,7 @@ namespace Panoptes.Presentation.UI.HUD
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
-        private static bool IsCombatPhase(string phase)
+        private static bool IsPlanningPhase(string phase)
         {
             var normalized = NormalizeToken(phase);
             if (string.IsNullOrEmpty(normalized))
@@ -110,8 +110,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            return string.Equals(normalized, "combat", StringComparison.Ordinal)
-                   || normalized.Contains("combat");
+            return string.Equals(normalized, "planning", StringComparison.Ordinal);
         }
     }
 }

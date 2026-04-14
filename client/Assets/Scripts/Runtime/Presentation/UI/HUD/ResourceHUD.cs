@@ -6,10 +6,11 @@
  * Description: Resource HUD placeholder.
  *************************************************/
 
-using UnityEngine;
+using System;
 using TMPro;
 using Panoptes.Core.Application.Cache;
-using System.Collections.Generic;
+using Panoptes.Core.Domain;
+using UnityEngine;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -52,7 +53,37 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 return;
             }
-            // TODO: Replace with real resource data when available.
+
+            var resources = GameStateCache.Instance != null
+                ? GameStateCache.Instance.GetMyResources()
+                : new ResourceDto();
+            var items = new[]
+            {
+                ("木材", resources.Wood),
+                ("粮食", resources.Food),
+                ("矿石", resources.Ore),
+                ("精炼矿", resources.RefinedOre),
+                ("工材", resources.EngineerMaterial),
+                ("建造点", resources.BuildPoints)
+            };
+
+            var format = string.IsNullOrWhiteSpace(lineFormat) ? "{0}: {1}" : lineFormat;
+            for (var i = 0; i < resourceLines.Length; i++)
+            {
+                var line = resourceLines[i];
+                if (line == null)
+                {
+                    continue;
+                }
+
+                if (i >= items.Length)
+                {
+                    line.text = string.Empty;
+                    continue;
+                }
+
+                line.text = string.Format(format, items[i].Item1, items[i].Item2);
+            }
         }
     }
 }

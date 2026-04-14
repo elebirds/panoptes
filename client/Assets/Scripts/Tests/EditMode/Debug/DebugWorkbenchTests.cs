@@ -9,6 +9,7 @@ namespace Panoptes.Tests.EditMode.Debug
     public sealed class DebugWorkbenchTests
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
 
         [Test]
         public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
@@ -82,6 +83,36 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<DebugPanel>(managers);", content,
                 "多 Tab DebugPanel 应从 Managers 全局挂载，覆盖 Login/Lobby/Game。");
+        }
+
+        [Test]
+        public void AppManager_ShouldBootstrapPlanningDraftCache_InsteadOfCombatDraftCache()
+        {
+            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+
+            var content = File.ReadAllText(_appManagerPath);
+            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content,
+                "Managers 应挂载统一的 PlanningDraftCache。");
+            Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
+                "客户端不应再挂载旧 CombatDraftCache。");
+        }
+
+        [Test]
+        public void GameMessageHandler_ShouldRegisterTurnV2MessagesOnly()
+        {
+            Assert.That(File.Exists(_gameMessageHandlerPath), Is.True, "GameMessageHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_gameMessageHandlerPath);
+            StringAssert.Contains("Register<MsgPlanningStart>(\"MsgPlanningStart\", OnPlanningStart);", content);
+            StringAssert.Contains("Register<MsgPlanningSnapshot>(\"MsgPlanningSnapshot\", OnPlanningSnapshot);", content);
+            StringAssert.Contains("Register<MsgTurnSettlement>(\"MsgTurnSettlement\", OnTurnSettlement);", content);
+            StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
+            Assert.That(content, Does.Not.Contain("MsgDomesticPhaseStart"));
+            Assert.That(content, Does.Not.Contain("MsgCombatPhaseStart"));
+            Assert.That(content, Does.Not.Contain("MsgDomesticSettlement"));
+            Assert.That(content, Does.Not.Contain("MsgCombatSettlement"));
+            Assert.That(content, Does.Not.Contain("MsgCombatOrdersSnapshot"));
+            Assert.That(content, Does.Not.Contain("MsgCombatPathPreviewResponse"));
         }
 
         [Test]

@@ -230,7 +230,7 @@ namespace Panoptes.Presentation.UI.HUD
             name.fontSize = fontSize;
             name.fontStyle = FontStyles.Bold;
             name.alignment = TextAlignmentOptions.Center;
-            name.enableWordWrapping = false;
+            name.textWrappingMode = TextWrappingModes.NoWrap;
             name.enableAutoSizing = false;
             name.extraPadding = true;
             name.raycastTarget = false;
