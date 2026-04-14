@@ -145,7 +145,7 @@ panoptes/                          # Monorepo 根目录
 
 - 入站：`ClientFrame.meta + oneof target { auth | lobby | game }`
 - 出站：`ServerFrame.meta + oneof target { auth | lobby | game | problem }`
-- `request_id` 由客户端生成并随命令发送，服务端在关联响应中回传
+- JSON 字段使用 `requestId`（对应 proto 字段 `request_id`），由客户端生成并随命令发送，服务端在关联响应中回传
 
 ### 修改协议的唯一方式
 
