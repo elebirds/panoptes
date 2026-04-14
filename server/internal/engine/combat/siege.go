@@ -31,7 +31,9 @@ func (s *SiegeSystem) Run(world donburi.World, state *domain.GameState) []event.
 
 		ability := ecs.SiegeAbilityC.Get(unitEntry)
 		wallReduction := math.Min(float64(building.WallLevel)*0.08, 0.75)
-		dmg := int(math.Round(float64(unit.Attack) * ability.Multiplier * (1 - wallReduction)))
+		attack := effectiveUnitAttack(state, unit.Faction, unit.Type, unit.Attack)
+		multiplier := effectiveUnitSiegeMultiplier(state, unit.Faction, unit.Type, ability.Multiplier)
+		dmg := int(math.Round(float64(attack) * multiplier * (1 - wallReduction)))
 		if dmg < 1 {
 			dmg = 1
 		}

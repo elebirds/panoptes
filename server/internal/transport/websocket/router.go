@@ -167,6 +167,8 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		"MsgTokenBuild",
 		"MsgTokenExpandTerritory",
 		"MsgTokenReveal",
+		"MsgResearchTechnology",
+		"MsgSetBuildingRecipe",
 		"MsgMinisterDirective",
 		"MsgSetWarZone",
 		"MsgWarZoneDirective",

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"math"
 	"sort"
 
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -20,13 +21,15 @@ type GameState struct {
 	Players    map[string]*PlayerState
 	NodeIndex  map[string]donburi.Entity
 
-	PendingBuilds       []BuildOrder
-	MinisterBuildOrders []BuildOrder
-	MinisterMoveOrders  []MoveOrder
-	PendingCombatOrders map[string]CombatOrder
-	ActiveMarches       map[string]ActiveMarch
-	PendingMoves        []PendingMove
-	PendingConflicts    []Conflict
+	PendingBuilds           []BuildOrder
+	PendingResearchOrders   []ResearchOrder
+	PendingRecipeSelections []RecipeSelectionOrder
+	MinisterBuildOrders     []BuildOrder
+	MinisterMoveOrders      []MoveOrder
+	PendingCombatOrders     map[string]CombatOrder
+	ActiveMarches           map[string]ActiveMarch
+	PendingMoves            []PendingMove
+	PendingConflicts        []Conflict
 }
 
 type PlayerState struct {
@@ -34,6 +37,7 @@ type PlayerState struct {
 	Username     string
 	Resources    ResourceBag
 	Castles      map[string]*CastleState
+	Research     ResearchState
 	Policy       Policy
 	TokensLeft   int
 	MainCastleHP int
@@ -70,6 +74,215 @@ type BuildOrder struct {
 	NodeID       string
 	BuildingType string
 	CastleID     string
+}
+
+type ResearchOrder struct {
+	PlayerID     string
+	TechnologyID string
+}
+
+type RecipeSelectionOrder struct {
+	PlayerID string
+	NodeID   string
+	RecipeID string
+}
+
+type ResearchState struct {
+	TechPoints           int
+	TechPointsIncome     int
+	TechPointsCap        int
+	UnlockedTechnologies map[string]struct{}
+	UnlockedBuildings    map[string]struct{}
+	UnlockedRecipes      map[string]struct{}
+}
+
+func NewResearchState(starting int, income int, cap int) ResearchState {
+	return ResearchState{
+		TechPoints:           starting,
+		TechPointsIncome:     income,
+		TechPointsCap:        cap,
+		UnlockedTechnologies: make(map[string]struct{}),
+		UnlockedBuildings:    make(map[string]struct{}),
+		UnlockedRecipes:      make(map[string]struct{}),
+	}
+}
+
+func (r *ResearchState) HasTechnology(id string) bool {
+	if r == nil {
+		return false
+	}
+	_, ok := r.UnlockedTechnologies[id]
+	return ok
+}
+
+func (r *ResearchState) HasBuilding(id string) bool {
+	if r == nil {
+		return false
+	}
+	_, ok := r.UnlockedBuildings[id]
+	return ok
+}
+
+func (r *ResearchState) HasRecipe(id string) bool {
+	if r == nil {
+		return false
+	}
+	_, ok := r.UnlockedRecipes[id]
+	return ok
+}
+
+func (r *ResearchState) UnlockTechnology(id string) {
+	if r == nil || id == "" {
+		return
+	}
+	r.UnlockedTechnologies[id] = struct{}{}
+}
+
+func (r *ResearchState) UnlockBuilding(id string) {
+	if r == nil || id == "" {
+		return
+	}
+	r.UnlockedBuildings[id] = struct{}{}
+}
+
+func (r *ResearchState) UnlockRecipe(id string) {
+	if r == nil || id == "" {
+		return
+	}
+	r.UnlockedRecipes[id] = struct{}{}
+}
+
+// technologyEffects 只读取“已正式解锁”的科技效果。
+//
+// 科技研究在当前语义下是回合末完成、下一回合生效，因此这里不再暴露任何本回合
+// 尚未 Apply 的临时解锁状态。
+func (s *GameState) technologyEffects(playerID string) []staticdata.TechnologyEffect {
+	if s == nil {
+		return nil
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return nil
+	}
+	technologyIDs := make(map[string]struct{}, len(playerState.Research.UnlockedTechnologies))
+	for technologyID := range playerState.Research.UnlockedTechnologies {
+		technologyIDs[technologyID] = struct{}{}
+	}
+	effects := make([]staticdata.TechnologyEffect, 0)
+	for technologyID := range technologyIDs {
+		technology, ok := staticdata.Default().GetTechnology(technologyID)
+		if !ok {
+			continue
+		}
+		effects = append(effects, technology.Effects...)
+	}
+	return effects
+}
+
+// ApplyFloatModifier 实现统一的 flat -> percent -> multiplier 聚合顺序。
+//
+// 所有 trigger/key 型修正都通过这里读时计算，而不是把最终值预写回 ECS 或静态表。
+func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID string, resourceKey string, base float64) float64 {
+	value := base
+	flat := 0.0
+	percent := 0.0
+	multiplier := 1.0
+	for _, effect := range s.technologyEffects(playerID) {
+		if effect.Type != "modifier" || effect.Trigger != trigger {
+			continue
+		}
+		if effect.TargetID != "" && effect.TargetID != targetID {
+			continue
+		}
+		if effect.ResourceKey != "" && effect.ResourceKey != resourceKey {
+			continue
+		}
+		switch effect.ModifierType {
+		case "flat":
+			flat += effect.Value
+		case "percent":
+			percent += effect.Value
+		case "multiplier":
+			multiplier *= effect.Value
+		}
+	}
+	value = (value + flat) * (1 + percent) * multiplier
+	if value < 0 {
+		value = 0
+	}
+	return value
+}
+
+func (s *GameState) ApplyScalarModifier(playerID string, trigger string, targetID string, resourceKey string, base int) int {
+	return int(math.Round(s.ApplyFloatModifier(playerID, trigger, targetID, resourceKey, float64(base))))
+}
+
+func (s *GameState) ApplyResourceModifiers(playerID string, trigger string, targetID string, base ResourceBag) ResourceBag {
+	if base == nil {
+		return nil
+	}
+	out := NewResourceBag()
+	for _, key := range base.Keys() {
+		out.Set(key, s.ApplyScalarModifier(playerID, trigger, targetID, string(key), base.Get(key)))
+	}
+	return out
+}
+
+// EffectiveTechPointIncome / Cap 让科技点数值也走同一套 modifier 入口，
+// 避免研究系统和展示层再各自复制一份“科技点增益”逻辑。
+func (s *GameState) EffectiveTechPointIncome(playerID string) int {
+	if s == nil {
+		return 0
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return 0
+	}
+	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPlayerTechIncome), "", "", playerState.Research.TechPointsIncome)
+}
+
+func (s *GameState) EffectiveTechPointCap(playerID string) int {
+	if s == nil {
+		return 0
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return 0
+	}
+	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPlayerTechCap), "", "", playerState.Research.TechPointsCap)
+}
+
+func (s *GameState) HasTechnologyUnlocked(playerID string, technologyID string) bool {
+	if s == nil || technologyID == "" {
+		return false
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return false
+	}
+	return playerState.Research.HasTechnology(technologyID)
+}
+
+func (s *GameState) IsBuildingUnlocked(playerID string, buildingID string) bool {
+	if s == nil || buildingID == "" {
+		return false
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return false
+	}
+	return playerState.Research.HasBuilding(buildingID)
+}
+
+func (s *GameState) IsRecipeUnlocked(playerID string, recipeID string) bool {
+	if s == nil || recipeID == "" {
+		return false
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return false
+	}
+	return playerState.Research.HasRecipe(recipeID)
 }
 
 type MoveOrder struct {
@@ -129,6 +342,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 				return bag
 			}(),
 			Castles:      make(map[string]*CastleState),
+			Research:     NewResearchState(rules.StartingTechPoints, rules.TechPointsPerTurn, rules.TechPointsMax),
 			TokensLeft:   rules.TokensPerTurn,
 			MainCastleHP: rules.CastleBaseHP,
 			WarZones:     []*WarZone{},
@@ -311,10 +525,10 @@ func (s *GameState) CanAffordFromCastle(playerID string, castleID string, cost R
 // ConsumeResources subtracts resources from the castle-scoped model.
 //
 // 规则如下：
-// 1. 有 castleID 时，只从该城堡扣费。
-// 2. 没有 castleID 时，先校验玩家总城堡资源是否足够，再按稳定顺序从多个城堡
-//    分摊扣除，避免 nondeterministic 的 map 遍历影响结果。
-// 3. 每次扣费完成后，同步刷新 player.Resources 聚合视图。
+//  1. 有 castleID 时，只从该城堡扣费。
+//  2. 没有 castleID 时，先校验玩家总城堡资源是否足够，再按稳定顺序从多个城堡
+//     分摊扣除，避免 nondeterministic 的 map 遍历影响结果。
+//  3. 每次扣费完成后，同步刷新 player.Resources 聚合视图。
 func (s *GameState) ConsumeResources(playerID string, castleID string, cost ResourceBag) bool {
 	if s == nil || cost == nil || cost.IsZero() {
 		return true
