@@ -1,0 +1,289 @@
+{
+  "config_version": "1.0.0",
+  "nodes": [
+    {
+      "id": "N_Farm",
+      "title": "农耕",
+      "description": "农场解锁：粮食",
+      "x": -760,
+      "y": -130,
+      "width": 230,
+      "height": 86,
+      "visible": true
+    },
+    {
+      "id": "N_Lumber",
+      "title": "林业",
+      "description": "伐木场解锁：木头",
+      "x": -760,
+      "y": -270,
+      "width": 230,
+      "height": 86,
+      "visible": true
+    },
+    {
+      "id": "N_Military",
+      "title": "军事传统",
+      "description": "军营解锁：兵种",
+      "x": -420,
+      "y": -130,
+      "width": 285,
+      "height": 92,
+      "visible": true
+    },
+    {
+      "id": "N_Knowledge",
+      "title": "知识体系",
+      "description": "科技中心解锁：科技点数",
+      "x": -420,
+      "y": -250,
+      "width": 300,
+      "height": 92,
+      "visible": true
+    },
+    {
+      "id": "N_Mining",
+      "title": "采矿",
+      "description": "矿场解锁：铁矿",
+      "x": -420,
+      "y": -370,
+      "width": 270,
+      "height": 92,
+      "visible": true
+    },
+    {
+      "id": "N_Standing",
+      "title": "常备军（步兵解锁）",
+      "description": "步兵配方：粮食+木头",
+      "x": -20,
+      "y": -20,
+      "width": 330,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "N_Building",
+      "title": "营造术（建筑中心）",
+      "description": "解锁：建筑点数",
+      "x": 20,
+      "y": -180,
+      "width": 300,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "N_Metallurgy",
+      "title": "冶金学（精铁加工厂解锁：铁材）",
+      "description": "",
+      "x": 360,
+      "y": -280,
+      "width": 320,
+      "height": 98,
+      "visible": true
+    },
+    {
+      "id": "N_Woodwork",
+      "title": "木工工艺（木材加工厂解锁：工程木材）",
+      "description": "",
+      "x": 170,
+      "y": -450,
+      "width": 370,
+      "height": 98,
+      "visible": true
+    },
+    {
+      "id": "N_Knight",
+      "title": "骑术（骑兵解锁）",
+      "description": "骑兵配方：铁材+木材+粮食",
+      "x": 780,
+      "y": 40,
+      "width": 360,
+      "height": 106,
+      "visible": true
+    },
+    {
+      "id": "N_Siege",
+      "title": "攻城术（攻城兵解锁）",
+      "description": "攻城兵配方：木材+粮食+铁矿",
+      "x": 780,
+      "y": -120,
+      "width": 390,
+      "height": 106,
+      "visible": true
+    },
+    {
+      "id": "N_Settler",
+      "title": "移动城邦（基地车解锁）",
+      "description": "基地车配方：钢材+工程木材+粮食",
+      "x": 780,
+      "y": -270,
+      "width": 420,
+      "height": 106,
+      "visible": true
+    },
+    {
+      "id": "N_Steel",
+      "title": "高炉炼钢（钢材解锁）",
+      "description": "",
+      "x": 700,
+      "y": -370,
+      "width": 280,
+      "height": 92,
+      "visible": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "farm_to_knowledge",
+      "from": "N_Farm",
+      "to": "N_Knowledge",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -645, "y": -130 },
+        { "x": -540, "y": -130 }
+      ]
+    },
+    {
+      "id": "lumber_to_mining",
+      "from": "N_Lumber",
+      "to": "N_Mining",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -645, "y": -270 },
+        { "x": -540, "y": -270 }
+      ]
+    },
+    {
+      "id": "trunk_to_military",
+      "from": "N_Lumber",
+      "to": "N_Military",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -650, "y": -270 },
+        { "x": -650, "y": -130 },
+        { "x": -540, "y": -130 }
+      ]
+    },
+    {
+      "id": "military_to_standing",
+      "from": "N_Military",
+      "to": "N_Standing",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -280, "y": -130 },
+        { "x": -280, "y": -20 },
+        { "x": -110, "y": -20 }
+      ]
+    },
+    {
+      "id": "knowledge_to_building",
+      "from": "N_Knowledge",
+      "to": "N_Building",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -270, "y": -250 },
+        { "x": -270, "y": -180 },
+        { "x": -90, "y": -180 }
+      ]
+    },
+    {
+      "id": "mining_to_metallurgy",
+      "from": "N_Mining",
+      "to": "N_Metallurgy",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -300, "y": -280 },
+        { "x": 202, "y": -280 }
+      ]
+    },
+    {
+      "id": "lumber_to_woodwork",
+      "from": "N_Lumber",
+      "to": "N_Woodwork",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": -760, "y": -270 },
+        { "x": -760, "y": -450 },
+        { "x": -18, "y": -450 }
+      ]
+    },
+    {
+      "id": "woodwork_to_metallurgy",
+      "from": "N_Woodwork",
+      "to": "N_Metallurgy",
+      "arrow": "up",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": 300, "y": -450 },
+        { "x": 360, "y": -450 },
+        { "x": 360, "y": -332 }
+      ]
+    },
+    {
+      "id": "metallurgy_to_steel",
+      "from": "N_Metallurgy",
+      "to": "N_Steel",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": 530, "y": -370 },
+        { "x": 568, "y": -370 }
+      ]
+    },
+    {
+      "id": "standing_to_knight",
+      "from": "N_Standing",
+      "to": "N_Knight",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": 150, "y": -20 },
+        { "x": 150, "y": 40 },
+        { "x": 596, "y": 40 }
+      ]
+    },
+    {
+      "id": "standing_to_siege",
+      "from": "N_Standing",
+      "to": "N_Siege",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": 150, "y": -20 },
+        { "x": 150, "y": -120 },
+        { "x": 594, "y": -120 }
+      ]
+    },
+    {
+      "id": "building_to_settler",
+      "from": "N_Building",
+      "to": "N_Settler",
+      "arrow": "right",
+      "thickness": 3,
+      "show_arrow": true,
+      "points": [
+        { "x": 170, "y": -180 },
+        { "x": 170, "y": -270 },
+        { "x": 586, "y": -270 }
+      ]
+    }
+  ]
+}
