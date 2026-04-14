@@ -1,5 +1,18 @@
 .PHONY: data-gen data-validate gen proto-gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
 
+PROTO_GEN_PATHS = \
+	--path common.proto \
+	--path data_types.proto \
+	--path data_catalog.proto \
+	--path map_catalog.proto \
+	--path auth.proto \
+	--path lobby.proto \
+	--path game_state.proto \
+	--path minister.proto \
+	--path orders.proto \
+	--path turn.proto \
+	--path settlement.proto
+
 data-gen:
 	cd server && go run ./cmd/datagen
 
@@ -10,7 +23,7 @@ data-validate:
 gen: data-gen proto-gen db-sqlc
 
 proto-gen:
-	cd protocol && buf generate
+	cd protocol && buf generate $(PROTO_GEN_PATHS)
 
 # Run the Go backend
 server:
