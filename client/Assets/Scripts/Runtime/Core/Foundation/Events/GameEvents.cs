@@ -49,21 +49,6 @@ namespace Panoptes.Core.Events
         public int EnemyDelta;
     }
 
-    public class DomesticSettledEvent
-    {
-        public DomesticSettlementDto Settlement;
-        public ResourceDto ResourcesAfter;
-        public List<string> BuiltNodeIDs;
-    }
-
-    public class CombatSettledEvent
-    {
-        public CombatSettlementDto Settlement;
-        public List<string> MovedUnitIDs;
-        public List<string> DeadUnitIDs;
-        public bool CastleDamaged;
-    }
-
     public class TurnSettledEvent
     {
         public TurnSettlementDto Settlement;
@@ -85,14 +70,6 @@ namespace Panoptes.Core.Events
     {
         public string MinisterRole;
         public List<MinisterMetricDto> Metrics;
-    }
-
-    public class MinisterActionEvent
-    {
-        public string MinisterRole;
-        public string ActionID;
-        public List<MinisterActionItemDto> Actions;
-        public string Report;
     }
 
     public class TokenResultEvent
