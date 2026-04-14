@@ -1,5 +1,6 @@
 # Panoptes — 前端开发指南（Agent版）
 
+> Turn V2 覆盖说明：凡与统一 `planning/resolving` 前端消息流、缓存模型、UI 结构冲突之处，以 `docs/TURN_V2_REFACTOR_PLAN.md` 为准。
 > 本文档是Unity客户端开发的唯一权威参考。
 > 客户端是纯展示层：不包含任何游戏逻辑，不做任何合法性校验。
 > 所有状态以服务端推送为准，客户端只负责渲染、输入收集、动画播放。
