@@ -42,36 +42,33 @@ func (p *HumanPlayer) Send(msg proto.Message) error {
 }
 
 func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
-	rules := staticdata.Default().Rules()
-	switch phase {
-	case domain.PhaseDomesticPlanning.String():
-		currentPolicy := ""
-		if room != nil && room.state != nil {
-			if playerState := room.state.Players[p.playerID]; playerState != nil {
-				currentPolicy = string(playerState.Policy)
-			}
-		}
-		_ = p.Send(&pb.MsgDomesticPhaseStart{
-			Timeout:       int32(rules.TurnTimeLimitDomestic),
-			Turn:          int32(room.Turn),
-			Tokens:        int32(rules.TokensPerTurn),
-			CurrentPolicy: currentPolicy,
-			Phase:         phase,
-		})
-	case domain.PhaseCombatPlanning.String():
-		_ = p.Send(&pb.MsgCombatPhaseStart{
-			Timeout: int32(rules.TurnTimeLimitCombat),
-			Tokens:  int32(rules.TokensPerTurn),
-			Turn:    int32(room.Turn),
-			Phase:   phase,
-		})
-		if room != nil {
-			snapshot := room.buildCombatOrdersSnapshot(p.playerID)
-			snapshot.Turn = int32(room.Turn)
-			snapshot.Phase = phase
-			_ = p.Send(snapshot)
-		}
-	default:
+	if phase != domain.PhasePlanning.String() {
 		slog.Warn("未知阶段通知", "phase", phase, "player_id", p.playerID)
+		return
 	}
+	rules := staticdata.Default().Rules()
+	timeout := rules.TurnTimeLimitDomestic + rules.TurnTimeLimitCombat
+	if timeout <= 0 {
+		timeout = 35
+	}
+	currentPolicy := ""
+	if room != nil && room.state != nil {
+		if playerState := room.state.Players[p.playerID]; playerState != nil {
+			currentPolicy = string(playerState.Policy)
+		}
+	}
+	msg := &pb.MsgPlanningStart{
+		Timeout:       int32(timeout),
+		Turn:          int32(room.Turn),
+		Tokens:        int32(rules.TokensPerTurn),
+		CurrentPolicy: currentPolicy,
+		Phase:         phase,
+	}
+	if room != nil {
+		snapshot := room.buildPlanningSnapshot(p.playerID)
+		snapshot.Turn = int32(room.Turn)
+		snapshot.Phase = phase
+		msg.Snapshot = snapshot
+	}
+	_ = p.Send(msg)
 }

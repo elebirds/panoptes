@@ -6,6 +6,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/combat"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/yohamta/donburi"
 )
@@ -121,15 +122,15 @@ func trimMarchPathFromCurrentNode(pathNodeIDs []string, currentNodeID string, de
 	return remaining, len(remaining) > 0
 }
 
-func (r *GameRoom) SendCombatOrdersSnapshot(playerID string) error {
+func (r *GameRoom) SendPlanningSnapshot(playerID string) error {
 	if r == nil {
 		return nil
 	}
-	return r.SendToPlayer(playerID, r.buildCombatOrdersSnapshot(playerID))
+	return r.SendToPlayer(playerID, r.buildPlanningSnapshot(playerID))
 }
 
-func (r *GameRoom) buildCombatOrdersSnapshot(playerID string) *pb.MsgCombatOrdersSnapshot {
-	msg := &pb.MsgCombatOrdersSnapshot{
+func (r *GameRoom) buildPlanningSnapshot(playerID string) *pb.MsgPlanningSnapshot {
+	msg := &pb.MsgPlanningSnapshot{
 		Turn:  int32(r.Turn),
 		Phase: r.Phase,
 	}
@@ -137,24 +138,26 @@ func (r *GameRoom) buildCombatOrdersSnapshot(playerID string) *pb.MsgCombatOrder
 		return msg
 	}
 
-	ordersByUnit := make(map[string]*pb.QueuedCombatOrder)
+	ordersByUnit := make(map[string]*pb.QueuedUnitOrder)
 	for unitID, march := range r.state.ActiveMarches {
 		if march.PlayerID != playerID {
 			continue
 		}
 		ordersByUnit[unitID] = queuedMoveOrder(unitID, march)
 	}
-	for unitID, order := range r.combatOrders {
+	for unitID, order := range r.plannedUnitOrders {
 		if order.PlayerID != playerID {
 			continue
 		}
-		queued := &pb.QueuedCombatOrder{
-			UnitId:       unitID,
-			Action:       string(order.Action),
-			TargetNodeId: order.TargetNodeID,
-			TargetUnitId: order.TargetUnitID,
+		queued := &pb.QueuedUnitOrder{
+			UnitId:          unitID,
+			Action:          string(order.Action),
+			TargetNodeId:    order.TargetNodeID,
+			TargetUnitId:    order.TargetUnitID,
+			SecondaryNodeId: order.SecondaryNodeID,
+			Params:          cloneStringMap(order.Params),
 		}
-		if order.Action == domain.CombatActionMove {
+		if order.Action == gameorders.ActionMove {
 			if march, ok := r.state.ActiveMarches[unitID]; ok {
 				queued = queuedMoveOrder(unitID, march)
 			} else if preview, ok := r.buildRoutePreview(unitID, order.TargetNodeID); ok {
@@ -173,7 +176,18 @@ func (r *GameRoom) buildCombatOrdersSnapshot(playerID string) *pb.MsgCombatOrder
 	}
 	sort.Strings(unitIDs)
 	for _, unitID := range unitIDs {
-		msg.Orders = append(msg.Orders, ordersByUnit[unitID])
+		msg.UnitOrders = append(msg.UnitOrders, ordersByUnit[unitID])
+	}
+	if playerState := r.state.Players[playerID]; playerState != nil {
+		for _, zone := range playerState.WarZones {
+			msg.WarZones = append(msg.WarZones, &pb.WarZone{
+				Id:         zone.ID,
+				Name:       zone.Name,
+				NodeIds:    append([]string(nil), zone.NodeIDs...),
+				Directive:  zone.Directive,
+				TargetNode: zone.Target,
+			})
+		}
 	}
 	return msg
 }
@@ -194,10 +208,10 @@ func (r *GameRoom) findUnitByID(unitID string) (*donburi.Entry, bool) {
 	return found, found != nil
 }
 
-func queuedMoveOrder(unitID string, march domain.ActiveMarch) *pb.QueuedCombatOrder {
-	return &pb.QueuedCombatOrder{
+func queuedMoveOrder(unitID string, march domain.ActiveMarch) *pb.QueuedUnitOrder {
+	return &pb.QueuedUnitOrder{
 		UnitId:          unitID,
-		Action:          string(domain.CombatActionMove),
+		Action:          string(gameorders.ActionMove),
 		TargetNodeId:    march.DestinationNodeID,
 		PathNodeIds:     append([]string(nil), march.LastPreview.PathNodeIDs...),
 		FirstTurnNodeId: march.LastPreview.FirstTurnNodeID,
@@ -215,4 +229,15 @@ func toProtoTurnStops(stops []domain.MarchTurnStop) []*pb.MarchTurnStop {
 		})
 	}
 	return out
+}
+
+func cloneStringMap(src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return nil
+	}
+	dst := make(map[string]string, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
 }

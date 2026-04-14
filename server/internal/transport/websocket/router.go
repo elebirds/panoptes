@@ -115,8 +115,8 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 		if err := r.lobbySvc.KickPlayer(context.Background(), playerID, msg.GetPlayerId()); err != nil {
 			r.sendLobbyError(sender, err)
 		}
-	case "MsgSubmitDomestic":
-		msg := &pb.MsgSubmitDomestic{}
+	case "MsgSubmitTurn":
+		msg := &pb.MsgSubmitTurn{}
 		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
 			r.sendGameError(sender, errors.New("invalid_request"))
 			return
@@ -131,51 +131,25 @@ func (r *Router) Route(sender Sender, playerID string, envelope *pb.Envelope) {
 			return
 		}
 		if submitter, ok := room.(interface {
-			OnHumanSubmitDomesticChecked(playerID string) error
+			OnHumanSubmitTurnChecked(playerID string) error
 		}); ok {
-			if err := submitter.OnHumanSubmitDomesticChecked(playerID); err != nil {
+			if err := submitter.OnHumanSubmitTurnChecked(playerID); err != nil {
 				r.sendGameError(sender, err)
 			}
 			return
 		}
-		room.OnHumanSubmitDomestic(playerID)
-	case "MsgSubmitCombat":
-		msg := &pb.MsgSubmitCombat{}
-		if err := protojson.Unmarshal([]byte(envelope.GetPayload()), msg); err != nil {
-			r.sendGameError(sender, errors.New("invalid_request"))
-			return
-		}
-		if r.gameRooms == nil {
-			r.sendGameNotFound(sender)
-			return
-		}
-		room, ok := r.gameRooms.GetRoomByPlayerID(playerID)
-		if !ok {
-			r.sendGameNotFound(sender)
-			return
-		}
-		if submitter, ok := room.(interface {
-			OnHumanSubmitCombatChecked(playerID string) error
-		}); ok {
-			if err := submitter.OnHumanSubmitCombatChecked(playerID); err != nil {
-				r.sendGameError(sender, err)
-			}
-			return
-		}
-		room.OnHumanSubmitCombat(playerID)
+		room.OnHumanSubmitTurn(playerID)
 	case "MsgSetPolicy",
-		"MsgTokenBuild",
-		"MsgTokenExpandTerritory",
-		"MsgTokenReveal",
-		"MsgResearchTechnology",
+		"MsgBuildStructure",
+		"MsgRevealNode",
+		"MsgSetResearchTarget",
 		"MsgSetBuildingRecipe",
-		"MsgMinisterDirective",
+		"MsgSetMinisterDirective",
 		"MsgSetWarZone",
 		"MsgWarZoneDirective",
-		"MsgTokenVetoCombat",
-		"MsgTokenMicro",
-		"MsgCombatOrder",
-		"MsgCombatPathPreviewRequest":
+		"MsgIssueUnitOrder",
+		"MsgCancelUnitOrder",
+		"MsgPlanningPathPreviewRequest":
 		if r.gameRooms == nil {
 			r.sendGameNotFound(sender)
 			return

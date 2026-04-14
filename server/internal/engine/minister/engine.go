@@ -75,7 +75,6 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 		MinisterRole: profile.Role,
 		PlayerID:     playerID,
 		ActionID:     output.ActionID,
-		Actions:      toProtoActions(output.Actions),
 		Report:       output.Report,
 	}.Apply(state.World, state)
 
@@ -146,18 +145,6 @@ func pickProfiles() []MinisterProfile {
 
 func fallbackJSON(report string) string {
 	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
-}
-
-func toProtoActions(actions []MinisterActionItem) []*pb.MinisterActionItem {
-	out := make([]*pb.MinisterActionItem, 0, len(actions))
-	for _, a := range actions {
-		params := make(map[string]string, len(a.Params))
-		for k, v := range a.Params {
-			params[k] = fmt.Sprint(v)
-		}
-		out = append(out, &pb.MinisterActionItem{Type: a.Type, Params: params})
-	}
-	return out
 }
 
 type actionRoom struct {

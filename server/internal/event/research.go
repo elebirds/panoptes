@@ -5,7 +5,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
@@ -48,7 +47,7 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	}
 }
 
-func (e TechnologyUnlockedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e TechnologyUnlockedEvent) Kind() string { return "technology_unlocked" }
 
 func (e TechnologyUnlockedEvent) String() string {
 	return fmt.Sprintf("TechnologyUnlockedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
@@ -73,7 +72,7 @@ func (e TechPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState
 	}
 }
 
-func (e TechPointsRechargedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e TechPointsRechargedEvent) Kind() string { return "tech_points_recharged" }
 
 func (e TechPointsRechargedEvent) String() string {
 	return fmt.Sprintf("TechPointsRechargedEvent player=%s amount=%d", e.PlayerID, e.Amount)
@@ -108,7 +107,7 @@ func (e TechnologyGrantAppliedEvent) Apply(world donburi.World, state *domain.Ga
 	}
 }
 
-func (e TechnologyGrantAppliedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e TechnologyGrantAppliedEvent) Kind() string { return "technology_grant_applied" }
 
 func (e TechnologyGrantAppliedEvent) String() string {
 	return fmt.Sprintf("TechnologyGrantAppliedEvent player=%s technology=%s", e.PlayerID, e.SourceTech)

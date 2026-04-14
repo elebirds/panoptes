@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/yohamta/donburi"
 )
 
@@ -18,7 +17,7 @@ func (e TurnStartedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.Phase = e.Phase
 }
 
-func (e TurnStartedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e TurnStartedEvent) Kind() string { return "turn_started" }
 
 func (e TurnStartedEvent) String() string {
 	return fmt.Sprintf("TurnStartedEvent turn=%d phase=%s", e.Turn, e.Phase)
@@ -33,7 +32,7 @@ func (e PhaseChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.Phase = e.To
 }
 
-func (e PhaseChangedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e PhaseChangedEvent) Kind() string { return "phase_changed" }
 
 func (e PhaseChangedEvent) String() string {
 	return fmt.Sprintf("PhaseChangedEvent from=%s to=%s", e.From, e.To)
@@ -52,7 +51,7 @@ func (e GameOverEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.Narrative = e.Narrative
 }
 
-func (e GameOverEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e GameOverEvent) Kind() string { return "game_over" }
 
 func (e GameOverEvent) String() string {
 	return fmt.Sprintf("GameOverEvent winner=%s reason=%s", e.WinnerID, e.Reason)
@@ -64,7 +63,7 @@ type PlayerReconnectedEvent struct {
 
 func (e PlayerReconnectedEvent) Apply(donburi.World, *domain.GameState) {}
 
-func (e PlayerReconnectedEvent) ClientPayload() *pb.CombatEvent { return nil }
+func (e PlayerReconnectedEvent) Kind() string { return "player_reconnected" }
 
 func (e PlayerReconnectedEvent) String() string {
 	return fmt.Sprintf("PlayerReconnectedEvent player=%s", e.PlayerID)

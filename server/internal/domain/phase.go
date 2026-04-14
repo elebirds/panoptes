@@ -3,10 +3,8 @@ package domain
 type TurnPhase string
 
 const (
-	PhaseDomesticPlanning  TurnPhase = "domestic_planning"
-	PhaseDomesticResolving TurnPhase = "domestic_resolving"
-	PhaseCombatPlanning    TurnPhase = "combat_planning"
-	PhaseCombatResolving   TurnPhase = "combat_resolving"
+	PhasePlanning  TurnPhase = "planning"
+	PhaseResolving TurnPhase = "resolving"
 )
 
 func (p TurnPhase) String() string {
@@ -14,5 +12,5 @@ func (p TurnPhase) String() string {
 }
 
 func (p TurnPhase) IsPlanning() bool {
-	return p == PhaseDomesticPlanning || p == PhaseCombatPlanning
+	return p == PhasePlanning
 }

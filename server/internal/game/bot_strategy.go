@@ -24,19 +24,12 @@ func (s *RandomStrategy) DecideAndSubmit(ctx context.Context, room *Room, phase 
 	}
 
 	switch phase {
-	case domain.PhaseDomesticPlanning.String():
+	case domain.PhasePlanning.String():
 		select {
 		case <-time.After(500 * time.Millisecond):
-			room.submitDomestic(playerID)
+			room.submitTurn(playerID)
 		case <-ctx.Done():
-			room.submitDomestic(playerID)
-		}
-	case domain.PhaseCombatPlanning.String():
-		select {
-		case <-time.After(time.Second):
-			room.submitCombat(playerID)
-		case <-ctx.Done():
-			room.submitCombat(playerID)
+			room.submitTurn(playerID)
 		}
 	}
 }
