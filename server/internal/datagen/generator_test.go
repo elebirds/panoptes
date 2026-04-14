@@ -20,6 +20,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		"data/schema/registry/resources.schema.json",
 		"data/schema/content/units.schema.json",
 		"data/schema/content/buildings.schema.json",
+		"data/schema/content/technologies.schema.json",
+		"data/schema/content/recipes.schema.json",
 		"data/schema/content/terrains.schema.json",
 		"data/schema/content/rules.schema.json",
 		"data/schema/content/ministers.schema.json",
@@ -40,12 +42,18 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/manifest.schema.json"), `"additionalProperties": false`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/units.schema.json"), `"additionalProperties": false`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"warrior"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/technologies.schema.json"), `"unlock_recipe"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/recipes.schema.json"), `"delay_penalty"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"technologies"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"recipes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message ResourceBag")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogManifest")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message TechnologyCatalogEntry")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message RecipeCatalogEntry")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/map_catalog.proto"), "message MapCatalogEntry")
 	assertFileContains(t, filepath.Join(repoRoot, "server/internal/staticdata/generated/resource_keys_gen.go"), "ResourceOre")
 	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Core/Foundation/Domain/ResourceKeys.g.cs"), "ResourceOre")
@@ -251,6 +259,70 @@ func TestGenerateRejectsInvalidAuthoringSources(t *testing.T) {
 			wantContains: []string{"ghost"},
 		},
 		{
+			name:    "technologies reject unknown unlock target",
+			relPath: "data/content/technologies/technologies.json",
+			content: `{
+  "technologies": [
+    {
+      "id": "unlock_missing_building",
+      "branch": "industry",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        { "type": "unlock_building", "target_id": "ghost_building" }
+      ]
+    }
+  ]
+}`,
+			wantPath:     "data/content/technologies/technologies.json",
+			wantContains: []string{"ghost_building"},
+		},
+		{
+			name:    "recipes reject unknown modifier trigger",
+			relPath: "data/content/technologies/technologies.json",
+			content: `{
+  "technologies": [
+    {
+      "id": "bad_modifier",
+      "branch": "industry",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "modifier",
+          "trigger": "recipe.unknown",
+          "target_id": "farm_food",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    }
+  ]
+}`,
+			wantPath:     "data/content/technologies/technologies.json",
+			wantContains: []string{"recipe.unknown"},
+		},
+		{
+			name:    "recipes reject unknown building reference",
+			relPath: "data/content/recipes/recipes.json",
+			content: `{
+  "recipes": [
+    {
+      "id": "ghost_recipe",
+      "building_id": "ghost_building",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "food": 1 } }
+    }
+  ]
+}`,
+			wantPath:     "data/content/recipes/recipes.json",
+			wantContains: []string{"ghost_building"},
+		},
+		{
 			name:    "maps reject unknown default terrain",
 			relPath: "data/content/maps/default/definition.json",
 			content: `{
@@ -373,10 +445,56 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
       "required_resource_type": "food",
       "build_cost": { "food": 1 },
       "upkeep": {},
-      "production": { "input": {}, "output": { "food": 2 }, "cycle_turns": 1 },
-      "produces_units": [],
+      "recipe_ids": ["farm_food"],
+      "default_recipe_id": "farm_food",
       "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
       "limits": { "max_per_node": 1, "max_per_player": -1 }
+    }
+  ]
+}`,
+		"data/content/technologies/technologies.json": `{
+  "technologies": [
+    {
+      "id": "agri_unlock_farm",
+      "branch": "agriculture",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        { "type": "unlock_building", "target_id": "farm" },
+        { "type": "unlock_recipe", "target_id": "farm_food" }
+      ]
+    },
+    {
+      "id": "agri_prod_1",
+      "branch": "agriculture",
+      "tier": 2,
+      "tech_point_cost": 1,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "agri_unlock_farm" }
+      ],
+      "effects": [
+        {
+          "type": "modifier",
+          "trigger": "recipe.output",
+          "target_id": "farm_food",
+          "resource_key": "food",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    }
+  ]
+}`,
+		"data/content/recipes/recipes.json": `{
+  "recipes": [
+    {
+      "id": "farm_food",
+      "building_id": "farm",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": { "mode": "add_turns", "value": 1 },
+      "outputs": { "resources": { "food": 2 } }
     }
   ]
 }`,
@@ -423,6 +541,9 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
   "castle_base_hp": 100,
   "safe_zone_radius": 4,
   "occupy_turns": 1,
+  "starting_tech_points": 1,
+  "tech_points_per_turn": 1,
+  "tech_points_max": 5,
   "build_points_per_turn": 10,
   "build_points_max": 30
 }`,
@@ -496,6 +617,17 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
 		"data/ui/catalogs/buildings.json": `{
   "buildings": [
     { "id": "farm", "name": "农场", "description": "基础粮食产出建筑", "icon_key": "building_farm", "prefab_key": "Farm", "sort_order": 10, "tags": ["eco"] }
+  ]
+}`,
+		"data/ui/catalogs/technologies.json": `{
+  "technologies": [
+    { "id": "agri_unlock_farm", "name": "开垦令", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agri_unlock_farm", "sort_order": 10, "tags": ["agriculture"] },
+    { "id": "agri_prod_1", "name": "精耕细作", "description": "提高农场产出", "icon_key": "tech_agri_prod_1", "sort_order": 20, "tags": ["agriculture"] }
+  ]
+}`,
+		"data/ui/catalogs/recipes.json": `{
+  "recipes": [
+    { "id": "farm_food", "name": "基础农耕", "description": "产出粮食", "icon_key": "recipe_farm_food", "sort_order": 10, "tags": ["food"] }
   ]
 }`,
 		"data/ui/catalogs/terrains.json": `{

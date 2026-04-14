@@ -82,6 +82,9 @@
             ],
             "type": "object"
           },
+          "default_recipe_id": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -143,6 +146,12 @@
             ],
             "type": "object"
           },
+          "recipe_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "required_resource_type": {
             "enum": [
               "build_points",
@@ -166,8 +175,8 @@
           "required_resource_type",
           "build_cost",
           "upkeep",
-          "production",
-          "produces_units",
+          "recipe_ids",
+          "default_recipe_id",
           "combat",
           "limits"
         ],
