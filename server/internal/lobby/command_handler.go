@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 )
@@ -28,29 +29,33 @@ type lobbyAdapter struct {
 }
 
 func (a lobbyAdapter) CreateRoom(ctx cmddispatch.InboundContext, cmd *pb.MsgCreateRoom) error {
-	return a.service.CreateRoom(context.Background(), ctx.PlayerID, cmd.GetName(), int(cmd.GetMaxPlayers()))
+	return a.service.CreateRoom(commandContext(ctx), ctx.PlayerID, cmd.GetName(), int(cmd.GetMaxPlayers()))
 }
 
 func (a lobbyAdapter) JoinRoom(ctx cmddispatch.InboundContext, cmd *pb.MsgJoinRoom) error {
-	return a.service.JoinRoom(context.Background(), ctx.PlayerID, cmd.GetRoomCode())
+	return a.service.JoinRoom(commandContext(ctx), ctx.PlayerID, cmd.GetRoomCode())
 }
 
 func (a lobbyAdapter) LeaveRoom(ctx cmddispatch.InboundContext, _ *pb.MsgLeaveRoom) error {
-	return a.service.LeaveRoom(context.Background(), ctx.PlayerID)
+	return a.service.LeaveRoom(commandContext(ctx), ctx.PlayerID)
 }
 
 func (a lobbyAdapter) ReadyUp(ctx cmddispatch.InboundContext, _ *pb.MsgReadyUp) error {
-	return a.service.ReadyUp(context.Background(), ctx.PlayerID)
+	return a.service.ReadyUp(commandContext(ctx), ctx.PlayerID)
 }
 
 func (a lobbyAdapter) AddBot(ctx cmddispatch.InboundContext, _ *pb.MsgAddBot) error {
-	return a.service.AddBot(context.Background(), ctx.PlayerID)
+	return a.service.AddBot(commandContext(ctx), ctx.PlayerID)
 }
 
 func (a lobbyAdapter) StartGame(ctx cmddispatch.InboundContext, _ *pb.MsgStartGame) error {
-	return a.service.StartGame(context.Background(), ctx.PlayerID)
+	return a.service.StartGame(commandContext(ctx), ctx.PlayerID)
 }
 
 func (a lobbyAdapter) KickPlayer(ctx cmddispatch.InboundContext, cmd *pb.MsgKickPlayer) error {
-	return a.service.KickPlayer(context.Background(), ctx.PlayerID, cmd.GetPlayerId())
+	return a.service.KickPlayer(commandContext(ctx), ctx.PlayerID, cmd.GetPlayerId())
+}
+
+func commandContext(ctx cmddispatch.InboundContext) context.Context {
+	return coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(ctx))
 }

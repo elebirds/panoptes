@@ -128,7 +128,7 @@ panoptes/
 │   │   │   ├── websocket/
 │   │   │   │   ├── hub.go         # 连接池管理
 │   │   │   │   ├── client.go      # 单连接读写goroutine
-│   │   │   │   ├── router.go      # Envelope.Type路由到handler
+│   │   │   │   ├── client.go      # ClientFrame解码 + Problem回包
 │   │   │   │   └── transport.go   # 实现Transport interface
 │   │   │   └── grpc/
 │   │   │       └── .gitkeep       # 预留，暂不实现
@@ -372,16 +372,23 @@ message Resources {
   int32 build_points = 6;
 }
 
-message ErrorResponse {
-  string code = 1;
-  string message = 2;
+message ClientFrame {
+  CommandMeta meta = 1;
+  oneof target {
+    AuthCommand auth = 10;
+    LobbyCommand lobby = 11;
+    GameCommand game = 12;
+  }
 }
 
-// 所有WebSocket消息的外层包装
-// type用于路由，payload是对应消息的protojson序列化
-message Envelope {
-  string type = 1;
-  bytes payload = 2;
+message ServerFrame {
+  EventMeta meta = 1;
+  oneof target {
+    AuthEvent auth = 10;
+    LobbyEvent lobby = 11;
+    GameEvent game = 12;
+    Problem problem = 13;
+  }
 }
 ```
 
@@ -1565,7 +1572,7 @@ Step 1：基础框架（Day 1）
   - go.mod，依赖安装
   - buf generate跑通，三端代码生成验证
   - config加载（环境变量）+ staticdata加载（generated bundle）
-  - WebSocket Hub能连接，Envelope消息收发正常
+  - WebSocket Hub能连接，ClientFrame/ServerFrame消息收发正常
   - 硬编码两个测试账号（alice/bob），JWT生成和校验
   - 手动房间号加入（不做匹配队列）
   - 消息路由骨架（handler签名定好，内部TODO）

@@ -44,8 +44,8 @@ func (p *HumanPlayer) IsBot() bool {
 	return false
 }
 
-func (p *HumanPlayer) Send(msg proto.Message) error {
-	return p.transport.Send(p.playerID, msg)
+func (p *HumanPlayer) Send(ctx context.Context, msg proto.Message) error {
+	return p.transport.Send(ctx, p.playerID, msg)
 }
 
 func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
@@ -72,5 +72,5 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		snapshot.Phase = phase
 		msg.Snapshot = snapshot
 	}
-	_ = p.Send(msg)
+	_ = p.Send(context.Background(), msg)
 }

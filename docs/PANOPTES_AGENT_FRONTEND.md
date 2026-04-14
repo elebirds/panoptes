@@ -253,20 +253,22 @@ WebSocket在后台线程接收消息，必须通过`UnityMainThreadDispatcher`�
 
 ## 5. 消息协议
 
-### Envelope规范
+### Transport V2 规范
 
-所有WebSocket消息使用Envelope包装：
+所有WebSocket消息使用 `ClientFrame` / `ServerFrame`，编码为 protojson：
 
-```csharp
-// Envelope.type对应消息类型，payload是对应消息的protojson字节
-// 发送示例
-var envelope = new Envelope {
-    Type = "MsgTokenBuild",
-    Payload = Google.Protobuf.ByteString.CopyFrom(
-        msg.ToByteArray()
-    )
-};
-NetworkManager.Instance.Send(envelope.ToByteArray());
+```json
+{
+  "meta": { "requestId": "req-17" },
+  "game": {
+    "planning": {
+      "buildStructure": {
+        "nodeId": "C3",
+        "buildingType": "farm"
+      }
+    }
+  }
+}
 ```
 
 ### 消息类型枚举（固定，不得新增）
@@ -335,7 +337,7 @@ MsgMinisterCombatOrders
 MsgCombatSettlement
 
 // 通用
-ErrorResponse
+Problem
 ```
 
 ---
@@ -447,8 +449,8 @@ public class NetworkManager : MonoBehaviour
     // 断开连接
     public void Disconnect();
 
-    // 发送消息（序列化为Envelope bytes）
-    public void Send(string messageType, IMessage message);
+    // 发送消息（封装为ClientFrame后发送）
+    public void Send(IMessage message);
 
     // 内部：收到消息时分发给MessageDispatcher
     private void OnMessageReceived(byte[] data);
@@ -458,7 +460,7 @@ public class NetworkManager : MonoBehaviour
 ### MessageDispatcher.cs
 
 ```csharp
-// 根据Envelope.type路由到对应Handler
+// 从ServerFrame提取具体payload并路由到对应Handler
 public class MessageDispatcher : MonoBehaviour
 {
     public static MessageDispatcher Instance { get; private set; }
@@ -468,7 +470,7 @@ public class MessageDispatcher : MonoBehaviour
         where T : IMessage<T>, new();
 
     // 分发（由NetworkManager调用，已在主线程）
-    public void Dispatch(Envelope envelope);
+    public void Dispatch(ServerFrame frame);
 }
 ```
 
@@ -691,20 +693,12 @@ private void OnLoginSuccess(MsgLoginSuccess msg)
 ### MessageSender.cs
 
 ```csharp
-// 工具类，统一打包发送
+// 工具类，统一封装并发送 ClientFrame
 public static class MessageSender
 {
     public static void Send<T>(T message) where T : IMessage<T>
     {
-        var typeName = typeof(T).Name;  // 例如 "MsgTokenBuild"
-        var envelope = new Envelope
-        {
-            Type = typeName,
-            Payload = Google.Protobuf.ByteString.CopyFrom(
-                ((IMessage)message).ToByteArray()
-            )
-        };
-        NetworkManager.Instance.Send(envelope);
+        NetworkManager.Instance.Send(message);
     }
 }
 ```
@@ -901,7 +895,7 @@ Step 1：项目基础（Day 1）
     - 运行根目录 `make gen`，同步更新 `Assets/Scripts/Protocol/`
   - Boot场景，单例初始化
   - NetworkManager：连接，发送，接收，主线程回调
-  - MessageDispatcher：Envelope路由骨架
+  - MessageDispatcher：ServerFrame提取与payload路由骨架
   - MessageSender工具类
   - Config.cs：服务器地址配置
 

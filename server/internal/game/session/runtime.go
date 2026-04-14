@@ -28,7 +28,7 @@ type Player interface {
 	PlayerID() string
 	Username() string
 	IsBot() bool
-	Send(msg proto.Message) error
+	Send(ctx context.Context, msg proto.Message) error
 }
 
 type Runtime struct {
@@ -129,18 +129,18 @@ func (r *Runtime) PlayerCount() int {
 	return len(r.players)
 }
 
-func (r *Runtime) SendToPlayer(playerID string, msg proto.Message) error {
+func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
 	for _, player := range r.players {
 		if player.PlayerID() == playerID {
-			return player.Send(msg)
+			return player.Send(ctx, msg)
 		}
 	}
 	return fmt.Errorf("player %s not found", playerID)
 }
 
-func (r *Runtime) Broadcast(msg proto.Message) {
+func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
 	for _, player := range r.players {
-		_ = player.Send(msg)
+		_ = player.Send(ctx, msg)
 	}
 }
 
@@ -309,7 +309,7 @@ func (r *Runtime) sendGameInit(p Player) {
 		Nodes:        gamequery.BuildNodeViews(r.state, p.PlayerID()),
 		Units:        gamequery.BuildUnitViews(r.state),
 	}
-	_ = p.Send(msg)
+	_ = p.Send(context.Background(), msg)
 }
 
 func (r *Runtime) sendStaticCatalogManifest(p Player) {
@@ -323,5 +323,5 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 			DefaultMapId:   manifest.DefaultMapID,
 		},
 	}
-	_ = p.Send(msg)
+	_ = p.Send(context.Background(), msg)
 }

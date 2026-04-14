@@ -11,6 +11,8 @@ namespace Panoptes.Tests.EditMode.Debug
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
         private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
+        private readonly string _networkManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/NetworkManager.cs");
+        private readonly string _messageSenderPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSender.cs");
 
         [Test]
         public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
@@ -136,12 +138,31 @@ namespace Panoptes.Tests.EditMode.Debug
             StringAssert.Contains("Register<MsgPlanningSnapshot>(\"MsgPlanningSnapshot\", OnPlanningSnapshot);", content);
             StringAssert.Contains("Register<MsgTurnSettlement>(\"MsgTurnSettlement\", OnTurnSettlement);", content);
             StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
+            StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", OnResearchResult);", content);
+            StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", OnSetBuildingRecipeResult);", content);
+            Assert.That(content, Does.Not.Contain("Register<ErrorResponse>(\"ErrorResponse\", OnGameError);"),
+                "GameMessageHandler 不应继续注册旧 ErrorResponse。");
             Assert.That(content, Does.Not.Contain("MsgDomesticPhaseStart"));
             Assert.That(content, Does.Not.Contain("MsgCombatPhaseStart"));
             Assert.That(content, Does.Not.Contain("MsgDomesticSettlement"));
             Assert.That(content, Does.Not.Contain("MsgCombatSettlement"));
             Assert.That(content, Does.Not.Contain("MsgCombatOrdersSnapshot"));
             Assert.That(content, Does.Not.Contain("MsgCombatPathPreviewResponse"));
+        }
+
+        [Test]
+        public void NetworkRuntime_ShouldNotExposeLegacySendRawPath()
+        {
+            Assert.That(File.Exists(_networkManagerPath), Is.True, "NetworkManager.cs 不存在。");
+            Assert.That(File.Exists(_messageSenderPath), Is.True, "MessageSender.cs 不存在。");
+
+            var networkContent = File.ReadAllText(_networkManagerPath);
+            var senderContent = File.ReadAllText(_messageSenderPath);
+
+            Assert.That(networkContent, Does.Not.Contain("public void SendRaw("),
+                "Transport V2 下 NetworkManager 不应继续暴露 SendRaw。");
+            Assert.That(senderContent, Does.Not.Contain("public static void SendRaw("),
+                "Transport V2 下 MessageSender 不应继续暴露 SendRaw。");
         }
 
         [Test]

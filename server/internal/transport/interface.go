@@ -7,6 +7,8 @@
 package transport
 
 import (
+	"context"
+
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/transport/dispatch"
 	"google.golang.org/protobuf/proto"
@@ -15,9 +17,9 @@ import (
 // GameTransport 是游戏消息推送抽象。
 // WebSocket 和 gRPC 都应实现该接口。
 type GameTransport interface {
-	Send(playerID string, msg proto.Message) error
-	Broadcast(roomID string, msg proto.Message) error
-	Stream(playerID string, msgs <-chan proto.Message) error
+	Send(ctx context.Context, playerID string, msg proto.Message) error
+	Broadcast(ctx context.Context, roomID string, msg proto.Message) error
+	Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error
 }
 
 // GameRoom 是运行中的对局房间最小提交接口。

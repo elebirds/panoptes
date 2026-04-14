@@ -17,6 +17,6 @@ type Player interface {
 	PlayerID() string
 	Username() string
 	IsBot() bool
-	Send(msg proto.Message) error
+	Send(ctx context.Context, msg proto.Message) error
 	NotifyTurn(ctx context.Context, room *Room, phase string)
 }

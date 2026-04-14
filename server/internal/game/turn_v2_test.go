@@ -16,28 +16,34 @@ import (
 	gameturn "github.com/elebirds/panoptes/internal/game/turn"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"google.golang.org/protobuf/proto"
 )
 
 type stubTransport struct {
-	sent map[string][]proto.Message
+	sent     map[string][]proto.Message
+	sentMeta map[string][]*pb.EventMeta
 }
 
 func newStubTransport() *stubTransport {
-	return &stubTransport{sent: make(map[string][]proto.Message)}
+	return &stubTransport{
+		sent:     make(map[string][]proto.Message),
+		sentMeta: make(map[string][]*pb.EventMeta),
+	}
 }
 
-func (t *stubTransport) Send(playerID string, msg proto.Message) error {
+func (t *stubTransport) Send(ctx context.Context, playerID string, msg proto.Message) error {
 	t.sent[playerID] = append(t.sent[playerID], msg)
+	t.sentMeta[playerID] = append(t.sentMeta[playerID], coretransport.EventMetaFromContext(ctx))
 	return nil
 }
 
-func (t *stubTransport) Broadcast(string, proto.Message) error { return nil }
+func (t *stubTransport) Broadcast(context.Context, string, proto.Message) error { return nil }
 
-func (t *stubTransport) Stream(playerID string, msgs <-chan proto.Message) error {
+func (t *stubTransport) Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error {
 	for msg := range msgs {
-		if err := t.Send(playerID, msg); err != nil {
+		if err := t.Send(ctx, playerID, msg); err != nil {
 			return err
 		}
 	}
@@ -151,8 +157,61 @@ func TestGameRoomRejectsActionsOutsidePlanning(t *testing.T) {
 	}
 }
 
+func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T) {
+	t.Parallel()
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+	room.State().Players["player-1"].TokensLeft = 3
+
+	err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID:  "player-1",
+		RequestID: "req-123",
+		TraceID:   "trace-456",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_Planning{
+			Planning: &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_SetPolicy{
+					SetPolicy: &pb.MsgSetPolicy{Policy: "growth"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleGameCommand() error = %v", err)
+	}
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) != 1 {
+		t.Fatalf("send count = %d, want 1", len(msgs))
+	}
+	if _, ok := msgs[0].(*pb.MsgTokenResult); !ok {
+		t.Fatalf("message type = %T, want MsgTokenResult", msgs[0])
+	}
+
+	metas := tp.sentMeta["player-1"]
+	if len(metas) != 1 {
+		t.Fatalf("meta count = %d, want 1", len(metas))
+	}
+	if metas[0] == nil {
+		t.Fatalf("event meta = nil, want request correlation")
+	}
+	if metas[0].GetRequestId() != "req-123" {
+		t.Fatalf("request_id = %q, want req-123", metas[0].GetRequestId())
+	}
+	if metas[0].GetTraceId() != "trace-456" {
+		t.Fatalf("trace_id = %q, want trace-456", metas[0].GetTraceId())
+	}
+}
+
 func newTestRuntime(gameID string, tp *stubTransport) *gamesession.Runtime {
-	runtime := gamesession.NewRuntime(gameID, nil, tp, &config.Config{})
+	players := []gamesession.Player{
+		NewHumanPlayer("player-1", "alice", tp),
+	}
+	runtime := gamesession.NewRuntime(gameID, players, tp, &config.Config{})
 	state := domain.NewGameState(gameID, []string{"player-1"}, []string{"alice"}, &domain.MapData{})
 	runtime.SetState(state)
 	return runtime

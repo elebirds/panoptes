@@ -41,7 +41,7 @@ func (p *BotPlayer) IsBot() bool {
 	return true
 }
 
-func (p *BotPlayer) Send(proto.Message) error {
+func (p *BotPlayer) Send(context.Context, proto.Message) error {
 	return nil
 }
 
