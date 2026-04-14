@@ -2,13 +2,13 @@ using System.Collections.Generic;
 
 namespace Panoptes.Core.Domain
 {
-    public sealed class MarchTurnStopDto
+    public class MarchTurnStopDto
     {
         public int TurnIndex;
         public string NodeId;
     }
 
-    public sealed class PathPreviewDto
+    public class PathPreviewDto
     {
         public string RequestId;
         public string UnitId;
@@ -22,21 +22,19 @@ namespace Panoptes.Core.Domain
         public List<MarchTurnStopDto> TurnStops;
     }
 
-    public sealed class QueuedUnitOrderDto
+    public class QueuedCombatOrderDto
     {
         public string UnitId;
         public string Action;
         public string TargetNodeId;
         public string TargetUnitId;
-        public string SecondaryNodeId;
-        public Dictionary<string, string> Params;
         public List<string> PathNodeIds;
         public string FirstTurnNodeId;
         public int TotalTurns;
         public List<MarchTurnStopDto> TurnStops;
     }
 
-    public sealed class BuiltStructureDto
+    public class DomesticBuildResultDto
     {
         public string NodeId;
         public string BuildingType;
@@ -45,7 +43,7 @@ namespace Panoptes.Core.Domain
         public int BuildingHp;
     }
 
-    public sealed class CastleBuiltBuildingDto
+    public class CastleBuiltBuildingDto
     {
         public string NodeId;
         public string BuildingType;
@@ -54,29 +52,24 @@ namespace Panoptes.Core.Domain
         public bool HasCoordinates;
     }
 
-    public sealed class SettlementSectionDto
+    public class DomesticSettlementDto
     {
-        public string Section;
-        public List<TurnEventDto> Events;
+        public List<string> BuiltNodeIDs;
+        public List<string> ChangedNodeIDs;
+        public List<DomesticBuildResultDto> BuiltBuildings;
     }
 
-    public sealed class TurnSettlementDto
+    public class CombatSettlementDto
     {
-        public string Phase;
-        public string NextPhase;
-        public List<SettlementSectionDto> Sections;
-        public List<string> BuiltNodeIDs;
-        public List<BuiltStructureDto> BuiltBuildings;
         public List<string> MovedUnitIDs;
         public List<string> DeadUnitIDs;
         public bool CastleDamaged;
+        public List<CombatEventDto> Events;
     }
 
-    public sealed class TurnEventDto
+    public class CombatEventDto
     {
-        public string Section;
         public string Type;
-        public Dictionary<string, string> Data;
         public string UnitId;
         public string TargetUnitId;
         public string EnemyUnitId;
@@ -93,5 +86,22 @@ namespace Panoptes.Core.Domain
         public int FromY;
         public int ToX;
         public int ToY;
+    }
+
+    public class TurnSettlementSectionDto
+    {
+        public string Section;
+        public List<CombatEventDto> Events;
+    }
+
+    public class TurnSettlementDto
+    {
+        public List<TurnSettlementSectionDto> Sections;
+        public List<CombatEventDto> Events;
+        public List<string> BuiltNodeIDs;
+        public List<DomesticBuildResultDto> BuiltBuildings;
+        public List<string> MovedUnitIDs;
+        public List<string> DeadUnitIDs;
+        public bool CastleDamaged;
     }
 }
