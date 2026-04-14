@@ -10,7 +10,6 @@ namespace Panoptes.Editor
     public static class TerrainMaterialAutoSetup
     {
         private const string TextureRoot = "Assets/Art/textures";
-        private const string StylizedTextureRoot = "Assets/Art/textures/terrain/stylized/VoxelCoreLab";
         private const string AmbientCgTextureRoot = "Assets/Art/textures/terrain/ambientcg";
         private const string MaterialRoot = "Assets/Art/Materials/Terrain";
         private const string NodeTilePrefabPath = "Assets/Prefabs/Map/NodeTile3D.prefab";
@@ -112,7 +111,7 @@ namespace Panoptes.Editor
 
         private static void TryAutoSetupStylizedTerrain()
         {
-            if (!AssetDatabase.IsValidFolder(StylizedTextureRoot) && !AssetDatabase.IsValidFolder(AmbientCgTextureRoot))
+            if (!AssetDatabase.IsValidFolder(AmbientCgTextureRoot))
             {
                 return;
             }
@@ -123,7 +122,7 @@ namespace Panoptes.Editor
                 return;
             }
 
-            var signature = BuildTextureSignature(StylizedTextureRoot, AmbientCgTextureRoot);
+            var signature = BuildTextureSignature(AmbientCgTextureRoot);
             if (string.IsNullOrEmpty(signature))
             {
                 return;
@@ -210,13 +209,9 @@ namespace Panoptes.Editor
                     diffuseExactNames = new[]
                     {
                         "Grass001_2K-JPG_Color.jpg",
-                        "Grass001.png",
-                        "Grass_02.png",
-                        "Grass_01.png"
+                        "Grass001.png"
                     },
-                    diffusePrefixes = new[] { "grass_bermuda_01" },
-                    normalExactNames = new[] { "Grass001_2K-JPG_NormalGL.jpg", "Grass001_2K-JPG_NormalDX.jpg" },
-                    normalPrefixes = new[] { "grass_bermuda_01" },
+                    normalExactNames = new[] { "Grass001_2K-JPG_NormalGL.jpg" },
                     smoothness = 0.18f
                 },
                 new TerrainSet
@@ -225,13 +220,9 @@ namespace Panoptes.Editor
                     diffuseExactNames = new[]
                     {
                         "Ground020_2K-JPG_Color.jpg",
-                        "Ground020.png",
-                        "Grass_04.png",
-                        "Dirt_03.png"
+                        "Ground020.png"
                     },
-                    diffusePrefixes = new[] { "muddy_tracks" },
-                    normalExactNames = new[] { "Ground020_2K-JPG_NormalGL.jpg", "Ground020_2K-JPG_NormalDX.jpg" },
-                    normalPrefixes = new[] { "muddy_tracks" },
+                    normalExactNames = new[] { "Ground020_2K-JPG_NormalGL.jpg" },
                     baseTint = new Color(0.92f, 1f, 0.92f),
                     smoothness = 0.12f
                 },
@@ -241,13 +232,9 @@ namespace Panoptes.Editor
                     diffuseExactNames = new[]
                     {
                         "Ground014_2K-JPG_Color.jpg",
-                        "Ground014.png",
-                        "Stone_02.png",
-                        "Stone_03.png"
+                        "Ground014.png"
                     },
-                    diffusePrefixes = new[] { "rocky_terrain_02" },
-                    normalExactNames = new[] { "Ground014_2K-JPG_NormalGL.jpg", "Ground014_2K-JPG_NormalDX.jpg" },
-                    normalPrefixes = new[] { "rocky_terrain_02" },
+                    normalExactNames = new[] { "Ground014_2K-JPG_NormalGL.jpg" },
                     smoothness = 0.08f
                 },
                 new TerrainSet
@@ -256,13 +243,9 @@ namespace Panoptes.Editor
                     diffuseExactNames = new[]
                     {
                         "Ground074_2K-JPG_Color.jpg",
-                        "Ground074.png",
-                        "Water_02.png",
-                        "Water_01.png"
+                        "Ground074.png"
                     },
-                    diffusePrefixes = new[] { "rock_tile_floor" },
-                    normalExactNames = new[] { "Ground074_2K-JPG_NormalGL.jpg", "Ground074_2K-JPG_NormalDX.jpg" },
-                    normalPrefixes = new[] { "rock_tile_floor" },
+                    normalExactNames = new[] { "Ground074_2K-JPG_NormalGL.jpg" },
                     baseTint = new Color(0.72f, 0.86f, 1f),
                     smoothness = 0.35f,
                     normalScale = 0.8f
@@ -270,8 +253,8 @@ namespace Panoptes.Editor
                 new TerrainSet
                 {
                     key = "snow",
-                    diffusePrefixes = new[] { "snow_01" },
-                    normalPrefixes = new[] { "snow_01" },
+                    diffuseExactNames = new[] { "Ground074_2K-JPG_Color.jpg" },
+                    normalExactNames = new[] { "Ground074_2K-JPG_NormalGL.jpg" },
                     smoothness = 0.42f,
                     normalScale = 0.55f
                 },
@@ -281,13 +264,9 @@ namespace Panoptes.Editor
                     diffuseExactNames = new[]
                     {
                         "PavingStones050_2K-JPG_Color.jpg",
-                        "PavingStones050.png",
-                        "Dirt_04.png",
-                        "Stone_04.png"
+                        "PavingStones050.png"
                     },
-                    diffusePrefixes = new[] { "slate_floor_03" },
-                    normalExactNames = new[] { "PavingStones050_2K-JPG_NormalGL.jpg", "PavingStones050_2K-JPG_NormalDX.jpg" },
-                    normalPrefixes = new[] { "slate_floor_03" },
+                    normalExactNames = new[] { "PavingStones050_2K-JPG_NormalGL.jpg" },
                     baseTint = new Color(0.72f, 0.72f, 0.72f),
                     smoothness = 0.12f
                 }

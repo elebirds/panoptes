@@ -1,0 +1,728 @@
+fileFormatVersion: 2
+guid: ef0570931924bea498b0b0ab25189eda
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7330851847946160535
+    second: Leaves_TwistedTree_C_0
+  - first:
+      213: -1460864751900368885
+    second: Leaves_TwistedTree_C_1
+  - first:
+      213: 8970141140263475550
+    second: Leaves_TwistedTree_C_2
+  - first:
+      213: 2093765704018987044
+    second: Leaves_TwistedTree_C_3
+  - first:
+      213: 2228834443480085442
+    second: Leaves_TwistedTree_C_4
+  - first:
+      213: -804980564370468357
+    second: Leaves_TwistedTree_C_5
+  - first:
+      213: 9223110981695423641
+    second: Leaves_TwistedTree_C_6
+  - first:
+      213: -1707244383375443868
+    second: Leaves_TwistedTree_C_7
+  - first:
+      213: 6358457476118523864
+    second: Leaves_TwistedTree_C_8
+  - first:
+      213: 829167477588186823
+    second: Leaves_TwistedTree_C_9
+  - first:
+      213: 8667250967871776934
+    second: Leaves_TwistedTree_C_10
+  - first:
+      213: -5737035153127612113
+    second: Leaves_TwistedTree_C_11
+  - first:
+      213: 5083322216240817915
+    second: Leaves_TwistedTree_C_12
+  - first:
+      213: -4644764269997008722
+    second: Leaves_TwistedTree_C_13
+  - first:
+      213: -1130879724681085147
+    second: Leaves_TwistedTree_C_14
+  - first:
+      213: 2246899486834918912
+    second: Leaves_TwistedTree_C_15
+  - first:
+      213: 6387652250512303027
+    second: Leaves_TwistedTree_C_16
+  - first:
+      213: 2093574201705499773
+    second: Leaves_TwistedTree_C_17
+  - first:
+      213: -6625916834707088167
+    second: Leaves_TwistedTree_C_18
+  - first:
+      213: -3987646573110814731
+    second: Leaves_TwistedTree_C_19
+  - first:
+      213: -3613708021725179938
+    second: Leaves_TwistedTree_C_20
+  - first:
+      213: 3199489193882213972
+    second: Leaves_TwistedTree_C_21
+  - first:
+      213: 6844278593916604188
+    second: Leaves_TwistedTree_C_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_0
+      rect:
+        serializedVersion: 2
+        x: 166
+        y: 738
+        width: 102
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9663726b515934a90800000000000000
+      internalID: -7330851847946160535
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_1
+      rect:
+        serializedVersion: 2
+        x: 283
+        y: 656
+        width: 133
+        height: 213
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b00e6168f37f9bbe0800000000000000
+      internalID: -1460864751900368885
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_2
+      rect:
+        serializedVersion: 2
+        x: 431
+        y: 699
+        width: 196
+        height: 222
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e59958a57d75c7c70800000000000000
+      internalID: 8970141140263475550
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_3
+      rect:
+        serializedVersion: 2
+        x: 642
+        y: 735
+        width: 104
+        height: 153
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 42882f680dc8e0d10800000000000000
+      internalID: 2093765704018987044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_4
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 637
+        width: 98
+        height: 83
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c339c21e196eee10800000000000000
+      internalID: 2228834443480085442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_5
+      rect:
+        serializedVersion: 2
+        x: 194
+        y: 481
+        width: 242
+        height: 163
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf1da91117224d4f0800000000000000
+      internalID: -804980564370468357
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_6
+      rect:
+        serializedVersion: 2
+        x: 402
+        y: 592
+        width: 96
+        height: 101
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 994c5fb52921fff70800000000000000
+      internalID: 9223110981695423641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_7
+      rect:
+        serializedVersion: 2
+        x: 515
+        y: 584
+        width: 169
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46830285746ae48e0800000000000000
+      internalID: -1707244383375443868
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_8
+      rect:
+        serializedVersion: 2
+        x: 732
+        y: 606
+        width: 126
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dfa87fc267cd3850800000000000000
+      internalID: 6358457476118523864
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_9
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 451
+        width: 87
+        height: 81
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7c653f08d6bc18b00800000000000000
+      internalID: 829167477588186823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_10
+      rect:
+        serializedVersion: 2
+        x: 254
+        y: 416
+        width: 89
+        height: 73
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a8682f85d2484870800000000000000
+      internalID: 8667250967871776934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_11
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 438
+        width: 205
+        height: 151
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2166e1ace4f160b0800000000000000
+      internalID: -5737035153127612113
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_12
+      rect:
+        serializedVersion: 2
+        x: 528
+        y: 287
+        width: 189
+        height: 193
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf6a2e18f969b8640800000000000000
+      internalID: 5083322216240817915
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_13
+      rect:
+        serializedVersion: 2
+        x: 664
+        y: 428
+        width: 219
+        height: 175
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea8d665618b7a8fb0800000000000000
+      internalID: -4644764269997008722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_14
+      rect:
+        serializedVersion: 2
+        x: 133
+        y: 300
+        width: 67
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52f31bec1ee4e40f0800000000000000
+      internalID: -1130879724681085147
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_15
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 318
+        width: 133
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0068dcebd279e2f10800000000000000
+      internalID: 2246899486834918912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_16
+      rect:
+        serializedVersion: 2
+        x: 282
+        y: 180
+        width: 123
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b3a28ce0ef75a850800000000000000
+      internalID: 6387652250512303027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_17
+      rect:
+        serializedVersion: 2
+        x: 374
+        y: 292
+        width: 158
+        height: 149
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d7c049be4aedd0d10800000000000000
+      internalID: 2093574201705499773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_18
+      rect:
+        serializedVersion: 2
+        x: 725
+        y: 253
+        width: 135
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9dcd0049eb30c04a0800000000000000
+      internalID: -6625916834707088167
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_19
+      rect:
+        serializedVersion: 2
+        x: 376
+        y: 154
+        width: 172
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f71de7b19809a8c0800000000000000
+      internalID: -3987646573110814731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_20
+      rect:
+        serializedVersion: 2
+        x: 561
+        y: 120
+        width: 79
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edf471353b789ddc0800000000000000
+      internalID: -3613708021725179938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_21
+      rect:
+        serializedVersion: 2
+        x: 630
+        y: 170
+        width: 114
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45edc00687ed66c20800000000000000
+      internalID: 3199489193882213972
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_TwistedTree_C_22
+      rect:
+        serializedVersion: 2
+        x: 747
+        y: 155
+        width: 95
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1f853e5e13cbfe50800000000000000
+      internalID: 6844278593916604188
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Leaves_TwistedTree_C_0: -7330851847946160535
+      Leaves_TwistedTree_C_1: -1460864751900368885
+      Leaves_TwistedTree_C_10: 8667250967871776934
+      Leaves_TwistedTree_C_11: -5737035153127612113
+      Leaves_TwistedTree_C_12: 5083322216240817915
+      Leaves_TwistedTree_C_13: -4644764269997008722
+      Leaves_TwistedTree_C_14: -1130879724681085147
+      Leaves_TwistedTree_C_15: 2246899486834918912
+      Leaves_TwistedTree_C_16: 6387652250512303027
+      Leaves_TwistedTree_C_17: 2093574201705499773
+      Leaves_TwistedTree_C_18: -6625916834707088167
+      Leaves_TwistedTree_C_19: -3987646573110814731
+      Leaves_TwistedTree_C_2: 8970141140263475550
+      Leaves_TwistedTree_C_20: -3613708021725179938
+      Leaves_TwistedTree_C_21: 3199489193882213972
+      Leaves_TwistedTree_C_22: 6844278593916604188
+      Leaves_TwistedTree_C_3: 2093765704018987044
+      Leaves_TwistedTree_C_4: 2228834443480085442
+      Leaves_TwistedTree_C_5: -804980564370468357
+      Leaves_TwistedTree_C_6: 9223110981695423641
+      Leaves_TwistedTree_C_7: -1707244383375443868
+      Leaves_TwistedTree_C_8: 6358457476118523864
+      Leaves_TwistedTree_C_9: 829167477588186823
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
