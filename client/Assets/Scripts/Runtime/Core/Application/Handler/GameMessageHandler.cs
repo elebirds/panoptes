@@ -1,3 +1,4 @@
+using System;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Mapper;
@@ -37,6 +38,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgResearchResult>("MsgResearchResult", OnResearchResult);
             dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
+            dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
             dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
             dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
@@ -61,6 +63,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", OnResearchResult);
             dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
+            dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
             dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
             dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
@@ -198,6 +201,23 @@ namespace Panoptes.Core.Application.Handler
             }
 
             Debug.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
+        }
+
+        private static void OnSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, string.Join(",", msg.PolicyIds));
+                Debug.LogWarning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
+                return;
+            }
+
+            Debug.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
         }
 
         private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)

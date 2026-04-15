@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Events;
 using Panoptes.Protocol.V1;
 using Panoptes.Presentation.UI.Game;
 using UnityEngine;
@@ -126,11 +128,150 @@ namespace Panoptes.Tests.EditMode.Lobby
             cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
             {
                 Turn = 2,
-                Phase = "planning"
+                Phase = "planning",
+                PlannedInstitutionPolicyIds = { "academy_charter" }
             });
 
             Assert.That(cache.CurrentPreview, Is.Null, "snapshot 覆盖后应清掉旧 preview。");
+            Assert.That(cache.PlannedInstitutionPolicyIds.Count, Is.EqualTo(1));
+            Assert.That(cache.PlannedInstitutionPolicyIds[0], Is.EqualTo("academy_charter"));
             Assert.That(previewChanged, Is.GreaterThanOrEqualTo(2), "预览建立与清理都应触发 PreviewChanged。");
+        }
+
+        [Test]
+        public void GameStateCache_ShouldRefreshPlanningStartWithoutSettlementReplay()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+
+            var nodeEvents = 0;
+            var unitEvents = 0;
+            var settledEvents = 0;
+            NodeChangedEvent lastNodeEvent = null;
+            UnitsChangedEvent lastUnitEvent = null;
+
+            cache.OnNodeChanged += evt =>
+            {
+                nodeEvents++;
+                lastNodeEvent = evt;
+            };
+            cache.OnUnitsChanged += evt =>
+            {
+                unitEvents++;
+                lastUnitEvent = evt;
+            };
+            cache.OnTurnSettled += _ => settledEvents++;
+
+            cache.ApplyGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 1,
+                Phase = "planning",
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 1,
+                    CapitalCityCoreHp = 100,
+                    CapitalCityCoreMaxHp = 100
+                },
+                Nodes =
+                {
+                    new NodeView
+                    {
+                        Id = "A1",
+                        Pos = new Position { X = 0, Y = 0 },
+                        Terrain = "plain",
+                        ControllerPlayerId = "player-1",
+                        TerritoryOwnerPlayerId = "player-1",
+                        BuildingTypeId = "city_core",
+                        BuildingHp = 100
+                    }
+                },
+                Units =
+                {
+                    new UnitView
+                    {
+                        Id = "unit-1",
+                        Faction = "player-1",
+                        UnitType = "settler",
+                        Hp = 10,
+                        MaxHp = 10,
+                        Pos = new Position { X = 0, Y = 0 }
+                    }
+                }
+            });
+
+            nodeEvents = 0;
+            unitEvents = 0;
+            lastNodeEvent = null;
+            lastUnitEvent = null;
+
+            var planningStart = new MsgPlanningStart
+            {
+                Turn = 2,
+                Phase = "planning",
+                Timeout = 30,
+                Tokens = 3,
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 3,
+                    CapitalCityCoreHp = 90,
+                    CapitalCityCoreMaxHp = 100
+                },
+                Snapshot = new MsgPlanningSnapshot
+                {
+                    Turn = 2,
+                    Phase = "planning",
+                    PlannedInstitutionPolicyIds = { "academy_charter" }
+                },
+                Nodes =
+                {
+                    new NodeView
+                    {
+                        Id = "A1",
+                        Pos = new Position { X = 0, Y = 0 },
+                        Terrain = "plain",
+                        ControllerPlayerId = "player-1",
+                        TerritoryOwnerPlayerId = "player-1",
+                        BuildingTypeId = "city_core",
+                        BuildingHp = 90
+                    }
+                },
+                Units =
+                {
+                    new UnitView
+                    {
+                        Id = "unit-1",
+                        Faction = "player-1",
+                        UnitType = "settler",
+                        Hp = 10,
+                        MaxHp = 10,
+                        Pos = new Position { X = 1, Y = 0 }
+                    }
+                }
+            };
+
+            cache.ApplyPlanningStart(planningStart);
+
+            Assert.That(settledEvents, Is.EqualTo(0), "planning_start 不应触发 settlement 回放。");
+            Assert.That(cache.TokensLeft, Is.EqualTo(3));
+            Assert.That(cache.MyPlayer, Is.Not.Null);
+            Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
+            Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
+            Assert.That(nodeEvents, Is.EqualTo(1));
+            Assert.That(lastNodeEvent, Is.Not.Null);
+            Assert.That(lastNodeEvent.ChangeType, Is.EqualTo("planning_start"));
+            Assert.That(unitEvents, Is.EqualTo(1));
+            Assert.That(lastUnitEvent, Is.Not.Null);
+            Assert.That(lastUnitEvent.ChangeType, Is.EqualTo("planning_start"));
+            Assert.That(lastUnitEvent.Moved.Count, Is.EqualTo(1));
+
+            cache.ApplyPlanningStart(planningStart);
+
+            Assert.That(nodeEvents, Is.EqualTo(1), "相同 planning_start 不应重复发 node diff。");
+            Assert.That(unitEvents, Is.EqualTo(1), "相同 planning_start 不应重复发 unit diff。");
         }
 
         [Test]

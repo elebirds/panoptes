@@ -37,6 +37,7 @@ namespace Panoptes.Core.Events
         public List<UnitDto> Added;
         public List<string> RemovedIDs;
         public List<UnitDto> Moved;
+        public string ChangeType;
     }
 
     public class CityCoreHpChangedEvent

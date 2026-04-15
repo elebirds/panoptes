@@ -60,6 +60,9 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSetPolicy setPolicy:
                     frame = PlanningFrame(new PlanningCommand { SetPolicy = setPolicy });
                     return true;
+                case MsgSetInstitutionLoadout setInstitutionLoadout:
+                    frame = PlanningFrame(new PlanningCommand { SetInstitutionLoadout = setInstitutionLoadout });
+                    return true;
                 case MsgSetResearchTarget setResearchTarget:
                     frame = PlanningFrame(new PlanningCommand { SetResearchTarget = setResearchTarget });
                     return true;
@@ -220,6 +223,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.RevealResult => evt.RevealResult,
                 GameEvent.BodyOneofCase.ResearchResult => evt.ResearchResult,
                 GameEvent.BodyOneofCase.SetPolicyResult => evt.SetPolicyResult,
+                GameEvent.BodyOneofCase.SetInstitutionLoadoutResult => evt.SetInstitutionLoadoutResult,
                 GameEvent.BodyOneofCase.SetBuildingRecipeResult => evt.SetBuildingRecipeResult,
                 GameEvent.BodyOneofCase.BuildStructureResult => evt.BuildStructureResult,
                 GameEvent.BodyOneofCase.TurnReport => evt.TurnReport,
