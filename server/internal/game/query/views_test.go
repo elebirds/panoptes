@@ -163,8 +163,8 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	if got := farmView.GetCityId(); got != "C1" {
 		t.Fatalf("farm city_id = %q, want C1", got)
 	}
-	if got := farmView.GetServiceCityId(); got != "" {
-		t.Fatalf("farm service_city_id = %q, want empty", got)
+	if got := farmView.GetServiceCityId(); got != "C1" {
+		t.Fatalf("farm service_city_id = %q, want C1", got)
 	}
 	if got := farmView.GetBuildingStatus(); got != "blocked" {
 		t.Fatalf("farm building_status = %q, want blocked", got)
@@ -188,6 +188,68 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	}
 	if got := emptyView.GetTakeoverRequired(); got != 0 {
 		t.Fatalf("empty takeover_required = %d, want 0", got)
+	}
+}
+
+func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             3,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      5,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "farm",
+				BuildingScope: "out_of_city",
+				MaxHP:         60,
+				TakeoverMode:  "delayed",
+			},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "default",
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	nodeEntry := createNodeForViewTest(world, mapData, "F1", 0, 0)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	node.IsResource = true
+	node.ResourceType = "food"
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	state.EnsureCityState("player-1", "C1")
+
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	nodeEntry.AddComponent(ecs.BuildingStateC)
+	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
+		Disabled:       true,
+		DisabledReason: "outside_territory",
+	})
+	ecs.FacilityTakeoverC.SetValue(nodeEntry, ecs.FacilityTakeoverComp{
+		Mode:            "delayed",
+		Progress:        2,
+		Required:        5,
+		Completed:       false,
+	})
+
+	view := BuildNodeView(state, nodeEntry, "player-1")
+	if got := view.GetBuildingStatus(); got != "disabled" {
+		t.Fatalf("building_status = %q, want disabled", got)
+	}
+	if got := view.GetTakeoverProgress(); got != 2 {
+		t.Fatalf("takeover_progress = %d, want 2", got)
+	}
+	if got := view.GetTakeoverRequired(); got != 5 {
+		t.Fatalf("takeover_required = %d, want 5", got)
 	}
 }
 

@@ -65,13 +65,12 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	if playerState.Research.CurrentProgress < 0 {
 		playerState.Research.CurrentProgress = 0
 	}
-	for _, effect := range technology.ExplicitEffects {
-		switch effect.Type {
-		case "unlock_building":
-			playerState.Research.UnlockBuilding(effect.TargetID)
-		case "unlock_recipe":
-			playerState.Research.UnlockRecipe(effect.TargetID)
-		}
+	resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
+	for _, buildingID := range resolved.UnlockBuildingIDs {
+		playerState.Research.UnlockBuilding(buildingID)
+	}
+	for _, recipeID := range resolved.UnlockRecipeIDs {
+		playerState.Research.UnlockRecipe(recipeID)
 	}
 	if cap := state.EffectiveResearchCap(e.PlayerID); playerState.Research.CurrentProgress > cap {
 		playerState.Research.CurrentProgress = cap
@@ -146,8 +145,8 @@ func resolveGrantSpawnPosition(world donburi.World, state *domain.GameState, pla
 	if state == nil {
 		return domain.Position{}, false
 	}
-	if city := state.PrimaryCityState(playerID); city != nil && city.NodeID != "" {
-		if entry, ok := state.GetNode(city.NodeID); ok {
+	if city := state.PrimaryCityState(playerID); city != nil && city.CoreNodeID != "" {
+		if entry, ok := state.GetNode(city.CoreNodeID); ok {
 			pos := ecs.PositionC.Get(entry)
 			return domain.Position{X: pos.X, Y: pos.Y}, true
 		}

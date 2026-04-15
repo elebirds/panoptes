@@ -124,3 +124,38 @@ func TestCreateBuildingStoresOriginCityID(t *testing.T) {
 		t.Fatalf("origin city id = %q", comp.CityID)
 	}
 }
+
+func TestCreateBuildingAttachesCityScopeComponents(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			FacilityTakeoverTurns: 2,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "barracks", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+			{ID: "farm", BuildingScope: "out_of_city", MaxHP: 60, TakeoverMode: "delayed"},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	cityEntry := world.Entry(CreateNode(world, MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"}))
+	barracksEntry := world.Entry(CreateNode(world, MapNode{ID: "C2", X: 1, Y: 0, Terrain: "plain"}))
+	farmEntry := world.Entry(CreateNode(world, MapNode{ID: "C3", X: 2, Y: 0, Terrain: "plain"}))
+
+	CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
+	CreateBuilding(world, "barracks", "player-1", "C1", barracksEntry)
+	CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
+
+	if !cityEntry.HasComponent(CityCoreC) {
+		t.Fatalf("city core missing CityCoreC")
+	}
+	if !barracksEntry.HasComponent(ServiceCityC) {
+		t.Fatalf("barracks missing ServiceCityC")
+	}
+	if !farmEntry.HasComponent(FacilityBindingC) {
+		t.Fatalf("farm missing FacilityBindingC")
+	}
+	if !farmEntry.HasComponent(FacilityTakeoverC) {
+		t.Fatalf("farm missing FacilityTakeoverC")
+	}
+}

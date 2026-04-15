@@ -7,14 +7,12 @@
 package game
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
-	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -65,28 +63,12 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 		centerNodeID = target
 	}
 
-	footprintEntries, footprintIDs, err := collectTerritory3x3(state.World, centerEntry)
-	if err != nil {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "territory_out_of_bounds"}}, true
+	if ok, reason := ecs.CanFoundCityAt(state, centerEntry); !ok {
+		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": reason}}, true
 	}
-	for _, entry := range footprintEntries {
-		if entry == nil {
-			continue
-		}
-		nodeComp := ecs.NodeC.Get(entry)
-		if nodeComp.IsResource {
-			return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "territory_blocked"}}, true
-		}
-		if !entry.HasComponent(ecs.BuildingC) {
-			continue
-		}
-		building := ecs.BuildingC.Get(entry)
-		buildingType := normalizeMapActionToken(string(building.Type))
-		nodeID := ecs.NodeC.Get(entry).ID
-		if nodeID == centerNodeID && buildingType == "city_core" {
-			continue
-		}
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "territory_blocked"}}, true
+	footprintEntries, footprintIDs, reason := ecs.TerritoryFootprint(state, centerEntry)
+	if reason != "" {
+		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": reason}}, true
 	}
 
 	barracksEntry, barracksNodeID := pickBarracksNode(centerEntry, footprintEntries)
@@ -99,8 +81,8 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 		node.TerritoryOwner = order.PlayerID
 		node.Owner = order.PlayerID
 	}
-	setBuildingOnNode(centerEntry, "city_core", order.PlayerID, centerNodeID)
-	setBuildingOnNode(barracksEntry, "barracks", order.PlayerID, centerNodeID)
+	setBuildingOnNode(state.World, centerEntry, "city_core", order.PlayerID, centerNodeID)
+	setBuildingOnNode(state.World, barracksEntry, "barracks", order.PlayerID, centerNodeID)
 	state.EnsureCityState(order.PlayerID, centerNodeID)
 	state.World.Remove(unitEntry.Entity())
 
@@ -115,28 +97,6 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 			"updated_nodes":    strings.Join(footprintIDs, ","),
 		},
 	}, true
-}
-
-func collectTerritory3x3(world donburi.World, centerEntry *donburi.Entry) ([]*donburi.Entry, []string, error) {
-	if centerEntry == nil {
-		return nil, nil, fmt.Errorf("center entry is nil")
-	}
-
-	centerPos := ecs.PositionC.Get(centerEntry)
-	entries := make([]*donburi.Entry, 0, 9)
-	ids := make([]string, 0, 9)
-	for dy := -1; dy <= 1; dy++ {
-		for dx := -1; dx <= 1; dx++ {
-			pos := domain.Position{X: centerPos.X + dx, Y: centerPos.Y + dy}
-			entry, ok := domain.GetNodeAt(world, pos)
-			if !ok {
-				return nil, nil, fmt.Errorf("node out of map (%d,%d)", pos.X, pos.Y)
-			}
-			entries = append(entries, entry)
-			ids = append(ids, ecs.NodeC.Get(entry).ID)
-		}
-	}
-	return entries, ids, nil
 }
 
 func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.Entry) (*donburi.Entry, string) {
@@ -175,49 +135,13 @@ func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.En
 	return nil, ""
 }
 
-func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, cityID string) {
-	if nodeEntry == nil {
+func setBuildingOnNode(world donburi.World, nodeEntry *donburi.Entry, buildingType, owner string, cityID string) {
+	if world == nil || nodeEntry == nil {
 		return
 	}
-	maxHP, wallLevel, towers := resolveBuildingTemplate(buildingType)
-	comp := domain.BuildingComp{
-		Type:      domain.BuildingType(buildingType),
-		HP:        maxHP,
-		MaxHP:     maxHP,
-		WallLevel: wallLevel,
-		Owner:     owner,
-		CityID:    cityID,
-		Towers:    towers,
-	}
-	if !nodeEntry.HasComponent(ecs.BuildingC) {
-		nodeEntry.AddComponent(ecs.BuildingC)
-	}
-	ecs.BuildingC.SetValue(nodeEntry, comp)
+	ecs.CreateBuilding(world, buildingType, owner, cityID, nodeEntry)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = owner
-}
-
-func resolveBuildingTemplate(buildingType string) (maxHP int, wallLevel int, towers int) {
-	maxHP = 100
-	catalog := staticdata.Default()
-	if catalog != nil {
-		if cfg, ok := catalog.GetBuilding(buildingType); ok {
-			maxHP = cfg.MaxHP
-			return
-		}
-		if normalizeMapActionToken(buildingType) == "city_core" {
-			maxHP = catalog.Rules().CityCoreMaxHP
-			return
-		}
-	}
-	switch normalizeMapActionToken(buildingType) {
-	case "barracks":
-		return 120, 0, 0
-	case "city_core":
-		return 100, 0, 0
-	default:
-		return maxHP, 0, 0
-	}
 }
 
 func findUnitEntryByID(world donburi.World, unitID string) (*donburi.Entry, bool) {

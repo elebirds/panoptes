@@ -6,6 +6,8 @@
 
 package domain
 
+import "github.com/elebirds/panoptes/internal/staticdata"
+
 func (p *PlanningInputs) EnsureDraftMaps() {
 	if p == nil {
 		return
@@ -53,4 +55,89 @@ func (p *PlanningInputs) PendingResearchTarget(playerID string) string {
 		return ""
 	}
 	return p.PendingResearch[playerID]
+}
+
+func (p *PlanningInputs) HasBuildOrder(playerID string, nodeID string) bool {
+	if p == nil {
+		return false
+	}
+	for _, order := range p.BuildOrders {
+		if order.PlayerID == playerID && order.NodeID == nodeID {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *PlanningInputs) UpsertBuildOrder(order BuildOrder) bool {
+	if p == nil {
+		return false
+	}
+	for idx, existing := range p.BuildOrders {
+		if existing.PlayerID == order.PlayerID && existing.NodeID == order.NodeID {
+			p.BuildOrders[idx] = order
+			return true
+		}
+	}
+	p.BuildOrders = append(p.BuildOrders, order)
+	return false
+}
+
+func (p *PlanningInputs) UpsertRecipeSelection(order RecipeSelectionOrder) bool {
+	if p == nil {
+		return false
+	}
+	for idx, existing := range p.RecipeSelections {
+		if existing.PlayerID == order.PlayerID && existing.NodeID == order.NodeID {
+			p.RecipeSelections[idx] = order
+			return true
+		}
+	}
+	p.RecipeSelections = append(p.RecipeSelections, order)
+	return false
+}
+
+func (p *PlanningInputs) UpsertWarDirective(playerID string, directive WarZoneDirective) bool {
+	p.EnsureDraftMaps()
+	directives := p.WarDirectives[playerID]
+	for idx, existing := range directives {
+		if existing.ZoneID == directive.ZoneID {
+			directives[idx] = directive
+			p.WarDirectives[playerID] = directives
+			return true
+		}
+	}
+	p.WarDirectives[playerID] = append(directives, directive)
+	return false
+}
+
+type ResolvedExplicitEffects struct {
+	UnlockBuildingIDs []string
+	UnlockRecipeIDs   []string
+	GrantResources    ResourceBag
+	GrantUnitTypes    []string
+}
+
+func ResolveExplicitEffects(effects []staticdata.ExplicitEffect) ResolvedExplicitEffects {
+	resolved := ResolvedExplicitEffects{
+		GrantResources: NewResourceBag(),
+	}
+	for _, effect := range effects {
+		switch effect.Type {
+		case "unlock_building":
+			if effect.TargetID != "" {
+				resolved.UnlockBuildingIDs = append(resolved.UnlockBuildingIDs, effect.TargetID)
+			}
+		case "unlock_recipe":
+			if effect.TargetID != "" {
+				resolved.UnlockRecipeIDs = append(resolved.UnlockRecipeIDs, effect.TargetID)
+			}
+		case "grant":
+			for key, value := range effect.GrantResources {
+				resolved.GrantResources.AddAmount(ResourceKey(key), value)
+			}
+			resolved.GrantUnitTypes = append(resolved.GrantUnitTypes, effect.GrantUnits...)
+		}
+	}
+	return resolved
 }
