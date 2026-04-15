@@ -10,8 +10,11 @@ func TestScenarioBuildersProduceDeterministicStates(t *testing.T) {
 		build func() (*Definition, error)
 	}{
 		{name: "research_unlock_build", build: ResearchUnlockBuild},
+		{name: "industry_budget_exhaustion", build: IndustryBudgetExhaustion},
+		{name: "building_modifier_point_preview", build: BuildingModifierPointPreview},
 		{name: "settler_found_city", build: SettlerFoundCity},
 		{name: "recipe_blocked_by_input", build: RecipeBlockedByInput},
+		{name: "disabled_recipe_skipped", build: DisabledRecipeSkipped},
 		{name: "outer_facility_capture", build: OuterFacilityCapture},
 		{name: "capital_destroy_gameover", build: CapitalDestroyGameOver},
 	}

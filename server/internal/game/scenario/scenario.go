@@ -75,6 +75,102 @@ func ResearchUnlockBuild() (*Definition, error) {
 	}, nil
 }
 
+func IndustryBudgetExhaustion() (*Definition, error) {
+	rules := baseRules()
+	rules.BaseIndustryOutputPerTurn = 1
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: manifest("industry_budget_exhaustion"),
+		Rules:    rules,
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:            "farm",
+				PlacementKind: "city_territory",
+				BuildingScope: "out_of_city",
+				PointCosts:    staticdata.PointAmounts{"industry_output": 1},
+				MaxHP:         80,
+				TakeoverMode:  "delayed",
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, cityBuildMap("industry_budget_exhaustion"))
+
+	state, err := newState("industry_budget_exhaustion", catalog, []string{"player-1"}, []string{"alice"}, cityBuildMap("industry_budget_exhaustion"))
+	if err != nil {
+		return nil, err
+	}
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	return &Definition{
+		Name:      "industry_budget_exhaustion",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: []string{"player-1"},
+		Usernames: []string{"alice"},
+	}, nil
+}
+
+func BuildingModifierPointPreview() (*Definition, error) {
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: manifest("building_modifier_point_preview"),
+		Rules:    baseRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:            "workshop",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				MaxHP:         80,
+				TakeoverMode:  "city_capture",
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "point.output", PointKey: "industry_output", ModifierType: "flat", Value: 1},
+				},
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, cityBuildMap("building_modifier_point_preview"))
+
+	state, err := newState("building_modifier_point_preview", catalog, []string{"player-1"}, []string{"alice"}, cityBuildMap("building_modifier_point_preview"))
+	if err != nil {
+		return nil, err
+	}
+	nodeEntry, ok := state.GetNode("A2")
+	if !ok {
+		return nil, fmt.Errorf("missing node A2")
+	}
+	ecs.CreateBuilding(state.World, "workshop", "player-1", "A1", nodeEntry)
+	return &Definition{
+		Name:      "building_modifier_point_preview",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: []string{"player-1"},
+		Usernames: []string{"alice"},
+	}, nil
+}
+
 func SettlerFoundCity() (*Definition, error) {
 	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: manifest("settler_found_city"),
@@ -177,6 +273,73 @@ func RecipeBlockedByInput() (*Definition, error) {
 	state.Players["player-1"].Research.UnlockRecipe("barracks_infantry")
 	return &Definition{
 		Name:      "recipe_blocked_by_input",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: []string{"player-1"},
+		Usernames: []string{"alice"},
+	}, nil
+}
+
+func DisabledRecipeSkipped() (*Definition, error) {
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: manifest("disabled_recipe_skipped"),
+		Rules:    baseRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:              "barracks",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "in_city",
+				DefaultRecipeID: "barracks_infantry",
+				MaxHP:           90,
+				TakeoverMode:    "city_capture",
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
+			{
+				ID:           "barracks_infantry",
+				BuildingID:   "barracks",
+				WorkAmount:   2,
+				BaseProgress: 1,
+				Outputs:      staticdata.RecipeOutputs{Units: []string{"infantry"}},
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			infantryDefinition(),
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, cityBuildMap("disabled_recipe_skipped"))
+
+	state, err := newState("disabled_recipe_skipped", catalog, []string{"player-1"}, []string{"alice"}, cityBuildMap("disabled_recipe_skipped"))
+	if err != nil {
+		return nil, err
+	}
+	nodeEntry, ok := state.GetNode("A2")
+	if !ok {
+		return nil, fmt.Errorf("missing node A2")
+	}
+	ecs.CreateBuilding(state.World, "barracks", "player-1", "A1", nodeEntry)
+	if !nodeEntry.HasComponent(ecs.BuildingStateC) {
+		nodeEntry.AddComponent(ecs.BuildingStateC)
+	}
+	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
+		Disabled:       true,
+		DisabledReason: "outside_territory",
+	})
+	state.Players["player-1"].Research.UnlockBuilding("barracks")
+	state.Players["player-1"].Research.UnlockRecipe("barracks_infantry")
+	return &Definition{
+		Name:      "disabled_recipe_skipped",
 		Catalog:   catalog,
 		State:     state,
 		PlayerIDs: []string{"player-1"},

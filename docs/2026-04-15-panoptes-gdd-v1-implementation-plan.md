@@ -112,6 +112,7 @@
 - `planning -> resolving` 边界的 lock-in 现在会把 `national_policy_changed` 与 `research_target_changed` 放入 `MsgTurnSettlement.economy` 事件流，而不再只是静默改状态。
 - Chunk 3 已按 revised plan 完成主干收口：经济 resolving 改为单一 orchestrator，点数预算已从 `ResourceBag` 拆分为 resolving 内部 `PointBag`，`PlayerView.points` 保持“有效产出预览”语义，建筑来源修正已正式纳入 `staticdata + datagen + content + generated bundle` 链路。
 - 统一修正公式现已切到 `((base*(1+percent))+flat)*multiplier`，并补上了 combat regression 与结算事件映射；点数刷新、点数消耗、建造跳过/配方阻塞都能进入 settlement/report。
+- Chunk 7 的无头验证场景已继续扩到 Chunk 3：当前 harness 已能验证研究解锁次回合建造、共享工业点预算耗尽、settlement 重校验建造草案、配方阻塞/失效、建筑修正影响点数预览、建城、设施停用与主城摧毁判负。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
 - 当前已覆盖科技推进、研究解锁后次回合建造、配方阻塞、开拓者建城、设施停用/失效、主城摧毁判负；“延时接管并转移归属”仍待静态规则补齐接管回合数后继续实现。
 - 主工作区验证结果：`cd server && go test ./...` 与 `cd server && go build ./...` 已于 2026-04-15 在 `main` 上通过。
@@ -359,10 +360,11 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - 建筑修正来源已前移到正式数据链路：`BuildingDefinition`、schema、validator、作者源和生成 bundle 现在都支持 `explicit_effects / modifier_effects` 字段，本轮作者源先以空数组和最小样例口径收口。
 - 统一修正公式已切到 `((base*(1+percent))+flat)*multiplier`，并通过同一入口同时服务经济与 combat；科技、国策、已建成且未停用建筑都可作为活跃修正来源。
 - 结算报告已补齐 `point_budget_refreshed`、`point_spent`、`building_skipped`、`recipe_skipped` 等事件映射；建造会在 settlement 重新校验可建性，失效配方选择也会显式进入 skipped/blocked，而不是静默失败。
+- 道路仍未接入 Chunk 3 的统一预算与 map action 结算；当前已显式禁止部长 `repair_road` 直接落图，避免绕过点数账本，后续若恢复道路玩法必须另行接入正式预算链。
 
 当前说明：
 
-- Chunk 3 已完成 revised plan 口径下的主干闭环，但 Chunk 4 里的“低效推进/延迟惩罚”“更完整城市/接管语义”仍未提前实现。
+- Chunk 3 现在可按 revised plan 的范围定义视为完成；剩余未做项属于 Chunk 4 的“低效推进/延迟惩罚”“更完整城市/接管语义”，不再计入本 Chunk。
 - 客户端本轮只同步了“建造成功=草案已记录”的提示语义与断言；Unity EditMode 自动化结果仍未在主工作区重新确认通过。
 
 ### Task 7: 建立当前基线的资源与点数回合结算
@@ -567,7 +569,7 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - [x] **Step 3: 为每一类关键规则建立可读的场景名称，使失败信息能直接对应到 GDD 条目**
 - [x] **Step 4: 保证“单条规则失败”与“整局链路失败”能够在测试层级上被区分定位**
 
-当前状态：科技、建筑放置、配方阻塞、设施停用/失效与主城判负已进入规则级矩阵；“建筑接管完成并转移归属”尚未补齐，因此 Step 1 继续保留未完成。
+当前状态：科技推进、研究解锁次回合建造、建筑放置、共享工业点预算、配方阻塞/失效、设施停用/失效与主城判负已进入规则级矩阵；“建筑接管完成并转移归属”尚未补齐，因此 Step 1 继续保留未完成。
 
 ### Task 19: 抽象无头对局 Harness
 
@@ -584,9 +586,9 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - [x] **Step 1: 从现有 `captureTransport + GameRoom` 联调测试中抽出可复用的无头对局运行器**
 - [x] **Step 2: 让 harness 支持装配静态数据、地图、玩家、注入 planning 命令、自动 submit 和等待 settlement**
 - [x] **Step 3: 让 harness 能导出每回合消息、状态摘要和关键结算 sections，用于断言与复盘**
-- [x] **Step 4: 建立一组场景化无头对局用例，验证研究解锁、开拓者建城、配方阻塞、设施接管和主城摧毁**
+- [x] **Step 4: 建立一组场景化无头对局用例，验证研究解锁、点数预算消耗、结算重校验、开拓者建城、配方阻塞/失效、设施接管和主城摧毁**
 
-当前状态：5 个场景化无头用例已经落地；其中“设施接管”场景当前验证的是“越界后停用/失效”，后续会在接管回合数进入静态规则后补齐完整归属转移断言。
+当前状态：9 个场景化无头用例已经落地，除原有研究解锁、建城、配方阻塞、设施停用与主城摧毁外，新增覆盖了共享工业点预算耗尽、settlement 阶段建造重校验、点数预览保持有效产出语义，以及 disabled recipe 的 `recipe_skipped` 反馈；其中“设施接管”场景当前仍只验证“越界后停用/失效”，后续会在接管回合数进入静态规则后补齐完整归属转移断言。
 
 ### Task 20: 落地开发态调试接口与状态转储
 
