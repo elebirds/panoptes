@@ -51,6 +51,7 @@ message PlayerView {
   int32 capital_city_core_max_hp = 8;
   repeated WarZone war_zones = 9;
   ResearchStateView research = 10;
+  InstitutionStateView institutions = 11;
 }
 
 message ResearchStateView {
@@ -58,6 +59,21 @@ message ResearchStateView {
   int32 current_progress = 2;
   int32 required_progress = 3;
   repeated string completed_technology_ids = 4;
+  repeated string active_technology_ids = 5;
+  repeated string pending_activation_technology_ids = 6;
+  repeated ResearchProgressEntry saved_progress = 7;
+}
+
+message ResearchProgressEntry {
+  string technology_id = 1;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+}
+
+message InstitutionStateView {
+  int32 slot_count = 1;
+  repeated string candidate_policy_ids = 2;
+  repeated string active_policy_ids = 3;
 }
 
 message BuildingOperationView {
