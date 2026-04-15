@@ -91,6 +91,7 @@ namespace Panoptes.Core.Application.Cache
 
         public void ApplyPlanningSnapshot(MsgPlanningSnapshot msg)
         {
+            ClearPreview();
             SnapshotTurn = msg != null ? msg.Turn : 0;
             SnapshotPhase = msg != null ? (msg.Phase ?? string.Empty) : string.Empty;
             PlannedResearchTargetTechnologyId = msg != null ? (msg.PlannedResearchTargetTechnologyId ?? string.Empty) : string.Empty;

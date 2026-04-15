@@ -2037,7 +2037,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            placementRule = NormalizeToken(entry.placement_rule);
+            placementRule = NormalizeToken(entry.placement_kind);
             requiredResourceType = NormalizeToken(entry.required_resource_type);
             return !string.IsNullOrEmpty(placementRule);
         }
