@@ -31,7 +31,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		if !ok {
 			continue
 		}
-		cost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingBuildCost), order.BuildingType, toResourceBag(cfg.BuildCost))
+		cost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingResourceCost), order.BuildingType, toResourceBag(cfg.ResourceCosts))
 		if !state.CanAffordFromCastle(order.PlayerID, order.CastleID, cost) {
 			continue
 		}

@@ -61,10 +61,10 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		}
 	}
 	msg := &pb.MsgPlanningStart{
-		Timeout:       int32(rules.TurnTimeLimitPlanning),
-		Tokens:        int32(rules.TokensPerTurn),
-		CurrentPolicy: currentPolicy,
-		Phase:         phase,
+		Timeout:                int32(rules.TurnTimeLimitPlanning),
+		Tokens:                 int32(rules.TokensPerTurn),
+		ActiveNationalPolicyId: currentPolicy,
+		Phase:                  phase,
 	}
 	if room != nil && room.State() != nil {
 		msg.Turn = int32(room.State().Turn)

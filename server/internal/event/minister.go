@@ -42,7 +42,7 @@ func (e PolicyChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	playerState.Policy = domain.Policy(e.NewPolicy)
 }
 
-func (e PolicyChangedEvent) Kind() string { return "policy_changed" }
+func (e PolicyChangedEvent) Kind() string { return "national_policy_changed" }
 
 func (e PolicyChangedEvent) String() string {
 	return fmt.Sprintf("PolicyChangedEvent player=%s %s->%s", e.PlayerID, e.OldPolicy, e.NewPolicy)
