@@ -1,25 +1,25 @@
 {
-  "$id": "ui/recipes.schema.json",
+  "$id": "registry/points.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
     "$schema": {
       "type": "string"
     },
-    "recipes": {
+    "points": {
       "items": {
         "additionalProperties": false,
         "properties": {
           "description": {
             "type": "string"
           },
+          "display_name": {
+            "type": "string"
+          },
           "icon_key": {
             "type": "string"
           },
-          "id": {
-            "type": "string"
-          },
-          "name": {
+          "key": {
             "type": "string"
           },
           "sort_order": {
@@ -31,15 +31,18 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "visible_in_hud": {
+            "type": "boolean"
           }
         },
         "required": [
-          "id",
-          "name",
+          "key",
+          "display_name",
           "description",
           "icon_key",
           "sort_order",
-          "tags"
+          "visible_in_hud"
         ],
         "type": "object"
       },
@@ -48,7 +51,7 @@
     }
   },
   "required": [
-    "recipes"
+    "points"
   ],
   "type": "object"
 }

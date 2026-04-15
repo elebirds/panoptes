@@ -22,10 +22,10 @@ const (
 )
 
 type MsgSetPolicy struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Policy        string                 `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	NationalPolicyId string                 `protobuf:"bytes,1,opt,name=national_policy_id,json=nationalPolicyId,proto3" json:"national_policy_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *MsgSetPolicy) Reset() {
@@ -58,9 +58,9 @@ func (*MsgSetPolicy) Descriptor() ([]byte, []int) {
 	return file_orders_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MsgSetPolicy) GetPolicy() string {
+func (x *MsgSetPolicy) GetNationalPolicyId() string {
 	if x != nil {
-		return x.Policy
+		return x.NationalPolicyId
 	}
 	return ""
 }
@@ -162,12 +162,12 @@ func (x *MsgSetBuildingRecipe) GetRecipeId() string {
 }
 
 type MsgBuildStructure struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	BuildingType  string                 `protobuf:"bytes,2,opt,name=building_type,json=buildingType,proto3" json:"building_type,omitempty"`
-	CastleId      string                 `protobuf:"bytes,3,opt,name=castle_id,json=castleId,proto3" json:"castle_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	NodeId         string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	BuildingTypeId string                 `protobuf:"bytes,2,opt,name=building_type_id,json=buildingTypeId,proto3" json:"building_type_id,omitempty"`
+	CityId         string                 `protobuf:"bytes,3,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MsgBuildStructure) Reset() {
@@ -207,16 +207,16 @@ func (x *MsgBuildStructure) GetNodeId() string {
 	return ""
 }
 
-func (x *MsgBuildStructure) GetBuildingType() string {
+func (x *MsgBuildStructure) GetBuildingTypeId() string {
 	if x != nil {
-		return x.BuildingType
+		return x.BuildingTypeId
 	}
 	return ""
 }
 
-func (x *MsgBuildStructure) GetCastleId() string {
+func (x *MsgBuildStructure) GetCityId() string {
 	if x != nil {
-		return x.CastleId
+		return x.CityId
 	}
 	return ""
 }
@@ -681,18 +681,18 @@ var File_orders_proto protoreflect.FileDescriptor
 
 const file_orders_proto_rawDesc = "" +
 	"\n" +
-	"\forders.proto\x12\x11panoptes.proto.v1\"&\n" +
-	"\fMsgSetPolicy\x12\x16\n" +
-	"\x06policy\x18\x01 \x01(\tR\x06policy\";\n" +
+	"\forders.proto\x12\x11panoptes.proto.v1\"<\n" +
+	"\fMsgSetPolicy\x12,\n" +
+	"\x12national_policy_id\x18\x01 \x01(\tR\x10nationalPolicyId\";\n" +
 	"\x14MsgSetResearchTarget\x12#\n" +
 	"\rtechnology_id\x18\x01 \x01(\tR\ftechnologyId\"L\n" +
 	"\x14MsgSetBuildingRecipe\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x1b\n" +
-	"\trecipe_id\x18\x02 \x01(\tR\brecipeId\"n\n" +
+	"\trecipe_id\x18\x02 \x01(\tR\brecipeId\"o\n" +
 	"\x11MsgBuildStructure\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12#\n" +
-	"\rbuilding_type\x18\x02 \x01(\tR\fbuildingType\x12\x1b\n" +
-	"\tcastle_id\x18\x03 \x01(\tR\bcastleId\"(\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12(\n" +
+	"\x10building_type_id\x18\x02 \x01(\tR\x0ebuildingTypeId\x12\x17\n" +
+	"\acity_id\x18\x03 \x01(\tR\x06cityId\"(\n" +
 	"\rMsgRevealNode\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"W\n" +
 	"\rMsgSetWarZone\x12\x17\n" +

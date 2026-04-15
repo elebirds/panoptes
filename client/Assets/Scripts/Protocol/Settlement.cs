@@ -30,7 +30,7 @@ namespace Panoptes.Protocol.V1 {
             "YXRhRW50cnlSBGRhdGEaNwoJRGF0YUVudHJ5EhAKA2tleRgBIAEoCVIDa2V5",
             "EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAEiYwoRU2V0dGxlbWVudFNlY3Rp",
             "b24SGAoHc2VjdGlvbhgBIAEoCVIHc2VjdGlvbhI0CgZldmVudHMYAiADKAsy",
-            "HC5wYW5vcHRlcy5wcm90by52MS5UdXJuRXZlbnRSBmV2ZW50cyKeAwoRTXNn",
+            "HC5wYW5vcHRlcy5wcm90by52MS5UdXJuRXZlbnRSBmV2ZW50cyLLAgoRTXNn",
             "VHVyblNldHRsZW1lbnQSQAoIc2VjdGlvbnMYASADKAsyJC5wYW5vcHRlcy5w",
             "cm90by52MS5TZXR0bGVtZW50U2VjdGlvblIIc2VjdGlvbnMSEgoEdHVybhgC",
             "IAEoBVIEdHVybhIUCgVwaGFzZRgDIAEoCVIFcGhhc2USHQoKbmV4dF9waGFz",
@@ -38,17 +38,15 @@ namespace Panoptes.Protocol.V1 {
             "cHJvdG8udjEuTm9kZVZpZXdSBW5vZGVzEjEKBXVuaXRzGAYgAygLMhsucGFu",
             "b3B0ZXMucHJvdG8udjEuVW5pdFZpZXdSBXVuaXRzEkUKD215X3BsYXllcl9h",
             "ZnRlchgHIAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLlBsYXllclZpZXdSDW15",
-            "UGxheWVyQWZ0ZXISUQoRbXlfcmVzZWFyY2hfYWZ0ZXIYCCABKAsyJS5wYW5v",
-            "cHRlcy5wcm90by52MS5QbGF5ZXJSZXNlYXJjaFZpZXdSD215UmVzZWFyY2hB",
-            "ZnRlckJTWjpnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFs",
-            "L2dlbi9wcm90by92MTtwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFi",
-            "BnByb3RvMw=="));
+            "UGxheWVyQWZ0ZXJCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9p",
+            "bnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3Rv",
+            "Y29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.TurnEvent), global::Panoptes.Protocol.V1.TurnEvent.Parser, new[]{ "Type", "Data" }, null, null, null, new pbr::GeneratedClrTypeInfo[] { null, }),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.SettlementSection), global::Panoptes.Protocol.V1.SettlementSection.Parser, new[]{ "Section", "Events" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTurnSettlement), global::Panoptes.Protocol.V1.MsgTurnSettlement.Parser, new[]{ "Sections", "Turn", "Phase", "NextPhase", "Nodes", "Units", "MyPlayerAfter", "MyResearchAfter" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgTurnSettlement), global::Panoptes.Protocol.V1.MsgTurnSettlement.Parser, new[]{ "Sections", "Turn", "Phase", "NextPhase", "Nodes", "Units", "MyPlayerAfter" }, null, null, null, null)
           }));
     }
     #endregion
@@ -229,7 +227,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -252,7 +254,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -445,7 +451,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -468,7 +478,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -529,7 +543,6 @@ namespace Panoptes.Protocol.V1 {
       nodes_ = other.nodes_.Clone();
       units_ = other.units_.Clone();
       myPlayerAfter_ = other.myPlayerAfter_ != null ? other.myPlayerAfter_.Clone() : null;
-      myResearchAfter_ = other.myResearchAfter_ != null ? other.myResearchAfter_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -620,18 +633,6 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "my_research_after" field.</summary>
-    public const int MyResearchAfterFieldNumber = 8;
-    private global::Panoptes.Protocol.V1.PlayerResearchView myResearchAfter_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Panoptes.Protocol.V1.PlayerResearchView MyResearchAfter {
-      get { return myResearchAfter_; }
-      set {
-        myResearchAfter_ = value;
-      }
-    }
-
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -654,7 +655,6 @@ namespace Panoptes.Protocol.V1 {
       if(!nodes_.Equals(other.nodes_)) return false;
       if(!units_.Equals(other.units_)) return false;
       if (!object.Equals(MyPlayerAfter, other.MyPlayerAfter)) return false;
-      if (!object.Equals(MyResearchAfter, other.MyResearchAfter)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -669,7 +669,6 @@ namespace Panoptes.Protocol.V1 {
       hash ^= nodes_.GetHashCode();
       hash ^= units_.GetHashCode();
       if (myPlayerAfter_ != null) hash ^= MyPlayerAfter.GetHashCode();
-      if (myResearchAfter_ != null) hash ^= MyResearchAfter.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -707,10 +706,6 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(58);
         output.WriteMessage(MyPlayerAfter);
       }
-      if (myResearchAfter_ != null) {
-        output.WriteRawTag(66);
-        output.WriteMessage(MyResearchAfter);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -740,10 +735,6 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(58);
         output.WriteMessage(MyPlayerAfter);
       }
-      if (myResearchAfter_ != null) {
-        output.WriteRawTag(66);
-        output.WriteMessage(MyResearchAfter);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -768,9 +759,6 @@ namespace Panoptes.Protocol.V1 {
       size += units_.CalculateSize(_repeated_units_codec);
       if (myPlayerAfter_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(MyPlayerAfter);
-      }
-      if (myResearchAfter_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MyResearchAfter);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -802,12 +790,6 @@ namespace Panoptes.Protocol.V1 {
         }
         MyPlayerAfter.MergeFrom(other.MyPlayerAfter);
       }
-      if (other.myResearchAfter_ != null) {
-        if (myResearchAfter_ == null) {
-          MyResearchAfter = new global::Panoptes.Protocol.V1.PlayerResearchView();
-        }
-        MyResearchAfter.MergeFrom(other.MyResearchAfter);
-      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -819,7 +801,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -854,13 +840,6 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(MyPlayerAfter);
             break;
           }
-          case 66: {
-            if (myResearchAfter_ == null) {
-              MyResearchAfter = new global::Panoptes.Protocol.V1.PlayerResearchView();
-            }
-            input.ReadMessage(MyResearchAfter);
-            break;
-          }
         }
       }
     #endif
@@ -872,7 +851,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -905,13 +888,6 @@ namespace Panoptes.Protocol.V1 {
               MyPlayerAfter = new global::Panoptes.Protocol.V1.PlayerView();
             }
             input.ReadMessage(MyPlayerAfter);
-            break;
-          }
-          case 66: {
-            if (myResearchAfter_ == null) {
-              MyResearchAfter = new global::Panoptes.Protocol.V1.PlayerResearchView();
-            }
-            input.ReadMessage(MyResearchAfter);
             break;
           }
         }

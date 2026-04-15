@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14 18:45:09 +0800
+// Updated: 2026-04-15 12:00:00 +0800
 // Description: 实现数据生成模块的作者源校验逻辑。
 
 package datagen
@@ -29,6 +29,9 @@ type authoredData struct {
 	Resources jsonDocument[struct {
 		Resources []staticdata.ResourceDescriptor `json:"resources"`
 	}]
+	Points jsonDocument[struct {
+		Points []staticdata.PointDescriptor `json:"points"`
+	}]
 	Units jsonDocument[struct {
 		Units []staticdata.UnitDefinition `json:"units"`
 	}]
@@ -37,6 +40,9 @@ type authoredData struct {
 	}]
 	Technologies jsonDocument[struct {
 		Technologies []staticdata.TechnologyDefinition `json:"technologies"`
+	}]
+	Policies jsonDocument[struct {
+		Policies []staticdata.PolicyDefinition `json:"policies"`
 	}]
 	Recipes jsonDocument[struct {
 		Recipes []staticdata.RecipeDefinition `json:"recipes"`
@@ -49,9 +55,11 @@ type authoredData struct {
 		Pool []staticdata.Minister `json:"pool"`
 	}]
 	ResourceUI   jsonDocument[staticdata.ResourceCatalogUIFile]
+	PointUI      jsonDocument[staticdata.PointCatalogUIFile]
 	UnitUI       jsonDocument[staticdata.UnitCatalogUIFile]
 	BuildingUI   jsonDocument[staticdata.BuildingCatalogUIFile]
 	TechnologyUI jsonDocument[staticdata.TechnologyCatalogUIFile]
+	PolicyUI     jsonDocument[staticdata.PolicyCatalogUIFile]
 	RecipeUI     jsonDocument[staticdata.RecipeCatalogUIFile]
 	TerrainUI    jsonDocument[staticdata.TerrainCatalogUIFile]
 	MapDefs      map[string]jsonDocument[staticdata.MapDefinition]
@@ -76,6 +84,12 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	points, err := readJSONDocument[struct {
+		Points []staticdata.PointDescriptor `json:"points"`
+	}](filepath.Join(repoRoot, "data/registry/points.json"))
+	if err != nil {
+		return nil, err
+	}
 	units, err := readJSONDocument[struct {
 		Units []staticdata.UnitDefinition `json:"units"`
 	}](filepath.Join(repoRoot, "data/content/units/units.json"))
@@ -91,6 +105,12 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	technologies, err := readJSONDocument[struct {
 		Technologies []staticdata.TechnologyDefinition `json:"technologies"`
 	}](filepath.Join(repoRoot, "data/content/technologies/technologies.json"))
+	if err != nil {
+		return nil, err
+	}
+	policies, err := readJSONDocument[struct {
+		Policies []staticdata.PolicyDefinition `json:"policies"`
+	}](filepath.Join(repoRoot, "data/content/policies/policies.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +140,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	pointUI, err := readJSONDocument[staticdata.PointCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/points.json"))
+	if err != nil {
+		return nil, err
+	}
 	unitUI, err := readJSONDocument[staticdata.UnitCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/units.json"))
 	if err != nil {
 		return nil, err
@@ -129,6 +153,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 		return nil, err
 	}
 	technologyUI, err := readJSONDocument[staticdata.TechnologyCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/technologies.json"))
+	if err != nil {
+		return nil, err
+	}
+	policyUI, err := readJSONDocument[staticdata.PolicyCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/policies.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -149,17 +177,21 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	return &authoredData{
 		Manifest:     manifest,
 		Resources:    resources,
+		Points:       points,
 		Units:        units,
 		Buildings:    buildings,
 		Technologies: technologies,
+		Policies:     policies,
 		Recipes:      recipes,
 		Terrains:     terrains,
 		Rules:        rules,
 		Ministers:    ministers,
 		ResourceUI:   resourceUI,
+		PointUI:      pointUI,
 		UnitUI:       unitUI,
 		BuildingUI:   buildingUI,
 		TechnologyUI: technologyUI,
+		PolicyUI:     policyUI,
 		RecipeUI:     recipeUI,
 		TerrainUI:    terrainUI,
 		MapDefs:      mapDefs,
@@ -203,17 +235,21 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 	targets := []validationTarget{
 		{Path: data.Manifest.Path, SchemaRel: filepath.Join("registry", "manifest.schema.json"), Raw: data.Manifest.Raw},
 		{Path: data.Resources.Path, SchemaRel: filepath.Join("registry", "resources.schema.json"), Raw: data.Resources.Raw},
+		{Path: data.Points.Path, SchemaRel: filepath.Join("registry", "points.schema.json"), Raw: data.Points.Raw},
 		{Path: data.Units.Path, SchemaRel: filepath.Join("content", "units.schema.json"), Raw: data.Units.Raw},
 		{Path: data.Buildings.Path, SchemaRel: filepath.Join("content", "buildings.schema.json"), Raw: data.Buildings.Raw},
 		{Path: data.Technologies.Path, SchemaRel: filepath.Join("content", "technologies.schema.json"), Raw: data.Technologies.Raw},
+		{Path: data.Policies.Path, SchemaRel: filepath.Join("content", "policies.schema.json"), Raw: data.Policies.Raw},
 		{Path: data.Recipes.Path, SchemaRel: filepath.Join("content", "recipes.schema.json"), Raw: data.Recipes.Raw},
 		{Path: data.Terrains.Path, SchemaRel: filepath.Join("content", "terrains.schema.json"), Raw: data.Terrains.Raw},
 		{Path: data.Rules.Path, SchemaRel: filepath.Join("content", "rules.schema.json"), Raw: data.Rules.Raw},
 		{Path: data.Ministers.Path, SchemaRel: filepath.Join("content", "ministers.schema.json"), Raw: data.Ministers.Raw},
 		{Path: data.ResourceUI.Path, SchemaRel: filepath.Join("ui", "resources.schema.json"), Raw: data.ResourceUI.Raw},
+		{Path: data.PointUI.Path, SchemaRel: filepath.Join("ui", "points.schema.json"), Raw: data.PointUI.Raw},
 		{Path: data.UnitUI.Path, SchemaRel: filepath.Join("ui", "units.schema.json"), Raw: data.UnitUI.Raw},
 		{Path: data.BuildingUI.Path, SchemaRel: filepath.Join("ui", "buildings.schema.json"), Raw: data.BuildingUI.Raw},
 		{Path: data.TechnologyUI.Path, SchemaRel: filepath.Join("ui", "technologies.schema.json"), Raw: data.TechnologyUI.Raw},
+		{Path: data.PolicyUI.Path, SchemaRel: filepath.Join("ui", "policies.schema.json"), Raw: data.PolicyUI.Raw},
 		{Path: data.RecipeUI.Path, SchemaRel: filepath.Join("ui", "recipes.schema.json"), Raw: data.RecipeUI.Raw},
 		{Path: data.TerrainUI.Path, SchemaRel: filepath.Join("ui", "terrains.schema.json"), Raw: data.TerrainUI.Raw},
 	}
@@ -286,22 +322,13 @@ func readJSONDocument[T any](path string) (jsonDocument[T], error) {
 }
 
 func validateCrossReferences(data *authoredData) error {
-	buildingIDs := make(map[string]struct{}, len(data.Buildings.Value.Buildings))
-	for _, building := range data.Buildings.Value.Buildings {
-		buildingIDs[building.ID] = struct{}{}
-	}
-	technologyIDs := make(map[string]struct{}, len(data.Technologies.Value.Technologies))
-	for _, technology := range data.Technologies.Value.Technologies {
-		technologyIDs[technology.ID] = struct{}{}
-	}
-	recipeIDs := make(map[string]struct{}, len(data.Recipes.Value.Recipes))
-	for _, recipe := range data.Recipes.Value.Recipes {
-		recipeIDs[recipe.ID] = struct{}{}
-	}
-	unitIDs := make(map[string]struct{}, len(data.Units.Value.Units))
-	for _, unit := range data.Units.Value.Units {
-		unitIDs[unit.ID] = struct{}{}
-	}
+	resourceKeys := makeStringSetResource(data.Resources.Value.Resources)
+	pointKeys := makeStringSetPoint(data.Points.Value.Points)
+	buildingIDs := makeStringSetBuilding(data.Buildings.Value.Buildings)
+	technologyIDs := makeStringSetTechnology(data.Technologies.Value.Technologies)
+	policyIDs := makeStringSetPolicy(data.Policies.Value.Policies)
+	recipeIDs := makeStringSetRecipe(data.Recipes.Value.Recipes)
+	unitIDs := makeStringSetUnit(data.Units.Value.Units)
 	allowedTriggers := make(map[string]struct{}, len(staticdata.AllowedModifierTriggers()))
 	for _, trigger := range staticdata.AllowedModifierTriggers() {
 		allowedTriggers[trigger] = struct{}{}
@@ -311,6 +338,12 @@ func validateCrossReferences(data *authoredData) error {
 		if _, ok := buildingIDs[recipe.BuildingID]; !ok {
 			return fmt.Errorf("semantic validation failed for %s: unknown building_id %q", data.Recipes.Path, recipe.BuildingID)
 		}
+		if err := validatePointBagKeys(recipe.PointInputs, pointKeys, data.Recipes.Path, "point input"); err != nil {
+			return err
+		}
+		if err := validatePointBagKeys(recipe.Outputs.PointProgress, pointKeys, data.Recipes.Path, "point progress"); err != nil {
+			return err
+		}
 		for _, unitID := range recipe.Outputs.Units {
 			if _, ok := unitIDs[unitID]; !ok {
 				return fmt.Errorf("semantic validation failed for %s: unknown output unit %q", data.Recipes.Path, unitID)
@@ -319,6 +352,9 @@ func validateCrossReferences(data *authoredData) error {
 	}
 
 	for _, building := range data.Buildings.Value.Buildings {
+		if err := validatePointBagKeys(building.PointCosts, pointKeys, data.Buildings.Path, "point cost"); err != nil {
+			return err
+		}
 		if len(building.RecipeIDs) == 0 {
 			if building.DefaultRecipeID != "" {
 				return fmt.Errorf("semantic validation failed for %s: building %q has default_recipe_id %q without recipe_ids", data.Buildings.Path, building.ID, building.DefaultRecipeID)
@@ -339,53 +375,182 @@ func validateCrossReferences(data *authoredData) error {
 	}
 
 	for _, technology := range data.Technologies.Value.Technologies {
-		for _, prereq := range technology.Prerequisites {
-			if prereq.Type == "technology_unlocked" {
-				if _, ok := technologyIDs[prereq.TargetID]; !ok {
-					return fmt.Errorf("semantic validation failed for %s: unknown prerequisite target %q", data.Technologies.Path, prereq.TargetID)
-				}
-			}
+		if err := validatePrerequisites(technology.Prerequisites, technologyIDs, policyIDs, data.Technologies.Path); err != nil {
+			return err
 		}
-		for _, effect := range technology.Effects {
-			switch effect.Type {
-			case "unlock_building":
-				if _, ok := buildingIDs[effect.TargetID]; !ok {
-					return fmt.Errorf("semantic validation failed for %s: unknown building unlock target %q", data.Technologies.Path, effect.TargetID)
-				}
-			case "unlock_recipe":
-				if _, ok := recipeIDs[effect.TargetID]; !ok {
-					return fmt.Errorf("semantic validation failed for %s: unknown recipe unlock target %q", data.Technologies.Path, effect.TargetID)
-				}
-			case "modifier":
-				if _, ok := allowedTriggers[effect.Trigger]; !ok {
-					return fmt.Errorf("semantic validation failed for %s: unknown modifier trigger %q", data.Technologies.Path, effect.Trigger)
-				}
-				if effect.TargetID != "" {
-					if strings.HasPrefix(effect.Trigger, "recipe.") {
-						if _, ok := recipeIDs[effect.TargetID]; !ok {
-							return fmt.Errorf("semantic validation failed for %s: unknown recipe modifier target %q", data.Technologies.Path, effect.TargetID)
-						}
-					}
-					if effect.Trigger == string(staticdata.ModifierTriggerBuildingBuildCost) {
-						if _, ok := buildingIDs[effect.TargetID]; !ok {
-							return fmt.Errorf("semantic validation failed for %s: unknown building modifier target %q", data.Technologies.Path, effect.TargetID)
-						}
-					}
-					if strings.HasPrefix(effect.Trigger, "unit.") {
-						if _, ok := unitIDs[effect.TargetID]; !ok {
-							return fmt.Errorf("semantic validation failed for %s: unknown unit modifier target %q", data.Technologies.Path, effect.TargetID)
-						}
-					}
-				}
-			case "grant":
-				for _, unitID := range effect.GrantUnits {
-					if _, ok := unitIDs[unitID]; !ok {
-						return fmt.Errorf("semantic validation failed for %s: unknown grant unit %q", data.Technologies.Path, unitID)
-					}
-				}
-			}
+		if err := validateExplicitEffects(technology.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Technologies.Path); err != nil {
+			return err
+		}
+		if err := validateModifierEffects(technology.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Technologies.Path); err != nil {
+			return err
+		}
+	}
+
+	for _, policy := range data.Policies.Value.Policies {
+		if err := validatePrerequisites(policy.Prerequisites, technologyIDs, policyIDs, data.Policies.Path); err != nil {
+			return err
+		}
+		if err := validateExplicitEffects(policy.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Policies.Path); err != nil {
+			return err
+		}
+		if err := validateModifierEffects(policy.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Policies.Path); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func validatePrerequisites(prereqs []staticdata.Prerequisite, technologyIDs map[string]struct{}, policyIDs map[string]struct{}, path string) error {
+	for _, prereq := range prereqs {
+		switch prereq.Type {
+		case "technology_unlocked":
+			if _, ok := technologyIDs[prereq.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown prerequisite target %q", path, prereq.TargetID)
+			}
+		case "policy_active":
+			if _, ok := policyIDs[prereq.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown prerequisite target %q", path, prereq.TargetID)
+			}
+		}
+	}
+	return nil
+}
+
+func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs map[string]struct{}, recipeIDs map[string]struct{}, unitIDs map[string]struct{}, path string) error {
+	for _, effect := range effects {
+		switch effect.Type {
+		case "unlock_building":
+			if _, ok := buildingIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown building unlock target %q", path, effect.TargetID)
+			}
+		case "unlock_recipe":
+			if _, ok := recipeIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown recipe unlock target %q", path, effect.TargetID)
+			}
+		case "grant":
+			for _, unitID := range effect.GrantUnits {
+				if _, ok := unitIDs[unitID]; !ok {
+					return fmt.Errorf("semantic validation failed for %s: unknown grant unit %q", path, unitID)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func validateModifierEffects(
+	effects []staticdata.ModifierEffect,
+	allowedTriggers map[string]struct{},
+	resourceKeys map[string]struct{},
+	pointKeys map[string]struct{},
+	buildingIDs map[string]struct{},
+	recipeIDs map[string]struct{},
+	unitIDs map[string]struct{},
+	path string,
+) error {
+	for _, effect := range effects {
+		if _, ok := allowedTriggers[effect.Trigger]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: unknown modifier trigger %q", path, effect.Trigger)
+		}
+		switch effect.Trigger {
+		case string(staticdata.ModifierTriggerPointOutput),
+			string(staticdata.ModifierTriggerBuildingPointCost),
+			string(staticdata.ModifierTriggerRecipePointInput):
+			if effect.PointKey != "" {
+				if _, ok := pointKeys[effect.PointKey]; !ok {
+					return fmt.Errorf("semantic validation failed for %s: unknown point modifier target %q", path, effect.PointKey)
+				}
+			}
+		case string(staticdata.ModifierTriggerBuildingResourceCost),
+			string(staticdata.ModifierTriggerRecipeResourceInput),
+			string(staticdata.ModifierTriggerRecipeResourceOutput):
+			if effect.ResourceKey != "" {
+				if _, ok := resourceKeys[effect.ResourceKey]; !ok {
+					return fmt.Errorf("semantic validation failed for %s: unknown resource modifier target %q", path, effect.ResourceKey)
+				}
+			}
+		}
+
+		switch {
+		case strings.HasPrefix(effect.Trigger, "building.") && effect.TargetID != "":
+			if _, ok := buildingIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown building modifier target %q", path, effect.TargetID)
+			}
+		case strings.HasPrefix(effect.Trigger, "recipe.") && effect.TargetID != "":
+			if _, ok := recipeIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown recipe modifier target %q", path, effect.TargetID)
+			}
+		case strings.HasPrefix(effect.Trigger, "unit.") && effect.TargetID != "":
+			if _, ok := unitIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown unit modifier target %q", path, effect.TargetID)
+			}
+		}
+	}
+	return nil
+}
+
+func validatePointBagKeys(values map[string]int, allowed map[string]struct{}, path string, label string) error {
+	for key := range values {
+		if _, ok := allowed[key]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: unknown %s %q", path, label, key)
+		}
+	}
+	return nil
+}
+
+func makeStringSetResource(resources []staticdata.ResourceDescriptor) map[string]struct{} {
+	values := make(map[string]struct{}, len(resources))
+	for _, resource := range resources {
+		values[resource.Key] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetPoint(points []staticdata.PointDescriptor) map[string]struct{} {
+	values := make(map[string]struct{}, len(points))
+	for _, point := range points {
+		values[point.Key] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetBuilding(buildings []staticdata.BuildingDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(buildings))
+	for _, building := range buildings {
+		values[building.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetTechnology(technologies []staticdata.TechnologyDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(technologies))
+	for _, technology := range technologies {
+		values[technology.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetPolicy(policies []staticdata.PolicyDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(policies))
+	for _, policy := range policies {
+		values[policy.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetRecipe(recipes []staticdata.RecipeDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(recipes))
+	for _, recipe := range recipes {
+		values[recipe.ID] = struct{}{}
+	}
+	return values
+}
+
+func makeStringSetUnit(units []staticdata.UnitDefinition) map[string]struct{} {
+	values := make(map[string]struct{}, len(units))
+	for _, unit := range units {
+		values[unit.ID] = struct{}{}
+	}
+	return values
 }

@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
     {
       "id": "m001",
@@ -6,29 +7,9 @@
       "role": "military",
       "ability": 8,
       "personality": "aggressive",
-      "personality_desc": "果敢激进，善于把握战机",
+      "personality_desc": "果敢激进",
       "loyalty": 7,
       "ambition": 6
-    },
-    {
-      "id": "m003",
-      "name": "陈丰",
-      "role": "agriculture",
-      "ability": 8,
-      "personality": "conservative",
-      "personality_desc": "精于算计，注重积累",
-      "loyalty": 6,
-      "ambition": 7
-    },
-    {
-      "id": "m005",
-      "name": "孙谋",
-      "role": "diplomacy",
-      "ability": 9,
-      "personality": "cunning",
-      "personality_desc": "老谋深算，情报精准",
-      "loyalty": 5,
-      "ambition": 8
     }
   ]
 }

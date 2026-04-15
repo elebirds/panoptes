@@ -1,10 +1,8 @@
 {
+  "$schema": "../../schema/ui/resources.schema.json",
   "resources": [
-    { "id": "ore", "name": "矿石", "description": "基础矿物资源。", "icon_key": "resource_ore", "sort_order": 10, "tags": ["base"] },
-    { "id": "wood", "name": "木材", "description": "木料与加工原料。", "icon_key": "resource_wood", "sort_order": 20, "tags": ["base"] },
-    { "id": "food", "name": "粮食", "description": "人口与军队补给。", "icon_key": "resource_food", "sort_order": 30, "tags": ["base"] },
-    { "id": "refined_ore", "name": "精炼矿", "description": "高阶军用矿材。", "icon_key": "resource_refined_ore", "sort_order": 40, "tags": ["advanced"] },
-    { "id": "engineer_material", "name": "工程材料", "description": "工程营与特殊建筑材料。", "icon_key": "resource_engineer_material", "sort_order": 50, "tags": ["advanced"] },
-    { "id": "build_points", "name": "建造点", "description": "建筑行动额度。", "icon_key": "resource_build_points", "sort_order": 60, "tags": ["meta"] }
+    { "id": "ore", "name": "矿石", "description": "基础矿物", "icon_key": "resource_ore", "sort_order": 10, "tags": ["base"] },
+    { "id": "wood", "name": "木材", "description": "基础建设材料", "icon_key": "resource_wood", "sort_order": 20, "tags": ["base"] },
+    { "id": "food", "name": "粮食", "description": "补给与人口", "icon_key": "resource_food", "sort_order": 30, "tags": ["base"] }
   ]
 }

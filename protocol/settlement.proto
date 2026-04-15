@@ -25,5 +25,4 @@ message MsgTurnSettlement {
   repeated NodeView nodes = 5;
   repeated UnitView units = 6;
   PlayerView my_player_after = 7;
-  PlayerResearchView my_research_after = 8;
 }

@@ -1,0 +1,7 @@
+{
+  "$schema": "../../schema/ui/points.schema.json",
+  "points": [
+    { "id": "research_output", "name": "科研产出", "description": "推进当前研究目标", "icon_key": "point_research_output", "sort_order": 10, "tags": ["hud"] },
+    { "id": "industry_output", "name": "工业产出", "description": "推进建设与生产", "icon_key": "point_industry_output", "sort_order": 20, "tags": ["hud"] }
+  ]
+}

@@ -193,7 +193,7 @@ func (r *ResearchState) UnlockRecipe(id string) {
 //
 // 科技研究在当前语义下是回合末完成、下一回合生效，因此这里不再暴露任何本回合
 // 尚未 Apply 的临时解锁状态。
-func (s *GameState) technologyEffects(playerID string) []staticdata.TechnologyEffect {
+func (s *GameState) modifierEffects(playerID string) []staticdata.ModifierEffect {
 	if s == nil {
 		return nil
 	}
@@ -205,13 +205,18 @@ func (s *GameState) technologyEffects(playerID string) []staticdata.TechnologyEf
 	for technologyID := range playerState.Research.UnlockedTechnologies {
 		technologyIDs[technologyID] = struct{}{}
 	}
-	effects := make([]staticdata.TechnologyEffect, 0)
+	effects := make([]staticdata.ModifierEffect, 0)
 	for technologyID := range technologyIDs {
 		technology, ok := staticdata.Default().GetTechnology(technologyID)
 		if !ok {
 			continue
 		}
-		effects = append(effects, technology.Effects...)
+		effects = append(effects, technology.ModifierEffects...)
+	}
+	if playerState.Policy != "" {
+		if policy, ok := staticdata.Default().GetPolicy(string(playerState.Policy)); ok {
+			effects = append(effects, policy.ModifierEffects...)
+		}
 	}
 	return effects
 }
@@ -219,19 +224,22 @@ func (s *GameState) technologyEffects(playerID string) []staticdata.TechnologyEf
 // ApplyFloatModifier 实现统一的 flat -> percent -> multiplier 聚合顺序。
 //
 // 所有 trigger/key 型修正都通过这里读时计算，而不是把最终值预写回 ECS 或静态表。
-func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID string, resourceKey string, base float64) float64 {
+func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID string, modifierKey string, base float64) float64 {
 	value := base
 	flat := 0.0
 	percent := 0.0
 	multiplier := 1.0
-	for _, effect := range s.technologyEffects(playerID) {
-		if effect.Type != "modifier" || effect.Trigger != trigger {
+	for _, effect := range s.modifierEffects(playerID) {
+		if effect.Trigger != trigger {
 			continue
 		}
 		if effect.TargetID != "" && effect.TargetID != targetID {
 			continue
 		}
-		if effect.ResourceKey != "" && effect.ResourceKey != resourceKey {
+		if effect.ResourceKey != "" && effect.ResourceKey != modifierKey {
+			continue
+		}
+		if effect.PointKey != "" && effect.PointKey != modifierKey {
 			continue
 		}
 		switch effect.ModifierType {
@@ -267,7 +275,7 @@ func (s *GameState) ApplyResourceModifiers(playerID string, trigger string, targ
 
 // EffectiveTechPointIncome / Cap 让科技点数值也走同一套 modifier 入口，
 // 避免研究系统和展示层再各自复制一份“科技点增益”逻辑。
-func (s *GameState) EffectiveTechPointIncome(playerID string) int {
+func (s *GameState) EffectiveResearchOutput(playerID string) int {
 	if s == nil {
 		return 0
 	}
@@ -275,7 +283,25 @@ func (s *GameState) EffectiveTechPointIncome(playerID string) int {
 	if !ok || playerState == nil {
 		return 0
 	}
-	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPlayerTechIncome), "", "", playerState.Research.TechPointsIncome)
+	base := playerState.Research.TechPointsIncome
+	if base <= 0 {
+		base = staticdata.Default().Rules().BaseResearchOutputPerTurn
+	}
+	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPointOutput), "", "research_output", base)
+}
+
+func (s *GameState) EffectiveIndustryOutput(playerID string) int {
+	if s == nil {
+		return 0
+	}
+	if _, ok := s.Players[playerID]; !ok {
+		return 0
+	}
+	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPointOutput), "", "industry_output", staticdata.Default().Rules().BaseIndustryOutputPerTurn)
+}
+
+func (s *GameState) EffectiveTechPointIncome(playerID string) int {
+	return s.EffectiveResearchOutput(playerID)
 }
 
 func (s *GameState) EffectiveTechPointCap(playerID string) int {
@@ -286,7 +312,10 @@ func (s *GameState) EffectiveTechPointCap(playerID string) int {
 	if !ok || playerState == nil {
 		return 0
 	}
-	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPlayerTechCap), "", "", playerState.Research.TechPointsCap)
+	if playerState.Research.TechPointsCap > 0 {
+		return playerState.Research.TechPointsCap
+	}
+	return math.MaxInt / 4
 }
 
 func (s *GameState) HasTechnologyUnlocked(playerID string, technologyID string) bool {
@@ -384,13 +413,13 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Username: username,
 			Resources: func() ResourceBag {
 				bag := NewResourceBag()
-				bag[ResourceBuildPoints] = rules.BuildPointsPerTurn
+				bag[ResourceBuildPoints] = rules.BaseIndustryOutputPerTurn
 				return bag
 			}(),
 			Castles:      make(map[string]*CastleState),
-			Research:     NewResearchState(rules.StartingTechPoints, rules.TechPointsPerTurn, rules.TechPointsMax),
+			Research:     NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
 			TokensLeft:   rules.TokensPerTurn,
-			MainCastleHP: rules.CastleBaseHP,
+			MainCastleHP: rules.CityCoreMaxHP,
 			WarZones:     []*WarZone{},
 		}
 	}

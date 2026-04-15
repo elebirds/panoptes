@@ -1,123 +1,32 @@
 {
+  "$schema": "../../schema/content/technologies.schema.json",
   "technologies": [
     {
-      "id": "agri_unlock_farm",
+      "id": "agrarian_foundations",
       "branch": "agriculture",
       "tier": 1,
-      "tech_point_cost": 1,
+      "research_cost": 1,
       "prerequisites": [],
-      "effects": [
+      "explicit_effects": [
         { "type": "unlock_building", "target_id": "farm" },
         { "type": "unlock_recipe", "target_id": "farm_food" }
-      ]
-    },
-    {
-      "id": "ind_unlock_mine",
-      "branch": "industry",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        { "type": "unlock_building", "target_id": "mine" },
-        { "type": "unlock_recipe", "target_id": "mine_ore" }
-      ]
-    },
-    {
-      "id": "ind_unlock_lumber",
-      "branch": "industry",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        { "type": "unlock_building", "target_id": "lumber" },
-        { "type": "unlock_recipe", "target_id": "lumber_wood" }
-      ]
-    },
-    {
-      "id": "agri_unlock_granary",
-      "branch": "agriculture",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        { "type": "unlock_building", "target_id": "granary" }
-      ]
-    },
-    {
-      "id": "ind_unlock_smelter",
-      "branch": "industry",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "ind_unlock_mine" }
       ],
-      "effects": [
-        { "type": "unlock_building", "target_id": "smelter" },
-        { "type": "unlock_recipe", "target_id": "smelter_refined_ore" }
-      ]
+      "modifier_effects": []
     },
     {
-      "id": "ind_unlock_workshop",
-      "branch": "industry",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "ind_unlock_lumber" }
-      ],
-      "effects": [
-        { "type": "unlock_building", "target_id": "workshop" },
-        { "type": "unlock_recipe", "target_id": "workshop_engineer_material" }
-      ]
-    },
-    {
-      "id": "mil_unlock_basic",
-      "branch": "military",
+      "id": "organized_labor",
+      "branch": "governance",
       "tier": 1,
-      "tech_point_cost": 1,
+      "research_cost": 2,
       "prerequisites": [],
-      "effects": [
-        { "type": "unlock_building", "target_id": "barracks" },
-        { "type": "unlock_recipe", "target_id": "barracks_warrior" },
-        { "type": "unlock_recipe", "target_id": "barracks_archer" }
-      ]
-    },
-    {
-      "id": "mil_unlock_cavalry",
-      "branch": "military",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "mil_unlock_basic" },
-        { "type": "technology_unlocked", "target_id": "ind_unlock_smelter" }
-      ],
-      "effects": [
-        { "type": "unlock_building", "target_id": "stable" },
-        { "type": "unlock_recipe", "target_id": "stable_cavalry" }
-      ]
-    },
-    {
-      "id": "mil_unlock_engineering",
-      "branch": "military",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        { "type": "technology_unlocked", "target_id": "ind_unlock_workshop" }
-      ],
-      "effects": [
-        { "type": "unlock_building", "target_id": "engineer_camp" },
-        { "type": "unlock_recipe", "target_id": "engineer_camp_settler" }
-      ]
-    },
-    {
-      "id": "mil_unlock_fortification",
-      "branch": "military",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        { "type": "unlock_building", "target_id": "wall" },
-        { "type": "unlock_building", "target_id": "tower" },
-        { "type": "unlock_building", "target_id": "watchtower" }
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
       ]
     }
   ]

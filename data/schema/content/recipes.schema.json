@@ -1,25 +1,27 @@
 {
   "$defs": {
+    "point_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "industry_output": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "research_output": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "resource_amount": {
       "additionalProperties": false,
       "properties": {
-        "build_points": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "engineer_material": {
-          "minimum": 0,
-          "type": "integer"
-        },
         "food": {
           "minimum": 0,
           "type": "integer"
         },
         "ore": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "refined_ore": {
           "minimum": 0,
           "type": "integer"
         },
@@ -31,56 +33,31 @@
       "type": "object"
     }
   },
+  "$id": "content/recipes.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "recipes": {
       "items": {
         "additionalProperties": false,
         "properties": {
+          "base_progress": {
+            "minimum": 1,
+            "type": "integer"
+          },
           "building_id": {
             "enum": [
               "barracks",
-              "engineer_camp",
+              "city_core",
               "farm",
-              "granary",
               "lumber",
               "mine",
-              "smelter",
-              "stable",
-              "tower",
-              "wall",
-              "watchtower",
-              "workshop"
+              "wall"
             ],
             "type": "string"
-          },
-          "cost": {
-            "$ref": "#/$defs/resource_amount"
-          },
-          "delay_penalty": {
-            "additionalProperties": false,
-            "properties": {
-              "mode": {
-                "enum": [
-                  "add_turns"
-                ],
-                "type": "string"
-              },
-              "value": {
-                "minimum": 0,
-                "type": "integer"
-              }
-            },
-            "required": [
-              "mode",
-              "value"
-            ],
-            "type": "object"
-          },
-          "duration_turns": {
-            "minimum": 1,
-            "type": "integer"
           },
           "id": {
             "type": "string"
@@ -88,16 +65,23 @@
           "outputs": {
             "additionalProperties": false,
             "properties": {
+              "point_progress": {
+                "$ref": "#/$defs/point_amount"
+              },
               "resources": {
                 "$ref": "#/$defs/resource_amount"
+              },
+              "state_changes": {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
               },
               "units": {
                 "items": {
                   "enum": [
-                    "archer",
-                    "cavalry",
-                    "settler",
-                    "warrior"
+                    "infantry",
+                    "settler"
                   ],
                   "type": "string"
                 },
@@ -105,14 +89,25 @@
               }
             },
             "type": "object"
+          },
+          "point_inputs": {
+            "$ref": "#/$defs/point_amount"
+          },
+          "resource_inputs": {
+            "$ref": "#/$defs/resource_amount"
+          },
+          "work_amount": {
+            "minimum": 1,
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "building_id",
-          "cost",
-          "duration_turns",
-          "delay_penalty",
+          "resource_inputs",
+          "point_inputs",
+          "work_amount",
+          "base_progress",
           "outputs"
         ],
         "type": "object"

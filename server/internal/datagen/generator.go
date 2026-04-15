@@ -47,8 +47,11 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 	schemas := buildAuthoringSchemas(buildAuthoringSchemaContext(
 		authored.Resources.Value.Resources,
+		authored.Points.Value.Points,
 		authored.Units.Value.Units,
 		authored.Buildings.Value.Buildings,
+		authored.Technologies.Value.Technologies,
+		authored.Policies.Value.Policies,
 		authored.Recipes.Value.Recipes,
 		authored.Terrains.Value.Terrains,
 	))
@@ -57,9 +60,11 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	mergeUI(authored.Resources.Value.Resources, authored.ResourceUI.Value)
+	mergePointUI(authored.Points.Value.Points, authored.PointUI.Value)
 	mergeUnitUI(authored.Units.Value.Units, authored.UnitUI.Value)
 	mergeBuildingUI(authored.Buildings.Value.Buildings, authored.BuildingUI.Value)
 	mergeTechnologyUI(authored.Technologies.Value.Technologies, authored.TechnologyUI.Value)
+	mergePolicyUI(authored.Policies.Value.Policies, authored.PolicyUI.Value)
 	mergeRecipeUI(authored.Recipes.Value.Recipes, authored.RecipeUI.Value)
 	mergeTerrainUI(authored.Terrains.Value.Terrains, authored.TerrainUI.Value)
 
@@ -71,9 +76,11 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	bundle := staticdata.CatalogBundle{
 		Manifest:     authored.Manifest.Value,
 		Resources:    authored.Resources.Value.Resources,
+		Points:       authored.Points.Value.Points,
 		Units:        authored.Units.Value.Units,
 		Buildings:    authored.Buildings.Value.Buildings,
 		Technologies: authored.Technologies.Value.Technologies,
+		Policies:     authored.Policies.Value.Policies,
 		Recipes:      authored.Recipes.Value.Recipes,
 		Terrains:     authored.Terrains.Value.Terrains,
 		Rules:        authored.Rules.Value,
@@ -442,6 +449,34 @@ func mergeUI(resources []staticdata.ResourceDescriptor, ui staticdata.ResourceCa
 	}
 }
 
+func mergePointUI(points []staticdata.PointDescriptor, ui staticdata.PointCatalogUIFile) {
+	uiByID := make(map[string]struct {
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
+	}, len(ui.Points))
+	for _, entry := range ui.Points {
+		uiByID[entry.ID] = struct {
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
+	}
+	for i := range points {
+		if entry, ok := uiByID[points[i].Key]; ok {
+			points[i].DisplayName = entry.Name
+			points[i].Description = entry.Description
+			points[i].IconKey = entry.IconKey
+			points[i].SortOrder = entry.SortOrder
+			points[i].Tags = append([]string(nil), entry.Tags...)
+		}
+	}
+}
+
 func mergeUnitUI(units []staticdata.UnitDefinition, ui staticdata.UnitCatalogUIFile) {
 	uiByID := make(map[string]struct {
 		Name        string
@@ -532,6 +567,34 @@ func mergeTechnologyUI(technologies []staticdata.TechnologyDefinition, ui static
 	}
 }
 
+func mergePolicyUI(policies []staticdata.PolicyDefinition, ui staticdata.PolicyCatalogUIFile) {
+	uiByID := make(map[string]struct {
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
+	}, len(ui.Policies))
+	for _, entry := range ui.Policies {
+		uiByID[entry.ID] = struct {
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
+	}
+	for i := range policies {
+		if entry, ok := uiByID[policies[i].ID]; ok {
+			policies[i].Name = entry.Name
+			policies[i].Description = entry.Description
+			policies[i].IconKey = entry.IconKey
+			policies[i].SortOrder = entry.SortOrder
+			policies[i].Tags = append([]string(nil), entry.Tags...)
+		}
+	}
+}
+
 func mergeRecipeUI(recipes []staticdata.RecipeDefinition, ui staticdata.RecipeCatalogUIFile) {
 	uiByID := make(map[string]struct {
 		Name        string
@@ -608,6 +671,15 @@ message ResourceBag {
   repeated ResourceValue items = 1;
 }
 
+message PointValue {
+  string key = 1;
+  int32 amount = 2;
+}
+
+message PointBag {
+  repeated PointValue items = 1;
+}
+
 message ResourceDescriptor {
   string key = 1;
   string display_name = 2;
@@ -616,6 +688,15 @@ message ResourceDescriptor {
   int32 sort_order = 5;
   int32 proto_number = 6;
   bool visible_in_hud = 7;
+}
+
+message PointDescriptor {
+  string key = 1;
+  string display_name = 2;
+  string description = 3;
+  string icon_key = 4;
+  int32 sort_order = 5;
+  bool visible_in_hud = 6;
 }
 
 message StaticCatalogManifest {
@@ -643,6 +724,7 @@ message UnitCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string prefab_key = 5;
+  repeated string tags = 6;
 }
 
 message BuildingCatalogEntry {
@@ -651,6 +733,11 @@ message BuildingCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string prefab_key = 5;
+  string placement_kind = 6;
+  string building_scope = 7;
+  string required_resource_type = 8;
+  string takeover_mode = 9;
+  repeated string tags = 10;
 }
 
 message TechnologyCatalogEntry {
@@ -660,7 +747,18 @@ message TechnologyCatalogEntry {
   string icon_key = 4;
   string branch = 5;
   int32 tier = 6;
-  int32 tech_point_cost = 7;
+  int32 research_cost = 7;
+  repeated string tags = 8;
+}
+
+message PolicyCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string layer = 5;
+  string activation_timing = 6;
+  repeated string tags = 7;
 }
 
 message RecipeCatalogEntry {
@@ -669,7 +767,9 @@ message RecipeCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string building_id = 5;
-  int32 duration_turns = 6;
+  int32 work_amount = 6;
+  int32 base_progress = 7;
+  repeated string tags = 8;
 }
 
 message TerrainCatalogEntry {
@@ -678,16 +778,19 @@ message TerrainCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string material_key = 5;
+  repeated string tags = 6;
 }
 
 message StaticCatalogSnapshot {
   StaticCatalogManifest manifest = 1;
   repeated ResourceDescriptor resources = 2;
-  repeated UnitCatalogEntry units = 3;
-  repeated BuildingCatalogEntry buildings = 4;
-  repeated TechnologyCatalogEntry technologies = 5;
-  repeated RecipeCatalogEntry recipes = 6;
-  repeated TerrainCatalogEntry terrains = 7;
+  repeated PointDescriptor points = 3;
+  repeated UnitCatalogEntry units = 4;
+  repeated BuildingCatalogEntry buildings = 5;
+  repeated TechnologyCatalogEntry technologies = 6;
+  repeated PolicyCatalogEntry policies = 7;
+  repeated RecipeCatalogEntry recipes = 8;
+  repeated TerrainCatalogEntry terrains = 9;
 }
 
 message MsgStaticCatalogManifest {

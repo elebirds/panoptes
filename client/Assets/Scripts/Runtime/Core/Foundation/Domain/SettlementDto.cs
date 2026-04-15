@@ -41,11 +41,11 @@ namespace Panoptes.Core.Domain
         public string NodeId;
         public string BuildingType;
         public string OwnerId;
-        public string CastleId;
+        public string CityId;
         public int BuildingHp;
     }
 
-    public sealed class CastleBuiltBuildingDto
+    public sealed class CityBuiltBuildingDto
     {
         public string NodeId;
         public string BuildingType;
@@ -69,7 +69,7 @@ namespace Panoptes.Core.Domain
         public List<BuiltStructureDto> BuiltBuildings;
         public List<string> MovedUnitIDs;
         public List<string> DeadUnitIDs;
-        public bool CastleDamaged;
+        public bool CityCoreDamaged;
     }
 
     public sealed class TurnEventDto

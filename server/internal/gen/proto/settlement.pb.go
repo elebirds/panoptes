@@ -126,17 +126,16 @@ func (x *SettlementSection) GetEvents() []*TurnEvent {
 }
 
 type MsgTurnSettlement struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Sections        []*SettlementSection   `protobuf:"bytes,1,rep,name=sections,proto3" json:"sections,omitempty"`
-	Turn            int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
-	Phase           string                 `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
-	NextPhase       string                 `protobuf:"bytes,4,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
-	Nodes           []*NodeView            `protobuf:"bytes,5,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	Units           []*UnitView            `protobuf:"bytes,6,rep,name=units,proto3" json:"units,omitempty"`
-	MyPlayerAfter   *PlayerView            `protobuf:"bytes,7,opt,name=my_player_after,json=myPlayerAfter,proto3" json:"my_player_after,omitempty"`
-	MyResearchAfter *PlayerResearchView    `protobuf:"bytes,8,opt,name=my_research_after,json=myResearchAfter,proto3" json:"my_research_after,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sections      []*SettlementSection   `protobuf:"bytes,1,rep,name=sections,proto3" json:"sections,omitempty"`
+	Turn          int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
+	Phase         string                 `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
+	NextPhase     string                 `protobuf:"bytes,4,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
+	Nodes         []*NodeView            `protobuf:"bytes,5,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	Units         []*UnitView            `protobuf:"bytes,6,rep,name=units,proto3" json:"units,omitempty"`
+	MyPlayerAfter *PlayerView            `protobuf:"bytes,7,opt,name=my_player_after,json=myPlayerAfter,proto3" json:"my_player_after,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MsgTurnSettlement) Reset() {
@@ -218,13 +217,6 @@ func (x *MsgTurnSettlement) GetMyPlayerAfter() *PlayerView {
 	return nil
 }
 
-func (x *MsgTurnSettlement) GetMyResearchAfter() *PlayerResearchView {
-	if x != nil {
-		return x.MyResearchAfter
-	}
-	return nil
-}
-
 var File_settlement_proto protoreflect.FileDescriptor
 
 const file_settlement_proto_rawDesc = "" +
@@ -238,7 +230,7 @@ const file_settlement_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"c\n" +
 	"\x11SettlementSection\x12\x18\n" +
 	"\asection\x18\x01 \x01(\tR\asection\x124\n" +
-	"\x06events\x18\x02 \x03(\v2\x1c.panoptes.proto.v1.TurnEventR\x06events\"\x9e\x03\n" +
+	"\x06events\x18\x02 \x03(\v2\x1c.panoptes.proto.v1.TurnEventR\x06events\"\xcb\x02\n" +
 	"\x11MsgTurnSettlement\x12@\n" +
 	"\bsections\x18\x01 \x03(\v2$.panoptes.proto.v1.SettlementSectionR\bsections\x12\x12\n" +
 	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x14\n" +
@@ -247,8 +239,7 @@ const file_settlement_proto_rawDesc = "" +
 	"next_phase\x18\x04 \x01(\tR\tnextPhase\x121\n" +
 	"\x05nodes\x18\x05 \x03(\v2\x1b.panoptes.proto.v1.NodeViewR\x05nodes\x121\n" +
 	"\x05units\x18\x06 \x03(\v2\x1b.panoptes.proto.v1.UnitViewR\x05units\x12E\n" +
-	"\x0fmy_player_after\x18\a \x01(\v2\x1d.panoptes.proto.v1.PlayerViewR\rmyPlayerAfter\x12Q\n" +
-	"\x11my_research_after\x18\b \x01(\v2%.panoptes.proto.v1.PlayerResearchViewR\x0fmyResearchAfterBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x0fmy_player_after\x18\a \x01(\v2\x1d.panoptes.proto.v1.PlayerViewR\rmyPlayerAfterBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
 	file_settlement_proto_rawDescOnce sync.Once
@@ -264,14 +255,13 @@ func file_settlement_proto_rawDescGZIP() []byte {
 
 var file_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_settlement_proto_goTypes = []any{
-	(*TurnEvent)(nil),          // 0: panoptes.proto.v1.TurnEvent
-	(*SettlementSection)(nil),  // 1: panoptes.proto.v1.SettlementSection
-	(*MsgTurnSettlement)(nil),  // 2: panoptes.proto.v1.MsgTurnSettlement
-	nil,                        // 3: panoptes.proto.v1.TurnEvent.DataEntry
-	(*NodeView)(nil),           // 4: panoptes.proto.v1.NodeView
-	(*UnitView)(nil),           // 5: panoptes.proto.v1.UnitView
-	(*PlayerView)(nil),         // 6: panoptes.proto.v1.PlayerView
-	(*PlayerResearchView)(nil), // 7: panoptes.proto.v1.PlayerResearchView
+	(*TurnEvent)(nil),         // 0: panoptes.proto.v1.TurnEvent
+	(*SettlementSection)(nil), // 1: panoptes.proto.v1.SettlementSection
+	(*MsgTurnSettlement)(nil), // 2: panoptes.proto.v1.MsgTurnSettlement
+	nil,                       // 3: panoptes.proto.v1.TurnEvent.DataEntry
+	(*NodeView)(nil),          // 4: panoptes.proto.v1.NodeView
+	(*UnitView)(nil),          // 5: panoptes.proto.v1.UnitView
+	(*PlayerView)(nil),        // 6: panoptes.proto.v1.PlayerView
 }
 var file_settlement_proto_depIdxs = []int32{
 	3, // 0: panoptes.proto.v1.TurnEvent.data:type_name -> panoptes.proto.v1.TurnEvent.DataEntry
@@ -280,12 +270,11 @@ var file_settlement_proto_depIdxs = []int32{
 	4, // 3: panoptes.proto.v1.MsgTurnSettlement.nodes:type_name -> panoptes.proto.v1.NodeView
 	5, // 4: panoptes.proto.v1.MsgTurnSettlement.units:type_name -> panoptes.proto.v1.UnitView
 	6, // 5: panoptes.proto.v1.MsgTurnSettlement.my_player_after:type_name -> panoptes.proto.v1.PlayerView
-	7, // 6: panoptes.proto.v1.MsgTurnSettlement.my_research_after:type_name -> panoptes.proto.v1.PlayerResearchView
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_settlement_proto_init() }

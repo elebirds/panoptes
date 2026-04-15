@@ -120,12 +120,14 @@ message GameEvent {
     MsgTokenResult token_result = 7;
     MsgRevealResult reveal_result = 8;
     MsgResearchResult research_result = 9;
-    MsgSetBuildingRecipeResult set_building_recipe_result = 10;
-    MsgTurnReport turn_report = 11;
-    MsgTurnSettlement turn_settlement = 12;
-    MsgGameOver game_over = 13;
-    MsgMinisterReportChunk minister_report_chunk = 14;
-    MsgMinisterMetrics minister_metrics = 15;
+    MsgSetPolicyResult set_policy_result = 10;
+    MsgSetBuildingRecipeResult set_building_recipe_result = 11;
+    MsgBuildStructureResult build_structure_result = 12;
+    MsgTurnReport turn_report = 13;
+    MsgTurnSettlement turn_settlement = 14;
+    MsgGameOver game_over = 15;
+    MsgMinisterReportChunk minister_report_chunk = 16;
+    MsgMinisterMetrics minister_metrics = 17;
   }
 }
 

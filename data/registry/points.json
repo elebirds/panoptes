@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/registry/points.schema.json",
+  "points": [
+    {
+      "key": "research_output",
+      "display_name": "科研产出",
+      "description": "用于推进当前研究目标。",
+      "icon_key": "point_research_output",
+      "sort_order": 10,
+      "visible_in_hud": true
+    },
+    {
+      "key": "industry_output",
+      "display_name": "工业产出",
+      "description": "用于推进建设与生产。",
+      "icon_key": "point_industry_output",
+      "sort_order": 20,
+      "visible_in_hud": true
+    }
+  ]
+}

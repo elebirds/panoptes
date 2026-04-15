@@ -24,43 +24,44 @@ namespace Panoptes.Protocol.V1 {
     static OrdersReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "CgxvcmRlcnMucHJvdG8SEXBhbm9wdGVzLnByb3RvLnYxIiYKDE1zZ1NldFBv",
-            "bGljeRIWCgZwb2xpY3kYASABKAlSBnBvbGljeSI7ChRNc2dTZXRSZXNlYXJj",
-            "aFRhcmdldBIjCg10ZWNobm9sb2d5X2lkGAEgASgJUgx0ZWNobm9sb2d5SWQi",
-            "TAoUTXNnU2V0QnVpbGRpbmdSZWNpcGUSFwoHbm9kZV9pZBgBIAEoCVIGbm9k",
-            "ZUlkEhsKCXJlY2lwZV9pZBgCIAEoCVIIcmVjaXBlSWQibgoRTXNnQnVpbGRT",
-            "dHJ1Y3R1cmUSFwoHbm9kZV9pZBgBIAEoCVIGbm9kZUlkEiMKDWJ1aWxkaW5n",
-            "X3R5cGUYAiABKAlSDGJ1aWxkaW5nVHlwZRIbCgljYXN0bGVfaWQYAyABKAlS",
-            "CGNhc3RsZUlkIigKDU1zZ1JldmVhbE5vZGUSFwoHbm9kZV9pZBgBIAEoCVIG",
-            "bm9kZUlkIlcKDU1zZ1NldFdhclpvbmUSFwoHem9uZV9pZBgBIAEoCVIGem9u",
-            "ZUlkEhIKBG5hbWUYAiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25v",
-            "ZGVJZHMibQoTTXNnV2FyWm9uZURpcmVjdGl2ZRIXCgd6b25lX2lkGAEgASgJ",
-            "UgZ6b25lSWQSHAoJZGlyZWN0aXZlGAIgASgJUglkaXJlY3RpdmUSHwoLdGFy",
-            "Z2V0X25vZGUYAyABKAlSCnRhcmdldE5vZGUiWAoXTXNnU2V0TWluaXN0ZXJE",
-            "aXJlY3RpdmUSIwoNbWluaXN0ZXJfcm9sZRgBIAEoCVIMbWluaXN0ZXJSb2xl",
-            "EhgKB2NvbnRlbnQYAiABKAlSB2NvbnRlbnQiwQIKEU1zZ0lzc3VlVW5pdE9y",
-            "ZGVyEhcKB3VuaXRfaWQYASABKAlSBnVuaXRJZBIWCgZhY3Rpb24YAiABKAlS",
-            "BmFjdGlvbhIkCg50YXJnZXRfbm9kZV9pZBgDIAEoCVIMdGFyZ2V0Tm9kZUlk",
-            "EiQKDnRhcmdldF91bml0X2lkGAQgASgJUgx0YXJnZXRVbml0SWQSKgoRc2Vj",
-            "b25kYXJ5X25vZGVfaWQYBSABKAlSD3NlY29uZGFyeU5vZGVJZBJICgZwYXJh",
-            "bXMYBiADKAsyMC5wYW5vcHRlcy5wcm90by52MS5Nc2dJc3N1ZVVuaXRPcmRl",
-            "ci5QYXJhbXNFbnRyeVIGcGFyYW1zGjkKC1BhcmFtc0VudHJ5EhAKA2tleRgB",
-            "IAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAEiLQoSTXNnQ2Fu",
-            "Y2VsVW5pdE9yZGVyEhcKB3VuaXRfaWQYASABKAlSBnVuaXRJZCLBAQodTXNn",
-            "UGxhbm5pbmdQYXRoUHJldmlld1JlcXVlc3QSHQoKcmVxdWVzdF9pZBgBIAEo",
-            "CVIJcmVxdWVzdElkEhcKB3VuaXRfaWQYAiABKAlSBnVuaXRJZBIWCgZhY3Rp",
-            "b24YAyABKAlSBmFjdGlvbhIkCg50YXJnZXRfbm9kZV9pZBgEIAEoCVIMdGFy",
-            "Z2V0Tm9kZUlkEioKEXNlY29uZGFyeV9ub2RlX2lkGAUgASgJUg9zZWNvbmRh",
-            "cnlOb2RlSWQiDwoNTXNnU3VibWl0VHVybkJTWjpnaXRodWIuY29tL2VsZWJp",
-            "cmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIU",
-            "UGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "CgxvcmRlcnMucHJvdG8SEXBhbm9wdGVzLnByb3RvLnYxIjwKDE1zZ1NldFBv",
+            "bGljeRIsChJuYXRpb25hbF9wb2xpY3lfaWQYASABKAlSEG5hdGlvbmFsUG9s",
+            "aWN5SWQiOwoUTXNnU2V0UmVzZWFyY2hUYXJnZXQSIwoNdGVjaG5vbG9neV9p",
+            "ZBgBIAEoCVIMdGVjaG5vbG9neUlkIkwKFE1zZ1NldEJ1aWxkaW5nUmVjaXBl",
+            "EhcKB25vZGVfaWQYASABKAlSBm5vZGVJZBIbCglyZWNpcGVfaWQYAiABKAlS",
+            "CHJlY2lwZUlkIm8KEU1zZ0J1aWxkU3RydWN0dXJlEhcKB25vZGVfaWQYASAB",
+            "KAlSBm5vZGVJZBIoChBidWlsZGluZ190eXBlX2lkGAIgASgJUg5idWlsZGlu",
+            "Z1R5cGVJZBIXCgdjaXR5X2lkGAMgASgJUgZjaXR5SWQiKAoNTXNnUmV2ZWFs",
+            "Tm9kZRIXCgdub2RlX2lkGAEgASgJUgZub2RlSWQiVwoNTXNnU2V0V2FyWm9u",
+            "ZRIXCgd6b25lX2lkGAEgASgJUgZ6b25lSWQSEgoEbmFtZRgCIAEoCVIEbmFt",
+            "ZRIZCghub2RlX2lkcxgDIAMoCVIHbm9kZUlkcyJtChNNc2dXYXJab25lRGly",
+            "ZWN0aXZlEhcKB3pvbmVfaWQYASABKAlSBnpvbmVJZBIcCglkaXJlY3RpdmUY",
+            "AiABKAlSCWRpcmVjdGl2ZRIfCgt0YXJnZXRfbm9kZRgDIAEoCVIKdGFyZ2V0",
+            "Tm9kZSJYChdNc2dTZXRNaW5pc3RlckRpcmVjdGl2ZRIjCg1taW5pc3Rlcl9y",
+            "b2xlGAEgASgJUgxtaW5pc3RlclJvbGUSGAoHY29udGVudBgCIAEoCVIHY29u",
+            "dGVudCLBAgoRTXNnSXNzdWVVbml0T3JkZXISFwoHdW5pdF9pZBgBIAEoCVIG",
+            "dW5pdElkEhYKBmFjdGlvbhgCIAEoCVIGYWN0aW9uEiQKDnRhcmdldF9ub2Rl",
+            "X2lkGAMgASgJUgx0YXJnZXROb2RlSWQSJAoOdGFyZ2V0X3VuaXRfaWQYBCAB",
+            "KAlSDHRhcmdldFVuaXRJZBIqChFzZWNvbmRhcnlfbm9kZV9pZBgFIAEoCVIP",
+            "c2Vjb25kYXJ5Tm9kZUlkEkgKBnBhcmFtcxgGIAMoCzIwLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLk1zZ0lzc3VlVW5pdE9yZGVyLlBhcmFtc0VudHJ5UgZwYXJhbXMa",
+            "OQoLUGFyYW1zRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiAB",
+            "KAlSBXZhbHVlOgI4ASItChJNc2dDYW5jZWxVbml0T3JkZXISFwoHdW5pdF9p",
+            "ZBgBIAEoCVIGdW5pdElkIsEBCh1Nc2dQbGFubmluZ1BhdGhQcmV2aWV3UmVx",
+            "dWVzdBIdCgpyZXF1ZXN0X2lkGAEgASgJUglyZXF1ZXN0SWQSFwoHdW5pdF9p",
+            "ZBgCIAEoCVIGdW5pdElkEhYKBmFjdGlvbhgDIAEoCVIGYWN0aW9uEiQKDnRh",
+            "cmdldF9ub2RlX2lkGAQgASgJUgx0YXJnZXROb2RlSWQSKgoRc2Vjb25kYXJ5",
+            "X25vZGVfaWQYBSABKAlSD3NlY29uZGFyeU5vZGVJZCIPCg1Nc2dTdWJtaXRU",
+            "dXJuQlNaOmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwv",
+            "Z2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIG",
+            "cHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetPolicy), global::Panoptes.Protocol.V1.MsgSetPolicy.Parser, new[]{ "Policy" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetPolicy), global::Panoptes.Protocol.V1.MsgSetPolicy.Parser, new[]{ "NationalPolicyId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetResearchTarget), global::Panoptes.Protocol.V1.MsgSetResearchTarget.Parser, new[]{ "TechnologyId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetBuildingRecipe), global::Panoptes.Protocol.V1.MsgSetBuildingRecipe.Parser, new[]{ "NodeId", "RecipeId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgBuildStructure), global::Panoptes.Protocol.V1.MsgBuildStructure.Parser, new[]{ "NodeId", "BuildingType", "CastleId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgBuildStructure), global::Panoptes.Protocol.V1.MsgBuildStructure.Parser, new[]{ "NodeId", "BuildingTypeId", "CityId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgRevealNode), global::Panoptes.Protocol.V1.MsgRevealNode.Parser, new[]{ "NodeId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgSetWarZone), global::Panoptes.Protocol.V1.MsgSetWarZone.Parser, new[]{ "ZoneId", "Name", "NodeIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgWarZoneDirective), global::Panoptes.Protocol.V1.MsgWarZoneDirective.Parser, new[]{ "ZoneId", "Directive", "TargetNode" }, null, null, null, null),
@@ -110,7 +111,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public MsgSetPolicy(MsgSetPolicy other) : this() {
-      policy_ = other.policy_;
+      nationalPolicyId_ = other.nationalPolicyId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -120,15 +121,15 @@ namespace Panoptes.Protocol.V1 {
       return new MsgSetPolicy(this);
     }
 
-    /// <summary>Field number for the "policy" field.</summary>
-    public const int PolicyFieldNumber = 1;
-    private string policy_ = "";
+    /// <summary>Field number for the "national_policy_id" field.</summary>
+    public const int NationalPolicyIdFieldNumber = 1;
+    private string nationalPolicyId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Policy {
-      get { return policy_; }
+    public string NationalPolicyId {
+      get { return nationalPolicyId_; }
       set {
-        policy_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        nationalPolicyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -147,7 +148,7 @@ namespace Panoptes.Protocol.V1 {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Policy != other.Policy) return false;
+      if (NationalPolicyId != other.NationalPolicyId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -155,7 +156,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Policy.Length != 0) hash ^= Policy.GetHashCode();
+      if (NationalPolicyId.Length != 0) hash ^= NationalPolicyId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -174,9 +175,9 @@ namespace Panoptes.Protocol.V1 {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Policy.Length != 0) {
+      if (NationalPolicyId.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Policy);
+        output.WriteString(NationalPolicyId);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -188,9 +189,9 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Policy.Length != 0) {
+      if (NationalPolicyId.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Policy);
+        output.WriteString(NationalPolicyId);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -202,8 +203,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Policy.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Policy);
+      if (NationalPolicyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(NationalPolicyId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -217,8 +218,8 @@ namespace Panoptes.Protocol.V1 {
       if (other == null) {
         return;
       }
-      if (other.Policy.Length != 0) {
-        Policy = other.Policy;
+      if (other.NationalPolicyId.Length != 0) {
+        NationalPolicyId = other.NationalPolicyId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -231,12 +232,16 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Policy = input.ReadString();
+            NationalPolicyId = input.ReadString();
             break;
           }
         }
@@ -250,12 +255,16 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Policy = input.ReadString();
+            NationalPolicyId = input.ReadString();
             break;
           }
         }
@@ -421,7 +430,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -440,7 +453,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -640,7 +657,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -663,7 +684,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -718,8 +743,8 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public MsgBuildStructure(MsgBuildStructure other) : this() {
       nodeId_ = other.nodeId_;
-      buildingType_ = other.buildingType_;
-      castleId_ = other.castleId_;
+      buildingTypeId_ = other.buildingTypeId_;
+      cityId_ = other.cityId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -741,27 +766,27 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "building_type" field.</summary>
-    public const int BuildingTypeFieldNumber = 2;
-    private string buildingType_ = "";
+    /// <summary>Field number for the "building_type_id" field.</summary>
+    public const int BuildingTypeIdFieldNumber = 2;
+    private string buildingTypeId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string BuildingType {
-      get { return buildingType_; }
+    public string BuildingTypeId {
+      get { return buildingTypeId_; }
       set {
-        buildingType_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        buildingTypeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
-    /// <summary>Field number for the "castle_id" field.</summary>
-    public const int CastleIdFieldNumber = 3;
-    private string castleId_ = "";
+    /// <summary>Field number for the "city_id" field.</summary>
+    public const int CityIdFieldNumber = 3;
+    private string cityId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string CastleId {
-      get { return castleId_; }
+    public string CityId {
+      get { return cityId_; }
       set {
-        castleId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        cityId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -781,8 +806,8 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if (NodeId != other.NodeId) return false;
-      if (BuildingType != other.BuildingType) return false;
-      if (CastleId != other.CastleId) return false;
+      if (BuildingTypeId != other.BuildingTypeId) return false;
+      if (CityId != other.CityId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -791,8 +816,8 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       if (NodeId.Length != 0) hash ^= NodeId.GetHashCode();
-      if (BuildingType.Length != 0) hash ^= BuildingType.GetHashCode();
-      if (CastleId.Length != 0) hash ^= CastleId.GetHashCode();
+      if (BuildingTypeId.Length != 0) hash ^= BuildingTypeId.GetHashCode();
+      if (CityId.Length != 0) hash ^= CityId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -815,13 +840,13 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(NodeId);
       }
-      if (BuildingType.Length != 0) {
+      if (BuildingTypeId.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteString(BuildingType);
+        output.WriteString(BuildingTypeId);
       }
-      if (CastleId.Length != 0) {
+      if (CityId.Length != 0) {
         output.WriteRawTag(26);
-        output.WriteString(CastleId);
+        output.WriteString(CityId);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -837,13 +862,13 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(NodeId);
       }
-      if (BuildingType.Length != 0) {
+      if (BuildingTypeId.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteString(BuildingType);
+        output.WriteString(BuildingTypeId);
       }
-      if (CastleId.Length != 0) {
+      if (CityId.Length != 0) {
         output.WriteRawTag(26);
-        output.WriteString(CastleId);
+        output.WriteString(CityId);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -858,11 +883,11 @@ namespace Panoptes.Protocol.V1 {
       if (NodeId.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(NodeId);
       }
-      if (BuildingType.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingType);
+      if (BuildingTypeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingTypeId);
       }
-      if (CastleId.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(CastleId);
+      if (CityId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CityId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -879,11 +904,11 @@ namespace Panoptes.Protocol.V1 {
       if (other.NodeId.Length != 0) {
         NodeId = other.NodeId;
       }
-      if (other.BuildingType.Length != 0) {
-        BuildingType = other.BuildingType;
+      if (other.BuildingTypeId.Length != 0) {
+        BuildingTypeId = other.BuildingTypeId;
       }
-      if (other.CastleId.Length != 0) {
-        CastleId = other.CastleId;
+      if (other.CityId.Length != 0) {
+        CityId = other.CityId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -896,7 +921,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -905,11 +934,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            BuildingType = input.ReadString();
+            BuildingTypeId = input.ReadString();
             break;
           }
           case 26: {
-            CastleId = input.ReadString();
+            CityId = input.ReadString();
             break;
           }
         }
@@ -923,7 +952,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -932,11 +965,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 18: {
-            BuildingType = input.ReadString();
+            BuildingTypeId = input.ReadString();
             break;
           }
           case 26: {
-            CastleId = input.ReadString();
+            CityId = input.ReadString();
             break;
           }
         }
@@ -1102,7 +1135,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1121,7 +1158,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1339,7 +1380,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1366,7 +1411,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1603,7 +1652,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1630,7 +1683,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1838,7 +1895,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1861,7 +1922,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2170,7 +2235,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2209,7 +2278,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2400,7 +2473,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2419,7 +2496,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2706,7 +2787,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2741,7 +2826,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2899,7 +2988,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2914,7 +3007,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
