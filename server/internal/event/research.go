@@ -40,7 +40,7 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	if playerState.Research.TechPoints < 0 {
 		playerState.Research.TechPoints = 0
 	}
-	for _, effect := range technology.Effects {
+	for _, effect := range technology.ExplicitEffects {
 		switch effect.Type {
 		case "unlock_building":
 			playerState.Research.UnlockBuilding(effect.TargetID)
@@ -53,7 +53,7 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	}
 }
 
-func (e TechnologyUnlockedEvent) Kind() string { return "technology_unlocked" }
+func (e TechnologyUnlockedEvent) Kind() string { return "technology_completed" }
 
 func (e TechnologyUnlockedEvent) String() string {
 	return fmt.Sprintf("TechnologyUnlockedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
@@ -78,7 +78,7 @@ func (e TechPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState
 	}
 }
 
-func (e TechPointsRechargedEvent) Kind() string { return "tech_points_recharged" }
+func (e TechPointsRechargedEvent) Kind() string { return "technology_progressed" }
 
 func (e TechPointsRechargedEvent) String() string {
 	return fmt.Sprintf("TechPointsRechargedEvent player=%s amount=%d", e.PlayerID, e.Amount)

@@ -175,7 +175,7 @@ func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T)
 		Body: &pb.GameCommand_Planning{
 			Planning: &pb.PlanningCommand{
 				Body: &pb.PlanningCommand_SetPolicy{
-					SetPolicy: &pb.MsgSetPolicy{Policy: "growth"},
+					SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
 				},
 			},
 		},

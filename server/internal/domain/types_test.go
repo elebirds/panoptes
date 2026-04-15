@@ -47,18 +47,12 @@ func TestResourceBagMethods(t *testing.T) {
 		ResourceOre:         3,
 		ResourceWood:        4,
 		ResourceFood:        5,
-		ResourceRefinedOre:  2,
-		ResourceEngineerMat: 1,
-		ResourceBuildPoints: 6,
 		ResourceKey("mana"): 9,
 	}
 	other := ResourceBag{
 		ResourceOre:         1,
 		ResourceWood:        2,
 		ResourceFood:        3,
-		ResourceRefinedOre:  1,
-		ResourceEngineerMat: 1,
-		ResourceBuildPoints: 2,
 		ResourceKey("mana"): 4,
 	}
 
@@ -66,9 +60,6 @@ func TestResourceBagMethods(t *testing.T) {
 		ResourceOre:         4,
 		ResourceWood:        6,
 		ResourceFood:        8,
-		ResourceRefinedOre:  3,
-		ResourceEngineerMat: 2,
-		ResourceBuildPoints: 8,
 		ResourceKey("mana"): 13,
 	}) {
 		t.Fatalf("Add() = %#v", got)
@@ -78,8 +69,6 @@ func TestResourceBagMethods(t *testing.T) {
 		ResourceOre:         2,
 		ResourceWood:        2,
 		ResourceFood:        2,
-		ResourceRefinedOre:  1,
-		ResourceBuildPoints: 4,
 		ResourceKey("mana"): 5,
 	}) {
 		t.Fatalf("Sub() = %#v", got)
@@ -133,13 +122,13 @@ func TestResourceBagUtilityMethods(t *testing.T) {
 
 func TestResourceBagFromAmounts(t *testing.T) {
 	bag, err := ResourceBagFromAmounts(map[string]int{
-		"ore":          2,
-		"build_points": 5,
+		"ore":  2,
+		"wood": 5,
 	})
 	if err != nil {
 		t.Fatalf("ResourceBagFromAmounts() error = %v", err)
 	}
-	if bag.Get(ResourceOre) != 2 || bag.Get(ResourceBuildPoints) != 5 {
+	if bag.Get(ResourceOre) != 2 || bag.Get(ResourceWood) != 5 {
 		t.Fatalf("bag = %#v", bag)
 	}
 }
@@ -147,9 +136,10 @@ func TestResourceBagFromAmounts(t *testing.T) {
 func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			CastleBaseHP:       100,
-			BuildPointsPerTurn: 10,
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 10,
 		},
 	}))
 
@@ -230,20 +220,20 @@ func TestEnsureCastleStateCreatesBucket(t *testing.T) {
 		},
 	}
 
-	castle := state.EnsureCastleState("player-1", "castle-a")
-	if castle == nil {
-		t.Fatalf("castle state is nil")
+	cityState := state.EnsureCastleState("player-1", "city-a")
+	if cityState == nil {
+		t.Fatalf("city state is nil")
 	}
-	if castle.CastleID != "castle-a" || castle.NodeID != "castle-a" {
-		t.Fatalf("castle = %#v", castle)
+	if cityState.CastleID != "city-a" || cityState.NodeID != "city-a" {
+		t.Fatalf("city state = %#v", cityState)
 	}
-	if castle.OwnerID != "player-1" {
-		t.Fatalf("owner = %q", castle.OwnerID)
+	if cityState.OwnerID != "player-1" {
+		t.Fatalf("owner = %q", cityState.OwnerID)
 	}
-	if castle.Resources == nil {
+	if cityState.Resources == nil {
 		t.Fatalf("resources is nil")
 	}
-	if state.Players["player-1"].Castles["castle-a"] == nil {
-		t.Fatalf("castle was not stored")
+	if state.Players["player-1"].Castles["city-a"] == nil {
+		t.Fatalf("city state was not stored")
 	}
 }

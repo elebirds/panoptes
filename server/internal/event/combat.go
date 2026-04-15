@@ -98,7 +98,7 @@ func (e CastleDamagedEvent) Apply(world donburi.World, state *domain.GameState) 
 	}
 }
 
-func (e CastleDamagedEvent) Kind() string { return "castle_damaged" }
+func (e CastleDamagedEvent) Kind() string { return "city_core_damaged" }
 
 func (e CastleDamagedEvent) String() string {
 	return fmt.Sprintf("CastleDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
@@ -121,10 +121,10 @@ func (e CastleDestroyedEvent) Apply(world donburi.World, state *domain.GameState
 	}
 	state.IsOver = true
 	state.WinnerID = e.ConquerorFaction
-	state.OverReason = "castle_destroyed"
+	state.OverReason = "city_core_destroyed"
 }
 
-func (e CastleDestroyedEvent) Kind() string { return "castle_destroyed" }
+func (e CastleDestroyedEvent) Kind() string { return "city_core_destroyed" }
 
 func (e CastleDestroyedEvent) String() string {
 	return fmt.Sprintf("CastleDestroyedEvent node=%s conqueror=%s", e.NodeID, e.ConquerorFaction)

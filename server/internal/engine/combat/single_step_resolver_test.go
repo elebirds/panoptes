@@ -18,8 +18,8 @@ import (
 
 func TestSingleStepResolver_BlockedByEnemyStartPositionEvenIfEnemyMovesAway(t *testing.T) {
 	state := newCombatTestState(t, 4)
-	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
-	enemyID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
+	attackerID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	enemyID := spawnTestUnit(state.World, "infantry", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N2_0"},
@@ -40,8 +40,8 @@ func TestSingleStepResolver_BlockedByEnemyStartPositionEvenIfEnemyMovesAway(t *t
 
 func TestSingleStepResolver_EdgeConflictStopsBothUnits(t *testing.T) {
 	state := newCombatTestState(t, 2)
-	leftID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
-	rightID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
+	leftID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	rightID := spawnTestUnit(state.World, "infantry", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		leftID:  {PlayerID: "player-a", UnitID: leftID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_0"},
@@ -65,8 +65,8 @@ func TestSingleStepResolver_EdgeConflictStopsBothUnits(t *testing.T) {
 
 func TestSingleStepResolver_AttackMissesWhenTargetSuccessfullyMovesAway(t *testing.T) {
 	state := newCombatTestState(t, 3)
-	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
-	targetID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
+	attackerID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	targetID := spawnTestUnit(state.World, "infantry", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionAttack, TargetUnitID: targetID},
@@ -87,8 +87,8 @@ func TestSingleStepResolver_AttackMissesWhenTargetSuccessfullyMovesAway(t *testi
 
 func TestSingleStepResolver_AttackHitsAndRetaliatesWhenMoveBlocked(t *testing.T) {
 	state := newCombatTestState(t, 2)
-	attackerID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
-	targetID := spawnTestUnit(state.World, "warrior", "player-b", 1, 0)
+	attackerID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	targetID := spawnTestUnit(state.World, "infantry", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		attackerID: {PlayerID: "player-a", UnitID: attackerID, Action: domain.UnitResolutionActionAttack, TargetUnitID: targetID},
@@ -110,7 +110,7 @@ func TestSingleStepResolver_AttackHitsAndRetaliatesWhenMoveBlocked(t *testing.T)
 func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 	state := newCombatTestState(t, 4)
 	cavalryID := spawnTestUnit(state.World, "cavalry", "player-a", 0, 0)
-	blockerID := spawnTestUnit(state.World, "warrior", "player-b", 2, 0)
+	blockerID := spawnTestUnit(state.World, "infantry", "player-b", 2, 0)
 	rearID := spawnTestUnit(state.World, "archer", "player-b", 3, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
@@ -134,7 +134,7 @@ func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 
 func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 	state := newCombatTestState(t, 2)
-	warriorID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
+	warriorID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
 	settlerID := spawnTestUnit(state.World, "settler", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
@@ -156,13 +156,14 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
-			CastleBaseHP:       100,
-			BuildPointsPerTurn: 10,
-			TokensPerTurn:      3,
+			CityCoreMaxHP:             100,
+			BaseIndustryOutputPerTurn: 10,
+			BaseResearchOutputPerTurn: 1,
+			TokensPerTurn:             3,
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian"}},
-			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
 		},

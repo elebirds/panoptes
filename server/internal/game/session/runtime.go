@@ -216,8 +216,6 @@ func (r *Runtime) grantDevStartingResources() {
 		player.Resources.Set(domain.ResourceOre, 200)
 		player.Resources.Set(domain.ResourceWood, 200)
 		player.Resources.Set(domain.ResourceFood, 200)
-		player.Resources.Set(domain.ResourceRefinedOre, 100)
-		player.Resources.Set(domain.ResourceEngineerMat, 100)
 	}
 }
 
@@ -235,7 +233,7 @@ func (r *Runtime) initializeCastleStates() {
 			}
 
 			building := ecs.BuildingC.Get(entry)
-			if !strings.EqualFold(string(building.Type), "castle") {
+			if !strings.EqualFold(string(building.Type), "city_core") {
 				continue
 			}
 
@@ -249,7 +247,7 @@ func (r *Runtime) initializeCastleStates() {
 		}
 
 		building := ecs.BuildingC.Get(entry)
-		if !strings.EqualFold(string(building.Type), "castle") {
+		if !strings.EqualFold(string(building.Type), "city_core") {
 			return
 		}
 

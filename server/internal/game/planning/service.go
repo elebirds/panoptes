@@ -77,12 +77,12 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 	switch body := cmd.Body.(type) {
 	case *pb.PlanningCommand_SetPolicy:
 		msg := body.SetPolicy
-		playerState.Policy = domain.Policy(msg.GetPolicy())
+		playerState.Policy = domain.Policy(msg.GetNationalPolicyId())
 		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: true, Action: "set_policy", TokensLeft: int32(playerState.TokensLeft)})
 		return nil
 	case *pb.PlanningCommand_BuildStructure:
 		msg := body.BuildStructure
-		return s.handleBuildRequest(eventCtx, room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingType(), msg.GetCastleId())
+		return s.handleBuildRequest(eventCtx, room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingTypeId(), msg.GetCityId())
 	case *pb.PlanningCommand_RevealNode:
 		msg := body.RevealNode
 		if playerState.TokensLeft <= 0 {
@@ -194,7 +194,7 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 			return nil
 		}
 	}
-	if playerState.Research.TechPoints < tech.TechPointCost {
+	if playerState.Research.TechPoints < tech.ResearchCost {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "insufficient_resources"})
 		return nil
 	}
@@ -303,7 +303,7 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		return nil
 	}
 
-	cost, err := domain.ResourceBagFromAmounts(cfg.BuildCost)
+	cost, err := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
 	if err != nil {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
 		return nil
@@ -330,7 +330,7 @@ func validateCastleContext(room Session, playerID string, castleID string) strin
 		return "invalid_target"
 	}
 	building := ecs.BuildingC.Get(castleEntry)
-	if normalizeToken(string(building.Type)) != "castle" {
+	if normalizeToken(string(building.Type)) != "city_core" {
 		return "invalid_target"
 	}
 	node := ecs.NodeC.Get(castleEntry)
@@ -351,16 +351,16 @@ func validateBuildPlacement(node *ecs.NodeComp, cfg staticdata.BuildingDefinitio
 			return "terrain_not_buildable"
 		}
 	}
-	rule := normalizeToken(cfg.PlacementRule)
+	rule := normalizeToken(cfg.PlacementKind)
 	switch rule {
-	case "city_only":
+	case "city_territory":
 		player := normalizeToken(playerID)
 		territoryOwner := normalizeToken(node.TerritoryOwner)
 		owner := normalizeToken(node.Owner)
 		if territoryOwner != player && owner != player {
 			return "outside_territory"
 		}
-	case "resource_only":
+	case "resource_node":
 		if !node.IsResource {
 			return "resource_only_required"
 		}

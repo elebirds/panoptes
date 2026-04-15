@@ -12,7 +12,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -170,17 +169,20 @@ type BuildPointsRechargedEvent struct {
 	Amount   int
 }
 
-// Apply recharges build points per castle and then refreshes the player-level
-// aggregate.
+// Apply refreshes the per-city industry budget snapshot used by the current
+// runtime.
 //
-// 过去 build_points 更接近玩家级资源；改造后它会在每个城堡资源池内分别回充，
-// 从而让资源看板展示的是“每座城堡剩余多少建造点”。
+// Chunk 1 先把静态契约切到 point/output 语义；完整的“非库存工业点结算”会在后续
+// chunk 完成。这里先把旧的内部 build_points 存量约束成“每回合刷新到本回合可用
+// 的工业产出”，避免继续出现跨回合累积的旧含义。
 func (e BuildPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState) {
-	maxVal := staticdata.Default().Rules().BuildPointsMax
-	state.RechargeBuildPoints(e.PlayerID, e.Amount, maxVal)
+	if e.Amount <= 0 {
+		return
+	}
+	state.RechargeBuildPoints(e.PlayerID, e.Amount, e.Amount)
 }
 
-func (e BuildPointsRechargedEvent) Kind() string { return "build_points_recharged" }
+func (e BuildPointsRechargedEvent) Kind() string { return "industry_output_refreshed" }
 
 func (e BuildPointsRechargedEvent) String() string {
 	return fmt.Sprintf("BuildPointsRechargedEvent player=%s amount=%d", e.PlayerID, e.Amount)

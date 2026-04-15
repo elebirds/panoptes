@@ -32,7 +32,7 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 			continue
 		}
 		available := playerState.Research.TechPoints - spentByPlayer[order.PlayerID]
-		if available < technology.TechPointCost {
+		if available < technology.ResearchCost {
 			continue
 		}
 		prereqsMet := true
@@ -45,11 +45,11 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 		if !prereqsMet {
 			continue
 		}
-		spentByPlayer[order.PlayerID] += technology.TechPointCost
+		spentByPlayer[order.PlayerID] += technology.ResearchCost
 		events = append(events, event.TechnologyUnlockedEvent{
-			PlayerID: order.PlayerID, TechnologyID: order.TechnologyID, Cost: technology.TechPointCost,
+			PlayerID: order.PlayerID, TechnologyID: order.TechnologyID, Cost: technology.ResearchCost,
 		})
-		for _, effect := range technology.Effects {
+		for _, effect := range technology.ExplicitEffects {
 			if effect.Type != "grant" {
 				continue
 			}

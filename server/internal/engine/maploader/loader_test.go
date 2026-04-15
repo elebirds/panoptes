@@ -78,7 +78,7 @@ func TestInitWorldFromMapSetsSafeZoneReadyData(t *testing.T) {
 			{Slot: 0, X: 2, Y: 10},
 		},
 		Nodes: []staticdata.MapRuntimeNode{
-			{ID: "castle", X: 2, Y: 10, Terrain: "plain"},
+			{ID: "city_core", X: 2, Y: 10, Terrain: "plain"},
 		},
 	}
 
@@ -136,9 +136,9 @@ func TestGenerateProceduralMapKeepsAuthorNodeIDs_ForGeneratedServerMap(t *testin
 		t.Fatalf("LoadDir() error = %v", err)
 	}
 
-	base, err := LoadMap(catalog, "initial_4_regions_20x20")
+	base, err := LoadMap(catalog, "default")
 	if err != nil {
-		t.Fatalf("LoadMap() error = %v", err)
+		t.Fatalf("LoadMap(default) error = %v", err)
 	}
 
 	runtime := GenerateProceduralMap(base, 4, 20260414)
@@ -156,7 +156,7 @@ func TestGenerateProceduralMapKeepsAuthorNodeIDs_ForGeneratedServerMap(t *testin
 func TestInitWorldFromMapCreatesPrebuiltStructures(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "barracks", Category: "military_production", Combat: staticdata.BuildingCombat{MaxHP: 120}},
+			{ID: "barracks", MaxHP: 120},
 		},
 	}))
 
@@ -201,7 +201,7 @@ func TestInitWorldFromMapCreatesPrebuiltStructures(t *testing.T) {
 func TestInitWorldFromMapResolvesOwnerSlotToPlayerID(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "farm", Category: "production", Combat: staticdata.BuildingCombat{MaxHP: 80}},
+			{ID: "farm", MaxHP: 80},
 		},
 	}))
 

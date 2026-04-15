@@ -15,7 +15,7 @@ import (
 
 func TestWeightedRoutePlanner_BuildPreviewUsesTerrainCostAndTurnStops(t *testing.T) {
 	state := newCombatTestState(t, 5)
-	unitID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
+	unitID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
 
 	planner := NewWeightedRoutePlanner(DefaultTerrainCostPolicy{})
 	preview, ok := planner.BuildPreview(state.World, state, unitID, "N4_0")
@@ -45,7 +45,7 @@ func TestWeightedRoutePlanner_BuildPreviewUsesTerrainCostAndTurnStops(t *testing
 
 func TestWeightedRoutePlanner_BuildPreviewAllowsRiverWithRoad(t *testing.T) {
 	state := newCombatTestState(t, 3)
-	unitID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
+	unitID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
 	setNodeTerrain(t, state, "N1_0", "river", true)
 
 	planner := NewWeightedRoutePlanner(DefaultTerrainCostPolicy{})
@@ -75,7 +75,7 @@ func TestWeightedRoutePlanner_BuildPreviewBlocksCavalryOnMountainWithoutRoad(t *
 
 func TestSingleStepResolver_MoveBudgetUsesTerrainCost(t *testing.T) {
 	state := newCombatTestState(t, 4)
-	unitID := spawnTestUnit(state.World, "warrior", "player-a", 0, 0)
+	unitID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
 	setNodeTerrain(t, state, "N1_0", "forest", false)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
