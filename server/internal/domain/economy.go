@@ -54,20 +54,58 @@ func (s *GameState) AddResources(playerID string, delta ResourceBag) {
 	}
 }
 
-func (s *GameState) RefreshTurnOutputBudget(playerID string, key ResourceKey, amount int, maxVal int) {
+func (s *GameState) EnsurePointBudget(playerID string) PointBag {
+	if s == nil {
+		return nil
+	}
+	if s.TurnRuntime.Resolving.PointBudgets == nil {
+		s.TurnRuntime.Resolving.PointBudgets = make(map[string]PointBag)
+	}
+	if budget, ok := s.TurnRuntime.Resolving.PointBudgets[playerID]; ok && budget != nil {
+		return budget
+	}
+	budget := NewPointBag()
+	s.TurnRuntime.Resolving.PointBudgets[playerID] = budget
+	return budget
+}
+
+func (s *GameState) CanAffordPoints(playerID string, cost PointBag) bool {
+	if s == nil || cost == nil || cost.IsZero() {
+		return true
+	}
+	return s.EnsurePointBudget(playerID).CanAfford(cost)
+}
+
+func (s *GameState) ConsumePoints(playerID string, cost PointBag) bool {
+	if s == nil || cost == nil || cost.IsZero() {
+		return true
+	}
+	budget := s.EnsurePointBudget(playerID)
+	if budget == nil || !budget.CanAfford(cost) {
+		return false
+	}
+	for _, key := range cost.Keys() {
+		budget.AddAmount(key, -cost.Get(key))
+	}
+	return true
+}
+
+func (s *GameState) RefreshPointBudget(playerID string, key PointKey, amount int) {
 	if s == nil || amount == 0 {
 		return
 	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
+	budget := s.EnsurePointBudget(playerID)
+	if budget == nil {
 		return
 	}
-	if playerState.Resources == nil {
-		playerState.Resources = NewResourceBag()
+	budget.Set(key, amount)
+}
+
+func (s *GameState) ClearPointBudgets() {
+	if s == nil || s.TurnRuntime.Resolving.PointBudgets == nil {
+		return
 	}
-	next := playerState.Resources.Get(key) + amount
-	if next > maxVal {
-		next = maxVal
+	for playerID := range s.TurnRuntime.Resolving.PointBudgets {
+		s.TurnRuntime.Resolving.PointBudgets[playerID] = NewPointBag()
 	}
-	playerState.Resources.Set(key, next)
 }

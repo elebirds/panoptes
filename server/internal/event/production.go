@@ -146,6 +146,62 @@ func (e UnitProducedEvent) String() string {
 	return fmt.Sprintf("UnitProducedEvent node=%s type=%s city=%s count=%d", e.NodeID, e.UnitType, e.CityID, e.Count)
 }
 
+type PointBudgetRefreshedEvent struct {
+	PlayerID string
+	Key      domain.PointKey
+	Amount   int
+}
+
+func (e PointBudgetRefreshedEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if e.Amount <= 0 {
+		return
+	}
+	state.RefreshPointBudget(e.PlayerID, e.Key, e.Amount)
+}
+
+func (e PointBudgetRefreshedEvent) Kind() string { return "point_budget_refreshed" }
+
+func (e PointBudgetRefreshedEvent) String() string {
+	return fmt.Sprintf("PointBudgetRefreshedEvent player=%s key=%s amount=%d", e.PlayerID, e.Key, e.Amount)
+}
+
+type PointSpentEvent struct {
+	PlayerID string
+	Key      domain.PointKey
+	Amount   int
+	Reason   string
+}
+
+func (e PointSpentEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if e.Amount <= 0 {
+		return
+	}
+	_ = state.ConsumePoints(e.PlayerID, domain.PointBag{
+		e.Key: e.Amount,
+	})
+}
+
+func (e PointSpentEvent) Kind() string { return "point_spent" }
+
+func (e PointSpentEvent) String() string {
+	return fmt.Sprintf("PointSpentEvent player=%s key=%s amount=%d reason=%s", e.PlayerID, e.Key, e.Amount, e.Reason)
+}
+
+type BuildSkippedEvent struct {
+	PlayerID     string
+	NodeID       string
+	BuildingType string
+	Reason       string
+}
+
+func (e BuildSkippedEvent) Apply(donburi.World, *domain.GameState) {}
+
+func (e BuildSkippedEvent) Kind() string { return "building_skipped" }
+
+func (e BuildSkippedEvent) String() string {
+	return fmt.Sprintf("BuildSkippedEvent player=%s node=%s type=%s reason=%s", e.PlayerID, e.NodeID, e.BuildingType, e.Reason)
+}
+
 type IndustryOutputRefreshedEvent struct {
 	PlayerID string
 	Amount   int
@@ -155,7 +211,7 @@ func (e IndustryOutputRefreshedEvent) Apply(_ donburi.World, state *domain.GameS
 	if e.Amount <= 0 {
 		return
 	}
-	state.RefreshTurnOutputBudget(e.PlayerID, domain.ResourceIndustryOutput, e.Amount, e.Amount)
+	state.RefreshPointBudget(e.PlayerID, domain.PointIndustryOutput, e.Amount)
 }
 
 func (e IndustryOutputRefreshedEvent) Kind() string { return "industry_output_refreshed" }

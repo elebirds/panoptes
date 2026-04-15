@@ -76,6 +76,35 @@ func TestTurnEventFromEventMapsResearchTargetChangedEvent(t *testing.T) {
 	}
 }
 
+func TestTurnEventFromEventMapsPointBudgetEvents(t *testing.T) {
+	t.Parallel()
+
+	refreshed := TurnEventFromEvent(event.PointBudgetRefreshedEvent{
+		PlayerID: "player-1",
+		Key:      domain.PointIndustryOutput,
+		Amount:   2,
+	})
+	if refreshed.GetType() != "point_budget_refreshed" {
+		t.Fatalf("type = %q, want point_budget_refreshed", refreshed.GetType())
+	}
+	if got := refreshed.GetData()["point_key"]; got != "industry_output" {
+		t.Fatalf("point_key = %q, want industry_output", got)
+	}
+
+	spent := TurnEventFromEvent(event.PointSpentEvent{
+		PlayerID: "player-1",
+		Key:      domain.PointIndustryOutput,
+		Amount:   1,
+		Reason:   "build_structure",
+	})
+	if spent.GetType() != "point_spent" {
+		t.Fatalf("type = %q, want point_spent", spent.GetType())
+	}
+	if got := spent.GetData()["reason"]; got != "build_structure" {
+		t.Fatalf("reason = %q, want build_structure", got)
+	}
+}
+
 func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	t.Parallel()
 

@@ -113,10 +113,21 @@ const (
 )
 
 var knownResourceKeys = map[ResourceKey]struct{}{
-	ResourceOre:            {},
-	ResourceWood:           {},
-	ResourceFood:           {},
-	ResourceIndustryOutput: {},
+	ResourceOre:  {},
+	ResourceWood: {},
+	ResourceFood: {},
+}
+
+type PointKey string
+
+const (
+	PointResearchOutput PointKey = "research_output"
+	PointIndustryOutput PointKey = "industry_output"
+)
+
+var knownPointKeys = map[PointKey]struct{}{
+	PointResearchOutput: {},
+	PointIndustryOutput: {},
 }
 
 type ResourceBag map[ResourceKey]int
@@ -231,6 +242,77 @@ func ResourceBagFromAmounts(amount map[string]int) (ResourceBag, error) {
 			return nil, fmt.Errorf("unknown resource key %q", key)
 		}
 		bag.Set(resourceKey, value)
+	}
+	return bag, nil
+}
+
+type PointBag map[PointKey]int
+
+func NewPointBag() PointBag {
+	return make(PointBag)
+}
+
+func (p PointBag) Clone() PointBag {
+	cloned := make(PointBag, len(p))
+	for key, value := range p {
+		cloned[key] = value
+	}
+	return cloned
+}
+
+func (p PointBag) Get(key PointKey) int {
+	return p[key]
+}
+
+func (p PointBag) Set(key PointKey, amount int) {
+	if amount == 0 {
+		delete(p, key)
+		return
+	}
+	p[key] = amount
+}
+
+func (p PointBag) AddAmount(key PointKey, delta int) {
+	p.Set(key, p.Get(key)+delta)
+}
+
+func (p PointBag) CanAfford(cost PointBag) bool {
+	for key, value := range cost {
+		if p.Get(key) < value {
+			return false
+		}
+	}
+	return true
+}
+
+func (p PointBag) IsZero() bool {
+	for _, value := range p {
+		if value != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (p PointBag) Keys() []PointKey {
+	keys := make([]PointKey, 0, len(p))
+	for key, value := range p {
+		if value != 0 {
+			keys = append(keys, key)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
+}
+
+func PointBagFromAmounts(amount map[string]int) (PointBag, error) {
+	bag := NewPointBag()
+	for key, value := range amount {
+		pointKey := PointKey(key)
+		if _, ok := knownPointKeys[pointKey]; !ok {
+			return nil, fmt.Errorf("unknown point key %q", key)
+		}
+		bag.Set(pointKey, value)
 	}
 	return bag, nil
 }

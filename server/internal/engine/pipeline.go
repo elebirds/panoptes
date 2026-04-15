@@ -38,17 +38,8 @@ func (p *Pipeline) Run(world donburi.World, state *domain.GameState) []event.Eve
 	return allEvents
 }
 
-func NewEconomyPipeline() *Pipeline {
-	return NewPipeline(
-		&production.ResearchSystem{},
-		&production.BuildSystem{},
-		&production.TerritoryControlSystem{},
-		&production.RecipeSystem{},
-		&production.FlowSystem{},
-		&production.ProductionSystem{},
-		&production.UpkeepSystem{},
-		&production.RechargeSystem{},
-	)
+func NewEconomyPipeline() *production.EconomyRunner {
+	return &production.EconomyRunner{}
 }
 
 func NewUnitResolutionPipeline() *Pipeline {
