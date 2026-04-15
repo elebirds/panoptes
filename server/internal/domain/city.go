@@ -6,12 +6,17 @@
 
 package domain
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/elebirds/panoptes/internal/staticdata"
+)
 
 type CityState struct {
-	CityID  string
-	NodeID  string
-	OwnerID string
+	CityID              string
+	CoreNodeID          string
+	OwnerID             string
+	TerritoryBaseRadius int
 }
 
 func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
@@ -25,20 +30,25 @@ func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
 	if playerState.Cities == nil {
 		playerState.Cities = make(map[string]*CityState)
 	}
+	baseRadius := staticdata.Default().Rules().InitialCityTerritoryRadius
 	if city, ok := playerState.Cities[cityID]; ok && city != nil {
-		if city.NodeID == "" {
-			city.NodeID = cityID
+		if city.CoreNodeID == "" {
+			city.CoreNodeID = cityID
 		}
 		if city.OwnerID == "" {
 			city.OwnerID = playerID
+		}
+		if city.TerritoryBaseRadius <= 0 {
+			city.TerritoryBaseRadius = baseRadius
 		}
 		return city
 	}
 
 	city := &CityState{
-		CityID:  cityID,
-		NodeID:  cityID,
-		OwnerID: playerID,
+		CityID:              cityID,
+		CoreNodeID:          cityID,
+		OwnerID:             playerID,
+		TerritoryBaseRadius: baseRadius,
 	}
 	playerState.Cities[cityID] = city
 	return city

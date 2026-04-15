@@ -121,24 +121,13 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		building := ecs.BuildingC.Get(entry)
 		view.BuildingTypeId = string(building.Type)
 		view.BuildingHp = int32(building.HP)
-		view.IsCityCore = strings.EqualFold(string(building.Type), "city_core")
-		view.CityId = strings.TrimSpace(building.CityID)
-		if view.IsCityCore {
-			view.CityId = node.ID
-		}
-		if cfg, ok := staticdata.Default().GetBuilding(string(building.Type)); ok {
-			switch strings.ToLower(strings.TrimSpace(cfg.BuildingScope)) {
-			case "city_core", "in_city":
-				view.ServiceCityId = view.CityId
-			default:
-				view.ServiceCityId = ""
-			}
-			if !strings.EqualFold(strings.TrimSpace(cfg.TakeoverMode), "disabled") {
-				view.TakeoverRequired = int32(staticdata.Default().Rules().FacilityTakeoverTurns)
-			}
-		}
-		view.TakeoverProgress = 0
-		view.BuildingStatus = resolveBuildingStatus(entry)
+		view.IsCityCore = entry.HasComponent(ecs.CityCoreC) || strings.EqualFold(string(building.Type), "city_core")
+		view.CityId = ecs.ResolveCityID(entry)
+		view.ServiceCityId = ecs.ResolveServiceCityID(entry)
+		status, takeoverProgress, takeoverRequired := ecs.BuildingRuntimeState(entry)
+		view.BuildingStatus = status
+		view.TakeoverProgress = int32(takeoverProgress)
+		view.TakeoverRequired = int32(takeoverRequired)
 	} else {
 		view.BuildingStatus = "empty"
 	}
@@ -212,21 +201,4 @@ func researchRequiredProgress(research domain.ResearchState) int {
 		return 0
 	}
 	return technology.ResearchCost
-}
-
-func resolveBuildingStatus(entry *donburi.Entry) string {
-	if entry == nil || !entry.HasComponent(ecs.BuildingC) {
-		return "empty"
-	}
-	if !entry.HasComponent(ecs.BuildingOperationC) {
-		return "idle"
-	}
-	operation := ecs.BuildingOperationC.Get(entry)
-	if strings.TrimSpace(operation.BlockedReason) != "" {
-		return "blocked"
-	}
-	if strings.TrimSpace(operation.SelectedRecipeID) != "" {
-		return "active"
-	}
-	return "idle"
 }

@@ -23,11 +23,7 @@ type BuildingBuiltEvent struct {
 	Cost         domain.ResourceBag
 }
 
-// Apply creates the building and charges the city that issued the build.
-//
-// 这里的关键变化是：建造成本不再默认从玩家公共资源池扣除，而是优先从
-// BuildOrder 绑定的 CityID 对应资源池扣除，这样城市看板上的数字会和
-// “哪个城市造了这个建筑”保持一致。
+// Apply creates the building and charges the player-global inventory.
 func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {
@@ -51,11 +47,6 @@ type ResourceProducedEvent struct {
 	CityID       string
 }
 
-// Apply settles one resource delta into the city-scoped resource model.
-//
-// Amount 可以是正数（产出）也可以是负数（upkeep 扣费）。当 CityID 非空时，
-// 资源直接落入对应城市；随后会同步回 player.Resources 聚合视图，兼容仍然只
-// 读取玩家总资源的消息与前端逻辑。
 func (e ResourceProducedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.AddResource(e.Owner, domain.ResourceKey(e.ResourceType), e.Amount)
 }
@@ -87,10 +78,6 @@ type RoadBuiltEvent struct {
 	Cost     int
 }
 
-// Apply spends industry output through the shared city aggregate path.
-//
-// 道路当前还没有绑定明确的 cityID，所以这里走“玩家全部城市总池扣费”的
-// 兼容分支。这样至少能保证玩家总资源和城堡看板汇总结果一致。
 func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	fromEntry, okFrom := findNodeByID(world, state, e.FromNode)
 	toEntry, okTo := findNodeByID(world, state, e.ToNode)
@@ -141,11 +128,6 @@ type UnitProducedEvent struct {
 	Cost     domain.ResourceBag
 }
 
-// Apply spawns units and charges the military production cost to the
-// originating city.
-//
-// 这让兵营等建筑的生产输入可以和建筑归属的城市资源池绑定，避免多个
-// 城市之间错误共用一份军事生产成本。
 func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {
@@ -169,12 +151,6 @@ type IndustryOutputRefreshedEvent struct {
 	Amount   int
 }
 
-// Apply refreshes the per-city industry budget snapshot used by the current
-// runtime.
-//
-// Chunk 1 先把静态契约切到 point/output 语义；完整的“非库存工业点结算”会在后续
-// chunk 完成。这里先把旧的内部库存语义约束成“每回合刷新到本回合可用
-// 的工业产出”，避免继续出现跨回合累积的旧含义。
 func (e IndustryOutputRefreshedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	if e.Amount <= 0 {
 		return
@@ -193,10 +169,6 @@ type UpkeepPaidEvent struct {
 	FoodConsumed int
 }
 
-// Apply settles combat food upkeep through the city aggregate path.
-//
-// 战斗补给目前仍然没有精确到某一座城市，因此这里从玩家全部城市的总资源中扣除。
-// 扣完后若总粮食为 0，则继续触发饥饿逻辑。
 func (e UpkeepPaidEvent) Apply(world donburi.World, state *domain.GameState) {
 	playerState, ok := state.Players[e.PlayerID]
 	if !ok {
@@ -261,6 +233,7 @@ func (e BuildingDeactivatedEvent) Apply(world donburi.World, state *domain.GameS
 	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
 		Disabled:       true,
 		DisabledReason: e.Reason,
+		Status:         "disabled",
 	})
 	if nodeEntry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(nodeEntry)

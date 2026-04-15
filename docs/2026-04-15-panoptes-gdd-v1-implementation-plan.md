@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **状态更新（2026-04-15）**：M1 / Chunk 1 已完成，Chunk 2 主线收口已完成大半。当前仓库已按“破坏式归正”切到新版静态数据、协议与最小运行时消费链路，并补齐了 `planning draft -> lock-in -> settlement` 的主干链路；本文档中的 Chunk 1 勾选与 Chunk 2 状态说明已同步到当前实现现状。
+> **状态更新（2026-04-15）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成。当前仓库已按“破坏式归正”切到新版静态数据、协议与最小运行时消费链路，并补齐了 `planning draft -> lock-in -> settlement` 的主干链路；本文档中的 Chunk 1 与 Chunk 2 勾选状态已同步到当前实现现状。
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
@@ -108,7 +108,7 @@
 
 - `main` 已集成“无客户端调试与规则验证”首批服务端实现，包含 prepared room、deterministic scenario、headless harness、结构化状态摘要、结算记录器与 `DEV_MODE` HTTP 调试入口。
 - `M2` 相关基础设施已明显前移：服务端现在可以在不依赖客户端的情况下，用规则级测试与 harness 场景测试复现 `planning -> settlement` 的关键裁决。
-- Chunk 2 主线已进一步收口：`player.Resources` 已回归唯一权威库存，`planning` 与长期状态已分离，`planning snapshot` 已可回显研究/国策/建筑/配方草案，并且 `planning` 阶段重连可通过 `MsgPlanningStart.snapshot` 重建草案缓存。
+- Chunk 2 已按“最小收口”完成：`player.Resources` 已回归唯一权威库存，`planning` 与长期状态已分离，城市/建筑状态与服务城市语义已正式进入 `domain + ecs + query` 边界，`planning snapshot` 也已按唯一键草案语义稳定回显研究/国策/建筑/配方/战区指令。
 - `planning -> resolving` 边界的 lock-in 现在会把 `national_policy_changed` 与 `research_target_changed` 放入 `MsgTurnSettlement.economy` 事件流，而不再只是静默改状态。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
 - 当前已覆盖科技推进、研究解锁后次回合建造、配方阻塞、开拓者建城、设施停用/失效、主城摧毁判负；“延时接管并转移归属”仍待静态规则补齐接管回合数后继续实现。
@@ -281,17 +281,18 @@ Chunk 1 在实际落地时采用了“静态数据与协议先对齐，再补最
 
 ### 7.0 当前状态（2026-04-15）
 
-Chunk 2 当前已经完成了“领域长期状态收口 + planning 输入模型主线 + reconnect/settlement 补口”的主干工作，主要包括：
+Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正式化 + planning 输入模型主线 + reconnect/settlement 补口”的收尾工作，主要包括：
 
 - `player.Resources` 已成为唯一权威库存；城市库存双权威已移除，建造、配方、研究 grant 与工业点刷新都已改走玩家级库存。
 - `TurnRuntime.Planning` 现在只保存研究目标、国策、建筑/配方、单位命令等草案；研究目标与国策不会在 planning 阶段直接污染 active state。
 - `planning snapshot` 已扩展并稳定回显当前研究目标、国策、建筑放置、配方切换、战区指令和单位有效命令；`planning` 阶段重连会补发带 `snapshot` 的 `MsgPlanningStart`。
 - `planning -> resolving` 的 lock-in 已接入 settlement 事件流；客户端与调试侧现在能看到 `national_policy_changed` / `research_target_changed`，不再只看到终态。
+- 城市、城市核心、服务城市、设施绑定、takeover runtime 元数据和单位类别组件已正式进入 ECS；查询层可以直接回答“某建筑属于哪座城市”“某节点是否可建城”“某设施当前是否 disabled / takeover 中”等规则问题，`NodeView.city_id / service_city_id / building_status / takeover_*` 不再由视图层临时猜测。
+- `PlanningInputs` 已补齐唯一键 upsert 语义：同节点建造草案、同节点配方草案和同战区指令会保留最后一次提交；同节点建造草案替换不重复扣 token。
 
-当前仍未在 Chunk 2 内完全做完的内容：
+当前说明：
 
-- ECS 组件与查询层的系统化扩展还未完全对齐 Task 5 的原始表述，当前主要完成了 `planning snapshot` 与相关视图的回显闭环，而不是整套“城市归属 / 接管判定 / 可建城查询”查询接口。
-- 城市辖区基础值、更完整的建筑状态语义与显式效果/修正效果统一入口，仍主要留在 Chunk 3-4 继续收口。
+- Chunk 2 已完成到“最小收口”口径；更完整的接管推进、城市玩法扩展和 richer city gameplay 仍留在 Chunk 3-4。
 - 客户端 EditMode 自动化结果文件仍未稳定落盘，因此客户端验证口径目前以“脚本编译通过 + 关键缓存行为测试已补”为主，不把 Unity 测试整体验证记为完成。
 
 ### Task 4: 重塑领域状态以承载 GDD 当前基线
@@ -308,8 +309,8 @@ Chunk 2 当前已经完成了“领域长期状态收口 + planning 输入模型
 - Modify: `server/internal/domain/types_test.go`
 
 - [x] **Step 1: 在领域层明确玩家资源、玩家点数、科技进度、当前研究目标、国策状态和解锁状态**
-- [ ] **Step 2: 建立城市、城市核心、服务城市、辖区基础值和建筑状态的领域模型**
-- [ ] **Step 3: 把“显式效果”和“修正效果”的计算入口统一到领域层，而不是散落到各个系统**
+- [x] **Step 2: 建立城市、城市核心、服务城市、辖区基础值和建筑状态的领域模型**
+- [x] **Step 3: 把“显式效果”和“修正效果”的计算入口统一到领域层，而不是散落到各个系统**
 - [x] **Step 4: 保持 `TurnRuntime.Planning` 与 `TurnRuntime.Resolving` 只承载回合临时态，不反向污染长期状态**
 
 ### Task 5: 扩展 ECS 组件与查询层
@@ -322,10 +323,10 @@ Chunk 2 当前已经完成了“领域长期状态收口 + planning 输入模型
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/game/query/planning.go`
 
-- [ ] **Step 1: 为城市核心、建筑状态、设施绑定、建筑运行态、单位类别和未来可见性插口补齐 ECS 组件**
-- [ ] **Step 2: 让查询层能够直接回答“某建筑属于哪座城市”“某节点是否可建城”“某设施是否已被接管”等规则问题**
-- [ ] **Step 3: 让视图构建函数能输出玩家所需的城市、建筑、科技和配方运行信息**
-- [ ] **Step 4: 保持查询层只做读取与拼装，不在查询过程中修改状态**
+- [x] **Step 1: 为城市核心、建筑状态、设施绑定、建筑运行态、单位类别和未来可见性插口补齐 ECS 组件**
+- [x] **Step 2: 让查询层能够直接回答“某建筑属于哪座城市”“某节点是否可建城”“某设施是否已被接管”等规则问题**
+- [x] **Step 3: 让视图构建函数能输出玩家所需的城市、建筑、科技和配方运行信息**
+- [x] **Step 4: 保持查询层只做读取与拼装，不在查询过程中修改状态**
 
 ### Task 6: 收口规划态输入模型
 
@@ -340,9 +341,9 @@ Chunk 2 当前已经完成了“领域长期状态收口 + planning 输入模型
 - [x] **Step 1: 把研究目标切换、国策切换、建城、建筑放置、配方切换和单位命令统一收口到 `planning` 输入模型**
 - [x] **Step 2: 移除“研究即消费整笔科技点”的旧语义，改为“设定目标、回合末自动推进”**
 - [x] **Step 3: 让 `planning snapshot` 能正确回显当前研究目标、国策、建筑配方和单位命令**
-- [ ] **Step 4: 用测试覆盖重复提交、非法切换、回合外提交和快照回显行为**
+- [x] **Step 4: 用测试覆盖重复提交、非法切换、回合外提交和快照回显行为**
 
-> **备注（Task 6 / Step 4）**：当前已经补齐 `planning` 阶段不污染 active state、回合外提交拒绝、`planning snapshot` 回显、reconnect 补发 snapshot，以及 lock-in 进入 settlement 的回归测试；“重复替换草案”的系统化测试仍可继续补强。
+> **备注（Task 6 / Step 4）**：当前已经补齐 `planning` 阶段不污染 active state、回合外提交拒绝、`planning snapshot` 回显、reconnect 补发 snapshot、lock-in 进入 settlement，以及 build/recipe/war directive 按唯一键替换草案的回归测试。
 
 ## 8. Chunk 3：经济基础、点数与修正系统
 

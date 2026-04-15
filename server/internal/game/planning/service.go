@@ -258,8 +258,9 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	nodeID = strings.TrimSpace(nodeID)
 	buildingType = strings.TrimSpace(buildingType)
 	cityID = strings.TrimSpace(cityID)
+	replacingExistingDraft := room.State().TurnRuntime.Planning.HasBuildOrder(playerID, nodeID)
 
-	if playerState.TokensLeft <= 0 {
+	if !replacingExistingDraft && playerState.TokensLeft <= 0 {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "no_tokens_left"})
 		return nil
 	}
@@ -289,8 +290,7 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		}
 	}
 
-	nodeComp := ecs.NodeC.Get(nodeEntry)
-	if errCode := validateBuildPlacement(nodeComp, cfg, playerID); errCode != "" {
+	if errCode := ecs.CanPlaceBuildingAt(nodeEntry, playerID, cfg); errCode != "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
 		return nil
 	}
@@ -306,9 +306,11 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	}
 
 	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
-	playerState.TokensLeft--
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: true, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID})
-	_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
+	if !replacingExistingDraft {
+		playerState.TokensLeft--
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
+	}
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }
@@ -331,37 +333,6 @@ func validateCityContext(room Session, playerID string, cityID string) string {
 	player := normalizeToken(playerID)
 	if normalizeToken(building.Owner) != player && normalizeToken(node.Owner) != player && normalizeToken(node.TerritoryOwner) != player {
 		return "unauthorized"
-	}
-	return ""
-}
-
-func validateBuildPlacement(node *ecs.NodeComp, cfg staticdata.BuildingDefinition, playerID string) string {
-	if node == nil {
-		return "invalid_target"
-	}
-	terrainID := normalizeToken(string(node.Terrain))
-	if terrainID != "" {
-		if terrain, ok := staticdata.Default().GetTerrain(terrainID); ok && !terrain.Buildable {
-			return "terrain_not_buildable"
-		}
-	}
-	rule := normalizeToken(cfg.PlacementKind)
-	switch rule {
-	case "city_territory":
-		player := normalizeToken(playerID)
-		territoryOwner := normalizeToken(node.TerritoryOwner)
-		owner := normalizeToken(node.Owner)
-		if territoryOwner != player && owner != player {
-			return "outside_territory"
-		}
-	case "resource_node":
-		if !node.IsResource {
-			return "resource_only_required"
-		}
-		required := normalizeToken(cfg.RequiredResourceType)
-		if required != "" && normalizeToken(node.ResourceType) != required {
-			return "resource_type_mismatch"
-		}
 	}
 	return ""
 }

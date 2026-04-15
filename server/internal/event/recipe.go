@@ -46,7 +46,18 @@ type BuildingStatusChangedEvent struct {
 	Reason string
 }
 
-func (e BuildingStatusChangedEvent) Apply(donburi.World, *domain.GameState) {}
+func (e BuildingStatusChangedEvent) Apply(world donburi.World, state *domain.GameState) {
+	entry, ok := findNodeByID(world, state, e.NodeID)
+	if !ok {
+		return
+	}
+	if !entry.HasComponent(ecs.BuildingStateC) {
+		entry.AddComponent(ecs.BuildingStateC)
+	}
+	current := ecs.BuildingStateC.Get(entry)
+	current.Status = e.Status
+	ecs.BuildingStateC.SetValue(entry, *current)
+}
 
 func (e BuildingStatusChangedEvent) Kind() string { return "building_status_changed" }
 

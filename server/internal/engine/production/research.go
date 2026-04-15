@@ -49,16 +49,12 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 		events = append(events, event.TechnologyUnlockedEvent{
 			PlayerID: playerID, TechnologyID: technologyID, Cost: technology.ResearchCost,
 		})
-		for _, effect := range technology.ExplicitEffects {
-			if effect.Type != "grant" {
-				continue
-			}
-			// grant 不走 recipe，而是和科技解锁一起排进事件流，
-			// 由 Event.Apply 负责真正加资源/刷单位。
+		resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
+		if !resolved.GrantResources.IsZero() || len(resolved.GrantUnitTypes) > 0 {
 			events = append(events, event.TechnologyGrantAppliedEvent{
 				PlayerID:   playerID,
-				Resources:  toResourceBag(effect.GrantResources),
-				UnitTypes:  append([]string(nil), effect.GrantUnits...),
+				Resources:  resolved.GrantResources,
+				UnitTypes:  append([]string(nil), resolved.GrantUnitTypes...),
 				SourceTech: technology.ID,
 			})
 		}

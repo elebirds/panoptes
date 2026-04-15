@@ -119,6 +119,162 @@ func TestIssueUnitOrderEchoesPlanningSnapshot(t *testing.T) {
 	}
 }
 
+func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+			{ID: "wall", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 90, TakeoverMode: "city_capture"},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "default", NodeIndex: map[string]donburi.Entity{}}
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	mapData.NodeIndex["C1"] = cityEntity
+	mapData.NodeIndex["N1"] = targetEntity
+	cityEntry := world.Entry(cityEntity)
+	targetEntry := world.Entry(targetEntity)
+	for _, entry := range []*donburi.Entry{cityEntry, targetEntry} {
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	state.Players["player-1"].TokensLeft = 3
+	state.Players["player-1"].Resources.Set(domain.ResourceWood, 5)
+	state.Players["player-1"].Resources.Set(domain.ResourceOre, 5)
+	state.Players["player-1"].Research.UnlockBuilding("barracks")
+	state.Players["player-1"].Research.UnlockBuilding("wall")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	first := &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "N1", BuildingTypeId: "wall", CityId: "C1"},
+		},
+	}
+	second := &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "N1", BuildingTypeId: "barracks", CityId: "C1"},
+		},
+	}
+	if err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, first); err != nil {
+		t.Fatalf("first HandleCommand() error = %v", err)
+	}
+	if err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, second); err != nil {
+		t.Fatalf("second HandleCommand() error = %v", err)
+	}
+
+	if got := state.Players["player-1"].TokensLeft; got != 2 {
+		t.Fatalf("tokens left = %d, want 2", got)
+	}
+	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 1 {
+		t.Fatalf("build order count = %d, want 1", got)
+	}
+	if got := state.TurnRuntime.Planning.BuildOrders[0].BuildingType; got != "barracks" {
+		t.Fatalf("build order type = %q, want barracks", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetBuildOrders()) != 1 || snapshot.GetBuildOrders()[0].GetBuildingTypeId() != "barracks" {
+		t.Fatalf("snapshot build orders = %#v, want latest barracks draft", snapshot.GetBuildOrders())
+	}
+}
+
+func TestSetBuildingRecipeReplacesDraftOnSameNode(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", BuildingScope: "in_city", MaxHP: 80, RecipeIDs: []string{"train_infantry", "train_settler"}},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+			{ID: "train_settler", BuildingID: "barracks", WorkAmount: 3, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"B1": nodeEntity},
+	})
+	state.World = world
+	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
+	state.Players["player-1"].Research.UnlockRecipe("train_settler")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	for _, recipeID := range []string{"train_infantry", "train_settler"} {
+		err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+			Body: &pb.PlanningCommand_SetBuildingRecipe{
+				SetBuildingRecipe: &pb.MsgSetBuildingRecipe{NodeId: "B1", RecipeId: recipeID},
+			},
+		})
+		if err != nil {
+			t.Fatalf("HandleCommand(%s) error = %v", recipeID, err)
+		}
+	}
+
+	if got := len(state.TurnRuntime.Planning.RecipeSelections); got != 1 {
+		t.Fatalf("recipe selection count = %d, want 1", got)
+	}
+	if got := state.TurnRuntime.Planning.RecipeSelections[0].RecipeID; got != "train_settler" {
+		t.Fatalf("recipe selection = %q, want train_settler", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetRecipeSelections()) != 1 || snapshot.GetRecipeSelections()[0].GetRecipeId() != "train_settler" {
+		t.Fatalf("snapshot recipe selections = %#v, want latest train_settler draft", snapshot.GetRecipeSelections())
+	}
+}
+
+func TestWarZoneDirectiveReplacesDraftOnSameZone(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	for _, directive := range []struct {
+		action string
+		target string
+	}{
+		{action: "attack", target: "A1"},
+		{action: "hold", target: "B2"},
+	} {
+		err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+			Body: &pb.PlanningCommand_WarZoneDirective{
+				WarZoneDirective: &pb.MsgWarZoneDirective{ZoneId: "north", Directive: directive.action, TargetNode: directive.target},
+			},
+		})
+		if err != nil {
+			t.Fatalf("HandleCommand(%s) error = %v", directive.action, err)
+		}
+	}
+
+	got := state.TurnRuntime.Planning.WarDirectives["player-1"]
+	if len(got) != 1 || got[0].Directive != "hold" || got[0].TargetNode != "B2" {
+		t.Fatalf("war directives = %#v, want latest hold/B2 only", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetWarZoneDirectives()) != 1 || snapshot.GetWarZoneDirectives()[0].GetDirective() != "hold" {
+		t.Fatalf("snapshot war directives = %#v, want latest hold draft", snapshot.GetWarZoneDirectives())
+	}
+}
+
 type planningSessionStub struct {
 	state *domain.GameState
 	sent  map[string][]proto.Message
@@ -143,11 +299,11 @@ func (s *planningSessionStub) SendToPlayer(_ context.Context, playerID string, m
 func (s *planningSessionStub) IsDevMode() bool { return true }
 
 func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
-	s.state.TurnRuntime.Planning.BuildOrders = append(s.state.TurnRuntime.Planning.BuildOrders, order)
+	s.state.TurnRuntime.Planning.UpsertBuildOrder(order)
 }
 
 func (s *planningSessionStub) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
-	s.state.TurnRuntime.Planning.RecipeSelections = append(s.state.TurnRuntime.Planning.RecipeSelections, order)
+	s.state.TurnRuntime.Planning.UpsertRecipeSelection(order)
 }
 
 func (s *planningSessionStub) SetMinisterDirective(playerID string, directive string) {
@@ -158,10 +314,9 @@ func (s *planningSessionStub) SetMinisterDirective(playerID string, directive st
 }
 
 func (s *planningSessionStub) SetWarDirectives(playerID string, directives []domain.WarZoneDirective) {
-	if s.state.TurnRuntime.Planning.WarDirectives == nil {
-		s.state.TurnRuntime.Planning.WarDirectives = make(map[string][]domain.WarZoneDirective)
+	for _, directive := range directives {
+		s.state.TurnRuntime.Planning.UpsertWarDirective(playerID, directive)
 	}
-	s.state.TurnRuntime.Planning.WarDirectives[playerID] = append([]domain.WarZoneDirective(nil), directives...)
 }
 
 func (s *planningSessionStub) SetUnitOrder(order gameorders.UnitOrder) {

@@ -132,13 +132,13 @@ func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.
 
 func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
 	if state := r.State(); state != nil {
-		state.TurnRuntime.Planning.BuildOrders = append(state.TurnRuntime.Planning.BuildOrders, order)
+		state.TurnRuntime.Planning.UpsertBuildOrder(order)
 	}
 }
 
 func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	if state := r.State(); state != nil {
-		state.TurnRuntime.Planning.RecipeSelections = append(state.TurnRuntime.Planning.RecipeSelections, order)
+		state.TurnRuntime.Planning.UpsertRecipeSelection(order)
 	}
 }
 
@@ -158,10 +158,9 @@ func (r *GameRoom) SetWarDirectives(playerID string, directives []domain.WarZone
 	if state == nil {
 		return
 	}
-	if state.TurnRuntime.Planning.WarDirectives == nil {
-		state.TurnRuntime.Planning.WarDirectives = make(map[string][]domain.WarZoneDirective)
+	for _, directive := range directives {
+		state.TurnRuntime.Planning.UpsertWarDirective(playerID, directive)
 	}
-	state.TurnRuntime.Planning.WarDirectives[playerID] = append([]domain.WarZoneDirective(nil), directives...)
 }
 
 func (r *GameRoom) SetUnitOrder(order gameorders.UnitOrder) {

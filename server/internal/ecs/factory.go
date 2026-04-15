@@ -8,6 +8,7 @@ package ecs
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -47,7 +48,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		cfg = fallback
 	}
 
-	entity := world.Create(PositionC, UnitStatsC, UnitCapabilitiesC)
+	entity := world.Create(PositionC, UnitStatsC, UnitCategoryC, UnitCapabilitiesC)
 	entry := world.Entry(entity)
 	PositionC.SetValue(entry, PositionComp{X: pos.X, Y: pos.Y})
 	UnitStatsC.SetValue(entry, UnitStatsComp{
@@ -60,6 +61,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 		AttackRange: cfg.AttackRange,
 		Speed:       cfg.MoveRange,
 	})
+	UnitCategoryC.SetValue(entry, UnitCategoryComp{Category: cfg.Class})
 	UnitCapabilitiesC.SetValue(entry, UnitCapabilitiesComp{
 		Civilian:    cfg.Class == "civilian",
 		Melee:       cfg.Class != "civilian" && cfg.AttackRange <= 1,
@@ -137,6 +139,7 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 			nodeEntry.AddComponent(BuildingC)
 		}
 		BuildingC.SetValue(nodeEntry, comp)
+		attachBuildingScopeComponents(nodeEntry, cfg, cityID)
 		if cfg.DefaultRecipeID != "" {
 			if !nodeEntry.HasComponent(BuildingOperationC) {
 				nodeEntry.AddComponent(BuildingOperationC)
@@ -158,7 +161,67 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 	entity := world.Create(BuildingC)
 	buildingEntry := world.Entry(entity)
 	BuildingC.SetValue(buildingEntry, comp)
+	attachBuildingScopeComponents(buildingEntry, cfg, cityID)
 	return entity
+}
+
+func attachBuildingScopeComponents(entry *donburi.Entry, cfg staticdata.BuildingDefinition, cityID string) {
+	if entry == nil {
+		return
+	}
+	removeBuildingScopeComponents(entry)
+	if cityID != "" {
+		if !entry.HasComponent(ServiceCityC) {
+			entry.AddComponent(ServiceCityC)
+		}
+		ServiceCityC.SetValue(entry, ServiceCityComp{CityID: cityID})
+	}
+
+	switch normalizeBuildingToken(cfg.BuildingScope) {
+	case "city_core":
+		if !entry.HasComponent(CityCoreC) {
+			entry.AddComponent(CityCoreC)
+		}
+		CityCoreC.SetValue(entry, CityCoreComp{CityID: cityID})
+	case "out_of_city":
+		if !entry.HasComponent(FacilityBindingC) {
+			entry.AddComponent(FacilityBindingC)
+		}
+		FacilityBindingC.SetValue(entry, FacilityBindingComp{CityID: cityID})
+	}
+
+	if normalizeBuildingToken(cfg.TakeoverMode) != "disabled" {
+		required := staticdata.Default().Rules().FacilityTakeoverTurns
+		current := FacilityTakeoverComp{}
+		if entry.HasComponent(FacilityTakeoverC) {
+			current = *FacilityTakeoverC.Get(entry)
+		} else {
+			entry.AddComponent(FacilityTakeoverC)
+		}
+		current.Mode = cfg.TakeoverMode
+		current.Required = required
+		FacilityTakeoverC.SetValue(entry, current)
+	}
+}
+
+func removeBuildingScopeComponents(entry *donburi.Entry) {
+	if entry == nil {
+		return
+	}
+	for _, component := range []donburi.IComponentType{
+		CityCoreC,
+		ServiceCityC,
+		FacilityBindingC,
+		FacilityTakeoverC,
+	} {
+		if entry.HasComponent(component) {
+			entry.RemoveComponent(component)
+		}
+	}
+}
+
+func normalizeBuildingToken(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {

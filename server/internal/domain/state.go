@@ -179,11 +179,11 @@ func (r *ResearchState) UnlockRecipe(id string) {
 	r.UnlockedRecipes[id] = struct{}{}
 }
 
-// technologyEffects 只读取“已正式解锁”的科技效果。
+// ActiveModifierEffects 只读取“已正式解锁”的科技/政策修正。
 //
-// 科技研究在当前语义下是回合末完成、下一回合生效，因此这里不再暴露任何本回合
+// 科技研究在当前语义下是回合末完成、下一回合生效，因此这里不暴露任何本回合
 // 尚未 Apply 的临时解锁状态。
-func (s *GameState) modifierEffects(playerID string) []staticdata.ModifierEffect {
+func (s *GameState) ActiveModifierEffects(playerID string) []staticdata.ModifierEffect {
 	if s == nil {
 		return nil
 	}
@@ -219,7 +219,7 @@ func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID
 	flat := 0.0
 	percent := 0.0
 	multiplier := 1.0
-	for _, effect := range s.modifierEffects(playerID) {
+	for _, effect := range s.ActiveModifierEffects(playerID) {
 		if effect.Trigger != trigger {
 			continue
 		}

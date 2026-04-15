@@ -17,11 +17,11 @@ func (s *TerritoryControlSystem) Run(world donburi.World, _ *domain.GameState) [
 		if entry == nil {
 			return
 		}
-		node := ecs.NodeC.Get(entry)
-		building := ecs.BuildingC.Get(entry)
-		if strings.EqualFold(string(building.Type), "castle") {
+		if entry.HasComponent(ecs.CityCoreC) {
 			return
 		}
+		node := ecs.NodeC.Get(entry)
+		building := ecs.BuildingC.Get(entry)
 		territoryOwner := strings.TrimSpace(node.TerritoryOwner)
 		if territoryOwner == "" || territoryOwner == strings.TrimSpace(building.Owner) {
 			return

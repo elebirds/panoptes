@@ -211,6 +211,12 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 }
 
 func TestEnsureCityStateCreatesBucket(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			InitialCityTerritoryRadius: 2,
+		},
+	}))
+
 	state := &GameState{
 		Players: map[string]*PlayerState{
 			"player-1": {
@@ -224,13 +230,37 @@ func TestEnsureCityStateCreatesBucket(t *testing.T) {
 	if cityState == nil {
 		t.Fatalf("city state is nil")
 	}
-	if cityState.CityID != "city-a" || cityState.NodeID != "city-a" {
+	if cityState.CityID != "city-a" || cityState.CoreNodeID != "city-a" {
 		t.Fatalf("city state = %#v", cityState)
 	}
 	if cityState.OwnerID != "player-1" {
 		t.Fatalf("owner = %q", cityState.OwnerID)
 	}
+	if cityState.TerritoryBaseRadius != 2 {
+		t.Fatalf("territory base radius = %d, want 2", cityState.TerritoryBaseRadius)
+	}
 	if state.Players["player-1"].Cities["city-a"] == nil {
 		t.Fatalf("city state was not stored")
+	}
+}
+
+func TestResolveExplicitEffectsSeparatesUnlocksAndGrants(t *testing.T) {
+	resolved := ResolveExplicitEffects([]staticdata.ExplicitEffect{
+		{Type: "unlock_building", TargetID: "farm"},
+		{Type: "unlock_recipe", TargetID: "farm_food"},
+		{Type: "grant", GrantResources: staticdata.ResourceAmounts{"ore": 2}, GrantUnits: []string{"infantry"}},
+	})
+
+	if len(resolved.UnlockBuildingIDs) != 1 || resolved.UnlockBuildingIDs[0] != "farm" {
+		t.Fatalf("unlock buildings = %#v, want [farm]", resolved.UnlockBuildingIDs)
+	}
+	if len(resolved.UnlockRecipeIDs) != 1 || resolved.UnlockRecipeIDs[0] != "farm_food" {
+		t.Fatalf("unlock recipes = %#v, want [farm_food]", resolved.UnlockRecipeIDs)
+	}
+	if got := resolved.GrantResources.Get(ResourceOre); got != 2 {
+		t.Fatalf("grant resources ore = %d, want 2", got)
+	}
+	if len(resolved.GrantUnitTypes) != 1 || resolved.GrantUnitTypes[0] != "infantry" {
+		t.Fatalf("grant units = %#v, want [infantry]", resolved.GrantUnitTypes)
 	}
 }

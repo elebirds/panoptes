@@ -44,6 +44,34 @@ type BuildingOperationComp struct {
 type BuildingStateComp struct {
 	Disabled       bool
 	DisabledReason string
+	Status         string
+}
+
+type CityCoreComp struct {
+	CityID string
+}
+
+type ServiceCityComp struct {
+	CityID string
+}
+
+type FacilityBindingComp struct {
+	CityID string
+}
+
+type FacilityTakeoverComp struct {
+	Mode      string
+	Progress  int
+	Required  int
+	Completed bool
+}
+
+type UnitCategoryComp struct {
+	Category string
+}
+
+type VisibilityHookComp struct {
+	Key string
 }
 
 type UnitStatsComp struct {
@@ -95,7 +123,13 @@ var (
 	BuildingC          = donburi.NewComponentType[BuildingComp]()
 	BuildingOperationC = donburi.NewComponentType[BuildingOperationComp]()
 	BuildingStateC     = donburi.NewComponentType[BuildingStateComp]()
+	CityCoreC          = donburi.NewComponentType[CityCoreComp]()
+	ServiceCityC       = donburi.NewComponentType[ServiceCityComp]()
+	FacilityBindingC   = donburi.NewComponentType[FacilityBindingComp]()
+	FacilityTakeoverC  = donburi.NewComponentType[FacilityTakeoverComp]()
 	UnitStatsC         = donburi.NewComponentType[UnitStatsComp]()
+	UnitCategoryC      = donburi.NewComponentType[UnitCategoryComp]()
+	VisibilityHookC    = donburi.NewComponentType[VisibilityHookComp]()
 	UnitCapabilitiesC  = donburi.NewComponentType[UnitCapabilitiesComp]()
 	MoveIntentC        = donburi.NewComponentType[MoveIntentComp]()
 	SiegeAbilityC      = donburi.NewComponentType[SiegeAbilityComp]()
