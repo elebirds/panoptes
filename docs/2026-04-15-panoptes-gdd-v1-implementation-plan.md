@@ -40,7 +40,7 @@
 4. 客户端仍是纯展示层，任何合法性判断、经济计算、科技推进、战斗结果和建筑归属都在服务端完成。
 5. 当前版本的玩家控制模式仍是直接指挥；大臣系统仅保留数据接口与命令接管插口。
 6. 当前版本的资源逻辑仍使用全局虚空库存；道路不承担经济物流，只承担地图骨架与未来网络接口。
-7. 政策系统必须按“双层设计、单层优先实现”落地：国策层可用，制度层先建立数据模型和接口，不强做复杂切换成本。
+7. 政策系统继续按“双层设计”落地：国策保持 same-turn，制度后端已具备候选池、槽位、loadout、next-turn 激活与统一 modifier 接入；正式制度 UI 与复杂切换成本仍留待后续。
 
 ### 2.3 术语归正策略
 
@@ -61,7 +61,7 @@
 - 两类点数：科研产出、建造/工业产出
 - 统一修正系统与显式效果/修正效果分层
 - 科技目标选择、进度累积、次回合生效
-- 国策层可用，制度层保留接口
+- 国策层可用，制度后端已打通；制度正式 UI 暂不做
 - 建筑统一底座、城市内建筑/城外设施双轨
 - 单建筑单激活配方
 - 输入不足时低效推进或停滞
@@ -480,10 +480,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Modify: `protocol/game_state.proto`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
-- [ ] **Step 1: 为玩家建立“当前研究目标 + 每项科技进度”的长期状态，而不是自由科技点购买模型**
-- [ ] **Step 2: 把 `MsgSetResearchTarget` 改为只切目标，不在下达命令时直接消费整笔科技点**
-- [ ] **Step 3: 在回合末自动把科研产出灌入目标科技，并在科技完成时发出“本回合显示、下回合生效”的事件**
-- [ ] **Step 4: 用测试覆盖切线保留进度、前置依赖、连续回合推进和完成延迟生效**
+- [x] **Step 1: 为玩家建立“当前研究目标 + 每项科技进度”的长期状态，而不是自由科技点购买模型**
+- [x] **Step 2: 把 `MsgSetResearchTarget` 改为只切目标，不在下达命令时直接消费整笔科技点**
+- [x] **Step 3: 在回合末自动把科研产出灌入目标科技，并在科技完成时发出“本回合显示、下回合生效”的事件**
+- [x] **Step 4: 用测试覆盖切线保留进度、前置依赖、连续回合推进和完成延迟生效**
 
 ### Task 14: 落地科技显式效果链
 
@@ -494,10 +494,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
-- [ ] **Step 1: 让科技支持解锁建筑、解锁配方、解锁兵种、解锁政策候选、授予单位和修正效果**
-- [ ] **Step 2: 保证显式效果只在科技正式生效时进入玩家可用边界**
-- [ ] **Step 3: 在玩家视图中清楚呈现当前目标、已解锁科技和完成后新增的可用项**
-- [ ] **Step 4: 用测试覆盖科技完成前不可建、科技完成后次回合可建的时序规则**
+- [x] **Step 1: 让科技支持解锁建筑、解锁配方、解锁兵种、解锁政策候选、授予单位和修正效果**
+- [x] **Step 2: 保证显式效果只在科技正式生效时进入玩家可用边界**
+- [x] **Step 3: 在玩家视图中清楚呈现当前目标、已解锁科技和完成后新增的可用项**
+- [x] **Step 4: 用测试覆盖科技完成前不可建、科技完成后次回合可建的时序规则**
 
 ### Task 15: 落地政策系统的 MVP 形态
 
@@ -512,10 +512,17 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Create: `server/internal/engine/production/policy.go`
 - Create: `server/internal/engine/production/policy_test.go`
 
-- [ ] **Step 1: 用静态数据落地国策目录、候选可见性与修正效果**
-- [ ] **Step 2: 让当前版本的玩家可切换国策，并在当回合结算开始时生效**
-- [ ] **Step 3: 为制度层建立数据模型、候选池和协议接口，但不在 MVP 强做完整制度玩法**
-- [ ] **Step 4: 保证政策修正能进入统一修正系统，而不是单独写一套特殊分支**
+- [x] **Step 1: 用静态数据落地国策目录、候选可见性与修正效果**
+- [x] **Step 2: 让当前版本的玩家可切换国策，并在当回合结算开始时生效**
+- [x] **Step 3: 为制度层建立数据模型、候选池和协议接口，但不在 MVP 强做完整制度玩法**
+- [x] **Step 4: 保证政策修正能进入统一修正系统，而不是单独写一套特殊分支**
+
+当前状态：
+- 研究状态已改为 `current target + per-tech saved progress + completed/pending_activation/active` 三态模型；`completed_technology_ids` 明确只表示“研究已完成”，不再等价于“已正式生效”。
+- 科技完成当回合只记录 completion；建筑/配方/制度候选/制度槽位/resource grant/unit grant/modifier effect 全部统一在下一回合 `planning_start` 前激活。
+- `MsgPlanningStart` 已扩展为 planning 边界的唯一 active-state 同步载体，bootstrap 与常规回合都复用同一条 turn-start activation 链，并携带 `my_player + nodes + units + snapshot`。
+- 制度层后端已具备 `candidate pool + slot_count + active loadout + pending loadout/activation turn`，支持 `MsgSetInstitutionLoadout`、planning snapshot 回显、next-turn 激活，以及通过统一 modifier 入口正式生效。
+- 客户端已补齐非 UI 管线：`planning_start` 走静默 cache refresh，不复用 settlement 回放；planning draft、debug raw sender、日志与快捷动作已能观察和发送制度 loadout。
 
 ## 11. Chunk 6：单位、战争与胜负
 
