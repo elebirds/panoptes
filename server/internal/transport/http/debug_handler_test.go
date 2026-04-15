@@ -78,9 +78,8 @@ func TestDebugHandlerCommandQueuesPlanningCommand(t *testing.T) {
 		t.Fatalf("status = %d, want 200 body=%s", resp.Code, resp.Body.String())
 	}
 
-	orders := fixture.room.State().TurnRuntime.Planning.ResearchOrders
-	if len(orders) != 1 || orders[0].TechnologyID != "agri_unlock_farm" {
-		t.Fatalf("research orders = %#v", orders)
+	if got := fixture.room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agri_unlock_farm" {
+		t.Fatalf("pending research target = %q, want agri_unlock_farm", got)
 	}
 }
 

@@ -146,10 +146,6 @@ func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 	s.state.TurnRuntime.Planning.BuildOrders = append(s.state.TurnRuntime.Planning.BuildOrders, order)
 }
 
-func (s *planningSessionStub) QueueResearchOrder(order domain.ResearchOrder) {
-	s.state.TurnRuntime.Planning.ResearchOrders = append(s.state.TurnRuntime.Planning.ResearchOrders, order)
-}
-
 func (s *planningSessionStub) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	s.state.TurnRuntime.Planning.RecipeSelections = append(s.state.TurnRuntime.Planning.RecipeSelections, order)
 }

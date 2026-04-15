@@ -136,12 +136,6 @@ func (r *GameRoom) QueueBuildOrder(order domain.BuildOrder) {
 	}
 }
 
-func (r *GameRoom) QueueResearchOrder(order domain.ResearchOrder) {
-	if state := r.State(); state != nil {
-		state.TurnRuntime.Planning.ResearchOrders = append(state.TurnRuntime.Planning.ResearchOrders, order)
-	}
-}
-
 func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	if state := r.State(); state != nil {
 		state.TurnRuntime.Planning.RecipeSelections = append(state.TurnRuntime.Planning.RecipeSelections, order)

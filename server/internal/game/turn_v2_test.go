@@ -187,8 +187,8 @@ func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T)
 	}
 
 	msgs := tp.sent["player-1"]
-	if len(msgs) != 1 {
-		t.Fatalf("send count = %d, want 1", len(msgs))
+	if len(msgs) != 2 {
+		t.Fatalf("send count = %d, want 2", len(msgs))
 	}
 	result, ok := msgs[0].(*pb.MsgSetPolicyResult)
 	if !ok {
@@ -197,23 +197,31 @@ func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T)
 	if !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
 		t.Fatalf("policy result = %#v", result)
 	}
+	if _, ok := msgs[1].(*pb.MsgPlanningSnapshot); !ok {
+		t.Fatalf("message type = %T, want MsgPlanningSnapshot", msgs[1])
+	}
+	if got := string(room.State().Players["player-1"].Policy); got != "" {
+		t.Fatalf("active policy = %q, want empty before lock-in", got)
+	}
 
 	metas := tp.sentMeta["player-1"]
-	if len(metas) != 1 {
-		t.Fatalf("meta count = %d, want 1", len(metas))
+	if len(metas) != 2 {
+		t.Fatalf("meta count = %d, want 2", len(metas))
 	}
-	if metas[0] == nil {
-		t.Fatalf("event meta = nil, want request correlation")
-	}
-	if metas[0].GetRequestId() != "req-123" {
-		t.Fatalf("request_id = %q, want req-123", metas[0].GetRequestId())
-	}
-	if metas[0].GetTraceId() != "trace-456" {
-		t.Fatalf("trace_id = %q, want trace-456", metas[0].GetTraceId())
+	for idx, meta := range metas {
+		if meta == nil {
+			t.Fatalf("event meta[%d] = nil, want request correlation", idx)
+		}
+		if meta.GetRequestId() != "req-123" {
+			t.Fatalf("request_id[%d] = %q, want req-123", idx, meta.GetRequestId())
+		}
+		if meta.GetTraceId() != "trace-456" {
+			t.Fatalf("trace_id[%d] = %q, want trace-456", idx, meta.GetTraceId())
+		}
 	}
 }
 
-func TestHandleGameCommandSetResearchTargetUpdatesCurrentTargetImmediately(t *testing.T) {
+func TestHandleGameCommandSetResearchTargetQueuesDraftWithoutUpdatingActiveState(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{TokensPerTurn: 3, CityCoreMaxHP: 100, BaseResearchOutputPerTurn: 1, BaseIndustryOutputPerTurn: 2},
 		Technologies: []staticdata.TechnologyDefinition{
@@ -243,8 +251,8 @@ func TestHandleGameCommandSetResearchTargetUpdatesCurrentTargetImmediately(t *te
 	}
 
 	msgs := tp.sent["player-1"]
-	if len(msgs) != 1 {
-		t.Fatalf("send count = %d, want 1", len(msgs))
+	if len(msgs) != 2 {
+		t.Fatalf("send count = %d, want 2", len(msgs))
 	}
 	result, ok := msgs[0].(*pb.MsgResearchResult)
 	if !ok {
@@ -253,13 +261,16 @@ func TestHandleGameCommandSetResearchTargetUpdatesCurrentTargetImmediately(t *te
 	if !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
 		t.Fatalf("research result = %#v", result)
 	}
+	if _, ok := msgs[1].(*pb.MsgPlanningSnapshot); !ok {
+		t.Fatalf("message type = %T, want MsgPlanningSnapshot", msgs[1])
+	}
 
 	player := room.State().Players["player-1"]
-	if got := player.Research.CurrentTargetTechnologyID; got != "agrarian_foundations" {
-		t.Fatalf("current target = %q, want agrarian_foundations", got)
+	if got := player.Research.CurrentTargetTechnologyID; got != "" {
+		t.Fatalf("current target = %q, want empty until lock-in", got)
 	}
-	if got := len(room.State().TurnRuntime.Planning.ResearchOrders); got != 1 {
-		t.Fatalf("research order count = %d, want 1", got)
+	if got := room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
 	}
 	view := room.BuildNodeViewForPlayer("missing", "player-1")
 	if view != nil {
@@ -270,11 +281,11 @@ func TestHandleGameCommandSetResearchTargetUpdatesCurrentTargetImmediately(t *te
 		t.Fatalf("player state missing")
 	}
 	researchView := gamequery.BuildPlayerView(room.State(), "player-1").GetResearch()
-	if got := researchView.GetCurrentTargetTechnologyId(); got != "agrarian_foundations" {
-		t.Fatalf("research view current target = %q, want agrarian_foundations", got)
+	if got := researchView.GetCurrentTargetTechnologyId(); got != "" {
+		t.Fatalf("research view current target = %q, want empty before lock-in", got)
 	}
-	if got := researchView.GetRequiredProgress(); got != 4 {
-		t.Fatalf("research view required_progress = %d, want 4", got)
+	if got := researchView.GetRequiredProgress(); got != 0 {
+		t.Fatalf("research view required_progress = %d, want 0 before lock-in", got)
 	}
 }
 
@@ -339,8 +350,7 @@ func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) 
 		NodeIndex: map[string]donburi.Entity{"C1": cityEntity, "N1": targetEntity},
 	}
 	room.State().NodeIndex = room.State().Map.NodeIndex
-	room.State().EnsureCityState("player-1", "C1").Resources.Set(domain.ResourceWood, 2)
-	room.State().SyncPlayerResourcesFromCities("player-1")
+	room.State().Players["player-1"].Resources.Set(domain.ResourceWood, 2)
 
 	err := room.HandleGameCommand(cmddispatch.InboundContext{
 		PlayerID: "player-1",
@@ -367,6 +377,40 @@ func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) 
 	}
 	if !result.GetSuccess() || result.GetNodeId() != "N1" || result.GetBuildingTypeId() != "farm" || result.GetCityId() != "C1" {
 		t.Fatalf("build result = %#v", result)
+	}
+}
+
+func TestRunTurnResolutionLocksPendingPolicyAndResearchIntoActiveState(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national"},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
+		},
+	}))
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhaseResolving.String()
+	room.State().TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
+	room.State().TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
+
+	room.RunTurnResolution()
+
+	if got := string(room.State().Players["player-1"].Policy); got != "expansion" {
+		t.Fatalf("active policy after lock-in = %q, want expansion", got)
+	}
+	if got := room.State().Players["player-1"].Research.CurrentTargetTechnologyID; got != "agrarian_foundations" {
+		t.Fatalf("current research target after lock-in = %q, want agrarian_foundations", got)
 	}
 }
 

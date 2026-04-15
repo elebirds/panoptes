@@ -56,9 +56,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 
 	world, state, nodeEntry := newOwnedNodeState()
 	state.Players["player-1"].Research.CurrentProgress = 1
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
-		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
-	}
+	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
 		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
 	}
@@ -147,9 +145,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	})
 	state.World = world
 	state.Players["player-1"].Research.CurrentProgress = 1
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
-		{PlayerID: "player-1", TechnologyID: "militia_mobilization"},
-	}
+	state.Players["player-1"].Research.CurrentTargetTechnologyID = "militia_mobilization"
 
 	engine.NewEconomyPipeline().Run(world, state)
 
@@ -181,16 +177,13 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.World = world
 	state.Players["player-1"].Research.CurrentProgress = 1
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
-		{PlayerID: "player-1", TechnologyID: "research_boost"},
-	}
+	state.Players["player-1"].Research.CurrentTargetTechnologyID = "research_boost"
 
 	engine.NewEconomyPipeline().Run(world, state)
 	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
 		t.Fatalf("research progress after unlock turn = %d, want 1", got)
 	}
 
-	state.TurnRuntime.Planning.ResearchOrders = nil
 	engine.NewEconomyPipeline().Run(world, state)
 	if got := state.Players["player-1"].Research.CurrentProgress; got != 4 {
 		t.Fatalf("research progress after next-turn modifier = %d, want 4", got)
@@ -215,9 +208,6 @@ func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
 	state.World = world
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
 	state.Players["player-1"].Research.CurrentProgress = 1
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
-		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
-	}
 
 	engine.NewEconomyPipeline().Run(world, state)
 

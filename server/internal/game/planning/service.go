@@ -30,7 +30,6 @@ type Session interface {
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 	IsDevMode() bool
 	QueueBuildOrder(order domain.BuildOrder)
-	QueueResearchOrder(order domain.ResearchOrder)
 	QueueRecipeSelection(order domain.RecipeSelectionOrder)
 	SetMinisterDirective(playerID string, directive string)
 	SetWarDirectives(playerID string, directives []domain.WarZoneDirective)
@@ -47,16 +46,7 @@ func (s *Service) Enter(room Session) {
 	if room == nil || room.State() == nil {
 		return
 	}
-	planning := &room.State().TurnRuntime.Planning
-	if planning.MinisterDirectives == nil {
-		planning.MinisterDirectives = make(map[string]string)
-	}
-	if planning.WarDirectives == nil {
-		planning.WarDirectives = make(map[string][]domain.WarZoneDirective)
-	}
-	if planning.UnitOrders == nil {
-		planning.UnitOrders = make(map[string]domain.UnitDirective)
-	}
+	room.State().TurnRuntime.Planning.EnsureDraftMaps()
 }
 
 func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
@@ -86,8 +76,9 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_target"})
 			return nil
 		}
-		playerState.Policy = domain.Policy(policyID)
 		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
+		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
+		_ = room.SendPlanningSnapshot(eventCtx, playerID)
 		return nil
 	case *pb.PlanningCommand_BuildStructure:
 		msg := body.BuildStructure
@@ -207,12 +198,9 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 		}
 	}
 
-	playerState.Research.CurrentTargetTechnologyID = technologyID
-	state.TurnRuntime.Planning.ResearchOrders = replaceResearchOrdersForPlayer(
-		state.TurnRuntime.Planning.ResearchOrders,
-		domain.ResearchOrder{PlayerID: playerID, TechnologyID: technologyID},
-	)
+	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }
 
@@ -259,6 +247,7 @@ func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, pla
 	}
 	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: true, NodeId: nodeID, RecipeId: recipeID})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }
 
@@ -311,7 +300,7 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
 	}
-	if !room.State().CanAffordFromCity(playerID, cityID, cost) && !room.IsDevMode() {
+	if !room.State().CanAffordResources(playerID, cost) && !room.IsDevMode() {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "insufficient_resources"})
 		return nil
 	}
@@ -320,18 +309,8 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	playerState.TokensLeft--
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: true, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID})
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
-}
-
-func replaceResearchOrdersForPlayer(existing []domain.ResearchOrder, replacement domain.ResearchOrder) []domain.ResearchOrder {
-	filtered := existing[:0]
-	for _, order := range existing {
-		if order.PlayerID == replacement.PlayerID {
-			continue
-		}
-		filtered = append(filtered, order)
-	}
-	return append(filtered, replacement)
 }
 
 func validateCityContext(room Session, playerID string, cityID string) string {

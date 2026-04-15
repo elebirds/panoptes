@@ -11,6 +11,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
+	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 )
 
@@ -20,6 +21,7 @@ func RunTurnResolution(room *GameRoom) {
 		return
 	}
 
+	room.lockPlanningInputs()
 	room.lockUnitResolutionOrders()
 	unitResolutionPipeline := engine.NewUnitResolutionPipeline()
 	unitEvents := unitResolutionPipeline.Run(room.State().World, room.State())
@@ -39,14 +41,43 @@ func RunTurnResolution(room *GameRoom) {
 	state := room.State()
 	clear(state.TurnRuntime.Resolving.UnitOrders)
 	state.TurnRuntime.Planning.BuildOrders = state.TurnRuntime.Planning.BuildOrders[:0]
-	state.TurnRuntime.Planning.ResearchOrders = state.TurnRuntime.Planning.ResearchOrders[:0]
 	state.TurnRuntime.Planning.RecipeSelections = state.TurnRuntime.Planning.RecipeSelections[:0]
 	state.TurnRuntime.Planning.MinisterBuilds = state.TurnRuntime.Planning.MinisterBuilds[:0]
 	state.TurnRuntime.Planning.MinisterMoves = state.TurnRuntime.Planning.MinisterMoves[:0]
 	state.TurnRuntime.Resolving.Conflicts = state.TurnRuntime.Resolving.Conflicts[:0]
 	clear(state.TurnRuntime.Planning.UnitOrders)
 	clear(state.TurnRuntime.Planning.MinisterDirectives)
+	clear(state.TurnRuntime.Planning.PendingPolicies)
+	clear(state.TurnRuntime.Planning.PendingResearch)
 	clear(state.TurnRuntime.Planning.WarDirectives)
+}
+
+func (r *GameRoom) lockPlanningInputs() {
+	state := r.State()
+	if state == nil {
+		return
+	}
+	for playerID, policyID := range state.TurnRuntime.Planning.PendingPolicies {
+		playerState, ok := state.Players[playerID]
+		if !ok || playerState == nil || playerState.Policy == policyID {
+			continue
+		}
+		event.PolicyChangedEvent{
+			PlayerID:  playerID,
+			OldPolicy: string(playerState.Policy),
+			NewPolicy: string(policyID),
+		}.Apply(state.World, state)
+	}
+	for playerID, technologyID := range state.TurnRuntime.Planning.PendingResearch {
+		playerState, ok := state.Players[playerID]
+		if !ok || playerState == nil || playerState.Research.CurrentTargetTechnologyID == technologyID {
+			continue
+		}
+		event.ResearchTargetChangedEvent{
+			PlayerID:     playerID,
+			TechnologyID: technologyID,
+		}.Apply(state.World, state)
+	}
 }
 
 func (r *GameRoom) lockUnitResolutionOrders() {
