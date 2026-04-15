@@ -39,12 +39,17 @@ type BuildingOperationComp struct {
 	RequiredTurns    int
 	DelayTurns       int
 	BlockedReason    string
+	ProgressRemainder int
+	ConsumedResources ResourceBag
+	ConsumedPoints    PointBag
 }
 
 type BuildingStateComp struct {
 	Disabled       bool
 	DisabledReason string
 	Status         string
+	Reason         string
+	OnlineOnTurn   int
 }
 
 type CityCoreComp struct {
@@ -60,10 +65,11 @@ type FacilityBindingComp struct {
 }
 
 type FacilityTakeoverComp struct {
-	Mode      string
-	Progress  int
-	Required  int
-	Completed bool
+	Mode               string
+	Progress           int
+	Required           int
+	Completed          bool
+	ControllerPlayerID string
 }
 
 type UnitCategoryComp struct {

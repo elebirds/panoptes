@@ -401,10 +401,19 @@ func isResourceCandidateTerrain(terrain string) bool {
 
 func pickSpawnPoints(rng *rand.Rand, grid [][]string, width, height int, resources map[mapPoint]string, playerCount int) []staticdata.SpawnPoint {
 	candidates := make([]mapPoint, 0, width*height)
+	margin := 1
+	if catalog := staticdata.Default(); catalog != nil {
+		if radius := catalog.Rules().InitialCityTerritoryRadius; radius > 0 {
+			margin = radius
+		}
+	}
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			p := mapPoint{X: x, Y: y}
 			if _, hasResource := resources[p]; hasResource {
+				continue
+			}
+			if x < margin || y < margin || x >= width-margin || y >= height-margin {
 				continue
 			}
 			if !isResourceCandidateTerrain(grid[y][x]) {

@@ -75,6 +75,7 @@ type PlayerState struct {
 	Username          string
 	Resources         ResourceBag
 	Cities            map[string]*CityState
+	CapitalCityID     string
 	Research          ResearchState
 	Policy            Policy
 	TokensLeft        int
@@ -218,11 +219,8 @@ func (s *GameState) ActiveModifierEffects(playerID string) []staticdata.Modifier
 			if building.Owner != playerID {
 				return
 			}
-			if entry.HasComponent(BuildingStateC) {
-				state := BuildingStateC.Get(entry)
-				if state.Disabled {
-					return
-				}
+			if !BuildingOperationalAtTurn(entry, s.Turn) {
+				return
 			}
 			cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
 			if !ok || len(cfg.ModifierEffects) == 0 {
