@@ -25,6 +25,9 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if !entry.HasComponent(ecs.BuildingOperationC) {
 			return
 		}
+		if entry.HasComponent(ecs.BuildingStateC) && ecs.BuildingStateC.Get(entry).Disabled {
+			return
+		}
 		building := ecs.BuildingC.Get(entry)
 		operation := ecs.BuildingOperationC.Get(entry)
 		if operation.SelectedRecipeID == "" || !state.IsRecipeUnlocked(building.Owner, operation.SelectedRecipeID) {

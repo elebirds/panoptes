@@ -34,6 +34,7 @@ type GameRoom struct {
 	Players     []Player
 	runtime     *gamesession.Runtime
 	coordinator *gameturn.Coordinator
+	prepared    *domain.GameState
 }
 
 type Room = GameRoom
@@ -56,11 +57,23 @@ func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config
 	return room
 }
 
+func NewPreparedRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config, state *domain.GameState) *GameRoom {
+	room := NewRoom(id, players, t, cfg)
+	room.prepared = state
+	return room
+}
+
 func (r *GameRoom) Start() {
 	if r == nil || r.runtime == nil {
 		return
 	}
-	if err := r.runtime.Initialize(); err != nil {
+	var err error
+	if r.prepared != nil {
+		err = r.runtime.InitializePrepared(r.prepared)
+	} else {
+		err = r.runtime.Initialize()
+	}
+	if err != nil {
 		slog.Error("对局初始化失败", "room_id", r.ID, "error", err)
 		return
 	}
@@ -240,6 +253,9 @@ func (r *GameRoom) broadcastTurnSettlement(unitEvents []event.Event, mapEvents [
 			mapEvents,
 			economyEvents,
 		)
+		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
+			hooks.RecordSettlement(r.ID, player.PlayerID(), msg)
+		}
 		_ = player.Send(context.Background(), msg)
 	}
 }
@@ -281,6 +297,9 @@ func (r *GameRoom) checkGameOver() {
 		return
 	}
 	msg := &pb.MsgGameOver{WinnerId: state.WinnerID, Reason: state.OverReason, Narrative: state.Narrative}
+	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
+		hooks.RecordGameOver(r.ID, msg)
+	}
 	r.Broadcast(context.Background(), msg)
 	Registry.Unregister(r.ID)
 	if r.runtime != nil {
@@ -296,7 +315,11 @@ func (r *GameRoom) handleDraw() {
 	state.IsOver = true
 	state.WinnerID = ""
 	state.OverReason = "timeout_draw"
-	r.Broadcast(context.Background(), &pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"})
+	msg := &pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"}
+	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
+		hooks.RecordGameOver(r.ID, msg)
+	}
+	r.Broadcast(context.Background(), msg)
 	Registry.Unregister(r.ID)
 	if r.runtime != nil {
 		r.runtime.Cancel()

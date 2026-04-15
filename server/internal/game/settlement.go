@@ -9,7 +9,6 @@ package game
 import (
 	"strings"
 
-	"github.com/elebirds/panoptes/internal/debug"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
@@ -31,7 +30,9 @@ func RunTurnResolution(room *GameRoom) {
 
 	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)
 	if room.IsDevMode() {
-		debug.DumpGameStateSummary(room.State())
+		if hooks := currentDebugHooks(); hooks.DumpStateSummary != nil {
+			hooks.DumpStateSummary(room.State())
+		}
 	}
 	room.checkGameOver()
 

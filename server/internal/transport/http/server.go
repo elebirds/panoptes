@@ -18,11 +18,13 @@ type Pinger interface {
 }
 
 type Server struct {
-	mux         *http.ServeMux
-	authHandler *AuthHandler
-	jwtSecret   string
-	dbPinger    Pinger
-	redisPinger Pinger
+	mux          *http.ServeMux
+	authHandler  *AuthHandler
+	debugHandler *DebugHandler
+	jwtSecret    string
+	dbPinger     Pinger
+	redisPinger  Pinger
+	devMode      bool
 }
 
 func NewServer(
@@ -30,14 +32,18 @@ func NewServer(
 	jwtSecret string,
 	dbPinger Pinger,
 	redisPinger Pinger,
+	devMode bool,
+	debugHandler *DebugHandler,
 ) *Server {
 	mux := http.NewServeMux()
 	s := &Server{
-		mux:         mux,
-		authHandler: NewAuthHandler(authSvc, jwtSecret),
-		jwtSecret:   jwtSecret,
-		dbPinger:    dbPinger,
-		redisPinger: redisPinger,
+		mux:          mux,
+		authHandler:  NewAuthHandler(authSvc, jwtSecret),
+		debugHandler: debugHandler,
+		jwtSecret:    jwtSecret,
+		dbPinger:     dbPinger,
+		redisPinger:  redisPinger,
+		devMode:      devMode,
 	}
 
 	s.registerRoutes()
@@ -53,6 +59,14 @@ func (s *Server) registerRoutes() {
 
 	// Protected routes
 	s.mux.HandleFunc("GET /api/users/{username}", AuthMiddleware(s.jwtSecret, s.authHandler.GetUser))
+
+	if s.devMode && s.debugHandler != nil {
+		s.mux.HandleFunc("GET /api/dev/game/state", AuthMiddleware(s.jwtSecret, s.debugHandler.GetState))
+		s.mux.HandleFunc("GET /api/dev/game/settlement", AuthMiddleware(s.jwtSecret, s.debugHandler.GetSettlement))
+		s.mux.HandleFunc("POST /api/dev/game/command", AuthMiddleware(s.jwtSecret, s.debugHandler.Command))
+		s.mux.HandleFunc("POST /api/dev/game/submit", AuthMiddleware(s.jwtSecret, s.debugHandler.Submit))
+		s.mux.HandleFunc("POST /api/dev/game/step-turn", AuthMiddleware(s.jwtSecret, s.debugHandler.StepTurn))
+	}
 }
 
 func (s *Server) registerHealthRoutes() {

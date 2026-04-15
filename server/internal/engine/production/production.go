@@ -33,6 +33,9 @@ func (s *ProductionSystem) Run(world donburi.World, state *domain.GameState) []e
 	}
 
 	ecs.NodesWithBuilding(world).Each(world, func(entry *donburi.Entry) {
+		if entry.HasComponent(ecs.BuildingStateC) && ecs.BuildingStateC.Get(entry).Disabled {
+			return
+		}
 		node := ecs.NodeC.Get(entry)
 		building := ecs.BuildingC.Get(entry)
 		if !isMilitaryProducer(string(building.Type)) {

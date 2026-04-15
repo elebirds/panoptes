@@ -248,7 +248,23 @@ type BuildingDeactivatedEvent struct {
 	Reason string
 }
 
-func (e BuildingDeactivatedEvent) Apply(donburi.World, *domain.GameState) {}
+func (e BuildingDeactivatedEvent) Apply(world donburi.World, state *domain.GameState) {
+	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
+	if !ok {
+		return
+	}
+	if !nodeEntry.HasComponent(ecs.BuildingStateC) {
+		nodeEntry.AddComponent(ecs.BuildingStateC)
+	}
+	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
+		Disabled:       true,
+		DisabledReason: e.Reason,
+	})
+	if nodeEntry.HasComponent(ecs.BuildingOperationC) {
+		operation := ecs.BuildingOperationC.Get(nodeEntry)
+		operation.BlockedReason = e.Reason
+	}
+}
 
 func (e BuildingDeactivatedEvent) Kind() string { return "building_deactivated" }
 

@@ -12,6 +12,7 @@ type PositionComp = domain.PositionComp
 type NodeComp = domain.NodeComp
 type BuildingComp = domain.BuildingComp
 type BuildingOperationComp = domain.BuildingOperationComp
+type BuildingStateComp = domain.BuildingStateComp
 type UnitStatsComp = domain.UnitStatsComp
 type UnitCapabilitiesComp = domain.UnitCapabilitiesComp
 type MoveIntentComp = domain.MoveIntentComp
@@ -27,6 +28,7 @@ var (
 	NodeC              = domain.NodeC
 	BuildingC          = domain.BuildingC
 	BuildingOperationC = domain.BuildingOperationC
+	BuildingStateC     = domain.BuildingStateC
 	UnitStatsC         = domain.UnitStatsC
 	UnitCapabilitiesC  = domain.UnitCapabilitiesC
 	MoveIntentC        = domain.MoveIntentC
