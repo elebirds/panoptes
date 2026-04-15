@@ -124,7 +124,7 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		view.IsCityCore = entry.HasComponent(ecs.CityCoreC) || strings.EqualFold(string(building.Type), "city_core")
 		view.CityId = ecs.ResolveCityID(entry)
 		view.ServiceCityId = ecs.ResolveServiceCityID(entry)
-		status, takeoverProgress, takeoverRequired := ecs.BuildingRuntimeState(entry)
+		status, takeoverProgress, takeoverRequired := ecs.BuildingRuntimeState(entry, state.Turn)
 		view.BuildingStatus = status
 		view.TakeoverProgress = int32(takeoverProgress)
 		view.TakeoverRequired = int32(takeoverRequired)

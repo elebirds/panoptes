@@ -21,6 +21,7 @@ type BuildingBuiltEvent struct {
 	Owner        string
 	CityID       string
 	Cost         domain.ResourceBag
+	OnlineOnTurn int
 }
 
 // Apply creates the building and charges the player-global inventory.
@@ -33,7 +34,14 @@ func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) 
 		return
 	}
 	ecs.CreateBuilding(world, e.BuildingType, e.Owner, e.CityID, nodeEntry)
-	state.ConsumeResources(e.Owner, e.CityID, e.Cost)
+	if state != nil {
+		onlineOnTurn := e.OnlineOnTurn
+		if onlineOnTurn <= 0 {
+			onlineOnTurn = state.Turn + 1
+		}
+		domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, "pending_activation", onlineOnTurn)
+		state.ConsumeResources(e.Owner, e.CityID, e.Cost)
+	}
 }
 
 func (e BuildingBuiltEvent) Kind() string { return "building_built" }
@@ -286,14 +294,7 @@ func (e BuildingDeactivatedEvent) Apply(world donburi.World, state *domain.GameS
 	if !ok {
 		return
 	}
-	if !nodeEntry.HasComponent(ecs.BuildingStateC) {
-		nodeEntry.AddComponent(ecs.BuildingStateC)
-	}
-	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
-		Disabled:       true,
-		DisabledReason: e.Reason,
-		Status:         "disabled",
-	})
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, e.Reason, 0)
 	if nodeEntry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(nodeEntry)
 		operation.BlockedReason = e.Reason

@@ -64,7 +64,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 			})
 			continue
 		}
-		if errCode := ecs.CanPlaceBuildingAt(nodeEntry, order.PlayerID, cfg); errCode != "" {
+		if errCode := ecs.ValidateBuildingPlacement(state, nodeEntry, order.PlayerID, cfg, order.CityID); errCode != "" {
 			events = append(events, event.BuildSkippedEvent{
 				PlayerID:     order.PlayerID,
 				NodeID:       order.NodeID,
@@ -112,6 +112,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 			Owner:        order.PlayerID,
 			CityID:       order.CityID,
 			Cost:         resourceCost,
+			OnlineOnTurn: state.Turn + 1,
 		})
 	}
 	return events

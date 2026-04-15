@@ -71,19 +71,16 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": reason}}, true
 	}
 
-	barracksEntry, barracksNodeID := pickBarracksNode(centerEntry, footprintEntries)
-	if barracksEntry == nil || barracksNodeID == "" {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "no_barracks_slot"}}, true
-	}
-
 	for _, entry := range footprintEntries {
 		node := ecs.NodeC.Get(entry)
 		node.TerritoryOwner = order.PlayerID
 		node.Owner = order.PlayerID
 	}
-	setBuildingOnNode(state.World, centerEntry, "city_core", order.PlayerID, centerNodeID)
-	setBuildingOnNode(state.World, barracksEntry, "barracks", order.PlayerID, centerNodeID)
-	state.EnsureCityState(order.PlayerID, centerNodeID)
+	setBuildingOnNode(state, centerEntry, "city_core", order.PlayerID, centerNodeID, state.Turn+1)
+	cityState := state.EnsureCityState(order.PlayerID, centerNodeID)
+	if cityState != nil {
+		cityState.OnlineOnTurn = state.Turn + 1
+	}
 	state.World.Remove(unitEntry.Entity())
 
 	return &pb.TurnEvent{
@@ -93,53 +90,17 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 			"unit_id":          order.UnitID,
 			"city_id":          centerNodeID,
 			"center_node_id":   centerNodeID,
-			"barracks_node_id": barracksNodeID,
 			"updated_nodes":    strings.Join(footprintIDs, ","),
 		},
 	}, true
 }
 
-func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.Entry) (*donburi.Entry, string) {
-	if centerEntry == nil {
-		return nil, ""
-	}
-
-	centerPos := ecs.PositionC.Get(centerEntry)
-	byPos := make(map[domain.Position]*donburi.Entry, len(footprintEntries))
-	for _, entry := range footprintEntries {
-		if entry == nil {
-			continue
-		}
-		pos := ecs.PositionC.Get(entry)
-		byPos[domain.Position{X: pos.X, Y: pos.Y}] = entry
-	}
-	candidates := []domain.Position{
-		{X: centerPos.X + 1, Y: centerPos.Y},
-		{X: centerPos.X - 1, Y: centerPos.Y},
-		{X: centerPos.X, Y: centerPos.Y + 1},
-		{X: centerPos.X, Y: centerPos.Y - 1},
-	}
-	for _, candidate := range candidates {
-		entry, ok := byPos[candidate]
-		if !ok || entry == nil {
-			continue
-		}
-		return entry, ecs.NodeC.Get(entry).ID
-	}
-	for _, entry := range footprintEntries {
-		if entry == nil || entry == centerEntry {
-			continue
-		}
-		return entry, ecs.NodeC.Get(entry).ID
-	}
-	return nil, ""
-}
-
-func setBuildingOnNode(world donburi.World, nodeEntry *donburi.Entry, buildingType, owner string, cityID string) {
-	if world == nil || nodeEntry == nil {
+func setBuildingOnNode(state *domain.GameState, nodeEntry *donburi.Entry, buildingType, owner string, cityID string, onlineOnTurn int) {
+	if state == nil || state.World == nil || nodeEntry == nil {
 		return
 	}
-	ecs.CreateBuilding(world, buildingType, owner, cityID, nodeEntry)
+	ecs.CreateBuilding(state.World, buildingType, owner, cityID, nodeEntry)
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, "pending_activation", onlineOnTurn)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = owner
 }

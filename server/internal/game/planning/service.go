@@ -283,14 +283,8 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
 	}
-	if cityID != "" {
-		if errCode := validateCityContext(room, playerID, cityID); errCode != "" {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
-			return nil
-		}
-	}
 
-	if errCode := ecs.CanPlaceBuildingAt(nodeEntry, playerID, cfg); errCode != "" {
+	if errCode := ecs.ValidateBuildingPlacement(room.State(), nodeEntry, playerID, cfg, cityID); errCode != "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
 		return nil
 	}
@@ -313,28 +307,6 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	}
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
-}
-
-func validateCityContext(room Session, playerID string, cityID string) string {
-	cityID = strings.TrimSpace(cityID)
-	if cityID == "" {
-		return "invalid_request"
-	}
-
-	cityEntry, ok := room.NodeByID(cityID)
-	if !ok || !cityEntry.HasComponent(ecs.BuildingC) {
-		return "invalid_target"
-	}
-	building := ecs.BuildingC.Get(cityEntry)
-	if normalizeToken(string(building.Type)) != "city_core" {
-		return "invalid_target"
-	}
-	node := ecs.NodeC.Get(cityEntry)
-	player := normalizeToken(playerID)
-	if normalizeToken(building.Owner) != player && normalizeToken(node.Owner) != player && normalizeToken(node.TerritoryOwner) != player {
-		return "unauthorized"
-	}
-	return ""
 }
 
 func normalizeToken(value string) string {

@@ -28,7 +28,7 @@ func TestHarnessIndustryBudgetExhaustion_RecordsBudgetAndSkip(t *testing.T) {
 	for _, nodeID := range []string{"A2", "B1"} {
 		if err := h.InjectPlanningCommand("player-1", "req-build-"+nodeID, &pb.PlanningCommand{
 			Body: &pb.PlanningCommand_BuildStructure{
-				BuildStructure: &pb.MsgBuildStructure{NodeId: nodeID, BuildingTypeId: "farm"},
+				BuildStructure: &pb.MsgBuildStructure{NodeId: nodeID, BuildingTypeId: "farm", CityId: "A1"},
 			},
 		}); err != nil {
 			t.Fatalf("InjectPlanningCommand(build %s) error = %v", nodeID, err)
@@ -77,7 +77,7 @@ func TestHarnessSettlementBuildRevalidation_ReportsSkippedBuild(t *testing.T) {
 	}
 	if err := h.InjectPlanningCommand("player-1", "req-build-A2", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm", CityId: "A1"},
 		},
 	}); err != nil {
 		t.Fatalf("InjectPlanningCommand(build) error = %v", err)

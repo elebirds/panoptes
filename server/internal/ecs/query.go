@@ -9,6 +9,7 @@ package ecs
 import (
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/algo/geometry"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -114,7 +115,7 @@ func ResolveServiceCityID(entry *donburi.Entry) string {
 	return ""
 }
 
-func BuildingRuntimeState(entry *donburi.Entry) (string, int, int) {
+func BuildingRuntimeState(entry *donburi.Entry, currentTurn int) (string, int, int) {
 	if entry == nil || !entry.HasComponent(BuildingC) {
 		return "empty", 0, 0
 	}
@@ -127,15 +128,17 @@ func BuildingRuntimeState(entry *donburi.Entry) (string, int, int) {
 		required = takeover.Required
 	}
 
-	if entry.HasComponent(BuildingStateC) {
-		state := BuildingStateC.Get(entry)
-		if state.Disabled {
-			return "disabled", progress, required
-		}
-		switch normalizeRuntimeToken(state.Status) {
-		case "blocked", "active", "idle":
-			return normalizeRuntimeToken(state.Status), progress, required
-		}
+	status, _ := domain.BuildingLifecycleStateAtTurn(entry, currentTurn)
+	switch status {
+	case domain.BuildingStatusDisabled,
+		domain.BuildingStatusContested,
+		domain.BuildingStatusTakeover,
+		domain.BuildingStatusRuined:
+		return status, progress, required
+	case domain.BuildingStatusBlocked:
+		return domain.BuildingStatusBlocked, progress, required
+	case domain.BuildingStatusActive:
+		return domain.BuildingStatusActive, progress, required
 	}
 
 	if entry.HasComponent(BuildingOperationC) {
@@ -148,6 +151,87 @@ func BuildingRuntimeState(entry *donburi.Entry) (string, int, int) {
 		}
 	}
 	return "idle", progress, required
+}
+
+func ValidateBuildingPlacement(state *domain.GameState, nodeEntry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition, cityID string) string {
+	if state == nil || nodeEntry == nil {
+		return "invalid_target"
+	}
+	scope := normalizeRuntimeToken(cfg.BuildingScope)
+	if scope == "city_core" {
+		return "invalid_directive"
+	}
+	cityID = strings.TrimSpace(cityID)
+	if cityID == "" {
+		return "invalid_request"
+	}
+	cityEntry, cityState, errCode := ResolveCityContext(state, playerID, cityID)
+	if errCode != "" {
+		return errCode
+	}
+	if !domain.IsCityOnline(state, cityState) {
+		return "invalid_directive"
+	}
+	if errCode := CanPlaceBuildingAt(nodeEntry, playerID, cfg); errCode != "" {
+		return errCode
+	}
+	if scope != "in_city" {
+		return ""
+	}
+	radius := staticdata.Default().Rules().InitialCityTerritoryRadius
+	if radius <= 0 {
+		radius = 1
+	}
+	targetPos := PositionC.Get(nodeEntry)
+	cityPos := PositionC.Get(cityEntry)
+	dx := targetPos.X - cityPos.X
+	if dx < 0 {
+		dx = -dx
+	}
+	dy := targetPos.Y - cityPos.Y
+	if dy < 0 {
+		dy = -dy
+	}
+	if dx <= radius && dy <= radius {
+		return ""
+	}
+	return "outside_territory"
+}
+
+func ResolveCityContext(state *domain.GameState, playerID string, cityID string) (*donburi.Entry, *domain.CityState, string) {
+	if state == nil {
+		return nil, nil, "invalid_target"
+	}
+	cityID = strings.TrimSpace(cityID)
+	if cityID == "" {
+		return nil, nil, "invalid_request"
+	}
+	cityEntry, ok := state.GetNode(cityID)
+	if !ok || !cityEntry.HasComponent(BuildingC) {
+		return nil, nil, "invalid_target"
+	}
+	building := BuildingC.Get(cityEntry)
+	if normalizeRuntimeToken(string(building.Type)) != "city_core" {
+		return nil, nil, "invalid_target"
+	}
+	node := NodeC.Get(cityEntry)
+	player := normalizeRuntimeToken(playerID)
+	if normalizeRuntimeToken(building.Owner) != player && normalizeRuntimeToken(node.Owner) != player && normalizeRuntimeToken(node.TerritoryOwner) != player {
+		return nil, nil, "unauthorized"
+	}
+	ownerState, cityState := state.FindCityState(cityID)
+	if ownerState == nil || cityState == nil {
+		return cityEntry, &domain.CityState{
+			CityID:              cityID,
+			CoreNodeID:          cityID,
+			OwnerID:             playerID,
+			TerritoryBaseRadius: staticdata.Default().Rules().InitialCityTerritoryRadius,
+		}, ""
+	}
+	if normalizeRuntimeToken(ownerState.PlayerID) != player {
+		return nil, nil, "unauthorized"
+	}
+	return cityEntry, cityState, ""
 }
 
 func CanPlaceBuildingAt(entry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition) string {
@@ -225,6 +309,33 @@ func CanFoundCityAt(state *domain.GameState, centerEntry *donburi.Entry) (bool, 
 			continue
 		}
 		return false, "territory_blocked"
+	}
+	centerPos := PositionC.Get(centerEntry)
+	minimumDistance := staticdata.Default().Rules().MinimumCityDistance
+	if minimumDistance > 0 {
+		NodesWithBuilding(state.World).Each(state.World, func(entry *donburi.Entry) {
+			if entry == nil || !entry.HasComponent(BuildingC) {
+				return
+			}
+			building := BuildingC.Get(entry)
+			if normalizeRuntimeToken(string(building.Type)) != "city_core" {
+				return
+			}
+			node := NodeC.Get(entry)
+			if strings.TrimSpace(node.ID) == centerNodeID {
+				return
+			}
+			pos := PositionC.Get(entry)
+			if geometry.Manhattan(
+				domain.Position{X: centerPos.X, Y: centerPos.Y},
+				domain.Position{X: pos.X, Y: pos.Y},
+			) < minimumDistance {
+				reason = "minimum_city_distance"
+			}
+		})
+		if reason != "" {
+			return false, reason
+		}
 	}
 	return true, ""
 }

@@ -120,11 +120,11 @@ func TestBuildingRuntimeStateAndPlacementHelpers(t *testing.T) {
 		BlockedReason:    "insufficient_resources",
 	})
 
-	status, progress, required := BuildingRuntimeState(cityEntry)
+	status, progress, required := BuildingRuntimeState(cityEntry, 1)
 	if status != "disabled" || progress != 0 || required != 4 {
 		t.Fatalf("city runtime = (%q,%d,%d), want (disabled,0,4)", status, progress, required)
 	}
-	status, progress, required = BuildingRuntimeState(farmEntry)
+	status, progress, required = BuildingRuntimeState(farmEntry, 1)
 	if status != "blocked" || progress != 0 || required != 4 {
 		t.Fatalf("farm runtime = (%q,%d,%d), want (blocked,0,4)", status, progress, required)
 	}
@@ -138,5 +138,43 @@ func TestBuildingRuntimeStateAndPlacementHelpers(t *testing.T) {
 	}
 	if canFound, reason := CanFoundCityAt(state, cityEntry); canFound || reason != "territory_blocked" {
 		t.Fatalf("CanFoundCityAt(occupied city) = (%v,%q), want (false,territory_blocked)", canFound, reason)
+	}
+}
+
+func TestCanFoundCityAtRejectsCentersWithinMinimumCityDistance(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+			MinimumCityDistance:        4,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "default", Width: 9, Height: 9, NodeIndex: map[string]donburi.Entity{}}
+	for y := 0; y < 9; y++ {
+		for x := 0; x < 9; x++ {
+			nodeID := string(rune('A'+x)) + string(rune('1'+y))
+			entity := CreateNode(world, MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			mapData.NodeIndex[nodeID] = entity
+		}
+	}
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+
+	existingCore := world.Entry(mapData.NodeIndex["D4"])
+	existingNode := NodeC.Get(existingCore)
+	existingNode.Owner = "player-1"
+	existingNode.TerritoryOwner = "player-1"
+	CreateBuilding(world, "city_core", "player-1", "D4", existingCore)
+	state.EnsureCityState("player-1", "D4")
+
+	target := world.Entry(mapData.NodeIndex["D7"])
+	if canFound, reason := CanFoundCityAt(state, target); canFound || reason != "minimum_city_distance" {
+		t.Fatalf("CanFoundCityAt(too close) = (%v,%q), want (false,minimum_city_distance)", canFound, reason)
 	}
 }
