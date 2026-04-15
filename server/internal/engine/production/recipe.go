@@ -37,23 +37,34 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if !entry.HasComponent(ecs.BuildingOperationC) {
 			return
 		}
-		if entry.HasComponent(ecs.BuildingStateC) && ecs.BuildingStateC.Get(entry).Disabled {
-			return
-		}
 		building := ecs.BuildingC.Get(entry)
+		nodeID := ecs.NodeC.Get(entry).ID
 		operation := ecs.BuildingOperationC.Get(entry)
 		selectedRecipeID := operation.SelectedRecipeID
 		requiredTurns := operation.RequiredTurns
-		if override, ok := selectionOverrides[ecs.NodeC.Get(entry).ID]; ok {
+		if override, ok := selectionOverrides[nodeID]; ok {
 			selectedRecipeID = override.RecipeID
 			requiredTurns = override.RequiredTurns
 		}
-		if selectedRecipeID == "" || !state.IsRecipeUnlocked(building.Owner, selectedRecipeID) {
+		if selectedRecipeID == "" {
+			return
+		}
+		if entry.HasComponent(ecs.BuildingStateC) && ecs.BuildingStateC.Get(entry).Disabled {
+			events = append(events, event.RecipeSkippedEvent{
+				NodeID:   nodeID,
+				RecipeID: selectedRecipeID,
+				Reason:   "building_disabled",
+			})
+			return
+		}
+		if !state.IsRecipeUnlocked(building.Owner, selectedRecipeID) {
+			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredTurns, "invalid_recipe_selection")
 			return
 		}
 
 		recipe, ok := staticdata.Default().GetRecipe(selectedRecipeID)
 		if !ok {
+			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredTurns, "invalid_recipe_selection")
 			return
 		}
 
@@ -72,14 +83,14 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		}
 		if blockedReason != "" {
 			events = append(events, event.RecipeProgressedEvent{
-				NodeID:        ecs.NodeC.Get(entry).ID,
+				NodeID:        nodeID,
 				ProgressTurns: operation.ProgressTurns,
 				RequiredTurns: max(requiredTurns, requiredProgress),
 				BlockedReason: blockedReason,
 			})
 			if !wasBlocked || operation.BlockedReason != blockedReason {
 				events = append(events, event.BuildingStatusChangedEvent{
-					NodeID: ecs.NodeC.Get(entry).ID,
+					NodeID: nodeID,
 					Status: "blocked",
 					Reason: blockedReason,
 				})
@@ -104,7 +115,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if progress >= requiredProgress {
 			simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceCost)
 			events = append(events, event.RecipeCompletedEvent{
-				NodeID:        ecs.NodeC.Get(entry).ID,
+				NodeID:        nodeID,
 				Owner:         building.Owner,
 				CityID:        building.CityID,
 				RequiredTurns: requiredProgress,
@@ -113,18 +124,18 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 				Units:         append([]string(nil), recipe.Outputs.Units...),
 			})
 			events = append(events, event.BuildingStatusChangedEvent{
-				NodeID: ecs.NodeC.Get(entry).ID,
+				NodeID: nodeID,
 				Status: "idle",
 			})
 			return
 		}
 
 		events = append(events, event.RecipeProgressedEvent{
-			NodeID: ecs.NodeC.Get(entry).ID, ProgressTurns: progress, RequiredTurns: requiredProgress,
+			NodeID: nodeID, ProgressTurns: progress, RequiredTurns: requiredProgress,
 		})
 		if wasBlocked {
 			events = append(events, event.BuildingStatusChangedEvent{
-				NodeID: ecs.NodeC.Get(entry).ID,
+				NodeID: nodeID,
 				Status: "active",
 			})
 		}
@@ -145,18 +156,38 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 	}
 	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
 		if !state.IsRecipeUnlocked(selection.PlayerID, selection.RecipeID) {
+			*events = append(*events, event.RecipeSkippedEvent{
+				NodeID:   selection.NodeID,
+				RecipeID: selection.RecipeID,
+				Reason:   "invalid_recipe_selection",
+			})
 			continue
 		}
 		recipe, ok := staticdata.Default().GetRecipe(selection.RecipeID)
 		if !ok {
+			*events = append(*events, event.RecipeSkippedEvent{
+				NodeID:   selection.NodeID,
+				RecipeID: selection.RecipeID,
+				Reason:   "invalid_recipe_selection",
+			})
 			continue
 		}
 		entry, ok := state.GetNode(selection.NodeID)
 		if !ok || !entry.HasComponent(ecs.BuildingC) {
+			*events = append(*events, event.RecipeSkippedEvent{
+				NodeID:   selection.NodeID,
+				RecipeID: selection.RecipeID,
+				Reason:   "invalid_target",
+			})
 			continue
 		}
 		building := ecs.BuildingC.Get(entry)
 		if building.Owner != selection.PlayerID {
+			*events = append(*events, event.RecipeSkippedEvent{
+				NodeID:   selection.NodeID,
+				RecipeID: selection.RecipeID,
+				Reason:   "unauthorized",
+			})
 			continue
 		}
 		requiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
@@ -176,4 +207,32 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 		})
 	}
 	return overrides
+}
+
+func appendRecipeBlocked(events *[]event.Event, nodeID string, recipeID string, operation *ecs.BuildingOperationComp, requiredTurns int, reason string) {
+	if events == nil || operation == nil {
+		return
+	}
+	if requiredTurns <= 0 {
+		requiredTurns = max(operation.RequiredTurns, 1)
+	}
+	*events = append(*events, event.RecipeSkippedEvent{
+		NodeID:   nodeID,
+		RecipeID: recipeID,
+		Reason:   reason,
+	})
+	*events = append(*events, event.RecipeProgressedEvent{
+		NodeID:        nodeID,
+		ProgressTurns: operation.ProgressTurns,
+		RequiredTurns: requiredTurns,
+		BlockedReason: reason,
+	})
+	if operation.BlockedReason == reason {
+		return
+	}
+	*events = append(*events, event.BuildingStatusChangedEvent{
+		NodeID: nodeID,
+		Status: "blocked",
+		Reason: reason,
+	})
 }

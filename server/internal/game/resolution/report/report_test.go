@@ -105,6 +105,29 @@ func TestTurnEventFromEventMapsPointBudgetEvents(t *testing.T) {
 	}
 }
 
+func TestTurnEventFromEventMapsRecipeSkippedEvent(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.RecipeSkippedEvent{
+		NodeID:   "A1",
+		RecipeID: "farm_food",
+		Reason:   "building_disabled",
+	})
+
+	if turnEvent.GetType() != "recipe_skipped" {
+		t.Fatalf("type = %q, want recipe_skipped", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["node_id"]; got != "A1" {
+		t.Fatalf("node_id = %q, want A1", got)
+	}
+	if got := turnEvent.GetData()["recipe_id"]; got != "farm_food" {
+		t.Fatalf("recipe_id = %q, want farm_food", got)
+	}
+	if got := turnEvent.GetData()["reason"]; got != "building_disabled" {
+		t.Fatalf("reason = %q, want building_disabled", got)
+	}
+}
+
 func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	t.Parallel()
 
