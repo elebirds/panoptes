@@ -355,6 +355,12 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePointBagKeys(building.PointCosts, pointKeys, data.Buildings.Path, "point cost"); err != nil {
 			return err
 		}
+		if err := validateExplicitEffects(building.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Buildings.Path); err != nil {
+			return err
+		}
+		if err := validateModifierEffects(building.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Buildings.Path); err != nil {
+			return err
+		}
 		if len(building.RecipeIDs) == 0 {
 			if building.DefaultRecipeID != "" {
 				return fmt.Errorf("semantic validation failed for %s: building %q has default_recipe_id %q without recipe_ids", data.Buildings.Path, building.ID, building.DefaultRecipeID)

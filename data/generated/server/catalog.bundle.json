@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "8af81ec21f69d5c83892298e34a9fc8dc68c9f0e3b2245a4eb317f361972e84a"
+    "bundle_hash": "a62c81274714cfd2c271faea37e5be65aab9a95091a32ebfcd365ccf05d46e19"
   },
   "resources": [
     {
@@ -150,6 +150,8 @@
         "city_core_settler"
       ],
       "default_recipe_id": "city_core_settler",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 100,
       "takeover_mode": "disabled",
       "sort_order": 10,
@@ -176,6 +178,8 @@
         "farm_food"
       ],
       "default_recipe_id": "farm_food",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
       "sort_order": 20,
@@ -202,6 +206,8 @@
         "mine_ore"
       ],
       "default_recipe_id": "mine_ore",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
       "sort_order": 30,
@@ -228,6 +234,8 @@
         "lumber_wood"
       ],
       "default_recipe_id": "lumber_wood",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
       "sort_order": 40,
@@ -255,6 +263,8 @@
         "barracks_infantry"
       ],
       "default_recipe_id": "barracks_infantry",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 90,
       "takeover_mode": "city_capture",
       "sort_order": 50,
@@ -280,6 +290,8 @@
       },
       "recipe_ids": [],
       "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [],
       "max_hp": 120,
       "takeover_mode": "city_capture",
       "sort_order": 60,
