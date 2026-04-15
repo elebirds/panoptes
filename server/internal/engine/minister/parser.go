@@ -83,10 +83,9 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 			}
 			state.TurnRuntime.Planning.MinisterBuilds = append(state.TurnRuntime.Planning.MinisterBuilds, domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType})
 		case "repair_road":
-			fromNode, _ := asString(action.Params["from_node"])
-			toNode, _ := asString(action.Params["to_node"])
-			cost, _ := asInt(action.Params["cost"])
-			events = append(events, event.RoadBuiltEvent{FromNode: fromNode, ToNode: toNode, Owner: playerID, Cost: cost})
+			// 道路当前仍未接入 Chunk 3 统一预算与 map action 结算，
+			// 这里禁止部长直接落图，避免绕过点数账本。
+			continue
 		case "move_units":
 			unitID, _ := asString(action.Params["unit_id"])
 			targetNode, _ := asString(action.Params["target_node"])
