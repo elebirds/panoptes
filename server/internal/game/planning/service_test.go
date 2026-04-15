@@ -86,6 +86,62 @@ func TestBuildPlanningSnapshot_UsesActiveMarchPreviewForMoveOrders(t *testing.T)
 	}
 }
 
+func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
+	state, unitID := newPreviewState(t)
+	state.TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
+		{PlayerID: "player-1", NodeID: "N1_0", BuildingType: "farm", CityID: "C1"},
+		{PlayerID: "player-2", NodeID: "N2_0", BuildingType: "mine", CityID: "C2"},
+	}
+	state.TurnRuntime.Planning.RecipeSelections = []domain.RecipeSelectionOrder{
+		{PlayerID: "player-1", NodeID: "N3_0", RecipeID: "farm_food"},
+		{PlayerID: "player-2", NodeID: "N4_0", RecipeID: "mine_ore"},
+	}
+	state.TurnRuntime.Planning.WarDirectives["player-1"] = []domain.WarZoneDirective{
+		{ZoneID: "north", Directive: "attack", TargetNode: "N4_0"},
+	}
+	state.TurnRuntime.Planning.UnitOrders[unitID] = domain.UnitDirective{
+		PlayerID:     "player-1",
+		UnitID:       unitID,
+		Action:       "hold",
+		TargetNodeID: "N1_0",
+	}
+	state.Players["player-1"].WarZones = []*domain.WarZone{
+		{ID: "north", Name: "North", NodeIDs: []string{"N3_0"}},
+	}
+
+	snapshot := gamequery.BuildPlanningSnapshot(state, "player-1")
+
+	if got := snapshot.GetPlannedResearchTargetTechnologyId(); got != "agrarian_foundations" {
+		t.Fatalf("planned research target = %q, want agrarian_foundations", got)
+	}
+	if got := snapshot.GetPlannedNationalPolicyId(); got != "expansion" {
+		t.Fatalf("planned national policy = %q, want expansion", got)
+	}
+	if got := len(snapshot.GetBuildOrders()); got != 1 {
+		t.Fatalf("build order count = %d, want 1", got)
+	}
+	if got := snapshot.GetBuildOrders()[0].GetNodeId(); got != "N1_0" {
+		t.Fatalf("build order node_id = %q, want N1_0", got)
+	}
+	if got := len(snapshot.GetRecipeSelections()); got != 1 {
+		t.Fatalf("recipe selection count = %d, want 1", got)
+	}
+	if got := snapshot.GetRecipeSelections()[0].GetRecipeId(); got != "farm_food" {
+		t.Fatalf("recipe selection recipe_id = %q, want farm_food", got)
+	}
+	if got := len(snapshot.GetWarZoneDirectives()); got != 1 {
+		t.Fatalf("war zone directive count = %d, want 1", got)
+	}
+	if got := snapshot.GetWarZoneDirectives()[0].GetDirective(); got != "attack" {
+		t.Fatalf("war zone directive = %q, want attack", got)
+	}
+	if got := len(snapshot.GetWarZones()); got != 1 {
+		t.Fatalf("war zone count = %d, want 1", got)
+	}
+}
+
 func newPreviewState(t *testing.T) (*domain.GameState, string) {
 	t.Helper()
 

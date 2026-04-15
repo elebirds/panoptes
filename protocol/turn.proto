@@ -42,12 +42,34 @@ message QueuedUnitOrder {
   repeated MarchTurnStop turn_stops = 10;
 }
 
+message QueuedBuildOrder {
+  string node_id = 1;
+  string building_type_id = 2;
+  string city_id = 3;
+}
+
+message QueuedRecipeSelection {
+  string node_id = 1;
+  string recipe_id = 2;
+}
+
+message QueuedWarZoneDirective {
+  string zone_id = 1;
+  string directive = 2;
+  string target_node = 3;
+}
+
 message MsgPlanningSnapshot {
   int32 turn = 1;
   string phase = 2;
   repeated QueuedUnitOrder unit_orders = 3;
   repeated WarZone war_zones = 4;
   repeated MinisterDraftView minister_drafts = 5;
+  string planned_research_target_technology_id = 6;
+  string planned_national_policy_id = 7;
+  repeated QueuedBuildOrder build_orders = 8;
+  repeated QueuedRecipeSelection recipe_selections = 9;
+  repeated QueuedWarZoneDirective war_zone_directives = 10;
 }
 
 message MsgPlanningPathPreviewResponse {
