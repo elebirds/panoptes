@@ -30,16 +30,25 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 			continue
 		}
 		technology, ok := staticdata.Default().GetTechnology(technologyID)
-		if !ok || playerState.Research.HasTechnology(technologyID) {
+		if !ok || playerState.Research.HasCompletedTechnology(technologyID) {
 			continue
 		}
-		if playerState.Research.CurrentProgress < technology.ResearchCost {
+		if playerState.Research.CurrentTargetProgress() < technology.ResearchCost {
 			continue
 		}
 		prereqsMet := true
 		for _, prereq := range technology.Prerequisites {
-			if prereq.Type == "technology_unlocked" && !playerState.Research.HasTechnology(prereq.TargetID) {
-				prereqsMet = false
+			switch prereq.Type {
+			case "technology_unlocked":
+				if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
+					prereqsMet = false
+				}
+			case "policy_active":
+				if !state.IsPolicyActive(playerID, prereq.TargetID) {
+					prereqsMet = false
+				}
+			}
+			if !prereqsMet {
 				break
 			}
 		}
@@ -49,15 +58,6 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 		events = append(events, event.TechnologyUnlockedEvent{
 			PlayerID: playerID, TechnologyID: technologyID, Cost: technology.ResearchCost,
 		})
-		resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
-		if !resolved.GrantResources.IsZero() || len(resolved.GrantUnitTypes) > 0 {
-			events = append(events, event.TechnologyGrantAppliedEvent{
-				PlayerID:   playerID,
-				Resources:  resolved.GrantResources,
-				UnitTypes:  append([]string(nil), resolved.GrantUnitTypes...),
-				SourceTech: technology.ID,
-			})
-		}
 	}
 
 	return events

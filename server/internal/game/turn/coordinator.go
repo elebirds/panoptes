@@ -58,6 +58,7 @@ func (c *Coordinator) Start() {
 
 	rules := staticdata.Default().Rules()
 	planningTimeoutSec := rules.TurnTimeLimitPlanning
+	skipNotify := c.runtime.ConsumeBootstrapPlanningStart()
 
 	for !c.runtime.State().IsOver {
 		if ctx.Err() != nil {
@@ -65,7 +66,10 @@ func (c *Coordinator) Start() {
 		}
 		c.planningService.Enter(c.host)
 		c.runtime.State().Phase = domain.PhasePlanning.String()
-		if !c.runtime.ConsumeBootstrapPlanningStart() {
+		if skipNotify {
+			skipNotify = false
+		} else {
+			session.PreparePlanningStartState(c.runtime.State())
 			c.host.NotifyTurn(domain.PhasePlanning.String())
 		}
 		if c.ministerEngine != nil {

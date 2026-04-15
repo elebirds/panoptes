@@ -52,6 +52,7 @@ func RunTurnResolution(room *GameRoom) {
 	clear(state.TurnRuntime.Planning.MinisterDirectives)
 	clear(state.TurnRuntime.Planning.PendingPolicies)
 	clear(state.TurnRuntime.Planning.PendingResearch)
+	clear(state.TurnRuntime.Planning.PendingInstitutions)
 	clear(state.TurnRuntime.Planning.WarDirectives)
 }
 
@@ -60,7 +61,7 @@ func (r *GameRoom) lockPlanningInputs() []event.Event {
 	if state == nil {
 		return nil
 	}
-	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.PendingPolicies)+len(state.TurnRuntime.Planning.PendingResearch))
+	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.PendingPolicies)+len(state.TurnRuntime.Planning.PendingResearch)+len(state.TurnRuntime.Planning.PendingInstitutions))
 	for playerID, policyID := range state.TurnRuntime.Planning.PendingPolicies {
 		playerState, ok := state.Players[playerID]
 		if !ok || playerState == nil || playerState.Policy == policyID {
@@ -86,7 +87,36 @@ func (r *GameRoom) lockPlanningInputs() []event.Event {
 		evt.Apply(state.World, state)
 		events = append(events, evt)
 	}
+	for playerID := range state.Players {
+		playerState := state.Players[playerID]
+		if playerState == nil || !state.TurnRuntime.Planning.HasPendingInstitutionLoadout(playerID) {
+			continue
+		}
+		policyIDs := state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
+		if policySlicesEqual(playerState.Institutions.PendingPolicyIDs, policyIDs) && playerState.Institutions.PendingActivationTurn == state.Turn+1 {
+			continue
+		}
+		evt := event.InstitutionLoadoutChangedEvent{
+			PlayerID:       playerID,
+			PolicyIDs:      policyIDs,
+			ActivationTurn: state.Turn + 1,
+		}
+		evt.Apply(state.World, state)
+		events = append(events, evt)
+	}
 	return events
+}
+
+func policySlicesEqual(a []string, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for idx := range a {
+		if a[idx] != b[idx] {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *GameRoom) lockUnitResolutionOrders() {

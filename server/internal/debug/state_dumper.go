@@ -23,15 +23,23 @@ type StateSummary struct {
 }
 
 type PlayerSummary struct {
-	Username                  string         `json:"username"`
-	Resources                 map[string]int `json:"resources"`
-	TokensLeft                int            `json:"tokens_left"`
-	CapitalCityCoreHP         int            `json:"capital_city_core_hp"`
-	CurrentResearchProgress   int            `json:"current_research_progress"`
-	CurrentTargetTechnologyID string         `json:"current_target_technology_id,omitempty"`
-	CompletedTechnologyIDs    []string       `json:"completed_technology_ids"`
-	UnlockedBuildingIDs       []string       `json:"unlocked_building_ids"`
-	UnlockedRecipeIDs         []string       `json:"unlocked_recipe_ids"`
+	Username                         string         `json:"username"`
+	Resources                        map[string]int `json:"resources"`
+	TokensLeft                       int            `json:"tokens_left"`
+	CapitalCityCoreHP                int            `json:"capital_city_core_hp"`
+	CurrentResearchProgress          int            `json:"current_research_progress"`
+	CurrentTargetTechnologyID        string         `json:"current_target_technology_id,omitempty"`
+	CompletedTechnologyIDs           []string       `json:"completed_technology_ids"`
+	ActiveTechnologyIDs              []string       `json:"active_technology_ids"`
+	PendingActivationTechnologyIDs   []string       `json:"pending_activation_technology_ids"`
+	SavedResearchProgress            map[string]int `json:"saved_research_progress"`
+	UnlockedBuildingIDs              []string       `json:"unlocked_building_ids"`
+	UnlockedRecipeIDs                []string       `json:"unlocked_recipe_ids"`
+	InstitutionSlotCount             int            `json:"institution_slot_count"`
+	InstitutionCandidatePolicyIDs    []string       `json:"institution_candidate_policy_ids"`
+	InstitutionActivePolicyIDs       []string       `json:"institution_active_policy_ids"`
+	InstitutionPendingPolicyIDs      []string       `json:"institution_pending_policy_ids"`
+	InstitutionPendingActivationTurn int            `json:"institution_pending_activation_turn"`
 }
 
 type BuildingSummary struct {
@@ -81,15 +89,23 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			continue
 		}
 		summary.Players[playerID] = PlayerSummary{
-			Username:                  player.Username,
-			Resources:                 resourceMap(player.Resources),
-			TokensLeft:                player.TokensLeft,
-			CapitalCityCoreHP:         player.CapitalCityCoreHP,
-			CurrentResearchProgress:   player.Research.CurrentProgress,
-			CurrentTargetTechnologyID: player.Research.CurrentTargetTechnologyID,
-			CompletedTechnologyIDs:    sortedSetKeys(player.Research.UnlockedTechnologies),
-			UnlockedBuildingIDs:       sortedSetKeys(player.Research.UnlockedBuildings),
-			UnlockedRecipeIDs:         sortedSetKeys(player.Research.UnlockedRecipes),
+			Username:                         player.Username,
+			Resources:                        resourceMap(player.Resources),
+			TokensLeft:                       player.TokensLeft,
+			CapitalCityCoreHP:                player.CapitalCityCoreHP,
+			CurrentResearchProgress:          player.Research.CurrentTargetProgress(),
+			CurrentTargetTechnologyID:        player.Research.CurrentTargetTechnologyID,
+			CompletedTechnologyIDs:           player.Research.CompletedTechnologyIDs(),
+			ActiveTechnologyIDs:              player.Research.ActiveTechnologyIDs(),
+			PendingActivationTechnologyIDs:   player.Research.PendingActivationTechnologyIDs(),
+			SavedResearchProgress:            savedResearchProgress(player.Research),
+			UnlockedBuildingIDs:              sortedSetKeys(player.Research.UnlockedBuildings),
+			UnlockedRecipeIDs:                sortedSetKeys(player.Research.UnlockedRecipes),
+			InstitutionSlotCount:             player.Institutions.SlotCount,
+			InstitutionCandidatePolicyIDs:    player.Institutions.CandidateIDs(),
+			InstitutionActivePolicyIDs:       append([]string(nil), player.Institutions.ActivePolicyIDs...),
+			InstitutionPendingPolicyIDs:      append([]string(nil), player.Institutions.PendingPolicyIDs...),
+			InstitutionPendingActivationTurn: player.Institutions.PendingActivationTurn,
 		}
 	}
 
@@ -170,13 +186,15 @@ func formatPlayerSummary(players map[string]PlayerSummary) string {
 	for _, playerID := range ids {
 		player := players[playerID]
 		parts = append(parts, fmt.Sprintf(
-			"%s: resources={%s} tokens=%d city_core_hp=%d research_progress=%d target=%s",
+			"%s: resources={%s} tokens=%d city_core_hp=%d research_progress=%d target=%s active_techs=%v institutions=%v",
 			playerID,
 			formatResources(player.Resources),
 			player.TokensLeft,
 			player.CapitalCityCoreHP,
 			player.CurrentResearchProgress,
 			player.CurrentTargetTechnologyID,
+			player.ActiveTechnologyIDs,
+			player.InstitutionActivePolicyIDs,
 		))
 	}
 	return strings.Join(parts, " | ")
@@ -217,6 +235,18 @@ func resourceMap(bag domain.ResourceBag) map[string]int {
 	out := make(map[string]int, len(bag))
 	for key, amount := range bag {
 		out[string(key)] = amount
+	}
+	return out
+}
+
+func savedResearchProgress(research domain.ResearchState) map[string]int {
+	ids := research.StoredProgressTechnologyIDs()
+	if len(ids) == 0 {
+		return map[string]int{}
+	}
+	out := make(map[string]int, len(ids))
+	for _, technologyID := range ids {
+		out[technologyID] = research.ProgressForTechnology(technologyID)
 	}
 	return out
 }

@@ -34,7 +34,7 @@ func (e ResearchTargetChangedEvent) Apply(_ donburi.World, state *domain.GameSta
 	if !ok || playerState == nil {
 		return
 	}
-	playerState.Research.CurrentTargetTechnologyID = e.TechnologyID
+	playerState.Research.SetCurrentTarget(e.TechnologyID)
 }
 
 func (e ResearchTargetChangedEvent) Kind() string { return "research_target_changed" }
@@ -55,25 +55,10 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	if !ok {
 		return
 	}
-	// 这里只落正式状态：扣研究进度、写已解锁集合、同步 unlock 效果。
-	// 科技在 settlement 中完成，但这些解锁内容要到下一回合的指令阶段才会被使用。
-	playerState.Research.UnlockTechnology(e.TechnologyID)
+	playerState.Research.SetProgress(e.TechnologyID, technology.ResearchCost)
+	playerState.Research.MarkTechnologyCompleted(e.TechnologyID, state.Turn)
 	if playerState.Research.CurrentTargetTechnologyID == e.TechnologyID {
-		playerState.Research.CurrentTargetTechnologyID = ""
-	}
-	playerState.Research.CurrentProgress -= e.Cost
-	if playerState.Research.CurrentProgress < 0 {
-		playerState.Research.CurrentProgress = 0
-	}
-	resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
-	for _, buildingID := range resolved.UnlockBuildingIDs {
-		playerState.Research.UnlockBuilding(buildingID)
-	}
-	for _, recipeID := range resolved.UnlockRecipeIDs {
-		playerState.Research.UnlockRecipe(recipeID)
-	}
-	if cap := state.EffectiveResearchCap(e.PlayerID); playerState.Research.CurrentProgress > cap {
-		playerState.Research.CurrentProgress = cap
+		playerState.Research.SetCurrentTarget("")
 	}
 }
 
@@ -96,10 +81,15 @@ func (e ResearchProgressAppliedEvent) Apply(_ donburi.World, state *domain.GameS
 	if !ok || playerState == nil {
 		return
 	}
-	playerState.Research.CurrentProgress += e.Amount
-	if playerState.Research.CurrentProgress > state.EffectiveResearchCap(e.PlayerID) {
-		playerState.Research.CurrentProgress = state.EffectiveResearchCap(e.PlayerID)
+	technologyID := playerState.Research.CurrentTargetTechnologyID
+	if technologyID == "" {
+		return
 	}
+	progress := playerState.Research.ProgressForTechnology(technologyID) + e.Amount
+	if progress > state.EffectiveResearchCap(e.PlayerID) {
+		progress = state.EffectiveResearchCap(e.PlayerID)
+	}
+	playerState.Research.SetProgress(technologyID, progress)
 }
 
 func (e ResearchProgressAppliedEvent) Kind() string { return "technology_progressed" }

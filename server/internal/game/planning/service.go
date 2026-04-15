@@ -31,6 +31,7 @@ type Session interface {
 	IsDevMode() bool
 	QueueBuildOrder(order domain.BuildOrder)
 	QueueRecipeSelection(order domain.RecipeSelectionOrder)
+	SetInstitutionLoadout(playerID string, policyIDs []string)
 	SetMinisterDirective(playerID string, directive string)
 	SetWarDirectives(playerID string, directives []domain.WarZoneDirective)
 	SetUnitOrder(order gameorders.UnitOrder)
@@ -80,6 +81,9 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
 		_ = room.SendPlanningSnapshot(eventCtx, playerID)
 		return nil
+	case *pb.PlanningCommand_SetInstitutionLoadout:
+		msg := body.SetInstitutionLoadout
+		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, msg.GetPolicyIds())
 	case *pb.PlanningCommand_BuildStructure:
 		msg := body.BuildStructure
 		return s.handleBuildRequest(eventCtx, room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingTypeId(), msg.GetCityId())
@@ -184,22 +188,73 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_target"})
 		return nil
 	}
-	if playerState.Research.HasTechnology(technologyID) {
+	if playerState.Research.HasCompletedTechnology(technologyID) || playerState.Research.HasTechnology(technologyID) {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
 		return nil
 	}
 	for _, prereq := range tech.Prerequisites {
-		if prereq.Type != "technology_unlocked" {
-			continue
-		}
-		if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-			return nil
+		switch prereq.Type {
+		case "technology_unlocked":
+			if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
+				_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
+				return nil
+			}
+		case "policy_active":
+			if !state.IsPolicyActive(playerID, prereq.TargetID) {
+				_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
+				return nil
+			}
 		}
 	}
 
 	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
+	return nil
+}
+
+func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) error {
+	if playerState == nil {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, ErrorCode: "invalid_request"})
+		return nil
+	}
+	state := room.State()
+	normalized := domain.NormalizePolicyIDList(policyIDs)
+	if len(normalized) > playerState.Institutions.SlotCount {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+		return nil
+	}
+	for _, policyID := range normalized {
+		policy, ok := staticdata.Default().GetPolicy(policyID)
+		if !ok {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_target"})
+			return nil
+		}
+		if !strings.EqualFold(policy.Layer, "institutional") {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+			return nil
+		}
+		if !playerState.Institutions.HasCandidate(policyID) {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+			return nil
+		}
+		for _, prereq := range policy.Prerequisites {
+			switch prereq.Type {
+			case "technology_unlocked":
+				if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
+					_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+					return nil
+				}
+			case "policy_active":
+				if !state.IsPolicyActive(playerID, prereq.TargetID) {
+					_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+					return nil
+				}
+			}
+		}
+	}
+	room.SetInstitutionLoadout(playerID, normalized)
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: true, PolicyIds: normalized})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }

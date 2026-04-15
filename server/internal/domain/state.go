@@ -34,15 +34,16 @@ type TurnRuntime struct {
 }
 
 type PlanningInputs struct {
-	BuildOrders        []BuildOrder
-	RecipeSelections   []RecipeSelectionOrder
-	MinisterBuilds     []BuildOrder
-	MinisterMoves      []MoveOrder
-	MinisterDirectives map[string]string
-	PendingPolicies    map[string]Policy
-	PendingResearch    map[string]string
-	WarDirectives      map[string][]WarZoneDirective
-	UnitOrders         map[string]UnitDirective
+	BuildOrders         []BuildOrder
+	RecipeSelections    []RecipeSelectionOrder
+	MinisterBuilds      []BuildOrder
+	MinisterMoves       []MoveOrder
+	MinisterDirectives  map[string]string
+	PendingPolicies     map[string]Policy
+	PendingResearch     map[string]string
+	PendingInstitutions map[string][]string
+	WarDirectives       map[string][]WarZoneDirective
+	UnitOrders          map[string]UnitDirective
 }
 
 type ResolvingState struct {
@@ -78,6 +79,7 @@ type PlayerState struct {
 	CapitalCityID     string
 	Research          ResearchState
 	Policy            Policy
+	Institutions      InstitutionState
 	TokensLeft        int
 	CapitalCityCoreHP int
 	WarZones          []*WarZone
@@ -119,21 +121,33 @@ type ResearchState struct {
 	CurrentProgress           int
 	OutputPerTurn             int
 	ProgressCap               int
+	ProgressByTechnology      map[string]int
+	CompletedTechnologyTurns  map[string]int
+	ActiveTechnologyTurns     map[string]int
 	UnlockedTechnologies      map[string]struct{}
 	UnlockedBuildings         map[string]struct{}
 	UnlockedRecipes           map[string]struct{}
+	UnlockedPolicyCandidates  map[string]struct{}
 }
 
 func NewResearchState(starting int, income int, cap int) ResearchState {
-	return ResearchState{
+	state := ResearchState{
 		CurrentTargetTechnologyID: "",
 		CurrentProgress:           starting,
 		OutputPerTurn:             income,
 		ProgressCap:               cap,
+		ProgressByTechnology:      make(map[string]int),
+		CompletedTechnologyTurns:  make(map[string]int),
+		ActiveTechnologyTurns:     make(map[string]int),
 		UnlockedTechnologies:      make(map[string]struct{}),
 		UnlockedBuildings:         make(map[string]struct{}),
 		UnlockedRecipes:           make(map[string]struct{}),
+		UnlockedPolicyCandidates:  make(map[string]struct{}),
 	}
+	if starting > 0 {
+		state.ProgressByTechnology[""] = starting
+	}
+	return state
 }
 
 func (r *ResearchState) HasTechnology(id string) bool {
@@ -164,6 +178,9 @@ func (r *ResearchState) UnlockTechnology(id string) {
 	if r == nil || id == "" {
 		return
 	}
+	r.EnsureProgressMaps()
+	r.CompletedTechnologyTurns[id] = 0
+	r.ActiveTechnologyTurns[id] = 0
 	r.UnlockedTechnologies[id] = struct{}{}
 }
 
@@ -179,6 +196,29 @@ func (r *ResearchState) UnlockRecipe(id string) {
 		return
 	}
 	r.UnlockedRecipes[id] = struct{}{}
+}
+
+func (r *ResearchState) UnlockPolicyCandidate(id string) {
+	if r == nil || id == "" {
+		return
+	}
+	r.UnlockedPolicyCandidates[id] = struct{}{}
+}
+
+type InstitutionState struct {
+	SlotCount             int
+	CandidatePolicyIDs    map[string]struct{}
+	ActivePolicyIDs       []string
+	PendingPolicyIDs      []string
+	PendingActivationTurn int
+}
+
+func NewInstitutionState() InstitutionState {
+	return InstitutionState{
+		CandidatePolicyIDs: make(map[string]struct{}),
+		ActivePolicyIDs:    []string{},
+		PendingPolicyIDs:   []string{},
+	}
 }
 
 // ActiveModifierEffects 只读取“已正式解锁”的科技/政策修正。
@@ -207,6 +247,11 @@ func (s *GameState) ActiveModifierEffects(playerID string) []staticdata.Modifier
 	}
 	if playerState.Policy != "" {
 		if policy, ok := staticdata.Default().GetPolicy(string(playerState.Policy)); ok {
+			effects = append(effects, policy.ModifierEffects...)
+		}
+	}
+	for _, policyID := range playerState.Institutions.ActivePolicyIDs {
+		if policy, ok := staticdata.Default().GetPolicy(policyID); ok {
 			effects = append(effects, policy.ModifierEffects...)
 		}
 	}
@@ -368,6 +413,25 @@ func (s *GameState) IsRecipeUnlocked(playerID string, recipeID string) bool {
 	return playerState.Research.HasRecipe(recipeID)
 }
 
+func (s *GameState) IsPolicyActive(playerID string, policyID string) bool {
+	if s == nil || policyID == "" {
+		return false
+	}
+	playerState, ok := s.Players[playerID]
+	if !ok || playerState == nil {
+		return false
+	}
+	if string(playerState.Policy) == policyID {
+		return true
+	}
+	for _, activeID := range playerState.Institutions.ActivePolicyIDs {
+		if activeID == policyID {
+			return true
+		}
+	}
+	return false
+}
+
 type MoveOrder struct {
 	PlayerID string
 	UnitID   string
@@ -402,11 +466,12 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		NodeIndex: make(map[string]donburi.Entity),
 		TurnRuntime: TurnRuntime{
 			Planning: PlanningInputs{
-				MinisterDirectives: make(map[string]string),
-				PendingPolicies:    make(map[string]Policy),
-				PendingResearch:    make(map[string]string),
-				WarDirectives:      make(map[string][]WarZoneDirective),
-				UnitOrders:         make(map[string]UnitDirective),
+				MinisterDirectives:  make(map[string]string),
+				PendingPolicies:     make(map[string]Policy),
+				PendingResearch:     make(map[string]string),
+				PendingInstitutions: make(map[string][]string),
+				WarDirectives:       make(map[string][]WarZoneDirective),
+				UnitOrders:          make(map[string]UnitDirective),
 			},
 			Resolving: ResolvingState{
 				UnitOrders:    make(map[string]UnitResolutionOrder),
@@ -434,6 +499,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Resources:         NewResourceBag(),
 			Cities:            make(map[string]*CityState),
 			Research:          NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
+			Institutions:      NewInstitutionState(),
 			TokensLeft:        rules.TokensPerTurn,
 			CapitalCityCoreHP: rules.CityCoreMaxHP,
 			WarZones:          []*WarZone{},

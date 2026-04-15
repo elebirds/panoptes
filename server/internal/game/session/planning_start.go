@@ -26,6 +26,9 @@ func BuildPlanningStartMessage(state *domain.GameState, playerID string, phase s
 		Tokens:                 tokens,
 		Phase:                  phase,
 		ActiveNationalPolicyId: currentPolicy,
+		MyPlayer:               gamequery.BuildPlayerView(state, playerID),
+		Nodes:                  gamequery.BuildNodeViews(state, playerID),
+		Units:                  gamequery.BuildUnitViews(state),
 	}
 	snapshot := gamequery.BuildPlanningSnapshot(state, playerID)
 	snapshot.Phase = phase
