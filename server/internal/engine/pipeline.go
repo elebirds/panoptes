@@ -42,6 +42,7 @@ func NewEconomyPipeline() *Pipeline {
 	return NewPipeline(
 		&production.ResearchSystem{},
 		&production.BuildSystem{},
+		&production.TerritoryControlSystem{},
 		&production.RecipeSystem{},
 		&production.FlowSystem{},
 		&production.ProductionSystem{},
@@ -53,6 +54,7 @@ func NewEconomyPipeline() *Pipeline {
 func NewUnitResolutionPipeline() *Pipeline {
 	return NewPipeline(
 		combat.NewSingleStepResolver(),
+		&combat.SiegeSystem{},
 		&combat.CombatUpkeepSystem{},
 	)
 }

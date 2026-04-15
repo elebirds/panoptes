@@ -79,16 +79,33 @@ func (r *Runtime) Initialize() error {
 	r.spawnInitialBaseVehicles()
 	r.grantDevStartingResources()
 	r.initializeCastleStates()
+	return r.sendBootstrapMessages()
+}
 
-	for _, player := range r.players {
-		if player.IsBot() {
-			continue
-		}
-		r.sendStaticCatalogManifest(player)
-		r.sendGameInit(player)
+func (r *Runtime) InitializePrepared(state *domain.GameState) error {
+	if state == nil {
+		return fmt.Errorf("prepared state is nil")
+	}
+	if state.World == nil {
+		return fmt.Errorf("prepared state world is nil")
+	}
+	if state.Map == nil {
+		return fmt.Errorf("prepared state map is nil")
 	}
 
-	return nil
+	r.state = state
+	if r.state.GameID == "" {
+		r.state.GameID = r.ID
+	}
+	if r.state.NodeIndex == nil {
+		r.state.NodeIndex = make(map[string]donburi.Entity)
+	}
+	if r.state.Map != nil && r.state.Map.NodeIndex != nil && len(r.state.NodeIndex) == 0 {
+		for nodeID, entity := range r.state.Map.NodeIndex {
+			r.state.NodeIndex[nodeID] = entity
+		}
+	}
+	return r.sendBootstrapMessages()
 }
 
 func (r *Runtime) State() *domain.GameState {
@@ -324,4 +341,15 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 		},
 	}
 	_ = p.Send(context.Background(), msg)
+}
+
+func (r *Runtime) sendBootstrapMessages() error {
+	for _, player := range r.players {
+		if player.IsBot() {
+			continue
+		}
+		r.sendStaticCatalogManifest(player)
+		r.sendGameInit(player)
+	}
+	return nil
 }

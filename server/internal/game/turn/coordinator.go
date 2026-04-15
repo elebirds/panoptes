@@ -63,13 +63,12 @@ func (c *Coordinator) Start() {
 		if ctx.Err() != nil {
 			return
 		}
-		if c.ministerEngine != nil {
-			c.ministerEngine.GenerateReports(ctx, c.host)
-		}
-
 		c.planningService.Enter(c.host)
 		c.runtime.State().Phase = domain.PhasePlanning.String()
 		c.host.NotifyTurn(domain.PhasePlanning.String())
+		if c.ministerEngine != nil {
+			c.ministerEngine.GenerateReports(ctx, c.host)
+		}
 		c.waitAllSubmit(time.Duration(planningTimeoutSec) * time.Second)
 		c.runtime.State().Phase = domain.PhaseResolving.String()
 		c.host.RunTurnResolution()

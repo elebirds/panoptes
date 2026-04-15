@@ -41,6 +41,11 @@ type BuildingOperationComp struct {
 	BlockedReason    string
 }
 
+type BuildingStateComp struct {
+	Disabled       bool
+	DisabledReason string
+}
+
 type UnitStatsComp struct {
 	ID          string
 	Faction     string
@@ -89,6 +94,7 @@ var (
 	NodeC              = donburi.NewComponentType[NodeComp]()
 	BuildingC          = donburi.NewComponentType[BuildingComp]()
 	BuildingOperationC = donburi.NewComponentType[BuildingOperationComp]()
+	BuildingStateC     = donburi.NewComponentType[BuildingStateComp]()
 	UnitStatsC         = donburi.NewComponentType[UnitStatsComp]()
 	UnitCapabilitiesC  = donburi.NewComponentType[UnitCapabilitiesComp]()
 	MoveIntentC        = donburi.NewComponentType[MoveIntentComp]()

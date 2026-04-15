@@ -47,11 +47,25 @@ func (a *App) buildServer() *http.Server {
 	})
 	go wsHub.Run(context.Background())
 
+	var settlementRecorder *debug.SettlementRecorder
+	if a.cfg.DevMode {
+		settlementRecorder = debug.NewSettlementRecorder()
+		game.SetDebugHooks(game.DebugHooks{
+			DumpStateSummary: debug.DumpGameStateSummary,
+			RecordSettlement: settlementRecorder.RecordSettlement,
+			RecordGameOver:   settlementRecorder.RecordGameOver,
+		})
+	} else {
+		game.SetDebugHooks(game.DebugHooks{})
+	}
+
 	httpServer := httptransport.NewServer(
 		authSvc,
 		a.cfg.JWTSecret,
 		a.infra.pgDB,
 		a.infra.redisClient,
+		a.cfg.DevMode,
+		httptransport.NewDebugHandler(game.Registry, settlementRecorder),
 	)
 
 	mux := http.NewServeMux()
