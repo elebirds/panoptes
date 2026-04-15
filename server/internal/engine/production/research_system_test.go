@@ -12,6 +12,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine"
+	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
@@ -157,7 +158,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing.T) {
+func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
@@ -185,8 +186,11 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing
 	}
 
 	engine.NewEconomyPipeline().Run(world, state)
-	if got := state.Players["player-1"].Research.CurrentProgress; got != 4 {
-		t.Fatalf("research progress after next-turn modifier = %d, want 4", got)
+	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
+		t.Fatalf("research progress without active target = %d, want 1", got)
+	}
+	if got := state.EffectiveResearchOutput("player-1"); got != 3 {
+		t.Fatalf("research output preview after unlock = %d, want 3", got)
 	}
 }
 
@@ -214,6 +218,104 @@ func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
 	if got := state.Players["player-1"].Research.CurrentTargetTechnologyID; got != "" {
 		t.Fatalf("current target after unlock = %q, want empty", got)
 	}
+}
+
+func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "farm",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				PointCosts:    staticdata.PointAmounts{"industry_output": 1},
+				MaxHP:         80,
+				TakeoverMode:  "city_capture",
+			},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeB := ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"})
+	entryA := world.Entry(nodeA)
+	entryB := world.Entry(nodeB)
+	for _, entry := range []*donburi.Entry{entryA, entryB} {
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID: "default",
+		NodeIndex: map[string]donburi.Entity{
+			"A1": nodeA,
+			"A2": nodeB,
+		},
+	})
+	state.World = world
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
+		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
+		{PlayerID: "player-1", NodeID: "A2", BuildingType: "farm"},
+	}
+
+	events := engine.NewEconomyPipeline().Run(world, state)
+
+	if !entryA.HasComponent(ecs.BuildingC) {
+		t.Fatalf("first build should consume the only available industry budget")
+	}
+	if entryB.HasComponent(ecs.BuildingC) {
+		t.Fatalf("second build should not resolve once industry budget is exhausted")
+	}
+	if got := state.TurnRuntime.Resolving.PointBudgets["player-1"].Get(domain.PointIndustryOutput); got != 0 {
+		t.Fatalf("industry budget after resolving = %d, want 0", got)
+	}
+	if !hasEventKind(events, "point_budget_refreshed") {
+		t.Fatalf("events should include point_budget_refreshed: %#v", events)
+	}
+	if !hasEventKind(events, "point_spent") {
+		t.Fatalf("events should include point_spent: %#v", events)
+	}
+}
+
+func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "workshop",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				MaxHP:         80,
+				TakeoverMode:  "city_capture",
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "point.output", PointKey: "industry_output", ModifierType: "flat", Value: 1},
+				},
+			},
+		},
+	}))
+
+	world, state, nodeEntry := newOwnedNodeState()
+	ecs.CreateBuilding(world, "workshop", "player-1", "", nodeEntry)
+
+	if got := state.EffectiveIndustryOutput("player-1"); got != 3 {
+		t.Fatalf("industry output with building modifier = %d, want 3", got)
+	}
+}
+
+func hasEventKind(events []event.Event, kind string) bool {
+	for _, evt := range events {
+		if evt != nil && evt.Kind() == kind {
+			return true
+		}
+	}
+	return false
 }
 
 func newPipelineRules() staticdata.Rules {

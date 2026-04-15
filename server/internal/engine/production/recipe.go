@@ -18,8 +18,20 @@ type RecipeSystem struct{}
 
 func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
+	if state == nil {
+		return events
+	}
 	// 先结算“玩家这轮切了什么配方”，再按切换后的运行态推进生产。
-	applySelections(world, state, &events)
+	selectionOverrides := applySelections(world, state, &events)
+	simulatedResources := make(map[string]domain.ResourceBag, len(state.Players))
+	simulatedPoints := make(map[string]domain.PointBag, len(state.Players))
+	for playerID, playerState := range state.Players {
+		if playerState == nil {
+			continue
+		}
+		simulatedResources[playerID] = playerState.Resources.Clone()
+		simulatedPoints[playerID] = state.EnsurePointBudget(playerID).Clone()
+	}
 
 	ecs.NodesWithBuilding(world).Each(world, func(entry *donburi.Entry) {
 		if !entry.HasComponent(ecs.BuildingOperationC) {
@@ -30,50 +42,73 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		}
 		building := ecs.BuildingC.Get(entry)
 		operation := ecs.BuildingOperationC.Get(entry)
-		if operation.SelectedRecipeID == "" || !state.IsRecipeUnlocked(building.Owner, operation.SelectedRecipeID) {
+		selectedRecipeID := operation.SelectedRecipeID
+		requiredTurns := operation.RequiredTurns
+		if override, ok := selectionOverrides[ecs.NodeC.Get(entry).ID]; ok {
+			selectedRecipeID = override.RecipeID
+			requiredTurns = override.RequiredTurns
+		}
+		if selectedRecipeID == "" || !state.IsRecipeUnlocked(building.Owner, selectedRecipeID) {
 			return
 		}
 
-		recipe, ok := staticdata.Default().GetRecipe(operation.SelectedRecipeID)
+		recipe, ok := staticdata.Default().GetRecipe(selectedRecipeID)
 		if !ok {
 			return
 		}
 
-		cost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
+		resourceCost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
+		pointCost := state.ApplyPointModifiers(building.Owner, string(staticdata.ModifierTriggerRecipePointInput), recipe.ID, toPointBag(recipe.PointInputs))
 		requiredProgress := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
 		if requiredProgress <= 0 {
 			requiredProgress = 1
 		}
 		wasBlocked := operation.BlockedReason != ""
-		if !state.CanAffordResources(building.Owner, cost) {
+		blockedReason := ""
+		if !simulatedResources[building.Owner].CanAfford(resourceCost) {
+			blockedReason = "insufficient_resources"
+		} else if !simulatedPoints[building.Owner].CanAfford(pointCost) {
+			blockedReason = "insufficient_points"
+		}
+		if blockedReason != "" {
 			events = append(events, event.RecipeProgressedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				ProgressTurns: operation.ProgressTurns,
-				RequiredTurns: requiredProgress,
-				BlockedReason: "insufficient_resources",
+				RequiredTurns: max(requiredTurns, requiredProgress),
+				BlockedReason: blockedReason,
 			})
-			if !wasBlocked {
+			if !wasBlocked || operation.BlockedReason != blockedReason {
 				events = append(events, event.BuildingStatusChangedEvent{
 					NodeID: ecs.NodeC.Get(entry).ID,
 					Status: "blocked",
-					Reason: "insufficient_resources",
+					Reason: blockedReason,
 				})
 			}
 			return
 		}
 
+		for _, key := range pointCost.Keys() {
+			simulatedPoints[building.Owner].AddAmount(key, -pointCost.Get(key))
+			events = append(events, event.PointSpentEvent{
+				PlayerID: building.Owner,
+				Key:      key,
+				Amount:   pointCost.Get(key),
+				Reason:   "recipe_progress",
+			})
+		}
 		progressStep := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
 		if progressStep <= 0 {
 			progressStep = 1
 		}
 		progress := operation.ProgressTurns + progressStep
 		if progress >= requiredProgress {
+			simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceCost)
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				Owner:         building.Owner,
 				CityID:        building.CityID,
 				RequiredTurns: requiredProgress,
-				Cost:          cost,
+				Cost:          resourceCost,
 				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
 				Units:         append([]string(nil), recipe.Outputs.Units...),
 			})
@@ -98,9 +133,15 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 	return events
 }
 
-func applySelections(world donburi.World, state *domain.GameState, events *[]event.Event) {
+type recipeSelectionOverride struct {
+	RecipeID      string
+	RequiredTurns int
+}
+
+func applySelections(world donburi.World, state *domain.GameState, events *[]event.Event) map[string]recipeSelectionOverride {
+	overrides := make(map[string]recipeSelectionOverride)
 	if state == nil {
-		return
+		return overrides
 	}
 	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
 		if !state.IsRecipeUnlocked(selection.PlayerID, selection.RecipeID) {
@@ -122,6 +163,10 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 		if requiredTurns <= 0 {
 			requiredTurns = 1
 		}
+		overrides[selection.NodeID] = recipeSelectionOverride{
+			RecipeID:      selection.RecipeID,
+			RequiredTurns: requiredTurns,
+		}
 		*events = append(*events, event.RecipeSelectionChangedEvent{
 			NodeID: selection.NodeID, RecipeID: selection.RecipeID, RequiredTurns: requiredTurns,
 		})
@@ -130,4 +175,5 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 			Status: "active",
 		})
 	}
+	return overrides
 }

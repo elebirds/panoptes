@@ -50,6 +50,7 @@ type ResolvingState struct {
 	ActiveMarches map[string]ActiveMarch
 	PendingMoves  []PendingMove
 	Conflicts     []Conflict
+	PointBudgets  map[string]PointBag
 }
 
 type WarZoneDirective struct {
@@ -208,14 +209,35 @@ func (s *GameState) ActiveModifierEffects(playerID string) []staticdata.Modifier
 			effects = append(effects, policy.ModifierEffects...)
 		}
 	}
+	if s.World != nil {
+		nodeQuery.Each(s.World, func(entry *donburi.Entry) {
+			if entry == nil || !entry.HasComponent(BuildingC) {
+				return
+			}
+			building := BuildingC.Get(entry)
+			if building.Owner != playerID {
+				return
+			}
+			if entry.HasComponent(BuildingStateC) {
+				state := BuildingStateC.Get(entry)
+				if state.Disabled {
+					return
+				}
+			}
+			cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
+			if !ok || len(cfg.ModifierEffects) == 0 {
+				return
+			}
+			effects = append(effects, cfg.ModifierEffects...)
+		})
+	}
 	return effects
 }
 
-// ApplyFloatModifier 实现统一的 flat -> percent -> multiplier 聚合顺序。
+// ApplyFloatModifier 实现统一的 percent -> flat -> multiplier 聚合顺序。
 //
 // 所有 trigger/key 型修正都通过这里读时计算，而不是把最终值预写回 ECS 或静态表。
 func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID string, modifierKey string, base float64) float64 {
-	value := base
 	flat := 0.0
 	percent := 0.0
 	multiplier := 1.0
@@ -241,7 +263,7 @@ func (s *GameState) ApplyFloatModifier(playerID string, trigger string, targetID
 			multiplier *= effect.Value
 		}
 	}
-	value = (value + flat) * (1 + percent) * multiplier
+	value := ((base * (1 + percent)) + flat) * multiplier
 	if value < 0 {
 		value = 0
 	}
@@ -257,6 +279,17 @@ func (s *GameState) ApplyResourceModifiers(playerID string, trigger string, targ
 		return nil
 	}
 	out := NewResourceBag()
+	for _, key := range base.Keys() {
+		out.Set(key, s.ApplyScalarModifier(playerID, trigger, targetID, string(key), base.Get(key)))
+	}
+	return out
+}
+
+func (s *GameState) ApplyPointModifiers(playerID string, trigger string, targetID string, base PointBag) PointBag {
+	if base == nil {
+		return nil
+	}
+	out := NewPointBag()
 	for _, key := range base.Keys() {
 		out.Set(key, s.ApplyScalarModifier(playerID, trigger, targetID, string(key), base.Get(key)))
 	}
@@ -380,6 +413,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Resolving: ResolvingState{
 				UnitOrders:    make(map[string]UnitResolutionOrder),
 				ActiveMarches: make(map[string]ActiveMarch),
+				PointBudgets:  make(map[string]PointBag),
 			},
 		},
 	}
@@ -397,19 +431,16 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			username = usernames[idx]
 		}
 		state.Players[playerID] = &PlayerState{
-			PlayerID: playerID,
-			Username: username,
-			Resources: func() ResourceBag {
-				bag := NewResourceBag()
-				bag[ResourceIndustryOutput] = rules.BaseIndustryOutputPerTurn
-				return bag
-			}(),
+			PlayerID:          playerID,
+			Username:          username,
+			Resources:         NewResourceBag(),
 			Cities:            make(map[string]*CityState),
 			Research:          NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
 			TokensLeft:        rules.TokensPerTurn,
 			CapitalCityCoreHP: rules.CityCoreMaxHP,
 			WarZones:          []*WarZone{},
 		}
+		state.TurnRuntime.Resolving.PointBudgets[playerID] = NewPointBag()
 	}
 
 	return state

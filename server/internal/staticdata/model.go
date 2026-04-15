@@ -178,22 +178,24 @@ type PolicyDefinition struct {
 }
 
 type BuildingDefinition struct {
-	ID                   string          `json:"id"`
-	Name                 string          `json:"name"`
-	Description          string          `json:"description"`
-	IconKey              string          `json:"icon_key"`
-	PrefabKey            string          `json:"prefab_key"`
-	PlacementKind        string          `json:"placement_kind"`
-	BuildingScope        string          `json:"building_scope"`
-	RequiredResourceType string          `json:"required_resource_type"`
-	ResourceCosts        ResourceAmounts `json:"resource_costs"`
-	PointCosts           PointAmounts    `json:"point_costs"`
-	RecipeIDs            []string        `json:"recipe_ids"`
-	DefaultRecipeID      string          `json:"default_recipe_id"`
-	MaxHP                int             `json:"max_hp"`
-	TakeoverMode         string          `json:"takeover_mode"`
-	SortOrder            int             `json:"sort_order"`
-	Tags                 []string        `json:"tags,omitempty"`
+	ID                   string           `json:"id"`
+	Name                 string           `json:"name"`
+	Description          string           `json:"description"`
+	IconKey              string           `json:"icon_key"`
+	PrefabKey            string           `json:"prefab_key"`
+	PlacementKind        string           `json:"placement_kind"`
+	BuildingScope        string           `json:"building_scope"`
+	RequiredResourceType string           `json:"required_resource_type"`
+	ResourceCosts        ResourceAmounts  `json:"resource_costs"`
+	PointCosts           PointAmounts     `json:"point_costs"`
+	RecipeIDs            []string         `json:"recipe_ids"`
+	DefaultRecipeID      string           `json:"default_recipe_id"`
+	ExplicitEffects      []ExplicitEffect `json:"explicit_effects"`
+	ModifierEffects      []ModifierEffect `json:"modifier_effects"`
+	MaxHP                int              `json:"max_hp"`
+	TakeoverMode         string           `json:"takeover_mode"`
+	SortOrder            int              `json:"sort_order"`
+	Tags                 []string         `json:"tags,omitempty"`
 }
 
 type TerrainDefinition struct {

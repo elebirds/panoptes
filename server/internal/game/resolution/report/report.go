@@ -130,6 +130,35 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"count":     strconv.Itoa(e.Count),
 			},
 		}
+	case event.PointBudgetRefreshedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id": strings.TrimSpace(e.PlayerID),
+				"point_key": string(e.Key),
+				"amount":    strconv.Itoa(e.Amount),
+			},
+		}
+	case event.PointSpentEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id": strings.TrimSpace(e.PlayerID),
+				"point_key": string(e.Key),
+				"amount":    strconv.Itoa(e.Amount),
+				"reason":    strings.TrimSpace(e.Reason),
+			},
+		}
+	case event.BuildSkippedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id":     strings.TrimSpace(e.PlayerID),
+				"node_id":       strings.TrimSpace(e.NodeID),
+				"building_type": strings.TrimSpace(e.BuildingType),
+				"reason":        strings.TrimSpace(e.Reason),
+			},
+		}
 	case event.IndustryOutputRefreshedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -202,6 +231,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			Data: map[string]string{
 				"node_id":        strings.TrimSpace(e.NodeID),
 				"progress_turns": strconv.Itoa(e.ProgressTurns),
+				"required_turns": strconv.Itoa(e.RequiredTurns),
+				"blocked_reason": strings.TrimSpace(e.BlockedReason),
 			},
 		}
 	case event.RecipeDelayedEvent:

@@ -120,6 +120,26 @@ func TestResourceBagUtilityMethods(t *testing.T) {
 	}
 }
 
+func TestPointBagMethods(t *testing.T) {
+	bag := NewPointBag()
+	bag.Set(PointIndustryOutput, 3)
+	bag.AddAmount(PointResearchOutput, 2)
+	bag.AddAmount(PointResearchOutput, -1)
+
+	if got := bag.Get(PointIndustryOutput); got != 3 {
+		t.Fatalf("industry_output = %d, want 3", got)
+	}
+	if got := bag.Get(PointResearchOutput); got != 1 {
+		t.Fatalf("research_output = %d, want 1", got)
+	}
+	if !bag.CanAfford(PointBag{PointIndustryOutput: 2}) {
+		t.Fatalf("CanAfford() = false")
+	}
+	if bag.CanAfford(PointBag{PointIndustryOutput: 4}) {
+		t.Fatalf("CanAfford() = true for impossible point cost")
+	}
+}
+
 func TestResourceBagFromAmounts(t *testing.T) {
 	bag, err := ResourceBagFromAmounts(map[string]int{
 		"ore":  2,
@@ -187,8 +207,14 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	if player.Username != "alice" {
 		t.Fatalf("Username = %q", player.Username)
 	}
-	if player.Resources.Get(ResourceIndustryOutput) != 10 {
-		t.Fatalf("IndustryOutput = %d", player.Resources.Get(ResourceIndustryOutput))
+	if player.Resources.Get(ResourceIndustryOutput) != 0 {
+		t.Fatalf("IndustryOutput resource should be detached from ResourceBag, got %d", player.Resources.Get(ResourceIndustryOutput))
+	}
+	if state.TurnRuntime.Resolving.PointBudgets["player-1"].Get(PointIndustryOutput) != 0 {
+		t.Fatalf("industry point budget should start empty")
+	}
+	if state.TurnRuntime.Resolving.PointBudgets["player-1"].Get(PointResearchOutput) != 0 {
+		t.Fatalf("research point budget should start empty")
 	}
 	if player.TokensLeft != 3 {
 		t.Fatalf("TokensLeft = %d", player.TokensLeft)
