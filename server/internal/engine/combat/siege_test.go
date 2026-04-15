@@ -65,6 +65,8 @@ func TestCapitalDestroyedEndsGameImmediately(t *testing.T) {
 		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
 	})
 	state.World = world
+	state.EnsureCityState("player-1", "A1")
+	state.Players["player-1"].CapitalCityID = "A1"
 	state.Players["player-1"].CapitalCityCoreHP = 10
 
 	unitEntry := world.Entry(ecs.CreateUnit(world, "siege_engine", "player-2", domain.Position{X: 0, Y: 0}))
@@ -84,6 +86,94 @@ func TestCapitalDestroyedEndsGameImmediately(t *testing.T) {
 	}
 	if state.OverReason != "city_core_destroyed" {
 		t.Fatalf("over_reason = %q, want city_core_destroyed", state.OverReason)
+	}
+}
+
+func TestSiegeDamagesOrdinaryBuildingWithoutCapitalGameOver(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			CityCoreMaxHP:             10,
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "farm",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				MaxHP:         10,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "siege_engine",
+				Class:       "siege",
+				MaxHP:       20,
+				Attack:      10,
+				AttackRange: 1,
+				MoveRange:   1,
+				VisionRange: 2,
+				TrainCost:   staticdata.ResourceAmounts{},
+				Upkeep:      staticdata.ResourceAmounts{},
+				Flags: staticdata.UnitFlags{
+					CanSiege:        true,
+					SiegeMultiplier: 1,
+					CanCapture:      true,
+				},
+			},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{
+		ID:      "A1",
+		X:       0,
+		Y:       0,
+		Terrain: "plain",
+	})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+
+	state := domain.NewGameState("combat-siege-farm", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:        "combat-siege-farm",
+		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
+	})
+	state.World = world
+	state.Players["player-1"].CapitalCityID = "C1"
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityCoreHP = 10
+
+	unitEntry := world.Entry(ecs.CreateUnit(world, "siege_engine", "player-2", domain.Position{X: 0, Y: 0}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "siege-1"
+
+	events := (&SiegeSystem{}).Run(world, state)
+	if len(events) == 0 {
+		t.Fatalf("siege events should not be empty")
+	}
+	if _, ok := events[0].(event.BuildingDamagedEvent); !ok {
+		t.Fatalf("first siege event = %T, want BuildingDamagedEvent", events[0])
+	}
+	if len(events) < 2 {
+		t.Fatalf("siege events len = %d, want damage + ruin events", len(events))
+	}
+	if _, ok := events[1].(event.BuildingRuinedEvent); !ok {
+		t.Fatalf("second siege event = %T, want BuildingRuinedEvent", events[1])
+	}
+	applySiegeEvents(state, events)
+
+	if state.IsOver {
+		t.Fatalf("state.IsOver = true, want false")
+	}
+	if got := state.Players["player-1"].CapitalCityCoreHP; got != 10 {
+		t.Fatalf("capital city core hp = %d, want unchanged 10", got)
+	}
+	if status, _ := domain.BuildingLifecycleStateAtTurn(nodeEntry, state.Turn); status != domain.BuildingStatusRuined {
+		t.Fatalf("ordinary building status = %q, want ruined", status)
 	}
 }
 

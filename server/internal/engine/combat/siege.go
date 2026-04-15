@@ -52,10 +52,25 @@ func (s *SiegeSystem) Run(world donburi.World, state *domain.GameState) []event.
 		}
 		nextHP := maxInt(0, curHP-dmg)
 		hpAfter[buildingKey] = nextHP
-		events = append(events, event.CityCoreDamagedEvent{NodeID: node.ID, Damage: dmg, HPAfter: nextHP, AttackerID: unit.ID})
-		if nextHP <= 0 {
-			events = append(events, event.CityCoreDestroyedEvent{NodeID: node.ID, ConquerorFaction: unit.Faction})
-			return
+		if building.Type == domain.BuildingType("city_core") {
+			events = append(events, event.CityCoreDamagedEvent{NodeID: node.ID, Damage: dmg, HPAfter: nextHP, AttackerID: unit.ID})
+			if nextHP <= 0 && state != nil {
+				if ownerState, ok := state.Players[building.Owner]; ok && ownerState != nil {
+					if cityID := ecs.ResolveCityID(nodeEntry); cityID != "" && cityID == ownerState.CapitalCityID {
+						events = append(events, event.CityCoreDestroyedEvent{NodeID: node.ID, ConquerorFaction: unit.Faction})
+						return
+					}
+				}
+			}
+		} else {
+			events = append(events, event.BuildingDamagedEvent{NodeID: node.ID, Damage: dmg, HPAfter: nextHP})
+			if nextHP <= 0 {
+				events = append(events, event.BuildingRuinedEvent{
+					NodeID: node.ID,
+					Reason: "destroyed_in_siege",
+				})
+				return
+			}
 		}
 
 		counterDmg := building.Towers

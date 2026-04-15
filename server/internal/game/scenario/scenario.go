@@ -353,6 +353,14 @@ func OuterFacilityCapture() (*Definition, error) {
 		Rules:    baseRules(),
 		Buildings: []staticdata.BuildingDefinition{
 			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
 				ID:                   "farm",
 				PlacementKind:        "resource_node",
 				BuildingScope:        "out_of_city",
@@ -363,7 +371,11 @@ func OuterFacilityCapture() (*Definition, error) {
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
 			{ID: "farm_food", BuildingID: "farm", WorkAmount: 1, BaseProgress: 1},
+		},
+		Units: []staticdata.UnitDefinition{
+			infantryDefinition(),
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", Passable: true, Buildable: true},
@@ -379,6 +391,8 @@ func OuterFacilityCapture() (*Definition, error) {
 		return nil, fmt.Errorf("missing node B2")
 	}
 	ecs.CreateBuilding(state.World, "farm", "player-1", "A1", nodeEntry)
+	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 1, Y: 1}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 	return &Definition{
@@ -558,6 +572,7 @@ func expansionMap(id string) *staticdata.MapRuntimeBundle {
 }
 
 func contestedFacilityMap(id string) *staticdata.MapRuntimeBundle {
+	zero := 0
 	one := 1
 	return &staticdata.MapRuntimeBundle{
 		ID:     id,
@@ -569,9 +584,9 @@ func contestedFacilityMap(id string) *staticdata.MapRuntimeBundle {
 			{Slot: 1, X: 2, Y: 2},
 		},
 		Nodes: []staticdata.MapRuntimeNode{
-			{ID: "A1", X: 0, Y: 0, Terrain: "plain"},
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "city_core"},
 			{ID: "B2", X: 1, Y: 1, Terrain: "plain", IsResourcePoint: true, ResourceType: "food", TerritoryOwnerSlot: &one},
-			{ID: "C3", X: 2, Y: 2, Terrain: "plain"},
+			{ID: "C3", X: 2, Y: 2, Terrain: "plain", OwnerSlot: &one, TerritoryOwnerSlot: &one, BuildingType: "city_core"},
 		},
 		NamedNodes: map[string]string{
 			"B2": "争议农田",
@@ -634,5 +649,37 @@ func newState(gameID string, catalog *staticdata.Catalog, playerIDs []string, us
 	state := domain.NewGameState(gameID, playerIDs, usernames, mapData)
 	state.World = world
 	state.GameID = gameID
+	initializeScenarioCities(state)
 	return state, nil
+}
+
+func initializeScenarioCities(state *domain.GameState) {
+	if state == nil || state.World == nil {
+		return
+	}
+	ecs.NodesWithBuilding(state.World).Each(state.World, func(entry *donburi.Entry) {
+		if entry == nil || !entry.HasComponent(ecs.BuildingC) {
+			return
+		}
+		building := ecs.BuildingC.Get(entry)
+		if string(building.Type) != "city_core" || building.Owner == "" {
+			return
+		}
+		node := ecs.NodeC.Get(entry)
+		cityState := state.EnsureCityState(building.Owner, node.ID)
+		if cityState != nil {
+			cityState.OnlineOnTurn = 0
+		}
+		if state.Map == nil {
+			return
+		}
+		corePos := ecs.PositionC.Get(entry)
+		if spawnPos, ok := state.Map.PlayerSpawns[building.Owner]; ok && spawnPos.X == corePos.X && spawnPos.Y == corePos.Y {
+			playerState := state.Players[building.Owner]
+			if playerState != nil {
+				playerState.CapitalCityID = node.ID
+				playerState.CapitalCityCoreHP = building.HP
+			}
+		}
+	})
 }

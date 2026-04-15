@@ -94,7 +94,9 @@ func (e CityCoreDamagedEvent) Apply(world donburi.World, state *domain.GameState
 	building := ecs.BuildingC.Get(nodeEntry)
 	building.HP = e.HPAfter
 	if ownerState, ok := state.Players[building.Owner]; ok {
-		ownerState.CapitalCityCoreHP = e.HPAfter
+		if cityID := ecs.ResolveCityID(nodeEntry); cityID != "" && cityID == ownerState.CapitalCityID {
+			ownerState.CapitalCityCoreHP = e.HPAfter
+		}
 	}
 }
 
@@ -111,14 +113,20 @@ type CityCoreDestroyedEvent struct {
 
 func (e CityCoreDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
-	if ok {
-		node := ecs.NodeC.Get(nodeEntry)
-		node.Owner = e.ConquerorFaction
-		if nodeEntry.HasComponent(ecs.BuildingC) {
-			building := ecs.BuildingC.Get(nodeEntry)
-			building.Owner = e.ConquerorFaction
-		}
+	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
+		return
 	}
+	building := ecs.BuildingC.Get(nodeEntry)
+	ownerState, ok := state.Players[building.Owner]
+	if !ok || ownerState == nil {
+		return
+	}
+	if cityID := ecs.ResolveCityID(nodeEntry); cityID == "" || cityID != ownerState.CapitalCityID {
+		return
+	}
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = e.ConquerorFaction
+	building.Owner = e.ConquerorFaction
 	state.IsOver = true
 	state.WinnerID = e.ConquerorFaction
 	state.OverReason = "city_core_destroyed"

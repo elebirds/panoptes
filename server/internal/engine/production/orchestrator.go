@@ -41,7 +41,7 @@ func (r *EconomyRunner) Run(world donburi.World, state *domain.GameState) []even
 		}
 	}
 
-	applyNow((&TerritoryControlSystem{}).Run(world, state))
+	applyNow((&BuildingLifecycleSystem{}).Run(world, state))
 	applyNow(refreshPointBudgets(state))
 	applyNow(applyResearchProgress(state))
 
