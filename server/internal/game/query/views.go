@@ -52,8 +52,9 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		CapitalCityCoreMaxHp:   int32(staticdata.Default().Rules().CityCoreMaxHP),
 		WarZones:               warZones,
 		Research: &pb.ResearchStateView{
+			CurrentTargetTechnologyId: playerState.Research.CurrentTargetTechnologyID,
 			CurrentProgress:        int32(playerState.Research.CurrentProgress),
-			RequiredProgress:       int32(playerState.Research.ProgressCap),
+			RequiredProgress:       int32(researchRequiredProgress(playerState.Research)),
 			CompletedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
 		},
 	}
@@ -102,11 +103,17 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 	}
 	if entry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(entry)
+		baseProgress := 0
+		if recipeID := strings.TrimSpace(operation.SelectedRecipeID); recipeID != "" {
+			if recipe, ok := staticdata.Default().GetRecipe(recipeID); ok {
+				baseProgress = recipe.BaseProgress
+			}
+		}
 		view.Operation = &pb.BuildingOperationView{
 			SelectedRecipeId: operation.SelectedRecipeID,
 			CurrentProgress:  int32(operation.ProgressTurns),
 			RequiredProgress: int32(operation.RequiredTurns),
-			BaseProgress:     1,
+			BaseProgress:     int32(baseProgress),
 			BlockedReason:    operation.BlockedReason,
 		}
 	}
@@ -114,8 +121,24 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		building := ecs.BuildingC.Get(entry)
 		view.BuildingTypeId = string(building.Type)
 		view.BuildingHp = int32(building.HP)
-		view.BuildingStatus = "idle"
 		view.IsCityCore = strings.EqualFold(string(building.Type), "city_core")
+		view.CityId = strings.TrimSpace(building.CityID)
+		if view.IsCityCore {
+			view.CityId = node.ID
+		}
+		if cfg, ok := staticdata.Default().GetBuilding(string(building.Type)); ok {
+			switch strings.ToLower(strings.TrimSpace(cfg.BuildingScope)) {
+			case "city_core", "in_city":
+				view.ServiceCityId = view.CityId
+			default:
+				view.ServiceCityId = ""
+			}
+			if !strings.EqualFold(strings.TrimSpace(cfg.TakeoverMode), "disabled") {
+				view.TakeoverRequired = int32(staticdata.Default().Rules().FacilityTakeoverTurns)
+			}
+		}
+		view.TakeoverProgress = 0
+		view.BuildingStatus = resolveBuildingStatus(entry)
 	} else {
 		view.BuildingStatus = "empty"
 	}
@@ -177,4 +200,33 @@ func sortedUnlockedTechnologyIDs(research domain.ResearchState) []string {
 	}
 	sort.Strings(ids)
 	return ids
+}
+
+func researchRequiredProgress(research domain.ResearchState) int {
+	technologyID := strings.TrimSpace(research.CurrentTargetTechnologyID)
+	if technologyID == "" {
+		return 0
+	}
+	technology, ok := staticdata.Default().GetTechnology(technologyID)
+	if !ok {
+		return 0
+	}
+	return technology.ResearchCost
+}
+
+func resolveBuildingStatus(entry *donburi.Entry) string {
+	if entry == nil || !entry.HasComponent(ecs.BuildingC) {
+		return "empty"
+	}
+	if !entry.HasComponent(ecs.BuildingOperationC) {
+		return "idle"
+	}
+	operation := ecs.BuildingOperationC.Get(entry)
+	if strings.TrimSpace(operation.BlockedReason) != "" {
+		return "blocked"
+	}
+	if strings.TrimSpace(operation.SelectedRecipeID) != "" {
+		return "active"
+	}
+	return "idle"
 }

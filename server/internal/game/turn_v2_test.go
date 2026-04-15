@@ -12,12 +12,15 @@ import (
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	gameturn "github.com/elebirds/panoptes/internal/game/turn"
+	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -158,7 +161,12 @@ func TestGameRoomRejectsActionsOutsidePlanning(t *testing.T) {
 }
 
 func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T) {
-	t.Parallel()
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TokensPerTurn: 3, CityCoreMaxHP: 100, BaseResearchOutputPerTurn: 1, BaseIndustryOutputPerTurn: 2},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national"},
+		},
+	}))
 
 	tp := newStubTransport()
 	room := NewRoom("game-1", nil, tp, &config.Config{})
@@ -188,8 +196,12 @@ func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T)
 	if len(msgs) != 1 {
 		t.Fatalf("send count = %d, want 1", len(msgs))
 	}
-	if _, ok := msgs[0].(*pb.MsgTokenResult); !ok {
-		t.Fatalf("message type = %T, want MsgTokenResult", msgs[0])
+	result, ok := msgs[0].(*pb.MsgSetPolicyResult)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgSetPolicyResult", msgs[0])
+	}
+	if !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
+		t.Fatalf("policy result = %#v", result)
 	}
 
 	metas := tp.sentMeta["player-1"]
@@ -204,6 +216,163 @@ func TestHandleGameCommandPropagatesRequestMetaToOutboundResponses(t *testing.T)
 	}
 	if metas[0].GetTraceId() != "trace-456" {
 		t.Fatalf("trace_id = %q, want trace-456", metas[0].GetTraceId())
+	}
+}
+
+func TestHandleGameCommandSetResearchTargetUpdatesCurrentTargetImmediately(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TokensPerTurn: 3, CityCoreMaxHP: 100, BaseResearchOutputPerTurn: 1, BaseIndustryOutputPerTurn: 2},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
+		},
+	}))
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+
+	err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID: "player-1",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_Planning{
+			Planning: &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_SetResearchTarget{
+					SetResearchTarget: &pb.MsgSetResearchTarget{TechnologyId: "agrarian_foundations"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleGameCommand() error = %v", err)
+	}
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) != 1 {
+		t.Fatalf("send count = %d, want 1", len(msgs))
+	}
+	result, ok := msgs[0].(*pb.MsgResearchResult)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgResearchResult", msgs[0])
+	}
+	if !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
+		t.Fatalf("research result = %#v", result)
+	}
+
+	player := room.State().Players["player-1"]
+	if got := player.Research.CurrentTargetTechnologyID; got != "agrarian_foundations" {
+		t.Fatalf("current target = %q, want agrarian_foundations", got)
+	}
+	if got := len(room.State().TurnRuntime.Planning.ResearchOrders); got != 1 {
+		t.Fatalf("research order count = %d, want 1", got)
+	}
+	view := room.BuildNodeViewForPlayer("missing", "player-1")
+	if view != nil {
+		t.Fatalf("unexpected node view for missing node")
+	}
+	playerView := room.State().Players["player-1"]
+	if playerView == nil {
+		t.Fatalf("player state missing")
+	}
+	researchView := gamequery.BuildPlayerView(room.State(), "player-1").GetResearch()
+	if got := researchView.GetCurrentTargetTechnologyId(); got != "agrarian_foundations" {
+		t.Fatalf("research view current target = %q, want agrarian_foundations", got)
+	}
+	if got := researchView.GetRequiredProgress(); got != 4 {
+		t.Fatalf("research view required_progress = %d, want 4", got)
+	}
+}
+
+func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:              "farm",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "out_of_city",
+				ResourceCosts:   staticdata.ResourceAmounts{"wood": 1},
+				DefaultRecipeID: "farm_food",
+				MaxHP:           80,
+				TakeoverMode:    "delayed",
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 1, BaseProgress: 1},
+			{ID: "farm_food", BuildingID: "farm", WorkAmount: 1, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+	room.State().Players["player-1"].TokensLeft = 3
+	room.State().Players["player-1"].Research.UnlockBuilding("farm")
+
+	world := donburi.NewWorld()
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntry := world.Entry(cityEntity)
+	targetEntry := world.Entry(targetEntity)
+	for _, entry := range []*donburi.Entry{cityEntry, targetEntry} {
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
+	room.State().World = world
+	room.State().Map = &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"C1": cityEntity, "N1": targetEntity},
+	}
+	room.State().NodeIndex = room.State().Map.NodeIndex
+	room.State().EnsureCityState("player-1", "C1").Resources.Set(domain.ResourceWood, 2)
+	room.State().SyncPlayerResourcesFromCities("player-1")
+
+	err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID: "player-1",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_Planning{
+			Planning: &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_BuildStructure{
+					BuildStructure: &pb.MsgBuildStructure{NodeId: "N1", BuildingTypeId: "farm", CityId: "C1"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleGameCommand() error = %v", err)
+	}
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) == 0 {
+		t.Fatalf("send count = 0, want >= 1")
+	}
+	result, ok := msgs[0].(*pb.MsgBuildStructureResult)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgBuildStructureResult", msgs[0])
+	}
+	if !result.GetSuccess() || result.GetNodeId() != "N1" || result.GetBuildingTypeId() != "farm" || result.GetCityId() != "C1" {
+		t.Fatalf("build result = %#v", result)
 	}
 }
 

@@ -19,6 +19,8 @@ namespace Panoptes.Core.Application.Cache
 {
     public class GameStateCache : MonoBehaviour
     {
+        private const string IndustryOutputPointKey = "industry_output";
+
         public static GameStateCache Instance { get; private set; }
 
         public string GameID { get; private set; }
@@ -123,7 +125,7 @@ namespace Panoptes.Core.Application.Cache
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
-                Resources = SnapshotResources(MyPlayer?.Resources),
+                Resources = SnapshotResources(MyPlayer),
                 Delta = new ResourceDto()
             }, nameof(OnResourcesChanged));
             Fire(OnTokensChanged, new TokensChangedEvent
@@ -206,7 +208,7 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
-            var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
+            var resourcesBefore = SnapshotResources(MyPlayer);
             var myHpBefore = MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0;
             var enemyHpBefore = EnemyCityCoreHP;
             var oldUnits = CloneUnitMap(_units);
@@ -226,7 +228,7 @@ namespace Panoptes.Core.Application.Cache
             SeedCityResourcesFromCurrentState();
             SynchronizeCityCoreState();
 
-            var resourcesAfter = SnapshotResources(MyPlayer?.Resources);
+            var resourcesAfter = SnapshotResources(MyPlayer);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
                 Resources = resourcesAfter,
@@ -359,7 +361,31 @@ namespace Panoptes.Core.Application.Cache
 
         public ResourceDto GetMyResources()
         {
-            return SnapshotResources(MyPlayer?.Resources);
+            return SnapshotResources(MyPlayer);
+        }
+
+        public void UpdateActiveNationalPolicy(string nationalPolicyId)
+        {
+            if (MyPlayer == null)
+            {
+                return;
+            }
+
+            MyPlayer.ActiveNationalPolicyId = nationalPolicyId ?? string.Empty;
+            OnStateChanged?.Invoke();
+        }
+
+        public void UpdateResearchTarget(string technologyId, int requiredProgress)
+        {
+            if (MyPlayer == null)
+            {
+                return;
+            }
+
+            MyPlayer.Research ??= new ResearchStateView();
+            MyPlayer.Research.CurrentTargetTechnologyId = technologyId ?? string.Empty;
+            MyPlayer.Research.RequiredProgress = requiredProgress;
+            OnStateChanged?.Invoke();
         }
 
         public void UpsertRuntimeUnit(UnitDto unit)
@@ -564,7 +590,7 @@ namespace Panoptes.Core.Application.Cache
             for (var i = 0; i < ownedCityIds.Count; i++)
             {
                 _cityResources[ownedCityIds[i]] = i == 0
-                    ? SnapshotResources(MyPlayer?.Resources)
+                    ? SnapshotResources(MyPlayer)
                     : new ResourceDto();
             }
         }
@@ -719,11 +745,17 @@ namespace Panoptes.Core.Application.Cache
             };
         }
 
-        private static ResourceDto SnapshotResources(ResourceBag bag)
+        private static ResourceDto SnapshotResources(PlayerView player)
+        {
+            return SnapshotResources(player?.Resources, player?.Points);
+        }
+
+        private static ResourceDto SnapshotResources(ResourceBag bag, PointBag points)
         {
             var resources = new ResourceDto();
             if (bag == null || bag.Items == null)
             {
+                resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
                 return resources;
             }
 
@@ -746,12 +778,10 @@ namespace Panoptes.Core.Application.Cache
                     case ResourceKeys.ResourceFood:
                         resources.Food = item.Amount;
                         break;
-                    case ResourceKeys.ResourceIndustryOutput:
-                        resources.IndustryOutput = item.Amount;
-                        break;
                 }
             }
 
+            resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
             return resources;
         }
 
@@ -782,6 +812,30 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Empty;
+        }
+
+        private static int FindPointAmount(PointBag bag, string key)
+        {
+            if (bag == null || bag.Items == null || string.IsNullOrWhiteSpace(key))
+            {
+                return 0;
+            }
+
+            for (var i = 0; i < bag.Items.Count; i++)
+            {
+                var item = bag.Items[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return item.Amount;
+                }
+            }
+
+            return 0;
         }
     }
 }

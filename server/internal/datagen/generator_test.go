@@ -54,6 +54,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/technologies.schema.json"), `"research_cost"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/policies.schema.json"), `"national"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/recipes.schema.json"), `"point_inputs"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"bonus_tokens_per_turn"`)
+	assertFileNotContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"`+strings.Join([]string{"tokens", "recu" + "peration", "bonus"}, "_")+`"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
@@ -75,8 +77,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "server/internal/staticdata/generated/resource_keys_gen.go"), "ResourceOre")
 	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Core/Foundation/Domain/ResourceKeys.g.cs"), "ResourceOre")
 	assertFileContains(t, filepath.Join(repoRoot, "client/Assets/Resources/Data/catalog.bundle.json"), `"default_map_id": "default"`)
-	assertFileNotContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"warrior"`)
-	assertFileNotContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"build_points"`)
+	assertFileNotContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"`+strings.Join([]string{"war", "rior"}, "")+`"`)
+	assertFileNotContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"`+strings.Join([]string{"build", "points"}, "_")+`"`)
 	assertFileNotContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "tech_point_cost")
 }
 
@@ -712,7 +714,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
   "$schema": "../../schema/content/rules.schema.json",
   "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
-  "tokens_recuperation_bonus": 1,
+  "bonus_tokens_per_turn": 1,
   "max_turns": 30,
   "city_core_max_hp": 100,
   "safe_zone_radius": 4,

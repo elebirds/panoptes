@@ -116,7 +116,7 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
   "$schema": "../../schema/content/rules.schema.json",
   "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
-  "tokens_recuperation_bonus": 1,
+  "bonus_tokens_per_turn": 1,
   "max_turns": 30,
   "city_core_max_hp": 100,
   "safe_zone_radius": 4,

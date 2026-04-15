@@ -409,7 +409,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 				map[string]any{
 					"turn_time_limit_planning":      intSchema(map[string]any{"minimum": 1}),
 					"tokens_per_turn":               intSchema(map[string]any{"minimum": 0}),
-					"tokens_recuperation_bonus":     intSchema(map[string]any{"minimum": 0}),
+					"bonus_tokens_per_turn":         intSchema(map[string]any{"minimum": 0}),
 					"max_turns":                     intSchema(map[string]any{"minimum": 1}),
 					"city_core_max_hp":              intSchema(map[string]any{"minimum": 0}),
 					"safe_zone_radius":              intSchema(map[string]any{"minimum": 0}),
@@ -420,7 +420,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 					"initial_city_territory_radius": intSchema(map[string]any{"minimum": 0}),
 				},
 				[]string{
-					"turn_time_limit_planning", "tokens_per_turn", "tokens_recuperation_bonus",
+					"turn_time_limit_planning", "tokens_per_turn", "bonus_tokens_per_turn",
 					"max_turns", "city_core_max_hp", "safe_zone_radius", "facility_takeover_turns",
 					"base_research_output_per_turn", "base_industry_output_per_turn",
 					"minimum_city_distance", "initial_city_territory_radius",

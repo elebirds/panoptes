@@ -125,6 +125,7 @@ type RecipeSelectionOrder struct {
 }
 
 type ResearchState struct {
+	CurrentTargetTechnologyID string
 	CurrentProgress      int
 	OutputPerTurn        int
 	ProgressCap          int
@@ -135,6 +136,7 @@ type ResearchState struct {
 
 func NewResearchState(starting int, income int, cap int) ResearchState {
 	return ResearchState{
+		CurrentTargetTechnologyID: "",
 		CurrentProgress:      starting,
 		OutputPerTurn:        income,
 		ProgressCap:          cap,

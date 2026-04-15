@@ -68,11 +68,11 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 		ecs.NodeC.Get(entry).TerritoryOwner = territoryOwner
 		ecs.NodeC.Get(entry).HasRoad = node.HasRoad
 		if node.BuildingType != "" {
-			castleID := ""
+			cityID := ""
 			if node.BuildingType == "city_core" {
-				castleID = node.ID
+				cityID = node.ID
 			}
-			ecs.CreateBuilding(world, node.BuildingType, owner, castleID, entry)
+			ecs.CreateBuilding(world, node.BuildingType, owner, cityID, entry)
 			if node.BuildingHP > 0 {
 				building := ecs.BuildingC.Get(entry)
 				if node.BuildingHP < building.MaxHP {

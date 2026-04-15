@@ -216,7 +216,7 @@ type TerrainDefinition struct {
 type Rules struct {
 	TurnTimeLimitPlanning      int `json:"turn_time_limit_planning"`
 	TokensPerTurn              int `json:"tokens_per_turn"`
-	TokensRecuperationBonus    int `json:"tokens_recuperation_bonus"`
+	BonusTokensPerTurn         int `json:"bonus_tokens_per_turn"`
 	MaxTurns                   int `json:"max_turns"`
 	CityCoreMaxHP              int `json:"city_core_max_hp"`
 	SafeZoneRadius             int `json:"safe_zone_radius"`
