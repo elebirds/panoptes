@@ -40,6 +40,20 @@ func (e RecipeSelectionChangedEvent) String() string {
 	return fmt.Sprintf("RecipeSelectionChangedEvent node=%s recipe=%s", e.NodeID, e.RecipeID)
 }
 
+type BuildingStatusChangedEvent struct {
+	NodeID string
+	Status string
+	Reason string
+}
+
+func (e BuildingStatusChangedEvent) Apply(donburi.World, *domain.GameState) {}
+
+func (e BuildingStatusChangedEvent) Kind() string { return "building_status_changed" }
+
+func (e BuildingStatusChangedEvent) String() string {
+	return fmt.Sprintf("BuildingStatusChangedEvent node=%s status=%s reason=%s", e.NodeID, e.Status, e.Reason)
+}
+
 type RecipeDelayedEvent struct {
 	NodeID        string
 	DelayTurns    int

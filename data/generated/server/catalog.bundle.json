@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "6299794e61d1384cc2c18ce5b890e8a9b4bfbd7861812aced514ef89dfaa2bda"
+    "bundle_hash": "8af81ec21f69d5c83892298e34a9fc8dc68c9f0e3b2245a4eb317f361972e84a"
   },
   "resources": [
     {
@@ -577,7 +577,7 @@
   "rules": {
     "turn_time_limit_planning": 35,
     "tokens_per_turn": 3,
-    "tokens_recuperation_bonus": 1,
+    "bonus_tokens_per_turn": 1,
     "max_turns": 30,
     "city_core_max_hp": 100,
     "safe_zone_radius": 4,

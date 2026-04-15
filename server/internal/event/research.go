@@ -36,6 +36,9 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	// 这里只落正式状态：扣研究进度、写已解锁集合、同步 unlock 效果。
 	// 科技在 settlement 中完成，但这些解锁内容要到下一回合的指令阶段才会被使用。
 	playerState.Research.UnlockTechnology(e.TechnologyID)
+	if playerState.Research.CurrentTargetTechnologyID == e.TechnologyID {
+		playerState.Research.CurrentTargetTechnologyID = ""
+	}
 	playerState.Research.CurrentProgress -= e.Cost
 	if playerState.Research.CurrentProgress < 0 {
 		playerState.Research.CurrentProgress = 0

@@ -36,7 +36,9 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgResearchResult>("MsgResearchResult", OnResearchResult);
+            dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
             dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
+            dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
@@ -58,7 +60,9 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", OnResearchResult);
+            dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
             dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
+            dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
@@ -176,7 +180,32 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            var requiredProgress = 0;
+            if (StaticCatalogCache.EnsureInstance().TryGetTechnology(msg.TechnologyId, out var technology) && technology != null)
+            {
+                requiredProgress = technology.research_cost;
+            }
+
+            GameStateCache.Instance?.UpdateResearchTarget(msg.TechnologyId, requiredProgress);
             Debug.Log($"[Game] 研究目标已设置 tech={msg.TechnologyId}");
+        }
+
+        private static void OnSetPolicyResult(MsgSetPolicyResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, msg.NationalPolicyId);
+                Debug.LogWarning($"[Game] 国策设置失败 policy={msg.NationalPolicyId} error={msg.ErrorCode}");
+                return;
+            }
+
+            GameStateCache.Instance?.UpdateActiveNationalPolicy(msg.NationalPolicyId);
+            Debug.Log($"[Game] 国策已设置 policy={msg.NationalPolicyId}");
         }
 
         private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
@@ -194,6 +223,23 @@ namespace Panoptes.Core.Application.Handler
             }
 
             Debug.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
+        }
+
+        private static void OnBuildStructureResult(MsgBuildStructureResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, $"{msg.NodeId}:{msg.BuildingTypeId}:{msg.CityId}");
+                Debug.LogWarning($"[Game] 建筑建造失败 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} error={msg.ErrorCode}");
+                return;
+            }
+
+            Debug.Log($"[Game] 建筑建造已排队 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
         }
 
         private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)

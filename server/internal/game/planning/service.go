@@ -77,8 +77,17 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 	switch body := cmd.Body.(type) {
 	case *pb.PlanningCommand_SetPolicy:
 		msg := body.SetPolicy
-		playerState.Policy = domain.Policy(msg.GetNationalPolicyId())
-		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: true, Action: "set_policy", TokensLeft: int32(playerState.TokensLeft)})
+		policyID := strings.TrimSpace(msg.GetNationalPolicyId())
+		if policyID == "" {
+			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_request"})
+			return nil
+		}
+		if _, ok := staticdata.Default().GetPolicy(policyID); !ok {
+			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_target"})
+			return nil
+		}
+		playerState.Policy = domain.Policy(policyID)
+		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
 		return nil
 	case *pb.PlanningCommand_BuildStructure:
 		msg := body.BuildStructure
@@ -188,16 +197,6 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
 		return nil
 	}
-	for _, order := range state.TurnRuntime.Planning.ResearchOrders {
-		if order.PlayerID == playerID && order.TechnologyID == technologyID {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-			return nil
-		}
-	}
-	if playerState.Research.CurrentProgress < tech.ResearchCost {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "insufficient_resources"})
-		return nil
-	}
 	for _, prereq := range tech.Prerequisites {
 		if prereq.Type != "technology_unlocked" {
 			continue
@@ -208,7 +207,11 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 		}
 	}
 
-	room.QueueResearchOrder(domain.ResearchOrder{PlayerID: playerID, TechnologyID: technologyID})
+	playerState.Research.CurrentTargetTechnologyID = technologyID
+	state.TurnRuntime.Planning.ResearchOrders = replaceResearchOrdersForPlayer(
+		state.TurnRuntime.Planning.ResearchOrders,
+		domain.ResearchOrder{PlayerID: playerID, TechnologyID: technologyID},
+	)
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
 	return nil
 }
@@ -268,55 +271,67 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	cityID = strings.TrimSpace(cityID)
 
 	if playerState.TokensLeft <= 0 {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "no_tokens_left"})
 		return nil
 	}
 	nodeEntry, ok := room.NodeByID(nodeID)
 	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
 		return nil
 	}
 	if nodeEntry.HasComponent(ecs.BuildingC) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "building_exists"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "building_exists"})
 		return nil
 	}
 
 	cfg, ok := staticdata.Default().GetBuilding(buildingType)
 	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
 		return nil
 	}
 	if !room.State().IsBuildingUnlocked(playerID, buildingType) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
 	}
 	if cityID != "" {
 		if errCode := validateCityContext(room, playerID, cityID); errCode != "" {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: errCode})
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
 			return nil
 		}
 	}
 
 	nodeComp := ecs.NodeC.Get(nodeEntry)
 	if errCode := validateBuildPlacement(nodeComp, cfg, playerID); errCode != "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: errCode})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
 		return nil
 	}
 
 	cost, err := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
 	if err != nil {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
 	}
 	if !room.State().CanAffordFromCity(playerID, cityID, cost) && !room.IsDevMode() {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "insufficient_resources"})
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "insufficient_resources"})
 		return nil
 	}
 
 	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
 	playerState.TokensLeft--
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: true, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID})
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 	return nil
+}
+
+func replaceResearchOrdersForPlayer(existing []domain.ResearchOrder, replacement domain.ResearchOrder) []domain.ResearchOrder {
+	filtered := existing[:0]
+	for _, order := range existing {
+		if order.PlayerID == replacement.PlayerID {
+			continue
+		}
+		filtered = append(filtered, order)
+	}
+	return append(filtered, replacement)
 }
 
 func validateCityContext(room Session, playerID string, cityID string) string {

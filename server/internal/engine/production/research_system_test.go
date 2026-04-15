@@ -197,6 +197,35 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing
 	}
 }
 
+func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID:           "agrarian_foundations",
+				Branch:       "agriculture",
+				Tier:         1,
+				ResearchCost: 1,
+			},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.World = world
+	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
+	state.Players["player-1"].Research.CurrentProgress = 1
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
+		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
+	}
+
+	engine.NewEconomyPipeline().Run(world, state)
+
+	if got := state.Players["player-1"].Research.CurrentTargetTechnologyID; got != "" {
+		t.Fatalf("current target after unlock = %q, want empty", got)
+	}
+}
+
 func newPipelineRules() staticdata.Rules {
 	return staticdata.Rules{
 		TokensPerTurn:             3,

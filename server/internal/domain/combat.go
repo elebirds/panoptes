@@ -36,7 +36,7 @@ func (o UnitResolutionOrder) Normalized() UnitResolutionOrder {
 }
 
 // UnitCapabilities 使用能力组合而不是兵种继承。
-// 这样 V1 的 warrior/archer/cavalry/settler 与未来新增兵种都能复用同一套结算流程。
+// 这样当前的 infantry/ranged/cavalry/settler 与未来新增兵种都能复用同一套结算流程。
 type UnitCapabilities struct {
 	Civilian    bool
 	Melee       bool

@@ -64,6 +64,9 @@ func SettlementSections(unitEvents []event.Event, mapEvents []*pb.TurnEvent, eco
 func TurnEvents(events []event.Event) []*pb.TurnEvent {
 	out := make([]*pb.TurnEvent, 0, len(events))
 	for _, evt := range events {
+		if shouldSkipSettlementEvent(evt) {
+			continue
+		}
 		out = append(out, TurnEventFromEvent(evt))
 	}
 	return out
@@ -184,13 +187,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.RecipeSelectionChangedEvent:
-		return &pb.TurnEvent{
-			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id":   strings.TrimSpace(e.NodeID),
-				"recipe_id": strings.TrimSpace(e.RecipeID),
-			},
-		}
+		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	case event.RecipeProgressedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -214,6 +211,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			Data: map[string]string{
 				"node_id": strings.TrimSpace(e.NodeID),
 				"owner":   strings.TrimSpace(e.Owner),
+			},
+		}
+	case event.BuildingStatusChangedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"node_id": strings.TrimSpace(e.NodeID),
+				"status":  strings.TrimSpace(e.Status),
+				"reason":  strings.TrimSpace(e.Reason),
 			},
 		}
 	case event.MinisterActedEvent:
@@ -314,6 +320,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		Data: map[string]string{
 			"detail": evt.String(),
 		},
+	}
+}
+
+func shouldSkipSettlementEvent(evt event.Event) bool {
+	switch evt.(type) {
+	case event.RecipeSelectionChangedEvent:
+		return true
+	default:
+		return false
 	}
 }
 

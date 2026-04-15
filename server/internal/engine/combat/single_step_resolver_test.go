@@ -134,11 +134,11 @@ func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 
 func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 	state := newCombatTestState(t, 2)
-	warriorID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
+	infantryID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
 	settlerID := spawnTestUnit(state.World, "settler", "player-b", 1, 0)
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
-		warriorID: {PlayerID: "player-a", UnitID: warriorID, Action: domain.UnitResolutionActionAttack, TargetUnitID: settlerID},
+		infantryID: {PlayerID: "player-a", UnitID: infantryID, Action: domain.UnitResolutionActionAttack, TargetUnitID: settlerID},
 		settlerID: {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
 	}
 

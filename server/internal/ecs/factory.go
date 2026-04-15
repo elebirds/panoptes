@@ -164,13 +164,13 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {
 	switch buildingType {
 	case "city_core":
-		castleHP := 100
+		cityCoreHP := 100
 		if catalog := staticdata.Default(); catalog != nil {
-			castleHP = catalog.Rules().CityCoreMaxHP
+			cityCoreHP = catalog.Rules().CityCoreMaxHP
 		}
 		return staticdata.BuildingDefinition{
 			ID:    buildingType,
-			MaxHP: castleHP,
+			MaxHP: cityCoreHP,
 		}, true
 	default:
 		return staticdata.BuildingDefinition{}, false

@@ -14,6 +14,10 @@
       "minimum": 0,
       "type": "integer"
     },
+    "bonus_tokens_per_turn": {
+      "minimum": 0,
+      "type": "integer"
+    },
     "city_core_max_hp": {
       "minimum": 0,
       "type": "integer"
@@ -42,10 +46,6 @@
       "minimum": 0,
       "type": "integer"
     },
-    "tokens_recuperation_bonus": {
-      "minimum": 0,
-      "type": "integer"
-    },
     "turn_time_limit_planning": {
       "minimum": 1,
       "type": "integer"
@@ -54,7 +54,7 @@
   "required": [
     "turn_time_limit_planning",
     "tokens_per_turn",
-    "tokens_recuperation_bonus",
+    "bonus_tokens_per_turn",
     "max_turns",
     "city_core_max_hp",
     "safe_zone_radius",

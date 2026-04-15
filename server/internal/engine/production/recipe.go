@@ -41,6 +41,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if requiredProgress <= 0 {
 			requiredProgress = 1
 		}
+		wasBlocked := operation.BlockedReason != ""
 		if !state.CanAffordFromCity(building.Owner, building.CityID, cost) {
 			events = append(events, event.RecipeProgressedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
@@ -48,6 +49,13 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 				RequiredTurns: requiredProgress,
 				BlockedReason: "insufficient_resources",
 			})
+			if !wasBlocked {
+				events = append(events, event.BuildingStatusChangedEvent{
+					NodeID: ecs.NodeC.Get(entry).ID,
+					Status: "blocked",
+					Reason: "insufficient_resources",
+				})
+			}
 			return
 		}
 
@@ -66,12 +74,22 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
 				Units:         append([]string(nil), recipe.Outputs.Units...),
 			})
+			events = append(events, event.BuildingStatusChangedEvent{
+				NodeID: ecs.NodeC.Get(entry).ID,
+				Status: "idle",
+			})
 			return
 		}
 
 		events = append(events, event.RecipeProgressedEvent{
 			NodeID: ecs.NodeC.Get(entry).ID, ProgressTurns: progress, RequiredTurns: requiredProgress,
 		})
+		if wasBlocked {
+			events = append(events, event.BuildingStatusChangedEvent{
+				NodeID: ecs.NodeC.Get(entry).ID,
+				Status: "active",
+			})
+		}
 	})
 
 	return events
@@ -103,6 +121,10 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 		}
 		*events = append(*events, event.RecipeSelectionChangedEvent{
 			NodeID: selection.NodeID, RecipeID: selection.RecipeID, RequiredTurns: requiredTurns,
+		})
+		*events = append(*events, event.BuildingStatusChangedEvent{
+			NodeID: selection.NodeID,
+			Status: "active",
 		})
 	}
 }

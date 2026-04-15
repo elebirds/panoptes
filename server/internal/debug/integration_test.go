@@ -85,7 +85,7 @@ func TestRoundTrip(t *testing.T) {
 		Ministers: []staticdata.Minister{
 			{ID: "m1", Name: "军事部长", Role: "military", Ability: 7, Personality: "bold", PersonalityDesc: "果断", Loyalty: 6, Ambition: 5},
 			{ID: "m2", Name: "农业部长", Role: "agriculture", Ability: 6, Personality: "steady", PersonalityDesc: "稳健", Loyalty: 6, Ambition: 4},
-			{ID: "m3", Name: "外交部长", Role: "diplomacy", Ability: 6, Personality: "calm", PersonalityDesc: "谨慎", Loyalty: 6, Ambition: 5},
+			{ID: "m3", Name: "后勤部长", Role: "logistics", Ability: 6, Personality: "calm", PersonalityDesc: "谨慎", Loyalty: 6, Ambition: 5},
 		},
 	}, &staticdata.MapRuntimeBundle{
 		ID:     "default",
