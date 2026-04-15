@@ -45,6 +45,8 @@ func (e RecipeSelectionChangedEvent) Apply(world donburi.World, state *domain.Ga
 	ecs.BuildingOperationC.SetValue(entry, ecs.BuildingOperationComp{
 		SelectedRecipeID: e.RecipeID,
 		RequiredTurns:    e.RequiredTurns,
+		ConsumedResources: domain.NewResourceBag(),
+		ConsumedPoints:    domain.NewPointBag(),
 	})
 }
 
@@ -55,9 +57,10 @@ func (e RecipeSelectionChangedEvent) String() string {
 }
 
 type BuildingStatusChangedEvent struct {
-	NodeID string
-	Status string
-	Reason string
+	NodeID        string
+	Status        string
+	Reason        string
+	OnlineOnTurn  int
 }
 
 func (e BuildingStatusChangedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -65,12 +68,7 @@ func (e BuildingStatusChangedEvent) Apply(world donburi.World, state *domain.Gam
 	if !ok {
 		return
 	}
-	if !entry.HasComponent(ecs.BuildingStateC) {
-		entry.AddComponent(ecs.BuildingStateC)
-	}
-	current := ecs.BuildingStateC.Get(entry)
-	current.Status = e.Status
-	ecs.BuildingStateC.SetValue(entry, *current)
+	domain.SetBuildingLifecycleState(entry, e.Status, e.Reason, e.OnlineOnTurn)
 }
 
 func (e BuildingStatusChangedEvent) Kind() string { return "building_status_changed" }
@@ -110,6 +108,10 @@ type RecipeProgressedEvent struct {
 	ProgressTurns int
 	RequiredTurns int
 	BlockedReason string
+	ProgressRemainder int
+	ConsumedResources domain.ResourceBag
+	ConsumedPoints    domain.PointBag
+	ResourceDelta     domain.ResourceBag
 }
 
 func (e RecipeProgressedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -121,7 +123,17 @@ func (e RecipeProgressedEvent) Apply(world donburi.World, state *domain.GameStat
 	operation.ProgressTurns = e.ProgressTurns
 	operation.RequiredTurns = e.RequiredTurns
 	operation.BlockedReason = e.BlockedReason
+	operation.ProgressRemainder = e.ProgressRemainder
+	if e.ConsumedResources != nil {
+		operation.ConsumedResources = e.ConsumedResources.Clone()
+	}
+	if e.ConsumedPoints != nil {
+		operation.ConsumedPoints = e.ConsumedPoints.Clone()
+	}
 	ecs.BuildingOperationC.SetValue(entry, *operation)
+	if state != nil && e.ResourceDelta != nil && !e.ResourceDelta.IsZero() {
+		state.ConsumeResources(ecs.BuildingC.Get(entry).Owner, ecs.ResolveCityID(entry), e.ResourceDelta)
+	}
 }
 
 func (e RecipeProgressedEvent) Kind() string { return "recipe_progressed" }
@@ -148,11 +160,10 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 		operation.DelayTurns = 0
 		operation.RequiredTurns = e.RequiredTurns
 		operation.BlockedReason = ""
+		operation.ProgressRemainder = 0
+		operation.ConsumedResources = domain.NewResourceBag()
+		operation.ConsumedPoints = domain.NewPointBag()
 		ecs.BuildingOperationC.SetValue(entry, *operation)
-	}
-	// 配方完成时才统一扣输入、发输出，避免“进度走了一半先扣料”带来额外回滚问题。
-	if e.Cost != nil {
-		state.ConsumeResources(e.Owner, e.CityID, e.Cost)
 	}
 	state.AddResources(e.Owner, e.Resources)
 	if len(e.Units) == 0 || !ok {

@@ -145,10 +145,21 @@ func resolveGrantSpawnPosition(world donburi.World, state *domain.GameState, pla
 	if state == nil {
 		return domain.Position{}, false
 	}
-	if city := state.PrimaryCityState(playerID); city != nil && city.CoreNodeID != "" {
+	if city := state.PrimaryCityState(playerID); city != nil && city.CoreNodeID != "" && domain.IsCityOnline(state, city) {
 		if entry, ok := state.GetNode(city.CoreNodeID); ok {
 			pos := ecs.PositionC.Get(entry)
 			return domain.Position{X: pos.X, Y: pos.Y}, true
+		}
+	}
+	if playerState := state.Players[playerID]; playerState != nil {
+		for _, city := range playerState.Cities {
+			if city == nil || city.CoreNodeID == "" || !domain.IsCityOnline(state, city) {
+				continue
+			}
+			if entry, ok := state.GetNode(city.CoreNodeID); ok {
+				pos := ecs.PositionC.Get(entry)
+				return domain.Position{X: pos.X, Y: pos.Y}, true
+			}
 		}
 	}
 	if state.Map != nil {

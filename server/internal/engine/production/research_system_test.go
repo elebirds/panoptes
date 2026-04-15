@@ -59,7 +59,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	state.Players["player-1"].Research.CurrentProgress = 1
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
-		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
+		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm", CityID: "C1"},
 	}
 
 	engine.NewEconomyPipeline().Run(world, state)
@@ -99,7 +99,7 @@ func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	}))
 
 	world, state, nodeEntry := newOwnedNodeState()
-	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
 	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "farm_food",
 		RequiredTurns:    1,
@@ -241,34 +241,40 @@ func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	cityNode := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 1, Terrain: "plain"})
 	nodeB := ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"})
+	cityEntry := world.Entry(cityNode)
 	entryA := world.Entry(nodeA)
 	entryB := world.Entry(nodeB)
-	for _, entry := range []*donburi.Entry{entryA, entryB} {
+	for _, entry := range []*donburi.Entry{cityEntry, entryA, entryB} {
 		node := ecs.NodeC.Get(entry)
 		node.Owner = "player-1"
 		node.TerritoryOwner = "player-1"
 	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID: "default",
 		NodeIndex: map[string]donburi.Entity{
+			"C1": cityNode,
 			"A1": nodeA,
 			"A2": nodeB,
 		},
 	})
 	state.World = world
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
-		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
-		{PlayerID: "player-1", NodeID: "A2", BuildingType: "farm"},
+		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm", CityID: "C1"},
+		{PlayerID: "player-1", NodeID: "A2", BuildingType: "farm", CityID: "C1"},
 	}
 
 	events := engine.NewEconomyPipeline().Run(world, state)
 
 	if !entryA.HasComponent(ecs.BuildingC) {
-		t.Fatalf("first build should consume the only available industry budget")
+		t.Fatalf("first build should consume the only available industry budget: %#v", events)
 	}
 	if entryB.HasComponent(ecs.BuildingC) {
 		t.Fatalf("second build should not resolve once industry budget is exhausted")
@@ -327,7 +333,7 @@ func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	world, state, nodeEntry := newOwnedNodeState()
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
-		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
+		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm", CityID: "C1"},
 	}
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-2"
@@ -373,7 +379,7 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	}))
 
 	world, state, nodeEntry := newOwnedNodeState()
-	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
 	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "farm_food",
 		RequiredTurns:    1,
@@ -393,6 +399,229 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	}
 	if !hasEventWithReason(events, "recipe_skipped", "building_disabled") {
 		t.Fatalf("events should include recipe_skipped building_disabled: %#v", events)
+	}
+}
+
+func TestEconomyPipelineLowEfficiencyRecipeConsumesPartialInputAndProgress(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", PlacementKind: "city_territory", BuildingScope: "in_city", RecipeIDs: []string{"train_infantry"}, DefaultRecipeID: "train_infantry", MaxHP: 80, TakeoverMode: "city_capture"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{
+				ID:             "train_infantry",
+				BuildingID:     "barracks",
+				ResourceInputs: staticdata.ResourceAmounts{"food": 4},
+				WorkAmount:     4,
+				BaseProgress:   2,
+			},
+		},
+	}))
+
+	world, state, nodeEntry := newOwnedNodeState()
+	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+	state.Players["player-1"].Resources.Set(domain.ResourceFood, 2)
+	state.Players["player-1"].Research.UnlockBuilding("barracks")
+	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
+
+	events := engine.NewEconomyPipeline().Run(world, state)
+
+	operation := ecs.BuildingOperationC.Get(nodeEntry)
+	if got := operation.ProgressTurns; got != 1 {
+		t.Fatalf("progress turns = %d, want 1 after low-efficiency progress", got)
+	}
+	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 1 {
+		t.Fatalf("food after partial progress = %d, want 1", got)
+	}
+	if !hasEventKind(events, "recipe_progressed") {
+		t.Fatalf("events should include recipe_progressed: %#v", events)
+	}
+	if hasEventKind(events, "recipe_completed") {
+		t.Fatalf("events should not include recipe_completed: %#v", events)
+	}
+}
+
+func TestEffectiveIndustryOutputIgnoresPendingActivationUntilOnline(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "workshop",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				MaxHP:         80,
+				TakeoverMode:  "city_capture",
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "point.output", PointKey: "industry_output", ModifierType: "flat", Value: 1},
+				},
+			},
+		},
+	}))
+
+	world, state, nodeEntry := newOwnedNodeState()
+	ecs.CreateBuilding(world, "workshop", "player-1", "C1", nodeEntry)
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, "pending_activation", 2)
+
+	state.Turn = 1
+	if got := state.EffectiveIndustryOutput("player-1"); got != 2 {
+		t.Fatalf("industry output before online turn = %d, want 2", got)
+	}
+	state.Turn = 2
+	if got := state.EffectiveIndustryOutput("player-1"); got != 3 {
+		t.Fatalf("industry output after online turn = %d, want 3", got)
+	}
+}
+
+func TestEconomyPipelineCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture", Tags: []string{"production"}},
+			{ID: "wall", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture", Tags: []string{"defense"}},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 20, Attack: 6, AttackRange: 1, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{}
+	createNode := func(id string, x int, y int, owner string) *donburi.Entry {
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain"})
+		nodeIndex[id] = entity
+		entry := world.Entry(entity)
+		node := ecs.NodeC.Get(entry)
+		node.Owner = owner
+		node.TerritoryOwner = owner
+		return entry
+	}
+	capitalEntry := createNode("C1", 0, 0, "player-1")
+	cityEntry := createNode("C3", 2, 2, "player-1")
+	barracksEntry := createNode("C4", 3, 2, "player-1")
+	wallEntry := createNode("C2", 2, 1, "player-1")
+	enemyCapitalEntry := createNode("E5", 4, 4, "player-2")
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", capitalEntry)
+	ecs.CreateBuilding(world, "city_core", "player-1", "C3", cityEntry)
+	ecs.CreateBuilding(world, "barracks", "player-1", "C3", barracksEntry)
+	ecs.CreateBuilding(world, "wall", "player-1", "C3", wallEntry)
+	ecs.CreateBuilding(world, "city_core", "player-2", "E5", enemyCapitalEntry)
+	ecs.BuildingC.Get(cityEntry).HP = 0
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 2}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
+
+	state := domain.NewGameState("city-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:           "city-capture",
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
+		NodeIndex:    nodeIndex,
+	})
+	state.World = world
+	state.EnsureCityState("player-1", "C1")
+	state.EnsureCityState("player-1", "C3")
+	state.Players["player-1"].CapitalCityID = "C1"
+	state.EnsureCityState("player-2", "E5")
+	state.Players["player-2"].CapitalCityID = "E5"
+
+	events := engine.NewEconomyPipeline().Run(world, state)
+
+	if state.IsOver {
+		t.Fatalf("state.IsOver = true, want false")
+	}
+	if _, ok := state.Players["player-1"].Cities["C3"]; ok {
+		t.Fatalf("player-1 should no longer own city C3")
+	}
+	capturedCity := state.Players["player-2"].Cities["C3"]
+	if capturedCity == nil || capturedCity.OwnerID != "player-2" || capturedCity.OnlineOnTurn != state.Turn+1 {
+		t.Fatalf("captured city state = %#v, want transferred to player-2 and pending next turn", capturedCity)
+	}
+	if got := ecs.BuildingC.Get(cityEntry).Owner; got != "player-2" {
+		t.Fatalf("captured city core owner = %q, want player-2", got)
+	}
+	if got := ecs.BuildingC.Get(barracksEntry).Owner; got != "player-2" {
+		t.Fatalf("captured barracks owner = %q, want player-2", got)
+	}
+	if status, _ := domain.BuildingLifecycleStateAtTurn(wallEntry, state.Turn); status != domain.BuildingStatusRuined {
+		t.Fatalf("wall status = %q, want ruined", status)
+	}
+	if !hasEventKind(events, "city_captured") {
+		t.Fatalf("events should include city_captured: %#v", events)
+	}
+	if !hasEventKind(events, "building_ruined") {
+		t.Fatalf("events should include building_ruined for ruined defensive buildings: %#v", events)
+	}
+}
+
+func TestEconomyPipelineCompletesFacilityTakeoverAfterConsecutiveControl(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+			FacilityTakeoverTurns:     2,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 80, TakeoverMode: "delayed"},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 20, Attack: 6, AttackRange: 1, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{}
+	createNode := func(id string, x int, y int, owner string, resource bool) *donburi.Entry {
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
+		nodeIndex[id] = entity
+		entry := world.Entry(entity)
+		node := ecs.NodeC.Get(entry)
+		node.Owner = owner
+		node.TerritoryOwner = owner
+		return entry
+	}
+	player1Capital := createNode("C1", 0, 0, "player-1", false)
+	player2Capital := createNode("E5", 4, 4, "player-2", false)
+	farmEntry := createNode("B2", 1, 1, "player-1", true)
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", player1Capital)
+	ecs.CreateBuilding(world, "city_core", "player-2", "E5", player2Capital)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 1}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
+
+	state := domain.NewGameState("facility-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:           "facility-capture",
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
+		NodeIndex:    nodeIndex,
+	})
+	state.World = world
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
+	state.EnsureCityState("player-2", "E5")
+	state.Players["player-2"].CapitalCityID = "E5"
+
+	firstTurnEvents := engine.NewEconomyPipeline().Run(world, state)
+	if !hasEventKind(firstTurnEvents, "facility_takeover_progressed") {
+		t.Fatalf("first turn should include facility_takeover_progressed: %#v", firstTurnEvents)
+	}
+	if got := ecs.BuildingC.Get(farmEntry).Owner; got != "player-1" {
+		t.Fatalf("farm owner after first turn = %q, want player-1", got)
+	}
+	state.Turn++
+
+	secondTurnEvents := engine.NewEconomyPipeline().Run(world, state)
+	if !hasEventKind(secondTurnEvents, "facility_takeover_completed") {
+		t.Fatalf("second turn should include facility_takeover_completed: %#v", secondTurnEvents)
+	}
+	if got := ecs.BuildingC.Get(farmEntry).Owner; got != "player-2" {
+		t.Fatalf("farm owner after capture = %q, want player-2", got)
+	}
+	if got := ecs.ResolveServiceCityID(farmEntry); got != "E5" {
+		t.Fatalf("farm service city after capture = %q, want E5", got)
+	}
+	if status, _ := domain.BuildingLifecycleStateAtTurn(farmEntry, state.Turn); status != domain.BuildingStatusDisabled {
+		t.Fatalf("farm status on takeover completion turn = %q, want disabled", status)
 	}
 }
 
@@ -435,15 +664,22 @@ func newPipelineRules() staticdata.Rules {
 
 func newOwnedNodeState() (donburi.World, *domain.GameState, *donburi.Entry) {
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntry := world.Entry(cityEntity)
 	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
+	for _, entry := range []*donburi.Entry{cityEntry, nodeEntry} {
+		ecs.NodeC.Get(entry).Owner = "player-1"
+		ecs.NodeC.Get(entry).TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
+		NodeIndex: map[string]donburi.Entity{"C1": cityEntity, "A1": nodeEntity},
 	})
 	state.World = world
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
 	return world, state, nodeEntry
 }

@@ -34,13 +34,33 @@ func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
 	}
 }
 
+func TestTurnEventFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.BuildingBuiltEvent{
+		NodeID:       "A2",
+		BuildingType: "farm",
+		Owner:        "player-1",
+		CityID:       "A1",
+		OnlineOnTurn: 4,
+	})
+
+	if turnEvent.GetType() != "building_built" {
+		t.Fatalf("type = %q, want building_built", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["online_on_turn"]; got != "4" {
+		t.Fatalf("online_on_turn = %q, want 4", got)
+	}
+}
+
 func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
 	t.Parallel()
 
 	turnEvent := TurnEventFromEvent(event.BuildingStatusChangedEvent{
-		NodeID: "C2",
-		Status: "blocked",
-		Reason: "insufficient_resources",
+		NodeID:       "C2",
+		Status:       "blocked",
+		Reason:       "insufficient_resources",
+		OnlineOnTurn: 3,
 	})
 
 	if turnEvent.GetType() != "building_status_changed" {
@@ -54,6 +74,9 @@ func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
 	}
 	if got := turnEvent.GetData()["reason"]; got != "insufficient_resources" {
 		t.Fatalf("reason = %q, want insufficient_resources", got)
+	}
+	if got := turnEvent.GetData()["online_on_turn"]; got != "3" {
+		t.Fatalf("online_on_turn = %q, want 3", got)
 	}
 }
 
@@ -125,6 +148,64 @@ func TestTurnEventFromEventMapsRecipeSkippedEvent(t *testing.T) {
 	}
 	if got := turnEvent.GetData()["reason"]; got != "building_disabled" {
 		t.Fatalf("reason = %q, want building_disabled", got)
+	}
+}
+
+func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
+	t.Parallel()
+
+	captured := TurnEventFromEvent(event.CityCapturedEvent{
+		NodeID:       "C3",
+		CityID:       "C3",
+		OldOwnerID:   "player-1",
+		NewOwnerID:   "player-2",
+		OnlineOnTurn: 5,
+	})
+	if captured.GetType() != "city_captured" {
+		t.Fatalf("type = %q, want city_captured", captured.GetType())
+	}
+	if got := captured.GetData()["online_on_turn"]; got != "5" {
+		t.Fatalf("city_captured online_on_turn = %q, want 5", got)
+	}
+
+	progressed := TurnEventFromEvent(event.FacilityTakeoverProgressedEvent{
+		NodeID:             "B2",
+		ControllerPlayerID: "player-2",
+		Progress:           1,
+		Required:           2,
+		Status:             "takeover",
+		Reason:             "enemy_control",
+	})
+	if progressed.GetType() != "facility_takeover_progressed" {
+		t.Fatalf("type = %q, want facility_takeover_progressed", progressed.GetType())
+	}
+	if got := progressed.GetData()["status"]; got != "takeover" {
+		t.Fatalf("facility_takeover_progressed status = %q, want takeover", got)
+	}
+
+	completed := TurnEventFromEvent(event.FacilityTakeoverCompletedEvent{
+		NodeID:        "B2",
+		NewOwnerID:    "player-2",
+		ServiceCityID: "E5",
+		OnlineOnTurn:  6,
+	})
+	if completed.GetType() != "facility_takeover_completed" {
+		t.Fatalf("type = %q, want facility_takeover_completed", completed.GetType())
+	}
+	if got := completed.GetData()["online_on_turn"]; got != "6" {
+		t.Fatalf("facility_takeover_completed online_on_turn = %q, want 6", got)
+	}
+
+	ruined := TurnEventFromEvent(event.BuildingRuinedEvent{
+		NodeID:     "C2",
+		NewOwnerID: "player-2",
+		Reason:     "city_captured",
+	})
+	if ruined.GetType() != "building_ruined" {
+		t.Fatalf("type = %q, want building_ruined", ruined.GetType())
+	}
+	if got := ruined.GetData()["reason"]; got != "city_captured" {
+		t.Fatalf("building_ruined reason = %q, want city_captured", got)
 	}
 }
 
