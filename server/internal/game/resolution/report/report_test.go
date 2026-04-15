@@ -57,6 +57,25 @@ func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
 	}
 }
 
+func TestTurnEventFromEventMapsResearchTargetChangedEvent(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.ResearchTargetChangedEvent{
+		PlayerID:     "player-1",
+		TechnologyID: "agrarian_foundations",
+	})
+
+	if turnEvent.GetType() != "research_target_changed" {
+		t.Fatalf("type = %q, want research_target_changed", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["player_id"]; got != "player-1" {
+		t.Fatalf("player_id = %q, want player-1", got)
+	}
+	if got := turnEvent.GetData()["technology_id"]; got != "agrarian_foundations" {
+		t.Fatalf("technology_id = %q, want agrarian_foundations", got)
+	}
+}
+
 func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	t.Parallel()
 

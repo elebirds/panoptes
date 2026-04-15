@@ -65,7 +65,9 @@ func (c *Coordinator) Start() {
 		}
 		c.planningService.Enter(c.host)
 		c.runtime.State().Phase = domain.PhasePlanning.String()
-		c.host.NotifyTurn(domain.PhasePlanning.String())
+		if !c.runtime.ConsumeBootstrapPlanningStart() {
+			c.host.NotifyTurn(domain.PhasePlanning.String())
+		}
 		if c.ministerEngine != nil {
 			c.ministerEngine.GenerateReports(ctx, c.host)
 		}

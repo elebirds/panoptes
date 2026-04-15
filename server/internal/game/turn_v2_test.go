@@ -65,6 +65,7 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 	room.runtime.State().Turn = 7
 	room.runtime.State().Phase = domain.PhasePlanning.String()
+	room.runtime.State().Players["player-1"].TokensLeft = 1
 
 	player := NewHumanPlayer("player-1", "alice", tp)
 	player.NotifyTurn(context.Background(), room, domain.PhasePlanning.String())
@@ -78,7 +79,7 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	if !ok {
 		t.Fatalf("message type = %T, want MsgPlanningStart", msgs[0])
 	}
-	if start.GetTimeout() != 30 || start.GetTurn() != 7 || start.GetTokens() != 3 {
+	if start.GetTimeout() != 30 || start.GetTurn() != 7 || start.GetTokens() != 1 {
 		t.Fatalf("planning payload = %#v", start)
 	}
 	if start.GetPhase() != domain.PhasePlanning.String() {
@@ -411,6 +412,66 @@ func TestRunTurnResolutionLocksPendingPolicyAndResearchIntoActiveState(t *testin
 	}
 	if got := room.State().Players["player-1"].Research.CurrentTargetTechnologyID; got != "agrarian_foundations" {
 		t.Fatalf("current research target after lock-in = %q, want agrarian_foundations", got)
+	}
+}
+
+func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national"},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
+		},
+	}))
+
+	tp := newStubTransport()
+	player := NewHumanPlayer("player-1", "alice", tp)
+	room := NewRoom("game-1", []Player{player}, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player}, tp, &config.Config{})
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.runtime.SetState(domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{}))
+	room.State().Phase = domain.PhaseResolving.String()
+	room.State().TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
+	room.State().TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
+
+	room.RunTurnResolution()
+
+	msgs := tp.sent["player-1"]
+	if len(msgs) != 1 {
+		t.Fatalf("send count = %d, want 1 settlement", len(msgs))
+	}
+	settlement, ok := msgs[0].(*pb.MsgTurnSettlement)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgTurnSettlement", msgs[0])
+	}
+	if len(settlement.GetSections()) == 0 {
+		t.Fatalf("settlement sections empty")
+	}
+	var economy *pb.SettlementSection
+	for _, section := range settlement.GetSections() {
+		if section.GetSection() == "economy" {
+			economy = section
+			break
+		}
+	}
+	if economy == nil {
+		t.Fatalf("economy section missing: %#v", settlement.GetSections())
+	}
+	if len(economy.GetEvents()) < 2 {
+		t.Fatalf("economy events len = %d, want at least 2", len(economy.GetEvents()))
+	}
+	if got := economy.GetEvents()[0].GetType(); got != "national_policy_changed" {
+		t.Fatalf("economy first event = %q, want national_policy_changed", got)
+	}
+	if got := economy.GetEvents()[1].GetType(); got != "research_target_changed" {
+		t.Fatalf("economy second event = %q, want research_target_changed", got)
 	}
 }
 

@@ -39,6 +39,8 @@ type Runtime struct {
 	submitCh  chan string
 	cancelFn  context.CancelFunc
 	state     *domain.GameState
+
+	bootstrapPlanningStartSent bool
 }
 
 func NewRuntime(id string, players []Player, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -144,6 +146,14 @@ func (r *Runtime) PlayerIDs() []string {
 
 func (r *Runtime) PlayerCount() int {
 	return len(r.players)
+}
+
+func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
+	if r == nil || !r.bootstrapPlanningStartSent {
+		return false
+	}
+	r.bootstrapPlanningStartSent = false
+	return true
 }
 
 func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
@@ -320,12 +330,17 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 }
 
 func (r *Runtime) sendBootstrapMessages() error {
+	r.bootstrapPlanningStartSent = false
 	for _, player := range r.players {
 		if player.IsBot() {
 			continue
 		}
 		r.sendStaticCatalogManifest(player)
 		r.sendGameInit(player)
+		if msg := BuildPlanningStartMessage(r.state, player.PlayerID(), r.state.Phase); msg != nil {
+			_ = player.Send(context.Background(), msg)
+			r.bootstrapPlanningStartSent = true
+		}
 	}
 	return nil
 }
