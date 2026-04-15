@@ -231,7 +231,7 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            Debug.Log($"[Game] 建筑建造已排队 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
+            Debug.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
         }
 
         private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)

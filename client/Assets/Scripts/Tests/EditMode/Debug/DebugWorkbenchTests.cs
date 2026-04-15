@@ -163,6 +163,18 @@ namespace Panoptes.Tests.EditMode.Debug
         }
 
         [Test]
+        public void GameMessageHandler_ShouldDescribeBuildSuccessAsDraftRecorded_NotQueuedExecution()
+        {
+            Assert.That(File.Exists(_gameMessageHandlerPath), Is.True, "GameMessageHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_gameMessageHandlerPath);
+            StringAssert.Contains("建筑建造草案已记录", content,
+                "build success 文案应明确表示只是记录 planning 草案。");
+            Assert.That(content, Does.Not.Contain("建筑建造已排队"),
+                "build success 文案不应继续暗示 resolving 预算已经锁定。");
+        }
+
+        [Test]
         public void NetworkRuntime_ShouldNotExposeLegacySendRawPath()
         {
             Assert.That(File.Exists(_networkManagerPath), Is.True, "NetworkManager.cs 不存在。");
