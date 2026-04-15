@@ -673,6 +673,15 @@ namespace Panoptes.DebugTools
             }
             GUILayout.EndHorizontal();
 
+            DebugGuiUtil.Section("制度");
+            if (GUILayout.Button("装填学术特许", GUILayout.Height(28f)))
+            {
+                MessageSender.Send(new MsgSetInstitutionLoadout
+                {
+                    PolicyIds = { "academy_charter" }
+                });
+            }
+
             DebugGuiUtil.Section("令牌操作");
             GUILayout.Label("建造节点");
             _buildNodeId = GUILayout.TextField(_buildNodeId ?? string.Empty);
@@ -855,6 +864,12 @@ namespace Panoptes.DebugTools
                     "国策",
                     DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("war_preparedness")),
                     DebugActionCatalog.Action("设置恢复国策", () => GameIntents.SetPolicy("recovery"))),
+                DebugActionCatalog.Section(
+                    "制度",
+                    DebugActionCatalog.Action("装填学术特许", () => MessageSender.Send(new MsgSetInstitutionLoadout
+                    {
+                        PolicyIds = { "academy_charter" }
+                    }))),
                 DebugActionCatalog.Section(
                     "令牌高频操作",
                     DebugActionCatalog.Action("粮点建农场", () => GameIntents.BuildToken("res_food", "farm")),

@@ -40,6 +40,8 @@ namespace Panoptes.Core.Application.Cache
         public string SnapshotPhase { get; private set; } = string.Empty;
         public string PlannedResearchTargetTechnologyId { get; private set; } = string.Empty;
         public string PlannedNationalPolicyId { get; private set; } = string.Empty;
+        public IReadOnlyList<string> PlannedInstitutionPolicyIds => _plannedInstitutionPolicyIds;
+        private readonly List<string> _plannedInstitutionPolicyIds = new();
 
         public event Action PreviewChanged;
         public event Action OrdersChanged;
@@ -96,6 +98,7 @@ namespace Panoptes.Core.Application.Cache
             SnapshotPhase = msg != null ? (msg.Phase ?? string.Empty) : string.Empty;
             PlannedResearchTargetTechnologyId = msg != null ? (msg.PlannedResearchTargetTechnologyId ?? string.Empty) : string.Empty;
             PlannedNationalPolicyId = msg != null ? (msg.PlannedNationalPolicyId ?? string.Empty) : string.Empty;
+            _plannedInstitutionPolicyIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
             _recipeSelections.Clear();
@@ -188,6 +191,19 @@ namespace Panoptes.Core.Application.Cache
                     });
                 }
             }
+            if (msg != null && msg.PlannedInstitutionPolicyIds != null)
+            {
+                for (var i = 0; i < msg.PlannedInstitutionPolicyIds.Count; i++)
+                {
+                    var policyId = msg.PlannedInstitutionPolicyIds[i];
+                    if (string.IsNullOrWhiteSpace(policyId))
+                    {
+                        continue;
+                    }
+
+                    _plannedInstitutionPolicyIds.Add(policyId);
+                }
+            }
 
             OrdersChanged?.Invoke();
         }
@@ -243,6 +259,7 @@ namespace Panoptes.Core.Application.Cache
             SnapshotPhase = string.Empty;
             PlannedResearchTargetTechnologyId = string.Empty;
             PlannedNationalPolicyId = string.Empty;
+            _plannedInstitutionPolicyIds.Clear();
             _ordersByUnitId.Clear();
             _buildOrders.Clear();
             _recipeSelections.Clear();

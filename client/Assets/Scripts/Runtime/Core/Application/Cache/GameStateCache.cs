@@ -91,8 +91,8 @@ namespace Panoptes.Core.Application.Cache
             MapHeight = msg.MapHeight;
             IsGameOver = false;
 
-            ReplaceNodes(msg.Nodes);
-            ReplaceUnits(msg.Units, publishChanges: false);
+            ReplaceNodes(msg.Nodes, publishChanges: false, changeType: "init");
+            ReplaceUnits(msg.Units, publishChanges: false, changeType: "init");
             if (_nodes.Count > 0)
             {
                 var firstNodeId = _nodes.Values.FirstOrDefault()?.Id ?? string.Empty;
@@ -137,7 +137,8 @@ namespace Panoptes.Core.Application.Cache
             {
                 Added = _units.Values.Select(CloneUnitDto).ToList(),
                 RemovedIDs = new List<string>(),
-                Moved = new List<UnitDto>()
+                Moved = new List<UnitDto>(),
+                ChangeType = "init"
             }, nameof(OnUnitsChanged));
             foreach (var node in _nodes.Values)
             {
@@ -169,16 +170,8 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
-            Turn = msg.Turn;
-            Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
-            UpdateTokens(msg.Tokens);
-            var draftCache = PlanningDraftCache.EnsureInstance();
-            draftCache?.ClearAll();
-            if (msg.Snapshot != null)
-            {
-                draftCache?.ApplyPlanningSnapshot(msg.Snapshot);
-            }
-
+            ApplyPlanningStartActiveState(msg);
+            ApplyPlanningStartDraft(msg.Snapshot);
             PublishPhaseState(Turn, Phase, msg.Timeout, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
         }
@@ -216,8 +209,8 @@ namespace Panoptes.Core.Application.Cache
             Turn = msg.Turn > 0 ? msg.Turn : Turn;
             Phase = NormalizePhase(msg.Phase, GamePhases.Resolving);
 
-            ReplaceNodes(msg.Nodes);
-            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits);
+            ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "settlement");
+            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "settlement");
 
             if (msg.MyPlayerAfter != null)
             {
@@ -414,7 +407,49 @@ namespace Panoptes.Core.Application.Cache
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
         public void PublishGameError(GameErrorEvent evtArgs) => Fire(OnGameError, evtArgs, nameof(OnGameError));
 
-        private UnitsChangedEvent ReplaceUnits(System.Collections.Generic.IEnumerable<UnitView> units, bool publishChanges, IDictionary<string, UnitDto> previousUnits = null)
+        private void ApplyPlanningStartActiveState(MsgPlanningStart msg)
+        {
+            Turn = msg.Turn;
+            Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
+
+            var oldTokens = TokensLeft;
+            var oldUnits = CloneUnitMap(_units);
+
+            if (msg.MyPlayer != null)
+            {
+                MyPlayer = msg.MyPlayer.Clone();
+            }
+
+            ReplaceNodesByDiff(msg.Nodes, "planning_start");
+            ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "planning_start");
+
+            TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : msg.Tokens;
+            if (MyPlayer != null)
+            {
+                MyPlayer.TokensLeft = TokensLeft;
+            }
+
+            SeedCityResourcesFromCurrentState();
+            SynchronizeCityCoreState();
+
+            Fire(OnTokensChanged, new TokensChangedEvent
+            {
+                TokensLeft = TokensLeft,
+                Action = TokensLeft >= oldTokens ? "recharge" : "consume"
+            }, nameof(OnTokensChanged));
+        }
+
+        private static void ApplyPlanningStartDraft(MsgPlanningSnapshot snapshot)
+        {
+            var draftCache = PlanningDraftCache.EnsureInstance();
+            draftCache?.ClearAll();
+            if (snapshot != null)
+            {
+                draftCache?.ApplyPlanningSnapshot(snapshot);
+            }
+        }
+
+        private UnitsChangedEvent ReplaceUnits(System.Collections.Generic.IEnumerable<UnitView> units, bool publishChanges, IDictionary<string, UnitDto> previousUnits = null, string changeType = "")
         {
             previousUnits ??= CloneUnitMap(_units);
             var nextUnits = new Dictionary<string, UnitDto>();
@@ -467,7 +502,8 @@ namespace Panoptes.Core.Application.Cache
             {
                 Added = added,
                 RemovedIDs = removed,
-                Moved = moved
+                Moved = moved,
+                ChangeType = changeType ?? string.Empty
             };
 
             if (publishChanges)
@@ -478,7 +514,7 @@ namespace Panoptes.Core.Application.Cache
             return evt;
         }
 
-        private void ReplaceNodes(System.Collections.Generic.IEnumerable<NodeView> nodes)
+        private void ReplaceNodes(System.Collections.Generic.IEnumerable<NodeView> nodes, bool publishChanges, string changeType)
         {
             _nodes.Clear();
             if (nodes == null)
@@ -495,12 +531,52 @@ namespace Panoptes.Core.Application.Cache
 
                 var dto = NodeMapper.ToDto(node);
                 _nodes[node.Id] = dto;
-                Fire(OnNodeChanged, new NodeChangedEvent
+                if (publishChanges)
                 {
-                    NodeID = dto.Id,
-                    Node = dto,
-                    ChangeType = "settlement"
-                }, nameof(OnNodeChanged));
+                    Fire(OnNodeChanged, new NodeChangedEvent
+                    {
+                        NodeID = dto.Id,
+                        Node = CloneNodeDto(dto),
+                        ChangeType = changeType ?? string.Empty
+                    }, nameof(OnNodeChanged));
+                }
+            }
+        }
+
+        private void ReplaceNodesByDiff(System.Collections.Generic.IEnumerable<NodeView> nodes, string changeType)
+        {
+            var previousNodes = CloneNodeMap(_nodes);
+            var nextNodes = new Dictionary<string, NodeDto>();
+            if (nodes != null)
+            {
+                foreach (var node in nodes)
+                {
+                    if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                    {
+                        continue;
+                    }
+
+                    nextNodes[node.Id] = NodeMapper.ToDto(node);
+                }
+            }
+
+            _nodes.Clear();
+            foreach (var pair in nextNodes)
+            {
+                _nodes[pair.Key] = pair.Value;
+            }
+
+            foreach (var pair in nextNodes)
+            {
+                if (!previousNodes.TryGetValue(pair.Key, out var previous) || !NodeEquals(previous, pair.Value))
+                {
+                    Fire(OnNodeChanged, new NodeChangedEvent
+                    {
+                        NodeID = pair.Value.Id,
+                        Node = CloneNodeDto(pair.Value),
+                        ChangeType = changeType ?? string.Empty
+                    }, nameof(OnNodeChanged));
+                }
             }
         }
 
@@ -689,6 +765,85 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return clone;
+        }
+
+        private static IDictionary<string, NodeDto> CloneNodeMap(IDictionary<string, NodeDto> source)
+        {
+            var clone = new Dictionary<string, NodeDto>();
+            foreach (var pair in source)
+            {
+                clone[pair.Key] = CloneNodeDto(pair.Value);
+            }
+
+            return clone;
+        }
+
+        private static NodeDto CloneNodeDto(NodeDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new NodeDto
+            {
+                Id = source.Id,
+                X = source.X,
+                Y = source.Y,
+                Type = source.Type,
+                Owner = source.Owner,
+                TerritoryOwner = source.TerritoryOwner,
+                BuildingType = source.BuildingType,
+                BuildingHp = source.BuildingHp,
+                BuildingMaxHp = source.BuildingMaxHp,
+                BuildingStatus = source.BuildingStatus,
+                CityId = source.CityId,
+                ServiceCityId = source.ServiceCityId,
+                TakeoverProgress = source.TakeoverProgress,
+                TakeoverRequired = source.TakeoverRequired,
+                IsCityCore = source.IsCityCore,
+                IsVisible = source.IsVisible,
+                HasRoad = source.HasRoad,
+                Terrain = source.Terrain,
+                IsResourcePoint = source.IsResourcePoint,
+                ResourceType = source.ResourceType,
+                IsSafeZone = source.IsSafeZone
+            };
+        }
+
+        private static bool NodeEquals(NodeDto left, NodeDto right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left == null || right == null)
+            {
+                return false;
+            }
+
+            return string.Equals(left.Id, right.Id, StringComparison.Ordinal) &&
+                   left.X == right.X &&
+                   left.Y == right.Y &&
+                   string.Equals(left.Type, right.Type, StringComparison.Ordinal) &&
+                   string.Equals(left.Owner, right.Owner, StringComparison.Ordinal) &&
+                   string.Equals(left.TerritoryOwner, right.TerritoryOwner, StringComparison.Ordinal) &&
+                   string.Equals(left.BuildingType, right.BuildingType, StringComparison.Ordinal) &&
+                   left.BuildingHp == right.BuildingHp &&
+                   left.BuildingMaxHp == right.BuildingMaxHp &&
+                   string.Equals(left.BuildingStatus, right.BuildingStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.CityId, right.CityId, StringComparison.Ordinal) &&
+                   string.Equals(left.ServiceCityId, right.ServiceCityId, StringComparison.Ordinal) &&
+                   left.TakeoverProgress == right.TakeoverProgress &&
+                   left.TakeoverRequired == right.TakeoverRequired &&
+                   left.IsCityCore == right.IsCityCore &&
+                   left.IsVisible == right.IsVisible &&
+                   left.HasRoad == right.HasRoad &&
+                   string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
+                   left.IsResourcePoint == right.IsResourcePoint &&
+                   string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&
+                   left.IsSafeZone == right.IsSafeZone;
         }
 
         private static UnitDto CloneUnitDto(UnitDto source)

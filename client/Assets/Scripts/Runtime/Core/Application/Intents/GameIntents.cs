@@ -71,6 +71,31 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetPolicy");
         }
 
+        public static void SetInstitutionLoadout(params string[] policyIds)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgSetInstitutionLoadout();
+            if (policyIds != null)
+            {
+                for (var i = 0; i < policyIds.Length; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(policyIds[i]))
+                    {
+                        continue;
+                    }
+
+                    msg.PolicyIds.Add(policyIds[i]);
+                }
+            }
+
+            MessageSender.Send(msg);
+            Debug.Log("[GameIntents] SetInstitutionLoadout");
+        }
+
         public static void BuildToken(string nodeId, string buildingTypeId, string cityId = null)
         {
             if (ActionLock.IsLocked)
