@@ -151,6 +151,18 @@ namespace Panoptes.Tests.EditMode.Debug
         }
 
         [Test]
+        public void GameMessageHandler_ShouldNotTreatResearchOrPolicyResultsAsActiveStateWrites()
+        {
+            Assert.That(File.Exists(_gameMessageHandlerPath), Is.True, "GameMessageHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_gameMessageHandlerPath);
+            Assert.That(content, Does.Not.Contain("UpdateResearchTarget("),
+                "研究成功回执不应直接写 active cache。");
+            Assert.That(content, Does.Not.Contain("UpdateActiveNationalPolicy("),
+                "国策成功回执不应直接写 active cache。");
+        }
+
+        [Test]
         public void NetworkRuntime_ShouldNotExposeLegacySendRawPath()
         {
             Assert.That(File.Exists(_networkManagerPath), Is.True, "NetworkManager.cs 不存在。");

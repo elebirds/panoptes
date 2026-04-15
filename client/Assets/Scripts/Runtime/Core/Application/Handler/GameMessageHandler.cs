@@ -180,14 +180,7 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            var requiredProgress = 0;
-            if (StaticCatalogCache.EnsureInstance().TryGetTechnology(msg.TechnologyId, out var technology) && technology != null)
-            {
-                requiredProgress = technology.research_cost;
-            }
-
-            GameStateCache.Instance?.UpdateResearchTarget(msg.TechnologyId, requiredProgress);
-            Debug.Log($"[Game] 研究目标已设置 tech={msg.TechnologyId}");
+            Debug.Log($"[Game] 研究目标草案已接受 tech={msg.TechnologyId}");
         }
 
         private static void OnSetPolicyResult(MsgSetPolicyResult msg)
@@ -204,8 +197,7 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
-            GameStateCache.Instance?.UpdateActiveNationalPolicy(msg.NationalPolicyId);
-            Debug.Log($"[Game] 国策已设置 policy={msg.NationalPolicyId}");
+            Debug.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
         }
 
         private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
