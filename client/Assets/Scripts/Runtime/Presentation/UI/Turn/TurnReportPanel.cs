@@ -60,7 +60,7 @@ namespace Panoptes.Presentation.UI.Turn
                 $"建筑新增：{SafeCount(evt.BuiltNodeIDs)}\n" +
                 $"单位移动：{SafeCount(evt.MovedUnitIDs)}\n" +
                 $"单位损失：{SafeCount(evt.DeadUnitIDs)}\n" +
-                $"城堡受击：{(evt.CastleDamaged ? "是" : "否")}\n" +
+                $"城市核心受击：{(evt.CityCoreDamaged ? "是" : "否")}\n" +
                 $"下一阶段：{evt.Settlement?.NextPhase ?? string.Empty}";
         }
 

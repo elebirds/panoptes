@@ -1,8 +1,7 @@
 {
+  "$schema": "../../schema/ui/units.schema.json",
   "units": [
-    { "id": "settler", "name": "开拓者", "description": "平民单位，可用于建立据点。", "icon_key": "unit_settler", "prefab_key": "Settler", "sort_order": 10, "tags": ["civilian", "expansion"] },
-    { "id": "warrior", "name": "勇士", "description": "基础近战战斗单位。", "icon_key": "unit_warrior", "prefab_key": "Infantry", "sort_order": 11, "tags": ["frontline", "melee"] },
-    { "id": "archer", "name": "弓箭手", "description": "基础远程战斗单位。", "icon_key": "unit_archer", "prefab_key": "Archer", "sort_order": 12, "tags": ["ranged"] },
-    { "id": "cavalry", "name": "骑兵", "description": "高速机动单位，可执行冲锋。", "icon_key": "unit_cavalry", "prefab_key": "Cavalry", "sort_order": 13, "tags": ["flank", "charge"] }
+    { "id": "settler", "name": "开拓者", "description": "用于建立新城市。", "icon_key": "unit_settler", "prefab_key": "Settler", "sort_order": 10, "tags": ["civilian"] },
+    { "id": "infantry", "name": "步兵", "description": "基础近战战斗单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 20, "tags": ["frontline"] }
   ]
 }

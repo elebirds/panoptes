@@ -11,6 +11,12 @@ namespace Panoptes.Core.Domain
         public string BuildingType;
         public int BuildingHp;
         public int BuildingMaxHp;
+        public string BuildingStatus;
+        public string CityId;
+        public string ServiceCityId;
+        public int TakeoverProgress;
+        public int TakeoverRequired;
+        public bool IsCityCore;
         public bool IsVisible;
         public bool HasRoad;
         public string Terrain;

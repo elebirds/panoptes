@@ -1,25 +1,27 @@
 {
   "$defs": {
+    "point_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "industry_output": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "research_output": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "resource_amount": {
       "additionalProperties": false,
       "properties": {
-        "build_points": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "engineer_material": {
-          "minimum": 0,
-          "type": "integer"
-        },
         "food": {
           "minimum": 0,
           "type": "integer"
         },
         "ore": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "refined_ore": {
           "minimum": 0,
           "type": "integer"
         },
@@ -31,56 +33,24 @@
       "type": "object"
     }
   },
+  "$id": "content/buildings.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "buildings": {
       "items": {
         "additionalProperties": false,
         "properties": {
-          "build_cost": {
-            "$ref": "#/$defs/resource_amount"
-          },
-          "category": {
+          "building_scope": {
             "enum": [
-              "production",
-              "military_production",
-              "military"
+              "out_of_city",
+              "in_city",
+              "city_core"
             ],
             "type": "string"
-          },
-          "combat": {
-            "additionalProperties": false,
-            "properties": {
-              "attack_per_turn": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "max_hp": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "range": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "towers": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "wall_level": {
-                "minimum": 0,
-                "type": "integer"
-              }
-            },
-            "required": [
-              "max_hp",
-              "attack_per_turn",
-              "range",
-              "wall_level",
-              "towers"
-            ],
-            "type": "object"
           },
           "default_recipe_id": {
             "type": "string"
@@ -88,63 +58,20 @@
           "id": {
             "type": "string"
           },
-          "limits": {
-            "additionalProperties": false,
-            "properties": {
-              "max_per_node": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "max_per_player": {
-                "minimum": -1,
-                "type": "integer"
-              }
-            },
-            "required": [
-              "max_per_node",
-              "max_per_player"
-            ],
-            "type": "object"
+          "max_hp": {
+            "minimum": 0,
+            "type": "integer"
           },
-          "placement_rule": {
+          "placement_kind": {
             "enum": [
-              "resource_only",
-              "city_only"
+              "resource_node",
+              "city_territory",
+              "city_foundation_center"
             ],
             "type": "string"
           },
-          "produces_units": {
-            "items": {
-              "enum": [
-                "archer",
-                "cavalry",
-                "settler",
-                "warrior"
-              ],
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "production": {
-            "additionalProperties": false,
-            "properties": {
-              "cycle_turns": {
-                "minimum": 0,
-                "type": "integer"
-              },
-              "input": {
-                "$ref": "#/$defs/resource_amount"
-              },
-              "output": {
-                "$ref": "#/$defs/resource_amount"
-              }
-            },
-            "required": [
-              "input",
-              "output",
-              "cycle_turns"
-            ],
-            "type": "object"
+          "point_costs": {
+            "$ref": "#/$defs/point_amount"
           },
           "recipe_ids": {
             "items": {
@@ -154,31 +81,42 @@
           },
           "required_resource_type": {
             "enum": [
-              "build_points",
-              "engineer_material",
               "food",
               "ore",
-              "refined_ore",
               "wood",
               ""
             ],
             "type": "string"
           },
-          "upkeep": {
+          "resource_costs": {
             "$ref": "#/$defs/resource_amount"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "takeover_mode": {
+            "enum": [
+              "disabled",
+              "delayed",
+              "city_capture"
+            ],
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "category",
-          "placement_rule",
+          "placement_kind",
+          "building_scope",
           "required_resource_type",
-          "build_cost",
-          "upkeep",
+          "resource_costs",
+          "point_costs",
           "recipe_ids",
           "default_recipe_id",
-          "combat",
-          "limits"
+          "max_hp",
+          "takeover_mode"
         ],
         "type": "object"
       },

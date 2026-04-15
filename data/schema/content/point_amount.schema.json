@@ -1,0 +1,21 @@
+{
+  "$defs": {
+    "point_amount": {
+      "additionalProperties": false,
+      "properties": {
+        "industry_output": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "research_output": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "content/point_amount.schema.json",
+  "$ref": "#/$defs/point_amount",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

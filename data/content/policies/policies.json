@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/content/policies.schema.json",
+  "policies": [
+    {
+      "id": "expansion",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": []
+    },
+    {
+      "id": "war_preparedness",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": []
+    },
+    {
+      "id": "recovery",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": []
+    },
+    {
+      "id": "reorganization",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": []
+    }
+  ]
+}

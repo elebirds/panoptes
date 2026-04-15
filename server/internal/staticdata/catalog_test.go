@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14 18:45:09 +0800
+// Updated: 2026-04-15 12:00:00 +0800
 // Description: 验证静态目录模块的目录加载与查询。
 
 package staticdata_test
@@ -17,7 +17,7 @@ import (
 
 func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	repoRoot := t.TempDir()
-	datagenTestFixture(t, repoRoot)
+	writeCatalogFixture(t, repoRoot)
 
 	if err := datagen.Generate(datagen.Options{RepoRoot: repoRoot}); err != nil {
 		t.Fatalf("Generate() error = %v", err)
@@ -36,9 +36,17 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 		t.Fatalf("resource display_name = %q", resource.DisplayName)
 	}
 
-	unit, ok := catalog.GetUnit("warrior")
+	point, ok := catalog.GetPoint("research_output")
 	if !ok {
-		t.Fatalf("GetUnit(warrior) missing")
+		t.Fatalf("GetPoint(research_output) missing")
+	}
+	if point.DisplayName != "科研产出" {
+		t.Fatalf("point display_name = %q", point.DisplayName)
+	}
+
+	unit, ok := catalog.GetUnit("infantry")
+	if !ok {
+		t.Fatalf("GetUnit(infantry) missing")
 	}
 	if unit.TrainCost["ore"] != 1 || unit.TrainCost["food"] != 1 {
 		t.Fatalf("unit train_cost = %#v", unit.TrainCost)
@@ -48,24 +56,32 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	if !ok {
 		t.Fatalf("GetBuilding(farm) missing")
 	}
-	if building.DefaultRecipeID != "farm_food" {
-		t.Fatalf("building default recipe = %q", building.DefaultRecipeID)
+	if building.DefaultRecipeID != "farm_food" || building.TakeoverMode != "delayed" {
+		t.Fatalf("building = %#v", building)
 	}
 
-	technology, ok := catalog.GetTechnology("agri_unlock_farm")
+	technology, ok := catalog.GetTechnology("agrarian_foundations")
 	if !ok {
-		t.Fatalf("GetTechnology(agri_unlock_farm) missing")
+		t.Fatalf("GetTechnology(agrarian_foundations) missing")
 	}
-	if technology.TechPointCost != 1 || len(technology.Effects) != 2 {
+	if technology.ResearchCost != 1 || len(technology.ExplicitEffects) != 2 {
 		t.Fatalf("technology = %#v", technology)
+	}
+
+	policy, ok := catalog.GetPolicy("expansion")
+	if !ok {
+		t.Fatalf("GetPolicy(expansion) missing")
+	}
+	if policy.Layer != "national" {
+		t.Fatalf("policy = %#v", policy)
 	}
 
 	recipe, ok := catalog.GetRecipe("farm_food")
 	if !ok {
 		t.Fatalf("GetRecipe(farm_food) missing")
 	}
-	if recipe.Outputs.Resources["food"] != 2 {
-		t.Fatalf("recipe output = %#v", recipe.Outputs.Resources)
+	if recipe.Outputs.Resources["food"] != 2 || recipe.PointInputs["industry_output"] != 1 {
+		t.Fatalf("recipe = %#v", recipe)
 	}
 
 	terrain, ok := catalog.GetTerrain("forest")
@@ -77,7 +93,7 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 
 	rules := catalog.Rules()
-	if rules.CastleBaseHP != 100 || rules.BuildPointsPerTurn != 10 || rules.TechPointsPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
+	if rules.CityCoreMaxHP != 100 || rules.BaseIndustryOutputPerTurn != 2 || rules.BaseResearchOutputPerTurn != 1 || rules.TurnTimeLimitPlanning != 35 {
 		t.Fatalf("rules = %#v", rules)
 	}
 
@@ -102,41 +118,50 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 }
 
-func datagenTestFixture(t *testing.T, repoRoot string) {
+func writeCatalogFixture(t *testing.T, repoRoot string) {
 	t.Helper()
+
 	files := map[string]string{
 		"data/registry/manifest.json": `{
-  "schema_version": "2026-04-06",
-  "content_version": "2026-04-06.alpha",
+  "$schema": "../schema/registry/manifest.schema.json",
+  "schema_version": "2026-04-15",
+  "content_version": "2026-04-15.alpha",
   "default_locale": "zh-CN",
   "default_map_id": "default"
 }`,
 		"data/registry/resources.json": `{
+  "$schema": "../schema/registry/resources.schema.json",
   "resources": [
-    {
-      "key": "ore",
-      "display_name": "矿石",
-      "description": "基础矿物",
-      "icon_key": "resource_ore",
-      "sort_order": 10,
-      "proto_number": 1,
-      "visible_in_hud": true
-    },
-    {
-      "key": "food",
-      "display_name": "粮食",
-      "description": "基础粮食",
-      "icon_key": "resource_food",
-      "sort_order": 20,
-      "proto_number": 2,
-      "visible_in_hud": true
-    }
+    { "key": "ore", "display_name": "矿石", "description": "基础矿物", "icon_key": "resource_ore", "sort_order": 10, "proto_number": 1, "visible_in_hud": true },
+    { "key": "wood", "display_name": "木材", "description": "基础建设材料", "icon_key": "resource_wood", "sort_order": 20, "proto_number": 2, "visible_in_hud": true },
+    { "key": "food", "display_name": "粮食", "description": "补给与人口", "icon_key": "resource_food", "sort_order": 30, "proto_number": 3, "visible_in_hud": true }
+  ]
+}`,
+		"data/registry/points.json": `{
+  "$schema": "../schema/registry/points.schema.json",
+  "points": [
+    { "key": "research_output", "display_name": "科研产出", "description": "推进当前研究目标", "icon_key": "point_research_output", "sort_order": 10, "visible_in_hud": true },
+    { "key": "industry_output", "display_name": "工业产出", "description": "推进建设与生产", "icon_key": "point_industry_output", "sort_order": 20, "visible_in_hud": true }
   ]
 }`,
 		"data/content/units/units.json": `{
+  "$schema": "../../schema/content/units.schema.json",
   "units": [
     {
-      "id": "warrior",
+      "id": "settler",
+      "class": "civilian",
+      "max_hp": 12,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 2,
+      "vision_range": 2,
+      "train_cost": { "food": 2, "wood": 1 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true }
+    },
+    {
+      "id": "infantry",
       "class": "melee",
       "max_hp": 30,
       "attack": 10,
@@ -151,133 +176,82 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
   ]
 }`,
 		"data/content/buildings/buildings.json": `{
+  "$schema": "../../schema/content/buildings.schema.json",
   "buildings": [
-    {
-      "id": "farm",
-      "category": "production",
-      "placement_rule": "resource_only",
-      "required_resource_type": "food",
-      "build_cost": { "food": 1 },
-      "upkeep": {},
-      "recipe_ids": ["farm_food"],
-      "default_recipe_id": "farm_food",
-      "combat": { "max_hp": 80, "attack_per_turn": 0, "range": 0, "wall_level": 0, "towers": 0 },
-      "limits": { "max_per_node": 1, "max_per_player": -1 }
-    }
+    { "id": "city_core", "placement_kind": "city_foundation_center", "building_scope": "city_core", "required_resource_type": "", "resource_costs": { "wood": 2 }, "point_costs": { "industry_output": 1 }, "recipe_ids": ["city_core_settler"], "default_recipe_id": "city_core_settler", "max_hp": 100, "takeover_mode": "disabled", "tags": ["core"] },
+    { "id": "farm", "placement_kind": "resource_node", "building_scope": "out_of_city", "required_resource_type": "food", "resource_costs": { "wood": 1 }, "point_costs": { "industry_output": 1 }, "recipe_ids": ["farm_food"], "default_recipe_id": "farm_food", "max_hp": 80, "takeover_mode": "delayed", "tags": ["eco"] }
   ]
 }`,
 		"data/content/technologies/technologies.json": `{
+  "$schema": "../../schema/content/technologies.schema.json",
   "technologies": [
     {
-      "id": "agri_unlock_farm",
+      "id": "agrarian_foundations",
       "branch": "agriculture",
       "tier": 1,
-      "tech_point_cost": 1,
+      "research_cost": 1,
       "prerequisites": [],
-      "effects": [
+      "explicit_effects": [
         { "type": "unlock_building", "target_id": "farm" },
         { "type": "unlock_recipe", "target_id": "farm_food" }
-      ]
+      ],
+      "modifier_effects": []
     }
+  ]
+}`,
+		"data/content/policies/policies.json": `{
+  "$schema": "../../schema/content/policies.schema.json",
+  "policies": [
+    { "id": "expansion", "layer": "national", "activation_timing": "same_turn", "prerequisites": [], "explicit_effects": [], "modifier_effects": [] }
   ]
 }`,
 		"data/content/recipes/recipes.json": `{
+  "$schema": "../../schema/content/recipes.schema.json",
   "recipes": [
-    {
-      "id": "farm_food",
-      "building_id": "farm",
-      "cost": {},
-      "duration_turns": 1,
-      "delay_penalty": { "mode": "add_turns", "value": 1 },
-      "outputs": { "resources": { "food": 2 } }
-    }
+    { "id": "city_core_settler", "building_id": "city_core", "resource_inputs": { "food": 2, "wood": 1 }, "point_inputs": { "industry_output": 1 }, "work_amount": 2, "base_progress": 1, "outputs": { "units": ["settler"] } },
+    { "id": "farm_food", "building_id": "farm", "resource_inputs": {}, "point_inputs": { "industry_output": 1 }, "work_amount": 1, "base_progress": 1, "outputs": { "resources": { "food": 2 } } }
   ]
 }`,
 		"data/content/terrains/terrains.json": `{
+  "$schema": "../../schema/content/terrains.schema.json",
   "terrains": [
-    {
-      "id": "plain",
-      "move_cost_no_road": 2,
-      "defense_bonus": 0.0,
-      "attack_penalty": 0.0,
-      "blocks_cavalry": false,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": true
-    },
-    {
-      "id": "forest",
-      "move_cost_no_road": 3,
-      "defense_bonus": 0.2,
-      "attack_penalty": 0.0,
-      "blocks_cavalry": false,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": true
-    }
+    { "id": "plain", "move_cost_no_road": 2, "defense_bonus": 0.0, "attack_penalty": 0.0, "blocks_cavalry": false, "passable_with_road": false, "passable": true, "buildable": true },
+    { "id": "forest", "move_cost_no_road": 3, "defense_bonus": 0.2, "attack_penalty": 0.0, "blocks_cavalry": false, "passable_with_road": false, "passable": true, "buildable": true }
   ]
 }`,
 		"data/content/rules/rules.json": `{
+  "$schema": "../../schema/content/rules.schema.json",
   "turn_time_limit_planning": 35,
   "tokens_per_turn": 3,
-  "tokens_recuperation_bonus": 1,
+  "bonus_tokens_per_turn": 1,
   "max_turns": 30,
-  "castle_base_hp": 100,
+  "city_core_max_hp": 100,
   "safe_zone_radius": 4,
-  "occupy_turns": 1,
-  "starting_tech_points": 1,
-  "tech_points_per_turn": 1,
-  "tech_points_max": 5,
-  "build_points_per_turn": 10,
-  "build_points_max": 30
+  "facility_takeover_turns": 2,
+  "base_research_output_per_turn": 1,
+  "base_industry_output_per_turn": 2,
+  "minimum_city_distance": 3,
+  "initial_city_territory_radius": 1
 }`,
 		"data/content/ministers/ministers.json": `{
+  "$schema": "../../schema/content/ministers.schema.json",
   "pool": [
-    {
-      "id": "m001",
-      "name": "李猛",
-      "role": "military",
-      "ability": 8,
-      "personality": "aggressive",
-      "personality_desc": "果敢激进",
-      "loyalty": 7,
-      "ambition": 6
-    }
+    { "id": "m001", "name": "李猛", "role": "military", "ability": 8, "personality": "aggressive", "personality_desc": "果敢激进", "loyalty": 7, "ambition": 6 }
   ]
 }`,
 		"data/content/maps/default/definition.json": `{
-  "meta": {
-    "id": "default",
-    "name": "标准地图",
-    "width": 2,
-    "height": 2,
-    "default_terrain": "plain",
-    "tags": ["pvp"]
-  },
+  "$schema": "../../../schema/content/maps/definition.schema.json",
+  "meta": { "id": "default", "name": "标准地图", "width": 2, "height": 2, "default_terrain": "plain", "tags": ["pvp"] },
   "terrain_patches": [
-    {
-      "kind": "point",
-      "terrain": "forest",
-      "points": [{ "x": 1, "y": 0 }]
-    }
+    { "kind": "point", "terrain": "forest", "points": [{ "x": 1, "y": 0 }] }
   ],
   "node_overrides": [
-    {
-      "id": "B2",
-      "x": 1,
-      "y": 1,
-      "terrain": "forest",
-      "has_road": true
-    }
+    { "id": "B2", "x": 1, "y": 1, "terrain": "forest", "has_road": true, "building_type": "city_core", "building_hp": 100 }
   ],
   "features": {
-    "resource_points": [
-      { "x": 0, "y": 1, "resource_type": "food", "node_name": "粮仓" }
-    ],
-    "roads": [],
-    "named_nodes": [
-      { "x": 1, "y": 1, "name": "林地" }
-    ],
+    "resource_points": [{ "x": 0, "y": 1, "resource_type": "food", "node_name": "粮仓" }],
+    "roads": [{ "points": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }] }],
+    "named_nodes": [{ "x": 1, "y": 1, "name": "林地" }],
     "central_points": []
   },
   "spawn_points": [
@@ -285,21 +259,87 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
     { "slot": 1, "x": 1, "y": 1 }
   ]
 }`,
-		"data/ui/catalogs/resources.json":    `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
-		"data/ui/catalogs/units.json":        `{"units":[{"id":"warrior","name":"勇士","description":"基础近战战斗单位","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
-		"data/ui/catalogs/buildings.json":    `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
-		"data/ui/catalogs/technologies.json": `{"technologies":[{"id":"agri_unlock_farm","name":"开垦令","description":"解锁农场","icon_key":"tech_agri_unlock_farm","sort_order":10,"tags":["agriculture"]}]}`,
-		"data/ui/catalogs/recipes.json":      `{"recipes":[{"id":"farm_food","name":"基础农耕","description":"产出粮食","icon_key":"recipe_farm_food","sort_order":10,"tags":["food"]}]}`,
-		"data/ui/catalogs/terrains.json":     `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
-		"data/ui/catalogs/maps/default.json": `{"id":"default","name":"标准地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
+		"data/ui/catalogs/resources.json": `{
+  "$schema": "../../schema/ui/resources.schema.json",
+  "resources": [
+    { "id": "ore", "name": "矿石", "description": "基础矿物", "icon_key": "resource_ore", "sort_order": 10, "tags": ["base"] },
+    { "id": "wood", "name": "木材", "description": "基础建设材料", "icon_key": "resource_wood", "sort_order": 20, "tags": ["base"] },
+    { "id": "food", "name": "粮食", "description": "补给与人口", "icon_key": "resource_food", "sort_order": 30, "tags": ["base"] }
+  ]
+}`,
+		"data/ui/catalogs/points.json": `{
+  "$schema": "../../schema/ui/points.schema.json",
+  "points": [
+    { "id": "research_output", "name": "科研产出", "description": "推进当前研究目标", "icon_key": "point_research_output", "sort_order": 10, "tags": ["hud"] },
+    { "id": "industry_output", "name": "工业产出", "description": "推进建设与生产", "icon_key": "point_industry_output", "sort_order": 20, "tags": ["hud"] }
+  ]
+}`,
+		"data/ui/catalogs/units.json": `{
+  "$schema": "../../schema/ui/units.schema.json",
+  "units": [
+    { "id": "settler", "name": "开拓者", "description": "用于建立新城市。", "icon_key": "unit_settler", "prefab_key": "Settler", "sort_order": 10, "tags": ["civilian"] },
+    { "id": "infantry", "name": "步兵", "description": "基础近战战斗单位", "icon_key": "unit_infantry", "prefab_key": "Infantry", "sort_order": 20, "tags": ["frontline"] }
+  ]
+}`,
+		"data/ui/catalogs/buildings.json": `{
+  "$schema": "../../schema/ui/buildings.schema.json",
+  "buildings": [
+    { "id": "city_core", "name": "城市核心", "description": "定义城市存在与归属的核心建筑。", "icon_key": "building_city_core", "prefab_key": "CityCore", "sort_order": 10, "tags": ["core"] },
+    { "id": "farm", "name": "农场", "description": "基础粮食产出建筑", "icon_key": "building_farm", "prefab_key": "Farm", "sort_order": 20, "tags": ["eco"] }
+  ]
+}`,
+		"data/ui/catalogs/technologies.json": `{
+  "$schema": "../../schema/ui/technologies.schema.json",
+  "technologies": [
+    { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] }
+  ]
+}`,
+		"data/ui/catalogs/policies.json": `{
+  "$schema": "../../schema/ui/policies.schema.json",
+  "policies": [
+    { "id": "expansion", "name": "扩张", "description": "优先扩张国家边界。", "icon_key": "policy_expansion", "sort_order": 10, "tags": ["national"] }
+  ]
+}`,
+		"data/ui/catalogs/recipes.json": `{
+  "$schema": "../../schema/ui/recipes.schema.json",
+  "recipes": [
+    { "id": "city_core_settler", "name": "组织开拓", "description": "产出开拓者", "icon_key": "recipe_city_core_settler", "sort_order": 10, "tags": ["expansion"] },
+    { "id": "farm_food", "name": "基础农耕", "description": "产出粮食", "icon_key": "recipe_farm_food", "sort_order": 20, "tags": ["food"] }
+  ]
+}`,
+		"data/ui/catalogs/terrains.json": `{
+  "$schema": "../../schema/ui/terrains.schema.json",
+  "terrains": [
+    { "id": "plain", "name": "平原", "description": "标准地块", "icon_key": "terrain_plain", "material_key": "M_Plain", "sort_order": 10, "tags": ["ground"] },
+    { "id": "forest", "name": "森林", "description": "高防御地块", "icon_key": "terrain_forest", "material_key": "M_Forest", "sort_order": 20, "tags": ["ground"] }
+  ]
+}`,
+		"data/ui/catalogs/maps/default.json": `{
+  "$schema": "../../../schema/ui/maps/catalog.schema.json",
+  "id": "default",
+  "name": "标准地图",
+  "description": "默认对战地图",
+  "thumbnail_key": "map_default",
+  "legend": [
+    { "id": "road", "name": "道路", "icon_key": "marker_road" },
+    { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" }
+  ]
+}`,
 	}
+
 	for rel, content := range files {
-		path := filepath.Join(repoRoot, rel)
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatalf("MkdirAll(%q) error = %v", path, err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-			t.Fatalf("WriteFile(%q) error = %v", path, err)
-		}
+		writeCatalogFixtureFile(t, repoRoot, rel, content)
+	}
+}
+
+func writeCatalogFixtureFile(t *testing.T, repoRoot string, rel string, content string) {
+	t.Helper()
+
+	path := filepath.Join(repoRoot, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("MkdirAll(%q) error = %v", path, err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", path, err)
 	}
 }

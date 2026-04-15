@@ -1,0 +1,57 @@
+{
+  "$id": "registry/points.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "points": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "icon_key": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "sort_order": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "visible_in_hud": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "description",
+          "icon_key",
+          "sort_order",
+          "visible_in_hud"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "points"
+  ],
+  "type": "object"
+}

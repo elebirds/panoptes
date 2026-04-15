@@ -87,7 +87,7 @@ func TestCreateUnitAttachesAbilityComponents(t *testing.T) {
 func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "wall", Category: "military", Combat: staticdata.BuildingCombat{MaxHP: 50}},
+			{ID: "wall", MaxHP: 50},
 		},
 	}))
 
@@ -107,10 +107,10 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	}
 }
 
-func TestCreateBuildingStoresCastleID(t *testing.T) {
+func TestCreateBuildingStoresOriginCityID(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "farm", Category: "production", Combat: staticdata.BuildingCombat{MaxHP: 40}},
+			{ID: "farm", MaxHP: 40},
 		},
 	}))
 
@@ -118,9 +118,9 @@ func TestCreateBuildingStoresCastleID(t *testing.T) {
 	nodeEntity := CreateNode(world, MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 
-	building := world.Entry(CreateBuilding(world, "farm", "player-1", "castle-a", nodeEntry))
+	building := world.Entry(CreateBuilding(world, "farm", "player-1", "city-a", nodeEntry))
 	comp := donburi.Get[BuildingComp](building, BuildingC)
-	if comp.CastleID != "castle-a" {
-		t.Fatalf("castle id = %q", comp.CastleID)
+	if comp.CityID != "city-a" {
+		t.Fatalf("origin city id = %q", comp.CityID)
 	}
 }

@@ -1,39 +1,45 @@
 {
+  "$schema": "../../../schema/content/maps/definition.schema.json",
   "meta": {
     "id": "default",
-    "name": "中原",
-    "width": 20,
-    "height": 20,
+    "name": "标准地图",
+    "width": 2,
+    "height": 2,
     "default_terrain": "plain",
-    "tags": ["default", "pvp"]
+    "tags": ["pvp"]
   },
-  "terrain_patches": [],
+  "terrain_patches": [
+    {
+      "kind": "point",
+      "terrain": "forest",
+      "points": [{ "x": 1, "y": 0 }]
+    }
+  ],
   "node_overrides": [
     {
+      "id": "B2",
       "x": 1,
-      "y": 4,
-      "terrain": "mountain"
-    },
-    {
-      "x": 14,
-      "y": 7,
-      "terrain": "forest"
+      "y": 1,
+      "terrain": "forest",
+      "has_road": true,
+      "building_type": "city_core",
+      "building_hp": 100
     }
   ],
   "features": {
     "resource_points": [
-      { "x": 10, "y": 9, "resource_type": "food", "node_name": "龙脊" },
-      { "x": 1, "y": 4, "resource_type": "ore" },
-      { "x": 14, "y": 7, "resource_type": "wood" }
+      { "x": 0, "y": 1, "resource_type": "food", "node_name": "粮仓" }
     ],
-    "roads": [],
-    "named_nodes": [],
-    "central_points": [
-      { "x": 10, "y": 9 }
-    ]
+    "roads": [
+      { "points": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }] }
+    ],
+    "named_nodes": [
+      { "x": 1, "y": 1, "name": "林地" }
+    ],
+    "central_points": [{ "x": 1, "y": 1 }]
   },
   "spawn_points": [
-    { "slot": 0, "x": 2, "y": 10 },
-    { "slot": 1, "x": 17, "y": 10 }
+    { "slot": 0, "x": 0, "y": 0 },
+    { "slot": 1, "x": 1, "y": 1 }
   ]
 }

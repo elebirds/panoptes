@@ -15,7 +15,7 @@ func TestBuildingDeactivatedEventApplyMarksBuildingDisabled(t *testing.T) {
 	world := donburi.NewWorld()
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "farm", Category: "production", Combat: staticdata.BuildingCombat{MaxHP: 80}},
+			{ID: "farm", MaxHP: 80},
 		},
 	}))
 	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})

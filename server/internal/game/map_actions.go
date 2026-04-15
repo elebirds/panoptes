@@ -83,7 +83,7 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 		building := ecs.BuildingC.Get(entry)
 		buildingType := normalizeMapActionToken(string(building.Type))
 		nodeID := ecs.NodeC.Get(entry).ID
-		if nodeID == centerNodeID && buildingType == "castle" {
+		if nodeID == centerNodeID && buildingType == "city_core" {
 			continue
 		}
 		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "territory_blocked"}}, true
@@ -99,16 +99,17 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 		node.TerritoryOwner = order.PlayerID
 		node.Owner = order.PlayerID
 	}
-	setBuildingOnNode(centerEntry, "castle", order.PlayerID, centerNodeID)
+	setBuildingOnNode(centerEntry, "city_core", order.PlayerID, centerNodeID)
 	setBuildingOnNode(barracksEntry, "barracks", order.PlayerID, centerNodeID)
-	state.EnsureCastleState(order.PlayerID, centerNodeID)
+	state.EnsureCityState(order.PlayerID, centerNodeID)
 	state.World.Remove(unitEntry.Entity())
 
 	return &pb.TurnEvent{
-		Type: "settle_city",
+		Type: "city_founded",
 		Data: map[string]string{
 			"player_id":        order.PlayerID,
 			"unit_id":          order.UnitID,
+			"city_id":          centerNodeID,
 			"center_node_id":   centerNodeID,
 			"barracks_node_id": barracksNodeID,
 			"updated_nodes":    strings.Join(footprintIDs, ","),
@@ -174,7 +175,7 @@ func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.En
 	return nil, ""
 }
 
-func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, castleID string) {
+func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, cityID string) {
 	if nodeEntry == nil {
 		return
 	}
@@ -185,7 +186,7 @@ func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, cas
 		MaxHP:     maxHP,
 		WallLevel: wallLevel,
 		Owner:     owner,
-		CastleID:  castleID,
+		CityID:    cityID,
 		Towers:    towers,
 	}
 	if !nodeEntry.HasComponent(ecs.BuildingC) {
@@ -201,20 +202,18 @@ func resolveBuildingTemplate(buildingType string) (maxHP int, wallLevel int, tow
 	catalog := staticdata.Default()
 	if catalog != nil {
 		if cfg, ok := catalog.GetBuilding(buildingType); ok {
-			maxHP = cfg.Combat.MaxHP
-			wallLevel = cfg.Combat.WallLevel
-			towers = cfg.Combat.Towers
+			maxHP = cfg.MaxHP
 			return
 		}
-		if normalizeMapActionToken(buildingType) == "castle" {
-			maxHP = catalog.Rules().CastleBaseHP
+		if normalizeMapActionToken(buildingType) == "city_core" {
+			maxHP = catalog.Rules().CityCoreMaxHP
 			return
 		}
 	}
 	switch normalizeMapActionToken(buildingType) {
 	case "barracks":
 		return 120, 0, 0
-	case "castle":
+	case "city_core":
 		return 100, 0, 0
 	default:
 		return maxHP, 0, 0

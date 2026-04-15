@@ -96,7 +96,7 @@ namespace Panoptes.Protocol.V1 {
             "ZWQYBCABKAsyIi5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGF5ZXJLaWNrZWRI",
             "AFIMcGxheWVyS2lja2VkEkMKC2xvYmJ5X2Vycm9yGAUgASgLMiAucGFub3B0",
             "ZXMucHJvdG8udjEuTXNnTG9iYnlFcnJvckgAUgpsb2JieUVycm9yQgYKBGJv",
-            "ZHkimwoKCUdhbWVFdmVudBJlChdzdGF0aWNfY2F0YWxvZ19tYW5pZmVzdBgB",
+            "ZHki1AsKCUdhbWVFdmVudBJlChdzdGF0aWNfY2F0YWxvZ19tYW5pZmVzdBgB",
             "IAEoCzIrLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1N0YXRpY0NhdGFsb2dNYW5p",
             "ZmVzdEgAUhVzdGF0aWNDYXRhbG9nTWFuaWZlc3QSZQoXc3RhdGljX2NhdGFs",
             "b2dfc25hcHNob3QYAiABKAsyKy5wYW5vcHRlcy5wcm90by52MS5Nc2dTdGF0",
@@ -113,27 +113,31 @@ namespace Panoptes.Protocol.V1 {
             "AFILdG9rZW5SZXN1bHQSSQoNcmV2ZWFsX3Jlc3VsdBgIIAEoCzIiLnBhbm9w",
             "dGVzLnByb3RvLnYxLk1zZ1JldmVhbFJlc3VsdEgAUgxyZXZlYWxSZXN1bHQS",
             "TwoPcmVzZWFyY2hfcmVzdWx0GAkgASgLMiQucGFub3B0ZXMucHJvdG8udjEu",
-            "TXNnUmVzZWFyY2hSZXN1bHRIAFIOcmVzZWFyY2hSZXN1bHQSbAoac2V0X2J1",
-            "aWxkaW5nX3JlY2lwZV9yZXN1bHQYCiABKAsyLS5wYW5vcHRlcy5wcm90by52",
-            "MS5Nc2dTZXRCdWlsZGluZ1JlY2lwZVJlc3VsdEgAUhdzZXRCdWlsZGluZ1Jl",
-            "Y2lwZVJlc3VsdBJDCgt0dXJuX3JlcG9ydBgLIAEoCzIgLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLk1zZ1R1cm5SZXBvcnRIAFIKdHVyblJlcG9ydBJPCg90dXJuX3Nl",
-            "dHRsZW1lbnQYDCABKAsyJC5wYW5vcHRlcy5wcm90by52MS5Nc2dUdXJuU2V0",
-            "dGxlbWVudEgAUg50dXJuU2V0dGxlbWVudBI9CglnYW1lX292ZXIYDSABKAsy",
-            "Hi5wYW5vcHRlcy5wcm90by52MS5Nc2dHYW1lT3ZlckgAUghnYW1lT3ZlchJf",
-            "ChVtaW5pc3Rlcl9yZXBvcnRfY2h1bmsYDiABKAsyKS5wYW5vcHRlcy5wcm90",
-            "by52MS5Nc2dNaW5pc3RlclJlcG9ydENodW5rSABSE21pbmlzdGVyUmVwb3J0",
-            "Q2h1bmsSUgoQbWluaXN0ZXJfbWV0cmljcxgPIAEoCzIlLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLk1zZ01pbmlzdGVyTWV0cmljc0gAUg9taW5pc3Rlck1ldHJpY3NC",
-            "BgoEYm9keSKgAgoLU2VydmVyRnJhbWUSMAoEbWV0YRgBIAEoCzIcLnBhbm9w",
-            "dGVzLnByb3RvLnYxLkV2ZW50TWV0YVIEbWV0YRIyCgRhdXRoGAogASgLMhwu",
-            "cGFub3B0ZXMucHJvdG8udjEuQXV0aEV2ZW50SABSBGF1dGgSNQoFbG9iYnkY",
-            "CyABKAsyHS5wYW5vcHRlcy5wcm90by52MS5Mb2JieUV2ZW50SABSBWxvYmJ5",
-            "EjIKBGdhbWUYDCABKAsyHC5wYW5vcHRlcy5wcm90by52MS5HYW1lRXZlbnRI",
-            "AFIEZ2FtZRI2Cgdwcm9ibGVtGA0gASgLMhoucGFub3B0ZXMucHJvdG8udjEu",
-            "UHJvYmxlbUgAUgdwcm9ibGVtQggKBnRhcmdldEJTWjpnaXRodWIuY29tL2Vs",
-            "ZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90by92MTtwcm90b3Yx",
-            "qgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "TXNnUmVzZWFyY2hSZXN1bHRIAFIOcmVzZWFyY2hSZXN1bHQSUwoRc2V0X3Bv",
+            "bGljeV9yZXN1bHQYCiABKAsyJS5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRQ",
+            "b2xpY3lSZXN1bHRIAFIPc2V0UG9saWN5UmVzdWx0EmwKGnNldF9idWlsZGlu",
+            "Z19yZWNpcGVfcmVzdWx0GAsgASgLMi0ucGFub3B0ZXMucHJvdG8udjEuTXNn",
+            "U2V0QnVpbGRpbmdSZWNpcGVSZXN1bHRIAFIXc2V0QnVpbGRpbmdSZWNpcGVS",
+            "ZXN1bHQSYgoWYnVpbGRfc3RydWN0dXJlX3Jlc3VsdBgMIAEoCzIqLnBhbm9w",
+            "dGVzLnByb3RvLnYxLk1zZ0J1aWxkU3RydWN0dXJlUmVzdWx0SABSFGJ1aWxk",
+            "U3RydWN0dXJlUmVzdWx0EkMKC3R1cm5fcmVwb3J0GA0gASgLMiAucGFub3B0",
+            "ZXMucHJvdG8udjEuTXNnVHVyblJlcG9ydEgAUgp0dXJuUmVwb3J0Ek8KD3R1",
+            "cm5fc2V0dGxlbWVudBgOIAEoCzIkLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1R1",
+            "cm5TZXR0bGVtZW50SABSDnR1cm5TZXR0bGVtZW50Ej0KCWdhbWVfb3ZlchgP",
+            "IAEoCzIeLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0dhbWVPdmVySABSCGdhbWVP",
+            "dmVyEl8KFW1pbmlzdGVyX3JlcG9ydF9jaHVuaxgQIAEoCzIpLnBhbm9wdGVz",
+            "LnByb3RvLnYxLk1zZ01pbmlzdGVyUmVwb3J0Q2h1bmtIAFITbWluaXN0ZXJS",
+            "ZXBvcnRDaHVuaxJSChBtaW5pc3Rlcl9tZXRyaWNzGBEgASgLMiUucGFub3B0",
+            "ZXMucHJvdG8udjEuTXNnTWluaXN0ZXJNZXRyaWNzSABSD21pbmlzdGVyTWV0",
+            "cmljc0IGCgRib2R5IqACCgtTZXJ2ZXJGcmFtZRIwCgRtZXRhGAEgASgLMhwu",
+            "cGFub3B0ZXMucHJvdG8udjEuRXZlbnRNZXRhUgRtZXRhEjIKBGF1dGgYCiAB",
+            "KAsyHC5wYW5vcHRlcy5wcm90by52MS5BdXRoRXZlbnRIAFIEYXV0aBI1CgVs",
+            "b2JieRgLIAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLkxvYmJ5RXZlbnRIAFIF",
+            "bG9iYnkSMgoEZ2FtZRgMIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkdhbWVF",
+            "dmVudEgAUgRnYW1lEjYKB3Byb2JsZW0YDSABKAsyGi5wYW5vcHRlcy5wcm90",
+            "by52MS5Qcm9ibGVtSABSB3Byb2JsZW1CCAoGdGFyZ2V0QlNaOmdpdGh1Yi5j",
+            "b20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvL3YxO3By",
+            "b3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.Auth.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.SettlementReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -148,7 +152,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ClientFrame), global::Panoptes.Protocol.V1.ClientFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game" }, new[]{ "Target" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthEvent), global::Panoptes.Protocol.V1.AuthEvent.Parser, new[]{ "LoginSuccess", "AuthError", "ClientRuntimeConfig" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.LobbyEvent), global::Panoptes.Protocol.V1.LobbyEvent.Parser, new[]{ "RoomCreated", "RoomState", "GameStarting", "PlayerKicked", "LobbyError" }, new[]{ "Body" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetBuildingRecipeResult", "TurnReport", "TurnSettlement", "GameOver", "MinisterReportChunk", "MinisterMetrics" }, new[]{ "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "TurnSettlement", "GameOver", "MinisterReportChunk", "MinisterMetrics" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ServerFrame), global::Panoptes.Protocol.V1.ServerFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game", "Problem" }, new[]{ "Target" }, null, null, null)
           }));
     }
@@ -388,7 +392,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -419,7 +427,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -660,7 +672,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -687,7 +703,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -895,7 +915,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -918,7 +942,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1140,7 +1168,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1167,7 +1199,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1414,7 +1450,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1447,7 +1487,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1875,7 +1919,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1953,7 +2001,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2601,7 +2653,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2724,7 +2780,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3032,7 +3092,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3056,7 +3120,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3367,7 +3435,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3416,7 +3488,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3720,7 +3796,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3762,7 +3842,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4129,7 +4213,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4189,7 +4277,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4308,8 +4400,14 @@ namespace Panoptes.Protocol.V1 {
         case BodyOneofCase.ResearchResult:
           ResearchResult = other.ResearchResult.Clone();
           break;
+        case BodyOneofCase.SetPolicyResult:
+          SetPolicyResult = other.SetPolicyResult.Clone();
+          break;
         case BodyOneofCase.SetBuildingRecipeResult:
           SetBuildingRecipeResult = other.SetBuildingRecipeResult.Clone();
+          break;
+        case BodyOneofCase.BuildStructureResult:
+          BuildStructureResult = other.BuildStructureResult.Clone();
           break;
         case BodyOneofCase.TurnReport:
           TurnReport = other.TurnReport.Clone();
@@ -4445,8 +4543,20 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "set_policy_result" field.</summary>
+    public const int SetPolicyResultFieldNumber = 10;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgSetPolicyResult SetPolicyResult {
+      get { return bodyCase_ == BodyOneofCase.SetPolicyResult ? (global::Panoptes.Protocol.V1.MsgSetPolicyResult) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.SetPolicyResult;
+      }
+    }
+
     /// <summary>Field number for the "set_building_recipe_result" field.</summary>
-    public const int SetBuildingRecipeResultFieldNumber = 10;
+    public const int SetBuildingRecipeResultFieldNumber = 11;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult SetBuildingRecipeResult {
@@ -4457,8 +4567,20 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "build_structure_result" field.</summary>
+    public const int BuildStructureResultFieldNumber = 12;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgBuildStructureResult BuildStructureResult {
+      get { return bodyCase_ == BodyOneofCase.BuildStructureResult ? (global::Panoptes.Protocol.V1.MsgBuildStructureResult) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.BuildStructureResult;
+      }
+    }
+
     /// <summary>Field number for the "turn_report" field.</summary>
-    public const int TurnReportFieldNumber = 11;
+    public const int TurnReportFieldNumber = 13;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgTurnReport TurnReport {
@@ -4470,7 +4592,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "turn_settlement" field.</summary>
-    public const int TurnSettlementFieldNumber = 12;
+    public const int TurnSettlementFieldNumber = 14;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgTurnSettlement TurnSettlement {
@@ -4482,7 +4604,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "game_over" field.</summary>
-    public const int GameOverFieldNumber = 13;
+    public const int GameOverFieldNumber = 15;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgGameOver GameOver {
@@ -4494,7 +4616,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "minister_report_chunk" field.</summary>
-    public const int MinisterReportChunkFieldNumber = 14;
+    public const int MinisterReportChunkFieldNumber = 16;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgMinisterReportChunk MinisterReportChunk {
@@ -4506,7 +4628,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "minister_metrics" field.</summary>
-    public const int MinisterMetricsFieldNumber = 15;
+    public const int MinisterMetricsFieldNumber = 17;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::Panoptes.Protocol.V1.MsgMinisterMetrics MinisterMetrics {
@@ -4530,12 +4652,14 @@ namespace Panoptes.Protocol.V1 {
       TokenResult = 7,
       RevealResult = 8,
       ResearchResult = 9,
-      SetBuildingRecipeResult = 10,
-      TurnReport = 11,
-      TurnSettlement = 12,
-      GameOver = 13,
-      MinisterReportChunk = 14,
-      MinisterMetrics = 15,
+      SetPolicyResult = 10,
+      SetBuildingRecipeResult = 11,
+      BuildStructureResult = 12,
+      TurnReport = 13,
+      TurnSettlement = 14,
+      GameOver = 15,
+      MinisterReportChunk = 16,
+      MinisterMetrics = 17,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4575,7 +4699,9 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(TokenResult, other.TokenResult)) return false;
       if (!object.Equals(RevealResult, other.RevealResult)) return false;
       if (!object.Equals(ResearchResult, other.ResearchResult)) return false;
+      if (!object.Equals(SetPolicyResult, other.SetPolicyResult)) return false;
       if (!object.Equals(SetBuildingRecipeResult, other.SetBuildingRecipeResult)) return false;
+      if (!object.Equals(BuildStructureResult, other.BuildStructureResult)) return false;
       if (!object.Equals(TurnReport, other.TurnReport)) return false;
       if (!object.Equals(TurnSettlement, other.TurnSettlement)) return false;
       if (!object.Equals(GameOver, other.GameOver)) return false;
@@ -4598,7 +4724,9 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.TokenResult) hash ^= TokenResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.RevealResult) hash ^= RevealResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.ResearchResult) hash ^= ResearchResult.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.SetPolicyResult) hash ^= SetPolicyResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) hash ^= SetBuildingRecipeResult.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.BuildStructureResult) hash ^= BuildStructureResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.TurnReport) hash ^= TurnReport.GetHashCode();
       if (bodyCase_ == BodyOneofCase.TurnSettlement) hash ^= TurnSettlement.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GameOver) hash ^= GameOver.GetHashCode();
@@ -4659,28 +4787,36 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(74);
         output.WriteMessage(ResearchResult);
       }
-      if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
+      if (bodyCase_ == BodyOneofCase.SetPolicyResult) {
         output.WriteRawTag(82);
+        output.WriteMessage(SetPolicyResult);
+      }
+      if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
+        output.WriteRawTag(90);
         output.WriteMessage(SetBuildingRecipeResult);
       }
+      if (bodyCase_ == BodyOneofCase.BuildStructureResult) {
+        output.WriteRawTag(98);
+        output.WriteMessage(BuildStructureResult);
+      }
       if (bodyCase_ == BodyOneofCase.TurnReport) {
-        output.WriteRawTag(90);
+        output.WriteRawTag(106);
         output.WriteMessage(TurnReport);
       }
       if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-        output.WriteRawTag(98);
+        output.WriteRawTag(114);
         output.WriteMessage(TurnSettlement);
       }
       if (bodyCase_ == BodyOneofCase.GameOver) {
-        output.WriteRawTag(106);
+        output.WriteRawTag(122);
         output.WriteMessage(GameOver);
       }
       if (bodyCase_ == BodyOneofCase.MinisterReportChunk) {
-        output.WriteRawTag(114);
+        output.WriteRawTag(130, 1);
         output.WriteMessage(MinisterReportChunk);
       }
       if (bodyCase_ == BodyOneofCase.MinisterMetrics) {
-        output.WriteRawTag(122);
+        output.WriteRawTag(138, 1);
         output.WriteMessage(MinisterMetrics);
       }
       if (_unknownFields != null) {
@@ -4729,28 +4865,36 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(74);
         output.WriteMessage(ResearchResult);
       }
-      if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
+      if (bodyCase_ == BodyOneofCase.SetPolicyResult) {
         output.WriteRawTag(82);
+        output.WriteMessage(SetPolicyResult);
+      }
+      if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
+        output.WriteRawTag(90);
         output.WriteMessage(SetBuildingRecipeResult);
       }
+      if (bodyCase_ == BodyOneofCase.BuildStructureResult) {
+        output.WriteRawTag(98);
+        output.WriteMessage(BuildStructureResult);
+      }
       if (bodyCase_ == BodyOneofCase.TurnReport) {
-        output.WriteRawTag(90);
+        output.WriteRawTag(106);
         output.WriteMessage(TurnReport);
       }
       if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-        output.WriteRawTag(98);
+        output.WriteRawTag(114);
         output.WriteMessage(TurnSettlement);
       }
       if (bodyCase_ == BodyOneofCase.GameOver) {
-        output.WriteRawTag(106);
+        output.WriteRawTag(122);
         output.WriteMessage(GameOver);
       }
       if (bodyCase_ == BodyOneofCase.MinisterReportChunk) {
-        output.WriteRawTag(114);
+        output.WriteRawTag(130, 1);
         output.WriteMessage(MinisterReportChunk);
       }
       if (bodyCase_ == BodyOneofCase.MinisterMetrics) {
-        output.WriteRawTag(122);
+        output.WriteRawTag(138, 1);
         output.WriteMessage(MinisterMetrics);
       }
       if (_unknownFields != null) {
@@ -4790,8 +4934,14 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.ResearchResult) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ResearchResult);
       }
+      if (bodyCase_ == BodyOneofCase.SetPolicyResult) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(SetPolicyResult);
+      }
       if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(SetBuildingRecipeResult);
+      }
+      if (bodyCase_ == BodyOneofCase.BuildStructureResult) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(BuildStructureResult);
       }
       if (bodyCase_ == BodyOneofCase.TurnReport) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(TurnReport);
@@ -4803,10 +4953,10 @@ namespace Panoptes.Protocol.V1 {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(GameOver);
       }
       if (bodyCase_ == BodyOneofCase.MinisterReportChunk) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MinisterReportChunk);
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(MinisterReportChunk);
       }
       if (bodyCase_ == BodyOneofCase.MinisterMetrics) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(MinisterMetrics);
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(MinisterMetrics);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -4875,11 +5025,23 @@ namespace Panoptes.Protocol.V1 {
           }
           ResearchResult.MergeFrom(other.ResearchResult);
           break;
+        case BodyOneofCase.SetPolicyResult:
+          if (SetPolicyResult == null) {
+            SetPolicyResult = new global::Panoptes.Protocol.V1.MsgSetPolicyResult();
+          }
+          SetPolicyResult.MergeFrom(other.SetPolicyResult);
+          break;
         case BodyOneofCase.SetBuildingRecipeResult:
           if (SetBuildingRecipeResult == null) {
             SetBuildingRecipeResult = new global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult();
           }
           SetBuildingRecipeResult.MergeFrom(other.SetBuildingRecipeResult);
+          break;
+        case BodyOneofCase.BuildStructureResult:
+          if (BuildStructureResult == null) {
+            BuildStructureResult = new global::Panoptes.Protocol.V1.MsgBuildStructureResult();
+          }
+          BuildStructureResult.MergeFrom(other.BuildStructureResult);
           break;
         case BodyOneofCase.TurnReport:
           if (TurnReport == null) {
@@ -4924,7 +5086,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5010,6 +5176,15 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 82: {
+            global::Panoptes.Protocol.V1.MsgSetPolicyResult subBuilder = new global::Panoptes.Protocol.V1.MsgSetPolicyResult();
+            if (bodyCase_ == BodyOneofCase.SetPolicyResult) {
+              subBuilder.MergeFrom(SetPolicyResult);
+            }
+            input.ReadMessage(subBuilder);
+            SetPolicyResult = subBuilder;
+            break;
+          }
+          case 90: {
             global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult subBuilder = new global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult();
             if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
               subBuilder.MergeFrom(SetBuildingRecipeResult);
@@ -5018,7 +5193,16 @@ namespace Panoptes.Protocol.V1 {
             SetBuildingRecipeResult = subBuilder;
             break;
           }
-          case 90: {
+          case 98: {
+            global::Panoptes.Protocol.V1.MsgBuildStructureResult subBuilder = new global::Panoptes.Protocol.V1.MsgBuildStructureResult();
+            if (bodyCase_ == BodyOneofCase.BuildStructureResult) {
+              subBuilder.MergeFrom(BuildStructureResult);
+            }
+            input.ReadMessage(subBuilder);
+            BuildStructureResult = subBuilder;
+            break;
+          }
+          case 106: {
             global::Panoptes.Protocol.V1.MsgTurnReport subBuilder = new global::Panoptes.Protocol.V1.MsgTurnReport();
             if (bodyCase_ == BodyOneofCase.TurnReport) {
               subBuilder.MergeFrom(TurnReport);
@@ -5027,7 +5211,7 @@ namespace Panoptes.Protocol.V1 {
             TurnReport = subBuilder;
             break;
           }
-          case 98: {
+          case 114: {
             global::Panoptes.Protocol.V1.MsgTurnSettlement subBuilder = new global::Panoptes.Protocol.V1.MsgTurnSettlement();
             if (bodyCase_ == BodyOneofCase.TurnSettlement) {
               subBuilder.MergeFrom(TurnSettlement);
@@ -5036,7 +5220,7 @@ namespace Panoptes.Protocol.V1 {
             TurnSettlement = subBuilder;
             break;
           }
-          case 106: {
+          case 122: {
             global::Panoptes.Protocol.V1.MsgGameOver subBuilder = new global::Panoptes.Protocol.V1.MsgGameOver();
             if (bodyCase_ == BodyOneofCase.GameOver) {
               subBuilder.MergeFrom(GameOver);
@@ -5045,7 +5229,7 @@ namespace Panoptes.Protocol.V1 {
             GameOver = subBuilder;
             break;
           }
-          case 114: {
+          case 130: {
             global::Panoptes.Protocol.V1.MsgMinisterReportChunk subBuilder = new global::Panoptes.Protocol.V1.MsgMinisterReportChunk();
             if (bodyCase_ == BodyOneofCase.MinisterReportChunk) {
               subBuilder.MergeFrom(MinisterReportChunk);
@@ -5054,7 +5238,7 @@ namespace Panoptes.Protocol.V1 {
             MinisterReportChunk = subBuilder;
             break;
           }
-          case 122: {
+          case 138: {
             global::Panoptes.Protocol.V1.MsgMinisterMetrics subBuilder = new global::Panoptes.Protocol.V1.MsgMinisterMetrics();
             if (bodyCase_ == BodyOneofCase.MinisterMetrics) {
               subBuilder.MergeFrom(MinisterMetrics);
@@ -5074,7 +5258,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -5160,6 +5348,15 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 82: {
+            global::Panoptes.Protocol.V1.MsgSetPolicyResult subBuilder = new global::Panoptes.Protocol.V1.MsgSetPolicyResult();
+            if (bodyCase_ == BodyOneofCase.SetPolicyResult) {
+              subBuilder.MergeFrom(SetPolicyResult);
+            }
+            input.ReadMessage(subBuilder);
+            SetPolicyResult = subBuilder;
+            break;
+          }
+          case 90: {
             global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult subBuilder = new global::Panoptes.Protocol.V1.MsgSetBuildingRecipeResult();
             if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) {
               subBuilder.MergeFrom(SetBuildingRecipeResult);
@@ -5168,7 +5365,16 @@ namespace Panoptes.Protocol.V1 {
             SetBuildingRecipeResult = subBuilder;
             break;
           }
-          case 90: {
+          case 98: {
+            global::Panoptes.Protocol.V1.MsgBuildStructureResult subBuilder = new global::Panoptes.Protocol.V1.MsgBuildStructureResult();
+            if (bodyCase_ == BodyOneofCase.BuildStructureResult) {
+              subBuilder.MergeFrom(BuildStructureResult);
+            }
+            input.ReadMessage(subBuilder);
+            BuildStructureResult = subBuilder;
+            break;
+          }
+          case 106: {
             global::Panoptes.Protocol.V1.MsgTurnReport subBuilder = new global::Panoptes.Protocol.V1.MsgTurnReport();
             if (bodyCase_ == BodyOneofCase.TurnReport) {
               subBuilder.MergeFrom(TurnReport);
@@ -5177,7 +5383,7 @@ namespace Panoptes.Protocol.V1 {
             TurnReport = subBuilder;
             break;
           }
-          case 98: {
+          case 114: {
             global::Panoptes.Protocol.V1.MsgTurnSettlement subBuilder = new global::Panoptes.Protocol.V1.MsgTurnSettlement();
             if (bodyCase_ == BodyOneofCase.TurnSettlement) {
               subBuilder.MergeFrom(TurnSettlement);
@@ -5186,7 +5392,7 @@ namespace Panoptes.Protocol.V1 {
             TurnSettlement = subBuilder;
             break;
           }
-          case 106: {
+          case 122: {
             global::Panoptes.Protocol.V1.MsgGameOver subBuilder = new global::Panoptes.Protocol.V1.MsgGameOver();
             if (bodyCase_ == BodyOneofCase.GameOver) {
               subBuilder.MergeFrom(GameOver);
@@ -5195,7 +5401,7 @@ namespace Panoptes.Protocol.V1 {
             GameOver = subBuilder;
             break;
           }
-          case 114: {
+          case 130: {
             global::Panoptes.Protocol.V1.MsgMinisterReportChunk subBuilder = new global::Panoptes.Protocol.V1.MsgMinisterReportChunk();
             if (bodyCase_ == BodyOneofCase.MinisterReportChunk) {
               subBuilder.MergeFrom(MinisterReportChunk);
@@ -5204,7 +5410,7 @@ namespace Panoptes.Protocol.V1 {
             MinisterReportChunk = subBuilder;
             break;
           }
-          case 122: {
+          case 138: {
             global::Panoptes.Protocol.V1.MsgMinisterMetrics subBuilder = new global::Panoptes.Protocol.V1.MsgMinisterMetrics();
             if (bodyCase_ == BodyOneofCase.MinisterMetrics) {
               subBuilder.MergeFrom(MinisterMetrics);
@@ -5546,7 +5752,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5604,7 +5814,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

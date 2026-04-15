@@ -3,23 +3,11 @@
     "resource_amount": {
       "additionalProperties": false,
       "properties": {
-        "build_points": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "engineer_material": {
-          "minimum": 0,
-          "type": "integer"
-        },
         "food": {
           "minimum": 0,
           "type": "integer"
         },
         "ore": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "refined_ore": {
           "minimum": 0,
           "type": "integer"
         },
@@ -31,6 +19,7 @@
       "type": "object"
     }
   },
+  "$id": "content/resource_amount.schema.json",
   "$ref": "#/$defs/resource_amount",
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

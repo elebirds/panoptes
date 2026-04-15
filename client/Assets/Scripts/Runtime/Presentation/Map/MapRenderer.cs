@@ -558,7 +558,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var hasTerritory = false;
-            var castleCount = 0;
+            var cityCoreCount = 0;
             for (var i = 0; i < nodes.Count; i++)
             {
                 var node = nodes[i];
@@ -572,13 +572,13 @@ namespace Panoptes.Presentation.Map
                     hasTerritory = true;
                 }
 
-                if (string.Equals(NormalizeToken(node.BuildingType), "castle", System.StringComparison.Ordinal))
+                if (string.Equals(NormalizeToken(node.BuildingType), "city_core", System.StringComparison.Ordinal))
                 {
-                    castleCount++;
+                    cityCoreCount++;
                 }
             }
 
-            return hasTerritory && castleCount >= 4;
+            return hasTerritory && cityCoreCount >= 4;
         }
 
         public bool LoadMapFromJsonString(string json)
@@ -1013,12 +1013,12 @@ namespace Panoptes.Presentation.Map
                     }
                 }
 
-                if (TryGetDebugNode(nodes, mapWidth, mapHeight, center.x, center.y, out var castleNode) && castleNode != null)
+                if (TryGetDebugNode(nodes, mapWidth, mapHeight, center.x, center.y, out var cityCoreNode) && cityCoreNode != null)
                 {
-                    castleNode.TerritoryOwner = owner;
-                    castleNode.Owner = owner;
-                    castleNode.BuildingType = "castle";
-                    castleNode.BuildingHp = 200;
+                    cityCoreNode.TerritoryOwner = owner;
+                    cityCoreNode.Owner = owner;
+                    cityCoreNode.BuildingType = "city_core";
+                    cityCoreNode.BuildingHp = 200;
                 }
             }
         }
@@ -1364,7 +1364,7 @@ namespace Panoptes.Presentation.Map
                 {
                     Id = $"U_DEBUG_{i + 1}",
                     Owner = faction,
-                    Type = "warrior",
+                    Type = "infantry",
                     Hp = 100,
                     MaxHp = 100,
                     X = p.x,
@@ -2080,7 +2080,7 @@ namespace Panoptes.Presentation.Map
                 {
                     Id = string.IsNullOrWhiteSpace(src.id) ? $"U_{src.x}_{src.y}_{i}" : src.id.Trim(),
                     Owner = (src.faction ?? string.Empty).Trim(),
-                    Type = string.IsNullOrWhiteSpace(src.unitType) ? "warrior" : src.unitType.Trim(),
+                    Type = string.IsNullOrWhiteSpace(src.unitType) ? "infantry" : src.unitType.Trim(),
                     Hp = Mathf.Max(0, src.hp),
                     MaxHp = Mathf.Max(1, src.maxHp),
                     X = src.x,

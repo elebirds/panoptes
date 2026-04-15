@@ -40,16 +40,16 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	service := &Service{}
 	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingType: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm"},
 		},
 	})
 	if err != nil {
 		t.Fatalf("HandleCommand() error = %v", err)
 	}
 
-	result := lastMessage[*pb.MsgTokenResult](session.sent["player-1"])
+	result := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
 	if result == nil || result.GetErrorCode() != "outside_territory" {
-		t.Fatalf("token result = %#v, want outside_territory", result)
+		t.Fatalf("build result = %#v, want outside_territory", result)
 	}
 	if len(state.TurnRuntime.Planning.BuildOrders) != 0 {
 		t.Fatalf("build orders = %#v, want empty", state.TurnRuntime.Planning.BuildOrders)
@@ -72,16 +72,16 @@ func TestBuildStructureRejectedWhenBuildingAlreadyExists(t *testing.T) {
 	service := &Service{}
 	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A1", BuildingType: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A1", BuildingTypeId: "farm"},
 		},
 	})
 	if err != nil {
 		t.Fatalf("HandleCommand() error = %v", err)
 	}
 
-	result := lastMessage[*pb.MsgTokenResult](session.sent["player-1"])
+	result := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
 	if result == nil || result.GetErrorCode() != "building_exists" {
-		t.Fatalf("token result = %#v, want building_exists", result)
+		t.Fatalf("build result = %#v, want building_exists", result)
 	}
 }
 

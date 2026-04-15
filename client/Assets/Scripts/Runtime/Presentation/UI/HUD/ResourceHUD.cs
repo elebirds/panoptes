@@ -62,9 +62,7 @@ namespace Panoptes.Presentation.UI.HUD
                 ("木材", resources.Wood),
                 ("粮食", resources.Food),
                 ("矿石", resources.Ore),
-                ("精炼矿", resources.RefinedOre),
-                ("工材", resources.EngineerMaterial),
-                ("建造点", resources.BuildPoints)
+                ("工业产出", resources.IndustryOutput)
             };
 
             var format = string.IsNullOrWhiteSpace(lineFormat) ? "{0}: {1}" : lineFormat;

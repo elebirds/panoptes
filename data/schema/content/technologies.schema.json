@@ -1,25 +1,92 @@
 {
   "$defs": {
+    "modifier_effect": {
+      "additionalProperties": false,
+      "properties": {
+        "modifier_type": {
+          "enum": [
+            "flat",
+            "percent",
+            "multiplier"
+          ],
+          "type": "string"
+        },
+        "point_key": {
+          "enum": [
+            "industry_output",
+            "research_output",
+            ""
+          ],
+          "type": "string"
+        },
+        "resource_key": {
+          "enum": [
+            "food",
+            "ore",
+            "wood",
+            ""
+          ],
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "trigger": {
+          "enum": [
+            "building.resource_cost",
+            "building.point_cost",
+            "building.max_hp",
+            "recipe.resource_input",
+            "recipe.point_input",
+            "recipe.resource_output",
+            "recipe.work_amount",
+            "recipe.base_progress",
+            "unit.attack",
+            "unit.move_range",
+            "unit.siege_multiplier",
+            "point.output"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "trigger",
+        "modifier_type",
+        "value"
+      ],
+      "type": "object"
+    },
+    "prerequisite": {
+      "additionalProperties": false,
+      "properties": {
+        "target_id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "technology_unlocked",
+            "policy_active"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "target_id"
+      ],
+      "type": "object"
+    },
     "resource_amount": {
       "additionalProperties": false,
       "properties": {
-        "build_points": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "engineer_material": {
-          "minimum": 0,
-          "type": "integer"
-        },
         "food": {
           "minimum": 0,
           "type": "integer"
         },
         "ore": {
-          "minimum": 0,
-          "type": "integer"
-        },
-        "refined_ore": {
           "minimum": 0,
           "type": "integer"
         },
@@ -29,11 +96,81 @@
         }
       },
       "type": "object"
+    },
+    "technology_effect": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_building"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_recipe"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "grant_resources": {
+              "$ref": "#/$defs/resource_amount"
+            },
+            "grant_units": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": {
+              "enum": [
+                "grant"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      ]
     }
   },
+  "$id": "content/technologies.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "technologies": {
       "items": {
         "additionalProperties": false,
@@ -41,168 +178,28 @@
           "branch": {
             "type": "string"
           },
-          "effects": {
+          "explicit_effects": {
             "items": {
-              "oneOf": [
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "target_id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "enum": [
-                        "unlock_building"
-                      ],
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target_id"
-                  ],
-                  "type": "object"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "target_id": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "enum": [
-                        "unlock_recipe"
-                      ],
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "target_id"
-                  ],
-                  "type": "object"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "modifier_type": {
-                      "enum": [
-                        "flat",
-                        "percent",
-                        "multiplier"
-                      ],
-                      "type": "string"
-                    },
-                    "resource_key": {
-                      "enum": [
-                        "build_points",
-                        "engineer_material",
-                        "food",
-                        "ore",
-                        "refined_ore",
-                        "wood",
-                        ""
-                      ],
-                      "type": "string"
-                    },
-                    "target_id": {
-                      "type": "string"
-                    },
-                    "trigger": {
-                      "enum": [
-                        "building.build_cost",
-                        "recipe.input",
-                        "recipe.output",
-                        "recipe.duration",
-                        "recipe.delay_penalty",
-                        "unit.attack",
-                        "unit.move_range",
-                        "unit.siege_multiplier",
-                        "unit.destroy_multiplier",
-                        "player.tech_point_income",
-                        "player.tech_point_cap"
-                      ],
-                      "type": "string"
-                    },
-                    "type": {
-                      "enum": [
-                        "modifier"
-                      ],
-                      "type": "string"
-                    },
-                    "value": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "trigger",
-                    "modifier_type",
-                    "value"
-                  ],
-                  "type": "object"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "grant_resources": {
-                      "$ref": "#/$defs/resource_amount"
-                    },
-                    "grant_units": {
-                      "items": {
-                        "enum": [
-                          "archer",
-                          "cavalry",
-                          "settler",
-                          "warrior"
-                        ],
-                        "type": "string"
-                      },
-                      "type": "array"
-                    },
-                    "type": {
-                      "enum": [
-                        "grant"
-                      ],
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type"
-                  ],
-                  "type": "object"
-                }
-              ]
+              "$ref": "#/$defs/technology_effect"
             },
-            "minItems": 1,
             "type": "array"
           },
           "id": {
             "type": "string"
           },
-          "prerequisites": {
+          "modifier_effects": {
             "items": {
-              "additionalProperties": false,
-              "properties": {
-                "target_id": {
-                  "type": "string"
-                },
-                "type": {
-                  "enum": [
-                    "technology_unlocked"
-                  ],
-                  "type": "string"
-                }
-              },
-              "required": [
-                "type",
-                "target_id"
-              ],
-              "type": "object"
+              "$ref": "#/$defs/modifier_effect"
             },
             "type": "array"
           },
-          "tech_point_cost": {
+          "prerequisites": {
+            "items": {
+              "$ref": "#/$defs/prerequisite"
+            },
+            "type": "array"
+          },
+          "research_cost": {
             "minimum": 0,
             "type": "integer"
           },
@@ -215,9 +212,10 @@
           "id",
           "branch",
           "tier",
-          "tech_point_cost",
+          "research_cost",
           "prerequisites",
-          "effects"
+          "explicit_effects",
+          "modifier_effects"
         ],
         "type": "object"
       },

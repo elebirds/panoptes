@@ -43,16 +43,19 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		Resources: func() *pb.ResourceBag {
 			return ToProtoResourceBag(playerState.Resources)
 		}(),
-		TokensLeft:    int32(playerState.TokensLeft),
-		CurrentPolicy: string(playerState.Policy),
-		MainCastleHp:  int32(playerState.MainCastleHP),
-		MaxCastleHp:   int32(staticdata.Default().Rules().CastleBaseHP),
-		WarZones:      warZones,
-		Research: &pb.PlayerResearchView{
-			TechPoints:            int32(playerState.Research.TechPoints),
-			TechPointsIncome:      int32(state.EffectiveTechPointIncome(playerID)),
-			TechPointsCap:         int32(state.EffectiveTechPointCap(playerID)),
-			UnlockedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
+		Points: func() *pb.PointBag {
+			return ToProtoPointBag(state, playerState.PlayerID)
+		}(),
+		TokensLeft:             int32(playerState.TokensLeft),
+		ActiveNationalPolicyId: string(playerState.Policy),
+		CapitalCityCoreHp:      int32(playerState.CapitalCityCoreHP),
+		CapitalCityCoreMaxHp:   int32(staticdata.Default().Rules().CityCoreMaxHP),
+		WarZones:               warZones,
+		Research: &pb.ResearchStateView{
+			CurrentTargetTechnologyId: playerState.Research.CurrentTargetTechnologyID,
+			CurrentProgress:        int32(playerState.Research.CurrentProgress),
+			RequiredProgress:       int32(researchRequiredProgress(playerState.Research)),
+			CompletedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
 		},
 	}
 }
@@ -86,33 +89,58 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 	}
 
 	view := &pb.NodeView{
-		Id:              node.ID,
-		Pos:             &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
-		Terrain:         string(node.Terrain),
-		Owner:           node.Owner,
-		TerritoryOwner:  node.TerritoryOwner,
-		MyUnitCount:     int32(myCount),
-		EnemyUnitCount:  int32(enemyCount),
-		HasRoad:         node.HasRoad,
-		IsResourcePoint: node.IsResource,
-		ResourceType:    node.ResourceType,
-		IsSafeZone:      domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
+		Id:                     node.ID,
+		Pos:                    &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Terrain:                string(node.Terrain),
+		ControllerPlayerId:     node.Owner,
+		TerritoryOwnerPlayerId: node.TerritoryOwner,
+		MyUnitCount:            int32(myCount),
+		EnemyUnitCount:         int32(enemyCount),
+		HasRoad:                node.HasRoad,
+		IsResourcePoint:        node.IsResource,
+		ResourceType:           node.ResourceType,
+		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
 	}
 	if entry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(entry)
+		baseProgress := 0
+		if recipeID := strings.TrimSpace(operation.SelectedRecipeID); recipeID != "" {
+			if recipe, ok := staticdata.Default().GetRecipe(recipeID); ok {
+				baseProgress = recipe.BaseProgress
+			}
+		}
 		view.Operation = &pb.BuildingOperationView{
 			SelectedRecipeId: operation.SelectedRecipeID,
-			ProgressTurns:    int32(operation.ProgressTurns),
-			RequiredTurns:    int32(operation.RequiredTurns),
-			DelayTurns:       int32(operation.DelayTurns),
+			CurrentProgress:  int32(operation.ProgressTurns),
+			RequiredProgress: int32(operation.RequiredTurns),
+			BaseProgress:     int32(baseProgress),
 			BlockedReason:    operation.BlockedReason,
 		}
 	}
 	if entry.HasComponent(ecs.BuildingC) {
 		building := ecs.BuildingC.Get(entry)
-		view.BuildingType = string(building.Type)
+		view.BuildingTypeId = string(building.Type)
 		view.BuildingHp = int32(building.HP)
-		view.WallLevel = int32(building.WallLevel)
+		view.IsCityCore = strings.EqualFold(string(building.Type), "city_core")
+		view.CityId = strings.TrimSpace(building.CityID)
+		if view.IsCityCore {
+			view.CityId = node.ID
+		}
+		if cfg, ok := staticdata.Default().GetBuilding(string(building.Type)); ok {
+			switch strings.ToLower(strings.TrimSpace(cfg.BuildingScope)) {
+			case "city_core", "in_city":
+				view.ServiceCityId = view.CityId
+			default:
+				view.ServiceCityId = ""
+			}
+			if !strings.EqualFold(strings.TrimSpace(cfg.TakeoverMode), "disabled") {
+				view.TakeoverRequired = int32(staticdata.Default().Rules().FacilityTakeoverTurns)
+			}
+		}
+		view.TakeoverProgress = 0
+		view.BuildingStatus = resolveBuildingStatus(entry)
+	} else {
+		view.BuildingStatus = "empty"
 	}
 	return view
 }
@@ -140,12 +168,27 @@ func BuildUnitViews(state *domain.GameState) []*pb.UnitView {
 func ToProtoResourceBag(resources domain.ResourceBag) *pb.ResourceBag {
 	items := make([]*pb.ResourceValue, 0, len(resources))
 	for _, key := range resources.Keys() {
+		if _, ok := staticdata.Default().GetResource(string(key)); !ok {
+			continue
+		}
 		items = append(items, &pb.ResourceValue{
 			Key:    string(key),
 			Amount: int32(resources.Get(key)),
 		})
 	}
 	return &pb.ResourceBag{Items: items}
+}
+
+func ToProtoPointBag(state *domain.GameState, playerID string) *pb.PointBag {
+	if state == nil {
+		return &pb.PointBag{}
+	}
+	return &pb.PointBag{
+		Items: []*pb.PointValue{
+			{Key: "research_output", Amount: int32(state.EffectiveResearchOutput(playerID))},
+			{Key: "industry_output", Amount: int32(state.EffectiveIndustryOutput(playerID))},
+		},
+	}
 }
 
 func sortedUnlockedTechnologyIDs(research domain.ResearchState) []string {
@@ -157,4 +200,33 @@ func sortedUnlockedTechnologyIDs(research domain.ResearchState) []string {
 	}
 	sort.Strings(ids)
 	return ids
+}
+
+func researchRequiredProgress(research domain.ResearchState) int {
+	technologyID := strings.TrimSpace(research.CurrentTargetTechnologyID)
+	if technologyID == "" {
+		return 0
+	}
+	technology, ok := staticdata.Default().GetTechnology(technologyID)
+	if !ok {
+		return 0
+	}
+	return technology.ResearchCost
+}
+
+func resolveBuildingStatus(entry *donburi.Entry) string {
+	if entry == nil || !entry.HasComponent(ecs.BuildingC) {
+		return "empty"
+	}
+	if !entry.HasComponent(ecs.BuildingOperationC) {
+		return "idle"
+	}
+	operation := ecs.BuildingOperationC.Get(entry)
+	if strings.TrimSpace(operation.BlockedReason) != "" {
+		return "blocked"
+	}
+	if strings.TrimSpace(operation.SelectedRecipeID) != "" {
+		return "active"
+	}
+	return "idle"
 }

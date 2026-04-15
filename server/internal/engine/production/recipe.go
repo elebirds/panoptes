@@ -39,47 +39,60 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			return
 		}
 
-		cost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeInput), recipe.ID, toResourceBag(recipe.Cost))
-		targetTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeDuration), recipe.ID, "", recipe.DurationTurns) + operation.DelayTurns
-		if targetTurns <= 0 {
-			targetTurns = 1
+		cost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
+		requiredProgress := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
+		if requiredProgress <= 0 {
+			requiredProgress = 1
 		}
-		if !state.CanAffordFromCastle(building.Owner, building.CastleID, cost) {
-			// 缺料不失败、不回滚进度，只累计延时惩罚。
-			// 这样配方会“卡住变慢”，而不是每轮重新开始。
-			delayTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeDelayPenalty), recipe.ID, "", recipe.DelayPenalty.Value)
-			if delayTurns <= 0 {
-				delayTurns = 1
-			}
-			events = append(events, event.RecipeDelayedEvent{
-				NodeID: ecs.NodeC.Get(entry).ID, DelayTurns: delayTurns, RequiredTurns: targetTurns + delayTurns, Reason: "insufficient_resources",
+		wasBlocked := operation.BlockedReason != ""
+		if !state.CanAffordFromCity(building.Owner, building.CityID, cost) {
+			events = append(events, event.RecipeProgressedEvent{
+				NodeID:        ecs.NodeC.Get(entry).ID,
+				ProgressTurns: operation.ProgressTurns,
+				RequiredTurns: requiredProgress,
+				BlockedReason: "insufficient_resources",
 			})
+			if !wasBlocked {
+				events = append(events, event.BuildingStatusChangedEvent{
+					NodeID: ecs.NodeC.Get(entry).ID,
+					Status: "blocked",
+					Reason: "insufficient_resources",
+				})
+			}
 			return
 		}
 
-		progress := operation.ProgressTurns + 1
-		if progress >= targetTurns {
-			// 输入资源在完成时统一扣除，保证“本轮够不够料”和“真正结算扣料”
-			// 共享同一份 modifier 后的成本视图。
-			nextRequiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeDuration), recipe.ID, "", recipe.DurationTurns)
-			if nextRequiredTurns <= 0 {
-				nextRequiredTurns = 1
-			}
+		progressStep := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
+		if progressStep <= 0 {
+			progressStep = 1
+		}
+		progress := operation.ProgressTurns + progressStep
+		if progress >= requiredProgress {
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				Owner:         building.Owner,
-				CastleID:      building.CastleID,
-				RequiredTurns: nextRequiredTurns,
+				CityID:        building.CityID,
+				RequiredTurns: requiredProgress,
 				Cost:          cost,
-				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
+				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
 				Units:         append([]string(nil), recipe.Outputs.Units...),
+			})
+			events = append(events, event.BuildingStatusChangedEvent{
+				NodeID: ecs.NodeC.Get(entry).ID,
+				Status: "idle",
 			})
 			return
 		}
 
 		events = append(events, event.RecipeProgressedEvent{
-			NodeID: ecs.NodeC.Get(entry).ID, ProgressTurns: progress, RequiredTurns: targetTurns,
+			NodeID: ecs.NodeC.Get(entry).ID, ProgressTurns: progress, RequiredTurns: requiredProgress,
 		})
+		if wasBlocked {
+			events = append(events, event.BuildingStatusChangedEvent{
+				NodeID: ecs.NodeC.Get(entry).ID,
+				Status: "active",
+			})
+		}
 	})
 
 	return events
@@ -105,14 +118,16 @@ func applySelections(world donburi.World, state *domain.GameState, events *[]eve
 		if building.Owner != selection.PlayerID {
 			continue
 		}
-		// 切配方时就把当前 requiredTurns 写进运行态，方便客户端直接展示
-		// “现在这条配方一共要几回合”，不必自行重算。
-		requiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeDuration), recipe.ID, "", recipe.DurationTurns)
+		requiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
 		if requiredTurns <= 0 {
 			requiredTurns = 1
 		}
 		*events = append(*events, event.RecipeSelectionChangedEvent{
 			NodeID: selection.NodeID, RecipeID: selection.RecipeID, RequiredTurns: requiredTurns,
+		})
+		*events = append(*events, event.BuildingStatusChangedEvent{
+			NodeID: selection.NodeID,
+			Status: "active",
 		})
 	}
 }

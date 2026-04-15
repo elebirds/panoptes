@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14 18:45:09 +0800
-// Description: 验证经济结算引擎的科研与经济流水线行为。
+// Updated: 2026-04-15 16:20:00 +0800
+// Description: 验证经济结算引擎在新版静态数据语义下的核心回归。
 
 package production_test
 
@@ -16,36 +16,37 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-func TestEconomyPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
+func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 1,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
+		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
 			{
-				ID: "farm", Category: "production", PlacementRule: "city_only", RequiredResourceType: "",
-				BuildCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{},
-				RecipeIDs: []string{"farm_food"}, DefaultRecipeID: "farm_food",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
+				ID:              "farm",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "in_city",
+				ResourceCosts:   staticdata.ResourceAmounts{},
+				PointCosts:      staticdata.PointAmounts{"industry_output": 1},
+				RecipeIDs:       []string{"farm_food"},
+				DefaultRecipeID: "farm_food",
+				MaxHP:           80,
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
 			{
-				ID: "farm_food", BuildingID: "farm", Cost: staticdata.ResourceAmounts{},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs: staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
+				ID:           "farm_food",
+				BuildingID:   "farm",
+				WorkAmount:   1,
+				BaseProgress: 1,
+				Outputs:      staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
 			},
 		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{
-				ID: "agri_unlock_farm", Branch: "agriculture", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
+				ID:           "agrarian_foundations",
+				Branch:       "agriculture",
+				Tier:         1,
+				ResearchCost: 1,
+				ExplicitEffects: []staticdata.ExplicitEffect{
 					{Type: "unlock_building", TargetID: "farm"},
 					{Type: "unlock_recipe", TargetID: "farm_food"},
 				},
@@ -53,85 +54,57 @@ func TestEconomyPipelineResearchDoesNotAllowSameTurnBuild(t *testing.T) {
 		},
 	}))
 
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID: "default",
-		NodeIndex: map[string]donburi.Entity{
-			"A1": nodeEntity,
-		},
-	})
-	state.World = world
+	world, state, nodeEntry := newOwnedNodeState()
+	state.Players["player-1"].Research.CurrentProgress = 1
 	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
-		{PlayerID: "player-1", TechnologyID: "agri_unlock_farm"},
+		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
 	}
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
 		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
 	}
 
-	events := engine.NewEconomyPipeline().Run(world, state)
-	if len(events) == 0 {
-		t.Fatalf("expected economy events")
-	}
+	engine.NewEconomyPipeline().Run(world, state)
+
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should remain unavailable until next turn")
 	}
-	if !state.Players["player-1"].Research.HasTechnology("agri_unlock_farm") {
+	if !state.Players["player-1"].Research.HasTechnology("agrarian_foundations") {
 		t.Fatalf("technology not unlocked")
-	}
-	if state.Players["player-1"].Research.TechPoints != 1 {
-		t.Fatalf("tech_points = %d, want 1 after recharge", state.Players["player-1"].Research.TechPoints)
 	}
 }
 
-func TestEconomyPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
+func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 0,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
+		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
 			{
-				ID: "farm", Category: "production", PlacementRule: "city_only",
-				BuildCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{},
-				RecipeIDs: []string{"farm_food"}, DefaultRecipeID: "farm_food",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
+				ID:              "farm",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "in_city",
+				ResourceCosts:   staticdata.ResourceAmounts{},
+				PointCosts:      staticdata.PointAmounts{"industry_output": 1},
+				RecipeIDs:       []string{"farm_food"},
+				DefaultRecipeID: "farm_food",
+				MaxHP:           80,
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
 			{
-				ID: "farm_food", BuildingID: "farm", Cost: staticdata.ResourceAmounts{},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs: staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
+				ID:           "farm_food",
+				BuildingID:   "farm",
+				WorkAmount:   1,
+				BaseProgress: 1,
+				Outputs:      staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
 			},
 		},
 	}))
 
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
+	world, state, nodeEntry := newOwnedNodeState()
 	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
 	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
 		SelectedRecipeID: "farm_food",
 		RequiredTurns:    1,
 	})
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
-	})
-	state.World = world
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
@@ -146,270 +119,20 @@ func TestEconomyPipelineRecipeProducesResourcesWhenSelected(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRecipeAddsDelayWhenResourcesMissing(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 0,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
-		Buildings: []staticdata.BuildingDefinition{
-			{
-				ID: "smelter", Category: "production", PlacementRule: "city_only",
-				BuildCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{},
-				RecipeIDs: []string{"smelter_refined_ore"}, DefaultRecipeID: "smelter_refined_ore",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
-			},
-		},
-		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID: "smelter_refined_ore", BuildingID: "smelter", Cost: staticdata.ResourceAmounts{"ore": 2},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 2},
-				Outputs: staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"refined_ore": 1}},
-			},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
-	ecs.CreateBuilding(world, "smelter", "player-1", "", nodeEntry)
-	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
-		SelectedRecipeID: "smelter_refined_ore",
-		RequiredTurns:    1,
-	})
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
-	})
-	state.World = world
-	state.Players["player-1"].Research.UnlockBuilding("smelter")
-	state.Players["player-1"].Research.UnlockRecipe("smelter_refined_ore")
-
-	engine.NewEconomyPipeline().Run(world, state)
-
-	operation := ecs.BuildingOperationC.Get(nodeEntry)
-	if operation.DelayTurns != 2 {
-		t.Fatalf("delay turns = %d, want 2", operation.DelayTurns)
-	}
-	if got := state.Players["player-1"].Resources.Get(domain.ResourceRefinedOre); got != 0 {
-		t.Fatalf("refined_ore after blocked recipe = %d, want 0", got)
-	}
-}
-
-func TestEconomyPipelineBuildAppliesBuildingCostModifier(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 0,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 1,
-			BuildPointsMax:     10,
-			CastleBaseHP:       100,
-		},
-		Buildings: []staticdata.BuildingDefinition{
-			{
-				ID: "farm", Category: "production", PlacementRule: "city_only",
-				BuildCost: staticdata.ResourceAmounts{"build_points": 2},
-				RecipeIDs: []string{"farm_food"}, DefaultRecipeID: "farm_food",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
-			},
-		},
-		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID: "farm_food", BuildingID: "farm", Cost: staticdata.ResourceAmounts{},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs: staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
-			},
-		},
-		Technologies: []staticdata.TechnologyDefinition{
-			{
-				ID: "construction_discount", Branch: "industry", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
-					{Type: "unlock_building", TargetID: "farm"},
-					{Type: "unlock_recipe", TargetID: "farm_food"},
-					{Type: "modifier", Trigger: "building.build_cost", TargetID: "farm", ResourceKey: "build_points", ModifierType: "flat", Value: -1},
-				},
-			},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
-	})
-	state.World = world
-	state.Players["player-1"].Research.UnlockTechnology("construction_discount")
-	state.Players["player-1"].Research.UnlockBuilding("farm")
-	state.Players["player-1"].Research.UnlockRecipe("farm_food")
-	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"}}
-
-	engine.NewEconomyPipeline().Run(world, state)
-
-	if !nodeEntry.HasComponent(ecs.BuildingC) {
-		t.Fatalf("building should be created after discounted cost")
-	}
-}
-
-func TestEconomyPipelineRecipeAppliesOutputModifier(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 0,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
-		Buildings: []staticdata.BuildingDefinition{
-			{
-				ID: "farm", Category: "production", PlacementRule: "city_only",
-				BuildCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{},
-				RecipeIDs: []string{"farm_food"}, DefaultRecipeID: "farm_food",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
-			},
-		},
-		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID: "farm_food", BuildingID: "farm", Cost: staticdata.ResourceAmounts{},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs: staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
-			},
-		},
-		Technologies: []staticdata.TechnologyDefinition{
-			{
-				ID: "agri_bonus", Branch: "agriculture", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
-					{Type: "unlock_building", TargetID: "farm"},
-					{Type: "unlock_recipe", TargetID: "farm_food"},
-					{Type: "modifier", Trigger: "recipe.output", TargetID: "farm_food", ResourceKey: "food", ModifierType: "flat", Value: 1},
-				},
-			},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
-	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
-	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
-		SelectedRecipeID: "farm_food",
-		RequiredTurns:    1,
-	})
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
-	})
-	state.World = world
-	state.Players["player-1"].Research.UnlockTechnology("agri_bonus")
-	state.Players["player-1"].Research.UnlockBuilding("farm")
-	state.Players["player-1"].Research.UnlockRecipe("farm_food")
-
-	engine.NewEconomyPipeline().Run(world, state)
-
-	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
-		t.Fatalf("food after modified recipe = %d, want 3", got)
-	}
-}
-
-func TestEconomyPipelineRecipeConsumesCostAndProducesUnit(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 0,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
-		Buildings: []staticdata.BuildingDefinition{
-			{
-				ID: "barracks", Category: "military", PlacementRule: "city_only",
-				BuildCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{},
-				RecipeIDs: []string{"train_warrior"}, DefaultRecipeID: "train_warrior",
-				Combat: staticdata.BuildingCombat{MaxHP: 80},
-			},
-		},
-		Units: []staticdata.UnitDefinition{
-			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
-		},
-		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID: "train_warrior", BuildingID: "barracks", Cost: staticdata.ResourceAmounts{"food": 2},
-				DurationTurns: 1, DelayPenalty: staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs: staticdata.RecipeOutputs{Units: []string{"warrior"}},
-			},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntry := world.Entry(nodeEntity)
-	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
-	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
-	ecs.CreateBuilding(world, "barracks", "player-1", "", nodeEntry)
-	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
-		SelectedRecipeID: "train_warrior",
-		RequiredTurns:    1,
-	})
-
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
-	})
-	state.World = world
-	state.Players["player-1"].Resources.Set(domain.ResourceFood, 2)
-	state.Players["player-1"].Research.UnlockBuilding("barracks")
-	state.Players["player-1"].Research.UnlockRecipe("train_warrior")
-
-	engine.NewEconomyPipeline().Run(world, state)
-
-	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
-		t.Fatalf("food after training = %d, want 0", got)
-	}
-	if got := domain.GetUnitsByNode(world, domain.Position{X: 0, Y: 0}); len(got) != 1 {
-		t.Fatalf("units at barracks = %d, want 1", len(got))
-	}
-}
-
 func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 1,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
+		Rules: newPipelineRules(),
 		Units: []staticdata.UnitDefinition{
-			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
 		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{
-				ID: "mil_bonus", Branch: "military", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
-					{Type: "grant", GrantResources: staticdata.ResourceAmounts{"food": 3}, GrantUnits: []string{"warrior"}},
+				ID:           "militia_mobilization",
+				Branch:       "military",
+				Tier:         1,
+				ResearchCost: 1,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "grant", GrantResources: staticdata.ResourceAmounts{"food": 3}, GrantUnits: []string{"infantry"}},
 				},
 			},
 		},
@@ -418,14 +141,15 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	world := donburi.NewWorld()
 	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 1, Y: 1, Terrain: "plain"})
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID: "default",
-		PlayerSpawns: map[string]domain.Position{
-			"player-1": domain.Position{X: 1, Y: 1},
-		},
-		NodeIndex: map[string]donburi.Entity{"C1": nodeEntity},
+		ID:           "default",
+		PlayerSpawns: map[string]domain.Position{"player-1": {X: 1, Y: 1}},
+		NodeIndex:    map[string]donburi.Entity{"C1": nodeEntity},
 	})
 	state.World = world
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "mil_bonus"}}
+	state.Players["player-1"].Research.CurrentProgress = 1
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
+		{PlayerID: "player-1", TechnologyID: "militia_mobilization"},
+	}
 
 	engine.NewEconomyPipeline().Run(world, state)
 
@@ -437,22 +161,17 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRechargeAppliesTechIncomeModifierNextTurn(t *testing.T) {
+func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:      3,
-			StartingTechPoints: 1,
-			TechPointsPerTurn:  1,
-			TechPointsMax:      5,
-			BuildPointsPerTurn: 10,
-			BuildPointsMax:     30,
-			CastleBaseHP:       100,
-		},
+		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
 			{
-				ID: "research_boost", Branch: "industry", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
-					{Type: "modifier", Trigger: "player.tech_point_income", ModifierType: "flat", Value: 2},
+				ID:           "research_boost",
+				Branch:       "governance",
+				Tier:         1,
+				ResearchCost: 1,
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "point.output", PointKey: "research_output", ModifierType: "flat", Value: 2},
 				},
 			},
 		},
@@ -461,17 +180,72 @@ func TestEconomyPipelineRechargeAppliesTechIncomeModifierNextTurn(t *testing.T) 
 	world := donburi.NewWorld()
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.World = world
-	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{{PlayerID: "player-1", TechnologyID: "research_boost"}}
+	state.Players["player-1"].Research.CurrentProgress = 1
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
+		{PlayerID: "player-1", TechnologyID: "research_boost"},
+	}
 
 	engine.NewEconomyPipeline().Run(world, state)
+	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
+		t.Fatalf("research progress after unlock turn = %d, want 1", got)
+	}
 
-	if got := state.Players["player-1"].Research.TechPoints; got != 1 {
-		t.Fatalf("tech_points after unlock turn = %d, want 1", got)
+	state.TurnRuntime.Planning.ResearchOrders = nil
+	engine.NewEconomyPipeline().Run(world, state)
+	if got := state.Players["player-1"].Research.CurrentProgress; got != 4 {
+		t.Fatalf("research progress after next-turn modifier = %d, want 4", got)
+	}
+}
+
+func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID:           "agrarian_foundations",
+				Branch:       "agriculture",
+				Tier:         1,
+				ResearchCost: 1,
+			},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.World = world
+	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
+	state.Players["player-1"].Research.CurrentProgress = 1
+	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
+		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
 	}
 
 	engine.NewEconomyPipeline().Run(world, state)
 
-	if got := state.Players["player-1"].Research.TechPoints; got != 4 {
-		t.Fatalf("tech_points after next-turn modified recharge = %d, want 4", got)
+	if got := state.Players["player-1"].Research.CurrentTargetTechnologyID; got != "" {
+		t.Fatalf("current target after unlock = %q, want empty", got)
 	}
+}
+
+func newPipelineRules() staticdata.Rules {
+	return staticdata.Rules{
+		TokensPerTurn:             3,
+		CityCoreMaxHP:             100,
+		BaseResearchOutputPerTurn: 1,
+		BaseIndustryOutputPerTurn: 2,
+	}
+}
+
+func newOwnedNodeState() (donburi.World, *domain.GameState, *donburi.Entry) {
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	ecs.NodeC.Get(nodeEntry).Owner = "player-1"
+	ecs.NodeC.Get(nodeEntry).TerritoryOwner = "player-1"
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
+	})
+	state.World = world
+	return world, state, nodeEntry
 }

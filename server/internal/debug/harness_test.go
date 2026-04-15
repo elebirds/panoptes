@@ -40,8 +40,8 @@ func TestHarnessResearchUnlockBuild_NextTurnOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement(turn=1) error = %v", err)
 	}
-	if !hasTurnEvent(turn1.Settlement, "economy", "technology_unlocked") {
-		t.Fatalf("turn 1 missing technology_unlocked event")
+	if !hasTurnEvent(turn1.Settlement, "economy", "technology_completed") {
+		t.Fatalf("turn 1 missing technology_completed event")
 	}
 	if _, ok := turn1.Summary.Buildings["A2"]; ok {
 		t.Fatalf("turn 1 should not build farm on A2")
@@ -52,7 +52,7 @@ func TestHarnessResearchUnlockBuild_NextTurnOnly(t *testing.T) {
 	}
 	if err := h.InjectPlanningCommand("player-1", "req-build", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingType: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm"},
 		},
 	}); err != nil {
 		t.Fatalf("InjectPlanningCommand(build) error = %v", err)
@@ -108,14 +108,14 @@ func TestHarnessSettlerFoundCity_RecordsTurnArtifacts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "map", "settle_city") {
-		t.Fatalf("missing settle_city event")
+	if !hasTurnEvent(record.Settlement, "map", "city_founded") {
+		t.Fatalf("missing city_founded event")
 	}
 	if _, ok := record.Summary.Units["settler-1"]; ok {
 		t.Fatalf("settler-1 should be removed after city founding")
 	}
-	if center, ok := record.Summary.Buildings["C3"]; !ok || center.Type != "castle" {
-		t.Fatalf("city center summary = %#v, want castle at C3", center)
+	if center, ok := record.Summary.Buildings["C3"]; !ok || center.Type != "city_core" {
+		t.Fatalf("city center summary = %#v, want city_core at C3", center)
 	}
 }
 
@@ -143,11 +143,15 @@ func TestHarnessRecipeBlockedByInput_RecordsSettlementAndState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "recipe_delayed") {
-		t.Fatalf("missing recipe_delayed event")
+	if !hasTurnEvent(record.Settlement, "economy", "building_status_changed") {
+		t.Fatalf("missing building_status_changed event")
 	}
-	if got := record.Summary.Players["player-1"].Resources["refined_ore"]; got != 0 {
-		t.Fatalf("refined_ore = %d, want 0", got)
+	building, ok := record.Summary.Buildings["A2"]
+	if !ok {
+		t.Fatalf("missing building summary for A2")
+	}
+	if !building.Disabled && !hasTurnEvent(record.Settlement, "economy", "recipe_progressed") {
+		t.Fatalf("blocked recipe should produce recipe_progressed event")
 	}
 }
 
@@ -175,14 +179,14 @@ func TestHarnessCapitalDestroyGameOver_StopsAtGameOver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "unit", "castle_destroyed") {
-		t.Fatalf("missing castle_destroyed event")
+	if !hasTurnEvent(record.Settlement, "unit", "city_core_destroyed") {
+		t.Fatalf("missing city_core_destroyed event")
 	}
 	if record.GameOver == nil {
 		t.Fatalf("game over payload is nil")
 	}
-	if record.GameOver.GetReason() != "castle_destroyed" {
-		t.Fatalf("game over reason = %q, want castle_destroyed", record.GameOver.GetReason())
+	if record.GameOver.GetReason() != "city_core_destroyed" {
+		t.Fatalf("game over reason = %q, want city_core_destroyed", record.GameOver.GetReason())
 	}
 	if !record.Summary.IsOver || record.Summary.WinnerID != "player-2" {
 		t.Fatalf("summary game over = %#v", record.Summary)

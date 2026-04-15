@@ -34,6 +34,29 @@ func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
 	}
 }
 
+func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.BuildingStatusChangedEvent{
+		NodeID: "C2",
+		Status: "blocked",
+		Reason: "insufficient_resources",
+	})
+
+	if turnEvent.GetType() != "building_status_changed" {
+		t.Fatalf("type = %q, want building_status_changed", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["node_id"]; got != "C2" {
+		t.Fatalf("node_id = %q, want C2", got)
+	}
+	if got := turnEvent.GetData()["status"]; got != "blocked" {
+		t.Fatalf("status = %q, want blocked", got)
+	}
+	if got := turnEvent.GetData()["reason"]; got != "insufficient_resources" {
+		t.Fatalf("reason = %q, want insufficient_resources", got)
+	}
+}
+
 func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	t.Parallel()
 

@@ -24,36 +24,40 @@ func ResearchUnlockBuild() (*Definition, error) {
 		Rules:    baseRules(),
 		Buildings: []staticdata.BuildingDefinition{
 			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
 				ID:              "farm",
-				Category:        "production",
-				PlacementRule:   "city_only",
-				BuildCost:       staticdata.ResourceAmounts{},
-				RecipeIDs:       []string{"farm_food"},
+				PlacementKind:   "city_territory",
+				BuildingScope:   "out_of_city",
 				DefaultRecipeID: "farm_food",
-				Combat:          staticdata.BuildingCombat{MaxHP: 80},
+				MaxHP:           80,
+				TakeoverMode:    "delayed",
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID:            "farm_food",
-				BuildingID:    "farm",
-				Cost:          staticdata.ResourceAmounts{},
-				DurationTurns: 1,
-				DelayPenalty:  staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs:       staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
-			},
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
+			{ID: "farm_food", BuildingID: "farm", WorkAmount: 1, BaseProgress: 1},
 		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{
-				ID:            "agri_unlock_farm",
-				Branch:        "agriculture",
-				Tier:          1,
-				TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
+				ID:           "agri_unlock_farm",
+				Branch:       "agriculture",
+				Tier:         1,
+				ResearchCost: 1,
+				ExplicitEffects: []staticdata.ExplicitEffect{
 					{Type: "unlock_building", TargetID: "farm"},
 					{Type: "unlock_recipe", TargetID: "farm_food"},
 				},
 			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 	}, cityBuildMap("research_unlock_build"))
 
@@ -61,7 +65,7 @@ func ResearchUnlockBuild() (*Definition, error) {
 	if err != nil {
 		return nil, err
 	}
-	state.Players["player-1"].Research.TechPoints = 1
+	state.Players["player-1"].Research.CurrentProgress = 1
 	return &Definition{
 		Name:      "research_unlock_build",
 		Catalog:   catalog,
@@ -77,6 +81,29 @@ func SettlerFoundCity() (*Definition, error) {
 		Rules:    baseRules(),
 		Units: []staticdata.UnitDefinition{
 			settlerDefinition(),
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:            "barracks",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				MaxHP:         90,
+				TakeoverMode:  "city_capture",
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 	}, expansionMap("settler_found_city"))
 
@@ -102,24 +129,38 @@ func RecipeBlockedByInput() (*Definition, error) {
 		Rules:    baseRules(),
 		Buildings: []staticdata.BuildingDefinition{
 			{
-				ID:              "smelter",
-				Category:        "production",
-				PlacementRule:   "city_only",
-				BuildCost:       staticdata.ResourceAmounts{},
-				RecipeIDs:       []string{"smelter_refined_ore"},
-				DefaultRecipeID: "smelter_refined_ore",
-				Combat:          staticdata.BuildingCombat{MaxHP: 80},
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           100,
+				TakeoverMode:    "disabled",
+			},
+			{
+				ID:              "barracks",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "in_city",
+				DefaultRecipeID: "barracks_infantry",
+				MaxHP:           90,
+				TakeoverMode:    "city_capture",
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
 			{
-				ID:            "smelter_refined_ore",
-				BuildingID:    "smelter",
-				Cost:          staticdata.ResourceAmounts{"ore": 2},
-				DurationTurns: 1,
-				DelayPenalty:  staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 2},
-				Outputs:       staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"refined_ore": 1}},
+				ID:             "barracks_infantry",
+				BuildingID:     "barracks",
+				ResourceInputs: staticdata.ResourceAmounts{"food": 999, "ore": 999},
+				WorkAmount:     2,
+				BaseProgress:   1,
+				Outputs:        staticdata.RecipeOutputs{Units: []string{"infantry"}},
 			},
+		},
+		Units: []staticdata.UnitDefinition{
+			infantryDefinition(),
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 	}, cityBuildMap("recipe_blocked_by_input"))
 
@@ -131,16 +172,9 @@ func RecipeBlockedByInput() (*Definition, error) {
 	if !ok {
 		return nil, fmt.Errorf("missing node A2")
 	}
-	ecs.CreateBuilding(state.World, "smelter", "player-1", "", nodeEntry)
-	if !nodeEntry.HasComponent(ecs.BuildingOperationC) {
-		nodeEntry.AddComponent(ecs.BuildingOperationC)
-	}
-	ecs.BuildingOperationC.SetValue(nodeEntry, domain.BuildingOperationComp{
-		SelectedRecipeID: "smelter_refined_ore",
-		RequiredTurns:    1,
-	})
-	state.Players["player-1"].Research.UnlockBuilding("smelter")
-	state.Players["player-1"].Research.UnlockRecipe("smelter_refined_ore")
+	ecs.CreateBuilding(state.World, "barracks", "player-1", "A1", nodeEntry)
+	state.Players["player-1"].Research.UnlockBuilding("barracks")
+	state.Players["player-1"].Research.UnlockRecipe("barracks_infantry")
 	return &Definition{
 		Name:      "recipe_blocked_by_input",
 		Catalog:   catalog,
@@ -157,24 +191,19 @@ func OuterFacilityCapture() (*Definition, error) {
 		Buildings: []staticdata.BuildingDefinition{
 			{
 				ID:                   "farm",
-				Category:             "production",
-				PlacementRule:        "resource_only",
+				PlacementKind:        "resource_node",
+				BuildingScope:        "out_of_city",
 				RequiredResourceType: "food",
-				BuildCost:            staticdata.ResourceAmounts{},
-				RecipeIDs:            []string{"farm_food"},
 				DefaultRecipeID:      "farm_food",
-				Combat:               staticdata.BuildingCombat{MaxHP: 80},
+				MaxHP:                80,
+				TakeoverMode:         "delayed",
 			},
 		},
 		Recipes: []staticdata.RecipeDefinition{
-			{
-				ID:            "farm_food",
-				BuildingID:    "farm",
-				Cost:          staticdata.ResourceAmounts{},
-				DurationTurns: 1,
-				DelayPenalty:  staticdata.RecipeDelayPenalty{Mode: "add_turns", Value: 1},
-				Outputs:       staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
-			},
+			{ID: "farm_food", BuildingID: "farm", WorkAmount: 1, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 	}, contestedFacilityMap("outer_facility_capture"))
 
@@ -186,14 +215,7 @@ func OuterFacilityCapture() (*Definition, error) {
 	if !ok {
 		return nil, fmt.Errorf("missing node B2")
 	}
-	ecs.CreateBuilding(state.World, "farm", "player-1", "", nodeEntry)
-	if !nodeEntry.HasComponent(ecs.BuildingOperationC) {
-		nodeEntry.AddComponent(ecs.BuildingOperationC)
-	}
-	ecs.BuildingOperationC.SetValue(nodeEntry, domain.BuildingOperationComp{
-		SelectedRecipeID: "farm_food",
-		RequiredTurns:    1,
-	})
+	ecs.CreateBuilding(state.World, "farm", "player-1", "A1", nodeEntry)
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 	return &Definition{
@@ -209,15 +231,30 @@ func CapitalDestroyGameOver() (*Definition, error) {
 	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: manifest("capital_destroy_gameover"),
 		Rules: staticdata.Rules{
-			TokensPerTurn:         3,
-			StartingTechPoints:    0,
-			TechPointsPerTurn:     0,
-			TechPointsMax:         10,
-			BuildPointsPerTurn:    10,
-			BuildPointsMax:        20,
-			CastleBaseHP:          10,
-			TurnTimeLimitPlanning: 1,
-			MaxTurns:              3,
+			TokensPerTurn:              3,
+			BonusTokensPerTurn:         0,
+			MaxTurns:                   3,
+			CityCoreMaxHP:              10,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  0,
+			BaseIndustryOutputPerTurn:  0,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
+			TurnTimeLimitPlanning:      1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "city_core",
+				PlacementKind:   "city_foundation_center",
+				BuildingScope:   "city_core",
+				DefaultRecipeID: "city_core_settler",
+				MaxHP:           10,
+				TakeoverMode:    "disabled",
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
 		},
 		Units: []staticdata.UnitDefinition{
 			{
@@ -237,6 +274,9 @@ func CapitalDestroyGameOver() (*Definition, error) {
 					CanCapture:      true,
 				},
 			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 	}, capitalSiegeMap("capital_destroy_gameover"))
 
@@ -258,15 +298,17 @@ func CapitalDestroyGameOver() (*Definition, error) {
 
 func baseRules() staticdata.Rules {
 	return staticdata.Rules{
-		TokensPerTurn:         3,
-		StartingTechPoints:    0,
-		TechPointsPerTurn:     0,
-		TechPointsMax:         10,
-		BuildPointsPerTurn:    10,
-		BuildPointsMax:        20,
-		CastleBaseHP:          100,
-		TurnTimeLimitPlanning: 1,
-		MaxTurns:              4,
+		TokensPerTurn:              3,
+		BonusTokensPerTurn:         0,
+		MaxTurns:                   4,
+		CityCoreMaxHP:              100,
+		SafeZoneRadius:             3,
+		FacilityTakeoverTurns:      2,
+		BaseResearchOutputPerTurn:  1,
+		BaseIndustryOutputPerTurn:  2,
+		MinimumCityDistance:        2,
+		InitialCityTerritoryRadius: 1,
+		TurnTimeLimitPlanning:      1,
 	}
 }
 
@@ -298,6 +340,21 @@ func settlerDefinition() staticdata.UnitDefinition {
 	}
 }
 
+func infantryDefinition() staticdata.UnitDefinition {
+	return staticdata.UnitDefinition{
+		ID:          "infantry",
+		Class:       "melee",
+		MaxHP:       20,
+		Attack:      6,
+		AttackRange: 1,
+		MoveRange:   2,
+		VisionRange: 2,
+		TrainCost:   staticdata.ResourceAmounts{},
+		Upkeep:      staticdata.ResourceAmounts{},
+		Multipliers: map[string]float64{},
+	}
+}
+
 func cityBuildMap(id string) *staticdata.MapRuntimeBundle {
 	zero := 0
 	return &staticdata.MapRuntimeBundle{
@@ -309,7 +366,7 @@ func cityBuildMap(id string) *staticdata.MapRuntimeBundle {
 			{Slot: 0, X: 0, Y: 0},
 		},
 		Nodes: []staticdata.MapRuntimeNode{
-			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "castle"},
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "city_core"},
 			{ID: "A2", X: 0, Y: 1, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero},
 			{ID: "B1", X: 1, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero},
 			{ID: "B2", X: 1, Y: 1, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero},
@@ -372,7 +429,7 @@ func capitalSiegeMap(id string) *staticdata.MapRuntimeBundle {
 			{Slot: 1, X: 1, Y: 1},
 		},
 		Nodes: []staticdata.MapRuntimeNode{
-			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "castle"},
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "city_core"},
 			{ID: "B2", X: 1, Y: 1, Terrain: "plain", OwnerSlot: &one, TerritoryOwnerSlot: &one},
 		},
 		NamedNodes: map[string]string{

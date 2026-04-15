@@ -19,8 +19,15 @@ func (s *RechargeSystem) Run(world donburi.World, state *domain.GameState) []eve
 	rules := staticdata.Default().Rules()
 	events := make([]event.Event, 0, len(state.Players))
 	for playerID := range state.Players {
-		events = append(events, event.BuildPointsRechargedEvent{PlayerID: playerID, Amount: rules.BuildPointsPerTurn})
-		events = append(events, event.TechPointsRechargedEvent{PlayerID: playerID, Amount: state.EffectiveTechPointIncome(playerID)})
+		events = append(events, event.IndustryOutputRefreshedEvent{PlayerID: playerID, Amount: state.EffectiveIndustryOutput(playerID)})
+		events = append(events, event.ResearchProgressAppliedEvent{PlayerID: playerID, Amount: max(state.EffectiveResearchOutput(playerID), rules.BaseResearchOutputPerTurn)})
 	}
 	return events
+}
+
+func max(a int, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

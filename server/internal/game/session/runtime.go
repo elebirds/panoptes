@@ -78,7 +78,7 @@ func (r *Runtime) Initialize() error {
 	r.state.World = world
 	r.spawnInitialBaseVehicles()
 	r.grantDevStartingResources()
-	r.initializeCastleStates()
+	r.initializeCityStates()
 	return r.sendBootstrapMessages()
 }
 
@@ -233,17 +233,15 @@ func (r *Runtime) grantDevStartingResources() {
 		player.Resources.Set(domain.ResourceOre, 200)
 		player.Resources.Set(domain.ResourceWood, 200)
 		player.Resources.Set(domain.ResourceFood, 200)
-		player.Resources.Set(domain.ResourceRefinedOre, 100)
-		player.Resources.Set(domain.ResourceEngineerMat, 100)
 	}
 }
 
-func (r *Runtime) initializeCastleStates() {
+func (r *Runtime) initializeCityStates() {
 	if r == nil || r.state == nil || r.state.World == nil {
 		return
 	}
 
-	primaryCastleByPlayer := make(map[string]string, len(r.state.Players))
+	primaryCityByPlayer := make(map[string]string, len(r.state.Players))
 	if r.state.Map != nil {
 		for playerID, spawnPos := range r.state.Map.PlayerSpawns {
 			entry, ok := domain.GetNodeAt(r.state.World, spawnPos)
@@ -252,11 +250,11 @@ func (r *Runtime) initializeCastleStates() {
 			}
 
 			building := ecs.BuildingC.Get(entry)
-			if !strings.EqualFold(string(building.Type), "castle") {
+			if !strings.EqualFold(string(building.Type), "city_core") {
 				continue
 			}
 
-			primaryCastleByPlayer[playerID] = ecs.NodeC.Get(entry).ID
+			primaryCityByPlayer[playerID] = ecs.NodeC.Get(entry).ID
 		}
 	}
 
@@ -266,7 +264,7 @@ func (r *Runtime) initializeCastleStates() {
 		}
 
 		building := ecs.BuildingC.Get(entry)
-		if !strings.EqualFold(string(building.Type), "castle") {
+		if !strings.EqualFold(string(building.Type), "city_core") {
 			return
 		}
 
@@ -282,31 +280,31 @@ func (r *Runtime) initializeCastleStates() {
 			return
 		}
 
-		r.state.EnsureCastleState(playerID, node.ID)
+		r.state.EnsureCityState(playerID, node.ID)
 	})
 
 	for playerID, playerState := range r.state.Players {
-		if playerState == nil || len(playerState.Castles) == 0 {
+		if playerState == nil || len(playerState.Cities) == 0 {
 			continue
 		}
 
-		primaryCastleID := strings.TrimSpace(primaryCastleByPlayer[playerID])
-		if primaryCastleID == "" {
-			for castleID := range playerState.Castles {
-				primaryCastleID = castleID
+		primaryCityID := strings.TrimSpace(primaryCityByPlayer[playerID])
+		if primaryCityID == "" {
+			for cityID := range playerState.Cities {
+				primaryCityID = cityID
 				break
 			}
 		}
-		if primaryCastleID == "" {
+		if primaryCityID == "" {
 			continue
 		}
 
-		castle := playerState.Castles[primaryCastleID]
-		if castle == nil || !castle.Resources.IsZero() {
+		city := playerState.Cities[primaryCityID]
+		if city == nil || !city.Resources.IsZero() {
 			continue
 		}
 
-		castle.Resources = playerState.Resources.Clone()
+		city.Resources = playerState.Resources.Clone()
 	}
 }
 
