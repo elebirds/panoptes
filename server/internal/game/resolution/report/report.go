@@ -186,6 +186,14 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"technology_id": strings.TrimSpace(e.SourceTech),
 			},
 		}
+	case event.ResearchTargetChangedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id":     strings.TrimSpace(e.PlayerID),
+				"technology_id": strings.TrimSpace(e.TechnologyID),
+			},
+		}
 	case event.RecipeSelectionChangedEvent:
 		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	case event.RecipeProgressedEvent:

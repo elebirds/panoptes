@@ -21,7 +21,7 @@ func RunTurnResolution(room *GameRoom) {
 		return
 	}
 
-	room.lockPlanningInputs()
+	lockInEvents := room.lockPlanningInputs()
 	room.lockUnitResolutionOrders()
 	unitResolutionPipeline := engine.NewUnitResolutionPipeline()
 	unitEvents := unitResolutionPipeline.Run(room.State().World, room.State())
@@ -29,6 +29,9 @@ func RunTurnResolution(room *GameRoom) {
 	mapEvents := room.applyPlannedMapActions()
 	economyPipeline := engine.NewEconomyPipeline()
 	economyEvents := economyPipeline.Run(room.State().World, room.State())
+	if len(lockInEvents) > 0 {
+		economyEvents = append(lockInEvents, economyEvents...)
+	}
 
 	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)
 	if room.IsDevMode() {
@@ -52,32 +55,38 @@ func RunTurnResolution(room *GameRoom) {
 	clear(state.TurnRuntime.Planning.WarDirectives)
 }
 
-func (r *GameRoom) lockPlanningInputs() {
+func (r *GameRoom) lockPlanningInputs() []event.Event {
 	state := r.State()
 	if state == nil {
-		return
+		return nil
 	}
+	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.PendingPolicies)+len(state.TurnRuntime.Planning.PendingResearch))
 	for playerID, policyID := range state.TurnRuntime.Planning.PendingPolicies {
 		playerState, ok := state.Players[playerID]
 		if !ok || playerState == nil || playerState.Policy == policyID {
 			continue
 		}
-		event.PolicyChangedEvent{
+		evt := event.PolicyChangedEvent{
 			PlayerID:  playerID,
 			OldPolicy: string(playerState.Policy),
 			NewPolicy: string(policyID),
-		}.Apply(state.World, state)
+		}
+		evt.Apply(state.World, state)
+		events = append(events, evt)
 	}
 	for playerID, technologyID := range state.TurnRuntime.Planning.PendingResearch {
 		playerState, ok := state.Players[playerID]
 		if !ok || playerState == nil || playerState.Research.CurrentTargetTechnologyID == technologyID {
 			continue
 		}
-		event.ResearchTargetChangedEvent{
+		evt := event.ResearchTargetChangedEvent{
 			PlayerID:     playerID,
 			TechnologyID: technologyID,
-		}.Apply(state.World, state)
+		}
+		evt.Apply(state.World, state)
+		events = append(events, evt)
 	}
+	return events
 }
 
 func (r *GameRoom) lockUnitResolutionOrders() {

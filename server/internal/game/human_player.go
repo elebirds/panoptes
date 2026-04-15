@@ -11,9 +11,7 @@ import (
 	"log/slog"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	gamequery "github.com/elebirds/panoptes/internal/game/query"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
-	"github.com/elebirds/panoptes/internal/staticdata"
+	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
 )
@@ -53,24 +51,12 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 		slog.Warn("未知阶段通知", "phase", phase, "player_id", p.playerID)
 		return
 	}
-	rules := staticdata.Default().Rules()
-	currentPolicy := ""
-	if room != nil && room.State() != nil {
-		if playerState := room.State().Players[p.playerID]; playerState != nil {
-			currentPolicy = string(playerState.Policy)
-		}
+	if room == nil || room.State() == nil {
+		return
 	}
-	msg := &pb.MsgPlanningStart{
-		Timeout:                int32(rules.TurnTimeLimitPlanning),
-		Tokens:                 int32(rules.TokensPerTurn),
-		ActiveNationalPolicyId: currentPolicy,
-		Phase:                  phase,
-	}
-	if room != nil && room.State() != nil {
-		msg.Turn = int32(room.State().Turn)
-		snapshot := gamequery.BuildPlanningSnapshot(room.State(), p.playerID)
-		snapshot.Phase = phase
-		msg.Snapshot = snapshot
+	msg := gamesession.BuildPlanningStartMessage(room.State(), p.playerID, phase)
+	if msg == nil {
+		return
 	}
 	_ = p.Send(context.Background(), msg)
 }
