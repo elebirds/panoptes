@@ -249,8 +249,8 @@ namespace Panoptes.DebugTools
                 case MsgTokenResult tokenResult:
                     return $"success={tokenResult.Success} tokens_left={tokenResult.TokensLeft} error={tokenResult.ErrorCode}";
                 case MsgRevealResult reveal:
-                    var owner = reveal.TrueState != null ? reveal.TrueState.Owner : string.Empty;
-                    var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingType : string.Empty;
+                    var owner = reveal.TrueState != null ? reveal.TrueState.ControllerPlayerId : string.Empty;
+                    var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingTypeId : string.Empty;
                     return $"node={reveal.NodeId} owner={owner} building={buildingType}";
                 case MsgResearchResult research:
                     return $"success={research.Success} tech={research.TechnologyId} error={research.ErrorCode}";
@@ -278,9 +278,9 @@ namespace Panoptes.DebugTools
         {
             return message switch
             {
-                MsgSetPolicy setPolicy => $"policy={setPolicy.Policy}",
+                MsgSetPolicy setPolicy => $"policy={setPolicy.NationalPolicyId}",
                 MsgBuildStructure buildStructure =>
-                    $"node={buildStructure.NodeId} building={buildStructure.BuildingType}",
+                    $"node={buildStructure.NodeId} building={buildStructure.BuildingTypeId}",
                 MsgRevealNode revealNode => $"node={revealNode.NodeId}",
                 MsgSetWarZone setWarZone => $"zone={setWarZone.ZoneId} nodes={setWarZone.NodeIds.Count}",
                 MsgWarZoneDirective warZoneDirective =>

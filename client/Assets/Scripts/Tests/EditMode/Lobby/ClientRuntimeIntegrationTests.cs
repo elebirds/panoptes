@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using NUnit.Framework;
+using Panoptes.Core.Application.Cache;
+using Panoptes.Protocol.V1;
 using Panoptes.Presentation.UI.Game;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -29,6 +31,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             DestroySingleton("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.GameStateCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Application.Cache.PlanningDraftCache, Panoptes.Core");
         }
 
         [Test]
@@ -99,6 +102,35 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.GameID, Is.Empty);
             Assert.That(cache.MyPlayerID, Is.Empty);
             Assert.That(changedCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void PlanningDraftCache_ShouldClearPreview_WhenPlanningSnapshotApplied()
+        {
+            var cache = PlanningDraftCache.EnsureInstance();
+            var previewChanged = 0;
+            cache.PreviewChanged += () => previewChanged++;
+
+            cache.TrackPreviewRequest("req-1", "unit-1", "move", "node-b");
+            cache.ApplyPreviewResponse(new MsgPlanningPathPreviewResponse
+            {
+                RequestId = "req-1",
+                UnitId = "unit-1",
+                Action = "move",
+                TargetNodeId = "node-b",
+                Valid = true
+            });
+
+            Assert.That(cache.CurrentPreview, Is.Not.Null, "预览响应后应存在当前 preview。");
+
+            cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
+            {
+                Turn = 2,
+                Phase = "planning"
+            });
+
+            Assert.That(cache.CurrentPreview, Is.Null, "snapshot 覆盖后应清掉旧 preview。");
+            Assert.That(previewChanged, Is.GreaterThanOrEqualTo(2), "预览建立与清理都应触发 PreviewChanged。");
         }
 
         [Test]
