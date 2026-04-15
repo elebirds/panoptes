@@ -90,6 +90,7 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	state, unitID := newPreviewState(t)
 	state.TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
 	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
+	state.TurnRuntime.Planning.SetPendingInstitutionLoadout("player-1", []string{"academy_charter"})
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
 		{PlayerID: "player-1", NodeID: "N1_0", BuildingType: "farm", CityID: "C1"},
 		{PlayerID: "player-2", NodeID: "N2_0", BuildingType: "mine", CityID: "C2"},
@@ -118,6 +119,9 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	}
 	if got := snapshot.GetPlannedNationalPolicyId(); got != "expansion" {
 		t.Fatalf("planned national policy = %q, want expansion", got)
+	}
+	if got := snapshot.GetPlannedInstitutionPolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("planned institution policy ids = %#v, want [academy_charter]", got)
 	}
 	if got := len(snapshot.GetBuildOrders()); got != 1 {
 		t.Fatalf("build order count = %d, want 1", got)

@@ -13,6 +13,7 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine"
 	"github.com/elebirds/panoptes/internal/event"
+	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
@@ -67,8 +68,18 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should remain unavailable until next turn")
 	}
-	if !state.Players["player-1"].Research.HasTechnology("agrarian_foundations") {
-		t.Fatalf("technology not unlocked")
+	if state.HasTechnologyUnlocked("player-1", "agrarian_foundations") {
+		t.Fatalf("technology should remain inactive on completion turn")
+	}
+	if got := state.Players["player-1"].Research.CompletedTechnologyIDs(); len(got) != 1 || got[0] != "agrarian_foundations" {
+		t.Fatalf("completed tech ids = %#v, want [agrarian_foundations]", got)
+	}
+
+	state.Turn++
+	gamesession.PreparePlanningStartState(state)
+
+	if !state.HasTechnologyUnlocked("player-1", "agrarian_foundations") {
+		t.Fatalf("technology should activate at next planning start")
 	}
 }
 
@@ -150,11 +161,21 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 
 	engine.NewEconomyPipeline().Run(world, state)
 
+	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
+		t.Fatalf("food after completion turn = %d, want 0", got)
+	}
+	if got := domain.GetUnitsByNode(world, domain.Position{X: 1, Y: 1}); len(got) != 0 {
+		t.Fatalf("granted units at spawn on completion turn = %d, want 0", len(got))
+	}
+
+	state.Turn++
+	gamesession.PreparePlanningStartState(state)
+
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
-		t.Fatalf("food after grant = %d, want 3", got)
+		t.Fatalf("food after activation = %d, want 3", got)
 	}
 	if got := domain.GetUnitsByNode(world, domain.Position{X: 1, Y: 1}); len(got) != 1 {
-		t.Fatalf("granted units at spawn = %d, want 1", len(got))
+		t.Fatalf("granted units at spawn after activation = %d, want 1", len(got))
 	}
 }
 
@@ -181,16 +202,14 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "research_boost"
 
 	engine.NewEconomyPipeline().Run(world, state)
-	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
-		t.Fatalf("research progress after unlock turn = %d, want 1", got)
+	if got := state.EffectiveResearchOutput("player-1"); got != 1 {
+		t.Fatalf("research output during completion turn = %d, want 1", got)
 	}
 
-	engine.NewEconomyPipeline().Run(world, state)
-	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
-		t.Fatalf("research progress without active target = %d, want 1", got)
-	}
+	state.Turn++
+	gamesession.PreparePlanningStartState(state)
 	if got := state.EffectiveResearchOutput("player-1"); got != 3 {
-		t.Fatalf("research output preview after unlock = %d, want 3", got)
+		t.Fatalf("research output preview after activation = %d, want 3", got)
 	}
 }
 

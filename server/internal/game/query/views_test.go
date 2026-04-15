@@ -21,6 +21,10 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
+			{ID: "civic_institutions", Branch: "governance", Tier: 1, ResearchCost: 1},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
 		},
 	}))
 
@@ -29,10 +33,15 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
 	})
 	player := state.Players["player-1"]
-	player.Research.CurrentTargetTechnologyID = "agrarian_foundations"
-	player.Research.CurrentProgress = 2
+	player.Research.SetCurrentTarget("agrarian_foundations")
+	player.Research.SetProgress("agrarian_foundations", 2)
 	player.Research.ProgressCap = 99
 	player.Research.UnlockTechnology("mining")
+	player.Research.SetProgress("civic_institutions", 1)
+	player.Research.MarkTechnologyCompleted("civic_institutions", 1)
+	player.Institutions.SlotCount = 1
+	player.Institutions.UnlockCandidate("academy_charter")
+	player.Institutions.ActivePolicyIDs = []string{"academy_charter"}
 
 	view := BuildPlayerView(state, "player-1")
 
@@ -45,8 +54,26 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 	if got := view.GetResearch().GetCurrentProgress(); got != 2 {
 		t.Fatalf("current_progress = %d, want 2", got)
 	}
-	if got := view.GetResearch().GetCompletedTechnologyIds(); len(got) != 1 || got[0] != "mining" {
-		t.Fatalf("completed_technology_ids = %#v, want [mining]", got)
+	if got := view.GetResearch().GetCompletedTechnologyIds(); len(got) != 2 || got[0] != "civic_institutions" || got[1] != "mining" {
+		t.Fatalf("completed_technology_ids = %#v, want [civic_institutions mining]", got)
+	}
+	if got := view.GetResearch().GetActiveTechnologyIds(); len(got) != 1 || got[0] != "mining" {
+		t.Fatalf("active_technology_ids = %#v, want [mining]", got)
+	}
+	if got := view.GetResearch().GetPendingActivationTechnologyIds(); len(got) != 1 || got[0] != "civic_institutions" {
+		t.Fatalf("pending_activation_technology_ids = %#v, want [civic_institutions]", got)
+	}
+	if got := view.GetResearch().GetSavedProgress(); len(got) != 1 || got[0].GetTechnologyId() != "civic_institutions" || got[0].GetCurrentProgress() != 1 {
+		t.Fatalf("saved_progress = %#v, want civic_institutions progress 1", got)
+	}
+	if got := view.GetInstitutions().GetSlotCount(); got != 1 {
+		t.Fatalf("institution slot_count = %d, want 1", got)
+	}
+	if got := view.GetInstitutions().GetCandidatePolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("candidate_policy_ids = %#v, want [academy_charter]", got)
+	}
+	if got := view.GetInstitutions().GetActivePolicyIds(); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("active_policy_ids = %#v, want [academy_charter]", got)
 	}
 }
 
@@ -235,10 +262,10 @@ func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) 
 		DisabledReason: "outside_territory",
 	})
 	ecs.FacilityTakeoverC.SetValue(nodeEntry, ecs.FacilityTakeoverComp{
-		Mode:            "delayed",
-		Progress:        2,
-		Required:        5,
-		Completed:       false,
+		Mode:      "delayed",
+		Progress:  2,
+		Required:  5,
+		Completed: false,
 	})
 
 	view := BuildNodeView(state, nodeEntry, "player-1")

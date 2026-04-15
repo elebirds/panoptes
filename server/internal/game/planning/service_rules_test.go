@@ -279,6 +279,73 @@ func TestWarZoneDirectiveReplacesDraftOnSameZone(t *testing.T) {
 	}
 }
 
+func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].Institutions.SlotCount = 1
+	state.Players["player-1"].Institutions.UnlockCandidate("academy_charter")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetInstitutionLoadout{
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: []string{"expansion"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetInstitutionLoadoutResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("institution result = %#v, want invalid_directive", result)
+	}
+	if state.TurnRuntime.Planning.HasPendingInstitutionLoadout("player-1") {
+		t.Fatalf("pending institution loadout should stay empty")
+	}
+}
+
+func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].Institutions.SlotCount = 1
+	state.Players["player-1"].Institutions.UnlockCandidate("academy_charter")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetInstitutionLoadout{
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: []string{"academy_charter"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetInstitutionLoadoutResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() {
+		t.Fatalf("institution result = %#v, want success", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingInstitutionLoadout("player-1"); len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("pending institution loadout = %#v, want [academy_charter]", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || len(snapshot.GetPlannedInstitutionPolicyIds()) != 1 || snapshot.GetPlannedInstitutionPolicyIds()[0] != "academy_charter" {
+		t.Fatalf("planned institution ids = %#v, want [academy_charter]", snapshot.GetPlannedInstitutionPolicyIds())
+	}
+}
+
 type planningSessionStub struct {
 	state *domain.GameState
 	sent  map[string][]proto.Message
@@ -308,6 +375,10 @@ func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 
 func (s *planningSessionStub) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	s.state.TurnRuntime.Planning.UpsertRecipeSelection(order)
+}
+
+func (s *planningSessionStub) SetInstitutionLoadout(playerID string, policyIDs []string) {
+	s.state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, policyIDs)
 }
 
 func (s *planningSessionStub) SetMinisterDirective(playerID string, directive string) {

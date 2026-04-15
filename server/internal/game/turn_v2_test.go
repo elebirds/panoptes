@@ -85,6 +85,9 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	if start.GetPhase() != domain.PhasePlanning.String() {
 		t.Fatalf("phase = %q, want %q", start.GetPhase(), domain.PhasePlanning.String())
 	}
+	if start.GetMyPlayer() == nil || start.GetMyPlayer().GetTokensLeft() != 1 {
+		t.Fatalf("my_player = %#v, want tokens_left=1", start.GetMyPlayer())
+	}
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
 	}
@@ -472,6 +475,55 @@ func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testin
 	}
 	if got := economy.GetEvents()[1].GetType(); got != "research_target_changed" {
 		t.Fatalf("economy second event = %q, want research_target_changed", got)
+	}
+}
+
+func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{
+				ID:               "academy_charter",
+				Layer:            "institutional",
+				ActivationTiming: "next_turn",
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "point.output", PointKey: "research_output", ModifierType: "flat", Value: 1},
+				},
+			},
+		},
+	}))
+
+	tp := newStubTransport()
+	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhaseResolving.String()
+	room.State().Players["player-1"].Institutions.SlotCount = 1
+	room.State().Players["player-1"].Institutions.UnlockCandidate("academy_charter")
+	room.State().TurnRuntime.Planning.SetPendingInstitutionLoadout("player-1", []string{"academy_charter"})
+
+	room.RunTurnResolution()
+
+	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 0 {
+		t.Fatalf("active institutions after settlement = %#v, want empty", got)
+	}
+	if got := room.State().Players["player-1"].Institutions.PendingPolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("pending institutions after settlement = %#v, want [academy_charter]", got)
+	}
+
+	room.State().Turn++
+	gamesession.PreparePlanningStartState(room.State())
+
+	if got := room.State().Players["player-1"].Institutions.ActivePolicyIDs; len(got) != 1 || got[0] != "academy_charter" {
+		t.Fatalf("active institutions after planning start = %#v, want [academy_charter]", got)
+	}
+	if got := room.State().EffectiveResearchOutput("player-1"); got != 2 {
+		t.Fatalf("research output with institution active = %d, want 2", got)
 	}
 }
 

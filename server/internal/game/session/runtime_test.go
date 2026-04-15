@@ -57,6 +57,9 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if got := start.GetTurn(); got != 4 {
 		t.Fatalf("turn = %d, want 4", got)
 	}
+	if start.GetMyPlayer() == nil {
+		t.Fatalf("my_player is nil")
+	}
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
 	}
