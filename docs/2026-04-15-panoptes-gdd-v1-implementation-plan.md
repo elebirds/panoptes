@@ -110,6 +110,8 @@
 - `M2` 相关基础设施已明显前移：服务端现在可以在不依赖客户端的情况下，用规则级测试与 harness 场景测试复现 `planning -> settlement` 的关键裁决。
 - Chunk 2 已按“最小收口”完成：`player.Resources` 已回归唯一权威库存，`planning` 与长期状态已分离，城市/建筑状态与服务城市语义已正式进入 `domain + ecs + query` 边界，`planning snapshot` 也已按唯一键草案语义稳定回显研究/国策/建筑/配方/战区指令。
 - `planning -> resolving` 边界的 lock-in 现在会把 `national_policy_changed` 与 `research_target_changed` 放入 `MsgTurnSettlement.economy` 事件流，而不再只是静默改状态。
+- Chunk 3 已按 revised plan 完成主干收口：经济 resolving 改为单一 orchestrator，点数预算已从 `ResourceBag` 拆分为 resolving 内部 `PointBag`，`PlayerView.points` 保持“有效产出预览”语义，建筑来源修正已正式纳入 `staticdata + datagen + content + generated bundle` 链路。
+- 统一修正公式现已切到 `((base*(1+percent))+flat)*multiplier`，并补上了 combat regression 与结算事件映射；点数刷新、点数消耗、建造跳过/配方阻塞都能进入 settlement/report。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
 - 当前已覆盖科技推进、研究解锁后次回合建造、配方阻塞、开拓者建城、设施停用/失效、主城摧毁判负；“延时接管并转移归属”仍待静态规则补齐接管回合数后继续实现。
 - 主工作区验证结果：`cd server && go test ./...` 与 `cd server && go build ./...` 已于 2026-04-15 在 `main` 上通过。
@@ -347,6 +349,22 @@ Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正�
 
 ## 8. Chunk 3：经济基础、点数与修正系统
 
+### 8.0 当前状态（2026-04-15）
+
+Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济结算顺序收口 + 修正来源统一聚合”的主干改造，主要包括：
+
+- `ResourceBag` 已回归纯物质库存；科研/工业点数不再伪装成资源库存条目，而是在 `TurnRuntime.Resolving.PointBudgets` 中以独立 `PointBag` 管理。
+- 经济结算不再依赖通用 `Pipeline.Run` 的“先收集后 Apply”语义；`NewEconomyPipeline()` 现在会进入单一 orchestrator，按“预算刷新 -> 科研推进 -> 建造 -> 配方 -> 其余生产/维护”的固定顺序执行同回合共享预算。
+- `PlayerView.points` 与客户端 HUD 继续展示 `EffectiveResearchOutput / EffectiveIndustryOutput` 的预览值，而不是 resolving 内部剩余预算；预算刷新与消费改由 settlement economy 事件显式表达。
+- 建筑修正来源已前移到正式数据链路：`BuildingDefinition`、schema、validator、作者源和生成 bundle 现在都支持 `explicit_effects / modifier_effects` 字段，本轮作者源先以空数组和最小样例口径收口。
+- 统一修正公式已切到 `((base*(1+percent))+flat)*multiplier`，并通过同一入口同时服务经济与 combat；科技、国策、已建成且未停用建筑都可作为活跃修正来源。
+- 结算报告已补齐 `point_budget_refreshed`、`point_spent`、`building_skipped`、`recipe_skipped` 等事件映射；建造会在 settlement 重新校验可建性，失效配方选择也会显式进入 skipped/blocked，而不是静默失败。
+
+当前说明：
+
+- Chunk 3 已完成 revised plan 口径下的主干闭环，但 Chunk 4 里的“低效推进/延迟惩罚”“更完整城市/接管语义”仍未提前实现。
+- 客户端本轮只同步了“建造成功=草案已记录”的提示语义与断言；Unity EditMode 自动化结果仍未在主工作区重新确认通过。
+
 ### Task 7: 建立当前基线的资源与点数回合结算
 
 **Files:**
@@ -358,10 +376,10 @@ Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正�
 - Modify: `server/internal/game/resolution/report/report.go`
 - Modify: `server/internal/game/resolution/report/report_test.go`
 
-- [ ] **Step 1: 明确当前 MVP 的资源库存口径为玩家级全局虚空库存，并在结算链中统一读写**
-- [ ] **Step 2: 为科研产出与建造/工业产出建立统一回合收入、统一修正入口和统一结算展示**
-- [ ] **Step 3: 让资源产出、点数产出、维护消耗和库存变化都进入统一事件流与结算报告**
-- [ ] **Step 4: 保证道路当前不参与经济物流判定，但在模型中保留后续接入点**
+- [x] **Step 1: 明确当前 MVP 的资源库存口径为玩家级全局虚空库存，并在结算链中统一读写**
+- [x] **Step 2: 为科研产出与建造/工业产出建立统一回合收入、统一修正入口和统一结算展示**
+- [x] **Step 3: 让资源产出、点数产出、维护消耗和库存变化都进入统一事件流与结算报告**
+- [x] **Step 4: 保证道路当前不参与经济物流判定，但在模型中保留后续接入点**
 
 ### Task 8: 收敛统一修正系统
 
@@ -375,10 +393,10 @@ Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正�
 - Modify: `server/internal/engine/combat/modifier_integration_test.go`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
-- [ ] **Step 1: 统一 `flat / percent / multiplier` 的计算顺序，并明确触发域与目标域**
-- [ ] **Step 2: 让科技、政策和建筑都通过同一修正入口影响科研、建造、单位和配方**
-- [ ] **Step 3: 让“显式效果”与“修正效果”分层执行，避免在修正路径中偷做解锁行为**
-- [ ] **Step 4: 补齐集成测试，保证同一修正不会在不同系统里出现不同结果**
+- [x] **Step 1: 统一 `flat / percent / multiplier` 的计算顺序，并明确触发域与目标域**
+- [x] **Step 2: 让科技、政策和建筑都通过同一修正入口影响科研、建造、单位和配方**
+- [x] **Step 3: 让“显式效果”与“修正效果”分层执行，避免在修正路径中偷做解锁行为**
+- [x] **Step 4: 补齐集成测试，保证同一修正不会在不同系统里出现不同结果**
 
 ## 9. Chunk 4：城市、建筑与配方主闭环
 
