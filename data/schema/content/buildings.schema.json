@@ -134,6 +134,44 @@
         {
           "additionalProperties": false,
           "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_policy"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "institution_slots": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "type": {
+              "enum": [
+                "add_institution_slots"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "grant_resources": {
               "$ref": "#/$defs/resource_amount"
             },

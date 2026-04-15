@@ -123,6 +123,20 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			),
 			objectSchema(
 				map[string]any{
+					"type":      enumSchema([]string{"unlock_policy"}),
+					"target_id": stringSchema(nil),
+				},
+				[]string{"type", "target_id"},
+			),
+			objectSchema(
+				map[string]any{
+					"type":              enumSchema([]string{"add_institution_slots"}),
+					"institution_slots": intSchema(map[string]any{"minimum": 1}),
+				},
+				[]string{"type"},
+			),
+			objectSchema(
+				map[string]any{
 					"type":            enumSchema([]string{"grant"}),
 					"grant_resources": refSchema("#/$defs/resource_amount"),
 					"grant_units":     arraySchema(stringSchema(nil), nil),
