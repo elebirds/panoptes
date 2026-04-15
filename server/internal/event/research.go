@@ -21,6 +21,28 @@ type TechnologyUnlockedEvent struct {
 	Cost         int
 }
 
+type ResearchTargetChangedEvent struct {
+	PlayerID     string
+	TechnologyID string
+}
+
+func (e ResearchTargetChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if state == nil {
+		return
+	}
+	playerState, ok := state.Players[e.PlayerID]
+	if !ok || playerState == nil {
+		return
+	}
+	playerState.Research.CurrentTargetTechnologyID = e.TechnologyID
+}
+
+func (e ResearchTargetChangedEvent) Kind() string { return "research_target_changed" }
+
+func (e ResearchTargetChangedEvent) String() string {
+	return fmt.Sprintf("ResearchTargetChangedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
+}
+
 func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	if state == nil {
 		return
@@ -98,9 +120,7 @@ func (e TechnologyGrantAppliedEvent) Apply(world donburi.World, state *domain.Ga
 	if state == nil {
 		return
 	}
-	for _, key := range e.Resources.Keys() {
-		state.AddResourceToCity(e.PlayerID, "", key, e.Resources.Get(key))
-	}
+	state.AddResources(e.PlayerID, e.Resources)
 	if len(e.UnitTypes) == 0 {
 		return
 	}

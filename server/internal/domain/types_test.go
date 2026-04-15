@@ -230,9 +230,6 @@ func TestEnsureCityStateCreatesBucket(t *testing.T) {
 	if cityState.OwnerID != "player-1" {
 		t.Fatalf("owner = %q", cityState.OwnerID)
 	}
-	if cityState.Resources == nil {
-		t.Fatalf("resources is nil")
-	}
 	if state.Players["player-1"].Cities["city-a"] == nil {
 		t.Fatalf("city state was not stored")
 	}

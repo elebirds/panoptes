@@ -129,9 +129,7 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 	if e.Cost != nil {
 		state.ConsumeResources(e.Owner, e.CityID, e.Cost)
 	}
-	for _, key := range e.Resources.Keys() {
-		state.AddResourceToCity(e.Owner, e.CityID, key, e.Resources.Get(key))
-	}
+	state.AddResources(e.Owner, e.Resources)
 	if len(e.Units) == 0 || !ok {
 		return
 	}

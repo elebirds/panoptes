@@ -45,7 +45,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			requiredProgress = 1
 		}
 		wasBlocked := operation.BlockedReason != ""
-		if !state.CanAffordFromCity(building.Owner, building.CityID, cost) {
+		if !state.CanAffordResources(building.Owner, cost) {
 			events = append(events, event.RecipeProgressedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				ProgressTurns: operation.ProgressTurns,

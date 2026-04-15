@@ -283,29 +283,7 @@ func (r *Runtime) initializeCityStates() {
 		r.state.EnsureCityState(playerID, node.ID)
 	})
 
-	for playerID, playerState := range r.state.Players {
-		if playerState == nil || len(playerState.Cities) == 0 {
-			continue
-		}
-
-		primaryCityID := strings.TrimSpace(primaryCityByPlayer[playerID])
-		if primaryCityID == "" {
-			for cityID := range playerState.Cities {
-				primaryCityID = cityID
-				break
-			}
-		}
-		if primaryCityID == "" {
-			continue
-		}
-
-		city := playerState.Cities[primaryCityID]
-		if city == nil || !city.Resources.IsZero() {
-			continue
-		}
-
-		city.Resources = playerState.Resources.Clone()
-	}
+	_ = primaryCityByPlayer
 }
 
 func (r *Runtime) sendGameInit(p Player) {

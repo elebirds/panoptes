@@ -8,7 +8,6 @@ package domain
 
 import (
 	"math"
-	"sort"
 
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -36,11 +35,12 @@ type TurnRuntime struct {
 
 type PlanningInputs struct {
 	BuildOrders        []BuildOrder
-	ResearchOrders     []ResearchOrder
 	RecipeSelections   []RecipeSelectionOrder
 	MinisterBuilds     []BuildOrder
 	MinisterMoves      []MoveOrder
 	MinisterDirectives map[string]string
+	PendingPolicies    map[string]Policy
+	PendingResearch    map[string]string
 	WarDirectives      map[string][]WarZoneDirective
 	UnitOrders         map[string]UnitDirective
 }
@@ -81,13 +81,6 @@ type PlayerState struct {
 	WarZones          []*WarZone
 }
 
-type CityState struct {
-	CityID    string
-	NodeID    string
-	OwnerID   string
-	Resources ResourceBag
-}
-
 type WarZone struct {
 	ID        string
 	Name      string
@@ -113,11 +106,6 @@ type BuildOrder struct {
 	CityID       string
 }
 
-type ResearchOrder struct {
-	PlayerID     string
-	TechnologyID string
-}
-
 type RecipeSelectionOrder struct {
 	PlayerID string
 	NodeID   string
@@ -126,23 +114,23 @@ type RecipeSelectionOrder struct {
 
 type ResearchState struct {
 	CurrentTargetTechnologyID string
-	CurrentProgress      int
-	OutputPerTurn        int
-	ProgressCap          int
-	UnlockedTechnologies map[string]struct{}
-	UnlockedBuildings    map[string]struct{}
-	UnlockedRecipes      map[string]struct{}
+	CurrentProgress           int
+	OutputPerTurn             int
+	ProgressCap               int
+	UnlockedTechnologies      map[string]struct{}
+	UnlockedBuildings         map[string]struct{}
+	UnlockedRecipes           map[string]struct{}
 }
 
 func NewResearchState(starting int, income int, cap int) ResearchState {
 	return ResearchState{
 		CurrentTargetTechnologyID: "",
-		CurrentProgress:      starting,
-		OutputPerTurn:        income,
-		ProgressCap:          cap,
-		UnlockedTechnologies: make(map[string]struct{}),
-		UnlockedBuildings:    make(map[string]struct{}),
-		UnlockedRecipes:      make(map[string]struct{}),
+		CurrentProgress:           starting,
+		OutputPerTurn:             income,
+		ProgressCap:               cap,
+		UnlockedTechnologies:      make(map[string]struct{}),
+		UnlockedBuildings:         make(map[string]struct{}),
+		UnlockedRecipes:           make(map[string]struct{}),
 	}
 }
 
@@ -384,6 +372,8 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		TurnRuntime: TurnRuntime{
 			Planning: PlanningInputs{
 				MinisterDirectives: make(map[string]string),
+				PendingPolicies:    make(map[string]Policy),
+				PendingResearch:    make(map[string]string),
 				WarDirectives:      make(map[string][]WarZoneDirective),
 				UnitOrders:         make(map[string]UnitDirective),
 			},
@@ -434,295 +424,4 @@ func (s *GameState) GetNode(nodeID string) (*donburi.Entry, bool) {
 		return nil, false
 	}
 	return s.World.Entry(entity), true
-}
-
-func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
-	if s == nil {
-		return nil
-	}
-	if cityID == "" {
-		return nil
-	}
-
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return nil
-	}
-
-	if playerState.Cities == nil {
-		playerState.Cities = make(map[string]*CityState)
-	}
-
-	city, ok := playerState.Cities[cityID]
-	if ok && city != nil {
-		if city.NodeID == "" {
-			city.NodeID = cityID
-		}
-		if city.OwnerID == "" {
-			city.OwnerID = playerID
-		}
-		if city.Resources == nil {
-			city.Resources = NewResourceBag()
-		}
-		return city
-	}
-
-	city = &CityState{
-		CityID:    cityID,
-		NodeID:    cityID,
-		OwnerID:   playerID,
-		Resources: NewResourceBag(),
-	}
-	playerState.Cities[cityID] = city
-	return city
-}
-
-// PrimaryCityState returns a stable fallback city for player-scoped
-// operations that still need落到某个城市上。
-//
-// 当前实现按 cityID 的字典序选择主城市，目的是在“没有显式 cityID”
-// 的旧逻辑里维持可预测行为，避免不同运行时因为 map 遍历顺序不同而把资源
-// 加到不同城市。
-func (s *GameState) PrimaryCityState(playerID string) *CityState {
-	if s == nil {
-		return nil
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil || len(playerState.Cities) == 0 {
-		return nil
-	}
-
-	ids := make([]string, 0, len(playerState.Cities))
-	for cityID := range playerState.Cities {
-		if cityID != "" {
-			ids = append(ids, cityID)
-		}
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	sort.Strings(ids)
-	return playerState.Cities[ids[0]]
-}
-
-// CityResources returns the resource bag for a specific city.
-//
-// 当调用方没有传 cityID 时，这里退回到主城市资源；如果玩家当前还没有
-// 城市资源结构，则继续兼容旧的 player.Resources。
-func (s *GameState) CityResources(playerID string, cityID string) ResourceBag {
-	if s == nil {
-		return nil
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return nil
-	}
-	if cityID != "" {
-		if city := s.EnsureCityState(playerID, cityID); city != nil {
-			return city.Resources
-		}
-		return nil
-	}
-	if city := s.PrimaryCityState(playerID); city != nil {
-		return city.Resources
-	}
-	return playerState.Resources
-}
-
-// TotalCityResources aggregates all city resource bags into a single view.
-//
-// 这层聚合主要服务于两类场景：
-// 1. 仍然只认识 player.Resources 的旧协议/旧客户端。
-// 2. 没有明确 cityID 的消耗逻辑，需要先判断玩家总池是否足够。
-func (s *GameState) TotalCityResources(playerID string) ResourceBag {
-	if s == nil {
-		return nil
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return nil
-	}
-	if len(playerState.Cities) == 0 {
-		return playerState.Resources.Clone()
-	}
-
-	total := NewResourceBag()
-	for _, city := range playerState.Cities {
-		if city == nil || city.Resources == nil {
-			continue
-		}
-		total = total.Add(city.Resources)
-	}
-	return total
-}
-
-// SyncPlayerResourcesFromCities mirrors all city resources back into
-// player.Resources.
-//
-// 目前 player.Resources 不再是唯一真实来源，而更像“聚合视图”。
-// 每次城市资源发生结算后，都需要同步这里，保证仍依赖 PlayerView.Resources
-// 的消息与 UI 不会和城市看板显示脱节。
-func (s *GameState) SyncPlayerResourcesFromCities(playerID string) {
-	if s == nil {
-		return
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return
-	}
-	if len(playerState.Cities) == 0 {
-		if playerState.Resources == nil {
-			playerState.Resources = NewResourceBag()
-		}
-		return
-	}
-	playerState.Resources = s.TotalCityResources(playerID)
-}
-
-// CanAffordFromCity checks affordability against the city-scoped pool.
-//
-// 有 cityID 时严格校验指定城市；没有 cityID 时，退回到玩家所有城市
-// 的聚合资源池，用于兼容道路、战斗补给等尚未绑定具体城市的行为。
-func (s *GameState) CanAffordFromCity(playerID string, cityID string, cost ResourceBag) bool {
-	if cost == nil || cost.IsZero() {
-		return true
-	}
-	if cityID != "" {
-		resources := s.CityResources(playerID, cityID)
-		return resources != nil && resources.CanAfford(cost)
-	}
-	total := s.TotalCityResources(playerID)
-	return total != nil && total.CanAfford(cost)
-}
-
-// ConsumeResources subtracts resources from the city-scoped model.
-//
-// 规则如下：
-//  1. 有 cityID 时，只从该城市扣费。
-//  2. 没有 cityID 时，先校验玩家总城市资源是否足够，再按稳定顺序从多个城市
-//     分摊扣除，避免 nondeterministic 的 map 遍历影响结果。
-//  3. 每次扣费完成后，同步刷新 player.Resources 聚合视图。
-func (s *GameState) ConsumeResources(playerID string, cityID string, cost ResourceBag) bool {
-	if s == nil || cost == nil || cost.IsZero() {
-		return true
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return false
-	}
-
-	if cityID != "" {
-		city := s.EnsureCityState(playerID, cityID)
-		if city == nil || !city.Resources.CanAfford(cost) {
-			return false
-		}
-		city.Resources = city.Resources.Sub(cost)
-		s.SyncPlayerResourcesFromCities(playerID)
-		return true
-	}
-
-	total := s.TotalCityResources(playerID)
-	if total == nil || !total.CanAfford(cost) {
-		return false
-	}
-	if len(playerState.Cities) == 0 {
-		playerState.Resources = playerState.Resources.Sub(cost)
-		return true
-	}
-
-	ids := make([]string, 0, len(playerState.Cities))
-	for id := range playerState.Cities {
-		if id != "" {
-			ids = append(ids, id)
-		}
-	}
-	sort.Strings(ids)
-	for _, key := range cost.Keys() {
-		remaining := cost.Get(key)
-		for _, id := range ids {
-			if remaining <= 0 {
-				break
-			}
-			city := playerState.Cities[id]
-			if city == nil || city.Resources == nil {
-				continue
-			}
-			available := city.Resources.Get(key)
-			if available <= 0 {
-				continue
-			}
-			consume := available
-			if consume > remaining {
-				consume = remaining
-			}
-			city.Resources.AddAmount(key, -consume)
-			remaining -= consume
-		}
-	}
-	s.SyncPlayerResourcesFromCities(playerID)
-	return true
-}
-
-// AddResourceToCity adds delta to a city resource pool and keeps the
-// player-level aggregate in sync.
-//
-// 没有显式 cityID 时，这里优先回落到主城市，用来承接尚未完成“明确归属”
-// 改造的产出逻辑；如果玩家甚至还没有城市结构，则继续兼容旧的 player.Resources。
-func (s *GameState) AddResourceToCity(playerID string, cityID string, key ResourceKey, delta int) {
-	if s == nil || delta == 0 {
-		return
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return
-	}
-	if cityID != "" {
-		city := s.EnsureCityState(playerID, cityID)
-		if city == nil {
-			return
-		}
-		city.Resources.AddAmount(key, delta)
-		s.SyncPlayerResourcesFromCities(playerID)
-		return
-	}
-	if city := s.PrimaryCityState(playerID); city != nil {
-		city.Resources.AddAmount(key, delta)
-		s.SyncPlayerResourcesFromCities(playerID)
-		return
-	}
-	playerState.Resources.AddAmount(key, delta)
-}
-
-// RefreshIndustryOutput refreshes the per-city industry budget instead of once
-// per player.
-//
-// 这样客户端城市资源看板里的 industry_output 才能反映“每座城市自己的工业产出”，
-// 而不是玩家共享的一份总值。
-func (s *GameState) RefreshIndustryOutput(playerID string, amount int, maxVal int) {
-	if s == nil || amount == 0 {
-		return
-	}
-	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil {
-		return
-	}
-	if len(playerState.Cities) == 0 {
-		next := playerState.Resources.Get(ResourceIndustryOutput) + amount
-		if next > maxVal {
-			next = maxVal
-		}
-		playerState.Resources.Set(ResourceIndustryOutput, next)
-		return
-	}
-	for _, city := range playerState.Cities {
-		if city == nil {
-			continue
-		}
-		next := city.Resources.Get(ResourceIndustryOutput) + amount
-		if next > maxVal {
-			next = maxVal
-		}
-		city.Resources.Set(ResourceIndustryOutput, next)
-	}
-	s.SyncPlayerResourcesFromCities(playerID)
 }

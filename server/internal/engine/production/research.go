@@ -19,20 +19,21 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 	if state == nil {
 		return nil
 	}
-	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.ResearchOrders))
-	spentByPlayer := make(map[string]int)
+	events := make([]event.Event, 0, len(state.Players))
 
-	for _, order := range state.TurnRuntime.Planning.ResearchOrders {
-		playerState, ok := state.Players[order.PlayerID]
-		if !ok || playerState == nil {
+	for playerID, playerState := range state.Players {
+		if playerState == nil {
 			continue
 		}
-		technology, ok := staticdata.Default().GetTechnology(order.TechnologyID)
-		if !ok || playerState.Research.HasTechnology(order.TechnologyID) {
+		technologyID := playerState.Research.CurrentTargetTechnologyID
+		if technologyID == "" {
 			continue
 		}
-		available := playerState.Research.CurrentProgress - spentByPlayer[order.PlayerID]
-		if available < technology.ResearchCost {
+		technology, ok := staticdata.Default().GetTechnology(technologyID)
+		if !ok || playerState.Research.HasTechnology(technologyID) {
+			continue
+		}
+		if playerState.Research.CurrentProgress < technology.ResearchCost {
 			continue
 		}
 		prereqsMet := true
@@ -45,9 +46,8 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 		if !prereqsMet {
 			continue
 		}
-		spentByPlayer[order.PlayerID] += technology.ResearchCost
 		events = append(events, event.TechnologyUnlockedEvent{
-			PlayerID: order.PlayerID, TechnologyID: order.TechnologyID, Cost: technology.ResearchCost,
+			PlayerID: playerID, TechnologyID: technologyID, Cost: technology.ResearchCost,
 		})
 		for _, effect := range technology.ExplicitEffects {
 			if effect.Type != "grant" {
@@ -56,7 +56,7 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 			// grant 不走 recipe，而是和科技解锁一起排进事件流，
 			// 由 Event.Apply 负责真正加资源/刷单位。
 			events = append(events, event.TechnologyGrantAppliedEvent{
-				PlayerID:   order.PlayerID,
+				PlayerID:   playerID,
 				Resources:  toResourceBag(effect.GrantResources),
 				UnitTypes:  append([]string(nil), effect.GrantUnits...),
 				SourceTech: technology.ID,

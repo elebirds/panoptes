@@ -57,7 +57,7 @@ type ResourceProducedEvent struct {
 // 资源直接落入对应城市；随后会同步回 player.Resources 聚合视图，兼容仍然只
 // 读取玩家总资源的消息与前端逻辑。
 func (e ResourceProducedEvent) Apply(_ donburi.World, state *domain.GameState) {
-	state.AddResourceToCity(e.Owner, e.CityID, domain.ResourceKey(e.ResourceType), e.Amount)
+	state.AddResource(e.Owner, domain.ResourceKey(e.ResourceType), e.Amount)
 }
 
 func (e ResourceProducedEvent) Kind() string { return "resource_produced" }
@@ -179,7 +179,7 @@ func (e IndustryOutputRefreshedEvent) Apply(_ donburi.World, state *domain.GameS
 	if e.Amount <= 0 {
 		return
 	}
-	state.RefreshIndustryOutput(e.PlayerID, e.Amount, e.Amount)
+	state.RefreshTurnOutputBudget(e.PlayerID, domain.ResourceIndustryOutput, e.Amount, e.Amount)
 }
 
 func (e IndustryOutputRefreshedEvent) Kind() string { return "industry_output_refreshed" }
