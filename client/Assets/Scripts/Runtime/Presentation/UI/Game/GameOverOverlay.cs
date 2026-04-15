@@ -285,7 +285,7 @@ namespace Panoptes.Presentation.UI.Game
         {
             return reason switch
             {
-                "castle_destroyed" => "Main castle destroyed",
+                "city_core_destroyed" => "City core destroyed",
                 "timeout_draw" => "Turn limit reached, draw",
                 _ => string.IsNullOrWhiteSpace(reason) ? "Game ended" : reason
             };

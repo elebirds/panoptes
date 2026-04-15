@@ -110,7 +110,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
         [SerializeField] private string[] territoryOnlyBuildingTypes =
         {
-            "castle",
+            "city_core",
             "engineer",
             "engineer_camp",
             "workshop",
@@ -491,9 +491,9 @@ namespace Panoptes.Presentation.Map
         private void EnterBuildPlacement(string buildingType, BuildPlacementRule rule)
         {
             _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
-            if (disallowManualCastlePlacement && string.Equals(_buildType, "castle", StringComparison.Ordinal))
+            if (disallowManualCastlePlacement && string.Equals(_buildType, "city_core", StringComparison.Ordinal))
             {
-                Debug.Log("[MapInputHandler] Castle is pre-placed by map config and cannot be manually built.");
+                Debug.Log("[MapInputHandler] City core is pre-placed by map config and cannot be manually built.");
                 ExitBuildMode();
                 return;
             }
@@ -746,7 +746,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (string.Equals(buildingType, "castle", StringComparison.Ordinal))
+            if (string.Equals(buildingType, "city_core", StringComparison.Ordinal))
             {
                 HighlightTerritoryForNode(nodeState);
             }
@@ -1879,7 +1879,7 @@ namespace Panoptes.Presentation.Map
             var map = MapRenderer.Instance;
             if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
             {
-                return string.Equals(NormalizeToken(mapNode.BuildingType), "castle", StringComparison.Ordinal);
+                return string.Equals(NormalizeToken(mapNode.BuildingType), "city_core", StringComparison.Ordinal);
             }
 
             if (GameStateCache.Instance == null)
@@ -1888,7 +1888,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var cacheNode = GameStateCache.Instance.GetNode(nodeId);
-            return cacheNode != null && string.Equals(NormalizeToken(cacheNode.BuildingType), "castle", StringComparison.Ordinal);
+            return cacheNode != null && string.Equals(NormalizeToken(cacheNode.BuildingType), "city_core", StringComparison.Ordinal);
         }
 
         private bool IsCastleOwnedByLocalPlayer(string nodeId)
@@ -2146,7 +2146,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            map.ApplyBuildingPlacement(normalizedNodeId, "castle", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
+            map.ApplyBuildingPlacement(normalizedNodeId, "city_core", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
             _pendingDeployGhostNodeByUnitId[normalizedUnitId] = normalizedNodeId;
         }
 
@@ -2374,8 +2374,8 @@ namespace Panoptes.Presentation.Map
                     var buildingType = NormalizeToken(nodeState.BuildingType);
                     if (!string.IsNullOrEmpty(buildingType))
                     {
-                        // Allow already-expanded center castle only for idempotent retry.
-                        var allowCenterCastle = dx == 0 && dy == 0 && string.Equals(buildingType, "castle", StringComparison.Ordinal);
+                        // Allow already-expanded center city core only for idempotent retry.
+                        var allowCenterCastle = dx == 0 && dy == 0 && string.Equals(buildingType, "city_core", StringComparison.Ordinal);
                         if (!allowCenterCastle)
                         {
                             errorMessage = "Cannot deploy here: 3x3 territory contains existing buildings.";

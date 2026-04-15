@@ -82,7 +82,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"node_id":       strings.TrimSpace(e.NodeID),
 				"building_type": strings.TrimSpace(e.BuildingType),
 				"owner":         strings.TrimSpace(e.Owner),
-				"city_id":       strings.TrimSpace(e.CastleID),
+				"city_id":       strings.TrimSpace(e.CityID),
 				"building_hp":   strconv.Itoa(resolveBuiltBuildingHP(e.BuildingType)),
 			},
 		}
@@ -94,7 +94,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"resource_type": strings.TrimSpace(e.ResourceType),
 				"amount":        strconv.Itoa(e.Amount),
 				"owner":         strings.TrimSpace(e.Owner),
-				"city_id":       strings.TrimSpace(e.CastleID),
+				"city_id":       strings.TrimSpace(e.CityID),
 			},
 		}
 	case event.ResourceFlowedEvent:
@@ -123,11 +123,11 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"node_id":   strings.TrimSpace(e.NodeID),
 				"unit_type": strings.TrimSpace(e.UnitType),
 				"faction":   strings.TrimSpace(e.Faction),
-				"city_id":   strings.TrimSpace(e.CastleID),
+				"city_id":   strings.TrimSpace(e.CityID),
 				"count":     strconv.Itoa(e.Count),
 			},
 		}
-	case event.BuildPointsRechargedEvent:
+	case event.IndustryOutputRefreshedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -167,7 +167,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"technology_id": strings.TrimSpace(e.TechnologyID),
 			},
 		}
-	case event.TechPointsRechargedEvent:
+	case event.ResearchProgressAppliedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -266,14 +266,14 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			"pos_x":     strconv.Itoa(e.Pos.X),
 			"pos_y":     strconv.Itoa(e.Pos.Y),
 		}}
-	case event.CastleDamagedEvent:
+	case event.CityCoreDamagedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"node_id":  e.NodeID,
 			"damage":   strconv.Itoa(e.Damage),
 			"hp_after": strconv.Itoa(e.HPAfter),
 			"attacker": e.AttackerID,
 		}}
-	case event.CastleDestroyedEvent:
+	case event.CityCoreDestroyedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"node_id":           e.NodeID,
 			"conqueror_faction": e.ConquerorFaction,

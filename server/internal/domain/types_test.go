@@ -187,20 +187,20 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	if player.Username != "alice" {
 		t.Fatalf("Username = %q", player.Username)
 	}
-	if player.Resources.Get(ResourceBuildPoints) != 10 {
-		t.Fatalf("BuildPoints = %d", player.Resources.Get(ResourceBuildPoints))
+	if player.Resources.Get(ResourceIndustryOutput) != 10 {
+		t.Fatalf("IndustryOutput = %d", player.Resources.Get(ResourceIndustryOutput))
 	}
 	if player.TokensLeft != 3 {
 		t.Fatalf("TokensLeft = %d", player.TokensLeft)
 	}
-	if player.MainCastleHP != 100 {
-		t.Fatalf("MainCastleHP = %d", player.MainCastleHP)
+	if player.CapitalCityCoreHP != 100 {
+		t.Fatalf("CapitalCityCoreHP = %d", player.CapitalCityCoreHP)
 	}
-	if player.Castles == nil {
-		t.Fatalf("Castles is nil")
+	if player.Cities == nil {
+		t.Fatalf("Cities is nil")
 	}
-	if len(player.Castles) != 0 {
-		t.Fatalf("Castles len = %d", len(player.Castles))
+	if len(player.Cities) != 0 {
+		t.Fatalf("Cities len = %d", len(player.Cities))
 	}
 	if state.NodeIndex == nil {
 		t.Fatalf("NodeIndex is nil")
@@ -210,21 +210,21 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 	}
 }
 
-func TestEnsureCastleStateCreatesBucket(t *testing.T) {
+func TestEnsureCityStateCreatesBucket(t *testing.T) {
 	state := &GameState{
 		Players: map[string]*PlayerState{
 			"player-1": {
 				PlayerID: "player-1",
-				Castles:  map[string]*CastleState{},
+				Cities:   map[string]*CityState{},
 			},
 		},
 	}
 
-	cityState := state.EnsureCastleState("player-1", "city-a")
+	cityState := state.EnsureCityState("player-1", "city-a")
 	if cityState == nil {
 		t.Fatalf("city state is nil")
 	}
-	if cityState.CastleID != "city-a" || cityState.NodeID != "city-a" {
+	if cityState.CityID != "city-a" || cityState.NodeID != "city-a" {
 		t.Fatalf("city state = %#v", cityState)
 	}
 	if cityState.OwnerID != "player-1" {
@@ -233,7 +233,7 @@ func TestEnsureCastleStateCreatesBucket(t *testing.T) {
 	if cityState.Resources == nil {
 		t.Fatalf("resources is nil")
 	}
-	if state.Players["player-1"].Castles["city-a"] == nil {
+	if state.Players["player-1"].Cities["city-a"] == nil {
 		t.Fatalf("city state was not stored")
 	}
 }

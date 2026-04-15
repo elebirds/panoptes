@@ -41,7 +41,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if requiredProgress <= 0 {
 			requiredProgress = 1
 		}
-		if !state.CanAffordFromCastle(building.Owner, building.CastleID, cost) {
+		if !state.CanAffordFromCity(building.Owner, building.CityID, cost) {
 			events = append(events, event.RecipeProgressedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				ProgressTurns: operation.ProgressTurns,
@@ -60,7 +60,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				Owner:         building.Owner,
-				CastleID:      building.CastleID,
+				CityID:        building.CityID,
 				RequiredTurns: requiredProgress,
 				Cost:          cost,
 				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),

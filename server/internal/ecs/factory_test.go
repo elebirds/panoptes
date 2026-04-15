@@ -120,7 +120,7 @@ func TestCreateBuildingStoresOriginCityID(t *testing.T) {
 
 	building := world.Entry(CreateBuilding(world, "farm", "player-1", "city-a", nodeEntry))
 	comp := donburi.Get[BuildingComp](building, BuildingC)
-	if comp.CastleID != "city-a" {
-		t.Fatalf("origin city id = %q", comp.CastleID)
+	if comp.CityID != "city-a" {
+		t.Fatalf("origin city id = %q", comp.CityID)
 	}
 }

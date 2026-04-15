@@ -31,7 +31,7 @@ func (s *ResearchSystem) Run(_ donburi.World, state *domain.GameState) []event.E
 		if !ok || playerState.Research.HasTechnology(order.TechnologyID) {
 			continue
 		}
-		available := playerState.Research.TechPoints - spentByPlayer[order.PlayerID]
+		available := playerState.Research.CurrentProgress - spentByPlayer[order.PlayerID]
 		if available < technology.ResearchCost {
 			continue
 		}

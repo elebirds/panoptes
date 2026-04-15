@@ -52,14 +52,14 @@ func formatPlayers(state *domain.GameState) string {
 			continue
 		}
 		parts = append(parts, fmt.Sprintf(
-			"%s: resources={ore:%d wood:%d food:%d bp:%d} tokens=%d castle_hp=%d",
+			"%s: resources={ore:%d wood:%d food:%d industry:%d} tokens=%d city_core_hp=%d",
 			playerID,
 			p.Resources.Get(domain.ResourceOre),
 			p.Resources.Get(domain.ResourceWood),
 			p.Resources.Get(domain.ResourceFood),
-			p.Resources.Get(domain.ResourceBuildPoints),
+			p.Resources.Get(domain.ResourceIndustryOutput),
 			p.TokensLeft,
-			p.MainCastleHP,
+			p.CapitalCityCoreHP,
 		))
 	}
 

@@ -70,19 +70,19 @@ type UnitDirective struct {
 }
 
 type PlayerState struct {
-	PlayerID     string
-	Username     string
-	Resources    ResourceBag
-	Castles      map[string]*CastleState
-	Research     ResearchState
-	Policy       Policy
-	TokensLeft   int
-	MainCastleHP int
-	WarZones     []*WarZone
+	PlayerID          string
+	Username          string
+	Resources         ResourceBag
+	Cities            map[string]*CityState
+	Research          ResearchState
+	Policy            Policy
+	TokensLeft        int
+	CapitalCityCoreHP int
+	WarZones          []*WarZone
 }
 
-type CastleState struct {
-	CastleID  string
+type CityState struct {
+	CityID    string
 	NodeID    string
 	OwnerID   string
 	Resources ResourceBag
@@ -110,7 +110,7 @@ type BuildOrder struct {
 	PlayerID     string
 	NodeID       string
 	BuildingType string
-	CastleID     string
+	CityID       string
 }
 
 type ResearchOrder struct {
@@ -125,9 +125,9 @@ type RecipeSelectionOrder struct {
 }
 
 type ResearchState struct {
-	TechPoints           int
-	TechPointsIncome     int
-	TechPointsCap        int
+	CurrentProgress      int
+	OutputPerTurn        int
+	ProgressCap          int
 	UnlockedTechnologies map[string]struct{}
 	UnlockedBuildings    map[string]struct{}
 	UnlockedRecipes      map[string]struct{}
@@ -135,9 +135,9 @@ type ResearchState struct {
 
 func NewResearchState(starting int, income int, cap int) ResearchState {
 	return ResearchState{
-		TechPoints:           starting,
-		TechPointsIncome:     income,
-		TechPointsCap:        cap,
+		CurrentProgress:      starting,
+		OutputPerTurn:        income,
+		ProgressCap:          cap,
 		UnlockedTechnologies: make(map[string]struct{}),
 		UnlockedBuildings:    make(map[string]struct{}),
 		UnlockedRecipes:      make(map[string]struct{}),
@@ -273,8 +273,8 @@ func (s *GameState) ApplyResourceModifiers(playerID string, trigger string, targ
 	return out
 }
 
-// EffectiveTechPointIncome / Cap 让科技点数值也走同一套 modifier 入口，
-// 避免研究系统和展示层再各自复制一份“科技点增益”逻辑。
+// 研究推进数值也走同一套 modifier 入口，避免研究系统和展示层再各自复制一份
+// “研究产出增益”逻辑。
 func (s *GameState) EffectiveResearchOutput(playerID string) int {
 	if s == nil {
 		return 0
@@ -283,7 +283,7 @@ func (s *GameState) EffectiveResearchOutput(playerID string) int {
 	if !ok || playerState == nil {
 		return 0
 	}
-	base := playerState.Research.TechPointsIncome
+	base := playerState.Research.OutputPerTurn
 	if base <= 0 {
 		base = staticdata.Default().Rules().BaseResearchOutputPerTurn
 	}
@@ -300,11 +300,7 @@ func (s *GameState) EffectiveIndustryOutput(playerID string) int {
 	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPointOutput), "", "industry_output", staticdata.Default().Rules().BaseIndustryOutputPerTurn)
 }
 
-func (s *GameState) EffectiveTechPointIncome(playerID string) int {
-	return s.EffectiveResearchOutput(playerID)
-}
-
-func (s *GameState) EffectiveTechPointCap(playerID string) int {
+func (s *GameState) EffectiveResearchCap(playerID string) int {
 	if s == nil {
 		return 0
 	}
@@ -312,8 +308,8 @@ func (s *GameState) EffectiveTechPointCap(playerID string) int {
 	if !ok || playerState == nil {
 		return 0
 	}
-	if playerState.Research.TechPointsCap > 0 {
-		return playerState.Research.TechPointsCap
+	if playerState.Research.ProgressCap > 0 {
+		return playerState.Research.ProgressCap
 	}
 	return math.MaxInt / 4
 }
@@ -413,14 +409,14 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 			Username: username,
 			Resources: func() ResourceBag {
 				bag := NewResourceBag()
-				bag[ResourceBuildPoints] = rules.BaseIndustryOutputPerTurn
+				bag[ResourceIndustryOutput] = rules.BaseIndustryOutputPerTurn
 				return bag
 			}(),
-			Castles:      make(map[string]*CastleState),
-			Research:     NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
-			TokensLeft:   rules.TokensPerTurn,
-			MainCastleHP: rules.CityCoreMaxHP,
-			WarZones:     []*WarZone{},
+			Cities:            make(map[string]*CityState),
+			Research:          NewResearchState(0, rules.BaseResearchOutputPerTurn, math.MaxInt/4),
+			TokensLeft:        rules.TokensPerTurn,
+			CapitalCityCoreHP: rules.CityCoreMaxHP,
+			WarZones:          []*WarZone{},
 		}
 	}
 
@@ -438,11 +434,11 @@ func (s *GameState) GetNode(nodeID string) (*donburi.Entry, bool) {
 	return s.World.Entry(entity), true
 }
 
-func (s *GameState) EnsureCastleState(playerID string, castleID string) *CastleState {
+func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
 	if s == nil {
 		return nil
 	}
-	if castleID == "" {
+	if cityID == "" {
 		return nil
 	}
 
@@ -451,67 +447,67 @@ func (s *GameState) EnsureCastleState(playerID string, castleID string) *CastleS
 		return nil
 	}
 
-	if playerState.Castles == nil {
-		playerState.Castles = make(map[string]*CastleState)
+	if playerState.Cities == nil {
+		playerState.Cities = make(map[string]*CityState)
 	}
 
-	castle, ok := playerState.Castles[castleID]
-	if ok && castle != nil {
-		if castle.NodeID == "" {
-			castle.NodeID = castleID
+	city, ok := playerState.Cities[cityID]
+	if ok && city != nil {
+		if city.NodeID == "" {
+			city.NodeID = cityID
 		}
-		if castle.OwnerID == "" {
-			castle.OwnerID = playerID
+		if city.OwnerID == "" {
+			city.OwnerID = playerID
 		}
-		if castle.Resources == nil {
-			castle.Resources = NewResourceBag()
+		if city.Resources == nil {
+			city.Resources = NewResourceBag()
 		}
-		return castle
+		return city
 	}
 
-	castle = &CastleState{
-		CastleID:  castleID,
-		NodeID:    castleID,
+	city = &CityState{
+		CityID:    cityID,
+		NodeID:    cityID,
 		OwnerID:   playerID,
 		Resources: NewResourceBag(),
 	}
-	playerState.Castles[castleID] = castle
-	return castle
+	playerState.Cities[cityID] = city
+	return city
 }
 
-// PrimaryCastleState returns a stable fallback castle for player-scoped
-// operations that still need落到某个城堡上。
+// PrimaryCityState returns a stable fallback city for player-scoped
+// operations that still need落到某个城市上。
 //
-// 当前实现按 castleID 的字典序选择主城堡，目的是在“没有显式 castleID”
+// 当前实现按 cityID 的字典序选择主城市，目的是在“没有显式 cityID”
 // 的旧逻辑里维持可预测行为，避免不同运行时因为 map 遍历顺序不同而把资源
-// 加到不同城堡。
-func (s *GameState) PrimaryCastleState(playerID string) *CastleState {
+// 加到不同城市。
+func (s *GameState) PrimaryCityState(playerID string) *CityState {
 	if s == nil {
 		return nil
 	}
 	playerState, ok := s.Players[playerID]
-	if !ok || playerState == nil || len(playerState.Castles) == 0 {
+	if !ok || playerState == nil || len(playerState.Cities) == 0 {
 		return nil
 	}
 
-	ids := make([]string, 0, len(playerState.Castles))
-	for castleID := range playerState.Castles {
-		if castleID != "" {
-			ids = append(ids, castleID)
+	ids := make([]string, 0, len(playerState.Cities))
+	for cityID := range playerState.Cities {
+		if cityID != "" {
+			ids = append(ids, cityID)
 		}
 	}
 	if len(ids) == 0 {
 		return nil
 	}
 	sort.Strings(ids)
-	return playerState.Castles[ids[0]]
+	return playerState.Cities[ids[0]]
 }
 
-// CastleResources returns the resource bag for a specific castle.
+// CityResources returns the resource bag for a specific city.
 //
-// 当调用方没有传 castleID 时，这里退回到主城堡资源；如果玩家当前还没有
-// 城堡资源结构，则继续兼容旧的 player.Resources。
-func (s *GameState) CastleResources(playerID string, castleID string) ResourceBag {
+// 当调用方没有传 cityID 时，这里退回到主城市资源；如果玩家当前还没有
+// 城市资源结构，则继续兼容旧的 player.Resources。
+func (s *GameState) CityResources(playerID string, cityID string) ResourceBag {
 	if s == nil {
 		return nil
 	}
@@ -519,24 +515,24 @@ func (s *GameState) CastleResources(playerID string, castleID string) ResourceBa
 	if !ok || playerState == nil {
 		return nil
 	}
-	if castleID != "" {
-		if castle := s.EnsureCastleState(playerID, castleID); castle != nil {
-			return castle.Resources
+	if cityID != "" {
+		if city := s.EnsureCityState(playerID, cityID); city != nil {
+			return city.Resources
 		}
 		return nil
 	}
-	if castle := s.PrimaryCastleState(playerID); castle != nil {
-		return castle.Resources
+	if city := s.PrimaryCityState(playerID); city != nil {
+		return city.Resources
 	}
 	return playerState.Resources
 }
 
-// TotalCastleResources aggregates all castle resource bags into a single view.
+// TotalCityResources aggregates all city resource bags into a single view.
 //
 // 这层聚合主要服务于两类场景：
 // 1. 仍然只认识 player.Resources 的旧协议/旧客户端。
-// 2. 没有明确 castleID 的消耗逻辑，需要先判断玩家总池是否足够。
-func (s *GameState) TotalCastleResources(playerID string) ResourceBag {
+// 2. 没有明确 cityID 的消耗逻辑，需要先判断玩家总池是否足够。
+func (s *GameState) TotalCityResources(playerID string) ResourceBag {
 	if s == nil {
 		return nil
 	}
@@ -544,27 +540,27 @@ func (s *GameState) TotalCastleResources(playerID string) ResourceBag {
 	if !ok || playerState == nil {
 		return nil
 	}
-	if len(playerState.Castles) == 0 {
+	if len(playerState.Cities) == 0 {
 		return playerState.Resources.Clone()
 	}
 
 	total := NewResourceBag()
-	for _, castle := range playerState.Castles {
-		if castle == nil || castle.Resources == nil {
+	for _, city := range playerState.Cities {
+		if city == nil || city.Resources == nil {
 			continue
 		}
-		total = total.Add(castle.Resources)
+		total = total.Add(city.Resources)
 	}
 	return total
 }
 
-// SyncPlayerResourcesFromCastles mirrors all castle resources back into
+// SyncPlayerResourcesFromCities mirrors all city resources back into
 // player.Resources.
 //
 // 目前 player.Resources 不再是唯一真实来源，而更像“聚合视图”。
-// 每次城堡资源发生结算后，都需要同步这里，保证仍依赖 PlayerView.Resources
-// 的消息与 UI 不会和城堡看板显示脱节。
-func (s *GameState) SyncPlayerResourcesFromCastles(playerID string) {
+// 每次城市资源发生结算后，都需要同步这里，保证仍依赖 PlayerView.Resources
+// 的消息与 UI 不会和城市看板显示脱节。
+func (s *GameState) SyncPlayerResourcesFromCities(playerID string) {
 	if s == nil {
 		return
 	}
@@ -572,39 +568,39 @@ func (s *GameState) SyncPlayerResourcesFromCastles(playerID string) {
 	if !ok || playerState == nil {
 		return
 	}
-	if len(playerState.Castles) == 0 {
+	if len(playerState.Cities) == 0 {
 		if playerState.Resources == nil {
 			playerState.Resources = NewResourceBag()
 		}
 		return
 	}
-	playerState.Resources = s.TotalCastleResources(playerID)
+	playerState.Resources = s.TotalCityResources(playerID)
 }
 
-// CanAffordFromCastle checks affordability against the castle-scoped pool.
+// CanAffordFromCity checks affordability against the city-scoped pool.
 //
-// 有 castleID 时严格校验指定城堡；没有 castleID 时，退回到玩家所有城堡
-// 的聚合资源池，用于兼容道路、战斗补给等尚未绑定具体城堡的行为。
-func (s *GameState) CanAffordFromCastle(playerID string, castleID string, cost ResourceBag) bool {
+// 有 cityID 时严格校验指定城市；没有 cityID 时，退回到玩家所有城市
+// 的聚合资源池，用于兼容道路、战斗补给等尚未绑定具体城市的行为。
+func (s *GameState) CanAffordFromCity(playerID string, cityID string, cost ResourceBag) bool {
 	if cost == nil || cost.IsZero() {
 		return true
 	}
-	if castleID != "" {
-		resources := s.CastleResources(playerID, castleID)
+	if cityID != "" {
+		resources := s.CityResources(playerID, cityID)
 		return resources != nil && resources.CanAfford(cost)
 	}
-	total := s.TotalCastleResources(playerID)
+	total := s.TotalCityResources(playerID)
 	return total != nil && total.CanAfford(cost)
 }
 
-// ConsumeResources subtracts resources from the castle-scoped model.
+// ConsumeResources subtracts resources from the city-scoped model.
 //
 // 规则如下：
-//  1. 有 castleID 时，只从该城堡扣费。
-//  2. 没有 castleID 时，先校验玩家总城堡资源是否足够，再按稳定顺序从多个城堡
+//  1. 有 cityID 时，只从该城市扣费。
+//  2. 没有 cityID 时，先校验玩家总城市资源是否足够，再按稳定顺序从多个城市
 //     分摊扣除，避免 nondeterministic 的 map 遍历影响结果。
 //  3. 每次扣费完成后，同步刷新 player.Resources 聚合视图。
-func (s *GameState) ConsumeResources(playerID string, castleID string, cost ResourceBag) bool {
+func (s *GameState) ConsumeResources(playerID string, cityID string, cost ResourceBag) bool {
 	if s == nil || cost == nil || cost.IsZero() {
 		return true
 	}
@@ -613,27 +609,27 @@ func (s *GameState) ConsumeResources(playerID string, castleID string, cost Reso
 		return false
 	}
 
-	if castleID != "" {
-		castle := s.EnsureCastleState(playerID, castleID)
-		if castle == nil || !castle.Resources.CanAfford(cost) {
+	if cityID != "" {
+		city := s.EnsureCityState(playerID, cityID)
+		if city == nil || !city.Resources.CanAfford(cost) {
 			return false
 		}
-		castle.Resources = castle.Resources.Sub(cost)
-		s.SyncPlayerResourcesFromCastles(playerID)
+		city.Resources = city.Resources.Sub(cost)
+		s.SyncPlayerResourcesFromCities(playerID)
 		return true
 	}
 
-	total := s.TotalCastleResources(playerID)
+	total := s.TotalCityResources(playerID)
 	if total == nil || !total.CanAfford(cost) {
 		return false
 	}
-	if len(playerState.Castles) == 0 {
+	if len(playerState.Cities) == 0 {
 		playerState.Resources = playerState.Resources.Sub(cost)
 		return true
 	}
 
-	ids := make([]string, 0, len(playerState.Castles))
-	for id := range playerState.Castles {
+	ids := make([]string, 0, len(playerState.Cities))
+	for id := range playerState.Cities {
 		if id != "" {
 			ids = append(ids, id)
 		}
@@ -645,11 +641,11 @@ func (s *GameState) ConsumeResources(playerID string, castleID string, cost Reso
 			if remaining <= 0 {
 				break
 			}
-			castle := playerState.Castles[id]
-			if castle == nil || castle.Resources == nil {
+			city := playerState.Cities[id]
+			if city == nil || city.Resources == nil {
 				continue
 			}
-			available := castle.Resources.Get(key)
+			available := city.Resources.Get(key)
 			if available <= 0 {
 				continue
 			}
@@ -657,20 +653,20 @@ func (s *GameState) ConsumeResources(playerID string, castleID string, cost Reso
 			if consume > remaining {
 				consume = remaining
 			}
-			castle.Resources.AddAmount(key, -consume)
+			city.Resources.AddAmount(key, -consume)
 			remaining -= consume
 		}
 	}
-	s.SyncPlayerResourcesFromCastles(playerID)
+	s.SyncPlayerResourcesFromCities(playerID)
 	return true
 }
 
-// AddResourceToCastle adds delta to a castle resource pool and keeps the
+// AddResourceToCity adds delta to a city resource pool and keeps the
 // player-level aggregate in sync.
 //
-// 没有显式 castleID 时，这里优先回落到主城堡，用来承接尚未完成“明确归属”
-// 改造的产出逻辑；如果玩家甚至还没有城堡结构，则继续兼容旧的 player.Resources。
-func (s *GameState) AddResourceToCastle(playerID string, castleID string, key ResourceKey, delta int) {
+// 没有显式 cityID 时，这里优先回落到主城市，用来承接尚未完成“明确归属”
+// 改造的产出逻辑；如果玩家甚至还没有城市结构，则继续兼容旧的 player.Resources。
+func (s *GameState) AddResourceToCity(playerID string, cityID string, key ResourceKey, delta int) {
 	if s == nil || delta == 0 {
 		return
 	}
@@ -678,29 +674,29 @@ func (s *GameState) AddResourceToCastle(playerID string, castleID string, key Re
 	if !ok || playerState == nil {
 		return
 	}
-	if castleID != "" {
-		castle := s.EnsureCastleState(playerID, castleID)
-		if castle == nil {
+	if cityID != "" {
+		city := s.EnsureCityState(playerID, cityID)
+		if city == nil {
 			return
 		}
-		castle.Resources.AddAmount(key, delta)
-		s.SyncPlayerResourcesFromCastles(playerID)
+		city.Resources.AddAmount(key, delta)
+		s.SyncPlayerResourcesFromCities(playerID)
 		return
 	}
-	if castle := s.PrimaryCastleState(playerID); castle != nil {
-		castle.Resources.AddAmount(key, delta)
-		s.SyncPlayerResourcesFromCastles(playerID)
+	if city := s.PrimaryCityState(playerID); city != nil {
+		city.Resources.AddAmount(key, delta)
+		s.SyncPlayerResourcesFromCities(playerID)
 		return
 	}
 	playerState.Resources.AddAmount(key, delta)
 }
 
-// RechargeBuildPoints replenishes build points per castle instead of once per
-// player.
+// RefreshIndustryOutput refreshes the per-city industry budget instead of once
+// per player.
 //
-// 这样客户端城堡资源看板里的 build_points 才能反映“每座城堡自己的建造点”，
+// 这样客户端城市资源看板里的 industry_output 才能反映“每座城市自己的工业产出”，
 // 而不是玩家共享的一份总值。
-func (s *GameState) RechargeBuildPoints(playerID string, amount int, maxVal int) {
+func (s *GameState) RefreshIndustryOutput(playerID string, amount int, maxVal int) {
 	if s == nil || amount == 0 {
 		return
 	}
@@ -708,23 +704,23 @@ func (s *GameState) RechargeBuildPoints(playerID string, amount int, maxVal int)
 	if !ok || playerState == nil {
 		return
 	}
-	if len(playerState.Castles) == 0 {
-		next := playerState.Resources.Get(ResourceBuildPoints) + amount
+	if len(playerState.Cities) == 0 {
+		next := playerState.Resources.Get(ResourceIndustryOutput) + amount
 		if next > maxVal {
 			next = maxVal
 		}
-		playerState.Resources.Set(ResourceBuildPoints, next)
+		playerState.Resources.Set(ResourceIndustryOutput, next)
 		return
 	}
-	for _, castle := range playerState.Castles {
-		if castle == nil {
+	for _, city := range playerState.Cities {
+		if city == nil {
 			continue
 		}
-		next := castle.Resources.Get(ResourceBuildPoints) + amount
+		next := city.Resources.Get(ResourceIndustryOutput) + amount
 		if next > maxVal {
 			next = maxVal
 		}
-		castle.Resources.Set(ResourceBuildPoints, next)
+		city.Resources.Set(ResourceIndustryOutput, next)
 	}
-	s.SyncPlayerResourcesFromCastles(playerID)
+	s.SyncPlayerResourcesFromCities(playerID)
 }

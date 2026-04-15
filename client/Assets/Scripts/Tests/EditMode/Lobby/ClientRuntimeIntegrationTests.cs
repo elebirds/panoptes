@@ -265,7 +265,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("BuildBackendGameMap();", content,
                 "Game 运行态应通过单独的后端权威建图入口渲染地图。");
             Assert.That(content, Does.Not.Contain("HasSufficientTerritoryAndCastles(backendNodes)"),
-                "Game 运行态不应再根据 territory/castle 完整度决定是否回退本地地图。");
+                "Game 运行态不应再根据 territory/city_core 完整度决定是否回退本地地图。");
             Assert.That(content, Does.Not.Contain("if (TryLoadConfiguredMap())"),
                 "Game 运行态不应再尝试从配置或本地 fallback 地图建图。");
         }

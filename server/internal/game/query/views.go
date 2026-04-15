@@ -48,12 +48,12 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		}(),
 		TokensLeft:             int32(playerState.TokensLeft),
 		ActiveNationalPolicyId: string(playerState.Policy),
-		CapitalCityCoreHp:      int32(playerState.MainCastleHP),
+		CapitalCityCoreHp:      int32(playerState.CapitalCityCoreHP),
 		CapitalCityCoreMaxHp:   int32(staticdata.Default().Rules().CityCoreMaxHP),
 		WarZones:               warZones,
 		Research: &pb.ResearchStateView{
-			CurrentProgress:        int32(playerState.Research.TechPoints),
-			RequiredProgress:       int32(playerState.Research.TechPointsCap),
+			CurrentProgress:        int32(playerState.Research.CurrentProgress),
+			RequiredProgress:       int32(playerState.Research.ProgressCap),
 			CompletedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
 		},
 	}
