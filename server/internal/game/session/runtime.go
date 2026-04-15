@@ -78,6 +78,7 @@ func (r *Runtime) Initialize() error {
 	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
+	r.bootstrapStartingCapitals()
 	r.spawnInitialBaseVehicles()
 	r.grantDevStartingResources()
 	r.initializeCityStates()
@@ -107,6 +108,7 @@ func (r *Runtime) InitializePrepared(state *domain.GameState) error {
 			r.state.NodeIndex[nodeID] = entity
 		}
 	}
+	r.initializeCityStates()
 	return r.sendBootstrapMessages()
 }
 
@@ -246,26 +248,70 @@ func (r *Runtime) grantDevStartingResources() {
 	}
 }
 
-func (r *Runtime) initializeCityStates() {
-	if r == nil || r.state == nil || r.state.World == nil {
+func (r *Runtime) bootstrapStartingCapitals() {
+	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
 		return
 	}
 
-	primaryCityByPlayer := make(map[string]string, len(r.state.Players))
-	if r.state.Map != nil {
-		for playerID, spawnPos := range r.state.Map.PlayerSpawns {
-			entry, ok := domain.GetNodeAt(r.state.World, spawnPos)
-			if !ok || entry == nil || !entry.HasComponent(ecs.BuildingC) {
-				continue
-			}
-
-			building := ecs.BuildingC.Get(entry)
-			if !strings.EqualFold(string(building.Type), "city_core") {
-				continue
-			}
-
-			primaryCityByPlayer[playerID] = ecs.NodeC.Get(entry).ID
+	for playerID, spawnPos := range r.state.Map.PlayerSpawns {
+		playerID = strings.TrimSpace(playerID)
+		if playerID == "" {
+			continue
 		}
+		spawnEntry, ok := domain.GetNodeAt(r.state.World, spawnPos)
+		if !ok || spawnEntry == nil {
+			continue
+		}
+
+		if !spawnEntry.HasComponent(ecs.BuildingC) {
+			ecs.CreateBuilding(r.state.World, "city_core", playerID, ecs.NodeC.Get(spawnEntry).ID, spawnEntry)
+		}
+
+		if !spawnEntry.HasComponent(ecs.BuildingC) {
+			continue
+		}
+		building := ecs.BuildingC.Get(spawnEntry)
+		if !strings.EqualFold(string(building.Type), "city_core") {
+			continue
+		}
+
+		cityID := ecs.NodeC.Get(spawnEntry).ID
+		footprintEntries, _, reason := ecs.TerritoryFootprint(r.state, spawnEntry)
+		if reason == "" {
+			for _, entry := range footprintEntries {
+				if entry == nil {
+					continue
+				}
+				node := ecs.NodeC.Get(entry)
+				node.Owner = playerID
+				node.TerritoryOwner = playerID
+			}
+		} else {
+			node := ecs.NodeC.Get(spawnEntry)
+			node.Owner = playerID
+			node.TerritoryOwner = playerID
+		}
+
+		building.Owner = playerID
+		building.CityID = cityID
+		playerState := r.state.Players[playerID]
+		if playerState == nil {
+			continue
+		}
+		playerState.CapitalCityID = cityID
+		playerState.CapitalCityCoreHP = building.HP
+		cityState := r.state.EnsureCityState(playerID, cityID)
+		if cityState != nil {
+			cityState.CoreNodeID = cityID
+			cityState.OwnerID = playerID
+			cityState.OnlineOnTurn = 0
+		}
+	}
+}
+
+func (r *Runtime) initializeCityStates() {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return
 	}
 
 	ecs.NodesWithBuilding(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
@@ -290,10 +336,25 @@ func (r *Runtime) initializeCityStates() {
 			return
 		}
 
-		r.state.EnsureCityState(playerID, node.ID)
+		playerState := r.state.Players[playerID]
+		if playerState == nil {
+			return
+		}
+		cityState := r.state.EnsureCityState(playerID, node.ID)
+		if cityState != nil {
+			cityState.CoreNodeID = node.ID
+			cityState.OwnerID = playerID
+		}
+		if r.state.Map != nil {
+			if spawnPos, ok := r.state.Map.PlayerSpawns[playerID]; ok {
+				pos := ecs.PositionC.Get(entry)
+				if pos.X == spawnPos.X && pos.Y == spawnPos.Y {
+					playerState.CapitalCityID = node.ID
+					playerState.CapitalCityCoreHP = building.HP
+				}
+			}
+		}
 	})
-
-	_ = primaryCityByPlayer
 }
 
 func (r *Runtime) sendGameInit(p Player) {

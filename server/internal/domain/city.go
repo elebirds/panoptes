@@ -17,6 +17,7 @@ type CityState struct {
 	CoreNodeID          string
 	OwnerID             string
 	TerritoryBaseRadius int
+	OnlineOnTurn        int
 }
 
 func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
@@ -49,6 +50,7 @@ func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
 		CoreNodeID:          cityID,
 		OwnerID:             playerID,
 		TerritoryBaseRadius: baseRadius,
+		OnlineOnTurn:        0,
 	}
 	playerState.Cities[cityID] = city
 	return city
@@ -62,6 +64,11 @@ func (s *GameState) PrimaryCityState(playerID string) *CityState {
 	playerState, ok := s.Players[playerID]
 	if !ok || playerState == nil || len(playerState.Cities) == 0 {
 		return nil
+	}
+	if cityID := playerState.CapitalCityID; cityID != "" {
+		if city, ok := playerState.Cities[cityID]; ok && city != nil {
+			return city
+		}
 	}
 	ids := make([]string, 0, len(playerState.Cities))
 	for cityID := range playerState.Cities {
