@@ -102,6 +102,14 @@
 
 里程碑必须顺序推进。不得在 M1 尚未稳定时切客户端玩法 UI；不得在 M2 未闭环时接入复杂中期系统。
 
+### 4.1 当前进度（2026-04-15）
+
+- `main` 已集成“无客户端调试与规则验证”首批服务端实现，包含 prepared room、deterministic scenario、headless harness、结构化状态摘要、结算记录器与 `DEV_MODE` HTTP 调试入口。
+- `M2` 相关基础设施已明显前移：服务端现在可以在不依赖客户端的情况下，用规则级测试与 harness 场景测试复现 `planning -> settlement` 的关键裁决。
+- `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
+- 当前已覆盖科技推进、研究解锁后次回合建造、配方阻塞、开拓者建城、设施停用/失效、主城摧毁判负；“延时接管并转移归属”仍待静态规则补齐接管回合数后继续实现。
+- 主工作区验证结果：`cd server && go test ./...` 与 `cd server && go build ./...` 已于 2026-04-15 在 `main` 上通过。
+
 ## 5. 推荐排期
 
 ### 5.1 排期假设
@@ -486,30 +494,35 @@
 - Modify: `server/internal/engine/production/research_system_test.go`
 - Modify: `server/internal/game/turn_v2_test.go`
 - Modify: `server/internal/engine/combat/*_test.go`
-- Modify: `server/internal/game/planning/service_test.go`
+- Create: `server/internal/game/planning/service_rules_test.go`
 - Create: `server/internal/event/building_state_test.go`
 - Create: `server/internal/game/scenario/scenario_test.go`
 
 - [ ] **Step 1: 把 GDD 当前基线中的关键裁决拆成规则级测试矩阵，覆盖科技、建城、建筑放置、配方阻塞、建筑接管和主城判负**
-- [ ] **Step 2: 让规则级测试尽量只依赖 `domain / engine / event`，不把网络与客户端状态卷入断言**
-- [ ] **Step 3: 为每一类关键规则建立可读的场景名称，使失败信息能直接对应到 GDD 条目**
-- [ ] **Step 4: 保证“单条规则失败”与“整局链路失败”能够在测试层级上被区分定位**
+- [x] **Step 2: 让规则级测试尽量只依赖 `domain / engine / event`，不把网络与客户端状态卷入断言**
+- [x] **Step 3: 为每一类关键规则建立可读的场景名称，使失败信息能直接对应到 GDD 条目**
+- [x] **Step 4: 保证“单条规则失败”与“整局链路失败”能够在测试层级上被区分定位**
+
+当前状态：科技、建筑放置、配方阻塞、设施停用/失效与主城判负已进入规则级矩阵；“建筑接管完成并转移归属”尚未补齐，因此 Step 1 继续保留未完成。
 
 ### Task 19: 抽象无头对局 Harness
 
 **Files:**
 - Create: `server/internal/debug/capture_transport.go`
 - Create: `server/internal/debug/harness.go`
-- Create: `server/internal/debug/scenario.go`
+- Create: `server/internal/game/scenario/scenario.go`
 - Create: `server/internal/debug/harness_test.go`
 - Modify: `server/internal/debug/integration_test.go`
 - Modify: `server/internal/game/room.go`
+- Modify: `server/internal/game/session/runtime.go`
 - Modify: `server/internal/game/turn/coordinator.go`
 
-- [ ] **Step 1: 从现有 `captureTransport + GameRoom` 联调测试中抽出可复用的无头对局运行器**
-- [ ] **Step 2: 让 harness 支持装配静态数据、地图、玩家、注入 planning 命令、自动 submit 和等待 settlement**
-- [ ] **Step 3: 让 harness 能导出每回合消息、状态摘要和关键结算 sections，用于断言与复盘**
-- [ ] **Step 4: 建立一组场景化无头对局用例，验证研究解锁、开拓者建城、配方阻塞、设施接管和主城摧毁**
+- [x] **Step 1: 从现有 `captureTransport + GameRoom` 联调测试中抽出可复用的无头对局运行器**
+- [x] **Step 2: 让 harness 支持装配静态数据、地图、玩家、注入 planning 命令、自动 submit 和等待 settlement**
+- [x] **Step 3: 让 harness 能导出每回合消息、状态摘要和关键结算 sections，用于断言与复盘**
+- [x] **Step 4: 建立一组场景化无头对局用例，验证研究解锁、开拓者建城、配方阻塞、设施接管和主城摧毁**
+
+当前状态：5 个场景化无头用例已经落地；其中“设施接管”场景当前验证的是“越界后停用/失效”，后续会在接管回合数进入静态规则后补齐完整归属转移断言。
 
 ### Task 20: 落地开发态调试接口与状态转储
 
@@ -519,12 +532,12 @@
 - Create: `server/internal/debug/settlement_recorder.go`
 - Create: `server/internal/transport/http/debug_handler.go`
 - Modify: `server/internal/transport/http/server.go`
-- Modify: `server/internal/transport/http/handler.go`
+- Modify: `server/cmd/server/app/server.go`
 
-- [ ] **Step 1: 扩展状态转储，让开发者能查看当前回合、玩家、城市、建筑、单位、研究和点数摘要**
-- [ ] **Step 2: 记录最近一次结算输出，支持导出 `MsgTurnSettlement` 与关键事件 sections**
-- [ ] **Step 3: 在 `DEV_MODE` 下提供最小调试入口，用于注入 planning 命令、强制 submit 和单步推进回合**
-- [ ] **Step 4: 保证这些接口只服务调试与复现，不承担规则正确性的主验证职责**
+- [x] **Step 1: 扩展状态转储，让开发者能查看当前回合、玩家、城市、建筑、单位、研究和点数摘要**
+- [x] **Step 2: 记录最近一次结算输出，支持导出 `MsgTurnSettlement` 与关键事件 sections**
+- [x] **Step 3: 在 `DEV_MODE` 下提供最小调试入口，用于注入 planning 命令、强制 submit 和单步推进回合**
+- [x] **Step 4: 保证这些接口只服务调试与复现，不承担规则正确性的主验证职责**
 
 ## 13. Chunk 8：客户端垂直切片
 
@@ -600,16 +613,19 @@
 
 **Files:**
 - Modify: `server/internal/game/turn_v2_test.go`
-- Modify: `server/internal/game/planning/service_test.go`
+- Create: `server/internal/game/planning/service_rules_test.go`
 - Modify: `server/internal/engine/production/research_system_test.go`
 - Modify: `server/internal/engine/combat/*_test.go`
-- Modify: `server/internal/transport/websocket/transport_v2_test.go`
+- Modify: `server/internal/event/building_state_test.go`
+- Modify: `server/internal/debug/harness_test.go`
 - Modify: `server/internal/debug/integration_test.go`
 
 - [ ] **Step 1: 补齐一局完整 MVP 的服务端回归用例**
 - [ ] **Step 2: 覆盖研究推进、建筑解锁、配方阻塞、建城、建筑接管、主城摧毁等关键裁决**
-- [ ] **Step 3: 运行 `cd server && go test ./...` 与 `cd server && go build ./...`**
-- [ ] **Step 4: 保持所有规则性断言都在服务端测试中可复现，不把关键验证留给客户端手点**
+- [x] **Step 3: 运行 `cd server && go test ./...` 与 `cd server && go build ./...`**
+- [x] **Step 4: 保持所有规则性断言都在服务端测试中可复现，不把关键验证留给客户端手点**
+
+当前状态：服务端回归已覆盖研究推进、研究解锁后的次回合建造、配方阻塞、开拓者建城、设施停用/失效与主城摧毁判负；完整 MVP 整局回归与“接管完成后归属转移”仍待后续玩法内容补齐。
 
 ### Task 26: 客户端与联机冒烟
 
