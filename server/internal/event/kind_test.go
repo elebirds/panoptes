@@ -57,6 +57,7 @@ func TestEconomyEventKinds(t *testing.T) {
 		{name: "point budget refreshed", kind: "point_budget_refreshed", ev: PointBudgetRefreshedEvent{}},
 		{name: "point spent", kind: "point_spent", ev: PointSpentEvent{}},
 		{name: "building skipped", kind: "building_skipped", ev: BuildSkippedEvent{}},
+		{name: "recipe skipped", kind: "recipe_skipped", ev: RecipeSkippedEvent{}},
 		{name: "industry output refreshed", kind: "industry_output_refreshed", ev: IndustryOutputRefreshedEvent{}},
 		{name: "upkeep paid", kind: "upkeep_paid", ev: UpkeepPaidEvent{}},
 		{name: "unit starving", kind: "unit_starving", ev: UnitStarvingEvent{}},

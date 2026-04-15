@@ -8,6 +8,7 @@ package production
 
 import (
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -24,6 +25,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 	orders = append(orders, state.TurnRuntime.Planning.MinisterBuilds...)
 	simulatedResources := make(map[string]domain.ResourceBag, len(state.Players))
 	simulatedPoints := make(map[string]domain.PointBag, len(state.Players))
+	reservedNodes := make(map[string]struct{}, len(orders))
 	for playerID, playerState := range state.Players {
 		if playerState == nil {
 			continue
@@ -41,6 +43,34 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		}
 		cfg, ok := staticdata.Default().GetBuilding(order.BuildingType)
 		if !ok {
+			continue
+		}
+		nodeEntry, ok := state.GetNode(order.NodeID)
+		if !ok {
+			events = append(events, event.BuildSkippedEvent{
+				PlayerID:     order.PlayerID,
+				NodeID:       order.NodeID,
+				BuildingType: order.BuildingType,
+				Reason:       "invalid_target",
+			})
+			continue
+		}
+		if _, reserved := reservedNodes[order.NodeID]; reserved || nodeEntry.HasComponent(ecs.BuildingC) {
+			events = append(events, event.BuildSkippedEvent{
+				PlayerID:     order.PlayerID,
+				NodeID:       order.NodeID,
+				BuildingType: order.BuildingType,
+				Reason:       "building_exists",
+			})
+			continue
+		}
+		if errCode := ecs.CanPlaceBuildingAt(nodeEntry, order.PlayerID, cfg); errCode != "" {
+			events = append(events, event.BuildSkippedEvent{
+				PlayerID:     order.PlayerID,
+				NodeID:       order.NodeID,
+				BuildingType: order.BuildingType,
+				Reason:       errCode,
+			})
 			continue
 		}
 		resourceCost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingResourceCost), order.BuildingType, toResourceBag(cfg.ResourceCosts))
@@ -75,6 +105,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 				Reason:   "build_structure",
 			})
 		}
+		reservedNodes[order.NodeID] = struct{}{}
 		events = append(events, event.BuildingBuiltEvent{
 			NodeID:       order.NodeID,
 			BuildingType: order.BuildingType,

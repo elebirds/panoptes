@@ -29,6 +29,9 @@ func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) 
 	if !ok {
 		return
 	}
+	if nodeEntry.HasComponent(ecs.BuildingC) {
+		return
+	}
 	ecs.CreateBuilding(world, e.BuildingType, e.Owner, e.CityID, nodeEntry)
 	state.ConsumeResources(e.Owner, e.CityID, e.Cost)
 }

@@ -20,6 +20,20 @@ type RecipeSelectionChangedEvent struct {
 	RequiredTurns int
 }
 
+type RecipeSkippedEvent struct {
+	NodeID   string
+	RecipeID string
+	Reason   string
+}
+
+func (e RecipeSkippedEvent) Apply(donburi.World, *domain.GameState) {}
+
+func (e RecipeSkippedEvent) Kind() string { return "recipe_skipped" }
+
+func (e RecipeSkippedEvent) String() string {
+	return fmt.Sprintf("RecipeSkippedEvent node=%s recipe=%s reason=%s", e.NodeID, e.RecipeID, e.Reason)
+}
+
 func (e RecipeSelectionChangedEvent) Apply(world donburi.World, state *domain.GameState) {
 	entry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {

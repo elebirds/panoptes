@@ -309,10 +309,116 @@ func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T
 	}
 }
 
+func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "farm",
+				PlacementKind: "city_territory",
+				BuildingScope: "in_city",
+				PointCosts:    staticdata.PointAmounts{"industry_output": 1},
+				MaxHP:         80,
+				TakeoverMode:  "city_capture",
+			},
+		},
+	}))
+
+	world, state, nodeEntry := newOwnedNodeState()
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
+		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm"},
+	}
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-2"
+	node.TerritoryOwner = "player-2"
+
+	events := engine.NewEconomyPipeline().Run(world, state)
+
+	if nodeEntry.HasComponent(ecs.BuildingC) {
+		t.Fatalf("build should be rejected once placement becomes invalid at settlement")
+	}
+	if hasEventKind(events, "point_spent") {
+		t.Fatalf("point_spent should not be emitted for skipped builds: %#v", events)
+	}
+	if !hasEventWithReason(events, "building_skipped", "outside_territory") {
+		t.Fatalf("events should include building_skipped outside_territory: %#v", events)
+	}
+}
+
+func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: newPipelineRules(),
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:              "farm",
+				PlacementKind:   "city_territory",
+				BuildingScope:   "in_city",
+				ResourceCosts:   staticdata.ResourceAmounts{},
+				PointCosts:      staticdata.PointAmounts{"industry_output": 1},
+				RecipeIDs:       []string{"farm_food"},
+				DefaultRecipeID: "farm_food",
+				MaxHP:           80,
+			},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{
+				ID:           "farm_food",
+				BuildingID:   "farm",
+				WorkAmount:   1,
+				BaseProgress: 1,
+				Outputs:      staticdata.RecipeOutputs{Resources: staticdata.ResourceAmounts{"food": 2}},
+			},
+		},
+	}))
+
+	world, state, nodeEntry := newOwnedNodeState()
+	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
+	ecs.BuildingOperationC.SetValue(nodeEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "farm_food",
+		RequiredTurns:    1,
+	})
+	nodeEntry.AddComponent(ecs.BuildingStateC)
+	ecs.BuildingStateC.SetValue(nodeEntry, ecs.BuildingStateComp{
+		Disabled:       true,
+		DisabledReason: "outside_territory",
+	})
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.Players["player-1"].Research.UnlockRecipe("farm_food")
+
+	events := engine.NewEconomyPipeline().Run(world, state)
+
+	if !hasEventKind(events, "recipe_skipped") {
+		t.Fatalf("events should include recipe_skipped: %#v", events)
+	}
+	if !hasEventWithReason(events, "recipe_skipped", "building_disabled") {
+		t.Fatalf("events should include recipe_skipped building_disabled: %#v", events)
+	}
+}
+
 func hasEventKind(events []event.Event, kind string) bool {
 	for _, evt := range events {
 		if evt != nil && evt.Kind() == kind {
 			return true
+		}
+	}
+	return false
+}
+
+func hasEventWithReason(events []event.Event, kind string, reason string) bool {
+	for _, evt := range events {
+		if evt == nil || evt.Kind() != kind {
+			continue
+		}
+		switch current := evt.(type) {
+		case event.BuildSkippedEvent:
+			if current.Reason == reason {
+				return true
+			}
+		case event.RecipeSkippedEvent:
+			if current.Reason == reason {
+				return true
+			}
 		}
 	}
 	return false

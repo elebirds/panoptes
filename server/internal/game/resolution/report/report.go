@@ -225,6 +225,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		}
 	case event.RecipeSelectionChangedEvent:
 		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
+	case event.RecipeSkippedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"node_id":   strings.TrimSpace(e.NodeID),
+				"recipe_id": strings.TrimSpace(e.RecipeID),
+				"reason":    strings.TrimSpace(e.Reason),
+			},
+		}
 	case event.RecipeProgressedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
