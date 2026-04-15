@@ -355,7 +355,7 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePointBagKeys(building.PointCosts, pointKeys, data.Buildings.Path, "point cost"); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(building.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Buildings.Path); err != nil {
+		if err := validateExplicitEffects(building.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Buildings.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(building.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Buildings.Path); err != nil {
@@ -384,7 +384,7 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePrerequisites(technology.Prerequisites, technologyIDs, policyIDs, data.Technologies.Path); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(technology.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Technologies.Path); err != nil {
+		if err := validateExplicitEffects(technology.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Technologies.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(technology.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Technologies.Path); err != nil {
@@ -396,7 +396,7 @@ func validateCrossReferences(data *authoredData) error {
 		if err := validatePrerequisites(policy.Prerequisites, technologyIDs, policyIDs, data.Policies.Path); err != nil {
 			return err
 		}
-		if err := validateExplicitEffects(policy.ExplicitEffects, buildingIDs, recipeIDs, unitIDs, data.Policies.Path); err != nil {
+		if err := validateExplicitEffects(policy.ExplicitEffects, buildingIDs, recipeIDs, policyIDs, unitIDs, data.Policies.Path); err != nil {
 			return err
 		}
 		if err := validateModifierEffects(policy.ModifierEffects, allowedTriggers, resourceKeys, pointKeys, buildingIDs, recipeIDs, unitIDs, data.Policies.Path); err != nil {
@@ -423,7 +423,7 @@ func validatePrerequisites(prereqs []staticdata.Prerequisite, technologyIDs map[
 	return nil
 }
 
-func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs map[string]struct{}, recipeIDs map[string]struct{}, unitIDs map[string]struct{}, path string) error {
+func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs map[string]struct{}, recipeIDs map[string]struct{}, policyIDs map[string]struct{}, unitIDs map[string]struct{}, path string) error {
 	for _, effect := range effects {
 		switch effect.Type {
 		case "unlock_building":
@@ -433,6 +433,14 @@ func validateExplicitEffects(effects []staticdata.ExplicitEffect, buildingIDs ma
 		case "unlock_recipe":
 			if _, ok := recipeIDs[effect.TargetID]; !ok {
 				return fmt.Errorf("semantic validation failed for %s: unknown recipe unlock target %q", path, effect.TargetID)
+			}
+		case "unlock_policy":
+			if _, ok := policyIDs[effect.TargetID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: unknown policy unlock target %q", path, effect.TargetID)
+			}
+		case "add_institution_slots":
+			if effect.InstitutionSlots < 0 {
+				return fmt.Errorf("semantic validation failed for %s: institution slot delta must be non-negative", path)
 			}
 		case "grant":
 			for _, unitID := range effect.GrantUnits {

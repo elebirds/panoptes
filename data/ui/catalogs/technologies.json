@@ -2,6 +2,7 @@
   "$schema": "../../schema/ui/technologies.schema.json",
   "technologies": [
     { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] },
-    { "id": "organized_labor", "name": "组织化劳动", "description": "提升工业产出效率", "icon_key": "tech_organized_labor", "sort_order": 20, "tags": ["governance"] }
+    { "id": "organized_labor", "name": "组织化劳动", "description": "提升工业产出效率", "icon_key": "tech_organized_labor", "sort_order": 20, "tags": ["governance"] },
+    { "id": "civic_institutions", "name": "公共制度", "description": "解锁制度候选并新增一个制度槽位", "icon_key": "tech_civic_institutions", "sort_order": 30, "tags": ["governance", "institution"] }
   ]
 }

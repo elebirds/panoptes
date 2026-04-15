@@ -109,12 +109,13 @@ type Prerequisite struct {
 }
 
 type ExplicitEffect struct {
-	Type           string          `json:"type"`
-	TargetID       string          `json:"target_id,omitempty"`
-	ResourceKey    string          `json:"resource_key,omitempty"`
-	PointKey       string          `json:"point_key,omitempty"`
-	GrantResources ResourceAmounts `json:"grant_resources,omitempty"`
-	GrantUnits     []string        `json:"grant_units,omitempty"`
+	Type             string          `json:"type"`
+	TargetID         string          `json:"target_id,omitempty"`
+	ResourceKey      string          `json:"resource_key,omitempty"`
+	PointKey         string          `json:"point_key,omitempty"`
+	InstitutionSlots int             `json:"institution_slots,omitempty"`
+	GrantResources   ResourceAmounts `json:"grant_resources,omitempty"`
+	GrantUnits       []string        `json:"grant_units,omitempty"`
 }
 
 type ModifierEffect struct {

@@ -28,6 +28,18 @@
           "value": 1
         }
       ]
+    },
+    {
+      "id": "civic_institutions",
+      "branch": "governance",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        { "type": "unlock_policy", "target_id": "academy_charter" },
+        { "type": "add_institution_slots", "institution_slots": 1 }
+      ],
+      "modifier_effects": []
     }
   ]
 }

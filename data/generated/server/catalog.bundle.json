@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "a62c81274714cfd2c271faea37e5be65aab9a95091a32ebfcd365ccf05d46e19"
+    "bundle_hash": "0ca143c923b2ae1659befc584dd9cd5fcaf75710aa5450cc3842546367cc7b5f"
   },
   "resources": [
     {
@@ -348,6 +348,32 @@
       "tags": [
         "governance"
       ]
+    },
+    {
+      "id": "civic_institutions",
+      "name": "公共制度",
+      "description": "解锁制度候选并新增一个制度槽位",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_policy",
+          "target_id": "academy_charter"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 30,
+      "tags": [
+        "governance",
+        "institution"
+      ]
     }
   ],
   "policies": [
@@ -409,6 +435,28 @@
       "sort_order": 40,
       "tags": [
         "national"
+      ]
+    },
+    {
+      "id": "academy_charter",
+      "name": "学术特许",
+      "description": "制度层面的学术组织支持，提升科研产出。",
+      "icon_key": "policy_academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 50,
+      "tags": [
+        "institutional"
       ]
     }
   ],

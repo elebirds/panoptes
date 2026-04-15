@@ -32,6 +32,21 @@
       "prerequisites": [],
       "explicit_effects": [],
       "modifier_effects": []
+    },
+    {
+      "id": "academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
     }
   ]
 }
