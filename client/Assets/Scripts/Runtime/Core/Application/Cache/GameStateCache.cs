@@ -715,9 +715,7 @@ namespace Panoptes.Core.Application.Cache
                 Ore = after.Ore - before.Ore,
                 Wood = after.Wood - before.Wood,
                 Food = after.Food - before.Food,
-                RefinedOre = after.RefinedOre - before.RefinedOre,
-                EngineerMaterial = after.EngineerMaterial - before.EngineerMaterial,
-                BuildPoints = after.BuildPoints - before.BuildPoints
+                IndustryOutput = after.IndustryOutput - before.IndustryOutput
             };
         }
 
@@ -748,14 +746,8 @@ namespace Panoptes.Core.Application.Cache
                     case ResourceKeys.ResourceFood:
                         resources.Food = item.Amount;
                         break;
-                    case ResourceKeys.ResourceRefinedOre:
-                        resources.RefinedOre = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceEngineerMaterial:
-                        resources.EngineerMaterial = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceBuildPoints:
-                        resources.BuildPoints = item.Amount;
+                    case ResourceKeys.ResourceIndustryOutput:
+                        resources.IndustryOutput = item.Amount;
                         break;
                 }
             }
@@ -775,9 +767,7 @@ namespace Panoptes.Core.Application.Cache
                 Ore = source.Ore,
                 Wood = source.Wood,
                 Food = source.Food,
-                RefinedOre = source.RefinedOre,
-                EngineerMaterial = source.EngineerMaterial,
-                BuildPoints = source.BuildPoints
+                IndustryOutput = source.IndustryOutput
             };
         }
 

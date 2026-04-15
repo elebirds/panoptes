@@ -24,7 +24,6 @@ type UnitType string
 
 const (
 	UnitTypeSettler  UnitType = "settler"
-	UnitTypeWarrior  UnitType = "warrior"
 	UnitTypeArcher   UnitType = "archer"
 	UnitTypeCavalry  UnitType = "cavalry"
 	UnitTypeInfantry UnitType = "infantry"
@@ -60,10 +59,10 @@ const (
 type Policy string
 
 const (
-	PolicyReadyForWar  Policy = "ready_for_war"
-	PolicyExpansion    Policy = "expansion"
-	PolicyRecuperation Policy = "recuperation"
-	PolicyDiplomacy    Policy = "diplomacy"
+	PolicyExpansion       Policy = "expansion"
+	PolicyWarPreparedness Policy = "war_preparedness"
+	PolicyRecovery        Policy = "recovery"
+	PolicyReorganization  Policy = "reorganization"
 )
 
 type RoadStatus string
@@ -107,21 +106,17 @@ func (p Position) Neighbors() []Position {
 type ResourceKey string
 
 const (
-	ResourceOre         ResourceKey = "ore"
-	ResourceWood        ResourceKey = "wood"
-	ResourceFood        ResourceKey = "food"
-	ResourceRefinedOre  ResourceKey = "refined_ore"
-	ResourceEngineerMat ResourceKey = "engineer_material"
-	ResourceBuildPoints ResourceKey = "build_points"
+	ResourceOre            ResourceKey = "ore"
+	ResourceWood           ResourceKey = "wood"
+	ResourceFood           ResourceKey = "food"
+	ResourceIndustryOutput ResourceKey = "industry_output"
 )
 
 var knownResourceKeys = map[ResourceKey]struct{}{
-	ResourceOre:         {},
-	ResourceWood:        {},
-	ResourceFood:        {},
-	ResourceRefinedOre:  {},
-	ResourceEngineerMat: {},
-	ResourceBuildPoints: {},
+	ResourceOre:            {},
+	ResourceWood:           {},
+	ResourceFood:           {},
+	ResourceIndustryOutput: {},
 }
 
 type ResourceBag map[ResourceKey]int

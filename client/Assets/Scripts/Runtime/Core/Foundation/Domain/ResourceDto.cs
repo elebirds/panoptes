@@ -5,8 +5,6 @@ namespace Panoptes.Core.Domain
         public int Ore;
         public int Wood;
         public int Food;
-        public int RefinedOre;
-        public int EngineerMaterial;
-        public int BuildPoints;
+        public int IndustryOutput;
     }
 }

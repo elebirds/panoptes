@@ -101,7 +101,7 @@ func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEve
 	}
 	setBuildingOnNode(centerEntry, "city_core", order.PlayerID, centerNodeID)
 	setBuildingOnNode(barracksEntry, "barracks", order.PlayerID, centerNodeID)
-	state.EnsureCastleState(order.PlayerID, centerNodeID)
+	state.EnsureCityState(order.PlayerID, centerNodeID)
 	state.World.Remove(unitEntry.Entity())
 
 	return &pb.TurnEvent{
@@ -175,7 +175,7 @@ func pickBarracksNode(centerEntry *donburi.Entry, footprintEntries []*donburi.En
 	return nil, ""
 }
 
-func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, castleID string) {
+func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, cityID string) {
 	if nodeEntry == nil {
 		return
 	}
@@ -186,7 +186,7 @@ func setBuildingOnNode(nodeEntry *donburi.Entry, buildingType, owner string, cas
 		MaxHP:     maxHP,
 		WallLevel: wallLevel,
 		Owner:     owner,
-		CastleID:  castleID,
+		CityID:    cityID,
 		Towers:    towers,
 	}
 	if !nodeEntry.HasComponent(ecs.BuildingC) {

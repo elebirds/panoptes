@@ -194,7 +194,7 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 			return nil
 		}
 	}
-	if playerState.Research.TechPoints < tech.ResearchCost {
+	if playerState.Research.CurrentProgress < tech.ResearchCost {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "insufficient_resources"})
 		return nil
 	}
@@ -259,13 +259,13 @@ func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, pla
 	return nil
 }
 
-func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, castleID string) error {
+func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, cityID string) error {
 	if playerState == nil {
 		return errors.New("player not found")
 	}
 	nodeID = strings.TrimSpace(nodeID)
 	buildingType = strings.TrimSpace(buildingType)
-	castleID = strings.TrimSpace(castleID)
+	cityID = strings.TrimSpace(cityID)
 
 	if playerState.TokensLeft <= 0 {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
@@ -290,8 +290,8 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
 		return nil
 	}
-	if castleID != "" {
-		if errCode := validateCastleContext(room, playerID, castleID); errCode != "" {
+	if cityID != "" {
+		if errCode := validateCityContext(room, playerID, cityID); errCode != "" {
 			_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: errCode})
 			return nil
 		}
@@ -308,32 +308,32 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_directive"})
 		return nil
 	}
-	if !room.State().CanAffordFromCastle(playerID, castleID, cost) && !room.IsDevMode() {
+	if !room.State().CanAffordFromCity(playerID, cityID, cost) && !room.IsDevMode() {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: false, Action: "build", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "insufficient_resources"})
 		return nil
 	}
 
-	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CastleID: castleID})
+	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
 	playerState.TokensLeft--
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 	return nil
 }
 
-func validateCastleContext(room Session, playerID string, castleID string) string {
-	castleID = strings.TrimSpace(castleID)
-	if castleID == "" {
+func validateCityContext(room Session, playerID string, cityID string) string {
+	cityID = strings.TrimSpace(cityID)
+	if cityID == "" {
 		return "invalid_request"
 	}
 
-	castleEntry, ok := room.NodeByID(castleID)
-	if !ok || !castleEntry.HasComponent(ecs.BuildingC) {
+	cityEntry, ok := room.NodeByID(cityID)
+	if !ok || !cityEntry.HasComponent(ecs.BuildingC) {
 		return "invalid_target"
 	}
-	building := ecs.BuildingC.Get(castleEntry)
+	building := ecs.BuildingC.Get(cityEntry)
 	if normalizeToken(string(building.Type)) != "city_core" {
 		return "invalid_target"
 	}
-	node := ecs.NodeC.Get(castleEntry)
+	node := ecs.NodeC.Get(cityEntry)
 	player := normalizeToken(playerID)
 	if normalizeToken(building.Owner) != player && normalizeToken(node.Owner) != player && normalizeToken(node.TerritoryOwner) != player {
 		return "unauthorized"

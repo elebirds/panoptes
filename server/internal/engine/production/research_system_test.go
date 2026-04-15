@@ -55,7 +55,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	}))
 
 	world, state, nodeEntry := newOwnedNodeState()
-	state.Players["player-1"].Research.TechPoints = 1
+	state.Players["player-1"].Research.CurrentProgress = 1
 	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
 		{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
 	}
@@ -146,7 +146,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 		NodeIndex:    map[string]donburi.Entity{"C1": nodeEntity},
 	})
 	state.World = world
-	state.Players["player-1"].Research.TechPoints = 1
+	state.Players["player-1"].Research.CurrentProgress = 1
 	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
 		{PlayerID: "player-1", TechnologyID: "militia_mobilization"},
 	}
@@ -180,19 +180,19 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurn(t *testing
 	world := donburi.NewWorld()
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.World = world
-	state.Players["player-1"].Research.TechPoints = 1
+	state.Players["player-1"].Research.CurrentProgress = 1
 	state.TurnRuntime.Planning.ResearchOrders = []domain.ResearchOrder{
 		{PlayerID: "player-1", TechnologyID: "research_boost"},
 	}
 
 	engine.NewEconomyPipeline().Run(world, state)
-	if got := state.Players["player-1"].Research.TechPoints; got != 1 {
+	if got := state.Players["player-1"].Research.CurrentProgress; got != 1 {
 		t.Fatalf("research progress after unlock turn = %d, want 1", got)
 	}
 
 	state.TurnRuntime.Planning.ResearchOrders = nil
 	engine.NewEconomyPipeline().Run(world, state)
-	if got := state.Players["player-1"].Research.TechPoints; got != 4 {
+	if got := state.Players["player-1"].Research.CurrentProgress; got != 4 {
 		t.Fatalf("research progress after next-turn modifier = %d, want 4", got)
 	}
 }

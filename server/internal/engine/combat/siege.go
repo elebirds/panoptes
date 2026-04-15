@@ -52,9 +52,9 @@ func (s *SiegeSystem) Run(world donburi.World, state *domain.GameState) []event.
 		}
 		nextHP := maxInt(0, curHP-dmg)
 		hpAfter[buildingKey] = nextHP
-		events = append(events, event.CastleDamagedEvent{NodeID: node.ID, Damage: dmg, HPAfter: nextHP, AttackerID: unit.ID})
+		events = append(events, event.CityCoreDamagedEvent{NodeID: node.ID, Damage: dmg, HPAfter: nextHP, AttackerID: unit.ID})
 		if nextHP <= 0 {
-			events = append(events, event.CastleDestroyedEvent{NodeID: node.ID, ConquerorFaction: unit.Faction})
+			events = append(events, event.CityCoreDestroyedEvent{NodeID: node.ID, ConquerorFaction: unit.Faction})
 			return
 		}
 

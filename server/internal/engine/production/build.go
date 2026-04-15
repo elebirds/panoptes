@@ -32,14 +32,14 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 			continue
 		}
 		cost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingResourceCost), order.BuildingType, toResourceBag(cfg.ResourceCosts))
-		if !state.CanAffordFromCastle(order.PlayerID, order.CastleID, cost) {
+		if !state.CanAffordFromCity(order.PlayerID, order.CityID, cost) {
 			continue
 		}
 		events = append(events, event.BuildingBuiltEvent{
 			NodeID:       order.NodeID,
 			BuildingType: order.BuildingType,
 			Owner:        order.PlayerID,
-			CastleID:     order.CastleID,
+			CityID:       order.CityID,
 			Cost:         cost,
 		})
 	}
