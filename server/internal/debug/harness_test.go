@@ -52,7 +52,7 @@ func TestHarnessResearchUnlockBuild_NextTurnOnly(t *testing.T) {
 	}
 	if err := h.InjectPlanningCommand("player-1", "req-build", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm", CityId: "A1"},
 		},
 	}); err != nil {
 		t.Fatalf("InjectPlanningCommand(build) error = %v", err)
@@ -217,15 +217,15 @@ func TestHarnessOuterFacilityCapture_DeactivatesContestedFacility(t *testing.T) 
 	if err != nil {
 		t.Fatalf("WaitSettlement() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "building_deactivated") {
-		t.Fatalf("missing building_deactivated event")
+	if !hasTurnEvent(record.Settlement, "economy", "facility_takeover_progressed") {
+		t.Fatalf("missing facility_takeover_progressed event")
 	}
 	building, ok := record.Summary.Buildings["B2"]
 	if !ok {
 		t.Fatalf("missing building summary for B2")
 	}
-	if !building.Disabled || building.DisabledReason != "outside_territory" {
-		t.Fatalf("building summary = %#v, want disabled outside_territory", building)
+	if !building.Disabled || building.DisabledReason != "enemy_control" {
+		t.Fatalf("building summary = %#v, want disabled enemy_control", building)
 	}
 }
 
