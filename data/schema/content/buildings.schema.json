@@ -1,5 +1,64 @@
 {
   "$defs": {
+    "modifier_effect": {
+      "additionalProperties": false,
+      "properties": {
+        "modifier_type": {
+          "enum": [
+            "flat",
+            "percent",
+            "multiplier"
+          ],
+          "type": "string"
+        },
+        "point_key": {
+          "enum": [
+            "industry_output",
+            "research_output",
+            ""
+          ],
+          "type": "string"
+        },
+        "resource_key": {
+          "enum": [
+            "food",
+            "ore",
+            "wood",
+            ""
+          ],
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "trigger": {
+          "enum": [
+            "building.resource_cost",
+            "building.point_cost",
+            "building.max_hp",
+            "recipe.resource_input",
+            "recipe.point_input",
+            "recipe.resource_output",
+            "recipe.work_amount",
+            "recipe.base_progress",
+            "unit.attack",
+            "unit.move_range",
+            "unit.siege_multiplier",
+            "point.output"
+          ],
+          "type": "string"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "trigger",
+        "modifier_type",
+        "value"
+      ],
+      "type": "object"
+    },
     "point_amount": {
       "additionalProperties": false,
       "properties": {
@@ -31,6 +90,72 @@
         }
       },
       "type": "object"
+    },
+    "technology_effect": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_building"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "target_id": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "unlock_recipe"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "target_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "grant_resources": {
+              "$ref": "#/$defs/resource_amount"
+            },
+            "grant_units": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": {
+              "enum": [
+                "grant"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      ]
     }
   },
   "$id": "content/buildings.schema.json",
@@ -55,12 +180,24 @@
           "default_recipe_id": {
             "type": "string"
           },
+          "explicit_effects": {
+            "items": {
+              "$ref": "#/$defs/technology_effect"
+            },
+            "type": "array"
+          },
           "id": {
             "type": "string"
           },
           "max_hp": {
             "minimum": 0,
             "type": "integer"
+          },
+          "modifier_effects": {
+            "items": {
+              "$ref": "#/$defs/modifier_effect"
+            },
+            "type": "array"
           },
           "placement_kind": {
             "enum": [

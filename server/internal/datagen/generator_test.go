@@ -51,6 +51,8 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/registry/manifest.schema.json"), `"$id"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/units.schema.json"), `"additionalProperties": false`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"city_foundation_center"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"explicit_effects"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/buildings.schema.json"), `"modifier_effects"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/technologies.schema.json"), `"research_cost"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/policies.schema.json"), `"national"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/recipes.schema.json"), `"point_inputs"`)

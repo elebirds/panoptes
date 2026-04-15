@@ -263,6 +263,8 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 								"point_costs":            refSchema("#/$defs/point_amount"),
 								"recipe_ids":             arraySchema(stringSchema(nil), nil),
 								"default_recipe_id":      stringSchema(nil),
+								"explicit_effects":       arraySchema(refSchema("#/$defs/technology_effect"), nil),
+								"modifier_effects":       arraySchema(refSchema("#/$defs/modifier_effect"), nil),
 								"max_hp":                 intSchema(map[string]any{"minimum": 0}),
 								"takeover_mode":          enumSchema([]string{"disabled", "delayed", "city_capture"}),
 								"tags":                   arraySchema(stringSchema(nil), nil),
@@ -279,8 +281,10 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 				[]string{"buildings"},
 			),
 			map[string]any{
-				"resource_amount": defs["resource_amount"],
-				"point_amount":    defs["point_amount"],
+				"resource_amount":   defs["resource_amount"],
+				"point_amount":      defs["point_amount"],
+				"technology_effect": defs["technology_effect"],
+				"modifier_effect":   defs["modifier_effect"],
 			},
 		),
 		filepath.Join("content", "technologies.schema.json"): schemaDocument(
