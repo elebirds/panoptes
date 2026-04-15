@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **状态更新（2026-04-15）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成。当前仓库已按“破坏式归正”切到新版静态数据、协议与最小运行时消费链路，并补齐了 `planning draft -> lock-in -> settlement` 的主干链路；本文档中的 Chunk 1 与 Chunk 2 勾选状态已同步到当前实现现状。
+> **状态更新（2026-04-16）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成，Chunk 3 与 Chunk 4 已按 revised plan 落地到 `main`。当前仓库已补齐主城 bootstrap、建城/建筑放置统一校验、配方低效推进、城市陷落与设施延时接管，以及对应的 settlement/report 与无头验证覆盖；本文档中的 Chunk 1-4 勾选状态已同步到当前实现现状。
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
@@ -104,7 +104,7 @@
 
 里程碑必须顺序推进。不得在 M1 尚未稳定时切客户端玩法 UI；不得在 M2 未闭环时接入复杂中期系统。
 
-### 4.1 当前进度（2026-04-15）
+### 4.1 当前进度（2026-04-16）
 
 - `main` 已集成“无客户端调试与规则验证”首批服务端实现，包含 prepared room、deterministic scenario、headless harness、结构化状态摘要、结算记录器与 `DEV_MODE` HTTP 调试入口。
 - `M2` 相关基础设施已明显前移：服务端现在可以在不依赖客户端的情况下，用规则级测试与 harness 场景测试复现 `planning -> settlement` 的关键裁决。
@@ -112,10 +112,10 @@
 - `planning -> resolving` 边界的 lock-in 现在会把 `national_policy_changed` 与 `research_target_changed` 放入 `MsgTurnSettlement.economy` 事件流，而不再只是静默改状态。
 - Chunk 3 已按 revised plan 完成主干收口：经济 resolving 改为单一 orchestrator，点数预算已从 `ResourceBag` 拆分为 resolving 内部 `PointBag`，`PlayerView.points` 保持“有效产出预览”语义，建筑来源修正已正式纳入 `staticdata + datagen + content + generated bundle` 链路。
 - 统一修正公式现已切到 `((base*(1+percent))+flat)*multiplier`，并补上了 combat regression 与结算事件映射；点数刷新、点数消耗、建造跳过/配方阻塞都能进入 settlement/report。
-- Chunk 7 的无头验证场景已继续扩到 Chunk 3：当前 harness 已能验证研究解锁次回合建造、共享工业点预算耗尽、settlement 重校验建造草案、配方阻塞/失效、建筑修正影响点数预览、建城、设施停用与主城摧毁判负。
+- Chunk 4 已按 revised plan 完成主干收口：runtime 程序化开局会主动 bootstrap 主城，`CapitalCityID / OnlineOnTurn / building lifecycle status` 已成为统一运行时状态；建城、建筑放置、配方低效推进、非主城城市陷落、设施延时接管与 settlement/report 可观测性均已接入主线。
+- Chunk 7 的无头验证场景已继续扩到 Chunk 4：当前规则级测试与 harness 场景已能验证研究解锁次回合建造、共享工业点预算耗尽、settlement 重校验建造草案、低效推进/阻塞、开拓者建城、设施接管完成转移归属、非主城城市陷落、普通建筑废墟化与主城摧毁判负。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
-- 当前已覆盖科技推进、研究解锁后次回合建造、配方阻塞、开拓者建城、设施停用/失效、主城摧毁判负；“延时接管并转移归属”仍待静态规则补齐接管回合数后继续实现。
-- 主工作区验证结果：`cd server && go test ./...` 与 `cd server && go build ./...` 已于 2026-04-15 在 `main` 上通过。
+- 当前主工作区验证结果：`cd server && go test ./...` 已于 2026-04-16 在 `main` 上通过。
 - Windows Unity batchmode 当前已可完成脚本编译并退出，但 `-runTests -testPlatform EditMode` 仍未稳定产出 `-testResults` XML，因此客户端 EditMode 自动化验证暂时仍记为“未最终确认通过”。
 
 ## 5. 推荐排期
@@ -295,7 +295,7 @@ Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正�
 
 当前说明：
 
-- Chunk 2 已完成到“最小收口”口径；更完整的接管推进、城市玩法扩展和 richer city gameplay 仍留在 Chunk 3-4。
+- Chunk 2 已完成到“最小收口”口径；原先留给 Chunk 3-4 的接管推进、城市玩法扩展和 richer city gameplay 主干现已在 `main` 落地，后续只剩 Chunk 5-6 与更后续阶段的扩展项。
 - 客户端 EditMode 自动化结果文件仍未稳定落盘，因此客户端验证口径目前以“脚本编译通过 + 关键缓存行为测试已补”为主，不把 Unity 测试整体验证记为完成。
 
 ### Task 4: 重塑领域状态以承载 GDD 当前基线
@@ -364,7 +364,7 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 
 当前说明：
 
-- Chunk 3 现在可按 revised plan 的范围定义视为完成；剩余未做项属于 Chunk 4 的“低效推进/延迟惩罚”“更完整城市/接管语义”，不再计入本 Chunk。
+- Chunk 3 现在可按 revised plan 的范围定义视为完成；原先挂到 Chunk 4 的“低效推进”“更完整城市/接管语义”已在当前主线实现，不再作为 Chunk 3/4 之间的悬而未决项。
 - 客户端本轮只同步了“建造成功=草案已记录”的提示语义与断言；Unity EditMode 自动化结果仍未在主工作区重新确认通过。
 
 ### Task 7: 建立当前基线的资源与点数回合结算
@@ -402,6 +402,22 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 
 ## 9. Chunk 4：城市、建筑与配方主闭环
 
+### 9.0 当前状态（2026-04-16）
+
+Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属双轨正式化 + 配方低效推进 + 建筑生命周期与接管闭环”的主干改造，主要包括：
+
+- runtime 程序化开局会在最终 spawn 点主动 bootstrap 主城；prepared/scenario 路径仍可扫描已有 `city_core`。`PlayerState.CapitalCityID`、`CityState.OnlineOnTurn` 和建筑 `OnlineOnTurn` 已成为统一时序状态。
+- `settle_city` 现在只创建 `city_core + 初始辖区`，不再赠送免费建筑；新城、新建筑和新接管资产统一采用“本回合落地、次回合上线”口径。
+- 建城与建筑放置统一收口到服务端唯一合法性入口；非核心建筑要求 `city_id`，城内建筑受城市固定辖区约束，城外设施必须匹配资源点并绑定服务城市；最小城距已按 Manhattan 距离进入 `CanFoundCityAt()`。
+- 战斗后果已拆分为普通建筑受损/废墟、非主城城市陷落、主城核心摧毁判负三条路径；城市陷落会同步迁移 `node.Owner / TerritoryOwner`、`CityState` 目录和后续城市归属。
+- 建筑生命周期系统已替换旧 territory disable 语义；设施会先 `contested/takeover` 再延时接管，城市陷落时 `production / processing / storage` 建筑进入接管池，`defense / governance` 建筑进入 `ruined`。
+- 配方推进已切到“工作量 / 推进率 / 运行效率”模型；资源与点数按累计进度比例扣除，输入不足时会低效推进或停滞，不再在完工瞬间一次性扣料。
+- `NodeView.building_status`、settlement report、新增 lifecycle 事件以及规则级 / 场景化测试已覆盖上述语义。
+
+当前说明：
+
+- Chunk 4 现在可按 revised plan 的范围定义视为完成；剩余主线工作已转入 Chunk 5-6 的科技/政策收尾与单位/战争闭环，不再把城市/接管尾差挂在本 Chunk 名下。
+
 ### Task 9: 落地主城、开拓者建城与城市核心
 
 **Files:**
@@ -415,10 +431,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Modify: `server/internal/engine/maploader/loader_test.go`
 - Modify: `server/internal/game/turn_v2_test.go`
 
-- [ ] **Step 1: 让主城在初始化时以“主城核心建筑 + 城市记录”的形式成立**
-- [ ] **Step 2: 让开拓者的 `settle_city` 动作创建新城市核心，并初始化基础辖区和服务关系**
-- [ ] **Step 3: 统一主城核心与普通城市核心的生命、归属和判负语义**
-- [ ] **Step 4: 用测试覆盖开局主城存在、建城合法性、非法地块建城和新城次回合生效口径**
+- [x] **Step 1: 让主城在初始化时以“主城核心建筑 + 城市记录”的形式成立**
+- [x] **Step 2: 让开拓者的 `settle_city` 动作创建新城市核心，并初始化基础辖区和服务关系**
+- [x] **Step 3: 统一主城核心与普通城市核心的生命、归属和判负语义**
+- [x] **Step 4: 用测试覆盖开局主城存在、建城合法性、非法地块建城和新城次回合生效口径**
 
 ### Task 10: 落地建筑放置规则与归属双轨
 
@@ -430,10 +446,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
-- [ ] **Step 1: 让建筑放置规则显式区分 `city_only` 与 `resource_only`，并由服务端统一校验**
-- [ ] **Step 2: 让城市内建筑必须处于辖区内，城外设施必须绑定服务城市**
-- [ ] **Step 3: 让科技解锁和建筑标签决定玩家能建什么、能在哪建，而不是只靠节点类型硬编码**
-- [ ] **Step 4: 用测试覆盖未解锁建筑、辖区外建造、错误资源点建造和服务城市绑定**
+- [x] **Step 1: 让建筑放置规则显式区分城市内建筑与资源点设施，并由服务端统一校验**
+- [x] **Step 2: 让城市内建筑必须处于辖区内，城外设施必须绑定服务城市**
+- [x] **Step 3: 让科技解锁和建筑标签决定玩家能建什么、能在哪建，而不是只靠节点类型硬编码**
+- [x] **Step 4: 用测试覆盖未解锁建筑、辖区外建造、错误资源点建造和服务城市绑定**
 
 ### Task 11: 对齐配方推进模型
 
@@ -444,10 +460,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
-- [ ] **Step 1: 保持单建筑单激活配方，但把推进逻辑明确为“工作量/推进率/运行效率”模型**
-- [ ] **Step 2: 让输入不足时进入低效推进、停滞或延迟惩罚，而不是回滚进度**
-- [ ] **Step 3: 让配方产出严格限制在资源、单位、点数推进和局部状态边界内**
-- [ ] **Step 4: 在查询层和结算报告中暴露配方选择、当前进度、需要回合和阻塞原因**
+- [x] **Step 1: 保持单建筑单激活配方，但把推进逻辑明确为“工作量/推进率/运行效率”模型**
+- [x] **Step 2: 让输入不足时进入低效推进或停滞，而不是回滚进度**
+- [x] **Step 3: 让配方产出严格限制在资源、单位、点数推进和局部状态边界内**
+- [x] **Step 4: 在查询层和结算报告中暴露配方选择、当前进度、需要回合和阻塞原因**
 
 ### Task 12: 落地建筑状态、停用与接管
 
@@ -461,10 +477,10 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Create: `server/internal/event/building_state.go`
 - Create: `server/internal/engine/combat/capture.go`
 
-- [ ] **Step 1: 建立建筑的激活、停用、争夺、接管、废墟状态语义**
-- [ ] **Step 2: 让城外设施采用“先失效、后接管”的延时接管规则，并读取可调参数 `N`**
-- [ ] **Step 3: 让城市陷落时执行“部分接管、部分废墟”的基础分类，而不是整城原样翻面**
-- [ ] **Step 4: 在结算报告和地图视图中给出建筑状态变化，便于客户端播放与提示**
+- [x] **Step 1: 建立建筑的激活、停用、争夺、接管、废墟状态语义**
+- [x] **Step 2: 让城外设施采用“先失效、后接管”的延时接管规则，并读取可调参数 `N`**
+- [x] **Step 3: 让城市陷落时执行“部分接管、部分废墟”的基础分类，而不是整城原样翻面**
+- [x] **Step 4: 在结算报告和地图视图中给出建筑状态变化，便于客户端播放与提示**
 
 ## 10. Chunk 5：科技与政策闭环
 
@@ -571,12 +587,12 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - Create: `server/internal/event/building_state_test.go`
 - Create: `server/internal/game/scenario/scenario_test.go`
 
-- [ ] **Step 1: 把 GDD 当前基线中的关键裁决拆成规则级测试矩阵，覆盖科技、建城、建筑放置、配方阻塞、建筑接管和主城判负**
+- [x] **Step 1: 把 GDD 当前基线中的关键裁决拆成规则级测试矩阵，覆盖科技、建城、建筑放置、配方阻塞、建筑接管和主城判负**
 - [x] **Step 2: 让规则级测试尽量只依赖 `domain / engine / event`，不把网络与客户端状态卷入断言**
 - [x] **Step 3: 为每一类关键规则建立可读的场景名称，使失败信息能直接对应到 GDD 条目**
 - [x] **Step 4: 保证“单条规则失败”与“整局链路失败”能够在测试层级上被区分定位**
 
-当前状态：科技推进、研究解锁次回合建造、建筑放置、共享工业点预算、配方阻塞/失效、设施停用/失效与主城判负已进入规则级矩阵；“建筑接管完成并转移归属”尚未补齐，因此 Step 1 继续保留未完成。
+当前状态：科技推进、研究解锁次回合建造、建筑放置、共享工业点预算、配方阻塞/低效推进、设施接管完成并转移归属、非主城城市陷落与主城判负均已进入规则级矩阵；Step 1 的覆盖范围已按当前 GDD 基线补齐。
 
 ### Task 19: 抽象无头对局 Harness
 
@@ -595,7 +611,7 @@ Chunk 3 当前已经完成了“经济预算从资源库存拆分 + 单轮经济
 - [x] **Step 3: 让 harness 能导出每回合消息、状态摘要和关键结算 sections，用于断言与复盘**
 - [x] **Step 4: 建立一组场景化无头对局用例，验证研究解锁、点数预算消耗、结算重校验、开拓者建城、配方阻塞/失效、设施接管和主城摧毁**
 
-当前状态：9 个场景化无头用例已经落地，除原有研究解锁、建城、配方阻塞、设施停用与主城摧毁外，新增覆盖了共享工业点预算耗尽、settlement 阶段建造重校验、点数预览保持有效产出语义，以及 disabled recipe 的 `recipe_skipped` 反馈；其中“设施接管”场景当前仍只验证“越界后停用/失效”，后续会在接管回合数进入静态规则后补齐完整归属转移断言。
+当前状态：9 个场景化无头用例已经落地，除原有研究解锁、建城、配方阻塞与主城摧毁外，新增覆盖了共享工业点预算耗尽、settlement 阶段建造重校验、点数预览保持有效产出语义、disabled recipe 的 `recipe_skipped` 反馈，以及设施接管进度/完成后的归属与服务城市转移断言。
 
 ### Task 20: 落地开发态调试接口与状态转储
 
