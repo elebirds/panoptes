@@ -1,6 +1,8 @@
 # Panoptes GDD V1 Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+>
+> **状态更新（2026-04-15）**：M1 / Chunk 1 已完成。当前仓库已按“破坏式归正”切到新版静态数据、协议与最小运行时消费链路；本文档中的 Chunk 1 勾选与说明已同步到当前实现现状。
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
@@ -40,13 +42,13 @@
 6. 当前版本的资源逻辑仍使用全局虚空库存；道路不承担经济物流，只承担地图骨架与未来网络接口。
 7. 政策系统必须按“双层设计、单层优先实现”落地：国策层可用，制度层先建立数据模型和接口，不强做复杂切换成本。
 
-### 2.3 术语迁移策略
+### 2.3 术语归正策略
 
-现有实现仍大量使用 `castle` 命名，但新版 GDD 的正式术语是“城市 / 主城 / 城市核心”。实施上采用如下策略：
+新版 GDD 的正式术语是“城市 / 城市核心 / 步兵 / 点数”。当前仓库已采用破坏式归正策略，规则如下：
 
-- 用户可见文案、协议字段、静态数据命名优先转向 `city / city_core` 语义。
-- 服务端内部若已有 `CastleState`、`main_castle_hp` 等深度耦合命名，可在第一阶段保留兼容壳，避免一轮实施同时叠加大规模重命名风险。
-- 当 MVP 垂直切片稳定后，再单独执行“castle -> city” 内部收口，不与玩法闭环首轮交织。
+- 作者源、schema、proto、生成代码、服务端视图与客户端运行时脚本统一使用新版公开语义，不保留 `castle -> city`、`warrior -> infantry`、`build_points/tech_points -> points` 的兼容壳。
+- 旧公开字段、旧公开 ID 和旧结算事件名必须在运行时代码中直接删除，而不是继续桥接。
+- 本轮允许暂时保留 `Castle*` 这类 Prefab、资源路径和表现层类名；它们属于资产与命名清扫范围，不再影响协议与玩法语义。
 
 ## 3. 当前实施范围冻结
 
@@ -95,7 +97,7 @@
 
 | 里程碑 | 目标 | 完成标志 |
 |---|---|---|
-| M1 数据与协议对齐 | 让 GDD 当前基线拥有稳定作者源和跨端契约 | `make data-validate`、`make gen` 稳定通过 |
+| M1 数据与协议对齐（已完成） | 让 GDD 当前基线拥有稳定作者源和跨端契约 | `make data-validate`、`make gen` 稳定通过 |
 | M2 服务端规则闭环 | 服务端能够独立跑通一局 MVP | `go test ./...` 通过；无头对局 harness 能稳定跑通场景化对局 |
 | M3 客户端垂直切片 | Unity 客户端可完成一局基本对局 | 可从房间进入游戏，完成研究、建造、建城、战斗与结算 |
 | M4 内容与验收 | 内容、数值、提示、结算信息达到可试玩标准 | 数据包定版，完成手工冒烟与规则回归 |
@@ -188,7 +190,30 @@
 
 如果只有一名主开发者，则建议仍按相同阶段顺序推进，但不要在第 7 周前尝试把客户端和服务端两条线同时铺开，应优先拿到“无头可跑完一局”的里程碑。
 
-## 6. Chunk 1：静态数据与协议对齐
+## 6. Chunk 1：静态数据、协议与运行时收口（已完成）
+
+### 6.0 完成说明（2026-04-15）
+
+Chunk 1 在实际落地时采用了“静态数据与协议先对齐，再补最小运行时消费链路”的收口方式，当前已经完成以下内容：
+
+- 作者源、schema 与生成链已切到新版 MVP 基线；所有作者源 JSON 顶层都带 `$schema`，并新增 `points`、`policies` 目录。
+- 公开契约已按破坏式归正切换到新版术语：`city_core`、`infantry`、`research_output`、`industry_output`、`expansion / war_preparedness / recovery / reorganization`。
+- `data_types.proto`、`data_catalog.proto`、`game_state.proto`、`orders.proto`、`turn.proto`、`settlement.proto` 已对齐新版字段与结果消息。
+- 服务端已真实填充 `PlayerView.research.current_target_technology_id`、`required_progress`、`NodeView.city_id`、`service_city_id`、`building_status`、`takeover_*` 等字段。
+- `MsgSetPolicyResult`、`MsgBuildStructureResult`、`MsgResearchResult` 的运行时语义已接入；settlement 已纳入 `building_status_changed`。
+- 客户端运行时脚本已改为从 `PointBag` 读取 `industry_output`，并消费新的玩家/节点视图字段与结果消息。
+- 规则字段 `tokens_recuperation_bonus` 已统一归正为 `bonus_tokens_per_turn`。
+
+本 Chunk 的完成验证口径为：
+
+- `make data-validate`
+- `make gen`
+- `cd server && go test ./...`
+
+范围说明：
+
+- Chunk 1 已完成到“跨端契约与最小运行时消费链路闭环”的口径。
+- Unity Prefab、Scene、资源路径和表现层类名中的 `Castle*` 仍允许暂存，留待单独的资产与命名清扫轮次处理。
 
 ### Task 1: 建立 GDD 当前基线的静态数据作者源
 
@@ -209,10 +234,10 @@
 - Create: `data/schema/ui/policies.schema.json`
 - Modify: `data/registry/manifest.json`
 
-- [ ] **Step 1: 以 GDD 当前基线为准，收敛 MVP 内容集**
-- [ ] **Step 2: 在作者源中补齐三种原始资源、两类点数、两种单位、城市核心、基础资源建筑、基础生产建筑、基础国策与代表性科技**
-- [ ] **Step 3: 用数据字段表达建筑标签、放置规则、配方工作量、科技显式效果、修正效果和占领参数**
-- [ ] **Step 4: 在规则表中加入建筑接管回合数 `N`、科研/建造基础收入、主城核心生命等可调参数**
+- [x] **Step 1: 以 GDD 当前基线为准，收敛 MVP 内容集**
+- [x] **Step 2: 在作者源中补齐三种原始资源、两类点数、两种单位、城市核心、基础资源建筑、基础生产建筑、基础国策与代表性科技**
+- [x] **Step 3: 用数据字段表达建筑标签、放置规则、配方工作量、科技显式效果、修正效果和占领参数**
+- [x] **Step 4: 在规则表中加入建筑接管回合数 `N`、科研/建造基础收入、主城核心生命等可调参数**
 
 ### Task 2: 扩展静态数据模型与生成链
 
@@ -225,10 +250,10 @@
 - Modify: `server/internal/staticdata/catalog_test.go`
 - Modify: `server/internal/datagen/generator_test.go`
 
-- [ ] **Step 1: 为政策、点数、建筑状态、城市内建筑/城外设施语义补齐静态数据模型**
-- [ ] **Step 2: 让 schema 与语义验证能校验建筑放置规则、科技解锁目标、政策依赖、配方边界和修正 trigger**
-- [ ] **Step 3: 让 generator 把新增内容合并进服务端 bundle 和客户端 UI catalog**
-- [ ] **Step 4: 用测试覆盖政策目录、科技效果、建筑与配方的交叉引用**
+- [x] **Step 1: 为政策、点数、建筑状态、城市内建筑/城外设施语义补齐静态数据模型**
+- [x] **Step 2: 让 schema 与语义验证能校验建筑放置规则、科技解锁目标、政策依赖、配方边界和修正 trigger**
+- [x] **Step 3: 让 generator 把新增内容合并进服务端 bundle 和客户端 UI catalog**
+- [x] **Step 4: 用测试覆盖政策目录、科技效果、建筑与配方的交叉引用**
 
 ### Task 3: 对齐跨端协议视图
 
@@ -244,10 +269,10 @@
 - Modify: `server/internal/gen/proto/*.pb.go`
 - Modify: `client/Assets/Scripts/Protocol/*.cs`
 
-- [ ] **Step 1: 在目录快照中加入政策目录、点数展示所需结构，以及科技/建筑/配方所需的最小 UI 数据**
-- [ ] **Step 2: 在 `game_state.proto` 中补齐当前科技目标、科技进度、玩家点数、城市核心信息、建筑状态、服务城市与建筑运作视图**
-- [ ] **Step 3: 在 `orders/turn/settlement` 中补齐研究目标切换、国策切换、建城结果、建筑状态变化、科技完成和配方推进结果的统一消息**
-- [ ] **Step 4: 运行 `make gen`，保证 Go 与 C# 生成代码、命令分发代码同步更新**
+- [x] **Step 1: 在目录快照中加入政策目录、点数展示所需结构，以及科技/建筑/配方所需的最小 UI 数据**
+- [x] **Step 2: 在 `game_state.proto` 中补齐当前科技目标、科技进度、玩家点数、城市核心信息、建筑状态、服务城市与建筑运作视图**
+- [x] **Step 3: 在 `orders/turn/settlement` 中补齐研究目标切换、国策切换、建城结果、建筑状态变化、科技完成和配方推进结果的统一消息**
+- [x] **Step 4: 运行 `make gen`，保证 Go 与 C# 生成代码、命令分发代码同步更新**
 
 ## 7. Chunk 2：领域模型与运行时基础
 

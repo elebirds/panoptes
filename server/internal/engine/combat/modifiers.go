@@ -35,8 +35,8 @@ func effectiveUnitSiegeMultiplier(state *domain.GameState, faction string, unitT
 }
 
 func effectiveUnitDestroyMultiplier(state *domain.GameState, faction string, unitType domain.UnitType, base float64) float64 {
-	if state == nil {
-		return base
-	}
-	return state.ApplyFloatModifier(faction, string(staticdata.ModifierTriggerUnitDestroyMult), string(unitType), "", base)
+	_ = state
+	_ = faction
+	_ = unitType
+	return base
 }

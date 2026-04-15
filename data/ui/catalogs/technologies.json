@@ -1,14 +1,7 @@
 {
+  "$schema": "../../schema/ui/technologies.schema.json",
   "technologies": [
-    { "id": "agri_unlock_farm", "name": "开垦令", "description": "解锁农场与基础农耕配方。", "icon_key": "tech_agri_unlock_farm", "sort_order": 10, "tags": ["agriculture"] },
-    { "id": "ind_unlock_mine", "name": "采矿令", "description": "解锁矿山与基础采矿配方。", "icon_key": "tech_ind_unlock_mine", "sort_order": 11, "tags": ["industry"] },
-    { "id": "ind_unlock_lumber", "name": "林业令", "description": "解锁伐木场与基础伐木配方。", "icon_key": "tech_ind_unlock_lumber", "sort_order": 12, "tags": ["industry"] },
-    { "id": "agri_unlock_granary", "name": "仓储令", "description": "解锁粮仓。", "icon_key": "tech_agri_unlock_granary", "sort_order": 13, "tags": ["agriculture"] },
-    { "id": "ind_unlock_smelter", "name": "冶炼令", "description": "解锁冶炼厂与矿石冶炼配方。", "icon_key": "tech_ind_unlock_smelter", "sort_order": 20, "tags": ["industry"] },
-    { "id": "ind_unlock_workshop", "name": "工坊令", "description": "解锁工坊与工程加工配方。", "icon_key": "tech_ind_unlock_workshop", "sort_order": 21, "tags": ["industry"] },
-    { "id": "mil_unlock_basic", "name": "基础兵役令", "description": "解锁兵营与基础军训配方。", "icon_key": "tech_mil_unlock_basic", "sort_order": 30, "tags": ["military"] },
-    { "id": "mil_unlock_cavalry", "name": "精锐兵役令", "description": "解锁骑兵场与骑兵训练配方。", "icon_key": "tech_mil_unlock_cavalry", "sort_order": 31, "tags": ["military"] },
-    { "id": "mil_unlock_engineering", "name": "工程兵役令", "description": "解锁工程营与开拓者训练配方。", "icon_key": "tech_mil_unlock_engineering", "sort_order": 32, "tags": ["military"] },
-    { "id": "mil_unlock_fortification", "name": "防御工事令", "description": "解锁城墙、箭塔和烽火台。", "icon_key": "tech_mil_unlock_fortification", "sort_order": 33, "tags": ["military"] }
+    { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] },
+    { "id": "organized_labor", "name": "组织化劳动", "description": "提升工业产出效率", "icon_key": "tech_organized_labor", "sort_order": 20, "tags": ["governance"] }
   ]
 }

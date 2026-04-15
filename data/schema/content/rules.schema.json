@@ -1,16 +1,32 @@
 {
+  "$id": "content/rules.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "build_points_max": {
+    "$schema": {
+      "type": "string"
+    },
+    "base_industry_output_per_turn": {
       "minimum": 0,
       "type": "integer"
     },
-    "build_points_per_turn": {
+    "base_research_output_per_turn": {
       "minimum": 0,
       "type": "integer"
     },
-    "castle_base_hp": {
+    "bonus_tokens_per_turn": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "city_core_max_hp": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "facility_takeover_turns": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "initial_city_territory_radius": {
       "minimum": 0,
       "type": "integer"
     },
@@ -18,7 +34,7 @@
       "minimum": 1,
       "type": "integer"
     },
-    "occupy_turns": {
+    "minimum_city_distance": {
       "minimum": 0,
       "type": "integer"
     },
@@ -26,23 +42,7 @@
       "minimum": 0,
       "type": "integer"
     },
-    "starting_tech_points": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "tech_points_max": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "tech_points_per_turn": {
-      "minimum": 0,
-      "type": "integer"
-    },
     "tokens_per_turn": {
-      "minimum": 0,
-      "type": "integer"
-    },
-    "tokens_recuperation_bonus": {
       "minimum": 0,
       "type": "integer"
     },
@@ -54,16 +54,15 @@
   "required": [
     "turn_time_limit_planning",
     "tokens_per_turn",
-    "tokens_recuperation_bonus",
+    "bonus_tokens_per_turn",
     "max_turns",
-    "castle_base_hp",
+    "city_core_max_hp",
     "safe_zone_radius",
-    "occupy_turns",
-    "starting_tech_points",
-    "tech_points_per_turn",
-    "tech_points_max",
-    "build_points_per_turn",
-    "build_points_max"
+    "facility_takeover_turns",
+    "base_research_output_per_turn",
+    "base_industry_output_per_turn",
+    "minimum_city_distance",
+    "initial_city_territory_radius"
   ],
   "type": "object"
 }

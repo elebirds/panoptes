@@ -49,7 +49,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private CastleHPBar castleHpBarPrefab;
         [SerializeField] private bool autoLoadCastleHpBarPrefab = true;
         [SerializeField] private string castleHpBarResourcesPath = "Prefabs/UI/CastleHPBar";
-        [SerializeField] private string castleDisplayName = "Castle";
+        [SerializeField] private string castleDisplayName = "City Core";
         [SerializeField] private float castleHpBarWidth = 1.8f;
         [SerializeField] private float castleHpBarHeight = 0.2f;
         [SerializeField] private float castleHpBarVerticalPadding = 0.35f;
@@ -116,7 +116,7 @@ namespace Panoptes.Presentation.Map
             else if (MaxHitPoints <= 0)
             {
                 // When protocol doesn't provide max HP, treat first observed HP as max to avoid fake half-HP display.
-                // If current HP is zero (e.g. transient state), fallback to castle default.
+                // If current HP is zero (e.g. transient state), fallback to city core default.
                 if (IsCastleBuildingType() && HitPoints <= 0)
                 {
                     MaxHitPoints = Mathf.Max(1, defaultCastleMaxHp);
@@ -615,14 +615,14 @@ namespace Panoptes.Presentation.Map
             }
 
             var label = string.IsNullOrWhiteSpace(castleDisplayName)
-                ? "Castle"
+                ? "City Core"
                 : castleDisplayName.Trim();
             _castleHpBarView.SetName(label);
         }
 
         private bool IsCastleBuildingType()
         {
-            return string.Equals(buildingType, "castle", StringComparison.Ordinal);
+            return string.Equals(buildingType, "city_core", StringComparison.Ordinal);
         }
 
         private static string NormalizeToken(string value)

@@ -664,12 +664,12 @@ namespace Panoptes.DebugTools
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("设置备战国策", GUILayout.Height(28f)))
             {
-                GameIntents.SetPolicy("ready_for_war");
+                GameIntents.SetPolicy("war_preparedness");
             }
 
             if (GUILayout.Button("设置休养国策", GUILayout.Height(28f)))
             {
-                GameIntents.SetPolicy("recuperation");
+                GameIntents.SetPolicy("recovery");
             }
             GUILayout.EndHorizontal();
 
@@ -765,8 +765,8 @@ namespace Panoptes.DebugTools
 
             DebugGuiUtil.Section("缓存快照");
             DebugGuiUtil.KeyValue("MyPlayerID", cache.MyPlayerID);
-            DebugGuiUtil.KeyValue("EnemyCastleHP", cache.EnemyCastleHP.ToString());
-            DebugGuiUtil.KeyValue("EnemyMaxHP", cache.EnemyMaxCastleHP.ToString());
+            DebugGuiUtil.KeyValue("EnemyCityCoreHP", cache.EnemyCityCoreHP.ToString());
+            DebugGuiUtil.KeyValue("EnemyMaxHP", cache.EnemyMaxCityCoreHP.ToString());
             DebugGuiUtil.KeyValue("Nodes", cache.Nodes.Count.ToString());
             DebugGuiUtil.KeyValue("Units", cache.Units.Count.ToString());
 
@@ -853,8 +853,8 @@ namespace Panoptes.DebugTools
                     DebugActionCatalog.Action("提交回合", GameIntents.SubmitTurn)),
                 DebugActionCatalog.Section(
                     "国策",
-                    DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("ready_for_war")),
-                    DebugActionCatalog.Action("设置休养国策", () => GameIntents.SetPolicy("recuperation"))),
+                    DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("war_preparedness")),
+                    DebugActionCatalog.Action("设置恢复国策", () => GameIntents.SetPolicy("recovery"))),
                 DebugActionCatalog.Section(
                     "令牌高频操作",
                     DebugActionCatalog.Action("粮点建农场", () => GameIntents.BuildToken("res_food", "farm")),

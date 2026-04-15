@@ -1,7 +1,11 @@
 {
+  "$id": "registry/resources.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "resources": {
       "items": {
         "additionalProperties": false,

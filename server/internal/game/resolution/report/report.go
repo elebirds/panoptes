@@ -41,9 +41,6 @@ func BuildTurnSettlement(
 	msg.Nodes = gamequery.BuildNodeViews(state, playerID)
 	msg.Units = gamequery.BuildUnitViews(state)
 	msg.MyPlayerAfter = gamequery.BuildPlayerView(state, playerID)
-	if msg.MyPlayerAfter != nil {
-		msg.MyResearchAfter = msg.MyPlayerAfter.GetResearch()
-	}
 	return msg
 }
 
@@ -67,6 +64,9 @@ func SettlementSections(unitEvents []event.Event, mapEvents []*pb.TurnEvent, eco
 func TurnEvents(events []event.Event) []*pb.TurnEvent {
 	out := make([]*pb.TurnEvent, 0, len(events))
 	for _, evt := range events {
+		if shouldSkipSettlementEvent(evt) {
+			continue
+		}
 		out = append(out, TurnEventFromEvent(evt))
 	}
 	return out
@@ -85,7 +85,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"node_id":       strings.TrimSpace(e.NodeID),
 				"building_type": strings.TrimSpace(e.BuildingType),
 				"owner":         strings.TrimSpace(e.Owner),
-				"castle_id":     strings.TrimSpace(e.CastleID),
+				"city_id":       strings.TrimSpace(e.CityID),
 				"building_hp":   strconv.Itoa(resolveBuiltBuildingHP(e.BuildingType)),
 			},
 		}
@@ -97,7 +97,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"resource_type": strings.TrimSpace(e.ResourceType),
 				"amount":        strconv.Itoa(e.Amount),
 				"owner":         strings.TrimSpace(e.Owner),
-				"castle_id":     strings.TrimSpace(e.CastleID),
+				"city_id":       strings.TrimSpace(e.CityID),
 			},
 		}
 	case event.ResourceFlowedEvent:
@@ -126,11 +126,11 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"node_id":   strings.TrimSpace(e.NodeID),
 				"unit_type": strings.TrimSpace(e.UnitType),
 				"faction":   strings.TrimSpace(e.Faction),
-				"castle_id": strings.TrimSpace(e.CastleID),
+				"city_id":   strings.TrimSpace(e.CityID),
 				"count":     strconv.Itoa(e.Count),
 			},
 		}
-	case event.BuildPointsRechargedEvent:
+	case event.IndustryOutputRefreshedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -170,7 +170,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"technology_id": strings.TrimSpace(e.TechnologyID),
 			},
 		}
-	case event.TechPointsRechargedEvent:
+	case event.ResearchProgressAppliedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -187,13 +187,7 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.RecipeSelectionChangedEvent:
-		return &pb.TurnEvent{
-			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id":   strings.TrimSpace(e.NodeID),
-				"recipe_id": strings.TrimSpace(e.RecipeID),
-			},
-		}
+		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	case event.RecipeProgressedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -219,6 +213,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"owner":   strings.TrimSpace(e.Owner),
 			},
 		}
+	case event.BuildingStatusChangedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"node_id": strings.TrimSpace(e.NodeID),
+				"status":  strings.TrimSpace(e.Status),
+				"reason":  strings.TrimSpace(e.Reason),
+			},
+		}
 	case event.MinisterActedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -233,9 +236,9 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
-				"player_id":  strings.TrimSpace(e.PlayerID),
-				"old_policy": strings.TrimSpace(e.OldPolicy),
-				"new_policy": strings.TrimSpace(e.NewPolicy),
+				"player_id":              strings.TrimSpace(e.PlayerID),
+				"old_national_policy_id": strings.TrimSpace(e.OldPolicy),
+				"new_national_policy_id": strings.TrimSpace(e.NewPolicy),
 			},
 		}
 	case event.TokenUsedEvent:
@@ -269,14 +272,14 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			"pos_x":     strconv.Itoa(e.Pos.X),
 			"pos_y":     strconv.Itoa(e.Pos.Y),
 		}}
-	case event.CastleDamagedEvent:
+	case event.CityCoreDamagedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"node_id":  e.NodeID,
 			"damage":   strconv.Itoa(e.Damage),
 			"hp_after": strconv.Itoa(e.HPAfter),
 			"attacker": e.AttackerID,
 		}}
-	case event.CastleDestroyedEvent:
+	case event.CityCoreDestroyedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"node_id":           e.NodeID,
 			"conqueror_faction": e.ConquerorFaction,
@@ -320,6 +323,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 	}
 }
 
+func shouldSkipSettlementEvent(evt event.Event) bool {
+	switch evt.(type) {
+	case event.RecipeSelectionChangedEvent:
+		return true
+	default:
+		return false
+	}
+}
+
 func resolveBuiltBuildingHP(buildingType string) int {
 	const fallback = 100
 
@@ -327,11 +339,11 @@ func resolveBuiltBuildingHP(buildingType string) int {
 	if catalog == nil {
 		return fallback
 	}
-	if cfg, ok := catalog.GetBuilding(strings.TrimSpace(buildingType)); ok && cfg.Combat.MaxHP > 0 {
-		return cfg.Combat.MaxHP
+	if cfg, ok := catalog.GetBuilding(strings.TrimSpace(buildingType)); ok && cfg.MaxHP > 0 {
+		return cfg.MaxHP
 	}
-	if strings.EqualFold(strings.TrimSpace(buildingType), "castle") {
-		if hp := catalog.Rules().CastleBaseHP; hp > 0 {
+	if strings.EqualFold(strings.TrimSpace(buildingType), "city_core") {
+		if hp := catalog.Rules().CityCoreMaxHP; hp > 0 {
 			return hp
 		}
 	}

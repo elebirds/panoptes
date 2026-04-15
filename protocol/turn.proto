@@ -13,7 +13,7 @@ message MsgPlanningStart {
   int32 turn = 2;
   int32 tokens = 3;
   string phase = 4;
-  string current_policy = 5;
+  string active_national_policy_id = 5;
   MsgPlanningSnapshot snapshot = 6;
   repeated MinisterDraftView minister_drafts = 7;
 }
@@ -82,11 +82,25 @@ message MsgResearchResult {
   string error_code = 3;
 }
 
+message MsgSetPolicyResult {
+  bool success = 1;
+  string national_policy_id = 2;
+  string error_code = 3;
+}
+
 message MsgSetBuildingRecipeResult {
   bool success = 1;
   string node_id = 2;
   string recipe_id = 3;
   string error_code = 4;
+}
+
+message MsgBuildStructureResult {
+  bool success = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+  string error_code = 5;
 }
 
 message MsgTurnReport {

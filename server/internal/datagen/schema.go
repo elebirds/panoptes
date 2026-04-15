@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Panoptes Project Authors.
 // Project: Panoptes
 // Author: elebirds <hhmcn@outlook.com>
-// Updated: 2026-04-14 18:45:09 +0800
+// Updated: 2026-04-15 12:00:00 +0800
 // Description: 构建数据生成模块的作者源 Schema 构建逻辑。
 
 package datagen
@@ -18,32 +18,42 @@ const schemaVersion = "https://json-schema.org/draft/2020-12/schema"
 type schemaSet map[string]any
 
 type authoringSchemaContext struct {
-	ResourceKeys []string
-	UnitIDs      []string
-	BuildingIDs  []string
-	RecipeIDs    []string
-	TerrainIDs   []string
+	ResourceKeys  []string
+	PointKeys     []string
+	UnitIDs       []string
+	BuildingIDs   []string
+	RecipeIDs     []string
+	TechnologyIDs []string
+	PolicyIDs     []string
+	TerrainIDs    []string
 }
 
 func buildAuthoringSchemaContext(
 	resources []staticdata.ResourceDescriptor,
+	points []staticdata.PointDescriptor,
 	units []staticdata.UnitDefinition,
 	buildings []staticdata.BuildingDefinition,
+	technologies []staticdata.TechnologyDefinition,
+	policies []staticdata.PolicyDefinition,
 	recipes []staticdata.RecipeDefinition,
 	terrains []staticdata.TerrainDefinition,
 ) authoringSchemaContext {
 	return authoringSchemaContext{
-		ResourceKeys: collectResourceKeys(resources),
-		UnitIDs:      collectUnitIDs(units),
-		BuildingIDs:  collectBuildingIDs(buildings),
-		RecipeIDs:    collectRecipeIDs(recipes),
-		TerrainIDs:   collectTerrainIDs(terrains),
+		ResourceKeys:  collectResourceKeys(resources),
+		PointKeys:     collectPointKeys(points),
+		UnitIDs:       collectUnitIDs(units),
+		BuildingIDs:   collectBuildingIDs(buildings),
+		RecipeIDs:     collectRecipeIDs(recipes),
+		TechnologyIDs: collectTechnologyIDs(technologies),
+		PolicyIDs:     collectPolicyIDs(policies),
+		TerrainIDs:    collectTerrainIDs(terrains),
 	}
 }
 
 func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 	defs := map[string]any{
 		"resource_amount": resourceAmountSchema(ctx.ResourceKeys),
+		"point_amount":    resourceAmountSchema(ctx.PointKeys),
 		"grid_point": objectSchema(
 			map[string]any{
 				"x": intSchema(map[string]any{"minimum": 0}),
@@ -66,6 +76,24 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			},
 			[]string{"max", "terrain"},
 		),
+		"prerequisite": objectSchema(
+			map[string]any{
+				"type":      enumSchema([]string{"technology_unlocked", "policy_active"}),
+				"target_id": stringSchema(nil),
+			},
+			[]string{"type", "target_id"},
+		),
+		"modifier_effect": objectSchema(
+			map[string]any{
+				"trigger":       enumSchema(staticdata.AllowedModifierTriggers()),
+				"target_id":     stringSchema(nil),
+				"resource_key":  enumSchema(append(copyStrings(ctx.ResourceKeys), "")),
+				"point_key":     enumSchema(append(copyStrings(ctx.PointKeys), "")),
+				"modifier_type": enumSchema([]string{"flat", "percent", "multiplier"}),
+				"value":         numberSchema(nil),
+			},
+			[]string{"trigger", "modifier_type", "value"},
+		),
 	}
 
 	defs["map_generator"] = objectSchema(
@@ -77,9 +105,37 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 		[]string{"type", "seed"},
 	)
 
+	defs["technology_effect"] = map[string]any{
+		"oneOf": []any{
+			objectSchema(
+				map[string]any{
+					"type":      enumSchema([]string{"unlock_building"}),
+					"target_id": stringSchema(nil),
+				},
+				[]string{"type", "target_id"},
+			),
+			objectSchema(
+				map[string]any{
+					"type":      enumSchema([]string{"unlock_recipe"}),
+					"target_id": stringSchema(nil),
+				},
+				[]string{"type", "target_id"},
+			),
+			objectSchema(
+				map[string]any{
+					"type":            enumSchema([]string{"grant"}),
+					"grant_resources": refSchema("#/$defs/resource_amount"),
+					"grant_units":     arraySchema(stringSchema(nil), nil),
+				},
+				[]string{"type"},
+			),
+		},
+	}
+
 	return schemaSet{
 		filepath.Join("registry", "manifest.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("registry", "manifest.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"schema_version":  stringSchema(nil),
 					"content_version": stringSchema(nil),
@@ -92,7 +148,8 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("registry", "resources.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("registry", "resources.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"resources": arraySchema(
 						objectSchema(
@@ -115,12 +172,43 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			),
 			nil,
 		),
+		filepath.Join("registry", "points.schema.json"): schemaDocument(
+			filepath.Join("registry", "points.schema.json"),
+			authoredRootSchema(
+				map[string]any{
+					"points": arraySchema(
+						objectSchema(
+							map[string]any{
+								"key":            stringSchema(nil),
+								"display_name":   stringSchema(nil),
+								"description":    stringSchema(nil),
+								"icon_key":       stringSchema(nil),
+								"sort_order":     intSchema(map[string]any{"minimum": 0}),
+								"visible_in_hud": boolSchema(),
+								"tags":           arraySchema(stringSchema(nil), nil),
+							},
+							[]string{"key", "display_name", "description", "icon_key", "sort_order", "visible_in_hud"},
+						),
+						map[string]any{"minItems": 1},
+					),
+				},
+				[]string{"points"},
+			),
+			nil,
+		),
 		filepath.Join("content", "resource_amount.schema.json"): schemaDocument(
+			filepath.Join("content", "resource_amount.schema.json"),
 			refSchema("#/$defs/resource_amount"),
 			map[string]any{"resource_amount": defs["resource_amount"]},
 		),
+		filepath.Join("content", "point_amount.schema.json"): schemaDocument(
+			filepath.Join("content", "point_amount.schema.json"),
+			refSchema("#/$defs/point_amount"),
+			map[string]any{"point_amount": defs["point_amount"]},
+		),
 		filepath.Join("content", "units.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "units.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"units": arraySchema(
 						objectSchema(
@@ -161,49 +249,28 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			map[string]any{"resource_amount": defs["resource_amount"]},
 		),
 		filepath.Join("content", "buildings.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "buildings.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"buildings": arraySchema(
 						objectSchema(
 							map[string]any{
 								"id":                     stringSchema(nil),
-								"category":               enumSchema([]string{"production", "military_production", "military"}),
-								"placement_rule":         enumSchema([]string{"resource_only", "city_only"}),
+								"placement_kind":         enumSchema([]string{"resource_node", "city_territory", "city_foundation_center"}),
+								"building_scope":         enumSchema([]string{"out_of_city", "in_city", "city_core"}),
 								"required_resource_type": enumSchema(append(copyStrings(ctx.ResourceKeys), "")),
-								"build_cost":             refSchema("#/$defs/resource_amount"),
-								"upkeep":                 refSchema("#/$defs/resource_amount"),
-								"production": objectSchema(
-									map[string]any{
-										"input":       refSchema("#/$defs/resource_amount"),
-										"output":      refSchema("#/$defs/resource_amount"),
-										"cycle_turns": intSchema(map[string]any{"minimum": 0}),
-									},
-									[]string{"input", "output", "cycle_turns"},
-								),
-								"produces_units":    arraySchema(enumSchema(ctx.UnitIDs), nil),
-								"recipe_ids":        arraySchema(stringSchema(nil), nil),
-								"default_recipe_id": stringSchema(nil),
-								"combat": objectSchema(
-									map[string]any{
-										"max_hp":          intSchema(map[string]any{"minimum": 0}),
-										"attack_per_turn": intSchema(map[string]any{"minimum": 0}),
-										"range":           intSchema(map[string]any{"minimum": 0}),
-										"wall_level":      intSchema(map[string]any{"minimum": 0}),
-										"towers":          intSchema(map[string]any{"minimum": 0}),
-									},
-									[]string{"max_hp", "attack_per_turn", "range", "wall_level", "towers"},
-								),
-								"limits": objectSchema(
-									map[string]any{
-										"max_per_node":   intSchema(map[string]any{"minimum": 0}),
-										"max_per_player": intSchema(map[string]any{"minimum": -1}),
-									},
-									[]string{"max_per_node", "max_per_player"},
-								),
+								"resource_costs":         refSchema("#/$defs/resource_amount"),
+								"point_costs":            refSchema("#/$defs/point_amount"),
+								"recipe_ids":             arraySchema(stringSchema(nil), nil),
+								"default_recipe_id":      stringSchema(nil),
+								"max_hp":                 intSchema(map[string]any{"minimum": 0}),
+								"takeover_mode":          enumSchema([]string{"disabled", "delayed", "city_capture"}),
+								"tags":                   arraySchema(stringSchema(nil), nil),
 							},
 							[]string{
-								"id", "category", "placement_rule", "required_resource_type",
-								"build_cost", "upkeep", "recipe_ids", "default_recipe_id", "combat", "limits",
+								"id", "placement_kind", "building_scope", "required_resource_type",
+								"resource_costs", "point_costs", "recipe_ids", "default_recipe_id",
+								"max_hp", "takeover_mode",
 							},
 						),
 						map[string]any{"minItems": 1},
@@ -211,114 +278,106 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 				},
 				[]string{"buildings"},
 			),
-			map[string]any{"resource_amount": defs["resource_amount"]},
+			map[string]any{
+				"resource_amount": defs["resource_amount"],
+				"point_amount":    defs["point_amount"],
+			},
 		),
 		filepath.Join("content", "technologies.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "technologies.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"technologies": arraySchema(
 						objectSchema(
 							map[string]any{
-								"id":              stringSchema(nil),
-								"branch":          stringSchema(nil),
-								"tier":            intSchema(map[string]any{"minimum": 1}),
-								"tech_point_cost": intSchema(map[string]any{"minimum": 0}),
-								"prerequisites": arraySchema(
-									objectSchema(
-										map[string]any{
-											"type":      enumSchema([]string{"technology_unlocked"}),
-											"target_id": stringSchema(nil),
-										},
-										[]string{"type", "target_id"},
-									),
-									nil,
-								),
-								"effects": arraySchema(
-									map[string]any{
-										"oneOf": []any{
-											objectSchema(
-												map[string]any{
-													"type":      enumSchema([]string{"unlock_building"}),
-													"target_id": stringSchema(nil),
-												},
-												[]string{"type", "target_id"},
-											),
-											objectSchema(
-												map[string]any{
-													"type":      enumSchema([]string{"unlock_recipe"}),
-													"target_id": stringSchema(nil),
-												},
-												[]string{"type", "target_id"},
-											),
-											objectSchema(
-												map[string]any{
-													"type":          enumSchema([]string{"modifier"}),
-													"trigger":       enumSchema(staticdata.AllowedModifierTriggers()),
-													"target_id":     stringSchema(nil),
-													"resource_key":  enumSchema(append(copyStrings(ctx.ResourceKeys), "")),
-													"modifier_type": enumSchema([]string{"flat", "percent", "multiplier"}),
-													"value":         numberSchema(nil),
-												},
-												[]string{"type", "trigger", "modifier_type", "value"},
-											),
-											objectSchema(
-												map[string]any{
-													"type":            enumSchema([]string{"grant"}),
-													"grant_resources": refSchema("#/$defs/resource_amount"),
-													"grant_units":     arraySchema(enumSchema(ctx.UnitIDs), nil),
-												},
-												[]string{"type"},
-											),
-										},
-									},
-									map[string]any{"minItems": 1},
-								),
+								"id":               stringSchema(nil),
+								"branch":           stringSchema(nil),
+								"tier":             intSchema(map[string]any{"minimum": 1}),
+								"research_cost":    intSchema(map[string]any{"minimum": 0}),
+								"prerequisites":    arraySchema(refSchema("#/$defs/prerequisite"), nil),
+								"explicit_effects": arraySchema(refSchema("#/$defs/technology_effect"), nil),
+								"modifier_effects": arraySchema(refSchema("#/$defs/modifier_effect"), nil),
 							},
-							[]string{"id", "branch", "tier", "tech_point_cost", "prerequisites", "effects"},
+							[]string{"id", "branch", "tier", "research_cost", "prerequisites", "explicit_effects", "modifier_effects"},
 						),
 						map[string]any{"minItems": 1},
 					),
 				},
 				[]string{"technologies"},
 			),
-			map[string]any{"resource_amount": defs["resource_amount"]},
+			map[string]any{
+				"resource_amount":   defs["resource_amount"],
+				"prerequisite":      defs["prerequisite"],
+				"technology_effect": defs["technology_effect"],
+				"modifier_effect":   defs["modifier_effect"],
+			},
+		),
+		filepath.Join("content", "policies.schema.json"): schemaDocument(
+			filepath.Join("content", "policies.schema.json"),
+			authoredRootSchema(
+				map[string]any{
+					"policies": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":                stringSchema(nil),
+								"layer":             enumSchema([]string{"national", "institutional"}),
+								"activation_timing": enumSchema([]string{"same_turn", "next_turn"}),
+								"prerequisites":     arraySchema(refSchema("#/$defs/prerequisite"), nil),
+								"explicit_effects":  arraySchema(refSchema("#/$defs/technology_effect"), nil),
+								"modifier_effects":  arraySchema(refSchema("#/$defs/modifier_effect"), nil),
+							},
+							[]string{"id", "layer", "activation_timing", "prerequisites", "explicit_effects", "modifier_effects"},
+						),
+						map[string]any{"minItems": 1},
+					),
+				},
+				[]string{"policies"},
+			),
+			map[string]any{
+				"resource_amount":   defs["resource_amount"],
+				"prerequisite":      defs["prerequisite"],
+				"technology_effect": defs["technology_effect"],
+				"modifier_effect":   defs["modifier_effect"],
+			},
 		),
 		filepath.Join("content", "recipes.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "recipes.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"recipes": arraySchema(
 						objectSchema(
 							map[string]any{
-								"id":             stringSchema(nil),
-								"building_id":    enumSchema(ctx.BuildingIDs),
-								"cost":           refSchema("#/$defs/resource_amount"),
-								"duration_turns": intSchema(map[string]any{"minimum": 1}),
-								"delay_penalty": objectSchema(
-									map[string]any{
-										"mode":  enumSchema([]string{"add_turns"}),
-										"value": intSchema(map[string]any{"minimum": 0}),
-									},
-									[]string{"mode", "value"},
-								),
+								"id":              stringSchema(nil),
+								"building_id":     enumSchema(ctx.BuildingIDs),
+								"resource_inputs": refSchema("#/$defs/resource_amount"),
+								"point_inputs":    refSchema("#/$defs/point_amount"),
+								"work_amount":     intSchema(map[string]any{"minimum": 1}),
+								"base_progress":   intSchema(map[string]any{"minimum": 1}),
 								"outputs": objectSchema(
 									map[string]any{
-										"resources": refSchema("#/$defs/resource_amount"),
-										"units":     arraySchema(enumSchema(ctx.UnitIDs), nil),
+										"resources":      refSchema("#/$defs/resource_amount"),
+										"units":          arraySchema(enumSchema(ctx.UnitIDs), nil),
+										"point_progress": refSchema("#/$defs/point_amount"),
+										"state_changes":  additionalPropertyIntObject(),
 									},
 									[]string{},
 								),
 							},
-							[]string{"id", "building_id", "cost", "duration_turns", "delay_penalty", "outputs"},
+							[]string{"id", "building_id", "resource_inputs", "point_inputs", "work_amount", "base_progress", "outputs"},
 						),
 						map[string]any{"minItems": 1},
 					),
 				},
 				[]string{"recipes"},
 			),
-			map[string]any{"resource_amount": defs["resource_amount"]},
+			map[string]any{
+				"resource_amount": defs["resource_amount"],
+				"point_amount":    defs["point_amount"],
+			},
 		),
 		filepath.Join("content", "terrains.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "terrains.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"terrains": arraySchema(
 						objectSchema(
@@ -345,32 +404,33 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("content", "rules.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "rules.schema.json"),
+			authoredRootSchema(
 				map[string]any{
-					"turn_time_limit_planning":  intSchema(map[string]any{"minimum": 1}),
-					"tokens_per_turn":           intSchema(map[string]any{"minimum": 0}),
-					"tokens_recuperation_bonus": intSchema(map[string]any{"minimum": 0}),
-					"max_turns":                 intSchema(map[string]any{"minimum": 1}),
-					"castle_base_hp":            intSchema(map[string]any{"minimum": 0}),
-					"safe_zone_radius":          intSchema(map[string]any{"minimum": 0}),
-					"occupy_turns":              intSchema(map[string]any{"minimum": 0}),
-					"starting_tech_points":      intSchema(map[string]any{"minimum": 0}),
-					"tech_points_per_turn":      intSchema(map[string]any{"minimum": 0}),
-					"tech_points_max":           intSchema(map[string]any{"minimum": 0}),
-					"build_points_per_turn":     intSchema(map[string]any{"minimum": 0}),
-					"build_points_max":          intSchema(map[string]any{"minimum": 0}),
+					"turn_time_limit_planning":      intSchema(map[string]any{"minimum": 1}),
+					"tokens_per_turn":               intSchema(map[string]any{"minimum": 0}),
+					"bonus_tokens_per_turn":         intSchema(map[string]any{"minimum": 0}),
+					"max_turns":                     intSchema(map[string]any{"minimum": 1}),
+					"city_core_max_hp":              intSchema(map[string]any{"minimum": 0}),
+					"safe_zone_radius":              intSchema(map[string]any{"minimum": 0}),
+					"facility_takeover_turns":       intSchema(map[string]any{"minimum": 0}),
+					"base_research_output_per_turn": intSchema(map[string]any{"minimum": 0}),
+					"base_industry_output_per_turn": intSchema(map[string]any{"minimum": 0}),
+					"minimum_city_distance":         intSchema(map[string]any{"minimum": 0}),
+					"initial_city_territory_radius": intSchema(map[string]any{"minimum": 0}),
 				},
 				[]string{
-					"turn_time_limit_planning", "tokens_per_turn",
-					"tokens_recuperation_bonus", "max_turns", "castle_base_hp", "safe_zone_radius",
-					"occupy_turns", "starting_tech_points", "tech_points_per_turn", "tech_points_max",
-					"build_points_per_turn", "build_points_max",
+					"turn_time_limit_planning", "tokens_per_turn", "bonus_tokens_per_turn",
+					"max_turns", "city_core_max_hp", "safe_zone_radius", "facility_takeover_turns",
+					"base_research_output_per_turn", "base_industry_output_per_turn",
+					"minimum_city_distance", "initial_city_territory_radius",
 				},
 			),
 			nil,
 		),
 		filepath.Join("content", "ministers.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "ministers.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"pool": arraySchema(
 						objectSchema(
@@ -394,7 +454,8 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("content", "maps", "definition.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("content", "maps", "definition.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"meta": objectSchema(
 						map[string]any{
@@ -439,16 +500,16 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 								"id":                   stringSchema(nil),
 								"x":                    intSchema(map[string]any{"minimum": 0}),
 								"y":                    intSchema(map[string]any{"minimum": 0}),
-								"terrain":              enumSchema(ctx.TerrainIDs),
+								"terrain":              enumSchema(append(copyStrings(ctx.TerrainIDs), "")),
 								"has_road":             boolSchema(),
 								"is_resource_point":    boolSchema(),
-								"resource_type":        enumSchema(ctx.ResourceKeys),
+								"resource_type":        enumSchema(append(copyStrings(ctx.ResourceKeys), "")),
 								"node_name":            stringSchema(nil),
 								"owner":                stringSchema(nil),
 								"owner_slot":           intSchema(map[string]any{"minimum": 0}),
 								"territory_owner":      stringSchema(nil),
 								"territory_owner_slot": intSchema(map[string]any{"minimum": 0}),
-								"building_type":        stringSchema(nil),
+								"building_type":        enumSchema(append(copyStrings(ctx.BuildingIDs), "")),
 								"building_hp":          intSchema(map[string]any{"minimum": 0}),
 							},
 							[]string{"x", "y"},
@@ -501,6 +562,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			defs,
 		),
 		filepath.Join("ui", "resources.schema.json"): schemaDocument(
+			filepath.Join("ui", "resources.schema.json"),
 			uiCatalogSchema("resources", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
@@ -511,7 +573,20 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
 			nil,
 		),
+		filepath.Join("ui", "points.schema.json"): schemaDocument(
+			filepath.Join("ui", "points.schema.json"),
+			uiCatalogSchema("points", map[string]any{
+				"id":          stringSchema(nil),
+				"name":        stringSchema(nil),
+				"description": stringSchema(nil),
+				"icon_key":    stringSchema(nil),
+				"sort_order":  intSchema(map[string]any{"minimum": 0}),
+				"tags":        arraySchema(stringSchema(nil), nil),
+			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
+			nil,
+		),
 		filepath.Join("ui", "units.schema.json"): schemaDocument(
+			filepath.Join("ui", "units.schema.json"),
 			uiCatalogSchema("units", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
@@ -524,6 +599,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("ui", "buildings.schema.json"): schemaDocument(
+			filepath.Join("ui", "buildings.schema.json"),
 			uiCatalogSchema("buildings", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
@@ -536,6 +612,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("ui", "technologies.schema.json"): schemaDocument(
+			filepath.Join("ui", "technologies.schema.json"),
 			uiCatalogSchema("technologies", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
@@ -546,7 +623,20 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
 			nil,
 		),
+		filepath.Join("ui", "policies.schema.json"): schemaDocument(
+			filepath.Join("ui", "policies.schema.json"),
+			uiCatalogSchema("policies", map[string]any{
+				"id":          stringSchema(nil),
+				"name":        stringSchema(nil),
+				"description": stringSchema(nil),
+				"icon_key":    stringSchema(nil),
+				"sort_order":  intSchema(map[string]any{"minimum": 0}),
+				"tags":        arraySchema(stringSchema(nil), nil),
+			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
+			nil,
+		),
 		filepath.Join("ui", "recipes.schema.json"): schemaDocument(
+			filepath.Join("ui", "recipes.schema.json"),
 			uiCatalogSchema("recipes", map[string]any{
 				"id":          stringSchema(nil),
 				"name":        stringSchema(nil),
@@ -558,6 +648,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("ui", "terrains.schema.json"): schemaDocument(
+			filepath.Join("ui", "terrains.schema.json"),
 			uiCatalogSchema("terrains", map[string]any{
 				"id":           stringSchema(nil),
 				"name":         stringSchema(nil),
@@ -570,7 +661,8 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			nil,
 		),
 		filepath.Join("ui", "maps", "catalog.schema.json"): schemaDocument(
-			objectSchema(
+			filepath.Join("ui", "maps", "catalog.schema.json"),
+			authoredRootSchema(
 				map[string]any{
 					"id":            stringSchema(nil),
 					"name":          stringSchema(nil),
@@ -604,6 +696,15 @@ func collectResourceKeys(resources []staticdata.ResourceDescriptor) []string {
 	return keys
 }
 
+func collectPointKeys(points []staticdata.PointDescriptor) []string {
+	keys := make([]string, 0, len(points))
+	for _, point := range points {
+		keys = append(keys, point.Key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func collectUnitIDs(units []staticdata.UnitDefinition) []string {
 	ids := make([]string, 0, len(units))
 	for _, unit := range units {
@@ -631,6 +732,24 @@ func collectRecipeIDs(recipes []staticdata.RecipeDefinition) []string {
 	return ids
 }
 
+func collectTechnologyIDs(technologies []staticdata.TechnologyDefinition) []string {
+	ids := make([]string, 0, len(technologies))
+	for _, technology := range technologies {
+		ids = append(ids, technology.ID)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
+func collectPolicyIDs(policies []staticdata.PolicyDefinition) []string {
+	ids := make([]string, 0, len(policies))
+	for _, policy := range policies {
+		ids = append(ids, policy.ID)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
 func collectTerrainIDs(terrains []staticdata.TerrainDefinition) []string {
 	ids := make([]string, 0, len(terrains))
 	for _, terrain := range terrains {
@@ -640,9 +759,10 @@ func collectTerrainIDs(terrains []staticdata.TerrainDefinition) []string {
 	return ids
 }
 
-func schemaDocument(root any, defs map[string]any) map[string]any {
+func schemaDocument(rel string, root any, defs map[string]any) map[string]any {
 	schema := map[string]any{
 		"$schema": schemaVersion,
+		"$id":     filepath.ToSlash(rel),
 	}
 	if rootMap, ok := root.(map[string]any); ok {
 		for key, value := range rootMap {
@@ -653,6 +773,12 @@ func schemaDocument(root any, defs map[string]any) map[string]any {
 		schema["$defs"] = defs
 	}
 	return schema
+}
+
+func authoredRootSchema(properties map[string]any, required []string) map[string]any {
+	rootProperties := cloneSchemaMap(properties)
+	rootProperties["$schema"] = stringSchema(nil)
+	return objectSchema(rootProperties, required)
 }
 
 func objectSchema(properties map[string]any, required []string) map[string]any {
@@ -731,9 +857,9 @@ func boolSchema() map[string]any {
 	}
 }
 
-func resourceAmountSchema(resourceKeys []string) map[string]any {
-	properties := make(map[string]any, len(resourceKeys))
-	for _, key := range resourceKeys {
+func resourceAmountSchema(keys []string) map[string]any {
+	properties := make(map[string]any, len(keys))
+	for _, key := range keys {
 		properties[key] = intSchema(map[string]any{"minimum": 0})
 	}
 	return objectSchema(properties, nil)
@@ -742,17 +868,32 @@ func resourceAmountSchema(resourceKeys []string) map[string]any {
 func additionalPropertyNumberObject() map[string]any {
 	return map[string]any{
 		"type":                 "object",
-		"additionalProperties": numberSchema(map[string]any{"minimum": 0}),
+		"additionalProperties": numberSchema(nil),
+	}
+}
+
+func additionalPropertyIntObject() map[string]any {
+	return map[string]any{
+		"type":                 "object",
+		"additionalProperties": intSchema(nil),
 	}
 }
 
 func uiCatalogSchema(key string, itemProperties map[string]any, required []string) map[string]any {
-	return objectSchema(
+	return authoredRootSchema(
 		map[string]any{
 			key: arraySchema(objectSchema(itemProperties, required), map[string]any{"minItems": 1}),
 		},
 		[]string{key},
 	)
+}
+
+func cloneSchemaMap(src map[string]any) map[string]any {
+	dst := make(map[string]any, len(src))
+	for key, value := range src {
+		dst[key] = value
+	}
+	return dst
 }
 
 func copyStrings(values []string) []string {

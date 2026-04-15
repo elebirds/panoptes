@@ -17,9 +17,11 @@ import (
 type Catalog struct {
 	bundle       CatalogBundle
 	resources    map[string]ResourceDescriptor
+	points       map[string]PointDescriptor
 	units        map[string]UnitDefinition
 	buildings    map[string]BuildingDefinition
 	technologies map[string]TechnologyDefinition
+	policies     map[string]PolicyDefinition
 	recipes      map[string]RecipeDefinition
 	terrains     map[string]TerrainDefinition
 	maps         map[string]*MapRuntimeBundle
@@ -75,9 +77,11 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	catalog := &Catalog{
 		bundle:       bundle,
 		resources:    make(map[string]ResourceDescriptor, len(bundle.Resources)),
+		points:       make(map[string]PointDescriptor, len(bundle.Points)),
 		units:        make(map[string]UnitDefinition, len(bundle.Units)),
 		buildings:    make(map[string]BuildingDefinition, len(bundle.Buildings)),
 		technologies: make(map[string]TechnologyDefinition, len(bundle.Technologies)),
+		policies:     make(map[string]PolicyDefinition, len(bundle.Policies)),
 		recipes:      make(map[string]RecipeDefinition, len(bundle.Recipes)),
 		terrains:     make(map[string]TerrainDefinition, len(bundle.Terrains)),
 		maps:         make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
@@ -85,6 +89,9 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 
 	for _, resource := range bundle.Resources {
 		catalog.resources[resource.Key] = resource
+	}
+	for _, point := range bundle.Points {
+		catalog.points[point.Key] = point
 	}
 	for _, unit := range bundle.Units {
 		catalog.units[unit.ID] = unit
@@ -94,6 +101,9 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 	for _, technology := range bundle.Technologies {
 		catalog.technologies[technology.ID] = technology
+	}
+	for _, policy := range bundle.Policies {
+		catalog.policies[policy.ID] = policy
 	}
 	for _, recipe := range bundle.Recipes {
 		catalog.recipes[recipe.ID] = recipe
@@ -135,6 +145,14 @@ func (c *Catalog) GetResource(key string) (ResourceDescriptor, bool) {
 	return resource, ok
 }
 
+func (c *Catalog) GetPoint(key string) (PointDescriptor, bool) {
+	if c == nil {
+		return PointDescriptor{}, false
+	}
+	point, ok := c.points[key]
+	return point, ok
+}
+
 func (c *Catalog) GetUnit(id string) (UnitDefinition, bool) {
 	if c == nil {
 		return UnitDefinition{}, false
@@ -157,6 +175,14 @@ func (c *Catalog) GetTechnology(id string) (TechnologyDefinition, bool) {
 	}
 	technology, ok := c.technologies[id]
 	return technology, ok
+}
+
+func (c *Catalog) GetPolicy(id string) (PolicyDefinition, bool) {
+	if c == nil {
+		return PolicyDefinition{}, false
+	}
+	policy, ok := c.policies[id]
+	return policy, ok
 }
 
 func (c *Catalog) GetRecipe(id string) (RecipeDefinition, bool) {

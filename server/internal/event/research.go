@@ -33,14 +33,17 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	if !ok {
 		return
 	}
-	// 这里只落正式状态：扣科技点、写已解锁集合、同步 unlock 效果。
+	// 这里只落正式状态：扣研究进度、写已解锁集合、同步 unlock 效果。
 	// 科技在 settlement 中完成，但这些解锁内容要到下一回合的指令阶段才会被使用。
 	playerState.Research.UnlockTechnology(e.TechnologyID)
-	playerState.Research.TechPoints -= e.Cost
-	if playerState.Research.TechPoints < 0 {
-		playerState.Research.TechPoints = 0
+	if playerState.Research.CurrentTargetTechnologyID == e.TechnologyID {
+		playerState.Research.CurrentTargetTechnologyID = ""
 	}
-	for _, effect := range technology.Effects {
+	playerState.Research.CurrentProgress -= e.Cost
+	if playerState.Research.CurrentProgress < 0 {
+		playerState.Research.CurrentProgress = 0
+	}
+	for _, effect := range technology.ExplicitEffects {
 		switch effect.Type {
 		case "unlock_building":
 			playerState.Research.UnlockBuilding(effect.TargetID)
@@ -48,23 +51,23 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 			playerState.Research.UnlockRecipe(effect.TargetID)
 		}
 	}
-	if cap := state.EffectiveTechPointCap(e.PlayerID); playerState.Research.TechPoints > cap {
-		playerState.Research.TechPoints = cap
+	if cap := state.EffectiveResearchCap(e.PlayerID); playerState.Research.CurrentProgress > cap {
+		playerState.Research.CurrentProgress = cap
 	}
 }
 
-func (e TechnologyUnlockedEvent) Kind() string { return "technology_unlocked" }
+func (e TechnologyUnlockedEvent) Kind() string { return "technology_completed" }
 
 func (e TechnologyUnlockedEvent) String() string {
 	return fmt.Sprintf("TechnologyUnlockedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
 }
 
-type TechPointsRechargedEvent struct {
+type ResearchProgressAppliedEvent struct {
 	PlayerID string
 	Amount   int
 }
 
-func (e TechPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState) {
+func (e ResearchProgressAppliedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	if state == nil {
 		return
 	}
@@ -72,16 +75,16 @@ func (e TechPointsRechargedEvent) Apply(_ donburi.World, state *domain.GameState
 	if !ok || playerState == nil {
 		return
 	}
-	playerState.Research.TechPoints += e.Amount
-	if playerState.Research.TechPoints > state.EffectiveTechPointCap(e.PlayerID) {
-		playerState.Research.TechPoints = state.EffectiveTechPointCap(e.PlayerID)
+	playerState.Research.CurrentProgress += e.Amount
+	if playerState.Research.CurrentProgress > state.EffectiveResearchCap(e.PlayerID) {
+		playerState.Research.CurrentProgress = state.EffectiveResearchCap(e.PlayerID)
 	}
 }
 
-func (e TechPointsRechargedEvent) Kind() string { return "tech_points_recharged" }
+func (e ResearchProgressAppliedEvent) Kind() string { return "technology_progressed" }
 
-func (e TechPointsRechargedEvent) String() string {
-	return fmt.Sprintf("TechPointsRechargedEvent player=%s amount=%d", e.PlayerID, e.Amount)
+func (e ResearchProgressAppliedEvent) String() string {
+	return fmt.Sprintf("ResearchProgressAppliedEvent player=%s amount=%d", e.PlayerID, e.Amount)
 }
 
 type TechnologyGrantAppliedEvent struct {
@@ -96,13 +99,13 @@ func (e TechnologyGrantAppliedEvent) Apply(world donburi.World, state *domain.Ga
 		return
 	}
 	for _, key := range e.Resources.Keys() {
-		state.AddResourceToCastle(e.PlayerID, "", key, e.Resources.Get(key))
+		state.AddResourceToCity(e.PlayerID, "", key, e.Resources.Get(key))
 	}
 	if len(e.UnitTypes) == 0 {
 		return
 	}
 
-	// grant 单位优先落在主城堡，没有城堡时再回退到玩家出生点。
+	// grant 单位优先落在主城市，没有城市时再回退到玩家出生点。
 	// 这样后续即便科技 grant 和“主城体系”继续演化，这里的行为仍然稳定可预测。
 	spawnPos, ok := resolveGrantSpawnPosition(world, state, e.PlayerID)
 	if !ok {
@@ -123,8 +126,8 @@ func resolveGrantSpawnPosition(world donburi.World, state *domain.GameState, pla
 	if state == nil {
 		return domain.Position{}, false
 	}
-	if castle := state.PrimaryCastleState(playerID); castle != nil && castle.NodeID != "" {
-		if entry, ok := state.GetNode(castle.NodeID); ok {
+	if city := state.PrimaryCityState(playerID); city != nil && city.NodeID != "" {
+		if entry, ok := state.GetNode(city.NodeID); ok {
 			pos := ecs.PositionC.Get(entry)
 			return domain.Position{X: pos.X, Y: pos.Y}, true
 		}

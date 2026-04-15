@@ -79,14 +79,14 @@ func (e UnitDiedEvent) String() string {
 	return fmt.Sprintf("UnitDiedEvent unit=%s killer=%s", e.UnitID, e.KillerID)
 }
 
-type CastleDamagedEvent struct {
+type CityCoreDamagedEvent struct {
 	NodeID     string
 	Damage     int
 	HPAfter    int
 	AttackerID string
 }
 
-func (e CastleDamagedEvent) Apply(world donburi.World, state *domain.GameState) {
+func (e CityCoreDamagedEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
 		return
@@ -94,22 +94,22 @@ func (e CastleDamagedEvent) Apply(world donburi.World, state *domain.GameState) 
 	building := ecs.BuildingC.Get(nodeEntry)
 	building.HP = e.HPAfter
 	if ownerState, ok := state.Players[building.Owner]; ok {
-		ownerState.MainCastleHP = e.HPAfter
+		ownerState.CapitalCityCoreHP = e.HPAfter
 	}
 }
 
-func (e CastleDamagedEvent) Kind() string { return "castle_damaged" }
+func (e CityCoreDamagedEvent) Kind() string { return "city_core_damaged" }
 
-func (e CastleDamagedEvent) String() string {
-	return fmt.Sprintf("CastleDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
+func (e CityCoreDamagedEvent) String() string {
+	return fmt.Sprintf("CityCoreDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
 }
 
-type CastleDestroyedEvent struct {
+type CityCoreDestroyedEvent struct {
 	NodeID           string
 	ConquerorFaction string
 }
 
-func (e CastleDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
+func (e CityCoreDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if ok {
 		node := ecs.NodeC.Get(nodeEntry)
@@ -121,13 +121,13 @@ func (e CastleDestroyedEvent) Apply(world donburi.World, state *domain.GameState
 	}
 	state.IsOver = true
 	state.WinnerID = e.ConquerorFaction
-	state.OverReason = "castle_destroyed"
+	state.OverReason = "city_core_destroyed"
 }
 
-func (e CastleDestroyedEvent) Kind() string { return "castle_destroyed" }
+func (e CityCoreDestroyedEvent) Kind() string { return "city_core_destroyed" }
 
-func (e CastleDestroyedEvent) String() string {
-	return fmt.Sprintf("CastleDestroyedEvent node=%s conqueror=%s", e.NodeID, e.ConquerorFaction)
+func (e CityCoreDestroyedEvent) String() string {
+	return fmt.Sprintf("CityCoreDestroyedEvent node=%s conqueror=%s", e.NodeID, e.ConquerorFaction)
 }
 
 type RoadDestroyedEvent struct {

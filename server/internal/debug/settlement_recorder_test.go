@@ -15,7 +15,7 @@ func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 	}
 	gameOver := &pb.MsgGameOver{
 		WinnerId: "player-1",
-		Reason:   "castle_destroyed",
+		Reason:   "city_core_destroyed",
 	}
 
 	recorder.RecordSettlement("room-1", "player-1", settlement)
@@ -36,8 +36,8 @@ func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 	if gotGameOver == nil {
 		t.Fatalf("LatestGameOver() = nil")
 	}
-	if gotGameOver.GetReason() != "castle_destroyed" {
-		t.Fatalf("game over reason = %q, want castle_destroyed", gotGameOver.GetReason())
+	if gotGameOver.GetReason() != "city_core_destroyed" {
+		t.Fatalf("game over reason = %q, want city_core_destroyed", gotGameOver.GetReason())
 	}
 
 	gotSettlement.Turn = 11
@@ -46,7 +46,7 @@ func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 	if recorder.LatestSettlement("room-1", "player-1").GetTurn() != 2 {
 		t.Fatalf("LatestSettlement() should return cloned message")
 	}
-	if recorder.LatestGameOver("room-1").GetReason() != "castle_destroyed" {
+	if recorder.LatestGameOver("room-1").GetReason() != "city_core_destroyed" {
 		t.Fatalf("LatestGameOver() should return cloned message")
 	}
 }

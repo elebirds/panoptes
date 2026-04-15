@@ -25,68 +25,77 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBnYW1lX3N0YXRlLnByb3RvEhFwYW5vcHRlcy5wcm90by52MRoMY29tbW9u",
-            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIqsECghOb2RlVmlldxIOCgJpZBgB",
+            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIqUGCghOb2RlVmlldxIOCgJpZBgB",
             "IAEoCVICaWQSLQoDcG9zGAIgASgLMhsucGFub3B0ZXMucHJvdG8udjEuUG9z",
-            "aXRpb25SA3BvcxIYCgd0ZXJyYWluGAMgASgJUgd0ZXJyYWluEhQKBW93bmVy",
-            "GAQgASgJUgVvd25lchInCg90ZXJyaXRvcnlfb3duZXIYDiABKAlSDnRlcnJp",
-            "dG9yeU93bmVyEiMKDWJ1aWxkaW5nX3R5cGUYBSABKAlSDGJ1aWxkaW5nVHlw",
-            "ZRIfCgtidWlsZGluZ19ocBgGIAEoBVIKYnVpbGRpbmdIcBIdCgp3YWxsX2xl",
-            "dmVsGAcgASgFUgl3YWxsTGV2ZWwSIgoNbXlfdW5pdF9jb3VudBgIIAEoBVIL",
-            "bXlVbml0Q291bnQSKAoQZW5lbXlfdW5pdF9jb3VudBgJIAEoBVIOZW5lbXlV",
-            "bml0Q291bnQSGQoIaGFzX3JvYWQYCiABKAhSB2hhc1JvYWQSKgoRaXNfcmVz",
-            "b3VyY2VfcG9pbnQYCyABKAhSD2lzUmVzb3VyY2VQb2ludBIjCg1yZXNvdXJj",
-            "ZV90eXBlGAwgASgJUgxyZXNvdXJjZVR5cGUSIAoMaXNfc2FmZV96b25lGA0g",
-            "ASgIUgppc1NhZmVab25lEkYKCW9wZXJhdGlvbhgPIAEoCzIoLnBhbm9wdGVz",
-            "LnByb3RvLnYxLkJ1aWxkaW5nT3BlcmF0aW9uVmlld1IJb3BlcmF0aW9uIqcB",
-            "CghVbml0VmlldxIOCgJpZBgBIAEoCVICaWQSGAoHZmFjdGlvbhgCIAEoCVIH",
-            "ZmFjdGlvbhIbCgl1bml0X3R5cGUYAyABKAlSCHVuaXRUeXBlEg4KAmhwGAQg",
-            "ASgFUgJocBIVCgZtYXhfaHAYBSABKAVSBW1heEhwEi0KA3BvcxgGIAEoCzIb",
-            "LnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgNwb3MihAMKClBsYXllclZp",
-            "ZXcSDgoCaWQYASABKAlSAmlkEhoKCHVzZXJuYW1lGAIgASgJUgh1c2VybmFt",
-            "ZRI8CglyZXNvdXJjZXMYAyABKAsyHi5wYW5vcHRlcy5wcm90by52MS5SZXNv",
-            "dXJjZUJhZ1IJcmVzb3VyY2VzEh8KC3Rva2Vuc19sZWZ0GAQgASgFUgp0b2tl",
-            "bnNMZWZ0EiUKDmN1cnJlbnRfcG9saWN5GAUgASgJUg1jdXJyZW50UG9saWN5",
-            "EiQKDm1haW5fY2FzdGxlX2hwGAYgASgFUgxtYWluQ2FzdGxlSHASIgoNbWF4",
-            "X2Nhc3RsZV9ocBgHIAEoBVILbWF4Q2FzdGxlSHASNwoJd2FyX3pvbmVzGAgg",
-            "AygLMhoucGFub3B0ZXMucHJvdG8udjEuV2FyWm9uZVIId2FyWm9uZXMSQQoI",
-            "cmVzZWFyY2gYCSABKAsyJS5wYW5vcHRlcy5wcm90by52MS5QbGF5ZXJSZXNl",
-            "YXJjaFZpZXdSCHJlc2VhcmNoIsMBChJQbGF5ZXJSZXNlYXJjaFZpZXcSHwoL",
-            "dGVjaF9wb2ludHMYASABKAVSCnRlY2hQb2ludHMSLAoSdGVjaF9wb2ludHNf",
-            "aW5jb21lGAIgASgFUhB0ZWNoUG9pbnRzSW5jb21lEiYKD3RlY2hfcG9pbnRz",
-            "X2NhcBgDIAEoBVINdGVjaFBvaW50c0NhcBI2Chd1bmxvY2tlZF90ZWNobm9s",
-            "b2d5X2lkcxgEIAMoCVIVdW5sb2NrZWRUZWNobm9sb2d5SWRzItsBChVCdWls",
-            "ZGluZ09wZXJhdGlvblZpZXcSLAoSc2VsZWN0ZWRfcmVjaXBlX2lkGAEgASgJ",
-            "UhBzZWxlY3RlZFJlY2lwZUlkEiUKDnByb2dyZXNzX3R1cm5zGAIgASgFUg1w",
-            "cm9ncmVzc1R1cm5zEiUKDnJlcXVpcmVkX3R1cm5zGAMgASgFUg1yZXF1aXJl",
-            "ZFR1cm5zEh8KC2RlbGF5X3R1cm5zGAQgASgFUgpkZWxheVR1cm5zEiUKDmJs",
-            "b2NrZWRfcmVhc29uGAUgASgJUg1ibG9ja2VkUmVhc29uIocBCgdXYXJab25l",
-            "Eg4KAmlkGAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVf",
-            "aWRzGAMgAygJUgdub2RlSWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0",
-            "aXZlEh8KC3RhcmdldF9ub2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlz",
-            "dGVyVmlldxISCgRyb2xlGAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5h",
-            "bWUSGAoHYWJpbGl0eRgDIAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgE",
-            "IAEoCVILcGVyc29uYWxpdHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQY",
-            "ASABKAlSBmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBs",
-            "YXllcklkEhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBo",
-            "YXNlEjEKBW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZp",
-            "ZXdSBW5vZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEu",
-            "VW5pdFZpZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVz",
-            "LnByb3RvLnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgI",
-            "IAMoCzIfLnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0",
-            "ZXJzEhsKCW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdo",
-            "dBgKIAEoBVIJbWFwSGVpZ2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9p",
-            "ZBgBIAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJ",
-            "bmFycmF0aXZlGAMgASgJUgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGVi",
-            "aXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoC",
-            "FFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "aXRpb25SA3BvcxIYCgd0ZXJyYWluGAMgASgJUgd0ZXJyYWluEjAKFGNvbnRy",
+            "b2xsZXJfcGxheWVyX2lkGAQgASgJUhJjb250cm9sbGVyUGxheWVySWQSKAoQ",
+            "YnVpbGRpbmdfdHlwZV9pZBgFIAEoCVIOYnVpbGRpbmdUeXBlSWQSHwoLYnVp",
+            "bGRpbmdfaHAYBiABKAVSCmJ1aWxkaW5nSHASIgoNbXlfdW5pdF9jb3VudBgH",
+            "IAEoBVILbXlVbml0Q291bnQSKAoQZW5lbXlfdW5pdF9jb3VudBgIIAEoBVIO",
+            "ZW5lbXlVbml0Q291bnQSGQoIaGFzX3JvYWQYCSABKAhSB2hhc1JvYWQSKgoR",
+            "aXNfcmVzb3VyY2VfcG9pbnQYCiABKAhSD2lzUmVzb3VyY2VQb2ludBIjCg1y",
+            "ZXNvdXJjZV90eXBlGAsgASgJUgxyZXNvdXJjZVR5cGUSIAoMaXNfc2FmZV96",
+            "b25lGAwgASgIUgppc1NhZmVab25lEjkKGXRlcnJpdG9yeV9vd25lcl9wbGF5",
+            "ZXJfaWQYDSABKAlSFnRlcnJpdG9yeU93bmVyUGxheWVySWQSRgoJb3BlcmF0",
+            "aW9uGA4gASgLMigucGFub3B0ZXMucHJvdG8udjEuQnVpbGRpbmdPcGVyYXRp",
+            "b25WaWV3UglvcGVyYXRpb24SJwoPYnVpbGRpbmdfc3RhdHVzGA8gASgJUg5i",
+            "dWlsZGluZ1N0YXR1cxIXCgdjaXR5X2lkGBAgASgJUgZjaXR5SWQSJgoPc2Vy",
+            "dmljZV9jaXR5X2lkGBEgASgJUg1zZXJ2aWNlQ2l0eUlkEiAKDGlzX2NpdHlf",
+            "Y29yZRgSIAEoCFIKaXNDaXR5Q29yZRIrChF0YWtlb3Zlcl9wcm9ncmVzcxgT",
+            "IAEoBVIQdGFrZW92ZXJQcm9ncmVzcxIrChF0YWtlb3Zlcl9yZXF1aXJlZBgU",
+            "IAEoBVIQdGFrZW92ZXJSZXF1aXJlZCKnAQoIVW5pdFZpZXcSDgoCaWQYASAB",
+            "KAlSAmlkEhgKB2ZhY3Rpb24YAiABKAlSB2ZhY3Rpb24SGwoJdW5pdF90eXBl",
+            "GAMgASgJUgh1bml0VHlwZRIOCgJocBgEIAEoBVICaHASFQoGbWF4X2hwGAUg",
+            "ASgFUgVtYXhIcBItCgNwb3MYBiABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Q",
+            "b3NpdGlvblIDcG9zIusDCgpQbGF5ZXJWaWV3Eg4KAmlkGAEgASgJUgJpZBIa",
+            "Cgh1c2VybmFtZRgCIAEoCVIIdXNlcm5hbWUSPAoJcmVzb3VyY2VzGAMgASgL",
+            "Mh4ucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSCXJlc291cmNlcxIz",
+            "CgZwb2ludHMYBCABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb2ludEJhZ1IG",
+            "cG9pbnRzEh8KC3Rva2Vuc19sZWZ0GAUgASgFUgp0b2tlbnNMZWZ0EjkKGWFj",
+            "dGl2ZV9uYXRpb25hbF9wb2xpY3lfaWQYBiABKAlSFmFjdGl2ZU5hdGlvbmFs",
+            "UG9saWN5SWQSLwoUY2FwaXRhbF9jaXR5X2NvcmVfaHAYByABKAVSEWNhcGl0",
+            "YWxDaXR5Q29yZUhwEjYKGGNhcGl0YWxfY2l0eV9jb3JlX21heF9ocBgIIAEo",
+            "BVIUY2FwaXRhbENpdHlDb3JlTWF4SHASNwoJd2FyX3pvbmVzGAkgAygLMhou",
+            "cGFub3B0ZXMucHJvdG8udjEuV2FyWm9uZVIId2FyWm9uZXMSQAoIcmVzZWFy",
+            "Y2gYCiABKAsyJC5wYW5vcHRlcy5wcm90by52MS5SZXNlYXJjaFN0YXRlVmll",
+            "d1IIcmVzZWFyY2gi5gEKEVJlc2VhcmNoU3RhdGVWaWV3Ej8KHGN1cnJlbnRf",
+            "dGFyZ2V0X3RlY2hub2xvZ3lfaWQYASABKAlSGWN1cnJlbnRUYXJnZXRUZWNo",
+            "bm9sb2d5SWQSKQoQY3VycmVudF9wcm9ncmVzcxgCIAEoBVIPY3VycmVudFBy",
+            "b2dyZXNzEisKEXJlcXVpcmVkX3Byb2dyZXNzGAMgASgFUhByZXF1aXJlZFBy",
+            "b2dyZXNzEjgKGGNvbXBsZXRlZF90ZWNobm9sb2d5X2lkcxgEIAMoCVIWY29t",
+            "cGxldGVkVGVjaG5vbG9neUlkcyLpAQoVQnVpbGRpbmdPcGVyYXRpb25WaWV3",
+            "EiwKEnNlbGVjdGVkX3JlY2lwZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJ",
+            "ZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MS",
+            "KwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MS",
+            "IwoNYmFzZV9wcm9ncmVzcxgEIAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2Nr",
+            "ZWRfcmVhc29uGAUgASgJUg1ibG9ja2VkUmVhc29uIocBCgdXYXJab25lEg4K",
+            "AmlkGAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVfaWRz",
+            "GAMgAygJUgdub2RlSWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0aXZl",
+            "Eh8KC3RhcmdldF9ub2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlzdGVy",
+            "VmlldxISCgRyb2xlGAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5hbWUS",
+            "GAoHYWJpbGl0eRgDIAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgEIAEo",
+            "CVILcGVyc29uYWxpdHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASAB",
+            "KAlSBmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXll",
+            "cklkEhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNl",
+            "EjEKBW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdS",
+            "BW5vZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5p",
+            "dFZpZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMo",
+            "CzIfLnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJz",
+            "EhsKCW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgK",
+            "IAEoBVIJbWFwSGVpZ2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9pZBgB",
+            "IAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJbmFy",
+            "cmF0aXZlGAMgASgJUgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGViaXJk",
+            "cy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBh",
+            "bm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "Owner", "TerritoryOwner", "BuildingType", "BuildingHp", "WallLevel", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "Operation" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "TokensLeft", "CurrentPolicy", "MainCastleHp", "MaxCastleHp", "WarZones", "Research" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerResearchView), global::Panoptes.Protocol.V1.PlayerResearchView.Parser, new[]{ "TechPoints", "TechPointsIncome", "TechPointsCap", "UnlockedTechnologyIds" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "ProgressTurns", "RequiredTurns", "DelayTurns", "BlockedReason" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight" }, null, null, null, null),
@@ -135,18 +144,23 @@ namespace Panoptes.Protocol.V1 {
       id_ = other.id_;
       pos_ = other.pos_ != null ? other.pos_.Clone() : null;
       terrain_ = other.terrain_;
-      owner_ = other.owner_;
-      territoryOwner_ = other.territoryOwner_;
-      buildingType_ = other.buildingType_;
+      controllerPlayerId_ = other.controllerPlayerId_;
+      buildingTypeId_ = other.buildingTypeId_;
       buildingHp_ = other.buildingHp_;
-      wallLevel_ = other.wallLevel_;
       myUnitCount_ = other.myUnitCount_;
       enemyUnitCount_ = other.enemyUnitCount_;
       hasRoad_ = other.hasRoad_;
       isResourcePoint_ = other.isResourcePoint_;
       resourceType_ = other.resourceType_;
       isSafeZone_ = other.isSafeZone_;
+      territoryOwnerPlayerId_ = other.territoryOwnerPlayerId_;
       operation_ = other.operation_ != null ? other.operation_.Clone() : null;
+      buildingStatus_ = other.buildingStatus_;
+      cityId_ = other.cityId_;
+      serviceCityId_ = other.serviceCityId_;
+      isCityCore_ = other.isCityCore_;
+      takeoverProgress_ = other.takeoverProgress_;
+      takeoverRequired_ = other.takeoverRequired_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -183,9 +197,6 @@ namespace Panoptes.Protocol.V1 {
     /// <summary>Field number for the "terrain" field.</summary>
     public const int TerrainFieldNumber = 3;
     private string terrain_ = "";
-    /// <summary>
-    /// "plain|mountain|forest|river"
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Terrain {
@@ -195,48 +206,27 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "owner" field.</summary>
-    public const int OwnerFieldNumber = 4;
-    private string owner_ = "";
-    /// <summary>
-    /// player_id or ""
-    /// </summary>
+    /// <summary>Field number for the "controller_player_id" field.</summary>
+    public const int ControllerPlayerIdFieldNumber = 4;
+    private string controllerPlayerId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Owner {
-      get { return owner_; }
+    public string ControllerPlayerId {
+      get { return controllerPlayerId_; }
       set {
-        owner_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        controllerPlayerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
-    /// <summary>Field number for the "territory_owner" field.</summary>
-    public const int TerritoryOwnerFieldNumber = 14;
-    private string territoryOwner_ = "";
-    /// <summary>
-    /// player_id or ""
-    /// </summary>
+    /// <summary>Field number for the "building_type_id" field.</summary>
+    public const int BuildingTypeIdFieldNumber = 5;
+    private string buildingTypeId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string TerritoryOwner {
-      get { return territoryOwner_; }
+    public string BuildingTypeId {
+      get { return buildingTypeId_; }
       set {
-        territoryOwner_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "building_type" field.</summary>
-    public const int BuildingTypeFieldNumber = 5;
-    private string buildingType_ = "";
-    /// <summary>
-    /// "" if none
-    /// </summary>
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string BuildingType {
-      get { return buildingType_; }
-      set {
-        buildingType_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        buildingTypeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -252,24 +242,9 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "wall_level" field.</summary>
-    public const int WallLevelFieldNumber = 7;
-    private int wallLevel_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int WallLevel {
-      get { return wallLevel_; }
-      set {
-        wallLevel_ = value;
-      }
-    }
-
     /// <summary>Field number for the "my_unit_count" field.</summary>
-    public const int MyUnitCountFieldNumber = 8;
+    public const int MyUnitCountFieldNumber = 7;
     private int myUnitCount_;
-    /// <summary>
-    /// 己方兵力（精确）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int MyUnitCount {
@@ -280,11 +255,8 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "enemy_unit_count" field.</summary>
-    public const int EnemyUnitCountFieldNumber = 9;
+    public const int EnemyUnitCountFieldNumber = 8;
     private int enemyUnitCount_;
-    /// <summary>
-    /// 敌方兵力（可能有延迟/失真）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int EnemyUnitCount {
@@ -295,7 +267,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "has_road" field.</summary>
-    public const int HasRoadFieldNumber = 10;
+    public const int HasRoadFieldNumber = 9;
     private bool hasRoad_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -307,7 +279,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "is_resource_point" field.</summary>
-    public const int IsResourcePointFieldNumber = 11;
+    public const int IsResourcePointFieldNumber = 10;
     private bool isResourcePoint_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -319,11 +291,8 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "resource_type" field.</summary>
-    public const int ResourceTypeFieldNumber = 12;
+    public const int ResourceTypeFieldNumber = 11;
     private string resourceType_ = "";
-    /// <summary>
-    /// "ore|wood|food"
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string ResourceType {
@@ -334,7 +303,7 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "is_safe_zone" field.</summary>
-    public const int IsSafeZoneFieldNumber = 13;
+    public const int IsSafeZoneFieldNumber = 12;
     private bool isSafeZone_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -345,8 +314,20 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "territory_owner_player_id" field.</summary>
+    public const int TerritoryOwnerPlayerIdFieldNumber = 13;
+    private string territoryOwnerPlayerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TerritoryOwnerPlayerId {
+      get { return territoryOwnerPlayerId_; }
+      set {
+        territoryOwnerPlayerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     /// <summary>Field number for the "operation" field.</summary>
-    public const int OperationFieldNumber = 15;
+    public const int OperationFieldNumber = 14;
     private global::Panoptes.Protocol.V1.BuildingOperationView operation_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -354,6 +335,78 @@ namespace Panoptes.Protocol.V1 {
       get { return operation_; }
       set {
         operation_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "building_status" field.</summary>
+    public const int BuildingStatusFieldNumber = 15;
+    private string buildingStatus_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string BuildingStatus {
+      get { return buildingStatus_; }
+      set {
+        buildingStatus_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "city_id" field.</summary>
+    public const int CityIdFieldNumber = 16;
+    private string cityId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string CityId {
+      get { return cityId_; }
+      set {
+        cityId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "service_city_id" field.</summary>
+    public const int ServiceCityIdFieldNumber = 17;
+    private string serviceCityId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ServiceCityId {
+      get { return serviceCityId_; }
+      set {
+        serviceCityId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "is_city_core" field.</summary>
+    public const int IsCityCoreFieldNumber = 18;
+    private bool isCityCore_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IsCityCore {
+      get { return isCityCore_; }
+      set {
+        isCityCore_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "takeover_progress" field.</summary>
+    public const int TakeoverProgressFieldNumber = 19;
+    private int takeoverProgress_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TakeoverProgress {
+      get { return takeoverProgress_; }
+      set {
+        takeoverProgress_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "takeover_required" field.</summary>
+    public const int TakeoverRequiredFieldNumber = 20;
+    private int takeoverRequired_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int TakeoverRequired {
+      get { return takeoverRequired_; }
+      set {
+        takeoverRequired_ = value;
       }
     }
 
@@ -375,18 +428,23 @@ namespace Panoptes.Protocol.V1 {
       if (Id != other.Id) return false;
       if (!object.Equals(Pos, other.Pos)) return false;
       if (Terrain != other.Terrain) return false;
-      if (Owner != other.Owner) return false;
-      if (TerritoryOwner != other.TerritoryOwner) return false;
-      if (BuildingType != other.BuildingType) return false;
+      if (ControllerPlayerId != other.ControllerPlayerId) return false;
+      if (BuildingTypeId != other.BuildingTypeId) return false;
       if (BuildingHp != other.BuildingHp) return false;
-      if (WallLevel != other.WallLevel) return false;
       if (MyUnitCount != other.MyUnitCount) return false;
       if (EnemyUnitCount != other.EnemyUnitCount) return false;
       if (HasRoad != other.HasRoad) return false;
       if (IsResourcePoint != other.IsResourcePoint) return false;
       if (ResourceType != other.ResourceType) return false;
       if (IsSafeZone != other.IsSafeZone) return false;
+      if (TerritoryOwnerPlayerId != other.TerritoryOwnerPlayerId) return false;
       if (!object.Equals(Operation, other.Operation)) return false;
+      if (BuildingStatus != other.BuildingStatus) return false;
+      if (CityId != other.CityId) return false;
+      if (ServiceCityId != other.ServiceCityId) return false;
+      if (IsCityCore != other.IsCityCore) return false;
+      if (TakeoverProgress != other.TakeoverProgress) return false;
+      if (TakeoverRequired != other.TakeoverRequired) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -397,18 +455,23 @@ namespace Panoptes.Protocol.V1 {
       if (Id.Length != 0) hash ^= Id.GetHashCode();
       if (pos_ != null) hash ^= Pos.GetHashCode();
       if (Terrain.Length != 0) hash ^= Terrain.GetHashCode();
-      if (Owner.Length != 0) hash ^= Owner.GetHashCode();
-      if (TerritoryOwner.Length != 0) hash ^= TerritoryOwner.GetHashCode();
-      if (BuildingType.Length != 0) hash ^= BuildingType.GetHashCode();
+      if (ControllerPlayerId.Length != 0) hash ^= ControllerPlayerId.GetHashCode();
+      if (BuildingTypeId.Length != 0) hash ^= BuildingTypeId.GetHashCode();
       if (BuildingHp != 0) hash ^= BuildingHp.GetHashCode();
-      if (WallLevel != 0) hash ^= WallLevel.GetHashCode();
       if (MyUnitCount != 0) hash ^= MyUnitCount.GetHashCode();
       if (EnemyUnitCount != 0) hash ^= EnemyUnitCount.GetHashCode();
       if (HasRoad != false) hash ^= HasRoad.GetHashCode();
       if (IsResourcePoint != false) hash ^= IsResourcePoint.GetHashCode();
       if (ResourceType.Length != 0) hash ^= ResourceType.GetHashCode();
       if (IsSafeZone != false) hash ^= IsSafeZone.GetHashCode();
+      if (TerritoryOwnerPlayerId.Length != 0) hash ^= TerritoryOwnerPlayerId.GetHashCode();
       if (operation_ != null) hash ^= Operation.GetHashCode();
+      if (BuildingStatus.Length != 0) hash ^= BuildingStatus.GetHashCode();
+      if (CityId.Length != 0) hash ^= CityId.GetHashCode();
+      if (ServiceCityId.Length != 0) hash ^= ServiceCityId.GetHashCode();
+      if (IsCityCore != false) hash ^= IsCityCore.GetHashCode();
+      if (TakeoverProgress != 0) hash ^= TakeoverProgress.GetHashCode();
+      if (TakeoverRequired != 0) hash ^= TakeoverRequired.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -439,53 +502,73 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteString(Terrain);
       }
-      if (Owner.Length != 0) {
+      if (ControllerPlayerId.Length != 0) {
         output.WriteRawTag(34);
-        output.WriteString(Owner);
+        output.WriteString(ControllerPlayerId);
       }
-      if (BuildingType.Length != 0) {
+      if (BuildingTypeId.Length != 0) {
         output.WriteRawTag(42);
-        output.WriteString(BuildingType);
+        output.WriteString(BuildingTypeId);
       }
       if (BuildingHp != 0) {
         output.WriteRawTag(48);
         output.WriteInt32(BuildingHp);
       }
-      if (WallLevel != 0) {
-        output.WriteRawTag(56);
-        output.WriteInt32(WallLevel);
-      }
       if (MyUnitCount != 0) {
-        output.WriteRawTag(64);
+        output.WriteRawTag(56);
         output.WriteInt32(MyUnitCount);
       }
       if (EnemyUnitCount != 0) {
-        output.WriteRawTag(72);
+        output.WriteRawTag(64);
         output.WriteInt32(EnemyUnitCount);
       }
       if (HasRoad != false) {
-        output.WriteRawTag(80);
+        output.WriteRawTag(72);
         output.WriteBool(HasRoad);
       }
       if (IsResourcePoint != false) {
-        output.WriteRawTag(88);
+        output.WriteRawTag(80);
         output.WriteBool(IsResourcePoint);
       }
       if (ResourceType.Length != 0) {
-        output.WriteRawTag(98);
+        output.WriteRawTag(90);
         output.WriteString(ResourceType);
       }
       if (IsSafeZone != false) {
-        output.WriteRawTag(104);
+        output.WriteRawTag(96);
         output.WriteBool(IsSafeZone);
       }
-      if (TerritoryOwner.Length != 0) {
-        output.WriteRawTag(114);
-        output.WriteString(TerritoryOwner);
+      if (TerritoryOwnerPlayerId.Length != 0) {
+        output.WriteRawTag(106);
+        output.WriteString(TerritoryOwnerPlayerId);
       }
       if (operation_ != null) {
-        output.WriteRawTag(122);
+        output.WriteRawTag(114);
         output.WriteMessage(Operation);
+      }
+      if (BuildingStatus.Length != 0) {
+        output.WriteRawTag(122);
+        output.WriteString(BuildingStatus);
+      }
+      if (CityId.Length != 0) {
+        output.WriteRawTag(130, 1);
+        output.WriteString(CityId);
+      }
+      if (ServiceCityId.Length != 0) {
+        output.WriteRawTag(138, 1);
+        output.WriteString(ServiceCityId);
+      }
+      if (IsCityCore != false) {
+        output.WriteRawTag(144, 1);
+        output.WriteBool(IsCityCore);
+      }
+      if (TakeoverProgress != 0) {
+        output.WriteRawTag(152, 1);
+        output.WriteInt32(TakeoverProgress);
+      }
+      if (TakeoverRequired != 0) {
+        output.WriteRawTag(160, 1);
+        output.WriteInt32(TakeoverRequired);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -509,53 +592,73 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteString(Terrain);
       }
-      if (Owner.Length != 0) {
+      if (ControllerPlayerId.Length != 0) {
         output.WriteRawTag(34);
-        output.WriteString(Owner);
+        output.WriteString(ControllerPlayerId);
       }
-      if (BuildingType.Length != 0) {
+      if (BuildingTypeId.Length != 0) {
         output.WriteRawTag(42);
-        output.WriteString(BuildingType);
+        output.WriteString(BuildingTypeId);
       }
       if (BuildingHp != 0) {
         output.WriteRawTag(48);
         output.WriteInt32(BuildingHp);
       }
-      if (WallLevel != 0) {
-        output.WriteRawTag(56);
-        output.WriteInt32(WallLevel);
-      }
       if (MyUnitCount != 0) {
-        output.WriteRawTag(64);
+        output.WriteRawTag(56);
         output.WriteInt32(MyUnitCount);
       }
       if (EnemyUnitCount != 0) {
-        output.WriteRawTag(72);
+        output.WriteRawTag(64);
         output.WriteInt32(EnemyUnitCount);
       }
       if (HasRoad != false) {
-        output.WriteRawTag(80);
+        output.WriteRawTag(72);
         output.WriteBool(HasRoad);
       }
       if (IsResourcePoint != false) {
-        output.WriteRawTag(88);
+        output.WriteRawTag(80);
         output.WriteBool(IsResourcePoint);
       }
       if (ResourceType.Length != 0) {
-        output.WriteRawTag(98);
+        output.WriteRawTag(90);
         output.WriteString(ResourceType);
       }
       if (IsSafeZone != false) {
-        output.WriteRawTag(104);
+        output.WriteRawTag(96);
         output.WriteBool(IsSafeZone);
       }
-      if (TerritoryOwner.Length != 0) {
-        output.WriteRawTag(114);
-        output.WriteString(TerritoryOwner);
+      if (TerritoryOwnerPlayerId.Length != 0) {
+        output.WriteRawTag(106);
+        output.WriteString(TerritoryOwnerPlayerId);
       }
       if (operation_ != null) {
-        output.WriteRawTag(122);
+        output.WriteRawTag(114);
         output.WriteMessage(Operation);
+      }
+      if (BuildingStatus.Length != 0) {
+        output.WriteRawTag(122);
+        output.WriteString(BuildingStatus);
+      }
+      if (CityId.Length != 0) {
+        output.WriteRawTag(130, 1);
+        output.WriteString(CityId);
+      }
+      if (ServiceCityId.Length != 0) {
+        output.WriteRawTag(138, 1);
+        output.WriteString(ServiceCityId);
+      }
+      if (IsCityCore != false) {
+        output.WriteRawTag(144, 1);
+        output.WriteBool(IsCityCore);
+      }
+      if (TakeoverProgress != 0) {
+        output.WriteRawTag(152, 1);
+        output.WriteInt32(TakeoverProgress);
+      }
+      if (TakeoverRequired != 0) {
+        output.WriteRawTag(160, 1);
+        output.WriteInt32(TakeoverRequired);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -576,20 +679,14 @@ namespace Panoptes.Protocol.V1 {
       if (Terrain.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Terrain);
       }
-      if (Owner.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Owner);
+      if (ControllerPlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ControllerPlayerId);
       }
-      if (TerritoryOwner.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(TerritoryOwner);
-      }
-      if (BuildingType.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingType);
+      if (BuildingTypeId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingTypeId);
       }
       if (BuildingHp != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(BuildingHp);
-      }
-      if (WallLevel != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(WallLevel);
       }
       if (MyUnitCount != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(MyUnitCount);
@@ -609,8 +706,29 @@ namespace Panoptes.Protocol.V1 {
       if (IsSafeZone != false) {
         size += 1 + 1;
       }
+      if (TerritoryOwnerPlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TerritoryOwnerPlayerId);
+      }
       if (operation_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Operation);
+      }
+      if (BuildingStatus.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(BuildingStatus);
+      }
+      if (CityId.Length != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeStringSize(CityId);
+      }
+      if (ServiceCityId.Length != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeStringSize(ServiceCityId);
+      }
+      if (IsCityCore != false) {
+        size += 2 + 1;
+      }
+      if (TakeoverProgress != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(TakeoverProgress);
+      }
+      if (TakeoverRequired != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(TakeoverRequired);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -636,20 +754,14 @@ namespace Panoptes.Protocol.V1 {
       if (other.Terrain.Length != 0) {
         Terrain = other.Terrain;
       }
-      if (other.Owner.Length != 0) {
-        Owner = other.Owner;
+      if (other.ControllerPlayerId.Length != 0) {
+        ControllerPlayerId = other.ControllerPlayerId;
       }
-      if (other.TerritoryOwner.Length != 0) {
-        TerritoryOwner = other.TerritoryOwner;
-      }
-      if (other.BuildingType.Length != 0) {
-        BuildingType = other.BuildingType;
+      if (other.BuildingTypeId.Length != 0) {
+        BuildingTypeId = other.BuildingTypeId;
       }
       if (other.BuildingHp != 0) {
         BuildingHp = other.BuildingHp;
-      }
-      if (other.WallLevel != 0) {
-        WallLevel = other.WallLevel;
       }
       if (other.MyUnitCount != 0) {
         MyUnitCount = other.MyUnitCount;
@@ -669,11 +781,32 @@ namespace Panoptes.Protocol.V1 {
       if (other.IsSafeZone != false) {
         IsSafeZone = other.IsSafeZone;
       }
+      if (other.TerritoryOwnerPlayerId.Length != 0) {
+        TerritoryOwnerPlayerId = other.TerritoryOwnerPlayerId;
+      }
       if (other.operation_ != null) {
         if (operation_ == null) {
           Operation = new global::Panoptes.Protocol.V1.BuildingOperationView();
         }
         Operation.MergeFrom(other.Operation);
+      }
+      if (other.BuildingStatus.Length != 0) {
+        BuildingStatus = other.BuildingStatus;
+      }
+      if (other.CityId.Length != 0) {
+        CityId = other.CityId;
+      }
+      if (other.ServiceCityId.Length != 0) {
+        ServiceCityId = other.ServiceCityId;
+      }
+      if (other.IsCityCore != false) {
+        IsCityCore = other.IsCityCore;
+      }
+      if (other.TakeoverProgress != 0) {
+        TakeoverProgress = other.TakeoverProgress;
+      }
+      if (other.TakeoverRequired != 0) {
+        TakeoverRequired = other.TakeoverRequired;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -686,7 +819,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -706,11 +843,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 34: {
-            Owner = input.ReadString();
+            ControllerPlayerId = input.ReadString();
             break;
           }
           case 42: {
-            BuildingType = input.ReadString();
+            BuildingTypeId = input.ReadString();
             break;
           }
           case 48: {
@@ -718,42 +855,62 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 56: {
-            WallLevel = input.ReadInt32();
-            break;
-          }
-          case 64: {
             MyUnitCount = input.ReadInt32();
             break;
           }
-          case 72: {
+          case 64: {
             EnemyUnitCount = input.ReadInt32();
             break;
           }
-          case 80: {
+          case 72: {
             HasRoad = input.ReadBool();
             break;
           }
-          case 88: {
+          case 80: {
             IsResourcePoint = input.ReadBool();
             break;
           }
-          case 98: {
+          case 90: {
             ResourceType = input.ReadString();
             break;
           }
-          case 104: {
+          case 96: {
             IsSafeZone = input.ReadBool();
             break;
           }
-          case 114: {
-            TerritoryOwner = input.ReadString();
+          case 106: {
+            TerritoryOwnerPlayerId = input.ReadString();
             break;
           }
-          case 122: {
+          case 114: {
             if (operation_ == null) {
               Operation = new global::Panoptes.Protocol.V1.BuildingOperationView();
             }
             input.ReadMessage(Operation);
+            break;
+          }
+          case 122: {
+            BuildingStatus = input.ReadString();
+            break;
+          }
+          case 130: {
+            CityId = input.ReadString();
+            break;
+          }
+          case 138: {
+            ServiceCityId = input.ReadString();
+            break;
+          }
+          case 144: {
+            IsCityCore = input.ReadBool();
+            break;
+          }
+          case 152: {
+            TakeoverProgress = input.ReadInt32();
+            break;
+          }
+          case 160: {
+            TakeoverRequired = input.ReadInt32();
             break;
           }
         }
@@ -767,7 +924,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -787,11 +948,11 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 34: {
-            Owner = input.ReadString();
+            ControllerPlayerId = input.ReadString();
             break;
           }
           case 42: {
-            BuildingType = input.ReadString();
+            BuildingTypeId = input.ReadString();
             break;
           }
           case 48: {
@@ -799,42 +960,62 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 56: {
-            WallLevel = input.ReadInt32();
-            break;
-          }
-          case 64: {
             MyUnitCount = input.ReadInt32();
             break;
           }
-          case 72: {
+          case 64: {
             EnemyUnitCount = input.ReadInt32();
             break;
           }
-          case 80: {
+          case 72: {
             HasRoad = input.ReadBool();
             break;
           }
-          case 88: {
+          case 80: {
             IsResourcePoint = input.ReadBool();
             break;
           }
-          case 98: {
+          case 90: {
             ResourceType = input.ReadString();
             break;
           }
-          case 104: {
+          case 96: {
             IsSafeZone = input.ReadBool();
             break;
           }
-          case 114: {
-            TerritoryOwner = input.ReadString();
+          case 106: {
+            TerritoryOwnerPlayerId = input.ReadString();
             break;
           }
-          case 122: {
+          case 114: {
             if (operation_ == null) {
               Operation = new global::Panoptes.Protocol.V1.BuildingOperationView();
             }
             input.ReadMessage(Operation);
+            break;
+          }
+          case 122: {
+            BuildingStatus = input.ReadString();
+            break;
+          }
+          case 130: {
+            CityId = input.ReadString();
+            break;
+          }
+          case 138: {
+            ServiceCityId = input.ReadString();
+            break;
+          }
+          case 144: {
+            IsCityCore = input.ReadBool();
+            break;
+          }
+          case 152: {
+            TakeoverProgress = input.ReadInt32();
+            break;
+          }
+          case 160: {
+            TakeoverRequired = input.ReadInt32();
             break;
           }
         }
@@ -1148,7 +1329,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1190,7 +1375,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1266,10 +1455,11 @@ namespace Panoptes.Protocol.V1 {
       id_ = other.id_;
       username_ = other.username_;
       resources_ = other.resources_ != null ? other.resources_.Clone() : null;
+      points_ = other.points_ != null ? other.points_.Clone() : null;
       tokensLeft_ = other.tokensLeft_;
-      currentPolicy_ = other.currentPolicy_;
-      mainCastleHp_ = other.mainCastleHp_;
-      maxCastleHp_ = other.maxCastleHp_;
+      activeNationalPolicyId_ = other.activeNationalPolicyId_;
+      capitalCityCoreHp_ = other.capitalCityCoreHp_;
+      capitalCityCoreMaxHp_ = other.capitalCityCoreMaxHp_;
       warZones_ = other.warZones_.Clone();
       research_ = other.research_ != null ? other.research_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -1317,8 +1507,20 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "points" field.</summary>
+    public const int PointsFieldNumber = 4;
+    private global::Panoptes.Protocol.V1.PointBag points_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.PointBag Points {
+      get { return points_; }
+      set {
+        points_ = value;
+      }
+    }
+
     /// <summary>Field number for the "tokens_left" field.</summary>
-    public const int TokensLeftFieldNumber = 4;
+    public const int TokensLeftFieldNumber = 5;
     private int tokensLeft_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1329,46 +1531,46 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "current_policy" field.</summary>
-    public const int CurrentPolicyFieldNumber = 5;
-    private string currentPolicy_ = "";
+    /// <summary>Field number for the "active_national_policy_id" field.</summary>
+    public const int ActiveNationalPolicyIdFieldNumber = 6;
+    private string activeNationalPolicyId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string CurrentPolicy {
-      get { return currentPolicy_; }
+    public string ActiveNationalPolicyId {
+      get { return activeNationalPolicyId_; }
       set {
-        currentPolicy_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        activeNationalPolicyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
-    /// <summary>Field number for the "main_castle_hp" field.</summary>
-    public const int MainCastleHpFieldNumber = 6;
-    private int mainCastleHp_;
+    /// <summary>Field number for the "capital_city_core_hp" field.</summary>
+    public const int CapitalCityCoreHpFieldNumber = 7;
+    private int capitalCityCoreHp_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int MainCastleHp {
-      get { return mainCastleHp_; }
+    public int CapitalCityCoreHp {
+      get { return capitalCityCoreHp_; }
       set {
-        mainCastleHp_ = value;
+        capitalCityCoreHp_ = value;
       }
     }
 
-    /// <summary>Field number for the "max_castle_hp" field.</summary>
-    public const int MaxCastleHpFieldNumber = 7;
-    private int maxCastleHp_;
+    /// <summary>Field number for the "capital_city_core_max_hp" field.</summary>
+    public const int CapitalCityCoreMaxHpFieldNumber = 8;
+    private int capitalCityCoreMaxHp_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int MaxCastleHp {
-      get { return maxCastleHp_; }
+    public int CapitalCityCoreMaxHp {
+      get { return capitalCityCoreMaxHp_; }
       set {
-        maxCastleHp_ = value;
+        capitalCityCoreMaxHp_ = value;
       }
     }
 
     /// <summary>Field number for the "war_zones" field.</summary>
-    public const int WarZonesFieldNumber = 8;
+    public const int WarZonesFieldNumber = 9;
     private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.WarZone> _repeated_warZones_codec
-        = pb::FieldCodec.ForMessage(66, global::Panoptes.Protocol.V1.WarZone.Parser);
+        = pb::FieldCodec.ForMessage(74, global::Panoptes.Protocol.V1.WarZone.Parser);
     private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.WarZone> warZones_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.WarZone>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1377,11 +1579,11 @@ namespace Panoptes.Protocol.V1 {
     }
 
     /// <summary>Field number for the "research" field.</summary>
-    public const int ResearchFieldNumber = 9;
-    private global::Panoptes.Protocol.V1.PlayerResearchView research_;
+    public const int ResearchFieldNumber = 10;
+    private global::Panoptes.Protocol.V1.ResearchStateView research_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Panoptes.Protocol.V1.PlayerResearchView Research {
+    public global::Panoptes.Protocol.V1.ResearchStateView Research {
       get { return research_; }
       set {
         research_ = value;
@@ -1406,10 +1608,11 @@ namespace Panoptes.Protocol.V1 {
       if (Id != other.Id) return false;
       if (Username != other.Username) return false;
       if (!object.Equals(Resources, other.Resources)) return false;
+      if (!object.Equals(Points, other.Points)) return false;
       if (TokensLeft != other.TokensLeft) return false;
-      if (CurrentPolicy != other.CurrentPolicy) return false;
-      if (MainCastleHp != other.MainCastleHp) return false;
-      if (MaxCastleHp != other.MaxCastleHp) return false;
+      if (ActiveNationalPolicyId != other.ActiveNationalPolicyId) return false;
+      if (CapitalCityCoreHp != other.CapitalCityCoreHp) return false;
+      if (CapitalCityCoreMaxHp != other.CapitalCityCoreMaxHp) return false;
       if(!warZones_.Equals(other.warZones_)) return false;
       if (!object.Equals(Research, other.Research)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -1422,10 +1625,11 @@ namespace Panoptes.Protocol.V1 {
       if (Id.Length != 0) hash ^= Id.GetHashCode();
       if (Username.Length != 0) hash ^= Username.GetHashCode();
       if (resources_ != null) hash ^= Resources.GetHashCode();
+      if (points_ != null) hash ^= Points.GetHashCode();
       if (TokensLeft != 0) hash ^= TokensLeft.GetHashCode();
-      if (CurrentPolicy.Length != 0) hash ^= CurrentPolicy.GetHashCode();
-      if (MainCastleHp != 0) hash ^= MainCastleHp.GetHashCode();
-      if (MaxCastleHp != 0) hash ^= MaxCastleHp.GetHashCode();
+      if (ActiveNationalPolicyId.Length != 0) hash ^= ActiveNationalPolicyId.GetHashCode();
+      if (CapitalCityCoreHp != 0) hash ^= CapitalCityCoreHp.GetHashCode();
+      if (CapitalCityCoreMaxHp != 0) hash ^= CapitalCityCoreMaxHp.GetHashCode();
       hash ^= warZones_.GetHashCode();
       if (research_ != null) hash ^= Research.GetHashCode();
       if (_unknownFields != null) {
@@ -1458,25 +1662,29 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteMessage(Resources);
       }
+      if (points_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(Points);
+      }
       if (TokensLeft != 0) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(40);
         output.WriteInt32(TokensLeft);
       }
-      if (CurrentPolicy.Length != 0) {
-        output.WriteRawTag(42);
-        output.WriteString(CurrentPolicy);
+      if (ActiveNationalPolicyId.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(ActiveNationalPolicyId);
       }
-      if (MainCastleHp != 0) {
-        output.WriteRawTag(48);
-        output.WriteInt32(MainCastleHp);
-      }
-      if (MaxCastleHp != 0) {
+      if (CapitalCityCoreHp != 0) {
         output.WriteRawTag(56);
-        output.WriteInt32(MaxCastleHp);
+        output.WriteInt32(CapitalCityCoreHp);
+      }
+      if (CapitalCityCoreMaxHp != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(CapitalCityCoreMaxHp);
       }
       warZones_.WriteTo(output, _repeated_warZones_codec);
       if (research_ != null) {
-        output.WriteRawTag(74);
+        output.WriteRawTag(82);
         output.WriteMessage(Research);
       }
       if (_unknownFields != null) {
@@ -1501,25 +1709,29 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteMessage(Resources);
       }
+      if (points_ != null) {
+        output.WriteRawTag(34);
+        output.WriteMessage(Points);
+      }
       if (TokensLeft != 0) {
-        output.WriteRawTag(32);
+        output.WriteRawTag(40);
         output.WriteInt32(TokensLeft);
       }
-      if (CurrentPolicy.Length != 0) {
-        output.WriteRawTag(42);
-        output.WriteString(CurrentPolicy);
+      if (ActiveNationalPolicyId.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(ActiveNationalPolicyId);
       }
-      if (MainCastleHp != 0) {
-        output.WriteRawTag(48);
-        output.WriteInt32(MainCastleHp);
-      }
-      if (MaxCastleHp != 0) {
+      if (CapitalCityCoreHp != 0) {
         output.WriteRawTag(56);
-        output.WriteInt32(MaxCastleHp);
+        output.WriteInt32(CapitalCityCoreHp);
+      }
+      if (CapitalCityCoreMaxHp != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(CapitalCityCoreMaxHp);
       }
       warZones_.WriteTo(ref output, _repeated_warZones_codec);
       if (research_ != null) {
-        output.WriteRawTag(74);
+        output.WriteRawTag(82);
         output.WriteMessage(Research);
       }
       if (_unknownFields != null) {
@@ -1541,17 +1753,20 @@ namespace Panoptes.Protocol.V1 {
       if (resources_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Resources);
       }
+      if (points_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Points);
+      }
       if (TokensLeft != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(TokensLeft);
       }
-      if (CurrentPolicy.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(CurrentPolicy);
+      if (ActiveNationalPolicyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ActiveNationalPolicyId);
       }
-      if (MainCastleHp != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MainCastleHp);
+      if (CapitalCityCoreHp != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CapitalCityCoreHp);
       }
-      if (MaxCastleHp != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxCastleHp);
+      if (CapitalCityCoreMaxHp != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CapitalCityCoreMaxHp);
       }
       size += warZones_.CalculateSize(_repeated_warZones_codec);
       if (research_ != null) {
@@ -1581,22 +1796,28 @@ namespace Panoptes.Protocol.V1 {
         }
         Resources.MergeFrom(other.Resources);
       }
+      if (other.points_ != null) {
+        if (points_ == null) {
+          Points = new global::Panoptes.Protocol.V1.PointBag();
+        }
+        Points.MergeFrom(other.Points);
+      }
       if (other.TokensLeft != 0) {
         TokensLeft = other.TokensLeft;
       }
-      if (other.CurrentPolicy.Length != 0) {
-        CurrentPolicy = other.CurrentPolicy;
+      if (other.ActiveNationalPolicyId.Length != 0) {
+        ActiveNationalPolicyId = other.ActiveNationalPolicyId;
       }
-      if (other.MainCastleHp != 0) {
-        MainCastleHp = other.MainCastleHp;
+      if (other.CapitalCityCoreHp != 0) {
+        CapitalCityCoreHp = other.CapitalCityCoreHp;
       }
-      if (other.MaxCastleHp != 0) {
-        MaxCastleHp = other.MaxCastleHp;
+      if (other.CapitalCityCoreMaxHp != 0) {
+        CapitalCityCoreMaxHp = other.CapitalCityCoreMaxHp;
       }
       warZones_.Add(other.warZones_);
       if (other.research_ != null) {
         if (research_ == null) {
-          Research = new global::Panoptes.Protocol.V1.PlayerResearchView();
+          Research = new global::Panoptes.Protocol.V1.ResearchStateView();
         }
         Research.MergeFrom(other.Research);
       }
@@ -1611,7 +1832,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1630,29 +1855,36 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(Resources);
             break;
           }
-          case 32: {
+          case 34: {
+            if (points_ == null) {
+              Points = new global::Panoptes.Protocol.V1.PointBag();
+            }
+            input.ReadMessage(Points);
+            break;
+          }
+          case 40: {
             TokensLeft = input.ReadInt32();
             break;
           }
-          case 42: {
-            CurrentPolicy = input.ReadString();
-            break;
-          }
-          case 48: {
-            MainCastleHp = input.ReadInt32();
+          case 50: {
+            ActiveNationalPolicyId = input.ReadString();
             break;
           }
           case 56: {
-            MaxCastleHp = input.ReadInt32();
+            CapitalCityCoreHp = input.ReadInt32();
             break;
           }
-          case 66: {
-            warZones_.AddEntriesFrom(input, _repeated_warZones_codec);
+          case 64: {
+            CapitalCityCoreMaxHp = input.ReadInt32();
             break;
           }
           case 74: {
+            warZones_.AddEntriesFrom(input, _repeated_warZones_codec);
+            break;
+          }
+          case 82: {
             if (research_ == null) {
-              Research = new global::Panoptes.Protocol.V1.PlayerResearchView();
+              Research = new global::Panoptes.Protocol.V1.ResearchStateView();
             }
             input.ReadMessage(Research);
             break;
@@ -1668,7 +1900,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1687,29 +1923,36 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(Resources);
             break;
           }
-          case 32: {
+          case 34: {
+            if (points_ == null) {
+              Points = new global::Panoptes.Protocol.V1.PointBag();
+            }
+            input.ReadMessage(Points);
+            break;
+          }
+          case 40: {
             TokensLeft = input.ReadInt32();
             break;
           }
-          case 42: {
-            CurrentPolicy = input.ReadString();
-            break;
-          }
-          case 48: {
-            MainCastleHp = input.ReadInt32();
+          case 50: {
+            ActiveNationalPolicyId = input.ReadString();
             break;
           }
           case 56: {
-            MaxCastleHp = input.ReadInt32();
+            CapitalCityCoreHp = input.ReadInt32();
             break;
           }
-          case 66: {
-            warZones_.AddEntriesFrom(ref input, _repeated_warZones_codec);
+          case 64: {
+            CapitalCityCoreMaxHp = input.ReadInt32();
             break;
           }
           case 74: {
+            warZones_.AddEntriesFrom(ref input, _repeated_warZones_codec);
+            break;
+          }
+          case 82: {
             if (research_ == null) {
-              Research = new global::Panoptes.Protocol.V1.PlayerResearchView();
+              Research = new global::Panoptes.Protocol.V1.ResearchStateView();
             }
             input.ReadMessage(Research);
             break;
@@ -1722,16 +1965,16 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class PlayerResearchView : pb::IMessage<PlayerResearchView>
+  public sealed partial class ResearchStateView : pb::IMessage<ResearchStateView>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<PlayerResearchView> _parser = new pb::MessageParser<PlayerResearchView>(() => new PlayerResearchView());
+    private static readonly pb::MessageParser<ResearchStateView> _parser = new pb::MessageParser<ResearchStateView>(() => new ResearchStateView());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<PlayerResearchView> Parser { get { return _parser; } }
+    public static pb::MessageParser<ResearchStateView> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -1747,7 +1990,7 @@ namespace Panoptes.Protocol.V1 {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PlayerResearchView() {
+    public ResearchStateView() {
       OnConstruction();
     }
 
@@ -1755,86 +1998,86 @@ namespace Panoptes.Protocol.V1 {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PlayerResearchView(PlayerResearchView other) : this() {
-      techPoints_ = other.techPoints_;
-      techPointsIncome_ = other.techPointsIncome_;
-      techPointsCap_ = other.techPointsCap_;
-      unlockedTechnologyIds_ = other.unlockedTechnologyIds_.Clone();
+    public ResearchStateView(ResearchStateView other) : this() {
+      currentTargetTechnologyId_ = other.currentTargetTechnologyId_;
+      currentProgress_ = other.currentProgress_;
+      requiredProgress_ = other.requiredProgress_;
+      completedTechnologyIds_ = other.completedTechnologyIds_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PlayerResearchView Clone() {
-      return new PlayerResearchView(this);
+    public ResearchStateView Clone() {
+      return new ResearchStateView(this);
     }
 
-    /// <summary>Field number for the "tech_points" field.</summary>
-    public const int TechPointsFieldNumber = 1;
-    private int techPoints_;
+    /// <summary>Field number for the "current_target_technology_id" field.</summary>
+    public const int CurrentTargetTechnologyIdFieldNumber = 1;
+    private string currentTargetTechnologyId_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int TechPoints {
-      get { return techPoints_; }
+    public string CurrentTargetTechnologyId {
+      get { return currentTargetTechnologyId_; }
       set {
-        techPoints_ = value;
+        currentTargetTechnologyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
-    /// <summary>Field number for the "tech_points_income" field.</summary>
-    public const int TechPointsIncomeFieldNumber = 2;
-    private int techPointsIncome_;
+    /// <summary>Field number for the "current_progress" field.</summary>
+    public const int CurrentProgressFieldNumber = 2;
+    private int currentProgress_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int TechPointsIncome {
-      get { return techPointsIncome_; }
+    public int CurrentProgress {
+      get { return currentProgress_; }
       set {
-        techPointsIncome_ = value;
+        currentProgress_ = value;
       }
     }
 
-    /// <summary>Field number for the "tech_points_cap" field.</summary>
-    public const int TechPointsCapFieldNumber = 3;
-    private int techPointsCap_;
+    /// <summary>Field number for the "required_progress" field.</summary>
+    public const int RequiredProgressFieldNumber = 3;
+    private int requiredProgress_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int TechPointsCap {
-      get { return techPointsCap_; }
+    public int RequiredProgress {
+      get { return requiredProgress_; }
       set {
-        techPointsCap_ = value;
+        requiredProgress_ = value;
       }
     }
 
-    /// <summary>Field number for the "unlocked_technology_ids" field.</summary>
-    public const int UnlockedTechnologyIdsFieldNumber = 4;
-    private static readonly pb::FieldCodec<string> _repeated_unlockedTechnologyIds_codec
+    /// <summary>Field number for the "completed_technology_ids" field.</summary>
+    public const int CompletedTechnologyIdsFieldNumber = 4;
+    private static readonly pb::FieldCodec<string> _repeated_completedTechnologyIds_codec
         = pb::FieldCodec.ForString(34);
-    private readonly pbc::RepeatedField<string> unlockedTechnologyIds_ = new pbc::RepeatedField<string>();
+    private readonly pbc::RepeatedField<string> completedTechnologyIds_ = new pbc::RepeatedField<string>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> UnlockedTechnologyIds {
-      get { return unlockedTechnologyIds_; }
+    public pbc::RepeatedField<string> CompletedTechnologyIds {
+      get { return completedTechnologyIds_; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as PlayerResearchView);
+      return Equals(other as ResearchStateView);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(PlayerResearchView other) {
+    public bool Equals(ResearchStateView other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (TechPoints != other.TechPoints) return false;
-      if (TechPointsIncome != other.TechPointsIncome) return false;
-      if (TechPointsCap != other.TechPointsCap) return false;
-      if(!unlockedTechnologyIds_.Equals(other.unlockedTechnologyIds_)) return false;
+      if (CurrentTargetTechnologyId != other.CurrentTargetTechnologyId) return false;
+      if (CurrentProgress != other.CurrentProgress) return false;
+      if (RequiredProgress != other.RequiredProgress) return false;
+      if(!completedTechnologyIds_.Equals(other.completedTechnologyIds_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1842,10 +2085,10 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (TechPoints != 0) hash ^= TechPoints.GetHashCode();
-      if (TechPointsIncome != 0) hash ^= TechPointsIncome.GetHashCode();
-      if (TechPointsCap != 0) hash ^= TechPointsCap.GetHashCode();
-      hash ^= unlockedTechnologyIds_.GetHashCode();
+      if (CurrentTargetTechnologyId.Length != 0) hash ^= CurrentTargetTechnologyId.GetHashCode();
+      if (CurrentProgress != 0) hash ^= CurrentProgress.GetHashCode();
+      if (RequiredProgress != 0) hash ^= RequiredProgress.GetHashCode();
+      hash ^= completedTechnologyIds_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1864,19 +2107,19 @@ namespace Panoptes.Protocol.V1 {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (TechPoints != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(TechPoints);
+      if (CurrentTargetTechnologyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(CurrentTargetTechnologyId);
       }
-      if (TechPointsIncome != 0) {
+      if (CurrentProgress != 0) {
         output.WriteRawTag(16);
-        output.WriteInt32(TechPointsIncome);
+        output.WriteInt32(CurrentProgress);
       }
-      if (TechPointsCap != 0) {
+      if (RequiredProgress != 0) {
         output.WriteRawTag(24);
-        output.WriteInt32(TechPointsCap);
+        output.WriteInt32(RequiredProgress);
       }
-      unlockedTechnologyIds_.WriteTo(output, _repeated_unlockedTechnologyIds_codec);
+      completedTechnologyIds_.WriteTo(output, _repeated_completedTechnologyIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1887,19 +2130,19 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (TechPoints != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(TechPoints);
+      if (CurrentTargetTechnologyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(CurrentTargetTechnologyId);
       }
-      if (TechPointsIncome != 0) {
+      if (CurrentProgress != 0) {
         output.WriteRawTag(16);
-        output.WriteInt32(TechPointsIncome);
+        output.WriteInt32(CurrentProgress);
       }
-      if (TechPointsCap != 0) {
+      if (RequiredProgress != 0) {
         output.WriteRawTag(24);
-        output.WriteInt32(TechPointsCap);
+        output.WriteInt32(RequiredProgress);
       }
-      unlockedTechnologyIds_.WriteTo(ref output, _repeated_unlockedTechnologyIds_codec);
+      completedTechnologyIds_.WriteTo(ref output, _repeated_completedTechnologyIds_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1910,16 +2153,16 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (TechPoints != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TechPoints);
+      if (CurrentTargetTechnologyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(CurrentTargetTechnologyId);
       }
-      if (TechPointsIncome != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TechPointsIncome);
+      if (CurrentProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentProgress);
       }
-      if (TechPointsCap != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(TechPointsCap);
+      if (RequiredProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RequiredProgress);
       }
-      size += unlockedTechnologyIds_.CalculateSize(_repeated_unlockedTechnologyIds_codec);
+      size += completedTechnologyIds_.CalculateSize(_repeated_completedTechnologyIds_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1928,20 +2171,20 @@ namespace Panoptes.Protocol.V1 {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(PlayerResearchView other) {
+    public void MergeFrom(ResearchStateView other) {
       if (other == null) {
         return;
       }
-      if (other.TechPoints != 0) {
-        TechPoints = other.TechPoints;
+      if (other.CurrentTargetTechnologyId.Length != 0) {
+        CurrentTargetTechnologyId = other.CurrentTargetTechnologyId;
       }
-      if (other.TechPointsIncome != 0) {
-        TechPointsIncome = other.TechPointsIncome;
+      if (other.CurrentProgress != 0) {
+        CurrentProgress = other.CurrentProgress;
       }
-      if (other.TechPointsCap != 0) {
-        TechPointsCap = other.TechPointsCap;
+      if (other.RequiredProgress != 0) {
+        RequiredProgress = other.RequiredProgress;
       }
-      unlockedTechnologyIds_.Add(other.unlockedTechnologyIds_);
+      completedTechnologyIds_.Add(other.completedTechnologyIds_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -1953,24 +2196,28 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
-          case 8: {
-            TechPoints = input.ReadInt32();
+          case 10: {
+            CurrentTargetTechnologyId = input.ReadString();
             break;
           }
           case 16: {
-            TechPointsIncome = input.ReadInt32();
+            CurrentProgress = input.ReadInt32();
             break;
           }
           case 24: {
-            TechPointsCap = input.ReadInt32();
+            RequiredProgress = input.ReadInt32();
             break;
           }
           case 34: {
-            unlockedTechnologyIds_.AddEntriesFrom(input, _repeated_unlockedTechnologyIds_codec);
+            completedTechnologyIds_.AddEntriesFrom(input, _repeated_completedTechnologyIds_codec);
             break;
           }
         }
@@ -1984,24 +2231,28 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
-          case 8: {
-            TechPoints = input.ReadInt32();
+          case 10: {
+            CurrentTargetTechnologyId = input.ReadString();
             break;
           }
           case 16: {
-            TechPointsIncome = input.ReadInt32();
+            CurrentProgress = input.ReadInt32();
             break;
           }
           case 24: {
-            TechPointsCap = input.ReadInt32();
+            RequiredProgress = input.ReadInt32();
             break;
           }
           case 34: {
-            unlockedTechnologyIds_.AddEntriesFrom(ref input, _repeated_unlockedTechnologyIds_codec);
+            completedTechnologyIds_.AddEntriesFrom(ref input, _repeated_completedTechnologyIds_codec);
             break;
           }
         }
@@ -2047,9 +2298,9 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public BuildingOperationView(BuildingOperationView other) : this() {
       selectedRecipeId_ = other.selectedRecipeId_;
-      progressTurns_ = other.progressTurns_;
-      requiredTurns_ = other.requiredTurns_;
-      delayTurns_ = other.delayTurns_;
+      currentProgress_ = other.currentProgress_;
+      requiredProgress_ = other.requiredProgress_;
+      baseProgress_ = other.baseProgress_;
       blockedReason_ = other.blockedReason_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -2072,39 +2323,39 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "progress_turns" field.</summary>
-    public const int ProgressTurnsFieldNumber = 2;
-    private int progressTurns_;
+    /// <summary>Field number for the "current_progress" field.</summary>
+    public const int CurrentProgressFieldNumber = 2;
+    private int currentProgress_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int ProgressTurns {
-      get { return progressTurns_; }
+    public int CurrentProgress {
+      get { return currentProgress_; }
       set {
-        progressTurns_ = value;
+        currentProgress_ = value;
       }
     }
 
-    /// <summary>Field number for the "required_turns" field.</summary>
-    public const int RequiredTurnsFieldNumber = 3;
-    private int requiredTurns_;
+    /// <summary>Field number for the "required_progress" field.</summary>
+    public const int RequiredProgressFieldNumber = 3;
+    private int requiredProgress_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int RequiredTurns {
-      get { return requiredTurns_; }
+    public int RequiredProgress {
+      get { return requiredProgress_; }
       set {
-        requiredTurns_ = value;
+        requiredProgress_ = value;
       }
     }
 
-    /// <summary>Field number for the "delay_turns" field.</summary>
-    public const int DelayTurnsFieldNumber = 4;
-    private int delayTurns_;
+    /// <summary>Field number for the "base_progress" field.</summary>
+    public const int BaseProgressFieldNumber = 4;
+    private int baseProgress_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int DelayTurns {
-      get { return delayTurns_; }
+    public int BaseProgress {
+      get { return baseProgress_; }
       set {
-        delayTurns_ = value;
+        baseProgress_ = value;
       }
     }
 
@@ -2136,9 +2387,9 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if (SelectedRecipeId != other.SelectedRecipeId) return false;
-      if (ProgressTurns != other.ProgressTurns) return false;
-      if (RequiredTurns != other.RequiredTurns) return false;
-      if (DelayTurns != other.DelayTurns) return false;
+      if (CurrentProgress != other.CurrentProgress) return false;
+      if (RequiredProgress != other.RequiredProgress) return false;
+      if (BaseProgress != other.BaseProgress) return false;
       if (BlockedReason != other.BlockedReason) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -2148,9 +2399,9 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       if (SelectedRecipeId.Length != 0) hash ^= SelectedRecipeId.GetHashCode();
-      if (ProgressTurns != 0) hash ^= ProgressTurns.GetHashCode();
-      if (RequiredTurns != 0) hash ^= RequiredTurns.GetHashCode();
-      if (DelayTurns != 0) hash ^= DelayTurns.GetHashCode();
+      if (CurrentProgress != 0) hash ^= CurrentProgress.GetHashCode();
+      if (RequiredProgress != 0) hash ^= RequiredProgress.GetHashCode();
+      if (BaseProgress != 0) hash ^= BaseProgress.GetHashCode();
       if (BlockedReason.Length != 0) hash ^= BlockedReason.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -2174,17 +2425,17 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(SelectedRecipeId);
       }
-      if (ProgressTurns != 0) {
+      if (CurrentProgress != 0) {
         output.WriteRawTag(16);
-        output.WriteInt32(ProgressTurns);
+        output.WriteInt32(CurrentProgress);
       }
-      if (RequiredTurns != 0) {
+      if (RequiredProgress != 0) {
         output.WriteRawTag(24);
-        output.WriteInt32(RequiredTurns);
+        output.WriteInt32(RequiredProgress);
       }
-      if (DelayTurns != 0) {
+      if (BaseProgress != 0) {
         output.WriteRawTag(32);
-        output.WriteInt32(DelayTurns);
+        output.WriteInt32(BaseProgress);
       }
       if (BlockedReason.Length != 0) {
         output.WriteRawTag(42);
@@ -2204,17 +2455,17 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(SelectedRecipeId);
       }
-      if (ProgressTurns != 0) {
+      if (CurrentProgress != 0) {
         output.WriteRawTag(16);
-        output.WriteInt32(ProgressTurns);
+        output.WriteInt32(CurrentProgress);
       }
-      if (RequiredTurns != 0) {
+      if (RequiredProgress != 0) {
         output.WriteRawTag(24);
-        output.WriteInt32(RequiredTurns);
+        output.WriteInt32(RequiredProgress);
       }
-      if (DelayTurns != 0) {
+      if (BaseProgress != 0) {
         output.WriteRawTag(32);
-        output.WriteInt32(DelayTurns);
+        output.WriteInt32(BaseProgress);
       }
       if (BlockedReason.Length != 0) {
         output.WriteRawTag(42);
@@ -2233,14 +2484,14 @@ namespace Panoptes.Protocol.V1 {
       if (SelectedRecipeId.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(SelectedRecipeId);
       }
-      if (ProgressTurns != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ProgressTurns);
+      if (CurrentProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentProgress);
       }
-      if (RequiredTurns != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RequiredTurns);
+      if (RequiredProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RequiredProgress);
       }
-      if (DelayTurns != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(DelayTurns);
+      if (BaseProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(BaseProgress);
       }
       if (BlockedReason.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(BlockedReason);
@@ -2260,14 +2511,14 @@ namespace Panoptes.Protocol.V1 {
       if (other.SelectedRecipeId.Length != 0) {
         SelectedRecipeId = other.SelectedRecipeId;
       }
-      if (other.ProgressTurns != 0) {
-        ProgressTurns = other.ProgressTurns;
+      if (other.CurrentProgress != 0) {
+        CurrentProgress = other.CurrentProgress;
       }
-      if (other.RequiredTurns != 0) {
-        RequiredTurns = other.RequiredTurns;
+      if (other.RequiredProgress != 0) {
+        RequiredProgress = other.RequiredProgress;
       }
-      if (other.DelayTurns != 0) {
-        DelayTurns = other.DelayTurns;
+      if (other.BaseProgress != 0) {
+        BaseProgress = other.BaseProgress;
       }
       if (other.BlockedReason.Length != 0) {
         BlockedReason = other.BlockedReason;
@@ -2283,7 +2534,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2292,15 +2547,15 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 16: {
-            ProgressTurns = input.ReadInt32();
+            CurrentProgress = input.ReadInt32();
             break;
           }
           case 24: {
-            RequiredTurns = input.ReadInt32();
+            RequiredProgress = input.ReadInt32();
             break;
           }
           case 32: {
-            DelayTurns = input.ReadInt32();
+            BaseProgress = input.ReadInt32();
             break;
           }
           case 42: {
@@ -2318,7 +2573,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2327,15 +2586,15 @@ namespace Panoptes.Protocol.V1 {
             break;
           }
           case 16: {
-            ProgressTurns = input.ReadInt32();
+            CurrentProgress = input.ReadInt32();
             break;
           }
           case 24: {
-            RequiredTurns = input.ReadInt32();
+            RequiredProgress = input.ReadInt32();
             break;
           }
           case 32: {
-            DelayTurns = input.ReadInt32();
+            BaseProgress = input.ReadInt32();
             break;
           }
           case 42: {
@@ -2610,7 +2869,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2645,7 +2908,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2727,9 +2994,6 @@ namespace Panoptes.Protocol.V1 {
     /// <summary>Field number for the "role" field.</summary>
     public const int RoleFieldNumber = 1;
     private string role_ = "";
-    /// <summary>
-    /// "military|agriculture|diplomacy"
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Role {
@@ -2754,9 +3018,6 @@ namespace Panoptes.Protocol.V1 {
     /// <summary>Field number for the "ability" field.</summary>
     public const int AbilityFieldNumber = 3;
     private int ability_;
-    /// <summary>
-    /// 1-10，可见
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int Ability {
@@ -2769,9 +3030,6 @@ namespace Panoptes.Protocol.V1 {
     /// <summary>Field number for the "personality" field.</summary>
     public const int PersonalityFieldNumber = 4;
     private string personality_ = "";
-    /// <summary>
-    /// 性格描述词，可见（模糊）
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Personality {
@@ -2928,7 +3186,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2959,7 +3221,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2986,9 +3252,6 @@ namespace Panoptes.Protocol.V1 {
 
   }
 
-  /// <summary>
-  /// 游戏初始化（仅发送一次）
-  /// </summary>
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MsgGameInit : pb::IMessage<MsgGameInit>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -3376,7 +3639,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3434,7 +3701,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3488,9 +3759,6 @@ namespace Panoptes.Protocol.V1 {
 
   }
 
-  /// <summary>
-  /// 游戏结束
-  /// </summary>
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MsgGameOver : pb::IMessage<MsgGameOver>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -3554,7 +3822,7 @@ namespace Panoptes.Protocol.V1 {
     public const int ReasonFieldNumber = 2;
     private string reason_ = "";
     /// <summary>
-    /// "castle_destroyed|timeout_draw"
+    /// "city_core_destroyed|timeout_draw"
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -3568,9 +3836,6 @@ namespace Panoptes.Protocol.V1 {
     /// <summary>Field number for the "narrative" field.</summary>
     public const int NarrativeFieldNumber = 3;
     private string narrative_ = "";
-    /// <summary>
-    /// LLM生成的本局历史总结
-    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Narrative {
@@ -3711,7 +3976,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3738,7 +4007,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

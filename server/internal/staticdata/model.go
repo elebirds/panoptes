@@ -27,6 +27,18 @@ type ResourceDescriptor struct {
 	Tags         []string `json:"tags,omitempty"`
 }
 
+type PointAmounts map[string]int
+
+type PointDescriptor struct {
+	Key          string   `json:"key"`
+	DisplayName  string   `json:"display_name"`
+	Description  string   `json:"description"`
+	IconKey      string   `json:"icon_key"`
+	SortOrder    int      `json:"sort_order"`
+	VisibleInHUD bool     `json:"visible_in_hud"`
+	Tags         []string `json:"tags,omitempty"`
+}
+
 type UnitFlags struct {
 	CanSiege          bool    `json:"can_siege"`
 	SiegeMultiplier   float64 `json:"siege_multiplier,omitempty"`
@@ -60,127 +72,128 @@ type UnitDefinition struct {
 type ModifierTrigger string
 
 const (
-	ModifierTriggerBuildingBuildCost   ModifierTrigger = "building.build_cost"
-	ModifierTriggerRecipeInput         ModifierTrigger = "recipe.input"
-	ModifierTriggerRecipeOutput        ModifierTrigger = "recipe.output"
-	ModifierTriggerRecipeDuration      ModifierTrigger = "recipe.duration"
-	ModifierTriggerRecipeDelayPenalty  ModifierTrigger = "recipe.delay_penalty"
-	ModifierTriggerUnitAttack          ModifierTrigger = "unit.attack"
-	ModifierTriggerUnitMoveRange       ModifierTrigger = "unit.move_range"
-	ModifierTriggerUnitSiegeMultiplier ModifierTrigger = "unit.siege_multiplier"
-	ModifierTriggerUnitDestroyMult     ModifierTrigger = "unit.destroy_multiplier"
-	ModifierTriggerPlayerTechIncome    ModifierTrigger = "player.tech_point_income"
-	ModifierTriggerPlayerTechCap       ModifierTrigger = "player.tech_point_cap"
+	ModifierTriggerBuildingResourceCost ModifierTrigger = "building.resource_cost"
+	ModifierTriggerBuildingPointCost    ModifierTrigger = "building.point_cost"
+	ModifierTriggerBuildingMaxHP        ModifierTrigger = "building.max_hp"
+	ModifierTriggerRecipeResourceInput  ModifierTrigger = "recipe.resource_input"
+	ModifierTriggerRecipePointInput     ModifierTrigger = "recipe.point_input"
+	ModifierTriggerRecipeResourceOutput ModifierTrigger = "recipe.resource_output"
+	ModifierTriggerRecipeWorkAmount     ModifierTrigger = "recipe.work_amount"
+	ModifierTriggerRecipeBaseProgress   ModifierTrigger = "recipe.base_progress"
+	ModifierTriggerUnitAttack           ModifierTrigger = "unit.attack"
+	ModifierTriggerUnitMoveRange        ModifierTrigger = "unit.move_range"
+	ModifierTriggerUnitSiegeMultiplier  ModifierTrigger = "unit.siege_multiplier"
+	ModifierTriggerPointOutput          ModifierTrigger = "point.output"
 )
 
 func AllowedModifierTriggers() []string {
 	return []string{
-		string(ModifierTriggerBuildingBuildCost),
-		string(ModifierTriggerRecipeInput),
-		string(ModifierTriggerRecipeOutput),
-		string(ModifierTriggerRecipeDuration),
-		string(ModifierTriggerRecipeDelayPenalty),
+		string(ModifierTriggerBuildingResourceCost),
+		string(ModifierTriggerBuildingPointCost),
+		string(ModifierTriggerBuildingMaxHP),
+		string(ModifierTriggerRecipeResourceInput),
+		string(ModifierTriggerRecipePointInput),
+		string(ModifierTriggerRecipeResourceOutput),
+		string(ModifierTriggerRecipeWorkAmount),
+		string(ModifierTriggerRecipeBaseProgress),
 		string(ModifierTriggerUnitAttack),
 		string(ModifierTriggerUnitMoveRange),
 		string(ModifierTriggerUnitSiegeMultiplier),
-		string(ModifierTriggerUnitDestroyMult),
-		string(ModifierTriggerPlayerTechIncome),
-		string(ModifierTriggerPlayerTechCap),
+		string(ModifierTriggerPointOutput),
 	}
 }
 
-type BuildingProduction struct {
-	Input      ResourceAmounts `json:"input"`
-	Output     ResourceAmounts `json:"output"`
-	CycleTurns int             `json:"cycle_turns"`
-}
-
-type TechnologyPrerequisite struct {
+type Prerequisite struct {
 	Type     string `json:"type"`
 	TargetID string `json:"target_id"`
 }
 
-type TechnologyEffect struct {
+type ExplicitEffect struct {
 	Type           string          `json:"type"`
 	TargetID       string          `json:"target_id,omitempty"`
-	Trigger        string          `json:"trigger,omitempty"`
 	ResourceKey    string          `json:"resource_key,omitempty"`
-	ModifierType   string          `json:"modifier_type,omitempty"`
-	Value          float64         `json:"value,omitempty"`
+	PointKey       string          `json:"point_key,omitempty"`
 	GrantResources ResourceAmounts `json:"grant_resources,omitempty"`
 	GrantUnits     []string        `json:"grant_units,omitempty"`
 }
 
-type RecipeDelayPenalty struct {
-	Mode  string `json:"mode"`
-	Value int    `json:"value"`
+type ModifierEffect struct {
+	Trigger      string  `json:"trigger"`
+	TargetID     string  `json:"target_id,omitempty"`
+	ResourceKey  string  `json:"resource_key,omitempty"`
+	PointKey     string  `json:"point_key,omitempty"`
+	ModifierType string  `json:"modifier_type"`
+	Value        float64 `json:"value"`
 }
 
 type RecipeOutputs struct {
-	Resources ResourceAmounts `json:"resources,omitempty"`
-	Units     []string        `json:"units,omitempty"`
+	Resources     ResourceAmounts `json:"resources,omitempty"`
+	Units         []string        `json:"units,omitempty"`
+	PointProgress PointAmounts    `json:"point_progress,omitempty"`
+	StateChanges  map[string]int  `json:"state_changes,omitempty"`
 }
 
 type RecipeDefinition struct {
-	ID            string             `json:"id"`
-	Name          string             `json:"name"`
-	Description   string             `json:"description"`
-	IconKey       string             `json:"icon_key"`
-	BuildingID    string             `json:"building_id"`
-	Cost          ResourceAmounts    `json:"cost"`
-	DurationTurns int                `json:"duration_turns"`
-	DelayPenalty  RecipeDelayPenalty `json:"delay_penalty"`
-	Outputs       RecipeOutputs      `json:"outputs"`
-	SortOrder     int                `json:"sort_order"`
-	Tags          []string           `json:"tags,omitempty"`
+	ID             string          `json:"id"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description"`
+	IconKey        string          `json:"icon_key"`
+	BuildingID     string          `json:"building_id"`
+	ResourceInputs ResourceAmounts `json:"resource_inputs"`
+	PointInputs    PointAmounts    `json:"point_inputs"`
+	WorkAmount     int             `json:"work_amount"`
+	BaseProgress   int             `json:"base_progress"`
+	Outputs        RecipeOutputs   `json:"outputs"`
+	SortOrder      int             `json:"sort_order"`
+	Tags           []string        `json:"tags,omitempty"`
 }
 
 type TechnologyDefinition struct {
-	ID            string                   `json:"id"`
-	Name          string                   `json:"name"`
-	Description   string                   `json:"description"`
-	IconKey       string                   `json:"icon_key"`
-	Branch        string                   `json:"branch"`
-	Tier          int                      `json:"tier"`
-	TechPointCost int                      `json:"tech_point_cost"`
-	Prerequisites []TechnologyPrerequisite `json:"prerequisites"`
-	Effects       []TechnologyEffect       `json:"effects"`
-	SortOrder     int                      `json:"sort_order"`
-	Tags          []string                 `json:"tags,omitempty"`
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description"`
+	IconKey         string           `json:"icon_key"`
+	Branch          string           `json:"branch"`
+	Tier            int              `json:"tier"`
+	ResearchCost    int              `json:"research_cost"`
+	Prerequisites   []Prerequisite   `json:"prerequisites"`
+	ExplicitEffects []ExplicitEffect `json:"explicit_effects"`
+	ModifierEffects []ModifierEffect `json:"modifier_effects"`
+	SortOrder       int              `json:"sort_order"`
+	Tags            []string         `json:"tags,omitempty"`
 }
 
-type BuildingCombat struct {
-	MaxHP         int `json:"max_hp"`
-	AttackPerTurn int `json:"attack_per_turn"`
-	Range         int `json:"range"`
-	WallLevel     int `json:"wall_level"`
-	Towers        int `json:"towers"`
-}
-
-type BuildingLimits struct {
-	MaxPerNode   int `json:"max_per_node"`
-	MaxPerPlayer int `json:"max_per_player"`
+type PolicyDefinition struct {
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	Description      string           `json:"description"`
+	IconKey          string           `json:"icon_key"`
+	Layer            string           `json:"layer"`
+	ActivationTiming string           `json:"activation_timing"`
+	Prerequisites    []Prerequisite   `json:"prerequisites"`
+	ExplicitEffects  []ExplicitEffect `json:"explicit_effects"`
+	ModifierEffects  []ModifierEffect `json:"modifier_effects"`
+	SortOrder        int              `json:"sort_order"`
+	Tags             []string         `json:"tags,omitempty"`
 }
 
 type BuildingDefinition struct {
-	ID                   string             `json:"id"`
-	Name                 string             `json:"name"`
-	Description          string             `json:"description"`
-	IconKey              string             `json:"icon_key"`
-	PrefabKey            string             `json:"prefab_key"`
-	Category             string             `json:"category"`
-	PlacementRule        string             `json:"placement_rule"`
-	RequiredResourceType string             `json:"required_resource_type"`
-	BuildCost            ResourceAmounts    `json:"build_cost"`
-	Upkeep               ResourceAmounts    `json:"upkeep"`
-	Production           BuildingProduction `json:"production,omitempty"`
-	ProducesUnits        []string           `json:"produces_units,omitempty"`
-	RecipeIDs            []string           `json:"recipe_ids"`
-	DefaultRecipeID      string             `json:"default_recipe_id"`
-	Combat               BuildingCombat     `json:"combat"`
-	Limits               BuildingLimits     `json:"limits"`
-	SortOrder            int                `json:"sort_order"`
-	Tags                 []string           `json:"tags,omitempty"`
+	ID                   string          `json:"id"`
+	Name                 string          `json:"name"`
+	Description          string          `json:"description"`
+	IconKey              string          `json:"icon_key"`
+	PrefabKey            string          `json:"prefab_key"`
+	PlacementKind        string          `json:"placement_kind"`
+	BuildingScope        string          `json:"building_scope"`
+	RequiredResourceType string          `json:"required_resource_type"`
+	ResourceCosts        ResourceAmounts `json:"resource_costs"`
+	PointCosts           PointAmounts    `json:"point_costs"`
+	RecipeIDs            []string        `json:"recipe_ids"`
+	DefaultRecipeID      string          `json:"default_recipe_id"`
+	MaxHP                int             `json:"max_hp"`
+	TakeoverMode         string          `json:"takeover_mode"`
+	SortOrder            int             `json:"sort_order"`
+	Tags                 []string        `json:"tags,omitempty"`
 }
 
 type TerrainDefinition struct {
@@ -201,18 +214,17 @@ type TerrainDefinition struct {
 }
 
 type Rules struct {
-	TurnTimeLimitPlanning   int `json:"turn_time_limit_planning"`
-	TokensPerTurn           int `json:"tokens_per_turn"`
-	TokensRecuperationBonus int `json:"tokens_recuperation_bonus"`
-	MaxTurns                int `json:"max_turns"`
-	CastleBaseHP            int `json:"castle_base_hp"`
-	SafeZoneRadius          int `json:"safe_zone_radius"`
-	OccupyTurns             int `json:"occupy_turns"`
-	StartingTechPoints      int `json:"starting_tech_points"`
-	TechPointsPerTurn       int `json:"tech_points_per_turn"`
-	TechPointsMax           int `json:"tech_points_max"`
-	BuildPointsPerTurn      int `json:"build_points_per_turn"`
-	BuildPointsMax          int `json:"build_points_max"`
+	TurnTimeLimitPlanning      int `json:"turn_time_limit_planning"`
+	TokensPerTurn              int `json:"tokens_per_turn"`
+	BonusTokensPerTurn         int `json:"bonus_tokens_per_turn"`
+	MaxTurns                   int `json:"max_turns"`
+	CityCoreMaxHP              int `json:"city_core_max_hp"`
+	SafeZoneRadius             int `json:"safe_zone_radius"`
+	FacilityTakeoverTurns      int `json:"facility_takeover_turns"`
+	BaseResearchOutputPerTurn  int `json:"base_research_output_per_turn"`
+	BaseIndustryOutputPerTurn  int `json:"base_industry_output_per_turn"`
+	MinimumCityDistance        int `json:"minimum_city_distance"`
+	InitialCityTerritoryRadius int `json:"initial_city_territory_radius"`
 }
 
 type Minister struct {
@@ -373,9 +385,11 @@ type MapCatalogEntry struct {
 type CatalogBundle struct {
 	Manifest     Manifest               `json:"manifest"`
 	Resources    []ResourceDescriptor   `json:"resources"`
+	Points       []PointDescriptor      `json:"points"`
 	Units        []UnitDefinition       `json:"units"`
 	Buildings    []BuildingDefinition   `json:"buildings"`
 	Technologies []TechnologyDefinition `json:"technologies"`
+	Policies     []PolicyDefinition     `json:"policies"`
 	Recipes      []RecipeDefinition     `json:"recipes"`
 	Terrains     []TerrainDefinition    `json:"terrains"`
 	Rules        Rules                  `json:"rules"`
@@ -392,6 +406,17 @@ type ResourceCatalogUIFile struct {
 		SortOrder   int      `json:"sort_order"`
 		Tags        []string `json:"tags"`
 	} `json:"resources"`
+}
+
+type PointCatalogUIFile struct {
+	Points []struct {
+		ID          string   `json:"id"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		IconKey     string   `json:"icon_key"`
+		SortOrder   int      `json:"sort_order"`
+		Tags        []string `json:"tags"`
+	} `json:"points"`
 }
 
 type UnitCatalogUIFile struct {
@@ -439,6 +464,17 @@ type TechnologyCatalogUIFile struct {
 		SortOrder   int      `json:"sort_order"`
 		Tags        []string `json:"tags"`
 	} `json:"technologies"`
+}
+
+type PolicyCatalogUIFile struct {
+	Policies []struct {
+		ID          string   `json:"id"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		IconKey     string   `json:"icon_key"`
+		SortOrder   int      `json:"sort_order"`
+		Tags        []string `json:"tags"`
+	} `json:"policies"`
 }
 
 type RecipeCatalogUIFile struct {

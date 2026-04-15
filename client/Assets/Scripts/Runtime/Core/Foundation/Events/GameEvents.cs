@@ -39,7 +39,7 @@ namespace Panoptes.Core.Events
         public List<UnitDto> Moved;
     }
 
-    public class CastleHPChangedEvent
+    public class CityCoreHpChangedEvent
     {
         public int MyHP;
         public int MyMaxHP;
@@ -56,7 +56,7 @@ namespace Panoptes.Core.Events
         public List<string> BuiltNodeIDs;
         public List<string> MovedUnitIDs;
         public List<string> DeadUnitIDs;
-        public bool CastleDamaged;
+        public bool CityCoreDamaged;
     }
 
     public class MinisterChunkEvent

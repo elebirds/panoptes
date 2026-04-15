@@ -53,8 +53,6 @@ func (t *asyncCaptureTransport) snapshot(playerID string) []proto.Message {
 }
 
 func TestPreparedRoomStartUsesProvidedStateAndSendsInitSequence(t *testing.T) {
-	t.Parallel()
-
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{
 			SchemaVersion:  "2026-04-15",
@@ -64,13 +62,17 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsInitSequence(t *testing.T) {
 			DefaultMapID:   "prepared_map",
 		},
 		Rules: staticdata.Rules{
-			TurnTimeLimitPlanning: 1,
-			TokensPerTurn:         3,
-			BuildPointsPerTurn:    10,
-			CastleBaseHP:          100,
-			StartingTechPoints:    0,
-			TechPointsPerTurn:     1,
-			TechPointsMax:         10,
+			TurnTimeLimitPlanning:      1,
+			TokensPerTurn:              3,
+			BonusTokensPerTurn:         0,
+			MaxTurns:                   10,
+			CityCoreMaxHP:              100,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
 		},
 	}, &staticdata.MapRuntimeBundle{
 		ID:     "prepared_map",

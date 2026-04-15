@@ -19,6 +19,8 @@ namespace Panoptes.Core.Application.Cache
 {
     public class GameStateCache : MonoBehaviour
     {
+        private const string IndustryOutputPointKey = "industry_output";
+
         public static GameStateCache Instance { get; private set; }
 
         public string GameID { get; private set; }
@@ -35,8 +37,8 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, UnitDto> _units = new();
         public IReadOnlyDictionary<string, UnitDto> Units => _units;
 
-        private readonly Dictionary<string, List<CastleBuiltBuildingDto>> _castleBuiltBuildings = new();
-        private readonly Dictionary<string, ResourceDto> _castleResources = new();
+        private readonly Dictionary<string, List<CityBuiltBuildingDto>> _cityBuiltBuildings = new();
+        private readonly Dictionary<string, ResourceDto> _cityResources = new();
 
         public PlayerView MyPlayer { get; private set; }
 
@@ -44,8 +46,8 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyList<MinisterView> Ministers => _ministers;
 
         public int TokensLeft { get; private set; }
-        public int EnemyCastleHP { get; private set; }
-        public int EnemyMaxCastleHP { get; private set; }
+        public int EnemyCityCoreHP { get; private set; }
+        public int EnemyMaxCityCoreHP { get; private set; }
 
         public event Action OnStateChanged;
         public event Action<PhaseChangedEvent> OnPhaseChanged;
@@ -53,7 +55,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<TokensChangedEvent> OnTokensChanged;
         public event Action<NodeChangedEvent> OnNodeChanged;
         public event Action<UnitsChangedEvent> OnUnitsChanged;
-        public event Action<CastleHPChangedEvent> OnCastleHPChanged;
+        public event Action<CityCoreHpChangedEvent> OnCityCoreHPChanged;
         public event Action<TurnSettledEvent> OnTurnSettled;
         public event Action<MinisterChunkEvent> OnMinisterChunk;
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
@@ -116,14 +118,14 @@ namespace Panoptes.Core.Application.Cache
                 }
             }
 
-            _castleBuiltBuildings.Clear();
-            SeedCastleResourcesFromCurrentState();
-            SynchronizeCastleState();
+            _cityBuiltBuildings.Clear();
+            SeedCityResourcesFromCurrentState();
+            SynchronizeCityCoreState();
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
-                Resources = SnapshotResources(MyPlayer?.Resources),
+                Resources = SnapshotResources(MyPlayer),
                 Delta = new ResourceDto()
             }, nameof(OnResourcesChanged));
             Fire(OnTokensChanged, new TokensChangedEvent
@@ -147,15 +149,15 @@ namespace Panoptes.Core.Application.Cache
                 }, nameof(OnNodeChanged));
             }
 
-            Fire(OnCastleHPChanged, new CastleHPChangedEvent
+            Fire(OnCityCoreHPChanged, new CityCoreHpChangedEvent
             {
-                MyHP = MyPlayer != null ? MyPlayer.MainCastleHp : 0,
-                MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
-                EnemyHP = EnemyCastleHP,
-                EnemyMaxHP = EnemyMaxCastleHP,
+                MyHP = MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0,
+                MyMaxHP = MyPlayer != null ? MyPlayer.CapitalCityCoreMaxHp : 0,
+                EnemyHP = EnemyCityCoreHP,
+                EnemyMaxHP = EnemyMaxCityCoreHP,
                 MyDelta = 0,
                 EnemyDelta = 0
-            }, nameof(OnCastleHPChanged));
+            }, nameof(OnCityCoreHPChanged));
 
             OnStateChanged?.Invoke();
         }
@@ -206,9 +208,9 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
-            var resourcesBefore = SnapshotResources(MyPlayer?.Resources);
-            var myHpBefore = MyPlayer != null ? MyPlayer.MainCastleHp : 0;
-            var enemyHpBefore = EnemyCastleHP;
+            var resourcesBefore = SnapshotResources(MyPlayer);
+            var myHpBefore = MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0;
+            var enemyHpBefore = EnemyCityCoreHP;
             var oldUnits = CloneUnitMap(_units);
 
             Turn = msg.Turn > 0 ? msg.Turn : Turn;
@@ -223,31 +225,31 @@ namespace Panoptes.Core.Application.Cache
             }
 
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
-            SeedCastleResourcesFromCurrentState();
-            SynchronizeCastleState();
+            SeedCityResourcesFromCurrentState();
+            SynchronizeCityCoreState();
 
-            var resourcesAfter = SnapshotResources(MyPlayer?.Resources);
+            var resourcesAfter = SnapshotResources(MyPlayer);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
                 Resources = resourcesAfter,
                 Delta = ComputeResourceDelta(resourcesBefore, resourcesAfter)
             }, nameof(OnResourcesChanged));
 
-            if (myHpBefore != (MyPlayer != null ? MyPlayer.MainCastleHp : 0) || enemyHpBefore != EnemyCastleHP)
+            if (myHpBefore != (MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0) || enemyHpBefore != EnemyCityCoreHP)
             {
-                Fire(OnCastleHPChanged, new CastleHPChangedEvent
+                Fire(OnCityCoreHPChanged, new CityCoreHpChangedEvent
                 {
-                    MyHP = MyPlayer != null ? MyPlayer.MainCastleHp : 0,
-                    MyMaxHP = MyPlayer != null ? MyPlayer.MaxCastleHp : 0,
-                    EnemyHP = EnemyCastleHP,
-                    EnemyMaxHP = EnemyMaxCastleHP,
-                    MyDelta = (MyPlayer != null ? MyPlayer.MainCastleHp : 0) - myHpBefore,
-                    EnemyDelta = EnemyCastleHP - enemyHpBefore
-                }, nameof(OnCastleHPChanged));
+                    MyHP = MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0,
+                    MyMaxHP = MyPlayer != null ? MyPlayer.CapitalCityCoreMaxHp : 0,
+                    EnemyHP = EnemyCityCoreHP,
+                    EnemyMaxHP = EnemyMaxCityCoreHP,
+                    MyDelta = (MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0) - myHpBefore,
+                    EnemyDelta = EnemyCityCoreHP - enemyHpBefore
+                }, nameof(OnCityCoreHPChanged));
             }
 
             var settlement = SettlementMapper.ToDto(msg);
-            TrackCastleBuiltBuildings(settlement);
+            TrackCityBuiltBuildings(settlement);
             PlanningDraftCache.Instance?.ClearAll();
 
             Fire(OnTurnSettled, new TurnSettledEvent
@@ -257,7 +259,7 @@ namespace Panoptes.Core.Application.Cache
                 BuiltNodeIDs = settlement?.BuiltNodeIDs ?? new List<string>(),
                 MovedUnitIDs = settlement?.MovedUnitIDs ?? unitChanges.Moved.Select(unit => unit.Id).ToList(),
                 DeadUnitIDs = settlement?.DeadUnitIDs ?? unitChanges.RemovedIDs,
-                CastleDamaged = settlement != null && settlement.CastleDamaged
+                CityCoreDamaged = settlement != null && settlement.CityCoreDamaged
             }, nameof(OnTurnSettled));
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, msg.NextPhase ?? string.Empty);
@@ -333,33 +335,57 @@ namespace Panoptes.Core.Application.Cache
             return unit;
         }
 
-        public IReadOnlyList<CastleBuiltBuildingDto> GetBuildingsBuiltByCastle(string castleId)
+        public IReadOnlyList<CityBuiltBuildingDto> GetBuildingsBuiltByCity(string cityId)
         {
-            if (string.IsNullOrWhiteSpace(castleId))
+            if (string.IsNullOrWhiteSpace(cityId))
             {
-                return Array.Empty<CastleBuiltBuildingDto>();
+                return Array.Empty<CityBuiltBuildingDto>();
             }
 
-            return _castleBuiltBuildings.TryGetValue(castleId.Trim(), out var buildings)
+            return _cityBuiltBuildings.TryGetValue(cityId.Trim(), out var buildings)
                 ? buildings
-                : Array.Empty<CastleBuiltBuildingDto>();
+                : Array.Empty<CityBuiltBuildingDto>();
         }
 
-        public ResourceDto GetCastleResources(string castleId)
+        public ResourceDto GetCityResources(string cityId)
         {
-            if (string.IsNullOrWhiteSpace(castleId))
+            if (string.IsNullOrWhiteSpace(cityId))
             {
                 return new ResourceDto();
             }
 
-            return _castleResources.TryGetValue(castleId.Trim(), out var resources) && resources != null
+            return _cityResources.TryGetValue(cityId.Trim(), out var resources) && resources != null
                 ? CloneResources(resources)
                 : new ResourceDto();
         }
 
         public ResourceDto GetMyResources()
         {
-            return SnapshotResources(MyPlayer?.Resources);
+            return SnapshotResources(MyPlayer);
+        }
+
+        public void UpdateActiveNationalPolicy(string nationalPolicyId)
+        {
+            if (MyPlayer == null)
+            {
+                return;
+            }
+
+            MyPlayer.ActiveNationalPolicyId = nationalPolicyId ?? string.Empty;
+            OnStateChanged?.Invoke();
+        }
+
+        public void UpdateResearchTarget(string technologyId, int requiredProgress)
+        {
+            if (MyPlayer == null)
+            {
+                return;
+            }
+
+            MyPlayer.Research ??= new ResearchStateView();
+            MyPlayer.Research.CurrentTargetTechnologyId = technologyId ?? string.Empty;
+            MyPlayer.Research.RequiredProgress = requiredProgress;
+            OnStateChanged?.Invoke();
         }
 
         public void UpsertRuntimeUnit(UnitDto unit)
@@ -393,13 +419,13 @@ namespace Panoptes.Core.Application.Cache
             IsGameOver = false;
             _nodes.Clear();
             _units.Clear();
-            _castleBuiltBuildings.Clear();
-            _castleResources.Clear();
+            _cityBuiltBuildings.Clear();
+            _cityResources.Clear();
             _ministers.Clear();
             MyPlayer = null;
             TokensLeft = 0;
-            EnemyCastleHP = 0;
-            EnemyMaxCastleHP = 0;
+            EnemyCityCoreHP = 0;
+            EnemyMaxCityCoreHP = 0;
             PlanningDraftCache.Instance?.ClearAll();
             OnStateChanged?.Invoke();
         }
@@ -502,7 +528,7 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
-        private void TrackCastleBuiltBuildings(TurnSettlementDto settlement)
+        private void TrackCityBuiltBuildings(TurnSettlementDto settlement)
         {
             if (settlement?.BuiltBuildings == null || settlement.BuiltBuildings.Count == 0)
             {
@@ -512,19 +538,19 @@ namespace Panoptes.Core.Application.Cache
             for (var i = 0; i < settlement.BuiltBuildings.Count; i++)
             {
                 var built = settlement.BuiltBuildings[i];
-                if (built == null || string.IsNullOrWhiteSpace(built.CastleId) || string.IsNullOrWhiteSpace(built.BuildingType))
+                if (built == null || string.IsNullOrWhiteSpace(built.CityId) || string.IsNullOrWhiteSpace(built.BuildingType))
                 {
                     continue;
                 }
 
-                var castleId = built.CastleId.Trim();
-                if (!_castleBuiltBuildings.TryGetValue(castleId, out var buildings))
+                var cityId = built.CityId.Trim();
+                if (!_cityBuiltBuildings.TryGetValue(cityId, out var buildings))
                 {
-                    buildings = new List<CastleBuiltBuildingDto>();
-                    _castleBuiltBuildings[castleId] = buildings;
+                    buildings = new List<CityBuiltBuildingDto>();
+                    _cityBuiltBuildings[cityId] = buildings;
                 }
 
-                var record = new CastleBuiltBuildingDto
+                var record = new CityBuiltBuildingDto
                 {
                     NodeId = built.NodeId?.Trim() ?? string.Empty,
                     BuildingType = built.BuildingType.Trim(),
@@ -544,40 +570,40 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
-        private void SeedCastleResourcesFromCurrentState()
+        private void SeedCityResourcesFromCurrentState()
         {
-            _castleResources.Clear();
+            _cityResources.Clear();
             var playerId = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
             if (string.IsNullOrWhiteSpace(playerId))
             {
                 return;
             }
 
-            var ownedCastleIds = _nodes.Values
+            var ownedCityIds = _nodes.Values
                 .Where(node => node != null &&
-                               string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase) &&
+                               string.Equals((node.BuildingType ?? string.Empty).Trim(), "city_core", StringComparison.OrdinalIgnoreCase) &&
                                string.Equals(NormalizePlayerId(node.Owner, node.TerritoryOwner), playerId, StringComparison.Ordinal))
                 .Select(node => node.Id)
                 .OrderBy(id => id, StringComparer.Ordinal)
                 .ToList();
 
-            for (var i = 0; i < ownedCastleIds.Count; i++)
+            for (var i = 0; i < ownedCityIds.Count; i++)
             {
-                _castleResources[ownedCastleIds[i]] = i == 0
-                    ? SnapshotResources(MyPlayer?.Resources)
+                _cityResources[ownedCityIds[i]] = i == 0
+                    ? SnapshotResources(MyPlayer)
                     : new ResourceDto();
             }
         }
 
-        private void SynchronizeCastleState()
+        private void SynchronizeCityCoreState()
         {
             var playerId = NormalizePlayerId(MyPlayerID, MyPlayer != null ? MyPlayer.Id : string.Empty);
-            EnemyCastleHP = 0;
-            EnemyMaxCastleHP = 0;
+            EnemyCityCoreHP = 0;
+            EnemyMaxCityCoreHP = 0;
 
             foreach (var node in _nodes.Values)
             {
-                if (node == null || !string.Equals((node.BuildingType ?? string.Empty).Trim(), "castle", StringComparison.OrdinalIgnoreCase))
+                if (node == null || !string.Equals((node.BuildingType ?? string.Empty).Trim(), "city_core", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -587,18 +613,18 @@ namespace Panoptes.Core.Application.Cache
                 {
                     if (MyPlayer != null)
                     {
-                        MyPlayer.MainCastleHp = node.BuildingHp;
-                        if (MyPlayer.MaxCastleHp < node.BuildingHp)
+                        MyPlayer.CapitalCityCoreHp = node.BuildingHp;
+                        if (MyPlayer.CapitalCityCoreMaxHp < node.BuildingHp)
                         {
-                            MyPlayer.MaxCastleHp = node.BuildingHp;
+                            MyPlayer.CapitalCityCoreMaxHp = node.BuildingHp;
                         }
                     }
 
                     continue;
                 }
 
-                EnemyCastleHP = Math.Max(EnemyCastleHP, node.BuildingHp);
-                EnemyMaxCastleHP = Math.Max(EnemyMaxCastleHP, node.BuildingHp);
+                EnemyCityCoreHP = Math.Max(EnemyCityCoreHP, node.BuildingHp);
+                EnemyMaxCityCoreHP = Math.Max(EnemyMaxCityCoreHP, node.BuildingHp);
             }
         }
 
@@ -715,17 +741,21 @@ namespace Panoptes.Core.Application.Cache
                 Ore = after.Ore - before.Ore,
                 Wood = after.Wood - before.Wood,
                 Food = after.Food - before.Food,
-                RefinedOre = after.RefinedOre - before.RefinedOre,
-                EngineerMaterial = after.EngineerMaterial - before.EngineerMaterial,
-                BuildPoints = after.BuildPoints - before.BuildPoints
+                IndustryOutput = after.IndustryOutput - before.IndustryOutput
             };
         }
 
-        private static ResourceDto SnapshotResources(ResourceBag bag)
+        private static ResourceDto SnapshotResources(PlayerView player)
+        {
+            return SnapshotResources(player?.Resources, player?.Points);
+        }
+
+        private static ResourceDto SnapshotResources(ResourceBag bag, PointBag points)
         {
             var resources = new ResourceDto();
             if (bag == null || bag.Items == null)
             {
+                resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
                 return resources;
             }
 
@@ -748,18 +778,10 @@ namespace Panoptes.Core.Application.Cache
                     case ResourceKeys.ResourceFood:
                         resources.Food = item.Amount;
                         break;
-                    case ResourceKeys.ResourceRefinedOre:
-                        resources.RefinedOre = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceEngineerMaterial:
-                        resources.EngineerMaterial = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceBuildPoints:
-                        resources.BuildPoints = item.Amount;
-                        break;
                 }
             }
 
+            resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
             return resources;
         }
 
@@ -775,9 +797,7 @@ namespace Panoptes.Core.Application.Cache
                 Ore = source.Ore,
                 Wood = source.Wood,
                 Food = source.Food,
-                RefinedOre = source.RefinedOre,
-                EngineerMaterial = source.EngineerMaterial,
-                BuildPoints = source.BuildPoints
+                IndustryOutput = source.IndustryOutput
             };
         }
 
@@ -792,6 +812,30 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Empty;
+        }
+
+        private static int FindPointAmount(PointBag bag, string key)
+        {
+            if (bag == null || bag.Items == null || string.IsNullOrWhiteSpace(key))
+            {
+                return 0;
+            }
+
+            for (var i = 0; i < bag.Items.Count; i++)
+            {
+                var item = bag.Items[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return item.Amount;
+                }
+            }
+
+            return 0;
         }
     }
 }

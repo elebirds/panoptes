@@ -18,20 +18,23 @@ import (
 func TestSnapshotPhaseAppliesUnitAttackModifier(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Units: []staticdata.UnitDefinition{
-			{ID: "warrior", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
 		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{
-				ID: "weapon_mastery", Branch: "military", Tier: 1, TechPointCost: 1,
-				Effects: []staticdata.TechnologyEffect{
-					{Type: "modifier", Trigger: "unit.attack", TargetID: "warrior", ModifierType: "flat", Value: 3},
+				ID:           "weapon_mastery",
+				Branch:       "military",
+				Tier:         1,
+				ResearchCost: 1,
+				ModifierEffects: []staticdata.ModifierEffect{
+					{Trigger: "unit.attack", TargetID: "infantry", ModifierType: "flat", Value: 3},
 				},
 			},
 		},
 	}))
 
 	world := donburi.NewWorld()
-	entity := ecs.CreateUnit(world, "warrior", "player-1", domain.Position{X: 0, Y: 0})
+	entity := ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0})
 	entry := world.Entry(entity)
 	unitID := ecs.UnitStatsC.Get(entry).ID
 

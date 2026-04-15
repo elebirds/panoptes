@@ -40,6 +40,20 @@ func (e RecipeSelectionChangedEvent) String() string {
 	return fmt.Sprintf("RecipeSelectionChangedEvent node=%s recipe=%s", e.NodeID, e.RecipeID)
 }
 
+type BuildingStatusChangedEvent struct {
+	NodeID string
+	Status string
+	Reason string
+}
+
+func (e BuildingStatusChangedEvent) Apply(donburi.World, *domain.GameState) {}
+
+func (e BuildingStatusChangedEvent) Kind() string { return "building_status_changed" }
+
+func (e BuildingStatusChangedEvent) String() string {
+	return fmt.Sprintf("BuildingStatusChangedEvent node=%s status=%s reason=%s", e.NodeID, e.Status, e.Reason)
+}
+
 type RecipeDelayedEvent struct {
 	NodeID        string
 	DelayTurns    int
@@ -94,7 +108,7 @@ func (e RecipeProgressedEvent) String() string {
 type RecipeCompletedEvent struct {
 	NodeID        string
 	Owner         string
-	CastleID      string
+	CityID        string
 	RequiredTurns int
 	Cost          domain.ResourceBag
 	Resources     domain.ResourceBag
@@ -113,10 +127,10 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 	}
 	// 配方完成时才统一扣输入、发输出，避免“进度走了一半先扣料”带来额外回滚问题。
 	if e.Cost != nil {
-		state.ConsumeResources(e.Owner, e.CastleID, e.Cost)
+		state.ConsumeResources(e.Owner, e.CityID, e.Cost)
 	}
 	for _, key := range e.Resources.Keys() {
-		state.AddResourceToCastle(e.Owner, e.CastleID, key, e.Resources.Get(key))
+		state.AddResourceToCity(e.Owner, e.CityID, key, e.Resources.Get(key))
 	}
 	if len(e.Units) == 0 || !ok {
 		return

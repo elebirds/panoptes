@@ -19,7 +19,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             var builtBuildings = new List<BuiltStructureDto>();
             var movedUnitIds = new List<string>();
             var deadUnitIds = new List<string>();
-            var castleDamaged = false;
+            var cityCoreDamaged = false;
 
             for (var sectionIndex = 0; sectionIndex < msg.Sections.Count; sectionIndex++)
             {
@@ -44,6 +44,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                     switch (evt.Type)
                     {
                         case "building_built":
+                        case "city_founded":
                             if (!string.IsNullOrWhiteSpace(evt.NodeId))
                             {
                                 builtNodeIds.Add(evt.NodeId);
@@ -52,9 +53,9 @@ namespace Panoptes.Core.Infrastructure.Mapper
                             builtBuildings.Add(new BuiltStructureDto
                             {
                                 NodeId = evt.NodeId,
-                                BuildingType = ReadString(evt.Data, "building_type"),
-                                OwnerId = ReadString(evt.Data, "owner"),
-                                CastleId = ReadString(evt.Data, "castle_id"),
+                                BuildingType = ReadString(evt.Data, "building_type_id", "building_type"),
+                                OwnerId = ReadString(evt.Data, "controller_player_id", "owner"),
+                                CityId = ReadString(evt.Data, "city_id"),
                                 BuildingHp = ReadInt(evt.Data, 100, "building_hp", "hp_after", "hp")
                             });
                             break;
@@ -70,8 +71,9 @@ namespace Panoptes.Core.Infrastructure.Mapper
                                 deadUnitIds.Add(evt.UnitId);
                             }
                             break;
-                        case "castle_damaged":
-                            castleDamaged = true;
+                        case "city_core_damaged":
+                        case "city_core_destroyed":
+                            cityCoreDamaged = true;
                             break;
                     }
                 }
@@ -92,7 +94,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 BuiltBuildings = builtBuildings,
                 MovedUnitIDs = movedUnitIds.Distinct().ToList(),
                 DeadUnitIDs = deadUnitIds.Distinct().ToList(),
-                CastleDamaged = castleDamaged
+                CityCoreDamaged = cityCoreDamaged
             };
         }
 

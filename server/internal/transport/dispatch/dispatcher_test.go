@@ -71,7 +71,7 @@ func TestDispatcherRoutesPlanningSetPolicy(t *testing.T) {
 				Body: &pb.GameCommand_Planning{
 					Planning: &pb.PlanningCommand{
 						Body: &pb.PlanningCommand_SetPolicy{
-							SetPolicy: &pb.MsgSetPolicy{Policy: "growth"},
+							SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
 						},
 					},
 				},
@@ -88,8 +88,8 @@ func TestDispatcherRoutesPlanningSetPolicy(t *testing.T) {
 	if !ok {
 		t.Fatalf("planning body type = %T", gameHandler.planning.Body)
 	}
-	if body.SetPolicy.GetPolicy() != "growth" {
-		t.Fatalf("set_policy.policy = %q", body.SetPolicy.GetPolicy())
+	if body.SetPolicy.GetNationalPolicyId() != "expansion" {
+		t.Fatalf("set_policy.national_policy_id = %q", body.SetPolicy.GetNationalPolicyId())
 	}
 }
 

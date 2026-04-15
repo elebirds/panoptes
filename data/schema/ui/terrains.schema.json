@@ -1,7 +1,11 @@
 {
+  "$id": "ui/terrains.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "terrains": {
       "items": {
         "additionalProperties": false,

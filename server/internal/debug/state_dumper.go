@@ -23,21 +23,22 @@ type StateSummary struct {
 }
 
 type PlayerSummary struct {
-	Username              string         `json:"username"`
-	Resources             map[string]int `json:"resources"`
-	TokensLeft            int            `json:"tokens_left"`
-	MainCastleHP          int            `json:"main_castle_hp"`
-	TechPoints            int            `json:"tech_points"`
-	UnlockedTechnologyIDs []string       `json:"unlocked_technology_ids"`
-	UnlockedBuildingIDs   []string       `json:"unlocked_building_ids"`
-	UnlockedRecipeIDs     []string       `json:"unlocked_recipe_ids"`
+	Username                  string         `json:"username"`
+	Resources                 map[string]int `json:"resources"`
+	TokensLeft                int            `json:"tokens_left"`
+	CapitalCityCoreHP         int            `json:"capital_city_core_hp"`
+	CurrentResearchProgress   int            `json:"current_research_progress"`
+	CurrentTargetTechnologyID string         `json:"current_target_technology_id,omitempty"`
+	CompletedTechnologyIDs    []string       `json:"completed_technology_ids"`
+	UnlockedBuildingIDs       []string       `json:"unlocked_building_ids"`
+	UnlockedRecipeIDs         []string       `json:"unlocked_recipe_ids"`
 }
 
 type BuildingSummary struct {
 	NodeID         string `json:"node_id"`
 	Type           string `json:"type"`
 	Owner          string `json:"owner"`
-	CastleID       string `json:"castle_id,omitempty"`
+	CityID         string `json:"city_id,omitempty"`
 	HP             int    `json:"hp"`
 	MaxHP          int    `json:"max_hp"`
 	Disabled       bool   `json:"disabled"`
@@ -80,14 +81,15 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			continue
 		}
 		summary.Players[playerID] = PlayerSummary{
-			Username:              player.Username,
-			Resources:             resourceMap(player.Resources),
-			TokensLeft:            player.TokensLeft,
-			MainCastleHP:          player.MainCastleHP,
-			TechPoints:            player.Research.TechPoints,
-			UnlockedTechnologyIDs: sortedSetKeys(player.Research.UnlockedTechnologies),
-			UnlockedBuildingIDs:   sortedSetKeys(player.Research.UnlockedBuildings),
-			UnlockedRecipeIDs:     sortedSetKeys(player.Research.UnlockedRecipes),
+			Username:                  player.Username,
+			Resources:                 resourceMap(player.Resources),
+			TokensLeft:                player.TokensLeft,
+			CapitalCityCoreHP:         player.CapitalCityCoreHP,
+			CurrentResearchProgress:   player.Research.CurrentProgress,
+			CurrentTargetTechnologyID: player.Research.CurrentTargetTechnologyID,
+			CompletedTechnologyIDs:    sortedSetKeys(player.Research.UnlockedTechnologies),
+			UnlockedBuildingIDs:       sortedSetKeys(player.Research.UnlockedBuildings),
+			UnlockedRecipeIDs:         sortedSetKeys(player.Research.UnlockedRecipes),
 		}
 	}
 
@@ -102,12 +104,12 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 		node := ecs.NodeC.Get(entry)
 		building := ecs.BuildingC.Get(entry)
 		summary.Buildings[node.ID] = BuildingSummary{
-			NodeID:   node.ID,
-			Type:     string(building.Type),
-			Owner:    building.Owner,
-			CastleID: building.CastleID,
-			HP:       building.HP,
-			MaxHP:    building.MaxHP,
+			NodeID: node.ID,
+			Type:   string(building.Type),
+			Owner:  building.Owner,
+			CityID: building.CityID,
+			HP:     building.HP,
+			MaxHP:  building.MaxHP,
 		}
 		if entry.HasComponent(ecs.BuildingStateC) {
 			buildingState := ecs.BuildingStateC.Get(entry)
@@ -168,12 +170,13 @@ func formatPlayerSummary(players map[string]PlayerSummary) string {
 	for _, playerID := range ids {
 		player := players[playerID]
 		parts = append(parts, fmt.Sprintf(
-			"%s: resources={%s} tokens=%d castle_hp=%d tech_points=%d",
+			"%s: resources={%s} tokens=%d city_core_hp=%d research_progress=%d target=%s",
 			playerID,
 			formatResources(player.Resources),
 			player.TokensLeft,
-			player.MainCastleHP,
-			player.TechPoints,
+			player.CapitalCityCoreHP,
+			player.CurrentResearchProgress,
+			player.CurrentTargetTechnologyID,
 		))
 	}
 	return strings.Join(parts, " | ")

@@ -13,17 +13,18 @@ import (
 func TestCapitalDestroyedEndsGameImmediately(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
-			CastleBaseHP:       10,
-			BuildPointsPerTurn: 10,
-			TokensPerTurn:      3,
+			CityCoreMaxHP:             10,
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
 		},
 		Buildings: []staticdata.BuildingDefinition{
 			{
-				ID:            "castle",
-				Category:      "city",
-				PlacementRule: "city_only",
-				BuildCost:     staticdata.ResourceAmounts{},
-				Combat:        staticdata.BuildingCombat{MaxHP: 10},
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         10,
+				TakeoverMode:  "disabled",
 			},
 		},
 		Units: []staticdata.UnitDefinition{
@@ -57,14 +58,14 @@ func TestCapitalDestroyedEndsGameImmediately(t *testing.T) {
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-1"
 	node.TerritoryOwner = "player-1"
-	ecs.CreateBuilding(world, "castle", "player-1", "A1", nodeEntry)
+	ecs.CreateBuilding(world, "city_core", "player-1", "A1", nodeEntry)
 
 	state := domain.NewGameState("combat-siege", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:        "combat-siege",
 		NodeIndex: map[string]donburi.Entity{"A1": nodeEntity},
 	})
 	state.World = world
-	state.Players["player-1"].MainCastleHP = 10
+	state.Players["player-1"].CapitalCityCoreHP = 10
 
 	unitEntry := world.Entry(ecs.CreateUnit(world, "siege_engine", "player-2", domain.Position{X: 0, Y: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "siege-1"
@@ -81,8 +82,8 @@ func TestCapitalDestroyedEndsGameImmediately(t *testing.T) {
 	if state.WinnerID != "player-2" {
 		t.Fatalf("winner_id = %q, want player-2", state.WinnerID)
 	}
-	if state.OverReason != "castle_destroyed" {
-		t.Fatalf("over_reason = %q, want castle_destroyed", state.OverReason)
+	if state.OverReason != "city_core_destroyed" {
+		t.Fatalf("over_reason = %q, want city_core_destroyed", state.OverReason)
 	}
 }
 
