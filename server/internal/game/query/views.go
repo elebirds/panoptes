@@ -7,7 +7,6 @@
 package query
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -51,11 +50,11 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		CapitalCityCoreHp:      int32(playerState.CapitalCityCoreHP),
 		CapitalCityCoreMaxHp:   int32(staticdata.Default().Rules().CityCoreMaxHP),
 		WarZones:               warZones,
-		Research: &pb.ResearchStateView{
-			CurrentTargetTechnologyId: playerState.Research.CurrentTargetTechnologyID,
-			CurrentProgress:        int32(playerState.Research.CurrentProgress),
-			RequiredProgress:       int32(researchRequiredProgress(playerState.Research)),
-			CompletedTechnologyIds: sortedUnlockedTechnologyIDs(playerState.Research),
+		Research:               buildResearchStateView(playerState.Research),
+		Institutions: &pb.InstitutionStateView{
+			SlotCount:          int32(playerState.Institutions.SlotCount),
+			CandidatePolicyIds: playerState.Institutions.CandidateIDs(),
+			ActivePolicyIds:    append([]string(nil), playerState.Institutions.ActivePolicyIDs...),
 		},
 	}
 }
@@ -180,19 +179,30 @@ func ToProtoPointBag(state *domain.GameState, playerID string) *pb.PointBag {
 	}
 }
 
-func sortedUnlockedTechnologyIDs(research domain.ResearchState) []string {
-	ids := make([]string, 0, len(research.UnlockedTechnologies))
-	for technologyID := range research.UnlockedTechnologies {
-		if strings.TrimSpace(technologyID) != "" {
-			ids = append(ids, strings.TrimSpace(technologyID))
-		}
+func buildResearchStateView(research domain.ResearchState) *pb.ResearchStateView {
+	view := &pb.ResearchStateView{
+		CurrentTargetTechnologyId:      research.CurrentTargetTechnologyID,
+		CurrentProgress:                int32(research.CurrentTargetProgress()),
+		RequiredProgress:               int32(researchRequiredProgress(research.CurrentTargetTechnologyID)),
+		CompletedTechnologyIds:         research.CompletedTechnologyIDs(),
+		ActiveTechnologyIds:            research.ActiveTechnologyIDs(),
+		PendingActivationTechnologyIds: research.PendingActivationTechnologyIDs(),
 	}
-	sort.Strings(ids)
-	return ids
+	for _, technologyID := range research.StoredProgressTechnologyIDs() {
+		if technologyID == research.CurrentTargetTechnologyID {
+			continue
+		}
+		view.SavedProgress = append(view.SavedProgress, &pb.ResearchProgressEntry{
+			TechnologyId:     technologyID,
+			CurrentProgress:  int32(research.ProgressForTechnology(technologyID)),
+			RequiredProgress: int32(researchRequiredProgress(technologyID)),
+		})
+	}
+	return view
 }
 
-func researchRequiredProgress(research domain.ResearchState) int {
-	technologyID := strings.TrimSpace(research.CurrentTargetTechnologyID)
+func researchRequiredProgress(technologyID string) int {
+	technologyID = strings.TrimSpace(technologyID)
 	if technologyID == "" {
 		return 0
 	}

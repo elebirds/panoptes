@@ -392,6 +392,9 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 
 func (r *Runtime) sendBootstrapMessages() error {
 	r.bootstrapPlanningStartSent = false
+	if r.state != nil && r.state.Phase == domain.PhasePlanning.String() {
+		PreparePlanningStartState(r.state)
+	}
 	for _, player := range r.players {
 		if player.IsBot() {
 			continue

@@ -291,6 +291,14 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"new_national_policy_id": strings.TrimSpace(e.NewPolicy),
 			},
 		}
+	case event.InstitutionLoadoutChangedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id":       strings.TrimSpace(e.PlayerID),
+				"activation_turn": strconv.Itoa(e.ActivationTurn),
+			},
+		}
 	case event.TokenUsedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -367,12 +375,12 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.FacilityTakeoverProgressedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
-			"node_id":               e.NodeID,
-			"controller_player_id":  e.ControllerPlayerID,
-			"progress":              strconv.Itoa(e.Progress),
-			"required":              strconv.Itoa(e.Required),
-			"status":                e.Status,
-			"reason":                e.Reason,
+			"node_id":              e.NodeID,
+			"controller_player_id": e.ControllerPlayerID,
+			"progress":             strconv.Itoa(e.Progress),
+			"required":             strconv.Itoa(e.Required),
+			"status":               e.Status,
+			"reason":               e.Reason,
 		}}
 	case event.FacilityTakeoverCompletedEvent:
 		data := map[string]string{

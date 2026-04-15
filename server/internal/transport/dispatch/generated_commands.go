@@ -81,6 +81,7 @@ type PlanningHandler interface {
 	CancelUnitOrder(ctx InboundContext, cmd *pb.MsgCancelUnitOrder) error
 	PlanningPathPreviewRequest(ctx InboundContext, cmd *pb.MsgPlanningPathPreviewRequest) error
 	SubmitTurn(ctx InboundContext, cmd *pb.MsgSubmitTurn) error
+	SetInstitutionLoadout(ctx InboundContext, cmd *pb.MsgSetInstitutionLoadout) error
 }
 
 func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handler PlanningHandler) error {
@@ -116,6 +117,8 @@ func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handle
 		return handler.PlanningPathPreviewRequest(ctx, body.PlanningPathPreviewRequest)
 	case *pb.PlanningCommand_SubmitTurn:
 		return handler.SubmitTurn(ctx, body.SubmitTurn)
+	case *pb.PlanningCommand_SetInstitutionLoadout:
+		return handler.SetInstitutionLoadout(ctx, body.SetInstitutionLoadout)
 	default:
 		return transportproblem.UnsupportedCommand("unsupported planning command")
 	}

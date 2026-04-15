@@ -21,6 +21,9 @@ func (p *PlanningInputs) EnsureDraftMaps() {
 	if p.PendingResearch == nil {
 		p.PendingResearch = make(map[string]string)
 	}
+	if p.PendingInstitutions == nil {
+		p.PendingInstitutions = make(map[string][]string)
+	}
 	if p.WarDirectives == nil {
 		p.WarDirectives = make(map[string][]WarZoneDirective)
 	}
@@ -55,6 +58,26 @@ func (p *PlanningInputs) PendingResearchTarget(playerID string) string {
 		return ""
 	}
 	return p.PendingResearch[playerID]
+}
+
+func (p *PlanningInputs) SetPendingInstitutionLoadout(playerID string, policyIDs []string) {
+	p.EnsureDraftMaps()
+	p.PendingInstitutions[playerID] = append([]string(nil), policyIDs...)
+}
+
+func (p *PlanningInputs) PendingInstitutionLoadout(playerID string) []string {
+	if p == nil || p.PendingInstitutions == nil {
+		return nil
+	}
+	return append([]string(nil), p.PendingInstitutions[playerID]...)
+}
+
+func (p *PlanningInputs) HasPendingInstitutionLoadout(playerID string) bool {
+	if p == nil || p.PendingInstitutions == nil {
+		return false
+	}
+	_, ok := p.PendingInstitutions[playerID]
+	return ok
 }
 
 func (p *PlanningInputs) HasBuildOrder(playerID string, nodeID string) bool {
@@ -112,10 +135,12 @@ func (p *PlanningInputs) UpsertWarDirective(playerID string, directive WarZoneDi
 }
 
 type ResolvedExplicitEffects struct {
-	UnlockBuildingIDs []string
-	UnlockRecipeIDs   []string
-	GrantResources    ResourceBag
-	GrantUnitTypes    []string
+	UnlockBuildingIDs   []string
+	UnlockRecipeIDs     []string
+	UnlockPolicyIDs     []string
+	AddInstitutionSlots int
+	GrantResources      ResourceBag
+	GrantUnitTypes      []string
 }
 
 func ResolveExplicitEffects(effects []staticdata.ExplicitEffect) ResolvedExplicitEffects {
@@ -131,6 +156,16 @@ func ResolveExplicitEffects(effects []staticdata.ExplicitEffect) ResolvedExplici
 		case "unlock_recipe":
 			if effect.TargetID != "" {
 				resolved.UnlockRecipeIDs = append(resolved.UnlockRecipeIDs, effect.TargetID)
+			}
+		case "unlock_policy":
+			if effect.TargetID != "" {
+				resolved.UnlockPolicyIDs = append(resolved.UnlockPolicyIDs, effect.TargetID)
+			}
+		case "add_institution_slots":
+			if effect.InstitutionSlots > 0 {
+				resolved.AddInstitutionSlots += effect.InstitutionSlots
+			} else {
+				resolved.AddInstitutionSlots++
 			}
 		case "grant":
 			for key, value := range effect.GrantResources {

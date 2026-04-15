@@ -142,6 +142,12 @@ func (r *GameRoom) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
 	}
 }
 
+func (r *GameRoom) SetInstitutionLoadout(playerID string, policyIDs []string) {
+	if state := r.State(); state != nil {
+		state.TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, append([]string(nil), policyIDs...))
+	}
+}
+
 func (r *GameRoom) SetMinisterDirective(playerID string, directive string) {
 	state := r.State()
 	if state == nil {
