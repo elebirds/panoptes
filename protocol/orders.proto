@@ -9,6 +9,10 @@ message MsgSetPolicy {
   string national_policy_id = 1;
 }
 
+message MsgSetInstitutionLoadout {
+  repeated string policy_ids = 1;
+}
+
 message MsgSetResearchTarget {
   string technology_id = 1;
 }

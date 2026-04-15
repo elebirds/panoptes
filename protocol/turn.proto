@@ -16,6 +16,9 @@ message MsgPlanningStart {
   string active_national_policy_id = 5;
   MsgPlanningSnapshot snapshot = 6;
   repeated MinisterDraftView minister_drafts = 7;
+  PlayerView my_player = 8;
+  repeated NodeView nodes = 9;
+  repeated UnitView units = 10;
 }
 
 message MinisterDraftView {
@@ -70,6 +73,7 @@ message MsgPlanningSnapshot {
   repeated QueuedBuildOrder build_orders = 8;
   repeated QueuedRecipeSelection recipe_selections = 9;
   repeated QueuedWarZoneDirective war_zone_directives = 10;
+  repeated string planned_institution_policy_ids = 11;
 }
 
 message MsgPlanningPathPreviewResponse {
@@ -107,6 +111,12 @@ message MsgResearchResult {
 message MsgSetPolicyResult {
   bool success = 1;
   string national_policy_id = 2;
+  string error_code = 3;
+}
+
+message MsgSetInstitutionLoadoutResult {
+  bool success = 1;
+  repeated string policy_ids = 2;
   string error_code = 3;
 }
 

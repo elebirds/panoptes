@@ -47,7 +47,7 @@ namespace Panoptes.Protocol.V1 {
             "KAlSAmlkEhgKB2ZhY3Rpb24YAiABKAlSB2ZhY3Rpb24SGwoJdW5pdF90eXBl",
             "GAMgASgJUgh1bml0VHlwZRIOCgJocBgEIAEoBVICaHASFQoGbWF4X2hwGAUg",
             "ASgFUgVtYXhIcBItCgNwb3MYBiABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Q",
-            "b3NpdGlvblIDcG9zIusDCgpQbGF5ZXJWaWV3Eg4KAmlkGAEgASgJUgJpZBIa",
+            "b3NpdGlvblIDcG9zIrgECgpQbGF5ZXJWaWV3Eg4KAmlkGAEgASgJUgJpZBIa",
             "Cgh1c2VybmFtZRgCIAEoCVIIdXNlcm5hbWUSPAoJcmVzb3VyY2VzGAMgASgL",
             "Mh4ucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSCXJlc291cmNlcxIz",
             "CgZwb2ludHMYBCABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb2ludEJhZ1IG",
@@ -58,43 +58,58 @@ namespace Panoptes.Protocol.V1 {
             "BVIUY2FwaXRhbENpdHlDb3JlTWF4SHASNwoJd2FyX3pvbmVzGAkgAygLMhou",
             "cGFub3B0ZXMucHJvdG8udjEuV2FyWm9uZVIId2FyWm9uZXMSQAoIcmVzZWFy",
             "Y2gYCiABKAsyJC5wYW5vcHRlcy5wcm90by52MS5SZXNlYXJjaFN0YXRlVmll",
-            "d1IIcmVzZWFyY2gi5gEKEVJlc2VhcmNoU3RhdGVWaWV3Ej8KHGN1cnJlbnRf",
-            "dGFyZ2V0X3RlY2hub2xvZ3lfaWQYASABKAlSGWN1cnJlbnRUYXJnZXRUZWNo",
-            "bm9sb2d5SWQSKQoQY3VycmVudF9wcm9ncmVzcxgCIAEoBVIPY3VycmVudFBy",
-            "b2dyZXNzEisKEXJlcXVpcmVkX3Byb2dyZXNzGAMgASgFUhByZXF1aXJlZFBy",
-            "b2dyZXNzEjgKGGNvbXBsZXRlZF90ZWNobm9sb2d5X2lkcxgEIAMoCVIWY29t",
-            "cGxldGVkVGVjaG5vbG9neUlkcyLpAQoVQnVpbGRpbmdPcGVyYXRpb25WaWV3",
-            "EiwKEnNlbGVjdGVkX3JlY2lwZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJ",
-            "ZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MS",
-            "KwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MS",
-            "IwoNYmFzZV9wcm9ncmVzcxgEIAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2Nr",
-            "ZWRfcmVhc29uGAUgASgJUg1ibG9ja2VkUmVhc29uIocBCgdXYXJab25lEg4K",
-            "AmlkGAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVfaWRz",
-            "GAMgAygJUgdub2RlSWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0aXZl",
-            "Eh8KC3RhcmdldF9ub2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlzdGVy",
-            "VmlldxISCgRyb2xlGAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5hbWUS",
-            "GAoHYWJpbGl0eRgDIAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgEIAEo",
-            "CVILcGVyc29uYWxpdHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASAB",
-            "KAlSBmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXll",
-            "cklkEhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNl",
-            "EjEKBW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdS",
-            "BW5vZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5p",
-            "dFZpZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnBy",
-            "b3RvLnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMo",
-            "CzIfLnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJz",
-            "EhsKCW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgK",
-            "IAEoBVIJbWFwSGVpZ2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9pZBgB",
-            "IAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJbmFy",
-            "cmF0aXZlGAMgASgJUgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGViaXJk",
-            "cy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBh",
-            "bm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "d1IIcmVzZWFyY2gSSwoMaW5zdGl0dXRpb25zGAsgASgLMicucGFub3B0ZXMu",
+            "cHJvdG8udjEuSW5zdGl0dXRpb25TdGF0ZVZpZXdSDGluc3RpdHV0aW9ucyK2",
+            "AwoRUmVzZWFyY2hTdGF0ZVZpZXcSPwocY3VycmVudF90YXJnZXRfdGVjaG5v",
+            "bG9neV9pZBgBIAEoCVIZY3VycmVudFRhcmdldFRlY2hub2xvZ3lJZBIpChBj",
+            "dXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVx",
+            "dWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSOAoYY29t",
+            "cGxldGVkX3RlY2hub2xvZ3lfaWRzGAQgAygJUhZjb21wbGV0ZWRUZWNobm9s",
+            "b2d5SWRzEjIKFWFjdGl2ZV90ZWNobm9sb2d5X2lkcxgFIAMoCVITYWN0aXZl",
+            "VGVjaG5vbG9neUlkcxJJCiFwZW5kaW5nX2FjdGl2YXRpb25fdGVjaG5vbG9n",
+            "eV9pZHMYBiADKAlSHnBlbmRpbmdBY3RpdmF0aW9uVGVjaG5vbG9neUlkcxJP",
+            "Cg5zYXZlZF9wcm9ncmVzcxgHIAMoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlJl",
+            "c2VhcmNoUHJvZ3Jlc3NFbnRyeVINc2F2ZWRQcm9ncmVzcyKUAQoVUmVzZWFy",
+            "Y2hQcm9ncmVzc0VudHJ5EiMKDXRlY2hub2xvZ3lfaWQYASABKAlSDHRlY2hu",
+            "b2xvZ3lJZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJv",
+            "Z3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJv",
+            "Z3Jlc3MikwEKFEluc3RpdHV0aW9uU3RhdGVWaWV3Eh0KCnNsb3RfY291bnQY",
+            "ASABKAVSCXNsb3RDb3VudBIwChRjYW5kaWRhdGVfcG9saWN5X2lkcxgCIAMo",
+            "CVISY2FuZGlkYXRlUG9saWN5SWRzEioKEWFjdGl2ZV9wb2xpY3lfaWRzGAMg",
+            "AygJUg9hY3RpdmVQb2xpY3lJZHMi6QEKFUJ1aWxkaW5nT3BlcmF0aW9uVmll",
+            "dxIsChJzZWxlY3RlZF9yZWNpcGVfaWQYASABKAlSEHNlbGVjdGVkUmVjaXBl",
+            "SWQSKQoQY3VycmVudF9wcm9ncmVzcxgCIAEoBVIPY3VycmVudFByb2dyZXNz",
+            "EisKEXJlcXVpcmVkX3Byb2dyZXNzGAMgASgFUhByZXF1aXJlZFByb2dyZXNz",
+            "EiMKDWJhc2VfcHJvZ3Jlc3MYBCABKAVSDGJhc2VQcm9ncmVzcxIlCg5ibG9j",
+            "a2VkX3JlYXNvbhgFIAEoCVINYmxvY2tlZFJlYXNvbiKHAQoHV2FyWm9uZRIO",
+            "CgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIZCghub2RlX2lk",
+            "cxgDIAMoCVIHbm9kZUlkcxIcCglkaXJlY3RpdmUYBCABKAlSCWRpcmVjdGl2",
+            "ZRIfCgt0YXJnZXRfbm9kZRgFIAEoCVIKdGFyZ2V0Tm9kZSJyCgxNaW5pc3Rl",
+            "clZpZXcSEgoEcm9sZRgBIAEoCVIEcm9sZRISCgRuYW1lGAIgASgJUgRuYW1l",
+            "EhgKB2FiaWxpdHkYAyABKAVSB2FiaWxpdHkSIAoLcGVyc29uYWxpdHkYBCAB",
+            "KAlSC3BlcnNvbmFsaXR5IpMDCgtNc2dHYW1lSW5pdBIXCgdnYW1lX2lkGAEg",
+            "ASgJUgZnYW1lSWQSJAoOeW91cl9wbGF5ZXJfaWQYAiABKAlSDHlvdXJQbGF5",
+            "ZXJJZBISCgR0dXJuGAMgASgFUgR0dXJuEhQKBXBoYXNlGAQgASgJUgVwaGFz",
+            "ZRIxCgVub2RlcxgFIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYxLk5vZGVWaWV3",
+            "UgVub2RlcxIxCgV1bml0cxgGIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlVu",
+            "aXRWaWV3UgV1bml0cxI6CglteV9wbGF5ZXIYByABKAsyHS5wYW5vcHRlcy5w",
+            "cm90by52MS5QbGF5ZXJWaWV3UghteVBsYXllchI9CgltaW5pc3RlcnMYCCAD",
+            "KAsyHy5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlclZpZXdSCW1pbmlzdGVy",
+            "cxIbCgltYXBfd2lkdGgYCSABKAVSCG1hcFdpZHRoEh0KCm1hcF9oZWlnaHQY",
+            "CiABKAVSCW1hcEhlaWdodCJgCgtNc2dHYW1lT3ZlchIbCgl3aW5uZXJfaWQY",
+            "ASABKAlSCHdpbm5lcklkEhYKBnJlYXNvbhgCIAEoCVIGcmVhc29uEhwKCW5h",
+            "cnJhdGl2ZRgDIAEoCVIJbmFycmF0aXZlQlNaOmdpdGh1Yi5jb20vZWxlYmly",
+            "ZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQ",
+            "YW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchProgressEntry), global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser, new[]{ "TechnologyId", "CurrentProgress", "RequiredProgress" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidatePolicyIds", "ActivePolicyIds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
@@ -1446,6 +1461,7 @@ namespace Panoptes.Protocol.V1 {
       capitalCityCoreMaxHp_ = other.capitalCityCoreMaxHp_;
       warZones_ = other.warZones_.Clone();
       research_ = other.research_ != null ? other.research_.Clone() : null;
+      institutions_ = other.institutions_ != null ? other.institutions_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1574,6 +1590,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "institutions" field.</summary>
+    public const int InstitutionsFieldNumber = 11;
+    private global::Panoptes.Protocol.V1.InstitutionStateView institutions_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.InstitutionStateView Institutions {
+      get { return institutions_; }
+      set {
+        institutions_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1599,6 +1627,7 @@ namespace Panoptes.Protocol.V1 {
       if (CapitalCityCoreMaxHp != other.CapitalCityCoreMaxHp) return false;
       if(!warZones_.Equals(other.warZones_)) return false;
       if (!object.Equals(Research, other.Research)) return false;
+      if (!object.Equals(Institutions, other.Institutions)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1616,6 +1645,7 @@ namespace Panoptes.Protocol.V1 {
       if (CapitalCityCoreMaxHp != 0) hash ^= CapitalCityCoreMaxHp.GetHashCode();
       hash ^= warZones_.GetHashCode();
       if (research_ != null) hash ^= Research.GetHashCode();
+      if (institutions_ != null) hash ^= Institutions.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1671,6 +1701,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(82);
         output.WriteMessage(Research);
       }
+      if (institutions_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(Institutions);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1718,6 +1752,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(82);
         output.WriteMessage(Research);
       }
+      if (institutions_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(Institutions);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1755,6 +1793,9 @@ namespace Panoptes.Protocol.V1 {
       size += warZones_.CalculateSize(_repeated_warZones_codec);
       if (research_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Research);
+      }
+      if (institutions_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Institutions);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1804,6 +1845,12 @@ namespace Panoptes.Protocol.V1 {
           Research = new global::Panoptes.Protocol.V1.ResearchStateView();
         }
         Research.MergeFrom(other.Research);
+      }
+      if (other.institutions_ != null) {
+        if (institutions_ == null) {
+          Institutions = new global::Panoptes.Protocol.V1.InstitutionStateView();
+        }
+        Institutions.MergeFrom(other.Institutions);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1867,6 +1914,13 @@ namespace Panoptes.Protocol.V1 {
               Research = new global::Panoptes.Protocol.V1.ResearchStateView();
             }
             input.ReadMessage(Research);
+            break;
+          }
+          case 90: {
+            if (institutions_ == null) {
+              Institutions = new global::Panoptes.Protocol.V1.InstitutionStateView();
+            }
+            input.ReadMessage(Institutions);
             break;
           }
         }
@@ -1933,6 +1987,13 @@ namespace Panoptes.Protocol.V1 {
             input.ReadMessage(Research);
             break;
           }
+          case 90: {
+            if (institutions_ == null) {
+              Institutions = new global::Panoptes.Protocol.V1.InstitutionStateView();
+            }
+            input.ReadMessage(Institutions);
+            break;
+          }
         }
       }
     }
@@ -1979,6 +2040,9 @@ namespace Panoptes.Protocol.V1 {
       currentProgress_ = other.currentProgress_;
       requiredProgress_ = other.requiredProgress_;
       completedTechnologyIds_ = other.completedTechnologyIds_.Clone();
+      activeTechnologyIds_ = other.activeTechnologyIds_.Clone();
+      pendingActivationTechnologyIds_ = other.pendingActivationTechnologyIds_.Clone();
+      savedProgress_ = other.savedProgress_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2035,6 +2099,39 @@ namespace Panoptes.Protocol.V1 {
       get { return completedTechnologyIds_; }
     }
 
+    /// <summary>Field number for the "active_technology_ids" field.</summary>
+    public const int ActiveTechnologyIdsFieldNumber = 5;
+    private static readonly pb::FieldCodec<string> _repeated_activeTechnologyIds_codec
+        = pb::FieldCodec.ForString(42);
+    private readonly pbc::RepeatedField<string> activeTechnologyIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> ActiveTechnologyIds {
+      get { return activeTechnologyIds_; }
+    }
+
+    /// <summary>Field number for the "pending_activation_technology_ids" field.</summary>
+    public const int PendingActivationTechnologyIdsFieldNumber = 6;
+    private static readonly pb::FieldCodec<string> _repeated_pendingActivationTechnologyIds_codec
+        = pb::FieldCodec.ForString(50);
+    private readonly pbc::RepeatedField<string> pendingActivationTechnologyIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> PendingActivationTechnologyIds {
+      get { return pendingActivationTechnologyIds_; }
+    }
+
+    /// <summary>Field number for the "saved_progress" field.</summary>
+    public const int SavedProgressFieldNumber = 7;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.ResearchProgressEntry> _repeated_savedProgress_codec
+        = pb::FieldCodec.ForMessage(58, global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.ResearchProgressEntry> savedProgress_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.ResearchProgressEntry>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.ResearchProgressEntry> SavedProgress {
+      get { return savedProgress_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -2054,6 +2151,9 @@ namespace Panoptes.Protocol.V1 {
       if (CurrentProgress != other.CurrentProgress) return false;
       if (RequiredProgress != other.RequiredProgress) return false;
       if(!completedTechnologyIds_.Equals(other.completedTechnologyIds_)) return false;
+      if(!activeTechnologyIds_.Equals(other.activeTechnologyIds_)) return false;
+      if(!pendingActivationTechnologyIds_.Equals(other.pendingActivationTechnologyIds_)) return false;
+      if(!savedProgress_.Equals(other.savedProgress_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -2065,6 +2165,9 @@ namespace Panoptes.Protocol.V1 {
       if (CurrentProgress != 0) hash ^= CurrentProgress.GetHashCode();
       if (RequiredProgress != 0) hash ^= RequiredProgress.GetHashCode();
       hash ^= completedTechnologyIds_.GetHashCode();
+      hash ^= activeTechnologyIds_.GetHashCode();
+      hash ^= pendingActivationTechnologyIds_.GetHashCode();
+      hash ^= savedProgress_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2096,6 +2199,9 @@ namespace Panoptes.Protocol.V1 {
         output.WriteInt32(RequiredProgress);
       }
       completedTechnologyIds_.WriteTo(output, _repeated_completedTechnologyIds_codec);
+      activeTechnologyIds_.WriteTo(output, _repeated_activeTechnologyIds_codec);
+      pendingActivationTechnologyIds_.WriteTo(output, _repeated_pendingActivationTechnologyIds_codec);
+      savedProgress_.WriteTo(output, _repeated_savedProgress_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -2119,6 +2225,9 @@ namespace Panoptes.Protocol.V1 {
         output.WriteInt32(RequiredProgress);
       }
       completedTechnologyIds_.WriteTo(ref output, _repeated_completedTechnologyIds_codec);
+      activeTechnologyIds_.WriteTo(ref output, _repeated_activeTechnologyIds_codec);
+      pendingActivationTechnologyIds_.WriteTo(ref output, _repeated_pendingActivationTechnologyIds_codec);
+      savedProgress_.WriteTo(ref output, _repeated_savedProgress_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -2139,6 +2248,9 @@ namespace Panoptes.Protocol.V1 {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(RequiredProgress);
       }
       size += completedTechnologyIds_.CalculateSize(_repeated_completedTechnologyIds_codec);
+      size += activeTechnologyIds_.CalculateSize(_repeated_activeTechnologyIds_codec);
+      size += pendingActivationTechnologyIds_.CalculateSize(_repeated_pendingActivationTechnologyIds_codec);
+      size += savedProgress_.CalculateSize(_repeated_savedProgress_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -2161,6 +2273,9 @@ namespace Panoptes.Protocol.V1 {
         RequiredProgress = other.RequiredProgress;
       }
       completedTechnologyIds_.Add(other.completedTechnologyIds_);
+      activeTechnologyIds_.Add(other.activeTechnologyIds_);
+      pendingActivationTechnologyIds_.Add(other.pendingActivationTechnologyIds_);
+      savedProgress_.Add(other.savedProgress_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2190,6 +2305,18 @@ namespace Panoptes.Protocol.V1 {
           }
           case 34: {
             completedTechnologyIds_.AddEntriesFrom(input, _repeated_completedTechnologyIds_codec);
+            break;
+          }
+          case 42: {
+            activeTechnologyIds_.AddEntriesFrom(input, _repeated_activeTechnologyIds_codec);
+            break;
+          }
+          case 50: {
+            pendingActivationTechnologyIds_.AddEntriesFrom(input, _repeated_pendingActivationTechnologyIds_codec);
+            break;
+          }
+          case 58: {
+            savedProgress_.AddEntriesFrom(input, _repeated_savedProgress_codec);
             break;
           }
         }
@@ -2223,6 +2350,524 @@ namespace Panoptes.Protocol.V1 {
             completedTechnologyIds_.AddEntriesFrom(ref input, _repeated_completedTechnologyIds_codec);
             break;
           }
+          case 42: {
+            activeTechnologyIds_.AddEntriesFrom(ref input, _repeated_activeTechnologyIds_codec);
+            break;
+          }
+          case 50: {
+            pendingActivationTechnologyIds_.AddEntriesFrom(ref input, _repeated_pendingActivationTechnologyIds_codec);
+            break;
+          }
+          case 58: {
+            savedProgress_.AddEntriesFrom(ref input, _repeated_savedProgress_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class ResearchProgressEntry : pb::IMessage<ResearchProgressEntry>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<ResearchProgressEntry> _parser = new pb::MessageParser<ResearchProgressEntry>(() => new ResearchProgressEntry());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<ResearchProgressEntry> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[4]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ResearchProgressEntry() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ResearchProgressEntry(ResearchProgressEntry other) : this() {
+      technologyId_ = other.technologyId_;
+      currentProgress_ = other.currentProgress_;
+      requiredProgress_ = other.requiredProgress_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ResearchProgressEntry Clone() {
+      return new ResearchProgressEntry(this);
+    }
+
+    /// <summary>Field number for the "technology_id" field.</summary>
+    public const int TechnologyIdFieldNumber = 1;
+    private string technologyId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TechnologyId {
+      get { return technologyId_; }
+      set {
+        technologyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "current_progress" field.</summary>
+    public const int CurrentProgressFieldNumber = 2;
+    private int currentProgress_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CurrentProgress {
+      get { return currentProgress_; }
+      set {
+        currentProgress_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "required_progress" field.</summary>
+    public const int RequiredProgressFieldNumber = 3;
+    private int requiredProgress_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int RequiredProgress {
+      get { return requiredProgress_; }
+      set {
+        requiredProgress_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as ResearchProgressEntry);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(ResearchProgressEntry other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (TechnologyId != other.TechnologyId) return false;
+      if (CurrentProgress != other.CurrentProgress) return false;
+      if (RequiredProgress != other.RequiredProgress) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (TechnologyId.Length != 0) hash ^= TechnologyId.GetHashCode();
+      if (CurrentProgress != 0) hash ^= CurrentProgress.GetHashCode();
+      if (RequiredProgress != 0) hash ^= RequiredProgress.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (TechnologyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(TechnologyId);
+      }
+      if (CurrentProgress != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(CurrentProgress);
+      }
+      if (RequiredProgress != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(RequiredProgress);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (TechnologyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(TechnologyId);
+      }
+      if (CurrentProgress != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(CurrentProgress);
+      }
+      if (RequiredProgress != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(RequiredProgress);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (TechnologyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TechnologyId);
+      }
+      if (CurrentProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(CurrentProgress);
+      }
+      if (RequiredProgress != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(RequiredProgress);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(ResearchProgressEntry other) {
+      if (other == null) {
+        return;
+      }
+      if (other.TechnologyId.Length != 0) {
+        TechnologyId = other.TechnologyId;
+      }
+      if (other.CurrentProgress != 0) {
+        CurrentProgress = other.CurrentProgress;
+      }
+      if (other.RequiredProgress != 0) {
+        RequiredProgress = other.RequiredProgress;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            TechnologyId = input.ReadString();
+            break;
+          }
+          case 16: {
+            CurrentProgress = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            RequiredProgress = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            TechnologyId = input.ReadString();
+            break;
+          }
+          case 16: {
+            CurrentProgress = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            RequiredProgress = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class InstitutionStateView : pb::IMessage<InstitutionStateView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<InstitutionStateView> _parser = new pb::MessageParser<InstitutionStateView>(() => new InstitutionStateView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<InstitutionStateView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InstitutionStateView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InstitutionStateView(InstitutionStateView other) : this() {
+      slotCount_ = other.slotCount_;
+      candidatePolicyIds_ = other.candidatePolicyIds_.Clone();
+      activePolicyIds_ = other.activePolicyIds_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InstitutionStateView Clone() {
+      return new InstitutionStateView(this);
+    }
+
+    /// <summary>Field number for the "slot_count" field.</summary>
+    public const int SlotCountFieldNumber = 1;
+    private int slotCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int SlotCount {
+      get { return slotCount_; }
+      set {
+        slotCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "candidate_policy_ids" field.</summary>
+    public const int CandidatePolicyIdsFieldNumber = 2;
+    private static readonly pb::FieldCodec<string> _repeated_candidatePolicyIds_codec
+        = pb::FieldCodec.ForString(18);
+    private readonly pbc::RepeatedField<string> candidatePolicyIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> CandidatePolicyIds {
+      get { return candidatePolicyIds_; }
+    }
+
+    /// <summary>Field number for the "active_policy_ids" field.</summary>
+    public const int ActivePolicyIdsFieldNumber = 3;
+    private static readonly pb::FieldCodec<string> _repeated_activePolicyIds_codec
+        = pb::FieldCodec.ForString(26);
+    private readonly pbc::RepeatedField<string> activePolicyIds_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> ActivePolicyIds {
+      get { return activePolicyIds_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as InstitutionStateView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(InstitutionStateView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SlotCount != other.SlotCount) return false;
+      if(!candidatePolicyIds_.Equals(other.candidatePolicyIds_)) return false;
+      if(!activePolicyIds_.Equals(other.activePolicyIds_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SlotCount != 0) hash ^= SlotCount.GetHashCode();
+      hash ^= candidatePolicyIds_.GetHashCode();
+      hash ^= activePolicyIds_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SlotCount != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(SlotCount);
+      }
+      candidatePolicyIds_.WriteTo(output, _repeated_candidatePolicyIds_codec);
+      activePolicyIds_.WriteTo(output, _repeated_activePolicyIds_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SlotCount != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(SlotCount);
+      }
+      candidatePolicyIds_.WriteTo(ref output, _repeated_candidatePolicyIds_codec);
+      activePolicyIds_.WriteTo(ref output, _repeated_activePolicyIds_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SlotCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(SlotCount);
+      }
+      size += candidatePolicyIds_.CalculateSize(_repeated_candidatePolicyIds_codec);
+      size += activePolicyIds_.CalculateSize(_repeated_activePolicyIds_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(InstitutionStateView other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SlotCount != 0) {
+        SlotCount = other.SlotCount;
+      }
+      candidatePolicyIds_.Add(other.candidatePolicyIds_);
+      activePolicyIds_.Add(other.activePolicyIds_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            SlotCount = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            candidatePolicyIds_.AddEntriesFrom(input, _repeated_candidatePolicyIds_codec);
+            break;
+          }
+          case 26: {
+            activePolicyIds_.AddEntriesFrom(input, _repeated_activePolicyIds_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            SlotCount = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            candidatePolicyIds_.AddEntriesFrom(ref input, _repeated_candidatePolicyIds_codec);
+            break;
+          }
+          case 26: {
+            activePolicyIds_.AddEntriesFrom(ref input, _repeated_activePolicyIds_codec);
+            break;
+          }
         }
       }
     }
@@ -2245,7 +2890,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2583,7 +3228,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2910,7 +3555,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3211,7 +3856,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3710,7 +4355,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

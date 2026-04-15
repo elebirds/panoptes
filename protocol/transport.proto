@@ -72,6 +72,7 @@ message PlanningCommand {
     MsgCancelUnitOrder cancel_unit_order = 10;
     MsgPlanningPathPreviewRequest planning_path_preview_request = 11;
     MsgSubmitTurn submit_turn = 12;
+    MsgSetInstitutionLoadout set_institution_loadout = 13;
   }
 }
 
@@ -128,6 +129,7 @@ message GameEvent {
     MsgGameOver game_over = 15;
     MsgMinisterReportChunk minister_report_chunk = 16;
     MsgMinisterMetrics minister_metrics = 17;
+    MsgSetInstitutionLoadoutResult set_institution_loadout_result = 18;
   }
 }
 
