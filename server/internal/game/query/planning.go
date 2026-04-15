@@ -26,6 +26,8 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	if playerID == "" {
 		return msg
 	}
+	msg.PlannedResearchTargetTechnologyId = state.TurnRuntime.Planning.PendingResearchTarget(playerID)
+	msg.PlannedNationalPolicyId = string(state.TurnRuntime.Planning.PendingPolicy(playerID))
 
 	ordersByUnit := make(map[string]*pb.QueuedUnitOrder)
 	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
@@ -62,6 +64,63 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	sort.Strings(unitIDs)
 	for _, unitID := range unitIDs {
 		msg.UnitOrders = append(msg.UnitOrders, ordersByUnit[unitID])
+	}
+
+	buildOrders := make([]domain.BuildOrder, 0)
+	for _, order := range state.TurnRuntime.Planning.BuildOrders {
+		if order.PlayerID == playerID {
+			buildOrders = append(buildOrders, order)
+		}
+	}
+	sort.Slice(buildOrders, func(i, j int) bool {
+		if buildOrders[i].NodeID == buildOrders[j].NodeID {
+			return buildOrders[i].BuildingType < buildOrders[j].BuildingType
+		}
+		return buildOrders[i].NodeID < buildOrders[j].NodeID
+	})
+	for _, order := range buildOrders {
+		msg.BuildOrders = append(msg.BuildOrders, &pb.QueuedBuildOrder{
+			NodeId:         order.NodeID,
+			BuildingTypeId: order.BuildingType,
+			CityId:         order.CityID,
+		})
+	}
+
+	recipeSelections := make([]domain.RecipeSelectionOrder, 0)
+	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
+		if selection.PlayerID == playerID {
+			recipeSelections = append(recipeSelections, selection)
+		}
+	}
+	sort.Slice(recipeSelections, func(i, j int) bool {
+		if recipeSelections[i].NodeID == recipeSelections[j].NodeID {
+			return recipeSelections[i].RecipeID < recipeSelections[j].RecipeID
+		}
+		return recipeSelections[i].NodeID < recipeSelections[j].NodeID
+	})
+	for _, selection := range recipeSelections {
+		msg.RecipeSelections = append(msg.RecipeSelections, &pb.QueuedRecipeSelection{
+			NodeId:   selection.NodeID,
+			RecipeId: selection.RecipeID,
+		})
+	}
+
+	warDirectives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
+	sort.Slice(warDirectives, func(i, j int) bool {
+		if warDirectives[i].ZoneID == warDirectives[j].ZoneID {
+			if warDirectives[i].Directive == warDirectives[j].Directive {
+				return warDirectives[i].TargetNode < warDirectives[j].TargetNode
+			}
+			return warDirectives[i].Directive < warDirectives[j].Directive
+		}
+		return warDirectives[i].ZoneID < warDirectives[j].ZoneID
+	})
+	for _, directive := range warDirectives {
+		msg.WarZoneDirectives = append(msg.WarZoneDirectives, &pb.QueuedWarZoneDirective{
+			ZoneId:     directive.ZoneID,
+			Directive:  directive.Directive,
+			TargetNode: directive.TargetNode,
+		})
 	}
 
 	if playerState := state.Players[playerID]; playerState != nil {
