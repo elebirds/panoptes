@@ -101,7 +101,7 @@ namespace Panoptes.DebugTools
                 "MsgCreateRoom" => "{\n  \"name\": \"debug-room\",\n  \"maxPlayers\": 2\n}",
                 "MsgJoinRoom" => "{\n  \"roomCode\": \"ABCD12\"\n}",
                 "MsgKickPlayer" => "{\n  \"playerId\": \"player-2\"\n}",
-                "MsgSetPolicy" => "{\n  \"policy\": \"ready_for_war\"\n}",
+                "MsgSetPolicy" => "{\n  \"nationalPolicyId\": \"war_preparedness\"\n}",
                 "MsgSetMinisterDirective" => "{\n  \"ministerRole\": \"domestic\",\n  \"content\": \"{}\"\n}",
                 "MsgSetResearchTarget" => "{\n  \"technologyId\": \"tech_masonry\"\n}",
                 "MsgSetBuildingRecipe" => "{\n  \"nodeId\": \"node-a\",\n  \"recipeId\": \"recipe_swordsman\"\n}",

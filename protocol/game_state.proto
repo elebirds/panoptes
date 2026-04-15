@@ -11,19 +11,24 @@ option csharp_namespace = "Panoptes.Protocol.V1";
 message NodeView {
   string id = 1;
   Position pos = 2;
-  string terrain = 3; // "plain|mountain|forest|river"
-  string owner = 4; // player_id or ""
-  string territory_owner = 14; // player_id or ""
-  string building_type = 5; // "" if none
+  string terrain = 3;
+  string controller_player_id = 4;
+  string building_type_id = 5;
   int32 building_hp = 6;
-  int32 wall_level = 7;
-  int32 my_unit_count = 8; // 己方兵力（精确）
-  int32 enemy_unit_count = 9; // 敌方兵力（可能有延迟/失真）
-  bool has_road = 10;
-  bool is_resource_point = 11;
-  string resource_type = 12; // "ore|wood|food"
-  bool is_safe_zone = 13;
-  BuildingOperationView operation = 15;
+  int32 my_unit_count = 7;
+  int32 enemy_unit_count = 8;
+  bool has_road = 9;
+  bool is_resource_point = 10;
+  string resource_type = 11;
+  bool is_safe_zone = 12;
+  string territory_owner_player_id = 13;
+  BuildingOperationView operation = 14;
+  string building_status = 15;
+  string city_id = 16;
+  string service_city_id = 17;
+  bool is_city_core = 18;
+  int32 takeover_progress = 19;
+  int32 takeover_required = 20;
 }
 
 message UnitView {
@@ -39,26 +44,27 @@ message PlayerView {
   string id = 1;
   string username = 2;
   ResourceBag resources = 3;
-  int32 tokens_left = 4;
-  string current_policy = 5;
-  int32 main_castle_hp = 6;
-  int32 max_castle_hp = 7;
-  repeated WarZone war_zones = 8;
-  PlayerResearchView research = 9;
+  PointBag points = 4;
+  int32 tokens_left = 5;
+  string active_national_policy_id = 6;
+  int32 capital_city_core_hp = 7;
+  int32 capital_city_core_max_hp = 8;
+  repeated WarZone war_zones = 9;
+  ResearchStateView research = 10;
 }
 
-message PlayerResearchView {
-  int32 tech_points = 1;
-  int32 tech_points_income = 2;
-  int32 tech_points_cap = 3;
-  repeated string unlocked_technology_ids = 4;
+message ResearchStateView {
+  string current_target_technology_id = 1;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+  repeated string completed_technology_ids = 4;
 }
 
 message BuildingOperationView {
   string selected_recipe_id = 1;
-  int32 progress_turns = 2;
-  int32 required_turns = 3;
-  int32 delay_turns = 4;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+  int32 base_progress = 4;
   string blocked_reason = 5;
 }
 
@@ -71,14 +77,12 @@ message WarZone {
 }
 
 message MinisterView {
-  string role = 1; // "military|agriculture|diplomacy"
+  string role = 1;
   string name = 2;
-  int32 ability = 3; // 1-10，可见
-  string personality = 4; // 性格描述词，可见（模糊）
-  // loyalty和ambition不推送给客户端
+  int32 ability = 3;
+  string personality = 4;
 }
 
-// 游戏初始化（仅发送一次）
 message MsgGameInit {
   string game_id = 1;
   string your_player_id = 2;
@@ -92,9 +96,8 @@ message MsgGameInit {
   int32 map_height = 10;
 }
 
-// 游戏结束
 message MsgGameOver {
   string winner_id = 1;
-  string reason = 2; // "castle_destroyed|timeout_draw"
-  string narrative = 3; // LLM生成的本局历史总结
+  string reason = 2; // "city_core_destroyed|timeout_draw"
+  string narrative = 3;
 }

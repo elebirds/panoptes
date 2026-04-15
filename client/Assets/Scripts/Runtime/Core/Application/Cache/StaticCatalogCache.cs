@@ -37,6 +37,17 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class PointEntryJson
+        {
+            public string key;
+            public string display_name;
+            public string description;
+            public string icon_key;
+            public int sort_order;
+            public bool visible_in_hud;
+        }
+
+        [Serializable]
         public sealed class BuildingEntryJson
         {
             public string id;
@@ -44,9 +55,46 @@ namespace Panoptes.Core.Application.Cache
             public string description;
             public string icon_key;
             public string prefab_key;
-            public string placement_rule;
+            public string placement_kind;
+            public string building_scope;
             public string required_resource_type;
+            public string takeover_mode;
             public int sort_order;
+        }
+
+        [Serializable]
+        public sealed class TechnologyEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string branch;
+            public int tier;
+            public int research_cost;
+        }
+
+        [Serializable]
+        public sealed class PolicyEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string layer;
+            public string activation_timing;
+        }
+
+        [Serializable]
+        public sealed class RecipeEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string building_id;
+            public int work_amount;
+            public int base_progress;
         }
 
         [Serializable]
@@ -100,8 +148,12 @@ namespace Panoptes.Core.Application.Cache
         {
             public ManifestJson manifest;
             public ResourceEntryJson[] resources;
+            public PointEntryJson[] points;
             public UnitEntryJson[] units;
             public BuildingEntryJson[] buildings;
+            public TechnologyEntryJson[] technologies;
+            public PolicyEntryJson[] policies;
+            public RecipeEntryJson[] recipes;
             public TerrainEntryJson[] terrains;
             public MapEntryJson[] maps;
         }
@@ -141,8 +193,12 @@ namespace Panoptes.Core.Application.Cache
 
         private readonly Dictionary<string, BuildingEntryJson> _buildingsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapEntryJson> _mapsById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, PointEntryJson> _pointsByKey = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, PolicyEntryJson> _policiesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, RecipeEntryJson> _recipesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ResourceEntryJson> _resourcesByKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, TerrainEntryJson> _terrainsById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TechnologyEntryJson> _technologiesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, UnitEntryJson> _unitsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapRuntimeBundleJson> _mapBundleCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -151,8 +207,12 @@ namespace Panoptes.Core.Application.Cache
         public event System.Action CatalogChanged;
 
         public IReadOnlyDictionary<string, BuildingEntryJson> Buildings => _buildingsById;
+        public IReadOnlyDictionary<string, PointEntryJson> Points => _pointsByKey;
+        public IReadOnlyDictionary<string, PolicyEntryJson> Policies => _policiesById;
+        public IReadOnlyDictionary<string, RecipeEntryJson> Recipes => _recipesById;
         public IReadOnlyDictionary<string, ResourceEntryJson> Resources => _resourcesByKey;
         public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
+        public IReadOnlyDictionary<string, TechnologyEntryJson> Technologies => _technologiesById;
         public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
 
         private void Awake()
@@ -220,8 +280,12 @@ namespace Panoptes.Core.Application.Cache
 
             LocalManifest = parsed.manifest;
             RebuildIndex(_resourcesByKey, parsed.resources, entry => entry != null ? entry.key : string.Empty);
+            RebuildIndex(_pointsByKey, parsed.points, entry => entry != null ? entry.key : string.Empty);
             RebuildIndex(_unitsById, parsed.units, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_buildingsById, parsed.buildings, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_technologiesById, parsed.technologies, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_policiesById, parsed.policies, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_recipesById, parsed.recipes, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
             _mapBundleCache.Clear();
@@ -252,9 +316,29 @@ namespace Panoptes.Core.Application.Cache
             return _buildingsById.TryGetValue(Normalize(buildingId), out entry);
         }
 
+        public bool TryGetPoint(string pointKey, out PointEntryJson entry)
+        {
+            return _pointsByKey.TryGetValue(Normalize(pointKey), out entry);
+        }
+
+        public bool TryGetPolicy(string policyId, out PolicyEntryJson entry)
+        {
+            return _policiesById.TryGetValue(Normalize(policyId), out entry);
+        }
+
+        public bool TryGetRecipe(string recipeId, out RecipeEntryJson entry)
+        {
+            return _recipesById.TryGetValue(Normalize(recipeId), out entry);
+        }
+
         public bool TryGetTerrain(string terrainId, out TerrainEntryJson entry)
         {
             return _terrainsById.TryGetValue(Normalize(terrainId), out entry);
+        }
+
+        public bool TryGetTechnology(string technologyId, out TechnologyEntryJson entry)
+        {
+            return _technologiesById.TryGetValue(Normalize(technologyId), out entry);
         }
 
         public bool TryGetUnit(string unitId, out UnitEntryJson entry)
@@ -316,6 +400,16 @@ namespace Panoptes.Core.Application.Cache
         public void Clear()
         {
             ServerManifest = null;
+            _pointsByKey.Clear();
+            _policiesById.Clear();
+            _recipesById.Clear();
+            _resourcesByKey.Clear();
+            _technologiesById.Clear();
+            _unitsById.Clear();
+            _buildingsById.Clear();
+            _terrainsById.Clear();
+            _mapsById.Clear();
+            _mapBundleCache.Clear();
         }
 
         private static void RebuildIndex<T>(Dictionary<string, T> target, T[] source, Func<T, string> keySelector)

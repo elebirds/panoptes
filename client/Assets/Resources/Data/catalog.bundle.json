@@ -1,16 +1,16 @@
 {
   "manifest": {
-    "schema_version": "2026-04-06",
-    "content_version": "2026-04-06.v2",
+    "schema_version": "2026-04-15",
+    "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "559874e13d8668a315a19beba0fea0010d244fb9f9bbff86d10a747162d9e648"
+    "bundle_hash": "6299794e61d1384cc2c18ce5b890e8a9b4bfbd7861812aced514ef89dfaa2bda"
   },
   "resources": [
     {
       "key": "ore",
       "display_name": "矿石",
-      "description": "基础矿物资源。",
+      "description": "基础矿物",
       "icon_key": "resource_ore",
       "sort_order": 10,
       "proto_number": 1,
@@ -22,7 +22,7 @@
     {
       "key": "wood",
       "display_name": "木材",
-      "description": "木料与加工原料。",
+      "description": "基础建设材料",
       "icon_key": "resource_wood",
       "sort_order": 20,
       "proto_number": 2,
@@ -34,7 +34,7 @@
     {
       "key": "food",
       "display_name": "粮食",
-      "description": "人口与军队补给。",
+      "description": "补给与人口",
       "icon_key": "resource_food",
       "sort_order": 30,
       "proto_number": 3,
@@ -42,41 +42,29 @@
       "tags": [
         "base"
       ]
-    },
+    }
+  ],
+  "points": [
     {
-      "key": "refined_ore",
-      "display_name": "精炼矿",
-      "description": "高阶军用矿材。",
-      "icon_key": "resource_refined_ore",
-      "sort_order": 40,
-      "proto_number": 4,
+      "key": "research_output",
+      "display_name": "科研产出",
+      "description": "推进当前研究目标",
+      "icon_key": "point_research_output",
+      "sort_order": 10,
       "visible_in_hud": true,
       "tags": [
-        "advanced"
+        "hud"
       ]
     },
     {
-      "key": "engineer_material",
-      "display_name": "工程材料",
-      "description": "工程营与特殊建筑材料。",
-      "icon_key": "resource_engineer_material",
-      "sort_order": 50,
-      "proto_number": 5,
+      "key": "industry_output",
+      "display_name": "工业产出",
+      "description": "推进建设与生产",
+      "icon_key": "point_industry_output",
+      "sort_order": 20,
       "visible_in_hud": true,
       "tags": [
-        "advanced"
-      ]
-    },
-    {
-      "key": "build_points",
-      "display_name": "建造点",
-      "description": "建筑行动额度。",
-      "icon_key": "resource_build_points",
-      "sort_order": 60,
-      "proto_number": 6,
-      "visible_in_hud": true,
-      "tags": [
-        "meta"
+        "hud"
       ]
     }
   ],
@@ -84,7 +72,7 @@
     {
       "id": "settler",
       "name": "开拓者",
-      "description": "平民单位，可用于建立据点。",
+      "description": "用于建立新城市。",
       "icon_key": "unit_settler",
       "prefab_key": "Settler",
       "class": "civilian",
@@ -108,15 +96,14 @@
       },
       "sort_order": 10,
       "tags": [
-        "civilian",
-        "expansion"
+        "civilian"
       ]
     },
     {
-      "id": "warrior",
-      "name": "勇士",
-      "description": "基础近战战斗单位。",
-      "icon_key": "unit_warrior",
+      "id": "infantry",
+      "name": "步兵",
+      "description": "基础近战战斗单位",
+      "icon_key": "unit_infantry",
       "prefab_key": "Infantry",
       "class": "melee",
       "max_hp": 30,
@@ -137,566 +124,181 @@
         "can_destroy_road": false,
         "can_capture": true
       },
-      "sort_order": 11,
+      "sort_order": 20,
       "tags": [
-        "frontline",
-        "melee"
-      ]
-    },
-    {
-      "id": "archer",
-      "name": "弓箭手",
-      "description": "基础远程战斗单位。",
-      "icon_key": "unit_archer",
-      "prefab_key": "Archer",
-      "class": "ranged",
-      "max_hp": 20,
-      "attack": 8,
-      "attack_range": 2,
-      "move_range": 1,
-      "vision_range": 4,
-      "train_cost": {
-        "food": 1,
-        "wood": 1
-      },
-      "upkeep": {
-        "food": 1
-      },
-      "multipliers": {
-        "cavalry": 1.5
-      },
-      "flags": {
-        "can_siege": false,
-        "can_destroy_road": false,
-        "can_capture": true
-      },
-      "sort_order": 12,
-      "tags": [
-        "ranged"
-      ]
-    },
-    {
-      "id": "cavalry",
-      "name": "骑兵",
-      "description": "高速机动单位，可执行冲锋。",
-      "icon_key": "unit_cavalry",
-      "prefab_key": "Cavalry",
-      "class": "mobile",
-      "max_hp": 25,
-      "attack": 12,
-      "attack_range": 1,
-      "move_range": 3,
-      "vision_range": 4,
-      "train_cost": {
-        "food": 2,
-        "refined_ore": 1
-      },
-      "upkeep": {
-        "food": 2
-      },
-      "multipliers": {
-        "warrior": 1.5
-      },
-      "road_speed_bonus": 1,
-      "charge_bonus": 1.5,
-      "flags": {
-        "can_siege": false,
-        "can_destroy_road": false,
-        "can_capture": true
-      },
-      "sort_order": 13,
-      "tags": [
-        "flank",
-        "charge"
+        "frontline"
       ]
     }
   ],
   "buildings": [
     {
+      "id": "city_core",
+      "name": "城市核心",
+      "description": "定义城市存在与归属的核心建筑。",
+      "icon_key": "building_city_core",
+      "prefab_key": "CityCore",
+      "placement_kind": "city_foundation_center",
+      "building_scope": "city_core",
+      "required_resource_type": "",
+      "resource_costs": {
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "city_core_settler"
+      ],
+      "default_recipe_id": "city_core_settler",
+      "max_hp": 100,
+      "takeover_mode": "disabled",
+      "sort_order": 10,
+      "tags": [
+        "core"
+      ]
+    },
+    {
       "id": "farm",
       "name": "农场",
-      "description": "基础粮食产出建筑。",
+      "description": "基础粮食产出建筑",
       "icon_key": "building_farm",
       "prefab_key": "Farm",
-      "category": "production",
-      "placement_rule": "resource_only",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
       "required_resource_type": "food",
-      "build_cost": {
-        "build_points": 2
+      "resource_costs": {
+        "wood": 1
       },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
+      "point_costs": {
+        "industry_output": 1
       },
       "recipe_ids": [
         "farm_food"
       ],
       "default_recipe_id": "farm_food",
-      "combat": {
-        "max_hp": 80,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 10,
-      "tags": [
-        "eco",
-        "food"
-      ]
-    },
-    {
-      "id": "mine",
-      "name": "矿山",
-      "description": "基础矿石产出建筑。",
-      "icon_key": "building_mine",
-      "prefab_key": "Mine",
-      "category": "production",
-      "placement_rule": "resource_only",
-      "required_resource_type": "ore",
-      "build_cost": {
-        "build_points": 3
-      },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [
-        "mine_ore"
-      ],
-      "default_recipe_id": "mine_ore",
-      "combat": {
-        "max_hp": 90,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 11,
-      "tags": [
-        "eco",
-        "ore"
-      ]
-    },
-    {
-      "id": "lumber",
-      "name": "伐木场",
-      "description": "基础木材产出建筑。",
-      "icon_key": "building_lumber",
-      "prefab_key": "Lumber",
-      "category": "production",
-      "placement_rule": "resource_only",
-      "required_resource_type": "wood",
-      "build_cost": {
-        "build_points": 2
-      },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [
-        "lumber_wood"
-      ],
-      "default_recipe_id": "lumber_wood",
-      "combat": {
-        "max_hp": 80,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 12,
-      "tags": [
-        "eco",
-        "wood"
-      ]
-    },
-    {
-      "id": "granary",
-      "name": "粮仓",
-      "description": "用于储备粮食。",
-      "icon_key": "building_granary",
-      "prefab_key": "Granary",
-      "category": "production",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 2,
-        "wood": 2
-      },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [],
-      "default_recipe_id": "",
-      "combat": {
-        "max_hp": 90,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
+      "max_hp": 80,
+      "takeover_mode": "delayed",
       "sort_order": 20,
       "tags": [
         "eco"
       ]
     },
     {
-      "id": "smelter",
-      "name": "冶炼厂",
-      "description": "将矿石精炼为精炼矿。",
-      "icon_key": "building_smelter",
-      "prefab_key": "Smelter",
-      "category": "production",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 3,
-        "ore": 2
+      "id": "mine",
+      "name": "矿山",
+      "description": "基础矿石产出建筑",
+      "icon_key": "building_mine",
+      "prefab_key": "Mine",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
+      "required_resource_type": "ore",
+      "resource_costs": {
+        "wood": 1
       },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
+      "point_costs": {
+        "industry_output": 1
       },
       "recipe_ids": [
-        "smelter_refined_ore"
+        "mine_ore"
       ],
-      "default_recipe_id": "smelter_refined_ore",
-      "combat": {
-        "max_hp": 100,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 21,
+      "default_recipe_id": "mine_ore",
+      "max_hp": 80,
+      "takeover_mode": "delayed",
+      "sort_order": 30,
       "tags": [
-        "eco",
-        "refine"
+        "eco"
       ]
     },
     {
-      "id": "workshop",
-      "name": "工坊",
-      "description": "将木材加工为工程材料。",
-      "icon_key": "building_workshop",
-      "prefab_key": "Workshop",
-      "category": "production",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 3,
-        "wood": 2
+      "id": "lumber",
+      "name": "伐木场",
+      "description": "基础木材产出建筑",
+      "icon_key": "building_lumber",
+      "prefab_key": "Lumber",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
+      "required_resource_type": "wood",
+      "resource_costs": {
+        "wood": 1
       },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
+      "point_costs": {
+        "industry_output": 1
       },
       "recipe_ids": [
-        "workshop_engineer_material"
+        "lumber_wood"
       ],
-      "default_recipe_id": "workshop_engineer_material",
-      "combat": {
-        "max_hp": 100,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 22,
+      "default_recipe_id": "lumber_wood",
+      "max_hp": 80,
+      "takeover_mode": "delayed",
+      "sort_order": 40,
       "tags": [
-        "eco",
-        "craft"
+        "eco"
       ]
     },
     {
       "id": "barracks",
       "name": "兵营",
-      "description": "基础军队训练建筑。",
+      "description": "基础军队训练建筑",
       "icon_key": "building_barracks",
       "prefab_key": "Barracks",
-      "category": "military_production",
-      "placement_rule": "city_only",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
       "required_resource_type": "",
-      "build_cost": {
-        "build_points": 3,
-        "ore": 1
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
       },
-      "upkeep": {
-        "food": 1
-      },
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
+      "point_costs": {
+        "industry_output": 1
       },
       "recipe_ids": [
-        "barracks_warrior",
-        "barracks_archer"
+        "barracks_infantry"
       ],
-      "default_recipe_id": "barracks_warrior",
-      "combat": {
-        "max_hp": 120,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 30,
+      "default_recipe_id": "barracks_infantry",
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 50,
       "tags": [
-        "military",
-        "train"
-      ]
-    },
-    {
-      "id": "stable",
-      "name": "骑兵场",
-      "description": "训练骑兵的军用设施。",
-      "icon_key": "building_stable",
-      "prefab_key": "Stable",
-      "category": "military_production",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 4,
-        "refined_ore": 1
-      },
-      "upkeep": {
-        "food": 2
-      },
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [
-        "stable_cavalry"
-      ],
-      "default_recipe_id": "stable_cavalry",
-      "combat": {
-        "max_hp": 120,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 31,
-      "tags": [
-        "military",
-        "train"
-      ]
-    },
-    {
-      "id": "engineer_camp",
-      "name": "工程营",
-      "description": "训练攻城兵与破坏兵。",
-      "icon_key": "building_engineer_camp",
-      "prefab_key": "EngineerCamp",
-      "category": "military_production",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 4,
-        "engineer_material": 1
-      },
-      "upkeep": {
-        "food": 1
-      },
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [
-        "engineer_camp_settler"
-      ],
-      "default_recipe_id": "engineer_camp_settler",
-      "combat": {
-        "max_hp": 110,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 32,
-      "tags": [
-        "military",
-        "train"
+        "military"
       ]
     },
     {
       "id": "wall",
       "name": "城墙",
-      "description": "提高防御能力。",
+      "description": "基础被动防御建筑",
       "icon_key": "building_wall",
       "prefab_key": "Wall",
-      "category": "military",
-      "placement_rule": "city_only",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
       "required_resource_type": "",
-      "build_cost": {
-        "build_points": 3,
-        "ore": 2
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
       },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
+      "point_costs": {
+        "industry_output": 1
       },
       "recipe_ids": [],
       "default_recipe_id": "",
-      "combat": {
-        "max_hp": 50,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 3,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 40,
+      "max_hp": 120,
+      "takeover_mode": "city_capture",
+      "sort_order": 60,
       "tags": [
         "defense"
-      ]
-    },
-    {
-      "id": "tower",
-      "name": "箭塔",
-      "description": "自动攻击附近敌军。",
-      "icon_key": "building_tower",
-      "prefab_key": "Tower",
-      "category": "military",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 2,
-        "wood": 2
-      },
-      "upkeep": {
-        "food": 1
-      },
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [],
-      "default_recipe_id": "",
-      "combat": {
-        "max_hp": 70,
-        "attack_per_turn": 8,
-        "range": 2,
-        "wall_level": 0,
-        "towers": 1
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 41,
-      "tags": [
-        "defense"
-      ]
-    },
-    {
-      "id": "watchtower",
-      "name": "烽火台",
-      "description": "用于观察周边态势。",
-      "icon_key": "building_watchtower",
-      "prefab_key": "Watchtower",
-      "category": "military",
-      "placement_rule": "city_only",
-      "required_resource_type": "",
-      "build_cost": {
-        "build_points": 1
-      },
-      "upkeep": {},
-      "production": {
-        "input": null,
-        "output": null,
-        "cycle_turns": 0
-      },
-      "recipe_ids": [],
-      "default_recipe_id": "",
-      "combat": {
-        "max_hp": 60,
-        "attack_per_turn": 0,
-        "range": 0,
-        "wall_level": 0,
-        "towers": 0
-      },
-      "limits": {
-        "max_per_node": 1,
-        "max_per_player": -1
-      },
-      "sort_order": 42,
-      "tags": [
-        "vision"
       ]
     }
   ],
   "technologies": [
     {
-      "id": "agri_unlock_farm",
-      "name": "开垦令",
-      "description": "解锁农场与基础农耕配方。",
-      "icon_key": "tech_agri_unlock_farm",
+      "id": "agrarian_foundations",
+      "name": "农业基础",
+      "description": "解锁农场与基础农耕配方",
+      "icon_key": "tech_agrarian_foundations",
       "branch": "agriculture",
       "tier": 1,
-      "tech_point_cost": 1,
+      "research_cost": 1,
       "prerequisites": [],
-      "effects": [
+      "explicit_effects": [
         {
           "type": "unlock_building",
           "target_id": "farm"
@@ -706,275 +308,142 @@
           "target_id": "farm_food"
         }
       ],
+      "modifier_effects": [],
       "sort_order": 10,
       "tags": [
         "agriculture"
       ]
     },
     {
-      "id": "ind_unlock_mine",
-      "name": "采矿令",
-      "description": "解锁矿山与基础采矿配方。",
-      "icon_key": "tech_ind_unlock_mine",
-      "branch": "industry",
+      "id": "organized_labor",
+      "name": "组织化劳动",
+      "description": "提升工业产出效率",
+      "icon_key": "tech_organized_labor",
+      "branch": "governance",
       "tier": 1,
-      "tech_point_cost": 1,
+      "research_cost": 2,
       "prerequisites": [],
-      "effects": [
+      "explicit_effects": [],
+      "modifier_effects": [
         {
-          "type": "unlock_building",
-          "target_id": "mine"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "mine_ore"
-        }
-      ],
-      "sort_order": 11,
-      "tags": [
-        "industry"
-      ]
-    },
-    {
-      "id": "ind_unlock_lumber",
-      "name": "林业令",
-      "description": "解锁伐木场与基础伐木配方。",
-      "icon_key": "tech_ind_unlock_lumber",
-      "branch": "industry",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "lumber"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "lumber_wood"
-        }
-      ],
-      "sort_order": 12,
-      "tags": [
-        "industry"
-      ]
-    },
-    {
-      "id": "agri_unlock_granary",
-      "name": "仓储令",
-      "description": "解锁粮仓。",
-      "icon_key": "tech_agri_unlock_granary",
-      "branch": "agriculture",
-      "tier": 1,
-      "tech_point_cost": 1,
-      "prerequisites": [],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "granary"
-        }
-      ],
-      "sort_order": 13,
-      "tags": [
-        "agriculture"
-      ]
-    },
-    {
-      "id": "ind_unlock_smelter",
-      "name": "冶炼令",
-      "description": "解锁冶炼厂与矿石冶炼配方。",
-      "icon_key": "tech_ind_unlock_smelter",
-      "branch": "industry",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        {
-          "type": "technology_unlocked",
-          "target_id": "ind_unlock_mine"
-        }
-      ],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "smelter"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "smelter_refined_ore"
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
         }
       ],
       "sort_order": 20,
       "tags": [
-        "industry"
+        "governance"
       ]
-    },
+    }
+  ],
+  "policies": [
     {
-      "id": "ind_unlock_workshop",
-      "name": "工坊令",
-      "description": "解锁工坊与工程加工配方。",
-      "icon_key": "tech_ind_unlock_workshop",
-      "branch": "industry",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        {
-          "type": "technology_unlocked",
-          "target_id": "ind_unlock_lumber"
-        }
-      ],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "workshop"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "workshop_engineer_material"
-        }
-      ],
-      "sort_order": 21,
-      "tags": [
-        "industry"
-      ]
-    },
-    {
-      "id": "mil_unlock_basic",
-      "name": "基础兵役令",
-      "description": "解锁兵营与基础军训配方。",
-      "icon_key": "tech_mil_unlock_basic",
-      "branch": "military",
-      "tier": 1,
-      "tech_point_cost": 1,
+      "id": "expansion",
+      "name": "扩张",
+      "description": "优先扩张国家边界。",
+      "icon_key": "policy_expansion",
+      "layer": "national",
+      "activation_timing": "same_turn",
       "prerequisites": [],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "barracks"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "barracks_warrior"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "barracks_archer"
-        }
-      ],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 10,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "war_preparedness",
+      "name": "备战",
+      "description": "优先军事准备。",
+      "icon_key": "policy_war_preparedness",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 20,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "recovery",
+      "name": "恢复",
+      "description": "优先恢复国家秩序。",
+      "icon_key": "policy_recovery",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
       "sort_order": 30,
       "tags": [
-        "military"
+        "national"
       ]
     },
     {
-      "id": "mil_unlock_cavalry",
-      "name": "精锐兵役令",
-      "description": "解锁骑兵场与骑兵训练配方。",
-      "icon_key": "tech_mil_unlock_cavalry",
-      "branch": "military",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        {
-          "type": "technology_unlocked",
-          "target_id": "mil_unlock_basic"
-        },
-        {
-          "type": "technology_unlocked",
-          "target_id": "ind_unlock_smelter"
-        }
-      ],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "stable"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "stable_cavalry"
-        }
-      ],
-      "sort_order": 31,
-      "tags": [
-        "military"
-      ]
-    },
-    {
-      "id": "mil_unlock_engineering",
-      "name": "工程兵役令",
-      "description": "解锁工程营与开拓者训练配方。",
-      "icon_key": "tech_mil_unlock_engineering",
-      "branch": "military",
-      "tier": 2,
-      "tech_point_cost": 1,
-      "prerequisites": [
-        {
-          "type": "technology_unlocked",
-          "target_id": "ind_unlock_workshop"
-        }
-      ],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "engineer_camp"
-        },
-        {
-          "type": "unlock_recipe",
-          "target_id": "engineer_camp_settler"
-        }
-      ],
-      "sort_order": 32,
-      "tags": [
-        "military"
-      ]
-    },
-    {
-      "id": "mil_unlock_fortification",
-      "name": "防御工事令",
-      "description": "解锁城墙、箭塔和烽火台。",
-      "icon_key": "tech_mil_unlock_fortification",
-      "branch": "military",
-      "tier": 1,
-      "tech_point_cost": 1,
+      "id": "reorganization",
+      "name": "整饬",
+      "description": "优先整顿国家结构。",
+      "icon_key": "policy_reorganization",
+      "layer": "national",
+      "activation_timing": "same_turn",
       "prerequisites": [],
-      "effects": [
-        {
-          "type": "unlock_building",
-          "target_id": "wall"
-        },
-        {
-          "type": "unlock_building",
-          "target_id": "tower"
-        },
-        {
-          "type": "unlock_building",
-          "target_id": "watchtower"
-        }
-      ],
-      "sort_order": 33,
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 40,
       "tags": [
-        "military"
+        "national"
       ]
     }
   ],
   "recipes": [
     {
+      "id": "city_core_settler",
+      "name": "组织开拓",
+      "description": "产出开拓者",
+      "icon_key": "recipe_city_core_settler",
+      "building_id": "city_core",
+      "resource_inputs": {
+        "food": 2,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "settler"
+        ]
+      },
+      "sort_order": 10,
+      "tags": [
+        "expansion"
+      ]
+    },
+    {
       "id": "farm_food",
       "name": "基础农耕",
-      "description": "稳定产出粮食。",
+      "description": "产出粮食",
       "icon_key": "recipe_farm_food",
       "building_id": "farm",
-      "cost": {},
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
       },
+      "work_amount": 1,
+      "base_progress": 1,
       "outputs": {
         "resources": {
           "food": 2
         }
       },
-      "sort_order": 10,
+      "sort_order": 20,
       "tags": [
         "food"
       ]
@@ -982,21 +451,21 @@
     {
       "id": "mine_ore",
       "name": "基础采矿",
-      "description": "稳定产出矿石。",
+      "description": "产出矿石",
       "icon_key": "recipe_mine_ore",
       "building_id": "mine",
-      "cost": {},
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
       },
+      "work_amount": 1,
+      "base_progress": 1,
       "outputs": {
         "resources": {
           "ore": 2
         }
       },
-      "sort_order": 11,
+      "sort_order": 30,
       "tags": [
         "ore"
       ]
@@ -1004,169 +473,46 @@
     {
       "id": "lumber_wood",
       "name": "基础伐木",
-      "description": "稳定产出木材。",
+      "description": "产出木材",
       "icon_key": "recipe_lumber_wood",
       "building_id": "lumber",
-      "cost": {},
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
       },
+      "work_amount": 1,
+      "base_progress": 1,
       "outputs": {
         "resources": {
           "wood": 2
         }
       },
-      "sort_order": 12,
+      "sort_order": 40,
       "tags": [
         "wood"
       ]
     },
     {
-      "id": "smelter_refined_ore",
-      "name": "矿石冶炼",
-      "description": "将矿石精炼为精炼矿。",
-      "icon_key": "recipe_smelter_refined_ore",
-      "building_id": "smelter",
-      "cost": {
-        "ore": 2
-      },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
-      },
-      "outputs": {
-        "resources": {
-          "refined_ore": 1
-        }
-      },
-      "sort_order": 20,
-      "tags": [
-        "refine"
-      ]
-    },
-    {
-      "id": "workshop_engineer_material",
-      "name": "工程加工",
-      "description": "将木材加工为工程材料。",
-      "icon_key": "recipe_workshop_engineer_material",
-      "building_id": "workshop",
-      "cost": {
-        "wood": 2
-      },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
-      },
-      "outputs": {
-        "resources": {
-          "engineer_material": 1
-        }
-      },
-      "sort_order": 21,
-      "tags": [
-        "craft"
-      ]
-    },
-    {
-      "id": "barracks_warrior",
-      "name": "训练勇士",
-      "description": "训练基础近战单位。",
-      "icon_key": "recipe_barracks_warrior",
+      "id": "barracks_infantry",
+      "name": "训练步兵",
+      "description": "产出步兵",
+      "icon_key": "recipe_barracks_infantry",
       "building_id": "barracks",
-      "cost": {
+      "resource_inputs": {
         "food": 1,
         "ore": 1
       },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
+      "point_inputs": {
+        "industry_output": 1
       },
+      "work_amount": 2,
+      "base_progress": 1,
       "outputs": {
         "units": [
-          "warrior"
+          "infantry"
         ]
       },
-      "sort_order": 30,
-      "tags": [
-        "military"
-      ]
-    },
-    {
-      "id": "barracks_archer",
-      "name": "训练弓箭手",
-      "description": "训练基础远程单位。",
-      "icon_key": "recipe_barracks_archer",
-      "building_id": "barracks",
-      "cost": {
-        "food": 1,
-        "wood": 1
-      },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
-      },
-      "outputs": {
-        "units": [
-          "archer"
-        ]
-      },
-      "sort_order": 31,
-      "tags": [
-        "military"
-      ]
-    },
-    {
-      "id": "stable_cavalry",
-      "name": "训练骑兵",
-      "description": "训练高速骑兵。",
-      "icon_key": "recipe_stable_cavalry",
-      "building_id": "stable",
-      "cost": {
-        "food": 2,
-        "refined_ore": 1
-      },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
-      },
-      "outputs": {
-        "units": [
-          "cavalry"
-        ]
-      },
-      "sort_order": 32,
-      "tags": [
-        "military"
-      ]
-    },
-    {
-      "id": "engineer_camp_settler",
-      "name": "训练开拓者",
-      "description": "训练扩张单位。",
-      "icon_key": "recipe_engineer_camp_settler",
-      "building_id": "engineer_camp",
-      "cost": {
-        "food": 2,
-        "wood": 1
-      },
-      "duration_turns": 1,
-      "delay_penalty": {
-        "mode": "add_turns",
-        "value": 1
-      },
-      "outputs": {
-        "units": [
-          "settler"
-        ]
-      },
-      "sort_order": 33,
+      "sort_order": 50,
       "tags": [
         "military"
       ]
@@ -1176,9 +522,9 @@
     {
       "id": "plain",
       "name": "平原",
-      "description": "标准地块。",
+      "description": "标准地块",
       "icon_key": "terrain_plain",
-      "material_key": "M_Ground_Lit",
+      "material_key": "M_Plain",
       "move_cost_no_road": 2,
       "defense_bonus": 0,
       "attack_penalty": 0,
@@ -1192,29 +538,11 @@
       ]
     },
     {
-      "id": "mountain",
-      "name": "山地",
-      "description": "高防御地形。",
-      "icon_key": "terrain_mountain",
-      "material_key": "M_Ground_Mountain_Lit",
-      "move_cost_no_road": 3,
-      "defense_bonus": 0.3,
-      "attack_penalty": 0.2,
-      "blocks_cavalry": true,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": false,
-      "sort_order": 20,
-      "tags": [
-        "ground"
-      ]
-    },
-    {
       "id": "forest",
       "name": "森林",
-      "description": "适合伏击的地形。",
+      "description": "高防御地块",
       "icon_key": "terrain_forest",
-      "material_key": "M_Ground_Forest_Lit",
+      "material_key": "M_Forest",
       "move_cost_no_road": 3,
       "defense_bonus": 0.2,
       "attack_penalty": 0,
@@ -1222,7 +550,7 @@
       "passable_with_road": false,
       "passable": true,
       "buildable": true,
-      "sort_order": 30,
+      "sort_order": 20,
       "tags": [
         "ground"
       ]
@@ -1230,9 +558,9 @@
     {
       "id": "river",
       "name": "河流",
-      "description": "难以通行。",
+      "description": "难以通行",
       "icon_key": "terrain_river",
-      "material_key": "M_Ground_River_Lit",
+      "material_key": "M_River",
       "move_cost_no_road": 99,
       "defense_bonus": 0,
       "attack_penalty": 0,
@@ -1240,25 +568,24 @@
       "passable_with_road": true,
       "passable": false,
       "buildable": false,
-      "sort_order": 40,
+      "sort_order": 30,
       "tags": [
         "ground"
       ]
     }
   ],
   "rules": {
-    "turn_time_limit_planning": 120,
+    "turn_time_limit_planning": 35,
     "tokens_per_turn": 3,
     "tokens_recuperation_bonus": 1,
     "max_turns": 30,
-    "castle_base_hp": 100,
+    "city_core_max_hp": 100,
     "safe_zone_radius": 4,
-    "occupy_turns": 1,
-    "starting_tech_points": 2,
-    "tech_points_per_turn": 1,
-    "tech_points_max": 8,
-    "build_points_per_turn": 10,
-    "build_points_max": 30
+    "facility_takeover_turns": 2,
+    "base_research_output_per_turn": 1,
+    "base_industry_output_per_turn": 2,
+    "minimum_city_distance": 3,
+    "initial_city_territory_radius": 1
   },
   "ministers": [
     {
@@ -1267,56 +594,21 @@
       "role": "military",
       "ability": 8,
       "personality": "aggressive",
-      "personality_desc": "果敢激进，善于把握战机",
+      "personality_desc": "果敢激进",
       "loyalty": 7,
       "ambition": 6
-    },
-    {
-      "id": "m003",
-      "name": "陈丰",
-      "role": "agriculture",
-      "ability": 8,
-      "personality": "conservative",
-      "personality_desc": "精于算计，注重积累",
-      "loyalty": 6,
-      "ambition": 7
-    },
-    {
-      "id": "m005",
-      "name": "孙谋",
-      "role": "diplomacy",
-      "ability": 9,
-      "personality": "cunning",
-      "personality_desc": "老谋深算，情报精准",
-      "loyalty": 5,
-      "ambition": 8
     }
   ],
   "maps": [
     {
       "id": "default",
-      "name": "中原",
-      "description": "标准双人对战地图。",
+      "name": "标准地图",
+      "description": "默认对战地图",
       "thumbnail_key": "map_default",
-      "width": 20,
-      "height": 20,
+      "width": 2,
+      "height": 2,
       "tags": [
-        "default",
         "pvp"
-      ]
-    },
-    {
-      "id": "initial_4_regions_20x20",
-      "name": "经典四域",
-      "description": "由旧版 init 地图迁移而来的四人经典地图，保留道路、资源点与预置据点布局。",
-      "thumbnail_key": "map_initial_4_regions_20x20",
-      "width": 20,
-      "height": 20,
-      "tags": [
-        "classic",
-        "legacy",
-        "pvp",
-        "four_player"
       ]
     }
   ]

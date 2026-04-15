@@ -125,13 +125,11 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, cast
 	}
 
 	comp := BuildingComp{
-		Type:      domain.BuildingType(buildingType),
-		HP:        cfg.Combat.MaxHP,
-		MaxHP:     cfg.Combat.MaxHP,
-		Owner:     owner,
-		CastleID:  castleID,
-		WallLevel: cfg.Combat.WallLevel,
-		Towers:    cfg.Combat.Towers,
+		Type:     domain.BuildingType(buildingType),
+		HP:       cfg.MaxHP,
+		MaxHP:    cfg.MaxHP,
+		Owner:    owner,
+		CastleID: castleID,
 	}
 
 	if nodeEntry != nil {
@@ -145,7 +143,7 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, cast
 			}
 			requiredTurns := 0
 			if recipe, ok := staticdata.Default().GetRecipe(cfg.DefaultRecipeID); ok {
-				requiredTurns = recipe.DurationTurns
+				requiredTurns = recipe.WorkAmount
 			}
 			BuildingOperationC.SetValue(nodeEntry, BuildingOperationComp{
 				SelectedRecipeID: cfg.DefaultRecipeID,
@@ -165,16 +163,14 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, cast
 
 func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {
 	switch buildingType {
-	case "castle":
+	case "city_core":
 		castleHP := 100
 		if catalog := staticdata.Default(); catalog != nil {
-			castleHP = catalog.Rules().CastleBaseHP
+			castleHP = catalog.Rules().CityCoreMaxHP
 		}
 		return staticdata.BuildingDefinition{
-			ID: buildingType,
-			Combat: staticdata.BuildingCombat{
-				MaxHP: castleHP,
-			},
+			ID:    buildingType,
+			MaxHP: castleHP,
 		}, true
 	default:
 		return staticdata.BuildingDefinition{}, false

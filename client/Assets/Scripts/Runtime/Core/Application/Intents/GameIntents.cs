@@ -65,13 +65,13 @@ namespace Panoptes.Core.Application.Intents
 
             var msg = new MsgSetPolicy
             {
-                Policy = policyType ?? string.Empty
+                NationalPolicyId = policyType ?? string.Empty
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] SetPolicy");
         }
 
-        public static void BuildToken(string nodeId, string buildingType, string castleId = null)
+        public static void BuildToken(string nodeId, string buildingTypeId, string cityId = null)
         {
             if (ActionLock.IsLocked)
             {
@@ -81,8 +81,8 @@ namespace Panoptes.Core.Application.Intents
             var msg = new MsgBuildStructure
             {
                 NodeId = nodeId ?? string.Empty,
-                BuildingType = buildingType ?? string.Empty,
-                CastleId = castleId ?? string.Empty
+                BuildingTypeId = buildingTypeId ?? string.Empty,
+                CityId = cityId ?? string.Empty
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] BuildStructure");

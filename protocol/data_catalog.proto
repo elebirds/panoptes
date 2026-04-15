@@ -13,6 +13,7 @@ message UnitCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string prefab_key = 5;
+  repeated string tags = 6;
 }
 
 message BuildingCatalogEntry {
@@ -21,6 +22,11 @@ message BuildingCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string prefab_key = 5;
+  string placement_kind = 6;
+  string building_scope = 7;
+  string required_resource_type = 8;
+  string takeover_mode = 9;
+  repeated string tags = 10;
 }
 
 message TechnologyCatalogEntry {
@@ -30,7 +36,18 @@ message TechnologyCatalogEntry {
   string icon_key = 4;
   string branch = 5;
   int32 tier = 6;
-  int32 tech_point_cost = 7;
+  int32 research_cost = 7;
+  repeated string tags = 8;
+}
+
+message PolicyCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string icon_key = 4;
+  string layer = 5;
+  string activation_timing = 6;
+  repeated string tags = 7;
 }
 
 message RecipeCatalogEntry {
@@ -39,7 +56,9 @@ message RecipeCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string building_id = 5;
-  int32 duration_turns = 6;
+  int32 work_amount = 6;
+  int32 base_progress = 7;
+  repeated string tags = 8;
 }
 
 message TerrainCatalogEntry {
@@ -48,16 +67,19 @@ message TerrainCatalogEntry {
   string description = 3;
   string icon_key = 4;
   string material_key = 5;
+  repeated string tags = 6;
 }
 
 message StaticCatalogSnapshot {
   StaticCatalogManifest manifest = 1;
   repeated ResourceDescriptor resources = 2;
-  repeated UnitCatalogEntry units = 3;
-  repeated BuildingCatalogEntry buildings = 4;
-  repeated TechnologyCatalogEntry technologies = 5;
-  repeated RecipeCatalogEntry recipes = 6;
-  repeated TerrainCatalogEntry terrains = 7;
+  repeated PointDescriptor points = 3;
+  repeated UnitCatalogEntry units = 4;
+  repeated BuildingCatalogEntry buildings = 5;
+  repeated TechnologyCatalogEntry technologies = 6;
+  repeated PolicyCatalogEntry policies = 7;
+  repeated RecipeCatalogEntry recipes = 8;
+  repeated TerrainCatalogEntry terrains = 9;
 }
 
 message MsgStaticCatalogManifest {

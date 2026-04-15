@@ -164,18 +164,22 @@
       ]
     }
   },
-  "$id": "content/technologies.schema.json",
+  "$id": "content/policies.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
     "$schema": {
       "type": "string"
     },
-    "technologies": {
+    "policies": {
       "items": {
         "additionalProperties": false,
         "properties": {
-          "branch": {
+          "activation_timing": {
+            "enum": [
+              "same_turn",
+              "next_turn"
+            ],
             "type": "string"
           },
           "explicit_effects": {
@@ -185,6 +189,13 @@
             "type": "array"
           },
           "id": {
+            "type": "string"
+          },
+          "layer": {
+            "enum": [
+              "national",
+              "institutional"
+            ],
             "type": "string"
           },
           "modifier_effects": {
@@ -198,21 +209,12 @@
               "$ref": "#/$defs/prerequisite"
             },
             "type": "array"
-          },
-          "research_cost": {
-            "minimum": 0,
-            "type": "integer"
-          },
-          "tier": {
-            "minimum": 1,
-            "type": "integer"
           }
         },
         "required": [
           "id",
-          "branch",
-          "tier",
-          "research_cost",
+          "layer",
+          "activation_timing",
           "prerequisites",
           "explicit_effects",
           "modifier_effects"
@@ -224,7 +226,7 @@
     }
   },
   "required": [
-    "technologies"
+    "policies"
   ],
   "type": "object"
 }
