@@ -20,6 +20,10 @@ namespace Panoptes.Core.Application.Cache
         public static PlanningDraftCache Instance { get; private set; }
 
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly List<QueuedBuildOrderDto> _buildOrders = new();
+        private readonly List<QueuedRecipeSelectionDto> _recipeSelections = new();
+        private readonly List<QueuedWarZoneDirectiveDto> _warZoneDirectives = new();
+        private readonly List<PlanningWarZoneDto> _warZones = new();
 
         private string _pendingRequestId = string.Empty;
         private string _pendingUnitId = string.Empty;
@@ -27,9 +31,15 @@ namespace Panoptes.Core.Application.Cache
         private string _pendingTargetNodeId = string.Empty;
 
         public IReadOnlyDictionary<string, QueuedUnitOrderDto> OrdersByUnitId => _ordersByUnitId;
+        public IReadOnlyList<QueuedBuildOrderDto> BuildOrders => _buildOrders;
+        public IReadOnlyList<QueuedRecipeSelectionDto> RecipeSelections => _recipeSelections;
+        public IReadOnlyList<QueuedWarZoneDirectiveDto> WarZoneDirectives => _warZoneDirectives;
+        public IReadOnlyList<PlanningWarZoneDto> WarZones => _warZones;
         public PathPreviewDto CurrentPreview { get; private set; }
         public int SnapshotTurn { get; private set; }
         public string SnapshotPhase { get; private set; } = string.Empty;
+        public string PlannedResearchTargetTechnologyId { get; private set; } = string.Empty;
+        public string PlannedNationalPolicyId { get; private set; } = string.Empty;
 
         public event Action PreviewChanged;
         public event Action OrdersChanged;
@@ -83,7 +93,13 @@ namespace Panoptes.Core.Application.Cache
         {
             SnapshotTurn = msg != null ? msg.Turn : 0;
             SnapshotPhase = msg != null ? (msg.Phase ?? string.Empty) : string.Empty;
+            PlannedResearchTargetTechnologyId = msg != null ? (msg.PlannedResearchTargetTechnologyId ?? string.Empty) : string.Empty;
+            PlannedNationalPolicyId = msg != null ? (msg.PlannedNationalPolicyId ?? string.Empty) : string.Empty;
             _ordersByUnitId.Clear();
+            _buildOrders.Clear();
+            _recipeSelections.Clear();
+            _warZoneDirectives.Clear();
+            _warZones.Clear();
 
             if (msg != null && msg.UnitOrders != null)
             {
@@ -96,6 +112,79 @@ namespace Panoptes.Core.Application.Cache
                     }
 
                     _ordersByUnitId[order.UnitId] = MapOrder(order);
+                }
+            }
+            if (msg != null && msg.BuildOrders != null)
+            {
+                for (var i = 0; i < msg.BuildOrders.Count; i++)
+                {
+                    var order = msg.BuildOrders[i];
+                    if (order == null || string.IsNullOrWhiteSpace(order.NodeId))
+                    {
+                        continue;
+                    }
+
+                    _buildOrders.Add(new QueuedBuildOrderDto
+                    {
+                        NodeId = order.NodeId,
+                        BuildingTypeId = order.BuildingTypeId,
+                        CityId = order.CityId
+                    });
+                }
+            }
+            if (msg != null && msg.RecipeSelections != null)
+            {
+                for (var i = 0; i < msg.RecipeSelections.Count; i++)
+                {
+                    var selection = msg.RecipeSelections[i];
+                    if (selection == null || string.IsNullOrWhiteSpace(selection.NodeId))
+                    {
+                        continue;
+                    }
+
+                    _recipeSelections.Add(new QueuedRecipeSelectionDto
+                    {
+                        NodeId = selection.NodeId,
+                        RecipeId = selection.RecipeId
+                    });
+                }
+            }
+            if (msg != null && msg.WarZoneDirectives != null)
+            {
+                for (var i = 0; i < msg.WarZoneDirectives.Count; i++)
+                {
+                    var directive = msg.WarZoneDirectives[i];
+                    if (directive == null || string.IsNullOrWhiteSpace(directive.ZoneId))
+                    {
+                        continue;
+                    }
+
+                    _warZoneDirectives.Add(new QueuedWarZoneDirectiveDto
+                    {
+                        ZoneId = directive.ZoneId,
+                        Directive = directive.Directive,
+                        TargetNode = directive.TargetNode
+                    });
+                }
+            }
+            if (msg != null && msg.WarZones != null)
+            {
+                for (var i = 0; i < msg.WarZones.Count; i++)
+                {
+                    var zone = msg.WarZones[i];
+                    if (zone == null || string.IsNullOrWhiteSpace(zone.Id))
+                    {
+                        continue;
+                    }
+
+                    _warZones.Add(new PlanningWarZoneDto
+                    {
+                        Id = zone.Id,
+                        Name = zone.Name,
+                        NodeIds = zone.NodeIds != null ? zone.NodeIds.ToList() : new List<string>(),
+                        Directive = zone.Directive,
+                        TargetNode = zone.TargetNode
+                    });
                 }
             }
 
@@ -151,7 +240,13 @@ namespace Panoptes.Core.Application.Cache
         {
             SnapshotTurn = 0;
             SnapshotPhase = string.Empty;
+            PlannedResearchTargetTechnologyId = string.Empty;
+            PlannedNationalPolicyId = string.Empty;
             _ordersByUnitId.Clear();
+            _buildOrders.Clear();
+            _recipeSelections.Clear();
+            _warZoneDirectives.Clear();
+            _warZones.Clear();
             OrdersChanged?.Invoke();
         }
 

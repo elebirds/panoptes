@@ -364,30 +364,6 @@ namespace Panoptes.Core.Application.Cache
             return SnapshotResources(MyPlayer);
         }
 
-        public void UpdateActiveNationalPolicy(string nationalPolicyId)
-        {
-            if (MyPlayer == null)
-            {
-                return;
-            }
-
-            MyPlayer.ActiveNationalPolicyId = nationalPolicyId ?? string.Empty;
-            OnStateChanged?.Invoke();
-        }
-
-        public void UpdateResearchTarget(string technologyId, int requiredProgress)
-        {
-            if (MyPlayer == null)
-            {
-                return;
-            }
-
-            MyPlayer.Research ??= new ResearchStateView();
-            MyPlayer.Research.CurrentTargetTechnologyId = technologyId ?? string.Empty;
-            MyPlayer.Research.RequiredProgress = requiredProgress;
-            OnStateChanged?.Invoke();
-        }
-
         public void UpsertRuntimeUnit(UnitDto unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Id))

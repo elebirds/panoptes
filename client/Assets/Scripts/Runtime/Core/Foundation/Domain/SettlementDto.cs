@@ -36,6 +36,35 @@ namespace Panoptes.Core.Domain
         public List<MarchTurnStopDto> TurnStops;
     }
 
+    public sealed class QueuedBuildOrderDto
+    {
+        public string NodeId;
+        public string BuildingTypeId;
+        public string CityId;
+    }
+
+    public sealed class QueuedRecipeSelectionDto
+    {
+        public string NodeId;
+        public string RecipeId;
+    }
+
+    public sealed class QueuedWarZoneDirectiveDto
+    {
+        public string ZoneId;
+        public string Directive;
+        public string TargetNode;
+    }
+
+    public sealed class PlanningWarZoneDto
+    {
+        public string Id;
+        public string Name;
+        public List<string> NodeIds;
+        public string Directive;
+        public string TargetNode;
+    }
+
     public sealed class BuiltStructureDto
     {
         public string NodeId;
