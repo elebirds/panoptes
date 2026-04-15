@@ -40,7 +40,7 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	service := &Service{}
 	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
-			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm"},
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "A2", BuildingTypeId: "farm", CityId: "A1"},
 		},
 	})
 	if err != nil {
@@ -151,6 +151,8 @@ func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testi
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
 	state.World = world
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Resources.Set(domain.ResourceWood, 5)
 	state.Players["player-1"].Resources.Set(domain.ResourceOre, 5)
@@ -176,8 +178,10 @@ func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testi
 		t.Fatalf("second HandleCommand() error = %v", err)
 	}
 
+	firstResult := firstMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
+	lastResult := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
 	if got := state.Players["player-1"].TokensLeft; got != 2 {
-		t.Fatalf("tokens left = %d, want 2", got)
+		t.Fatalf("tokens left = %d, want 2 (first=%#v last=%#v build_orders=%#v)", got, firstResult, lastResult, state.TurnRuntime.Planning.BuildOrders)
 	}
 	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 1 {
 		t.Fatalf("build order count = %d, want 1", got)
@@ -350,6 +354,17 @@ func lastMessage[T proto.Message](msgs []proto.Message) T {
 	var zero T
 	for i := len(msgs) - 1; i >= 0; i-- {
 		typed, ok := msgs[i].(T)
+		if ok {
+			return typed
+		}
+	}
+	return zero
+}
+
+func firstMessage[T proto.Message](msgs []proto.Message) T {
+	var zero T
+	for _, msg := range msgs {
+		typed, ok := msg.(T)
 		if ok {
 			return typed
 		}
