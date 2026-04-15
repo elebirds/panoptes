@@ -7,6 +7,8 @@
 package production
 
 import (
+	"math"
+
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
@@ -15,6 +17,8 @@ import (
 )
 
 type RecipeSystem struct{}
+
+const recipeProgressScale = 1000
 
 func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
@@ -49,11 +53,24 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if selectedRecipeID == "" {
 			return
 		}
-		if entry.HasComponent(ecs.BuildingStateC) && ecs.BuildingStateC.Get(entry).Disabled {
+		if !domain.BuildingOperationalAtTurn(entry, state.Turn) {
+			appendRecipeDisabled(&events, nodeID, selectedRecipeID, operation, requiredTurns, "building_disabled")
+			return
+		}
+		if serviceCityID := ecs.ResolveServiceCityID(entry); serviceCityID != "" && !state.IsCityOnlineForPlayer(building.Owner, serviceCityID) {
 			events = append(events, event.RecipeSkippedEvent{
 				NodeID:   nodeID,
 				RecipeID: selectedRecipeID,
 				Reason:   "building_disabled",
+			})
+			events = append(events, event.RecipeProgressedEvent{
+				NodeID:            nodeID,
+				ProgressTurns:     operation.ProgressTurns,
+				RequiredTurns:     max(requiredTurns, 1),
+				BlockedReason:     "building_disabled",
+				ProgressRemainder: operation.ProgressRemainder,
+				ConsumedResources: cloneResourceBag(operation.ConsumedResources),
+				ConsumedPoints:    clonePointBag(operation.ConsumedPoints),
 			})
 			return
 		}
@@ -75,18 +92,28 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			requiredProgress = 1
 		}
 		wasBlocked := operation.BlockedReason != ""
-		blockedReason := ""
-		if !simulatedResources[building.Owner].CanAfford(resourceCost) {
-			blockedReason = "insufficient_resources"
-		} else if !simulatedPoints[building.Owner].CanAfford(pointCost) {
-			blockedReason = "insufficient_points"
+		resourceRatio := affordabilityRatioResources(simulatedResources[building.Owner], resourceCost)
+		pointRatio := affordabilityRatioPoints(simulatedPoints[building.Owner], pointCost)
+		efficiency := math.Min(resourceRatio, pointRatio)
+		if efficiency < 0 {
+			efficiency = 0
 		}
-		if blockedReason != "" {
+		if efficiency > 1 {
+			efficiency = 1
+		}
+		if efficiency == 0 {
+			blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
+			if blockedReason == "" {
+				blockedReason = "building_disabled"
+			}
 			events = append(events, event.RecipeProgressedEvent{
-				NodeID:        nodeID,
-				ProgressTurns: operation.ProgressTurns,
-				RequiredTurns: max(requiredTurns, requiredProgress),
-				BlockedReason: blockedReason,
+				NodeID:            nodeID,
+				ProgressTurns:     operation.ProgressTurns,
+				RequiredTurns:     max(requiredTurns, requiredProgress),
+				BlockedReason:     blockedReason,
+				ProgressRemainder: operation.ProgressRemainder,
+				ConsumedResources: cloneResourceBag(operation.ConsumedResources),
+				ConsumedPoints:    clonePointBag(operation.ConsumedPoints),
 			})
 			if !wasBlocked || operation.BlockedReason != blockedReason {
 				events = append(events, event.BuildingStatusChangedEvent{
@@ -96,24 +123,59 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 				})
 			}
 			return
+			return
 		}
 
-		for _, key := range pointCost.Keys() {
-			simulatedPoints[building.Owner].AddAmount(key, -pointCost.Get(key))
-			events = append(events, event.PointSpentEvent{
-				PlayerID: building.Owner,
-				Key:      key,
-				Amount:   pointCost.Get(key),
-				Reason:   "recipe_progress",
-			})
-		}
 		progressStep := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
 		if progressStep <= 0 {
 			progressStep = 1
 		}
-		progress := operation.ProgressTurns + progressStep
-		if progress >= requiredProgress {
-			simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceCost)
+		currentScaled := operation.ProgressTurns*recipeProgressScale + operation.ProgressRemainder
+		maxScaled := requiredProgress * recipeProgressScale
+		deltaScaled := int(math.Round(float64(progressStep*recipeProgressScale) * efficiency))
+		if deltaScaled <= 0 && efficiency > 0 {
+			deltaScaled = 1
+		}
+		nextScaled := currentScaled + deltaScaled
+		if nextScaled > maxScaled {
+			nextScaled = maxScaled
+		}
+
+		targetConsumedResources := proportionalResourceBag(resourceCost, nextScaled, maxScaled)
+		targetConsumedPoints := proportionalPointBag(pointCost, nextScaled, maxScaled)
+		resourceDelta := subtractResourceBags(targetConsumedResources, operation.ConsumedResources)
+		pointDelta := subtractPointBags(targetConsumedPoints, operation.ConsumedPoints)
+		if !simulatedResources[building.Owner].CanAfford(resourceDelta) || !simulatedPoints[building.Owner].CanAfford(pointDelta) {
+			blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
+			if blockedReason == "" {
+				blockedReason = "insufficient_resources"
+			}
+			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredProgress, blockedReason)
+			return
+		}
+		simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceDelta)
+		for _, key := range pointDelta.Keys() {
+			simulatedPoints[building.Owner].AddAmount(key, -pointDelta.Get(key))
+			events = append(events, event.PointSpentEvent{
+				PlayerID: building.Owner,
+				Key:      key,
+				Amount:   pointDelta.Get(key),
+				Reason:   "recipe_progress",
+			})
+		}
+
+		progress := nextScaled / recipeProgressScale
+		remainder := nextScaled % recipeProgressScale
+		if nextScaled >= maxScaled {
+			events = append(events, event.RecipeProgressedEvent{
+				NodeID:            nodeID,
+				ProgressTurns:     progress,
+				RequiredTurns:     requiredProgress,
+				ProgressRemainder: remainder,
+				ConsumedResources: targetConsumedResources,
+				ConsumedPoints:    targetConsumedPoints,
+				ResourceDelta:     resourceDelta,
+			})
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        nodeID,
 				Owner:         building.Owner,
@@ -131,7 +193,13 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		}
 
 		events = append(events, event.RecipeProgressedEvent{
-			NodeID: nodeID, ProgressTurns: progress, RequiredTurns: requiredProgress,
+			NodeID:            nodeID,
+			ProgressTurns:     progress,
+			RequiredTurns:     requiredProgress,
+			ProgressRemainder: remainder,
+			ConsumedResources: targetConsumedResources,
+			ConsumedPoints:    targetConsumedPoints,
+			ResourceDelta:     resourceDelta,
 		})
 		if wasBlocked {
 			events = append(events, event.BuildingStatusChangedEvent{
@@ -222,10 +290,13 @@ func appendRecipeBlocked(events *[]event.Event, nodeID string, recipeID string, 
 		Reason:   reason,
 	})
 	*events = append(*events, event.RecipeProgressedEvent{
-		NodeID:        nodeID,
-		ProgressTurns: operation.ProgressTurns,
-		RequiredTurns: requiredTurns,
-		BlockedReason: reason,
+		NodeID:            nodeID,
+		ProgressTurns:     operation.ProgressTurns,
+		RequiredTurns:     requiredTurns,
+		BlockedReason:     reason,
+		ProgressRemainder: operation.ProgressRemainder,
+		ConsumedResources: cloneResourceBag(operation.ConsumedResources),
+		ConsumedPoints:    clonePointBag(operation.ConsumedPoints),
 	})
 	if operation.BlockedReason == reason {
 		return
@@ -235,4 +306,149 @@ func appendRecipeBlocked(events *[]event.Event, nodeID string, recipeID string, 
 		Status: "blocked",
 		Reason: reason,
 	})
+}
+
+func appendRecipeDisabled(events *[]event.Event, nodeID string, recipeID string, operation *ecs.BuildingOperationComp, requiredTurns int, reason string) {
+	if events == nil || operation == nil {
+		return
+	}
+	if requiredTurns <= 0 {
+		requiredTurns = max(operation.RequiredTurns, 1)
+	}
+	*events = append(*events, event.RecipeSkippedEvent{
+		NodeID:   nodeID,
+		RecipeID: recipeID,
+		Reason:   reason,
+	})
+	*events = append(*events, event.RecipeProgressedEvent{
+		NodeID:            nodeID,
+		ProgressTurns:     operation.ProgressTurns,
+		RequiredTurns:     requiredTurns,
+		BlockedReason:     reason,
+		ProgressRemainder: operation.ProgressRemainder,
+		ConsumedResources: cloneResourceBag(operation.ConsumedResources),
+		ConsumedPoints:    clonePointBag(operation.ConsumedPoints),
+	})
+}
+
+func affordabilityRatioResources(available domain.ResourceBag, total domain.ResourceBag) float64 {
+	if total == nil || total.IsZero() {
+		return 1
+	}
+	ratio := 1.0
+	for _, key := range total.Keys() {
+		required := total.Get(key)
+		if required <= 0 {
+			continue
+		}
+		current := available.Get(key)
+		currentRatio := float64(current) / float64(required)
+		if currentRatio < ratio {
+			ratio = currentRatio
+		}
+	}
+	if ratio < 0 {
+		return 0
+	}
+	return ratio
+}
+
+func affordabilityRatioPoints(available domain.PointBag, total domain.PointBag) float64 {
+	if total == nil || total.IsZero() {
+		return 1
+	}
+	ratio := 1.0
+	for _, key := range total.Keys() {
+		required := total.Get(key)
+		if required <= 0 {
+			continue
+		}
+		current := available.Get(key)
+		currentRatio := float64(current) / float64(required)
+		if currentRatio < ratio {
+			ratio = currentRatio
+		}
+	}
+	if ratio < 0 {
+		return 0
+	}
+	return ratio
+}
+
+func blockedReasonForRatios(resourceRatio float64, pointRatio float64, resources domain.ResourceBag, points domain.PointBag) string {
+	if (resources != nil && !resources.IsZero()) && resourceRatio <= 0 {
+		return "insufficient_resources"
+	}
+	if (points != nil && !points.IsZero()) && pointRatio <= 0 {
+		return "insufficient_points"
+	}
+	if resourceRatio < pointRatio {
+		return "insufficient_resources"
+	}
+	if pointRatio < resourceRatio {
+		return "insufficient_points"
+	}
+	return ""
+}
+
+func proportionalResourceBag(total domain.ResourceBag, scaledProgress int, scaledRequired int) domain.ResourceBag {
+	if total == nil || total.IsZero() || scaledRequired <= 0 {
+		return domain.NewResourceBag()
+	}
+	out := domain.NewResourceBag()
+	for _, key := range total.Keys() {
+		amount := int(float64(total.Get(key)) * float64(scaledProgress) / float64(scaledRequired))
+		if amount > total.Get(key) {
+			amount = total.Get(key)
+		}
+		out.Set(key, amount)
+	}
+	return out
+}
+
+func proportionalPointBag(total domain.PointBag, scaledProgress int, scaledRequired int) domain.PointBag {
+	if total == nil || total.IsZero() || scaledRequired <= 0 {
+		return domain.NewPointBag()
+	}
+	out := domain.NewPointBag()
+	for _, key := range total.Keys() {
+		amount := int(float64(total.Get(key)) * float64(scaledProgress) / float64(scaledRequired))
+		if amount > total.Get(key) {
+			amount = total.Get(key)
+		}
+		out.Set(key, amount)
+	}
+	return out
+}
+
+func subtractResourceBags(total domain.ResourceBag, consumed domain.ResourceBag) domain.ResourceBag {
+	out := domain.NewResourceBag()
+	for _, key := range total.Keys() {
+		delta := total.Get(key) - consumed.Get(key)
+		out.Set(key, delta)
+	}
+	return out
+}
+
+func subtractPointBags(total domain.PointBag, consumed domain.PointBag) domain.PointBag {
+	out := domain.NewPointBag()
+	for _, key := range total.Keys() {
+		delta := total.Get(key) - consumed.Get(key)
+		out.Set(key, delta)
+	}
+	return out
+}
+
+func cloneResourceBag(src domain.ResourceBag) domain.ResourceBag {
+	if src == nil {
+		return domain.NewResourceBag()
+	}
+	return src.Clone()
+}
+
+func clonePointBag(src domain.PointBag) domain.PointBag {
+	if src == nil {
+		return domain.NewPointBag()
+	}
+	return src.Clone()
 }

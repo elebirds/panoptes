@@ -79,16 +79,17 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 
 	switch e := evt.(type) {
 	case event.BuildingBuiltEvent:
-		return &pb.TurnEvent{
-			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id":       strings.TrimSpace(e.NodeID),
-				"building_type": strings.TrimSpace(e.BuildingType),
-				"owner":         strings.TrimSpace(e.Owner),
-				"city_id":       strings.TrimSpace(e.CityID),
-				"building_hp":   strconv.Itoa(resolveBuiltBuildingHP(e.BuildingType)),
-			},
+		data := map[string]string{
+			"node_id":       strings.TrimSpace(e.NodeID),
+			"building_type": strings.TrimSpace(e.BuildingType),
+			"owner":         strings.TrimSpace(e.Owner),
+			"city_id":       strings.TrimSpace(e.CityID),
+			"building_hp":   strconv.Itoa(resolveBuiltBuildingHP(e.BuildingType)),
 		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.ResourceProducedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -262,14 +263,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.BuildingStatusChangedEvent:
-		return &pb.TurnEvent{
-			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id": strings.TrimSpace(e.NodeID),
-				"status":  strings.TrimSpace(e.Status),
-				"reason":  strings.TrimSpace(e.Reason),
-			},
+		data := map[string]string{
+			"node_id": strings.TrimSpace(e.NodeID),
+			"status":  strings.TrimSpace(e.Status),
+			"reason":  strings.TrimSpace(e.Reason),
 		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.MinisterActedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -351,6 +353,42 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			"node_id":  e.NodeID,
 			"damage":   strconv.Itoa(e.Damage),
 			"hp_after": strconv.Itoa(e.HPAfter),
+		}}
+	case event.CityCapturedEvent:
+		data := map[string]string{
+			"node_id":      e.NodeID,
+			"city_id":      e.CityID,
+			"old_owner_id": e.OldOwnerID,
+			"new_owner_id": e.NewOwnerID,
+		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.FacilityTakeoverProgressedEvent:
+		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
+			"node_id":               e.NodeID,
+			"controller_player_id":  e.ControllerPlayerID,
+			"progress":              strconv.Itoa(e.Progress),
+			"required":              strconv.Itoa(e.Required),
+			"status":                e.Status,
+			"reason":                e.Reason,
+		}}
+	case event.FacilityTakeoverCompletedEvent:
+		data := map[string]string{
+			"node_id":         e.NodeID,
+			"new_owner_id":    e.NewOwnerID,
+			"service_city_id": e.ServiceCityID,
+		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.BuildingRuinedEvent:
+		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
+			"node_id":      e.NodeID,
+			"new_owner_id": e.NewOwnerID,
+			"reason":       e.Reason,
 		}}
 	}
 
