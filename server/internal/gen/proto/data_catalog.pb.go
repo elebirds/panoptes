@@ -757,6 +757,210 @@ func (x *MsgStaticCatalogManifest) GetManifest() *StaticCatalogManifest {
 	return nil
 }
 
+type MsgStaticCatalogSyncRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BundleHash    string                 `protobuf:"bytes,1,opt,name=bundle_hash,json=bundleHash,proto3" json:"bundle_hash,omitempty"`
+	SectionNames  []string               `protobuf:"bytes,2,rep,name=section_names,json=sectionNames,proto3" json:"section_names,omitempty"`
+	ForceFullSync bool                   `protobuf:"varint,3,opt,name=force_full_sync,json=forceFullSync,proto3" json:"force_full_sync,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgStaticCatalogSyncRequest) Reset() {
+	*x = MsgStaticCatalogSyncRequest{}
+	mi := &file_data_catalog_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgStaticCatalogSyncRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgStaticCatalogSyncRequest) ProtoMessage() {}
+
+func (x *MsgStaticCatalogSyncRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_data_catalog_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgStaticCatalogSyncRequest.ProtoReflect.Descriptor instead.
+func (*MsgStaticCatalogSyncRequest) Descriptor() ([]byte, []int) {
+	return file_data_catalog_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MsgStaticCatalogSyncRequest) GetBundleHash() string {
+	if x != nil {
+		return x.BundleHash
+	}
+	return ""
+}
+
+func (x *MsgStaticCatalogSyncRequest) GetSectionNames() []string {
+	if x != nil {
+		return x.SectionNames
+	}
+	return nil
+}
+
+func (x *MsgStaticCatalogSyncRequest) GetForceFullSync() bool {
+	if x != nil {
+		return x.ForceFullSync
+	}
+	return false
+}
+
+type MsgStaticCatalogSectionChunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SectionName   string                 `protobuf:"bytes,1,opt,name=section_name,json=sectionName,proto3" json:"section_name,omitempty"`
+	SectionHash   string                 `protobuf:"bytes,2,opt,name=section_hash,json=sectionHash,proto3" json:"section_hash,omitempty"`
+	ChunkIndex    uint32                 `protobuf:"varint,3,opt,name=chunk_index,json=chunkIndex,proto3" json:"chunk_index,omitempty"`
+	ChunkCount    uint32                 `protobuf:"varint,4,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	Compression   string                 `protobuf:"bytes,5,opt,name=compression,proto3" json:"compression,omitempty"`
+	Payload       []byte                 `protobuf:"bytes,6,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgStaticCatalogSectionChunk) Reset() {
+	*x = MsgStaticCatalogSectionChunk{}
+	mi := &file_data_catalog_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgStaticCatalogSectionChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgStaticCatalogSectionChunk) ProtoMessage() {}
+
+func (x *MsgStaticCatalogSectionChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_data_catalog_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgStaticCatalogSectionChunk.ProtoReflect.Descriptor instead.
+func (*MsgStaticCatalogSectionChunk) Descriptor() ([]byte, []int) {
+	return file_data_catalog_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetSectionName() string {
+	if x != nil {
+		return x.SectionName
+	}
+	return ""
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetSectionHash() string {
+	if x != nil {
+		return x.SectionHash
+	}
+	return ""
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetChunkIndex() uint32 {
+	if x != nil {
+		return x.ChunkIndex
+	}
+	return 0
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetChunkCount() uint32 {
+	if x != nil {
+		return x.ChunkCount
+	}
+	return 0
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetCompression() string {
+	if x != nil {
+		return x.Compression
+	}
+	return ""
+}
+
+func (x *MsgStaticCatalogSectionChunk) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+type MsgStaticCatalogSyncComplete struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	AppliedBundleHash string                 `protobuf:"bytes,1,opt,name=applied_bundle_hash,json=appliedBundleHash,proto3" json:"applied_bundle_hash,omitempty"`
+	Success           bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	Error             string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *MsgStaticCatalogSyncComplete) Reset() {
+	*x = MsgStaticCatalogSyncComplete{}
+	mi := &file_data_catalog_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgStaticCatalogSyncComplete) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgStaticCatalogSyncComplete) ProtoMessage() {}
+
+func (x *MsgStaticCatalogSyncComplete) ProtoReflect() protoreflect.Message {
+	mi := &file_data_catalog_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgStaticCatalogSyncComplete.ProtoReflect.Descriptor instead.
+func (*MsgStaticCatalogSyncComplete) Descriptor() ([]byte, []int) {
+	return file_data_catalog_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MsgStaticCatalogSyncComplete) GetAppliedBundleHash() string {
+	if x != nil {
+		return x.AppliedBundleHash
+	}
+	return ""
+}
+
+func (x *MsgStaticCatalogSyncComplete) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgStaticCatalogSyncComplete) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 type MsgStaticCatalogSnapshot struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Snapshot      *StaticCatalogSnapshot `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
@@ -766,7 +970,7 @@ type MsgStaticCatalogSnapshot struct {
 
 func (x *MsgStaticCatalogSnapshot) Reset() {
 	*x = MsgStaticCatalogSnapshot{}
-	mi := &file_data_catalog_proto_msgTypes[8]
+	mi := &file_data_catalog_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -778,7 +982,7 @@ func (x *MsgStaticCatalogSnapshot) String() string {
 func (*MsgStaticCatalogSnapshot) ProtoMessage() {}
 
 func (x *MsgStaticCatalogSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_data_catalog_proto_msgTypes[8]
+	mi := &file_data_catalog_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -791,7 +995,7 @@ func (x *MsgStaticCatalogSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgStaticCatalogSnapshot.ProtoReflect.Descriptor instead.
 func (*MsgStaticCatalogSnapshot) Descriptor() ([]byte, []int) {
-	return file_data_catalog_proto_rawDescGZIP(), []int{8}
+	return file_data_catalog_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MsgStaticCatalogSnapshot) GetSnapshot() *StaticCatalogSnapshot {
@@ -874,7 +1078,25 @@ const file_data_catalog_proto_rawDesc = "" +
 	"\arecipes\x18\b \x03(\v2%.panoptes.proto.v1.RecipeCatalogEntryR\arecipes\x12B\n" +
 	"\bterrains\x18\t \x03(\v2&.panoptes.proto.v1.TerrainCatalogEntryR\bterrains\"`\n" +
 	"\x18MsgStaticCatalogManifest\x12D\n" +
-	"\bmanifest\x18\x01 \x01(\v2(.panoptes.proto.v1.StaticCatalogManifestR\bmanifest\"`\n" +
+	"\bmanifest\x18\x01 \x01(\v2(.panoptes.proto.v1.StaticCatalogManifestR\bmanifest\"\x8b\x01\n" +
+	"\x1bMsgStaticCatalogSyncRequest\x12\x1f\n" +
+	"\vbundle_hash\x18\x01 \x01(\tR\n" +
+	"bundleHash\x12#\n" +
+	"\rsection_names\x18\x02 \x03(\tR\fsectionNames\x12&\n" +
+	"\x0fforce_full_sync\x18\x03 \x01(\bR\rforceFullSync\"\xe2\x01\n" +
+	"\x1cMsgStaticCatalogSectionChunk\x12!\n" +
+	"\fsection_name\x18\x01 \x01(\tR\vsectionName\x12!\n" +
+	"\fsection_hash\x18\x02 \x01(\tR\vsectionHash\x12\x1f\n" +
+	"\vchunk_index\x18\x03 \x01(\rR\n" +
+	"chunkIndex\x12\x1f\n" +
+	"\vchunk_count\x18\x04 \x01(\rR\n" +
+	"chunkCount\x12 \n" +
+	"\vcompression\x18\x05 \x01(\tR\vcompression\x12\x18\n" +
+	"\apayload\x18\x06 \x01(\fR\apayload\"~\n" +
+	"\x1cMsgStaticCatalogSyncComplete\x12.\n" +
+	"\x13applied_bundle_hash\x18\x01 \x01(\tR\x11appliedBundleHash\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"`\n" +
 	"\x18MsgStaticCatalogSnapshot\x12D\n" +
 	"\bsnapshot\x18\x01 \x01(\v2(.panoptes.proto.v1.StaticCatalogSnapshotR\bsnapshotBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
@@ -890,32 +1112,35 @@ func file_data_catalog_proto_rawDescGZIP() []byte {
 	return file_data_catalog_proto_rawDescData
 }
 
-var file_data_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_data_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_data_catalog_proto_goTypes = []any{
-	(*UnitCatalogEntry)(nil),         // 0: panoptes.proto.v1.UnitCatalogEntry
-	(*BuildingCatalogEntry)(nil),     // 1: panoptes.proto.v1.BuildingCatalogEntry
-	(*TechnologyCatalogEntry)(nil),   // 2: panoptes.proto.v1.TechnologyCatalogEntry
-	(*PolicyCatalogEntry)(nil),       // 3: panoptes.proto.v1.PolicyCatalogEntry
-	(*RecipeCatalogEntry)(nil),       // 4: panoptes.proto.v1.RecipeCatalogEntry
-	(*TerrainCatalogEntry)(nil),      // 5: panoptes.proto.v1.TerrainCatalogEntry
-	(*StaticCatalogSnapshot)(nil),    // 6: panoptes.proto.v1.StaticCatalogSnapshot
-	(*MsgStaticCatalogManifest)(nil), // 7: panoptes.proto.v1.MsgStaticCatalogManifest
-	(*MsgStaticCatalogSnapshot)(nil), // 8: panoptes.proto.v1.MsgStaticCatalogSnapshot
-	(*StaticCatalogManifest)(nil),    // 9: panoptes.proto.v1.StaticCatalogManifest
-	(*ResourceDescriptor)(nil),       // 10: panoptes.proto.v1.ResourceDescriptor
-	(*PointDescriptor)(nil),          // 11: panoptes.proto.v1.PointDescriptor
+	(*UnitCatalogEntry)(nil),             // 0: panoptes.proto.v1.UnitCatalogEntry
+	(*BuildingCatalogEntry)(nil),         // 1: panoptes.proto.v1.BuildingCatalogEntry
+	(*TechnologyCatalogEntry)(nil),       // 2: panoptes.proto.v1.TechnologyCatalogEntry
+	(*PolicyCatalogEntry)(nil),           // 3: panoptes.proto.v1.PolicyCatalogEntry
+	(*RecipeCatalogEntry)(nil),           // 4: panoptes.proto.v1.RecipeCatalogEntry
+	(*TerrainCatalogEntry)(nil),          // 5: panoptes.proto.v1.TerrainCatalogEntry
+	(*StaticCatalogSnapshot)(nil),        // 6: panoptes.proto.v1.StaticCatalogSnapshot
+	(*MsgStaticCatalogManifest)(nil),     // 7: panoptes.proto.v1.MsgStaticCatalogManifest
+	(*MsgStaticCatalogSyncRequest)(nil),  // 8: panoptes.proto.v1.MsgStaticCatalogSyncRequest
+	(*MsgStaticCatalogSectionChunk)(nil), // 9: panoptes.proto.v1.MsgStaticCatalogSectionChunk
+	(*MsgStaticCatalogSyncComplete)(nil), // 10: panoptes.proto.v1.MsgStaticCatalogSyncComplete
+	(*MsgStaticCatalogSnapshot)(nil),     // 11: panoptes.proto.v1.MsgStaticCatalogSnapshot
+	(*StaticCatalogManifest)(nil),        // 12: panoptes.proto.v1.StaticCatalogManifest
+	(*ResourceDescriptor)(nil),           // 13: panoptes.proto.v1.ResourceDescriptor
+	(*PointDescriptor)(nil),              // 14: panoptes.proto.v1.PointDescriptor
 }
 var file_data_catalog_proto_depIdxs = []int32{
-	9,  // 0: panoptes.proto.v1.StaticCatalogSnapshot.manifest:type_name -> panoptes.proto.v1.StaticCatalogManifest
-	10, // 1: panoptes.proto.v1.StaticCatalogSnapshot.resources:type_name -> panoptes.proto.v1.ResourceDescriptor
-	11, // 2: panoptes.proto.v1.StaticCatalogSnapshot.points:type_name -> panoptes.proto.v1.PointDescriptor
+	12, // 0: panoptes.proto.v1.StaticCatalogSnapshot.manifest:type_name -> panoptes.proto.v1.StaticCatalogManifest
+	13, // 1: panoptes.proto.v1.StaticCatalogSnapshot.resources:type_name -> panoptes.proto.v1.ResourceDescriptor
+	14, // 2: panoptes.proto.v1.StaticCatalogSnapshot.points:type_name -> panoptes.proto.v1.PointDescriptor
 	0,  // 3: panoptes.proto.v1.StaticCatalogSnapshot.units:type_name -> panoptes.proto.v1.UnitCatalogEntry
 	1,  // 4: panoptes.proto.v1.StaticCatalogSnapshot.buildings:type_name -> panoptes.proto.v1.BuildingCatalogEntry
 	2,  // 5: panoptes.proto.v1.StaticCatalogSnapshot.technologies:type_name -> panoptes.proto.v1.TechnologyCatalogEntry
 	3,  // 6: panoptes.proto.v1.StaticCatalogSnapshot.policies:type_name -> panoptes.proto.v1.PolicyCatalogEntry
 	4,  // 7: panoptes.proto.v1.StaticCatalogSnapshot.recipes:type_name -> panoptes.proto.v1.RecipeCatalogEntry
 	5,  // 8: panoptes.proto.v1.StaticCatalogSnapshot.terrains:type_name -> panoptes.proto.v1.TerrainCatalogEntry
-	9,  // 9: panoptes.proto.v1.MsgStaticCatalogManifest.manifest:type_name -> panoptes.proto.v1.StaticCatalogManifest
+	12, // 9: panoptes.proto.v1.MsgStaticCatalogManifest.manifest:type_name -> panoptes.proto.v1.StaticCatalogManifest
 	6,  // 10: panoptes.proto.v1.MsgStaticCatalogSnapshot.snapshot:type_name -> panoptes.proto.v1.StaticCatalogSnapshot
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
@@ -936,7 +1161,7 @@ func file_data_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_catalog_proto_rawDesc), len(file_data_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

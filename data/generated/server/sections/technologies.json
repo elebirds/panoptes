@@ -1,0 +1,78 @@
+{
+  "technologies": [
+    {
+      "id": "agrarian_foundations",
+      "name": "农业基础",
+      "description": "解锁农场与基础农耕配方",
+      "icon_key": "tech_agrarian_foundations",
+      "branch": "agriculture",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "farm"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "farm_food"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 10,
+      "tags": [
+        "agriculture"
+      ]
+    },
+    {
+      "id": "organized_labor",
+      "name": "组织化劳动",
+      "description": "提升工业产出效率",
+      "icon_key": "tech_organized_labor",
+      "branch": "governance",
+      "tier": 1,
+      "research_cost": 2,
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 20,
+      "tags": [
+        "governance"
+      ]
+    },
+    {
+      "id": "civic_institutions",
+      "name": "公共制度",
+      "description": "解锁制度候选并新增一个制度槽位",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_policy",
+          "target_id": "academy_charter"
+        },
+        {
+          "type": "add_institution_slots",
+          "institution_slots": 1
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 30,
+      "tags": [
+        "governance",
+        "institution"
+      ]
+    }
+  ]
+}

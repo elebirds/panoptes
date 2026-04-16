@@ -42,10 +42,17 @@ message PointDescriptor {
   bool visible_in_hud = 6;
 }
 
+message CatalogSectionHash {
+  string section_name = 1;
+  string hash = 2;
+}
+
 message StaticCatalogManifest {
   string schema_version = 1;
   string content_version = 2;
   string bundle_hash = 3;
   string default_locale = 4;
   string default_map_id = 5;
+  repeated string required_sections = 6;
+  repeated CatalogSectionHash section_hashes = 7;
 }

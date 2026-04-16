@@ -38,6 +38,14 @@ namespace Panoptes.Core.Infrastructure.Network
                 return true;
             }
 
+            if (gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogManifest ||
+                gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogSectionChunk ||
+                gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogSyncComplete ||
+                gameEvent.BodyCase == GameEvent.BodyOneofCase.ConfigBatchJson)
+            {
+                return true;
+            }
+
             var activeSessionID = GameStateCache.Instance != null
                 ? (GameStateCache.Instance.ActiveGameSessionID ?? string.Empty).Trim()
                 : string.Empty;

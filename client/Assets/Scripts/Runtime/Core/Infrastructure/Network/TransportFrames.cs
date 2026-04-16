@@ -96,6 +96,16 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSubmitTurn submitTurn:
                     frame = PlanningFrame(new PlanningCommand { SubmitTurn = submitTurn });
                     return true;
+                case MsgStaticCatalogSyncRequest syncRequest:
+                    frame = new ClientFrame
+                    {
+                        Meta = BuildMeta(),
+                        Game = new GameCommand
+                        {
+                            StaticCatalogSyncRequest = syncRequest
+                        }
+                    };
+                    return true;
                 default:
                     error = $"unsupported outbound message type: {command.Descriptor.Name}";
                     return false;
@@ -215,6 +225,8 @@ namespace Panoptes.Core.Infrastructure.Network
             {
                 GameEvent.BodyOneofCase.StaticCatalogManifest => evt.StaticCatalogManifest,
                 GameEvent.BodyOneofCase.StaticCatalogSnapshot => evt.StaticCatalogSnapshot,
+                GameEvent.BodyOneofCase.StaticCatalogSectionChunk => evt.StaticCatalogSectionChunk,
+                GameEvent.BodyOneofCase.StaticCatalogSyncComplete => evt.StaticCatalogSyncComplete,
                 GameEvent.BodyOneofCase.ConfigBatchJson => evt.ConfigBatchJson,
                 GameEvent.BodyOneofCase.GameInit => evt.GameInit,
                 GameEvent.BodyOneofCase.PlanningStart => evt.PlanningStart,

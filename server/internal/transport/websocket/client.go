@@ -13,8 +13,8 @@ import (
 	"time"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
-	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"github.com/elebirds/panoptes/internal/transport/codec"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"github.com/elebirds/panoptes/internal/transport/inbound"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/gorilla/websocket"
@@ -23,12 +23,12 @@ import (
 
 // Client represents a single websocket connection.
 type Client struct {
-	hub      *Hub
-	conn     *websocket.Conn
+	hub          *Hub
+	conn         *websocket.Conn
 	connectionID string
-	playerID string
-	roomID   string
-	send     chan []byte
+	playerID     string
+	roomID       string
+	send         chan []byte
 
 	closeOnce sync.Once
 	sendOnce  sync.Once
@@ -227,6 +227,8 @@ func gameCommandName(cmd *pb.GameCommand) string {
 		default:
 			return "PlanningCommand"
 		}
+	case *pb.GameCommand_StaticCatalogSyncRequest:
+		return commandBodyName(body.StaticCatalogSyncRequest)
 	default:
 		return "GameCommand"
 	}

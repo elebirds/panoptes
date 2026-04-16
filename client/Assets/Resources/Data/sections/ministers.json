@@ -1,0 +1,14 @@
+{
+  "ministers": [
+    {
+      "id": "m001",
+      "name": "李猛",
+      "role": "military",
+      "ability": 8,
+      "personality": "aggressive",
+      "personality_desc": "果敢激进",
+      "loyalty": 7,
+      "ambition": 6
+    }
+  ]
+}

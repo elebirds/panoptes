@@ -17,6 +17,7 @@ import (
 	"github.com/elebirds/panoptes/internal/game/scenario"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -269,6 +270,18 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	)
 	game.Registry.Register(room)
 	room.Start()
+	if err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID:  "player-1",
+		RequestID: "bootstrap-sync-player-1",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_StaticCatalogSyncRequest{
+			StaticCatalogSyncRequest: &pb.MsgStaticCatalogSyncRequest{
+				BundleHash: staticdata.Default().BundleHash(),
+			},
+		},
+	}); err != nil {
+		t.Fatalf("HandleGameCommand(sync) error = %v", err)
+	}
 
 	waitForDebugHTTP(t, 2*time.Second, func() bool {
 		return room.State() != nil && room.State().Phase == domain.PhasePlanning.String() && room.State().Turn == 1

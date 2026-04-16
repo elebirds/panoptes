@@ -9,11 +9,18 @@ package staticdata
 type ResourceAmounts map[string]int
 
 type Manifest struct {
-	SchemaVersion  string `json:"schema_version"`
-	ContentVersion string `json:"content_version"`
-	DefaultLocale  string `json:"default_locale"`
-	DefaultMapID   string `json:"default_map_id"`
-	BundleHash     string `json:"bundle_hash"`
+	SchemaVersion    string               `json:"schema_version"`
+	ContentVersion   string               `json:"content_version"`
+	DefaultLocale    string               `json:"default_locale"`
+	DefaultMapID     string               `json:"default_map_id"`
+	BundleHash       string               `json:"bundle_hash"`
+	RequiredSections []string             `json:"required_sections,omitempty"`
+	SectionHashes    []CatalogSectionHash `json:"section_hashes,omitempty"`
+}
+
+type CatalogSectionHash struct {
+	SectionName string `json:"section_name"`
+	Hash        string `json:"hash"`
 }
 
 type ResourceDescriptor struct {
@@ -386,19 +393,66 @@ type MapCatalogEntry struct {
 	Tags         []string `json:"tags,omitempty"`
 }
 
+type TechnologyTreeLayoutPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type TechnologyTreeLayoutNode struct {
+	ID           string  `json:"id"`
+	TechnologyID string  `json:"technology_id,omitempty"`
+	Title        string  `json:"title,omitempty"`
+	Description  string  `json:"description,omitempty"`
+	X            float64 `json:"x"`
+	Y            float64 `json:"y"`
+	Width        float64 `json:"width"`
+	Height       float64 `json:"height"`
+	Visible      bool    `json:"visible"`
+}
+
+type TechnologyTreeLayoutEdge struct {
+	ID        string                      `json:"id"`
+	From      string                      `json:"from"`
+	To        string                      `json:"to"`
+	ShowArrow bool                        `json:"show_arrow"`
+	Arrow     string                      `json:"arrow,omitempty"`
+	Thickness float64                     `json:"thickness"`
+	Points    []TechnologyTreeLayoutPoint `json:"points"`
+}
+
+type TechnologyTreeLayout struct {
+	ConfigVersion string                     `json:"config_version"`
+	Nodes         []TechnologyTreeLayoutNode `json:"nodes"`
+	Edges         []TechnologyTreeLayoutEdge `json:"edges"`
+}
+
+type BuildMenuLayout struct {
+	ConfigVersion     string   `json:"config_version"`
+	BuildingOrder     []string `json:"building_order"`
+	HiddenBuildingIDs []string `json:"hidden_building_ids,omitempty"`
+}
+
+type RecipeLayout struct {
+	ConfigVersion string   `json:"config_version"`
+	RecipeOrder   []string `json:"recipe_order"`
+}
+
 type CatalogBundle struct {
-	Manifest     Manifest               `json:"manifest"`
-	Resources    []ResourceDescriptor   `json:"resources"`
-	Points       []PointDescriptor      `json:"points"`
-	Units        []UnitDefinition       `json:"units"`
-	Buildings    []BuildingDefinition   `json:"buildings"`
-	Technologies []TechnologyDefinition `json:"technologies"`
-	Policies     []PolicyDefinition     `json:"policies"`
-	Recipes      []RecipeDefinition     `json:"recipes"`
-	Terrains     []TerrainDefinition    `json:"terrains"`
-	Rules        Rules                  `json:"rules"`
-	Ministers    []Minister             `json:"ministers"`
-	Maps         []MapCatalogEntry      `json:"maps"`
+	Manifest          Manifest               `json:"manifest"`
+	Resources         []ResourceDescriptor   `json:"resources"`
+	Points            []PointDescriptor      `json:"points"`
+	Units             []UnitDefinition       `json:"units"`
+	Buildings         []BuildingDefinition   `json:"buildings"`
+	Technologies      []TechnologyDefinition `json:"technologies"`
+	Policies          []PolicyDefinition     `json:"policies"`
+	Recipes           []RecipeDefinition     `json:"recipes"`
+	Terrains          []TerrainDefinition    `json:"terrains"`
+	Rules             Rules                  `json:"rules"`
+	Ministers         []Minister             `json:"ministers"`
+	Maps              []MapCatalogEntry      `json:"maps"`
+	UITechTreeLayout  TechnologyTreeLayout   `json:"ui_tech_tree_layout"`
+	UIBuildMenuLayout BuildMenuLayout        `json:"ui_build_menu_layout"`
+	UIRecipeLayout    RecipeLayout           `json:"ui_recipe_layout"`
 }
 
 type ResourceCatalogUIFile struct {
@@ -491,3 +545,5 @@ type RecipeCatalogUIFile struct {
 		Tags        []string `json:"tags"`
 	} `json:"recipes"`
 }
+
+type TechnologyTreeLayoutFile = TechnologyTreeLayout

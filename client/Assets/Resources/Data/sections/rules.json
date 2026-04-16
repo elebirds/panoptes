@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "turn_time_limit_planning": 35,
+    "tokens_per_turn": 3,
+    "bonus_tokens_per_turn": 1,
+    "max_turns": 30,
+    "city_core_max_hp": 100,
+    "safe_zone_radius": 4,
+    "facility_takeover_turns": 2,
+    "base_research_output_per_turn": 1,
+    "base_industry_output_per_turn": 2,
+    "minimum_city_distance": 3,
+    "initial_city_territory_radius": 1
+  }
+}

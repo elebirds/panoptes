@@ -1,0 +1,172 @@
+{
+  "buildings": [
+    {
+      "id": "city_core",
+      "name": "城市核心",
+      "description": "定义城市存在与归属的核心建筑。",
+      "icon_key": "building_city_core",
+      "prefab_key": "CityCore",
+      "placement_kind": "city_foundation_center",
+      "building_scope": "city_core",
+      "required_resource_type": "",
+      "resource_costs": {
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "city_core_settler"
+      ],
+      "default_recipe_id": "city_core_settler",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 100,
+      "takeover_mode": "disabled",
+      "sort_order": 10,
+      "tags": [
+        "core"
+      ]
+    },
+    {
+      "id": "farm",
+      "name": "农场",
+      "description": "基础粮食产出建筑",
+      "icon_key": "building_farm",
+      "prefab_key": "Farm",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
+      "required_resource_type": "food",
+      "resource_costs": {
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "farm_food"
+      ],
+      "default_recipe_id": "farm_food",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 80,
+      "takeover_mode": "delayed",
+      "sort_order": 20,
+      "tags": [
+        "eco"
+      ]
+    },
+    {
+      "id": "mine",
+      "name": "矿山",
+      "description": "基础矿石产出建筑",
+      "icon_key": "building_mine",
+      "prefab_key": "Mine",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
+      "required_resource_type": "ore",
+      "resource_costs": {
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "mine_ore"
+      ],
+      "default_recipe_id": "mine_ore",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 80,
+      "takeover_mode": "delayed",
+      "sort_order": 30,
+      "tags": [
+        "eco"
+      ]
+    },
+    {
+      "id": "lumber",
+      "name": "伐木场",
+      "description": "基础木材产出建筑",
+      "icon_key": "building_lumber",
+      "prefab_key": "Lumber",
+      "placement_kind": "resource_node",
+      "building_scope": "out_of_city",
+      "required_resource_type": "wood",
+      "resource_costs": {
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "lumber_wood"
+      ],
+      "default_recipe_id": "lumber_wood",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 80,
+      "takeover_mode": "delayed",
+      "sort_order": 40,
+      "tags": [
+        "eco"
+      ]
+    },
+    {
+      "id": "barracks",
+      "name": "兵营",
+      "description": "基础军队训练建筑",
+      "icon_key": "building_barracks",
+      "prefab_key": "Barracks",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "barracks_infantry"
+      ],
+      "default_recipe_id": "barracks_infantry",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 50,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "wall",
+      "name": "城墙",
+      "description": "基础被动防御建筑",
+      "icon_key": "building_wall",
+      "prefab_key": "Wall",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 120,
+      "takeover_mode": "city_capture",
+      "sort_order": 60,
+      "tags": [
+        "defense"
+      ]
+    }
+  ]
+}
