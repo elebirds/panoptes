@@ -22,10 +22,11 @@ namespace Panoptes.Presentation.UI.Turn
         [SerializeField] private TextMeshProUGUI reportText;
 
         private GameStateCache _cache;
+        private bool _warnedMissingUi;
 
         private void Awake()
         {
-            EnsureUi();
+            TryResolveUiReferences(false);
             _cache = GameStateCache.Instance;
         }
 
@@ -48,90 +49,76 @@ namespace Panoptes.Presentation.UI.Turn
 
         private void OnTurnSettled(TurnSettledEvent evt)
         {
-            EnsureUi();
-            titleText.text = "回合简报";
+            if (!TryResolveUiReferences(true))
+            {
+                return;
+            }
+
+            titleText.text = "Turn Report";
             if (evt == null)
             {
-                reportText.text = "等待结算";
+                reportText.text = "Waiting settlement";
                 return;
             }
 
             reportText.text =
-                $"建筑新增：{SafeCount(evt.BuiltNodeIDs)}\n" +
-                $"单位移动：{SafeCount(evt.MovedUnitIDs)}\n" +
-                $"单位损失：{SafeCount(evt.DeadUnitIDs)}\n" +
-                $"城市核心受击：{(evt.CityCoreDamaged ? "是" : "否")}\n" +
-                $"下一阶段：{evt.Settlement?.NextPhase ?? string.Empty}";
+                $"Built: {SafeCount(evt.BuiltNodeIDs)}\n" +
+                $"Moved: {SafeCount(evt.MovedUnitIDs)}\n" +
+                $"Lost: {SafeCount(evt.DeadUnitIDs)}\n" +
+                $"City Core Hit: {(evt.CityCoreDamaged ? "Yes" : "No")}\n" +
+                $"Next Phase: {evt.Settlement?.NextPhase ?? string.Empty}";
+        }
+
+        private bool TryResolveUiReferences(bool logWarning)
+        {
+            if (root == null)
+            {
+                root = GetComponent<RectTransform>();
+            }
+
+            if (root != null)
+            {
+                if (background == null)
+                {
+                    var bgTransform = root.Find("Background");
+                    if (bgTransform != null)
+                    {
+                        background = bgTransform.GetComponent<Image>();
+                    }
+                }
+
+                if (titleText == null)
+                {
+                    var titleTransform = root.Find("Title");
+                    if (titleTransform != null)
+                    {
+                        titleText = titleTransform.GetComponent<TextMeshProUGUI>();
+                    }
+                }
+
+                if (reportText == null)
+                {
+                    var reportTransform = root.Find("Report");
+                    if (reportTransform != null)
+                    {
+                        reportText = reportTransform.GetComponent<TextMeshProUGUI>();
+                    }
+                }
+            }
+
+            var ok = root != null && background != null && titleText != null && reportText != null;
+            if (!ok && logWarning && !_warnedMissingUi)
+            {
+                _warnedMissingUi = true;
+                Debug.LogWarning("[TurnReportPanel] Missing UI references. Assign root/background/titleText/reportText in prefab.");
+            }
+
+            return ok;
         }
 
         private static int SafeCount(System.Collections.ICollection values)
         {
             return values != null ? values.Count : 0;
-        }
-
-        private void EnsureUi()
-        {
-            root ??= GetComponent<RectTransform>() ?? gameObject.AddComponent<RectTransform>();
-            root.anchorMin = new Vector2(1f, 1f);
-            root.anchorMax = new Vector2(1f, 1f);
-            root.pivot = new Vector2(1f, 1f);
-            root.anchoredPosition = new Vector2(-24f, -24f);
-            root.sizeDelta = new Vector2(260f, 150f);
-
-            background = EnsureImage("Background");
-            background.color = new Color(0.08f, 0.09f, 0.13f, 0.88f);
-            titleText ??= CreateText("Title", new Vector2(-16f, -16f), new Vector2(228f, 24f), 24f, FontStyles.Bold, TextAlignmentOptions.TopRight);
-            reportText ??= CreateText("Report", new Vector2(-16f, -50f), new Vector2(228f, 84f), 18f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-        }
-
-        private Image EnsureImage(string objectName)
-        {
-            var existing = root.Find(objectName) as RectTransform;
-            var rect = existing;
-            if (rect == null)
-            {
-                var go = new GameObject(objectName, typeof(RectTransform), typeof(Image));
-                go.transform.SetParent(root, false);
-                rect = go.GetComponent<RectTransform>();
-            }
-
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            return rect.GetComponent<Image>();
-        }
-
-        private TextMeshProUGUI CreateText(string objectName, Vector2 anchoredPosition, Vector2 size, float fontSize, FontStyles style, TextAlignmentOptions alignment)
-        {
-            var rect = EnsureRect(objectName, anchoredPosition, size);
-            var text = rect.GetComponent<TextMeshProUGUI>() ?? rect.gameObject.AddComponent<TextMeshProUGUI>();
-            text.font = TMP_Settings.defaultFontAsset;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = Color.white;
-            text.alignment = alignment;
-            text.raycastTarget = false;
-            return text;
-        }
-
-        private RectTransform EnsureRect(string objectName, Vector2 anchoredPosition, Vector2 size)
-        {
-            var existing = root.Find(objectName) as RectTransform;
-            var rect = existing;
-            if (rect == null)
-            {
-                var go = new GameObject(objectName, typeof(RectTransform));
-                go.transform.SetParent(root, false);
-                rect = go.GetComponent<RectTransform>();
-            }
-
-            rect.anchorMin = new Vector2(1f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.pivot = new Vector2(1f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            return rect;
         }
     }
 }

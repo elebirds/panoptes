@@ -3,7 +3,7 @@
  * File: TokenHUD.cs
  * Author: Panoptes Team
  * Date: 2026-04-13
- * Description: Runtime-built token/submit-state HUD.
+ * Description: Token/submit-state HUD bound to prefab references only.
  *************************************************/
 
 using Panoptes.Core.Application.Cache;
@@ -22,10 +22,11 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TextMeshProUGUI stateText;
 
         private GameStateCache _cache;
+        private bool _warnedMissingUi;
 
         private void Awake()
         {
-            EnsureUi();
+            TryResolveUiReferences(false);
             _cache = GameStateCache.Instance;
         }
 
@@ -79,90 +80,72 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Refresh()
         {
-            EnsureUi();
-            if (tokenText == null || stateText == null)
+            if (!TryResolveUiReferences(true))
             {
                 return;
             }
 
             var cache = _cache ?? GameStateCache.Instance;
             var tokens = cache != null ? cache.TokensLeft : 0;
-            tokenText.text = $"令牌 {tokens}";
+            tokenText.text = $"Tokens {tokens}";
 
             if (cache == null)
             {
-                stateText.text = "等待同步";
+                stateText.text = "Waiting Sync";
                 return;
             }
 
             if (cache.IsGameOver)
             {
-                stateText.text = "对局结束";
+                stateText.text = "Game Over";
                 return;
             }
 
             if (ActionLock.IsLocked)
             {
-                stateText.text = "已提交，等待推进";
+                stateText.text = "Submitted";
                 return;
             }
 
-            stateText.text = GamePhases.IsResolving(cache.Phase)
-                ? "服务器结算中"
-                : "可继续操作";
+            stateText.text = GamePhases.IsResolving(cache.Phase) ? "Resolving" : "Ready";
         }
 
-        private void EnsureUi()
+        private bool TryResolveUiReferences(bool logWarning)
         {
             if (root == null)
             {
                 root = GetComponent<RectTransform>();
-                if (root == null)
+            }
+
+            if (root != null)
+            {
+                if (tokenText == null)
                 {
-                    root = gameObject.AddComponent<RectTransform>();
+                    var tokenTransform = root.Find("Tokens");
+                    if (tokenTransform != null)
+                    {
+                        tokenText = tokenTransform.GetComponent<TextMeshProUGUI>();
+                    }
+                }
+
+                if (stateText == null)
+                {
+                    var stateTransform = root.Find("State");
+                    if (stateTransform != null)
+                    {
+                        stateText = stateTransform.GetComponent<TextMeshProUGUI>();
+                    }
                 }
             }
 
-            root.anchorMin = new Vector2(1f, 1f);
-            root.anchorMax = new Vector2(1f, 1f);
-            root.pivot = new Vector2(1f, 1f);
-            root.anchoredPosition = new Vector2(-28f, -24f);
-            root.sizeDelta = new Vector2(260f, 88f);
-
-            tokenText ??= CreateText("Tokens", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 28f, FontStyles.Bold);
-            stateText ??= CreateText("State", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(0f, -34f), 20f, FontStyles.Normal);
-        }
-
-        private TextMeshProUGUI CreateText(string objectName, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, float fontSize, FontStyles style)
-        {
-            var existing = root.Find(objectName) as RectTransform;
-            var rect = existing;
-            if (rect == null)
+            var ok = root != null && tokenText != null && stateText != null;
+            if (!ok && logWarning && !_warnedMissingUi)
             {
-                var go = new GameObject(objectName, typeof(RectTransform));
-                go.transform.SetParent(root, false);
-                rect = go.GetComponent<RectTransform>();
+                _warnedMissingUi = true;
+                Debug.LogWarning("[TokenHUD] Missing UI references. Assign root/tokenText/stateText in prefab.");
             }
 
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = pivot;
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = new Vector2(240f, 32f);
-
-            var text = rect.GetComponent<TextMeshProUGUI>();
-            if (text == null)
-            {
-                text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            }
-
-            text.font = TMP_Settings.defaultFontAsset;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = Color.white;
-            text.alignment = TextAlignmentOptions.TopRight;
-            text.raycastTarget = false;
-            return text;
+            return ok;
         }
     }
 }
