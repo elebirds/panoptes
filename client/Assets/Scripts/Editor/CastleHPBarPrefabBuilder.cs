@@ -8,22 +8,22 @@ namespace Panoptes.Editor
     [InitializeOnLoad]
     public static class CastleHPBarPrefabBuilder
     {
-        private const string RuntimePrefabPath = "Assets/Resources/Prefabs/UI/CastleHPBar.prefab";
-        private const string UiPrefabPath = "Assets/Prefabs/UI/CastleHPBar.prefab";
+        private const string RuntimePrefabPath = "Assets/Resources/Prefabs/UI/CityCoreHPBar.prefab";
+        private const string UiPrefabPath = "Assets/Prefabs/UI/CityCoreHPBar.prefab";
 
         static CastleHPBarPrefabBuilder()
         {
             EditorApplication.delayCall += AutoEnsurePrefabs;
         }
 
-        [MenuItem("Panoptes/UI/Rebuild Castle HP Bar Prefabs")]
+        [MenuItem("Panoptes/UI/Rebuild City Core HP Bar Prefabs")]
         public static void RebuildPrefabs()
         {
             EnsurePrefab(RuntimePrefabPath, forceRebuild: true);
             EnsurePrefab(UiPrefabPath, forceRebuild: true);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[CastleHPBarPrefabBuilder] Rebuilt CastleHPBar prefabs.");
+            Debug.Log("[CastleHPBarPrefabBuilder] Rebuilt CityCoreHPBar prefabs.");
         }
 
         private static void AutoEnsurePrefabs()
@@ -53,10 +53,10 @@ namespace Panoptes.Editor
                 Directory.CreateDirectory(folder);
             }
 
-            var root = new GameObject("CastleHPBar", typeof(RectTransform));
+            var root = new GameObject("CityCoreHPBar", typeof(RectTransform));
             try
             {
-                var hpBar = root.AddComponent<CastleHPBar>();
+                var hpBar = root.AddComponent<CityCoreHPBar>();
                 hpBar.EditorRebuildUiForPrefab();
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             }
@@ -73,7 +73,7 @@ namespace Panoptes.Editor
                 return true;
             }
 
-            var hpBar = prefab.GetComponent<CastleHPBar>();
+            var hpBar = prefab.GetComponent<CityCoreHPBar>();
             if (hpBar == null)
             {
                 return true;
