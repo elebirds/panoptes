@@ -5,12 +5,14 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type DebugHooks struct {
-	DumpStateSummary func(state *domain.GameState)
-	RecordSettlement func(roomID string, playerID string, msg *pb.MsgTurnSettlement)
-	RecordGameOver   func(roomID string, msg *pb.MsgGameOver)
+	DumpStateSummary      func(state *domain.GameState)
+	RecordSettlement      func(roomID string, playerID string, msg *pb.MsgTurnSettlement)
+	RecordGameOver        func(roomID string, msg *pb.MsgGameOver)
+	RecordOutgoingMessage func(roomID string, playerID string, msg proto.Message, meta *pb.EventMeta)
 }
 
 var (

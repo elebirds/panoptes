@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/game/session"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -36,7 +35,6 @@ type Coordinator struct {
 	runtime         *session.Runtime
 	host            Host
 	planningService *planning.Service
-	ministerEngine  *minister.MinisterEngine
 }
 
 func NewCoordinator(runtime *session.Runtime, host Host) *Coordinator {
@@ -44,7 +42,6 @@ func NewCoordinator(runtime *session.Runtime, host Host) *Coordinator {
 		runtime:         runtime,
 		host:            host,
 		planningService: &planning.Service{},
-		ministerEngine:  minister.NewMinisterEngine(nil),
 	}
 }
 
@@ -66,14 +63,11 @@ func (c *Coordinator) Start() {
 		}
 		c.planningService.Enter(c.host)
 		c.runtime.State().Phase = domain.PhasePlanning.String()
+		c.runtime.PreparePlanningStartStateIfNeeded()
 		if skipNotify {
 			skipNotify = false
 		} else {
-			session.PreparePlanningStartState(c.runtime.State())
 			c.host.NotifyTurn(domain.PhasePlanning.String())
-		}
-		if c.ministerEngine != nil {
-			c.ministerEngine.GenerateReports(ctx, c.host)
 		}
 		c.waitAllSubmit(time.Duration(planningTimeoutSec) * time.Second)
 		c.runtime.State().Phase = domain.PhaseResolving.String()

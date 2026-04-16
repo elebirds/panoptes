@@ -226,14 +226,11 @@ Panoptes 当前的服务端结算链天然带有这些时序特征：
 
 本轮已明确按非 MVP 处理：
 
+- `set_minister_directive`
 - `set_war_zone`
 - `war_zone_directive`
 
-本轮仍保留但不视为 MVP 闭环的一类输入：
-
-- `minister` 相关入口
-
-原因是这部分协议/输入仍在仓库中承担一定实验性或占位职责，但不再进入本轮“核心运行时统一化”的设计口径。
+同时，默认主循环也不再触发 minister runtime；仓库内的 `engine/minister/*` 代码保留，但不再参与 MVP 核心裁决。
 
 ## 9. token 语义的收口
 

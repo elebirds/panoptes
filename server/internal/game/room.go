@@ -127,6 +127,9 @@ func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.
 	if r == nil || r.runtime == nil {
 		return nil
 	}
+	if hooks := currentDebugHooks(); hooks.RecordOutgoingMessage != nil {
+		hooks.RecordOutgoingMessage(r.ID, playerID, msg, transport.EventMetaFromContext(ctx))
+	}
 	return r.runtime.SendToPlayer(ctx, playerID, msg)
 }
 

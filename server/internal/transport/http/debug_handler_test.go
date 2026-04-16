@@ -18,6 +18,7 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/golang-jwt/jwt/v5"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestNewServerDoesNotRegisterDevGameRoutesWhenDevModeFalse(t *testing.T) {
@@ -27,7 +28,7 @@ func TestNewServerDoesNotRegisterDevGameRoutesWhenDevModeFalse(t *testing.T) {
 		nil,
 		nil,
 		false,
-		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewSettlementRecorder()),
+		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewSettlementRecorder(), debug.NewCommandResultRecorder()),
 	)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/state", nil)
@@ -78,8 +79,75 @@ func TestDebugHandlerCommandQueuesPlanningCommand(t *testing.T) {
 		t.Fatalf("status = %d, want 200 body=%s", resp.Code, resp.Body.String())
 	}
 
+	var body struct {
+		RequestID  string             `json:"request_id"`
+		State      debug.StateSummary `json:"state"`
+		ResultType string             `json:"result_type"`
+		Result     json.RawMessage    `json:"result"`
+	}
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+	if body.RequestID != "req-research" {
+		t.Fatalf("request_id = %q, want req-research", body.RequestID)
+	}
+	if body.ResultType != "MsgResearchResult" {
+		t.Fatalf("result_type = %q, want MsgResearchResult", body.ResultType)
+	}
+
+	var result pb.MsgResearchResult
+	if err := protojson.Unmarshal(body.Result, &result); err != nil {
+		t.Fatalf("protojson.Unmarshal() error = %v", err)
+	}
+	if !result.GetSuccess() || result.GetTechnologyId() != "agri_unlock_farm" {
+		t.Fatalf("research result = %#v", result)
+	}
+
 	if got := fixture.room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agri_unlock_farm" {
 		t.Fatalf("pending research target = %q, want agri_unlock_farm", got)
+	}
+}
+
+func TestDebugHandlerCommandReturnsConflictForRejectedPlanningCommand(t *testing.T) {
+	fixture := newDebugHTTPFixture(t)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/dev/game/command", bytes.NewBufferString(`{
+		"request_id":"req-invalid-research",
+		"planning":{"setResearchTarget":{"technologyId":"missing-tech"}}
+	}`))
+	req.Header.Set("Authorization", "Bearer "+fixture.token)
+	resp := httptest.NewRecorder()
+	fixture.server.Handler().ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409 body=%s", resp.Code, resp.Body.String())
+	}
+
+	var body struct {
+		RequestID  string             `json:"request_id"`
+		State      debug.StateSummary `json:"state"`
+		ResultType string             `json:"result_type"`
+		Result     json.RawMessage    `json:"result"`
+	}
+	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+	if body.ResultType != "MsgResearchResult" {
+		t.Fatalf("result_type = %q, want MsgResearchResult", body.ResultType)
+	}
+
+	var result pb.MsgResearchResult
+	if err := protojson.Unmarshal(body.Result, &result); err != nil {
+		t.Fatalf("protojson.Unmarshal() error = %v", err)
+	}
+	if result.GetSuccess() {
+		t.Fatalf("research result should fail: %#v", result)
+	}
+	if result.GetErrorCode() != "invalid_target" {
+		t.Fatalf("error_code = %q, want invalid_target", result.GetErrorCode())
+	}
+	if got := fixture.room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
+		t.Fatalf("pending research target = %q, want empty", got)
 	}
 }
 
@@ -160,10 +228,11 @@ func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
 }
 
 type debugHTTPFixture struct {
-	server   *Server
-	room     *game.GameRoom
-	recorder *debug.SettlementRecorder
-	token    string
+	server          *Server
+	room            *game.GameRoom
+	recorder        *debug.SettlementRecorder
+	commandRecorder *debug.CommandResultRecorder
+	token           string
 }
 
 func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
@@ -176,6 +245,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	staticdata.SetDefault(def.Catalog)
 
 	recorder := debug.NewSettlementRecorder()
+	commandRecorder := debug.NewCommandResultRecorder()
 	previousRegistry := game.Registry
 	game.Registry = game.NewGameRoomRegistry()
 	t.Cleanup(func() {
@@ -183,9 +253,10 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 		game.SetDebugHooks(game.DebugHooks{})
 	})
 	game.SetDebugHooks(game.DebugHooks{
-		DumpStateSummary: debug.DumpGameStateSummary,
-		RecordSettlement: recorder.RecordSettlement,
-		RecordGameOver:   recorder.RecordGameOver,
+		DumpStateSummary:      debug.DumpGameStateSummary,
+		RecordSettlement:      recorder.RecordSettlement,
+		RecordGameOver:        recorder.RecordGameOver,
+		RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 	})
 
 	transport := debug.NewCaptureTransport()
@@ -210,11 +281,12 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 			nil,
 			nil,
 			true,
-			NewDebugHandler(game.Registry, recorder),
+			NewDebugHandler(game.Registry, recorder, commandRecorder),
 		),
-		room:     room,
-		recorder: recorder,
-		token:    mustDebugToken(t, "test-secret", "player-1"),
+		room:            room,
+		recorder:        recorder,
+		commandRecorder: commandRecorder,
+		token:           mustDebugToken(t, "test-secret", "player-1"),
 	}
 }
 

@@ -313,6 +313,31 @@ func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	}
 }
 
+func TestSetMinisterDirectiveRejectedAsNonMVP(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{Content: "build more farms"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
+	}
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
+		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	}
+	if got := state.TurnRuntime.Planning.MinisterDirectives["player-1"]; got != "" {
+		t.Fatalf("minister directive = %q, want empty", got)
+	}
+	if len(session.sent["player-1"]) != 0 {
+		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
+	}
+}
+
 func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	session := newPlanningSessionStub(state)
