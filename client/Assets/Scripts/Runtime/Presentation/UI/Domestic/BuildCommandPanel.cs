@@ -252,23 +252,18 @@ namespace Panoptes.Presentation.UI.Domestic
         public void CancelPlacement()
         {
             ResolveMapInputHandler();
-            mapInputHandler?.SetBuildCastleContext(string.Empty);
             mapInputHandler?.CancelCurrentMode();
         }
 
         public void SetCastleContext(string castleNodeId)
         {
             _activeCastleNodeId = (castleNodeId ?? string.Empty).Trim();
-            ResolveMapInputHandler();
-            mapInputHandler?.SetBuildCastleContext(_activeCastleNodeId);
             RefreshBuildItems();
         }
 
         public void ClearCastleContext()
         {
             _activeCastleNodeId = string.Empty;
-            ResolveMapInputHandler();
-            mapInputHandler?.SetBuildCastleContext(string.Empty);
         }
 
         public void RefreshBuildItems()
@@ -1099,18 +1094,16 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            mapInputHandler.SetBuildCastleContext(_activeCastleNodeId);
-
             switch (rule)
             {
                 case BuildRule.ResourceOnly:
-                    mapInputHandler.EnterBuildPlacementResource(normalized);
+                    mapInputHandler.EnterBuildPlacementResource(normalized, _activeCastleNodeId);
                     break;
                 case BuildRule.CityOnly:
-                    mapInputHandler.EnterBuildPlacementCity(normalized);
+                    mapInputHandler.EnterBuildPlacementCity(normalized, _activeCastleNodeId);
                     break;
                 default:
-                    mapInputHandler.EnterBuildPlacementAny(normalized);
+                    mapInputHandler.EnterBuildPlacementAny(normalized, _activeCastleNodeId);
                     break;
             }
         }
