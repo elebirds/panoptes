@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "0ca143c923b2ae1659befc584dd9cd5fcaf75710aa5450cc3842546367cc7b5f"
+    "bundle_hash": "9fe067b973b976630a0d5b955b33fe09ac9f3c1621e04cd321fa570298dd4c84"
   },
   "resources": [
     {
@@ -91,6 +91,7 @@
       "multipliers": {},
       "flags": {
         "can_siege": false,
+        "can_attack_structures": false,
         "can_destroy_road": false,
         "can_capture": true
       },
@@ -121,6 +122,7 @@
       "multipliers": {},
       "flags": {
         "can_siege": false,
+        "can_attack_structures": true,
         "can_destroy_road": false,
         "can_capture": true
       },

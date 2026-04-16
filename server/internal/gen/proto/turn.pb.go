@@ -1229,6 +1229,90 @@ func (x *MsgBuildStructureResult) GetErrorCode() string {
 	return ""
 }
 
+type MsgIssueUnitOrderResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	UnitId        string                 `protobuf:"bytes,2,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	Action        string                 `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`
+	TargetNodeId  string                 `protobuf:"bytes,4,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
+	TargetUnitId  string                 `protobuf:"bytes,5,opt,name=target_unit_id,json=targetUnitId,proto3" json:"target_unit_id,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,6,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgIssueUnitOrderResult) Reset() {
+	*x = MsgIssueUnitOrderResult{}
+	mi := &file_turn_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgIssueUnitOrderResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgIssueUnitOrderResult) ProtoMessage() {}
+
+func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
+	mi := &file_turn_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgIssueUnitOrderResult.ProtoReflect.Descriptor instead.
+func (*MsgIssueUnitOrderResult) Descriptor() ([]byte, []int) {
+	return file_turn_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *MsgIssueUnitOrderResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *MsgIssueUnitOrderResult) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *MsgIssueUnitOrderResult) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *MsgIssueUnitOrderResult) GetTargetNodeId() string {
+	if x != nil {
+		return x.TargetNodeId
+	}
+	return ""
+}
+
+func (x *MsgIssueUnitOrderResult) GetTargetUnitId() string {
+	if x != nil {
+		return x.TargetUnitId
+	}
+	return ""
+}
+
+func (x *MsgIssueUnitOrderResult) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
 type MsgTurnReport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Turn          int32                  `protobuf:"varint,1,opt,name=turn,proto3" json:"turn,omitempty"`
@@ -1239,7 +1323,7 @@ type MsgTurnReport struct {
 
 func (x *MsgTurnReport) Reset() {
 	*x = MsgTurnReport{}
-	mi := &file_turn_proto_msgTypes[16]
+	mi := &file_turn_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1251,7 +1335,7 @@ func (x *MsgTurnReport) String() string {
 func (*MsgTurnReport) ProtoMessage() {}
 
 func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[16]
+	mi := &file_turn_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1264,7 +1348,7 @@ func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTurnReport.ProtoReflect.Descriptor instead.
 func (*MsgTurnReport) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{16}
+	return file_turn_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MsgTurnReport) GetTurn() int32 {
@@ -1407,7 +1491,15 @@ const file_turn_proto_rawDesc = "" +
 	"\x10building_type_id\x18\x03 \x01(\tR\x0ebuildingTypeId\x12\x17\n" +
 	"\acity_id\x18\x04 \x01(\tR\x06cityId\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\x05 \x01(\tR\terrorCode\"=\n" +
+	"error_code\x18\x05 \x01(\tR\terrorCode\"\xcf\x01\n" +
+	"\x17MsgIssueUnitOrderResult\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x17\n" +
+	"\aunit_id\x18\x02 \x01(\tR\x06unitId\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12$\n" +
+	"\x0etarget_node_id\x18\x04 \x01(\tR\ftargetNodeId\x12$\n" +
+	"\x0etarget_unit_id\x18\x05 \x01(\tR\ftargetUnitId\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x06 \x01(\tR\terrorCode\"=\n" +
 	"\rMsgTurnReport\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x18\n" +
 	"\asummary\x18\x02 \x01(\tR\asummaryBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
@@ -1424,7 +1516,7 @@ func file_turn_proto_rawDescGZIP() []byte {
 	return file_turn_proto_rawDescData
 }
 
-var file_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_turn_proto_goTypes = []any{
 	(*MsgPlanningStart)(nil),               // 0: panoptes.proto.v1.MsgPlanningStart
 	(*MinisterDraftView)(nil),              // 1: panoptes.proto.v1.MinisterDraftView
@@ -1442,29 +1534,30 @@ var file_turn_proto_goTypes = []any{
 	(*MsgSetInstitutionLoadoutResult)(nil), // 13: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
 	(*MsgSetBuildingRecipeResult)(nil),     // 14: panoptes.proto.v1.MsgSetBuildingRecipeResult
 	(*MsgBuildStructureResult)(nil),        // 15: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgTurnReport)(nil),                  // 16: panoptes.proto.v1.MsgTurnReport
-	nil,                                    // 17: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
-	(*PlayerView)(nil),                     // 18: panoptes.proto.v1.PlayerView
-	(*NodeView)(nil),                       // 19: panoptes.proto.v1.NodeView
-	(*UnitView)(nil),                       // 20: panoptes.proto.v1.UnitView
-	(*WarZone)(nil),                        // 21: panoptes.proto.v1.WarZone
+	(*MsgIssueUnitOrderResult)(nil),        // 16: panoptes.proto.v1.MsgIssueUnitOrderResult
+	(*MsgTurnReport)(nil),                  // 17: panoptes.proto.v1.MsgTurnReport
+	nil,                                    // 18: panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	(*PlayerView)(nil),                     // 19: panoptes.proto.v1.PlayerView
+	(*NodeView)(nil),                       // 20: panoptes.proto.v1.NodeView
+	(*UnitView)(nil),                       // 21: panoptes.proto.v1.UnitView
+	(*WarZone)(nil),                        // 22: panoptes.proto.v1.WarZone
 }
 var file_turn_proto_depIdxs = []int32{
 	7,  // 0: panoptes.proto.v1.MsgPlanningStart.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
 	1,  // 1: panoptes.proto.v1.MsgPlanningStart.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
-	18, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
-	19, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
-	20, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
-	17, // 5: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	19, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
+	20, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
+	21, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
+	18, // 5: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
 	2,  // 6: panoptes.proto.v1.QueuedUnitOrder.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
 	3,  // 7: panoptes.proto.v1.MsgPlanningSnapshot.unit_orders:type_name -> panoptes.proto.v1.QueuedUnitOrder
-	21, // 8: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
+	22, // 8: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
 	1,  // 9: panoptes.proto.v1.MsgPlanningSnapshot.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
 	4,  // 10: panoptes.proto.v1.MsgPlanningSnapshot.build_orders:type_name -> panoptes.proto.v1.QueuedBuildOrder
 	5,  // 11: panoptes.proto.v1.MsgPlanningSnapshot.recipe_selections:type_name -> panoptes.proto.v1.QueuedRecipeSelection
 	6,  // 12: panoptes.proto.v1.MsgPlanningSnapshot.war_zone_directives:type_name -> panoptes.proto.v1.QueuedWarZoneDirective
 	2,  // 13: panoptes.proto.v1.MsgPlanningPathPreviewResponse.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
-	19, // 14: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
+	20, // 14: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
 	15, // [15:15] is the sub-list for method output_type
 	15, // [15:15] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
@@ -1485,7 +1578,7 @@ func file_turn_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_turn_proto_rawDesc), len(file_turn_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
