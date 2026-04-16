@@ -213,6 +213,14 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Phase = "planning",
                 Timeout = 30,
                 Tokens = 3,
+                PlanningStartEvents =
+                {
+                    new TurnEvent
+                    {
+                        Type = "technology_activated",
+                        Data = { { "technology_id", "agrarian_foundations" }, { "player_id", "player-1" } }
+                    }
+                },
                 MyPlayer = new PlayerView
                 {
                     Id = "player-1",
@@ -259,6 +267,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.TokensLeft, Is.EqualTo(3));
             Assert.That(cache.MyPlayer, Is.Not.Null);
             Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
+            Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
+            Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
             Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);

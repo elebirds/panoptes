@@ -24,7 +24,8 @@ type BuildingBuiltEvent struct {
 	OnlineOnTurn int
 }
 
-// Apply creates the building and charges the player-global inventory.
+// Apply 负责真正创建建筑，并把建造成本扣到玩家全局库存。
+// 新建筑不会立刻上线，而是统一进入 pending_activation，等到下一回合再转为可运行状态。
 func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
 	if !ok {
@@ -164,9 +165,7 @@ type PointBudgetRefreshedEvent struct {
 }
 
 func (e PointBudgetRefreshedEvent) Apply(_ donburi.World, state *domain.GameState) {
-	if e.Amount <= 0 {
-		return
-	}
+	// 刷新预算的语义是“设置到精确值”，包括 0。
 	state.RefreshPointBudget(e.PlayerID, e.Key, e.Amount)
 }
 
@@ -187,6 +186,7 @@ func (e PointSpentEvent) Apply(_ donburi.World, state *domain.GameState) {
 	if e.Amount <= 0 {
 		return
 	}
+	// 点数只影响本回合 resolving 里的临时预算，不会像资源那样成为跨回合持久库存。
 	_ = state.ConsumePoints(e.PlayerID, domain.PointBag{
 		e.Key: e.Amount,
 	})
@@ -222,6 +222,7 @@ func (e IndustryOutputRefreshedEvent) Apply(_ donburi.World, state *domain.GameS
 	if e.Amount <= 0 {
 		return
 	}
+	// 这是旧版 industry refresh 事件；当前主链已统一改用 PointBudgetRefreshedEvent。
 	state.RefreshPointBudget(e.PlayerID, domain.PointIndustryOutput, e.Amount)
 }
 
