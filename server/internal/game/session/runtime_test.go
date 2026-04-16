@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -33,7 +34,19 @@ func (p *capturePlayer) Send(_ context.Context, msg proto.Message) error {
 
 func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentTokens(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Manifest: staticdata.Manifest{DefaultMapID: "default"},
+		Rules:    staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Maps: []staticdata.MapCatalogEntry{
+			{ID: "default", Name: "Default", Width: 2, Height: 2},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "Default",
+		Width:  2,
+		Height: 2,
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain"},
+		},
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
@@ -47,12 +60,60 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
-	if len(player.sent) != 3 {
-		t.Fatalf("send count = %d, want 3", len(player.sent))
+	if len(player.sent) != 4 {
+		t.Fatalf("send count = %d, want 4", len(player.sent))
 	}
-	start, ok := player.sent[2].(*pb.MsgPlanningStart)
+
+	if got := player.sent[0].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogManifest" {
+		t.Fatalf("message[0] = %s, want MsgStaticCatalogManifest", got)
+	}
+
+	configMsg := player.sent[1]
+	if got := configMsg.ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("message[1] = %s, want MsgConfigBatchJson", got)
+	}
+	configsField := configMsg.ProtoReflect().Descriptor().Fields().ByName("configs")
+	if configsField == nil {
+		t.Fatalf("MsgConfigBatchJson.configs field missing")
+	}
+	configs := configMsg.ProtoReflect().Get(configsField).List()
+	if configs.Len() != 1 {
+		t.Fatalf("configs len = %d, want 1", configs.Len())
+	}
+	entry := configs.Get(0).Message()
+	keyField := entry.Descriptor().Fields().ByName("key")
+	jsonField := entry.Descriptor().Fields().ByName("json")
+	if keyField == nil || jsonField == nil {
+		t.Fatalf("config entry fields missing")
+	}
+	if got := entry.Get(keyField).String(); got != "mapconfig" {
+		t.Fatalf("config key = %q, want mapconfig", got)
+	}
+	var payload struct {
+		ID     string `json:"id"`
+		Width  int    `json:"width"`
+		Height int    `json:"height"`
+		Nodes  []struct {
+			ID string `json:"id"`
+		} `json:"nodes"`
+	}
+	if err := json.Unmarshal([]byte(entry.Get(jsonField).String()), &payload); err != nil {
+		t.Fatalf("unmarshal mapconfig json: %v", err)
+	}
+	if payload.ID != "default" {
+		t.Fatalf("mapconfig.id = %q, want default", payload.ID)
+	}
+	if len(payload.Nodes) != 1 || payload.Nodes[0].ID != "A1" {
+		t.Fatalf("mapconfig nodes = %+v, want A1", payload.Nodes)
+	}
+
+	if got := player.sent[2].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
+		t.Fatalf("message[2] = %s, want MsgGameInit", got)
+	}
+
+	start, ok := player.sent[3].(*pb.MsgPlanningStart)
 	if !ok {
-		t.Fatalf("message type = %T, want MsgPlanningStart", player.sent[2])
+		t.Fatalf("message type = %T, want MsgPlanningStart", player.sent[3])
 	}
 	if got := start.GetTokens(); got != 1 {
 		t.Fatalf("tokens = %d, want 1", got)
@@ -73,7 +134,19 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 
 func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Manifest: staticdata.Manifest{DefaultMapID: "default"},
+		Rules:    staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Maps: []staticdata.MapCatalogEntry{
+			{ID: "default", Name: "Default", Width: 1, Height: 1},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "Default",
+		Width:  1,
+		Height: 1,
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain"},
+		},
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
@@ -86,8 +159,11 @@ func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
-	if len(player.sent) != 2 {
-		t.Fatalf("send count = %d, want 2", len(player.sent))
+	if len(player.sent) != 3 {
+		t.Fatalf("send count = %d, want 3", len(player.sent))
+	}
+	if got := player.sent[1].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("message[1] = %s, want MsgConfigBatchJson", got)
 	}
 	if _, ok := player.sent[len(player.sent)-1].(*pb.MsgPlanningStart); ok {
 		t.Fatalf("unexpected planning start in resolving bootstrap")

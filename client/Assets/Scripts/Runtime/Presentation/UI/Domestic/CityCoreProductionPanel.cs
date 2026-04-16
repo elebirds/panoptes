@@ -54,27 +54,6 @@ namespace Panoptes.Presentation.UI.Domestic
             public string local_timestamp_utc;
         }
 
-        [Serializable]
-        private sealed class ProductionConfigRoot
-        {
-            public ProductionConfigEntry[] buildings;
-            public ProductionConfigEntry[] entries;
-            public ProductionConfigEntry[] units;
-        }
-
-        [Serializable]
-        private sealed class ProductionConfigEntry
-        {
-            public string id;
-            public string name;
-            public string description;
-            public int refine_capacity;
-            public int recruit_capacity;
-            public int wood_essence_per_unit;
-            public int stone_essence_per_unit;
-            public int capacity;
-        }
-
         private enum Tab
         {
             Materials = 0,
@@ -123,9 +102,6 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private int fallbackArcheryCapacity = 10;
         [SerializeField] private int woodEssencePerUnit = 1;
         [SerializeField] private int stoneEssencePerUnit = 1;
-        [SerializeField] private bool tryReadCapacityFromConfig = true;
-        [SerializeField] private string buildConfigKey = "buildconfig";
-        [SerializeField] private string armyConfigKey = "armyconfig";
 
         [Header("Persistence")]
         [SerializeField] private string saveKeyPrefix = "city_core_production_plan";
@@ -695,129 +671,8 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void ResolveCapacities()
         {
-            _workshopCapacity = ResolveBuildingCapacity("workshop", fallbackWorkshopCapacity, true);
-            _archeryCapacity = ResolveBuildingCapacity("archery", fallbackArcheryCapacity, false);
-        }
-
-        private int ResolveBuildingCapacity(string buildingId, int fallbackValue, bool isWorkshop)
-        {
-            var resolved = fallbackValue;
-            if (!tryReadCapacityFromConfig)
-            {
-                return Mathf.Max(0, resolved);
-            }
-
-            var buildEntries = TryGetConfigEntries(buildConfigKey);
-            if (buildEntries != null)
-            {
-                resolved = ResolveFromEntries(buildEntries, buildingId, resolved, isWorkshop);
-            }
-
-            var armyEntries = TryGetConfigEntries(armyConfigKey);
-            if (armyEntries != null)
-            {
-                resolved = ResolveFromEntries(armyEntries, buildingId, resolved, isWorkshop);
-            }
-
-            return Mathf.Max(0, resolved);
-        }
-
-        private int ResolveFromEntries(ProductionConfigEntry[] entries, string buildingId, int fallback, bool isWorkshop)
-        {
-            if (entries == null)
-            {
-                return fallback;
-            }
-
-            var targetId = Normalize(buildingId);
-            var result = fallback;
-
-            for (var i = 0; i < entries.Length; i++)
-            {
-                var entry = entries[i];
-                if (entry == null || !string.Equals(Normalize(entry.id), targetId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (isWorkshop)
-                {
-                    if (entry.refine_capacity > 0)
-                    {
-                        result = entry.refine_capacity;
-                    }
-                    else if (entry.capacity > 0)
-                    {
-                        result = entry.capacity;
-                    }
-
-                    if (entry.wood_essence_per_unit > 0)
-                    {
-                        woodEssencePerUnit = entry.wood_essence_per_unit;
-                    }
-
-                    if (entry.stone_essence_per_unit > 0)
-                    {
-                        stoneEssencePerUnit = entry.stone_essence_per_unit;
-                    }
-                }
-                else
-                {
-                    if (entry.recruit_capacity > 0)
-                    {
-                        result = entry.recruit_capacity;
-                    }
-                    else if (entry.capacity > 0)
-                    {
-                        result = entry.capacity;
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private static ProductionConfigEntry[] TryGetConfigEntries(string key)
-        {
-            if (string.IsNullOrWhiteSpace(key) || ConfigCache.Instance == null)
-            {
-                return null;
-            }
-
-            if (!ConfigCache.Instance.TryGetJson(key, out var json) || string.IsNullOrWhiteSpace(json))
-            {
-                return null;
-            }
-
-            try
-            {
-                var root = JsonUtility.FromJson<ProductionConfigRoot>(json);
-                if (root == null)
-                {
-                    return null;
-                }
-
-                if (root.buildings != null && root.buildings.Length > 0)
-                {
-                    return root.buildings;
-                }
-
-                if (root.entries != null && root.entries.Length > 0)
-                {
-                    return root.entries;
-                }
-
-                if (root.units != null && root.units.Length > 0)
-                {
-                    return root.units;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[CityCoreProductionPanel] Failed to parse config '{key}': {ex.Message}");
-            }
-
-            return null;
+            _workshopCapacity = Mathf.Max(0, fallbackWorkshopCapacity);
+            _archeryCapacity = Mathf.Max(0, fallbackArcheryCapacity);
         }
 
         private void HandleTurnSubmitRequested()

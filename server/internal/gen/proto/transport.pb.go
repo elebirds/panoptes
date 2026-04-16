@@ -1194,6 +1194,7 @@ type GameEvent struct {
 	//	*GameEvent_MinisterMetrics
 	//	*GameEvent_SetInstitutionLoadoutResult
 	//	*GameEvent_IssueUnitOrderResult
+	//	*GameEvent_ConfigBatchJson
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1407,6 +1408,15 @@ func (x *GameEvent) GetIssueUnitOrderResult() *MsgIssueUnitOrderResult {
 	return nil
 }
 
+func (x *GameEvent) GetConfigBatchJson() *MsgConfigBatchJson {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_ConfigBatchJson); ok {
+			return x.ConfigBatchJson
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1487,6 +1497,10 @@ type GameEvent_IssueUnitOrderResult struct {
 	IssueUnitOrderResult *MsgIssueUnitOrderResult `protobuf:"bytes,19,opt,name=issue_unit_order_result,json=issueUnitOrderResult,proto3,oneof"`
 }
 
+type GameEvent_ConfigBatchJson struct {
+	ConfigBatchJson *MsgConfigBatchJson `protobuf:"bytes,20,opt,name=config_batch_json,json=configBatchJson,proto3,oneof"`
+}
+
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
 
 func (*GameEvent_StaticCatalogSnapshot) isGameEvent_Body() {}
@@ -1524,6 +1538,8 @@ func (*GameEvent_MinisterMetrics) isGameEvent_Body() {}
 func (*GameEvent_SetInstitutionLoadoutResult) isGameEvent_Body() {}
 
 func (*GameEvent_IssueUnitOrderResult) isGameEvent_Body() {}
+
+func (*GameEvent_ConfigBatchJson) isGameEvent_Body() {}
 
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1652,7 +1668,7 @@ var File_transport_proto protoreflect.FileDescriptor
 const file_transport_proto_rawDesc = "" +
 	"\n" +
 	"\x0ftransport.proto\x12\x11panoptes.proto.v1\x1a\n" +
-	"auth.proto\x1a\fcommon.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
+	"auth.proto\x1a\fcommon.proto\x1a\fconfig.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
 	"turn.proto\"\x92\x01\n" +
 	"\vCommandMeta\x12\x1d\n" +
 	"\n" +
@@ -1735,7 +1751,7 @@ const file_transport_proto_rawDesc = "" +
 	"\rplayer_kicked\x18\x04 \x01(\v2\".panoptes.proto.v1.MsgPlayerKickedH\x00R\fplayerKicked\x12C\n" +
 	"\vlobby_error\x18\x05 \x01(\v2 .panoptes.proto.v1.MsgLobbyErrorH\x00R\n" +
 	"lobbyErrorB\x06\n" +
-	"\x04body\"\xb3\r\n" +
+	"\x04body\"\x88\x0e\n" +
 	"\tGameEvent\x12e\n" +
 	"\x17static_catalog_manifest\x18\x01 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogManifestH\x00R\x15staticCatalogManifest\x12e\n" +
 	"\x17static_catalog_snapshot\x18\x02 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogSnapshotH\x00R\x15staticCatalogSnapshot\x12=\n" +
@@ -1757,7 +1773,8 @@ const file_transport_proto_rawDesc = "" +
 	"\x15minister_report_chunk\x18\x10 \x01(\v2).panoptes.proto.v1.MsgMinisterReportChunkH\x00R\x13ministerReportChunk\x12R\n" +
 	"\x10minister_metrics\x18\x11 \x01(\v2%.panoptes.proto.v1.MsgMinisterMetricsH\x00R\x0fministerMetrics\x12x\n" +
 	"\x1eset_institution_loadout_result\x18\x12 \x01(\v21.panoptes.proto.v1.MsgSetInstitutionLoadoutResultH\x00R\x1bsetInstitutionLoadoutResult\x12c\n" +
-	"\x17issue_unit_order_result\x18\x13 \x01(\v2*.panoptes.proto.v1.MsgIssueUnitOrderResultH\x00R\x14issueUnitOrderResultB\x06\n" +
+	"\x17issue_unit_order_result\x18\x13 \x01(\v2*.panoptes.proto.v1.MsgIssueUnitOrderResultH\x00R\x14issueUnitOrderResult\x12S\n" +
+	"\x11config_batch_json\x18\x14 \x01(\v2%.panoptes.proto.v1.MsgConfigBatchJsonH\x00R\x0fconfigBatchJsonB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -1844,6 +1861,7 @@ var file_transport_proto_goTypes = []any{
 	(*MsgMinisterMetrics)(nil),             // 59: panoptes.proto.v1.MsgMinisterMetrics
 	(*MsgSetInstitutionLoadoutResult)(nil), // 60: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
 	(*MsgIssueUnitOrderResult)(nil),        // 61: panoptes.proto.v1.MsgIssueUnitOrderResult
+	(*MsgConfigBatchJson)(nil),             // 62: panoptes.proto.v1.MsgConfigBatchJson
 }
 var file_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
@@ -1901,16 +1919,17 @@ var file_transport_proto_depIdxs = []int32{
 	59, // 52: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
 	60, // 53: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
 	61, // 54: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
-	1,  // 55: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
-	9,  // 56: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
-	10, // 57: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
-	11, // 58: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
-	3,  // 59: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
-	60, // [60:60] is the sub-list for method output_type
-	60, // [60:60] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	62, // 55: panoptes.proto.v1.GameEvent.config_batch_json:type_name -> panoptes.proto.v1.MsgConfigBatchJson
+	1,  // 56: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
+	9,  // 57: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
+	10, // 58: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
+	11, // 59: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
+	3,  // 60: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
+	61, // [61:61] is the sub-list for method output_type
+	61, // [61:61] is the sub-list for method input_type
+	61, // [61:61] is the sub-list for extension type_name
+	61, // [61:61] is the sub-list for extension extendee
+	0,  // [0:61] is the sub-list for field type_name
 }
 
 func init() { file_transport_proto_init() }
@@ -1920,6 +1939,7 @@ func file_transport_proto_init() {
 	}
 	file_auth_proto_init()
 	file_common_proto_init()
+	file_config_proto_init()
 	file_data_catalog_proto_init()
 	file_game_state_proto_init()
 	file_lobby_proto_init()
@@ -1995,6 +2015,7 @@ func file_transport_proto_init() {
 		(*GameEvent_MinisterMetrics)(nil),
 		(*GameEvent_SetInstitutionLoadoutResult)(nil),
 		(*GameEvent_IssueUnitOrderResult)(nil),
+		(*GameEvent_ConfigBatchJson)(nil),
 	}
 	file_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),

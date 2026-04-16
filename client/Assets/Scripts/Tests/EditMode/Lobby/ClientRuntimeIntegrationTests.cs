@@ -26,6 +26,10 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
         private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
+        private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
+        private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
+        private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
+        private readonly string _configBridgePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs");
         private readonly string _cityCoreHpBarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHPBar.cs");
         private readonly string _cityCoreHpBarOverlayControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs");
         private readonly string _buildingViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/BuildingView.cs");
@@ -45,7 +49,9 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void TearDown()
         {
             DestroySingleton("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Application.Cache.ConfigCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.GameStateCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Application.Cache.StaticCatalogCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.PlanningDraftCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Infrastructure.Network.MessageDispatcher, Panoptes.Core");
         }
@@ -118,6 +124,47 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.GameID, Is.Empty);
             Assert.That(cache.MyPlayerID, Is.Empty);
             Assert.That(changedCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ConfigCache_ShouldApplyTypedBatch_AndClearSessionScopedEntries()
+        {
+            var cacheType = Type.GetType("Panoptes.Core.Application.Cache.ConfigCache, Panoptes.Core")
+                            ?? throw new AssertionException("ConfigCache 类型不存在。");
+            var cacheObject = new GameObject("ConfigCache");
+            var cache = cacheObject.AddComponent(cacheType);
+
+            var batchType = Type.GetType("Panoptes.Protocol.V1.MsgConfigBatchJson, Panoptes.Protocol")
+                           ?? throw new AssertionException("MsgConfigBatchJson 类型不存在。");
+            var entryType = Type.GetType("Panoptes.Protocol.V1.ConfigJsonEntry, Panoptes.Protocol")
+                           ?? throw new AssertionException("ConfigJsonEntry 类型不存在。");
+
+            var batch = Activator.CreateInstance(batchType)
+                        ?? throw new AssertionException("无法创建 MsgConfigBatchJson。");
+            var entry = Activator.CreateInstance(entryType)
+                        ?? throw new AssertionException("无法创建 ConfigJsonEntry。");
+
+            entryType.GetProperty("Key")?.SetValue(entry, "mapconfig");
+            entryType.GetProperty("Json")?.SetValue(entry, "{\"id\":\"default\",\"nodes\":[]}");
+
+            var configs = batchType.GetProperty("Configs")?.GetValue(batch);
+            configs?.GetType().GetMethod("Add", new[] { entryType })?.Invoke(configs, new[] { entry });
+
+            var applyMethod = cacheType.GetMethod("ApplyBatch");
+            Assert.That(applyMethod, Is.Not.Null, "ConfigCache 必须提供 typed ApplyBatch 入口。");
+            applyMethod?.Invoke(cache, new[] { batch });
+
+            var tryGetJson = cacheType.GetMethod("TryGetJson");
+            var args = new object[] { "mapconfig", null };
+            var found = (bool)(tryGetJson?.Invoke(cache, args) ?? false);
+            Assert.That(found, Is.True, "typed config batch 应写入 ConfigCache。");
+            Assert.That(args[1] as string, Is.EqualTo("{\"id\":\"default\",\"nodes\":[]}"));
+
+            cacheType.GetMethod("Clear")?.Invoke(cache, Array.Empty<object>());
+
+            args = new object[] { "mapconfig", null };
+            found = (bool)(tryGetJson?.Invoke(cache, args) ?? false);
+            Assert.That(found, Is.False, "Clear 后不应保留旧会话的 config 覆盖。");
         }
 
         [Test]
@@ -372,6 +419,7 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
+            StringAssert.Contains("EnsureComponent<ConfigCache>(managers);", content);
             StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
             StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content);
             Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
@@ -386,11 +434,52 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("overlayObject.transform.SetParent(null, false);", content,
                 "通用弹层必须与 Managers 脱离父子关系，避开 LoadingOverlay 的 CanvasGroup。");
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
+            StringAssert.Contains("Register<MsgConfigBatchJson>(\"MsgConfigBatchJson\", OnConfigBatchJson)", content);
+            StringAssert.Contains("ConfigCache.Instance?.Clear();", content,
+                "进入 Login 或回退会话时必须清理会话级 ConfigCache。");
+            Assert.That(content, Does.Not.Contain("StaticCatalogCache.Instance?.Clear();"),
+                "AppManager 不应在登录态清空应用级静态目录缓存。");
+            Assert.That(content, Does.Not.Contain("ConfigMessageBridge"),
+                "正式启动链不应继续依赖 raw ConfigMessageBridge。");
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
             Assert.That(transitionIndex, Is.GreaterThan(applyIndex), "AppManager 必须在 ApplyGameInit 之后再切换 Game 场景。");
+        }
+
+        [Test]
+        public void StaticCatalogAndConfigCache_ShouldHaveSeparatedRuntimeResponsibilities()
+        {
+            Assert.That(File.Exists(_configCachePath), Is.True, "ConfigCache.cs 不存在。");
+            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
+
+            var configCacheContent = File.ReadAllText(_configCachePath);
+            var techTreeContent = File.ReadAllText(_techTreePanelPath);
+            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var buildContent = File.ReadAllText(_buildCommandPanelPath);
+            var cityCoreContent = File.ReadAllText(_cityCoreProductionPanelPath);
+
+            StringAssert.Contains("public void Clear()", configCacheContent,
+                "ConfigCache 必须暴露会话级清理入口。");
+            StringAssert.Contains("public void ApplyBatch(MsgConfigBatchJson msg)", configCacheContent,
+                "ConfigCache 必须直接消费 typed config batch。");
+
+            Assert.That(techTreeContent, Does.Not.Contain("Missing technology tree config from server snapshot"),
+                "科技树面板不应再等待服务端 snapshot 作为主路径。");
+            Assert.That(techTreeContent, Does.Not.Contain("ConfigCache"),
+                "科技树面板不应再通过 ConfigCache 读取静态科技实体。");
+            Assert.That(recipeContent, Does.Not.Contain("ConfigCache"),
+                "配方面板不应再通过 ConfigCache 读取静态配方实体。");
+            Assert.That(buildContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
+                "建造面板不应再把 buildconfig 作为正式运行时主数据源。");
+            Assert.That(cityCoreContent, Does.Not.Contain("buildConfigKey = \"buildconfig\""),
+                "CityCoreProductionPanel 不应继续读取 buildconfig。");
+            Assert.That(cityCoreContent, Does.Not.Contain("armyConfigKey = \"armyconfig\""),
+                "CityCoreProductionPanel 不应继续读取 armyconfig。");
         }
 
         [Test]

@@ -61,6 +61,7 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
             EnsureComponent<ClientRuntimeConfigCache>(managers);
+            EnsureComponent<ConfigCache>(managers);
             EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
@@ -162,6 +163,7 @@ namespace Panoptes.Core.Application.App
             if (MessageDispatcher.Instance != null)
             {
                 MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
+                MessageDispatcher.Instance.Unregister("MsgConfigBatchJson");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogSnapshot");
@@ -176,7 +178,7 @@ namespace Panoptes.Core.Application.App
             {
                 RoomCache.Instance?.Clear();
                 ClientRuntimeConfigCache.Instance?.Clear();
-                StaticCatalogCache.Instance?.Clear();
+                ConfigCache.Instance?.Clear();
                 GameStateCache.Instance?.Clear();
             }
 
@@ -212,6 +214,7 @@ namespace Panoptes.Core.Application.App
             }
 
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
+            MessageDispatcher.Instance.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
             MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
             MessageDispatcher.Instance.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
@@ -221,6 +224,11 @@ namespace Panoptes.Core.Application.App
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
         {
             ClientRuntimeConfigCache.Instance?.Apply(msg);
+        }
+
+        private void OnConfigBatchJson(MsgConfigBatchJson msg)
+        {
+            ConfigCache.Instance?.ApplyBatch(msg);
         }
 
         private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
