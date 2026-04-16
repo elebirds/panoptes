@@ -1,0 +1,10 @@
+{
+  "config_version": "2026-04-17",
+  "recipe_order": [
+    "city_core_settler",
+    "farm_food",
+    "mine_ore",
+    "lumber_wood",
+    "barracks_infantry"
+  ]
+}

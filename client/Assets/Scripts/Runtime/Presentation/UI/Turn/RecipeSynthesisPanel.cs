@@ -284,9 +284,14 @@ namespace Panoptes.Presentation.UI.Domestic
             var recipes = LoadRecipeData();
             recipes = FilterByBuilding(recipes);
             ApplyLockState(recipes);
+            var orderIndex = BuildRecipeOrderIndex();
 
             recipes.Sort((a, b) =>
             {
+                var leftIndex = orderIndex.TryGetValue(NormalizeToken(a.Id), out var leftOrder) ? leftOrder : int.MaxValue;
+                var rightIndex = orderIndex.TryGetValue(NormalizeToken(b.Id), out var rightOrder) ? rightOrder : int.MaxValue;
+                var layoutCmp = leftIndex.CompareTo(rightIndex);
+                if (layoutCmp != 0) return layoutCmp;
                 var sortCmp = a.SortOrder.CompareTo(b.SortOrder);
                 if (sortCmp != 0) return sortCmp;
                 return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
@@ -611,6 +616,28 @@ namespace Panoptes.Presentation.UI.Domestic
         private List<RecipeViewData> LoadRecipeData()
         {
             return LoadFromCatalog();
+        }
+
+        private Dictionary<string, int> BuildRecipeOrderIndex()
+        {
+            var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var layout = _catalog != null ? _catalog.RecipeLayout : null;
+            if (layout == null || layout.recipe_order == null)
+            {
+                return index;
+            }
+
+            for (var i = 0; i < layout.recipe_order.Length; i++)
+            {
+                var recipeId = NormalizeToken(layout.recipe_order[i]);
+                if (string.IsNullOrWhiteSpace(recipeId) || index.ContainsKey(recipeId))
+                {
+                    continue;
+                }
+                index[recipeId] = i;
+            }
+
+            return index;
         }
 
         private List<RecipeViewData> LoadFromCatalog()

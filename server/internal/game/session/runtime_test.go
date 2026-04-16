@@ -60,17 +60,27 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
-	if len(player.sent) != 4 {
-		t.Fatalf("send count = %d, want 4", len(player.sent))
+	if err := runtime.HandleStaticCatalogSyncRequest(context.Background(), "player-1", &pb.MsgStaticCatalogSyncRequest{
+		BundleHash: staticdata.Default().BundleHash(),
+	}); err != nil {
+		t.Fatalf("HandleStaticCatalogSyncRequest() error = %v", err)
+	}
+
+	if len(player.sent) != 5 {
+		t.Fatalf("send count = %d, want 5", len(player.sent))
 	}
 
 	if got := player.sent[0].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogManifest" {
 		t.Fatalf("message[0] = %s, want MsgStaticCatalogManifest", got)
 	}
 
-	configMsg := player.sent[1]
+	if got := player.sent[1].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogSyncComplete" {
+		t.Fatalf("message[1] = %s, want MsgStaticCatalogSyncComplete", got)
+	}
+
+	configMsg := player.sent[2]
 	if got := configMsg.ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
-		t.Fatalf("message[1] = %s, want MsgConfigBatchJson", got)
+		t.Fatalf("message[2] = %s, want MsgConfigBatchJson", got)
 	}
 	configsField := configMsg.ProtoReflect().Descriptor().Fields().ByName("configs")
 	if configsField == nil {
@@ -107,13 +117,13 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		t.Fatalf("mapconfig nodes = %+v, want A1", payload.Nodes)
 	}
 
-	if got := player.sent[2].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
-		t.Fatalf("message[2] = %s, want MsgGameInit", got)
+	if got := player.sent[3].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
+		t.Fatalf("message[3] = %s, want MsgGameInit", got)
 	}
 
-	start, ok := player.sent[3].(*pb.MsgPlanningStart)
+	start, ok := player.sent[4].(*pb.MsgPlanningStart)
 	if !ok {
-		t.Fatalf("message type = %T, want MsgPlanningStart", player.sent[3])
+		t.Fatalf("message type = %T, want MsgPlanningStart", player.sent[4])
 	}
 	if got := start.GetTokens(); got != 1 {
 		t.Fatalf("tokens = %d, want 1", got)
@@ -159,14 +169,107 @@ func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
-	if len(player.sent) != 3 {
-		t.Fatalf("send count = %d, want 3", len(player.sent))
+	if err := runtime.HandleStaticCatalogSyncRequest(context.Background(), "player-1", &pb.MsgStaticCatalogSyncRequest{
+		BundleHash: staticdata.Default().BundleHash(),
+	}); err != nil {
+		t.Fatalf("HandleStaticCatalogSyncRequest() error = %v", err)
 	}
-	if got := player.sent[1].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
-		t.Fatalf("message[1] = %s, want MsgConfigBatchJson", got)
+
+	if len(player.sent) != 4 {
+		t.Fatalf("send count = %d, want 4", len(player.sent))
+	}
+	if got := player.sent[1].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogSyncComplete" {
+		t.Fatalf("message[1] = %s, want MsgStaticCatalogSyncComplete", got)
+	}
+	if got := player.sent[2].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("message[2] = %s, want MsgConfigBatchJson", got)
 	}
 	if _, ok := player.sent[len(player.sent)-1].(*pb.MsgPlanningStart); ok {
 		t.Fatalf("unexpected planning start in resolving bootstrap")
+	}
+}
+
+func TestRuntimeInitializePreparedSendsManifestOnlyUntilCatalogSyncRequest(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			DefaultMapID: "default",
+		},
+		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Maps: []staticdata.MapCatalogEntry{
+			{ID: "default", Name: "Default", Width: 1, Height: 1},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "Default",
+		Width:  1,
+		Height: 1,
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain"},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Phase = domain.PhaseResolving.String()
+
+	if err := runtime.InitializePrepared(state); err != nil {
+		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+
+	if len(player.sent) != 1 {
+		t.Fatalf("send count = %d, want 1", len(player.sent))
+	}
+	if got := player.sent[0].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogManifest" {
+		t.Fatalf("message[0] = %s, want MsgStaticCatalogManifest", got)
+	}
+}
+
+func TestRuntimeCatalogSyncRequestWithMatchingHashSendsSyncCompleteThenBootstrapRemainder(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			DefaultMapID: "default",
+		},
+		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Maps: []staticdata.MapCatalogEntry{
+			{ID: "default", Name: "Default", Width: 1, Height: 1},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "default",
+		Name:   "Default",
+		Width:  1,
+		Height: 1,
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain"},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Phase = domain.PhaseResolving.String()
+
+	if err := runtime.InitializePrepared(state); err != nil {
+		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+
+	if err := runtime.HandleStaticCatalogSyncRequest(context.Background(), "player-1", &pb.MsgStaticCatalogSyncRequest{
+		BundleHash: staticdata.Default().BundleHash(),
+	}); err != nil {
+		t.Fatalf("HandleStaticCatalogSyncRequest() error = %v", err)
+	}
+
+	if len(player.sent) != 4 {
+		t.Fatalf("send count = %d, want 4", len(player.sent))
+	}
+	if got := player.sent[1].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogSyncComplete" {
+		t.Fatalf("message[1] = %s, want MsgStaticCatalogSyncComplete", got)
+	}
+	if got := player.sent[2].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("message[2] = %s, want MsgConfigBatchJson", got)
+	}
+	if got := player.sent[3].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
+		t.Fatalf("message[3] = %s, want MsgGameInit", got)
 	}
 }
 
@@ -257,6 +360,11 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 
 	if err := runtime.InitializePrepared(state); err != nil {
 		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+	if err := runtime.HandleStaticCatalogSyncRequest(context.Background(), "player-1", &pb.MsgStaticCatalogSyncRequest{
+		BundleHash: staticdata.Default().BundleHash(),
+	}); err != nil {
+		t.Fatalf("HandleStaticCatalogSyncRequest() error = %v", err)
 	}
 
 	start, ok := player.sent[len(player.sent)-1].(*pb.MsgPlanningStart)

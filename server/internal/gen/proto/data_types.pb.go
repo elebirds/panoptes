@@ -389,20 +389,74 @@ func (x *PointDescriptor) GetVisibleInHud() bool {
 	return false
 }
 
+type CatalogSectionHash struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SectionName   string                 `protobuf:"bytes,1,opt,name=section_name,json=sectionName,proto3" json:"section_name,omitempty"`
+	Hash          string                 `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CatalogSectionHash) Reset() {
+	*x = CatalogSectionHash{}
+	mi := &file_data_types_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CatalogSectionHash) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CatalogSectionHash) ProtoMessage() {}
+
+func (x *CatalogSectionHash) ProtoReflect() protoreflect.Message {
+	mi := &file_data_types_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CatalogSectionHash.ProtoReflect.Descriptor instead.
+func (*CatalogSectionHash) Descriptor() ([]byte, []int) {
+	return file_data_types_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CatalogSectionHash) GetSectionName() string {
+	if x != nil {
+		return x.SectionName
+	}
+	return ""
+}
+
+func (x *CatalogSectionHash) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
 type StaticCatalogManifest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	SchemaVersion  string                 `protobuf:"bytes,1,opt,name=schema_version,json=schemaVersion,proto3" json:"schema_version,omitempty"`
-	ContentVersion string                 `protobuf:"bytes,2,opt,name=content_version,json=contentVersion,proto3" json:"content_version,omitempty"`
-	BundleHash     string                 `protobuf:"bytes,3,opt,name=bundle_hash,json=bundleHash,proto3" json:"bundle_hash,omitempty"`
-	DefaultLocale  string                 `protobuf:"bytes,4,opt,name=default_locale,json=defaultLocale,proto3" json:"default_locale,omitempty"`
-	DefaultMapId   string                 `protobuf:"bytes,5,opt,name=default_map_id,json=defaultMapId,proto3" json:"default_map_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SchemaVersion    string                 `protobuf:"bytes,1,opt,name=schema_version,json=schemaVersion,proto3" json:"schema_version,omitempty"`
+	ContentVersion   string                 `protobuf:"bytes,2,opt,name=content_version,json=contentVersion,proto3" json:"content_version,omitempty"`
+	BundleHash       string                 `protobuf:"bytes,3,opt,name=bundle_hash,json=bundleHash,proto3" json:"bundle_hash,omitempty"`
+	DefaultLocale    string                 `protobuf:"bytes,4,opt,name=default_locale,json=defaultLocale,proto3" json:"default_locale,omitempty"`
+	DefaultMapId     string                 `protobuf:"bytes,5,opt,name=default_map_id,json=defaultMapId,proto3" json:"default_map_id,omitempty"`
+	RequiredSections []string               `protobuf:"bytes,6,rep,name=required_sections,json=requiredSections,proto3" json:"required_sections,omitempty"`
+	SectionHashes    []*CatalogSectionHash  `protobuf:"bytes,7,rep,name=section_hashes,json=sectionHashes,proto3" json:"section_hashes,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *StaticCatalogManifest) Reset() {
 	*x = StaticCatalogManifest{}
-	mi := &file_data_types_proto_msgTypes[6]
+	mi := &file_data_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +468,7 @@ func (x *StaticCatalogManifest) String() string {
 func (*StaticCatalogManifest) ProtoMessage() {}
 
 func (x *StaticCatalogManifest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[6]
+	mi := &file_data_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +481,7 @@ func (x *StaticCatalogManifest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StaticCatalogManifest.ProtoReflect.Descriptor instead.
 func (*StaticCatalogManifest) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{6}
+	return file_data_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StaticCatalogManifest) GetSchemaVersion() string {
@@ -465,6 +519,20 @@ func (x *StaticCatalogManifest) GetDefaultMapId() string {
 	return ""
 }
 
+func (x *StaticCatalogManifest) GetRequiredSections() []string {
+	if x != nil {
+		return x.RequiredSections
+	}
+	return nil
+}
+
+func (x *StaticCatalogManifest) GetSectionHashes() []*CatalogSectionHash {
+	if x != nil {
+		return x.SectionHashes
+	}
+	return nil
+}
+
 var File_data_types_proto protoreflect.FileDescriptor
 
 const file_data_types_proto_rawDesc = "" +
@@ -497,14 +565,19 @@ const file_data_types_proto_rawDesc = "" +
 	"\bicon_key\x18\x04 \x01(\tR\aiconKey\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\x05 \x01(\x05R\tsortOrder\x12$\n" +
-	"\x0evisible_in_hud\x18\x06 \x01(\bR\fvisibleInHud\"\xd5\x01\n" +
+	"\x0evisible_in_hud\x18\x06 \x01(\bR\fvisibleInHud\"K\n" +
+	"\x12CatalogSectionHash\x12!\n" +
+	"\fsection_name\x18\x01 \x01(\tR\vsectionName\x12\x12\n" +
+	"\x04hash\x18\x02 \x01(\tR\x04hash\"\xd0\x02\n" +
 	"\x15StaticCatalogManifest\x12%\n" +
 	"\x0eschema_version\x18\x01 \x01(\tR\rschemaVersion\x12'\n" +
 	"\x0fcontent_version\x18\x02 \x01(\tR\x0econtentVersion\x12\x1f\n" +
 	"\vbundle_hash\x18\x03 \x01(\tR\n" +
 	"bundleHash\x12%\n" +
 	"\x0edefault_locale\x18\x04 \x01(\tR\rdefaultLocale\x12$\n" +
-	"\x0edefault_map_id\x18\x05 \x01(\tR\fdefaultMapIdBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x0edefault_map_id\x18\x05 \x01(\tR\fdefaultMapId\x12+\n" +
+	"\x11required_sections\x18\x06 \x03(\tR\x10requiredSections\x12L\n" +
+	"\x0esection_hashes\x18\a \x03(\v2%.panoptes.proto.v1.CatalogSectionHashR\rsectionHashesBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
 	file_data_types_proto_rawDescOnce sync.Once
@@ -518,7 +591,7 @@ func file_data_types_proto_rawDescGZIP() []byte {
 	return file_data_types_proto_rawDescData
 }
 
-var file_data_types_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_data_types_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_data_types_proto_goTypes = []any{
 	(*ResourceValue)(nil),         // 0: panoptes.proto.v1.ResourceValue
 	(*ResourceBag)(nil),           // 1: panoptes.proto.v1.ResourceBag
@@ -526,16 +599,18 @@ var file_data_types_proto_goTypes = []any{
 	(*PointBag)(nil),              // 3: panoptes.proto.v1.PointBag
 	(*ResourceDescriptor)(nil),    // 4: panoptes.proto.v1.ResourceDescriptor
 	(*PointDescriptor)(nil),       // 5: panoptes.proto.v1.PointDescriptor
-	(*StaticCatalogManifest)(nil), // 6: panoptes.proto.v1.StaticCatalogManifest
+	(*CatalogSectionHash)(nil),    // 6: panoptes.proto.v1.CatalogSectionHash
+	(*StaticCatalogManifest)(nil), // 7: panoptes.proto.v1.StaticCatalogManifest
 }
 var file_data_types_proto_depIdxs = []int32{
 	0, // 0: panoptes.proto.v1.ResourceBag.items:type_name -> panoptes.proto.v1.ResourceValue
 	2, // 1: panoptes.proto.v1.PointBag.items:type_name -> panoptes.proto.v1.PointValue
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 2: panoptes.proto.v1.StaticCatalogManifest.section_hashes:type_name -> panoptes.proto.v1.CatalogSectionHash
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_data_types_proto_init() }
@@ -549,7 +624,7 @@ func file_data_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_types_proto_rawDesc), len(file_data_types_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
