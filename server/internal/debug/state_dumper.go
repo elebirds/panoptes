@@ -127,13 +127,15 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			HP:     building.HP,
 			MaxHP:  building.MaxHP,
 		}
-		if entry.HasComponent(ecs.BuildingStateC) {
-			buildingState := ecs.BuildingStateC.Get(entry)
-			current := summary.Buildings[node.ID]
-			current.Disabled = buildingState.Disabled
-			current.DisabledReason = buildingState.DisabledReason
-			summary.Buildings[node.ID] = current
+		status, reason := domain.BuildingLifecycleStateAtTurn(entry, state.Turn)
+		current := summary.Buildings[node.ID]
+		current.Disabled = buildingSummaryDisabled(status)
+		if current.Disabled {
+			current.DisabledReason = reason
+		} else {
+			current.DisabledReason = ""
 		}
+		summary.Buildings[node.ID] = current
 	})
 
 	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
@@ -153,6 +155,18 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 	})
 
 	return summary
+}
+
+func buildingSummaryDisabled(status string) bool {
+	switch status {
+	case domain.BuildingStatusDisabled,
+		domain.BuildingStatusContested,
+		domain.BuildingStatusTakeover,
+		domain.BuildingStatusRuined:
+		return true
+	default:
+		return false
+	}
 }
 
 func DumpGameStateSummary(state *domain.GameState) {

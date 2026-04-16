@@ -430,6 +430,30 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void MapInputHandler_ShouldRequireExplicitBuildCityContext()
+        {
+            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_mapInputHandlerPath);
+            StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
+                "建造入口应显式要求 cityId。");
+            StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
+                "资源建筑入口应显式要求 cityId。");
+            StringAssert.Contains("public void EnterBuildPlacementCity(string buildingType, string cityId)", content,
+                "城内建筑入口应显式要求 cityId。");
+            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", content,
+                "建造模式应保存显式传入的 cityId，而不是临时猜测。");
+            StringAssert.Contains("GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
+                "建造消息必须透传显式 cityId。");
+            Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
+                "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");
+            Assert.That(content, Does.Not.Contain("TryResolveBuildCityId"),
+                "不应再在客户端本地猜测 cityId。");
+            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", content,
+                "缺少 cityId 时应在进入建造模式前直接失败。");
+        }
+
+        [Test]
         public void MapRenderer_GameRuntime_ShouldNotFallbackToLocalOrConfiguredMaps()
         {
             Assert.That(File.Exists(_mapRendererPath), Is.True, "MapRenderer.cs 不存在。");
