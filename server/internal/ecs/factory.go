@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/google/uuid"
@@ -129,11 +130,10 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 	}
 
 	comp := BuildingComp{
-		Type:   domain.BuildingType(buildingType),
-		HP:     cfg.MaxHP,
-		MaxHP:  cfg.MaxHP,
-		Owner:  owner,
-		CityID: cityID,
+		Type:  domain.BuildingType(buildingType),
+		HP:    cfg.MaxHP,
+		MaxHP: cfg.MaxHP,
+		Owner: owner,
 	}
 
 	if nodeEntry != nil {
@@ -172,25 +172,7 @@ func attachBuildingScopeComponents(entry *donburi.Entry, cfg staticdata.Building
 		return
 	}
 	removeBuildingScopeComponents(entry)
-	if cityID != "" {
-		if !entry.HasComponent(ServiceCityC) {
-			entry.AddComponent(ServiceCityC)
-		}
-		ServiceCityC.SetValue(entry, ServiceCityComp{CityID: cityID})
-	}
-
-	switch normalizeBuildingToken(cfg.BuildingScope) {
-	case "city_core":
-		if !entry.HasComponent(CityCoreC) {
-			entry.AddComponent(CityCoreC)
-		}
-		CityCoreC.SetValue(entry, CityCoreComp{CityID: cityID})
-	case "out_of_city":
-		if !entry.HasComponent(FacilityBindingC) {
-			entry.AddComponent(FacilityBindingC)
-		}
-		FacilityBindingC.SetValue(entry, FacilityBindingComp{CityID: cityID})
-	}
+	building.SetBinding(entry, cfg.BuildingScope, cityID, cityID)
 
 	if normalizeBuildingToken(cfg.TakeoverMode) != "disabled" {
 		required := staticdata.Default().Rules().FacilityTakeoverTurns
@@ -211,9 +193,7 @@ func removeBuildingScopeComponents(entry *donburi.Entry) {
 		return
 	}
 	for _, component := range []donburi.IComponentType{
-		CityCoreC,
-		ServiceCityC,
-		FacilityBindingC,
+		BuildingBindingC,
 		FacilityTakeoverC,
 	} {
 		if entry.HasComponent(component) {

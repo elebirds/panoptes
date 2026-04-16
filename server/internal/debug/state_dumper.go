@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/yohamta/donburi"
@@ -118,14 +119,14 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			return
 		}
 		node := ecs.NodeC.Get(entry)
-		building := ecs.BuildingC.Get(entry)
+		buildingComp := ecs.BuildingC.Get(entry)
 		summary.Buildings[node.ID] = BuildingSummary{
 			NodeID: node.ID,
-			Type:   string(building.Type),
-			Owner:  building.Owner,
-			CityID: building.CityID,
-			HP:     building.HP,
-			MaxHP:  building.MaxHP,
+			Type:   string(buildingComp.Type),
+			Owner:  buildingComp.Owner,
+			CityID: building.ResolveCityID(entry),
+			HP:     buildingComp.HP,
+			MaxHP:  buildingComp.MaxHP,
 		}
 		status, reason := domain.BuildingLifecycleStateAtTurn(entry, state.Turn)
 		current := summary.Buildings[node.ID]

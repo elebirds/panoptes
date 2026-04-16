@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	buildingcore "github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
@@ -320,7 +321,7 @@ func (r *Runtime) bootstrapStartingCapitals() {
 		}
 
 		building.Owner = playerID
-		building.CityID = cityID
+		buildingcore.SetBinding(spawnEntry, domain.BuildingScopeCityCore, cityID, cityID)
 		playerState := r.state.Players[playerID]
 		if playerState == nil {
 			continue

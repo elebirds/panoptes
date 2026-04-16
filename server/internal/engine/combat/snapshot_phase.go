@@ -9,6 +9,7 @@ package combat
 import (
 	"sort"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -78,39 +79,39 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 	})
 
 	ecs.NodesWithBuilding(ctx.World).Each(ctx.World, func(entry *donburi.Entry) {
-		building := ecs.BuildingC.Get(entry)
-		if building.Owner == "" {
+		buildingComp := ecs.BuildingC.Get(entry)
+		if buildingComp.Owner == "" {
 			return
 		}
 		pos := ecs.PositionC.Get(entry)
 		node := ecs.NodeC.Get(entry)
 		cityID := ecs.ResolveCityID(entry)
-		isCityCore := entry.HasComponent(ecs.CityCoreC)
+		isCityCore := building.IsCityCore(entry)
 		isCapitalCore := false
 		if isCityCore && ctx.State != nil {
-			if ownerState, ok := ctx.State.Players[building.Owner]; ok && ownerState != nil && cityID != "" && cityID == ownerState.CapitalCityID {
+			if ownerState, ok := ctx.State.Players[buildingComp.Owner]; ok && ownerState != nil && cityID != "" && cityID == ownerState.CapitalCityID {
 				isCapitalCore = true
 			}
 		}
 		snapshot.Structures[node.ID] = SnapshotStructure{
 			NodeID:        node.ID,
-			PlayerID:      building.Owner,
+			PlayerID:      buildingComp.Owner,
 			CityID:        cityID,
-			Type:          building.Type,
+			Type:          buildingComp.Type,
 			Position:      domain.Position{X: pos.X, Y: pos.Y},
-			HP:            building.HP,
-			MaxHP:         building.MaxHP,
+			HP:            buildingComp.HP,
+			MaxHP:         buildingComp.MaxHP,
 			IsCityCore:    isCityCore,
 			IsCapitalCore: isCapitalCore,
 		}
-		ctx.CurrentStructureHP[node.ID] = building.HP
+		ctx.CurrentStructureHP[node.ID] = buildingComp.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
 		// 这里有意不覆盖同格单位阻断，因为 charge 的第一接敌目标必须保留为单位。
 		blockPos := domain.Position{X: pos.X, Y: pos.Y}
 		sources := snapshot.BlockSources[blockPos]
 		source := BlockSource{
 			Kind:     "building",
-			Owner:    building.Owner,
+			Owner:    buildingComp.Owner,
 			Position: blockPos,
 			NodeID:   node.ID,
 		}
