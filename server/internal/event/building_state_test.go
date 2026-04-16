@@ -9,7 +9,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-func TestBuildingDeactivatedEventApplyMarksBuildingDisabled(t *testing.T) {
+func TestBuildingStatusChangedEventApplyMarksBuildingDisabled(t *testing.T) {
 	t.Parallel()
 
 	world := donburi.NewWorld()
@@ -28,7 +28,11 @@ func TestBuildingDeactivatedEventApplyMarksBuildingDisabled(t *testing.T) {
 	})
 	state.World = world
 
-	BuildingDeactivatedEvent{NodeID: "A1", Reason: "outside_territory"}.Apply(world, state)
+	BuildingStatusChangedEvent{
+		NodeID: "A1",
+		Status: domain.BuildingStatusDisabled,
+		Reason: "outside_territory",
+	}.Apply(world, state)
 
 	if !nodeEntry.HasComponent(ecs.BuildingStateC) {
 		t.Fatalf("building state component missing")
@@ -102,7 +106,7 @@ func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *test
 	}.Apply(world, state)
 
 	building := ecs.BuildingC.Get(farmEntry)
-	if building.Owner != "player-2" || building.CityID != "E2" {
+	if building.Owner != "player-2" || ecs.ResolveCityID(farmEntry) != "E2" {
 		t.Fatalf("building after takeover = %#v, want owner player-2 city E2", building)
 	}
 	if got := ecs.ResolveServiceCityID(farmEntry); got != "E2" {

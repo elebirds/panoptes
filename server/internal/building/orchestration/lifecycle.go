@@ -1,8 +1,9 @@
-package economy
+package orchestration
 
 import (
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
@@ -10,11 +11,12 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-type BuildingLifecycleSystem struct{}
+type LifecycleSystem struct{}
 
-// BuildingLifecycleSystem 是经济主链的第一阶段。
-// 它先把城市、设施、接管、待激活这些运行态问题结算完，后面的 build / recipe 才能基于稳定状态继续处理。
-func (s *BuildingLifecycleSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
+// LifecycleSystem 是建筑主模块在 resolving 期的唯一运行态阶段。
+// 它只负责建筑是否在线、前线设施接管、以及非主城城市陷落后的建筑命运，
+// 不再作为 economy runner 的内部子阶段存在。
+func (s *LifecycleSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
 	if state == nil {
 		return events
@@ -23,79 +25,55 @@ func (s *BuildingLifecycleSystem) Run(world donburi.World, state *domain.GameSta
 		if entry == nil || !entry.HasComponent(ecs.BuildingC) {
 			return
 		}
-		building := ecs.BuildingC.Get(entry)
-		cfg, _ := staticdata.Default().GetBuilding(string(building.Type))
-		if strings.EqualFold(string(building.Type), "city_core") {
-			// 非首都 city core 会走“城市陷落”，首都判负则由战斗链单独处理。
+		buildingComp := ecs.BuildingC.Get(entry)
+		cfg, _ := staticdata.Default().GetBuilding(string(buildingComp.Type))
+		if building.IsCityCore(entry) {
 			events = append(events, s.captureCityIfNeeded(world, state, entry)...)
 			return
 		}
-		if strings.EqualFold(strings.TrimSpace(cfg.BuildingScope), "out_of_city") {
-			// 城外设施可能被敌军接管，因此也属于 lifecycle 阶段的一部分。
+		if domain.NormalizeBuildingScope(cfg.BuildingScope) == domain.BuildingScopeOutOfCity {
 			events = append(events, s.advanceFacilityTakeover(world, state, entry)...)
 		}
 	})
 	return events
 }
 
-func (s *BuildingLifecycleSystem) captureCityIfNeeded(world donburi.World, state *domain.GameState, entry *donburi.Entry) []event.Event {
+func (s *LifecycleSystem) captureCityIfNeeded(world donburi.World, state *domain.GameState, entry *donburi.Entry) []event.Event {
 	if state == nil || entry == nil || !entry.HasComponent(ecs.BuildingC) {
 		return nil
 	}
-	building := ecs.BuildingC.Get(entry)
-	if building.HP > 0 {
+	buildingComp := ecs.BuildingC.Get(entry)
+	if buildingComp.HP > 0 {
 		return nil
 	}
-	cityID := ecs.ResolveCityID(entry)
+	cityID := building.ResolveCityID(entry)
 	if strings.TrimSpace(cityID) == "" {
 		return nil
 	}
-	ownerState := state.Players[building.Owner]
+	ownerState := state.Players[buildingComp.Owner]
 	if ownerState != nil && ownerState.CapitalCityID == cityID {
 		return nil
 	}
-	controller, contested := exclusiveEnemyController(state, entry, building.Owner)
+	controller, contested := exclusiveEnemyController(state, entry, buildingComp.Owner)
 	if contested || controller == "" {
 		return nil
 	}
-	events := []event.Event{event.CityCapturedEvent{
+	// 这里只发一个聚合的 CityCapturedEvent。
+	// 城内建筑到底是转 ruined 还是 pending_activation，由 Apply 阶段复用 building 规则统一决定。
+	return []event.Event{event.CityCapturedEvent{
 		NodeID:       ecs.NodeC.Get(entry).ID,
 		CityID:       cityID,
-		OldOwnerID:   building.Owner,
+		OldOwnerID:   buildingComp.Owner,
 		NewOwnerID:   controller,
 		OnlineOnTurn: state.Turn + 1,
 	}}
-	ecs.NodesWithBuilding(world).Each(world, func(candidate *donburi.Entry) {
-		if candidate == nil || candidate == entry || !candidate.HasComponent(ecs.BuildingC) {
-			return
-		}
-		current := ecs.BuildingC.Get(candidate)
-		if strings.TrimSpace(current.Owner) != strings.TrimSpace(building.Owner) {
-			return
-		}
-		if ecs.ResolveCityID(candidate) != cityID {
-			return
-		}
-		cfg, ok := staticdata.Default().GetBuilding(string(current.Type))
-		if !ok {
-			return
-		}
-		if hasAnyTag(cfg.Tags, "defense", "governance") {
-			events = append(events, event.BuildingRuinedEvent{
-				NodeID:     ecs.NodeC.Get(candidate).ID,
-				NewOwnerID: controller,
-				Reason:     "city_captured",
-			})
-		}
-	})
-	return events
 }
 
-func (s *BuildingLifecycleSystem) advanceFacilityTakeover(world donburi.World, state *domain.GameState, entry *donburi.Entry) []event.Event {
+func (s *LifecycleSystem) advanceFacilityTakeover(world donburi.World, state *domain.GameState, entry *donburi.Entry) []event.Event {
 	if state == nil || entry == nil || !entry.HasComponent(ecs.BuildingC) {
 		return nil
 	}
-	building := ecs.BuildingC.Get(entry)
+	buildingComp := ecs.BuildingC.Get(entry)
 	if !entry.HasComponent(ecs.FacilityTakeoverC) {
 		return nil
 	}
@@ -107,10 +85,10 @@ func (s *BuildingLifecycleSystem) advanceFacilityTakeover(world donburi.World, s
 			required = 1
 		}
 	}
-	controller, contested := exclusiveEnemyController(state, entry, building.Owner)
+	controller, contested := exclusiveEnemyController(state, entry, buildingComp.Owner)
 	switch {
 	case contested:
-		// 多方同时控制时不累计 takeover，设施只进入 contested。
+		// 多方争夺时设施不会累计 takeover，只进入 contested。
 		return []event.Event{event.FacilityTakeoverProgressedEvent{
 			NodeID:   ecs.NodeC.Get(entry).ID,
 			Progress: 0,
@@ -139,10 +117,14 @@ func (s *BuildingLifecycleSystem) advanceFacilityTakeover(world donburi.World, s
 		if takeover.ControllerPlayerID == controller {
 			nextProgress = takeover.Progress + 1
 		}
-		// takeover 要求同一控制者连续控制；换一方后会从 1 重新累计。
+		// takeover 必须由同一控制者连续维持；换人后会从 1 重新开始。
 		if nextProgress >= required {
 			pos := ecs.PositionC.Get(entry)
-			serviceCityID := event.NearestOwnedCityID(state, controller, domain.Position{X: pos.X, Y: pos.Y}, state.Players[controller].CapitalCityID)
+			fallback := ""
+			if player := state.Players[controller]; player != nil {
+				fallback = player.CapitalCityID
+			}
+			serviceCityID := event.NearestOwnedCityID(state, controller, domain.Position{X: pos.X, Y: pos.Y}, fallback)
 			return []event.Event{event.FacilityTakeoverCompletedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				NewOwnerID:    controller,
@@ -165,8 +147,6 @@ func exclusiveEnemyController(state *domain.GameState, entry *donburi.Entry, own
 	if state == nil || state.World == nil || entry == nil {
 		return "", false
 	}
-	// 返回“唯一敌方控制者, 是否 contested”。
-	// 只要原 owner 仍在格内，或有多个敌对阵营同时在场，就不视为唯一控制。
 	pos := ecs.PositionC.Get(entry)
 	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{X: pos.X, Y: pos.Y})
 	if len(unitsByFaction) == 0 {
@@ -189,16 +169,4 @@ func exclusiveEnemyController(state *domain.GameState, entry *donburi.Entry, own
 		}
 	}
 	return controller, false
-}
-
-func hasAnyTag(tags []string, expected ...string) bool {
-	for _, tag := range tags {
-		current := strings.ToLower(strings.TrimSpace(tag))
-		for _, want := range expected {
-			if current == strings.ToLower(strings.TrimSpace(want)) {
-				return true
-			}
-		}
-	}
-	return false
 }

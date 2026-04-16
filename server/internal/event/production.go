@@ -285,29 +285,6 @@ func (e UnitStarvingEvent) String() string {
 	return fmt.Sprintf("UnitStarvingEvent unit=%s damage=%d", e.UnitID, e.DamagePerTurn)
 }
 
-type BuildingDeactivatedEvent struct {
-	NodeID string
-	Reason string
-}
-
-func (e BuildingDeactivatedEvent) Apply(world donburi.World, state *domain.GameState) {
-	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
-	if !ok {
-		return
-	}
-	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, e.Reason, 0)
-	if nodeEntry.HasComponent(ecs.BuildingOperationC) {
-		operation := ecs.BuildingOperationC.Get(nodeEntry)
-		operation.BlockedReason = e.Reason
-	}
-}
-
-func (e BuildingDeactivatedEvent) Kind() string { return "building_deactivated" }
-
-func (e BuildingDeactivatedEvent) String() string {
-	return fmt.Sprintf("BuildingDeactivatedEvent node=%s reason=%s", e.NodeID, e.Reason)
-}
-
 func markRoadAt(world donburi.World, pos domain.Position) {
 	entry, ok := domain.GetNodeAt(world, pos)
 	if !ok {

@@ -17,8 +17,6 @@ type Runner struct {
 	stages []Stage
 }
 
-type LifecycleStage struct{}
-
 type BudgetStage struct{}
 
 type ResearchProgressStage struct{}
@@ -34,8 +32,6 @@ type RecipeProgressStage struct{}
 func NewRunner() *Runner {
 	return &Runner{
 		stages: []Stage{
-			// 先决定建筑本回合是否在线，再生成预算。
-			LifecycleStage{},
 			BudgetStage{},
 			// 科研分成“推进”和“完成判定”两段，便于把 technology_completed 与后续 activation 解耦。
 			ResearchProgressStage{},
@@ -92,12 +88,6 @@ func applyEvents(world donburi.World, state *domain.GameState, events []event.Ev
 		}
 		evt.Apply(world, state)
 	}
-}
-
-func (LifecycleStage) Name() string { return "lifecycle" }
-
-func (LifecycleStage) Run(world donburi.World, state *domain.GameState) []event.Event {
-	return (&BuildingLifecycleSystem{}).Run(world, state)
 }
 
 func (BudgetStage) Name() string { return "budget" }

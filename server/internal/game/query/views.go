@@ -9,6 +9,7 @@ package query
 import (
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -123,13 +124,13 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		}
 	}
 	if entry.HasComponent(ecs.BuildingC) {
-		building := ecs.BuildingC.Get(entry)
-		view.BuildingTypeId = string(building.Type)
-		view.BuildingHp = int32(building.HP)
-		view.IsCityCore = entry.HasComponent(ecs.CityCoreC) || strings.EqualFold(string(building.Type), "city_core")
-		view.CityId = ecs.ResolveCityID(entry)
-		view.ServiceCityId = ecs.ResolveServiceCityID(entry)
-		status, takeoverProgress, takeoverRequired := ecs.BuildingRuntimeState(entry, state.Turn)
+		buildingComp := ecs.BuildingC.Get(entry)
+		view.BuildingTypeId = string(buildingComp.Type)
+		view.BuildingHp = int32(buildingComp.HP)
+		view.IsCityCore = building.IsCityCore(entry)
+		view.CityId = building.ResolveCityID(entry)
+		view.ServiceCityId = building.ResolveServiceCityID(entry)
+		status, takeoverProgress, takeoverRequired := building.RuntimeState(entry, state.Turn)
 		// runtime state 会把 pending_activation / blocked / contested / takeover 等运行态
 		// 统一折叠成客户端可直接展示的 building_status 与 takeover 字段。
 		view.BuildingStatus = status
