@@ -269,12 +269,6 @@ namespace Panoptes.Presentation.Map
                 cameraAnchor.AddComponent<CinemachineMapCameraController>();
             }
 
-            if (UnityEngine.Object.FindAnyObjectByType<CameraSafeAreaBootstrapper>() == null)
-            {
-                var go = new GameObject("CameraSafeAreaBootstrapper");
-                go.AddComponent<CameraSafeAreaBootstrapper>();
-            }
-
             if (UnityEngine.Object.FindAnyObjectByType<CityCoreHpBarOverlayController>() == null)
             {
                 var go = new GameObject("CityCoreHpBarOverlayController");
