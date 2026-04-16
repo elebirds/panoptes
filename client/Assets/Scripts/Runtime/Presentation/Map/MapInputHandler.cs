@@ -266,6 +266,14 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
+                if (ShouldPrioritizeStructureAttackClick())
+                {
+                    ClearTerritoryHighlights();
+                    NonBuildingMapClicked?.Invoke();
+                    HandleCombatSelectionClick();
+                    return;
+                }
+
                 if (TryOpenBuildingInfoFromClick())
                 {
                     return;
@@ -280,6 +288,21 @@ namespace Panoptes.Presentation.Map
             {
                 HandleCombatCancel();
             }
+        }
+
+        private bool ShouldPrioritizeStructureAttackClick()
+        {
+            if (_selectedUnit == null ||
+                _combatActionMode != CombatActionMode.Attack ||
+                !CanSelectedUnitAttackStructures() ||
+                !TryRaycastNode(out var node) ||
+                node == null ||
+                string.IsNullOrWhiteSpace(node.NodeId))
+            {
+                return false;
+            }
+
+            return TryGetAttackableStructureNode(node.NodeId, out _);
         }
 
         public void EnterBuildPlacementAny(string buildingType)
