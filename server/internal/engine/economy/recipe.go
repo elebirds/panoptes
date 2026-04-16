@@ -4,11 +4,12 @@
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 实现经济结算引擎的配方结算逻辑。
 
-package production
+package economy
 
 import (
 	"math"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
@@ -16,17 +17,50 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-type RecipeSystem struct{}
-
 const recipeProgressScale = 1000
 
-func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event.Event {
+// recipe 选择阶段只做两件事：
+// 1. 校验本回合切配方是否合法；
+// 2. 产出 RecipeSelectionChangedEvent，让新的 operation state 先落地。
+// 真正的资源消耗和进度推进放到后续 RecipeProgressStage。
+func collectRecipeSelectionEvents(world donburi.World, state *domain.GameState) []event.Event {
 	events := make([]event.Event, 0)
 	if state == nil {
 		return events
 	}
-	// 先结算“玩家这轮切了什么配方”，再按切换后的运行态推进生产。
-	selectionOverrides := applySelections(world, state, &events)
+	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
+		validation := ValidateRecipeSelection(state, selection.PlayerID, selection.NodeID, selection.RecipeID)
+		if !validation.OK {
+			events = append(events, event.RecipeSkippedEvent{
+				NodeID:   selection.NodeID,
+				RecipeID: selection.RecipeID,
+				Reason:   validation.ErrorCode,
+			})
+			continue
+		}
+		building := ecs.BuildingC.Get(validation.NodeEntry)
+		requiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), validation.Recipe.ID, "", validation.Recipe.WorkAmount)
+		if requiredTurns <= 0 {
+			requiredTurns = 1
+		}
+		events = append(events, event.RecipeSelectionChangedEvent{
+			NodeID: selection.NodeID, RecipeID: selection.RecipeID, RequiredTurns: requiredTurns,
+		})
+		events = append(events, event.BuildingStatusChangedEvent{
+			NodeID: selection.NodeID,
+			Status: "active",
+		})
+	}
+	return events
+}
+
+func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Event {
+	events := make([]event.Event, 0)
+	if state == nil {
+		return events
+	}
+	// 这里使用 per-player 的模拟库存，而不是一边遍历一边直接扣权威状态。
+	// 这样同回合多个建筑会按遍历顺序共享同一份预算，但直到事件 Apply 前都不会把 ECS 写脏。
 	simulatedResources := make(map[string]domain.ResourceBag, len(state.Players))
 	simulatedPoints := make(map[string]domain.PointBag, len(state.Players))
 	for playerID, playerState := range state.Players {
@@ -41,15 +75,11 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 		if !entry.HasComponent(ecs.BuildingOperationC) {
 			return
 		}
-		building := ecs.BuildingC.Get(entry)
+		buildingComp := ecs.BuildingC.Get(entry)
 		nodeID := ecs.NodeC.Get(entry).ID
 		operation := ecs.BuildingOperationC.Get(entry)
 		selectedRecipeID := operation.SelectedRecipeID
 		requiredTurns := operation.RequiredTurns
-		if override, ok := selectionOverrides[nodeID]; ok {
-			selectedRecipeID = override.RecipeID
-			requiredTurns = override.RequiredTurns
-		}
 		if selectedRecipeID == "" {
 			return
 		}
@@ -57,7 +87,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			appendRecipeDisabled(&events, nodeID, selectedRecipeID, operation, requiredTurns, "building_disabled")
 			return
 		}
-		if serviceCityID := ecs.ResolveServiceCityID(entry); serviceCityID != "" && !state.IsCityOnlineForPlayer(building.Owner, serviceCityID) {
+		if serviceCityID := ecs.ResolveServiceCityID(entry); serviceCityID != "" && !state.IsCityOnlineForPlayer(buildingComp.Owner, serviceCityID) {
 			events = append(events, event.RecipeSkippedEvent{
 				NodeID:   nodeID,
 				RecipeID: selectedRecipeID,
@@ -74,7 +104,7 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			})
 			return
 		}
-		if !state.IsRecipeUnlocked(building.Owner, selectedRecipeID) {
+		if !state.IsRecipeUnlocked(buildingComp.Owner, selectedRecipeID) {
 			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredTurns, "invalid_recipe_selection")
 			return
 		}
@@ -85,15 +115,17 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			return
 		}
 
-		resourceCost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
-		pointCost := state.ApplyPointModifiers(building.Owner, string(staticdata.ModifierTriggerRecipePointInput), recipe.ID, toPointBag(recipe.PointInputs))
-		requiredProgress := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
+		resourceCost := state.ApplyResourceModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
+		pointCost := state.ApplyPointModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipePointInput), recipe.ID, toPointBag(recipe.PointInputs))
+		requiredProgress := state.ApplyScalarModifier(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
 		if requiredProgress <= 0 {
 			requiredProgress = 1
 		}
 		wasBlocked := operation.BlockedReason != ""
-		resourceRatio := affordabilityRatioResources(simulatedResources[building.Owner], resourceCost)
-		pointRatio := affordabilityRatioPoints(simulatedPoints[building.Owner], pointCost)
+		resourceRatio := affordabilityRatioResources(simulatedResources[buildingComp.Owner], resourceCost)
+		pointRatio := affordabilityRatioPoints(simulatedPoints[buildingComp.Owner], pointCost)
+		// efficiency 是这套 recipe 模型的核心：它不是“要么全速运行，要么停工”，
+		// 而是允许资源或点数不足时按比例低效推进。
 		efficiency := math.Min(resourceRatio, pointRatio)
 		if efficiency < 0 {
 			efficiency = 0
@@ -126,10 +158,13 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			return
 		}
 
-		progressStep := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
+		progressStep := state.ApplyScalarModifier(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
 		if progressStep <= 0 {
 			progressStep = 1
 		}
+		// 进度使用定点整数而不是纯 float 保存：
+		// ProgressTurns 表示已经完成的整回合进度，ProgressRemainder 表示不足 1 turn 的余量。
+		// 这样既能支持比例推进，又能避免长期累计浮点误差。
 		currentScaled := operation.ProgressTurns*recipeProgressScale + operation.ProgressRemainder
 		maxScaled := requiredProgress * recipeProgressScale
 		deltaScaled := int(math.Round(float64(progressStep*recipeProgressScale) * efficiency))
@@ -143,9 +178,11 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 
 		targetConsumedResources := proportionalResourceBag(resourceCost, nextScaled, maxScaled)
 		targetConsumedPoints := proportionalPointBag(pointCost, nextScaled, maxScaled)
+		// 累计消耗是“按总进度比例反推目标总消耗”，再和 operation 上已消耗量做差。
+		// 这样可以保证低效推进时，本回合只补扣新增那一部分消耗。
 		resourceDelta := subtractResourceBags(targetConsumedResources, operation.ConsumedResources)
 		pointDelta := subtractPointBags(targetConsumedPoints, operation.ConsumedPoints)
-		if !simulatedResources[building.Owner].CanAfford(resourceDelta) || !simulatedPoints[building.Owner].CanAfford(pointDelta) {
+		if !simulatedResources[buildingComp.Owner].CanAfford(resourceDelta) || !simulatedPoints[buildingComp.Owner].CanAfford(pointDelta) {
 			blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
 			if blockedReason == "" {
 				blockedReason = "insufficient_resources"
@@ -153,11 +190,11 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredProgress, blockedReason)
 			return
 		}
-		simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceDelta)
+		simulatedResources[buildingComp.Owner] = simulatedResources[buildingComp.Owner].Sub(resourceDelta)
 		for _, key := range pointDelta.Keys() {
-			simulatedPoints[building.Owner].AddAmount(key, -pointDelta.Get(key))
+			simulatedPoints[buildingComp.Owner].AddAmount(key, -pointDelta.Get(key))
 			events = append(events, event.PointSpentEvent{
-				PlayerID: building.Owner,
+				PlayerID: buildingComp.Owner,
 				Key:      key,
 				Amount:   pointDelta.Get(key),
 				Reason:   "recipe_progress",
@@ -178,11 +215,11 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 			})
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        nodeID,
-				Owner:         building.Owner,
-				CityID:        building.CityID,
+				Owner:         buildingComp.Owner,
+				CityID:        building.ResolveCityID(entry),
 				RequiredTurns: requiredProgress,
 				Cost:          resourceCost,
-				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
+				Resources:     state.ApplyResourceModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
 				Units:         append([]string(nil), recipe.Outputs.Units...),
 			})
 			events = append(events, event.BuildingStatusChangedEvent{
@@ -212,71 +249,6 @@ func (s *RecipeSystem) Run(world donburi.World, state *domain.GameState) []event
 	return events
 }
 
-type recipeSelectionOverride struct {
-	RecipeID      string
-	RequiredTurns int
-}
-
-func applySelections(world donburi.World, state *domain.GameState, events *[]event.Event) map[string]recipeSelectionOverride {
-	overrides := make(map[string]recipeSelectionOverride)
-	if state == nil {
-		return overrides
-	}
-	for _, selection := range state.TurnRuntime.Planning.RecipeSelections {
-		if !state.IsRecipeUnlocked(selection.PlayerID, selection.RecipeID) {
-			*events = append(*events, event.RecipeSkippedEvent{
-				NodeID:   selection.NodeID,
-				RecipeID: selection.RecipeID,
-				Reason:   "invalid_recipe_selection",
-			})
-			continue
-		}
-		recipe, ok := staticdata.Default().GetRecipe(selection.RecipeID)
-		if !ok {
-			*events = append(*events, event.RecipeSkippedEvent{
-				NodeID:   selection.NodeID,
-				RecipeID: selection.RecipeID,
-				Reason:   "invalid_recipe_selection",
-			})
-			continue
-		}
-		entry, ok := state.GetNode(selection.NodeID)
-		if !ok || !entry.HasComponent(ecs.BuildingC) {
-			*events = append(*events, event.RecipeSkippedEvent{
-				NodeID:   selection.NodeID,
-				RecipeID: selection.RecipeID,
-				Reason:   "invalid_target",
-			})
-			continue
-		}
-		building := ecs.BuildingC.Get(entry)
-		if building.Owner != selection.PlayerID {
-			*events = append(*events, event.RecipeSkippedEvent{
-				NodeID:   selection.NodeID,
-				RecipeID: selection.RecipeID,
-				Reason:   "unauthorized",
-			})
-			continue
-		}
-		requiredTurns := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
-		if requiredTurns <= 0 {
-			requiredTurns = 1
-		}
-		overrides[selection.NodeID] = recipeSelectionOverride{
-			RecipeID:      selection.RecipeID,
-			RequiredTurns: requiredTurns,
-		}
-		*events = append(*events, event.RecipeSelectionChangedEvent{
-			NodeID: selection.NodeID, RecipeID: selection.RecipeID, RequiredTurns: requiredTurns,
-		})
-		*events = append(*events, event.BuildingStatusChangedEvent{
-			NodeID: selection.NodeID,
-			Status: "active",
-		})
-	}
-	return overrides
-}
-
 func appendRecipeBlocked(events *[]event.Event, nodeID string, recipeID string, operation *ecs.BuildingOperationComp, requiredTurns int, reason string) {
 	if events == nil || operation == nil {
 		return
@@ -284,6 +256,9 @@ func appendRecipeBlocked(events *[]event.Event, nodeID string, recipeID string, 
 	if requiredTurns <= 0 {
 		requiredTurns = max(operation.RequiredTurns, 1)
 	}
+	// blocked 会同时留下两类事件：
+	// 1. RecipeSkippedEvent 说明这回合没法继续运行；
+	// 2. RecipeProgressedEvent 回传当前累计进度与阻塞原因，方便 settlement 与客户端看到“停在什么位置”。
 	*events = append(*events, event.RecipeSkippedEvent{
 		NodeID:   nodeID,
 		RecipeID: recipeID,
@@ -315,6 +290,8 @@ func appendRecipeDisabled(events *[]event.Event, nodeID string, recipeID string,
 	if requiredTurns <= 0 {
 		requiredTurns = max(operation.RequiredTurns, 1)
 	}
+	// disabled 和 blocked 都不会推进进度，但 disabled 不额外改 building status，
+	// 因为建筑生命周期阶段已经决定了它当前处于 disabled/takeover/contested 等运行态。
 	*events = append(*events, event.RecipeSkippedEvent{
 		NodeID:   nodeID,
 		RecipeID: recipeID,
@@ -335,6 +312,7 @@ func affordabilityRatioResources(available domain.ResourceBag, total domain.Reso
 	if total == nil || total.IsZero() {
 		return 1
 	}
+	// 返回“所有输入资源里最短板的可支付比例”，用于和 point ratio 共同决定 recipe 的低效推进速度。
 	ratio := 1.0
 	for _, key := range total.Keys() {
 		required := total.Get(key)
@@ -395,6 +373,7 @@ func proportionalResourceBag(total domain.ResourceBag, scaledProgress int, scale
 	if total == nil || total.IsZero() || scaledRequired <= 0 {
 		return domain.NewResourceBag()
 	}
+	// 把“完整 recipe 的总成本”按当前累计进度折算成“理论上此刻应累计消耗多少”。
 	out := domain.NewResourceBag()
 	for _, key := range total.Keys() {
 		amount := int(float64(total.Get(key)) * float64(scaledProgress) / float64(scaledRequired))

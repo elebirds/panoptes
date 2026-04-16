@@ -1185,6 +1185,7 @@ type GameEvent struct {
 	//	*GameEvent_MinisterReportChunk
 	//	*GameEvent_MinisterMetrics
 	//	*GameEvent_SetInstitutionLoadoutResult
+	//	*GameEvent_IssueUnitOrderResult
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1389,6 +1390,15 @@ func (x *GameEvent) GetSetInstitutionLoadoutResult() *MsgSetInstitutionLoadoutRe
 	return nil
 }
 
+func (x *GameEvent) GetIssueUnitOrderResult() *MsgIssueUnitOrderResult {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_IssueUnitOrderResult); ok {
+			return x.IssueUnitOrderResult
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1465,6 +1475,10 @@ type GameEvent_SetInstitutionLoadoutResult struct {
 	SetInstitutionLoadoutResult *MsgSetInstitutionLoadoutResult `protobuf:"bytes,18,opt,name=set_institution_loadout_result,json=setInstitutionLoadoutResult,proto3,oneof"`
 }
 
+type GameEvent_IssueUnitOrderResult struct {
+	IssueUnitOrderResult *MsgIssueUnitOrderResult `protobuf:"bytes,19,opt,name=issue_unit_order_result,json=issueUnitOrderResult,proto3,oneof"`
+}
+
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
 
 func (*GameEvent_StaticCatalogSnapshot) isGameEvent_Body() {}
@@ -1500,6 +1514,8 @@ func (*GameEvent_MinisterReportChunk) isGameEvent_Body() {}
 func (*GameEvent_MinisterMetrics) isGameEvent_Body() {}
 
 func (*GameEvent_SetInstitutionLoadoutResult) isGameEvent_Body() {}
+
+func (*GameEvent_IssueUnitOrderResult) isGameEvent_Body() {}
 
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1710,7 +1726,7 @@ const file_transport_proto_rawDesc = "" +
 	"\rplayer_kicked\x18\x04 \x01(\v2\".panoptes.proto.v1.MsgPlayerKickedH\x00R\fplayerKicked\x12C\n" +
 	"\vlobby_error\x18\x05 \x01(\v2 .panoptes.proto.v1.MsgLobbyErrorH\x00R\n" +
 	"lobbyErrorB\x06\n" +
-	"\x04body\"\xce\f\n" +
+	"\x04body\"\xb3\r\n" +
 	"\tGameEvent\x12e\n" +
 	"\x17static_catalog_manifest\x18\x01 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogManifestH\x00R\x15staticCatalogManifest\x12e\n" +
 	"\x17static_catalog_snapshot\x18\x02 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogSnapshotH\x00R\x15staticCatalogSnapshot\x12=\n" +
@@ -1731,7 +1747,8 @@ const file_transport_proto_rawDesc = "" +
 	"\tgame_over\x18\x0f \x01(\v2\x1e.panoptes.proto.v1.MsgGameOverH\x00R\bgameOver\x12_\n" +
 	"\x15minister_report_chunk\x18\x10 \x01(\v2).panoptes.proto.v1.MsgMinisterReportChunkH\x00R\x13ministerReportChunk\x12R\n" +
 	"\x10minister_metrics\x18\x11 \x01(\v2%.panoptes.proto.v1.MsgMinisterMetricsH\x00R\x0fministerMetrics\x12x\n" +
-	"\x1eset_institution_loadout_result\x18\x12 \x01(\v21.panoptes.proto.v1.MsgSetInstitutionLoadoutResultH\x00R\x1bsetInstitutionLoadoutResultB\x06\n" +
+	"\x1eset_institution_loadout_result\x18\x12 \x01(\v21.panoptes.proto.v1.MsgSetInstitutionLoadoutResultH\x00R\x1bsetInstitutionLoadoutResult\x12c\n" +
+	"\x17issue_unit_order_result\x18\x13 \x01(\v2*.panoptes.proto.v1.MsgIssueUnitOrderResultH\x00R\x14issueUnitOrderResultB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -1817,6 +1834,7 @@ var file_transport_proto_goTypes = []any{
 	(*MsgMinisterReportChunk)(nil),         // 58: panoptes.proto.v1.MsgMinisterReportChunk
 	(*MsgMinisterMetrics)(nil),             // 59: panoptes.proto.v1.MsgMinisterMetrics
 	(*MsgSetInstitutionLoadoutResult)(nil), // 60: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgIssueUnitOrderResult)(nil),        // 61: panoptes.proto.v1.MsgIssueUnitOrderResult
 }
 var file_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
@@ -1873,16 +1891,17 @@ var file_transport_proto_depIdxs = []int32{
 	58, // 51: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
 	59, // 52: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
 	60, // 53: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
-	1,  // 54: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
-	9,  // 55: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
-	10, // 56: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
-	11, // 57: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
-	3,  // 58: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
-	59, // [59:59] is the sub-list for method output_type
-	59, // [59:59] is the sub-list for method input_type
-	59, // [59:59] is the sub-list for extension type_name
-	59, // [59:59] is the sub-list for extension extendee
-	0,  // [0:59] is the sub-list for field type_name
+	61, // 54: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
+	1,  // 55: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
+	9,  // 56: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
+	10, // 57: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
+	11, // 58: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
+	3,  // 59: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
+	60, // [60:60] is the sub-list for method output_type
+	60, // [60:60] is the sub-list for method input_type
+	60, // [60:60] is the sub-list for extension type_name
+	60, // [60:60] is the sub-list for extension extendee
+	0,  // [0:60] is the sub-list for field type_name
 }
 
 func init() { file_transport_proto_init() }
@@ -1966,6 +1985,7 @@ func file_transport_proto_init() {
 		(*GameEvent_MinisterReportChunk)(nil),
 		(*GameEvent_MinisterMetrics)(nil),
 		(*GameEvent_SetInstitutionLoadoutResult)(nil),
+		(*GameEvent_IssueUnitOrderResult)(nil),
 	}
 	file_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),

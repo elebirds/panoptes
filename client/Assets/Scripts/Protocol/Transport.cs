@@ -98,7 +98,7 @@ namespace Panoptes.Protocol.V1 {
             "Cg1wbGF5ZXJfa2lja2VkGAQgASgLMiIucGFub3B0ZXMucHJvdG8udjEuTXNn",
             "UGxheWVyS2lja2VkSABSDHBsYXllcktpY2tlZBJDCgtsb2JieV9lcnJvchgF",
             "IAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0xvYmJ5RXJyb3JIAFIKbG9i",
-            "YnlFcnJvckIGCgRib2R5Is4MCglHYW1lRXZlbnQSZQoXc3RhdGljX2NhdGFs",
+            "YnlFcnJvckIGCgRib2R5IrMNCglHYW1lRXZlbnQSZQoXc3RhdGljX2NhdGFs",
             "b2dfbWFuaWZlc3QYASABKAsyKy5wYW5vcHRlcy5wcm90by52MS5Nc2dTdGF0",
             "aWNDYXRhbG9nTWFuaWZlc3RIAFIVc3RhdGljQ2F0YWxvZ01hbmlmZXN0EmUK",
             "F3N0YXRpY19jYXRhbG9nX3NuYXBzaG90GAIgASgLMisucGFub3B0ZXMucHJv",
@@ -134,15 +134,18 @@ namespace Panoptes.Protocol.V1 {
             "Ug9taW5pc3Rlck1ldHJpY3MSeAoec2V0X2luc3RpdHV0aW9uX2xvYWRvdXRf",
             "cmVzdWx0GBIgASgLMjEucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0SW5zdGl0",
             "dXRpb25Mb2Fkb3V0UmVzdWx0SABSG3NldEluc3RpdHV0aW9uTG9hZG91dFJl",
-            "c3VsdEIGCgRib2R5IqACCgtTZXJ2ZXJGcmFtZRIwCgRtZXRhGAEgASgLMhwu",
-            "cGFub3B0ZXMucHJvdG8udjEuRXZlbnRNZXRhUgRtZXRhEjIKBGF1dGgYCiAB",
-            "KAsyHC5wYW5vcHRlcy5wcm90by52MS5BdXRoRXZlbnRIAFIEYXV0aBI1CgVs",
-            "b2JieRgLIAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLkxvYmJ5RXZlbnRIAFIF",
-            "bG9iYnkSMgoEZ2FtZRgMIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkdhbWVF",
-            "dmVudEgAUgRnYW1lEjYKB3Byb2JsZW0YDSABKAsyGi5wYW5vcHRlcy5wcm90",
-            "by52MS5Qcm9ibGVtSABSB3Byb2JsZW1CCAoGdGFyZ2V0QlNaOmdpdGh1Yi5j",
-            "b20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvL3YxO3By",
-            "b3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "c3VsdBJjChdpc3N1ZV91bml0X29yZGVyX3Jlc3VsdBgTIAEoCzIqLnBhbm9w",
+            "dGVzLnByb3RvLnYxLk1zZ0lzc3VlVW5pdE9yZGVyUmVzdWx0SABSFGlzc3Vl",
+            "VW5pdE9yZGVyUmVzdWx0QgYKBGJvZHkioAIKC1NlcnZlckZyYW1lEjAKBG1l",
+            "dGEYASABKAsyHC5wYW5vcHRlcy5wcm90by52MS5FdmVudE1ldGFSBG1ldGES",
+            "MgoEYXV0aBgKIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkF1dGhFdmVudEgA",
+            "UgRhdXRoEjUKBWxvYmJ5GAsgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuTG9i",
+            "YnlFdmVudEgAUgVsb2JieRIyCgRnYW1lGAwgASgLMhwucGFub3B0ZXMucHJv",
+            "dG8udjEuR2FtZUV2ZW50SABSBGdhbWUSNgoHcHJvYmxlbRgNIAEoCzIaLnBh",
+            "bm9wdGVzLnByb3RvLnYxLlByb2JsZW1IAFIHcHJvYmxlbUIICgZ0YXJnZXRC",
+            "U1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4v",
+            "cHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.Auth.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.SettlementReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -157,7 +160,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ClientFrame), global::Panoptes.Protocol.V1.ClientFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game" }, new[]{ "Target" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthEvent), global::Panoptes.Protocol.V1.AuthEvent.Parser, new[]{ "LoginSuccess", "AuthError", "ClientRuntimeConfig" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.LobbyEvent), global::Panoptes.Protocol.V1.LobbyEvent.Parser, new[]{ "RoomCreated", "RoomState", "GameStarting", "PlayerKicked", "LobbyError" }, new[]{ "Body" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "TurnSettlement", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult" }, new[]{ "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "TurnSettlement", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult", "IssueUnitOrderResult" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ServerFrame), global::Panoptes.Protocol.V1.ServerFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game", "Problem" }, new[]{ "Target" }, null, null, null)
           }));
     }
@@ -4397,6 +4400,9 @@ namespace Panoptes.Protocol.V1 {
         case BodyOneofCase.SetInstitutionLoadoutResult:
           SetInstitutionLoadoutResult = other.SetInstitutionLoadoutResult.Clone();
           break;
+        case BodyOneofCase.IssueUnitOrderResult:
+          IssueUnitOrderResult = other.IssueUnitOrderResult.Clone();
+          break;
       }
 
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -4624,6 +4630,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "issue_unit_order_result" field.</summary>
+    public const int IssueUnitOrderResultFieldNumber = 19;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult IssueUnitOrderResult {
+      get { return bodyCase_ == BodyOneofCase.IssueUnitOrderResult ? (global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.IssueUnitOrderResult;
+      }
+    }
+
     private object body_;
     /// <summary>Enum of possible cases for the "body" oneof.</summary>
     public enum BodyOneofCase {
@@ -4646,6 +4664,7 @@ namespace Panoptes.Protocol.V1 {
       MinisterReportChunk = 16,
       MinisterMetrics = 17,
       SetInstitutionLoadoutResult = 18,
+      IssueUnitOrderResult = 19,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4694,6 +4713,7 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(MinisterReportChunk, other.MinisterReportChunk)) return false;
       if (!object.Equals(MinisterMetrics, other.MinisterMetrics)) return false;
       if (!object.Equals(SetInstitutionLoadoutResult, other.SetInstitutionLoadoutResult)) return false;
+      if (!object.Equals(IssueUnitOrderResult, other.IssueUnitOrderResult)) return false;
       if (BodyCase != other.BodyCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -4720,6 +4740,7 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.MinisterReportChunk) hash ^= MinisterReportChunk.GetHashCode();
       if (bodyCase_ == BodyOneofCase.MinisterMetrics) hash ^= MinisterMetrics.GetHashCode();
       if (bodyCase_ == BodyOneofCase.SetInstitutionLoadoutResult) hash ^= SetInstitutionLoadoutResult.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) hash ^= IssueUnitOrderResult.GetHashCode();
       hash ^= (int) bodyCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -4811,6 +4832,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(146, 1);
         output.WriteMessage(SetInstitutionLoadoutResult);
       }
+      if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) {
+        output.WriteRawTag(154, 1);
+        output.WriteMessage(IssueUnitOrderResult);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4893,6 +4918,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(146, 1);
         output.WriteMessage(SetInstitutionLoadoutResult);
       }
+      if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) {
+        output.WriteRawTag(154, 1);
+        output.WriteMessage(IssueUnitOrderResult);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4956,6 +4985,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (bodyCase_ == BodyOneofCase.SetInstitutionLoadoutResult) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(SetInstitutionLoadoutResult);
+      }
+      if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(IssueUnitOrderResult);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -5077,6 +5109,12 @@ namespace Panoptes.Protocol.V1 {
             SetInstitutionLoadoutResult = new global::Panoptes.Protocol.V1.MsgSetInstitutionLoadoutResult();
           }
           SetInstitutionLoadoutResult.MergeFrom(other.SetInstitutionLoadoutResult);
+          break;
+        case BodyOneofCase.IssueUnitOrderResult:
+          if (IssueUnitOrderResult == null) {
+            IssueUnitOrderResult = new global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult();
+          }
+          IssueUnitOrderResult.MergeFrom(other.IssueUnitOrderResult);
           break;
       }
 
@@ -5257,6 +5295,15 @@ namespace Panoptes.Protocol.V1 {
             SetInstitutionLoadoutResult = subBuilder;
             break;
           }
+          case 154: {
+            global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult subBuilder = new global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult();
+            if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) {
+              subBuilder.MergeFrom(IssueUnitOrderResult);
+            }
+            input.ReadMessage(subBuilder);
+            IssueUnitOrderResult = subBuilder;
+            break;
+          }
         }
       }
     #endif
@@ -5432,6 +5479,15 @@ namespace Panoptes.Protocol.V1 {
             }
             input.ReadMessage(subBuilder);
             SetInstitutionLoadoutResult = subBuilder;
+            break;
+          }
+          case 154: {
+            global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult subBuilder = new global::Panoptes.Protocol.V1.MsgIssueUnitOrderResult();
+            if (bodyCase_ == BodyOneofCase.IssueUnitOrderResult) {
+              subBuilder.MergeFrom(IssueUnitOrderResult);
+            }
+            input.ReadMessage(subBuilder);
+            IssueUnitOrderResult = subBuilder;
             break;
           }
         }

@@ -4,21 +4,21 @@
 // Updated: 2026-04-15 16:20:00 +0800
 // Description: 验证经济结算引擎在新版静态数据语义下的核心回归。
 
-package production_test
+package economy_test
 
 import (
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/engine"
+	"github.com/elebirds/panoptes/internal/engine/economy"
 	"github.com/elebirds/panoptes/internal/event"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
-func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
+func TestEconomyRunnerResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -63,7 +63,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm", CityID: "C1"},
 	}
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should remain unavailable until next turn")
@@ -83,7 +83,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
+func TestEconomyRunnerRecipeProducesResources(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -118,7 +118,7 @@ func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 2 {
 		t.Fatalf("food after recipe = %d, want 2", got)
@@ -129,7 +129,7 @@ func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
+func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Units: []staticdata.UnitDefinition{
@@ -159,7 +159,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	state.Players["player-1"].Research.CurrentProgress = 1
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "militia_mobilization"
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
 		t.Fatalf("food after completion turn = %d, want 0", got)
@@ -179,7 +179,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *testing.T) {
+func TestEconomyRunnerRechargeAppliesResearchOutputModifierNextTurnPreview(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
@@ -201,7 +201,7 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *
 	state.Players["player-1"].Research.CurrentProgress = 1
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "research_boost"
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 	if got := state.EffectiveResearchOutput("player-1"); got != 1 {
 		t.Fatalf("research output during completion turn = %d, want 1", got)
 	}
@@ -213,7 +213,7 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *
 	}
 }
 
-func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
+func TestEconomyRunnerResearchUnlockClearsCurrentTarget(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
@@ -232,14 +232,14 @@ func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
 	state.Players["player-1"].Research.CurrentProgress = 1
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Research.CurrentTargetTechnologyID; got != "" {
 		t.Fatalf("current target after unlock = %q, want empty", got)
 	}
 }
 
-func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
+func TestEconomyRunnerConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -290,7 +290,7 @@ func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 		{PlayerID: "player-1", NodeID: "A2", BuildingType: "farm", CityID: "C1"},
 	}
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if !entryA.HasComponent(ecs.BuildingC) {
 		t.Fatalf("first build should consume the only available industry budget: %#v", events)
@@ -309,7 +309,7 @@ func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T) {
+func TestEconomyRunnerBuildingModifiersAffectNextTurnPointPreview(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -334,7 +334,7 @@ func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T
 	}
 }
 
-func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
+func TestEconomyRunnerBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -358,7 +358,7 @@ func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	node.Owner = "player-2"
 	node.TerritoryOwner = "player-2"
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("build should be rejected once placement becomes invalid at settlement")
@@ -371,7 +371,7 @@ func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
+func TestEconomyRunnerReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -411,7 +411,7 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if !hasEventKind(events, "recipe_skipped") {
 		t.Fatalf("events should include recipe_skipped: %#v", events)
@@ -421,7 +421,7 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineLowEfficiencyRecipeConsumesPartialInputAndProgress(t *testing.T) {
+func TestEconomyRunnerLowEfficiencyRecipeConsumesPartialInputAndProgress(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -444,7 +444,7 @@ func TestEconomyPipelineLowEfficiencyRecipeConsumesPartialInputAndProgress(t *te
 	state.Players["player-1"].Research.UnlockBuilding("barracks")
 	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	operation := ecs.BuildingOperationC.Get(nodeEntry)
 	if got := operation.ProgressTurns; got != 1 {
@@ -489,158 +489,6 @@ func TestEffectiveIndustryOutputIgnoresPendingActivationUntilOnline(t *testing.T
 	state.Turn = 2
 	if got := state.EffectiveIndustryOutput("player-1"); got != 3 {
 		t.Fatalf("industry output after online turn = %d, want 3", got)
-	}
-}
-
-func TestEconomyPipelineCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: newPipelineRules(),
-		Buildings: []staticdata.BuildingDefinition{
-			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
-			{ID: "barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture", Tags: []string{"production"}},
-			{ID: "wall", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture", Tags: []string{"defense"}},
-		},
-		Units: []staticdata.UnitDefinition{
-			{ID: "infantry", Class: "melee", MaxHP: 20, Attack: 6, AttackRange: 1, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeIndex := map[string]donburi.Entity{}
-	createNode := func(id string, x int, y int, owner string) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain"})
-		nodeIndex[id] = entity
-		entry := world.Entry(entity)
-		node := ecs.NodeC.Get(entry)
-		node.Owner = owner
-		node.TerritoryOwner = owner
-		return entry
-	}
-	capitalEntry := createNode("C1", 0, 0, "player-1")
-	cityEntry := createNode("C3", 2, 2, "player-1")
-	barracksEntry := createNode("C4", 3, 2, "player-1")
-	wallEntry := createNode("C2", 2, 1, "player-1")
-	enemyCapitalEntry := createNode("E5", 4, 4, "player-2")
-	ecs.CreateBuilding(world, "city_core", "player-1", "C1", capitalEntry)
-	ecs.CreateBuilding(world, "city_core", "player-1", "C3", cityEntry)
-	ecs.CreateBuilding(world, "barracks", "player-1", "C3", barracksEntry)
-	ecs.CreateBuilding(world, "wall", "player-1", "C3", wallEntry)
-	ecs.CreateBuilding(world, "city_core", "player-2", "E5", enemyCapitalEntry)
-	ecs.BuildingC.Get(cityEntry).HP = 0
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 2}))
-	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
-
-	state := domain.NewGameState("city-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
-		ID:           "city-capture",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
-		NodeIndex:    nodeIndex,
-	})
-	state.World = world
-	state.EnsureCityState("player-1", "C1")
-	state.EnsureCityState("player-1", "C3")
-	state.Players["player-1"].CapitalCityID = "C1"
-	state.EnsureCityState("player-2", "E5")
-	state.Players["player-2"].CapitalCityID = "E5"
-
-	events := engine.NewEconomyPipeline().Run(world, state)
-
-	if state.IsOver {
-		t.Fatalf("state.IsOver = true, want false")
-	}
-	if _, ok := state.Players["player-1"].Cities["C3"]; ok {
-		t.Fatalf("player-1 should no longer own city C3")
-	}
-	capturedCity := state.Players["player-2"].Cities["C3"]
-	if capturedCity == nil || capturedCity.OwnerID != "player-2" || capturedCity.OnlineOnTurn != state.Turn+1 {
-		t.Fatalf("captured city state = %#v, want transferred to player-2 and pending next turn", capturedCity)
-	}
-	if got := ecs.BuildingC.Get(cityEntry).Owner; got != "player-2" {
-		t.Fatalf("captured city core owner = %q, want player-2", got)
-	}
-	if got := ecs.BuildingC.Get(barracksEntry).Owner; got != "player-2" {
-		t.Fatalf("captured barracks owner = %q, want player-2", got)
-	}
-	if status, _ := domain.BuildingLifecycleStateAtTurn(wallEntry, state.Turn); status != domain.BuildingStatusRuined {
-		t.Fatalf("wall status = %q, want ruined", status)
-	}
-	if !hasEventKind(events, "city_captured") {
-		t.Fatalf("events should include city_captured: %#v", events)
-	}
-	if !hasEventKind(events, "building_ruined") {
-		t.Fatalf("events should include building_ruined for ruined defensive buildings: %#v", events)
-	}
-}
-
-func TestEconomyPipelineCompletesFacilityTakeoverAfterConsecutiveControl(t *testing.T) {
-	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
-		Rules: staticdata.Rules{
-			TokensPerTurn:             3,
-			CityCoreMaxHP:             100,
-			BaseResearchOutputPerTurn: 1,
-			BaseIndustryOutputPerTurn: 2,
-			FacilityTakeoverTurns:     2,
-		},
-		Buildings: []staticdata.BuildingDefinition{
-			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
-			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 80, TakeoverMode: "delayed"},
-		},
-		Units: []staticdata.UnitDefinition{
-			{ID: "infantry", Class: "melee", MaxHP: 20, Attack: 6, AttackRange: 1, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
-		},
-	}))
-
-	world := donburi.NewWorld()
-	nodeIndex := map[string]donburi.Entity{}
-	createNode := func(id string, x int, y int, owner string, resource bool) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
-		nodeIndex[id] = entity
-		entry := world.Entry(entity)
-		node := ecs.NodeC.Get(entry)
-		node.Owner = owner
-		node.TerritoryOwner = owner
-		return entry
-	}
-	player1Capital := createNode("C1", 0, 0, "player-1", false)
-	player2Capital := createNode("E5", 4, 4, "player-2", false)
-	farmEntry := createNode("B2", 1, 1, "player-1", true)
-	ecs.CreateBuilding(world, "city_core", "player-1", "C1", player1Capital)
-	ecs.CreateBuilding(world, "city_core", "player-2", "E5", player2Capital)
-	ecs.CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 1}))
-	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
-
-	state := domain.NewGameState("facility-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
-		ID:           "facility-capture",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
-		NodeIndex:    nodeIndex,
-	})
-	state.World = world
-	state.EnsureCityState("player-1", "C1")
-	state.Players["player-1"].CapitalCityID = "C1"
-	state.EnsureCityState("player-2", "E5")
-	state.Players["player-2"].CapitalCityID = "E5"
-
-	firstTurnEvents := engine.NewEconomyPipeline().Run(world, state)
-	if !hasEventKind(firstTurnEvents, "facility_takeover_progressed") {
-		t.Fatalf("first turn should include facility_takeover_progressed: %#v", firstTurnEvents)
-	}
-	if got := ecs.BuildingC.Get(farmEntry).Owner; got != "player-1" {
-		t.Fatalf("farm owner after first turn = %q, want player-1", got)
-	}
-	state.Turn++
-
-	secondTurnEvents := engine.NewEconomyPipeline().Run(world, state)
-	if !hasEventKind(secondTurnEvents, "facility_takeover_completed") {
-		t.Fatalf("second turn should include facility_takeover_completed: %#v", secondTurnEvents)
-	}
-	if got := ecs.BuildingC.Get(farmEntry).Owner; got != "player-2" {
-		t.Fatalf("farm owner after capture = %q, want player-2", got)
-	}
-	if got := ecs.ResolveServiceCityID(farmEntry); got != "E5" {
-		t.Fatalf("farm service city after capture = %q, want E5", got)
-	}
-	if status, _ := domain.BuildingLifecycleStateAtTurn(farmEntry, state.Turn); status != domain.BuildingStatusDisabled {
-		t.Fatalf("farm status on takeover completion turn = %q, want disabled", status)
 	}
 }
 

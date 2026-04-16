@@ -173,16 +173,17 @@ panoptes/
 │   │   ├── engine/
 │   │   │   ├── pipeline.go        # Pipeline：串联System，统一Apply
 │   │   │   ├── combat/
-│   │   │   │   ├── movement.go    # MovementSystem
-│   │   │   │   ├── conflict.go    # 冲突检测System
-│   │   │   │   ├── battle.go      # BattleSystem
-│   │   │   │   ├── siege.go       # SiegeSystem
-│   │   │   │   ├── ranged.go      # RangedSystem（弓手远程）
+│   │   │   │   ├── single_step_resolver.go # SingleStepResolver 主入口
+│   │   │   │   ├── snapshot_phase.go       # 战斗快照阶段
+│   │   │   │   ├── conflict_phase.go       # edge/node group conflict
+│   │   │   │   ├── damage_phase.go         # 冲突/攻击伤害阶段
 │   │   │   │   └── upkeep.go      # UpkeepSystem（粮食消耗）
-│   │   │   ├── production/
-│   │   │   │   ├── build.go       # BuildSystem（建造结算）
-│   │   │   │   ├── flow.go        # FlowSystem（资源流动）
-│   │   │   │   └── upkeep.go      # ProductionUpkeepSystem
+│   │   │   ├── economy/
+│   │   │   │   ├── orchestrator.go # Economy Runner + Stages
+│   │   │   │   ├── build.go        # BuildSystem（建造结算）
+│   │   │   │   ├── recipe.go       # 配方推进
+│   │   │   │   ├── research.go     # 科研完成判定
+│   │   │   │   └── validation.go   # planning/settlement 共享校验
 │   │   │   └── minister/
 │   │   │       ├── engine.go      # 部长调度器（异步）
 │   │   │       ├── prompt.go      # 游戏状态→Prompt序列化
@@ -306,10 +307,10 @@ config     被所有层依赖，但不依赖任何层
 
 ```go
 // 正确：System.Run读状态，返回事件，不修改任何数据
-func (s *SiegeSystem) Run(world donburi.World, state *domain.GameState) []event.Event
+func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.Event
 
 // 错误：System直接修改状态
-func (s *SiegeSystem) Run(world donburi.World) { world.Entry(...).HP -= 10 }
+func (s *BuildSystem) Run(world donburi.World) { world.Entry(...).HP -= 10 }
 ```
 
 所有状态修改只在`Event.Apply()`中发生，统一在Pipeline结束后执行。
@@ -1324,7 +1325,7 @@ var UnitStatsC = donburi.NewComponentType[UnitStatsComp]()
 // 移动意图（本回合有移动指令的单位才有）
 type MoveIntentComp struct {
     Target [2]int
-    Path   [][2]int  // 由MovementSystem填充
+    Path   [][2]int  // 由服务器权威路径规划填充
 }
 var MoveIntentC = donburi.NewComponentType[MoveIntentComp]()
 
@@ -1409,43 +1410,43 @@ PlayerReconnectedEvent
 ### 内政Pipeline（按顺序执行）
 
 ```
-1. BuildSystem          处理本回合所有建造指令
-2. FlowSystem           资源沿道路流动到城镇
-3. ProductionSystem     建筑消耗原料产出成品/兵种
-4. DomesticUpkeepSystem 建筑维持消耗（箭塔粮食等）
+1. LifecycleStage           先结算建筑运行态、接管与城市陷落
+2. BudgetStage              刷新 research/industry 临时预算
+3. ResearchProgressStage    投入科研点数
+4. ResearchCompletionStage  判定 technology_completed
+5. BuildStage               处理本回合建造
+6. RecipeSelectionStage     处理切配方并先落地 operation reset
+7. RecipeProgressStage      推进配方、产出资源/单位
 ```
 
 ### 战斗Pipeline（按顺序执行）
 
 ```
-1. MovementSystem       计算路径，产生MoveIntent
-2. ConflictSystem       检测三类冲突（边/节点/追及）
-3. BattleSystem         按冲突排序依次结算野战
-4. SiegeSystem          攻城兵攻击城堡
-5. RangedSystem         弓手远程攻击
-6. DestroySystem        破坏兵破坏道路/建筑
+1. SnapshotPhase        冻结单位/建筑/阻断快照
+2. PathPlanningPhase    计算 OrderPlan
+3. ConflictPhase        检测 edge conflict 与 node group conflict
+4. MovementApplyPhase   按冲突结果落最终位置
+5. DamagePhase          结算冲突、attack、charge 伤害
+6. CleanupPhase         预留收尾挂点
 7. CombatUpkeepSystem   军队粮食消耗
 ```
 
-### ConflictSystem算法规范
+### ConflictPhase算法规范
 
-冲突检测按以下顺序，时间步从0开始按速度展开：
+当前主线不再使用旧 `ConflictSystem`。冲突检测由 `SingleStepResolver/ConflictPhase` 负责，规则如下：
 
 ```
 边冲突：两单位在同一边上方向相反移动
-        → 在边中间格发生战斗
-        → 双方都不继续移动直到战斗结算
+        → 在边中点产生 edge conflict group
+        → 双方都回到起点
 
-节点冲突：两单位本回合结束时位于同一格
-        → 在该格发生战斗
+节点冲突：同一候选格上存在至少两个不同阵营单位
+        → 全体成员形成一个 node conflict group
+        → 整组都不能占住该格，统一回退
 
-追及冲突：同方向移动，速度快的单位追上慢的
-        → 在相遇格发生战斗
-
-冲突排序：按time_step升序，同time_step按max_speed降序
-
-换家处理：完全互换情形被检测为边冲突
-         强制在路径中点发生战斗，禁止完全错开
+组内伤害：对每个敌对 pair 依次结算一次冲突伤害
+        → 同阵营成员不互伤
+        → 结算顺序按稳定排序保证确定性
 ```
 
 ---
@@ -1586,16 +1587,16 @@ Step 2：ECS和地图（Day 2上午）
 Step 3：内政阶段（Day 2下午～Day 3上午）
   - Phase interface和状态机骨架
   - DomesticPhase：收消息，令牌操作Handler
-  - BuildSystem、FlowSystem、ProductionSystem
-  - 内政结算Pipeline
+  - Economy Runner + stages
+  - 内政结算Runner
   - 推送MsgDomesticSettlement
 
 Step 4：战斗阶段（Day 3下午～Day 4）
   - CombatPhase：战区指令收集
   - algo/pathfinding A*实现和测试
-  - MovementSystem、ConflictSystem
-  - BattleSystem、SiegeSystem
-  - 战斗结算Pipeline
+  - SingleStepResolver phases
+  - edge conflict / node group conflict
+  - 战斗结算Runner
   - 推送MsgCombatSettlement（含动画事件序列）
 
 Step 5：LLM部长（Day 5）

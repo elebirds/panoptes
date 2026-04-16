@@ -141,6 +141,12 @@ namespace Panoptes.Core.Application.Cache
         [Serializable]
         public sealed class UnitEntryJson
         {
+            [Serializable]
+            public sealed class UnitFlagsJson
+            {
+                public bool can_attack_structures;
+            }
+
             public string id;
             public string name;
             public string description;
@@ -154,6 +160,7 @@ namespace Panoptes.Core.Application.Cache
             public int vision_range;
             public int road_speed_bonus;
             public float charge_bonus;
+            public UnitFlagsJson flags;
             public string[] tags;
         }
 

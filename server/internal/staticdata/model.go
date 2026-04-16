@@ -40,11 +40,12 @@ type PointDescriptor struct {
 }
 
 type UnitFlags struct {
-	CanSiege          bool    `json:"can_siege"`
-	SiegeMultiplier   float64 `json:"siege_multiplier,omitempty"`
-	CanDestroyRoad    bool    `json:"can_destroy_road"`
-	DestroyMultiplier float64 `json:"destroy_multiplier,omitempty"`
-	CanCapture        bool    `json:"can_capture"`
+	CanSiege            bool    `json:"can_siege"`
+	SiegeMultiplier     float64 `json:"siege_multiplier,omitempty"`
+	CanAttackStructures bool    `json:"can_attack_structures"`
+	CanDestroyRoad      bool    `json:"can_destroy_road"`
+	DestroyMultiplier   float64 `json:"destroy_multiplier,omitempty"`
+	CanCapture          bool    `json:"can_capture"`
 }
 
 type UnitDefinition struct {

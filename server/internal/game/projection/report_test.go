@@ -4,13 +4,14 @@
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 验证回合结算报告模块的结算报告映射逻辑。
 
-package report
+package projection
 
 import (
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
+	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
@@ -212,11 +213,11 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	t.Parallel()
 
-	sections := SettlementSections(
-		[]event.Event{event.UnitDamagedEvent{UnitID: "unit-1", Damage: 2, HPAfter: 8, Source: "combat"}},
-		[]*pb.TurnEvent{{Type: "settle_city"}},
-		[]event.Event{event.UpkeepPaidEvent{PlayerID: "player-1", FoodConsumed: 3}},
-	)
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitDamagedEvent{UnitID: "unit-1", Damage: 2, HPAfter: 8, Source: "combat"})
+	collector.AppendDeferred(gameresolution.ChannelMap, event.CityFoundedEvent{PlayerID: "player-1", CityID: "B2", CenterNodeID: "B2"})
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.UpkeepPaidEvent{PlayerID: "player-1", FoodConsumed: 3})
+	sections := SettlementSections(collector)
 
 	if len(sections) != 3 {
 		t.Fatalf("sections len = %d, want 3", len(sections))
@@ -232,14 +233,12 @@ func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	}
 }
 
-func TestBuildTurnSettlementHandlesNilState(t *testing.T) {
+func TestProjectTurnSettlementHandlesNilState(t *testing.T) {
 	t.Parallel()
 
-	msg := BuildTurnSettlement(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(),
-		[]event.Event{event.UnitDiedEvent{UnitID: "unit-1"}},
-		nil,
-		nil,
-	)
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitDiedEvent{UnitID: "unit-1"})
+	msg := ProjectTurnSettlement(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
 
 	if msg.GetTurn() != 5 {
 		t.Fatalf("turn = %d, want 5", msg.GetTurn())
@@ -252,5 +251,96 @@ func TestBuildTurnSettlementHandlesNilState(t *testing.T) {
 	}
 	if len(msg.GetSections()) != 1 {
 		t.Fatalf("sections len = %d, want 1", len(msg.GetSections()))
+	}
+}
+
+func TestProjectTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T) {
+	t.Parallel()
+
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelPlanning, event.PolicyChangedEvent{
+		PlayerID:  "player-1",
+		OldPolicy: "",
+		NewPolicy: "expansion",
+	})
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.PointSpentEvent{
+		PlayerID: "player-1",
+		Key:      domain.PointIndustryOutput,
+		Amount:   1,
+		Reason:   "build_structure",
+	})
+	collector.AppendDeferred(gameresolution.ChannelMap, event.CityFoundedEvent{
+		PlayerID:     "player-1",
+		CityID:       "B2",
+		CenterNodeID: "B2",
+	})
+
+	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+
+	if len(msg.GetSections()) != 2 {
+		t.Fatalf("sections len = %d, want 2", len(msg.GetSections()))
+	}
+	if msg.GetSections()[0].GetSection() != "map" && msg.GetSections()[1].GetSection() != "map" {
+		t.Fatalf("sections = %#v, want map section present", msg.GetSections())
+	}
+	var economy *pb.SettlementSection
+	for _, section := range msg.GetSections() {
+		if section.GetSection() == "economy" {
+			economy = section
+			break
+		}
+	}
+	if economy == nil {
+		t.Fatalf("economy section missing")
+	}
+	if len(economy.GetEvents()) != 2 {
+		t.Fatalf("economy events len = %d, want 2", len(economy.GetEvents()))
+	}
+	if economy.GetEvents()[0].GetType() != "national_policy_changed" {
+		t.Fatalf("economy first event = %q, want national_policy_changed", economy.GetEvents()[0].GetType())
+	}
+	if economy.GetEvents()[1].GetType() != "point_spent" {
+		t.Fatalf("economy second event = %q, want point_spent", economy.GetEvents()[1].GetType())
+	}
+}
+
+func TestProjectPlanningStartEventsMapsTechnologyActivationOnly(t *testing.T) {
+	t.Parallel()
+
+	events := ProjectPlanningStartEvents([]event.Event{
+		event.TechnologyActivatedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
+		event.TechnologyGrantAppliedEvent{PlayerID: "player-1", SourceTech: "agrarian_foundations"},
+	})
+
+	if len(events) != 2 {
+		t.Fatalf("events len = %d, want 2", len(events))
+	}
+	if events[0].GetType() != "technology_activated" {
+		t.Fatalf("events[0].type = %q, want technology_activated", events[0].GetType())
+	}
+	if events[1].GetType() != "technology_grant_applied" {
+		t.Fatalf("events[1].type = %q, want technology_grant_applied", events[1].GetType())
+	}
+}
+
+func TestProjectTurnSettlementDoesNotContainPlanningStartActivationEvents(t *testing.T) {
+	t.Parallel()
+
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.TechnologyCompletedEvent{
+		PlayerID:     "player-1",
+		TechnologyID: "agrarian_foundations",
+	})
+
+	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	if len(msg.GetSections()) != 1 {
+		t.Fatalf("sections len = %d, want 1", len(msg.GetSections()))
+	}
+	economy := msg.GetSections()[0]
+	if len(economy.GetEvents()) != 1 {
+		t.Fatalf("economy events len = %d, want 1", len(economy.GetEvents()))
+	}
+	if got := economy.GetEvents()[0].GetType(); got != "technology_completed" {
+		t.Fatalf("economy events[0].type = %q, want technology_completed", got)
 	}
 }

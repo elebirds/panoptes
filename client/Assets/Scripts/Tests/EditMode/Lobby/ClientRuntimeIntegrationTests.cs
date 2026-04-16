@@ -213,6 +213,14 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Phase = "planning",
                 Timeout = 30,
                 Tokens = 3,
+                PlanningStartEvents =
+                {
+                    new TurnEvent
+                    {
+                        Type = "technology_activated",
+                        Data = { { "technology_id", "agrarian_foundations" }, { "player_id", "player-1" } }
+                    }
+                },
                 MyPlayer = new PlayerView
                 {
                     Id = "player-1",
@@ -259,6 +267,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.TokensLeft, Is.EqualTo(3));
             Assert.That(cache.MyPlayer, Is.Not.Null);
             Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
+            Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
+            Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
             Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);
@@ -427,6 +437,30 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "不应继续保留基于本地高亮的快速移动兼容壳。");
             Assert.That(content, Does.Not.Contain("moveRange = 4"),
                 "不应继续使用本地固定移动范围假高亮。");
+        }
+
+        [Test]
+        public void MapInputHandler_ShouldRequireExplicitBuildCityContext()
+        {
+            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_mapInputHandlerPath);
+            StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
+                "建造入口应显式要求 cityId。");
+            StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
+                "资源建筑入口应显式要求 cityId。");
+            StringAssert.Contains("public void EnterBuildPlacementCity(string buildingType, string cityId)", content,
+                "城内建筑入口应显式要求 cityId。");
+            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", content,
+                "建造模式应保存显式传入的 cityId，而不是临时猜测。");
+            StringAssert.Contains("GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
+                "建造消息必须透传显式 cityId。");
+            Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
+                "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");
+            Assert.That(content, Does.Not.Contain("TryResolveBuildCityId"),
+                "不应再在客户端本地猜测 cityId。");
+            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", content,
+                "缺少 cityId 时应在进入建造模式前直接失败。");
         }
 
         [Test]

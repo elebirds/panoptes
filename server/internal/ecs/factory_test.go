@@ -107,10 +107,30 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	}
 }
 
-func TestCreateBuildingStoresOriginCityID(t *testing.T) {
+func TestCreateUnitUsesAuthorSourcedStructureAttackCapability(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, MoveRange: 2, AttackRange: 0, Flags: staticdata.UnitFlags{CanAttackStructures: false}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, MoveRange: 2, AttackRange: 1, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	settler := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 0}))
+	infantry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{X: 1, Y: 0}))
+
+	if ecsCaps := donburi.Get[UnitCapabilitiesComp](settler, UnitCapabilitiesC); ecsCaps.CanAttackStructures {
+		t.Fatalf("settler should not inherit structure attack capability")
+	}
+	if ecsCaps := donburi.Get[UnitCapabilitiesComp](infantry, UnitCapabilitiesC); !ecsCaps.CanAttackStructures {
+		t.Fatalf("infantry should inherit structure attack capability from static data")
+	}
+}
+
+func TestCreateBuildingStoresBinding(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
-			{ID: "farm", MaxHP: 40},
+			{ID: "farm", BuildingScope: "out_of_city", MaxHP: 40, TakeoverMode: "delayed"},
 		},
 	}))
 
@@ -120,8 +140,18 @@ func TestCreateBuildingStoresOriginCityID(t *testing.T) {
 
 	building := world.Entry(CreateBuilding(world, "farm", "player-1", "city-a", nodeEntry))
 	comp := donburi.Get[BuildingComp](building, BuildingC)
-	if comp.CityID != "city-a" {
-		t.Fatalf("origin city id = %q", comp.CityID)
+	if comp.Owner != "player-1" {
+		t.Fatalf("owner = %q, want player-1", comp.Owner)
+	}
+	if !building.HasComponent(BuildingBindingC) {
+		t.Fatalf("building missing BuildingBindingC")
+	}
+	binding := donburi.Get[BuildingBindingComp](building, BuildingBindingC)
+	if binding.Scope != BuildingScopeOutOfCity {
+		t.Fatalf("binding scope = %q, want out_of_city", binding.Scope)
+	}
+	if binding.CityID != "city-a" || binding.ServiceCityID != "city-a" {
+		t.Fatalf("binding = %#v, want city/service city-a", binding)
 	}
 }
 
@@ -146,14 +176,27 @@ func TestCreateBuildingAttachesCityScopeComponents(t *testing.T) {
 	CreateBuilding(world, "barracks", "player-1", "C1", barracksEntry)
 	CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
 
-	if !cityEntry.HasComponent(CityCoreC) {
-		t.Fatalf("city core missing CityCoreC")
+	for nodeID, entry := range map[string]*donburi.Entry{
+		"C1": cityEntry,
+		"C2": barracksEntry,
+		"C3": farmEntry,
+	} {
+		if !entry.HasComponent(BuildingBindingC) {
+			t.Fatalf("%s missing BuildingBindingC", nodeID)
+		}
 	}
-	if !barracksEntry.HasComponent(ServiceCityC) {
-		t.Fatalf("barracks missing ServiceCityC")
+	if got := donburi.Get[BuildingBindingComp](cityEntry, BuildingBindingC).Scope; got != BuildingScopeCityCore {
+		t.Fatalf("city core scope = %q, want city_core", got)
 	}
-	if !farmEntry.HasComponent(FacilityBindingC) {
-		t.Fatalf("farm missing FacilityBindingC")
+	if got := donburi.Get[BuildingBindingComp](barracksEntry, BuildingBindingC).Scope; got != BuildingScopeInCity {
+		t.Fatalf("barracks scope = %q, want in_city", got)
+	}
+	farmBinding := donburi.Get[BuildingBindingComp](farmEntry, BuildingBindingC)
+	if farmBinding.Scope != BuildingScopeOutOfCity {
+		t.Fatalf("farm scope = %q, want out_of_city", farmBinding.Scope)
+	}
+	if farmBinding.CityID != "C1" || farmBinding.ServiceCityID != "C1" {
+		t.Fatalf("farm binding = %#v, want C1/C1", farmBinding)
 	}
 	if !farmEntry.HasComponent(FacilityTakeoverC) {
 		t.Fatalf("farm missing FacilityTakeoverC")

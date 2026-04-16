@@ -29,8 +29,13 @@ type BuildingComp struct {
 	MaxHP     int
 	WallLevel int
 	Owner     string
-	CityID    string
 	Towers    int
+}
+
+type BuildingBindingComp struct {
+	Scope         string
+	CityID        string
+	ServiceCityID string
 }
 
 type BuildingOperationComp struct {
@@ -50,18 +55,6 @@ type BuildingStateComp struct {
 	Status         string
 	Reason         string
 	OnlineOnTurn   int
-}
-
-type CityCoreComp struct {
-	CityID string
-}
-
-type ServiceCityComp struct {
-	CityID string
-}
-
-type FacilityBindingComp struct {
-	CityID string
 }
 
 type FacilityTakeoverComp struct {
@@ -127,11 +120,9 @@ var (
 	PositionC          = donburi.NewComponentType[PositionComp]()
 	NodeC              = donburi.NewComponentType[NodeComp]()
 	BuildingC          = donburi.NewComponentType[BuildingComp]()
+	BuildingBindingC   = donburi.NewComponentType[BuildingBindingComp]()
 	BuildingOperationC = donburi.NewComponentType[BuildingOperationComp]()
 	BuildingStateC     = donburi.NewComponentType[BuildingStateComp]()
-	CityCoreC          = donburi.NewComponentType[CityCoreComp]()
-	ServiceCityC       = donburi.NewComponentType[ServiceCityComp]()
-	FacilityBindingC   = donburi.NewComponentType[FacilityBindingComp]()
 	FacilityTakeoverC  = donburi.NewComponentType[FacilityTakeoverComp]()
 	UnitStatsC         = donburi.NewComponentType[UnitStatsComp]()
 	UnitCategoryC      = donburi.NewComponentType[UnitCategoryComp]()

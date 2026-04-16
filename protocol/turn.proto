@@ -4,6 +4,7 @@ package panoptes.proto.v1;
 
 import "common.proto";
 import "game_state.proto";
+import "settlement.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
@@ -19,6 +20,7 @@ message MsgPlanningStart {
   PlayerView my_player = 8;
   repeated NodeView nodes = 9;
   repeated UnitView units = 10;
+  repeated TurnEvent planning_start_events = 11;
 }
 
 message MinisterDraftView {
@@ -133,6 +135,15 @@ message MsgBuildStructureResult {
   string building_type_id = 3;
   string city_id = 4;
   string error_code = 5;
+}
+
+message MsgIssueUnitOrderResult {
+  bool success = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  string target_unit_id = 5;
+  string error_code = 6;
 }
 
 message MsgTurnReport {

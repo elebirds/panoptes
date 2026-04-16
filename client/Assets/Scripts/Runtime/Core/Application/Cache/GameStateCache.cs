@@ -39,8 +39,12 @@ namespace Panoptes.Core.Application.Cache
 
         private readonly Dictionary<string, List<CityBuiltBuildingDto>> _cityBuiltBuildings = new();
         private readonly Dictionary<string, ResourceDto> _cityResources = new();
+        // 这里保留最近一次 planning start 的事件，主要给客户端调试、日志和轻量展示使用。
+        // 本轮先不接动画播放，但把 activation 边界明确缓存下来，后续需要展示时可直接复用。
+        private readonly List<TurnEventDto> _lastPlanningStartEvents = new();
 
         public PlayerView MyPlayer { get; private set; }
+        public IReadOnlyList<TurnEventDto> LastPlanningStartEvents => _lastPlanningStartEvents;
 
         private readonly List<MinisterView> _ministers = new();
         public IReadOnlyList<MinisterView> Ministers => _ministers;
@@ -121,6 +125,7 @@ namespace Panoptes.Core.Application.Cache
             _cityBuiltBuildings.Clear();
             SeedCityResourcesFromCurrentState();
             SynchronizeCityCoreState();
+            _lastPlanningStartEvents.Clear();
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
@@ -172,6 +177,10 @@ namespace Panoptes.Core.Application.Cache
 
             ApplyPlanningStartActiveState(msg);
             ApplyPlanningStartDraft(msg.Snapshot);
+            // planning start 事件与 active state 一起进缓存，
+            // 这样客户端既拿到“当前已经生效后的快照”，也保留“这次为什么生效”的事件面。
+            _lastPlanningStartEvents.Clear();
+            _lastPlanningStartEvents.AddRange(SettlementMapper.ToPlanningStartEvents(msg));
             PublishPhaseState(Turn, Phase, msg.Timeout, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
         }
@@ -460,6 +469,7 @@ namespace Panoptes.Core.Application.Cache
             _units.Clear();
             _cityBuiltBuildings.Clear();
             _cityResources.Clear();
+            _lastPlanningStartEvents.Clear();
             _ministers.Clear();
             MyPlayer = null;
             TokensLeft = 0;

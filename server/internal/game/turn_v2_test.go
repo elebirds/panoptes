@@ -478,6 +478,172 @@ func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testin
 	}
 }
 
+func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockInEvents(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             10,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national"},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Branch: "agriculture", Tier: 1, ResearchCost: 4},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 10, TakeoverMode: "disabled"},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	tp := newStubTransport()
+	player1 := NewHumanPlayer("player-1", "alice", tp)
+	player2 := NewHumanPlayer("player-2", "bob", tp)
+	room := NewRoom("game-1", []Player{player1, player2}, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player1, player2}, tp, &config.Config{})
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"}),
+		"A2": ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"}),
+		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 1, Terrain: "plain"}),
+		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"}),
+	}
+	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:        "turn-fatal",
+		Width:     2,
+		Height:    2,
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	state.Phase = domain.PhaseResolving.String()
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
+	state.TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
+
+	coreEntry := world.Entry(nodeIndex["A1"])
+	coreNode := ecs.NodeC.Get(coreEntry)
+	coreNode.Owner = "player-1"
+	coreNode.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "city_core", "player-1", "A1", coreEntry)
+	state.EnsureCityState("player-1", "A1")
+	state.Players["player-1"].CapitalCityID = "A1"
+	state.Players["player-1"].CapitalCityCoreHP = 10
+
+	attackerEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 0}))
+	ecs.UnitStatsC.Get(attackerEntry).ID = "infantry-attack"
+	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 1}))
+	ecs.UnitStatsC.Get(settlerEntry).ID = "settler-1"
+	state.TurnRuntime.Planning.UnitOrders["infantry-attack"] = domain.UnitDirective{
+		PlayerID:     "player-2",
+		UnitID:       "infantry-attack",
+		Action:       "attack",
+		TargetNodeID: "A1",
+	}
+	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
+		PlayerID:     "player-1",
+		UnitID:       "settler-1",
+		Action:       "settle_city",
+		TargetNodeID: "B2",
+	}
+	room.runtime.SetState(state)
+
+	room.RunTurnResolution()
+
+	if got := string(room.State().Players["player-1"].Policy); got != "expansion" {
+		t.Fatalf("active policy after fatal turn = %q, want expansion", got)
+	}
+	if got := room.State().Players["player-1"].Research.CurrentTargetTechnologyID; got != "agrarian_foundations" {
+		t.Fatalf("research target after fatal turn = %q, want agrarian_foundations", got)
+	}
+
+	settlement := firstMessage[*pb.MsgTurnSettlement](tp.sent["player-1"])
+	if settlement == nil {
+		t.Fatalf("fatal turn settlement not sent")
+	}
+	if !hasSettlementEvent(settlement, "unit", "city_core_destroyed") {
+		t.Fatalf("fatal turn missing city_core_destroyed event")
+	}
+	if hasSettlementEvent(settlement, "unit", "upkeep_paid") {
+		t.Fatalf("fatal turn should skip upkeep_paid")
+	}
+	if hasSettlementEvent(settlement, "map", "city_founded") {
+		t.Fatalf("fatal turn should skip settle_city map action")
+	}
+	if hasSettlementEvent(settlement, "economy", "point_budget_refreshed") {
+		t.Fatalf("fatal turn should skip economy pipeline")
+	}
+	if !hasSettlementEvent(settlement, "economy", "national_policy_changed") || !hasSettlementEvent(settlement, "economy", "research_target_changed") {
+		t.Fatalf("fatal turn should keep planning lock-in events in economy section")
+	}
+	if _, ok := room.State().GetNode("B2"); !ok {
+		t.Fatalf("missing node B2")
+	}
+	targetNode := world.Entry(nodeIndex["B2"])
+	if targetNode.HasComponent(ecs.BuildingC) {
+		t.Fatalf("fatal turn should skip settle_city build on B2")
+	}
+	if _, ok := findUnitEntryByID(room.State().World, "settler-1"); !ok {
+		t.Fatalf("settler-1 should remain when map actions are skipped")
+	}
+}
+
+func TestRunTurnResolutionNonFatalStillIncludesCombatUpkeepInUnitSection(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             10,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	tp := newStubTransport()
+	player := NewHumanPlayer("player-1", "alice", tp)
+	room := NewRoom("game-1", []Player{player}, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player}, tp, &config.Config{})
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "upkeep-test", Width: 1, Height: 1, NodeIndex: map[string]donburi.Entity{"A1": nodeEntity}})
+	state.World = world
+	state.NodeIndex = state.Map.NodeIndex
+	state.Phase = domain.PhaseResolving.String()
+	state.Players["player-1"].Resources.Set(domain.ResourceFood, 0)
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
+	room.runtime.SetState(state)
+
+	room.RunTurnResolution()
+
+	settlement := firstMessage[*pb.MsgTurnSettlement](tp.sent["player-1"])
+	if settlement == nil {
+		t.Fatalf("non-fatal settlement not sent")
+	}
+	if !hasSettlementEvent(settlement, "unit", "upkeep_paid") {
+		t.Fatalf("non-fatal turn should include upkeep_paid in unit section")
+	}
+	if !hasSettlementEvent(settlement, "unit", "unit_starving") {
+		t.Fatalf("non-fatal turn should include unit_starving in unit section")
+	}
+}
+
 func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
@@ -535,4 +701,31 @@ func newTestRuntime(gameID string, tp *stubTransport) *gamesession.Runtime {
 	state := domain.NewGameState(gameID, []string{"player-1"}, []string{"alice"}, &domain.MapData{})
 	runtime.SetState(state)
 	return runtime
+}
+
+func hasSettlementEvent(msg *pb.MsgTurnSettlement, section string, eventType string) bool {
+	if msg == nil {
+		return false
+	}
+	for _, currentSection := range msg.GetSections() {
+		if currentSection.GetSection() != section {
+			continue
+		}
+		for _, event := range currentSection.GetEvents() {
+			if event.GetType() == eventType {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func firstMessage[T proto.Message](msgs []proto.Message) T {
+	var zero T
+	for _, msg := range msgs {
+		if typed, ok := msg.(T); ok {
+			return typed
+		}
+	}
+	return zero
 }

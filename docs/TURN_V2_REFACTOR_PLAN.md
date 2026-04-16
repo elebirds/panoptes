@@ -8,6 +8,8 @@
 > - `docs/gdd/2026-04-14-turn-structure-v2-draft.md`
 > - `docs/SERVER_RUNTIME_ARCHITECTURE.md`
 > - `docs/combat/2026-04-12-manual-combat-v1-spec.md`
+>
+> 补充说明：运行时主链的最新收敛设计见 `docs/2026-04-16-server-runtime-unification-plan.md`。当前实现已经明确采用顶层 `Runner + Stage`，而不是把通用 `Pipeline` 作为服务端运行时核心。
 
 ## 1. 本文档解决什么
 
@@ -333,7 +335,7 @@ type Event interface {
 
 客户端可播放数据不再由事件对象直接生成，而由：
 
-- `resolution/report`
+- `game/projection`
 - `query/settlement_mapper`
 
 按最终协议进行映射。
@@ -343,14 +345,14 @@ type Event interface {
 现有：
 
 - `server/internal/engine/combat`
-- `server/internal/engine/production`
+- `server/internal/engine/economy`
 
 不再按“旧阶段名称”组织。
 
 推荐迁移为：
 
 - `resolution/units`：原 combat 中与单位移动、冲突、战斗直接相关部分
-- `resolution/economy`：原 production 中与资源、生产、补给、科研相关部分
+- `resolution/economy`：原 economy 中与资源、生产、补给、科研相关部分
 - `resolution/mapactions`：把 `domestic_expand` 这类地图动作纳入统一结算
 
 `engine/maploader` 与 `engine/minister` 可暂留，但建议后续分别并入：

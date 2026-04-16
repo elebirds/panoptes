@@ -9,17 +9,23 @@ package combat
 import (
 	"sort"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
 type SnapshotPhase struct{}
 
 func (SnapshotPhase) Apply(ctx *ResolutionContext) {
+	// SnapshotPhase 的职责不是“复制一份世界状态”这么简单，
+	// 而是明确划定：本回合后续所有战斗裁决都只能读取这份冻结输入。
+	// 一旦快照建立完成，后续 phase 不再回头读取 ECS 当前值做重新判断。
 	snapshot := CombatSnapshot{
 		Units:          make(map[string]SnapshotUnit),
-		BlockSources:   make(map[domain.Position]BlockSource),
+		Structures:     make(map[string]SnapshotStructure),
+		BlockSources:   make(map[domain.Position]BlockSourcesAtPos),
 		OrderedUnitIDs: make([]string, 0),
 	}
 
@@ -30,7 +36,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		if entry.HasComponent(ecs.UnitCapabilitiesC) {
 			caps = *ecs.UnitCapabilitiesC.Get(entry)
 		} else {
-			caps = inferCapabilities(entry)
+			caps = inferCapabilities(entry, stats.Type)
 		}
 
 		// 快照阶段就把缺省指令归一成 hold，避免后续阶段重复兜底。
@@ -60,43 +66,76 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		snapshot.OrderedUnitIDs = append(snapshot.OrderedUnitIDs, stats.ID)
 		// 单位起始占位直接进入阻断快照。
 		// 根据 V1 规格，这个阻断信息在整次结算中不会因为单位本回合移动而更新。
-		snapshot.BlockSources[unit.Position] = BlockSource{
+		sources := snapshot.BlockSources[unit.Position]
+		source := BlockSource{
 			Kind:     "unit",
 			Owner:    unit.PlayerID,
 			Position: unit.Position,
 			UnitID:   unit.UnitID,
 		}
+		sources.Unit = &source
+		snapshot.BlockSources[unit.Position] = sources
 		ctx.CurrentHP[unit.UnitID] = unit.HP
 	})
 
 	ecs.NodesWithBuilding(ctx.World).Each(ctx.World, func(entry *donburi.Entry) {
-		building := ecs.BuildingC.Get(entry)
-		if building.Owner == "" {
+		buildingComp := ecs.BuildingC.Get(entry)
+		if buildingComp.Owner == "" {
 			return
 		}
 		pos := ecs.PositionC.Get(entry)
 		node := ecs.NodeC.Get(entry)
+		cityID := ecs.ResolveCityID(entry)
+		isCityCore := building.IsCityCore(entry)
+		isCapitalCore := false
+		if isCityCore && ctx.State != nil {
+			if ownerState, ok := ctx.State.Players[buildingComp.Owner]; ok && ownerState != nil && cityID != "" && cityID == ownerState.CapitalCityID {
+				isCapitalCore = true
+			}
+		}
+		snapshot.Structures[node.ID] = SnapshotStructure{
+			NodeID:        node.ID,
+			PlayerID:      buildingComp.Owner,
+			CityID:        cityID,
+			Type:          buildingComp.Type,
+			Position:      domain.Position{X: pos.X, Y: pos.Y},
+			HP:            buildingComp.HP,
+			MaxHP:         buildingComp.MaxHP,
+			IsCityCore:    isCityCore,
+			IsCapitalCore: isCapitalCore,
+		}
+		ctx.CurrentStructureHP[node.ID] = buildingComp.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
-		snapshot.BlockSources[domain.Position{X: pos.X, Y: pos.Y}] = BlockSource{
+		// 这里有意不覆盖同格单位阻断，因为 charge 的第一接敌目标必须保留为单位。
+		blockPos := domain.Position{X: pos.X, Y: pos.Y}
+		sources := snapshot.BlockSources[blockPos]
+		source := BlockSource{
 			Kind:     "building",
-			Owner:    building.Owner,
-			Position: domain.Position{X: pos.X, Y: pos.Y},
+			Owner:    buildingComp.Owner,
+			Position: blockPos,
 			NodeID:   node.ID,
 		}
+		sources.Structure = &source
+		snapshot.BlockSources[blockPos] = sources
 	})
 
 	sort.Strings(snapshot.OrderedUnitIDs)
 	ctx.Snapshot = snapshot
 }
 
-func inferCapabilities(entry *donburi.Entry) domain.UnitCapabilities {
+func inferCapabilities(entry *donburi.Entry, unitType domain.UnitType) domain.UnitCapabilities {
 	// 兼容旧存档/旧测试中尚未挂 UnitCapabilities 组件的单位。
 	// 这是迁移保护逻辑，正常新单位应优先使用静态数据生成后的能力组件。
+	canAttackStructures := false
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		canAttackStructures = cfg.Flags.CanAttackStructures
+	}
 	return domain.UnitCapabilities{
-		Melee:       !entry.HasComponent(ecs.RangedAbilityC),
-		Ranged:      entry.HasComponent(ecs.RangedAbilityC),
-		Charge:      entry.HasComponent(ecs.ChargeAbilityC),
-		Siege:       entry.HasComponent(ecs.SiegeAbilityC),
-		DestroyRoad: entry.HasComponent(ecs.DestroyAbilityC),
+		Melee:               !entry.HasComponent(ecs.RangedAbilityC),
+		Ranged:              entry.HasComponent(ecs.RangedAbilityC),
+		Charge:              entry.HasComponent(ecs.ChargeAbilityC),
+		Siege:               entry.HasComponent(ecs.SiegeAbilityC),
+		CanAttackStructures: canAttackStructures,
+		DestroyRoad:         entry.HasComponent(ecs.DestroyAbilityC),
 	}
 }

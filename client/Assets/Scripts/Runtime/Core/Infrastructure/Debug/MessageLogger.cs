@@ -252,6 +252,8 @@ namespace Panoptes.DebugTools
                     var owner = reveal.TrueState != null ? reveal.TrueState.ControllerPlayerId : string.Empty;
                     var buildingType = reveal.TrueState != null ? reveal.TrueState.BuildingTypeId : string.Empty;
                     return $"node={reveal.NodeId} owner={owner} building={buildingType}";
+                case MsgIssueUnitOrderResult issueUnitOrder:
+                    return $"success={issueUnitOrder.Success} unit={issueUnitOrder.UnitId} action={issueUnitOrder.Action} error={issueUnitOrder.ErrorCode}";
                 case MsgResearchResult research:
                     return $"success={research.Success} tech={research.TechnologyId} error={research.ErrorCode}";
                 case MsgSetInstitutionLoadoutResult institution:

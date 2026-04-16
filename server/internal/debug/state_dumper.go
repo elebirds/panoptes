@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/yohamta/donburi"
@@ -118,22 +119,24 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			return
 		}
 		node := ecs.NodeC.Get(entry)
-		building := ecs.BuildingC.Get(entry)
+		buildingComp := ecs.BuildingC.Get(entry)
 		summary.Buildings[node.ID] = BuildingSummary{
 			NodeID: node.ID,
-			Type:   string(building.Type),
-			Owner:  building.Owner,
-			CityID: building.CityID,
-			HP:     building.HP,
-			MaxHP:  building.MaxHP,
+			Type:   string(buildingComp.Type),
+			Owner:  buildingComp.Owner,
+			CityID: building.ResolveCityID(entry),
+			HP:     buildingComp.HP,
+			MaxHP:  buildingComp.MaxHP,
 		}
-		if entry.HasComponent(ecs.BuildingStateC) {
-			buildingState := ecs.BuildingStateC.Get(entry)
-			current := summary.Buildings[node.ID]
-			current.Disabled = buildingState.Disabled
-			current.DisabledReason = buildingState.DisabledReason
-			summary.Buildings[node.ID] = current
+		status, reason := domain.BuildingLifecycleStateAtTurn(entry, state.Turn)
+		current := summary.Buildings[node.ID]
+		current.Disabled = buildingSummaryDisabled(status)
+		if current.Disabled {
+			current.DisabledReason = reason
+		} else {
+			current.DisabledReason = ""
 		}
+		summary.Buildings[node.ID] = current
 	})
 
 	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
@@ -153,6 +156,18 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 	})
 
 	return summary
+}
+
+func buildingSummaryDisabled(status string) bool {
+	switch status {
+	case domain.BuildingStatusDisabled,
+		domain.BuildingStatusContested,
+		domain.BuildingStatusTakeover,
+		domain.BuildingStatusRuined:
+		return true
+	default:
+		return false
+	}
 }
 
 func DumpGameStateSummary(state *domain.GameState) {
