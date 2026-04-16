@@ -10,10 +10,8 @@ import (
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/engine"
 	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
 // RunTurnResolution executes the unified Turn V2 resolving pipeline.
@@ -22,21 +20,8 @@ func RunTurnResolution(room *GameRoom) {
 		return
 	}
 
-	lockInEvents := room.lockPlanningInputs()
-	room.lockUnitResolutionOrders()
-	unitResolutionRunner := engine.NewUnitResolutionRunner()
-	combatEvents, upkeepEvents := unitResolutionRunner.Run(room.State().World, room.State())
-	unitEvents := append(combatEvents, upkeepEvents...)
-	mapEvents := make([]*pb.TurnEvent, 0)
-	economyEvents := append([]event.Event(nil), lockInEvents...)
-	if !room.State().IsOver {
-		room.refreshActiveMarchesAfterSettlement()
-		mapEvents = room.applyPlannedMapActions()
-		economyPipeline := engine.NewEconomyPipeline()
-		economyEvents = append(economyEvents, economyPipeline.Run(room.State().World, room.State())...)
-	}
-
-	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)
+	collector := NewTurnResolutionRunner().Run(room)
+	room.broadcastTurnSettlement(collector)
 	if room.IsDevMode() {
 		if hooks := currentDebugHooks(); hooks.DumpStateSummary != nil {
 			hooks.DumpStateSummary(room.State())
@@ -59,7 +44,7 @@ func RunTurnResolution(room *GameRoom) {
 	clear(state.TurnRuntime.Planning.WarDirectives)
 }
 
-func (r *GameRoom) lockPlanningInputs() []event.Event {
+func (r *GameRoom) planningCommitEvents() []event.Event {
 	state := r.State()
 	if state == nil {
 		return nil
@@ -75,7 +60,6 @@ func (r *GameRoom) lockPlanningInputs() []event.Event {
 			OldPolicy: string(playerState.Policy),
 			NewPolicy: string(policyID),
 		}
-		evt.Apply(state.World, state)
 		events = append(events, evt)
 	}
 	for playerID, technologyID := range state.TurnRuntime.Planning.PendingResearch {
@@ -87,7 +71,6 @@ func (r *GameRoom) lockPlanningInputs() []event.Event {
 			PlayerID:     playerID,
 			TechnologyID: technologyID,
 		}
-		evt.Apply(state.World, state)
 		events = append(events, evt)
 	}
 	for playerID := range state.Players {
@@ -104,7 +87,6 @@ func (r *GameRoom) lockPlanningInputs() []event.Event {
 			PolicyIDs:      policyIDs,
 			ActivationTurn: state.Turn + 1,
 		}
-		evt.Apply(state.World, state)
 		events = append(events, evt)
 	}
 	return events

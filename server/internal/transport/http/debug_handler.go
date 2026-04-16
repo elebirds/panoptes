@@ -13,12 +13,14 @@ import (
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 type DebugHandler struct {
-	rooms         coretransport.GameRoomRegistry
-	recorder      *debug.SettlementRecorder
-	unmarshalOpts protojson.UnmarshalOptions
+	rooms          coretransport.GameRoomRegistry
+	recorder       *debug.SettlementRecorder
+	commandResults *debug.CommandResultRecorder
+	unmarshalOpts  protojson.UnmarshalOptions
 }
 
 type debugCommandRequest struct {
@@ -27,8 +29,10 @@ type debugCommandRequest struct {
 }
 
 type debugCommandResponse struct {
-	RequestID string             `json:"request_id,omitempty"`
-	State     debug.StateSummary `json:"state"`
+	RequestID  string             `json:"request_id,omitempty"`
+	State      debug.StateSummary `json:"state"`
+	ResultType string             `json:"result_type,omitempty"`
+	Result     json.RawMessage    `json:"result,omitempty"`
 }
 
 type debugSubmitResponse struct {
@@ -48,11 +52,12 @@ type debugStepTurnResponse struct {
 	State          debug.StateSummary    `json:"state"`
 }
 
-func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.SettlementRecorder) *DebugHandler {
+func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.SettlementRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
 	return &DebugHandler{
-		rooms:         rooms,
-		recorder:      recorder,
-		unmarshalOpts: protojson.UnmarshalOptions{DiscardUnknown: true},
+		rooms:          rooms,
+		recorder:       recorder,
+		commandResults: commandResults,
+		unmarshalOpts:  protojson.UnmarshalOptions{DiscardUnknown: true},
 	}
 }
 
@@ -113,10 +118,19 @@ func (h *DebugHandler) Command(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, debugCommandResponse{
+	resp := debugCommandResponse{
 		RequestID: req.RequestID,
 		State:     debug.BuildStateSummary(room.State()),
-	})
+	}
+	status := http.StatusOK
+	if result := h.latestCommandResult(room.ID, playerID, req.RequestID); result != nil {
+		resp.ResultType = result.Type
+		if encoded, encodeErr := protojson.Marshal(result.Message); encodeErr == nil {
+			resp.Result = encoded
+		}
+		status = commandResultHTTPStatus(result.Message)
+	}
+	writeJSON(w, status, resp)
 }
 
 func (h *DebugHandler) Submit(w http.ResponseWriter, r *http.Request) {
@@ -226,6 +240,13 @@ func (h *DebugHandler) latestGameOver(roomID string) *pb.MsgGameOver {
 	return h.recorder.LatestGameOver(roomID)
 }
 
+func (h *DebugHandler) latestCommandResult(roomID string, playerID string, requestID string) *debug.RecordedCommandResult {
+	if h == nil || h.commandResults == nil {
+		return nil
+	}
+	return h.commandResults.LatestCommandResult(roomID, playerID, requestID)
+}
+
 func writeCommandError(w http.ResponseWriter, err error) {
 	if errors.Is(err, game.ErrPhaseMismatch) {
 		writeError(w, http.StatusConflict, "phase_mismatch")
@@ -249,5 +270,49 @@ func writeCommandError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusInternalServerError, problem.GetCode())
 	default:
 		writeError(w, http.StatusConflict, problem.GetCode())
+	}
+}
+
+func commandResultHTTPStatus(msg proto.Message) int {
+	success, errorCode, ok := commandResultOutcome(msg)
+	if !ok || success {
+		return http.StatusOK
+	}
+	switch errorCode {
+	case "invalid_request":
+		return http.StatusBadRequest
+	case "unauthorized", "auth_failed", "invalid_credentials":
+		return http.StatusUnauthorized
+	case "game_not_found", "room_not_found", "user_not_found", "unit_not_found":
+		return http.StatusNotFound
+	case "internal_error":
+		return http.StatusInternalServerError
+	default:
+		return http.StatusConflict
+	}
+}
+
+func commandResultOutcome(msg proto.Message) (bool, string, bool) {
+	switch typed := msg.(type) {
+	case *pb.MsgResearchResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgSetPolicyResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgSetInstitutionLoadoutResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgIssueUnitOrderResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgSetBuildingRecipeResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgBuildStructureResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgTokenResult:
+		return typed.GetSuccess(), typed.GetErrorCode(), true
+	case *pb.MsgPlanningPathPreviewResponse:
+		return typed.GetValid(), typed.GetErrorCode(), true
+	case *pb.MsgRevealResult:
+		return true, "", true
+	default:
+		return false, "", false
 	}
 }

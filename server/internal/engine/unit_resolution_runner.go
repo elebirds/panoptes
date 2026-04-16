@@ -13,12 +13,26 @@ func NewUnitResolutionRunner() *UnitResolutionRunner {
 	return &UnitResolutionRunner{}
 }
 
+func (r *UnitResolutionRunner) ResolveCombat(world donburi.World, state *domain.GameState) []event.Event {
+	if world == nil || state == nil {
+		return nil
+	}
+	return combat.NewSingleStepResolver().Run(world, state)
+}
+
+func (r *UnitResolutionRunner) ResolveUpkeep(world donburi.World, state *domain.GameState) []event.Event {
+	if world == nil || state == nil || state.IsOver {
+		return nil
+	}
+	return (&combat.CombatUpkeepSystem{}).Run(world, state)
+}
+
 func (r *UnitResolutionRunner) Run(world donburi.World, state *domain.GameState) ([]event.Event, []event.Event) {
 	if world == nil || state == nil {
 		return nil, nil
 	}
 
-	combatEvents := combat.NewSingleStepResolver().Run(world, state)
+	combatEvents := r.ResolveCombat(world, state)
 	for _, evt := range combatEvents {
 		evt.Apply(world, state)
 	}
@@ -26,7 +40,7 @@ func (r *UnitResolutionRunner) Run(world donburi.World, state *domain.GameState)
 		return combatEvents, nil
 	}
 
-	upkeepEvents := (&combat.CombatUpkeepSystem{}).Run(world, state)
+	upkeepEvents := r.ResolveUpkeep(world, state)
 	for _, evt := range upkeepEvents {
 		evt.Apply(world, state)
 	}
