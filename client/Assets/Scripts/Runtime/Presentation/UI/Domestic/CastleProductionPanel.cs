@@ -23,6 +23,8 @@ namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class CastleProductionPanel : MonoBehaviour
     {
+        public event Action<bool> VisibilityChanged;
+
         [Serializable]
         private sealed class SavedSelection
         {
@@ -133,6 +135,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private int _workshopCapacity;
         private int _archeryCapacity;
         private SavedSelection _pendingSelection = new SavedSelection();
+        public bool IsVisible => panelRoot != null && panelRoot.activeSelf;
 
         private void Awake()
         {
@@ -432,6 +435,17 @@ namespace Panoptes.Presentation.UI.Domestic
             SetVisible(false);
         }
 
+        public float GetPanelWidth()
+        {
+            if (panelRoot == null)
+            {
+                return 0f;
+            }
+
+            var rect = panelRoot.transform as RectTransform;
+            return rect != null ? Mathf.Abs(rect.rect.width) : 0f;
+        }
+
         public void SelectMaterialsTab()
         {
             SetTab(Tab.Materials);
@@ -520,6 +534,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
+            var wasVisible = panelRoot.activeSelf;
             if (panelRoot == gameObject && !visible)
             {
                 Debug.LogWarning("[CastleProductionPanel] Skip hiding because panelRoot points to controller object.");
@@ -527,6 +542,10 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             panelRoot.SetActive(visible);
+            if (wasVisible != visible)
+            {
+                VisibilityChanged?.Invoke(visible);
+            }
         }
 
         private void SetTab(Tab tab)

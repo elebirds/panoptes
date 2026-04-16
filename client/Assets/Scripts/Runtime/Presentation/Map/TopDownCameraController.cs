@@ -7,6 +7,7 @@
  *************************************************/
 
 using UnityEngine;
+using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -18,6 +19,11 @@ namespace Panoptes.Presentation.Map
     {
         [Header("Time")]
         [SerializeField] private bool useUnscaledTime = true;
+        [Header("UI Input Block")]
+        [SerializeField] private bool blockCameraInputWhenPointerOverUI = true;
+        [SerializeField] private bool blockZoomWhenPointerOverUI = true;
+        [SerializeField] private bool blockDragWhenPointerOverUI = true;
+        [SerializeField] private bool blockEdgePanWhenPointerOverUI = true;
 
         [Header("Pan - Drag")]
         [SerializeField] private bool enableDragPan = true;
@@ -126,12 +132,13 @@ namespace Panoptes.Presentation.Map
 
             EnsureZoomRanges();
             ClampCurrentZoomToRange();
-            HandleZoom();
+            var pointerOverUi = IsPointerOverUI();
+            HandleZoom(pointerOverUi);
             HandlePerspectiveZoomTilt(dt);
 
-            var dragDelta = GetDragPanDelta();
+            var dragDelta = (pointerOverUi && blockDragWhenPointerOverUI) ? Vector3.zero : GetDragPanDelta();
             var keyboardDelta = GetKeyboardPanDelta(dt);
-            var edgeDelta = GetEdgePanDelta(dt);
+            var edgeDelta = (pointerOverUi && blockEdgePanWhenPointerOverUI) ? Vector3.zero : GetEdgePanDelta(dt);
             var panDelta = dragDelta + keyboardDelta + edgeDelta;
             _targetPosition += panDelta;
 
@@ -381,10 +388,14 @@ namespace Panoptes.Presentation.Map
             ClampCurrentZoomToRange();
         }
 
-        private void HandleZoom()
+        private void HandleZoom(bool pointerOverUi)
         {
             var rawScroll = GetScrollDeltaY();
             if (Mathf.Abs(rawScroll) <= 0.0001f)
+            {
+                return;
+            }
+            if (pointerOverUi && blockZoomWhenPointerOverUI)
             {
                 return;
             }
@@ -881,6 +892,26 @@ namespace Panoptes.Presentation.Map
                 normalized += 360f;
             }
             return normalized;
+        }
+
+        private bool IsPointerOverUI()
+        {
+            if (!blockCameraInputWhenPointerOverUI)
+            {
+                return false;
+            }
+
+            var eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+#if ENABLE_INPUT_SYSTEM
+            return eventSystem.IsPointerOverGameObject();
+#else
+            return eventSystem.IsPointerOverGameObject();
+#endif
         }
 
         private bool HasMouse()

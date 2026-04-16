@@ -910,6 +910,7 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureActionButtonSlot("action_2", "Action2");
             EnsureActionButtonSlot("action_3", "Action3");
             EnsureActionButtonSlot("action_4", "Action4");
+            EnsureActionButtonSlot("open_recipe_synthesis", "Synthesis");
         }
 
         private void EnsureActionButtonSlot(string actionId, string defaultLabel)

@@ -8,6 +8,7 @@
 
 using UnityEngine;
 using Panoptes.Core.Domain;
+using Panoptes.Core.Application.Cache;
 
 namespace Panoptes.Presentation.Map
 {
@@ -61,6 +62,7 @@ namespace Panoptes.Presentation.Map
         [Header("Building Prefabs")]
         [SerializeField] private BuildingView defaultBuildingPrefab;
         [SerializeField] private BuildingPrefabEntry[] buildingPrefabs;
+        [SerializeField] private string buildingPrefabResourcesRoot = "Prefabs/Buildings";
 
         [Header("Move Preview Marker")]
         [SerializeField] private bool autoCreateMoveMarker = true;
@@ -92,6 +94,8 @@ namespace Panoptes.Presentation.Map
         private MaterialPropertyBlock _moveMarkerBlock;
         private Material _moveMarkerMaterial;
         private MaterialPropertyBlock _groundBlock;
+        private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
+            new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
 
         private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
         private static readonly int MainTexStId = Shader.PropertyToID("_MainTex_ST");
@@ -675,7 +679,57 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
+            var runtimeLoaded = TryLoadBuildingPrefabFromResources(lookupKey);
+            if (runtimeLoaded != null)
+            {
+                return runtimeLoaded;
+            }
+
             return defaultBuildingPrefab;
+        }
+
+        private BuildingView TryLoadBuildingPrefabFromResources(string buildingType)
+        {
+            var lookupKey = NormalizeBuildingTypeKey(buildingType);
+            if (string.IsNullOrWhiteSpace(lookupKey))
+            {
+                return null;
+            }
+
+            if (_runtimeBuildingPrefabCache.TryGetValue(lookupKey, out var cachedPrefab))
+            {
+                return cachedPrefab;
+            }
+
+            var prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{lookupKey}");
+            if (prefab == null)
+            {
+                var cache = StaticCatalogCache.Instance;
+                if (cache != null && cache.TryGetBuilding(lookupKey, out var entry) && entry != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(entry.prefab_key))
+                    {
+                        prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{NormalizeToken(entry.prefab_key)}");
+                        if (prefab == null)
+                        {
+                            prefab = LoadBuildingPrefabByPath(NormalizeToken(entry.prefab_key));
+                        }
+                    }
+                }
+            }
+
+            _runtimeBuildingPrefabCache[lookupKey] = prefab;
+            return prefab;
+        }
+
+        private static BuildingView LoadBuildingPrefabByPath(string resourcePath)
+        {
+            if (string.IsNullOrWhiteSpace(resourcePath))
+            {
+                return null;
+            }
+
+            return Resources.Load<BuildingView>(resourcePath.Trim().Trim('/'));
         }
 
         public BuildingView ResolveBuildingPrefab(string buildingType)
@@ -694,8 +748,14 @@ namespace Panoptes.Presentation.Map
                     return "watchtower";
                 case "lumber":
                     return "lumberyard";
+                case "mine":
+                    return "smelter";
+                case "wall":
+                    return "tower";
                 case "engineer_camp":
                     return "engineer";
+                case "city_core":
+                    return "castle";
                 default:
                     return token;
             }

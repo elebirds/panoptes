@@ -1,9 +1,9 @@
-/*************************************************
+﻿/*************************************************
  * Project: Panoptes
  * File: TurnHUD.cs
  * Author: Panoptes Team
- * Date: 2026-04-13
- * Description: Runtime-built turn/phase HUD.
+ * Date: 2026-04-16
+ * Description: Turn/phase HUD that can bind to an external TurnPanel (turnNum).
  *************************************************/
 
 using Panoptes.Core.Application.Cache;
@@ -16,9 +16,17 @@ namespace Panoptes.Presentation.UI.HUD
 {
     public sealed class TurnHUD : MonoBehaviour
     {
+        [Header("Runtime HUD (fallback)")]
         [SerializeField] private RectTransform root;
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI detailText;
+
+        [Header("External Turn Panel")]
+        [SerializeField] private bool preferExternalTurnPanel = true;
+        [SerializeField] private bool preserveExternalLayout = true;
+        [SerializeField] private RectTransform externalTurnPanelRoot;
+        [SerializeField] private TextMeshProUGUI externalTurnNumText;
+        [SerializeField] private TextMeshProUGUI externalPhaseText;
 
         private GameStateCache _cache;
         private float _deadline = -1f;
@@ -30,12 +38,14 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Awake()
         {
+            ResolveExternalTurnPanelReferences();
             EnsureUi();
             _cache = GameStateCache.Instance;
         }
 
         private void OnEnable()
         {
+            ResolveExternalTurnPanelReferences();
             _cache = GameStateCache.Instance;
             if (_cache != null)
             {
@@ -61,15 +71,16 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Update()
         {
-            if (_deadline <= 0f || detailText == null || _gameEnded)
+            if (_deadline <= 0f || _gameEnded)
             {
                 return;
             }
 
             var remaining = Mathf.Max(0, Mathf.CeilToInt(_deadline - Time.unscaledTime));
-            detailText.text = remaining > 0
-                ? $"剩余 {remaining}s"
-                : "等待服务器推进";
+            var text = remaining > 0
+                ? $"{remaining}s"
+                : "Waiting server";
+            SetDetailText(text);
         }
 
         private void OnPhaseChanged(PhaseChangedEvent evt)
@@ -119,39 +130,148 @@ namespace Panoptes.Presentation.UI.HUD
         private void RefreshText()
         {
             EnsureUi();
-            if (titleText == null || detailText == null)
+            if (titleText == null && externalTurnNumText == null)
             {
                 return;
             }
 
-            titleText.text = _currentTurn > 0
-                ? $"第 {_currentTurn} 回合"
-                : "等待对局开始";
+            var turnNum = _currentTurn > 0 ? _currentTurn.ToString() : "--";
+            if (externalTurnNumText != null)
+            {
+                externalTurnNumText.text = turnNum;
+            }
+
+            if (titleText != null)
+            {
+                titleText.text = _currentTurn > 0
+                    ? $"Turn {_currentTurn}"
+                    : "Waiting game start";
+            }
 
             if (_gameEnded)
             {
-                detailText.text = "本局已结束";
+                SetDetailText("Game Over");
                 return;
             }
 
             var phaseText = GamePhases.ToDisplayText(_currentPhase);
             if (_isInteractive)
             {
-                detailText.text = phaseText;
+                SetDetailText(phaseText);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(_nextPhase))
             {
-                detailText.text = $"{phaseText}\n即将进入 {GamePhases.ToDisplayText(_nextPhase)}";
+                SetDetailText($"{phaseText}\nNext: {GamePhases.ToDisplayText(_nextPhase)}");
                 return;
             }
 
-            detailText.text = phaseText;
+            SetDetailText(phaseText);
+        }
+
+        private void SetDetailText(string value)
+        {
+            if (detailText != null)
+            {
+                detailText.text = value;
+            }
+
+            if (externalPhaseText != null)
+            {
+                externalPhaseText.text = value;
+            }
+        }
+
+        private void ResolveExternalTurnPanelReferences()
+        {
+            if (!preferExternalTurnPanel)
+            {
+                return;
+            }
+
+            if (externalTurnPanelRoot == null)
+            {
+                externalTurnPanelRoot = FindRectByName("TrunPanel");
+                if (externalTurnPanelRoot == null)
+                {
+                    externalTurnPanelRoot = FindRectByName("TurnPanel");
+                }
+            }
+
+            if (externalTurnPanelRoot == null)
+            {
+                return;
+            }
+
+            if (externalTurnNumText == null)
+            {
+                externalTurnNumText = FindTextByName(externalTurnPanelRoot, "turnNum");
+            }
+
+            if (externalPhaseText == null)
+            {
+                externalPhaseText = FindTextByName(externalTurnPanelRoot, "phaseText");
+            }
+        }
+
+        private static RectTransform FindRectByName(string name)
+        {
+            var all = UnityEngine.Object.FindObjectsByType<RectTransform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var i = 0; i < all.Length; i++)
+            {
+                var rect = all[i];
+                if (rect == null || string.IsNullOrWhiteSpace(rect.name))
+                {
+                    continue;
+                }
+
+                if (string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return rect;
+                }
+            }
+
+            return null;
+        }
+
+        private static TextMeshProUGUI FindTextByName(RectTransform rootRect, string name)
+        {
+            if (rootRect == null)
+            {
+                return null;
+            }
+
+            var all = rootRect.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (var i = 0; i < all.Length; i++)
+            {
+                var text = all[i];
+                if (text == null || string.IsNullOrWhiteSpace(text.name))
+                {
+                    continue;
+                }
+
+                if (string.Equals(text.name, name, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return text;
+                }
+            }
+
+            return null;
         }
 
         private void EnsureUi()
         {
+            ResolveExternalTurnPanelReferences();
+            var usingExternalPanel = preferExternalTurnPanel && externalTurnPanelRoot != null;
+
+            if (usingExternalPanel)
+            {
+                root = externalTurnPanelRoot;
+            }
+
             if (root == null)
             {
                 root = GetComponent<RectTransform>();
@@ -161,15 +281,21 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
-            root.anchorMin = new Vector2(0f, 1f);
-            root.anchorMax = new Vector2(0f, 1f);
-            root.pivot = new Vector2(0f, 1f);
-            root.anchoredPosition = new Vector2(28f, -24f);
-            root.sizeDelta = new Vector2(320f, 92f);
+            if (!(usingExternalPanel && preserveExternalLayout))
+            {
+                root.anchorMin = new Vector2(0f, 1f);
+                root.anchorMax = new Vector2(0f, 1f);
+                root.pivot = new Vector2(0f, 1f);
+                root.anchoredPosition = new Vector2(28f, -24f);
+                root.sizeDelta = new Vector2(320f, 92f);
+            }
 
-            titleText ??= CreateText("Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, -32f), 28f, FontStyles.Bold);
-            detailText ??= CreateText("Detail", new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, -84f), 22f, FontStyles.Normal);
-            detailText.textWrappingMode = TextWrappingModes.Normal;
+            if (!usingExternalPanel)
+            {
+                titleText ??= CreateText("Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, -32f), 28f, FontStyles.Bold);
+                detailText ??= CreateText("Detail", new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(0f, -84f), 22f, FontStyles.Normal);
+                detailText.textWrappingMode = TextWrappingModes.Normal;
+            }
         }
 
         private TextMeshProUGUI CreateText(string objectName, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, float fontSize, FontStyles style)

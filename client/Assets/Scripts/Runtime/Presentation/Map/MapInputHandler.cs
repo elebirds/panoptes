@@ -534,6 +534,10 @@ namespace Panoptes.Presentation.Map
 
             if (!IsCombatPhase())
             {
+                if (TryRaycastNode(out _))
+                {
+                    CloseCurrentInfoSelection();
+                }
                 return;
             }
 
@@ -557,6 +561,10 @@ namespace Panoptes.Presentation.Map
 
             if (TryRaycastNode(out _))
             {
+                if (_combatActionMode == CombatActionMode.None)
+                {
+                    CloseCurrentInfoSelection();
+                }
                 return;
             }
 
@@ -741,7 +749,8 @@ namespace Panoptes.Presentation.Map
             }
 
             var buildingType = NormalizeToken(nodeState.BuildingType);
-            if (string.IsNullOrEmpty(buildingType))
+            var isResourcePoint = nodeState.IsResourcePoint;
+            if (string.IsNullOrEmpty(buildingType) && !isResourcePoint)
             {
                 return false;
             }
@@ -755,7 +764,7 @@ namespace Panoptes.Presentation.Map
                 ClearTerritoryHighlights();
             }
 
-            var proxy = GetOrCreateBuildingInfoProxy(node, nodeState);
+            var proxy = GetOrCreateNodeInfoProxy(node, nodeState, buildingType, isResourcePoint);
             if (proxy == null)
             {
                 return false;
@@ -767,7 +776,7 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
-        private UnitView GetOrCreateBuildingInfoProxy(NodeView nodeView, NodeDto nodeState)
+        private UnitView GetOrCreateNodeInfoProxy(NodeView nodeView, NodeDto nodeState, string normalizedBuildingType, bool isResourcePoint)
         {
             if (nodeView == null || nodeState == null)
             {
@@ -781,11 +790,23 @@ namespace Panoptes.Presentation.Map
                 proxyGo.hideFlags = HideFlags.DontSave;
             }
 
-            var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : 100;
+            var infoType = normalizedBuildingType;
+            if (string.IsNullOrEmpty(infoType) && isResourcePoint)
+            {
+                var resourceType = NormalizeToken(nodeState.ResourceType);
+                infoType = string.IsNullOrEmpty(resourceType) ? "resource_point" : $"resource_{resourceType}";
+            }
+
+            if (string.IsNullOrEmpty(infoType))
+            {
+                return null;
+            }
+
+            var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : (isResourcePoint ? 1 : 100);
             var unit = new UnitDto
             {
                 Id = nodeState.Id ?? string.Empty,
-                Type = NormalizeToken(nodeState.BuildingType),
+                Type = infoType,
                 Owner = !string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.Owner : nodeState.TerritoryOwner,
                 X = nodeState.X,
                 Y = nodeState.Y,
@@ -807,6 +828,18 @@ namespace Panoptes.Presentation.Map
             }
             _buildingInfoProxy.gameObject.SetActive(false);
             return _buildingInfoProxy;
+        }
+
+        private void CloseCurrentInfoSelection()
+        {
+            if (_selectedUnit != null)
+            {
+                ClearMoveSelection();
+                return;
+            }
+
+            NotifyUnitSelectionChanged(null);
+            NotifyUnitInfoPanel(null);
         }
 
         private void SelectUnit(UnitView unit)

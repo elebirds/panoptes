@@ -52,37 +52,24 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void Awake()
         {
-            if (toggleButton == null)
-            {
-                toggleButton = GetComponent<Button>();
-            }
-
-            if (toggleButtonRect == null && toggleButton != null)
-            {
-                toggleButtonRect = toggleButton.transform as RectTransform;
-            }
-
-            if (buildPanelRoot == null)
-            {
-                var selfRect = transform as RectTransform;
-                if (selfRect != null)
-                {
-                    buildPanelRoot = selfRect.parent as RectTransform;
-                }
-            }
+            ResolveReferences();
 
             if (easing == null || easing.length == 0)
             {
                 easing = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
 
-            RecalculatePositions();
-            ApplyImmediate(startCollapsed);
             _isCollapsed = startCollapsed;
+            RecalculatePositions();
+            ApplyImmediate(_isCollapsed);
         }
 
         private void OnEnable()
         {
+            ResolveReferences();
+            RecalculatePositions();
+            ApplyImmediate(_isCollapsed);
+
             if (toggleButton != null)
             {
                 toggleButton.onClick.AddListener(Toggle);
@@ -179,6 +166,11 @@ namespace Panoptes.Presentation.UI.Domestic
             return Mathf.Abs(buildPanelRoot.rect.width);
         }
 
+        public float GetDuration()
+        {
+            return Mathf.Max(0.01f, duration);
+        }
+
         private void RecalculatePositions()
         {
             if (buildPanelRoot == null)
@@ -215,18 +207,68 @@ namespace Panoptes.Presentation.UI.Domestic
         private Vector2 ComputePanelOffset(RectTransform panel)
         {
             var size = panel.rect.size;
+            var width = Mathf.Abs(size.x);
+            var height = Mathf.Abs(size.y);
+            if (width <= 1f)
+            {
+                width = Mathf.Abs(LayoutUtility.GetPreferredWidth(panel));
+            }
+            if (height <= 1f)
+            {
+                height = Mathf.Abs(LayoutUtility.GetPreferredHeight(panel));
+            }
+            if (width <= 1f && panel.parent is RectTransform parentX)
+            {
+                width = Mathf.Abs(parentX.rect.width);
+            }
+            if (height <= 1f && panel.parent is RectTransform parentY)
+            {
+                height = Mathf.Abs(parentY.rect.height);
+            }
+
             switch (hideDirection)
             {
                 case SlideDirection.Left:
-                    return new Vector2(-(size.x + extraHiddenPadding), 0f);
+                    return new Vector2(-(width + extraHiddenPadding), 0f);
                 case SlideDirection.Right:
-                    return new Vector2(size.x + extraHiddenPadding, 0f);
+                    return new Vector2(width + extraHiddenPadding, 0f);
                 case SlideDirection.Up:
-                    return new Vector2(0f, size.y + extraHiddenPadding);
+                    return new Vector2(0f, height + extraHiddenPadding);
                 case SlideDirection.Down:
-                    return new Vector2(0f, -(size.y + extraHiddenPadding));
+                    return new Vector2(0f, -(height + extraHiddenPadding));
                 default:
                     return Vector2.zero;
+            }
+        }
+
+        private void ResolveReferences()
+        {
+            if (toggleButton == null)
+            {
+                toggleButton = GetComponent<Button>();
+            }
+
+            if (toggleButtonRect == null && toggleButton != null)
+            {
+                toggleButtonRect = toggleButton.transform as RectTransform;
+            }
+
+            if (buildPanelRoot == null)
+            {
+                var buildPanel = GetComponentInParent<BuildCommandPanel>(true);
+                if (buildPanel != null)
+                {
+                    buildPanelRoot = buildPanel.transform as RectTransform;
+                }
+            }
+
+            if (buildPanelRoot == null)
+            {
+                var selfRect = transform as RectTransform;
+                if (selfRect != null)
+                {
+                    buildPanelRoot = selfRect.parent as RectTransform;
+                }
             }
         }
 

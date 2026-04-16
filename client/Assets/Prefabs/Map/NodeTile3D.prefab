@@ -441,6 +441,16 @@ MonoBehaviour:
     prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
   - buildingType: backsmith
     prefab: {fileID: 5066956172554334073, guid: 4ae33987e5fa43c0ad617e62594ec804, type: 3}
+  - buildingType: mine
+    prefab: {fileID: 8465135733123450000, guid: c68dddccf4eadcd4f969c4f10a37e8f8, type: 3}
+  - buildingType: wall
+    prefab: {fileID: 8465135733123450000, guid: 8355141156ce37a4898e312e8573c47c, type: 3}
+  - buildingType: city_core
+    prefab: {fileID: 8465135733123450000, guid: d756ecddff37936469d7fe188ad876e2, type: 3}
+  - buildingType: castle
+    prefab: {fileID: 8465135733123450000, guid: d756ecddff37936469d7fe188ad876e2, type: 3}
+  - buildingType: lumber
+    prefab: {fileID: 8465135733123450000, guid: d72d9ee662b098b49a0452d4b4bfb86b, type: 3}
   autoCreateMoveMarker: 1
   moveMarkerY: 0.13
   moveArrowScale: {x: 0.12, y: 0.01, z: 0.42}

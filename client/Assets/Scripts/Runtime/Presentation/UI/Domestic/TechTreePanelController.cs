@@ -71,6 +71,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly HashSet<string> _visiting = new(StringComparer.OrdinalIgnoreCase);
         private StaticCatalogCache _catalog;
         private ConfigCache _config;
+        private bool _loggedMissingConfigThisEnable;
 
         private void Awake()
         {
@@ -81,6 +82,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void OnEnable()
         {
+            _loggedMissingConfigThisEnable = false;
             _catalog = StaticCatalogCache.EnsureInstance();
             if (_catalog != null) { _catalog.CatalogChanged -= Refresh; _catalog.CatalogChanged += Refresh; }
             if (listenServerConfigUpdates)
@@ -95,6 +97,7 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             if (_catalog != null) _catalog.CatalogChanged -= Refresh;
             if (_config != null) _config.ConfigUpdated -= OnConfigUpdated;
+            _loggedMissingConfigThisEnable = false;
         }
 
         private void OnConfigUpdated(string key)
@@ -111,7 +114,11 @@ namespace Panoptes.Presentation.UI.Domestic
             EnsureRoots();
             ResolveTemplate();
             if (_catalog == null) _catalog = StaticCatalogCache.Instance;
-            if (_catalog == null) return;
+            if (_catalog == null)
+            {
+                WarnMissingConfigOnce("[TechTreePanel] StaticCatalogCache missing.");
+                return;
+            }
 
             var nodes = LoadFromConfig();
             if (waitForServerSnapshot && nodes.Count == 0 && !allowLocalBundleFallback)
@@ -119,15 +126,27 @@ namespace Panoptes.Presentation.UI.Domestic
                 // Avoid depending on protocol manifest types at Presentation assembly level.
                 if (_catalog.Technologies == null || _catalog.Technologies.Count == 0)
                 {
+                    WarnMissingConfigOnce("[TechTreePanel] Missing technology tree config from server snapshot.");
                     return;
                 }
             }
 
             if (nodes.Count == 0) nodes = LoadFromCatalog();
-            if (nodes.Count == 0) { if (logWarnings) Debug.LogWarning("[TechTreePanel] No technologies."); return; }
+            if (nodes.Count == 0) { WarnMissingConfigOnce("[TechTreePanel] No technologies found in config/catalog."); return; }
 
             Layout(nodes);
             Render(nodes);
+        }
+
+        private void WarnMissingConfigOnce(string message)
+        {
+            if (!logWarnings || _loggedMissingConfigThisEnable)
+            {
+                return;
+            }
+
+            Debug.LogWarning(message);
+            _loggedMissingConfigThisEnable = true;
         }
 
         private List<NodeData> LoadFromConfig()

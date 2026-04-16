@@ -67,8 +67,21 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private int minQuantity;
         [SerializeField] private int maxQuantity = 99;
 
+        [Header("Locked State")]
+        [SerializeField] private GameObject lockedOverlayRoot;
+        [SerializeField] private Image lockedOverlayMask;
+        [SerializeField] private Image lockedIcon;
+        [SerializeField] private TMP_Text lockedText;
+        [SerializeField] private string lockedLabel = "Locked";
+        [SerializeField] private Color lockedOverlayColor = new Color(0f, 0f, 0f, 0.55f);
+
         private readonly List<SlotView> _outputSlots = new();
         private readonly List<SlotView> _inputSlots = new();
+
+        public event Action<RecipeSynthesisItemView, int> QuantityChanged;
+
+        public string RecipeId { get; private set; } = string.Empty;
+        public bool IsLocked { get; private set; }
 
         private void Awake()
         {
@@ -81,12 +94,25 @@ namespace Panoptes.Presentation.UI.Domestic
             BindButtons();
             HideLegacyRefs();
             RefreshQuantityText();
+            EnsureLockOverlay();
+            SetLocked(false);
         }
 
-        public void SetQuantity(int value)
+        public void SetRecipeId(string recipeId)
         {
-            quantity = Mathf.Clamp(value, minQuantity, maxQuantity);
+            RecipeId = string.IsNullOrWhiteSpace(recipeId) ? string.Empty : recipeId.Trim();
+        }
+
+        public void SetQuantity(int value, bool notify = false)
+        {
+            var next = Mathf.Clamp(value, minQuantity, maxQuantity);
+            var changed = next != quantity;
+            quantity = next;
             RefreshQuantityText();
+            if (notify && changed)
+            {
+                QuantityChanged?.Invoke(this, quantity);
+            }
         }
 
         public void Configure(
@@ -112,6 +138,42 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
+        public void SetLocked(bool locked)
+        {
+            IsLocked = locked;
+            EnsureLockOverlay();
+            if (lockedOverlayRoot != null)
+            {
+                lockedOverlayRoot.SetActive(locked);
+            }
+
+            if (minusButton != null)
+            {
+                minusButton.interactable = !locked;
+            }
+
+            if (plusButton != null)
+            {
+                plusButton.interactable = !locked;
+            }
+        }
+
+        public void SetLockedVisual(Sprite icon, string text = null)
+        {
+            EnsureLockOverlay();
+            if (lockedIcon != null)
+            {
+                lockedIcon.sprite = icon;
+                lockedIcon.color = icon == null ? new Color(1f, 1f, 1f, 0.9f) : Color.white;
+            }
+
+            if (lockedText != null)
+            {
+                var label = string.IsNullOrWhiteSpace(text) ? lockedLabel : text.Trim();
+                lockedText.text = label;
+            }
+        }
+
         private void BindButtons()
         {
             if (minusButton != null)
@@ -127,8 +189,25 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private void IncreaseQuantity() => SetQuantity(quantity + 1);
-        private void DecreaseQuantity() => SetQuantity(quantity - 1);
+        private void IncreaseQuantity()
+        {
+            if (IsLocked)
+            {
+                return;
+            }
+
+            SetQuantity(quantity + 1, true);
+        }
+
+        private void DecreaseQuantity()
+        {
+            if (IsLocked)
+            {
+                return;
+            }
+
+            SetQuantity(quantity - 1, true);
+        }
 
         private void RefreshQuantityText()
         {
@@ -277,6 +356,104 @@ namespace Panoptes.Presentation.UI.Domestic
                 }
 
                 cache.Add(new SlotView { Root = slotRoot, Icon = icon, Count = count });
+            }
+        }
+
+        private void EnsureLockOverlay()
+        {
+            if (root == null)
+            {
+                root = transform as RectTransform;
+            }
+
+            if (root == null)
+            {
+                return;
+            }
+
+            if (lockedOverlayRoot == null)
+            {
+                var existing = root.Find("LockedOverlay");
+                if (existing != null)
+                {
+                    lockedOverlayRoot = existing.gameObject;
+                }
+            }
+
+            if (lockedOverlayRoot == null)
+            {
+                var overlayGo = new GameObject("LockedOverlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var overlayRect = overlayGo.GetComponent<RectTransform>();
+                overlayRect.SetParent(root, false);
+                overlayRect.anchorMin = Vector2.zero;
+                overlayRect.anchorMax = Vector2.one;
+                overlayRect.offsetMin = Vector2.zero;
+                overlayRect.offsetMax = Vector2.zero;
+                overlayRect.SetAsLastSibling();
+                lockedOverlayRoot = overlayGo;
+                lockedOverlayMask = overlayGo.GetComponent<Image>();
+            }
+
+            if (lockedOverlayMask == null && lockedOverlayRoot != null)
+            {
+                lockedOverlayMask = lockedOverlayRoot.GetComponent<Image>();
+                if (lockedOverlayMask == null)
+                {
+                    lockedOverlayMask = lockedOverlayRoot.AddComponent<Image>();
+                }
+            }
+
+            if (lockedOverlayMask != null)
+            {
+                lockedOverlayMask.color = lockedOverlayColor;
+                lockedOverlayMask.raycastTarget = true;
+            }
+
+            if (lockedIcon == null && lockedOverlayRoot != null)
+            {
+                var iconTransform = lockedOverlayRoot.transform.Find("LockedIcon") as RectTransform;
+                if (iconTransform == null)
+                {
+                    var iconGo = new GameObject("LockedIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    iconTransform = iconGo.GetComponent<RectTransform>();
+                    iconTransform.SetParent(lockedOverlayRoot.transform, false);
+                    iconTransform.anchorMin = iconTransform.anchorMax = iconTransform.pivot = new Vector2(0.5f, 0.5f);
+                    iconTransform.anchoredPosition = new Vector2(0f, 10f);
+                    iconTransform.sizeDelta = new Vector2(34f, 34f);
+                }
+                lockedIcon = iconTransform.GetComponent<Image>();
+                if (lockedIcon == null)
+                {
+                    lockedIcon = iconTransform.gameObject.AddComponent<Image>();
+                }
+            }
+
+            if (lockedText == null && lockedOverlayRoot != null)
+            {
+                var textTransform = lockedOverlayRoot.transform.Find("LockedText") as RectTransform;
+                if (textTransform == null)
+                {
+                    var textGo = new GameObject("LockedText", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                    textTransform = textGo.GetComponent<RectTransform>();
+                    textTransform.SetParent(lockedOverlayRoot.transform, false);
+                    textTransform.anchorMin = textTransform.anchorMax = textTransform.pivot = new Vector2(0.5f, 0.5f);
+                    textTransform.anchoredPosition = new Vector2(0f, -20f);
+                    textTransform.sizeDelta = new Vector2(140f, 26f);
+                }
+                lockedText = textTransform.GetComponent<TextMeshProUGUI>();
+                if (lockedText == null)
+                {
+                    lockedText = textTransform.gameObject.AddComponent<TextMeshProUGUI>();
+                }
+
+                lockedText.alignment = TextAlignmentOptions.Center;
+                lockedText.fontSize = 20f;
+                lockedText.color = Color.white;
+                lockedText.text = lockedLabel;
+                if (TMP_Settings.defaultFontAsset != null)
+                {
+                    lockedText.font = TMP_Settings.defaultFontAsset;
+                }
             }
         }
     }
