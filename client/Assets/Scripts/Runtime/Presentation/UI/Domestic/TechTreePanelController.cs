@@ -1,13 +1,6 @@
-/*************************************************
- * Project: Panoptes
- * File: TechTreePanelController.cs
- * Author: Panoptes Team
- * Date: 2026-04-14
- * Description: Initializes technology tree panel from server static catalog snapshot.
- *************************************************/
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Panoptes.Core.Application.Cache;
 using TMPro;
 using UnityEngine;
@@ -17,340 +10,342 @@ namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class TechTreePanelController : MonoBehaviour
     {
+        [Serializable] private sealed class Root { public NodeCfg[] nodes; public NodeCfg[] technologies; public EdgeCfg[] edges; public EdgeCfg[] links; }
+        [Serializable] private sealed class NodeCfg { public string id; public string name; public string description; public string icon_key; public string branch; public int tier; public int sort_order; public int column = -1; public int row = -1; public string[] prerequisites; public string[] requires; public string[] prev; }
+        [Serializable] private sealed class EdgeCfg { public string from; public string to; public string source; public string target; }
+
+        private sealed class NodeData
+        {
+            public string Id;
+            public string Name;
+            public string Desc;
+            public string Icon;
+            public string Branch;
+            public int Tier;
+            public int Sort;
+            public int Column = -1;
+            public int Row = -1;
+            public Vector2 Pos;
+            public RectTransform Rect;
+            public readonly HashSet<string> Pre = new(StringComparer.OrdinalIgnoreCase);
+        }
+
         [Header("Binding")]
         [SerializeField] private RectTransform nodesRoot;
         [SerializeField] private RectTransform lineRoot;
         [SerializeField] private RectTransform panelRoot;
+        [SerializeField] private RectTransform nodeTemplate;
 
         [Header("Line Style")]
         [SerializeField] private Color lineColor = new Color(0.08f, 0.08f, 0.08f, 1f);
         [SerializeField] private float defaultLineThickness = 3f;
         [SerializeField] private TMP_FontAsset arrowFont;
-        [SerializeField] private float arrowFontSize = 24f;
+        [SerializeField] private int arrowFontSize = 24;
         [SerializeField] private Color arrowColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+
+        [Header("Layout")]
+        [SerializeField] private Vector2 layoutOffset = new Vector2(0f, 160f);
+        [SerializeField] private float columnSpacing = 300f;
+        [SerializeField] private float rowSpacing = 150f;
+        [SerializeField] private bool clearLegacyNodesOnRefresh = true;
+
+        [Header("Source")]
         [SerializeField] private bool logWarnings = true;
         [SerializeField] private bool waitForServerSnapshot = true;
         [SerializeField] private bool allowLocalBundleFallback = false;
-        [SerializeField] private Vector2 layoutOffset = new Vector2(0f, 160f);
+        [SerializeField] private bool preferServerPushedConfig = true;
+        [SerializeField] private bool listenServerConfigUpdates = true;
+        [SerializeField] private string[] serverConfigKeys = { "technologytreeconfig", "techtreeconfig", "technology_tree", "tech_tree" };
+        [SerializeField] private string iconResourcesRoot = "Icons/Tech";
 
-        [Header("Close Button")]
+        [Header("Close")]
         [SerializeField] private Button closeButton;
         [SerializeField] private bool autoCreateCloseButton = false;
         [SerializeField] private string closeButtonText = "Close";
         [SerializeField] private TMP_FontAsset closeButtonFont;
 
-        private readonly Dictionary<string, RectTransform> _nodeById = new(StringComparer.OrdinalIgnoreCase);
-        private readonly List<RectTransform> _fallbackOrderedNodes = new();
-        private readonly List<GameObject> _generatedLineObjects = new();
-        private StaticCatalogCache _catalogCache;
-        private bool _localFallbackAttempted;
+        private readonly List<GameObject> _runtimeNodes = new();
+        private readonly List<GameObject> _runtimeLines = new();
+        private readonly Dictionary<string, NodeData> _dict = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _cols = new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _visiting = new(StringComparer.OrdinalIgnoreCase);
+        private StaticCatalogCache _catalog;
+        private ConfigCache _config;
 
         private void Awake()
         {
             EnsureRoots();
             EnsureCloseButton();
+            ResolveTemplate();
         }
 
         private void OnEnable()
         {
-            _catalogCache = StaticCatalogCache.EnsureInstance();
-            if (_catalogCache != null)
+            _catalog = StaticCatalogCache.EnsureInstance();
+            if (_catalog != null) { _catalog.CatalogChanged -= Refresh; _catalog.CatalogChanged += Refresh; }
+            if (listenServerConfigUpdates)
             {
-                _catalogCache.CatalogChanged -= OnCatalogChanged;
-                _catalogCache.CatalogChanged += OnCatalogChanged;
+                _config = ConfigCache.EnsureInstance();
+                if (_config != null) { _config.ConfigUpdated -= OnConfigUpdated; _config.ConfigUpdated += OnConfigUpdated; }
             }
-
-            RefreshFromServerCatalog();
+            Refresh();
         }
 
         private void OnDisable()
         {
-            if (_catalogCache != null)
-            {
-                _catalogCache.CatalogChanged -= OnCatalogChanged;
-                _catalogCache = null;
-            }
-
-            ClearGeneratedLines();
-            _localFallbackAttempted = false;
+            if (_catalog != null) _catalog.CatalogChanged -= Refresh;
+            if (_config != null) _config.ConfigUpdated -= OnConfigUpdated;
         }
 
-        private void OnCatalogChanged()
+        private void OnConfigUpdated(string key)
         {
-            if (!isActiveAndEnabled)
+            key = Key(key);
+            for (var i = 0; i < serverConfigKeys.Length; i++)
             {
-                return;
+                if (key == Key(serverConfigKeys[i])) { Refresh(); return; }
             }
-
-            RefreshFromServerCatalog();
         }
 
-        private void RefreshFromServerCatalog()
+        private void Refresh()
         {
             EnsureRoots();
-            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
-            if (cache == null)
-            {
-                if (logWarnings)
-                {
-                    Debug.LogWarning("[TechTreePanel] Missing technology tree layout from server snapshot.");
-                }
-                return;
-            }
+            ResolveTemplate();
+            if (_catalog == null) _catalog = StaticCatalogCache.Instance;
+            if (_catalog == null) return;
 
-            if (waitForServerSnapshot && !cache.HasServerSnapshot)
+            var nodes = LoadFromConfig();
+            if (waitForServerSnapshot && nodes.Count == 0 && !allowLocalBundleFallback)
             {
-                return;
-            }
-
-            if (!cache.TryGetTechnologyTree(out var tree))
-            {
-                if (allowLocalBundleFallback && !_localFallbackAttempted)
+                // Avoid depending on protocol manifest types at Presentation assembly level.
+                if (_catalog.Technologies == null || _catalog.Technologies.Count == 0)
                 {
-                    _localFallbackAttempted = true;
-                    cache.LoadLocalCatalog();
-                }
-
-                if (!cache.TryGetTechnologyTree(out tree))
-                {
-                    if (logWarnings)
-                    {
-                        Debug.LogWarning("[TechTreePanel] Missing technology tree layout from server snapshot.");
-                    }
                     return;
                 }
             }
 
-            BuildNodeLookup();
-            ApplyNodeConfigs(tree.nodes, cache);
-            RenderEdges(tree.edges);
+            if (nodes.Count == 0) nodes = LoadFromCatalog();
+            if (nodes.Count == 0) { if (logWarnings) Debug.LogWarning("[TechTreePanel] No technologies."); return; }
+
+            Layout(nodes);
+            Render(nodes);
+        }
+
+        private List<NodeData> LoadFromConfig()
+        {
+            var list = new List<NodeData>();
+            if (!preferServerPushedConfig || _config == null) return list;
+            for (var i = 0; i < serverConfigKeys.Length; i++)
+            {
+                if (!_config.TryGetJson(serverConfigKeys[i], out var json) || string.IsNullOrWhiteSpace(json)) continue;
+                Root root = null; try { root = JsonUtility.FromJson<Root>(json); } catch { }
+                var src = root?.nodes != null && root.nodes.Length > 0 ? root.nodes : root?.technologies;
+                if (src == null || src.Length == 0) continue;
+
+                var map = new Dictionary<string, NodeData>(StringComparer.OrdinalIgnoreCase);
+                for (var n = 0; n < src.Length; n++)
+                {
+                    var s = src[n]; if (s == null || string.IsNullOrWhiteSpace(s.id)) continue;
+                    var id = s.id.Trim();
+                    if (!map.TryGetValue(id, out var d)) { d = new NodeData { Id = id }; map[id] = d; }
+                    d.Name = string.IsNullOrWhiteSpace(s.name) ? id : s.name.Trim();
+                    d.Desc = s.description ?? string.Empty;
+                    d.Icon = s.icon_key ?? string.Empty;
+                    d.Branch = s.branch ?? string.Empty;
+                    d.Tier = s.tier; d.Sort = s.sort_order; d.Column = s.column; d.Row = s.row;
+                    AddPre(d, s.prerequisites); AddPre(d, s.requires); AddPre(d, s.prev);
+                }
+                var edges = root.edges != null && root.edges.Length > 0 ? root.edges : root.links;
+                if (edges != null)
+                {
+                    for (var e = 0; e < edges.Length; e++)
+                    {
+                        var ed = edges[e]; if (ed == null) continue;
+                        var from = string.IsNullOrWhiteSpace(ed.from) ? ed.source : ed.from;
+                        var to = string.IsNullOrWhiteSpace(ed.to) ? ed.target : ed.to;
+                        if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to)) continue;
+                        if (map.TryGetValue(to.Trim(), out var toNode)) toNode.Pre.Add(from.Trim());
+                    }
+                }
+                list.AddRange(map.Values);
+                if (list.Count > 0) return list;
+            }
+            return list;
+        }
+
+        private List<NodeData> LoadFromCatalog()
+        {
+            var list = new List<NodeData>();
+            foreach (var pair in _catalog.Technologies)
+            {
+                var t = pair.Value; if (t == null || string.IsNullOrWhiteSpace(t.id)) continue;
+                var d = new NodeData { Id = t.id.Trim(), Name = string.IsNullOrWhiteSpace(t.name) ? t.id : t.name, Desc = t.description ?? string.Empty, Icon = t.icon_key ?? string.Empty, Branch = t.branch ?? string.Empty, Tier = t.tier, Sort = t.sort_order };
+                if (t.prerequisites != null)
+                {
+                    for (var i = 0; i < t.prerequisites.Length; i++)
+                    {
+                        var p = t.prerequisites[i];
+                        if (p != null && string.Equals((p.type ?? string.Empty).Trim(), "technology_unlocked", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(p.target_id))
+                            d.Pre.Add(p.target_id.Trim());
+                    }
+                }
+                list.Add(d);
+            }
+            return list;
+        }
+
+        private void Layout(List<NodeData> nodes)
+        {
+            _dict.Clear(); _cols.Clear(); _visiting.Clear();
+            for (var i = 0; i < nodes.Count; i++) { var n = nodes[i]; _dict[n.Id] = n; if (n.Column >= 0) _cols[n.Id] = n.Column; }
+            foreach (var n in nodes) ResolveCol(n.Id);
+
+            var groups = new Dictionary<int, List<NodeData>>();
+            foreach (var n in nodes)
+            {
+                var c = _cols.TryGetValue(n.Id, out var v) ? v : 0;
+                if (!groups.TryGetValue(c, out var g)) { g = new List<NodeData>(); groups[c] = g; }
+                g.Add(n);
+            }
+
+            foreach (var pair in groups)
+            {
+                var col = pair.Key; var g = pair.Value;
+                g.Sort((a, b) => a.Sort != b.Sort ? a.Sort.CompareTo(b.Sort) : (a.Tier != b.Tier ? a.Tier.CompareTo(b.Tier) : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase)));
+                var startY = layoutOffset.y + (g.Count - 1) * rowSpacing * 0.5f;
+                for (var i = 0; i < g.Count; i++)
+                {
+                    var row = g[i].Row >= 0 ? g[i].Row : i;
+                    var y = g[i].Row >= 0 ? layoutOffset.y - row * rowSpacing : startY - i * rowSpacing;
+                    g[i].Pos = new Vector2(layoutOffset.x + col * columnSpacing, y);
+                }
+            }
+        }
+
+        private int ResolveCol(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return 0;
+            if (_cols.TryGetValue(id, out var c)) return Mathf.Max(0, c);
+            if (!_dict.TryGetValue(id, out var n) || n == null) return 0;
+            if (!_visiting.Add(id)) return 0;
+            var m = -1;
+            foreach (var pre in n.Pre)
+            {
+                if (_dict.ContainsKey(pre))
+                {
+                    m = Mathf.Max(m, ResolveCol(pre));
+                }
+            }
+
+            // Service-aligned fallback: when no explicit prerequisites are provided,
+            // keep a layered look by using tier as the implicit column.
+            var fallbackCol = n.Tier > 0 ? n.Tier - 1 : 0;
+            _visiting.Remove(id);
+            _cols[id] = Mathf.Max(fallbackCol, m + 1);
+            return _cols[id];
+        }
+
+        private void Render(List<NodeData> nodes)
+        {
+            for (var i = 0; i < _runtimeNodes.Count; i++) if (_runtimeNodes[i] != null) Destroy(_runtimeNodes[i]);
+            for (var i = 0; i < _runtimeLines.Count; i++) if (_runtimeLines[i] != null) Destroy(_runtimeLines[i]);
+            _runtimeNodes.Clear(); _runtimeLines.Clear();
+            if (clearLegacyNodesOnRefresh) HideLegacyNodes();
+
+            for (var i = 0; i < nodes.Count; i++) nodes[i].Rect = CreateNode(nodes[i]);
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var n = nodes[i];
+                foreach (var pre in n.Pre)
+                {
+                    if (!_dict.TryGetValue(pre, out var p) || p.Rect == null || n.Rect == null) continue;
+                    CreateLine(ToLinePoint(p.Rect, new Vector3(p.Rect.rect.xMax, p.Rect.rect.center.y, 0f)), ToLinePoint(n.Rect, new Vector3(n.Rect.rect.xMin, n.Rect.rect.center.y, 0f)));
+                }
+            }
+        }
+
+        private RectTransform CreateNode(NodeData n)
+        {
+            RectTransform rect;
+            if (nodeTemplate != null) { rect = Instantiate(nodeTemplate, nodesRoot, false); rect.gameObject.SetActive(true); }
+            else { var go = new GameObject("TechNode", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)); rect = go.transform as RectTransform; rect.SetParent(nodesRoot, false); rect.sizeDelta = new Vector2(360f, 104f); }
+            rect.name = $"TechNode_{n.Id}";
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = n.Pos;
+
+            var texts = rect.GetComponentsInChildren<TMP_Text>(true);
+            TMP_Text title = null, desc = null;
+            for (var i = 0; i < texts.Length; i++)
+            {
+                var k = Key(texts[i].gameObject.name);
+                if (title == null && (k.Contains("name") || k.Contains("title") || k == "label")) title = texts[i];
+                else if (desc == null && (k.Contains("desc") || k.Contains("detail"))) desc = texts[i];
+            }
+            if (title == null && texts.Length > 0) title = texts[0];
+            if (desc == null && texts.Length > 1) desc = texts[texts.Length - 1];
+            if (title != null) title.text = n.Name;
+            if (desc != null && !ReferenceEquals(desc, title)) desc.text = n.Desc;
+
+            var imgs = rect.GetComponentsInChildren<Image>(true);
+            for (var i = 0; i < imgs.Length; i++)
+            {
+                if (!Key(imgs[i].gameObject.name).Contains("icon")) continue;
+                var sp = LoadIcon(n.Icon); if (sp != null) { imgs[i].sprite = sp; imgs[i].color = Color.white; imgs[i].preserveAspect = true; } else imgs[i].color = new Color(1f, 1f, 1f, 0.75f);
+                break;
+            }
+
+            _runtimeNodes.Add(rect.gameObject);
+            return rect;
+        }
+
+        private void CreateLine(Vector2 start, Vector2 end)
+        {
+            var root = lineRoot != null ? lineRoot : nodesRoot; if (root == null) return;
+            var go = new GameObject("TechEdge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var rect = go.transform as RectTransform; rect.SetParent(root, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            var dir = end - start; var len = Mathf.Max(1f, dir.magnitude);
+            rect.sizeDelta = new Vector2(len, Mathf.Max(1f, defaultLineThickness));
+            rect.anchoredPosition = (start + end) * 0.5f;
+            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            var img = go.GetComponent<Image>(); img.color = lineColor; img.raycastTarget = false;
+            _runtimeLines.Add(go);
+        }
+
+        private Vector2 ToLinePoint(RectTransform source, Vector3 local)
+        {
+            var root = lineRoot != null ? lineRoot : nodesRoot;
+            return root.InverseTransformPoint(source.TransformPoint(local));
         }
 
         private void EnsureRoots()
         {
-            if (panelRoot == null)
-            {
-                panelRoot = transform as RectTransform;
-            }
+            if (panelRoot == null) panelRoot = transform as RectTransform;
+            if (nodesRoot == null) nodesRoot = panelRoot != null ? panelRoot : transform as RectTransform;
+            if (lineRoot == null) lineRoot = nodesRoot;
+        }
 
-            if (nodesRoot == null)
+        private void ResolveTemplate()
+        {
+            if (nodesRoot == null) return;
+            if (nodeTemplate != null) { nodeTemplate.gameObject.SetActive(false); return; }
+            for (var i = 0; i < nodesRoot.childCount; i++)
             {
-                nodesRoot = panelRoot != null ? panelRoot : (transform as RectTransform);
-            }
-
-            if (lineRoot == null)
-            {
-                var existing = transform.Find("TechTreeLines");
-                if (existing != null)
-                {
-                    lineRoot = existing as RectTransform;
-                }
-                else
-                {
-                    var go = new GameObject("TechTreeLines", typeof(RectTransform));
-                    var rect = go.GetComponent<RectTransform>();
-                    rect.SetParent(transform, false);
-                    rect.anchorMin = Vector2.zero;
-                    rect.anchorMax = Vector2.one;
-                    rect.pivot = new Vector2(0.5f, 0.5f);
-                    rect.offsetMin = Vector2.zero;
-                    rect.offsetMax = Vector2.zero;
-                    lineRoot = rect;
-                }
+                var c = nodesRoot.GetChild(i) as RectTransform; if (c == null) continue;
+                if (Key(c.name).Contains("technodeitem")) { nodeTemplate = c; nodeTemplate.gameObject.SetActive(false); break; }
             }
         }
 
-        private void BuildNodeLookup()
+        private void HideLegacyNodes()
         {
-            _nodeById.Clear();
-            _fallbackOrderedNodes.Clear();
-            if (nodesRoot == null)
+            if (nodesRoot == null) return;
+            for (var i = 0; i < nodesRoot.childCount; i++)
             {
-                return;
-            }
-
-            var queue = new Queue<Transform>();
-            queue.Enqueue(nodesRoot);
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                for (var i = 0; i < current.childCount; i++)
-                {
-                    var child = current.GetChild(i);
-                    queue.Enqueue(child);
-                }
-
-                if (current == nodesRoot || current is not RectTransform rect)
-                {
-                    continue;
-                }
-
-                var key = NormalizeKey(current.name);
-                if (!string.IsNullOrEmpty(key) && !_nodeById.ContainsKey(key))
-                {
-                    _nodeById.Add(key, rect);
-                }
-
-                var normalizedName = NormalizeKey(rect.name);
-                if (normalizedName.Contains("btnclose"))
-                {
-                    continue;
-                }
-
-                if (rect.GetComponentInChildren<TMP_Text>(true) != null)
-                {
-                    _fallbackOrderedNodes.Add(rect);
-                }
-            }
-        }
-
-        private void ApplyNodeConfigs(StaticCatalogCache.TechnologyTreeNodeJson[] nodes, StaticCatalogCache cache)
-        {
-            if (nodes == null || nodes.Length == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < nodes.Length; i++)
-            {
-                var node = nodes[i];
-                if (node == null || string.IsNullOrWhiteSpace(node.id))
-                {
-                    continue;
-                }
-
-                if (!TryFindNode(node.id, out var nodeRect))
-                {
-                    if (i >= 0 && i < _fallbackOrderedNodes.Count)
-                    {
-                        nodeRect = _fallbackOrderedNodes[i];
-                    }
-                    else
-                    {
-                        if (logWarnings)
-                        {
-                            Debug.LogWarning($"[TechTreePanel] Node '{node.id}' not found in panel.");
-                        }
-                        continue;
-                    }
-                }
-
-                nodeRect.anchoredPosition = new Vector2(node.x, node.y) + layoutOffset;
-                nodeRect.sizeDelta = new Vector2(Mathf.Max(1f, node.width), Mathf.Max(1f, node.height));
-                nodeRect.gameObject.SetActive(node.visible);
-
-                var title = node.title ?? string.Empty;
-                var description = node.description ?? string.Empty;
-                if (!string.IsNullOrWhiteSpace(node.technology_id) &&
-                    cache.TryGetTechnology(node.technology_id, out var technology) &&
-                    technology != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(technology.name))
-                    {
-                        title = technology.name;
-                    }
-                    if (!string.IsNullOrWhiteSpace(technology.description))
-                    {
-                        description = technology.description;
-                    }
-                }
-
-                AssignNodeTexts(nodeRect, title, description);
-            }
-        }
-
-        private void AssignNodeTexts(RectTransform nodeRect, string title, string description)
-        {
-            var texts = nodeRect.GetComponentsInChildren<TMP_Text>(true);
-            if (texts == null || texts.Length == 0)
-            {
-                return;
-            }
-
-            TMP_Text titleText = null;
-            TMP_Text descText = null;
-            for (var i = 0; i < texts.Length; i++)
-            {
-                var t = texts[i];
-                var key = NormalizeKey(t.gameObject.name);
-                if (titleText == null && (key.Contains("name") || key.Contains("title") || key == "label"))
-                {
-                    titleText = t;
-                }
-
-                if (descText == null && (key.Contains("desc") || key.Contains("description") || key.Contains("detail")))
-                {
-                    descText = t;
-                }
-            }
-
-            if (titleText == null || descText == null)
-            {
-                Array.Sort(texts, (a, b) =>
-                {
-                    var ay = (a.transform as RectTransform)?.anchoredPosition.y ?? 0f;
-                    var by = (b.transform as RectTransform)?.anchoredPosition.y ?? 0f;
-                    return by.CompareTo(ay);
-                });
-
-                if (titleText == null)
-                {
-                    titleText = texts[0];
-                }
-                if (descText == null && texts.Length > 1)
-                {
-                    descText = texts[texts.Length - 1];
-                }
-            }
-
-            if (titleText != null)
-            {
-                titleText.text = title ?? string.Empty;
-            }
-
-            if (descText != null && !ReferenceEquals(descText, titleText))
-            {
-                descText.text = description ?? string.Empty;
-            }
-            else if (titleText != null)
-            {
-                titleText.text = string.IsNullOrWhiteSpace(description)
-                    ? (title ?? string.Empty)
-                    : $"{title}\n{description}";
-            }
-        }
-
-        private void RenderEdges(StaticCatalogCache.TechnologyTreeEdgeJson[] edges)
-        {
-            ClearGeneratedLines();
-            if (lineRoot == null || edges == null || edges.Length == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < edges.Length; i++)
-            {
-                var edge = edges[i];
-                if (edge?.points == null || edge.points.Length < 2)
-                {
-                    continue;
-                }
-
-                var thickness = edge.thickness > 0f ? edge.thickness : defaultLineThickness;
-
-                for (var p = 0; p < edge.points.Length - 1; p++)
-                {
-                    var a = new Vector2(edge.points[p].x, edge.points[p].y) + layoutOffset;
-                    var b = new Vector2(edge.points[p + 1].x, edge.points[p + 1].y) + layoutOffset;
-                    CreateLineSegment(a, b, thickness);
-                }
-
-                if (edge.show_arrow)
-                {
-                    var prev = new Vector2(edge.points[edge.points.Length - 2].x, edge.points[edge.points.Length - 2].y) + layoutOffset;
-                    var end = new Vector2(edge.points[edge.points.Length - 1].x, edge.points[edge.points.Length - 1].y) + layoutOffset;
-                    CreateArrow(edge.arrow, prev, end);
-                }
+                var c = nodesRoot.GetChild(i) as RectTransform; if (c == null) continue;
+                var k = Key(c.name);
+                if (k.Contains("btnclose")) continue;
+                if (nodeTemplate != null && ReferenceEquals(c, nodeTemplate)) { c.gameObject.SetActive(false); continue; }
+                if (_runtimeNodes.Contains(c.gameObject) || _runtimeLines.Contains(c.gameObject)) continue;
+                c.gameObject.SetActive(false);
             }
         }
 
@@ -359,51 +354,22 @@ namespace Panoptes.Presentation.UI.Domestic
             if (closeButton == null)
             {
                 var existing = transform.Find("BtnCloseTechTree");
-                if (existing != null)
-                {
-                    closeButton = existing.GetComponent<Button>();
-                }
+                if (existing != null) closeButton = existing.GetComponent<Button>();
             }
 
-            if (closeButton == null && autoCreateCloseButton && panelRoot != null &&
-                string.Equals(gameObject.name, "TechTreePanel", StringComparison.OrdinalIgnoreCase))
+            if (closeButton == null && autoCreateCloseButton && panelRoot != null)
             {
                 var go = new GameObject("BtnCloseTechTree", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
                 var rect = go.GetComponent<RectTransform>();
-                rect.SetParent(panelRoot, false);
-                rect.anchorMin = new Vector2(1f, 1f);
-                rect.anchorMax = new Vector2(1f, 1f);
-                rect.pivot = new Vector2(1f, 1f);
-                rect.anchoredPosition = new Vector2(-20f, -20f);
-                rect.sizeDelta = new Vector2(120f, 44f);
-
-                var image = go.GetComponent<Image>();
-                image.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-
+                rect.SetParent(panelRoot, false); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
+                rect.anchoredPosition = new Vector2(-20f, -20f); rect.sizeDelta = new Vector2(120f, 44f);
+                go.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
                 closeButton = go.GetComponent<Button>();
-
-                var labelGo = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-                var labelRect = labelGo.GetComponent<RectTransform>();
-                labelRect.SetParent(rect, false);
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = new Vector2(6f, 4f);
-                labelRect.offsetMax = new Vector2(-6f, -4f);
-
-                var label = labelGo.GetComponent<TextMeshProUGUI>();
-                label.text = string.IsNullOrWhiteSpace(closeButtonText) ? "Close" : closeButtonText;
-                label.alignment = TextAlignmentOptions.Center;
-                label.fontSize = 20f;
-                label.color = Color.white;
-                label.enableWordWrapping = false;
-                if (closeButtonFont == null)
-                {
-                    closeButtonFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
-                }
-                if (closeButtonFont != null)
-                {
-                    label.font = closeButtonFont;
-                }
+                var label = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
+                var lr = label.rectTransform; lr.SetParent(rect, false); lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = new Vector2(6f, 4f); lr.offsetMax = new Vector2(-6f, -4f);
+                label.text = string.IsNullOrWhiteSpace(closeButtonText) ? "Close" : closeButtonText; label.alignment = TextAlignmentOptions.Center; label.fontSize = 20f; label.color = Color.white; label.enableWordWrapping = false;
+                if (closeButtonFont == null) closeButtonFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
+                if (closeButtonFont != null) label.font = closeButtonFont;
             }
 
             if (closeButton != null)
@@ -413,133 +379,27 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private void HidePanel()
+        private void HidePanel() => gameObject.SetActive(false);
+
+        private Sprite LoadIcon(string iconKey)
         {
-            gameObject.SetActive(false);
+            iconKey = (iconKey ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(iconKey)) return null;
+            var root = (iconResourcesRoot ?? string.Empty).Trim().Trim('/');
+            if (!string.IsNullOrEmpty(root))
+            {
+                var sp = Resources.Load<Sprite>($"{root}/{iconKey}");
+                if (sp != null) return sp;
+            }
+            return Resources.Load<Sprite>(iconKey);
         }
 
-        private void CreateLineSegment(Vector2 a, Vector2 b, float thickness)
+        private static void AddPre(NodeData d, string[] arr)
         {
-            var go = new GameObject("EdgeSegment", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            go.transform.SetParent(lineRoot, false);
-
-            var rect = go.GetComponent<RectTransform>();
-            var img = go.GetComponent<Image>();
-            img.color = lineColor;
-            img.raycastTarget = false;
-
-            var delta = b - a;
-            var length = delta.magnitude;
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(length, Mathf.Max(1f, thickness));
-            rect.anchoredPosition = (a + b) * 0.5f;
-            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-
-            _generatedLineObjects.Add(go);
+            if (d == null || arr == null) return;
+            for (var i = 0; i < arr.Length; i++) { var v = (arr[i] ?? string.Empty).Trim(); if (!string.IsNullOrEmpty(v)) d.Pre.Add(v); }
         }
 
-        private void CreateArrow(string mode, Vector2 prev, Vector2 end)
-        {
-            var go = new GameObject("EdgeArrow", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            go.transform.SetParent(lineRoot, false);
-
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(24f, 24f);
-            rect.anchoredPosition = end;
-
-            var tmp = go.GetComponent<TextMeshProUGUI>();
-            tmp.text = ResolveArrowGlyph(mode, prev, end);
-            tmp.fontSize = arrowFontSize;
-            tmp.color = arrowColor;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.raycastTarget = false;
-
-            if (arrowFont == null)
-            {
-                arrowFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
-            }
-
-            if (arrowFont != null)
-            {
-                tmp.font = arrowFont;
-            }
-
-            _generatedLineObjects.Add(go);
-        }
-
-        private static string ResolveArrowGlyph(string mode, Vector2 prev, Vector2 end)
-        {
-            var token = NormalizeKey(mode);
-            if (token == "up") return "▲";
-            if (token == "down") return "▼";
-            if (token == "left") return "◀";
-            if (token == "right") return "▶";
-
-            var dir = (end - prev).normalized;
-            if (Mathf.Abs(dir.x) >= Mathf.Abs(dir.y))
-            {
-                return dir.x >= 0f ? "▶" : "◀";
-            }
-
-            return dir.y >= 0f ? "▲" : "▼";
-        }
-
-        private void ClearGeneratedLines()
-        {
-            for (var i = 0; i < _generatedLineObjects.Count; i++)
-            {
-                var go = _generatedLineObjects[i];
-                if (go == null)
-                {
-                    continue;
-                }
-
-                if (Application.isPlaying)
-                {
-                    Destroy(go);
-                }
-                else
-                {
-                    DestroyImmediate(go);
-                }
-            }
-
-            _generatedLineObjects.Clear();
-        }
-
-        private bool TryFindNode(string nodeId, out RectTransform rect)
-        {
-            rect = null;
-            var key = NormalizeKey(nodeId);
-            if (string.IsNullOrEmpty(key))
-            {
-                return false;
-            }
-
-            if (_nodeById.TryGetValue(key, out rect))
-            {
-                return rect != null;
-            }
-
-            var transformNode = transform.Find(nodeId);
-            if (transformNode is RectTransform direct)
-            {
-                rect = direct;
-                _nodeById[key] = direct;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static string NormalizeKey(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
-        }
+        private static string Key(string s) => string.IsNullOrWhiteSpace(s) ? string.Empty : s.Trim().ToLowerInvariant();
     }
 }

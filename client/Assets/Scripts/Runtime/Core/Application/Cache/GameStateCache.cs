@@ -797,6 +797,11 @@ namespace Panoptes.Core.Application.Cache
                 BuildingHp = source.BuildingHp,
                 BuildingMaxHp = source.BuildingMaxHp,
                 BuildingStatus = source.BuildingStatus,
+                OperationSelectedRecipeId = source.OperationSelectedRecipeId,
+                OperationCurrentProgress = source.OperationCurrentProgress,
+                OperationRequiredProgress = source.OperationRequiredProgress,
+                OperationBaseProgress = source.OperationBaseProgress,
+                OperationBlockedReason = source.OperationBlockedReason,
                 CityId = source.CityId,
                 ServiceCityId = source.ServiceCityId,
                 TakeoverProgress = source.TakeoverProgress,
@@ -833,6 +838,11 @@ namespace Panoptes.Core.Application.Cache
                    left.BuildingHp == right.BuildingHp &&
                    left.BuildingMaxHp == right.BuildingMaxHp &&
                    string.Equals(left.BuildingStatus, right.BuildingStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.OperationSelectedRecipeId, right.OperationSelectedRecipeId, StringComparison.Ordinal) &&
+                   left.OperationCurrentProgress == right.OperationCurrentProgress &&
+                   left.OperationRequiredProgress == right.OperationRequiredProgress &&
+                   left.OperationBaseProgress == right.OperationBaseProgress &&
+                   string.Equals(left.OperationBlockedReason, right.OperationBlockedReason, StringComparison.Ordinal) &&
                    string.Equals(left.CityId, right.CityId, StringComparison.Ordinal) &&
                    string.Equals(left.ServiceCityId, right.ServiceCityId, StringComparison.Ordinal) &&
                    left.TakeoverProgress == right.TakeoverProgress &&

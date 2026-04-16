@@ -12,6 +12,11 @@ namespace Panoptes.Core.Domain
         public int BuildingHp;
         public int BuildingMaxHp;
         public string BuildingStatus;
+        public string OperationSelectedRecipeId;
+        public int OperationCurrentProgress;
+        public int OperationRequiredProgress;
+        public int OperationBaseProgress;
+        public string OperationBlockedReason;
         public string CityId;
         public string ServiceCityId;
         public int TakeoverProgress;

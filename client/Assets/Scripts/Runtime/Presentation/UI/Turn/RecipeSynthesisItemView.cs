@@ -1,37 +1,74 @@
+using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    /// <summary>
-    /// Single recipe row:
-    /// right-side two inputs -> left-side one output, with amounts/turns and quantity +/- controls.
-    /// </summary>
     public sealed class RecipeSynthesisItemView : MonoBehaviour
     {
-        [Header("Auto Build")]
-        [SerializeField] private bool autoBuildFallbackUi = false;
+        public readonly struct IngredientViewData
+        {
+            public readonly string Key;
+            public readonly int Amount;
+            public readonly Sprite Icon;
 
-        [Header("Refs")]
+            public IngredientViewData(string key, int amount, Sprite icon = null)
+            {
+                Key = key ?? string.Empty;
+                Amount = Mathf.Max(0, amount);
+                Icon = icon;
+            }
+        }
+
+        private sealed class SlotView
+        {
+            public RectTransform Root;
+            public Image Icon;
+            public TMP_Text Count;
+        }
+
+        [Header("Roots")]
         [SerializeField] private RectTransform root;
+        [SerializeField] private RectTransform outputSlotsRoot;
+        [SerializeField] private RectTransform inputSlotsRoot;
+
+        [Header("Templates")]
+        [SerializeField] private Image outputIconTemplate;
+        [SerializeField] private Image inputIconTemplate;
+
+        [Header("Legacy Refs (auto hidden)")]
         [SerializeField] private Image outputIcon;
         [SerializeField] private Image inputIconA;
         [SerializeField] private Image inputIconB;
         [SerializeField] private TMP_Text outputCountText;
         [SerializeField] private TMP_Text inputCountAText;
         [SerializeField] private TMP_Text inputCountBText;
-        [SerializeField] private TMP_Text arrowText;
+
+        [Header("Texts")]
         [SerializeField] private TMP_Text produceAmountText;
         [SerializeField] private TMP_Text turnCostText;
         [SerializeField] private TMP_Text quantityValueText;
+
+        [Header("Buttons")]
         [SerializeField] private Button minusButton;
         [SerializeField] private Button plusButton;
 
-        [Header("Values")]
-        [SerializeField] private int quantity = 0;
-        [SerializeField] private int minQuantity = 0;
+        [Header("Layout")]
+        [SerializeField] private Vector2 outputIconSize = new Vector2(58f, 58f);
+        [SerializeField] private Vector2 inputIconSize = new Vector2(44f, 44f);
+        [SerializeField] private float outputSpacing = 10f;
+        [SerializeField] private float inputSpacing = 8f;
+        [SerializeField] private int maxSlotsPerSide = 3;
+
+        [Header("Quantity")]
+        [SerializeField] private int quantity;
+        [SerializeField] private int minQuantity;
         [SerializeField] private int maxQuantity = 99;
+
+        private readonly List<SlotView> _outputSlots = new();
+        private readonly List<SlotView> _inputSlots = new();
 
         private void Awake()
         {
@@ -40,12 +77,9 @@ namespace Panoptes.Presentation.UI.Domestic
                 root = transform as RectTransform;
             }
 
-            if (autoBuildFallbackUi)
-            {
-                EnsureFallbackLayout();
-            }
-
+            EnsureRoots();
             BindButtons();
+            HideLegacyRefs();
             RefreshQuantityText();
         }
 
@@ -55,30 +89,46 @@ namespace Panoptes.Presentation.UI.Domestic
             RefreshQuantityText();
         }
 
+        public void Configure(
+            IReadOnlyList<IngredientViewData> outputs,
+            IReadOnlyList<IngredientViewData> inputs,
+            int producePerTurn,
+            int turnCost)
+        {
+            EnsureRoots();
+            HideLegacyRefs();
+
+            RenderSlots(outputs, _outputSlots, outputSlotsRoot, outputIconTemplate, outputIconSize, outputSpacing);
+            RenderSlots(inputs, _inputSlots, inputSlotsRoot, inputIconTemplate, inputIconSize, inputSpacing);
+
+            if (produceAmountText != null)
+            {
+                produceAmountText.text = $"+{Mathf.Max(0, producePerTurn)}";
+            }
+
+            if (turnCostText != null)
+            {
+                turnCostText.text = $"{Mathf.Max(1, turnCost)}t";
+            }
+        }
+
         private void BindButtons()
         {
             if (minusButton != null)
             {
-                minusButton.onClick.RemoveListener(DecQuantity);
-                minusButton.onClick.AddListener(DecQuantity);
+                minusButton.onClick.RemoveListener(DecreaseQuantity);
+                minusButton.onClick.AddListener(DecreaseQuantity);
             }
 
             if (plusButton != null)
             {
-                plusButton.onClick.RemoveListener(IncQuantity);
-                plusButton.onClick.AddListener(IncQuantity);
+                plusButton.onClick.RemoveListener(IncreaseQuantity);
+                plusButton.onClick.AddListener(IncreaseQuantity);
             }
         }
 
-        private void IncQuantity()
-        {
-            SetQuantity(quantity + 1);
-        }
-
-        private void DecQuantity()
-        {
-            SetQuantity(quantity - 1);
-        }
+        private void IncreaseQuantity() => SetQuantity(quantity + 1);
+        private void DecreaseQuantity() => SetQuantity(quantity - 1);
 
         private void RefreshQuantityText()
         {
@@ -88,162 +138,146 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private void EnsureFallbackLayout()
+        private void EnsureRoots()
         {
             if (root == null)
             {
                 return;
             }
 
-            root.anchorMin = new Vector2(0f, 1f);
-            root.anchorMax = new Vector2(1f, 1f);
-            root.pivot = new Vector2(0.5f, 1f);
-            root.sizeDelta = new Vector2(0f, 178f);
+            if (outputSlotsRoot == null)
+            {
+                outputSlotsRoot = EnsureChildRoot("OutputSlots", root, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -20f));
+            }
 
-            var bg = EnsureImage("Background", root, new Color(0.1f, 0.14f, 0.22f, 0.95f));
-            Stretch(bg.rectTransform, 0f, 0f, 0f, 0f);
-
-            var outputRect = EnsureRect("OutputIcon", root);
-            outputRect.anchorMin = new Vector2(0f, 1f);
-            outputRect.anchorMax = new Vector2(0f, 1f);
-            outputRect.pivot = new Vector2(0f, 1f);
-            outputRect.anchoredPosition = new Vector2(18f, -18f);
-            outputRect.sizeDelta = new Vector2(78f, 78f);
-            outputIcon = EnsureImage(outputRect.gameObject, new Color(0.75f, 0.75f, 0.75f, 1f));
-
-            outputCountText = EnsureText("OutputCount", root, new Vector2(18f, -106f), new Vector2(78f, 28f), "x0");
-
-            var inputARect = EnsureRect("InputIconA", root);
-            inputARect.anchorMin = new Vector2(1f, 1f);
-            inputARect.anchorMax = new Vector2(1f, 1f);
-            inputARect.pivot = new Vector2(1f, 1f);
-            inputARect.anchoredPosition = new Vector2(-84f, -20f);
-            inputARect.sizeDelta = new Vector2(46f, 46f);
-            inputIconA = EnsureImage(inputARect.gameObject, new Color(0.72f, 0.72f, 0.72f, 1f));
-
-            var inputBRect = EnsureRect("InputIconB", root);
-            inputBRect.anchorMin = new Vector2(1f, 1f);
-            inputBRect.anchorMax = new Vector2(1f, 1f);
-            inputBRect.pivot = new Vector2(1f, 1f);
-            inputBRect.anchoredPosition = new Vector2(-28f, -20f);
-            inputBRect.sizeDelta = new Vector2(46f, 46f);
-            inputIconB = EnsureImage(inputBRect.gameObject, new Color(0.72f, 0.72f, 0.72f, 1f));
-
-            inputCountAText = EnsureText("InputCountA", root, new Vector2(-84f, -70f), new Vector2(46f, 22f), "x0", true);
-            inputCountBText = EnsureText("InputCountB", root, new Vector2(-28f, -70f), new Vector2(46f, 22f), "x0", true);
-
-            produceAmountText = EnsureText("ProduceAmount", root, new Vector2(0f, -16f), new Vector2(120f, 26f), "+0");
-            produceAmountText.alignment = TextAlignmentOptions.Center;
-
-            arrowText = EnsureText("Arrow", root, new Vector2(0f, -50f), new Vector2(140f, 48f), "<=");
-            arrowText.fontSize = 36f;
-            arrowText.alignment = TextAlignmentOptions.Center;
-
-            turnCostText = EnsureText("TurnCost", root, new Vector2(0f, -88f), new Vector2(120f, 24f), "1t");
-            turnCostText.alignment = TextAlignmentOptions.Center;
-
-            var qtyLabel = EnsureText("QuantityLabel", root, new Vector2(0f, -136f), new Vector2(110f, 28f), "Qty");
-            qtyLabel.alignment = TextAlignmentOptions.Center;
-
-            quantityValueText = EnsureText("QuantityValue", root, new Vector2(62f, -136f), new Vector2(52f, 28f), "0");
-            quantityValueText.alignment = TextAlignmentOptions.Left;
-
-            minusButton = EnsureButton("BtnMinus", root, new Vector2(1f, 0f), new Vector2(-110f, 14f), new Vector2(44f, 32f), "-", out _);
-            plusButton = EnsureButton("BtnPlus", root, new Vector2(1f, 0f), new Vector2(-58f, 14f), new Vector2(44f, 32f), "+", out _);
+            if (inputSlotsRoot == null)
+            {
+                inputSlotsRoot = EnsureChildRoot("InputSlots", root, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -20f));
+            }
         }
 
-        private static RectTransform EnsureRect(string name, RectTransform parent)
+        private static RectTransform EnsureChildRoot(string name, RectTransform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition)
         {
-            var existing = parent.Find(name) as RectTransform;
-            if (existing != null)
+            var child = parent.Find(name) as RectTransform;
+            if (child != null)
             {
-                return existing;
+                return child;
             }
 
             var go = new GameObject(name, typeof(RectTransform));
-            var rect = go.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
+            child = go.GetComponent<RectTransform>();
+            child.SetParent(parent, false);
+            child.anchorMin = anchorMin;
+            child.anchorMax = anchorMax;
+            child.pivot = pivot;
+            child.anchoredPosition = anchoredPosition;
+            child.sizeDelta = Vector2.zero;
+            return child;
         }
 
-        private static Image EnsureImage(string name, RectTransform parent, Color color)
+        private void HideLegacyRefs()
         {
-            var rect = EnsureRect(name, parent);
-            return EnsureImage(rect.gameObject, color);
+            if (outputIcon != null) outputIcon.gameObject.SetActive(false);
+            if (inputIconA != null) inputIconA.gameObject.SetActive(false);
+            if (inputIconB != null) inputIconB.gameObject.SetActive(false);
+            if (outputCountText != null) outputCountText.gameObject.SetActive(false);
+            if (inputCountAText != null) inputCountAText.gameObject.SetActive(false);
+            if (inputCountBText != null) inputCountBText.gameObject.SetActive(false);
         }
 
-        private static Image EnsureImage(GameObject go, Color color)
+        private void RenderSlots(
+            IReadOnlyList<IngredientViewData> source,
+            List<SlotView> cache,
+            RectTransform parent,
+            Image template,
+            Vector2 iconSize,
+            float spacing)
         {
-            var image = go.GetComponent<Image>();
-            if (image == null)
+            if (parent == null)
             {
-                image = go.AddComponent<Image>();
+                return;
             }
 
-            image.color = color;
-            return image;
-        }
+            var count = Mathf.Min(maxSlotsPerSide, source != null ? source.Count : 0);
+            EnsureSlotCache(cache, parent, template, count);
 
-        private static TMP_Text EnsureText(string name, RectTransform parent, Vector2 anchoredPos, Vector2 size, string value, bool rightAnchor = false)
-        {
-            var rect = EnsureRect(name, parent);
-            rect.anchorMin = rightAnchor ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
-            rect.anchorMax = rightAnchor ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
-            rect.pivot = rightAnchor ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
-            rect.anchoredPosition = anchoredPos;
-            rect.sizeDelta = size;
-
-            var text = rect.GetComponent<TextMeshProUGUI>();
-            if (text == null)
+            for (var i = 0; i < cache.Count; i++)
             {
-                text = rect.gameObject.AddComponent<TextMeshProUGUI>();
+                var slot = cache[i];
+                var active = i < count;
+                slot.Root.gameObject.SetActive(active);
+                if (!active)
+                {
+                    continue;
+                }
+
+                var item = source[i];
+                slot.Icon.sprite = item.Icon;
+                slot.Icon.color = item.Icon != null ? Color.white : new Color(1f, 1f, 1f, 0.78f);
+                slot.Icon.preserveAspect = true;
+                slot.Count.text = $"x{Mathf.Max(0, item.Amount)}";
             }
 
-            text.text = value;
-            text.fontSize = 20f;
-            text.color = Color.white;
-            text.enableWordWrapping = false;
-            text.overflowMode = TextOverflowModes.Truncate;
-            if (TMP_Settings.defaultFontAsset != null)
+            var width = count > 0 ? count * iconSize.x + (count - 1) * spacing : 0f;
+            var startX = -width * 0.5f + iconSize.x * 0.5f;
+            for (var i = 0; i < count; i++)
             {
-                text.font = TMP_Settings.defaultFontAsset;
+                var slot = cache[i];
+                slot.Root.sizeDelta = iconSize;
+                slot.Root.anchoredPosition = new Vector2(startX + i * (iconSize.x + spacing), 0f);
             }
-            return text;
         }
 
-        private static Button EnsureButton(string name, RectTransform parent, Vector2 anchor, Vector2 anchoredPos, Vector2 size, string label, out TMP_Text labelText)
+        private static void EnsureSlotCache(List<SlotView> cache, RectTransform parent, Image template, int required)
         {
-            var rect = EnsureRect(name, parent);
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = anchoredPos;
-            rect.sizeDelta = size;
-
-            var image = EnsureImage(rect.gameObject, new Color(0.2f, 0.45f, 0.8f, 0.92f));
-            var button = rect.GetComponent<Button>();
-            if (button == null)
+            while (cache.Count < required)
             {
-                button = rect.gameObject.AddComponent<Button>();
+                var index = cache.Count;
+                var slotRoot = new GameObject($"Slot_{index + 1}", typeof(RectTransform)).GetComponent<RectTransform>();
+                slotRoot.SetParent(parent, false);
+                slotRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                slotRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                slotRoot.pivot = new Vector2(0.5f, 0.5f);
+
+                var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var iconRect = iconGo.GetComponent<RectTransform>();
+                iconRect.SetParent(slotRoot, false);
+                iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+                iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+                iconRect.pivot = new Vector2(0.5f, 0.5f);
+                iconRect.anchoredPosition = Vector2.zero;
+                iconRect.sizeDelta = new Vector2(48f, 48f);
+                var icon = iconGo.GetComponent<Image>();
+                if (template != null)
+                {
+                    icon.sprite = template.sprite;
+                    icon.material = template.material;
+                    icon.type = template.type;
+                    icon.preserveAspect = template.preserveAspect;
+                }
+                icon.color = new Color(1f, 1f, 1f, 0.78f);
+
+                var countGo = new GameObject("Count", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                var countRect = countGo.GetComponent<RectTransform>();
+                countRect.SetParent(slotRoot, false);
+                countRect.anchorMin = new Vector2(0.5f, 0f);
+                countRect.anchorMax = new Vector2(0.5f, 0f);
+                countRect.pivot = new Vector2(0.5f, 1f);
+                countRect.anchoredPosition = new Vector2(0f, -4f);
+                countRect.sizeDelta = new Vector2(70f, 22f);
+                var count = countGo.GetComponent<TextMeshProUGUI>();
+                count.alignment = TextAlignmentOptions.Center;
+                count.fontSize = 18f;
+                count.color = Color.white;
+                count.enableWordWrapping = false;
+                count.overflowMode = TextOverflowModes.Truncate;
+                if (TMP_Settings.defaultFontAsset != null)
+                {
+                    count.font = TMP_Settings.defaultFontAsset;
+                }
+
+                cache.Add(new SlotView { Root = slotRoot, Icon = icon, Count = count });
             }
-            button.targetGraphic = image;
-
-            labelText = EnsureText("Label", rect, new Vector2(0f, 0f), Vector2.zero, label);
-            labelText.rectTransform.anchorMin = Vector2.zero;
-            labelText.rectTransform.anchorMax = Vector2.one;
-            labelText.rectTransform.offsetMin = Vector2.zero;
-            labelText.rectTransform.offsetMax = Vector2.zero;
-            labelText.alignment = TextAlignmentOptions.Center;
-            labelText.fontSize = 24f;
-            return button;
-        }
-
-        private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(left, bottom);
-            rect.offsetMax = new Vector2(-right, -top);
         }
     }
 }
