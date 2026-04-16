@@ -35,16 +35,4 @@ namespace Panoptes.Presentation.Map
             return new Vector3(worldRect.center.x, groundY, worldRect.center.y);
         }
     }
-
-    public struct GroundBoundsResult
-    {
-        public bool success;
-        public Rect bounds;
-
-        public GroundBoundsResult(bool success, Rect bounds)
-        {
-            this.success = success;
-            this.bounds = bounds;
-        }
-    }
 }
