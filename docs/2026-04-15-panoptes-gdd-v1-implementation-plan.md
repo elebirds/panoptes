@@ -291,7 +291,7 @@ Chunk 2 当前已经完成了“领域长期状态收口 + ECS/query 最小正�
 
 - `player.Resources` 已成为唯一权威库存；城市库存双权威已移除，建造、配方、研究 grant 与工业点刷新都已改走玩家级库存。
 - `TurnRuntime.Planning` 现在只保存研究目标、国策、建筑/配方、单位命令等草案；研究目标与国策不会在 planning 阶段直接污染 active state。
-- `planning snapshot` 已扩展并稳定回显当前研究目标、国策、建筑放置、配方切换、战区指令和单位有效命令；`planning` 阶段重连会补发带 `snapshot` 的 `MsgPlanningStart`。
+- `planning snapshot` 已扩展并稳定回显当前研究目标、国策、建筑放置、配方切换和单位有效命令；`planning` 阶段重连会补发带 `snapshot` 的 `MsgPlanningStart`。war zone 相关协议字段目前保留但不属于 MVP 主链，服务端会显式拒绝。
 - `planning -> resolving` 的 lock-in 已接入 settlement 事件流；客户端与调试侧现在能看到 `national_policy_changed` / `research_target_changed`，不再只看到终态。
 - 城市、城市核心、服务城市、设施绑定、takeover runtime 元数据和单位类别组件已正式进入 ECS；查询层可以直接回答“某建筑属于哪座城市”“某节点是否可建城”“某设施当前是否 disabled / takeover 中”等规则问题，`NodeView.city_id / service_city_id / building_status / takeover_*` 不再由视图层临时猜测。
 - `PlanningInputs` 已补齐唯一键 upsert 语义：同节点建造草案、同节点配方草案和同战区指令会保留最后一次提交；同节点建造草案替换不重复扣 token。
@@ -738,12 +738,12 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - Modify: `server/internal/debug/harness_test.go`
 - Modify: `server/internal/debug/integration_test.go`
 
-- [ ] **Step 1: 补齐一局完整 MVP 的服务端回归用例**
-- [ ] **Step 2: 覆盖研究推进、建筑解锁、配方阻塞、建城、建筑接管、主城摧毁等关键裁决**
+- [x] **Step 1: 补齐一局完整 MVP 的服务端回归用例**
+- [x] **Step 2: 覆盖研究推进、建筑解锁、配方阻塞、建城、建筑接管、主城摧毁等关键裁决**
 - [x] **Step 3: 运行 `cd server && go test ./...` 与 `cd server && go build ./...`**
 - [x] **Step 4: 保持所有规则性断言都在服务端测试中可复现，不把关键验证留给客户端手点**
 
-当前状态：服务端回归已覆盖研究推进、研究解锁后的次回合建造、配方阻塞、开拓者建城、设施停用/失效与主城摧毁判负；完整 MVP 整局回归与“接管完成后归属转移”仍待后续玩法内容补齐。
+当前状态：服务端回归已补齐真实内容基线下的完整 MVP 整局 happy path，并新增真实内容设施接管完成后的归属/服务城市转移与次回合重新激活断言；研究推进、研究解锁后的次回合建造、配方阻塞、开拓者建城、设施接管、主城摧毁判负与关键事件 Apply 语义现在都能在服务端测试中稳定复现。
 
 ### Task 26: 客户端与联机冒烟
 

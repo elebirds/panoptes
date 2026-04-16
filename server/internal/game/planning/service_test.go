@@ -99,17 +99,11 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 		{PlayerID: "player-1", NodeID: "N3_0", RecipeID: "farm_food"},
 		{PlayerID: "player-2", NodeID: "N4_0", RecipeID: "mine_ore"},
 	}
-	state.TurnRuntime.Planning.WarDirectives["player-1"] = []domain.WarZoneDirective{
-		{ZoneID: "north", Directive: "attack", TargetNode: "N4_0"},
-	}
 	state.TurnRuntime.Planning.UnitOrders[unitID] = domain.UnitDirective{
 		PlayerID:     "player-1",
 		UnitID:       unitID,
 		Action:       "hold",
 		TargetNodeID: "N1_0",
-	}
-	state.Players["player-1"].WarZones = []*domain.WarZone{
-		{ID: "north", Name: "North", NodeIDs: []string{"N3_0"}},
 	}
 
 	snapshot := gamequery.BuildPlanningSnapshot(state, "player-1")
@@ -135,14 +129,11 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	if got := snapshot.GetRecipeSelections()[0].GetRecipeId(); got != "farm_food" {
 		t.Fatalf("recipe selection recipe_id = %q, want farm_food", got)
 	}
-	if got := len(snapshot.GetWarZoneDirectives()); got != 1 {
-		t.Fatalf("war zone directive count = %d, want 1", got)
+	if got := len(snapshot.GetWarZoneDirectives()); got != 0 {
+		t.Fatalf("war zone directive count = %d, want 0 in MVP snapshot", got)
 	}
-	if got := snapshot.GetWarZoneDirectives()[0].GetDirective(); got != "attack" {
-		t.Fatalf("war zone directive = %q, want attack", got)
-	}
-	if got := len(snapshot.GetWarZones()); got != 1 {
-		t.Fatalf("war zone count = %d, want 1", got)
+	if got := len(snapshot.GetWarZones()); got != 0 {
+		t.Fatalf("war zone count = %d, want 0 in MVP snapshot", got)
 	}
 }
 

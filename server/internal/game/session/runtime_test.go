@@ -88,6 +88,57 @@ func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	}
 }
 
+func TestPreparePlanningStartStateIfNeededRunsOnlyOncePerTurn(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID:           "agrarian_foundations",
+				ResearchCost: 2,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "farm"},
+				},
+			},
+			{
+				ID:           "masonry",
+				ResearchCost: 2,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "wall"},
+				},
+			},
+		},
+	}))
+
+	runtime := NewRuntime("game-1", nil, nil, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Phase = domain.PhasePlanning.String()
+	runtime.state.Turn = 3
+	runtime.state.Players["player-1"].Research.MarkTechnologyCompleted("agrarian_foundations", 2)
+
+	runtime.PreparePlanningStartStateIfNeeded()
+	if got := runtime.planningStartPreparedTurn; got != 3 {
+		t.Fatalf("planningStartPreparedTurn = %d, want 3", got)
+	}
+	if !runtime.state.IsBuildingUnlocked("player-1", "farm") {
+		t.Fatalf("farm should unlock on first planning-start prepare")
+	}
+
+	runtime.state.Players["player-1"].Research.MarkTechnologyCompleted("masonry", 2)
+	runtime.PreparePlanningStartStateIfNeeded()
+	if runtime.state.IsBuildingUnlocked("player-1", "wall") {
+		t.Fatalf("second prepare in same turn should be skipped")
+	}
+
+	runtime.state.Turn = 4
+	runtime.PreparePlanningStartStateIfNeeded()
+	if !runtime.state.IsBuildingUnlocked("player-1", "wall") {
+		t.Fatalf("prepare after turn advance should run again")
+	}
+}
+
 func TestRuntimeInitializeBootstrapsCapitalOnProceduralSpawn(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{

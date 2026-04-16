@@ -14,10 +14,10 @@ import (
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	gamereport "github.com/elebirds/panoptes/internal/game/resolution/report"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	gameturn "github.com/elebirds/panoptes/internal/game/turn"
@@ -127,6 +127,9 @@ func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.
 	if r == nil || r.runtime == nil {
 		return nil
 	}
+	if hooks := currentDebugHooks(); hooks.RecordOutgoingMessage != nil {
+		hooks.RecordOutgoingMessage(r.ID, playerID, msg, transport.EventMetaFromContext(ctx))
+	}
 	return r.runtime.SendToPlayer(ctx, playerID, msg)
 }
 
@@ -228,7 +231,7 @@ func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
 	return state.GetNode(nodeID)
 }
 
-func (r *GameRoom) broadcastTurnSettlement(unitEvents []event.Event, mapEvents []*pb.TurnEvent, economyEvents []event.Event) {
+func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) {
 	state := r.State()
 	if state == nil {
 		return
@@ -248,9 +251,7 @@ func (r *GameRoom) broadcastTurnSettlement(unitEvents []event.Event, mapEvents [
 			int32(state.Turn),
 			domain.PhaseResolving.String(),
 			nextPhase,
-			unitEvents,
-			mapEvents,
-			economyEvents,
+			collector,
 		)
 		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
 			hooks.RecordSettlement(r.ID, player.PlayerID(), msg)
