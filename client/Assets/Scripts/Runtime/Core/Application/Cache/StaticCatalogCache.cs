@@ -85,6 +85,60 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class TechnologyEntryJson
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string branch;
+            public int tier;
+            public int tech_point_cost;
+            public string[] prerequisite_technology_ids;
+        }
+
+        [Serializable]
+        public sealed class TechnologyTreePointJson
+        {
+            public float x;
+            public float y;
+        }
+
+        [Serializable]
+        public sealed class TechnologyTreeNodeJson
+        {
+            public string id;
+            public string technology_id;
+            public string title;
+            public string description;
+            public float x;
+            public float y;
+            public float width;
+            public float height;
+            public bool visible;
+        }
+
+        [Serializable]
+        public sealed class TechnologyTreeEdgeJson
+        {
+            public string id;
+            public string from;
+            public string to;
+            public string arrow;
+            public bool show_arrow;
+            public float thickness;
+            public TechnologyTreePointJson[] points;
+        }
+
+        [Serializable]
+        public sealed class TechnologyTreeLayoutJson
+        {
+            public string config_version;
+            public TechnologyTreeNodeJson[] nodes;
+            public TechnologyTreeEdgeJson[] edges;
+        }
+
+        [Serializable]
         public sealed class MapEntryJson
         {
             public string id;
@@ -102,6 +156,8 @@ namespace Panoptes.Core.Application.Cache
             public ResourceEntryJson[] resources;
             public UnitEntryJson[] units;
             public BuildingEntryJson[] buildings;
+            public TechnologyEntryJson[] technologies;
+            public TechnologyTreeLayoutJson technology_tree;
             public TerrainEntryJson[] terrains;
             public MapEntryJson[] maps;
         }
@@ -143,16 +199,20 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, MapEntryJson> _mapsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, ResourceEntryJson> _resourcesByKey = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, TerrainEntryJson> _terrainsById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TechnologyEntryJson> _technologiesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, UnitEntryJson> _unitsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapRuntimeBundleJson> _mapBundleCache = new(StringComparer.OrdinalIgnoreCase);
 
         public ManifestJson LocalManifest { get; private set; }
         public StaticCatalogManifest ServerManifest { get; private set; }
+        public TechnologyTreeLayoutJson TechnologyTreeLayout { get; private set; }
+        public bool HasServerSnapshot { get; private set; }
         public event System.Action CatalogChanged;
 
         public IReadOnlyDictionary<string, BuildingEntryJson> Buildings => _buildingsById;
         public IReadOnlyDictionary<string, ResourceEntryJson> Resources => _resourcesByKey;
         public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
+        public IReadOnlyDictionary<string, TechnologyEntryJson> Technologies => _technologiesById;
         public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
 
         private void Awake()
@@ -222,8 +282,10 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_resourcesByKey, parsed.resources, entry => entry != null ? entry.key : string.Empty);
             RebuildIndex(_unitsById, parsed.units, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_buildingsById, parsed.buildings, entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_technologiesById, parsed.technologies, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
+            TechnologyTreeLayout = parsed.technology_tree;
             _mapBundleCache.Clear();
 
             if (logStatus)
@@ -247,6 +309,26 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
+        public void ApplySnapshot(StaticCatalogSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            ApplyManifest(snapshot.Manifest);
+
+            RebuildIndex(_resourcesByKey, snapshot.Resources, entry => entry != null ? entry.Key : string.Empty, ConvertResource);
+            RebuildIndex(_unitsById, snapshot.Units, entry => entry != null ? entry.Id : string.Empty, ConvertUnit);
+            RebuildIndex(_buildingsById, snapshot.Buildings, entry => entry != null ? entry.Id : string.Empty, ConvertBuilding);
+            RebuildIndex(_technologiesById, snapshot.Technologies, entry => entry != null ? entry.Id : string.Empty, ConvertTechnology);
+            RebuildIndex(_terrainsById, snapshot.Terrains, entry => entry != null ? entry.Id : string.Empty, ConvertTerrain);
+
+            TechnologyTreeLayout = ConvertTechnologyTree(snapshot.TechnologyTree);
+            HasServerSnapshot = true;
+            CatalogChanged?.Invoke();
+        }
+
         public bool TryGetBuilding(string buildingId, out BuildingEntryJson entry)
         {
             return _buildingsById.TryGetValue(Normalize(buildingId), out entry);
@@ -260,6 +342,17 @@ namespace Panoptes.Core.Application.Cache
         public bool TryGetUnit(string unitId, out UnitEntryJson entry)
         {
             return _unitsById.TryGetValue(Normalize(unitId), out entry);
+        }
+
+        public bool TryGetTechnology(string technologyId, out TechnologyEntryJson entry)
+        {
+            return _technologiesById.TryGetValue(Normalize(technologyId), out entry);
+        }
+
+        public bool TryGetTechnologyTree(out TechnologyTreeLayoutJson layout)
+        {
+            layout = TechnologyTreeLayout;
+            return layout != null && layout.nodes != null && layout.nodes.Length > 0;
         }
 
         public bool TryGetDefaultMap(out MapRuntimeBundleJson bundle)
@@ -316,6 +409,159 @@ namespace Panoptes.Core.Application.Cache
         public void Clear()
         {
             ServerManifest = null;
+            TechnologyTreeLayout = null;
+            HasServerSnapshot = false;
+        }
+
+        private static ResourceEntryJson ConvertResource(ResourceDescriptor source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new ResourceEntryJson
+            {
+                key = source.Key,
+                display_name = source.DisplayName,
+                description = source.Description,
+                icon_key = source.IconKey,
+                sort_order = source.SortOrder,
+                visible_in_hud = source.VisibleInHud
+            };
+        }
+
+        private static UnitEntryJson ConvertUnit(UnitCatalogEntry source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new UnitEntryJson
+            {
+                id = source.Id,
+                name = source.Name,
+                description = source.Description,
+                icon_key = source.IconKey,
+                prefab_key = source.PrefabKey
+            };
+        }
+
+        private static BuildingEntryJson ConvertBuilding(BuildingCatalogEntry source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new BuildingEntryJson
+            {
+                id = source.Id,
+                name = source.Name,
+                description = source.Description,
+                icon_key = source.IconKey,
+                prefab_key = source.PrefabKey
+            };
+        }
+
+        private static TerrainEntryJson ConvertTerrain(TerrainCatalogEntry source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new TerrainEntryJson
+            {
+                id = source.Id,
+                name = source.Name,
+                description = source.Description,
+                icon_key = source.IconKey,
+                material_key = source.MaterialKey
+            };
+        }
+
+        private static TechnologyEntryJson ConvertTechnology(TechnologyCatalogEntry source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new TechnologyEntryJson
+            {
+                id = source.Id,
+                name = source.Name,
+                description = source.Description,
+                icon_key = source.IconKey,
+                branch = source.Branch,
+                tier = source.Tier,
+                tech_point_cost = source.TechPointCost,
+                prerequisite_technology_ids = Array.Empty<string>()
+            };
+        }
+
+        private static TechnologyTreeLayoutJson ConvertTechnologyTree(TechnologyTreeLayout source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var nodes = source.Nodes;
+            var convertedNodes = new TechnologyTreeNodeJson[nodes.Count];
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                convertedNodes[i] = new TechnologyTreeNodeJson
+                {
+                    id = node.Id,
+                    technology_id = node.TechnologyId,
+                    title = node.Title,
+                    description = node.Description,
+                    x = node.X,
+                    y = node.Y,
+                    width = node.Width,
+                    height = node.Height,
+                    visible = node.Visible
+                };
+            }
+
+            var edges = source.Edges;
+            var convertedEdges = new TechnologyTreeEdgeJson[edges.Count];
+            for (var i = 0; i < edges.Count; i++)
+            {
+                var edge = edges[i];
+                var points = edge.Points;
+                var convertedPoints = new TechnologyTreePointJson[points.Count];
+                for (var p = 0; p < points.Count; p++)
+                {
+                    convertedPoints[p] = new TechnologyTreePointJson
+                    {
+                        x = points[p].X,
+                        y = points[p].Y
+                    };
+                }
+
+                convertedEdges[i] = new TechnologyTreeEdgeJson
+                {
+                    id = edge.Id,
+                    from = edge.From,
+                    to = edge.To,
+                    arrow = edge.Arrow,
+                    show_arrow = edge.ShowArrow,
+                    thickness = edge.Thickness,
+                    points = convertedPoints
+                };
+            }
+
+            return new TechnologyTreeLayoutJson
+            {
+                config_version = source.ConfigVersion,
+                nodes = convertedNodes,
+                edges = convertedEdges
+            };
         }
 
         private static void RebuildIndex<T>(Dictionary<string, T> target, T[] source, Func<T, string> keySelector)
@@ -336,6 +582,42 @@ namespace Panoptes.Core.Application.Cache
                 }
 
                 target[key] = entry;
+            }
+        }
+
+        private static void RebuildIndex<TTarget, TSource>(
+            Dictionary<string, TTarget> target,
+            System.Collections.Generic.IEnumerable<TSource> source,
+            Func<TSource, string> keySelector,
+            Func<TSource, TTarget> converter)
+            where TTarget : class
+        {
+            target.Clear();
+            if (source == null || converter == null)
+            {
+                return;
+            }
+
+            foreach (var sourceEntry in source)
+            {
+                if (sourceEntry == null)
+                {
+                    continue;
+                }
+
+                var key = Normalize(keySelector(sourceEntry));
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
+                var targetEntry = converter(sourceEntry);
+                if (targetEntry == null)
+                {
+                    continue;
+                }
+
+                target[key] = targetEntry;
             }
         }
 

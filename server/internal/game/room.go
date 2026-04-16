@@ -125,6 +125,7 @@ func (r *GameRoom) Start() {
 			continue
 		}
 		r.sendStaticCatalogManifest(player)
+		r.sendStaticCatalogSnapshot(player)
 		r.sendGameInit(player)
 	}
 
@@ -1000,6 +1001,145 @@ func (r *GameRoom) sendStaticCatalogManifest(p Player) {
 	if err := p.Send(msg); err != nil {
 		slog.Warn("发送静态目录清单失败", "room_id", r.ID, "player_id", p.PlayerID(), "error", err)
 	}
+}
+
+func (r *GameRoom) sendStaticCatalogSnapshot(p Player) {
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return
+	}
+
+	bundle := catalog.Bundle()
+	snapshot := &pb.StaticCatalogSnapshot{
+		Manifest: &pb.StaticCatalogManifest{
+			SchemaVersion:  bundle.Manifest.SchemaVersion,
+			ContentVersion: bundle.Manifest.ContentVersion,
+			BundleHash:     bundle.Manifest.BundleHash,
+			DefaultLocale:  bundle.Manifest.DefaultLocale,
+			DefaultMapId:   bundle.Manifest.DefaultMapID,
+		},
+		Resources:      make([]*pb.ResourceDescriptor, 0, len(bundle.Resources)),
+		Units:          make([]*pb.UnitCatalogEntry, 0, len(bundle.Units)),
+		Buildings:      make([]*pb.BuildingCatalogEntry, 0, len(bundle.Buildings)),
+		Technologies:   make([]*pb.TechnologyCatalogEntry, 0, len(bundle.Technologies)),
+		Recipes:        make([]*pb.RecipeCatalogEntry, 0, len(bundle.Recipes)),
+		Terrains:       make([]*pb.TerrainCatalogEntry, 0, len(bundle.Terrains)),
+		TechnologyTree: toProtoTechnologyTreeLayout(bundle.TechnologyTree),
+	}
+
+	for _, resource := range bundle.Resources {
+		snapshot.Resources = append(snapshot.Resources, &pb.ResourceDescriptor{
+			Key:          resource.Key,
+			DisplayName:  resource.DisplayName,
+			Description:  resource.Description,
+			IconKey:      resource.IconKey,
+			SortOrder:    int32(resource.SortOrder),
+			ProtoNumber:  int32(resource.ProtoNumber),
+			VisibleInHud: resource.VisibleInHUD,
+		})
+	}
+
+	for _, unit := range bundle.Units {
+		snapshot.Units = append(snapshot.Units, &pb.UnitCatalogEntry{
+			Id:          unit.ID,
+			Name:        unit.Name,
+			Description: unit.Description,
+			IconKey:     unit.IconKey,
+			PrefabKey:   unit.PrefabKey,
+		})
+	}
+
+	for _, building := range bundle.Buildings {
+		snapshot.Buildings = append(snapshot.Buildings, &pb.BuildingCatalogEntry{
+			Id:          building.ID,
+			Name:        building.Name,
+			Description: building.Description,
+			IconKey:     building.IconKey,
+			PrefabKey:   building.PrefabKey,
+		})
+	}
+
+	for _, technology := range bundle.Technologies {
+		snapshot.Technologies = append(snapshot.Technologies, &pb.TechnologyCatalogEntry{
+			Id:            technology.ID,
+			Name:          technology.Name,
+			Description:   technology.Description,
+			IconKey:       technology.IconKey,
+			Branch:        technology.Branch,
+			Tier:          int32(technology.Tier),
+			TechPointCost: int32(technology.TechPointCost),
+		})
+	}
+
+	for _, recipe := range bundle.Recipes {
+		snapshot.Recipes = append(snapshot.Recipes, &pb.RecipeCatalogEntry{
+			Id:            recipe.ID,
+			Name:          recipe.Name,
+			Description:   recipe.Description,
+			IconKey:       recipe.IconKey,
+			BuildingId:    recipe.BuildingID,
+			DurationTurns: int32(recipe.DurationTurns),
+		})
+	}
+
+	for _, terrain := range bundle.Terrains {
+		snapshot.Terrains = append(snapshot.Terrains, &pb.TerrainCatalogEntry{
+			Id:          terrain.ID,
+			Name:        terrain.Name,
+			Description: terrain.Description,
+			IconKey:     terrain.IconKey,
+			MaterialKey: terrain.MaterialKey,
+		})
+	}
+
+	if err := p.Send(&pb.MsgStaticCatalogSnapshot{Snapshot: snapshot}); err != nil {
+		slog.Warn("send static catalog snapshot failed", "room_id", r.ID, "player_id", p.PlayerID(), "error", err)
+	}
+}
+
+func toProtoTechnologyTreeLayout(layout staticdata.TechnologyTreeLayout) *pb.TechnologyTreeLayout {
+	result := &pb.TechnologyTreeLayout{
+		ConfigVersion: layout.ConfigVersion,
+		Nodes:         make([]*pb.TechnologyTreeNodeEntry, 0, len(layout.Nodes)),
+		Edges:         make([]*pb.TechnologyTreeEdgeEntry, 0, len(layout.Edges)),
+	}
+
+	for _, node := range layout.Nodes {
+		result.Nodes = append(result.Nodes, &pb.TechnologyTreeNodeEntry{
+			Id:           node.ID,
+			TechnologyId: node.TechnologyID,
+			Title:        node.Title,
+			Description:  node.Description,
+			X:            float32(node.X),
+			Y:            float32(node.Y),
+			Width:        float32(node.Width),
+			Height:       float32(node.Height),
+			Visible:      node.Visible,
+		})
+	}
+
+	for _, edge := range layout.Edges {
+		protoEdge := &pb.TechnologyTreeEdgeEntry{
+			Id:        edge.ID,
+			From:      edge.From,
+			To:        edge.To,
+			Arrow:     edge.Arrow,
+			ShowArrow: edge.ShowArrow,
+			Thickness: float32(edge.Thickness),
+			Points:    make([]*pb.TechnologyTreePoint, 0, len(edge.Points)),
+		}
+
+		for _, point := range edge.Points {
+			protoEdge.Points = append(protoEdge.Points, &pb.TechnologyTreePoint{
+				X: float32(point.X),
+				Y: float32(point.Y),
+			})
+		}
+
+		result.Edges = append(result.Edges, protoEdge)
+	}
+
+	return result
 }
 
 func (r *GameRoom) buildPlayerView(playerID string) *pb.PlayerView {

@@ -541,6 +541,56 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 			}, []string{"id", "name", "description", "icon_key", "sort_order", "tags"}),
 			nil,
 		),
+		filepath.Join("ui", "technology_tree.schema.json"): schemaDocument(
+			objectSchema(
+				map[string]any{
+					"config_version": stringSchema(nil),
+					"nodes": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":            stringSchema(nil),
+								"technology_id": stringSchema(nil),
+								"title":         stringSchema(nil),
+								"description":   stringSchema(nil),
+								"x":             numberSchema(nil),
+								"y":             numberSchema(nil),
+								"width":         numberSchema(map[string]any{"exclusiveMinimum": 0}),
+								"height":        numberSchema(map[string]any{"exclusiveMinimum": 0}),
+								"visible":       boolSchema(),
+							},
+							[]string{"id", "x", "y", "width", "height", "visible"},
+						),
+						map[string]any{"minItems": 1},
+					),
+					"edges": arraySchema(
+						objectSchema(
+							map[string]any{
+								"id":         stringSchema(nil),
+								"from":       stringSchema(nil),
+								"to":         stringSchema(nil),
+								"arrow":      stringSchema(nil),
+								"show_arrow": boolSchema(),
+								"thickness":  numberSchema(map[string]any{"exclusiveMinimum": 0}),
+								"points": arraySchema(
+									objectSchema(
+										map[string]any{
+											"x": numberSchema(nil),
+											"y": numberSchema(nil),
+										},
+										[]string{"x", "y"},
+									),
+									map[string]any{"minItems": 2},
+								),
+							},
+							[]string{"id", "from", "to", "show_arrow", "thickness", "points"},
+						),
+						map[string]any{},
+					),
+				},
+				[]string{"config_version", "nodes", "edges"},
+			),
+			nil,
+		),
 		filepath.Join("ui", "recipes.schema.json"): schemaDocument(
 			uiCatalogSchema("recipes", map[string]any{
 				"id":          stringSchema(nil),

@@ -280,13 +280,14 @@ func datagenTestFixture(t *testing.T, repoRoot string) {
     { "slot": 1, "x": 1, "y": 1 }
   ]
 }`,
-		"data/ui/catalogs/resources.json":    `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
-		"data/ui/catalogs/units.json":        `{"units":[{"id":"warrior","name":"勇士","description":"基础近战战斗单位","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
-		"data/ui/catalogs/buildings.json":    `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
-		"data/ui/catalogs/technologies.json": `{"technologies":[{"id":"agri_unlock_farm","name":"开垦令","description":"解锁农场","icon_key":"tech_agri_unlock_farm","sort_order":10,"tags":["agriculture"]}]}`,
-		"data/ui/catalogs/recipes.json":      `{"recipes":[{"id":"farm_food","name":"基础农耕","description":"产出粮食","icon_key":"recipe_farm_food","sort_order":10,"tags":["food"]}]}`,
-		"data/ui/catalogs/terrains.json":     `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
-		"data/ui/catalogs/maps/default.json": `{"id":"default","name":"标准地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
+		"data/ui/catalogs/resources.json":       `{"resources":[{"id":"ore","name":"矿石","description":"基础矿物","icon_key":"resource_ore","sort_order":10,"tags":["base"]},{"id":"food","name":"粮食","description":"补给","icon_key":"resource_food","sort_order":20,"tags":["base"]}]}`,
+		"data/ui/catalogs/units.json":           `{"units":[{"id":"warrior","name":"勇士","description":"基础近战战斗单位","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":["frontline"]}]}`,
+		"data/ui/catalogs/buildings.json":       `{"buildings":[{"id":"farm","name":"农场","description":"粮食建筑","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":["eco"]}]}`,
+		"data/ui/catalogs/technologies.json":    `{"technologies":[{"id":"agri_unlock_farm","name":"开垦令","description":"解锁农场","icon_key":"tech_agri_unlock_farm","sort_order":10,"tags":["agriculture"]}]}`,
+		"data/ui/catalogs/technology_tree.json": `{"config_version":"1.0.0","nodes":[{"id":"N_Farm","technology_id":"agri_unlock_farm","title":"农耕","description":"农场解锁：粮食","x":0,"y":0,"width":200,"height":80,"visible":true}],"edges":[]}`,
+		"data/ui/catalogs/recipes.json":         `{"recipes":[{"id":"farm_food","name":"基础农耕","description":"产出粮食","icon_key":"recipe_farm_food","sort_order":10,"tags":["food"]}]}`,
+		"data/ui/catalogs/terrains.json":        `{"terrains":[{"id":"plain","name":"平原","description":"标准地块","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":["ground"]},{"id":"forest","name":"森林","description":"树林","icon_key":"terrain_forest","material_key":"M_Forest","sort_order":20,"tags":["ground"]}]}`,
+		"data/ui/catalogs/maps/default.json":    `{"id":"default","name":"标准地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
 	}
 	for rel, content := range files {
 		path := filepath.Join(repoRoot, rel)

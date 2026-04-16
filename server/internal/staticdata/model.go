@@ -366,16 +366,17 @@ type MapCatalogEntry struct {
 }
 
 type CatalogBundle struct {
-	Manifest     Manifest               `json:"manifest"`
-	Resources    []ResourceDescriptor   `json:"resources"`
-	Units        []UnitDefinition       `json:"units"`
-	Buildings    []BuildingDefinition   `json:"buildings"`
-	Technologies []TechnologyDefinition `json:"technologies"`
-	Recipes      []RecipeDefinition     `json:"recipes"`
-	Terrains     []TerrainDefinition    `json:"terrains"`
-	Rules        Rules                  `json:"rules"`
-	Ministers    []Minister             `json:"ministers"`
-	Maps         []MapCatalogEntry      `json:"maps"`
+	Manifest       Manifest               `json:"manifest"`
+	Resources      []ResourceDescriptor   `json:"resources"`
+	Units          []UnitDefinition       `json:"units"`
+	Buildings      []BuildingDefinition   `json:"buildings"`
+	Technologies   []TechnologyDefinition `json:"technologies"`
+	TechnologyTree TechnologyTreeLayout   `json:"technology_tree"`
+	Recipes        []RecipeDefinition     `json:"recipes"`
+	Terrains       []TerrainDefinition    `json:"terrains"`
+	Rules          Rules                  `json:"rules"`
+	Ministers      []Minister             `json:"ministers"`
+	Maps           []MapCatalogEntry      `json:"maps"`
 }
 
 type ResourceCatalogUIFile struct {
@@ -435,6 +436,41 @@ type TechnologyCatalogUIFile struct {
 		Tags        []string `json:"tags"`
 	} `json:"technologies"`
 }
+
+type TechnologyTreeLayoutNode struct {
+	ID           string  `json:"id"`
+	TechnologyID string  `json:"technology_id,omitempty"`
+	Title        string  `json:"title,omitempty"`
+	Description  string  `json:"description,omitempty"`
+	X            float64 `json:"x"`
+	Y            float64 `json:"y"`
+	Width        float64 `json:"width"`
+	Height       float64 `json:"height"`
+	Visible      bool    `json:"visible"`
+}
+
+type TechnologyTreeLayoutPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type TechnologyTreeLayoutEdge struct {
+	ID        string                      `json:"id"`
+	From      string                      `json:"from"`
+	To        string                      `json:"to"`
+	Arrow     string                      `json:"arrow,omitempty"`
+	ShowArrow bool                        `json:"show_arrow"`
+	Thickness float64                     `json:"thickness"`
+	Points    []TechnologyTreeLayoutPoint `json:"points"`
+}
+
+type TechnologyTreeLayout struct {
+	ConfigVersion string                     `json:"config_version"`
+	Nodes         []TechnologyTreeLayoutNode `json:"nodes"`
+	Edges         []TechnologyTreeLayoutEdge `json:"edges"`
+}
+
+type TechnologyTreeLayoutUIFile = TechnologyTreeLayout
 
 type RecipeCatalogUIFile struct {
 	Recipes []struct {

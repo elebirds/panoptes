@@ -163,6 +163,7 @@ namespace Panoptes.Core.Application.App
                 MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
+                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSnapshot");
             }
         }
 
@@ -210,6 +211,7 @@ namespace Panoptes.Core.Application.App
 
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
             MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
+            MessageDispatcher.Instance.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
         }
 
@@ -221,6 +223,15 @@ namespace Panoptes.Core.Application.App
         private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
         {
             StaticCatalogCache.EnsureInstance()?.ApplyManifest(msg?.Manifest);
+        }
+
+        private void OnStaticCatalogSnapshot(MsgStaticCatalogSnapshot msg)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var nodeCount = msg?.Snapshot?.TechnologyTree?.Nodes?.Count ?? 0;
+            Debug.Log($"[AppManager] MsgStaticCatalogSnapshot received at t={Time.realtimeSinceStartup:F2}s, tech_nodes={nodeCount}");
+#endif
+            StaticCatalogCache.EnsureInstance()?.ApplySnapshot(msg?.Snapshot);
         }
 
         private void OnGameInit(MsgGameInit msg)

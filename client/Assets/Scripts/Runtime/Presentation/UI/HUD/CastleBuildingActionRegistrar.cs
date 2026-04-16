@@ -16,21 +16,26 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Action IDs")]
         [SerializeField] private string productionActionId = "action_2";
         [SerializeField] private string buildActionId = "action_3";
+        [SerializeField] private string techTreeActionId = "action_4";
         [SerializeField] private string fallbackProductionActionId = "castle_open_production";
         [SerializeField] private string fallbackBuildActionId = "castle_open_build";
+        [SerializeField] private string fallbackTechTreeActionId = "castle_open_techtree";
 
         [Header("Labels")]
         [SerializeField] private string productionActionLabel = "Production";
         [SerializeField] private string buildActionLabel = "Build";
+        [SerializeField] private string techTreeActionLabel = "Tech Tree";
 
         [Header("References")]
         [SerializeField] private MapInputHandler mapInputHandler;
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private CastleProductionPanel castleProductionPanel;
+        [SerializeField] private TechTreePanelController techTreePanelController;
         [SerializeField] private BuildPanelSlideToggle buildPanelSlideToggle;
         [SerializeField] private BuildCommandPanel buildCommandPanel;
         [SerializeField] private bool autoSpawnCastleProductionPanelIfMissing = true;
         [SerializeField] private string castleProductionPanelResourcesPath = "Prefabs/UI/CastleProductionPanel";
+        [SerializeField] private bool hideTechTreePanelOnStart = true;
 
         [Header("Build Derived Panel")]
         [SerializeField] private bool startBuildPanelCollapsed = true;
@@ -65,6 +70,12 @@ namespace Panoptes.Presentation.UI.HUD
                 string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
                 IsOwnedCastleBuildingProxy);
 
+            registry.RegisterAction(
+                techTreeActionId,
+                OnTechTreeActionClicked,
+                string.IsNullOrWhiteSpace(techTreeActionLabel) ? "Tech Tree" : techTreeActionLabel,
+                IsOwnedCastleBuildingProxy);
+
             // Compatibility: if UnitInfoPanel uses different action IDs.
             if (!string.Equals(fallbackProductionActionId, productionActionId, StringComparison.OrdinalIgnoreCase))
             {
@@ -81,6 +92,15 @@ namespace Panoptes.Presentation.UI.HUD
                     fallbackBuildActionId,
                     OnBuildActionClicked,
                     string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
+                    IsOwnedCastleBuildingProxy);
+            }
+
+            if (!string.Equals(fallbackTechTreeActionId, techTreeActionId, StringComparison.OrdinalIgnoreCase))
+            {
+                registry.RegisterAction(
+                    fallbackTechTreeActionId,
+                    OnTechTreeActionClicked,
+                    string.IsNullOrWhiteSpace(techTreeActionLabel) ? "Tech Tree" : techTreeActionLabel,
                     IsOwnedCastleBuildingProxy);
             }
         }
@@ -174,6 +194,46 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
+            if (techTreePanelController == null)
+            {
+                var techPanels = UnityEngine.Object.FindObjectsByType<TechTreePanelController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+                if (techPanels != null && techPanels.Length > 0)
+                {
+                    techTreePanelController = techPanels[0];
+                }
+            }
+
+            if (techTreePanelController == null)
+            {
+                var allRects = UnityEngine.Object.FindObjectsByType<RectTransform>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+                for (var i = 0; i < allRects.Length; i++)
+                {
+                    var rect = allRects[i];
+                    if (rect == null || !rect.gameObject.scene.IsValid())
+                    {
+                        continue;
+                    }
+
+                    var name = rect.name ?? string.Empty;
+                    if (!string.Equals(name, "TechTreePanel", StringComparison.OrdinalIgnoreCase) &&
+                        name.IndexOf("techtree", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    techTreePanelController = rect.GetComponent<TechTreePanelController>();
+                    if (techTreePanelController == null)
+                    {
+                        techTreePanelController = rect.gameObject.AddComponent<TechTreePanelController>();
+                    }
+                    break;
+                }
+            }
+
             if (buildCommandPanel == null)
             {
                 var buildPanels = UnityEngine.Object.FindObjectsByType<BuildCommandPanel>(
@@ -232,6 +292,11 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 unitInfoPanelController.SetExternalOffset(Vector2.zero, true);
             }
+
+            if (hideTechTreePanelOnStart && techTreePanelController != null)
+            {
+                techTreePanelController.gameObject.SetActive(false);
+            }
         }
 
         private void OnProductionActionClicked(UnitView unit)
@@ -243,6 +308,10 @@ namespace Panoptes.Presentation.UI.HUD
 
             ResolveReferences();
             CloseBuildPanel(true);
+            if (techTreePanelController != null)
+            {
+                techTreePanelController.gameObject.SetActive(false);
+            }
 
             if (castleProductionPanel == null)
             {
@@ -278,12 +347,53 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            if (techTreePanelController != null)
+            {
+                techTreePanelController.gameObject.SetActive(false);
+            }
+
             buildPanelSlideToggle.Expand();
             _buildPanelOpen = true;
             if (unitInfoPanelController != null)
             {
                 var shiftX = ResolveUnitInfoShiftX();
                 unitInfoPanelController.SetExternalOffset(new Vector2(-shiftX, 0f), false);
+            }
+        }
+
+        private void OnTechTreeActionClicked(UnitView unit)
+        {
+            if (!TryResolveCastleNodeId(unit, out _))
+            {
+                return;
+            }
+
+            ResolveReferences();
+            CloseBuildPanel(true);
+
+            if (castleProductionPanel != null)
+            {
+                castleProductionPanel.Close();
+            }
+
+            if (techTreePanelController == null)
+            {
+                Debug.LogWarning("[CastleBuildingActionRegistrar] TechTreePanelController missing.");
+                return;
+            }
+
+            var panelGo = techTreePanelController.gameObject;
+            if (panelGo.activeSelf)
+            {
+                panelGo.SetActive(false);
+                return;
+            }
+
+            panelGo.SetActive(true);
+            var panelRect = panelGo.transform as RectTransform;
+            if (panelRect != null)
+            {
+                panelRect.SetAsLastSibling();
             }
         }
 
@@ -300,6 +410,10 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             CloseBuildPanel(true);
+            if (techTreePanelController != null)
+            {
+                techTreePanelController.gameObject.SetActive(false);
+            }
         }
 
         private void CloseBuildPanel(bool resetUnitInfoOffset)

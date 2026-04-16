@@ -85,6 +85,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 EnsureDefaultLayout();
             }
+            EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
             {
                 RepairActionButtonLayoutAndVisuals();
@@ -584,9 +585,55 @@ namespace Panoptes.Presentation.UI.HUD
                 {
                     BuildDefaultButtonSlot("expand_territory", "Expand"),
                     BuildDefaultButtonSlot("action_2", "Action2"),
-                    BuildDefaultButtonSlot("action_3", "Action3")
+                    BuildDefaultButtonSlot("action_3", "Action3"),
+                    BuildDefaultButtonSlot("action_4", "Action4")
                 };
             }
+        }
+
+        private void EnsureRequiredActionButtonSlots()
+        {
+            EnsureActionButtonSlot("expand_territory", "Expand");
+            EnsureActionButtonSlot("action_2", "Action2");
+            EnsureActionButtonSlot("action_3", "Action3");
+            EnsureActionButtonSlot("action_4", "Action4");
+        }
+
+        private void EnsureActionButtonSlot(string actionId, string defaultLabel)
+        {
+            if (actionButtonsRoot == null || string.IsNullOrWhiteSpace(actionId))
+            {
+                return;
+            }
+
+            if (actionButtons != null)
+            {
+                for (var i = 0; i < actionButtons.Length; i++)
+                {
+                    var slot = actionButtons[i];
+                    if (slot == null)
+                    {
+                        continue;
+                    }
+
+                    if (string.Equals(NormalizeToken(slot.actionId), NormalizeToken(actionId), StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            var newSlot = BuildDefaultButtonSlot(actionId, defaultLabel);
+            if (actionButtons == null || actionButtons.Length == 0)
+            {
+                actionButtons = new[] { newSlot };
+                return;
+            }
+
+            var expanded = new ActionButtonSlot[actionButtons.Length + 1];
+            Array.Copy(actionButtons, expanded, actionButtons.Length);
+            expanded[actionButtons.Length] = newSlot;
+            actionButtons = expanded;
         }
 
         private void ResolveAnchoredPositions()

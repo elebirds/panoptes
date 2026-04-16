@@ -3,7 +3,7 @@
  * File: TechTreePanelController.cs
  * Author: Panoptes Team
  * Date: 2026-04-14
- * Description: Applies tech-tree node config and renders connection lines.
+ * Description: Initializes technology tree panel from server static catalog snapshot.
  *************************************************/
 
 using System;
@@ -17,58 +17,10 @@ namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class TechTreePanelController : MonoBehaviour
     {
-        [Serializable]
-        private sealed class TechTreeConfigRoot
-        {
-            public string config_version;
-            public TechTreeNodeConfig[] nodes;
-            public TechTreeEdgeConfig[] edges;
-        }
-
-        [Serializable]
-        private sealed class TechTreeNodeConfig
-        {
-            public string id;
-            public string title;
-            public string description;
-            public string icon_key;
-            public float x;
-            public float y;
-            public float width = 320f;
-            public float height = 96f;
-            public bool visible = true;
-        }
-
-        [Serializable]
-        private sealed class TechTreeEdgeConfig
-        {
-            public string id;
-            public string from;
-            public string to;
-            public string arrow = "auto";
-            public bool show_arrow = true;
-            public float thickness = 3f;
-            public TechTreePoint[] points;
-        }
-
-        [Serializable]
-        private sealed class TechTreePoint
-        {
-            public float x;
-            public float y;
-        }
-
-        [Header("Config Source")]
-        [SerializeField] private bool preferServerPushedConfig = true;
-        [SerializeField] private bool listenServerConfigUpdates = true;
-        [SerializeField] private string serverConfigKey = "techtreeconfig";
-        [SerializeField] private TextAsset localConfigJson;
-        [SerializeField] private string localConfigResourcesPath = "Config/techtreeconfig";
-        [SerializeField] private bool logWarnings = true;
-
         [Header("Binding")]
         [SerializeField] private RectTransform nodesRoot;
         [SerializeField] private RectTransform lineRoot;
+        [SerializeField] private RectTransform panelRoot;
 
         [Header("Line Style")]
         [SerializeField] private Color lineColor = new Color(0.08f, 0.08f, 0.08f, 1f);
@@ -76,120 +28,114 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private TMP_FontAsset arrowFont;
         [SerializeField] private float arrowFontSize = 24f;
         [SerializeField] private Color arrowColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+        [SerializeField] private bool logWarnings = true;
+        [SerializeField] private bool waitForServerSnapshot = true;
+        [SerializeField] private bool allowLocalBundleFallback = false;
+        [SerializeField] private Vector2 layoutOffset = new Vector2(0f, 160f);
+
+        [Header("Close Button")]
+        [SerializeField] private Button closeButton;
+        [SerializeField] private bool autoCreateCloseButton = false;
+        [SerializeField] private string closeButtonText = "Close";
+        [SerializeField] private TMP_FontAsset closeButtonFont;
 
         private readonly Dictionary<string, RectTransform> _nodeById = new(StringComparer.OrdinalIgnoreCase);
         private readonly List<RectTransform> _fallbackOrderedNodes = new();
         private readonly List<GameObject> _generatedLineObjects = new();
-        private ConfigCache _configCache;
-        private string _normalizedServerKey;
+        private StaticCatalogCache _catalogCache;
+        private bool _localFallbackAttempted;
 
         private void Awake()
         {
-            _normalizedServerKey = NormalizeKey(serverConfigKey);
             EnsureRoots();
+            EnsureCloseButton();
         }
 
         private void OnEnable()
         {
-            SubscribeServerConfig();
-            RefreshFromConfig();
+            _catalogCache = StaticCatalogCache.EnsureInstance();
+            if (_catalogCache != null)
+            {
+                _catalogCache.CatalogChanged -= OnCatalogChanged;
+                _catalogCache.CatalogChanged += OnCatalogChanged;
+            }
+
+            RefreshFromServerCatalog();
         }
 
         private void OnDisable()
         {
-            UnsubscribeServerConfig();
+            if (_catalogCache != null)
+            {
+                _catalogCache.CatalogChanged -= OnCatalogChanged;
+                _catalogCache = null;
+            }
+
             ClearGeneratedLines();
+            _localFallbackAttempted = false;
         }
 
-        private void SubscribeServerConfig()
-        {
-            if (!listenServerConfigUpdates)
-            {
-                return;
-            }
-
-            _configCache = ConfigCache.EnsureInstance();
-            if (_configCache == null)
-            {
-                return;
-            }
-
-            _configCache.ConfigUpdated -= OnServerConfigUpdated;
-            _configCache.ConfigUpdated += OnServerConfigUpdated;
-        }
-
-        private void UnsubscribeServerConfig()
-        {
-            if (_configCache == null)
-            {
-                return;
-            }
-
-            _configCache.ConfigUpdated -= OnServerConfigUpdated;
-            _configCache = null;
-        }
-
-        private void OnServerConfigUpdated(string key)
+        private void OnCatalogChanged()
         {
             if (!isActiveAndEnabled)
             {
                 return;
             }
 
-            if (NormalizeKey(key) != _normalizedServerKey)
-            {
-                return;
-            }
-
-            RefreshFromConfig();
+            RefreshFromServerCatalog();
         }
 
-        private void RefreshFromConfig()
+        private void RefreshFromServerCatalog()
         {
             EnsureRoots();
-            var json = TryLoadConfigJson();
-            if (string.IsNullOrWhiteSpace(json))
+            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
+            if (cache == null)
             {
                 if (logWarnings)
                 {
-                    Debug.LogWarning("[TechTreePanel] Missing tech-tree config JSON.");
+                    Debug.LogWarning("[TechTreePanel] Missing technology tree layout from server snapshot.");
                 }
                 return;
             }
 
-            TechTreeConfigRoot config;
-            try
+            if (waitForServerSnapshot && !cache.HasServerSnapshot)
             {
-                config = JsonUtility.FromJson<TechTreeConfigRoot>(json);
-            }
-            catch (Exception ex)
-            {
-                if (logWarnings)
-                {
-                    Debug.LogWarning($"[TechTreePanel] Failed to parse tech-tree config: {ex.Message}");
-                }
                 return;
             }
 
-            if (config == null || config.nodes == null || config.nodes.Length == 0)
+            if (!cache.TryGetTechnologyTree(out var tree))
             {
-                if (logWarnings)
+                if (allowLocalBundleFallback && !_localFallbackAttempted)
                 {
-                    Debug.LogWarning("[TechTreePanel] Config has no nodes.");
+                    _localFallbackAttempted = true;
+                    cache.LoadLocalCatalog();
                 }
-                return;
+
+                if (!cache.TryGetTechnologyTree(out tree))
+                {
+                    if (logWarnings)
+                    {
+                        Debug.LogWarning("[TechTreePanel] Missing technology tree layout from server snapshot.");
+                    }
+                    return;
+                }
             }
 
             BuildNodeLookup();
-            ApplyNodeConfigs(config.nodes);
-            RenderEdges(config.edges);
+            ApplyNodeConfigs(tree.nodes, cache);
+            RenderEdges(tree.edges);
         }
 
         private void EnsureRoots()
         {
+            if (panelRoot == null)
+            {
+                panelRoot = transform as RectTransform;
+            }
+
             if (nodesRoot == null)
             {
-                nodesRoot = transform as RectTransform;
+                nodesRoot = panelRoot != null ? panelRoot : (transform as RectTransform);
             }
 
             if (lineRoot == null)
@@ -214,30 +160,6 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private string TryLoadConfigJson()
-        {
-            if (preferServerPushedConfig && ConfigCache.Instance != null && ConfigCache.Instance.TryGetJson(_normalizedServerKey, out var serverJson))
-            {
-                return serverJson;
-            }
-
-            if (localConfigJson != null && !string.IsNullOrWhiteSpace(localConfigJson.text))
-            {
-                return localConfigJson.text;
-            }
-
-            if (!string.IsNullOrWhiteSpace(localConfigResourcesPath))
-            {
-                var asset = Resources.Load<TextAsset>(localConfigResourcesPath.Trim());
-                if (asset != null && !string.IsNullOrWhiteSpace(asset.text))
-                {
-                    return asset.text;
-                }
-            }
-
-            return string.Empty;
-        }
-
         private void BuildNodeLookup()
         {
             _nodeById.Clear();
@@ -258,25 +180,21 @@ namespace Panoptes.Presentation.UI.Domestic
                     queue.Enqueue(child);
                 }
 
-                if (current == nodesRoot)
-                {
-                    continue;
-                }
-
-                if (current is not RectTransform rect)
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(current.name))
+                if (current == nodesRoot || current is not RectTransform rect)
                 {
                     continue;
                 }
 
                 var key = NormalizeKey(current.name);
-                if (!_nodeById.ContainsKey(key))
+                if (!string.IsNullOrEmpty(key) && !_nodeById.ContainsKey(key))
                 {
                     _nodeById.Add(key, rect);
+                }
+
+                var normalizedName = NormalizeKey(rect.name);
+                if (normalizedName.Contains("btnclose"))
+                {
+                    continue;
                 }
 
                 if (rect.GetComponentInChildren<TMP_Text>(true) != null)
@@ -286,8 +204,13 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private void ApplyNodeConfigs(TechTreeNodeConfig[] nodes)
+        private void ApplyNodeConfigs(StaticCatalogCache.TechnologyTreeNodeJson[] nodes, StaticCatalogCache cache)
         {
+            if (nodes == null || nodes.Length == 0)
+            {
+                return;
+            }
+
             for (var i = 0; i < nodes.Length; i++)
             {
                 var node = nodes[i];
@@ -312,11 +235,27 @@ namespace Panoptes.Presentation.UI.Domestic
                     }
                 }
 
-                nodeRect.anchoredPosition = new Vector2(node.x, node.y);
+                nodeRect.anchoredPosition = new Vector2(node.x, node.y) + layoutOffset;
                 nodeRect.sizeDelta = new Vector2(Mathf.Max(1f, node.width), Mathf.Max(1f, node.height));
                 nodeRect.gameObject.SetActive(node.visible);
 
-                AssignNodeTexts(nodeRect, node.title, node.description);
+                var title = node.title ?? string.Empty;
+                var description = node.description ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(node.technology_id) &&
+                    cache.TryGetTechnology(node.technology_id, out var technology) &&
+                    technology != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(technology.name))
+                    {
+                        title = technology.name;
+                    }
+                    if (!string.IsNullOrWhiteSpace(technology.description))
+                    {
+                        description = technology.description;
+                    }
+                }
+
+                AssignNodeTexts(nodeRect, title, description);
             }
         }
 
@@ -330,15 +269,15 @@ namespace Panoptes.Presentation.UI.Domestic
 
             TMP_Text titleText = null;
             TMP_Text descText = null;
-
             for (var i = 0; i < texts.Length; i++)
             {
                 var t = texts[i];
                 var key = NormalizeKey(t.gameObject.name);
-                if (titleText == null && (key.Contains("name") || key.Contains("title")))
+                if (titleText == null && (key.Contains("name") || key.Contains("title") || key == "label"))
                 {
                     titleText = t;
                 }
+
                 if (descText == null && (key.Contains("desc") || key.Contains("description") || key.Contains("detail")))
                 {
                     descText = t;
@@ -358,7 +297,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 {
                     titleText = texts[0];
                 }
-
                 if (descText == null && texts.Length > 1)
                 {
                     descText = texts[texts.Length - 1];
@@ -382,7 +320,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
         }
 
-        private void RenderEdges(TechTreeEdgeConfig[] edges)
+        private void RenderEdges(StaticCatalogCache.TechnologyTreeEdgeJson[] edges)
         {
             ClearGeneratedLines();
             if (lineRoot == null || edges == null || edges.Length == 0)
@@ -402,18 +340,82 @@ namespace Panoptes.Presentation.UI.Domestic
 
                 for (var p = 0; p < edge.points.Length - 1; p++)
                 {
-                    var a = new Vector2(edge.points[p].x, edge.points[p].y);
-                    var b = new Vector2(edge.points[p + 1].x, edge.points[p + 1].y);
+                    var a = new Vector2(edge.points[p].x, edge.points[p].y) + layoutOffset;
+                    var b = new Vector2(edge.points[p + 1].x, edge.points[p + 1].y) + layoutOffset;
                     CreateLineSegment(a, b, thickness);
                 }
 
                 if (edge.show_arrow)
                 {
-                    var prev = new Vector2(edge.points[edge.points.Length - 2].x, edge.points[edge.points.Length - 2].y);
-                    var end = new Vector2(edge.points[edge.points.Length - 1].x, edge.points[edge.points.Length - 1].y);
+                    var prev = new Vector2(edge.points[edge.points.Length - 2].x, edge.points[edge.points.Length - 2].y) + layoutOffset;
+                    var end = new Vector2(edge.points[edge.points.Length - 1].x, edge.points[edge.points.Length - 1].y) + layoutOffset;
                     CreateArrow(edge.arrow, prev, end);
                 }
             }
+        }
+
+        private void EnsureCloseButton()
+        {
+            if (closeButton == null)
+            {
+                var existing = transform.Find("BtnCloseTechTree");
+                if (existing != null)
+                {
+                    closeButton = existing.GetComponent<Button>();
+                }
+            }
+
+            if (closeButton == null && autoCreateCloseButton && panelRoot != null &&
+                string.Equals(gameObject.name, "TechTreePanel", StringComparison.OrdinalIgnoreCase))
+            {
+                var go = new GameObject("BtnCloseTechTree", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+                var rect = go.GetComponent<RectTransform>();
+                rect.SetParent(panelRoot, false);
+                rect.anchorMin = new Vector2(1f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(1f, 1f);
+                rect.anchoredPosition = new Vector2(-20f, -20f);
+                rect.sizeDelta = new Vector2(120f, 44f);
+
+                var image = go.GetComponent<Image>();
+                image.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+
+                closeButton = go.GetComponent<Button>();
+
+                var labelGo = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                var labelRect = labelGo.GetComponent<RectTransform>();
+                labelRect.SetParent(rect, false);
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(6f, 4f);
+                labelRect.offsetMax = new Vector2(-6f, -4f);
+
+                var label = labelGo.GetComponent<TextMeshProUGUI>();
+                label.text = string.IsNullOrWhiteSpace(closeButtonText) ? "Close" : closeButtonText;
+                label.alignment = TextAlignmentOptions.Center;
+                label.fontSize = 20f;
+                label.color = Color.white;
+                label.enableWordWrapping = false;
+                if (closeButtonFont == null)
+                {
+                    closeButtonFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
+                }
+                if (closeButtonFont != null)
+                {
+                    label.font = closeButtonFont;
+                }
+            }
+
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveListener(HidePanel);
+                closeButton.onClick.AddListener(HidePanel);
+            }
+        }
+
+        private void HidePanel()
+        {
+            gameObject.SetActive(false);
         }
 
         private void CreateLineSegment(Vector2 a, Vector2 b, float thickness)
@@ -461,6 +463,7 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 arrowFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
             }
+
             if (arrowFont != null)
             {
                 tmp.font = arrowFont;

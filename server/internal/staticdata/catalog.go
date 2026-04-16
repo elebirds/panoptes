@@ -113,6 +113,13 @@ func (c *Catalog) Manifest() Manifest {
 	return c.bundle.Manifest
 }
 
+func (c *Catalog) Bundle() CatalogBundle {
+	if c == nil {
+		return CatalogBundle{}
+	}
+	return c.bundle
+}
+
 func (c *Catalog) BundleHash() string {
 	return c.Manifest().BundleHash
 }

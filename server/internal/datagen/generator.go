@@ -63,16 +63,17 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:     authored.Manifest.Value,
-		Resources:    authored.Resources.Value.Resources,
-		Units:        authored.Units.Value.Units,
-		Buildings:    authored.Buildings.Value.Buildings,
-		Technologies: authored.Technologies.Value.Technologies,
-		Recipes:      authored.Recipes.Value.Recipes,
-		Terrains:     authored.Terrains.Value.Terrains,
-		Rules:        authored.Rules.Value,
-		Ministers:    authored.Ministers.Value.Pool,
-		Maps:         entries,
+		Manifest:       authored.Manifest.Value,
+		Resources:      authored.Resources.Value.Resources,
+		Units:          authored.Units.Value.Units,
+		Buildings:      authored.Buildings.Value.Buildings,
+		Technologies:   authored.Technologies.Value.Technologies,
+		TechnologyTree: authored.TechnologyTreeUI.Value,
+		Recipes:        authored.Recipes.Value.Recipes,
+		Terrains:       authored.Terrains.Value.Terrains,
+		Rules:          authored.Rules.Value,
+		Ministers:      authored.Ministers.Value.Pool,
+		Maps:           entries,
 	}
 
 	hash, err := computeBundleHash(bundle, maps)
@@ -657,6 +658,39 @@ message TechnologyCatalogEntry {
   int32 tech_point_cost = 7;
 }
 
+message TechnologyTreePoint {
+  float x = 1;
+  float y = 2;
+}
+
+message TechnologyTreeNodeEntry {
+  string id = 1;
+  string technology_id = 2;
+  string title = 3;
+  string description = 4;
+  float x = 5;
+  float y = 6;
+  float width = 7;
+  float height = 8;
+  bool visible = 9;
+}
+
+message TechnologyTreeEdgeEntry {
+  string id = 1;
+  string from = 2;
+  string to = 3;
+  string arrow = 4;
+  bool show_arrow = 5;
+  float thickness = 6;
+  repeated TechnologyTreePoint points = 7;
+}
+
+message TechnologyTreeLayout {
+  string config_version = 1;
+  repeated TechnologyTreeNodeEntry nodes = 2;
+  repeated TechnologyTreeEdgeEntry edges = 3;
+}
+
 message RecipeCatalogEntry {
   string id = 1;
   string name = 2;
@@ -682,6 +716,7 @@ message StaticCatalogSnapshot {
   repeated TechnologyCatalogEntry technologies = 5;
   repeated RecipeCatalogEntry recipes = 6;
   repeated TerrainCatalogEntry terrains = 7;
+  TechnologyTreeLayout technology_tree = 8;
 }
 
 message MsgStaticCatalogManifest {

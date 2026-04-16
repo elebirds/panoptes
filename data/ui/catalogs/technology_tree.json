@@ -3,6 +3,7 @@
   "nodes": [
     {
       "id": "N_Farm",
+      "technology_id": "agri_unlock_farm",
       "title": "农耕",
       "description": "农场解锁：粮食",
       "x": -760,
@@ -13,6 +14,7 @@
     },
     {
       "id": "N_Lumber",
+      "technology_id": "ind_unlock_lumber",
       "title": "林业",
       "description": "伐木场解锁：木头",
       "x": -760,
@@ -23,8 +25,8 @@
     },
     {
       "id": "N_Military",
-      "title": "军事传统",
-      "description": "军营解锁：兵种",
+      "title": "军事传统（军营解锁）",
+      "description": "兵种",
       "x": -420,
       "y": -130,
       "width": 285,
@@ -33,8 +35,9 @@
     },
     {
       "id": "N_Knowledge",
-      "title": "知识体系",
-      "description": "科技中心解锁：科技点数",
+      "technology_id": "agri_unlock_granary",
+      "title": "知识体系（科技中心解锁）",
+      "description": "科技点数",
       "x": -420,
       "y": -250,
       "width": 300,
@@ -43,6 +46,7 @@
     },
     {
       "id": "N_Mining",
+      "technology_id": "ind_unlock_mine",
       "title": "采矿",
       "description": "矿场解锁：铁矿",
       "x": -420,
@@ -53,6 +57,7 @@
     },
     {
       "id": "N_Standing",
+      "technology_id": "mil_unlock_basic",
       "title": "常备军（步兵解锁）",
       "description": "步兵配方：粮食+木头",
       "x": -20,
@@ -73,8 +78,9 @@
     },
     {
       "id": "N_Metallurgy",
-      "title": "冶金学（精铁加工厂解锁：铁材）",
-      "description": "",
+      "technology_id": "ind_unlock_smelter",
+      "title": "冶金学（精铁加工厂解锁）",
+      "description": "铁材",
       "x": 360,
       "y": -280,
       "width": 320,
@@ -83,8 +89,9 @@
     },
     {
       "id": "N_Woodwork",
-      "title": "木工工艺（木材加工厂解锁：工程木材）",
-      "description": "",
+      "technology_id": "ind_unlock_workshop",
+      "title": "木工工艺（木材加工厂解锁）",
+      "description": "工程木材",
       "x": 170,
       "y": -450,
       "width": 370,
@@ -93,6 +100,7 @@
     },
     {
       "id": "N_Knight",
+      "technology_id": "mil_unlock_cavalry",
       "title": "骑术（骑兵解锁）",
       "description": "骑兵配方：铁材+木材+粮食",
       "x": 780,
@@ -103,6 +111,7 @@
     },
     {
       "id": "N_Siege",
+      "technology_id": "mil_unlock_fortification",
       "title": "攻城术（攻城兵解锁）",
       "description": "攻城兵配方：木材+粮食+铁矿",
       "x": 780,
@@ -113,6 +122,7 @@
     },
     {
       "id": "N_Settler",
+      "technology_id": "mil_unlock_engineering",
       "title": "移动城邦（基地车解锁）",
       "description": "基地车配方：钢材+工程木材+粮食",
       "x": 780,

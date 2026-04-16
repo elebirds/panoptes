@@ -155,9 +155,13 @@ func TestGameRoomStartSendsInitAndAdvancesTurns(t *testing.T) {
 		t.Fatalf("manifest type = %T", tp.sent["player-1"][0])
 	}
 
-	initMsg, ok := tp.sent["player-1"][1].(*pb.MsgGameInit)
+	if _, ok := tp.sent["player-1"][1].(*pb.MsgStaticCatalogSnapshot); !ok {
+		t.Fatalf("catalog snapshot type = %T", tp.sent["player-1"][1])
+	}
+
+	initMsg, ok := tp.sent["player-1"][2].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("init type = %T", tp.sent["player-1"][1])
+		t.Fatalf("init type = %T", tp.sent["player-1"][2])
 	}
 	if initMsg.GetYourPlayerId() != "player-1" {
 		t.Fatalf("your player id = %q", initMsg.GetYourPlayerId())

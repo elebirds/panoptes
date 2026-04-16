@@ -4,7 +4,7 @@
     "content_version": "2026-04-06.v2",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "61755e2f275e29725ff8a0e1e58f4596415e4bc5d529227eba0157aa0abcc83f"
+    "bundle_hash": "80926219fe0465a54d2bb1a2f6c5ecbd9f966729d83f2b974f8db6a946d89ddf"
   },
   "resources": [
     {
@@ -226,13 +226,14 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {
-          "food": 2
-        },
-        "cycle_turns": 1
+        "input": null,
+        "output": null,
+        "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [
+        "farm_food"
+      ],
+      "default_recipe_id": "farm_food",
       "combat": {
         "max_hp": 80,
         "attack_per_turn": 0,
@@ -264,13 +265,14 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {
-          "ore": 2
-        },
-        "cycle_turns": 1
+        "input": null,
+        "output": null,
+        "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [
+        "mine_ore"
+      ],
+      "default_recipe_id": "mine_ore",
       "combat": {
         "max_hp": 90,
         "attack_per_turn": 0,
@@ -302,13 +304,14 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {
-          "wood": 2
-        },
-        "cycle_turns": 1
+        "input": null,
+        "output": null,
+        "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [
+        "lumber_wood"
+      ],
+      "default_recipe_id": "lumber_wood",
       "combat": {
         "max_hp": 80,
         "attack_per_turn": 0,
@@ -341,11 +344,12 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [],
+      "default_recipe_id": "",
       "combat": {
         "max_hp": 90,
         "attack_per_turn": 0,
@@ -377,15 +381,14 @@
       },
       "upkeep": {},
       "production": {
-        "input": {
-          "ore": 2
-        },
-        "output": {
-          "refined_ore": 1
-        },
-        "cycle_turns": 1
+        "input": null,
+        "output": null,
+        "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [
+        "smelter_refined_ore"
+      ],
+      "default_recipe_id": "smelter_refined_ore",
       "combat": {
         "max_hp": 100,
         "attack_per_turn": 0,
@@ -418,15 +421,14 @@
       },
       "upkeep": {},
       "production": {
-        "input": {
-          "wood": 2
-        },
-        "output": {
-          "engineer_material": 1
-        },
-        "cycle_turns": 1
+        "input": null,
+        "output": null,
+        "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [
+        "workshop_engineer_material"
+      ],
+      "default_recipe_id": "workshop_engineer_material",
       "combat": {
         "max_hp": 100,
         "attack_per_turn": 0,
@@ -461,14 +463,15 @@
         "food": 1
       },
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [
-        "warrior",
-        "archer"
+      "recipe_ids": [
+        "barracks_warrior",
+        "barracks_archer"
       ],
+      "default_recipe_id": "barracks_warrior",
       "combat": {
         "max_hp": 120,
         "attack_per_turn": 0,
@@ -503,13 +506,14 @@
         "food": 2
       },
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [
-        "cavalry"
+      "recipe_ids": [
+        "stable_cavalry"
       ],
+      "default_recipe_id": "stable_cavalry",
       "combat": {
         "max_hp": 120,
         "attack_per_turn": 0,
@@ -544,13 +548,14 @@
         "food": 1
       },
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [
-        "settler"
+      "recipe_ids": [
+        "engineer_camp_settler"
       ],
+      "default_recipe_id": "engineer_camp_settler",
       "combat": {
         "max_hp": 110,
         "attack_per_turn": 0,
@@ -583,11 +588,12 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [],
+      "default_recipe_id": "",
       "combat": {
         "max_hp": 50,
         "attack_per_turn": 0,
@@ -621,11 +627,12 @@
         "food": 1
       },
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [],
+      "default_recipe_id": "",
       "combat": {
         "max_hp": 70,
         "attack_per_turn": 8,
@@ -656,11 +663,12 @@
       },
       "upkeep": {},
       "production": {
-        "input": {},
-        "output": {},
+        "input": null,
+        "output": null,
         "cycle_turns": 0
       },
-      "produces_units": [],
+      "recipe_ids": [],
+      "default_recipe_id": "",
       "combat": {
         "max_hp": 60,
         "attack_per_turn": 0,
@@ -675,6 +683,886 @@
       "sort_order": 42,
       "tags": [
         "vision"
+      ]
+    }
+  ],
+  "technologies": [
+    {
+      "id": "agri_unlock_farm",
+      "name": "开垦令",
+      "description": "解锁农场与基础农耕配方。",
+      "icon_key": "tech_agri_unlock_farm",
+      "branch": "agriculture",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "farm"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "farm_food"
+        }
+      ],
+      "sort_order": 10,
+      "tags": [
+        "agriculture"
+      ]
+    },
+    {
+      "id": "ind_unlock_mine",
+      "name": "采矿令",
+      "description": "解锁矿山与基础采矿配方。",
+      "icon_key": "tech_ind_unlock_mine",
+      "branch": "industry",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "mine"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "mine_ore"
+        }
+      ],
+      "sort_order": 11,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "ind_unlock_lumber",
+      "name": "林业令",
+      "description": "解锁伐木场与基础伐木配方。",
+      "icon_key": "tech_ind_unlock_lumber",
+      "branch": "industry",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "lumber"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "lumber_wood"
+        }
+      ],
+      "sort_order": 12,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "agri_unlock_granary",
+      "name": "仓储令",
+      "description": "解锁粮仓。",
+      "icon_key": "tech_agri_unlock_granary",
+      "branch": "agriculture",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "granary"
+        }
+      ],
+      "sort_order": 13,
+      "tags": [
+        "agriculture"
+      ]
+    },
+    {
+      "id": "ind_unlock_smelter",
+      "name": "冶炼令",
+      "description": "解锁冶炼厂与矿石冶炼配方。",
+      "icon_key": "tech_ind_unlock_smelter",
+      "branch": "industry",
+      "tier": 2,
+      "tech_point_cost": 1,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "ind_unlock_mine"
+        }
+      ],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "smelter"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "smelter_refined_ore"
+        }
+      ],
+      "sort_order": 20,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "ind_unlock_workshop",
+      "name": "工坊令",
+      "description": "解锁工坊与工程加工配方。",
+      "icon_key": "tech_ind_unlock_workshop",
+      "branch": "industry",
+      "tier": 2,
+      "tech_point_cost": 1,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "ind_unlock_lumber"
+        }
+      ],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "workshop"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "workshop_engineer_material"
+        }
+      ],
+      "sort_order": 21,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "mil_unlock_basic",
+      "name": "基础兵役令",
+      "description": "解锁兵营与基础军训配方。",
+      "icon_key": "tech_mil_unlock_basic",
+      "branch": "military",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "barracks"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "barracks_warrior"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "barracks_archer"
+        }
+      ],
+      "sort_order": 30,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "mil_unlock_cavalry",
+      "name": "精锐兵役令",
+      "description": "解锁骑兵场与骑兵训练配方。",
+      "icon_key": "tech_mil_unlock_cavalry",
+      "branch": "military",
+      "tier": 2,
+      "tech_point_cost": 1,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "mil_unlock_basic"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "ind_unlock_smelter"
+        }
+      ],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "stable"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "stable_cavalry"
+        }
+      ],
+      "sort_order": 31,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "mil_unlock_engineering",
+      "name": "工程兵役令",
+      "description": "解锁工程营与开拓者训练配方。",
+      "icon_key": "tech_mil_unlock_engineering",
+      "branch": "military",
+      "tier": 2,
+      "tech_point_cost": 1,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "ind_unlock_workshop"
+        }
+      ],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "engineer_camp"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "engineer_camp_settler"
+        }
+      ],
+      "sort_order": 32,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "mil_unlock_fortification",
+      "name": "防御工事令",
+      "description": "解锁城墙、箭塔和烽火台。",
+      "icon_key": "tech_mil_unlock_fortification",
+      "branch": "military",
+      "tier": 1,
+      "tech_point_cost": 1,
+      "prerequisites": [],
+      "effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "wall"
+        },
+        {
+          "type": "unlock_building",
+          "target_id": "tower"
+        },
+        {
+          "type": "unlock_building",
+          "target_id": "watchtower"
+        }
+      ],
+      "sort_order": 33,
+      "tags": [
+        "military"
+      ]
+    }
+  ],
+  "technology_tree": {
+    "config_version": "1.0.0",
+    "nodes": [
+      {
+        "id": "N_Farm",
+        "technology_id": "agri_unlock_farm",
+        "title": "农耕",
+        "description": "农场解锁：粮食",
+        "x": -760,
+        "y": -130,
+        "width": 230,
+        "height": 86,
+        "visible": true
+      },
+      {
+        "id": "N_Lumber",
+        "technology_id": "ind_unlock_lumber",
+        "title": "林业",
+        "description": "伐木场解锁：木头",
+        "x": -760,
+        "y": -270,
+        "width": 230,
+        "height": 86,
+        "visible": true
+      },
+      {
+        "id": "N_Military",
+        "title": "军事传统（军营解锁）",
+        "description": "兵种",
+        "x": -420,
+        "y": -130,
+        "width": 285,
+        "height": 92,
+        "visible": true
+      },
+      {
+        "id": "N_Knowledge",
+        "technology_id": "agri_unlock_granary",
+        "title": "知识体系（科技中心解锁）",
+        "description": "科技点数",
+        "x": -420,
+        "y": -250,
+        "width": 300,
+        "height": 92,
+        "visible": true
+      },
+      {
+        "id": "N_Mining",
+        "technology_id": "ind_unlock_mine",
+        "title": "采矿",
+        "description": "矿场解锁：铁矿",
+        "x": -420,
+        "y": -370,
+        "width": 270,
+        "height": 92,
+        "visible": true
+      },
+      {
+        "id": "N_Standing",
+        "technology_id": "mil_unlock_basic",
+        "title": "常备军（步兵解锁）",
+        "description": "步兵配方：粮食+木头",
+        "x": -20,
+        "y": -20,
+        "width": 330,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "N_Building",
+        "title": "营造术（建筑中心）",
+        "description": "解锁：建筑点数",
+        "x": 20,
+        "y": -180,
+        "width": 300,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "N_Metallurgy",
+        "technology_id": "ind_unlock_smelter",
+        "title": "冶金学（精铁加工厂解锁）",
+        "description": "铁材",
+        "x": 360,
+        "y": -280,
+        "width": 320,
+        "height": 98,
+        "visible": true
+      },
+      {
+        "id": "N_Woodwork",
+        "technology_id": "ind_unlock_workshop",
+        "title": "木工工艺（木材加工厂解锁）",
+        "description": "工程木材",
+        "x": 170,
+        "y": -450,
+        "width": 370,
+        "height": 98,
+        "visible": true
+      },
+      {
+        "id": "N_Knight",
+        "technology_id": "mil_unlock_cavalry",
+        "title": "骑术（骑兵解锁）",
+        "description": "骑兵配方：铁材+木材+粮食",
+        "x": 780,
+        "y": 40,
+        "width": 360,
+        "height": 106,
+        "visible": true
+      },
+      {
+        "id": "N_Siege",
+        "technology_id": "mil_unlock_fortification",
+        "title": "攻城术（攻城兵解锁）",
+        "description": "攻城兵配方：木材+粮食+铁矿",
+        "x": 780,
+        "y": -120,
+        "width": 390,
+        "height": 106,
+        "visible": true
+      },
+      {
+        "id": "N_Settler",
+        "technology_id": "mil_unlock_engineering",
+        "title": "移动城邦（基地车解锁）",
+        "description": "基地车配方：钢材+工程木材+粮食",
+        "x": 780,
+        "y": -270,
+        "width": 420,
+        "height": 106,
+        "visible": true
+      },
+      {
+        "id": "N_Steel",
+        "title": "高炉炼钢（钢材解锁）",
+        "x": 700,
+        "y": -370,
+        "width": 280,
+        "height": 92,
+        "visible": true
+      }
+    ],
+    "edges": [
+      {
+        "id": "farm_to_knowledge",
+        "from": "N_Farm",
+        "to": "N_Knowledge",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -645,
+            "y": -130
+          },
+          {
+            "x": -540,
+            "y": -130
+          }
+        ]
+      },
+      {
+        "id": "lumber_to_mining",
+        "from": "N_Lumber",
+        "to": "N_Mining",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -645,
+            "y": -270
+          },
+          {
+            "x": -540,
+            "y": -270
+          }
+        ]
+      },
+      {
+        "id": "trunk_to_military",
+        "from": "N_Lumber",
+        "to": "N_Military",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -650,
+            "y": -270
+          },
+          {
+            "x": -650,
+            "y": -130
+          },
+          {
+            "x": -540,
+            "y": -130
+          }
+        ]
+      },
+      {
+        "id": "military_to_standing",
+        "from": "N_Military",
+        "to": "N_Standing",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -280,
+            "y": -130
+          },
+          {
+            "x": -280,
+            "y": -20
+          },
+          {
+            "x": -110,
+            "y": -20
+          }
+        ]
+      },
+      {
+        "id": "knowledge_to_building",
+        "from": "N_Knowledge",
+        "to": "N_Building",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -270,
+            "y": -250
+          },
+          {
+            "x": -270,
+            "y": -180
+          },
+          {
+            "x": -90,
+            "y": -180
+          }
+        ]
+      },
+      {
+        "id": "mining_to_metallurgy",
+        "from": "N_Mining",
+        "to": "N_Metallurgy",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -300,
+            "y": -280
+          },
+          {
+            "x": 202,
+            "y": -280
+          }
+        ]
+      },
+      {
+        "id": "lumber_to_woodwork",
+        "from": "N_Lumber",
+        "to": "N_Woodwork",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": -760,
+            "y": -270
+          },
+          {
+            "x": -760,
+            "y": -450
+          },
+          {
+            "x": -18,
+            "y": -450
+          }
+        ]
+      },
+      {
+        "id": "woodwork_to_metallurgy",
+        "from": "N_Woodwork",
+        "to": "N_Metallurgy",
+        "arrow": "up",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 300,
+            "y": -450
+          },
+          {
+            "x": 360,
+            "y": -450
+          },
+          {
+            "x": 360,
+            "y": -332
+          }
+        ]
+      },
+      {
+        "id": "metallurgy_to_steel",
+        "from": "N_Metallurgy",
+        "to": "N_Steel",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 530,
+            "y": -370
+          },
+          {
+            "x": 568,
+            "y": -370
+          }
+        ]
+      },
+      {
+        "id": "standing_to_knight",
+        "from": "N_Standing",
+        "to": "N_Knight",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 150,
+            "y": -20
+          },
+          {
+            "x": 150,
+            "y": 40
+          },
+          {
+            "x": 596,
+            "y": 40
+          }
+        ]
+      },
+      {
+        "id": "standing_to_siege",
+        "from": "N_Standing",
+        "to": "N_Siege",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 150,
+            "y": -20
+          },
+          {
+            "x": 150,
+            "y": -120
+          },
+          {
+            "x": 594,
+            "y": -120
+          }
+        ]
+      },
+      {
+        "id": "building_to_settler",
+        "from": "N_Building",
+        "to": "N_Settler",
+        "arrow": "right",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 170,
+            "y": -180
+          },
+          {
+            "x": 170,
+            "y": -270
+          },
+          {
+            "x": 586,
+            "y": -270
+          }
+        ]
+      }
+    ]
+  },
+  "recipes": [
+    {
+      "id": "farm_food",
+      "name": "基础农耕",
+      "description": "稳定产出粮食。",
+      "icon_key": "recipe_farm_food",
+      "building_id": "farm",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "resources": {
+          "food": 2
+        }
+      },
+      "sort_order": 10,
+      "tags": [
+        "food"
+      ]
+    },
+    {
+      "id": "mine_ore",
+      "name": "基础采矿",
+      "description": "稳定产出矿石。",
+      "icon_key": "recipe_mine_ore",
+      "building_id": "mine",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "resources": {
+          "ore": 2
+        }
+      },
+      "sort_order": 11,
+      "tags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "lumber_wood",
+      "name": "基础伐木",
+      "description": "稳定产出木材。",
+      "icon_key": "recipe_lumber_wood",
+      "building_id": "lumber",
+      "cost": {},
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "resources": {
+          "wood": 2
+        }
+      },
+      "sort_order": 12,
+      "tags": [
+        "wood"
+      ]
+    },
+    {
+      "id": "smelter_refined_ore",
+      "name": "矿石冶炼",
+      "description": "将矿石精炼为精炼矿。",
+      "icon_key": "recipe_smelter_refined_ore",
+      "building_id": "smelter",
+      "cost": {
+        "ore": 2
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "resources": {
+          "refined_ore": 1
+        }
+      },
+      "sort_order": 20,
+      "tags": [
+        "refine"
+      ]
+    },
+    {
+      "id": "workshop_engineer_material",
+      "name": "工程加工",
+      "description": "将木材加工为工程材料。",
+      "icon_key": "recipe_workshop_engineer_material",
+      "building_id": "workshop",
+      "cost": {
+        "wood": 2
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "resources": {
+          "engineer_material": 1
+        }
+      },
+      "sort_order": 21,
+      "tags": [
+        "craft"
+      ]
+    },
+    {
+      "id": "barracks_warrior",
+      "name": "训练勇士",
+      "description": "训练基础近战单位。",
+      "icon_key": "recipe_barracks_warrior",
+      "building_id": "barracks",
+      "cost": {
+        "food": 1,
+        "ore": 1
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "units": [
+          "warrior"
+        ]
+      },
+      "sort_order": 30,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "barracks_archer",
+      "name": "训练弓箭手",
+      "description": "训练基础远程单位。",
+      "icon_key": "recipe_barracks_archer",
+      "building_id": "barracks",
+      "cost": {
+        "food": 1,
+        "wood": 1
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "units": [
+          "archer"
+        ]
+      },
+      "sort_order": 31,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "stable_cavalry",
+      "name": "训练骑兵",
+      "description": "训练高速骑兵。",
+      "icon_key": "recipe_stable_cavalry",
+      "building_id": "stable",
+      "cost": {
+        "food": 2,
+        "refined_ore": 1
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "units": [
+          "cavalry"
+        ]
+      },
+      "sort_order": 32,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "engineer_camp_settler",
+      "name": "训练开拓者",
+      "description": "训练扩张单位。",
+      "icon_key": "recipe_engineer_camp_settler",
+      "building_id": "engineer_camp",
+      "cost": {
+        "food": 2,
+        "wood": 1
+      },
+      "duration_turns": 1,
+      "delay_penalty": {
+        "mode": "add_turns",
+        "value": 1
+      },
+      "outputs": {
+        "units": [
+          "settler"
+        ]
+      },
+      "sort_order": 33,
+      "tags": [
+        "military"
       ]
     }
   ],
@@ -761,6 +1649,9 @@
     "castle_base_hp": 100,
     "safe_zone_radius": 4,
     "occupy_turns": 1,
+    "starting_tech_points": 2,
+    "tech_points_per_turn": 1,
+    "tech_points_max": 8,
     "build_points_per_turn": 10,
     "build_points_max": 30
   },

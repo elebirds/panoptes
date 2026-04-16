@@ -625,6 +625,13 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
     { "id": "agri_prod_1", "name": "精耕细作", "description": "提高农场产出", "icon_key": "tech_agri_prod_1", "sort_order": 20, "tags": ["agriculture"] }
   ]
 }`,
+		"data/ui/catalogs/technology_tree.json": `{
+  "config_version": "1.0.0",
+  "nodes": [
+    { "id": "N_Farm", "technology_id": "agri_unlock_farm", "title": "农耕", "description": "农场解锁：粮食", "x": 0, "y": 0, "width": 200, "height": 80, "visible": true }
+  ],
+  "edges": []
+}`,
 		"data/ui/catalogs/recipes.json": `{
   "recipes": [
     { "id": "farm_food", "name": "基础农耕", "description": "产出粮食", "icon_key": "recipe_farm_food", "sort_order": 10, "tags": ["food"] }

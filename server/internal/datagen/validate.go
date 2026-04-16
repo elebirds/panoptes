@@ -42,15 +42,16 @@ type authoredData struct {
 	Ministers jsonDocument[struct {
 		Pool []staticdata.Minister `json:"pool"`
 	}]
-	ResourceUI   jsonDocument[staticdata.ResourceCatalogUIFile]
-	UnitUI       jsonDocument[staticdata.UnitCatalogUIFile]
-	BuildingUI   jsonDocument[staticdata.BuildingCatalogUIFile]
-	TechnologyUI jsonDocument[staticdata.TechnologyCatalogUIFile]
-	RecipeUI     jsonDocument[staticdata.RecipeCatalogUIFile]
-	TerrainUI    jsonDocument[staticdata.TerrainCatalogUIFile]
-	MapDefs      map[string]jsonDocument[staticdata.MapDefinition]
-	MapUI        map[string]jsonDocument[staticdata.MapUICatalog]
-	MapIDs       []string
+	ResourceUI       jsonDocument[staticdata.ResourceCatalogUIFile]
+	UnitUI           jsonDocument[staticdata.UnitCatalogUIFile]
+	BuildingUI       jsonDocument[staticdata.BuildingCatalogUIFile]
+	TechnologyUI     jsonDocument[staticdata.TechnologyCatalogUIFile]
+	TechnologyTreeUI jsonDocument[staticdata.TechnologyTreeLayoutUIFile]
+	RecipeUI         jsonDocument[staticdata.RecipeCatalogUIFile]
+	TerrainUI        jsonDocument[staticdata.TerrainCatalogUIFile]
+	MapDefs          map[string]jsonDocument[staticdata.MapDefinition]
+	MapUI            map[string]jsonDocument[staticdata.MapUICatalog]
+	MapIDs           []string
 }
 
 type validationTarget struct {
@@ -126,6 +127,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	technologyTreeUI, err := readJSONDocument[staticdata.TechnologyTreeLayoutUIFile](filepath.Join(repoRoot, "data/ui/catalogs/technology_tree.json"))
+	if err != nil {
+		return nil, err
+	}
 	recipeUI, err := readJSONDocument[staticdata.RecipeCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/recipes.json"))
 	if err != nil {
 		return nil, err
@@ -141,24 +146,25 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	}
 
 	return &authoredData{
-		Manifest:     manifest,
-		Resources:    resources,
-		Units:        units,
-		Buildings:    buildings,
-		Technologies: technologies,
-		Recipes:      recipes,
-		Terrains:     terrains,
-		Rules:        rules,
-		Ministers:    ministers,
-		ResourceUI:   resourceUI,
-		UnitUI:       unitUI,
-		BuildingUI:   buildingUI,
-		TechnologyUI: technologyUI,
-		RecipeUI:     recipeUI,
-		TerrainUI:    terrainUI,
-		MapDefs:      mapDefs,
-		MapUI:        mapUI,
-		MapIDs:       mapIDs,
+		Manifest:         manifest,
+		Resources:        resources,
+		Units:            units,
+		Buildings:        buildings,
+		Technologies:     technologies,
+		Recipes:          recipes,
+		Terrains:         terrains,
+		Rules:            rules,
+		Ministers:        ministers,
+		ResourceUI:       resourceUI,
+		UnitUI:           unitUI,
+		BuildingUI:       buildingUI,
+		TechnologyUI:     technologyUI,
+		TechnologyTreeUI: technologyTreeUI,
+		RecipeUI:         recipeUI,
+		TerrainUI:        terrainUI,
+		MapDefs:          mapDefs,
+		MapUI:            mapUI,
+		MapIDs:           mapIDs,
 	}, nil
 }
 
@@ -208,6 +214,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.UnitUI.Path, SchemaRel: filepath.Join("ui", "units.schema.json"), Raw: data.UnitUI.Raw},
 		{Path: data.BuildingUI.Path, SchemaRel: filepath.Join("ui", "buildings.schema.json"), Raw: data.BuildingUI.Raw},
 		{Path: data.TechnologyUI.Path, SchemaRel: filepath.Join("ui", "technologies.schema.json"), Raw: data.TechnologyUI.Raw},
+		{Path: data.TechnologyTreeUI.Path, SchemaRel: filepath.Join("ui", "technology_tree.schema.json"), Raw: data.TechnologyTreeUI.Raw},
 		{Path: data.RecipeUI.Path, SchemaRel: filepath.Join("ui", "recipes.schema.json"), Raw: data.RecipeUI.Raw},
 		{Path: data.TerrainUI.Path, SchemaRel: filepath.Join("ui", "terrains.schema.json"), Raw: data.TerrainUI.Raw},
 	}
@@ -378,6 +385,40 @@ func validateCrossReferences(data *authoredData) error {
 					}
 				}
 			}
+		}
+	}
+
+	layoutNodeIDs := make(map[string]struct{}, len(data.TechnologyTreeUI.Value.Nodes))
+	layoutNodeByTech := make(map[string]struct{}, len(data.TechnologyTreeUI.Value.Nodes))
+	for _, node := range data.TechnologyTreeUI.Value.Nodes {
+		if node.ID == "" {
+			return fmt.Errorf("semantic validation failed for %s: node id is required", data.TechnologyTreeUI.Path)
+		}
+		if _, ok := layoutNodeIDs[node.ID]; ok {
+			return fmt.Errorf("semantic validation failed for %s: duplicate node id %q", data.TechnologyTreeUI.Path, node.ID)
+		}
+		layoutNodeIDs[node.ID] = struct{}{}
+
+		if node.TechnologyID != "" {
+			if _, ok := technologyIDs[node.TechnologyID]; !ok {
+				return fmt.Errorf("semantic validation failed for %s: node %q references unknown technology_id %q", data.TechnologyTreeUI.Path, node.ID, node.TechnologyID)
+			}
+			if _, ok := layoutNodeByTech[node.TechnologyID]; ok {
+				return fmt.Errorf("semantic validation failed for %s: duplicate technology_id mapping %q", data.TechnologyTreeUI.Path, node.TechnologyID)
+			}
+			layoutNodeByTech[node.TechnologyID] = struct{}{}
+		}
+	}
+
+	for _, edge := range data.TechnologyTreeUI.Value.Edges {
+		if edge.ID == "" {
+			return fmt.Errorf("semantic validation failed for %s: edge id is required", data.TechnologyTreeUI.Path)
+		}
+		if _, ok := layoutNodeIDs[edge.From]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: edge %q references unknown from node %q", data.TechnologyTreeUI.Path, edge.ID, edge.From)
+		}
+		if _, ok := layoutNodeIDs[edge.To]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: edge %q references unknown to node %q", data.TechnologyTreeUI.Path, edge.ID, edge.To)
 		}
 	}
 

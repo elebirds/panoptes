@@ -56,8 +56,13 @@ namespace Panoptes.Presentation.UI.Domestic
                 }
 
                 var name = rect.name ?? string.Empty;
-                if (!string.Equals(name, TargetPanelName, System.StringComparison.OrdinalIgnoreCase) &&
-                    name.IndexOf("techtree", System.StringComparison.OrdinalIgnoreCase) < 0)
+                if (!string.Equals(name, TargetPanelName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Tech tree controller must live on panel root only.
+                if (rect.parent != null)
                 {
                     continue;
                 }

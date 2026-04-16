@@ -56,6 +56,7 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
 		"data/ui/catalogs/units.json":                 `{"units":[{"id":"warrior","name":"勇士","description":"勇士","icon_key":"unit_warrior","prefab_key":"Infantry","sort_order":10,"tags":[]}]}`,
 		"data/ui/catalogs/buildings.json":             `{"buildings":[{"id":"farm","name":"农场","description":"农场","icon_key":"building_farm","prefab_key":"Farm","sort_order":10,"tags":[]}]}`,
 		"data/ui/catalogs/technologies.json":          `{"technologies":[{"id":"unlock_farm","name":"开垦令","description":"解锁农场","icon_key":"tech_unlock_farm","sort_order":10,"tags":[]}]}`,
+		"data/ui/catalogs/technology_tree.json":       `{"config_version":"1.0.0","nodes":[{"id":"N_Farm","technology_id":"unlock_farm","title":"开垦令","description":"解锁农场","x":0,"y":0,"width":200,"height":80,"visible":true}],"edges":[]}`,
 		"data/ui/catalogs/recipes.json":               `{"recipes":[{"id":"farm_ore","name":"采矿试作","description":"产出矿石","icon_key":"recipe_farm_ore","sort_order":10,"tags":[]}]}`,
 		"data/ui/catalogs/terrains.json":              `{"terrains":[{"id":"plain","name":"平原","description":"平原","icon_key":"terrain_plain","material_key":"M_Plain","sort_order":10,"tags":[]}]}`,
 		"data/ui/catalogs/maps/default.json":          `{"id":"default","name":"默认地图","description":"默认地图","thumbnail_key":"map_default","legend":[]}`,
