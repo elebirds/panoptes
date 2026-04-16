@@ -50,6 +50,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private bool startBuildPanelCollapsed = true;
         [SerializeField] private bool forceBuildPanelCollapsedOnStartup = true;
         [SerializeField] private bool hideBuildPanelToggleButton = false;
+        [SerializeField] private bool hideRecipePanelToggleButton = false;
         [SerializeField] private bool hideBuildPanelCancelButton = true;
         [SerializeField] private bool fallbackHideBuildPanelGameObjectWhenNoSlideToggle = true;
         [SerializeField] private float unitInfoShiftXWhenBuildPanelOpen = 360f;
@@ -435,6 +436,11 @@ namespace Panoptes.Presentation.UI.HUD
             if (hideBuildPanelCancelButton && buildCommandPanel != null)
             {
                 buildCommandPanel.SetCancelButtonVisible(false);
+            }
+
+            if (recipeSynthesisPanel != null)
+            {
+                recipeSynthesisPanel.SetSlideToggleButtonVisible(!hideRecipePanelToggleButton);
             }
 
             if (!_buildPanelOpen)

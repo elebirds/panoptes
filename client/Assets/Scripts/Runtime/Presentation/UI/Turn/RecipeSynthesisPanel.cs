@@ -52,6 +52,7 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private RecipeSynthesisItemView recipeItemPrefab;
         [SerializeField] private Button closeButton;
         [SerializeField] private BuildPanelSlideToggle slideToggle;
+        [SerializeField] private bool keepSlideToggleButtonVisible = true;
 
         [Header("Data Source")]
         [SerializeField] private bool startHidden = true;
@@ -90,6 +91,11 @@ namespace Panoptes.Presentation.UI.Domestic
             if (slideToggle == null)
             {
                 slideToggle = GetComponentInParent<BuildPanelSlideToggle>(true);
+            }
+
+            if (slideToggle != null)
+            {
+                slideToggle.SetToggleButtonVisible(keepSlideToggleButtonVisible);
             }
 
             if (closeButton != null)
@@ -206,6 +212,17 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             return 0.22f;
+        }
+
+        public void SetSlideToggleButtonVisible(bool visible)
+        {
+            if (slideToggle == null)
+            {
+                return;
+            }
+
+            keepSlideToggleButtonVisible = visible;
+            slideToggle.SetToggleButtonVisible(visible);
         }
 
         private void Hide(bool immediate)
