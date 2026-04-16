@@ -73,8 +73,8 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
 		"data/content/units/units.json": `{
   "$schema": "../../schema/content/units.schema.json",
   "units": [
-    { "id": "settler", "class": "civilian", "max_hp": 12, "attack": 0, "attack_range": 0, "move_range": 2, "vision_range": 2, "train_cost": { "food": 2, "wood": 1 }, "upkeep": { "food": 1 }, "multipliers": {}, "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true } },
-    { "id": "infantry", "class": "melee", "max_hp": 30, "attack": 10, "attack_range": 1, "move_range": 2, "vision_range": 3, "train_cost": { "food": 1, "ore": 1 }, "upkeep": { "food": 1 }, "multipliers": {}, "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true } }
+    { "id": "settler", "class": "civilian", "max_hp": 12, "attack": 0, "attack_range": 0, "move_range": 2, "vision_range": 2, "train_cost": { "food": 2, "wood": 1 }, "upkeep": { "food": 1 }, "multipliers": {}, "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": true } },
+    { "id": "infantry", "class": "melee", "max_hp": 30, "attack": 10, "attack_range": 1, "move_range": 2, "vision_range": 3, "train_cost": { "food": 1, "ore": 1 }, "upkeep": { "food": 1 }, "multipliers": {}, "flags": { "can_siege": false, "can_attack_structures": true, "can_destroy_road": false, "can_capture": true } }
   ]
 }`,
 		"data/content/buildings/buildings.json": `{

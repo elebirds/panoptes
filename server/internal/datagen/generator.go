@@ -725,6 +725,7 @@ message UnitCatalogEntry {
   string icon_key = 4;
   string prefab_key = 5;
   repeated string tags = 6;
+  bool can_attack_structures = 7;
 }
 
 message BuildingCatalogEntry {

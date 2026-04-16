@@ -241,13 +241,14 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 								"charge_bonus":     numberSchema(map[string]any{"minimum": 0}),
 								"flags": objectSchema(
 									map[string]any{
-										"can_siege":          boolSchema(),
-										"siege_multiplier":   numberSchema(map[string]any{"minimum": 0}),
-										"can_destroy_road":   boolSchema(),
-										"destroy_multiplier": numberSchema(map[string]any{"minimum": 0}),
-										"can_capture":        boolSchema(),
+										"can_siege":             boolSchema(),
+										"siege_multiplier":      numberSchema(map[string]any{"minimum": 0}),
+										"can_attack_structures": boolSchema(),
+										"can_destroy_road":      boolSchema(),
+										"destroy_multiplier":    numberSchema(map[string]any{"minimum": 0}),
+										"can_capture":           boolSchema(),
 									},
-									[]string{"can_siege", "can_destroy_road", "can_capture"},
+									[]string{"can_siege", "can_attack_structures", "can_destroy_road", "can_capture"},
 								),
 							},
 							[]string{

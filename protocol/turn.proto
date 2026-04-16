@@ -135,6 +135,15 @@ message MsgBuildStructureResult {
   string error_code = 5;
 }
 
+message MsgIssueUnitOrderResult {
+  bool success = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  string target_unit_id = 5;
+  string error_code = 6;
+}
+
 message MsgTurnReport {
   int32 turn = 1;
   string summary = 2;

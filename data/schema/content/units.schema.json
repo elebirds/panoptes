@@ -48,6 +48,9 @@
           "flags": {
             "additionalProperties": false,
             "properties": {
+              "can_attack_structures": {
+                "type": "boolean"
+              },
               "can_capture": {
                 "type": "boolean"
               },
@@ -68,6 +71,7 @@
             },
             "required": [
               "can_siege",
+              "can_attack_structures",
               "can_destroy_road",
               "can_capture"
             ],
