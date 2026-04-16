@@ -28,7 +28,7 @@ Panoptes 当前服务端已经切到统一的 `planning / resolving` 回合模�
 2. 向玩家发送 `MsgPlanningStart` 与当前 planning snapshot。
 3. 在 planning 阶段收集草案输入。
 4. 所有玩家提交或超时后进入 `resolving`。
-5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、经济结算。
+5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、建筑生命周期、经济结算。
 6. 生成 `MsgTurnSettlement`，并把新的权威状态投影为 `PlayerView / NodeView / UnitView`。
 7. 若未终局，则推进到下一回合的 planning。
 
@@ -42,9 +42,10 @@ flowchart LR
     F --> G["PlanningCommitStage"]
     G --> H["UnitResolutionStage"]
     H --> I["MapActionStage"]
-    I --> J["EconomyStage"]
-    J --> K["BuildTurnSettlement"]
-    K --> L["checkGameOver / turn++"]
+    I --> J["BuildingStage"]
+    J --> K["EconomyStage"]
+    K --> L["BuildTurnSettlement"]
+    L --> M["checkGameOver / turn++"]
 ```
 
 ### 2.1 分层关系
@@ -115,11 +116,9 @@ flowchart LR
   - `NodeComp`
 - 建筑
   - `BuildingComp`
+  - `BuildingBindingComp`
   - `BuildingOperationComp`
   - `BuildingStateComp`
-  - `CityCoreComp`
-  - `ServiceCityComp`
-  - `FacilityBindingComp`
   - `FacilityTakeoverComp`
 - 单位
   - `UnitStatsComp`
@@ -133,20 +132,17 @@ flowchart LR
 
 ### 3.3 建筑作用域与绑定关系
 
-建筑创建时由 `ecs.CreateBuilding()` 按静态数据自动装配作用域组件：
+建筑创建时由 `ecs.CreateBuilding()` 按静态数据写入统一 binding：
 
-- `city_core` 作用域挂 `CityCoreComp`
-- `out_of_city` 设施挂 `FacilityBindingComp`
-- 只要有 `cityID`，就挂 `ServiceCityComp`
+- `BuildingBindingComp.Scope`
+  - `city_core`
+  - `in_city`
+  - `out_of_city`
+- `BuildingBindingComp.CityID`
+- `BuildingBindingComp.ServiceCityID`
 - takeover mode 不是 `disabled` 的建筑会挂 `FacilityTakeoverComp`
 
-这意味着当前代码里“建筑归哪座城管理”不是只看 `BuildingComp.CityID`，还要结合：
-
-- `CityCoreComp.CityID`
-- `ServiceCityComp.CityID`
-- `FacilityBindingComp.CityID`
-
-查询时统一走：
+查询时统一走 binding 读取辅助：
 
 - `ecs.ResolveCityID()`
 - `ecs.ResolveServiceCityID()`
@@ -213,10 +209,11 @@ flowchart LR
 2. `OrderFreezeStage`
 3. `UnitResolutionStage`
 4. `MapActionStage`
-5. `EconomyStage`
-6. `broadcastTurnSettlement()`
-7. `checkGameOver()`
-8. 清理本回合 planning / resolving 临时数据
+5. `BuildingStage`
+6. `EconomyStage`
+7. `broadcastTurnSettlement()`
+8. `checkGameOver()`
+9. 清理本回合 planning / resolving 临时数据
 
 需要注意两点：
 
@@ -713,10 +710,19 @@ DamagePhase 当前顺序是：
 
 `BuildSystem` 当前规则：
 
-- 读取 `Planning.BuildOrders + Planning.MinisterBuilds`
+- 读取 `Planning.BuildOrders`
 - 逐条顺序模拟，不是并行批量扣费
 - 同回合内先成功的订单会占用资源、点数和节点
 - 后续订单可能因为预算耗尽或节点已被占而失败
+
+建筑放置的目标口径里，有一条正在收敛中的资源点规则需要特别说明：
+
+- 己方安全区或己方城市辖区内的资源点，可以直接开发
+- 前线或中立资源点，只有当回合被己方单位独占驻守时，才允许下达资源设施建造
+- 若该格存在敌军或多方混战，则不能开发
+- 不再额外引入“先占满 1 回合，再等下一回合开发”的独立占领手续
+
+这个口径目前已经作为目标规则确认，但代码尚未完全对齐，见本文“当前已知差距与未闭环点”。
 
 当前检查顺序：
 
@@ -743,15 +749,14 @@ DamagePhase 当前顺序是：
 
 ### 9.6 配方结算
 
-经济系统现在已经从 `server/internal/engine/production` 迁到 `server/internal/engine/economy`，并固定拆成 7 个 stage：
+建筑生命周期已经独立成 `BuildingStage`，其后的经济系统固定为 6 个 stage：
 
-1. `lifecycle`
-2. `budget`
-3. `research_progress`
-4. `research_completion`
-5. `build`
-6. `recipe_selection`
-7. `recipe_progress`
+1. `budget`
+2. `research_progress`
+3. `research_completion`
+4. `build`
+5. `recipe_selection`
+6. `recipe_progress`
 
 其中 `recipe_selection` 与 `recipe_progress` 已经拆开：
 
@@ -844,7 +849,7 @@ stateDiagram-v2
 
 ### 10.2 设施接管
 
-设施接管逻辑在 `BuildingLifecycleSystem.advanceFacilityTakeover()`。
+设施接管逻辑在 `server/internal/building/orchestration/LifecycleSystem.advanceFacilityTakeover()`。
 
 当前规则：
 
@@ -858,15 +863,14 @@ stateDiagram-v2
 `FacilityTakeoverCompletedEvent.Apply()` 当前会同时做以下事：
 
 - 建筑 owner 改为新拥有者
-- 建筑 `CityID` 改为新的 service city
+- `BuildingBindingComp.CityID / ServiceCityID` 改为新的 service city
 - `node.Owner` 与 `node.TerritoryOwner` 改为新拥有者
-- 更新 `ServiceCityComp / FacilityBindingComp`
 - takeover runtime 标记为 completed
 - 建筑进入 `pending_activation`，下一回合才重新运作
 
 ### 10.3 非主城城市陷落
 
-`BuildingLifecycleSystem.captureCityIfNeeded()` 当前只处理：
+`server/internal/building/orchestration/LifecycleSystem.captureCityIfNeeded()` 当前只处理：
 
 - city core HP 已降到 0
 - 且它不是对方 capital city core
@@ -884,6 +888,7 @@ stateDiagram-v2
 - 同城、同旧拥有者的城内建筑一起迁移
 - `defense/governance` 标签建筑转 `ruined`
 - 其余城内建筑转 `pending_activation`
+- 这条建筑命运规则现在只在 building 模块维护一份，producer 不再额外预发 `building_ruined`
 
 ### 10.4 主城不走城市接管
 
@@ -1065,6 +1070,7 @@ stateDiagram-v2
 - token 当前在建局时初始化，我没有在默认 planning start 链路里看到统一“每回合回满”逻辑
 - building / recipe 的大量合法性是“planning 先做一轮即时校验，settlement 再做一轮最终校验”
 - 当前客户端看到的 `NodeView.building_status` 已经是服务端根据运行态即时投影的结果，不是客户端自行推导
+- 当前代码对 `resource_node` 建筑仍主要按“资源点类型匹配即可放置”处理，尚未补上“前线资源点要求当回合己方单位独占驻守”的控制前提；这是建筑系统后续重构的明确目标
 
 ## 16. 阅读建议
 

@@ -200,14 +200,6 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"damage_per_turn": strconv.Itoa(e.DamagePerTurn),
 			},
 		}
-	case event.BuildingDeactivatedEvent:
-		return &pb.TurnEvent{
-			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id": strings.TrimSpace(e.NodeID),
-				"reason":  strings.TrimSpace(e.Reason),
-			},
-		}
 	case event.TechnologyCompletedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),

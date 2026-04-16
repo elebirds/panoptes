@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/algo/geometry"
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -72,15 +73,14 @@ func (e FacilityTakeoverCompletedEvent) Apply(world donburi.World, state *domain
 	if !ok || !entry.HasComponent(ecs.BuildingC) {
 		return
 	}
-	building := ecs.BuildingC.Get(entry)
-	building.Owner = e.NewOwnerID
-	building.CityID = e.ServiceCityID
+	currentBuilding := ecs.BuildingC.Get(entry)
+	currentBuilding.Owner = e.NewOwnerID
 
 	node := ecs.NodeC.Get(entry)
 	node.Owner = e.NewOwnerID
 	node.TerritoryOwner = e.NewOwnerID
 
-	updateBuildingCityBinding(entry, e.ServiceCityID)
+	building.Rebind(entry, e.ServiceCityID, e.ServiceCityID)
 	if entry.HasComponent(ecs.FacilityTakeoverC) {
 		takeover := ecs.FacilityTakeoverC.Get(entry)
 		takeover.Progress = 0
@@ -175,17 +175,16 @@ func (e CityCapturedEvent) Apply(world donburi.World, state *domain.GameState) {
 
 	coreBuilding := ecs.BuildingC.Get(entry)
 	coreBuilding.Owner = e.NewOwnerID
-	coreBuilding.CityID = e.CityID
 	if coreBuilding.MaxHP > 0 {
 		coreBuilding.HP = coreBuilding.MaxHP
 	}
 	coreNode := ecs.NodeC.Get(entry)
 	coreNode.Owner = e.NewOwnerID
 	coreNode.TerritoryOwner = e.NewOwnerID
-	updateBuildingCityBinding(entry, e.CityID)
+	building.SetBinding(entry, domain.BuildingScopeCityCore, e.CityID, e.CityID)
 	domain.SetBuildingLifecycleState(entry, domain.BuildingStatusDisabled, "pending_activation", e.OnlineOnTurn)
 
-	footprintEntries, _, reason := ecs.TerritoryFootprint(state, entry)
+	footprintEntries, _, reason := building.TerritoryFootprint(state, entry)
 	if reason == "" {
 		for _, footprintEntry := range footprintEntries {
 			if footprintEntry == nil {
@@ -201,32 +200,32 @@ func (e CityCapturedEvent) Apply(world donburi.World, state *domain.GameState) {
 		if candidate == nil || candidate == entry || !candidate.HasComponent(ecs.BuildingC) {
 			return
 		}
-		building := ecs.BuildingC.Get(candidate)
-		if strings.TrimSpace(building.Owner) != strings.TrimSpace(e.OldOwnerID) {
+		currentBuilding := ecs.BuildingC.Get(candidate)
+		if strings.TrimSpace(currentBuilding.Owner) != strings.TrimSpace(e.OldOwnerID) {
 			return
 		}
-		if ecs.ResolveCityID(candidate) != e.CityID {
+		if building.ResolveCityID(candidate) != e.CityID {
 			return
 		}
-		cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
+		cfg, ok := staticdata.Default().GetBuilding(string(currentBuilding.Type))
 		if !ok {
 			return
 		}
-		if strings.EqualFold(strings.TrimSpace(cfg.BuildingScope), "out_of_city") {
+		if domain.NormalizeBuildingScope(cfg.BuildingScope) == domain.BuildingScopeOutOfCity {
 			return
 		}
 
-		building.Owner = e.NewOwnerID
-		building.CityID = e.CityID
-		updateBuildingCityBinding(candidate, e.CityID)
+		currentBuilding.Owner = e.NewOwnerID
+		building.Rebind(candidate, e.CityID, e.CityID)
 		candidateNode := ecs.NodeC.Get(candidate)
 		candidateNode.Owner = e.NewOwnerID
 		candidateNode.TerritoryOwner = e.NewOwnerID
-		if hasAnyTag(cfg.Tags, "defense", "governance") {
-			domain.SetBuildingLifecycleState(candidate, domain.BuildingStatusRuined, "city_captured", 0)
-			return
+		status, reason := building.CapturedLifecycleForBuilding(cfg)
+		onlineOnTurn := 0
+		if status == domain.BuildingStatusDisabled {
+			onlineOnTurn = e.OnlineOnTurn
 		}
-		domain.SetBuildingLifecycleState(candidate, domain.BuildingStatusDisabled, "pending_activation", e.OnlineOnTurn)
+		domain.SetBuildingLifecycleState(candidate, status, reason, onlineOnTurn)
 	})
 }
 
@@ -234,22 +233,6 @@ func (e CityCapturedEvent) Kind() string { return "city_captured" }
 
 func (e CityCapturedEvent) String() string {
 	return fmt.Sprintf("CityCapturedEvent city=%s old_owner=%s new_owner=%s", e.CityID, e.OldOwnerID, e.NewOwnerID)
-}
-
-func updateBuildingCityBinding(entry *donburi.Entry, cityID string) {
-	if entry == nil {
-		return
-	}
-	cityID = strings.TrimSpace(cityID)
-	if entry.HasComponent(ecs.CityCoreC) {
-		ecs.CityCoreC.Get(entry).CityID = cityID
-	}
-	if entry.HasComponent(ecs.ServiceCityC) {
-		ecs.ServiceCityC.Get(entry).CityID = cityID
-	}
-	if entry.HasComponent(ecs.FacilityBindingC) {
-		ecs.FacilityBindingC.Get(entry).CityID = cityID
-	}
 }
 
 func NearestOwnedCityID(state *domain.GameState, playerID string, pos domain.Position, fallback string) string {
@@ -278,16 +261,4 @@ func NearestOwnedCityID(state *domain.GameState, playerID string, pos domain.Pos
 		}
 	}
 	return strings.TrimSpace(bestID)
-}
-
-func hasAnyTag(tags []string, expected ...string) bool {
-	for _, tag := range tags {
-		current := strings.ToLower(strings.TrimSpace(tag))
-		for _, want := range expected {
-			if current == strings.ToLower(strings.TrimSpace(want)) {
-				return true
-			}
-		}
-	}
-	return false
 }
