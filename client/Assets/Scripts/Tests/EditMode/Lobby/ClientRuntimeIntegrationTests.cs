@@ -29,6 +29,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
         private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
+        private readonly string _staticCatalogCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs");
         private readonly string _configBridgePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs");
         private readonly string _cityCoreHpBarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHPBar.cs");
         private readonly string _cityCoreHpBarOverlayControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs");
@@ -435,12 +436,20 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "通用弹层必须与 Managers 脱离父子关系，避开 LoadingOverlay 的 CanvasGroup。");
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
             StringAssert.Contains("Register<MsgConfigBatchJson>(\"MsgConfigBatchJson\", OnConfigBatchJson)", content);
+            StringAssert.Contains("Register<MsgStaticCatalogSectionChunk>(\"MsgStaticCatalogSectionChunk\", OnStaticCatalogSectionChunk)", content,
+                "AppManager 必须注册 Catalog V2 section chunk 事件。");
+            StringAssert.Contains("Register<MsgStaticCatalogSyncComplete>(\"MsgStaticCatalogSyncComplete\", OnStaticCatalogSyncComplete)", content,
+                "AppManager 必须注册 Catalog V2 sync complete 事件。");
+            StringAssert.Contains("MessageSender.Send(new MsgStaticCatalogSyncRequest", content,
+                "收到 manifest 后，AppManager 必须主动发起 Catalog V2 同步请求。");
             StringAssert.Contains("ConfigCache.Instance?.Clear();", content,
                 "进入 Login 或回退会话时必须清理会话级 ConfigCache。");
             Assert.That(content, Does.Not.Contain("StaticCatalogCache.Instance?.Clear();"),
                 "AppManager 不应在登录态清空应用级静态目录缓存。");
             Assert.That(content, Does.Not.Contain("ConfigMessageBridge"),
                 "正式启动链不应继续依赖 raw ConfigMessageBridge。");
+            StringAssert.Contains("_pendingCatalogSync", content,
+                "AppManager 必须显式跟踪 Catalog 同步中的 bootstrap 状态。");
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
@@ -452,12 +461,14 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void StaticCatalogAndConfigCache_ShouldHaveSeparatedRuntimeResponsibilities()
         {
             Assert.That(File.Exists(_configCachePath), Is.True, "ConfigCache.cs 不存在。");
+            Assert.That(File.Exists(_staticCatalogCachePath), Is.True, "StaticCatalogCache.cs 不存在。");
             Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
             Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
             Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
             Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
 
             var configCacheContent = File.ReadAllText(_configCachePath);
+            var staticCatalogCacheContent = File.ReadAllText(_staticCatalogCachePath);
             var techTreeContent = File.ReadAllText(_techTreePanelPath);
             var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
             var buildContent = File.ReadAllText(_buildCommandPanelPath);
@@ -467,11 +478,25 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "ConfigCache 必须暴露会话级清理入口。");
             StringAssert.Contains("public void ApplyBatch(MsgConfigBatchJson msg)", configCacheContent,
                 "ConfigCache 必须直接消费 typed config batch。");
+            StringAssert.Contains("public CatalogSyncDecision CompareManifest(StaticCatalogManifest manifest)", staticCatalogCacheContent,
+                "StaticCatalogCache 必须提供 manifest 比对入口。");
+            StringAssert.Contains("public void BeginSectionSync(", staticCatalogCacheContent,
+                "StaticCatalogCache 必须提供 section 同步起始入口。");
+            StringAssert.Contains("public void ApplySectionChunk(MsgStaticCatalogSectionChunk chunk)", staticCatalogCacheContent,
+                "StaticCatalogCache 必须支持逐块接收 section payload。");
+            StringAssert.Contains("public bool FinalizeSectionSync(", staticCatalogCacheContent,
+                "StaticCatalogCache 必须在 sync complete 后原子提交 section 变更。");
+            StringAssert.Contains("ui_tech_tree_layout", staticCatalogCacheContent,
+                "科技树布局元数据必须进入静态目录缓存。");
 
             Assert.That(techTreeContent, Does.Not.Contain("Missing technology tree config from server snapshot"),
                 "科技树面板不应再等待服务端 snapshot 作为主路径。");
             Assert.That(techTreeContent, Does.Not.Contain("ConfigCache"),
                 "科技树面板不应再通过 ConfigCache 读取静态科技实体。");
+            StringAssert.Contains("TechNodeTitle", techTreeContent,
+                "科技树在模板缺失时也必须生成可见标题文本，避免界面空白。");
+            StringAssert.Contains("TechNodeDescription", techTreeContent,
+                "科技树在模板缺失时也必须生成可见描述文本，避免界面空白。");
             Assert.That(recipeContent, Does.Not.Contain("ConfigCache"),
                 "配方面板不应再通过 ConfigCache 读取静态配方实体。");
             Assert.That(buildContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),

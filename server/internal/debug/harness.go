@@ -74,6 +74,20 @@ func (h *Harness) Start() error {
 		staticdata.SetDefault(h.definition.Catalog)
 	}
 	h.room.Start()
+	for _, playerID := range h.definition.PlayerIDs {
+		if err := h.room.HandleGameCommand(cmddispatch.InboundContext{
+			PlayerID:  playerID,
+			RequestID: "bootstrap-sync-" + playerID,
+		}, &pb.GameCommand{
+			Body: &pb.GameCommand_StaticCatalogSyncRequest{
+				StaticCatalogSyncRequest: &pb.MsgStaticCatalogSyncRequest{
+					BundleHash: staticdata.Default().BundleHash(),
+				},
+			},
+		}); err != nil {
+			return fmt.Errorf("bootstrap sync for %s: %w", playerID, err)
+		}
+	}
 	return nil
 }
 

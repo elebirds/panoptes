@@ -9,6 +9,7 @@ package staticdata_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/datagen"
@@ -115,6 +116,56 @@ func TestLoadDirBuildsQueryableCatalog(t *testing.T) {
 	}
 	if catalog.BundleHash() == "" {
 		t.Fatalf("bundle hash is empty")
+	}
+}
+
+func TestGeneratedDefaultMapMatchesOneVsOneLayout(t *testing.T) {
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatalf("runtime.Caller() failed")
+	}
+	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", ".."))
+	catalog, err := staticdata.LoadDir(filepath.Join(repoRoot, "data", "generated", "server"))
+	if err != nil {
+		t.Fatalf("LoadDir(real content) error = %v", err)
+	}
+
+	m, ok := catalog.GetMap("default")
+	if !ok {
+		t.Fatalf("GetMap(default) missing")
+	}
+	if m.Width != 36 || m.Height != 36 {
+		t.Fatalf("map size = %dx%d, want 36x36", m.Width, m.Height)
+	}
+	if len(m.Nodes) != 36*36 {
+		t.Fatalf("nodes len = %d, want %d", len(m.Nodes), 36*36)
+	}
+	if len(m.SpawnPoints) != 2 {
+		t.Fatalf("spawn points len = %d, want 2", len(m.SpawnPoints))
+	}
+
+	assertSpawnPoint(t, m, 0, 4, 31)
+	assertSpawnPoint(t, m, 1, 31, 4)
+	assertMainDiagonalMirror(t, m)
+
+	if got := countRoadNodes(m); got != 0 {
+		t.Fatalf("road nodes = %d, want 0", got)
+	}
+	if got := countResourceNodes(m); got < 20 {
+		t.Fatalf("resource nodes = %d, want at least 20", got)
+	}
+
+	if node := runtimeNodeAt(t, m, 4, 31); node.NodeName != "西南王庭" {
+		t.Fatalf("spawn node name = %q, want 西南王庭", node.NodeName)
+	}
+	if node := runtimeNodeAt(t, m, 31, 4); node.NodeName != "东北王庭" {
+		t.Fatalf("spawn node name = %q, want 东北王庭", node.NodeName)
+	}
+	if node := runtimeNodeAt(t, m, 14, 21); node.NodeName != "南隘口" {
+		t.Fatalf("south pass node = %#v", node)
+	}
+	if node := runtimeNodeAt(t, m, 21, 14); node.NodeName != "北隘口" {
+		t.Fatalf("north pass node = %#v", node)
 	}
 }
 
@@ -294,6 +345,14 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
     { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] }
   ]
 }`,
+		"data/ui/layouts/technology_tree.json": `{
+  "$schema": "../../schema/ui/technology_tree.schema.json",
+  "config_version": "2026-04-17",
+  "nodes": [
+    { "id": "node_agri", "technology_id": "agrarian_foundations", "title": "农业基础", "description": "解锁农场与基础农耕配方", "x": 0, "y": 0, "width": 360, "height": 104, "visible": true }
+  ],
+  "edges": []
+}`,
 		"data/ui/catalogs/policies.json": `{
   "$schema": "../../schema/ui/policies.schema.json",
   "policies": [
@@ -330,6 +389,83 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
 	for rel, content := range files {
 		writeCatalogFixtureFile(t, repoRoot, rel, content)
 	}
+}
+
+func assertSpawnPoint(t *testing.T, m *staticdata.MapRuntimeBundle, slot int, wantX int, wantY int) {
+	t.Helper()
+
+	for _, spawn := range m.SpawnPoints {
+		if spawn.Slot != slot {
+			continue
+		}
+		if spawn.X != wantX || spawn.Y != wantY {
+			t.Fatalf("spawn[%d] = (%d,%d), want (%d,%d)", slot, spawn.X, spawn.Y, wantX, wantY)
+		}
+		return
+	}
+
+	t.Fatalf("spawn[%d] missing", slot)
+}
+
+func countRoadNodes(m *staticdata.MapRuntimeBundle) int {
+	count := 0
+	for _, node := range m.Nodes {
+		if node.HasRoad {
+			count++
+		}
+	}
+	return count
+}
+
+func countResourceNodes(m *staticdata.MapRuntimeBundle) int {
+	count := 0
+	for _, node := range m.Nodes {
+		if node.IsResourcePoint {
+			count++
+		}
+	}
+	return count
+}
+
+func assertMainDiagonalMirror(t *testing.T, m *staticdata.MapRuntimeBundle) {
+	t.Helper()
+
+	nodesByPos := make(map[[2]int]staticdata.MapRuntimeNode, len(m.Nodes))
+	for _, node := range m.Nodes {
+		nodesByPos[[2]int{node.X, node.Y}] = node
+	}
+
+	for _, node := range m.Nodes {
+		mirror, ok := nodesByPos[[2]int{node.Y, node.X}]
+		if !ok {
+			t.Fatalf("mirror node for (%d,%d) missing", node.X, node.Y)
+		}
+		if node.Terrain != mirror.Terrain {
+			t.Fatalf("terrain mismatch at (%d,%d) -> (%d,%d): %s != %s", node.X, node.Y, mirror.X, mirror.Y, node.Terrain, mirror.Terrain)
+		}
+		if node.HasRoad != mirror.HasRoad {
+			t.Fatalf("road mismatch at (%d,%d) -> (%d,%d)", node.X, node.Y, mirror.X, mirror.Y)
+		}
+		if node.IsResourcePoint != mirror.IsResourcePoint {
+			t.Fatalf("resource flag mismatch at (%d,%d) -> (%d,%d)", node.X, node.Y, mirror.X, mirror.Y)
+		}
+		if node.ResourceType != mirror.ResourceType {
+			t.Fatalf("resource type mismatch at (%d,%d) -> (%d,%d): %s != %s", node.X, node.Y, mirror.X, mirror.Y, node.ResourceType, mirror.ResourceType)
+		}
+	}
+}
+
+func runtimeNodeAt(t *testing.T, m *staticdata.MapRuntimeBundle, x int, y int) staticdata.MapRuntimeNode {
+	t.Helper()
+
+	for _, node := range m.Nodes {
+		if node.X == x && node.Y == y {
+			return node
+		}
+	}
+
+	t.Fatalf("node (%d,%d) missing", x, y)
+	return staticdata.MapRuntimeNode{}
 }
 
 func writeCatalogFixtureFile(t *testing.T, repoRoot string, rel string, content string) {

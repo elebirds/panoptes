@@ -24,10 +24,16 @@ func (h *stubLobbyHandler) KickPlayer(InboundContext, *pb.MsgKickPlayer) error {
 
 type stubGameHandler struct {
 	planning *pb.PlanningCommand
+	syncReq  *pb.MsgStaticCatalogSyncRequest
 }
 
 func (h *stubGameHandler) Planning(_ InboundContext, cmd *pb.PlanningCommand) error {
 	h.planning = cmd
+	return nil
+}
+
+func (h *stubGameHandler) StaticCatalogSyncRequest(_ InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {
+	h.syncReq = cmd
 	return nil
 }
 
@@ -90,6 +96,35 @@ func TestDispatcherRoutesPlanningSetPolicy(t *testing.T) {
 	}
 	if body.SetPolicy.GetNationalPolicyId() != "expansion" {
 		t.Fatalf("set_policy.national_policy_id = %q", body.SetPolicy.GetNationalPolicyId())
+	}
+}
+
+func TestDispatcherRoutesStaticCatalogSyncRequest(t *testing.T) {
+	gameHandler := &stubGameHandler{}
+	dispatcher := Dispatcher{
+		Game: gameHandler,
+	}
+
+	err := dispatcher.Dispatch(InboundContext{PlayerID: "player-1"}, &pb.ClientFrame{
+		Meta: &pb.CommandMeta{RequestId: "req-2b"},
+		Target: &pb.ClientFrame_Game{
+			Game: &pb.GameCommand{
+				Body: &pb.GameCommand_StaticCatalogSyncRequest{
+					StaticCatalogSyncRequest: &pb.MsgStaticCatalogSyncRequest{
+						BundleHash: "bundle-1",
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Dispatch() error = %v", err)
+	}
+	if gameHandler.syncReq == nil {
+		t.Fatalf("game static catalog sync handler not called")
+	}
+	if gameHandler.syncReq.GetBundleHash() != "bundle-1" {
+		t.Fatalf("static_catalog_sync_request.bundle_hash = %q", gameHandler.syncReq.GetBundleHash())
 	}
 }
 

@@ -1,0 +1,40 @@
+{
+  "resources": [
+    {
+      "key": "ore",
+      "display_name": "矿石",
+      "description": "基础矿物",
+      "icon_key": "resource_ore",
+      "sort_order": 10,
+      "proto_number": 1,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    },
+    {
+      "key": "wood",
+      "display_name": "木材",
+      "description": "基础建设材料",
+      "icon_key": "resource_wood",
+      "sort_order": 20,
+      "proto_number": 2,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    },
+    {
+      "key": "food",
+      "display_name": "粮食",
+      "description": "补给与人口",
+      "icon_key": "resource_food",
+      "sort_order": 30,
+      "proto_number": 3,
+      "visible_in_hud": true,
+      "tags": [
+        "base"
+      ]
+    }
+  ]
+}

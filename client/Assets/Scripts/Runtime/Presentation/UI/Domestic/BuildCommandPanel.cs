@@ -656,12 +656,13 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             var result = new List<DynamicBuildRenderEntry>();
             var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var buildOrder = ResolveRuntimeBuildOrder();
 
-            if (runtimeBuildOrder != null)
+            if (buildOrder != null)
             {
-                for (var i = 0; i < runtimeBuildOrder.Length; i++)
+                for (var i = 0; i < buildOrder.Length; i++)
                 {
-                    var resolvedId = ResolveConfiguredBuildingType(runtimeBuildOrder[i]);
+                    var resolvedId = ResolveConfiguredBuildingType(buildOrder[i]);
                     if (string.IsNullOrWhiteSpace(resolvedId) || visited.Contains(resolvedId))
                     {
                         continue;
@@ -741,6 +742,18 @@ namespace Panoptes.Presentation.UI.Domestic
                 for (var i = 0; i < hiddenBuildingTypes.Length; i++)
                 {
                     if (string.Equals(normalized, NormalizeToken(hiddenBuildingTypes[i]), StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            var layout = (_catalogCache != null ? _catalogCache : StaticCatalogCache.Instance)?.BuildMenuLayout;
+            if (layout != null && layout.hidden_building_ids != null)
+            {
+                for (var i = 0; i < layout.hidden_building_ids.Length; i++)
+                {
+                    if (string.Equals(normalized, NormalizeToken(layout.hidden_building_ids[i]), StringComparison.Ordinal))
                     {
                         return true;
                     }
@@ -827,7 +840,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return buildButtons;
             }
 
-            var buildOrder = runtimeBuildOrder;
+            var buildOrder = ResolveRuntimeBuildOrder();
             if (buildOrder == null || buildOrder.Length == 0)
             {
                 return buildButtons;
@@ -863,6 +876,17 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             return generated;
+        }
+
+        private string[] ResolveRuntimeBuildOrder()
+        {
+            var layout = (_catalogCache != null ? _catalogCache : StaticCatalogCache.Instance)?.BuildMenuLayout;
+            if (layout != null && layout.building_order != null && layout.building_order.Length > 0)
+            {
+                return layout.building_order;
+            }
+
+            return runtimeBuildOrder;
         }
 
         private Transform ResolveBuildButtonsRoot()

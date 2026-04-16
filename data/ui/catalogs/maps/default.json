@@ -1,11 +1,10 @@
 {
   "$schema": "../../../schema/ui/maps/catalog.schema.json",
   "id": "default",
-  "name": "标准地图",
-  "description": "默认对战地图",
+  "name": "双隘争衡",
+  "description": "36x36 严格镜像 1v1 地图，左下与右上起城，中场双隘口争夺。",
   "thumbnail_key": "map_default",
   "legend": [
-    { "id": "road", "name": "道路", "icon_key": "marker_road" },
     { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" }
   ]
 }

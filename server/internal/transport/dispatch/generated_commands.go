@@ -126,6 +126,7 @@ func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handle
 
 type GameHandler interface {
 	Planning(ctx InboundContext, cmd *pb.PlanningCommand) error
+	StaticCatalogSyncRequest(ctx InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error
 }
 
 func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHandler) error {
@@ -139,6 +140,8 @@ func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHa
 	switch body := cmd.Body.(type) {
 	case *pb.GameCommand_Planning:
 		return handler.Planning(ctx, body.Planning)
+	case *pb.GameCommand_StaticCatalogSyncRequest:
+		return handler.StaticCatalogSyncRequest(ctx, body.StaticCatalogSyncRequest)
 	default:
 		return transportproblem.UnsupportedCommand("unsupported game command")
 	}

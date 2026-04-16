@@ -9,6 +9,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Panoptes.Protocol.V1;
 using UnityEngine;
 
@@ -24,6 +26,15 @@ namespace Panoptes.Core.Application.Cache
             public string default_locale;
             public string default_map_id;
             public string bundle_hash;
+            public string[] required_sections;
+            public CatalogSectionHashJson[] section_hashes;
+        }
+
+        [Serializable]
+        public sealed class CatalogSectionHashJson
+        {
+            public string section_name;
+            public string hash;
         }
 
         [Serializable]
@@ -195,6 +206,91 @@ namespace Panoptes.Core.Application.Cache
         }
 
         [Serializable]
+        public sealed class RulesJson
+        {
+            public int turn_time_limit_planning;
+            public int tokens_per_turn;
+            public int bonus_tokens_per_turn;
+            public int max_turns;
+            public int city_core_max_hp;
+            public int safe_zone_radius;
+            public int facility_takeover_turns;
+            public int base_research_output_per_turn;
+            public int base_industry_output_per_turn;
+            public int minimum_city_distance;
+            public int initial_city_territory_radius;
+        }
+
+        [Serializable]
+        public sealed class MinisterJson
+        {
+            public string id;
+            public string name;
+            public string role;
+            public int ability;
+            public string personality;
+            public string personality_desc;
+            public int loyalty;
+            public int ambition;
+        }
+
+        [Serializable]
+        public sealed class TechTreeLayoutPointJson
+        {
+            public float x;
+            public float y;
+        }
+
+        [Serializable]
+        public sealed class TechTreeLayoutNodeJson
+        {
+            public string id;
+            public string technology_id;
+            public string title;
+            public string description;
+            public float x;
+            public float y;
+            public float width;
+            public float height;
+            public bool visible;
+        }
+
+        [Serializable]
+        public sealed class TechTreeLayoutEdgeJson
+        {
+            public string id;
+            public string from;
+            public string to;
+            public bool show_arrow;
+            public string arrow;
+            public float thickness;
+            public TechTreeLayoutPointJson[] points;
+        }
+
+        [Serializable]
+        public sealed class TechTreeLayoutJson
+        {
+            public string config_version;
+            public TechTreeLayoutNodeJson[] nodes;
+            public TechTreeLayoutEdgeJson[] edges;
+        }
+
+        [Serializable]
+        public sealed class BuildMenuLayoutJson
+        {
+            public string config_version;
+            public string[] building_order;
+            public string[] hidden_building_ids;
+        }
+
+        [Serializable]
+        public sealed class RecipeLayoutJson
+        {
+            public string config_version;
+            public string[] recipe_order;
+        }
+
+        [Serializable]
         private sealed class CatalogBundleJson
         {
             public ManifestJson manifest;
@@ -206,6 +302,77 @@ namespace Panoptes.Core.Application.Cache
             public PolicyEntryJson[] policies;
             public RecipeEntryJson[] recipes;
             public TerrainEntryJson[] terrains;
+            public RulesJson rules;
+            public MinisterJson[] ministers;
+            public MapEntryJson[] maps;
+            public TechTreeLayoutJson ui_tech_tree_layout;
+            public BuildMenuLayoutJson ui_build_menu_layout;
+            public RecipeLayoutJson ui_recipe_layout;
+        }
+
+        [Serializable]
+        private sealed class ResourcesSectionJson
+        {
+            public ResourceEntryJson[] resources;
+        }
+
+        [Serializable]
+        private sealed class PointsSectionJson
+        {
+            public PointEntryJson[] points;
+        }
+
+        [Serializable]
+        private sealed class UnitsSectionJson
+        {
+            public UnitEntryJson[] units;
+        }
+
+        [Serializable]
+        private sealed class BuildingsSectionJson
+        {
+            public BuildingEntryJson[] buildings;
+        }
+
+        [Serializable]
+        private sealed class TechnologiesSectionJson
+        {
+            public TechnologyEntryJson[] technologies;
+        }
+
+        [Serializable]
+        private sealed class PoliciesSectionJson
+        {
+            public PolicyEntryJson[] policies;
+        }
+
+        [Serializable]
+        private sealed class RecipesSectionJson
+        {
+            public RecipeEntryJson[] recipes;
+        }
+
+        [Serializable]
+        private sealed class TerrainsSectionJson
+        {
+            public TerrainEntryJson[] terrains;
+        }
+
+        [Serializable]
+        private sealed class RulesSectionJson
+        {
+            public RulesJson rules;
+        }
+
+        [Serializable]
+        private sealed class MinistersSectionJson
+        {
+            public MinisterJson[] ministers;
+        }
+
+        [Serializable]
+        private sealed class MapsSectionJson
+        {
             public MapEntryJson[] maps;
         }
 
@@ -236,6 +403,25 @@ namespace Panoptes.Core.Application.Cache
             public MapRuntimeNodeJson[] nodes;
         }
 
+        public sealed class CatalogSyncDecision
+        {
+            public string ServerBundleHash = string.Empty;
+            public bool ForceFullSync;
+            public bool HashMatches;
+            public string[] RequestedSections = Array.Empty<string>();
+
+            public bool RequiresSync => ForceFullSync || RequestedSections.Length > 0 || !HashMatches;
+        }
+
+        private sealed class SectionSyncAccumulator
+        {
+            public string SectionName;
+            public string SectionHash;
+            public string Compression;
+            public int ChunkCount;
+            public readonly Dictionary<int, byte[]> Chunks = new();
+        }
+
         public static StaticCatalogCache Instance { get; private set; }
 
         [SerializeField] private bool autoLoadOnAwake = true;
@@ -252,6 +438,14 @@ namespace Panoptes.Core.Application.Cache
         private readonly Dictionary<string, TechnologyEntryJson> _technologiesById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, UnitEntryJson> _unitsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, MapRuntimeBundleJson> _mapBundleCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, SectionSyncAccumulator> _pendingSectionSync = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _syncedSectionHashes = new(StringComparer.OrdinalIgnoreCase);
+
+        private RulesJson _rules;
+        private MinisterJson[] _ministers = Array.Empty<MinisterJson>();
+        private TechTreeLayoutJson _techTreeLayout;
+        private BuildMenuLayoutJson _buildMenuLayout;
+        private RecipeLayoutJson _recipeLayout;
 
         public ManifestJson LocalManifest { get; private set; }
         public StaticCatalogManifest ServerManifest { get; private set; }
@@ -265,6 +459,11 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyDictionary<string, TerrainEntryJson> Terrains => _terrainsById;
         public IReadOnlyDictionary<string, TechnologyEntryJson> Technologies => _technologiesById;
         public IReadOnlyDictionary<string, UnitEntryJson> Units => _unitsById;
+        public RulesJson Rules => _rules;
+        public IReadOnlyList<MinisterJson> Ministers => _ministers;
+        public TechTreeLayoutJson TechTreeLayout => _techTreeLayout;
+        public BuildMenuLayoutJson BuildMenuLayout => _buildMenuLayout;
+        public RecipeLayoutJson RecipeLayout => _recipeLayout;
 
         private void Awake()
         {
@@ -339,7 +538,14 @@ namespace Panoptes.Core.Application.Cache
             RebuildIndex(_recipesById, parsed.recipes, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_terrainsById, parsed.terrains, entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_mapsById, parsed.maps, entry => entry != null ? entry.id : string.Empty);
+            _rules = parsed.rules;
+            _ministers = parsed.ministers ?? Array.Empty<MinisterJson>();
+            _techTreeLayout = parsed.ui_tech_tree_layout;
+            _buildMenuLayout = parsed.ui_build_menu_layout;
+            _recipeLayout = parsed.ui_recipe_layout;
             _mapBundleCache.Clear();
+            _pendingSectionSync.Clear();
+            _syncedSectionHashes.Clear();
 
             if (logStatus)
             {
@@ -360,6 +566,182 @@ namespace Panoptes.Core.Application.Cache
             {
                 Debug.LogWarning($"[StaticCatalogCache] Local bundle hash '{LocalManifest.bundle_hash}' differs from server '{manifest.BundleHash}'.");
             }
+        }
+
+        public CatalogSyncDecision CompareManifest(StaticCatalogManifest manifest)
+        {
+            ApplyManifest(manifest);
+
+            var decision = new CatalogSyncDecision
+            {
+                ServerBundleHash = manifest != null ? manifest.BundleHash ?? string.Empty : string.Empty,
+                HashMatches = manifest != null &&
+                              !string.IsNullOrWhiteSpace(LocalManifest != null ? LocalManifest.bundle_hash : string.Empty) &&
+                              string.Equals(LocalManifest.bundle_hash, manifest.BundleHash ?? string.Empty, StringComparison.Ordinal),
+            };
+            if (manifest == null)
+            {
+                return decision;
+            }
+
+            var requiredSections = manifest.RequiredSections != null && manifest.RequiredSections.Count > 0
+                ? manifest.RequiredSections.ToArray()
+                : Array.Empty<string>();
+            if (!string.Equals(LocalManifest != null ? LocalManifest.schema_version : string.Empty, manifest.SchemaVersion ?? string.Empty, StringComparison.Ordinal))
+            {
+                decision.ForceFullSync = requiredSections.Length > 0;
+                decision.RequestedSections = requiredSections;
+                return decision;
+            }
+
+            var localHashes = BuildCurrentSectionHashMap();
+            var requested = new List<string>();
+            var serverHashes = manifest.SectionHashes != null ? manifest.SectionHashes : null;
+            for (var i = 0; i < requiredSections.Length; i++)
+            {
+                var sectionName = Normalize(requiredSections[i]);
+                if (string.IsNullOrEmpty(sectionName))
+                {
+                    continue;
+                }
+
+                if (!TryGetServerSectionHash(serverHashes, sectionName, out var serverHash))
+                {
+                    requested.Add(sectionName);
+                    continue;
+                }
+
+                if (!localHashes.TryGetValue(sectionName, out var localHash) ||
+                    !string.Equals(localHash, serverHash, StringComparison.Ordinal))
+                {
+                    requested.Add(sectionName);
+                }
+            }
+
+            decision.RequestedSections = requested.ToArray();
+            return decision;
+        }
+
+        public void BeginSectionSync(StaticCatalogManifest manifest, IEnumerable<string> sectionNames)
+        {
+            ApplyManifest(manifest);
+            _pendingSectionSync.Clear();
+            if (sectionNames == null)
+            {
+                return;
+            }
+
+            foreach (var rawSectionName in sectionNames)
+            {
+                var sectionName = Normalize(rawSectionName);
+                if (string.IsNullOrEmpty(sectionName) || _pendingSectionSync.ContainsKey(sectionName))
+                {
+                    continue;
+                }
+
+                _pendingSectionSync[sectionName] = new SectionSyncAccumulator
+                {
+                    SectionName = sectionName
+                };
+            }
+        }
+
+        public void ApplySectionChunk(MsgStaticCatalogSectionChunk chunk)
+        {
+            if (chunk == null)
+            {
+                return;
+            }
+
+            var sectionName = Normalize(chunk.SectionName);
+            if (string.IsNullOrEmpty(sectionName))
+            {
+                return;
+            }
+
+            if (!_pendingSectionSync.TryGetValue(sectionName, out var accumulator))
+            {
+                accumulator = new SectionSyncAccumulator
+                {
+                    SectionName = sectionName
+                };
+                _pendingSectionSync[sectionName] = accumulator;
+            }
+
+            accumulator.SectionHash = chunk.SectionHash ?? string.Empty;
+            accumulator.Compression = chunk.Compression ?? string.Empty;
+            accumulator.ChunkCount = Mathf.Max(1, (int)chunk.ChunkCount);
+            accumulator.Chunks[(int)chunk.ChunkIndex] = chunk.Payload != null ? chunk.Payload.ToByteArray() : Array.Empty<byte>();
+        }
+
+        public bool FinalizeSectionSync(MsgStaticCatalogSyncComplete complete)
+        {
+            if (complete == null || !complete.Success)
+            {
+                _pendingSectionSync.Clear();
+                return false;
+            }
+
+            var appliedAny = false;
+            foreach (var pair in _pendingSectionSync)
+            {
+                var accumulator = pair.Value;
+                if (accumulator == null)
+                {
+                    continue;
+                }
+                if (accumulator.ChunkCount <= 0 || accumulator.Chunks.Count < accumulator.ChunkCount)
+                {
+                    _pendingSectionSync.Clear();
+                    return false;
+                }
+
+                var raw = ReassembleSection(accumulator);
+                if (raw == null)
+                {
+                    _pendingSectionSync.Clear();
+                    return false;
+                }
+                if (!ApplySectionJson(accumulator.SectionName, raw))
+                {
+                    _pendingSectionSync.Clear();
+                    return false;
+                }
+                _syncedSectionHashes[accumulator.SectionName] =
+                    !string.IsNullOrWhiteSpace(accumulator.SectionHash)
+                        ? accumulator.SectionHash
+                        : ComputeHash(raw);
+                appliedAny = true;
+            }
+
+            _pendingSectionSync.Clear();
+            if (ServerManifest != null)
+            {
+                LocalManifest = new ManifestJson
+                {
+                    schema_version = ServerManifest.SchemaVersion ?? string.Empty,
+                    content_version = ServerManifest.ContentVersion ?? string.Empty,
+                    default_locale = ServerManifest.DefaultLocale ?? string.Empty,
+                    default_map_id = ServerManifest.DefaultMapId ?? string.Empty,
+                    bundle_hash = complete.AppliedBundleHash ?? ServerManifest.BundleHash ?? string.Empty,
+                    required_sections = ServerManifest.RequiredSections != null ? ServerManifest.RequiredSections.ToArray() : Array.Empty<string>(),
+                    section_hashes = ServerManifest.SectionHashes != null
+                        ? ServerManifest.SectionHashes
+                            .Select(entry => new CatalogSectionHashJson
+                            {
+                                section_name = entry != null ? entry.SectionName : string.Empty,
+                                hash = entry != null ? entry.Hash : string.Empty
+                            })
+                            .ToArray()
+                        : Array.Empty<CatalogSectionHashJson>()
+                };
+            }
+
+            if (appliedAny)
+            {
+                CatalogChanged?.Invoke();
+            }
+            return true;
         }
 
         public void ApplySnapshot(StaticCatalogSnapshot snapshot)
@@ -481,6 +863,7 @@ namespace Panoptes.Core.Application.Cache
 
         public void Clear()
         {
+            LocalManifest = null;
             ServerManifest = null;
             _pointsByKey.Clear();
             _policiesById.Clear();
@@ -492,6 +875,239 @@ namespace Panoptes.Core.Application.Cache
             _terrainsById.Clear();
             _mapsById.Clear();
             _mapBundleCache.Clear();
+            _pendingSectionSync.Clear();
+            _syncedSectionHashes.Clear();
+            _rules = null;
+            _ministers = Array.Empty<MinisterJson>();
+            _techTreeLayout = null;
+            _buildMenuLayout = null;
+            _recipeLayout = null;
+        }
+
+        private Dictionary<string, string> BuildCurrentSectionHashMap()
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var requiredSections = LocalManifest != null && LocalManifest.required_sections != null
+                ? LocalManifest.required_sections
+                : Array.Empty<string>();
+
+            for (var i = 0; i < requiredSections.Length; i++)
+            {
+                var sectionName = Normalize(requiredSections[i]);
+                if (string.IsNullOrEmpty(sectionName))
+                {
+                    continue;
+                }
+
+                if (TryLoadLocalSectionHash(sectionName, out var hash))
+                {
+                    map[sectionName] = hash;
+                    continue;
+                }
+
+                if (_syncedSectionHashes.TryGetValue(sectionName, out hash) && !string.IsNullOrWhiteSpace(hash))
+                {
+                    map[sectionName] = hash;
+                }
+            }
+
+            if (map.Count > 0)
+            {
+                return map;
+            }
+
+            foreach (var section in CreateSectionPayloads())
+            {
+                if (section.Payload == null)
+                {
+                    continue;
+                }
+
+                map[section.Name] = ComputeHash(section.Payload);
+            }
+            return map;
+        }
+
+        private bool TryLoadLocalSectionHash(string sectionName, out string hash)
+        {
+            hash = string.Empty;
+            var normalized = Normalize(sectionName);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            var asset = UnityEngine.Resources.Load<TextAsset>($"Data/sections/{normalized}");
+            if (asset == null || string.IsNullOrEmpty(asset.text))
+            {
+                return false;
+            }
+
+            hash = ComputeHash(asset.text);
+            return !string.IsNullOrWhiteSpace(hash);
+        }
+
+        private IEnumerable<(string Name, string Payload)> CreateSectionPayloads()
+        {
+            yield return ("resources", JsonUtility.ToJson(new ResourcesSectionJson { resources = _resourcesByKey.Values.OrderBy(entry => Normalize(entry.key)).ToArray() }));
+            yield return ("points", JsonUtility.ToJson(new PointsSectionJson { points = _pointsByKey.Values.OrderBy(entry => Normalize(entry.key)).ToArray() }));
+            yield return ("units", JsonUtility.ToJson(new UnitsSectionJson { units = _unitsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("buildings", JsonUtility.ToJson(new BuildingsSectionJson { buildings = _buildingsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("technologies", JsonUtility.ToJson(new TechnologiesSectionJson { technologies = _technologiesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("policies", JsonUtility.ToJson(new PoliciesSectionJson { policies = _policiesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("recipes", JsonUtility.ToJson(new RecipesSectionJson { recipes = _recipesById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("terrains", JsonUtility.ToJson(new TerrainsSectionJson { terrains = _terrainsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("rules", JsonUtility.ToJson(new RulesSectionJson { rules = _rules ?? new RulesJson() }));
+            yield return ("ministers", JsonUtility.ToJson(new MinistersSectionJson { ministers = _ministers ?? Array.Empty<MinisterJson>() }));
+            yield return ("maps", JsonUtility.ToJson(new MapsSectionJson { maps = _mapsById.Values.OrderBy(entry => Normalize(entry.id)).ToArray() }));
+            yield return ("ui_tech_tree_layout", JsonUtility.ToJson(_techTreeLayout ?? new TechTreeLayoutJson()));
+            yield return ("ui_build_menu_layout", JsonUtility.ToJson(_buildMenuLayout ?? new BuildMenuLayoutJson()));
+            yield return ("ui_recipe_layout", JsonUtility.ToJson(_recipeLayout ?? new RecipeLayoutJson()));
+        }
+
+        private static bool TryGetServerSectionHash(IList<CatalogSectionHash> hashes, string sectionName, out string hash)
+        {
+            hash = string.Empty;
+            if (hashes == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < hashes.Count; i++)
+            {
+                var entry = hashes[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                if (!string.Equals(Normalize(entry.SectionName), sectionName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                hash = entry.Hash ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(hash);
+            }
+
+            return false;
+        }
+
+        private static string ComputeHash(string payload)
+        {
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return string.Empty;
+            }
+
+            using var sha256 = SHA256.Create();
+            var raw = Encoding.UTF8.GetBytes(payload);
+            var sum = sha256.ComputeHash(raw);
+            return BitConverter.ToString(sum).Replace("-", string.Empty).ToLowerInvariant();
+        }
+
+        private static string ReassembleSection(SectionSyncAccumulator accumulator)
+        {
+            if (accumulator == null)
+            {
+                return null;
+            }
+
+            var chunkCount = Mathf.Max(1, accumulator.ChunkCount);
+            var buffer = new List<byte>();
+            for (var i = 0; i < chunkCount; i++)
+            {
+                if (!accumulator.Chunks.TryGetValue(i, out var chunk) || chunk == null)
+                {
+                    return null;
+                }
+                buffer.AddRange(chunk);
+            }
+
+            var raw = buffer.ToArray();
+            if (string.Equals(accumulator.Compression, "gzip", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    using var input = new System.IO.MemoryStream(raw);
+                    using var gzip = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress);
+                    using var output = new System.IO.MemoryStream();
+                    gzip.CopyTo(output);
+                    raw = output.ToArray();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[StaticCatalogCache] Failed to decompress section '{accumulator.SectionName}': {ex.Message}");
+                    return null;
+                }
+            }
+
+            return Encoding.UTF8.GetString(raw);
+        }
+
+        private bool ApplySectionJson(string sectionName, string payload)
+        {
+            if (string.IsNullOrWhiteSpace(sectionName) || string.IsNullOrWhiteSpace(payload))
+            {
+                return false;
+            }
+
+            try
+            {
+                switch (Normalize(sectionName))
+                {
+                    case "resources":
+                        RebuildIndex(_resourcesByKey, JsonUtility.FromJson<ResourcesSectionJson>(payload)?.resources, entry => entry != null ? entry.key : string.Empty);
+                        return true;
+                    case "points":
+                        RebuildIndex(_pointsByKey, JsonUtility.FromJson<PointsSectionJson>(payload)?.points, entry => entry != null ? entry.key : string.Empty);
+                        return true;
+                    case "units":
+                        RebuildIndex(_unitsById, JsonUtility.FromJson<UnitsSectionJson>(payload)?.units, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "buildings":
+                        RebuildIndex(_buildingsById, JsonUtility.FromJson<BuildingsSectionJson>(payload)?.buildings, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "technologies":
+                        RebuildIndex(_technologiesById, JsonUtility.FromJson<TechnologiesSectionJson>(payload)?.technologies, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "policies":
+                        RebuildIndex(_policiesById, JsonUtility.FromJson<PoliciesSectionJson>(payload)?.policies, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "recipes":
+                        RebuildIndex(_recipesById, JsonUtility.FromJson<RecipesSectionJson>(payload)?.recipes, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "terrains":
+                        RebuildIndex(_terrainsById, JsonUtility.FromJson<TerrainsSectionJson>(payload)?.terrains, entry => entry != null ? entry.id : string.Empty);
+                        return true;
+                    case "rules":
+                        _rules = JsonUtility.FromJson<RulesSectionJson>(payload)?.rules;
+                        return true;
+                    case "ministers":
+                        _ministers = JsonUtility.FromJson<MinistersSectionJson>(payload)?.ministers ?? Array.Empty<MinisterJson>();
+                        return true;
+                    case "maps":
+                        RebuildIndex(_mapsById, JsonUtility.FromJson<MapsSectionJson>(payload)?.maps, entry => entry != null ? entry.id : string.Empty);
+                        _mapBundleCache.Clear();
+                        return true;
+                    case "ui_tech_tree_layout":
+                        _techTreeLayout = JsonUtility.FromJson<TechTreeLayoutJson>(payload);
+                        return _techTreeLayout != null;
+                    case "ui_build_menu_layout":
+                        _buildMenuLayout = JsonUtility.FromJson<BuildMenuLayoutJson>(payload);
+                        return _buildMenuLayout != null;
+                    case "ui_recipe_layout":
+                        _recipeLayout = JsonUtility.FromJson<RecipeLayoutJson>(payload);
+                        return _recipeLayout != null;
+                    default:
+                        return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[StaticCatalogCache] Failed to apply section '{sectionName}': {ex.Message}");
+                return false;
+            }
         }
 
         private static void RebuildIndex<T>(Dictionary<string, T> target, T[] source, Func<T, string> keySelector)

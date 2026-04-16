@@ -1,7 +1,11 @@
 {
+  "$id": "ui/technology_tree.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "config_version": {
       "type": "string"
     },
@@ -97,6 +101,7 @@
         },
         "required": [
           "id",
+          "technology_id",
           "x",
           "y",
           "width",

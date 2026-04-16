@@ -74,19 +74,30 @@ func loadAndCompile(opts Options) (staticdata.CatalogBundle, map[string]*staticd
 	}
 
 	bundle := staticdata.CatalogBundle{
-		Manifest:     authored.Manifest.Value,
-		Resources:    authored.Resources.Value.Resources,
-		Points:       authored.Points.Value.Points,
-		Units:        authored.Units.Value.Units,
-		Buildings:    authored.Buildings.Value.Buildings,
-		Technologies: authored.Technologies.Value.Technologies,
-		Policies:     authored.Policies.Value.Policies,
-		Recipes:      authored.Recipes.Value.Recipes,
-		Terrains:     authored.Terrains.Value.Terrains,
-		Rules:        authored.Rules.Value,
-		Ministers:    authored.Ministers.Value.Pool,
-		Maps:         entries,
+		Manifest:          authored.Manifest.Value,
+		Resources:         authored.Resources.Value.Resources,
+		Points:            authored.Points.Value.Points,
+		Units:             authored.Units.Value.Units,
+		Buildings:         authored.Buildings.Value.Buildings,
+		Technologies:      authored.Technologies.Value.Technologies,
+		Policies:          authored.Policies.Value.Policies,
+		Recipes:           authored.Recipes.Value.Recipes,
+		Terrains:          authored.Terrains.Value.Terrains,
+		Rules:             authored.Rules.Value,
+		Ministers:         authored.Ministers.Value.Pool,
+		Maps:              entries,
+		UITechTreeLayout:  authored.TechnologyTreeUI.Value,
+		UIBuildMenuLayout: buildBuildMenuLayout(authored.Buildings.Value.Buildings),
+		UIRecipeLayout:    buildRecipeLayout(authored.Recipes.Value.Recipes),
 	}
+
+	sectionPayloads, sectionHashes, err := staticdata.BuildSectionPayloads(bundle)
+	if err != nil {
+		return staticdata.CatalogBundle{}, nil, nil, err
+	}
+	_ = sectionPayloads
+	bundle.Manifest.RequiredSections = staticdata.RequiredCatalogSections()
+	bundle.Manifest.SectionHashes = sectionHashes
 
 	hash, err := computeBundleHash(bundle, maps)
 	if err != nil {
@@ -108,8 +119,10 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 	dirs := []string{
 		serverGen,
 		filepath.Join(serverGen, "maps"),
+		filepath.Join(serverGen, "sections"),
 		clientData,
 		filepath.Join(clientData, "maps"),
+		filepath.Join(clientData, "sections"),
 		filepath.Join(schemaDir, "registry"),
 		filepath.Join(schemaDir, "content"),
 		filepath.Join(schemaDir, "content", "maps"),
@@ -139,6 +152,14 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 			return err
 		}
 		if err := writePrettyJSON(filepath.Join(clientData, "maps", id+".runtime.json"), runtime); err != nil {
+			return err
+		}
+	}
+	for _, section := range staticdata.CatalogSectionValues(bundle) {
+		if err := writePrettyJSON(filepath.Join(serverGen, "sections", section.Name+".json"), section.Value); err != nil {
+			return err
+		}
+		if err := writePrettyJSON(filepath.Join(clientData, "sections", section.Name+".json"), section.Value); err != nil {
 			return err
 		}
 	}
@@ -567,6 +588,35 @@ func mergeTechnologyUI(technologies []staticdata.TechnologyDefinition, ui static
 	}
 }
 
+func buildBuildMenuLayout(buildings []staticdata.BuildingDefinition) staticdata.BuildMenuLayout {
+	type item struct {
+		ID        string
+		SortOrder int
+	}
+	items := make([]item, 0, len(buildings))
+	for _, building := range buildings {
+		if strings.TrimSpace(building.ID) == "" {
+			continue
+		}
+		items = append(items, item{ID: building.ID, SortOrder: building.SortOrder})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].SortOrder != items[j].SortOrder {
+			return items[i].SortOrder < items[j].SortOrder
+		}
+		return items[i].ID < items[j].ID
+	})
+	order := make([]string, 0, len(items))
+	for _, item := range items {
+		order = append(order, item.ID)
+	}
+	return staticdata.BuildMenuLayout{
+		ConfigVersion:     "2026-04-17",
+		BuildingOrder:     order,
+		HiddenBuildingIDs: []string{"city_core"},
+	}
+}
+
 func mergePolicyUI(policies []staticdata.PolicyDefinition, ui staticdata.PolicyCatalogUIFile) {
 	uiByID := make(map[string]struct {
 		Name        string
@@ -620,6 +670,34 @@ func mergeRecipeUI(recipes []staticdata.RecipeDefinition, ui staticdata.RecipeCa
 			recipes[i].SortOrder = entry.SortOrder
 			recipes[i].Tags = append([]string(nil), entry.Tags...)
 		}
+	}
+}
+
+func buildRecipeLayout(recipes []staticdata.RecipeDefinition) staticdata.RecipeLayout {
+	type item struct {
+		ID        string
+		SortOrder int
+	}
+	items := make([]item, 0, len(recipes))
+	for _, recipe := range recipes {
+		if strings.TrimSpace(recipe.ID) == "" {
+			continue
+		}
+		items = append(items, item{ID: recipe.ID, SortOrder: recipe.SortOrder})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].SortOrder != items[j].SortOrder {
+			return items[i].SortOrder < items[j].SortOrder
+		}
+		return items[i].ID < items[j].ID
+	})
+	order := make([]string, 0, len(items))
+	for _, item := range items {
+		order = append(order, item.ID)
+	}
+	return staticdata.RecipeLayout{
+		ConfigVersion: "2026-04-17",
+		RecipeOrder:   order,
 	}
 }
 
@@ -699,12 +777,19 @@ message PointDescriptor {
   bool visible_in_hud = 6;
 }
 
+message CatalogSectionHash {
+  string section_name = 1;
+  string hash = 2;
+}
+
 message StaticCatalogManifest {
   string schema_version = 1;
   string content_version = 2;
   string bundle_hash = 3;
   string default_locale = 4;
   string default_map_id = 5;
+  repeated string required_sections = 6;
+  repeated CatalogSectionHash section_hashes = 7;
 }`
 }
 
@@ -796,6 +881,27 @@ message StaticCatalogSnapshot {
 
 message MsgStaticCatalogManifest {
   StaticCatalogManifest manifest = 1;
+}
+
+message MsgStaticCatalogSyncRequest {
+  string bundle_hash = 1;
+  repeated string section_names = 2;
+  bool force_full_sync = 3;
+}
+
+message MsgStaticCatalogSectionChunk {
+  string section_name = 1;
+  string section_hash = 2;
+  uint32 chunk_index = 3;
+  uint32 chunk_count = 4;
+  string compression = 5;
+  bytes payload = 6;
+}
+
+message MsgStaticCatalogSyncComplete {
+  string applied_bundle_hash = 1;
+  bool success = 2;
+  string error = 3;
 }
 
 message MsgStaticCatalogSnapshot {

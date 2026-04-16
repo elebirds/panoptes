@@ -1,0 +1,14 @@
+{
+  "config_version": "2026-04-17",
+  "building_order": [
+    "city_core",
+    "farm",
+    "mine",
+    "lumber",
+    "barracks",
+    "wall"
+  ],
+  "hidden_building_ids": [
+    "city_core"
+  ]
+}

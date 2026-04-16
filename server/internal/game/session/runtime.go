@@ -7,11 +7,14 @@
 package session
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	buildingcore "github.com/elebirds/panoptes/internal/building"
@@ -24,6 +27,7 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/elebirds/panoptes/internal/transport"
+	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
@@ -44,7 +48,9 @@ type Runtime struct {
 	cancelFn  context.CancelFunc
 	state     *domain.GameState
 
+	bootstrapMu                sync.RWMutex
 	bootstrapPlanningStartSent bool
+	bootstrapReadyByPlayer     map[string]bool
 	// 同一回合内，bootstrap 消息与正式 planning 广播都必须看到同一份 planning-start 结果，
 	// 不能因为重复 Prepare 而重复激活 technology / institution。
 	planningStartPreparedTurn int
@@ -53,11 +59,12 @@ type Runtime struct {
 
 func NewRuntime(id string, players []Player, t transport.GameTransport, cfg *config.Config) *Runtime {
 	return &Runtime{
-		ID:        id,
-		players:   append([]Player(nil), players...),
-		cfg:       cfg,
-		transport: t,
-		submitCh:  make(chan string, len(players)*4+16),
+		ID:                     id,
+		players:                append([]Player(nil), players...),
+		cfg:                    cfg,
+		transport:              t,
+		submitCh:               make(chan string, len(players)*4+16),
+		bootstrapReadyByPlayer: make(map[string]bool, len(players)),
 	}
 }
 
@@ -129,6 +136,10 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	r.state = state
 	r.planningStartPreparedTurn = 0
 	r.planningStartResult = nil
+	r.bootstrapMu.Lock()
+	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.players))
+	r.bootstrapPlanningStartSent = false
+	r.bootstrapMu.Unlock()
 }
 
 func (r *Runtime) SubmitChannel() chan string {
@@ -162,7 +173,12 @@ func (r *Runtime) PlayerCount() int {
 }
 
 func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
-	if r == nil || !r.bootstrapPlanningStartSent {
+	if r == nil {
+		return false
+	}
+	r.bootstrapMu.Lock()
+	defer r.bootstrapMu.Unlock()
+	if !r.bootstrapPlanningStartSent {
 		return false
 	}
 	r.bootstrapPlanningStartSent = false
@@ -453,16 +469,56 @@ func (r *Runtime) sendGameInit(p Player) {
 
 func (r *Runtime) sendStaticCatalogManifest(p Player) {
 	manifest := staticdata.Default().Manifest()
+	hashes := make([]*pb.CatalogSectionHash, 0, len(manifest.SectionHashes))
+	for _, entry := range manifest.SectionHashes {
+		hashes = append(hashes, &pb.CatalogSectionHash{
+			SectionName: entry.SectionName,
+			Hash:        entry.Hash,
+		})
+	}
 	msg := &pb.MsgStaticCatalogManifest{
 		Manifest: &pb.StaticCatalogManifest{
-			SchemaVersion:  manifest.SchemaVersion,
-			ContentVersion: manifest.ContentVersion,
-			BundleHash:     manifest.BundleHash,
-			DefaultLocale:  manifest.DefaultLocale,
-			DefaultMapId:   manifest.DefaultMapID,
+			SchemaVersion:    manifest.SchemaVersion,
+			ContentVersion:   manifest.ContentVersion,
+			BundleHash:       manifest.BundleHash,
+			DefaultLocale:    manifest.DefaultLocale,
+			DefaultMapId:     manifest.DefaultMapID,
+			RequiredSections: append([]string(nil), manifest.RequiredSections...),
+			SectionHashes:    hashes,
 		},
 	}
 	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+}
+
+func (r *Runtime) HandleStaticCatalogSyncRequest(ctx context.Context, playerID string, req *pb.MsgStaticCatalogSyncRequest) error {
+	player, ok := r.findPlayer(playerID)
+	if !ok {
+		return transportproblem.InvalidRequest("player not found for static catalog sync")
+	}
+	if r.isBootstrapReady(playerID) {
+		return nil
+	}
+
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return transportproblem.InternalError("static catalog is not initialized")
+	}
+
+	sections := resolveRequestedSections(catalog, req)
+	for _, sectionName := range sections {
+		if err := r.sendCatalogSection(ctx, playerID, catalog, sectionName); err != nil {
+			return err
+		}
+	}
+
+	_ = player.Send(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), &pb.MsgStaticCatalogSyncComplete{
+		AppliedBundleHash: catalog.BundleHash(),
+		Success:           true,
+	})
+
+	r.sendBootstrapRemainder(player)
+	r.markBootstrapReady(playerID)
+	return nil
 }
 
 func (r *Runtime) sendConfigBatch(p Player) {
@@ -516,23 +572,194 @@ func (r *Runtime) resolveBootstrapMapBundle() *staticdata.MapRuntimeBundle {
 }
 
 func (r *Runtime) sendBootstrapMessages() error {
+	r.bootstrapMu.Lock()
 	r.bootstrapPlanningStartSent = false
-	r.PreparePlanningStartStateIfNeeded()
+	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.players))
+	r.bootstrapMu.Unlock()
 	for _, player := range r.players {
 		if player.IsBot() {
 			continue
 		}
 		r.sendStaticCatalogManifest(player)
-		r.sendConfigBatch(player)
-		r.sendGameInit(player)
-		var planningStartEvents []event.Event
-		if r.planningStartResult != nil {
-			planningStartEvents = r.planningStartResult.Events
+	}
+	return nil
+}
+
+func (r *Runtime) sendBootstrapRemainder(p Player) {
+	r.PreparePlanningStartStateIfNeeded()
+	r.sendConfigBatch(p)
+	r.sendGameInit(p)
+	var planningStartEvents []event.Event
+	if r.planningStartResult != nil {
+		planningStartEvents = r.planningStartResult.Events
+	}
+	if msg := BuildPlanningStartMessage(r.state, p.PlayerID(), r.state.Phase, planningStartEvents); msg != nil {
+		_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+		r.bootstrapMu.Lock()
+		r.bootstrapPlanningStartSent = true
+		r.bootstrapMu.Unlock()
+	}
+}
+
+func (r *Runtime) WaitBootstrapReady(ctx context.Context) bool {
+	if r == nil {
+		return false
+	}
+	if r.allHumanPlayersBootstrapReady() {
+		return true
+	}
+
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-ticker.C:
+			if r.allHumanPlayersBootstrapReady() {
+				return true
+			}
 		}
-		if msg := BuildPlanningStartMessage(r.state, player.PlayerID(), r.state.Phase, planningStartEvents); msg != nil {
-			_ = r.SendToPlayer(context.Background(), player.PlayerID(), msg)
-			r.bootstrapPlanningStartSent = true
+	}
+}
+
+func (r *Runtime) allHumanPlayersBootstrapReady() bool {
+	r.bootstrapMu.RLock()
+	defer r.bootstrapMu.RUnlock()
+	for _, player := range r.players {
+		if player == nil || player.IsBot() {
+			continue
+		}
+		if !r.bootstrapReadyByPlayer[player.PlayerID()] {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *Runtime) isBootstrapReady(playerID string) bool {
+	r.bootstrapMu.RLock()
+	defer r.bootstrapMu.RUnlock()
+	return r.bootstrapReadyByPlayer[playerID]
+}
+
+func (r *Runtime) markBootstrapReady(playerID string) {
+	r.bootstrapMu.Lock()
+	defer r.bootstrapMu.Unlock()
+	r.bootstrapReadyByPlayer[playerID] = true
+}
+
+func (r *Runtime) findPlayer(playerID string) (Player, bool) {
+	for _, player := range r.players {
+		if player != nil && player.PlayerID() == playerID {
+			return player, true
+		}
+	}
+	return nil, false
+}
+
+func resolveRequestedSections(catalog *staticdata.Catalog, req *pb.MsgStaticCatalogSyncRequest) []string {
+	if catalog == nil {
+		return nil
+	}
+	manifest := catalog.Manifest()
+	if req == nil {
+		return append([]string(nil), manifest.RequiredSections...)
+	}
+	if req.GetForceFullSync() {
+		return append([]string(nil), manifest.RequiredSections...)
+	}
+	if len(req.GetSectionNames()) == 0 {
+		if req.GetBundleHash() != "" && req.GetBundleHash() == catalog.BundleHash() {
+			return nil
+		}
+		return append([]string(nil), manifest.RequiredSections...)
+	}
+
+	allowed := make(map[string]struct{}, len(manifest.RequiredSections))
+	for _, section := range manifest.RequiredSections {
+		allowed[section] = struct{}{}
+	}
+
+	seen := make(map[string]struct{}, len(req.GetSectionNames()))
+	sections := make([]string, 0, len(req.GetSectionNames()))
+	for _, section := range req.GetSectionNames() {
+		section = strings.TrimSpace(section)
+		if section == "" {
+			continue
+		}
+		if _, ok := allowed[section]; !ok {
+			continue
+		}
+		if _, ok := seen[section]; ok {
+			continue
+		}
+		seen[section] = struct{}{}
+		sections = append(sections, section)
+	}
+	return sections
+}
+
+func (r *Runtime) sendCatalogSection(ctx context.Context, playerID string, catalog *staticdata.Catalog, sectionName string) error {
+	payload, ok := catalog.SectionPayload(sectionName)
+	if !ok {
+		return transportproblem.InvalidRequest("unknown static catalog section")
+	}
+
+	compressed, err := compressCatalogSection(payload)
+	if err != nil {
+		return transportproblem.InternalError("compress static catalog section failed")
+	}
+	hash := ""
+	for _, entry := range catalog.Manifest().SectionHashes {
+		if entry.SectionName == sectionName {
+			hash = entry.Hash
+			break
+		}
+	}
+	chunks := splitCatalogSection(compressed, 32*1024)
+	for i, chunk := range chunks {
+		if err := r.SendToPlayer(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), playerID, &pb.MsgStaticCatalogSectionChunk{
+			SectionName: sectionName,
+			SectionHash: hash,
+			ChunkIndex:  uint32(i),
+			ChunkCount:  uint32(len(chunks)),
+			Compression: "gzip",
+			Payload:     chunk,
+		}); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func compressCatalogSection(raw []byte) ([]byte, error) {
+	var buffer bytes.Buffer
+	writer := gzip.NewWriter(&buffer)
+	if _, err := writer.Write(raw); err != nil {
+		_ = writer.Close()
+		return nil, err
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+func splitCatalogSection(raw []byte, chunkSize int) [][]byte {
+	if chunkSize <= 0 || len(raw) <= chunkSize {
+		return [][]byte{raw}
+	}
+	chunks := make([][]byte, 0, (len(raw)+chunkSize-1)/chunkSize)
+	for start := 0; start < len(raw); start += chunkSize {
+		end := start + chunkSize
+		if end > len(raw) {
+			end = len(raw)
+		}
+		chunk := make([]byte, end-start)
+		copy(chunk, raw[start:end])
+		chunks = append(chunks, chunk)
+	}
+	return chunks
 }

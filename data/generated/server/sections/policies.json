@@ -1,0 +1,86 @@
+{
+  "policies": [
+    {
+      "id": "expansion",
+      "name": "扩张",
+      "description": "优先扩张国家边界。",
+      "icon_key": "policy_expansion",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 10,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "war_preparedness",
+      "name": "备战",
+      "description": "优先军事准备。",
+      "icon_key": "policy_war_preparedness",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 20,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "recovery",
+      "name": "恢复",
+      "description": "优先恢复国家秩序。",
+      "icon_key": "policy_recovery",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 30,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "reorganization",
+      "name": "整饬",
+      "description": "优先整顿国家结构。",
+      "icon_key": "policy_reorganization",
+      "layer": "national",
+      "activation_timing": "same_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "sort_order": 40,
+      "tags": [
+        "national"
+      ]
+    },
+    {
+      "id": "academy_charter",
+      "name": "学术特许",
+      "description": "制度层面的学术组织支持，提升科研产出。",
+      "icon_key": "policy_academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 50,
+      "tags": [
+        "institutional"
+      ]
+    }
+  ]
+}

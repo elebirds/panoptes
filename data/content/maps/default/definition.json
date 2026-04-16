@@ -2,44 +2,98 @@
   "$schema": "../../../schema/content/maps/definition.schema.json",
   "meta": {
     "id": "default",
-    "name": "标准地图",
-    "width": 2,
-    "height": 2,
+    "name": "双隘争衡",
+    "width": 36,
+    "height": 36,
     "default_terrain": "plain",
-    "tags": ["pvp"]
+    "tags": ["pvp", "1v1", "mirror"]
   },
   "terrain_patches": [
+    { "kind": "rect", "terrain": "forest", "x": 0, "y": 14, "width": 6, "height": 8 },
+    { "kind": "rect", "terrain": "forest", "x": 14, "y": 0, "width": 8, "height": 6 },
+    { "kind": "rect", "terrain": "forest", "x": 4, "y": 24, "width": 8, "height": 6 },
+    { "kind": "rect", "terrain": "forest", "x": 24, "y": 4, "width": 6, "height": 8 },
+    { "kind": "rect", "terrain": "forest", "x": 8, "y": 28, "width": 6, "height": 5 },
+    { "kind": "rect", "terrain": "forest", "x": 28, "y": 8, "width": 5, "height": 6 },
+    { "kind": "rect", "terrain": "forest", "x": 10, "y": 22, "width": 6, "height": 4 },
+    { "kind": "rect", "terrain": "forest", "x": 22, "y": 10, "width": 4, "height": 6 },
+    { "kind": "rect", "terrain": "forest", "x": 12, "y": 26, "width": 4, "height": 5 },
+    { "kind": "rect", "terrain": "forest", "x": 26, "y": 12, "width": 5, "height": 4 },
     {
       "kind": "point",
-      "terrain": "forest",
-      "points": [{ "x": 1, "y": 0 }]
+      "terrain": "river",
+      "points": [
+        { "x": 9, "y": 25 },
+        { "x": 10, "y": 24 },
+        { "x": 10, "y": 25 },
+        { "x": 10, "y": 26 },
+        { "x": 11, "y": 23 },
+        { "x": 11, "y": 24 },
+        { "x": 11, "y": 25 },
+        { "x": 12, "y": 22 },
+        { "x": 12, "y": 23 },
+        { "x": 12, "y": 24 },
+        { "x": 13, "y": 23 },
+        { "x": 15, "y": 19 },
+        { "x": 16, "y": 20 },
+        { "x": 19, "y": 15 },
+        { "x": 20, "y": 16 },
+        { "x": 22, "y": 12 },
+        { "x": 23, "y": 11 },
+        { "x": 23, "y": 12 },
+        { "x": 23, "y": 13 },
+        { "x": 24, "y": 10 },
+        { "x": 24, "y": 11 },
+        { "x": 24, "y": 12 },
+        { "x": 25, "y": 9 },
+        { "x": 25, "y": 10 },
+        { "x": 25, "y": 11 },
+        { "x": 26, "y": 10 }
+      ]
     }
   ],
-  "node_overrides": [
-    {
-      "id": "B2",
-      "x": 1,
-      "y": 1,
-      "terrain": "forest",
-      "has_road": true,
-      "building_type": "city_core",
-      "building_hp": 100
-    }
-  ],
+  "node_overrides": [],
   "features": {
     "resource_points": [
-      { "x": 0, "y": 1, "resource_type": "food", "node_name": "粮仓" }
+      { "x": 6, "y": 32, "resource_type": "food" },
+      { "x": 32, "y": 6, "resource_type": "food" },
+      { "x": 9, "y": 30, "resource_type": "wood" },
+      { "x": 30, "y": 9, "resource_type": "wood" },
+      { "x": 7, "y": 27, "resource_type": "ore" },
+      { "x": 27, "y": 7, "resource_type": "ore" },
+      { "x": 11, "y": 29, "resource_type": "food" },
+      { "x": 29, "y": 11, "resource_type": "food" },
+      { "x": 13, "y": 24, "resource_type": "wood" },
+      { "x": 24, "y": 13, "resource_type": "wood" },
+      { "x": 9, "y": 22, "resource_type": "ore" },
+      { "x": 22, "y": 9, "resource_type": "ore" },
+      { "x": 15, "y": 24, "resource_type": "food" },
+      { "x": 24, "y": 15, "resource_type": "food" },
+      { "x": 13, "y": 20, "resource_type": "ore" },
+      { "x": 20, "y": 13, "resource_type": "ore" },
+      { "x": 16, "y": 22, "resource_type": "wood" },
+      { "x": 22, "y": 16, "resource_type": "wood" },
+      { "x": 4, "y": 18, "resource_type": "wood" },
+      { "x": 18, "y": 4, "resource_type": "wood" },
+      { "x": 17, "y": 24, "resource_type": "food" },
+      { "x": 24, "y": 17, "resource_type": "food" }
     ],
-    "roads": [
-      { "points": [{ "x": 0, "y": 0 }, { "x": 1, "y": 0 }] }
-    ],
+    "roads": [],
     "named_nodes": [
-      { "x": 1, "y": 1, "name": "林地" }
+      { "x": 4, "y": 31, "name": "西南王庭" },
+      { "x": 31, "y": 4, "name": "东北王庭" },
+      { "x": 14, "y": 21, "name": "南隘口" },
+      { "x": 21, "y": 14, "name": "北隘口" }
     ],
-    "central_points": [{ "x": 1, "y": 1 }]
+    "central_points": [
+      { "x": 14, "y": 21 },
+      { "x": 15, "y": 20 },
+      { "x": 20, "y": 15 },
+      { "x": 21, "y": 14 }
+    ]
   },
   "spawn_points": [
-    { "slot": 0, "x": 0, "y": 0 },
-    { "slot": 1, "x": 1, "y": 1 }
+    { "slot": 0, "x": 4, "y": 31 },
+    { "slot": 1, "x": 31, "y": 4 }
   ]
 }

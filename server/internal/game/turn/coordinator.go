@@ -52,6 +52,9 @@ func (c *Coordinator) Start() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	c.runtime.SetCancelFunc(cancel)
+	if !c.runtime.WaitBootstrapReady(ctx) {
+		return
+	}
 
 	rules := staticdata.Default().Rules()
 	planningTimeoutSec := rules.TurnTimeLimitPlanning
@@ -106,6 +109,9 @@ func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.
 	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
 		return ErrPhaseMismatch
 	}
+	if _, ok := cmd.Body.(*pb.GameCommand_StaticCatalogSyncRequest); ok {
+		return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
+	}
 	if c.runtime.State().Phase != domain.PhasePlanning.String() {
 		return ErrPhaseMismatch
 	}
@@ -122,6 +128,13 @@ func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.Pla
 		return ErrPhaseMismatch
 	}
 	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
+}
+
+func (h gameCommandHandler) StaticCatalogSyncRequest(ctx cmddispatch.InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {
+	if h.coordinator == nil || h.coordinator.runtime == nil {
+		return ErrPhaseMismatch
+	}
+	return h.coordinator.runtime.HandleStaticCatalogSyncRequest(context.Background(), ctx.PlayerID, cmd)
 }
 
 func (c *Coordinator) waitAllSubmit(ctx context.Context, timeout time.Duration) {

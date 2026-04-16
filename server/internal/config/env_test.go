@@ -175,6 +175,14 @@ func writeConfigFixture(t *testing.T, repoRoot string) {
     { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场生产链", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": [] }
   ]
 }`,
+		"data/ui/layouts/technology_tree.json": `{
+  "$schema": "../../schema/ui/technology_tree.schema.json",
+  "config_version": "2026-04-17",
+  "nodes": [
+    { "id": "node_agri", "technology_id": "agrarian_foundations", "title": "农业基础", "description": "解锁农场生产链", "x": 0, "y": 0, "width": 360, "height": 104, "visible": true }
+  ],
+  "edges": []
+}`,
 		"data/ui/catalogs/policies.json": `{
   "$schema": "../../schema/ui/policies.schema.json",
   "policies": [

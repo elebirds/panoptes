@@ -12,6 +12,7 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
@@ -119,7 +120,21 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 	go room.Start()
 
 	waitForPrepared(t, 2*time.Second, func() bool {
-		return len(tp.snapshot("player-1")) >= 4
+		return len(tp.snapshot("player-1")) >= 1
+	})
+
+	if err := room.HandleGameCommand(cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.GameCommand{
+		Body: &pb.GameCommand_StaticCatalogSyncRequest{
+			StaticCatalogSyncRequest: &pb.MsgStaticCatalogSyncRequest{
+				BundleHash: staticdata.Default().BundleHash(),
+			},
+		},
+	}); err != nil {
+		t.Fatalf("HandleGameCommand(sync) error = %v", err)
+	}
+
+	waitForPrepared(t, 2*time.Second, func() bool {
+		return len(tp.snapshot("player-1")) >= 5
 	})
 
 	msgs := tp.snapshot("player-1")
@@ -131,22 +146,29 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 		t.Fatalf("msgs[0] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 
-	if got := msgs[1].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
-		t.Fatalf("msgs[1] = %s, want MsgConfigBatchJson", got)
+	if got := msgs[1].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogSyncComplete" {
+		t.Fatalf("msgs[1] = %s, want MsgStaticCatalogSyncComplete", got)
 	}
 	if got := metaGameSessionID(metas[1]); got != state.GameID {
 		t.Fatalf("msgs[1] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 
-	initMsg, ok := msgs[2].(*pb.MsgGameInit)
+	if got := msgs[2].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("msgs[2] = %s, want MsgConfigBatchJson", got)
+	}
+	if got := metaGameSessionID(metas[2]); got != state.GameID {
+		t.Fatalf("msgs[2] meta.game_session_id = %q, want %q", got, state.GameID)
+	}
+
+	initMsg, ok := msgs[3].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("msgs[2] type = %T, want *pb.MsgGameInit", msgs[2])
+		t.Fatalf("msgs[3] type = %T, want *pb.MsgGameInit", msgs[3])
 	}
 	if initMsg.GetGameId() != state.GameID {
 		t.Fatalf("game_id = %q, want %q", initMsg.GetGameId(), state.GameID)
 	}
-	if got := metaGameSessionID(metas[2]); got != state.GameID {
-		t.Fatalf("msgs[2] meta.game_session_id = %q, want %q", got, state.GameID)
+	if got := metaGameSessionID(metas[3]); got != state.GameID {
+		t.Fatalf("msgs[3] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if initMsg.GetTurn() != 4 {
 		t.Fatalf("init turn = %d, want 4", initMsg.GetTurn())
@@ -155,12 +177,12 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 		t.Fatalf("init nodes len = %d, want 2", got)
 	}
 
-	startMsg, ok := msgs[3].(*pb.MsgPlanningStart)
+	startMsg, ok := msgs[4].(*pb.MsgPlanningStart)
 	if !ok {
-		t.Fatalf("msgs[3] type = %T, want *pb.MsgPlanningStart", msgs[3])
+		t.Fatalf("msgs[4] type = %T, want *pb.MsgPlanningStart", msgs[4])
 	}
-	if got := metaGameSessionID(metas[3]); got != state.GameID {
-		t.Fatalf("msgs[3] meta.game_session_id = %q, want %q", got, state.GameID)
+	if got := metaGameSessionID(metas[4]); got != state.GameID {
+		t.Fatalf("msgs[4] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if startMsg.GetTurn() != 4 {
 		t.Fatalf("planning start turn = %d, want 4", startMsg.GetTurn())
