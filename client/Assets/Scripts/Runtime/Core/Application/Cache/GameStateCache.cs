@@ -24,6 +24,7 @@ namespace Panoptes.Core.Application.Cache
         public static GameStateCache Instance { get; private set; }
 
         public string GameID { get; private set; }
+        public string ActiveGameSessionID { get; private set; }
         public string MyPlayerID { get; private set; }
         public int Turn { get; private set; }
         public string Phase { get; private set; }
@@ -88,6 +89,10 @@ namespace Panoptes.Core.Application.Cache
             }
 
             GameID = msg.GameId ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(ActiveGameSessionID))
+            {
+                ActiveGameSessionID = GameID;
+            }
             MyPlayerID = msg.YourPlayerId ?? string.Empty;
             Turn = msg.Turn;
             Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
@@ -459,6 +464,7 @@ namespace Panoptes.Core.Application.Cache
         public void Clear()
         {
             GameID = string.Empty;
+            ActiveGameSessionID = string.Empty;
             MyPlayerID = string.Empty;
             Turn = 0;
             Phase = string.Empty;
@@ -477,6 +483,13 @@ namespace Panoptes.Core.Application.Cache
             EnemyMaxCityCoreHP = 0;
             PlanningDraftCache.Instance?.ClearAll();
             OnStateChanged?.Invoke();
+        }
+
+        public void SetActiveGameSession(string gameSessionID)
+        {
+            ActiveGameSessionID = string.IsNullOrWhiteSpace(gameSessionID)
+                ? string.Empty
+                : gameSessionID.Trim();
         }
 
         public void PublishPhaseChanged(PhaseChangedEvent evtArgs) => Fire(OnPhaseChanged, evtArgs, nameof(OnPhaseChanged));

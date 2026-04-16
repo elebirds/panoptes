@@ -169,6 +169,7 @@ func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
 }
 
 func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
+	ctx = transport.ContextWithGameSessionID(ctx, r.gameSessionID())
 	for _, player := range r.players {
 		if player.PlayerID() == playerID {
 			return player.Send(ctx, msg)
@@ -198,9 +199,20 @@ func (r *Runtime) PlanningStartResult() *PlanningStartResult {
 }
 
 func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
+	ctx = transport.ContextWithGameSessionID(ctx, r.gameSessionID())
 	for _, player := range r.players {
 		_ = player.Send(ctx, msg)
 	}
+}
+
+func (r *Runtime) gameSessionID() string {
+	if r == nil {
+		return ""
+	}
+	if r.state != nil && r.state.GameID != "" {
+		return r.state.GameID
+	}
+	return r.ID
 }
 
 func (r *Runtime) humanPlayerIDs() []string {
@@ -435,7 +447,7 @@ func (r *Runtime) sendGameInit(p Player) {
 		Nodes:        gamequery.BuildNodeViews(r.state, p.PlayerID()),
 		Units:        gamequery.BuildUnitViews(r.state),
 	}
-	_ = p.Send(context.Background(), msg)
+	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
 }
 
 func (r *Runtime) sendStaticCatalogManifest(p Player) {
@@ -449,7 +461,7 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 			DefaultMapId:   manifest.DefaultMapID,
 		},
 	}
-	_ = p.Send(context.Background(), msg)
+	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
 }
 
 func (r *Runtime) sendBootstrapMessages() error {
@@ -459,14 +471,14 @@ func (r *Runtime) sendBootstrapMessages() error {
 		if player.IsBot() {
 			continue
 		}
-		r.sendStaticCatalogManifest(player)
 		r.sendGameInit(player)
+		r.sendStaticCatalogManifest(player)
 		var planningStartEvents []event.Event
 		if r.planningStartResult != nil {
 			planningStartEvents = r.planningStartResult.Events
 		}
 		if msg := BuildPlanningStartMessage(r.state, player.PlayerID(), r.state.Phase, planningStartEvents); msg != nil {
-			_ = player.Send(context.Background(), msg)
+			_ = r.SendToPlayer(context.Background(), player.PlayerID(), msg)
 			r.bootstrapPlanningStartSent = true
 		}
 	}

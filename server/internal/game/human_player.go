@@ -63,5 +63,5 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 	if msg == nil {
 		return
 	}
-	_ = p.Send(context.Background(), msg)
+	_ = room.SendToPlayer(context.Background(), p.playerID, msg)
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
+using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
 using Panoptes.Presentation.UI.Game;
 using UnityEngine;
@@ -46,6 +47,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             DestroySingleton("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.GameStateCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.PlanningDraftCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Infrastructure.Network.MessageDispatcher, Panoptes.Core");
         }
 
         [Test]
@@ -116,6 +118,50 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.GameID, Is.Empty);
             Assert.That(cache.MyPlayerID, Is.Empty);
             Assert.That(changedCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void MessageDispatcher_ShouldDropCrossSessionGameEvents()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+            SetSingletonInstance(typeof(GameStateCache), cache);
+
+            var dispatcherObject = new GameObject("MessageDispatcher");
+            var dispatcher = dispatcherObject.AddComponent<MessageDispatcher>();
+            SetSingletonInstance(typeof(MessageDispatcher), dispatcher);
+
+            var settlementDispatches = 0;
+            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", _ => settlementDispatches++);
+
+            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 1, Phase = "resolving" }, "session-stale"));
+            Assert.That(settlementDispatches, Is.EqualTo(0),
+                "未建立激活会话前，不应处理非 MsgGameInit 的游戏消息。");
+
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 1,
+                Phase = "planning",
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 3
+                }
+            }, "session-a"));
+
+            var activeSession = GetStringPropertyIfPresent(cache, "ActiveGameSessionID");
+            Assert.That(activeSession, Is.EqualTo("session-a"),
+                "MsgGameInit 建立当前会话后，应记录激活中的 game session id。");
+
+            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-b"));
+            Assert.That(settlementDispatches, Is.EqualTo(0),
+                "不同 session 的游戏消息必须在分发前被丢弃。");
+
+            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-a"));
+            Assert.That(settlementDispatches, Is.EqualTo(1),
+                "同一 session 的游戏消息应继续正常分发。");
         }
 
         [Test]
@@ -705,6 +751,39 @@ namespace Panoptes.Tests.EditMode.Lobby
             var property = type.GetProperty(propertyName)
                            ?? throw new AssertionException($"缺少属性 {propertyName}");
             return (T)property.GetValue(instance);
+        }
+
+        private static string GetStringPropertyIfPresent(Component instance, string propertyName)
+        {
+            var property = instance.GetType().GetProperty(propertyName);
+            return property != null ? property.GetValue(instance) as string : string.Empty;
+        }
+
+        private static ServerFrame BuildGameFrame(object message, string gameSessionId)
+        {
+            var frame = new ServerFrame
+            {
+                Meta = new EventMeta()
+            };
+
+            var sessionProperty = typeof(EventMeta).GetProperty("GameSessionId");
+            sessionProperty?.SetValue(frame.Meta, gameSessionId);
+
+            var gameEvent = new GameEvent();
+            switch (message)
+            {
+                case MsgGameInit gameInit:
+                    gameEvent.GameInit = gameInit;
+                    break;
+                case MsgTurnSettlement settlement:
+                    gameEvent.TurnSettlement = settlement;
+                    break;
+                default:
+                    throw new AssertionException($"不支持的测试消息类型: {message?.GetType().Name ?? "null"}");
+            }
+
+            frame.Game = gameEvent;
+            return frame;
         }
 
         private static void InvokeLifecycle(object instance, string methodName)

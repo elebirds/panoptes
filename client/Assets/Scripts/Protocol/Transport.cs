@@ -31,126 +31,126 @@ namespace Panoptes.Protocol.V1 {
             "bW1hbmRNZXRhEh0KCnJlcXVlc3RfaWQYASABKAlSCXJlcXVlc3RJZBIZCgh0",
             "cmFjZV9pZBgCIAEoCVIHdHJhY2VJZBIlCg5jbGllbnRfdmVyc2lvbhgDIAEo",
             "CVINY2xpZW50VmVyc2lvbhIiCgxjYXBhYmlsaXRpZXMYBCADKAlSDGNhcGFi",
-            "aWxpdGllcyJzCglFdmVudE1ldGESHQoKcmVxdWVzdF9pZBgBIAEoCVIJcmVx",
-            "dWVzdElkEhkKCHRyYWNlX2lkGAIgASgJUgd0cmFjZUlkEiwKEnNlcnZlcl91",
-            "bml4X21pbGxpcxgDIAEoA1IQc2VydmVyVW5peE1pbGxpcyI7Cg1Qcm9ibGVt",
-            "RGV0YWlsEhIKBHBhdGgYASABKAlSBHBhdGgSFgoGZGV0YWlsGAIgASgJUgZk",
-            "ZXRhaWwicwoHUHJvYmxlbRISCgRjb2RlGAEgASgJUgRjb2RlEhgKB21lc3Nh",
-            "Z2UYAiABKAlSB21lc3NhZ2USOgoHZGV0YWlscxgDIAMoCzIgLnBhbm9wdGVz",
-            "LnByb3RvLnYxLlByb2JsZW1EZXRhaWxSB2RldGFpbHMiiAEKC0F1dGhDb21t",
-            "YW5kEjwKCHJlZ2lzdGVyGAEgASgLMh4ucGFub3B0ZXMucHJvdG8udjEuTXNn",
-            "UmVnaXN0ZXJIAFIIcmVnaXN0ZXISMwoFbG9naW4YAiABKAsyGy5wYW5vcHRl",
-            "cy5wcm90by52MS5Nc2dMb2dpbkgAUgVsb2dpbkIGCgRib2R5ItgDCgxMb2Ji",
-            "eUNvbW1hbmQSQwoLY3JlYXRlX3Jvb20YASABKAsyIC5wYW5vcHRlcy5wcm90",
-            "by52MS5Nc2dDcmVhdGVSb29tSABSCmNyZWF0ZVJvb20SPQoJam9pbl9yb29t",
-            "GAIgASgLMh4ucGFub3B0ZXMucHJvdG8udjEuTXNnSm9pblJvb21IAFIIam9p",
-            "blJvb20SQAoKbGVhdmVfcm9vbRgDIAEoCzIfLnBhbm9wdGVzLnByb3RvLnYx",
-            "Lk1zZ0xlYXZlUm9vbUgAUglsZWF2ZVJvb20SOgoIcmVhZHlfdXAYBCABKAsy",
-            "HS5wYW5vcHRlcy5wcm90by52MS5Nc2dSZWFkeVVwSABSB3JlYWR5VXASNwoH",
-            "YWRkX2JvdBgFIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0FkZEJvdEgA",
-            "UgZhZGRCb3QSQAoKc3RhcnRfZ2FtZRgGIAEoCzIfLnBhbm9wdGVzLnByb3Rv",
-            "LnYxLk1zZ1N0YXJ0R2FtZUgAUglzdGFydEdhbWUSQwoLa2lja19wbGF5ZXIY",
-            "ByABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dLaWNrUGxheWVySABSCmtp",
-            "Y2tQbGF5ZXJCBgoEYm9keSLzCAoPUGxhbm5pbmdDb21tYW5kEkAKCnNldF9w",
-            "b2xpY3kYASABKAsyHy5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRQb2xpY3lI",
-            "AFIJc2V0UG9saWN5ElkKE3NldF9yZXNlYXJjaF90YXJnZXQYAiABKAsyJy5w",
-            "YW5vcHRlcy5wcm90by52MS5Nc2dTZXRSZXNlYXJjaFRhcmdldEgAUhFzZXRS",
-            "ZXNlYXJjaFRhcmdldBJZChNzZXRfYnVpbGRpbmdfcmVjaXBlGAMgASgLMicu",
-            "cGFub3B0ZXMucHJvdG8udjEuTXNnU2V0QnVpbGRpbmdSZWNpcGVIAFIRc2V0",
-            "QnVpbGRpbmdSZWNpcGUSTwoPYnVpbGRfc3RydWN0dXJlGAQgASgLMiQucGFu",
-            "b3B0ZXMucHJvdG8udjEuTXNnQnVpbGRTdHJ1Y3R1cmVIAFIOYnVpbGRTdHJ1",
-            "Y3R1cmUSQwoLcmV2ZWFsX25vZGUYBSABKAsyIC5wYW5vcHRlcy5wcm90by52",
-            "MS5Nc2dSZXZlYWxOb2RlSABSCnJldmVhbE5vZGUSRAoMc2V0X3dhcl96b25l",
-            "GAYgASgLMiAucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0V2FyWm9uZUgAUgpz",
-            "ZXRXYXJab25lElYKEndhcl96b25lX2RpcmVjdGl2ZRgHIAEoCzImLnBhbm9w",
-            "dGVzLnByb3RvLnYxLk1zZ1dhclpvbmVEaXJlY3RpdmVIAFIQd2FyWm9uZURp",
-            "cmVjdGl2ZRJiChZzZXRfbWluaXN0ZXJfZGlyZWN0aXZlGAggASgLMioucGFu",
-            "b3B0ZXMucHJvdG8udjEuTXNnU2V0TWluaXN0ZXJEaXJlY3RpdmVIAFIUc2V0",
-            "TWluaXN0ZXJEaXJlY3RpdmUSUAoQaXNzdWVfdW5pdF9vcmRlchgJIAEoCzIk",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ0lzc3VlVW5pdE9yZGVySABSDmlzc3Vl",
-            "VW5pdE9yZGVyElMKEWNhbmNlbF91bml0X29yZGVyGAogASgLMiUucGFub3B0",
-            "ZXMucHJvdG8udjEuTXNnQ2FuY2VsVW5pdE9yZGVySABSD2NhbmNlbFVuaXRP",
-            "cmRlchJ1Ch1wbGFubmluZ19wYXRoX3ByZXZpZXdfcmVxdWVzdBgLIAEoCzIw",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5nUGF0aFByZXZpZXdSZXF1",
-            "ZXN0SABSGnBsYW5uaW5nUGF0aFByZXZpZXdSZXF1ZXN0EkMKC3N1Ym1pdF90",
-            "dXJuGAwgASgLMiAucGFub3B0ZXMucHJvdG8udjEuTXNnU3VibWl0VHVybkgA",
-            "UgpzdWJtaXRUdXJuEmUKF3NldF9pbnN0aXR1dGlvbl9sb2Fkb3V0GA0gASgL",
-            "MisucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0SW5zdGl0dXRpb25Mb2Fkb3V0",
-            "SABSFXNldEluc3RpdHV0aW9uTG9hZG91dEIGCgRib2R5IlcKC0dhbWVDb21t",
-            "YW5kEkAKCHBsYW5uaW5nGAEgASgLMiIucGFub3B0ZXMucHJvdG8udjEuUGxh",
-            "bm5pbmdDb21tYW5kSABSCHBsYW5uaW5nQgYKBGJvZHki8AEKC0NsaWVudEZy",
-            "YW1lEjIKBG1ldGEYASABKAsyHi5wYW5vcHRlcy5wcm90by52MS5Db21tYW5k",
-            "TWV0YVIEbWV0YRI0CgRhdXRoGAogASgLMh4ucGFub3B0ZXMucHJvdG8udjEu",
-            "QXV0aENvbW1hbmRIAFIEYXV0aBI3CgVsb2JieRgLIAEoCzIfLnBhbm9wdGVz",
-            "LnByb3RvLnYxLkxvYmJ5Q29tbWFuZEgAUgVsb2JieRI0CgRnYW1lGAwgASgL",
-            "Mh4ucGFub3B0ZXMucHJvdG8udjEuR2FtZUNvbW1hbmRIAFIEZ2FtZUIICgZ0",
-            "YXJnZXQigQIKCUF1dGhFdmVudBJJCg1sb2dpbl9zdWNjZXNzGAEgASgLMiIu",
-            "cGFub3B0ZXMucHJvdG8udjEuTXNnTG9naW5TdWNjZXNzSABSDGxvZ2luU3Vj",
-            "Y2VzcxJACgphdXRoX2Vycm9yGAIgASgLMh8ucGFub3B0ZXMucHJvdG8udjEu",
-            "TXNnQXV0aEVycm9ySABSCWF1dGhFcnJvchJfChVjbGllbnRfcnVudGltZV9j",
-            "b25maWcYAyABKAsyKS5wYW5vcHRlcy5wcm90by52MS5Nc2dDbGllbnRSdW50",
-            "aW1lQ29uZmlnSABSE2NsaWVudFJ1bnRpbWVDb25maWdCBgoEYm9keSL5AgoK",
-            "TG9iYnlFdmVudBJGCgxyb29tX2NyZWF0ZWQYASABKAsyIS5wYW5vcHRlcy5w",
-            "cm90by52MS5Nc2dSb29tQ3JlYXRlZEgAUgtyb29tQ3JlYXRlZBJACgpyb29t",
-            "X3N0YXRlGAIgASgLMh8ucGFub3B0ZXMucHJvdG8udjEuTXNnUm9vbVN0YXRl",
-            "SABSCXJvb21TdGF0ZRJJCg1nYW1lX3N0YXJ0aW5nGAMgASgLMiIucGFub3B0",
-            "ZXMucHJvdG8udjEuTXNnR2FtZVN0YXJ0aW5nSABSDGdhbWVTdGFydGluZxJJ",
-            "Cg1wbGF5ZXJfa2lja2VkGAQgASgLMiIucGFub3B0ZXMucHJvdG8udjEuTXNn",
-            "UGxheWVyS2lja2VkSABSDHBsYXllcktpY2tlZBJDCgtsb2JieV9lcnJvchgF",
-            "IAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0xvYmJ5RXJyb3JIAFIKbG9i",
-            "YnlFcnJvckIGCgRib2R5IrMNCglHYW1lRXZlbnQSZQoXc3RhdGljX2NhdGFs",
-            "b2dfbWFuaWZlc3QYASABKAsyKy5wYW5vcHRlcy5wcm90by52MS5Nc2dTdGF0",
-            "aWNDYXRhbG9nTWFuaWZlc3RIAFIVc3RhdGljQ2F0YWxvZ01hbmlmZXN0EmUK",
-            "F3N0YXRpY19jYXRhbG9nX3NuYXBzaG90GAIgASgLMisucGFub3B0ZXMucHJv",
-            "dG8udjEuTXNnU3RhdGljQ2F0YWxvZ1NuYXBzaG90SABSFXN0YXRpY0NhdGFs",
-            "b2dTbmFwc2hvdBI9CglnYW1lX2luaXQYAyABKAsyHi5wYW5vcHRlcy5wcm90",
-            "by52MS5Nc2dHYW1lSW5pdEgAUghnYW1lSW5pdBJMCg5wbGFubmluZ19zdGFy",
-            "dBgEIAEoCzIjLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5nU3RhcnRI",
-            "AFINcGxhbm5pbmdTdGFydBJVChFwbGFubmluZ19zbmFwc2hvdBgFIAEoCzIm",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5nU25hcHNob3RIAFIQcGxh",
-            "bm5pbmdTbmFwc2hvdBJ4Ch5wbGFubmluZ19wYXRoX3ByZXZpZXdfcmVzcG9u",
-            "c2UYBiABKAsyMS5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGFubmluZ1BhdGhQ",
-            "cmV2aWV3UmVzcG9uc2VIAFIbcGxhbm5pbmdQYXRoUHJldmlld1Jlc3BvbnNl",
-            "EkYKDHRva2VuX3Jlc3VsdBgHIAEoCzIhLnBhbm9wdGVzLnByb3RvLnYxLk1z",
-            "Z1Rva2VuUmVzdWx0SABSC3Rva2VuUmVzdWx0EkkKDXJldmVhbF9yZXN1bHQY",
-            "CCABKAsyIi5wYW5vcHRlcy5wcm90by52MS5Nc2dSZXZlYWxSZXN1bHRIAFIM",
-            "cmV2ZWFsUmVzdWx0Ek8KD3Jlc2VhcmNoX3Jlc3VsdBgJIAEoCzIkLnBhbm9w",
-            "dGVzLnByb3RvLnYxLk1zZ1Jlc2VhcmNoUmVzdWx0SABSDnJlc2VhcmNoUmVz",
-            "dWx0ElMKEXNldF9wb2xpY3lfcmVzdWx0GAogASgLMiUucGFub3B0ZXMucHJv",
-            "dG8udjEuTXNnU2V0UG9saWN5UmVzdWx0SABSD3NldFBvbGljeVJlc3VsdBJs",
-            "ChpzZXRfYnVpbGRpbmdfcmVjaXBlX3Jlc3VsdBgLIAEoCzItLnBhbm9wdGVz",
-            "LnByb3RvLnYxLk1zZ1NldEJ1aWxkaW5nUmVjaXBlUmVzdWx0SABSF3NldEJ1",
-            "aWxkaW5nUmVjaXBlUmVzdWx0EmIKFmJ1aWxkX3N0cnVjdHVyZV9yZXN1bHQY",
-            "DCABKAsyKi5wYW5vcHRlcy5wcm90by52MS5Nc2dCdWlsZFN0cnVjdHVyZVJl",
-            "c3VsdEgAUhRidWlsZFN0cnVjdHVyZVJlc3VsdBJDCgt0dXJuX3JlcG9ydBgN",
-            "IAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1R1cm5SZXBvcnRIAFIKdHVy",
-            "blJlcG9ydBJPCg90dXJuX3NldHRsZW1lbnQYDiABKAsyJC5wYW5vcHRlcy5w",
-            "cm90by52MS5Nc2dUdXJuU2V0dGxlbWVudEgAUg50dXJuU2V0dGxlbWVudBI9",
-            "CglnYW1lX292ZXIYDyABKAsyHi5wYW5vcHRlcy5wcm90by52MS5Nc2dHYW1l",
-            "T3ZlckgAUghnYW1lT3ZlchJfChVtaW5pc3Rlcl9yZXBvcnRfY2h1bmsYECAB",
-            "KAsyKS5wYW5vcHRlcy5wcm90by52MS5Nc2dNaW5pc3RlclJlcG9ydENodW5r",
-            "SABSE21pbmlzdGVyUmVwb3J0Q2h1bmsSUgoQbWluaXN0ZXJfbWV0cmljcxgR",
-            "IAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLk1zZ01pbmlzdGVyTWV0cmljc0gA",
-            "Ug9taW5pc3Rlck1ldHJpY3MSeAoec2V0X2luc3RpdHV0aW9uX2xvYWRvdXRf",
-            "cmVzdWx0GBIgASgLMjEucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0SW5zdGl0",
-            "dXRpb25Mb2Fkb3V0UmVzdWx0SABSG3NldEluc3RpdHV0aW9uTG9hZG91dFJl",
-            "c3VsdBJjChdpc3N1ZV91bml0X29yZGVyX3Jlc3VsdBgTIAEoCzIqLnBhbm9w",
-            "dGVzLnByb3RvLnYxLk1zZ0lzc3VlVW5pdE9yZGVyUmVzdWx0SABSFGlzc3Vl",
-            "VW5pdE9yZGVyUmVzdWx0QgYKBGJvZHkioAIKC1NlcnZlckZyYW1lEjAKBG1l",
-            "dGEYASABKAsyHC5wYW5vcHRlcy5wcm90by52MS5FdmVudE1ldGFSBG1ldGES",
-            "MgoEYXV0aBgKIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkF1dGhFdmVudEgA",
-            "UgRhdXRoEjUKBWxvYmJ5GAsgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuTG9i",
-            "YnlFdmVudEgAUgVsb2JieRIyCgRnYW1lGAwgASgLMhwucGFub3B0ZXMucHJv",
-            "dG8udjEuR2FtZUV2ZW50SABSBGdhbWUSNgoHcHJvYmxlbRgNIAEoCzIaLnBh",
-            "bm9wdGVzLnByb3RvLnYxLlByb2JsZW1IAFIHcHJvYmxlbUIICgZ0YXJnZXRC",
-            "U1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4v",
-            "cHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90",
-            "bzM="));
+            "aWxpdGllcyKbAQoJRXZlbnRNZXRhEh0KCnJlcXVlc3RfaWQYASABKAlSCXJl",
+            "cXVlc3RJZBIZCgh0cmFjZV9pZBgCIAEoCVIHdHJhY2VJZBIsChJzZXJ2ZXJf",
+            "dW5peF9taWxsaXMYAyABKANSEHNlcnZlclVuaXhNaWxsaXMSJgoPZ2FtZV9z",
+            "ZXNzaW9uX2lkGAQgASgJUg1nYW1lU2Vzc2lvbklkIjsKDVByb2JsZW1EZXRh",
+            "aWwSEgoEcGF0aBgBIAEoCVIEcGF0aBIWCgZkZXRhaWwYAiABKAlSBmRldGFp",
+            "bCJzCgdQcm9ibGVtEhIKBGNvZGUYASABKAlSBGNvZGUSGAoHbWVzc2FnZRgC",
+            "IAEoCVIHbWVzc2FnZRI6CgdkZXRhaWxzGAMgAygLMiAucGFub3B0ZXMucHJv",
+            "dG8udjEuUHJvYmxlbURldGFpbFIHZGV0YWlscyKIAQoLQXV0aENvbW1hbmQS",
+            "PAoIcmVnaXN0ZXIYASABKAsyHi5wYW5vcHRlcy5wcm90by52MS5Nc2dSZWdp",
+            "c3RlckgAUghyZWdpc3RlchIzCgVsb2dpbhgCIAEoCzIbLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLk1zZ0xvZ2luSABSBWxvZ2luQgYKBGJvZHki2AMKDExvYmJ5Q29t",
+            "bWFuZBJDCgtjcmVhdGVfcm9vbRgBIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk1zZ0NyZWF0ZVJvb21IAFIKY3JlYXRlUm9vbRI9Cglqb2luX3Jvb20YAiAB",
+            "KAsyHi5wYW5vcHRlcy5wcm90by52MS5Nc2dKb2luUm9vbUgAUghqb2luUm9v",
+            "bRJACgpsZWF2ZV9yb29tGAMgASgLMh8ucGFub3B0ZXMucHJvdG8udjEuTXNn",
+            "TGVhdmVSb29tSABSCWxlYXZlUm9vbRI6CghyZWFkeV91cBgEIAEoCzIdLnBh",
+            "bm9wdGVzLnByb3RvLnYxLk1zZ1JlYWR5VXBIAFIHcmVhZHlVcBI3CgdhZGRf",
+            "Ym90GAUgASgLMhwucGFub3B0ZXMucHJvdG8udjEuTXNnQWRkQm90SABSBmFk",
+            "ZEJvdBJACgpzdGFydF9nYW1lGAYgASgLMh8ucGFub3B0ZXMucHJvdG8udjEu",
+            "TXNnU3RhcnRHYW1lSABSCXN0YXJ0R2FtZRJDCgtraWNrX3BsYXllchgHIAEo",
+            "CzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0tpY2tQbGF5ZXJIAFIKa2lja1Bs",
+            "YXllckIGCgRib2R5IvMICg9QbGFubmluZ0NvbW1hbmQSQAoKc2V0X3BvbGlj",
+            "eRgBIAEoCzIfLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1NldFBvbGljeUgAUglz",
+            "ZXRQb2xpY3kSWQoTc2V0X3Jlc2VhcmNoX3RhcmdldBgCIAEoCzInLnBhbm9w",
+            "dGVzLnByb3RvLnYxLk1zZ1NldFJlc2VhcmNoVGFyZ2V0SABSEXNldFJlc2Vh",
+            "cmNoVGFyZ2V0ElkKE3NldF9idWlsZGluZ19yZWNpcGUYAyABKAsyJy5wYW5v",
+            "cHRlcy5wcm90by52MS5Nc2dTZXRCdWlsZGluZ1JlY2lwZUgAUhFzZXRCdWls",
+            "ZGluZ1JlY2lwZRJPCg9idWlsZF9zdHJ1Y3R1cmUYBCABKAsyJC5wYW5vcHRl",
+            "cy5wcm90by52MS5Nc2dCdWlsZFN0cnVjdHVyZUgAUg5idWlsZFN0cnVjdHVy",
+            "ZRJDCgtyZXZlYWxfbm9kZRgFIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1z",
+            "Z1JldmVhbE5vZGVIAFIKcmV2ZWFsTm9kZRJECgxzZXRfd2FyX3pvbmUYBiAB",
+            "KAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRXYXJab25lSABSCnNldFdh",
+            "clpvbmUSVgoSd2FyX3pvbmVfZGlyZWN0aXZlGAcgASgLMiYucGFub3B0ZXMu",
+            "cHJvdG8udjEuTXNnV2FyWm9uZURpcmVjdGl2ZUgAUhB3YXJab25lRGlyZWN0",
+            "aXZlEmIKFnNldF9taW5pc3Rlcl9kaXJlY3RpdmUYCCABKAsyKi5wYW5vcHRl",
+            "cy5wcm90by52MS5Nc2dTZXRNaW5pc3RlckRpcmVjdGl2ZUgAUhRzZXRNaW5p",
+            "c3RlckRpcmVjdGl2ZRJQChBpc3N1ZV91bml0X29yZGVyGAkgASgLMiQucGFu",
+            "b3B0ZXMucHJvdG8udjEuTXNnSXNzdWVVbml0T3JkZXJIAFIOaXNzdWVVbml0",
+            "T3JkZXISUwoRY2FuY2VsX3VuaXRfb3JkZXIYCiABKAsyJS5wYW5vcHRlcy5w",
+            "cm90by52MS5Nc2dDYW5jZWxVbml0T3JkZXJIAFIPY2FuY2VsVW5pdE9yZGVy",
+            "EnUKHXBsYW5uaW5nX3BhdGhfcHJldmlld19yZXF1ZXN0GAsgASgLMjAucGFu",
+            "b3B0ZXMucHJvdG8udjEuTXNnUGxhbm5pbmdQYXRoUHJldmlld1JlcXVlc3RI",
+            "AFIacGxhbm5pbmdQYXRoUHJldmlld1JlcXVlc3QSQwoLc3VibWl0X3R1cm4Y",
+            "DCABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dTdWJtaXRUdXJuSABSCnN1",
+            "Ym1pdFR1cm4SZQoXc2V0X2luc3RpdHV0aW9uX2xvYWRvdXQYDSABKAsyKy5w",
+            "YW5vcHRlcy5wcm90by52MS5Nc2dTZXRJbnN0aXR1dGlvbkxvYWRvdXRIAFIV",
+            "c2V0SW5zdGl0dXRpb25Mb2Fkb3V0QgYKBGJvZHkiVwoLR2FtZUNvbW1hbmQS",
+            "QAoIcGxhbm5pbmcYASABKAsyIi5wYW5vcHRlcy5wcm90by52MS5QbGFubmlu",
+            "Z0NvbW1hbmRIAFIIcGxhbm5pbmdCBgoEYm9keSLwAQoLQ2xpZW50RnJhbWUS",
+            "MgoEbWV0YRgBIAEoCzIeLnBhbm9wdGVzLnByb3RvLnYxLkNvbW1hbmRNZXRh",
+            "UgRtZXRhEjQKBGF1dGgYCiABKAsyHi5wYW5vcHRlcy5wcm90by52MS5BdXRo",
+            "Q29tbWFuZEgAUgRhdXRoEjcKBWxvYmJ5GAsgASgLMh8ucGFub3B0ZXMucHJv",
+            "dG8udjEuTG9iYnlDb21tYW5kSABSBWxvYmJ5EjQKBGdhbWUYDCABKAsyHi5w",
+            "YW5vcHRlcy5wcm90by52MS5HYW1lQ29tbWFuZEgAUgRnYW1lQggKBnRhcmdl",
+            "dCKBAgoJQXV0aEV2ZW50EkkKDWxvZ2luX3N1Y2Nlc3MYASABKAsyIi5wYW5v",
+            "cHRlcy5wcm90by52MS5Nc2dMb2dpblN1Y2Nlc3NIAFIMbG9naW5TdWNjZXNz",
+            "EkAKCmF1dGhfZXJyb3IYAiABKAsyHy5wYW5vcHRlcy5wcm90by52MS5Nc2dB",
+            "dXRoRXJyb3JIAFIJYXV0aEVycm9yEl8KFWNsaWVudF9ydW50aW1lX2NvbmZp",
+            "ZxgDIAEoCzIpLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0NsaWVudFJ1bnRpbWVD",
+            "b25maWdIAFITY2xpZW50UnVudGltZUNvbmZpZ0IGCgRib2R5IvkCCgpMb2Ji",
+            "eUV2ZW50EkYKDHJvb21fY3JlYXRlZBgBIAEoCzIhLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLk1zZ1Jvb21DcmVhdGVkSABSC3Jvb21DcmVhdGVkEkAKCnJvb21fc3Rh",
+            "dGUYAiABKAsyHy5wYW5vcHRlcy5wcm90by52MS5Nc2dSb29tU3RhdGVIAFIJ",
+            "cm9vbVN0YXRlEkkKDWdhbWVfc3RhcnRpbmcYAyABKAsyIi5wYW5vcHRlcy5w",
+            "cm90by52MS5Nc2dHYW1lU3RhcnRpbmdIAFIMZ2FtZVN0YXJ0aW5nEkkKDXBs",
+            "YXllcl9raWNrZWQYBCABKAsyIi5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGF5",
+            "ZXJLaWNrZWRIAFIMcGxheWVyS2lja2VkEkMKC2xvYmJ5X2Vycm9yGAUgASgL",
+            "MiAucGFub3B0ZXMucHJvdG8udjEuTXNnTG9iYnlFcnJvckgAUgpsb2JieUVy",
+            "cm9yQgYKBGJvZHkisw0KCUdhbWVFdmVudBJlChdzdGF0aWNfY2F0YWxvZ19t",
+            "YW5pZmVzdBgBIAEoCzIrLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1N0YXRpY0Nh",
+            "dGFsb2dNYW5pZmVzdEgAUhVzdGF0aWNDYXRhbG9nTWFuaWZlc3QSZQoXc3Rh",
+            "dGljX2NhdGFsb2dfc25hcHNob3QYAiABKAsyKy5wYW5vcHRlcy5wcm90by52",
+            "MS5Nc2dTdGF0aWNDYXRhbG9nU25hcHNob3RIAFIVc3RhdGljQ2F0YWxvZ1Nu",
+            "YXBzaG90Ej0KCWdhbWVfaW5pdBgDIAEoCzIeLnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk1zZ0dhbWVJbml0SABSCGdhbWVJbml0EkwKDnBsYW5uaW5nX3N0YXJ0GAQg",
+            "ASgLMiMucGFub3B0ZXMucHJvdG8udjEuTXNnUGxhbm5pbmdTdGFydEgAUg1w",
+            "bGFubmluZ1N0YXJ0ElUKEXBsYW5uaW5nX3NuYXBzaG90GAUgASgLMiYucGFu",
+            "b3B0ZXMucHJvdG8udjEuTXNnUGxhbm5pbmdTbmFwc2hvdEgAUhBwbGFubmlu",
+            "Z1NuYXBzaG90EngKHnBsYW5uaW5nX3BhdGhfcHJldmlld19yZXNwb25zZRgG",
+            "IAEoCzIxLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5nUGF0aFByZXZp",
+            "ZXdSZXNwb25zZUgAUhtwbGFubmluZ1BhdGhQcmV2aWV3UmVzcG9uc2USRgoM",
+            "dG9rZW5fcmVzdWx0GAcgASgLMiEucGFub3B0ZXMucHJvdG8udjEuTXNnVG9r",
+            "ZW5SZXN1bHRIAFILdG9rZW5SZXN1bHQSSQoNcmV2ZWFsX3Jlc3VsdBgIIAEo",
+            "CzIiLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1JldmVhbFJlc3VsdEgAUgxyZXZl",
+            "YWxSZXN1bHQSTwoPcmVzZWFyY2hfcmVzdWx0GAkgASgLMiQucGFub3B0ZXMu",
+            "cHJvdG8udjEuTXNnUmVzZWFyY2hSZXN1bHRIAFIOcmVzZWFyY2hSZXN1bHQS",
+            "UwoRc2V0X3BvbGljeV9yZXN1bHQYCiABKAsyJS5wYW5vcHRlcy5wcm90by52",
+            "MS5Nc2dTZXRQb2xpY3lSZXN1bHRIAFIPc2V0UG9saWN5UmVzdWx0EmwKGnNl",
+            "dF9idWlsZGluZ19yZWNpcGVfcmVzdWx0GAsgASgLMi0ucGFub3B0ZXMucHJv",
+            "dG8udjEuTXNnU2V0QnVpbGRpbmdSZWNpcGVSZXN1bHRIAFIXc2V0QnVpbGRp",
+            "bmdSZWNpcGVSZXN1bHQSYgoWYnVpbGRfc3RydWN0dXJlX3Jlc3VsdBgMIAEo",
+            "CzIqLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0J1aWxkU3RydWN0dXJlUmVzdWx0",
+            "SABSFGJ1aWxkU3RydWN0dXJlUmVzdWx0EkMKC3R1cm5fcmVwb3J0GA0gASgL",
+            "MiAucGFub3B0ZXMucHJvdG8udjEuTXNnVHVyblJlcG9ydEgAUgp0dXJuUmVw",
+            "b3J0Ek8KD3R1cm5fc2V0dGxlbWVudBgOIAEoCzIkLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLk1zZ1R1cm5TZXR0bGVtZW50SABSDnR1cm5TZXR0bGVtZW50Ej0KCWdh",
+            "bWVfb3ZlchgPIAEoCzIeLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0dhbWVPdmVy",
+            "SABSCGdhbWVPdmVyEl8KFW1pbmlzdGVyX3JlcG9ydF9jaHVuaxgQIAEoCzIp",
+            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ01pbmlzdGVyUmVwb3J0Q2h1bmtIAFIT",
+            "bWluaXN0ZXJSZXBvcnRDaHVuaxJSChBtaW5pc3Rlcl9tZXRyaWNzGBEgASgL",
+            "MiUucGFub3B0ZXMucHJvdG8udjEuTXNnTWluaXN0ZXJNZXRyaWNzSABSD21p",
+            "bmlzdGVyTWV0cmljcxJ4Ch5zZXRfaW5zdGl0dXRpb25fbG9hZG91dF9yZXN1",
+            "bHQYEiABKAsyMS5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRJbnN0aXR1dGlv",
+            "bkxvYWRvdXRSZXN1bHRIAFIbc2V0SW5zdGl0dXRpb25Mb2Fkb3V0UmVzdWx0",
+            "EmMKF2lzc3VlX3VuaXRfb3JkZXJfcmVzdWx0GBMgASgLMioucGFub3B0ZXMu",
+            "cHJvdG8udjEuTXNnSXNzdWVVbml0T3JkZXJSZXN1bHRIAFIUaXNzdWVVbml0",
+            "T3JkZXJSZXN1bHRCBgoEYm9keSKgAgoLU2VydmVyRnJhbWUSMAoEbWV0YRgB",
+            "IAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkV2ZW50TWV0YVIEbWV0YRIyCgRh",
+            "dXRoGAogASgLMhwucGFub3B0ZXMucHJvdG8udjEuQXV0aEV2ZW50SABSBGF1",
+            "dGgSNQoFbG9iYnkYCyABKAsyHS5wYW5vcHRlcy5wcm90by52MS5Mb2JieUV2",
+            "ZW50SABSBWxvYmJ5EjIKBGdhbWUYDCABKAsyHC5wYW5vcHRlcy5wcm90by52",
+            "MS5HYW1lRXZlbnRIAFIEZ2FtZRI2Cgdwcm9ibGVtGA0gASgLMhoucGFub3B0",
+            "ZXMucHJvdG8udjEuUHJvYmxlbUgAUgdwcm9ibGVtQggKBnRhcmdldEJTWjpn",
+            "aXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90",
+            "by92MTtwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.Auth.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.SettlementReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.CommandMeta), global::Panoptes.Protocol.V1.CommandMeta.Parser, new[]{ "RequestId", "TraceId", "ClientVersion", "Capabilities" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.EventMeta), global::Panoptes.Protocol.V1.EventMeta.Parser, new[]{ "RequestId", "TraceId", "ServerUnixMillis" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.EventMeta), global::Panoptes.Protocol.V1.EventMeta.Parser, new[]{ "RequestId", "TraceId", "ServerUnixMillis", "GameSessionId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ProblemDetail), global::Panoptes.Protocol.V1.ProblemDetail.Parser, new[]{ "Path", "Detail" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.Problem), global::Panoptes.Protocol.V1.Problem.Parser, new[]{ "Code", "Message", "Details" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthCommand), global::Panoptes.Protocol.V1.AuthCommand.Parser, new[]{ "Register", "Login" }, new[]{ "Body" }, null, null, null),
@@ -400,7 +400,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -431,7 +435,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -496,6 +504,7 @@ namespace Panoptes.Protocol.V1 {
       requestId_ = other.requestId_;
       traceId_ = other.traceId_;
       serverUnixMillis_ = other.serverUnixMillis_;
+      gameSessionId_ = other.gameSessionId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -541,6 +550,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "game_session_id" field.</summary>
+    public const int GameSessionIdFieldNumber = 4;
+    private string gameSessionId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameSessionId {
+      get { return gameSessionId_; }
+      set {
+        gameSessionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -559,6 +580,7 @@ namespace Panoptes.Protocol.V1 {
       if (RequestId != other.RequestId) return false;
       if (TraceId != other.TraceId) return false;
       if (ServerUnixMillis != other.ServerUnixMillis) return false;
+      if (GameSessionId != other.GameSessionId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -569,6 +591,7 @@ namespace Panoptes.Protocol.V1 {
       if (RequestId.Length != 0) hash ^= RequestId.GetHashCode();
       if (TraceId.Length != 0) hash ^= TraceId.GetHashCode();
       if (ServerUnixMillis != 0L) hash ^= ServerUnixMillis.GetHashCode();
+      if (GameSessionId.Length != 0) hash ^= GameSessionId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -599,6 +622,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(24);
         output.WriteInt64(ServerUnixMillis);
       }
+      if (GameSessionId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(GameSessionId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -621,6 +648,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(24);
         output.WriteInt64(ServerUnixMillis);
       }
+      if (GameSessionId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(GameSessionId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -639,6 +670,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (ServerUnixMillis != 0L) {
         size += 1 + pb::CodedOutputStream.ComputeInt64Size(ServerUnixMillis);
+      }
+      if (GameSessionId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameSessionId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -661,6 +695,9 @@ namespace Panoptes.Protocol.V1 {
       if (other.ServerUnixMillis != 0L) {
         ServerUnixMillis = other.ServerUnixMillis;
       }
+      if (other.GameSessionId.Length != 0) {
+        GameSessionId = other.GameSessionId;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -672,7 +709,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -688,6 +729,10 @@ namespace Panoptes.Protocol.V1 {
             ServerUnixMillis = input.ReadInt64();
             break;
           }
+          case 34: {
+            GameSessionId = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -699,7 +744,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -713,6 +762,10 @@ namespace Panoptes.Protocol.V1 {
           }
           case 24: {
             ServerUnixMillis = input.ReadInt64();
+            break;
+          }
+          case 34: {
+            GameSessionId = input.ReadString();
             break;
           }
         }
@@ -907,7 +960,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -930,7 +987,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1152,7 +1213,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1179,7 +1244,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1426,7 +1495,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1459,7 +1532,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1887,7 +1964,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1965,7 +2046,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2648,7 +2733,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2780,7 +2869,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3097,7 +3190,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3121,7 +3218,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3432,7 +3533,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3481,7 +3586,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3785,7 +3894,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3827,7 +3940,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4194,7 +4311,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4254,7 +4375,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -5129,7 +5254,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5315,7 +5444,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -5823,7 +5956,11 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -5881,7 +6018,11 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

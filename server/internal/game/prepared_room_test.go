@@ -11,25 +11,29 @@ import (
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
 
 type asyncCaptureTransport struct {
-	mu   sync.RWMutex
-	sent map[string][]proto.Message
+	mu       sync.RWMutex
+	sent     map[string][]proto.Message
+	sentMeta map[string][]*pb.EventMeta
 }
 
 func newAsyncCaptureTransport() *asyncCaptureTransport {
 	return &asyncCaptureTransport{
-		sent: make(map[string][]proto.Message),
+		sent:     make(map[string][]proto.Message),
+		sentMeta: make(map[string][]*pb.EventMeta),
 	}
 }
 
-func (t *asyncCaptureTransport) Send(_ context.Context, playerID string, msg proto.Message) error {
+func (t *asyncCaptureTransport) Send(ctx context.Context, playerID string, msg proto.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.sent[playerID] = append(t.sent[playerID], msg)
+	t.sentMeta[playerID] = append(t.sentMeta[playerID], coretransport.EventMetaFromContext(ctx))
 	return nil
 }
 
@@ -52,7 +56,15 @@ func (t *asyncCaptureTransport) snapshot(playerID string) []proto.Message {
 	return out
 }
 
-func TestPreparedRoomStartUsesProvidedStateAndSendsInitSequence(t *testing.T) {
+func (t *asyncCaptureTransport) snapshotMeta(playerID string) []*pb.EventMeta {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	out := make([]*pb.EventMeta, len(t.sentMeta[playerID]))
+	copy(out, t.sentMeta[playerID])
+	return out
+}
+
+func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{
 			SchemaVersion:  "2026-04-15",
@@ -111,16 +123,16 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsInitSequence(t *testing.T) {
 	})
 
 	msgs := tp.snapshot("player-1")
-	if _, ok := msgs[0].(*pb.MsgStaticCatalogManifest); !ok {
-		t.Fatalf("msgs[0] type = %T, want *pb.MsgStaticCatalogManifest", msgs[0])
-	}
-
-	initMsg, ok := msgs[1].(*pb.MsgGameInit)
+	metas := tp.snapshotMeta("player-1")
+	initMsg, ok := msgs[0].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("msgs[1] type = %T, want *pb.MsgGameInit", msgs[1])
+		t.Fatalf("msgs[0] type = %T, want *pb.MsgGameInit", msgs[0])
 	}
 	if initMsg.GetGameId() != state.GameID {
 		t.Fatalf("game_id = %q, want %q", initMsg.GetGameId(), state.GameID)
+	}
+	if got := metaGameSessionID(metas[0]); got != state.GameID {
+		t.Fatalf("msgs[0] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if initMsg.GetTurn() != 4 {
 		t.Fatalf("init turn = %d, want 4", initMsg.GetTurn())
@@ -129,9 +141,19 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsInitSequence(t *testing.T) {
 		t.Fatalf("init nodes len = %d, want 2", got)
 	}
 
+	if _, ok := msgs[1].(*pb.MsgStaticCatalogManifest); !ok {
+		t.Fatalf("msgs[1] type = %T, want *pb.MsgStaticCatalogManifest", msgs[1])
+	}
+	if got := metaGameSessionID(metas[1]); got != state.GameID {
+		t.Fatalf("msgs[1] meta.game_session_id = %q, want %q", got, state.GameID)
+	}
+
 	startMsg, ok := msgs[2].(*pb.MsgPlanningStart)
 	if !ok {
 		t.Fatalf("msgs[2] type = %T, want *pb.MsgPlanningStart", msgs[2])
+	}
+	if got := metaGameSessionID(metas[2]); got != state.GameID {
+		t.Fatalf("msgs[2] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if startMsg.GetTurn() != 4 {
 		t.Fatalf("planning start turn = %d, want 4", startMsg.GetTurn())
@@ -183,4 +205,15 @@ func waitForPrepared(t *testing.T, timeout time.Duration, cond func() bool) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatalf("condition not met within %s", timeout)
+}
+
+func metaGameSessionID(meta *pb.EventMeta) string {
+	if meta == nil {
+		return ""
+	}
+	field := meta.ProtoReflect().Descriptor().Fields().ByName("game_session_id")
+	if field == nil {
+		return ""
+	}
+	return meta.ProtoReflect().Get(field).String()
 }

@@ -70,6 +70,7 @@ func TestEncodeDecodeServerFrameRoundTrip(t *testing.T) {
 			RequestId:        "req-2",
 			TraceId:          "trace-2",
 			ServerUnixMillis: 1234,
+			GameSessionId:    "game-1",
 		},
 		Target: &pb.ServerFrame_Lobby{
 			Lobby: &pb.LobbyEvent{
@@ -95,6 +96,9 @@ func TestEncodeDecodeServerFrameRoundTrip(t *testing.T) {
 
 	if decoded.GetMeta().GetRequestId() != "req-2" {
 		t.Fatalf("request_id = %q", decoded.GetMeta().GetRequestId())
+	}
+	if decoded.GetMeta().GetGameSessionId() != "game-1" {
+		t.Fatalf("game_session_id = %q", decoded.GetMeta().GetGameSessionId())
 	}
 	if decoded.GetLobby().GetRoomCreated().GetRoomCode() != "ABC123" {
 		t.Fatalf("room_code = %q", decoded.GetLobby().GetRoomCreated().GetRoomCode())
