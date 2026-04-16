@@ -34,6 +34,8 @@ func NewSingleStepResolver() *SingleStepResolver {
 func (r *SingleStepResolver) Resolve(world donburi.World, state *domain.GameState) []event.Event {
 	// 所有策略对象都挂在上下文上，而不是散落在各阶段内部，
 	// 这样后续要替换 block / retaliation / damage 策略时不需要重写主 resolver。
+	// 这里的上下文就是“本回合战斗真相”的唯一工作区：
+	// 快照、计划、冲突分组、当前 HP、事件输出都只在这条链上流动。
 	ctx := &ResolutionContext{
 		World:              world,
 		State:              state,
@@ -59,6 +61,7 @@ func (r *SingleStepResolver) Resolve(world donburi.World, state *domain.GameStat
 	}
 
 	for _, phase := range r.phases {
+		// phases 严格串行，前一阶段写入的中间结果就是后一阶段的唯一输入。
 		phase.Apply(ctx)
 	}
 

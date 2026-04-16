@@ -15,6 +15,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/combat"
+	"github.com/elebirds/panoptes/internal/engine/economy"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -306,17 +307,9 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 	}
 
 	state := room.State()
-	tech, ok := staticdata.Default().GetTechnology(technologyID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	if playerState.Research.HasCompletedTechnology(technologyID) || playerState.Research.HasTechnology(technologyID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	if errCode := validatePrerequisites(state, playerID, tech.Prerequisites); errCode != "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: errCode})
+	validation := economy.ValidateResearchTarget(state, playerID, technologyID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: validation.ErrorCode})
 		return nil
 	}
 
@@ -391,40 +384,9 @@ func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, pla
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
 		return nil
 	}
-	nodeEntry, ok := room.NodeByID(nodeID)
-	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	recipe, ok := staticdata.Default().GetRecipe(recipeID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	building := ecs.BuildingC.Get(nodeEntry)
-	node := ecs.NodeC.Get(nodeEntry)
-	if normalizeToken(building.Owner) != normalizeToken(playerID) && normalizeToken(node.Owner) != normalizeToken(playerID) && normalizeToken(node.TerritoryOwner) != normalizeToken(playerID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "unauthorized"})
-		return nil
-	}
-	cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	allowed := false
-	for _, candidate := range cfg.RecipeIDs {
-		if candidate == recipeID {
-			allowed = true
-			break
-		}
-	}
-	if !allowed || recipe.BuildingID != string(building.Type) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	if !room.State().IsRecipeUnlocked(playerID, recipeID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
+	validation := economy.ValidateRecipeSelection(room.State(), playerID, nodeID, recipeID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: validation.ErrorCode})
 		return nil
 	}
 	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
@@ -456,22 +418,13 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		return nil
 	}
 
-	cfg, ok := staticdata.Default().GetBuilding(buildingType)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	if !room.State().IsBuildingUnlocked(playerID, buildingType) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
+	validation := economy.ValidateBuildOrder(room.State(), playerID, nodeID, buildingType, cityID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: validation.ErrorCode})
 		return nil
 	}
 
-	if errCode := ecs.ValidateBuildingPlacement(room.State(), nodeEntry, playerID, cfg, cityID); errCode != "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
-		return nil
-	}
-
-	cost, err := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
+	cost, err := domain.ResourceBagFromAmounts(validation.Building.ResourceCosts)
 	if err != nil {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
@@ -489,10 +442,6 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	}
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
-}
-
-func normalizeToken(value string) string {
-	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {

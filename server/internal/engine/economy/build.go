@@ -4,11 +4,10 @@
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 实现经济结算引擎的建造结算逻辑。
 
-package production
+package economy
 
 import (
 	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -21,6 +20,8 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 	if state == nil {
 		return events
 	}
+	// 先在临时库存和临时点数预算上模拟扣款，确认本回合多条 build order 的竞争结果，
+	// 再由事件 Apply 把最终结果落到权威状态。
 	orders := append([]domain.BuildOrder{}, state.TurnRuntime.Planning.BuildOrders...)
 	simulatedResources := make(map[string]domain.ResourceBag, len(state.Players))
 	simulatedPoints := make(map[string]domain.PointBag, len(state.Players))
@@ -37,24 +38,18 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		if _, ok := state.Players[order.PlayerID]; !ok {
 			continue
 		}
-		if !state.IsBuildingUnlocked(order.PlayerID, order.BuildingType) {
-			continue
-		}
-		cfg, ok := staticdata.Default().GetBuilding(order.BuildingType)
-		if !ok {
-			continue
-		}
-		nodeEntry, ok := state.GetNode(order.NodeID)
-		if !ok {
+		validation := ValidateBuildOrder(state, order.PlayerID, order.NodeID, order.BuildingType, order.CityID)
+		if !validation.OK {
 			events = append(events, event.BuildSkippedEvent{
 				PlayerID:     order.PlayerID,
 				NodeID:       order.NodeID,
 				BuildingType: order.BuildingType,
-				Reason:       "invalid_target",
+				Reason:       validation.ErrorCode,
 			})
 			continue
 		}
-		if _, reserved := reservedNodes[order.NodeID]; reserved || nodeEntry.HasComponent(ecs.BuildingC) {
+		if _, reserved := reservedNodes[order.NodeID]; reserved {
+			// 同回合前序草案已经成功占住同一节点时，后序草案统一按 building_exists 跳过。
 			events = append(events, event.BuildSkippedEvent{
 				PlayerID:     order.PlayerID,
 				NodeID:       order.NodeID,
@@ -63,17 +58,8 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 			})
 			continue
 		}
-		if errCode := ecs.ValidateBuildingPlacement(state, nodeEntry, order.PlayerID, cfg, order.CityID); errCode != "" {
-			events = append(events, event.BuildSkippedEvent{
-				PlayerID:     order.PlayerID,
-				NodeID:       order.NodeID,
-				BuildingType: order.BuildingType,
-				Reason:       errCode,
-			})
-			continue
-		}
-		resourceCost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingResourceCost), order.BuildingType, toResourceBag(cfg.ResourceCosts))
-		pointCost := state.ApplyPointModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingPointCost), order.BuildingType, toPointBag(cfg.PointCosts))
+		resourceCost := state.ApplyResourceModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingResourceCost), order.BuildingType, toResourceBag(validation.Building.ResourceCosts))
+		pointCost := state.ApplyPointModifiers(order.PlayerID, string(staticdata.ModifierTriggerBuildingPointCost), order.BuildingType, toPointBag(validation.Building.PointCosts))
 		availableResources := simulatedResources[order.PlayerID]
 		availablePoints := simulatedPoints[order.PlayerID]
 		if !availableResources.CanAfford(resourceCost) {
@@ -111,6 +97,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 			Owner:        order.PlayerID,
 			CityID:       order.CityID,
 			Cost:         resourceCost,
+			// 新建筑按统一生命周期规则延迟到下一回合上线。
 			OnlineOnTurn: state.Turn + 1,
 		})
 	}

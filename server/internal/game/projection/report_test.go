@@ -4,7 +4,7 @@
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 验证回合结算报告模块的结算报告映射逻辑。
 
-package report
+package projection
 
 import (
 	"testing"
@@ -233,12 +233,12 @@ func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
 	}
 }
 
-func TestBuildTurnSettlementHandlesNilState(t *testing.T) {
+func TestProjectTurnSettlementHandlesNilState(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
 	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitDiedEvent{UnitID: "unit-1"})
-	msg := BuildTurnSettlement(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	msg := ProjectTurnSettlement(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
 
 	if msg.GetTurn() != 5 {
 		t.Fatalf("turn = %d, want 5", msg.GetTurn())
@@ -254,7 +254,7 @@ func TestBuildTurnSettlementHandlesNilState(t *testing.T) {
 	}
 }
 
-func TestBuildTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T) {
+func TestProjectTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
@@ -275,7 +275,7 @@ func TestBuildTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T)
 		CenterNodeID: "B2",
 	})
 
-	msg := BuildTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
 
 	if len(msg.GetSections()) != 2 {
 		t.Fatalf("sections len = %d, want 2", len(msg.GetSections()))
@@ -301,5 +301,46 @@ func TestBuildTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T)
 	}
 	if economy.GetEvents()[1].GetType() != "point_spent" {
 		t.Fatalf("economy second event = %q, want point_spent", economy.GetEvents()[1].GetType())
+	}
+}
+
+func TestProjectPlanningStartEventsMapsTechnologyActivationOnly(t *testing.T) {
+	t.Parallel()
+
+	events := ProjectPlanningStartEvents([]event.Event{
+		event.TechnologyActivatedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
+		event.TechnologyGrantAppliedEvent{PlayerID: "player-1", SourceTech: "agrarian_foundations"},
+	})
+
+	if len(events) != 2 {
+		t.Fatalf("events len = %d, want 2", len(events))
+	}
+	if events[0].GetType() != "technology_activated" {
+		t.Fatalf("events[0].type = %q, want technology_activated", events[0].GetType())
+	}
+	if events[1].GetType() != "technology_grant_applied" {
+		t.Fatalf("events[1].type = %q, want technology_grant_applied", events[1].GetType())
+	}
+}
+
+func TestProjectTurnSettlementDoesNotContainPlanningStartActivationEvents(t *testing.T) {
+	t.Parallel()
+
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.TechnologyCompletedEvent{
+		PlayerID:     "player-1",
+		TechnologyID: "agrarian_foundations",
+	})
+
+	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	if len(msg.GetSections()) != 1 {
+		t.Fatalf("sections len = %d, want 1", len(msg.GetSections()))
+	}
+	economy := msg.GetSections()[0]
+	if len(economy.GetEvents()) != 1 {
+		t.Fatalf("economy events len = %d, want 1", len(economy.GetEvents()))
+	}
+	if got := economy.GetEvents()[0].GetType(); got != "technology_completed" {
+		t.Fatalf("economy events[0].type = %q, want technology_completed", got)
 	}
 }

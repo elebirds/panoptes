@@ -40,7 +40,7 @@ type BlockRule interface {
 // ConflictDetector 把边冲突、节点冲突拆成独立检测器。
 // 这样未来新增三方冲突、追及冲突时可以并列增加实现，而不必重写主流程。
 type ConflictDetector interface {
-	Detect(ctx *ResolutionContext) []domain.Conflict
+	Detect(ctx *ResolutionContext) []ConflictGroup
 }
 
 // RetaliationPolicy 统一托管反击判定，避免反击规则散落在 attack / charge / conflict 里。
@@ -128,13 +128,22 @@ type BlockSource struct {
 	NodeID   string
 }
 
+type BlockSourcesAtPos struct {
+	// Unit 表示该格在回合起点被冻结的敌方单位阻断。
+	// charge 必须优先读取它，否则“单位站在建筑格上”时会丢失第一接敌目标。
+	Unit *BlockSource
+	// Structure 表示同格上的敌方建筑阻断。
+	// 它不会覆盖 Unit，而是作为次级阻断来源保留下来。
+	Structure *BlockSource
+}
+
 // CombatSnapshot 是整个单步 WEGO 的输入基线。
 // V1 明确规定：阻断格基于这里生成，并在本次结算过程中保持不变。
 type CombatSnapshot struct {
 	Units          map[string]SnapshotUnit
 	Structures     map[string]SnapshotStructure
 	OrderedUnitIDs []string
-	BlockSources   map[domain.Position]BlockSource
+	BlockSources   map[domain.Position]BlockSourcesAtPos
 }
 
 // OrderPlan 是某个单位在“结算前半段”得到的执行计划。
@@ -151,6 +160,20 @@ type OrderPlan struct {
 	ChargeTargetID string
 }
 
+type ConflictPair struct {
+	UnitAID string
+	UnitBID string
+}
+
+// ConflictGroup 是 resolver 内部的主冲突模型。
+// 对外仍会投影成兼容的二元 conflict event，但结算真相已经允许同一格出现多成员争夺。
+type ConflictGroup struct {
+	ConflictType string
+	Location     domain.Position
+	Members      []string
+	HostilePairs []ConflictPair
+}
+
 // ResolutionContext 是本次战斗结算的唯一工作区。
 // 所有阶段都围绕它读写中间结果，从而把“快照、规划、冲突、伤害、事件输出”串成一条清晰流水线。
 type ResolutionContext struct {
@@ -162,7 +185,7 @@ type ResolutionContext struct {
 	CurrentHP          map[string]int
 	CurrentStructureHP map[string]int
 	DeadUnits          map[string]bool
-	Conflicts          []domain.Conflict
+	ConflictGroups     []ConflictGroup
 	EdgeConflictUnits  map[string]bool
 	NodeConflictUnits  map[string]bool
 	Events             []event.Event
@@ -236,21 +259,29 @@ func (ctx *ResolutionContext) IsDead(unitID string) bool {
 	return ctx.DeadUnits[unitID] || ctx.HP(unitID) <= 0
 }
 
-func sortConflictSlice(conflicts []domain.Conflict) {
+func sortConflictGroups(groups []ConflictGroup) {
 	// 结算事件必须稳定排序，否则同输入多次运行会得到不同的事件顺序。
-	sort.Slice(conflicts, func(i, j int) bool {
-		if conflicts[i].ConflictType != conflicts[j].ConflictType {
-			return conflicts[i].ConflictType < conflicts[j].ConflictType
+	// 这里先按冲突类型、坐标，再按成员序列排序。
+	// 这样 group 内 hostile pair 的发射顺序也就能间接稳定下来。
+	sort.Slice(groups, func(i, j int) bool {
+		if groups[i].ConflictType != groups[j].ConflictType {
+			return groups[i].ConflictType < groups[j].ConflictType
 		}
-		if conflicts[i].Location != conflicts[j].Location {
-			if conflicts[i].Location.X != conflicts[j].Location.X {
-				return conflicts[i].Location.X < conflicts[j].Location.X
+		if groups[i].Location != groups[j].Location {
+			if groups[i].Location.X != groups[j].Location.X {
+				return groups[i].Location.X < groups[j].Location.X
 			}
-			return conflicts[i].Location.Y < conflicts[j].Location.Y
+			return groups[i].Location.Y < groups[j].Location.Y
 		}
-		if conflicts[i].UnitAID != conflicts[j].UnitAID {
-			return conflicts[i].UnitAID < conflicts[j].UnitAID
+		limit := len(groups[i].Members)
+		if len(groups[j].Members) < limit {
+			limit = len(groups[j].Members)
 		}
-		return conflicts[i].UnitBID < conflicts[j].UnitBID
+		for idx := 0; idx < limit; idx++ {
+			if groups[i].Members[idx] != groups[j].Members[idx] {
+				return groups[i].Members[idx] < groups[j].Members[idx]
+			}
+		}
+		return len(groups[i].Members) < len(groups[j].Members)
 	})
 }

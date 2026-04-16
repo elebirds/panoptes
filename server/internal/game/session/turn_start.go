@@ -1,18 +1,20 @@
 package session
 
 import (
-	"strings"
-
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
-func PreparePlanningStartState(state *domain.GameState) {
-	NewPlanningStartRunner().Run(state)
+func PreparePlanningStartState(state *domain.GameState) *PlanningStartResult {
+	return NewPlanningStartRunner().Run(state)
 }
 
-func activatePendingTechnologies(state *domain.GameState) {
+func activatePendingTechnologies(state *domain.GameState) []event.Event {
+	events := make([]event.Event, 0)
+	if state == nil {
+		return events
+	}
 	for playerID, playerState := range state.Players {
 		if playerState == nil {
 			continue
@@ -26,35 +28,34 @@ func activatePendingTechnologies(state *domain.GameState) {
 			if !ok {
 				continue
 			}
-			playerState.Research.MarkTechnologyActive(technologyID, state.Turn)
 			resolved := domain.ResolveExplicitEffects(technology.ExplicitEffects)
-			for _, buildingID := range resolved.UnlockBuildingIDs {
-				playerState.Research.UnlockBuilding(buildingID)
-			}
-			for _, recipeID := range resolved.UnlockRecipeIDs {
-				playerState.Research.UnlockRecipe(recipeID)
-			}
-			for _, policyID := range resolved.UnlockPolicyIDs {
-				playerState.Research.UnlockPolicyCandidate(policyID)
-				if policy, ok := staticdata.Default().GetPolicy(policyID); ok && strings.EqualFold(policy.Layer, "institutional") {
-					playerState.Institutions.UnlockCandidate(policyID)
-				}
-			}
-			playerState.Institutions.SlotCount += resolved.AddInstitutionSlots
+			events = append(events, event.TechnologyActivatedEvent{
+				PlayerID:            playerID,
+				TechnologyID:        technologyID,
+				UnlockBuildingIDs:   append([]string(nil), resolved.UnlockBuildingIDs...),
+				UnlockRecipeIDs:     append([]string(nil), resolved.UnlockRecipeIDs...),
+				UnlockPolicyIDs:     append([]string(nil), resolved.UnlockPolicyIDs...),
+				AddInstitutionSlots: resolved.AddInstitutionSlots,
+			})
 			if !resolved.GrantResources.IsZero() || len(resolved.GrantUnitTypes) > 0 {
-				event.TechnologyGrantAppliedEvent{
+				events = append(events, event.TechnologyGrantAppliedEvent{
 					PlayerID:   playerID,
 					Resources:  resolved.GrantResources,
 					UnitTypes:  append([]string(nil), resolved.GrantUnitTypes...),
 					SourceTech: technology.ID,
-				}.Apply(state.World, state)
+				})
 			}
 		}
 	}
+	return events
 }
 
-func promoteInstitutionLoadouts(state *domain.GameState) {
-	for _, playerState := range state.Players {
+func promoteInstitutionLoadouts(state *domain.GameState) []event.Event {
+	events := make([]event.Event, 0)
+	if state == nil {
+		return events
+	}
+	for playerID, playerState := range state.Players {
 		if playerState == nil {
 			continue
 		}
@@ -72,8 +73,10 @@ func promoteInstitutionLoadouts(state *domain.GameState) {
 			}
 			next = append(next, policyID)
 		}
-		playerState.Institutions.ActivePolicyIDs = next
-		playerState.Institutions.PendingPolicyIDs = nil
-		playerState.Institutions.PendingActivationTurn = 0
+		events = append(events, event.InstitutionLoadoutActivatedEvent{
+			PlayerID:  playerID,
+			PolicyIDs: next,
+		})
 	}
+	return events
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-type TechnologyUnlockedEvent struct {
+type TechnologyCompletedEvent struct {
 	PlayerID     string
 	TechnologyID string
 	Cost         int
@@ -43,7 +43,7 @@ func (e ResearchTargetChangedEvent) String() string {
 	return fmt.Sprintf("ResearchTargetChangedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
 }
 
-func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState) {
+func (e TechnologyCompletedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	if state == nil {
 		return
 	}
@@ -55,6 +55,8 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	if !ok {
 		return
 	}
+	// completed 只表示“研究已经达标”，不在这里发放显式解锁效果。
+	// 真正的 building/recipe/policy/institution 激活留到下一回合 planning start。
 	playerState.Research.SetProgress(e.TechnologyID, technology.ResearchCost)
 	playerState.Research.MarkTechnologyCompleted(e.TechnologyID, state.Turn)
 	if playerState.Research.CurrentTargetTechnologyID == e.TechnologyID {
@@ -62,10 +64,51 @@ func (e TechnologyUnlockedEvent) Apply(_ donburi.World, state *domain.GameState)
 	}
 }
 
-func (e TechnologyUnlockedEvent) Kind() string { return "technology_completed" }
+func (e TechnologyCompletedEvent) Kind() string { return "technology_completed" }
 
-func (e TechnologyUnlockedEvent) String() string {
-	return fmt.Sprintf("TechnologyUnlockedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
+func (e TechnologyCompletedEvent) String() string {
+	return fmt.Sprintf("TechnologyCompletedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
+}
+
+type TechnologyActivatedEvent struct {
+	PlayerID            string
+	TechnologyID        string
+	UnlockBuildingIDs   []string
+	UnlockRecipeIDs     []string
+	UnlockPolicyIDs     []string
+	AddInstitutionSlots int
+}
+
+func (e TechnologyActivatedEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if state == nil {
+		return
+	}
+	playerState, ok := state.Players[e.PlayerID]
+	if !ok || playerState == nil {
+		return
+	}
+	// activated 才是“显式效果正式生效”的边界。
+	// 到这一步才会把 completed technology 提升成 active，并同步解锁所有外显内容。
+	playerState.Research.MarkTechnologyActive(e.TechnologyID, state.Turn)
+	for _, buildingID := range e.UnlockBuildingIDs {
+		playerState.Research.UnlockBuilding(buildingID)
+	}
+	for _, recipeID := range e.UnlockRecipeIDs {
+		playerState.Research.UnlockRecipe(recipeID)
+	}
+	for _, policyID := range e.UnlockPolicyIDs {
+		playerState.Research.UnlockPolicyCandidate(policyID)
+		if policy, ok := staticdata.Default().GetPolicy(policyID); ok && policy.Layer == "institutional" {
+			playerState.Institutions.UnlockCandidate(policyID)
+		}
+	}
+	playerState.Institutions.SlotCount += e.AddInstitutionSlots
+}
+
+func (e TechnologyActivatedEvent) Kind() string { return "technology_activated" }
+
+func (e TechnologyActivatedEvent) String() string {
+	return fmt.Sprintf("TechnologyActivatedEvent player=%s technology=%s", e.PlayerID, e.TechnologyID)
 }
 
 type ResearchProgressAppliedEvent struct {
@@ -109,6 +152,8 @@ func (e TechnologyGrantAppliedEvent) Apply(world donburi.World, state *domain.Ga
 	if state == nil {
 		return
 	}
+	// grant 跟着 activation 一起发生，而不是跟着 completion 一起发生。
+	// 这样客户端与规则都能稳定理解：本回合结算里看到 completed，下一 planning start 才真正拿到奖励。
 	state.AddResources(e.PlayerID, e.Resources)
 	if len(e.UnitTypes) == 0 {
 		return

@@ -98,6 +98,28 @@ namespace Panoptes.Core.Infrastructure.Mapper
             };
         }
 
+        public static List<TurnEventDto> ToPlanningStartEvents(MsgPlanningStart msg)
+        {
+            if (msg?.PlanningStartEvents == null || msg.PlanningStartEvents.Count == 0)
+            {
+                return new List<TurnEventDto>();
+            }
+
+            // planning_start_events 和 settlement 事件共用同一份 TurnEventDto 结构，
+            // 这样客户端缓存、日志和后续展示都不需要再维护第二套事件 DTO。
+            var events = new List<TurnEventDto>();
+            for (var i = 0; i < msg.PlanningStartEvents.Count; i++)
+            {
+                var evt = MapEvent(msg.PlanningStartEvents[i], "planning_start", i);
+                if (evt != null)
+                {
+                    events.Add(evt);
+                }
+            }
+
+            return events;
+        }
+
         private static TurnEventDto MapEvent(TurnEvent evt, string section, int sequence)
         {
             if (evt == null)
