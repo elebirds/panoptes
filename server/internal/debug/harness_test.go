@@ -48,8 +48,12 @@ func TestHarnessResearchUnlockBuild_NextTurnOnly(t *testing.T) {
 		t.Fatalf("turn 1 should not build farm on A2")
 	}
 
-	if _, err := h.WaitPlanningStart("player-1", 2, 2*time.Second); err != nil {
+	start2, err := h.WaitPlanningStart("player-1", 2, 2*time.Second)
+	if err != nil {
 		t.Fatalf("WaitPlanningStart(turn=2) error = %v", err)
+	}
+	if !hasPlanningStartEvent(start2, "technology_activated") {
+		t.Fatalf("turn 2 planning start missing technology_activated event")
 	}
 	if err := h.InjectPlanningCommand("player-1", "req-build", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
@@ -266,8 +270,12 @@ func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
 		t.Fatalf("turn 1 should not build farm on B2")
 	}
 
-	if _, err := h.WaitPlanningStart("player-1", 2, 2*time.Second); err != nil {
+	start2, err := h.WaitPlanningStart("player-1", 2, 2*time.Second)
+	if err != nil {
 		t.Fatalf("WaitPlanningStart(turn=2) error = %v", err)
+	}
+	if !hasPlanningStartEvent(start2, "technology_activated") {
+		t.Fatalf("turn 2 planning start missing technology_activated event")
 	}
 	if err := h.InjectPlanningCommand("player-1", "req-build-farm", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_BuildStructure{
@@ -518,6 +526,18 @@ func hasTurnEvent(msg *pb.MsgTurnSettlement, section string, eventType string) b
 			if event.GetType() == eventType {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func hasPlanningStartEvent(msg *pb.MsgPlanningStart, eventType string) bool {
+	if msg == nil {
+		return false
+	}
+	for _, evt := range msg.GetPlanningStartEvents() {
+		if evt.GetType() == eventType {
+			return true
 		}
 	}
 	return false

@@ -16,6 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	"github.com/elebirds/panoptes/internal/event"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -41,7 +42,10 @@ type Runtime struct {
 	state     *domain.GameState
 
 	bootstrapPlanningStartSent bool
-	planningStartPreparedTurn  int
+	// 同一回合内，bootstrap 消息与正式 planning 广播都必须看到同一份 planning-start 结果，
+	// 不能因为重复 Prepare 而重复激活 technology / institution。
+	planningStartPreparedTurn int
+	planningStartResult       *PlanningStartResult
 }
 
 func NewRuntime(id string, players []Player, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -119,6 +123,8 @@ func (r *Runtime) State() *domain.GameState {
 
 func (r *Runtime) SetState(state *domain.GameState) {
 	r.state = state
+	r.planningStartPreparedTurn = 0
+	r.planningStartResult = nil
 }
 
 func (r *Runtime) SubmitChannel() chan string {
@@ -175,8 +181,17 @@ func (r *Runtime) PreparePlanningStartStateIfNeeded() {
 	if r.planningStartPreparedTurn == r.state.Turn {
 		return
 	}
-	PreparePlanningStartState(r.state)
+	// 这里是 planning-start 状态推进的唯一受控入口。
+	// 其它调用方只读取缓存结果，不再各自直接推进状态。
+	r.planningStartResult = PreparePlanningStartState(r.state)
 	r.planningStartPreparedTurn = r.state.Turn
+}
+
+func (r *Runtime) PlanningStartResult() *PlanningStartResult {
+	if r == nil {
+		return nil
+	}
+	return r.planningStartResult
 }
 
 func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
@@ -411,7 +426,11 @@ func (r *Runtime) sendBootstrapMessages() error {
 		}
 		r.sendStaticCatalogManifest(player)
 		r.sendGameInit(player)
-		if msg := BuildPlanningStartMessage(r.state, player.PlayerID(), r.state.Phase); msg != nil {
+		var planningStartEvents []event.Event
+		if r.planningStartResult != nil {
+			planningStartEvents = r.planningStartResult.Events
+		}
+		if msg := BuildPlanningStartMessage(r.state, player.PlayerID(), r.state.Phase, planningStartEvents); msg != nil {
 			_ = player.Send(context.Background(), msg)
 			r.bootstrapPlanningStartSent = true
 		}

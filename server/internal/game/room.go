@@ -16,9 +16,9 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/planning"
+	gameprojection "github.com/elebirds/panoptes/internal/game/projection"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
-	gamereport "github.com/elebirds/panoptes/internal/game/resolution/report"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	gameturn "github.com/elebirds/panoptes/internal/game/turn"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -245,7 +245,7 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 		if player.IsBot() {
 			continue
 		}
-		msg := gamereport.BuildTurnSettlement(
+		msg := gameprojection.ProjectTurnSettlement(
 			state,
 			player.PlayerID(),
 			int32(state.Turn),

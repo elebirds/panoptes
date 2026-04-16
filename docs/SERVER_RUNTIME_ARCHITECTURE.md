@@ -4,7 +4,7 @@
 > 适用范围：当前仓库服务端真实实现  
 > 本文描述“代码现在是如何工作的”，不是目标设计稿，也不是历史方案。若本文与 `server/internal/*` 当前实现不一致，应以代码为准，并尽快回写本文。
 >
-> 目标设计与本轮架构裁决见：`docs/2026-04-16-server-runtime-unification-plan.md`。本文只记录“现状”，不替代那份设计文档。
+> 目标设计与本轮架构裁决见：`docs/2026-04-16-server-runtime-unification-plan.md`。经济与 progression 的归正结果见：`docs/2026-04-16-economy-and-progression-architecture.md`。本文只记录“现状”，不替代那两份文档。
 
 ## 1. 文档定位
 
@@ -57,7 +57,7 @@ flowchart LR
 
 - `ecs` 提供实体装配与查询。
 - `event` 提供统一状态写入口。
-- `game/query` 与 `game/resolution/report` 负责把权威状态投影成客户端消息。
+- `game/query` 与 `game/projection` 负责把权威状态投影成客户端消息。
 
 ### 2.2 当前“唯一写入口”的准确说法
 
@@ -65,7 +65,7 @@ flowchart LR
 
 - **Engine 子系统内部**遵循“只读状态、产出事件、由 `Event.Apply()` 写回”的规则。
 - **Planning 草案写入**不是 engine system，它会直接写 `TurnRuntime.Planning`。
-- **PlanningStartRunner** 也不是 engine system，它会在回合开始前提升科技和 institution 生效状态，并显式承接 refresh 语义。
+- **PlanningStartRunner** 也不是 engine system，但它现在不再静默改状态；它会返回 `PlanningStartResult.Events`，并把激活结果投影进 `MsgPlanningStart.planning_start_events`。
 
 所以更准确的描述是：
 
@@ -279,8 +279,8 @@ planning 阶段当前不是直接改世界，而是写入两类“待结算输�
 - prerequisite 必须满足
 - 成功后写入 `TurnRuntime.Planning.PendingResearch`
 - 本回合结算中先消耗 `research_output` 推进进度
-- 达到 cost 时发 `TechnologyUnlockedEvent`
-- 下一 planning start 才把显式效果正式激活
+- 达到 cost 时发 `TechnologyCompletedEvent`
+- 下一 planning start 由 `TechnologyActivatedEvent` 把显式效果正式激活
 
 ### 5.4 Institution loadout
 
@@ -693,15 +693,15 @@ DamagePhase 当前顺序是：
 - 当前累计进度必须达到 `ResearchCost`
 - prerequisite 必须满足
 
-满足后发出 `TechnologyUnlockedEvent`。
+满足后发出 `TechnologyCompletedEvent`。
 
-`TechnologyUnlockedEvent.Apply()` 当前只会：
+`TechnologyCompletedEvent.Apply()` 当前只会：
 
 - 把科技进度补齐到 cost
 - 记录 completed turn
 - 若它是当前目标，则清空当前目标
 
-真正的 building/recipe/policy 解锁，下一回合才在 `PreparePlanningStartState()` 生效。
+真正的 building/recipe/policy 解锁，下一回合才在 `PlanningStartRunner` 中通过 `TechnologyActivatedEvent` 生效。
 
 ### 9.5 建造结算
 
@@ -737,7 +737,22 @@ DamagePhase 当前顺序是：
 
 ### 9.6 配方结算
 
-`RecipeSystem` 是当前经济子系统里最复杂的一层。
+经济系统现在已经从 `server/internal/engine/production` 迁到 `server/internal/engine/economy`，并固定拆成 7 个 stage：
+
+1. `lifecycle`
+2. `budget`
+3. `research_progress`
+4. `research_completion`
+5. `build`
+6. `recipe_selection`
+7. `recipe_progress`
+
+其中 `recipe_selection` 与 `recipe_progress` 已经拆开：
+
+- 先通过 `RecipeSelectionChangedEvent` 重置并切换操作态
+- 再在同回合按切换后的 recipe 推进
+
+这使得“同回合切换配方后继承旧进度”不再成立。
 
 当前逻辑分三段：
 
@@ -932,6 +947,13 @@ stateDiagram-v2
 - `Nodes`
 - `Units`
 - `Snapshot`
+- `PlanningStartEvents`
+
+其中 `PlanningStartEvents` 当前至少承担三类“开回合正式生效”事件：
+
+- `technology_activated`
+- `technology_grant_applied`
+- `institution_loadout_activated`
 
 ### 12.2 NodeView
 
@@ -953,7 +975,7 @@ stateDiagram-v2
 
 ### 12.3 TurnSettlement
 
-`BuildTurnSettlement()` 会把结果按三段分组：
+`ProjectTurnSettlement()` 会把结果按三段分组：
 
 - `unit`
 - `map`
@@ -966,6 +988,11 @@ stateDiagram-v2
 - `MyPlayerAfter`
 
 这意味着 settlement 不是只发事件日志，而是带有“回合后完整权威投影”的混合消息。
+
+同时需要注意：
+
+- `technology_completed` 只出现在 settlement
+- `technology_activated` 不再出现在 settlement，而只出现在下一回合的 planning start
 
 ## 13. Minister 与 War Zone 的当前接线状态
 
@@ -1001,11 +1028,11 @@ stateDiagram-v2
 | 行军与路径预览 | `game/room_march.go`、`combat/route_planner.go` | `Resolving.ActiveMarches` | 无专门 event，结果进入 snapshot / queued orders | 是 |
 | 单位结算 | `engine/unit_resolution_runner.go`、`combat/*` | `Resolving.UnitOrders`、combat snapshot | `UnitMovedEvent`、`UnitDamagedEvent`、`UnitDiedEvent`、`CityCoreDestroyedEvent` | 是 |
 | 地图动作 | `game/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
-| 经济点数 | `production/orchestrator.go`、`domain/economy.go` | `PointBudgets`、玩家资源 | `PointBudgetRefreshedEvent`、`PointSpentEvent` | 是 |
-| 科研 | `production/research.go`、`session/turn_start.go` | `ResearchState` | `ResearchProgressAppliedEvent`、`TechnologyUnlockedEvent`、`TechnologyGrantAppliedEvent` | 是 |
-| 建筑建造 | `production/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |
-| 配方生产 | `production/recipe.go` | `BuildingOperationComp` | `RecipeProgressedEvent`、`RecipeCompletedEvent`、`BuildingStatusChangedEvent` | 是 |
-| 生命周期 | `production/control.go` | `BuildingStateComp`、`FacilityTakeoverComp` | `FacilityTakeoverProgressedEvent`、`FacilityTakeoverCompletedEvent`、`CityCapturedEvent`、`BuildingRuinedEvent` | 是 |
+| 经济点数 | `engine/economy/orchestrator.go`、`domain/economy.go` | `PointBudgets`、玩家资源 | `PointBudgetRefreshedEvent`、`PointSpentEvent` | 是 |
+| 科研推进与激活 | `engine/economy/research.go`、`session/planning_start_runner.go` | `ResearchState` | `ResearchProgressAppliedEvent`、`TechnologyCompletedEvent`、`TechnologyActivatedEvent`、`TechnologyGrantAppliedEvent` | 是 |
+| 建筑建造 | `engine/economy/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |
+| 配方生产 | `engine/economy/recipe.go` | `BuildingOperationComp` | `RecipeSelectionChangedEvent`、`RecipeProgressedEvent`、`RecipeCompletedEvent`、`BuildingStatusChangedEvent` | 是 |
+| 生命周期 | `engine/economy/control.go` | `BuildingStateComp`、`FacilityTakeoverComp` | `FacilityTakeoverProgressedEvent`、`FacilityTakeoverCompletedEvent`、`CityCapturedEvent`、`BuildingRuinedEvent` | 是 |
 | Minister | `engine/minister/*` | 默认主链不接线 | `MinisterActedEvent` | 非 MVP，已从主链移除 |
 | War Zone | `planning/service.go` | 协议字段仍在，但服务端显式拒绝 | 无 | 非 MVP，已从主链移除 |
 
@@ -1026,9 +1053,9 @@ stateDiagram-v2
 
 ### 15.3 保留代码文件，但已不在默认主链顺序中
 
-- `production.FlowSystem`
-- `production.ProductionSystem`
-- `production.UpkeepSystem`
+- `economy.FlowSystem`
+- `economy.ProductionSystem`
+- `economy.UpkeepSystem`
 
 ### 15.4 需要额外注意的实现现状
 
@@ -1044,7 +1071,7 @@ stateDiagram-v2
 2. `server/internal/game/settlement.go`
 3. `server/internal/engine/unit_resolution_runner.go`
 4. `server/internal/engine/combat/*`
-5. `server/internal/engine/production/*`
+5. `server/internal/engine/economy/*`
 6. `server/internal/event/*`
 7. `server/internal/game/query/*`
 

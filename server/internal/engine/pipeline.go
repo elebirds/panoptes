@@ -9,7 +9,6 @@ package engine
 import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine/combat"
-	"github.com/elebirds/panoptes/internal/engine/production"
 	"github.com/elebirds/panoptes/internal/event"
 	"github.com/yohamta/donburi"
 )
@@ -36,10 +35,6 @@ func (p *Pipeline) Run(world donburi.World, state *domain.GameState) []event.Eve
 		e.Apply(world, state)
 	}
 	return allEvents
-}
-
-func NewEconomyPipeline() *production.EconomyRunner {
-	return &production.EconomyRunner{}
 }
 
 func NewUnitResolutionPipeline() *Pipeline {
