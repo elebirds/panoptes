@@ -543,6 +543,15 @@ namespace Panoptes.Presentation.Map
             {
                 if (!string.IsNullOrEmpty(node.NodeId))
                 {
+                    if (_combatActionMode == CombatActionMode.Attack)
+                    {
+                        if (TryIssueStructureTargetOrder(node.NodeId))
+                        {
+                            _combatActionMode = CombatActionMode.None;
+                            NotifyCombatSelectionChanged();
+                        }
+                        return;
+                    }
                     if (_combatActionMode == CombatActionMode.Move)
                     {
                         if (TryIssueAuthoritativeMoveOrder(node.NodeId))
@@ -714,6 +723,14 @@ namespace Panoptes.Presentation.Map
             return TryGetSelectedUnitCatalog(out var entry) && !HasTag(entry, "civilian");
         }
 
+        private bool CanSelectedUnitAttackStructures()
+        {
+            return TryGetSelectedUnitCatalog(out var entry)
+                   && entry != null
+                   && entry.flags != null
+                   && entry.flags.can_attack_structures;
+        }
+
         private bool CanSelectedUnitCharge()
         {
             return TryGetSelectedUnitCatalog(out var entry) && HasTag(entry, "charge");
@@ -725,6 +742,59 @@ namespace Panoptes.Presentation.Map
             return _selectedUnit != null &&
                    StaticCatalogCache.EnsureInstance() != null &&
                    StaticCatalogCache.Instance.TryGetUnit(_selectedUnit.UnitType, out entry);
+        }
+
+        private bool TryIssueStructureTargetOrder(string nodeId)
+        {
+            if (_selectedUnit == null ||
+                _combatActionMode != CombatActionMode.Attack ||
+                string.IsNullOrWhiteSpace(nodeId) ||
+                !CanSelectedUnitAttackStructures())
+            {
+                return false;
+            }
+
+            if (!TryGetAttackableStructureNode(nodeId, out _))
+            {
+                return false;
+            }
+
+            GameIntents.AttackNode(_selectedUnit.UnitId, nodeId);
+            return true;
+        }
+
+        private bool TryGetAttackableStructureNode(string nodeId, out NodeDto nodeState)
+        {
+            nodeState = null;
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
+            {
+                nodeState = mapNode;
+            }
+            else if (GameStateCache.Instance != null)
+            {
+                nodeState = GameStateCache.Instance.GetNode(nodeId);
+            }
+
+            if (nodeState == null)
+            {
+                return false;
+            }
+
+            var buildingType = NormalizeToken(nodeState.BuildingType);
+            if (string.IsNullOrEmpty(buildingType))
+            {
+                return false;
+            }
+
+            var localOwner = NormalizeToken(GetLocalOwnerId());
+            var targetOwner = NormalizeToken(string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.TerritoryOwner : nodeState.Owner);
+            return !string.IsNullOrEmpty(targetOwner) && !string.Equals(targetOwner, localOwner, StringComparison.Ordinal);
         }
 
         private bool TryOpenBuildingInfoFromClick()
@@ -2417,7 +2487,7 @@ namespace Panoptes.Presentation.Map
             return _combatActionMode switch
             {
                 CombatActionMode.Move => "悬停节点等待服务端路径预览，确认后点击下达持久行军目标",
-                CombatActionMode.Attack => "点击敌方单位，发送攻击命令",
+                CombatActionMode.Attack => "点击敌方单位或敌方建筑，发送攻击命令",
                 CombatActionMode.Charge => "点击敌方单位，发送冲锋命令",
                 _ => "选择动作后再指定目标"
             };
