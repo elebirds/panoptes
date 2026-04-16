@@ -22,7 +22,19 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
         private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
+        private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
+        private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
+        private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
+        private readonly string _cityCoreHpBarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHPBar.cs");
+        private readonly string _cityCoreHpBarOverlayControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs");
+        private readonly string _buildingViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/BuildingView.cs");
+        private readonly string _buildCommandPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/BuildCommandPanel.cs");
+        private readonly string _nodeTilePrefabPath = Path.GetFullPath("Assets/Prefabs/Map/NodeTile3D.prefab");
+        private readonly string _cityCorePrefabAssetPath = Path.GetFullPath("Assets/Prefabs/Map/CityCore.prefab");
+        private readonly string _cityCoreHpBarPrefabPath = Path.GetFullPath("Assets/Prefabs/UI/CityCoreHPBar.prefab");
+        private readonly string _cityCoreProductionPanelPrefabPath = Path.GetFullPath("Assets/Prefabs/UI/CityCoreProductionPanel.prefab");
         private readonly string _gameSceneAssetPath = Path.GetFullPath("Assets/Scenes/Game.unity");
+        private readonly string _integrationCheckerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/IntegrationChecker.cs");
         private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
         private readonly string _unitInfoPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs");
         private readonly string _unitOrdersPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/UnitOrdersPanel.cs");
@@ -464,6 +476,82 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void MapInputHandler_ShouldPreferOwnedUnitSelectionBeforeBuildingInfo_OnSharedCityCoreTile()
+        {
+            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_mapInputHandlerPath);
+            var unitSelectionIndex = content.IndexOf("TrySelectOwnedUnitFromNodeClick()", StringComparison.Ordinal);
+            var buildingInfoIndex = content.IndexOf("TryOpenBuildingInfoFromClick()", StringComparison.Ordinal);
+
+            Assert.That(unitSelectionIndex, Is.GreaterThanOrEqualTo(0),
+                "同格节点交互应先尝试选中己方可控单位。");
+            Assert.That(buildingInfoIndex, Is.GreaterThan(unitSelectionIndex),
+                "建筑信息打开逻辑必须排在同格单位优先判定之后。");
+        }
+
+        [Test]
+        public void CityCoreRuntimeActions_ShouldUseCityCoreWithoutCastleAlias()
+        {
+            Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
+
+            var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+            var productionPanelContent = File.ReadAllText(_cityCoreProductionPanelPath);
+
+            StringAssert.Contains("\"city_core\"", registrarContent,
+                "主城动作注册必须显式接受 city_core。");
+            Assert.That(registrarContent, Does.Not.Contain("= \"castle\""),
+                "主城动作注册不应再保留 castle 运行时别名。");
+            Assert.That(registrarContent, Does.Not.Contain("castle_open_"),
+                "主城动作注册不应再保留旧 action id 兼容入口。");
+            Assert.That(registrarContent, Does.Not.Contain("building_open_recipe"),
+                "主城动作注册不应再保留旧配方 action id 兼容入口。");
+            StringAssert.Contains("\"city_core\"", productionPanelContent,
+                "主城生产面板必须显式接受 city_core。");
+            Assert.That(productionPanelContent, Does.Not.Contain("legacyCastleBuildingType"),
+                "主城生产面板不应再保留 legacy castle 兼容字段。");
+        }
+
+        [Test]
+        public void CityCoreRuntimeNaming_ShouldBeUnifiedAcrossCriticalPresentationChain()
+        {
+            Assert.That(File.Exists(_cityCoreHpBarPath), Is.True, "CityCoreHPBar.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreHpBarOverlayControllerPath), Is.True, "CityCoreHpBarOverlayController.cs 不存在。");
+            Assert.That(File.Exists(_buildingViewPath), Is.True, "BuildingView.cs 不存在。");
+            Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCorePrefabAssetPath), Is.True, "CityCore.prefab 不存在。");
+            Assert.That(File.Exists(_cityCoreHpBarPrefabPath), Is.True, "CityCoreHPBar.prefab 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPrefabPath), Is.True, "CityCoreProductionPanel.prefab 不存在。");
+
+            var hpBarContent = File.ReadAllText(_cityCoreHpBarPath);
+            var overlayContent = File.ReadAllText(_cityCoreHpBarOverlayControllerPath);
+            var buildingViewContent = File.ReadAllText(_buildingViewPath);
+            var buildCommandPanelContent = File.ReadAllText(_buildCommandPanelPath);
+            var hpBarPrefabContent = File.ReadAllText(_cityCoreHpBarPrefabPath);
+            var productionPanelPrefabContent = File.ReadAllText(_cityCoreProductionPanelPrefabPath);
+
+            Assert.That(hpBarContent, Does.Not.Contain("Castle"),
+                "主城血条脚本不应再保留 Castle 命名。");
+            Assert.That(overlayContent, Does.Not.Contain("Castle"),
+                "主城覆盖层脚本不应再保留 Castle 命名。");
+            Assert.That(buildingViewContent, Does.Not.Contain("Castle"),
+                "建筑视图脚本不应再保留 Castle 命名。");
+            Assert.That(buildCommandPanelContent, Does.Not.Contain("SetCastleContext"),
+                "建造面板不应再保留 SetCastleContext 命名。");
+            Assert.That(buildCommandPanelContent, Does.Not.Contain("ClearCastleContext"),
+                "建造面板不应再保留 ClearCastleContext 命名。");
+            StringAssert.Contains("SetCityCoreContext", buildCommandPanelContent,
+                "建造面板应改用 CityCore 命名的上下文入口。");
+            StringAssert.Contains("ClearCityCoreContext", buildCommandPanelContent,
+                "建造面板应改用 CityCore 命名的上下文清理入口。");
+            StringAssert.Contains("Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CityCoreHPBar", hpBarPrefabContent,
+                "主城血条 prefab 应绑定 CityCoreHPBar 组件。");
+            StringAssert.Contains("Panoptes.Presentation::Panoptes.Presentation.UI.Domestic.CityCoreProductionPanel", productionPanelPrefabContent,
+                "主城生产面板 prefab 应绑定 CityCoreProductionPanel 组件。");
+        }
+
+        [Test]
         public void MapRenderer_GameRuntime_ShouldNotFallbackToLocalOrConfiguredMaps()
         {
             Assert.That(File.Exists(_mapRendererPath), Is.True, "MapRenderer.cs 不存在。");
@@ -487,6 +575,52 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "Game 场景不应再启用 territory 不完整时的本地 fallback。");
             Assert.That(content, Does.Not.Contain("preferServerPushedMapConfig: 1"),
                 "Game 场景运行时不应再从服务端配置或本地资源选择另一张地图。");
+        }
+
+        [Test]
+        public void GameScene_ShouldNotKeepCastlePlacementToken_AfterCityCoreUnification()
+        {
+            Assert.That(File.Exists(_gameSceneAssetPath), Is.True, "Game.unity 不存在。");
+
+            var content = File.ReadAllText(_gameSceneAssetPath);
+            Assert.That(content, Does.Not.Contain("- castle"),
+                "Game 场景运行时关键配置不应再依赖 castle 常量。");
+            StringAssert.Contains("- city_core", content,
+                "Game 场景运行时关键配置应改为 city_core。");
+        }
+
+        [Test]
+        public void NodeTilePrefab_ShouldMapDedicatedCityCorePrefab()
+        {
+            Assert.That(File.Exists(_nodeTilePrefabPath), Is.True, "NodeTile3D.prefab 不存在。");
+
+            var content = File.ReadAllText(_nodeTilePrefabPath);
+            StringAssert.Contains("buildingType: city_core", content,
+                "NodeTile3D prefab 应为 city_core 提供专门映射。");
+            Assert.That(content, Does.Not.Contain("buildingType: castle"),
+                "NodeTile3D prefab 不应再保留 castle 重复映射。");
+        }
+
+        [Test]
+        public void IntegrationChecker_ShouldOnlyRequireOwnedCityCore_AfterGameInit()
+        {
+            Assert.That(File.Exists(_integrationCheckerPath), Is.True, "IntegrationChecker.cs 不存在。");
+
+            var content = File.ReadAllText(_integrationCheckerPath);
+            StringAssert.Contains("MsgGameInit 后缺少己方 city_core", content,
+                "客户端启动自检必须覆盖己方主城缺失场景。");
+            Assert.That(content, Does.Not.Contain("MsgGameInit 后缺少己方扩张单位"),
+                "客户端启动自检不应再把开局扩张单位当成必须项。");
+        }
+
+        [Test]
+        public void NodeView_ShouldNotAliasCityCoreToCastle()
+        {
+            Assert.That(File.Exists(_nodeViewPath), Is.True, "NodeView.cs 不存在。");
+
+            var content = File.ReadAllText(_nodeViewPath);
+            Assert.That(content, Does.Not.Contain("case \"city_core\":\n                    return \"castle\""),
+                "NodeView 不应再把 city_core 归一化成 castle。");
         }
 
         [Test]

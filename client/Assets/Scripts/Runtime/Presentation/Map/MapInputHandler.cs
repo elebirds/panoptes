@@ -125,7 +125,7 @@ namespace Panoptes.Presentation.Map
             "watchtower",
             "viewtower"
         };
-        [SerializeField] private bool disallowManualCastlePlacement = true;
+        [SerializeField] private bool disallowManualCityCorePlacement = true;
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
         [SerializeField] private CityZone[] cityZones;
@@ -147,6 +147,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
         private readonly HashSet<string> _pendingMoveUnitIds = new();
         private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
+        private readonly List<UnitView> _nodeClickUnits = new();
         private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
@@ -271,6 +272,11 @@ namespace Panoptes.Presentation.Map
                     ClearTerritoryHighlights();
                     NonBuildingMapClicked?.Invoke();
                     HandleCombatSelectionClick();
+                    return;
+                }
+
+                if (TrySelectOwnedUnitFromNodeClick())
+                {
                     return;
                 }
 
@@ -401,12 +407,12 @@ namespace Panoptes.Presentation.Map
             var centerNodeId = ResolveExpandCenterNodeId(_selectedUnit.UnitId, _selectedUnit.GridPos);
             if (!TryValidateTerritoryExpandRequest(_selectedUnit.UnitId, centerNodeId, out var validationError))
             {
-                ClearPendingDeployCastleGhostForUnit(_selectedUnit.UnitId);
+                ClearPendingDeployCityCoreGhostForUnit(_selectedUnit.UnitId);
                 ShowUserError(validationError);
                 return false;
             }
 
-            ShowPendingDeployCastleGhost(_selectedUnit.UnitId, centerNodeId);
+            ShowPendingDeployCityCoreGhost(_selectedUnit.UnitId, centerNodeId);
             GameIntents.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapInputHandler] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
@@ -428,12 +434,12 @@ namespace Panoptes.Presentation.Map
 
             if (!TryValidateTerritoryExpandRequest(unitId, resolvedCenterNodeId, out var validationError))
             {
-                ClearPendingDeployCastleGhostForUnit(unitId);
+                ClearPendingDeployCityCoreGhostForUnit(unitId);
                 ShowUserError(validationError);
                 return false;
             }
 
-            ShowPendingDeployCastleGhost(unitId, resolvedCenterNodeId);
+            ShowPendingDeployCityCoreGhost(unitId, resolvedCenterNodeId);
             GameIntents.ExpandTerritory(unitId, resolvedCenterNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapInputHandler] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
@@ -509,7 +515,7 @@ namespace Panoptes.Presentation.Map
         private void EnterBuildPlacement(string buildingType, string cityId, BuildPlacementRule rule)
         {
             _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
-            if (disallowManualCastlePlacement && string.Equals(_buildType, "city_core", StringComparison.Ordinal))
+            if (disallowManualCityCorePlacement && string.Equals(_buildType, "city_core", StringComparison.Ordinal))
             {
                 Debug.Log("[MapInputHandler] City core is pre-placed by map config and cannot be manually built.");
                 ExitBuildMode();
@@ -833,20 +839,12 @@ namespace Panoptes.Presentation.Map
 
         private bool TryOpenBuildingInfoFromClick()
         {
-            if (!TryRaycastNode(out var node))
+            if (!TryGetClickedNodeContext(out var node, out var nodeState))
             {
                 return false;
             }
 
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetNodeState(node.NodeId, out var nodeState) || nodeState == null)
-            {
-                return false;
-            }
-
-            var buildingType = NormalizeToken(nodeState.BuildingType);
-            var isResourcePoint = nodeState.IsResourcePoint;
-            if (string.IsNullOrEmpty(buildingType) && !isResourcePoint)
+            if (!TryGetInspectableNodeInfo(nodeState, out var buildingType, out var isResourcePoint))
             {
                 return false;
             }
@@ -870,6 +868,112 @@ namespace Panoptes.Presentation.Map
             NotifyUnitSelectionChanged(proxy);
             NotifyUnitInfoPanel(proxy);
             return true;
+        }
+
+        private bool TrySelectOwnedUnitFromNodeClick()
+        {
+            if (!TryGetClickedNodeContext(out var nodeView, out var nodeState))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || nodeView == null || string.IsNullOrWhiteSpace(nodeView.NodeId))
+            {
+                return false;
+            }
+
+            if (!map.TryGetUnitsOnNode(nodeView.NodeId, _nodeClickUnits))
+            {
+                return false;
+            }
+
+            UnitView selectedOwnedUnit = null;
+            for (var i = 0; i < _nodeClickUnits.Count; i++)
+            {
+                var candidate = _nodeClickUnits[i];
+                if (candidate == null || !CanControlUnit(candidate))
+                {
+                    continue;
+                }
+
+                if (selectedOwnedUnit == null)
+                {
+                    selectedOwnedUnit = candidate;
+                }
+
+                if (IsTerritoryExpansionUnitType(candidate.UnitType))
+                {
+                    selectedOwnedUnit = candidate;
+                    break;
+                }
+            }
+
+            if (selectedOwnedUnit == null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(_selectedUnit, selectedOwnedUnit)
+                && TryGetInspectableNodeInfo(nodeState, out _, out _))
+            {
+                return false;
+            }
+
+            SelectUnit(selectedOwnedUnit);
+            return true;
+        }
+
+        private bool TryGetClickedNodeContext(out NodeView nodeView, out NodeDto nodeState)
+        {
+            nodeView = null;
+            nodeState = null;
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return false;
+            }
+
+            if (TryRaycastNode(out nodeView)
+                && nodeView != null
+                && !string.IsNullOrWhiteSpace(nodeView.NodeId)
+                && map.TryGetNodeState(nodeView.NodeId, out nodeState)
+                && nodeState != null)
+            {
+                return true;
+            }
+
+            if (!TryRaycastUnit(out var unit) || unit == null)
+            {
+                return false;
+            }
+
+            if (!map.TryGetNodeIdByGrid(unit.GridPos, out var nodeId) || string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            if (!map.TryGetNodeView(nodeId, out nodeView) || nodeView == null)
+            {
+                return false;
+            }
+
+            return map.TryGetNodeState(nodeId, out nodeState) && nodeState != null;
+        }
+
+        private static bool TryGetInspectableNodeInfo(NodeDto nodeState, out string buildingType, out bool isResourcePoint)
+        {
+            buildingType = string.Empty;
+            isResourcePoint = false;
+            if (nodeState == null)
+            {
+                return false;
+            }
+
+            buildingType = NormalizeToken(nodeState.BuildingType);
+            isResourcePoint = nodeState.IsResourcePoint;
+            return !string.IsNullOrEmpty(buildingType) || isResourcePoint;
         }
 
         private UnitView GetOrCreateNodeInfoProxy(NodeView nodeView, NodeDto nodeState, string normalizedBuildingType, bool isResourcePoint)
@@ -1505,7 +1609,7 @@ namespace Panoptes.Presentation.Map
             {
                 var normalizedUnitId = unitId.Trim();
                 // Move command should cancel any pending deploy intent for the same unit.
-                ClearPendingDeployCastleGhostForUnit(normalizedUnitId);
+                ClearPendingDeployCityCoreGhostForUnit(normalizedUnitId);
                 _pendingMoveUnitIds.Add(normalizedUnitId);
                 _pendingMoveTargetNodeByUnitId[normalizedUnitId] = targetNodeId ?? string.Empty;
             }
@@ -1787,7 +1891,7 @@ namespace Panoptes.Presentation.Map
                     _pendingMoveUnitIds.Remove(normalizedRemovedId);
                     _pendingMoveTargetNodeByUnitId.Remove(normalizedRemovedId);
                     _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedRemovedId);
-                    ClearPendingDeployCastleGhostForUnit(normalizedRemovedId);
+                    ClearPendingDeployCityCoreGhostForUnit(normalizedRemovedId);
                     if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
                     {
                         ClearMoveSelection();
@@ -2009,7 +2113,7 @@ namespace Panoptes.Presentation.Map
             };
         }
 
-        private bool IsCastleNode(string nodeId)
+        private bool IsCityCoreNode(string nodeId)
         {
             if (string.IsNullOrEmpty(nodeId))
             {
@@ -2031,7 +2135,7 @@ namespace Panoptes.Presentation.Map
             return cacheNode != null && string.Equals(NormalizeToken(cacheNode.BuildingType), "city_core", StringComparison.Ordinal);
         }
 
-        private bool IsCastleOwnedByLocalPlayer(string nodeId)
+        private bool IsCityCoreOwnedByLocalPlayer(string nodeId)
         {
             if (string.IsNullOrEmpty(nodeId))
             {
@@ -2264,7 +2368,7 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void ShowPendingDeployCastleGhost(string unitId, string centerNodeId)
+        private void ShowPendingDeployCityCoreGhost(string unitId, string centerNodeId)
         {
             var normalizedUnitId = NormalizeToken(unitId);
             var normalizedNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
@@ -2290,7 +2394,7 @@ namespace Panoptes.Presentation.Map
             _pendingDeployGhostNodeByUnitId[normalizedUnitId] = normalizedNodeId;
         }
 
-        private void ClearPendingDeployCastleGhostForUnit(string unitId)
+        private void ClearPendingDeployCityCoreGhostForUnit(string unitId)
         {
             var normalizedUnitId = NormalizeToken(unitId);
             if (string.IsNullOrEmpty(normalizedUnitId))
@@ -2515,8 +2619,8 @@ namespace Panoptes.Presentation.Map
                     if (!string.IsNullOrEmpty(buildingType))
                     {
                         // Allow already-expanded center city core only for idempotent retry.
-                        var allowCenterCastle = dx == 0 && dy == 0 && string.Equals(buildingType, "city_core", StringComparison.Ordinal);
-                        if (!allowCenterCastle)
+                        var allowCenterCityCore = dx == 0 && dy == 0 && string.Equals(buildingType, "city_core", StringComparison.Ordinal);
+                        if (!allowCenterCityCore)
                         {
                             errorMessage = "Cannot deploy here: 3x3 territory contains existing buildings.";
                             return false;

@@ -7,21 +7,19 @@ using UnityEngine;
 namespace Panoptes.Presentation.UI.HUD
 {
     /// <summary>
-    /// Registers castle-specific actions on UnitInfoPanel:
+    /// Registers city-core-specific actions on UnitInfoPanel:
     /// 1) open production/refine panel
     /// 2) open derived build panel
     /// </summary>
-    public sealed class CastleBuildingActionRegistrar : UnitInfoActionProviderBase
+    public sealed class CityCoreBuildingActionRegistrar : UnitInfoActionProviderBase
     {
+        private const string CityCoreBuildingType = "city_core";
+
         [Header("Action IDs")]
         [SerializeField] private string productionActionId = "action_2";
         [SerializeField] private string buildActionId = "action_3";
         [SerializeField] private string techTreeActionId = "action_4";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
-        [SerializeField] private string fallbackProductionActionId = "castle_open_production";
-        [SerializeField] private string fallbackBuildActionId = "castle_open_build";
-        [SerializeField] private string fallbackTechTreeActionId = "castle_open_techtree";
-        [SerializeField] private string fallbackRecipeActionId = "building_open_recipe";
 
         [Header("Labels")]
         [SerializeField] private string productionActionLabel = "Production";
@@ -34,13 +32,13 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
-        [SerializeField] private CastleProductionPanel castleProductionPanel;
+        [SerializeField] private CityCoreProductionPanel cityCoreProductionPanel;
         [SerializeField] private RecipeSynthesisPanel recipeSynthesisPanel;
         [SerializeField] private TechTreePanelController techTreePanelController;
         [SerializeField] private BuildPanelSlideToggle buildPanelSlideToggle;
         [SerializeField] private BuildCommandPanel buildCommandPanel;
-        [SerializeField] private bool autoSpawnCastleProductionPanelIfMissing = true;
-        [SerializeField] private string castleProductionPanelResourcesPath = "Prefabs/UI/CastleProductionPanel";
+        [SerializeField] private bool autoSpawnCityCoreProductionPanelIfMissing = true;
+        [SerializeField] private string cityCoreProductionPanelResourcesPath = "Prefabs/UI/CityCoreProductionPanel";
         [SerializeField] private bool hideTechTreePanelOnStart = true;
         [SerializeField] private bool hideRecipePanelOnStart = true;
         [SerializeField] private bool autoFindNextStageButton = true;
@@ -75,7 +73,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private AnimationCurve rightGroupShiftCurve = null;
 
         private bool _buildPanelOpen;
-        private CastleProductionPanel _subscribedProductionPanel;
+        private CityCoreProductionPanel _subscribedProductionPanel;
         private RecipeSynthesisPanel _subscribedRecipePanel;
         private bool _nextStageBasePositionReady;
         private Vector2 _nextStageBaseAnchoredPos;
@@ -102,62 +100,25 @@ namespace Panoptes.Presentation.UI.HUD
                 productionActionId,
                 OnProductionActionClicked,
                 string.IsNullOrWhiteSpace(productionActionLabel) ? "Production" : productionActionLabel,
-                IsOwnedCastleBuildingProxy);
+                IsOwnedCityCoreBuildingProxy);
 
             registry.RegisterAction(
                 buildActionId,
                 OnBuildActionClicked,
                 string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
-                IsOwnedCastleBuildingProxy);
+                IsOwnedCityCoreBuildingProxy);
 
             registry.RegisterAction(
                 techTreeActionId,
                 OnTechTreeActionClicked,
                 string.IsNullOrWhiteSpace(techTreeActionLabel) ? "Tech Tree" : techTreeActionLabel,
-                IsOwnedCastleBuildingProxy);
+                IsOwnedCityCoreBuildingProxy);
 
             registry.RegisterAction(
                 recipeActionId,
                 OnRecipeActionClicked,
                 string.IsNullOrWhiteSpace(recipeActionLabel) ? "Synthesis" : recipeActionLabel,
                 IsOwnedRecipeBuildingProxy);
-
-            // Compatibility: if UnitInfoPanel uses different action IDs.
-            if (!string.Equals(fallbackProductionActionId, productionActionId, StringComparison.OrdinalIgnoreCase))
-            {
-                registry.RegisterAction(
-                    fallbackProductionActionId,
-                    OnProductionActionClicked,
-                    string.IsNullOrWhiteSpace(productionActionLabel) ? "Production" : productionActionLabel,
-                    IsOwnedCastleBuildingProxy);
-            }
-
-            if (!string.Equals(fallbackBuildActionId, buildActionId, StringComparison.OrdinalIgnoreCase))
-            {
-                registry.RegisterAction(
-                    fallbackBuildActionId,
-                    OnBuildActionClicked,
-                    string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
-                    IsOwnedCastleBuildingProxy);
-            }
-
-            if (!string.Equals(fallbackTechTreeActionId, techTreeActionId, StringComparison.OrdinalIgnoreCase))
-            {
-                registry.RegisterAction(
-                    fallbackTechTreeActionId,
-                    OnTechTreeActionClicked,
-                    string.IsNullOrWhiteSpace(techTreeActionLabel) ? "Tech Tree" : techTreeActionLabel,
-                    IsOwnedCastleBuildingProxy);
-            }
-
-            if (!string.Equals(fallbackRecipeActionId, recipeActionId, StringComparison.OrdinalIgnoreCase))
-            {
-                registry.RegisterAction(
-                    fallbackRecipeActionId,
-                    OnRecipeActionClicked,
-                    string.IsNullOrWhiteSpace(recipeActionLabel) ? "Synthesis" : recipeActionLabel,
-                    IsOwnedRecipeBuildingProxy);
-            }
         }
 
         protected override void OnEnable()
@@ -240,21 +201,21 @@ namespace Panoptes.Presentation.UI.HUD
                 unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
             }
 
-            if (castleProductionPanel == null)
+            if (cityCoreProductionPanel == null)
             {
-                var productionPanels = UnityEngine.Object.FindObjectsByType<CastleProductionPanel>(
+                var productionPanels = UnityEngine.Object.FindObjectsByType<CityCoreProductionPanel>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
                 if (productionPanels != null && productionPanels.Length > 0)
                 {
-                    castleProductionPanel = productionPanels[0];
+                    cityCoreProductionPanel = productionPanels[0];
                 }
             }
 
-            if (castleProductionPanel == null && autoSpawnCastleProductionPanelIfMissing)
+            if (cityCoreProductionPanel == null && autoSpawnCityCoreProductionPanelIfMissing)
             {
-                var prefab = !string.IsNullOrWhiteSpace(castleProductionPanelResourcesPath)
-                    ? Resources.Load<CastleProductionPanel>(castleProductionPanelResourcesPath.Trim())
+                var prefab = !string.IsNullOrWhiteSpace(cityCoreProductionPanelResourcesPath)
+                    ? Resources.Load<CityCoreProductionPanel>(cityCoreProductionPanelResourcesPath.Trim())
                     : null;
 
                 var canvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
@@ -262,16 +223,16 @@ namespace Panoptes.Presentation.UI.HUD
 
                 if (prefab != null)
                 {
-                    castleProductionPanel = UnityEngine.Object.Instantiate(prefab, parent, false);
+                    cityCoreProductionPanel = UnityEngine.Object.Instantiate(prefab, parent, false);
                 }
                 else
                 {
-                    var go = new GameObject("CastleProductionPanel", typeof(RectTransform));
+                    var go = new GameObject("CityCoreProductionPanel", typeof(RectTransform));
                     if (parent != null)
                     {
                         go.transform.SetParent(parent, false);
                     }
-                    castleProductionPanel = go.AddComponent<CastleProductionPanel>();
+                    cityCoreProductionPanel = go.AddComponent<CityCoreProductionPanel>();
                 }
             }
 
@@ -471,19 +432,19 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void SubscribeProductionPanelEvents()
         {
-            if (ReferenceEquals(_subscribedProductionPanel, castleProductionPanel))
+            if (ReferenceEquals(_subscribedProductionPanel, cityCoreProductionPanel))
             {
                 return;
             }
 
             UnsubscribeProductionPanelEvents();
-            if (castleProductionPanel == null)
+            if (cityCoreProductionPanel == null)
             {
                 return;
             }
 
-            castleProductionPanel.VisibilityChanged += OnProductionPanelVisibilityChanged;
-            _subscribedProductionPanel = castleProductionPanel;
+            cityCoreProductionPanel.VisibilityChanged += OnProductionPanelVisibilityChanged;
+            _subscribedProductionPanel = cityCoreProductionPanel;
         }
 
         private void SubscribeRecipePanelEvents()
@@ -545,21 +506,21 @@ namespace Panoptes.Presentation.UI.HUD
         private bool IsAnyDerivedPanelVisible()
         {
             return IsBuildPanelCurrentlyVisible()
-                   || (castleProductionPanel != null && castleProductionPanel.IsVisible)
+                   || (cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible)
                    || (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible);
         }
 
         private void UpdateDerivedPanelVisibilitySnapshot()
         {
             _lastBuildPanelVisible = IsBuildPanelCurrentlyVisible();
-            _lastProductionPanelVisible = castleProductionPanel != null && castleProductionPanel.IsVisible;
+            _lastProductionPanelVisible = cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible;
             _lastRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
         }
 
         private void SyncDerivedPanelStateFromVisibility()
         {
             var buildVisible = IsBuildPanelCurrentlyVisible();
-            var productionVisible = castleProductionPanel != null && castleProductionPanel.IsVisible;
+            var productionVisible = cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible;
             var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
 
             if (!buildVisible && _buildPanelOpen)
@@ -567,7 +528,7 @@ namespace Panoptes.Presentation.UI.HUD
                 _buildPanelOpen = false;
                 if (buildCommandPanel != null)
                 {
-                    buildCommandPanel.ClearCastleContext();
+                    buildCommandPanel.ClearCityCoreContext();
                 }
             }
 
@@ -614,7 +575,7 @@ namespace Panoptes.Presentation.UI.HUD
                 maxShift = Mathf.Max(maxShift, ResolveUnitInfoShiftX());
             }
 
-            if (castleProductionPanel != null && castleProductionPanel.IsVisible)
+            if (cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible)
             {
                 maxShift = Mathf.Max(maxShift, ResolveProductionShiftX());
             }
@@ -742,7 +703,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (buildCommandPanel != null)
             {
-                buildCommandPanel.SetCastleContext(nodeId);
+                buildCommandPanel.SetCityCoreContext(nodeId);
             }
 
             if (buildPanelSlideToggle != null)
@@ -755,7 +716,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
             else
             {
-                Debug.LogWarning("[CastleBuildingActionRegistrar] Build panel reference missing.");
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Build panel reference missing.");
                 return;
             }
 
@@ -768,7 +729,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (recipeSynthesisPanel == null)
             {
-                Debug.LogWarning("[CastleBuildingActionRegistrar] RecipeSynthesisPanel missing.");
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] RecipeSynthesisPanel missing.");
                 return;
             }
 
@@ -810,9 +771,9 @@ namespace Panoptes.Presentation.UI.HUD
         {
             StopPanelSwitchRoutine();
 
-            if (castleProductionPanel != null)
+            if (cityCoreProductionPanel != null)
             {
-                castleProductionPanel.Close();
+                cityCoreProductionPanel.Close();
             }
 
             if (recipeSynthesisPanel != null)
@@ -837,7 +798,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnProductionActionClicked(UnitView unit)
         {
-            if (!TryResolveCastleNodeId(unit, out var nodeId))
+            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
             {
                 return;
             }
@@ -855,20 +816,20 @@ namespace Panoptes.Presentation.UI.HUD
                 recipeSynthesisPanel.Hide();
             }
 
-            if (castleProductionPanel == null)
+            if (cityCoreProductionPanel == null)
             {
-                Debug.LogWarning($"[CastleBuildingActionRegistrar] CastleProductionPanel missing. node={nodeId}");
+                Debug.LogWarning($"[CityCoreBuildingActionRegistrar] CityCoreProductionPanel missing. node={nodeId}");
                 return;
             }
 
-            castleProductionPanel.OpenForCastle(nodeId);
+            cityCoreProductionPanel.OpenForCityCore(nodeId);
             ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
         private void OnBuildActionClicked(UnitView unit)
         {
-            if (!TryResolveCastleNodeId(unit, out var nodeId))
+            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
             {
                 return;
             }
@@ -876,9 +837,9 @@ namespace Panoptes.Presentation.UI.HUD
             _activeUnitInfoNodeId = nodeId;
             ResolveReferences();
             StopPanelSwitchRoutine();
-            if (castleProductionPanel != null)
+            if (cityCoreProductionPanel != null)
             {
-                castleProductionPanel.Close();
+                cityCoreProductionPanel.Close();
             }
 
             var isBuildPanelVisible = IsBuildPanelCurrentlyVisible();
@@ -906,7 +867,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnTechTreeActionClicked(UnitView unit)
         {
-            if (!TryResolveCastleNodeId(unit, out var nodeId))
+            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
             {
                 return;
             }
@@ -916,9 +877,9 @@ namespace Panoptes.Presentation.UI.HUD
             StopPanelSwitchRoutine();
             CloseBuildPanel(true);
 
-            if (castleProductionPanel != null)
+            if (cityCoreProductionPanel != null)
             {
-                castleProductionPanel.Close();
+                cityCoreProductionPanel.Close();
             }
             if (recipeSynthesisPanel != null)
             {
@@ -927,7 +888,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (techTreePanelController == null)
             {
-                Debug.LogWarning("[CastleBuildingActionRegistrar] TechTreePanelController missing.");
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] TechTreePanelController missing.");
                 return;
             }
 
@@ -957,9 +918,9 @@ namespace Panoptes.Presentation.UI.HUD
             ResolveReferences();
             StopPanelSwitchRoutine();
 
-            if (castleProductionPanel != null)
+            if (cityCoreProductionPanel != null)
             {
-                castleProductionPanel.Close();
+                cityCoreProductionPanel.Close();
             }
 
             if (techTreePanelController != null)
@@ -1018,7 +979,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildCommandPanel != null)
             {
-                buildCommandPanel.ClearCastleContext();
+                buildCommandPanel.ClearCityCoreContext();
             }
 
             if (resetUnitInfoOffset)
@@ -1039,14 +1000,14 @@ namespace Panoptes.Presentation.UI.HUD
             buildCommandPanel.gameObject.SetActive(visible);
             if (!visible)
             {
-                buildCommandPanel.ClearCastleContext();
+                buildCommandPanel.ClearCityCoreContext();
             }
         }
 
-        private bool TryResolveCastleNodeId(UnitView unit, out string nodeId)
+        private bool TryResolveCityCoreNodeId(UnitView unit, out string nodeId)
         {
             nodeId = string.Empty;
-            if (!IsOwnedCastleBuildingProxy(unit))
+            if (!IsOwnedCityCoreBuildingProxy(unit))
             {
                 return false;
             }
@@ -1083,14 +1044,9 @@ namespace Panoptes.Presentation.UI.HUD
             return !string.IsNullOrWhiteSpace(nodeId) && !string.IsNullOrWhiteSpace(buildingType);
         }
 
-        private bool IsOwnedCastleBuildingProxy(UnitView unit)
+        private bool IsOwnedCityCoreBuildingProxy(UnitView unit)
         {
             if (unit == null)
-            {
-                return false;
-            }
-
-            if (!string.Equals(NormalizeToken(unit.UnitType), "castle", StringComparison.Ordinal))
             {
                 return false;
             }
@@ -1103,6 +1059,12 @@ namespace Panoptes.Presentation.UI.HUD
 
             var node = cache.GetNode(unit.UnitId);
             if (node == null)
+            {
+                return false;
+            }
+
+            var buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? unit.UnitType : node.BuildingType);
+            if (!IsCityCoreBuildingType(buildingType))
             {
                 return false;
             }
@@ -1187,6 +1149,12 @@ namespace Panoptes.Presentation.UI.HUD
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
+        private static bool IsCityCoreBuildingType(string value)
+        {
+            var normalized = NormalizeToken(value);
+            return string.Equals(normalized, CityCoreBuildingType, StringComparison.Ordinal);
+        }
+
         private float ResolveUnitInfoShiftX()
         {
             var fallback = Mathf.Abs(unitInfoShiftXWhenBuildPanelOpen);
@@ -1223,12 +1191,12 @@ namespace Panoptes.Presentation.UI.HUD
         private float ResolveProductionShiftX()
         {
             var fallback = Mathf.Abs(productionPanelShiftXWhenOpen);
-            if (!useProductionPanelWidthForShift || castleProductionPanel == null)
+            if (!useProductionPanelWidthForShift || cityCoreProductionPanel == null)
             {
                 return fallback;
             }
 
-            var panelWidth = castleProductionPanel.GetPanelWidth();
+            var panelWidth = cityCoreProductionPanel.GetPanelWidth();
             if (panelWidth <= 1f)
             {
                 return fallback;

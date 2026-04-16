@@ -2,12 +2,15 @@ package session
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/engine/maploader"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -274,6 +277,215 @@ func TestRuntimeInitializeBootstrapsCapitalOnProceduralSpawn(t *testing.T) {
 	}
 }
 
+func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-15",
+			ContentVersion: "runtime-bootstrap-test",
+			BundleHash:     "runtime-bootstrap-test",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "runtime_bootstrap",
+		},
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      30,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "settler",
+				Class:       "civilian",
+				MaxHP:       12,
+				Attack:      0,
+				AttackRange: 0,
+				MoveRange:   2,
+				VisionRange: 2,
+				Flags:       staticdata.UnitFlags{CanCapture: true},
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+			{ID: "forest", Passable: true, Buildable: true},
+			{ID: "mountain", Passable: false, Buildable: false},
+			{ID: "river", Passable: false, Buildable: false},
+			{ID: "snow", Passable: true, Buildable: true},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "runtime_bootstrap",
+		Name:   "runtime_bootstrap",
+		Width:  8,
+		Height: 8,
+		Nodes:  runtimeBootstrapNodes(8, 8),
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+
+	if err := runtime.Initialize(); err != nil {
+		t.Fatalf("Initialize() error = %v", err)
+	}
+
+	state := runtime.State()
+	playerState := state.Players["player-1"]
+	if playerState == nil {
+		t.Fatalf("player-1 missing")
+	}
+	if playerState.CapitalCityID == "" {
+		t.Fatalf("CapitalCityID should be initialized")
+	}
+	if _, ok := findOwnedUnitEntryByType(state.World, "player-1", "settler"); ok {
+		t.Fatalf("player-1 should not receive an initial settler")
+	}
+}
+
+func TestRuntimeInitializeFailsWithoutHumanPlayers(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-15",
+			ContentVersion: "runtime-bootstrap-test",
+			BundleHash:     "runtime-bootstrap-test",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "runtime_bootstrap",
+		},
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      30,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+			{ID: "forest", Passable: true, Buildable: true},
+			{ID: "mountain", Passable: false, Buildable: false},
+			{ID: "river", Passable: false, Buildable: false},
+			{ID: "snow", Passable: true, Buildable: true},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "runtime_bootstrap",
+		Name:   "runtime_bootstrap",
+		Width:  8,
+		Height: 8,
+		Nodes:  runtimeBootstrapNodes(8, 8),
+	}))
+
+	runtime := NewRuntime("game-1", nil, nil, nil)
+	if err := runtime.Initialize(); err == nil {
+		t.Fatalf("Initialize() error = nil, want bootstrap invariant failure")
+	}
+}
+
+func TestBootstrapStartingPlayersFailsWhenPlayerSpawnMissing(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-15",
+			ContentVersion: "runtime-bootstrap-test",
+			BundleHash:     "runtime-bootstrap-test",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "runtime_bootstrap",
+		},
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      30,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "settler",
+				Class:       "civilian",
+				MaxHP:       12,
+				Attack:      0,
+				AttackRange: 0,
+				MoveRange:   2,
+				VisionRange: 2,
+				Flags:       staticdata.UnitFlags{CanCapture: true},
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "runtime_bootstrap",
+		Name:   "runtime_bootstrap",
+		Width:  8,
+		Height: 8,
+		Nodes:  runtimeBootstrapNodes(8, 8),
+	}))
+
+	catalog := staticdata.Default()
+	baseMap, err := maploader.LoadMap(catalog, catalog.DefaultMapID())
+	if err != nil {
+		t.Fatalf("LoadMap() error = %v", err)
+	}
+
+	world := donburi.NewWorld()
+	runtimeMap := maploader.GenerateProceduralMap(baseMap, 1, 1)
+	if runtimeMap == nil {
+		t.Fatalf("GenerateProceduralMap() returned nil")
+	}
+
+	mapData := maploader.InitWorldFromMap(world, runtimeMap, []string{"player-1"})
+	delete(mapData.PlayerSpawns, "player-1")
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime.state = state
+
+	err = runtime.bootstrapStartingPlayers()
+	if err == nil {
+		t.Fatalf("bootstrapStartingPlayers() error = nil, want missing spawn failure")
+	}
+	if !strings.Contains(err.Error(), "capital city missing") {
+		t.Fatalf("bootstrapStartingPlayers() error = %q, want capital city missing", err)
+	}
+}
+
 func runtimeBootstrapNodes(width int, height int) []staticdata.MapRuntimeNode {
 	nodes := make([]staticdata.MapRuntimeNode, 0, width*height)
 	for y := 0; y < height; y++ {
@@ -287,4 +499,18 @@ func runtimeBootstrapNodes(width int, height int) []staticdata.MapRuntimeNode {
 		}
 	}
 	return nodes
+}
+
+func findOwnedUnitEntryByType(world donburi.World, owner string, unitType string) (*donburi.Entry, bool) {
+	var found *donburi.Entry
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found != nil || entry == nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction == owner && string(stats.Type) == unitType {
+			found = entry
+		}
+	})
+	return found, found != nil
 }

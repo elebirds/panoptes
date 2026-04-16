@@ -1,9 +1,9 @@
 /*************************************************
  * Project: Panoptes
- * File: CastleHpBarOverlayController.cs
+ * File: CityCoreHpBarOverlayController.cs
  * Author: Panoptes Team
  * Date: 2026-04-12
- * Description: Screen-space castle HP bar overlay manager.
+ * Description: Screen-space city core HP bar overlay manager.
  *************************************************/
 
 using System.Collections.Generic;
@@ -16,18 +16,18 @@ using UnityEngine.UI;
 namespace Panoptes.Presentation.UI.HUD
 {
     [DisallowMultipleComponent]
-    public sealed class CastleHpBarOverlayController : MonoBehaviour
+    public sealed class CityCoreHpBarOverlayController : MonoBehaviour
     {
         [Header("Auto Setup")]
         [SerializeField] private bool autoCreateOverlayCanvas = true;
-        [SerializeField] private string canvasName = "CastleHpOverlayCanvas";
+        [SerializeField] private string canvasName = "CityCoreHpOverlayCanvas";
 
         [Header("Tracking")]
         [SerializeField] private Camera targetCamera;
         [SerializeField] private float screenYOffset = 32f;
         [SerializeField] private bool hideWhenBehindCamera = true;
         [SerializeField] private bool hideWhenOffScreen = true;
-        [SerializeField] private bool disableWorldSpaceCastleHpBar = true;
+        [SerializeField] private bool disableWorldSpaceCityCoreHpBar = true;
 
         [Header("Entry Layout")]
         [SerializeField] private Vector2 entrySize = new Vector2(228f, 34f);
@@ -153,7 +153,7 @@ namespace Panoptes.Presentation.UI.HUD
                 }
 
                 var building = node.BuildingInstance;
-                if (building == null || !building.IsCastle || building.IsGhost)
+                if (building == null || !building.IsCityCore || building.IsGhost)
                 {
                     continue;
                 }
@@ -175,9 +175,9 @@ namespace Panoptes.Presentation.UI.HUD
                     entry.Building = building;
                 }
 
-                if (disableWorldSpaceCastleHpBar && building != null && building.IsCastleHpBarEnabled)
+                if (disableWorldSpaceCityCoreHpBar && building != null && building.IsCityCoreHpBarEnabled)
                 {
-                    building.SetCastleHpBarEnabled(false);
+                    building.SetCityCoreHpBarEnabled(false);
                 }
 
                 RefreshEntryVisual(entry);
@@ -200,7 +200,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private Entry CreateEntry(string nodeId, BuildingView building)
         {
-            var go = new GameObject($"CastleHp_{nodeId}", typeof(RectTransform));
+            var go = new GameObject($"CityCoreHp_{nodeId}", typeof(RectTransform));
             var root = go.transform as RectTransform;
             root.SetParent(_canvasRect, false);
             root.sizeDelta = entrySize;
@@ -291,7 +291,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (entry.Name != null)
             {
-                entry.Name.text = "Castle";
+                entry.Name.text = "City Core";
                 entry.Name.color = Color.white;
             }
 

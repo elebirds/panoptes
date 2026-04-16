@@ -1,9 +1,9 @@
 ﻿/*************************************************
  * Project: Panoptes
- * File: CastleProductionPanel.cs
+ * File: CityCoreProductionPanel.cs
  * Author: Panoptes Team
  * Date: 2026-04-12
- * Description: Castle production/refine panel controller.
+ * Description: City core production/refine panel controller.
  *************************************************/
 
 using System;
@@ -21,7 +21,7 @@ using UnityEditor;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    public sealed class CastleProductionPanel : MonoBehaviour
+    public sealed class CityCoreProductionPanel : MonoBehaviour
     {
         public event Action<bool> VisibilityChanged;
 
@@ -29,7 +29,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private sealed class SavedSelection
         {
             public string player_id;
-            public string castle_node_id;
+            public string city_core_node_id;
             public int turn;
             public int wood;
             public int stone;
@@ -42,7 +42,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private sealed class SubmissionPayload
         {
             public string player_id;
-            public string castle_node_id;
+            public string city_core_node_id;
             public int turn;
             public int wood;
             public int stone;
@@ -113,10 +113,10 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private Button saveButton;
         [SerializeField] private Button closeButton;
 
-        [Header("Castle Gating")]
-        [SerializeField] private string castleBuildingType = "castle";
+        [Header("City Core Gating")]
+        [SerializeField] private string cityCoreBuildingType = "city_core";
         [SerializeField] private bool requireLocalOwnership = true;
-        [SerializeField] private bool requireCastleBuildingType = true;
+        [SerializeField] private bool requireCityCoreBuildingType = true;
 
         [Header("Capacity Fallbacks")]
         [SerializeField] private int fallbackWorkshopCapacity = 20;
@@ -128,9 +128,9 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private string armyConfigKey = "armyconfig";
 
         [Header("Persistence")]
-        [SerializeField] private string saveKeyPrefix = "castle_production_plan";
+        [SerializeField] private string saveKeyPrefix = "city_core_production_plan";
 
-        private string _castleNodeId = string.Empty;
+        private string _cityCoreNodeId = string.Empty;
         private Tab _activeTab = Tab.Materials;
         private int _workshopCapacity;
         private int _archeryCapacity;
@@ -156,7 +156,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 }
                 else
                 {
-                    Debug.LogWarning("[CastleProductionPanel] panelRoot points to the controller object. Assign a child visual root to support hide/show.");
+                    Debug.LogWarning("[CityCoreProductionPanel] panelRoot points to the controller object. Assign a child visual root to support hide/show.");
                 }
             }
         }
@@ -295,7 +295,7 @@ namespace Panoptes.Presentation.UI.Domestic
             panelImage.color = new Color(0.07f, 0.1f, 0.16f, 0.92f);
 
             var top = CreateUiObject("Top", visualRoot.transform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(10f, -90f), new Vector2(-10f, -10f));
-            titleText = CreateText("TitleText", top.transform, "Castle Production", 30, FontStyles.Bold, new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f));
+            titleText = CreateText("TitleText", top.transform, "City Core Production", 30, FontStyles.Bold, new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f));
             statusText = CreateText("StatusText", top.transform, "Waiting", 22, FontStyles.Normal, new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(0f, 0f));
 
             var tabs = CreateUiObject("Tabs", visualRoot.transform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(10f, -150f), new Vector2(-10f, -96f));
@@ -407,25 +407,25 @@ namespace Panoptes.Presentation.UI.Domestic
             SaveSelection();
         }
 
-        public bool OpenForCastle(string nodeId)
+        public bool OpenForCityCore(string nodeId)
         {
-            if (!TryResolveCastleNode(nodeId, out var node))
+            if (!TryResolveCityCoreNode(nodeId, out var node))
             {
-                SetStatus("Cannot open: this node is not your castle.");
+                SetStatus("Cannot open: this node is not your city core.");
                 return false;
             }
 
-            _castleNodeId = node.Id ?? string.Empty;
+            _cityCoreNodeId = node.Id ?? string.Empty;
             RefreshFromCache();
             LoadSelection();
             SetVisible(true);
 
             if (titleText != null)
             {
-                titleText.text = $"Castle Production - {_castleNodeId}";
+                titleText.text = $"City Core Production - {_cityCoreNodeId}";
             }
 
-            SetStatus($"Opened castle panel: {_castleNodeId}");
+            SetStatus($"Opened city core panel: {_cityCoreNodeId}");
             return true;
         }
 
@@ -458,14 +458,14 @@ namespace Panoptes.Presentation.UI.Domestic
 
         public void SaveSelection()
         {
-            if (string.IsNullOrEmpty(_castleNodeId))
+            if (string.IsNullOrEmpty(_cityCoreNodeId))
             {
                 return;
             }
 
             CaptureSelection();
             _pendingSelection.updated_utc = DateTime.UtcNow.ToString("o");
-            PlayerPrefs.SetString(GetSaveKey(_castleNodeId), JsonUtility.ToJson(_pendingSelection));
+            PlayerPrefs.SetString(GetSaveKey(_cityCoreNodeId), JsonUtility.ToJson(_pendingSelection));
             PlayerPrefs.Save();
 
             SetStatus($"Saved: wood {_pendingSelection.wood}, stone {_pendingSelection.stone}, troops {_pendingSelection.troops}");
@@ -479,9 +479,9 @@ namespace Panoptes.Presentation.UI.Domestic
             SyncSliderRanges();
             RefreshSliderTexts();
 
-            if (!string.IsNullOrEmpty(_castleNodeId) && titleText != null)
+            if (!string.IsNullOrEmpty(_cityCoreNodeId) && titleText != null)
             {
-                titleText.text = $"Castle Production - {_castleNodeId}";
+                titleText.text = $"City Core Production - {_cityCoreNodeId}";
             }
 
             SetTab(_activeTab);
@@ -537,7 +537,7 @@ namespace Panoptes.Presentation.UI.Domestic
             var wasVisible = panelRoot.activeSelf;
             if (panelRoot == gameObject && !visible)
             {
-                Debug.LogWarning("[CastleProductionPanel] Skip hiding because panelRoot points to controller object.");
+                Debug.LogWarning("[CityCoreProductionPanel] Skip hiding because panelRoot points to controller object.");
                 return;
             }
 
@@ -814,7 +814,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[CastleProductionPanel] Failed to parse config '{key}': {ex.Message}");
+                Debug.LogWarning($"[CityCoreProductionPanel] Failed to parse config '{key}': {ex.Message}");
             }
 
             return null;
@@ -822,7 +822,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void HandleTurnSubmitRequested()
         {
-            if (string.IsNullOrEmpty(_castleNodeId))
+            if (string.IsNullOrEmpty(_cityCoreNodeId))
             {
                 return;
             }
@@ -831,7 +831,7 @@ namespace Panoptes.Presentation.UI.Domestic
             SaveSelection();
 
             var payload = BuildPayload();
-            Debug.Log($"[CastleProductionPanel] No protocol defined for castle production yet. payload={JsonUtility.ToJson(payload)}");
+            Debug.Log($"[CityCoreProductionPanel] No protocol defined for city core production yet. payload={JsonUtility.ToJson(payload)}");
         }
 
         private SubmissionPayload BuildPayload()
@@ -839,7 +839,7 @@ namespace Panoptes.Presentation.UI.Domestic
             return new SubmissionPayload
             {
                 player_id = ResolveLocalPlayerId(),
-                castle_node_id = _castleNodeId,
+                city_core_node_id = _cityCoreNodeId,
                 turn = GameStateCache.Instance != null ? GameStateCache.Instance.Turn : 0,
                 wood = _pendingSelection.wood,
                 stone = _pendingSelection.stone,
@@ -855,7 +855,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private void CaptureSelection()
         {
             _pendingSelection.player_id = ResolveLocalPlayerId();
-            _pendingSelection.castle_node_id = _castleNodeId;
+            _pendingSelection.city_core_node_id = _cityCoreNodeId;
             _pendingSelection.turn = GameStateCache.Instance != null ? GameStateCache.Instance.Turn : 0;
             _pendingSelection.wood = woodSlider != null ? Mathf.RoundToInt(woodSlider.value) : 0;
             _pendingSelection.stone = stoneSlider != null ? Mathf.RoundToInt(stoneSlider.value) : 0;
@@ -866,12 +866,12 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void LoadSelection()
         {
-            if (string.IsNullOrEmpty(_castleNodeId))
+            if (string.IsNullOrEmpty(_cityCoreNodeId))
             {
                 return;
             }
 
-            var saveKey = GetSaveKey(_castleNodeId);
+            var saveKey = GetSaveKey(_cityCoreNodeId);
             if (!PlayerPrefs.HasKey(saveKey))
             {
                 ResetSelection();
@@ -916,7 +916,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[CastleProductionPanel] Failed to load saved selection: {ex.Message}");
+                Debug.LogWarning($"[CityCoreProductionPanel] Failed to load saved selection: {ex.Message}");
                 ResetSelection();
             }
         }
@@ -926,7 +926,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _pendingSelection = new SavedSelection
             {
                 player_id = ResolveLocalPlayerId(),
-                castle_node_id = _castleNodeId,
+                city_core_node_id = _cityCoreNodeId,
                 turn = GameStateCache.Instance != null ? GameStateCache.Instance.Turn : 0,
                 wood = 0,
                 stone = 0,
@@ -954,12 +954,12 @@ namespace Panoptes.Presentation.UI.Domestic
             RefreshSliderTexts();
         }
 
-        private string GetSaveKey(string castleNodeId)
+        private string GetSaveKey(string cityCoreNodeId)
         {
-            return $"{saveKeyPrefix}_{ResolveLocalPlayerId()}_{castleNodeId}";
+            return $"{saveKeyPrefix}_{ResolveLocalPlayerId()}_{cityCoreNodeId}";
         }
 
-        private bool TryResolveCastleNode(string nodeId, out NodeDto node)
+        private bool TryResolveCityCoreNode(string nodeId, out NodeDto node)
         {
             node = null;
             if (string.IsNullOrWhiteSpace(nodeId))
@@ -982,7 +982,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
-            if (requireCastleBuildingType && !string.Equals(Normalize(node.BuildingType), Normalize(castleBuildingType), StringComparison.Ordinal))
+            if (requireCityCoreBuildingType && !MatchesCityCoreBuildingType(node.BuildingType))
             {
                 return false;
             }
@@ -1024,6 +1024,17 @@ namespace Panoptes.Presentation.UI.Domestic
         private static string Normalize(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private bool MatchesCityCoreBuildingType(string value)
+        {
+            var normalized = Normalize(value);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return false;
+            }
+
+            return string.Equals(normalized, Normalize(cityCoreBuildingType), StringComparison.Ordinal);
         }
 
 #if UNITY_EDITOR

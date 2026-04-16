@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: 2840964080749049937}
   - component: {fileID: 4016005707563037387}
   m_Layer: 0
-  m_Name: CastleHPBar
+  m_Name: CityCoreHPBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -279,7 +279,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2115e01679211a749a48903dc4f9562b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CastleHPBar
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CityCoreHPBar
   worldCanvas: {fileID: 2468587539550233849}
   rootRect: {fileID: 2027693392397748272}
   factionPlateImage: {fileID: 5779927668553382135}
@@ -298,7 +298,7 @@ MonoBehaviour:
   nameColor: {r: 1, g: 1, b: 1, a: 1}
   hpBarBackgroundColor: {r: 0.08, g: 0.08, b: 0.08, a: 0.9}
   hpBarFillColor: {r: 0.2, g: 0.95, b: 0.35, a: 1}
-  defaultDisplayName: Castle
+  defaultDisplayName: City Core
 --- !u!223 &2468587539550233849
 Canvas:
   m_ObjectHideFlags: 0
@@ -428,7 +428,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Castle
+  m_text: City Core
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

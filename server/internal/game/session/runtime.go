@@ -9,6 +9,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -84,8 +85,9 @@ func (r *Runtime) Initialize() error {
 	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
-	r.bootstrapStartingCapitals()
-	r.spawnInitialBaseVehicles()
+	if err := r.bootstrapStartingPlayers(); err != nil {
+		return err
+	}
 	r.grantDevStartingResources()
 	r.initializeCityStates()
 	return r.sendBootstrapMessages()
@@ -221,46 +223,6 @@ func (r *Runtime) humanUsernames() []string {
 	return usernames
 }
 
-func (r *Runtime) spawnInitialBaseVehicles() {
-	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
-		return
-	}
-
-	for playerID := range r.state.Players {
-		if strings.TrimSpace(playerID) == "" {
-			continue
-		}
-		if hasTerritoryExpansionUnit(r.state.World, playerID) {
-			continue
-		}
-		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
-		if !ok {
-			continue
-		}
-		ecs.CreateUnit(r.state.World, string(domain.UnitTypeSettler), playerID, spawnPos)
-	}
-}
-
-func hasTerritoryExpansionUnit(world donburi.World, playerID string) bool {
-	found := false
-	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
-		if found || entry == nil {
-			return
-		}
-
-		stats := ecs.UnitStatsC.Get(entry)
-		if stats.Faction != playerID {
-			return
-		}
-
-		switch strings.ToLower(strings.TrimSpace(string(stats.Type))) {
-		case "settler", "pioneer", "expander", "engineer":
-			found = true
-		}
-	})
-	return found
-}
-
 func (r *Runtime) grantDevStartingResources() {
 	if r == nil || r.state == nil || !r.IsDevMode() {
 		return
@@ -276,65 +238,137 @@ func (r *Runtime) grantDevStartingResources() {
 	}
 }
 
-func (r *Runtime) bootstrapStartingCapitals() {
+func (r *Runtime) bootstrapStartingPlayers() error {
 	if r == nil || r.state == nil || r.state.World == nil || r.state.Map == nil {
-		return
+		return nil
 	}
 
-	for playerID, spawnPos := range r.state.Map.PlayerSpawns {
-		playerID = strings.TrimSpace(playerID)
+	for _, rawPlayerID := range r.humanPlayerIDs() {
+		playerID := strings.TrimSpace(rawPlayerID)
 		if playerID == "" {
 			continue
 		}
+
+		spawnPos, ok := r.state.Map.PlayerSpawns[playerID]
+		if !ok {
+			continue
+		}
+
 		spawnEntry, ok := domain.GetNodeAt(r.state.World, spawnPos)
 		if !ok || spawnEntry == nil {
 			continue
 		}
 
-		if !spawnEntry.HasComponent(ecs.BuildingC) {
-			ecs.CreateBuilding(r.state.World, "city_core", playerID, ecs.NodeC.Get(spawnEntry).ID, spawnEntry)
-		}
+		r.ensureCapitalAtSpawn(playerID, spawnEntry)
 
-		if !spawnEntry.HasComponent(ecs.BuildingC) {
-			continue
+		playerState := r.state.Players[playerID]
+		capitalNodeID := ""
+		if playerState != nil {
+			capitalNodeID = playerState.CapitalCityID
 		}
-		building := ecs.BuildingC.Get(spawnEntry)
-		if !strings.EqualFold(string(building.Type), "city_core") {
-			continue
-		}
+		slog.Info("runtime bootstrap player",
+			"game_id", r.ID,
+			"player_id", playerID,
+			"capital_node", capitalNodeID,
+		)
+	}
 
-		cityID := ecs.NodeC.Get(spawnEntry).ID
-		footprintEntries, _, reason := ecs.TerritoryFootprint(r.state, spawnEntry)
-		if reason == "" {
-			for _, entry := range footprintEntries {
-				if entry == nil {
-					continue
-				}
-				node := ecs.NodeC.Get(entry)
-				node.Owner = playerID
-				node.TerritoryOwner = playerID
+	if err := r.validateBootstrapState(); err != nil {
+		return fmt.Errorf("runtime bootstrap invariant failed: %w", err)
+	}
+	return nil
+}
+
+func (r *Runtime) ensureCapitalAtSpawn(playerID string, spawnEntry *donburi.Entry) {
+	if r == nil || r.state == nil || spawnEntry == nil {
+		return
+	}
+
+	if !spawnEntry.HasComponent(ecs.BuildingC) {
+		ecs.CreateBuilding(r.state.World, "city_core", playerID, ecs.NodeC.Get(spawnEntry).ID, spawnEntry)
+	}
+	if !spawnEntry.HasComponent(ecs.BuildingC) {
+		return
+	}
+
+	building := ecs.BuildingC.Get(spawnEntry)
+	if !strings.EqualFold(string(building.Type), "city_core") {
+		return
+	}
+
+	cityID := ecs.NodeC.Get(spawnEntry).ID
+	footprintEntries, _, reason := ecs.TerritoryFootprint(r.state, spawnEntry)
+	if reason == "" {
+		for _, entry := range footprintEntries {
+			if entry == nil {
+				continue
 			}
-		} else {
-			node := ecs.NodeC.Get(spawnEntry)
+			node := ecs.NodeC.Get(entry)
 			node.Owner = playerID
 			node.TerritoryOwner = playerID
 		}
+	} else {
+		node := ecs.NodeC.Get(spawnEntry)
+		node.Owner = playerID
+		node.TerritoryOwner = playerID
+	}
 
-		building.Owner = playerID
-		buildingcore.SetBinding(spawnEntry, domain.BuildingScopeCityCore, cityID, cityID)
-		playerState := r.state.Players[playerID]
-		if playerState == nil {
+	building.Owner = playerID
+	buildingcore.SetBinding(spawnEntry, domain.BuildingScopeCityCore, cityID, cityID)
+	playerState := r.state.Players[playerID]
+	if playerState == nil {
+		return
+	}
+	playerState.CapitalCityID = cityID
+	playerState.CapitalCityCoreHP = building.HP
+	cityState := r.state.EnsureCityState(playerID, cityID)
+	if cityState != nil {
+		cityState.CoreNodeID = cityID
+		cityState.OwnerID = playerID
+		cityState.OnlineOnTurn = 0
+	}
+}
+
+func (r *Runtime) validateBootstrapState() error {
+	if r == nil || r.state == nil {
+		return fmt.Errorf("state missing")
+	}
+
+	playerIDs := r.humanPlayerIDs()
+	if len(playerIDs) == 0 {
+		return fmt.Errorf("no human players available for bootstrap")
+	}
+
+	for _, rawPlayerID := range playerIDs {
+		playerID := strings.TrimSpace(rawPlayerID)
+		if playerID == "" {
 			continue
 		}
-		playerState.CapitalCityID = cityID
-		playerState.CapitalCityCoreHP = building.HP
-		cityState := r.state.EnsureCityState(playerID, cityID)
-		if cityState != nil {
-			cityState.CoreNodeID = cityID
-			cityState.OwnerID = playerID
-			cityState.OnlineOnTurn = 0
+
+		playerState := r.state.Players[playerID]
+		if playerState == nil {
+			return fmt.Errorf("player %s state missing", playerID)
+		}
+		if strings.TrimSpace(playerState.CapitalCityID) == "" {
+			return fmt.Errorf("player %s capital city missing", playerID)
+		}
+
+		capitalEntry, ok := r.state.GetNode(playerState.CapitalCityID)
+		if !ok || capitalEntry == nil {
+			return fmt.Errorf("player %s capital node %s missing", playerID, playerState.CapitalCityID)
+		}
+		if !capitalEntry.HasComponent(ecs.BuildingC) {
+			return fmt.Errorf("player %s capital node %s missing city_core building", playerID, playerState.CapitalCityID)
+		}
+		building := ecs.BuildingC.Get(capitalEntry)
+		if !strings.EqualFold(string(building.Type), "city_core") {
+			return fmt.Errorf("player %s capital node %s has building %s", playerID, playerState.CapitalCityID, building.Type)
+		}
+		if strings.TrimSpace(building.Owner) != playerID {
+			return fmt.Errorf("player %s capital node %s owned by %s", playerID, playerState.CapitalCityID, building.Owner)
 		}
 	}
+	return nil
 }
 
 func (r *Runtime) initializeCityStates() {

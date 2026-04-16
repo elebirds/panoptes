@@ -447,8 +447,6 @@ MonoBehaviour:
     prefab: {fileID: 8465135733123450000, guid: 8355141156ce37a4898e312e8573c47c, type: 3}
   - buildingType: city_core
     prefab: {fileID: 8465135733123450000, guid: d756ecddff37936469d7fe188ad876e2, type: 3}
-  - buildingType: castle
-    prefab: {fileID: 8465135733123450000, guid: d756ecddff37936469d7fe188ad876e2, type: 3}
   - buildingType: lumber
     prefab: {fileID: 8465135733123450000, guid: d72d9ee662b098b49a0452d4b4bfb86b, type: 3}
   autoCreateMoveMarker: 1

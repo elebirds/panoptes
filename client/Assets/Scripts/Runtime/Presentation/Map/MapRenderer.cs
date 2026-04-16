@@ -258,10 +258,10 @@ namespace Panoptes.Presentation.Map
                 cam.gameObject.AddComponent<TopDownCameraController>();
             }
 
-            if (UnityEngine.Object.FindAnyObjectByType<CastleHpBarOverlayController>() == null)
+            if (UnityEngine.Object.FindAnyObjectByType<CityCoreHpBarOverlayController>() == null)
             {
-                var go = new GameObject("CastleHpBarOverlayController");
-                go.AddComponent<CastleHpBarOverlayController>();
+                var go = new GameObject("CityCoreHpBarOverlayController");
+                go.AddComponent<CityCoreHpBarOverlayController>();
             }
 
             if (UnityEngine.Object.FindAnyObjectByType<BuildingConstructionOverlayController>() == null)
@@ -714,6 +714,35 @@ namespace Panoptes.Presentation.Map
         public bool TryGetUnitView(string unitId, out UnitView unitView)
         {
             return _unitViews.TryGetValue(unitId, out unitView) && unitView != null;
+        }
+
+        public bool TryGetUnitsOnNode(string nodeId, List<UnitView> units)
+        {
+            if (units == null)
+            {
+                return false;
+            }
+
+            units.Clear();
+            if (string.IsNullOrWhiteSpace(nodeId) || !_unitsByNodeId.TryGetValue(nodeId, out var unitIds) || unitIds == null)
+            {
+                return false;
+            }
+
+            foreach (var unitId in unitIds)
+            {
+                if (string.IsNullOrWhiteSpace(unitId))
+                {
+                    continue;
+                }
+
+                if (_unitViews.TryGetValue(unitId, out var unitView) && unitView != null)
+                {
+                    units.Add(unitView);
+                }
+            }
+
+            return units.Count > 0;
         }
 
         public bool TrySpawnRuntimeUnit(UnitDto unit, bool replaceIfExists = false, bool updateCache = true)
