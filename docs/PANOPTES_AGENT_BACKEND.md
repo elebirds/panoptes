@@ -178,10 +178,12 @@ panoptes/
 │   │   │   │   ├── conflict_phase.go       # edge/node group conflict
 │   │   │   │   ├── damage_phase.go         # 冲突/攻击伤害阶段
 │   │   │   │   └── upkeep.go      # UpkeepSystem（粮食消耗）
-│   │   │   ├── production/
-│   │   │   │   ├── build.go       # BuildSystem（建造结算）
-│   │   │   │   ├── flow.go        # FlowSystem（资源流动）
-│   │   │   │   └── upkeep.go      # ProductionUpkeepSystem
+│   │   │   ├── economy/
+│   │   │   │   ├── orchestrator.go # Economy Runner + Stages
+│   │   │   │   ├── build.go        # BuildSystem（建造结算）
+│   │   │   │   ├── recipe.go       # 配方推进
+│   │   │   │   ├── research.go     # 科研完成判定
+│   │   │   │   └── validation.go   # planning/settlement 共享校验
 │   │   │   └── minister/
 │   │   │       ├── engine.go      # 部长调度器（异步）
 │   │   │       ├── prompt.go      # 游戏状态→Prompt序列化
@@ -1408,10 +1410,13 @@ PlayerReconnectedEvent
 ### 内政Pipeline（按顺序执行）
 
 ```
-1. BuildSystem          处理本回合所有建造指令
-2. FlowSystem           资源沿道路流动到城镇
-3. ProductionSystem     建筑消耗原料产出成品/兵种
-4. DomesticUpkeepSystem 建筑维持消耗（箭塔粮食等）
+1. LifecycleStage           先结算建筑运行态、接管与城市陷落
+2. BudgetStage              刷新 research/industry 临时预算
+3. ResearchProgressStage    投入科研点数
+4. ResearchCompletionStage  判定 technology_completed
+5. BuildStage               处理本回合建造
+6. RecipeSelectionStage     处理切配方并先落地 operation reset
+7. RecipeProgressStage      推进配方、产出资源/单位
 ```
 
 ### 战斗Pipeline（按顺序执行）
@@ -1582,8 +1587,8 @@ Step 2：ECS和地图（Day 2上午）
 Step 3：内政阶段（Day 2下午～Day 3上午）
   - Phase interface和状态机骨架
   - DomesticPhase：收消息，令牌操作Handler
-  - BuildSystem、FlowSystem、ProductionSystem
-  - 内政结算Pipeline
+  - Economy Runner + stages
+  - 内政结算Runner
   - 推送MsgDomesticSettlement
 
 Step 4：战斗阶段（Day 3下午～Day 4）
