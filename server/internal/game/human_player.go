@@ -11,6 +11,7 @@ import (
 	"log/slog"
 
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/event"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	"github.com/elebirds/panoptes/internal/transport"
 	"google.golang.org/protobuf/proto"
@@ -54,7 +55,11 @@ func (p *HumanPlayer) NotifyTurn(_ context.Context, room *Room, phase string) {
 	if room == nil || room.State() == nil {
 		return
 	}
-	msg := gamesession.BuildPlanningStartMessage(room.State(), p.playerID, phase)
+	var planningStartEvents []event.Event
+	if room.runtime != nil && room.runtime.PlanningStartResult() != nil {
+		planningStartEvents = room.runtime.PlanningStartResult().Events
+	}
+	msg := gamesession.BuildPlanningStartMessage(room.State(), p.playerID, phase, planningStartEvents)
 	if msg == nil {
 		return
 	}

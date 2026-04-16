@@ -158,7 +158,7 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
       "train_cost": { "food": 2, "wood": 1 },
       "upkeep": { "food": 1 },
       "multipliers": {},
-      "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true }
+      "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": true }
     },
     {
       "id": "infantry",
@@ -171,7 +171,7 @@ func writeCatalogFixture(t *testing.T, repoRoot string) {
       "train_cost": { "ore": 1, "food": 1 },
       "upkeep": { "food": 1 },
       "multipliers": {},
-      "flags": { "can_siege": false, "can_destroy_road": false, "can_capture": true }
+      "flags": { "can_siege": false, "can_attack_structures": true, "can_destroy_road": false, "can_capture": true }
     }
   ]
 }`,

@@ -26,6 +26,8 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	if playerID == "" {
 		return msg
 	}
+	// planning snapshot 只回传“玩家在 planning 阶段已经排队但尚未 lock-in 的草案”，
+	// 不负责回放 settlement 或 planning-start 事件。
 	msg.PlannedResearchTargetTechnologyId = state.TurnRuntime.Planning.PendingResearchTarget(playerID)
 	msg.PlannedNationalPolicyId = string(state.TurnRuntime.Planning.PendingPolicy(playerID))
 	msg.PlannedInstitutionPolicyIds = state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
@@ -35,6 +37,8 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 		if march.PlayerID != playerID {
 			continue
 		}
+		// 长程移动在 planning 里会以 active march 的形式继续展示，
+		// 这样玩家看到的是服务器当前认可的整段行军计划，而不是只看一帧 directive。
 		ordersByUnit[unitID] = queuedMoveOrder(unitID, march)
 	}
 	for unitID, directive := range state.TurnRuntime.Planning.UnitOrders {
@@ -104,36 +108,6 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 			NodeId:   selection.NodeID,
 			RecipeId: selection.RecipeID,
 		})
-	}
-
-	warDirectives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
-	sort.Slice(warDirectives, func(i, j int) bool {
-		if warDirectives[i].ZoneID == warDirectives[j].ZoneID {
-			if warDirectives[i].Directive == warDirectives[j].Directive {
-				return warDirectives[i].TargetNode < warDirectives[j].TargetNode
-			}
-			return warDirectives[i].Directive < warDirectives[j].Directive
-		}
-		return warDirectives[i].ZoneID < warDirectives[j].ZoneID
-	})
-	for _, directive := range warDirectives {
-		msg.WarZoneDirectives = append(msg.WarZoneDirectives, &pb.QueuedWarZoneDirective{
-			ZoneId:     directive.ZoneID,
-			Directive:  directive.Directive,
-			TargetNode: directive.TargetNode,
-		})
-	}
-
-	if playerState := state.Players[playerID]; playerState != nil {
-		for _, zone := range playerState.WarZones {
-			msg.WarZones = append(msg.WarZones, &pb.WarZone{
-				Id:         zone.ID,
-				Name:       zone.Name,
-				NodeIds:    append([]string(nil), zone.NodeIDs...),
-				Directive:  zone.Directive,
-				TargetNode: zone.Target,
-			})
-		}
 	}
 
 	return msg

@@ -62,33 +62,6 @@ func SetBuildingLifecycleState(entry *donburi.Entry, status string, reason strin
 	BuildingStateC.SetValue(entry, current)
 }
 
-func SetBuildingOnlineOnTurn(entry *donburi.Entry, onlineOnTurn int) {
-	if entry == nil || onlineOnTurn <= 0 {
-		return
-	}
-	if !entry.HasComponent(BuildingStateC) {
-		entry.AddComponent(BuildingStateC)
-		BuildingStateC.SetValue(entry, BuildingStateComp{
-			Status:       BuildingStatusDisabled,
-			Reason:       pendingActivationReason,
-			Disabled:     true,
-			DisabledReason: pendingActivationReason,
-			OnlineOnTurn: onlineOnTurn,
-		})
-		return
-	}
-	state := BuildingStateC.Get(entry)
-	state.OnlineOnTurn = onlineOnTurn
-	if NormalizeBuildingStatus(state.Status) == BuildingStatusIdle {
-		state.Status = BuildingStatusDisabled
-	}
-	if strings.TrimSpace(state.Reason) == "" {
-		state.Reason = pendingActivationReason
-		state.DisabledReason = pendingActivationReason
-	}
-	state.Disabled = buildingStatusDisables(NormalizeBuildingStatus(state.Status))
-}
-
 func IsCityOnline(state *GameState, city *CityState) bool {
 	if state == nil || city == nil {
 		return false

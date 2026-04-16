@@ -15,11 +15,13 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/combat"
+	"github.com/elebirds/panoptes/internal/engine/economy"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
+	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
@@ -68,19 +70,7 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 	switch body := cmd.Body.(type) {
 	case *pb.PlanningCommand_SetPolicy:
 		msg := body.SetPolicy
-		policyID := strings.TrimSpace(msg.GetNationalPolicyId())
-		if policyID == "" {
-			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_request"})
-			return nil
-		}
-		if _, ok := staticdata.Default().GetPolicy(policyID); !ok {
-			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_target"})
-			return nil
-		}
-		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
-		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(msg.GetNationalPolicyId()))
 	case *pb.PlanningCommand_SetInstitutionLoadout:
 		msg := body.SetInstitutionLoadout
 		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, msg.GetPolicyIds())
@@ -108,46 +98,14 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		msg := body.SetBuildingRecipe
 		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
 	case *pb.PlanningCommand_SetMinisterDirective:
-		msg := body.SetMinisterDirective
-		room.SetMinisterDirective(playerID, msg.GetContent())
-		return nil
+		return transportproblem.New("invalid_directive", "minister is not part of current MVP")
 	case *pb.PlanningCommand_SetWarZone:
-		msg := body.SetWarZone
-		updated := false
-		for _, zone := range playerState.WarZones {
-			if zone.ID == msg.GetZoneId() {
-				zone.Name = msg.GetName()
-				zone.NodeIDs = msg.GetNodeIds()
-				updated = true
-				break
-			}
-		}
-		if !updated {
-			playerState.WarZones = append(playerState.WarZones, &domain.WarZone{ID: msg.GetZoneId(), Name: msg.GetName(), NodeIDs: msg.GetNodeIds()})
-		}
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_WarZoneDirective:
-		msg := body.WarZoneDirective
-		directives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
-		directives = append(directives, domain.WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()})
-		room.SetWarDirectives(playerID, directives)
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_IssueUnitOrder:
 		msg := body.IssueUnitOrder
-		order := gameorders.UnitOrder{
-			PlayerID:        playerID,
-			UnitID:          strings.TrimSpace(msg.GetUnitId()),
-			Action:          gameorders.UnitAction(strings.TrimSpace(msg.GetAction())),
-			TargetNodeID:    strings.TrimSpace(msg.GetTargetNodeId()),
-			TargetUnitID:    strings.TrimSpace(msg.GetTargetUnitId()),
-			SecondaryNodeID: strings.TrimSpace(msg.GetSecondaryNodeId()),
-			Params:          cloneParams(msg.GetParams()),
-		}
-		room.SetUnitOrder(order)
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return s.handleIssueUnitOrder(eventCtx, room, playerID, msg)
 	case *pb.PlanningCommand_CancelUnitOrder:
 		msg := body.CancelUnitOrder
 		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
@@ -176,6 +134,172 @@ func cloneParams(src map[string]string) map[string]string {
 	return dst
 }
 
+func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, playerID string, msg *pb.MsgIssueUnitOrder) error {
+	order := gameorders.UnitOrder{
+		PlayerID:        playerID,
+		UnitID:          strings.TrimSpace(msg.GetUnitId()),
+		Action:          gameorders.UnitAction(strings.TrimSpace(msg.GetAction())),
+		TargetNodeID:    strings.TrimSpace(msg.GetTargetNodeId()),
+		TargetUnitID:    strings.TrimSpace(msg.GetTargetUnitId()),
+		SecondaryNodeID: strings.TrimSpace(msg.GetSecondaryNodeId()),
+		Params:          cloneParams(msg.GetParams()),
+	}
+	if errCode := validateUnitOrder(room.State(), playerID, order); errCode != "" {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgIssueUnitOrderResult{
+			Success:      false,
+			UnitId:       order.UnitID,
+			Action:       string(order.Action),
+			TargetNodeId: order.TargetNodeID,
+			TargetUnitId: order.TargetUnitID,
+			ErrorCode:    errCode,
+		})
+		return nil
+	}
+
+	room.SetUnitOrder(order)
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgIssueUnitOrderResult{
+		Success:      true,
+		UnitId:       order.UnitID,
+		Action:       string(order.Action),
+		TargetNodeId: order.TargetNodeID,
+		TargetUnitId: order.TargetUnitID,
+	})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
+	return nil
+}
+
+func validateUnitOrder(state *domain.GameState, playerID string, order gameorders.UnitOrder) string {
+	if state == nil || order.UnitID == "" || order.Action == "" {
+		return "invalid_request"
+	}
+	unitEntry, ok := findPreviewUnit(state, order.UnitID, playerID)
+	if !ok {
+		return "unit_not_found"
+	}
+	stats := ecs.UnitStatsC.Get(unitEntry)
+
+	switch order.Action {
+	case gameorders.ActionHold:
+		return ""
+	case gameorders.ActionMove:
+		if order.TargetNodeID == "" {
+			return "invalid_request"
+		}
+		if _, ok := state.GetNode(order.TargetNodeID); !ok {
+			return "invalid_target"
+		}
+		return ""
+	case gameorders.ActionAttack:
+		hasUnitTarget := order.TargetUnitID != ""
+		hasNodeTarget := order.TargetNodeID != ""
+		if hasUnitTarget == hasNodeTarget || !unitCanAttack(unitEntry, stats.Type) {
+			return "invalid_directive"
+		}
+		if hasUnitTarget {
+			targetEntry, ok := findAnyUnit(state, order.TargetUnitID)
+			if !ok {
+				return "invalid_target"
+			}
+			targetStats := ecs.UnitStatsC.Get(targetEntry)
+			if targetStats.Faction == playerID {
+				return "invalid_target"
+			}
+			return ""
+		}
+		nodeEntry, ok := state.GetNode(order.TargetNodeID)
+		if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingC) {
+			return "invalid_target"
+		}
+		building := ecs.BuildingC.Get(nodeEntry)
+		if building.Owner == "" || building.Owner == playerID {
+			return "invalid_target"
+		}
+		if !unitCanAttackStructures(unitEntry, stats.Type) {
+			return "invalid_directive"
+		}
+		if !isStructureTargetInRange(unitEntry, nodeEntry, stats.AttackRange) {
+			return "invalid_target"
+		}
+		return ""
+	case gameorders.ActionCharge:
+		if !unitCanCharge(unitEntry) {
+			return "invalid_directive"
+		}
+		return ""
+	case gameorders.ActionSettleCity:
+		return ""
+	default:
+		return "invalid_directive"
+	}
+}
+
+func unitCanAttack(entry *donburi.Entry, unitType domain.UnitType) bool {
+	if entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) {
+		return ecs.UnitCapabilitiesC.Get(entry).CanAttack()
+	}
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		return cfg.Attack > 0 && cfg.AttackRange > 0 && cfg.Class != "civilian"
+	}
+	return false
+}
+
+func unitCanAttackStructures(entry *donburi.Entry, unitType domain.UnitType) bool {
+	if entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) {
+		return ecs.UnitCapabilitiesC.Get(entry).CanAttackStructures
+	}
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		return cfg.Flags.CanAttackStructures
+	}
+	return false
+}
+
+func unitCanCharge(entry *donburi.Entry) bool {
+	return entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) && ecs.UnitCapabilitiesC.Get(entry).Charge
+}
+
+func isStructureTargetInRange(unitEntry *donburi.Entry, nodeEntry *donburi.Entry, attackRange int) bool {
+	if unitEntry == nil || nodeEntry == nil || attackRange <= 0 {
+		return false
+	}
+	unitPos := ecs.PositionC.Get(unitEntry)
+	nodePos := ecs.PositionC.Get(nodeEntry)
+	return domain.Position{X: unitPos.X, Y: unitPos.Y}.DistanceTo(domain.Position{X: nodePos.X, Y: nodePos.Y}) <= attackRange
+}
+
+func findAnyUnit(state *domain.GameState, unitID string) (*donburi.Entry, bool) {
+	if state == nil || state.World == nil {
+		return nil, false
+	}
+	var found *donburi.Entry
+	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
+		if found != nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID == unitID {
+			found = entry
+		}
+	})
+	return found, found != nil
+}
+
+func (s *Service) handleSetPolicy(ctx context.Context, room Session, playerID string, policyID string) error {
+	if policyID == "" {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_request"})
+		return nil
+	}
+
+	if _, errCode := validatePolicySelection(room.State(), playerID, policyID, "national"); errCode != "" {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: errCode})
+		return nil
+	}
+
+	room.State().TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
+	return nil
+}
+
 func (s *Service) handleResearchRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, technologyID string) error {
 	if playerState == nil || technologyID == "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_request"})
@@ -183,28 +307,10 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 	}
 
 	state := room.State()
-	tech, ok := staticdata.Default().GetTechnology(technologyID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_target"})
+	validation := economy.ValidateResearchTarget(state, playerID, technologyID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: validation.ErrorCode})
 		return nil
-	}
-	if playerState.Research.HasCompletedTechnology(technologyID) || playerState.Research.HasTechnology(technologyID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	for _, prereq := range tech.Prerequisites {
-		switch prereq.Type {
-		case "technology_unlocked":
-			if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
-				_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-				return nil
-			}
-		case "policy_active":
-			if !state.IsPolicyActive(playerID, prereq.TargetID) {
-				_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_directive"})
-				return nil
-			}
-		}
 	}
 
 	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
@@ -225,32 +331,13 @@ func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, pl
 		return nil
 	}
 	for _, policyID := range normalized {
-		policy, ok := staticdata.Default().GetPolicy(policyID)
-		if !ok {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_target"})
-			return nil
-		}
-		if !strings.EqualFold(policy.Layer, "institutional") {
-			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
+		if _, errCode := validatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: errCode})
 			return nil
 		}
 		if !playerState.Institutions.HasCandidate(policyID) {
 			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
 			return nil
-		}
-		for _, prereq := range policy.Prerequisites {
-			switch prereq.Type {
-			case "technology_unlocked":
-				if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
-					_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-					return nil
-				}
-			case "policy_active":
-				if !state.IsPolicyActive(playerID, prereq.TargetID) {
-					_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-					return nil
-				}
-			}
 		}
 	}
 	room.SetInstitutionLoadout(playerID, normalized)
@@ -259,45 +346,47 @@ func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, pl
 	return nil
 }
 
+func validatePolicySelection(state *domain.GameState, playerID string, policyID string, requiredLayer string) (staticdata.PolicyDefinition, string) {
+	policy, ok := staticdata.Default().GetPolicy(policyID)
+	if !ok {
+		return staticdata.PolicyDefinition{}, "invalid_target"
+	}
+	if !strings.EqualFold(policy.Layer, requiredLayer) {
+		return staticdata.PolicyDefinition{}, "invalid_directive"
+	}
+	if errCode := validatePrerequisites(state, playerID, policy.Prerequisites); errCode != "" {
+		return staticdata.PolicyDefinition{}, errCode
+	}
+	return policy, ""
+}
+
+func validatePrerequisites(state *domain.GameState, playerID string, prerequisites []staticdata.Prerequisite) string {
+	if state == nil {
+		return "invalid_target"
+	}
+	for _, prereq := range prerequisites {
+		switch prereq.Type {
+		case "technology_unlocked":
+			if !state.HasTechnologyUnlocked(playerID, prereq.TargetID) {
+				return "invalid_directive"
+			}
+		case "policy_active":
+			if !state.IsPolicyActive(playerID, prereq.TargetID) {
+				return "invalid_directive"
+			}
+		}
+	}
+	return ""
+}
+
 func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, playerID string, nodeID string, recipeID string) error {
 	if nodeID == "" || recipeID == "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
 		return nil
 	}
-	nodeEntry, ok := room.NodeByID(nodeID)
-	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	recipe, ok := staticdata.Default().GetRecipe(recipeID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	building := ecs.BuildingC.Get(nodeEntry)
-	node := ecs.NodeC.Get(nodeEntry)
-	if normalizeToken(building.Owner) != normalizeToken(playerID) && normalizeToken(node.Owner) != normalizeToken(playerID) && normalizeToken(node.TerritoryOwner) != normalizeToken(playerID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "unauthorized"})
-		return nil
-	}
-	cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	allowed := false
-	for _, candidate := range cfg.RecipeIDs {
-		if candidate == recipeID {
-			allowed = true
-			break
-		}
-	}
-	if !allowed || recipe.BuildingID != string(building.Type) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	if !room.State().IsRecipeUnlocked(playerID, recipeID) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_directive"})
+	validation := economy.ValidateRecipeSelection(room.State(), playerID, nodeID, recipeID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: validation.ErrorCode})
 		return nil
 	}
 	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
@@ -329,22 +418,13 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		return nil
 	}
 
-	cfg, ok := staticdata.Default().GetBuilding(buildingType)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	if !room.State().IsBuildingUnlocked(playerID, buildingType) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
+	validation := economy.ValidateBuildOrder(room.State(), playerID, nodeID, buildingType, cityID)
+	if !validation.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: validation.ErrorCode})
 		return nil
 	}
 
-	if errCode := ecs.ValidateBuildingPlacement(room.State(), nodeEntry, playerID, cfg, cityID); errCode != "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: errCode})
-		return nil
-	}
-
-	cost, err := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
+	cost, err := domain.ResourceBagFromAmounts(validation.Building.ResourceCosts)
 	if err != nil {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
 		return nil
@@ -362,10 +442,6 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	}
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
-}
-
-func normalizeToken(value string) string {
-	return strings.ToLower(strings.TrimSpace(value))
 }
 
 func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {

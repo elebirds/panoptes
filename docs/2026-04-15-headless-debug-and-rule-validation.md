@@ -56,7 +56,7 @@ flowchart TD
 - 主城核心摧毁判负
 - 国策修正的生效时机
 
-这类测试必须尽量短、小、确定，不依赖全局房间流程。规则级测试的价值在于能快速定位“错的是哪一条规则”，并为之后的无头对局测试提供稳定基石。现有仓库中的 [research_system_test.go](/mnt/c/Users/hhmcn/code/panoptes/server/internal/engine/production/research_system_test.go) 和多处 combat tests 已经证明这种路径可行，但覆盖范围仍主要集中在局部生产与战斗逻辑，尚未扩展到城市、建筑状态、政策和完整科技推进模型。
+这类测试必须尽量短、小、确定，不依赖全局房间流程。规则级测试的价值在于能快速定位“错的是哪一条规则”，并为之后的无头对局测试提供稳定基石。现有仓库中的 [research_system_test.go](/Users/hhm/code/panoptes/.worktrees/economy-runtime-unification/server/internal/engine/economy/research_system_test.go) 和多处 combat tests 已经证明这种路径可行，但覆盖范围仍主要集中在局部生产与战斗逻辑，尚未扩展到城市、建筑状态、政策和完整科技推进模型。
 
 ## 5. 第二层：无头对局 Harness
 

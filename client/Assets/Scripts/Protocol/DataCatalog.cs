@@ -25,62 +25,63 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChJkYXRhX2NhdGFsb2cucHJvdG8SEXBhbm9wdGVzLnByb3RvLnYxGhBkYXRh",
-            "X3R5cGVzLnByb3RvIqYBChBVbml0Q2F0YWxvZ0VudHJ5Eg4KAmlkGAEgASgJ",
+            "X3R5cGVzLnByb3RvItoBChBVbml0Q2F0YWxvZ0VudHJ5Eg4KAmlkGAEgASgJ",
             "UgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEiAKC2Rlc2NyaXB0aW9uGAMgASgJ",
             "UgtkZXNjcmlwdGlvbhIZCghpY29uX2tleRgEIAEoCVIHaWNvbktleRIdCgpw",
             "cmVmYWJfa2V5GAUgASgJUglwcmVmYWJLZXkSEgoEdGFncxgGIAMoCVIEdGFn",
-            "cyLTAgoUQnVpbGRpbmdDYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIK",
-            "BG5hbWUYAiABKAlSBG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2Ny",
-            "aXB0aW9uEhkKCGljb25fa2V5GAQgASgJUgdpY29uS2V5Eh0KCnByZWZhYl9r",
-            "ZXkYBSABKAlSCXByZWZhYktleRIlCg5wbGFjZW1lbnRfa2luZBgGIAEoCVIN",
-            "cGxhY2VtZW50S2luZBIlCg5idWlsZGluZ19zY29wZRgHIAEoCVINYnVpbGRp",
-            "bmdTY29wZRI0ChZyZXF1aXJlZF9yZXNvdXJjZV90eXBlGAggASgJUhRyZXF1",
-            "aXJlZFJlc291cmNlVHlwZRIjCg10YWtlb3Zlcl9tb2RlGAkgASgJUgx0YWtl",
-            "b3Zlck1vZGUSEgoEdGFncxgKIAMoCVIEdGFncyLeAQoWVGVjaG5vbG9neUNh",
-            "dGFsb2dFbnRyeRIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFt",
-            "ZRIgCgtkZXNjcmlwdGlvbhgDIAEoCVILZGVzY3JpcHRpb24SGQoIaWNvbl9r",
-            "ZXkYBCABKAlSB2ljb25LZXkSFgoGYnJhbmNoGAUgASgJUgZicmFuY2gSEgoE",
-            "dGllchgGIAEoBVIEdGllchIjCg1yZXNlYXJjaF9jb3N0GAcgASgFUgxyZXNl",
-            "YXJjaENvc3QSEgoEdGFncxgIIAMoCVIEdGFncyLMAQoSUG9saWN5Q2F0YWxv",
-            "Z0VudHJ5Eg4KAmlkGAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEiAK",
-            "C2Rlc2NyaXB0aW9uGAMgASgJUgtkZXNjcmlwdGlvbhIZCghpY29uX2tleRgE",
-            "IAEoCVIHaWNvbktleRIUCgVsYXllchgFIAEoCVIFbGF5ZXISKwoRYWN0aXZh",
-            "dGlvbl90aW1pbmcYBiABKAlSEGFjdGl2YXRpb25UaW1pbmcSEgoEdGFncxgH",
-            "IAMoCVIEdGFncyLwAQoSUmVjaXBlQ2F0YWxvZ0VudHJ5Eg4KAmlkGAEgASgJ",
+            "cxIyChVjYW5fYXR0YWNrX3N0cnVjdHVyZXMYByABKAhSE2NhbkF0dGFja1N0",
+            "cnVjdHVyZXMi0wIKFEJ1aWxkaW5nQ2F0YWxvZ0VudHJ5Eg4KAmlkGAEgASgJ",
             "UgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEiAKC2Rlc2NyaXB0aW9uGAMgASgJ",
-            "UgtkZXNjcmlwdGlvbhIZCghpY29uX2tleRgEIAEoCVIHaWNvbktleRIfCgti",
-            "dWlsZGluZ19pZBgFIAEoCVIKYnVpbGRpbmdJZBIfCgt3b3JrX2Ftb3VudBgG",
-            "IAEoBVIKd29ya0Ftb3VudBIjCg1iYXNlX3Byb2dyZXNzGAcgASgFUgxiYXNl",
-            "UHJvZ3Jlc3MSEgoEdGFncxgIIAMoCVIEdGFncyKtAQoTVGVycmFpbkNhdGFs",
-            "b2dFbnRyeRIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIg",
-            "CgtkZXNjcmlwdGlvbhgDIAEoCVILZGVzY3JpcHRpb24SGQoIaWNvbl9rZXkY",
-            "BCABKAlSB2ljb25LZXkSIQoMbWF0ZXJpYWxfa2V5GAUgASgJUgttYXRlcmlh",
-            "bEtleRISCgR0YWdzGAYgAygJUgR0YWdzIvcEChVTdGF0aWNDYXRhbG9nU25h",
-            "cHNob3QSRAoIbWFuaWZlc3QYASABKAsyKC5wYW5vcHRlcy5wcm90by52MS5T",
-            "dGF0aWNDYXRhbG9nTWFuaWZlc3RSCG1hbmlmZXN0EkMKCXJlc291cmNlcxgC",
-            "IAMoCzIlLnBhbm9wdGVzLnByb3RvLnYxLlJlc291cmNlRGVzY3JpcHRvclIJ",
-            "cmVzb3VyY2VzEjoKBnBvaW50cxgDIAMoCzIiLnBhbm9wdGVzLnByb3RvLnYx",
-            "LlBvaW50RGVzY3JpcHRvclIGcG9pbnRzEjkKBXVuaXRzGAQgAygLMiMucGFu",
-            "b3B0ZXMucHJvdG8udjEuVW5pdENhdGFsb2dFbnRyeVIFdW5pdHMSRQoJYnVp",
-            "bGRpbmdzGAUgAygLMicucGFub3B0ZXMucHJvdG8udjEuQnVpbGRpbmdDYXRh",
-            "bG9nRW50cnlSCWJ1aWxkaW5ncxJNCgx0ZWNobm9sb2dpZXMYBiADKAsyKS5w",
-            "YW5vcHRlcy5wcm90by52MS5UZWNobm9sb2d5Q2F0YWxvZ0VudHJ5Ugx0ZWNo",
-            "bm9sb2dpZXMSQQoIcG9saWNpZXMYByADKAsyJS5wYW5vcHRlcy5wcm90by52",
-            "MS5Qb2xpY3lDYXRhbG9nRW50cnlSCHBvbGljaWVzEj8KB3JlY2lwZXMYCCAD",
-            "KAsyJS5wYW5vcHRlcy5wcm90by52MS5SZWNpcGVDYXRhbG9nRW50cnlSB3Jl",
-            "Y2lwZXMSQgoIdGVycmFpbnMYCSADKAsyJi5wYW5vcHRlcy5wcm90by52MS5U",
-            "ZXJyYWluQ2F0YWxvZ0VudHJ5Ugh0ZXJyYWlucyJgChhNc2dTdGF0aWNDYXRh",
-            "bG9nTWFuaWZlc3QSRAoIbWFuaWZlc3QYASABKAsyKC5wYW5vcHRlcy5wcm90",
-            "by52MS5TdGF0aWNDYXRhbG9nTWFuaWZlc3RSCG1hbmlmZXN0ImAKGE1zZ1N0",
-            "YXRpY0NhdGFsb2dTbmFwc2hvdBJECghzbmFwc2hvdBgBIAEoCzIoLnBhbm9w",
-            "dGVzLnByb3RvLnYxLlN0YXRpY0NhdGFsb2dTbmFwc2hvdFIIc25hcHNob3RC",
-            "U1o6Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4v",
-            "cHJvdG8vdjE7cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90",
-            "bzM="));
+            "UgtkZXNjcmlwdGlvbhIZCghpY29uX2tleRgEIAEoCVIHaWNvbktleRIdCgpw",
+            "cmVmYWJfa2V5GAUgASgJUglwcmVmYWJLZXkSJQoOcGxhY2VtZW50X2tpbmQY",
+            "BiABKAlSDXBsYWNlbWVudEtpbmQSJQoOYnVpbGRpbmdfc2NvcGUYByABKAlS",
+            "DWJ1aWxkaW5nU2NvcGUSNAoWcmVxdWlyZWRfcmVzb3VyY2VfdHlwZRgIIAEo",
+            "CVIUcmVxdWlyZWRSZXNvdXJjZVR5cGUSIwoNdGFrZW92ZXJfbW9kZRgJIAEo",
+            "CVIMdGFrZW92ZXJNb2RlEhIKBHRhZ3MYCiADKAlSBHRhZ3Mi3gEKFlRlY2hu",
+            "b2xvZ3lDYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiAB",
+            "KAlSBG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0aW9uEhkK",
+            "CGljb25fa2V5GAQgASgJUgdpY29uS2V5EhYKBmJyYW5jaBgFIAEoCVIGYnJh",
+            "bmNoEhIKBHRpZXIYBiABKAVSBHRpZXISIwoNcmVzZWFyY2hfY29zdBgHIAEo",
+            "BVIMcmVzZWFyY2hDb3N0EhIKBHRhZ3MYCCADKAlSBHRhZ3MizAEKElBvbGlj",
+            "eUNhdGFsb2dFbnRyeRIOCgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIE",
+            "bmFtZRIgCgtkZXNjcmlwdGlvbhgDIAEoCVILZGVzY3JpcHRpb24SGQoIaWNv",
+            "bl9rZXkYBCABKAlSB2ljb25LZXkSFAoFbGF5ZXIYBSABKAlSBWxheWVyEisK",
+            "EWFjdGl2YXRpb25fdGltaW5nGAYgASgJUhBhY3RpdmF0aW9uVGltaW5nEhIK",
+            "BHRhZ3MYByADKAlSBHRhZ3Mi8AEKElJlY2lwZUNhdGFsb2dFbnRyeRIOCgJp",
+            "ZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIgCgtkZXNjcmlwdGlv",
+            "bhgDIAEoCVILZGVzY3JpcHRpb24SGQoIaWNvbl9rZXkYBCABKAlSB2ljb25L",
+            "ZXkSHwoLYnVpbGRpbmdfaWQYBSABKAlSCmJ1aWxkaW5nSWQSHwoLd29ya19h",
+            "bW91bnQYBiABKAVSCndvcmtBbW91bnQSIwoNYmFzZV9wcm9ncmVzcxgHIAEo",
+            "BVIMYmFzZVByb2dyZXNzEhIKBHRhZ3MYCCADKAlSBHRhZ3MirQEKE1RlcnJh",
+            "aW5DYXRhbG9nRW50cnkSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUYAiABKAlS",
+            "BG5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2NyaXB0aW9uEhkKCGlj",
+            "b25fa2V5GAQgASgJUgdpY29uS2V5EiEKDG1hdGVyaWFsX2tleRgFIAEoCVIL",
+            "bWF0ZXJpYWxLZXkSEgoEdGFncxgGIAMoCVIEdGFncyL3BAoVU3RhdGljQ2F0",
+            "YWxvZ1NuYXBzaG90EkQKCG1hbmlmZXN0GAEgASgLMigucGFub3B0ZXMucHJv",
+            "dG8udjEuU3RhdGljQ2F0YWxvZ01hbmlmZXN0UghtYW5pZmVzdBJDCglyZXNv",
+            "dXJjZXMYAiADKAsyJS5wYW5vcHRlcy5wcm90by52MS5SZXNvdXJjZURlc2Ny",
+            "aXB0b3JSCXJlc291cmNlcxI6CgZwb2ludHMYAyADKAsyIi5wYW5vcHRlcy5w",
+            "cm90by52MS5Qb2ludERlc2NyaXB0b3JSBnBvaW50cxI5CgV1bml0cxgEIAMo",
+            "CzIjLnBhbm9wdGVzLnByb3RvLnYxLlVuaXRDYXRhbG9nRW50cnlSBXVuaXRz",
+            "EkUKCWJ1aWxkaW5ncxgFIAMoCzInLnBhbm9wdGVzLnByb3RvLnYxLkJ1aWxk",
+            "aW5nQ2F0YWxvZ0VudHJ5UglidWlsZGluZ3MSTQoMdGVjaG5vbG9naWVzGAYg",
+            "AygLMikucGFub3B0ZXMucHJvdG8udjEuVGVjaG5vbG9neUNhdGFsb2dFbnRy",
+            "eVIMdGVjaG5vbG9naWVzEkEKCHBvbGljaWVzGAcgAygLMiUucGFub3B0ZXMu",
+            "cHJvdG8udjEuUG9saWN5Q2F0YWxvZ0VudHJ5Ughwb2xpY2llcxI/CgdyZWNp",
+            "cGVzGAggAygLMiUucGFub3B0ZXMucHJvdG8udjEuUmVjaXBlQ2F0YWxvZ0Vu",
+            "dHJ5UgdyZWNpcGVzEkIKCHRlcnJhaW5zGAkgAygLMiYucGFub3B0ZXMucHJv",
+            "dG8udjEuVGVycmFpbkNhdGFsb2dFbnRyeVIIdGVycmFpbnMiYAoYTXNnU3Rh",
+            "dGljQ2F0YWxvZ01hbmlmZXN0EkQKCG1hbmlmZXN0GAEgASgLMigucGFub3B0",
+            "ZXMucHJvdG8udjEuU3RhdGljQ2F0YWxvZ01hbmlmZXN0UghtYW5pZmVzdCJg",
+            "ChhNc2dTdGF0aWNDYXRhbG9nU25hcHNob3QSRAoIc25hcHNob3QYASABKAsy",
+            "KC5wYW5vcHRlcy5wcm90by52MS5TdGF0aWNDYXRhbG9nU25hcHNob3RSCHNu",
+            "YXBzaG90QlNaOmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJu",
+            "YWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5W",
+            "MWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitCatalogEntry), global::Panoptes.Protocol.V1.UnitCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "PrefabKey", "Tags" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitCatalogEntry), global::Panoptes.Protocol.V1.UnitCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "PrefabKey", "Tags", "CanAttackStructures" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingCatalogEntry), global::Panoptes.Protocol.V1.BuildingCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "PrefabKey", "PlacementKind", "BuildingScope", "RequiredResourceType", "TakeoverMode", "Tags" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.TechnologyCatalogEntry), global::Panoptes.Protocol.V1.TechnologyCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "Branch", "Tier", "ResearchCost", "Tags" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PolicyCatalogEntry), global::Panoptes.Protocol.V1.PolicyCatalogEntry.Parser, new[]{ "Id", "Name", "Description", "IconKey", "Layer", "ActivationTiming", "Tags" }, null, null, null, null),
@@ -136,6 +137,7 @@ namespace Panoptes.Protocol.V1 {
       iconKey_ = other.iconKey_;
       prefabKey_ = other.prefabKey_;
       tags_ = other.tags_.Clone();
+      canAttackStructures_ = other.canAttackStructures_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -216,6 +218,18 @@ namespace Panoptes.Protocol.V1 {
       get { return tags_; }
     }
 
+    /// <summary>Field number for the "can_attack_structures" field.</summary>
+    public const int CanAttackStructuresFieldNumber = 7;
+    private bool canAttackStructures_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool CanAttackStructures {
+      get { return canAttackStructures_; }
+      set {
+        canAttackStructures_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -237,6 +251,7 @@ namespace Panoptes.Protocol.V1 {
       if (IconKey != other.IconKey) return false;
       if (PrefabKey != other.PrefabKey) return false;
       if(!tags_.Equals(other.tags_)) return false;
+      if (CanAttackStructures != other.CanAttackStructures) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -250,6 +265,7 @@ namespace Panoptes.Protocol.V1 {
       if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
       if (PrefabKey.Length != 0) hash ^= PrefabKey.GetHashCode();
       hash ^= tags_.GetHashCode();
+      if (CanAttackStructures != false) hash ^= CanAttackStructures.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -289,6 +305,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteString(PrefabKey);
       }
       tags_.WriteTo(output, _repeated_tags_codec);
+      if (CanAttackStructures != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(CanAttackStructures);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -320,6 +340,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteString(PrefabKey);
       }
       tags_.WriteTo(ref output, _repeated_tags_codec);
+      if (CanAttackStructures != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(CanAttackStructures);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -346,6 +370,9 @@ namespace Panoptes.Protocol.V1 {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(PrefabKey);
       }
       size += tags_.CalculateSize(_repeated_tags_codec);
+      if (CanAttackStructures != false) {
+        size += 1 + 1;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -374,6 +401,9 @@ namespace Panoptes.Protocol.V1 {
         PrefabKey = other.PrefabKey;
       }
       tags_.Add(other.tags_);
+      if (other.CanAttackStructures != false) {
+        CanAttackStructures = other.CanAttackStructures;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -413,6 +443,10 @@ namespace Panoptes.Protocol.V1 {
             tags_.AddEntriesFrom(input, _repeated_tags_codec);
             break;
           }
+          case 56: {
+            CanAttackStructures = input.ReadBool();
+            break;
+          }
         }
       }
     #endif
@@ -450,6 +484,10 @@ namespace Panoptes.Protocol.V1 {
           }
           case 50: {
             tags_.AddEntriesFrom(ref input, _repeated_tags_codec);
+            break;
+          }
+          case 56: {
+            CanAttackStructures = input.ReadBool();
             break;
           }
         }

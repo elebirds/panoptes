@@ -154,7 +154,7 @@ namespace Panoptes.Presentation.Map
         private UnitView _selectedUnit;
         private BuildPlacementRule _buildRule;
         private string _buildType = string.Empty;
-        private string _activeBuildCastleId = string.Empty;
+        private string _activeBuildCityId = string.Empty;
         private NodeView _hoverNode;
         private BuildingView _hoverGhost;
         private GameStateCache _cache;
@@ -266,6 +266,14 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
+                if (ShouldPrioritizeStructureAttackClick())
+                {
+                    ClearTerritoryHighlights();
+                    NonBuildingMapClicked?.Invoke();
+                    HandleCombatSelectionClick();
+                    return;
+                }
+
                 if (TryOpenBuildingInfoFromClick())
                 {
                     return;
@@ -282,24 +290,34 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        public void EnterBuildPlacementAny(string buildingType)
+        private bool ShouldPrioritizeStructureAttackClick()
         {
-            EnterBuildPlacement(buildingType, BuildPlacementRule.AnyTerrain);
+            if (_selectedUnit == null ||
+                _combatActionMode != CombatActionMode.Attack ||
+                !CanSelectedUnitAttackStructures() ||
+                !TryRaycastNode(out var node) ||
+                node == null ||
+                string.IsNullOrWhiteSpace(node.NodeId))
+            {
+                return false;
+            }
+
+            return TryGetAttackableStructureNode(node.NodeId, out _);
         }
 
-        public void EnterBuildPlacementResource(string buildingType)
+        public void EnterBuildPlacementAny(string buildingType, string cityId)
         {
-            EnterBuildPlacement(buildingType, BuildPlacementRule.ResourceOnly);
+            EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.AnyTerrain);
         }
 
-        public void EnterBuildPlacementCity(string buildingType)
+        public void EnterBuildPlacementResource(string buildingType, string cityId)
         {
-            EnterBuildPlacement(buildingType, BuildPlacementRule.CityOnly);
+            EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.ResourceOnly);
         }
 
-        public void SetBuildCastleContext(string castleNodeId)
+        public void EnterBuildPlacementCity(string buildingType, string cityId)
         {
-            _activeBuildCastleId = string.IsNullOrWhiteSpace(castleNodeId) ? string.Empty : castleNodeId.Trim();
+            EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.CityOnly);
         }
 
         public void CancelCurrentMode()
@@ -488,12 +506,20 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void EnterBuildPlacement(string buildingType, BuildPlacementRule rule)
+        private void EnterBuildPlacement(string buildingType, string cityId, BuildPlacementRule rule)
         {
             _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
             if (disallowManualCastlePlacement && string.Equals(_buildType, "city_core", StringComparison.Ordinal))
             {
                 Debug.Log("[MapInputHandler] City core is pre-placed by map config and cannot be manually built.");
+                ExitBuildMode();
+                return;
+            }
+            _activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();
+            if (string.IsNullOrEmpty(_activeBuildCityId))
+            {
+                Debug.LogWarning($"[MapInputHandler] Missing build city context before entering build mode. building={_buildType}");
+                ShowUserError("缺少建造城市上下文，无法进入建造模式");
                 ExitBuildMode();
                 return;
             }
@@ -513,7 +539,7 @@ namespace Panoptes.Presentation.Map
 
             _mode = Mode.None;
             _buildType = string.Empty;
-            _activeBuildCastleId = string.Empty;
+            _activeBuildCityId = string.Empty;
             _hoverNode = null;
             DestroyHoverGhost();
         }
@@ -547,6 +573,15 @@ namespace Panoptes.Presentation.Map
             {
                 if (!string.IsNullOrEmpty(node.NodeId))
                 {
+                    if (_combatActionMode == CombatActionMode.Attack)
+                    {
+                        if (TryIssueStructureTargetOrder(node.NodeId))
+                        {
+                            _combatActionMode = CombatActionMode.None;
+                            NotifyCombatSelectionChanged();
+                        }
+                        return;
+                    }
                     if (_combatActionMode == CombatActionMode.Move)
                     {
                         if (TryIssueAuthoritativeMoveOrder(node.NodeId))
@@ -722,6 +757,14 @@ namespace Panoptes.Presentation.Map
             return TryGetSelectedUnitCatalog(out var entry) && !HasTag(entry, "civilian");
         }
 
+        private bool CanSelectedUnitAttackStructures()
+        {
+            return TryGetSelectedUnitCatalog(out var entry)
+                   && entry != null
+                   && entry.flags != null
+                   && entry.flags.can_attack_structures;
+        }
+
         private bool CanSelectedUnitCharge()
         {
             return TryGetSelectedUnitCatalog(out var entry) && HasTag(entry, "charge");
@@ -733,6 +776,59 @@ namespace Panoptes.Presentation.Map
             return _selectedUnit != null &&
                    StaticCatalogCache.EnsureInstance() != null &&
                    StaticCatalogCache.Instance.TryGetUnit(_selectedUnit.UnitType, out entry);
+        }
+
+        private bool TryIssueStructureTargetOrder(string nodeId)
+        {
+            if (_selectedUnit == null ||
+                _combatActionMode != CombatActionMode.Attack ||
+                string.IsNullOrWhiteSpace(nodeId) ||
+                !CanSelectedUnitAttackStructures())
+            {
+                return false;
+            }
+
+            if (!TryGetAttackableStructureNode(nodeId, out _))
+            {
+                return false;
+            }
+
+            GameIntents.AttackNode(_selectedUnit.UnitId, nodeId);
+            return true;
+        }
+
+        private bool TryGetAttackableStructureNode(string nodeId, out NodeDto nodeState)
+        {
+            nodeState = null;
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
+            {
+                nodeState = mapNode;
+            }
+            else if (GameStateCache.Instance != null)
+            {
+                nodeState = GameStateCache.Instance.GetNode(nodeId);
+            }
+
+            if (nodeState == null)
+            {
+                return false;
+            }
+
+            var buildingType = NormalizeToken(nodeState.BuildingType);
+            if (string.IsNullOrEmpty(buildingType))
+            {
+                return false;
+            }
+
+            var localOwner = NormalizeToken(GetLocalOwnerId());
+            var targetOwner = NormalizeToken(string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.TerritoryOwner : nodeState.Owner);
+            return !string.IsNullOrEmpty(targetOwner) && !string.Equals(targetOwner, localOwner, StringComparison.Ordinal);
         }
 
         private bool TryOpenBuildingInfoFromClick()
@@ -996,8 +1092,13 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
-                var ownerId = GetLocalOwnerId();
                 var backendBuildingType = ResolveBackendBuildingType(_buildType);
+                if (!SendBuildCommand(backendBuildingType, node.NodeId))
+                {
+                    return;
+                }
+
+                var ownerId = GetLocalOwnerId();
                 map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
                 _pendingBuilds.Add(new PendingBuildRecord
                 {
@@ -1006,8 +1107,6 @@ namespace Panoptes.Presentation.Map
                     ownerId = ownerId,
                     isGhost = true
                 });
-
-                SendBuildCommand(backendBuildingType, node.NodeId);
                 ExitBuildMode();
             }
         }
@@ -1422,16 +1521,24 @@ namespace Panoptes.Presentation.Map
             ClearNodeHighlights();
         }
 
-        private void SendBuildCommand(string buildingType, string nodeId)
+        private bool SendBuildCommand(string buildingType, string nodeId)
         {
             buildingType = ResolveBackendBuildingType(buildingType);
+            if (string.IsNullOrWhiteSpace(_activeBuildCityId))
+            {
+                Debug.LogWarning($"[MapInputHandler] Missing build city context. node={nodeId} building={buildingType}");
+                ShowUserError("当前节点缺少城市上下文，无法发送建造指令");
+                return false;
+            }
+
             if (!string.IsNullOrWhiteSpace(nodeId))
             {
                 _pendingBuildTokenNodeQueue.Enqueue(nodeId.Trim());
             }
 
-            GameIntents.BuildToken(nodeId, buildingType, _activeBuildCastleId);
+            GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);
             BuildCommandSent?.Invoke(buildingType, nodeId);
+            return true;
         }
 
         private void SubscribeCacheEvents()
@@ -2450,7 +2557,7 @@ namespace Panoptes.Presentation.Map
             return _combatActionMode switch
             {
                 CombatActionMode.Move => "悬停节点等待服务端路径预览，确认后点击下达持久行军目标",
-                CombatActionMode.Attack => "点击敌方单位，发送攻击命令",
+                CombatActionMode.Attack => "点击敌方单位或敌方建筑，发送攻击命令",
                 CombatActionMode.Charge => "点击敌方单位，发送冲锋命令",
                 _ => "选择动作后再指定目标"
             };

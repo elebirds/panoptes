@@ -132,6 +132,135 @@ func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 	}
 }
 
+func TestSingleStepResolver_ChargeStillTargetsUnitOnBuildingNode(t *testing.T) {
+	state := newCombatTestState(t, 4)
+	cavalryID := spawnTestUnit(state.World, "cavalry", "player-a", 0, 0)
+	blockerID := spawnTestUnit(state.World, "infantry", "player-b", 2, 0)
+	rearID := spawnTestUnit(state.World, "archer", "player-b", 3, 0)
+	spawnTestBuilding(state.World, state, "N2_0", "farm", "player-b", "city-b")
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		cavalryID: {PlayerID: "player-a", UnitID: cavalryID, Action: domain.UnitResolutionActionCharge, TargetNodeID: "N3_0", TargetUnitID: rearID},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, cavalryID); got != (domain.Position{X: 1, Y: 0}) {
+		t.Fatalf("cavalry position = %#v, want stop before first contact", got)
+	}
+	if got := countDamageEventsForUnit(events, blockerID); got == 0 {
+		t.Fatalf("blocker should still receive charge damage on building node")
+	}
+	if got := countDamageEventsForUnit(events, rearID); got != 0 {
+		t.Fatalf("rear target damage count = %d, want 0", got)
+	}
+}
+
+func TestSingleStepResolver_NodeConflictGroupResolvesThreeHostileFactions(t *testing.T) {
+	state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b", "player-c"})
+	aID := spawnTestUnit(state.World, "infantry", "player-a", 0, 1)
+	bID := spawnTestUnit(state.World, "infantry", "player-b", 2, 1)
+	cID := spawnTestUnit(state.World, "infantry", "player-c", 1, 0)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		aID: {PlayerID: "player-a", UnitID: aID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		bID: {PlayerID: "player-b", UnitID: bID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		cID: {PlayerID: "player-c", UnitID: cID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := unitPosition(t, state.World, aID); got != (domain.Position{X: 0, Y: 1}) {
+		t.Fatalf("player-a position = %#v, want fallback to start", got)
+	}
+	if got := unitPosition(t, state.World, bID); got != (domain.Position{X: 2, Y: 1}) {
+		t.Fatalf("player-b position = %#v, want fallback to start", got)
+	}
+	if got := unitPosition(t, state.World, cID); got != (domain.Position{X: 1, Y: 0}) {
+		t.Fatalf("player-c position = %#v, want fallback to start", got)
+	}
+	if got := countConflicts(events, "node"); got != 3 {
+		t.Fatalf("node conflict count = %d, want 3 hostile pairs", got)
+	}
+	if got := countDamageEventsForUnit(events, aID); got != 2 {
+		t.Fatalf("player-a damage events = %d, want 2", got)
+	}
+	if got := countDamageEventsForUnit(events, bID); got != 2 {
+		t.Fatalf("player-b damage events = %d, want 2", got)
+	}
+	if got := countDamageEventsForUnit(events, cID); got != 2 {
+		t.Fatalf("player-c damage events = %d, want 2", got)
+	}
+}
+
+func TestSingleStepResolver_NodeConflictGroupSkipsFriendlyPairs(t *testing.T) {
+	state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b"})
+	a1ID := spawnTestUnit(state.World, "infantry", "player-a", 0, 1)
+	a2ID := spawnTestUnit(state.World, "infantry", "player-a", 1, 0)
+	bID := spawnTestUnit(state.World, "infantry", "player-b", 2, 1)
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		a1ID: {PlayerID: "player-a", UnitID: a1ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		a2ID: {PlayerID: "player-a", UnitID: a2ID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		bID:  {PlayerID: "player-b", UnitID: bID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countConflicts(events, "node"); got != 2 {
+		t.Fatalf("node conflict count = %d, want 2 hostile pairs", got)
+	}
+	if got := countDamageEventsForUnit(events, a1ID); got != 1 {
+		t.Fatalf("player-a unit1 damage events = %d, want 1", got)
+	}
+	if got := countDamageEventsForUnit(events, a2ID); got != 1 {
+		t.Fatalf("player-a unit2 damage events = %d, want 1", got)
+	}
+	if got := countDamageEventsForUnit(events, bID); got != 2 {
+		t.Fatalf("player-b damage events = %d, want 2", got)
+	}
+}
+
+func TestSingleStepResolver_NodeConflictGroupEmitsStableConflictOrder(t *testing.T) {
+	buildState := func() *domain.GameState {
+		state := newCombatTestStateWithPlayers(t, 3, 3, []string{"player-a", "player-b", "player-c"})
+		aID := spawnTestUnitWithID(state.World, "infantry", "player-a", 0, 1, "unit-a")
+		bID := spawnTestUnitWithID(state.World, "infantry", "player-b", 2, 1, "unit-b")
+		cID := spawnTestUnitWithID(state.World, "infantry", "player-c", 1, 0, "unit-c")
+		state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+			aID: {PlayerID: "player-a", UnitID: aID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+			bID: {PlayerID: "player-b", UnitID: bID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+			cID: {PlayerID: "player-c", UnitID: cID, Action: domain.UnitResolutionActionMove, TargetNodeID: "N1_1"},
+		}
+		return state
+	}
+
+	resolver := NewSingleStepResolver()
+	firstState := buildState()
+	secondState := buildState()
+	first := collectConflictPairs(resolver.Run(firstState.World, firstState))
+	second := collectConflictPairs(resolver.Run(secondState.World, secondState))
+
+	want := []string{"unit-a|unit-b|node", "unit-a|unit-c|node", "unit-b|unit-c|node"}
+	if len(first) != len(want) {
+		t.Fatalf("first conflict pair count = %d, want %d", len(first), len(want))
+	}
+	for idx := range want {
+		if first[idx] != want[idx] {
+			t.Fatalf("first conflict[%d] = %q, want %q", idx, first[idx], want[idx])
+		}
+		if second[idx] != want[idx] {
+			t.Fatalf("second conflict[%d] = %q, want %q", idx, second[idx], want[idx])
+		}
+	}
+}
+
 func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 	state := newCombatTestState(t, 2)
 	infantryID := spawnTestUnit(state.World, "infantry", "player-a", 0, 0)
@@ -139,7 +268,7 @@ func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		infantryID: {PlayerID: "player-a", UnitID: infantryID, Action: domain.UnitResolutionActionAttack, TargetUnitID: settlerID},
-		settlerID: {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
+		settlerID:  {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -151,7 +280,116 @@ func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 	}
 }
 
+func TestSingleStepResolver_AttackDamagesHostileBuildingByNodeTarget(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 0, 0, "attacker-1")
+	spawnTestBuilding(state.World, state, "N1_0", "farm", "player-b", "city-b")
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N1_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countBuildingDamageEvents(events, "N1_0"); got != 1 {
+		t.Fatalf("building damage events = %d, want 1", got)
+	}
+	nodeEntry, ok := state.GetNode("N1_0")
+	if !ok {
+		t.Fatalf("missing node N1_0")
+	}
+	if got := ecs.BuildingC.Get(nodeEntry).HP; got >= 20 {
+		t.Fatalf("building HP = %d, want reduced below 20", got)
+	}
+}
+
+func TestSingleStepResolver_AttackDestroysCapitalCityCoreByNodeTarget(t *testing.T) {
+	state := newCombatTestState(t, 2)
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 1, 0, "attacker-1")
+	spawnTestBuilding(state.World, state, "N0_0", "city_core", "player-b", "N0_0")
+	state.EnsureCityState("player-b", "N0_0")
+	state.Players["player-b"].CapitalCityID = "N0_0"
+	state.Players["player-b"].CapitalCityCoreHP = 10
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N0_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "city_core_destroyed"); got != 1 {
+		t.Fatalf("city_core_destroyed events = %d, want 1", got)
+	}
+	if !state.IsOver {
+		t.Fatalf("state.IsOver = false, want true")
+	}
+	if state.WinnerID != "player-a" {
+		t.Fatalf("winner_id = %q, want player-a", state.WinnerID)
+	}
+}
+
+func TestSingleStepResolver_DeadUnitCannotAttackStructureLaterThisTurn(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	killerID := spawnTestUnitWithID(state.World, "infantry", "player-b", 0, 0, "a-killer")
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 1, 0, "z-attacker")
+	spawnTestBuilding(state.World, state, "N2_0", "farm", "player-b", "city-b")
+
+	attackerEntry, ok := findUnitEntry(state.World, attackerID)
+	if !ok {
+		t.Fatalf("attacker not found")
+	}
+	ecs.UnitStatsC.Get(attackerEntry).HP = 1
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		killerID: {
+			PlayerID:     "player-b",
+			UnitID:       killerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetUnitID: attackerID,
+		},
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N2_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countBuildingDamageEvents(events, "N2_0"); got != 0 {
+		t.Fatalf("building damage events = %d, want 0 after attacker dies first", got)
+	}
+	nodeEntry, ok := state.GetNode("N2_0")
+	if !ok {
+		t.Fatalf("missing node N2_0")
+	}
+	if got := ecs.BuildingC.Get(nodeEntry).HP; got != 20 {
+		t.Fatalf("building HP = %d, want unchanged 20", got)
+	}
+}
+
 func newCombatTestState(t *testing.T, width int) *domain.GameState {
+	return newCombatTestStateWithPlayers(t, width, 1, []string{"player-a", "player-b"})
+}
+
+func newCombatTestStateWithPlayers(t *testing.T, width, height int, playerIDs []string) *domain.GameState {
 	t.Helper()
 
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
@@ -163,9 +401,13 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian"}},
-			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}, Tags: []string{"melee"}},
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 10, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 20, TakeoverMode: "city_capture"},
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", MoveCostNoRoad: 2, Passable: true},
@@ -179,18 +421,28 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 	mapData := &domain.MapData{
 		ID:           "combat-test",
 		Width:        width,
-		Height:       1,
-		SpawnPoints:  map[int]domain.Position{0: {X: 0, Y: 0}, 1: {X: width - 1, Y: 0}},
-		PlayerSpawns: map[string]domain.Position{"player-a": {X: 0, Y: 0}, "player-b": {X: width - 1, Y: 0}},
+		Height:       height,
+		SpawnPoints:  map[int]domain.Position{},
+		PlayerSpawns: map[string]domain.Position{},
 		NamedNodes:   map[string]string{},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
-	for x := 0; x < width; x++ {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID(x, 0), X: x, Y: 0, Terrain: "plain"})
-		mapData.NodeIndex[nodeID(x, 0)] = entity
+	for idx, playerID := range playerIDs {
+		mapData.SpawnPoints[idx] = domain.Position{X: idx % width, Y: idx / width}
+		mapData.PlayerSpawns[playerID] = mapData.SpawnPoints[idx]
+	}
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID(x, y), X: x, Y: y, Terrain: "plain"})
+			mapData.NodeIndex[nodeID(x, y)] = entity
+		}
 	}
 
-	state := domain.NewGameState("combat-test", []string{"player-a", "player-b"}, []string{"A", "B"}, mapData)
+	usernames := make([]string, len(playerIDs))
+	for idx, playerID := range playerIDs {
+		usernames[idx] = playerID
+	}
+	state := domain.NewGameState("combat-test", playerIDs, usernames, mapData)
 	state.World = world
 	return state
 }
@@ -198,6 +450,23 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 func spawnTestUnit(world donburi.World, unitType string, faction string, x, y int) string {
 	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
 	return ecs.UnitStatsC.Get(entry).ID
+}
+
+func spawnTestUnitWithID(world donburi.World, unitType string, faction string, x, y int, unitID string) string {
+	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
+	ecs.UnitStatsC.Get(entry).ID = unitID
+	return unitID
+}
+
+func spawnTestBuilding(world donburi.World, state *domain.GameState, nodeID string, buildingType string, owner string, cityID string) {
+	nodeEntry, ok := state.GetNode(nodeID)
+	if !ok {
+		panic("missing test node: " + nodeID)
+	}
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = owner
+	node.TerritoryOwner = owner
+	ecs.CreateBuilding(world, buildingType, owner, cityID, nodeEntry)
 }
 
 func applyCombatEvents(state *domain.GameState, events []event.Event) {
@@ -239,6 +508,26 @@ func countDamageEventsForUnit(events []event.Event, unitID string) int {
 	return count
 }
 
+func countBuildingDamageEvents(events []event.Event, nodeID string) int {
+	count := 0
+	for _, evt := range events {
+		if dmg, ok := evt.(event.BuildingDamagedEvent); ok && dmg.NodeID == nodeID {
+			count++
+		}
+	}
+	return count
+}
+
+func countEventKind(events []event.Event, kind string) int {
+	count := 0
+	for _, evt := range events {
+		if evt != nil && evt.Kind() == kind {
+			count++
+		}
+	}
+	return count
+}
+
 func countConflicts(events []event.Event, conflictType string) int {
 	count := 0
 	for _, evt := range events {
@@ -247,6 +536,18 @@ func countConflicts(events []event.Event, conflictType string) int {
 		}
 	}
 	return count
+}
+
+func collectConflictPairs(events []event.Event) []string {
+	pairs := make([]string, 0)
+	for _, evt := range events {
+		conflict, ok := evt.(event.ConflictResolvedEvent)
+		if !ok {
+			continue
+		}
+		pairs = append(pairs, conflict.UnitAID+"|"+conflict.UnitBID+"|"+conflict.ConflictType)
+	}
+	return pairs
 }
 
 func nodeID(x, y int) string {

@@ -63,6 +63,9 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
 	}
+	if len(start.GetPlanningStartEvents()) != 0 {
+		t.Fatalf("planning_start_events len = %d, want 0 without pending activations", len(start.GetPlanningStartEvents()))
+	}
 }
 
 func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
@@ -85,6 +88,107 @@ func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	}
 	if _, ok := player.sent[len(player.sent)-1].(*pb.MsgPlanningStart); ok {
 		t.Fatalf("unexpected planning start in resolving bootstrap")
+	}
+}
+
+func TestPreparePlanningStartStateIfNeededRunsOnlyOncePerTurn(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID:           "agrarian_foundations",
+				ResearchCost: 2,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "farm"},
+				},
+			},
+			{
+				ID:           "masonry",
+				ResearchCost: 2,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "wall"},
+				},
+			},
+		},
+	}))
+
+	runtime := NewRuntime("game-1", nil, nil, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Phase = domain.PhasePlanning.String()
+	runtime.state.Turn = 3
+	runtime.state.Players["player-1"].Research.MarkTechnologyCompleted("agrarian_foundations", 2)
+
+	runtime.PreparePlanningStartStateIfNeeded()
+	if got := runtime.planningStartPreparedTurn; got != 3 {
+		t.Fatalf("planningStartPreparedTurn = %d, want 3", got)
+	}
+	if !runtime.state.IsBuildingUnlocked("player-1", "farm") {
+		t.Fatalf("farm should unlock on first planning-start prepare")
+	}
+	firstResult := runtime.PlanningStartResult()
+	if firstResult == nil {
+		t.Fatalf("planning start result should be cached after first prepare")
+	}
+	if len(firstResult.Events) == 0 {
+		t.Fatalf("planning start result should include activation events")
+	}
+
+	runtime.state.Players["player-1"].Research.MarkTechnologyCompleted("masonry", 2)
+	runtime.PreparePlanningStartStateIfNeeded()
+	if runtime.state.IsBuildingUnlocked("player-1", "wall") {
+		t.Fatalf("second prepare in same turn should be skipped")
+	}
+	if runtime.PlanningStartResult() != firstResult {
+		t.Fatalf("planning start result should be reused within the same turn")
+	}
+
+	runtime.state.Turn = 4
+	runtime.PreparePlanningStartStateIfNeeded()
+	if !runtime.state.IsBuildingUnlocked("player-1", "wall") {
+		t.Fatalf("prepare after turn advance should run again")
+	}
+	if runtime.PlanningStartResult() == firstResult {
+		t.Fatalf("planning start result should refresh after turn advance")
+	}
+}
+
+func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID:           "agrarian_foundations",
+				ResearchCost: 2,
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "farm"},
+				},
+			},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Turn = 4
+	state.Phase = domain.PhasePlanning.String()
+	state.Players["player-1"].Research.MarkTechnologyCompleted("agrarian_foundations", 3)
+
+	if err := runtime.InitializePrepared(state); err != nil {
+		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+
+	start, ok := player.sent[len(player.sent)-1].(*pb.MsgPlanningStart)
+	if !ok {
+		t.Fatalf("message type = %T, want MsgPlanningStart", player.sent[len(player.sent)-1])
+	}
+	if len(start.GetPlanningStartEvents()) != 1 {
+		t.Fatalf("planning_start_events len = %d, want 1", len(start.GetPlanningStartEvents()))
+	}
+	if got := start.GetPlanningStartEvents()[0].GetType(); got != "technology_activated" {
+		t.Fatalf("planning_start_events[0].type = %q, want technology_activated", got)
 	}
 }
 

@@ -4,7 +4,7 @@
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 实现回合结算报告模块的结算报告映射逻辑。
 
-package report
+package projection
 
 import (
 	"reflect"
@@ -14,22 +14,22 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
-func BuildTurnSettlement(
+func ProjectTurnSettlement(
 	state *domain.GameState,
 	playerID string,
 	turn int32,
 	phase string,
 	nextPhase string,
-	unitEvents []event.Event,
-	mapEvents []*pb.TurnEvent,
-	economyEvents []event.Event,
+	collector *gameresolution.Collector,
 ) *pb.MsgTurnSettlement {
+	// settlement 只关心 resolving 这条链上发生过什么，以及结算后的最终权威快照。
 	msg := &pb.MsgTurnSettlement{
-		Sections:  SettlementSections(unitEvents, mapEvents, economyEvents),
+		Sections:  SettlementSections(collector),
 		Turn:      turn,
 		Phase:     phase,
 		NextPhase: nextPhase,
@@ -44,17 +44,26 @@ func BuildTurnSettlement(
 	return msg
 }
 
-func SettlementSections(unitEvents []event.Event, mapEvents []*pb.TurnEvent, economyEvents []event.Event) []*pb.SettlementSection {
+func ProjectPlanningStartEvents(events []event.Event) []*pb.TurnEvent {
+	// planning start 和 settlement 共用同一套 TurnEvent 映射，避免同一领域事件在两个出口写两套字符串规则。
+	return TurnEvents(events)
+}
+
+func SettlementSections(collector *gameresolution.Collector) []*pb.SettlementSection {
+	if collector == nil {
+		collector = gameresolution.NewCollector()
+	}
 	sections := make([]*pb.SettlementSection, 0, 3)
-	if events := TurnEvents(unitEvents); len(events) > 0 {
+	if events := TurnEvents(collector.Events(gameresolution.ChannelUnit)); len(events) > 0 {
 		sections = append(sections, &pb.SettlementSection{Section: "unit", Events: events})
 	}
-	if len(mapEvents) > 0 {
-		sections = append(sections, &pb.SettlementSection{
-			Section: "map",
-			Events:  append([]*pb.TurnEvent(nil), mapEvents...),
-		})
+	if events := TurnEvents(collector.Events(gameresolution.ChannelMap)); len(events) > 0 {
+		sections = append(sections, &pb.SettlementSection{Section: "map", Events: events})
 	}
+	// settlement 对外仍保留 unit / map / economy 三段。
+	// planning commit 事件虽然来源于 planning channel，但它们是 resolving lock-in 的一部分，
+	// 所以继续并入 economy section 对外展示。
+	economyEvents := append(collector.Events(gameresolution.ChannelPlanning), collector.Events(gameresolution.ChannelEconomy)...)
 	if events := TurnEvents(economyEvents); len(events) > 0 {
 		sections = append(sections, &pb.SettlementSection{Section: "economy", Events: events})
 	}
@@ -65,6 +74,7 @@ func TurnEvents(events []event.Event) []*pb.TurnEvent {
 	out := make([]*pb.TurnEvent, 0, len(events))
 	for _, evt := range events {
 		if shouldSkipSettlementEvent(evt) {
+			// 某些事件只用于服务端内部状态衔接，不需要直接暴露给客户端 settlement。
 			continue
 		}
 		out = append(out, TurnEventFromEvent(evt))
@@ -77,6 +87,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	}
 
+	// 这里是服务端对外事件字符串的唯一映射入口。
+	// 规则层只负责产出领域事件，不直接关心 protobuf 文本口径。
 	switch e := evt.(type) {
 	case event.BuildingBuiltEvent:
 		data := map[string]string{
@@ -132,6 +144,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.PointBudgetRefreshedEvent:
+		// 点数预算刷新是 settlement 里的“本回合经济输入”证据，
+		// 它告诉客户端这一回合研究/工业预算被设到了多少。
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -141,6 +155,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.PointSpentEvent:
+		// point_spent 描述的是“本回合预算被用在了什么地方”，
+		// 与玩家资源库存不同，它反映的是 resolving 内的临时预算消耗。
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -184,15 +200,15 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"damage_per_turn": strconv.Itoa(e.DamagePerTurn),
 			},
 		}
-	case event.BuildingDeactivatedEvent:
+	case event.TechnologyCompletedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
-				"node_id": strings.TrimSpace(e.NodeID),
-				"reason":  strings.TrimSpace(e.Reason),
+				"player_id":     strings.TrimSpace(e.PlayerID),
+				"technology_id": strings.TrimSpace(e.TechnologyID),
 			},
 		}
-	case event.TechnologyUnlockedEvent:
+	case event.TechnologyActivatedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -225,6 +241,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.RecipeSelectionChangedEvent:
+		// 配方切换属于 operation state 的内部重置，不单独投影为 settlement 事件。
+		// 客户端在结算后直接从 NodeView.Operation 看到新的 recipe 选择即可。
 		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	case event.RecipeSkippedEvent:
 		return &pb.TurnEvent{
@@ -236,6 +254,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.RecipeProgressedEvent:
+		// recipe_progressed 是经济链的关键反馈：
+		// 它让客户端知道当前建筑推进到了哪里，以及是否因为 blocked reason 停在这里。
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -255,6 +275,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.RecipeCompletedEvent:
+		// recipe_completed 只表达“这条 recipe 已完成”，
+		// 真正产出的资源和单位已经体现在 settlement 后的权威快照里。
 		return &pb.TurnEvent{
 			Type: e.Kind(),
 			Data: map[string]string{
@@ -263,6 +285,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.BuildingStatusChangedEvent:
+		// 建筑运行态变化会进入 settlement 事件流，方便客户端解释
+		// 为什么同一建筑这回合从 active 变成 blocked / idle / disabled。
 		data := map[string]string{
 			"node_id": strings.TrimSpace(e.NodeID),
 			"status":  strings.TrimSpace(e.Status),
@@ -272,6 +296,28 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
 		}
 		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.CityFoundedEvent:
+		data := map[string]string{
+			"player_id":      strings.TrimSpace(e.PlayerID),
+			"city_id":        strings.TrimSpace(e.CityID),
+			"center_node_id": strings.TrimSpace(e.CenterNodeID),
+		}
+		if len(e.TerritoryIDs) > 0 {
+			data["territory_node_ids"] = strings.Join(e.TerritoryIDs, ",")
+		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.CityFoundingFailedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id": strings.TrimSpace(e.PlayerID),
+				"unit_id":   strings.TrimSpace(e.UnitID),
+				"reason":    strings.TrimSpace(e.Reason),
+			},
+		}
 	case event.MinisterActedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -299,6 +345,14 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 				"activation_turn": strconv.Itoa(e.ActivationTurn),
 			},
 		}
+	case event.InstitutionLoadoutActivatedEvent:
+		data := map[string]string{
+			"player_id": strings.TrimSpace(e.PlayerID),
+		}
+		if len(e.PolicyIDs) > 0 {
+			data["policy_ids"] = strings.Join(e.PolicyIDs, ",")
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.TokenUsedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -418,6 +472,9 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 }
 
 func shouldSkipSettlementEvent(evt event.Event) bool {
+	if evt == nil {
+		return true
+	}
 	switch evt.(type) {
 	case event.RecipeSelectionChangedEvent:
 		return true

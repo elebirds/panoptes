@@ -11,11 +11,9 @@ import "github.com/elebirds/panoptes/internal/domain"
 type PositionComp = domain.PositionComp
 type NodeComp = domain.NodeComp
 type BuildingComp = domain.BuildingComp
+type BuildingBindingComp = domain.BuildingBindingComp
 type BuildingOperationComp = domain.BuildingOperationComp
 type BuildingStateComp = domain.BuildingStateComp
-type CityCoreComp = domain.CityCoreComp
-type ServiceCityComp = domain.ServiceCityComp
-type FacilityBindingComp = domain.FacilityBindingComp
 type FacilityTakeoverComp = domain.FacilityTakeoverComp
 type UnitStatsComp = domain.UnitStatsComp
 type UnitCategoryComp = domain.UnitCategoryComp
@@ -33,11 +31,9 @@ var (
 	PositionC          = domain.PositionC
 	NodeC              = domain.NodeC
 	BuildingC          = domain.BuildingC
+	BuildingBindingC   = domain.BuildingBindingC
 	BuildingOperationC = domain.BuildingOperationC
 	BuildingStateC     = domain.BuildingStateC
-	CityCoreC          = domain.CityCoreC
-	ServiceCityC       = domain.ServiceCityC
-	FacilityBindingC   = domain.FacilityBindingC
 	FacilityTakeoverC  = domain.FacilityTakeoverC
 	UnitStatsC         = domain.UnitStatsC
 	UnitCategoryC      = domain.UnitCategoryC
@@ -50,4 +46,10 @@ var (
 	ChargeAbilityC     = domain.ChargeAbilityC
 	PoisonEffectC      = domain.PoisonEffectC
 	StarvingC          = domain.StarvingC
+)
+
+const (
+	BuildingScopeCityCore  = domain.BuildingScopeCityCore
+	BuildingScopeInCity    = domain.BuildingScopeInCity
+	BuildingScopeOutOfCity = domain.BuildingScopeOutOfCity
 )

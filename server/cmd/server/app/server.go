@@ -48,12 +48,15 @@ func (a *App) buildServer() *http.Server {
 	go wsHub.Run(context.Background())
 
 	var settlementRecorder *debug.SettlementRecorder
+	var commandRecorder *debug.CommandResultRecorder
 	if a.cfg.DevMode {
 		settlementRecorder = debug.NewSettlementRecorder()
+		commandRecorder = debug.NewCommandResultRecorder()
 		game.SetDebugHooks(game.DebugHooks{
-			DumpStateSummary: debug.DumpGameStateSummary,
-			RecordSettlement: settlementRecorder.RecordSettlement,
-			RecordGameOver:   settlementRecorder.RecordGameOver,
+			DumpStateSummary:      debug.DumpGameStateSummary,
+			RecordSettlement:      settlementRecorder.RecordSettlement,
+			RecordGameOver:        settlementRecorder.RecordGameOver,
+			RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 		})
 	} else {
 		game.SetDebugHooks(game.DebugHooks{})
@@ -65,7 +68,7 @@ func (a *App) buildServer() *http.Server {
 		a.infra.pgDB,
 		a.infra.redisClient,
 		a.cfg.DevMode,
-		httptransport.NewDebugHandler(game.Registry, settlementRecorder),
+		httptransport.NewDebugHandler(game.Registry, settlementRecorder, commandRecorder),
 	)
 
 	mux := http.NewServeMux()

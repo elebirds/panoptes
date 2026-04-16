@@ -53,11 +53,17 @@ func TestResolveCityAndServiceBindings(t *testing.T) {
 	if got := ResolveServiceCityID(farmEntry); got != "C1" {
 		t.Fatalf("farm service city id = %q, want C1", got)
 	}
-	if !cityEntry.HasComponent(CityCoreC) {
-		t.Fatalf("city core missing CityCoreC")
+	if !cityEntry.HasComponent(BuildingBindingC) {
+		t.Fatalf("city core missing BuildingBindingC")
 	}
-	if !farmEntry.HasComponent(FacilityBindingC) {
-		t.Fatalf("farm missing FacilityBindingC")
+	if got := BuildingBindingC.Get(cityEntry).Scope; got != BuildingScopeCityCore {
+		t.Fatalf("city core scope = %q, want city_core", got)
+	}
+	if !farmEntry.HasComponent(BuildingBindingC) {
+		t.Fatalf("farm missing BuildingBindingC")
+	}
+	if got := BuildingBindingC.Get(farmEntry).Scope; got != BuildingScopeOutOfCity {
+		t.Fatalf("farm scope = %q, want out_of_city", got)
 	}
 	if !farmEntry.HasComponent(FacilityTakeoverC) {
 		t.Fatalf("farm missing FacilityTakeoverC")
@@ -138,6 +144,61 @@ func TestBuildingRuntimeStateAndPlacementHelpers(t *testing.T) {
 	}
 	if canFound, reason := CanFoundCityAt(state, cityEntry); canFound || reason != "territory_blocked" {
 		t.Fatalf("CanFoundCityAt(occupied city) = (%v,%q), want (false,territory_blocked)", canFound, reason)
+	}
+}
+
+func TestValidateBuildingPlacementRequiresExclusiveFrontlineControlForResourceNodes(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", BuildingScope: "city_core", PlacementKind: "city_foundation_center", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 60, TakeoverMode: "delayed"},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 20, Attack: 5, MoveRange: 1, AttackRange: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "default", Width: 4, Height: 3, NodeIndex: map[string]donburi.Entity{}}
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 4; x++ {
+			nodeID := string(rune('A'+x)) + string(rune('1'+y))
+			entity := CreateNode(world, MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			mapData.NodeIndex[nodeID] = entity
+		}
+	}
+	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, mapData)
+	state.World = world
+
+	cityEntry := world.Entry(mapData.NodeIndex["A2"])
+	cityNode := NodeC.Get(cityEntry)
+	cityNode.Owner = "player-1"
+	cityNode.TerritoryOwner = "player-1"
+	CreateBuilding(world, "city_core", "player-1", "A2", cityEntry)
+	state.EnsureCityState("player-1", "A2")
+	state.Players["player-1"].CapitalCityID = "A2"
+
+	targetEntry := world.Entry(mapData.NodeIndex["D2"])
+	targetNode := NodeC.Get(targetEntry)
+	targetNode.IsResource = true
+	targetNode.ResourceType = "food"
+
+	farmCfg, _ := staticdata.Default().GetBuilding("farm")
+	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", farmCfg, "A2"); got != "outside_territory" {
+		t.Fatalf("ValidateBuildingPlacement(no control) = %q, want outside_territory", got)
+	}
+
+	CreateUnit(world, "infantry", "player-1", domain.Position{X: 3, Y: 1})
+	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", farmCfg, "A2"); got != "" {
+		t.Fatalf("ValidateBuildingPlacement(exclusive control) = %q, want empty", got)
+	}
+
+	CreateUnit(world, "infantry", "player-2", domain.Position{X: 3, Y: 1})
+	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", farmCfg, "A2"); got != "outside_territory" {
+		t.Fatalf("ValidateBuildingPlacement(contested) = %q, want outside_territory", got)
 	}
 }
 
