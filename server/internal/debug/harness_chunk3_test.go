@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/game/scenario"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
@@ -82,13 +81,14 @@ func TestHarnessSettlementBuildRevalidation_ReportsSkippedBuild(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("InjectPlanningCommand(build) error = %v", err)
 	}
-	nodeEntry, ok := h.room.State().GetNode("A2")
-	if !ok {
+	if _, ok := h.room.State().GetNode("A2"); !ok {
 		t.Fatalf("missing node A2")
 	}
-	node := ecs.NodeC.Get(nodeEntry)
-	node.Owner = "player-2"
-	node.TerritoryOwner = "player-2"
+	cityState := h.room.State().Players["player-1"].Cities["A1"]
+	if cityState == nil {
+		t.Fatalf("missing city state A1")
+	}
+	cityState.OnlineOnTurn = 99
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}

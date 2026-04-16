@@ -27,6 +27,7 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
+	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
 
 	nodeEntry, ok := state.GetNode("A2")
 	if !ok {

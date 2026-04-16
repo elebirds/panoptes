@@ -1,6 +1,7 @@
 package game
 
 import (
+	buildingorchestration "github.com/elebirds/panoptes/internal/building/orchestration"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
 	"github.com/elebirds/panoptes/internal/engine/economy"
@@ -36,6 +37,8 @@ type UnitResolutionStage struct{}
 
 type MapActionStage struct{}
 
+type BuildingStage struct{}
+
 type EconomyStage struct{}
 
 func NewTurnResolutionRunner() *TurnResolutionRunner {
@@ -47,6 +50,7 @@ func NewTurnResolutionRunner() *TurnResolutionRunner {
 			// 单位与地图动作跑完以后，经济阶段才能读取这回合已经稳定下来的占领与建筑状态。
 			UnitResolutionStage{},
 			MapActionStage{},
+			BuildingStage{},
 			EconomyStage{},
 		},
 	}
@@ -101,6 +105,19 @@ func (MapActionStage) Run(ctx *ResolutionContext) StageOutcome {
 	}
 	ctx.Room.refreshActiveMarchesAfterSettlement()
 	ctx.Collector.ApplyNow(gameresolution.ChannelMap, ctx.State.World, ctx.State, ctx.Room.plannedMapActionEvents()...)
+	if ctx.State.IsOver {
+		return StageOutcome{Stop: true}
+	}
+	return StageOutcome{}
+}
+
+func (BuildingStage) Run(ctx *ResolutionContext) StageOutcome {
+	if ctx.State.IsOver {
+		return StageOutcome{Stop: true}
+	}
+	// 建筑阶段先于经济阶段执行，保证 budget / build / recipe 读取到的都是
+	// 已经完成接管、城市陷落与 pending_activation 解释后的稳定建筑状态。
+	ctx.Collector.ApplyNow(gameresolution.ChannelEconomy, ctx.State.World, ctx.State, (&buildingorchestration.LifecycleSystem{}).Run(ctx.State.World, ctx.State)...)
 	if ctx.State.IsOver {
 		return StageOutcome{Stop: true}
 	}

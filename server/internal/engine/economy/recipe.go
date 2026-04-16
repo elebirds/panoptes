@@ -9,6 +9,7 @@ package economy
 import (
 	"math"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
@@ -74,7 +75,7 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 		if !entry.HasComponent(ecs.BuildingOperationC) {
 			return
 		}
-		building := ecs.BuildingC.Get(entry)
+		buildingComp := ecs.BuildingC.Get(entry)
 		nodeID := ecs.NodeC.Get(entry).ID
 		operation := ecs.BuildingOperationC.Get(entry)
 		selectedRecipeID := operation.SelectedRecipeID
@@ -86,7 +87,7 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			appendRecipeDisabled(&events, nodeID, selectedRecipeID, operation, requiredTurns, "building_disabled")
 			return
 		}
-		if serviceCityID := ecs.ResolveServiceCityID(entry); serviceCityID != "" && !state.IsCityOnlineForPlayer(building.Owner, serviceCityID) {
+		if serviceCityID := ecs.ResolveServiceCityID(entry); serviceCityID != "" && !state.IsCityOnlineForPlayer(buildingComp.Owner, serviceCityID) {
 			events = append(events, event.RecipeSkippedEvent{
 				NodeID:   nodeID,
 				RecipeID: selectedRecipeID,
@@ -103,7 +104,7 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			})
 			return
 		}
-		if !state.IsRecipeUnlocked(building.Owner, selectedRecipeID) {
+		if !state.IsRecipeUnlocked(buildingComp.Owner, selectedRecipeID) {
 			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredTurns, "invalid_recipe_selection")
 			return
 		}
@@ -114,15 +115,15 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			return
 		}
 
-		resourceCost := state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
-		pointCost := state.ApplyPointModifiers(building.Owner, string(staticdata.ModifierTriggerRecipePointInput), recipe.ID, toPointBag(recipe.PointInputs))
-		requiredProgress := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
+		resourceCost := state.ApplyResourceModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeResourceInput), recipe.ID, toResourceBag(recipe.ResourceInputs))
+		pointCost := state.ApplyPointModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipePointInput), recipe.ID, toPointBag(recipe.PointInputs))
+		requiredProgress := state.ApplyScalarModifier(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeWorkAmount), recipe.ID, "", recipe.WorkAmount)
 		if requiredProgress <= 0 {
 			requiredProgress = 1
 		}
 		wasBlocked := operation.BlockedReason != ""
-		resourceRatio := affordabilityRatioResources(simulatedResources[building.Owner], resourceCost)
-		pointRatio := affordabilityRatioPoints(simulatedPoints[building.Owner], pointCost)
+		resourceRatio := affordabilityRatioResources(simulatedResources[buildingComp.Owner], resourceCost)
+		pointRatio := affordabilityRatioPoints(simulatedPoints[buildingComp.Owner], pointCost)
 		// efficiency 是这套 recipe 模型的核心：它不是“要么全速运行，要么停工”，
 		// 而是允许资源或点数不足时按比例低效推进。
 		efficiency := math.Min(resourceRatio, pointRatio)
@@ -157,7 +158,7 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			return
 		}
 
-		progressStep := state.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
+		progressStep := state.ApplyScalarModifier(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)
 		if progressStep <= 0 {
 			progressStep = 1
 		}
@@ -181,7 +182,7 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 		// 这样可以保证低效推进时，本回合只补扣新增那一部分消耗。
 		resourceDelta := subtractResourceBags(targetConsumedResources, operation.ConsumedResources)
 		pointDelta := subtractPointBags(targetConsumedPoints, operation.ConsumedPoints)
-		if !simulatedResources[building.Owner].CanAfford(resourceDelta) || !simulatedPoints[building.Owner].CanAfford(pointDelta) {
+		if !simulatedResources[buildingComp.Owner].CanAfford(resourceDelta) || !simulatedPoints[buildingComp.Owner].CanAfford(pointDelta) {
 			blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
 			if blockedReason == "" {
 				blockedReason = "insufficient_resources"
@@ -189,11 +190,11 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			appendRecipeBlocked(&events, nodeID, selectedRecipeID, operation, requiredProgress, blockedReason)
 			return
 		}
-		simulatedResources[building.Owner] = simulatedResources[building.Owner].Sub(resourceDelta)
+		simulatedResources[buildingComp.Owner] = simulatedResources[buildingComp.Owner].Sub(resourceDelta)
 		for _, key := range pointDelta.Keys() {
-			simulatedPoints[building.Owner].AddAmount(key, -pointDelta.Get(key))
+			simulatedPoints[buildingComp.Owner].AddAmount(key, -pointDelta.Get(key))
 			events = append(events, event.PointSpentEvent{
-				PlayerID: building.Owner,
+				PlayerID: buildingComp.Owner,
 				Key:      key,
 				Amount:   pointDelta.Get(key),
 				Reason:   "recipe_progress",
@@ -214,11 +215,11 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 			})
 			events = append(events, event.RecipeCompletedEvent{
 				NodeID:        nodeID,
-				Owner:         building.Owner,
-				CityID:        building.CityID,
+				Owner:         buildingComp.Owner,
+				CityID:        building.ResolveCityID(entry),
 				RequiredTurns: requiredProgress,
 				Cost:          resourceCost,
-				Resources:     state.ApplyResourceModifiers(building.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
+				Resources:     state.ApplyResourceModifiers(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeResourceOutput), recipe.ID, toResourceBag(recipe.Outputs.Resources)),
 				Units:         append([]string(nil), recipe.Outputs.Units...),
 			})
 			events = append(events, event.BuildingStatusChangedEvent{

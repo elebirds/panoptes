@@ -3,6 +3,7 @@ package economy
 import (
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -77,7 +78,7 @@ func ValidateBuildOrder(state *domain.GameState, playerID string, nodeID string,
 	if !state.IsBuildingUnlocked(playerID, buildingType) {
 		return BuildOrderValidation{ValidationResult: ValidationResult{ErrorCode: "invalid_directive"}}
 	}
-	if errCode := ecs.ValidateBuildingPlacement(state, nodeEntry, playerID, cfg, cityID); errCode != "" {
+	if errCode := building.ValidatePlacement(state, nodeEntry, playerID, cfg, cityID); errCode != "" {
 		return BuildOrderValidation{ValidationResult: ValidationResult{ErrorCode: errCode}}
 	}
 	return BuildOrderValidation{
