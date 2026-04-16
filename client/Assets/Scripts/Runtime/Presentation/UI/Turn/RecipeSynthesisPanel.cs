@@ -12,25 +12,6 @@ namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class RecipeSynthesisPanel : MonoBehaviour
     {
-        [Serializable] private sealed class Root { public RecipeCfg[] recipes; public RecipeCfg[] entries; }
-        [Serializable] private sealed class RecipeCfg
-        {
-            public string id;
-            public string name;
-            public string description;
-            public string icon_key;
-            public string building_id;
-            public int work_amount;
-            public int base_progress;
-            public int sort_order;
-            public AmountCfg[] resource_inputs;
-            public AmountCfg[] point_inputs;
-            public OutputCfg outputs;
-        }
-
-        [Serializable] private sealed class OutputCfg { public AmountCfg[] resources; public string[] units; public AmountCfg[] point_progress; }
-        [Serializable] private sealed class AmountCfg { public string key; public int amount; }
-
         private sealed class RecipeViewData
         {
             public string Id;
@@ -56,9 +37,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
         [Header("Data Source")]
         [SerializeField] private bool startHidden = true;
-        [SerializeField] private bool preferServerPushedConfig = true;
-        [SerializeField] private bool listenServerUpdates = true;
-        [SerializeField] private string[] serverConfigKeys = { "recipeconfig", "recipesconfig", "recipe_catalog", "recipes" };
         [SerializeField] private string[] iconRoots = { "Icons/Recipes", "Icons/Resources", "Icons/Units", "Icons/Points" };
 
         [Header("Locked Visual")]
@@ -73,7 +51,6 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, HashSet<string>> _recipeUnlockTechMap = new(StringComparer.OrdinalIgnoreCase);
 
         private StaticCatalogCache _catalog;
-        private ConfigCache _config;
         private GameStateCache _stateCache;
         private bool _lastVisible;
         private string _activeNodeId = string.Empty;
@@ -119,16 +96,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 _catalog.CatalogChanged += OnCatalogChanged;
             }
 
-            if (listenServerUpdates)
-            {
-                _config = ConfigCache.EnsureInstance();
-                if (_config != null)
-                {
-                    _config.ConfigUpdated -= OnConfigUpdated;
-                    _config.ConfigUpdated += OnConfigUpdated;
-                }
-            }
-
             _stateCache = GameStateCache.Instance;
             if (_stateCache != null)
             {
@@ -145,7 +112,6 @@ namespace Panoptes.Presentation.UI.Domestic
         private void OnDisable()
         {
             if (_catalog != null) _catalog.CatalogChanged -= OnCatalogChanged;
-            if (_config != null) _config.ConfigUpdated -= OnConfigUpdated;
             if (_stateCache != null)
             {
                 _stateCache.OnGameError -= OnGameError;
@@ -252,19 +218,6 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             RefreshList();
-        }
-
-        private void OnConfigUpdated(string key)
-        {
-            var normalized = NormalizeToken(key);
-            for (var i = 0; i < serverConfigKeys.Length; i++)
-            {
-                if (normalized == NormalizeToken(serverConfigKeys[i]))
-                {
-                    RefreshList();
-                    return;
-                }
-            }
         }
 
         private void OnGameError(GameErrorEvent evt)
@@ -657,75 +610,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private List<RecipeViewData> LoadRecipeData()
         {
-            var fromConfig = LoadFromConfig();
-            if (fromConfig.Count > 0) return fromConfig;
             return LoadFromCatalog();
-        }
-
-        private List<RecipeViewData> LoadFromConfig()
-        {
-            var result = new List<RecipeViewData>();
-            if (!preferServerPushedConfig || _config == null) return result;
-            for (var i = 0; i < serverConfigKeys.Length; i++)
-            {
-                if (!_config.TryGetJson(serverConfigKeys[i], out var json) || string.IsNullOrWhiteSpace(json)) continue;
-                Root root = null; try { root = JsonUtility.FromJson<Root>(json); } catch { }
-                var source = root?.recipes != null && root.recipes.Length > 0 ? root.recipes : root?.entries;
-                if (source == null || source.Length == 0) continue;
-                for (var r = 0; r < source.Length; r++)
-                {
-                    var cfg = source[r]; if (cfg == null || string.IsNullOrWhiteSpace(cfg.id)) continue;
-                    result.Add(BuildRecipeFromConfig(cfg));
-                }
-                if (result.Count > 0) return result;
-            }
-            return result;
-        }
-
-        private RecipeViewData BuildRecipeFromConfig(RecipeCfg cfg)
-        {
-            var view = new RecipeViewData
-            {
-                Id = cfg.id.Trim(),
-                Name = string.IsNullOrWhiteSpace(cfg.name) ? cfg.id.Trim() : cfg.name.Trim(),
-                IconKey = cfg.icon_key ?? string.Empty,
-                BuildingId = NormalizeToken(cfg.building_id),
-                TurnCost = Mathf.Max(1, cfg.work_amount),
-                ProduceAmount = Mathf.Max(1, cfg.base_progress),
-                SortOrder = cfg.sort_order
-            };
-
-            AddAmounts(view.Inputs, cfg.resource_inputs);
-            AddAmounts(view.Inputs, cfg.point_inputs);
-            if (cfg.outputs != null)
-            {
-                AddAmounts(view.Outputs, cfg.outputs.resources);
-                AddAmounts(view.Outputs, cfg.outputs.point_progress);
-                if (cfg.outputs.units != null)
-                {
-                    for (var i = 0; i < cfg.outputs.units.Length; i++)
-                    {
-                        var id = (cfg.outputs.units[i] ?? string.Empty).Trim();
-                        if (!string.IsNullOrEmpty(id))
-                        {
-                            view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(id, 1, LoadIcon(id)));
-                        }
-                    }
-                }
-            }
-
-            if (view.Outputs.Count == 0)
-            {
-                view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(view.IconKey, 1, LoadIcon(view.IconKey)));
-            }
-
-            if (view.Inputs.Count == 0)
-            {
-                view.Inputs.Add(new RecipeSynthesisItemView.IngredientViewData("input", 1, null));
-            }
-
-            view.ProduceAmount = Mathf.Max(1, view.Outputs.Sum(x => Mathf.Max(1, x.Amount)));
-            return view;
         }
 
         private List<RecipeViewData> LoadFromCatalog()
@@ -779,18 +664,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 result.Add(view);
             }
             return result;
-        }
-
-        private void AddAmounts(List<RecipeSynthesisItemView.IngredientViewData> target, AmountCfg[] source)
-        {
-            if (target == null || source == null) return;
-            for (var i = 0; i < source.Length; i++)
-            {
-                var amount = source[i];
-                if (amount == null || string.IsNullOrWhiteSpace(amount.key)) continue;
-                var key = amount.key.Trim();
-                target.Add(new RecipeSynthesisItemView.IngredientViewData(key, Mathf.Max(0, amount.amount), LoadIcon(key)));
-            }
         }
 
         private void AddAmounts(List<RecipeSynthesisItemView.IngredientViewData> target, StaticCatalogCache.IntAmountEntryJson[] source)

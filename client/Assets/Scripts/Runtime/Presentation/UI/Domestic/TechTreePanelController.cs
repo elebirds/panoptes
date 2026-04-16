@@ -10,10 +10,6 @@ namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class TechTreePanelController : MonoBehaviour
     {
-        [Serializable] private sealed class Root { public NodeCfg[] nodes; public NodeCfg[] technologies; public EdgeCfg[] edges; public EdgeCfg[] links; }
-        [Serializable] private sealed class NodeCfg { public string id; public string name; public string description; public string icon_key; public string branch; public int tier; public int sort_order; public int column = -1; public int row = -1; public string[] prerequisites; public string[] requires; public string[] prev; }
-        [Serializable] private sealed class EdgeCfg { public string from; public string to; public string source; public string target; }
-
         private sealed class NodeData
         {
             public string Id;
@@ -51,11 +47,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
         [Header("Source")]
         [SerializeField] private bool logWarnings = true;
-        [SerializeField] private bool waitForServerSnapshot = true;
-        [SerializeField] private bool allowLocalBundleFallback = false;
-        [SerializeField] private bool preferServerPushedConfig = true;
-        [SerializeField] private bool listenServerConfigUpdates = true;
-        [SerializeField] private string[] serverConfigKeys = { "technologytreeconfig", "techtreeconfig", "technology_tree", "tech_tree" };
         [SerializeField] private string iconResourcesRoot = "Icons/Tech";
 
         [Header("Close")]
@@ -70,7 +61,6 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, int> _cols = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _visiting = new(StringComparer.OrdinalIgnoreCase);
         private StaticCatalogCache _catalog;
-        private ConfigCache _config;
         private bool _loggedMissingConfigThisEnable;
 
         private void Awake()
@@ -85,28 +75,13 @@ namespace Panoptes.Presentation.UI.Domestic
             _loggedMissingConfigThisEnable = false;
             _catalog = StaticCatalogCache.EnsureInstance();
             if (_catalog != null) { _catalog.CatalogChanged -= Refresh; _catalog.CatalogChanged += Refresh; }
-            if (listenServerConfigUpdates)
-            {
-                _config = ConfigCache.EnsureInstance();
-                if (_config != null) { _config.ConfigUpdated -= OnConfigUpdated; _config.ConfigUpdated += OnConfigUpdated; }
-            }
             Refresh();
         }
 
         private void OnDisable()
         {
             if (_catalog != null) _catalog.CatalogChanged -= Refresh;
-            if (_config != null) _config.ConfigUpdated -= OnConfigUpdated;
             _loggedMissingConfigThisEnable = false;
-        }
-
-        private void OnConfigUpdated(string key)
-        {
-            key = Key(key);
-            for (var i = 0; i < serverConfigKeys.Length; i++)
-            {
-                if (key == Key(serverConfigKeys[i])) { Refresh(); return; }
-            }
         }
 
         private void Refresh()
@@ -120,18 +95,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            var nodes = LoadFromConfig();
-            if (waitForServerSnapshot && nodes.Count == 0 && !allowLocalBundleFallback)
-            {
-                // Avoid depending on protocol manifest types at Presentation assembly level.
-                if (_catalog.Technologies == null || _catalog.Technologies.Count == 0)
-                {
-                    WarnMissingConfigOnce("[TechTreePanel] Missing technology tree config from server snapshot.");
-                    return;
-                }
-            }
-
-            if (nodes.Count == 0) nodes = LoadFromCatalog();
+            var nodes = LoadFromCatalog();
             if (nodes.Count == 0) { WarnMissingConfigOnce("[TechTreePanel] No technologies found in config/catalog."); return; }
 
             Layout(nodes);
@@ -147,48 +111,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
             Debug.LogWarning(message);
             _loggedMissingConfigThisEnable = true;
-        }
-
-        private List<NodeData> LoadFromConfig()
-        {
-            var list = new List<NodeData>();
-            if (!preferServerPushedConfig || _config == null) return list;
-            for (var i = 0; i < serverConfigKeys.Length; i++)
-            {
-                if (!_config.TryGetJson(serverConfigKeys[i], out var json) || string.IsNullOrWhiteSpace(json)) continue;
-                Root root = null; try { root = JsonUtility.FromJson<Root>(json); } catch { }
-                var src = root?.nodes != null && root.nodes.Length > 0 ? root.nodes : root?.technologies;
-                if (src == null || src.Length == 0) continue;
-
-                var map = new Dictionary<string, NodeData>(StringComparer.OrdinalIgnoreCase);
-                for (var n = 0; n < src.Length; n++)
-                {
-                    var s = src[n]; if (s == null || string.IsNullOrWhiteSpace(s.id)) continue;
-                    var id = s.id.Trim();
-                    if (!map.TryGetValue(id, out var d)) { d = new NodeData { Id = id }; map[id] = d; }
-                    d.Name = string.IsNullOrWhiteSpace(s.name) ? id : s.name.Trim();
-                    d.Desc = s.description ?? string.Empty;
-                    d.Icon = s.icon_key ?? string.Empty;
-                    d.Branch = s.branch ?? string.Empty;
-                    d.Tier = s.tier; d.Sort = s.sort_order; d.Column = s.column; d.Row = s.row;
-                    AddPre(d, s.prerequisites); AddPre(d, s.requires); AddPre(d, s.prev);
-                }
-                var edges = root.edges != null && root.edges.Length > 0 ? root.edges : root.links;
-                if (edges != null)
-                {
-                    for (var e = 0; e < edges.Length; e++)
-                    {
-                        var ed = edges[e]; if (ed == null) continue;
-                        var from = string.IsNullOrWhiteSpace(ed.from) ? ed.source : ed.from;
-                        var to = string.IsNullOrWhiteSpace(ed.to) ? ed.target : ed.to;
-                        if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to)) continue;
-                        if (map.TryGetValue(to.Trim(), out var toNode)) toNode.Pre.Add(from.Trim());
-                    }
-                }
-                list.AddRange(map.Values);
-                if (list.Count > 0) return list;
-            }
-            return list;
         }
 
         private List<NodeData> LoadFromCatalog()
@@ -411,12 +333,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 if (sp != null) return sp;
             }
             return Resources.Load<Sprite>(iconKey);
-        }
-
-        private static void AddPre(NodeData d, string[] arr)
-        {
-            if (d == null || arr == null) return;
-            for (var i = 0; i < arr.Length; i++) { var v = (arr[i] ?? string.Empty).Trim(); if (!string.IsNullOrEmpty(v)) d.Pre.Add(v); }
         }
 
         private static string Key(string s) => string.IsNullOrWhiteSpace(s) ? string.Empty : s.Trim().ToLowerInvariant();

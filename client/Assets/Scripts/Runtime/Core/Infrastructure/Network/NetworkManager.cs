@@ -247,6 +247,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
             HideLoadingOverlay();
             ClientRuntimeConfigCache.Instance?.Clear();
+            ConfigCache.Instance?.Clear();
             GameStateCache.Instance?.Clear();
             if (AppManager.Instance != null)
             {

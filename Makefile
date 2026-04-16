@@ -2,6 +2,7 @@
 
 PROTO_GEN_PATHS = \
 	--path common.proto \
+	--path config.proto \
 	--path data_types.proto \
 	--path data_catalog.proto \
 	--path map_catalog.proto \

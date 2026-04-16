@@ -6,6 +6,7 @@
  * Description: Map + unit runtime rendering manager.
  *************************************************/
 
+using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
@@ -83,10 +84,6 @@ namespace Panoptes.Presentation.Map
         
         [Header("Runtime Helpers")]
         [SerializeField] private bool autoEnsureRuntimeControllers = true;
-        [SerializeField] private bool autoFocusCameraOnMapBuild = false;
-        [SerializeField] private bool autoFocusCameraOnMyBaseVehicleOnMapBuild = true;
-        [SerializeField] private bool autoApplyCameraBoundsOnMapBuild = false;
-        [SerializeField] private bool autoForceGameplayCameraPoseOnMapBuild = false;
 
         [Header("Prefab")]
         [SerializeField] private NodeView nodeTilePrefab;
@@ -147,6 +144,8 @@ namespace Panoptes.Presentation.Map
         private UnitView _baseVehiclePrefabCache;
         private TerrainDecorationSpawner _terrainDecorationSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
+        private MapCameraContext _currentCameraContext;
+        private bool _hasCameraContext;
 
         private readonly List<UnitDto> _jsonUnits = new();
         private StaticCatalogCache _catalogCache;
@@ -155,6 +154,13 @@ namespace Panoptes.Presentation.Map
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
         public float TileSize => tileSize;
+        public event Action<MapCameraContext> CameraContextReady;
+
+        public bool TryGetCameraContext(out MapCameraContext context)
+        {
+            context = _currentCameraContext;
+            return _hasCameraContext && context.IsValid;
+        }
 
         private void Awake()
         {
@@ -256,6 +262,12 @@ namespace Panoptes.Presentation.Map
             if (cam != null && cam.GetComponent<TopDownCameraController>() == null)
             {
                 cam.gameObject.AddComponent<TopDownCameraController>();
+            }
+
+            if (UnityEngine.Object.FindAnyObjectByType<CameraSafeAreaBootstrapper>() == null)
+            {
+                var go = new GameObject("CameraSafeAreaBootstrapper");
+                go.AddComponent<CameraSafeAreaBootstrapper>();
             }
 
             if (UnityEngine.Object.FindAnyObjectByType<CityCoreHpBarOverlayController>() == null)
@@ -1324,17 +1336,34 @@ namespace Panoptes.Presentation.Map
             RebuildMapBackdrop();
 
             RebuildUnitsForCurrentSource();
+            PublishCameraContext();
+        }
 
-            var focusedOnBaseVehicle = false;
-            if (autoFocusCameraOnMyBaseVehicleOnMapBuild)
+        private void PublishCameraContext()
+        {
+            if (!TryBuildCameraContext(out var context))
             {
-                focusedOnBaseVehicle = TryFocusCameraOnMyBaseVehicle();
+                _hasCameraContext = false;
+                _currentCameraContext = default;
+                return;
             }
 
-            if (!focusedOnBaseVehicle && autoFocusCameraOnMapBuild)
+            _currentCameraContext = context;
+            _hasCameraContext = true;
+            CameraContextReady?.Invoke(context);
+        }
+
+        private bool TryBuildCameraContext(out MapCameraContext context)
+        {
+            context = default;
+            if (!TryBuildWorldRectFromNodeStates(out var worldRect))
             {
-                FocusCameraToCenter();
+                return false;
             }
+
+            var focusPoint = ResolvePreferredCameraFocusPoint(worldRect);
+            context = new MapCameraContext(worldRect, plainElevation, focusPoint);
+            return context.IsValid;
         }
 
         private void RebuildTerrainDecorations(List<NodeDto> nodeList)
@@ -1793,76 +1822,24 @@ namespace Panoptes.Presentation.Map
             _unitsByNodeId.Clear();
         }
 
-        private void FocusCameraToCenter()
+        private Vector3 ResolvePreferredCameraFocusPoint(Rect worldRect)
         {
-            if (_tileViews.Count == 0)
+            if (TryGetOwnedCityCoreFocusPoint(out var cityCoreFocus))
             {
-                return;
+                return cityCoreFocus;
             }
 
-            float minX = float.MaxValue;
-            float maxX = float.MinValue;
-            float minZ = float.MaxValue;
-            float maxZ = float.MinValue;
-
-            foreach (var pair in _tileViews)
+            if (TryGetOwnedBaseVehicleFocusPoint(out var baseVehicleFocus))
             {
-                if (pair.Value == null)
-                {
-                    continue;
-                }
-
-                var pos = pair.Value.transform.position;
-                if (pos.x < minX) minX = pos.x;
-                if (pos.x > maxX) maxX = pos.x;
-                if (pos.z < minZ) minZ = pos.z;
-                if (pos.z > maxZ) maxZ = pos.z;
+                return baseVehicleFocus;
             }
 
-            var cam = Camera.main;
-            if (cam == null)
-            {
-                return;
-            }
-
-            if (autoForceGameplayCameraPoseOnMapBuild)
-            {
-                EnsureGameplayCameraPose(cam);
-            }
-            var center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
-            var camPos = cam.transform.position;
-
-            var cameraController = cam.GetComponent<TopDownCameraController>();
-            if (autoApplyCameraBoundsOnMapBuild)
-            {
-                cameraController?.SetWorldBounds(minX, maxX, minZ, maxZ);
-                cameraController?.SetBoundsGroundY(plainElevation);
-            }
-
-            if (cam.orthographic)
-            {
-                if (Mathf.Abs(cam.transform.forward.y) > 0.5f)
-                {
-                    cam.transform.position = new Vector3(center.x, camPos.y, center.z);
-                }
-                else
-                {
-                    cam.transform.position = new Vector3(center.x, camPos.y, center.z - 10f);
-                }
-            }
-            else
-            {
-                cam.transform.position = new Vector3(center.x, camPos.y, center.z - 6f);
-            }
-
-            if (cameraController != null)
-            {
-                cameraController.SnapTargetToCurrentPosition();
-            }
+            return new Vector3(worldRect.center.x, plainElevation, worldRect.center.y);
         }
 
-        private bool TryFocusCameraOnMyBaseVehicle()
+        private bool TryGetOwnedBaseVehicleFocusPoint(out Vector3 focusPoint)
         {
+            focusPoint = default;
             var cache = GameStateCache.Instance;
             if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID))
             {
@@ -1870,8 +1847,6 @@ namespace Panoptes.Presentation.Map
             }
 
             var myPlayerId = NormalizeToken(cache.MyPlayerID);
-            UnitView targetUnit = null;
-
             foreach (var pair in _unitViews)
             {
                 var unitView = pair.Value;
@@ -1880,7 +1855,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (!string.Equals(NormalizeToken(unitView.Faction), myPlayerId, System.StringComparison.Ordinal))
+                if (!string.Equals(NormalizeToken(unitView.Faction), myPlayerId, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -1890,96 +1865,111 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                targetUnit = unitView;
-                break;
+                focusPoint = unitView.transform.position;
+                focusPoint.y = plainElevation;
+                return true;
             }
 
-            if (targetUnit == null)
-            {
-                return false;
-            }
-
-            var cam = Camera.main;
-            if (cam == null)
-            {
-                return false;
-            }
-
-            if (autoForceGameplayCameraPoseOnMapBuild)
-            {
-                EnsureGameplayCameraPose(cam);
-            }
-
-            var targetPos = targetUnit.transform.position;
-            var cameraController = cam.GetComponent<TopDownCameraController>();
-            if (cameraController != null)
-            {
-                if (autoApplyCameraBoundsOnMapBuild && TryGetWorldBounds(out var minX, out var maxX, out var minZ, out var maxZ))
-                {
-                    cameraController.SetWorldBounds(minX, maxX, minZ, maxZ);
-                    cameraController.SetBoundsGroundY(plainElevation);
-                }
-
-                return cameraController.FocusWorldPoint(targetPos, true);
-            }
-
-            cam.transform.position = new Vector3(targetPos.x, cam.transform.position.y, targetPos.z);
-            return true;
+            return false;
         }
 
-        private bool TryGetWorldBounds(out float minX, out float maxX, out float minZ, out float maxZ)
+        private bool TryGetOwnedCityCoreFocusPoint(out Vector3 focusPoint)
         {
-            minX = float.MaxValue;
-            maxX = float.MinValue;
-            minZ = float.MaxValue;
-            maxZ = float.MinValue;
-
-            if (_tileViews.Count == 0)
+            focusPoint = default;
+            var cache = GameStateCache.Instance;
+            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID))
             {
                 return false;
             }
 
-            foreach (var pair in _tileViews)
+            var myPlayerId = NormalizeToken(cache.MyPlayerID);
+            foreach (var pair in _nodeStates)
             {
-                var tile = pair.Value;
-                if (tile == null)
+                var node = pair.Value;
+                if (node == null || !string.Equals(NormalizeToken(node.BuildingType), "city_core", StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                var pos = tile.transform.position;
-                if (pos.x < minX) minX = pos.x;
-                if (pos.x > maxX) maxX = pos.x;
-                if (pos.z < minZ) minZ = pos.z;
-                if (pos.z > maxZ) maxZ = pos.z;
+                var ownerId = NormalizeToken(string.IsNullOrWhiteSpace(node.TerritoryOwner) ? node.Owner : node.TerritoryOwner);
+                if (!string.Equals(ownerId, myPlayerId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (_tileViews.TryGetValue(node.Id, out var nodeView) && nodeView != null)
+                {
+                    focusPoint = nodeView.BuildingInstance != null
+                        ? nodeView.BuildingInstance.transform.position
+                        : nodeView.transform.position;
+                    focusPoint.y = plainElevation;
+                    return true;
+                }
             }
 
-            return minX <= maxX && minZ <= maxZ;
+            return false;
         }
 
-        private static void EnsureGameplayCameraPose(Camera cam)
+        private bool TryBuildWorldRectFromNodeStates(out Rect worldRect)
         {
-            if (cam == null)
+            worldRect = default;
+            if (_nodeStates.Count == 0)
+            {
+                return false;
+            }
+
+            var minGridX = int.MaxValue;
+            var maxGridX = int.MinValue;
+            var minGridY = int.MaxValue;
+            var maxGridY = int.MinValue;
+
+            foreach (var pair in _nodeStates)
+            {
+                var node = pair.Value;
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (node.X < minGridX) minGridX = node.X;
+                if (node.X > maxGridX) maxGridX = node.X;
+                if (node.Y < minGridY) minGridY = node.Y;
+                if (node.Y > maxGridY) maxGridY = node.Y;
+            }
+
+            if (minGridX > maxGridX || minGridY > maxGridY)
+            {
+                return false;
+            }
+
+            ValidateAuthoritativeMapDimensions(minGridX, maxGridX, minGridY, maxGridY);
+
+            var halfTile = tileSize * 0.5f;
+            var minX = minGridX * tileSize - halfTile;
+            var maxX = maxGridX * tileSize + halfTile;
+            var minZ = minGridY * tileSize - halfTile;
+            var maxZ = maxGridY * tileSize + halfTile;
+            worldRect = Rect.MinMaxRect(minX, minZ, maxX, maxZ);
+            return worldRect.width > 0f && worldRect.height > 0f;
+        }
+
+        private void ValidateAuthoritativeMapDimensions(int minGridX, int maxGridX, int minGridY, int maxGridY)
+        {
+            var cache = GameStateCache.Instance;
+            if (cache == null || cache.MapWidth <= 0 || cache.MapHeight <= 0)
             {
                 return;
             }
 
-            var forwardYAbs = Mathf.Abs(cam.transform.forward.y);
-            var looksStraightForward = forwardYAbs < 0.2f;
-            if (!looksStraightForward)
+            var actualWidth = maxGridX - minGridX + 1;
+            var actualHeight = maxGridY - minGridY + 1;
+            if (actualWidth == cache.MapWidth && actualHeight == cache.MapHeight)
             {
                 return;
             }
 
-            cam.orthographic = false;
-            cam.fieldOfView = Mathf.Clamp(cam.fieldOfView, 35f, 60f);
-            cam.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
-
-            var pos = cam.transform.position;
-            if (pos.y < 2f)
-            {
-                cam.transform.position = new Vector3(pos.x, 3.4f, pos.z);
-            }
+            Debug.LogWarning(
+                $"[MapRenderer] Camera context grid span {actualWidth}x{actualHeight} does not match authoritative map size {cache.MapWidth}x{cache.MapHeight}.");
         }
 
         private bool TryParseNodesFromJson(string json, out List<NodeDto> nodes)

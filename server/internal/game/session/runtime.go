@@ -8,6 +8,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -464,6 +465,56 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
 }
 
+func (r *Runtime) sendConfigBatch(p Player) {
+	mapBundle := r.resolveBootstrapMapBundle()
+	if mapBundle == nil {
+		return
+	}
+
+	raw, err := json.Marshal(mapBundle)
+	if err != nil {
+		slog.Warn("marshal bootstrap map config failed",
+			"player_id", p.PlayerID(),
+			"map_id", mapBundle.ID,
+			"error", err,
+		)
+		return
+	}
+
+	msg := &pb.MsgConfigBatchJson{
+		Configs: []*pb.ConfigJsonEntry{
+			{
+				Key:  "mapconfig",
+				Json: string(raw),
+			},
+		},
+	}
+	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+}
+
+func (r *Runtime) resolveBootstrapMapBundle() *staticdata.MapRuntimeBundle {
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return nil
+	}
+
+	if r != nil && r.state != nil && r.state.Map != nil {
+		if mapID := strings.TrimSpace(r.state.Map.ID); mapID != "" {
+			if bundle, ok := catalog.GetMap(mapID); ok && bundle != nil {
+				return bundle
+			}
+		}
+	}
+
+	if defaultMapID := strings.TrimSpace(catalog.DefaultMapID()); defaultMapID != "" {
+		if bundle, ok := catalog.GetMap(defaultMapID); ok && bundle != nil {
+			return bundle
+		}
+	}
+
+	return nil
+}
+
 func (r *Runtime) sendBootstrapMessages() error {
 	r.bootstrapPlanningStartSent = false
 	r.PreparePlanningStartStateIfNeeded()
@@ -471,8 +522,9 @@ func (r *Runtime) sendBootstrapMessages() error {
 		if player.IsBot() {
 			continue
 		}
-		r.sendGameInit(player)
 		r.sendStaticCatalogManifest(player)
+		r.sendConfigBatch(player)
+		r.sendGameInit(player)
 		var planningStartEvents []event.Event
 		if r.planningStartResult != nil {
 			planningStartEvents = r.planningStartResult.Events

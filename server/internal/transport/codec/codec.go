@@ -83,6 +83,8 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_StaticCatalogManifest{StaticCatalogManifest: typed}}}
 	case *pb.MsgStaticCatalogSnapshot:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_StaticCatalogSnapshot{StaticCatalogSnapshot: typed}}}
+	case *pb.MsgConfigBatchJson:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_ConfigBatchJson{ConfigBatchJson: typed}}}
 	case *pb.MsgGameInit:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameInit{GameInit: typed}}}
 	case *pb.MsgPlanningStart:
