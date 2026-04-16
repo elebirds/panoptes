@@ -215,6 +215,7 @@ namespace Panoptes.Core.Infrastructure.Network
             {
                 GameEvent.BodyOneofCase.StaticCatalogManifest => evt.StaticCatalogManifest,
                 GameEvent.BodyOneofCase.StaticCatalogSnapshot => evt.StaticCatalogSnapshot,
+                GameEvent.BodyOneofCase.ConfigBatchJson => evt.ConfigBatchJson,
                 GameEvent.BodyOneofCase.GameInit => evt.GameInit,
                 GameEvent.BodyOneofCase.PlanningStart => evt.PlanningStart,
                 GameEvent.BodyOneofCase.PlanningSnapshot => evt.PlanningSnapshot,

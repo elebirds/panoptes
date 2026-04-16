@@ -119,20 +119,34 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 	go room.Start()
 
 	waitForPrepared(t, 2*time.Second, func() bool {
-		return len(tp.snapshot("player-1")) >= 3
+		return len(tp.snapshot("player-1")) >= 4
 	})
 
 	msgs := tp.snapshot("player-1")
 	metas := tp.snapshotMeta("player-1")
-	initMsg, ok := msgs[0].(*pb.MsgGameInit)
+	if got := msgs[0].ProtoReflect().Descriptor().Name(); got != "MsgStaticCatalogManifest" {
+		t.Fatalf("msgs[0] = %s, want MsgStaticCatalogManifest", got)
+	}
+	if got := metaGameSessionID(metas[0]); got != state.GameID {
+		t.Fatalf("msgs[0] meta.game_session_id = %q, want %q", got, state.GameID)
+	}
+
+	if got := msgs[1].ProtoReflect().Descriptor().Name(); got != "MsgConfigBatchJson" {
+		t.Fatalf("msgs[1] = %s, want MsgConfigBatchJson", got)
+	}
+	if got := metaGameSessionID(metas[1]); got != state.GameID {
+		t.Fatalf("msgs[1] meta.game_session_id = %q, want %q", got, state.GameID)
+	}
+
+	initMsg, ok := msgs[2].(*pb.MsgGameInit)
 	if !ok {
-		t.Fatalf("msgs[0] type = %T, want *pb.MsgGameInit", msgs[0])
+		t.Fatalf("msgs[2] type = %T, want *pb.MsgGameInit", msgs[2])
 	}
 	if initMsg.GetGameId() != state.GameID {
 		t.Fatalf("game_id = %q, want %q", initMsg.GetGameId(), state.GameID)
 	}
-	if got := metaGameSessionID(metas[0]); got != state.GameID {
-		t.Fatalf("msgs[0] meta.game_session_id = %q, want %q", got, state.GameID)
+	if got := metaGameSessionID(metas[2]); got != state.GameID {
+		t.Fatalf("msgs[2] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if initMsg.GetTurn() != 4 {
 		t.Fatalf("init turn = %d, want 4", initMsg.GetTurn())
@@ -141,19 +155,12 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 		t.Fatalf("init nodes len = %d, want 2", got)
 	}
 
-	if _, ok := msgs[1].(*pb.MsgStaticCatalogManifest); !ok {
-		t.Fatalf("msgs[1] type = %T, want *pb.MsgStaticCatalogManifest", msgs[1])
-	}
-	if got := metaGameSessionID(metas[1]); got != state.GameID {
-		t.Fatalf("msgs[1] meta.game_session_id = %q, want %q", got, state.GameID)
-	}
-
-	startMsg, ok := msgs[2].(*pb.MsgPlanningStart)
+	startMsg, ok := msgs[3].(*pb.MsgPlanningStart)
 	if !ok {
-		t.Fatalf("msgs[2] type = %T, want *pb.MsgPlanningStart", msgs[2])
+		t.Fatalf("msgs[3] type = %T, want *pb.MsgPlanningStart", msgs[3])
 	}
-	if got := metaGameSessionID(metas[2]); got != state.GameID {
-		t.Fatalf("msgs[2] meta.game_session_id = %q, want %q", got, state.GameID)
+	if got := metaGameSessionID(metas[3]); got != state.GameID {
+		t.Fatalf("msgs[3] meta.game_session_id = %q, want %q", got, state.GameID)
 	}
 	if startMsg.GetTurn() != 4 {
 		t.Fatalf("planning start turn = %d, want 4", startMsg.GetTurn())

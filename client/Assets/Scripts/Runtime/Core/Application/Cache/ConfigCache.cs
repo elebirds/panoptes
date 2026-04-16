@@ -2,12 +2,13 @@
  * Project: Panoptes
  * File: ConfigCache.cs
  * Author: Panoptes Team
- * Date: 2026-04-06
- * Description: Runtime JSON config cache (server-first).
+ * Date: 2026-04-17
+ * Description: Session-scoped runtime JSON config cache.
  *************************************************/
 
 using System;
 using System.Collections.Generic;
+using Panoptes.Protocol.V1;
 using UnityEngine;
 
 namespace Panoptes.Core.Application.Cache
@@ -120,6 +121,35 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
+        public void ApplyBatch(MsgConfigBatchJson msg)
+        {
+            if (msg == null || msg.Configs == null || msg.Configs.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < msg.Configs.Count; i++)
+            {
+                ApplyEntry(msg.Configs[i]);
+            }
+        }
+
+        public void Clear()
+        {
+            if (_jsonByKey.Count == 0)
+            {
+                return;
+            }
+
+            var clearedKeys = new List<string>(_jsonByKey.Keys);
+            _jsonByKey.Clear();
+
+            for (var i = 0; i < clearedKeys.Count; i++)
+            {
+                ConfigUpdated?.Invoke(clearedKeys[i]);
+            }
+        }
+
         public bool ApplyPushJson(string payloadJson)
         {
             if (string.IsNullOrWhiteSpace(payloadJson))
@@ -143,6 +173,16 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return false;
+        }
+
+        private void ApplyEntry(ConfigJsonEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            SetJson(entry.Key, entry.Json);
         }
 
         private bool TryApplySingle(string payloadJson)

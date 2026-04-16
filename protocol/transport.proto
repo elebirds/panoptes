@@ -4,6 +4,7 @@ package panoptes.proto.v1;
 
 import "auth.proto";
 import "common.proto";
+import "config.proto";
 import "data_catalog.proto";
 import "game_state.proto";
 import "lobby.proto";
@@ -132,6 +133,7 @@ message GameEvent {
     MsgMinisterMetrics minister_metrics = 17;
     MsgSetInstitutionLoadoutResult set_institution_loadout_result = 18;
     MsgIssueUnitOrderResult issue_unit_order_result = 19;
+    MsgConfigBatchJson config_batch_json = 20;
   }
 }
 
