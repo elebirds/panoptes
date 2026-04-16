@@ -61,6 +61,8 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private float outputSpacing = 10f;
         [SerializeField] private float inputSpacing = 8f;
         [SerializeField] private int maxSlotsPerSide = 3;
+        [SerializeField] private float preferredItemHeight = 178f;
+        [SerializeField] private float minItemHeight = 156f;
 
         [Header("Quantity")]
         [SerializeField] private int quantity;
@@ -77,6 +79,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private readonly List<SlotView> _outputSlots = new();
         private readonly List<SlotView> _inputSlots = new();
+        private LayoutElement _layoutElement;
 
         public event Action<RecipeSynthesisItemView, int> QuantityChanged;
 
@@ -90,6 +93,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 root = transform as RectTransform;
             }
 
+            EnsureLayoutElement();
             EnsureRoots();
             BindButtons();
             HideLegacyRefs();
@@ -233,6 +237,42 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 inputSlotsRoot = EnsureChildRoot("InputSlots", root, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -20f));
             }
+
+            EnsureLayoutElement();
+        }
+
+        private void EnsureLayoutElement()
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            if (_layoutElement == null)
+            {
+                _layoutElement = root.GetComponent<LayoutElement>();
+                if (_layoutElement == null)
+                {
+                    _layoutElement = root.gameObject.AddComponent<LayoutElement>();
+                }
+            }
+
+            var resolvedPreferred = preferredItemHeight;
+            if (resolvedPreferred <= 0f)
+            {
+                resolvedPreferred = root.sizeDelta.y;
+            }
+            if (resolvedPreferred <= 0f)
+            {
+                resolvedPreferred = 178f;
+            }
+
+            var resolvedMin = minItemHeight > 0f ? minItemHeight : resolvedPreferred;
+            _layoutElement.preferredHeight = resolvedPreferred;
+            _layoutElement.minHeight = Mathf.Min(resolvedMin, resolvedPreferred);
+
+            // Force layout recalculation for freshly instantiated items under VerticalLayoutGroup.
+            LayoutRebuilder.MarkLayoutForRebuild(root);
         }
 
         private static RectTransform EnsureChildRoot(string name, RectTransform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition)

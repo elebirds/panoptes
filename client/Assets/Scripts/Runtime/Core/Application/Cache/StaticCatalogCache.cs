@@ -61,6 +61,9 @@ namespace Panoptes.Core.Application.Cache
             public string required_resource_type;
             public string takeover_mode;
             public int sort_order;
+            public string default_recipe_id;
+            public string[] recipe_ids;
+            public string[] tags;
         }
 
         [Serializable]
@@ -369,13 +372,14 @@ namespace Panoptes.Core.Application.Cache
             ApplyManifest(snapshot.Manifest);
 
             // Keep richer local-only fields (e.g. prerequisites) when server snapshot schema is narrower.
+            var oldBuildings = new Dictionary<string, BuildingEntryJson>(_buildingsById, StringComparer.OrdinalIgnoreCase);
             var oldTechnologies = new Dictionary<string, TechnologyEntryJson>(_technologiesById, StringComparer.OrdinalIgnoreCase);
             var oldRecipes = new Dictionary<string, RecipeEntryJson>(_recipesById, StringComparer.OrdinalIgnoreCase);
 
             RebuildIndex(_resourcesByKey, ConvertResources(snapshot.Resources), entry => entry != null ? entry.key : string.Empty);
             RebuildIndex(_pointsByKey, ConvertPoints(snapshot.Points), entry => entry != null ? entry.key : string.Empty);
             RebuildIndex(_unitsById, ConvertUnits(snapshot.Units), entry => entry != null ? entry.id : string.Empty);
-            RebuildIndex(_buildingsById, ConvertBuildings(snapshot.Buildings), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_buildingsById, ConvertBuildings(snapshot.Buildings, oldBuildings), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_technologiesById, ConvertTechnologies(snapshot.Technologies, oldTechnologies), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_policiesById, ConvertPolicies(snapshot.Policies), entry => entry != null ? entry.id : string.Empty);
             RebuildIndex(_recipesById, ConvertRecipes(snapshot.Recipes, oldRecipes), entry => entry != null ? entry.id : string.Empty);
@@ -586,7 +590,9 @@ namespace Panoptes.Core.Application.Cache
             return result;
         }
 
-        private static BuildingEntryJson[] ConvertBuildings(System.Collections.Generic.IList<BuildingCatalogEntry> source)
+        private static BuildingEntryJson[] ConvertBuildings(
+            System.Collections.Generic.IList<BuildingCatalogEntry> source,
+            IReadOnlyDictionary<string, BuildingEntryJson> previous)
         {
             if (source == null || source.Count == 0)
             {
@@ -597,9 +603,11 @@ namespace Panoptes.Core.Application.Cache
             for (var i = 0; i < source.Count; i++)
             {
                 var item = source[i];
+                var id = item != null ? item.Id : string.Empty;
+                previous.TryGetValue(Normalize(id), out var old);
                 result[i] = new BuildingEntryJson
                 {
-                    id = item != null ? item.Id : string.Empty,
+                    id = id,
                     name = item != null ? item.Name : string.Empty,
                     description = item != null ? item.Description : string.Empty,
                     icon_key = item != null ? item.IconKey : string.Empty,
@@ -607,7 +615,10 @@ namespace Panoptes.Core.Application.Cache
                     placement_kind = item != null ? item.PlacementKind : string.Empty,
                     building_scope = item != null ? item.BuildingScope : string.Empty,
                     required_resource_type = item != null ? item.RequiredResourceType : string.Empty,
-                    takeover_mode = item != null ? item.TakeoverMode : string.Empty
+                    takeover_mode = item != null ? item.TakeoverMode : string.Empty,
+                    tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
+                    recipe_ids = old != null ? old.recipe_ids : Array.Empty<string>(),
+                    default_recipe_id = old != null ? old.default_recipe_id : string.Empty
                 };
             }
 

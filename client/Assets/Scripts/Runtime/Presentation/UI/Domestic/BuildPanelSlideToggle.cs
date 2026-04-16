@@ -104,7 +104,7 @@ namespace Panoptes.Presentation.UI.Domestic
             RecalculatePositions();
             _isCollapsed = collapsed;
 
-            if (immediate)
+            if (immediate || !isActiveAndEnabled || !gameObject.activeInHierarchy)
             {
                 ApplyImmediate(collapsed);
                 return;
