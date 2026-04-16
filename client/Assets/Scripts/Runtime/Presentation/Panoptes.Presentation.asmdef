@@ -4,6 +4,7 @@
   "references": [
     "Panoptes.Core",
 
+    "Unity.Cinemachine",
     "Unity.InputSystem",
     "Unity.TextMeshPro"
   ],
