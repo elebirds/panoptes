@@ -991,7 +991,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2552761068511580735, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 670.67
+      value: 454
       objectReference: {fileID: 0}
     - target: {fileID: 2552761068511580735, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_SizeDelta.y
@@ -1112,6 +1112,10 @@ PrefabInstance:
     - target: {fileID: 4348037497199738759, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_Name
       value: ResourcePanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 5246940251071088468, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
+      propertyPath: m_Spacing.x
+      value: -73.7
       objectReference: {fileID: 0}
     - target: {fileID: 5873434162756272598, guid: 75afe6e7469c5d4479975feb3ee24dd9, type: 3}
       propertyPath: m_AnchorMax.x

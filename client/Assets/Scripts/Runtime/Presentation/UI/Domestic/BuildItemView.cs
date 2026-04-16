@@ -53,7 +53,6 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private Sprite fallbackLockIcon;
         [SerializeField] private Color lockMaskColor = new Color(0f, 0f, 0f, 0.55f);
         [SerializeField] private Color lockIconColor = Color.white;
-        [SerializeField] private bool autoCreateLockOverlay = true;
 
         private readonly List<MaterialSlot> _slots = new();
 
@@ -284,36 +283,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void EnsureLockOverlay()
         {
-            if (lockOverlayRoot == null && autoCreateLockOverlay)
-            {
-                var root = new GameObject("LockOverlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                var rect = root.GetComponent<RectTransform>();
-                rect.SetParent(transform, false);
-                rect.anchorMin = Vector2.zero;
-                rect.anchorMax = Vector2.one;
-                rect.offsetMin = Vector2.zero;
-                rect.offsetMax = Vector2.zero;
-                rect.SetAsLastSibling();
-
-                lockOverlayRoot = root;
-                lockMaskImage = root.GetComponent<Image>();
-                lockMaskImage.color = lockMaskColor;
-                lockMaskImage.raycastTarget = false;
-
-                var iconGo = new GameObject("LockIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                var iconRect = iconGo.GetComponent<RectTransform>();
-                iconRect.SetParent(rect, false);
-                iconRect.anchorMin = new Vector2(0.5f, 0.5f);
-                iconRect.anchorMax = new Vector2(0.5f, 0.5f);
-                iconRect.pivot = new Vector2(0.5f, 0.5f);
-                iconRect.sizeDelta = new Vector2(40f, 40f);
-                iconRect.anchoredPosition = Vector2.zero;
-
-                lockIconImage = iconGo.GetComponent<Image>();
-                lockIconImage.color = lockIconColor;
-                lockIconImage.raycastTarget = false;
-            }
-
             if (lockMaskImage == null && lockOverlayRoot != null)
             {
                 lockMaskImage = lockOverlayRoot.GetComponent<Image>();
