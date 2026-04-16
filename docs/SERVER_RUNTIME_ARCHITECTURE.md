@@ -164,13 +164,12 @@ flowchart LR
 1. 读取 `staticdata.Rules().TurnTimeLimitPlanning`
 2. 进入 planning
 3. `planning.Service.Enter()` 初始化草案 map
-4. `session.NewPlanningStartRunner().Run()` 处理延迟生效内容
+4. 通过 `runtime.PreparePlanningStartStateIfNeeded()` 触发 `PlanningStartRunner`
 5. `host.NotifyTurn("planning")` 推送 planning start
-6. 异步触发部长汇报生成
-7. 等待所有玩家提交或超时
-8. 切到 resolving
-9. `host.RunTurnResolution()`
-10. 若未结束则 `state.Turn++`
+6. 等待所有玩家提交或超时
+7. 切到 resolving
+8. `host.RunTurnResolution()`
+9. 若未结束则 `state.Turn++`
 
 ### 4.2 PlanningStart 的延迟激活
 
@@ -196,6 +195,15 @@ flowchart LR
   - 当前 MVP 明确保持 token 不在 planning start 自动恢复
 
 这就是当前“科技完成本回合显示、下回合正式生效”和“institution 下回合生效”的真实实现落点。
+
+此外，`Runtime` 现在有一个按回合号工作的 guard：
+
+- `PreparePlanningStartStateIfNeeded()`
+
+它保证：
+
+- bootstrap / reconnect 期间若处于 planning，可以先准备一次再发 `MsgPlanningStart`
+- 正常回合主循环进入同一 planning turn 时不会重复准备第二次
 
 ### 4.3 Resolving 总入口
 
@@ -239,7 +247,6 @@ planning 阶段当前不是直接改世界，而是写入两类“待结算输�
 - `reveal_node`
 - `set_research_target`
 - `set_building_recipe`
-- `set_minister_directive`
 - `issue_unit_order`
 - `cancel_unit_order`
 - `planning_path_preview_request`
@@ -247,6 +254,7 @@ planning 阶段当前不是直接改世界，而是写入两类“待结算输�
 
 协议中仍存在、但当前会直接返回 `invalid_directive` 的非 MVP 入口：
 
+- `set_minister_directive`
 - `set_war_zone`
 - `war_zone_directive`
 
@@ -374,11 +382,11 @@ planning 阶段当前不是直接改世界，而是写入两类“待结算输�
 
 当前状态：
 
-- `set_war_zone` 会更新玩家持久 `WarZones`
-- `war_zone_directive` 会写入 `TurnRuntime.Planning.WarDirectives`
-- `set_minister_directive` 会写入 `TurnRuntime.Planning.MinisterDirectives`
-
-但默认 resolving 主链并不会消费 `WarDirectives`，它当前主要仍是 planning snapshot 可见信息。
+- `set_minister_directive`、`set_war_zone`、`war_zone_directive` 的协议字段都还在
+- 但服务端当前统一把它们视为非 MVP 输入
+- planning 阶段会直接返回 `invalid_directive`
+- 它们不会写入 `TurnRuntime`
+- 也不会出现在 planning snapshot 主字段中
 
 ## 6. 行军与路径预览子系统
 
@@ -963,32 +971,26 @@ stateDiagram-v2
 
 ### 13.1 Minister
 
-`MinisterEngine.GenerateReports()` 会：
+`engine/minister/*` 代码仍保留在仓库中，但它已经不属于默认 MVP 主链：
 
-- 为每个玩家、每个部长 profile 生成报告
-- 解析 LLM JSON 输出
-- 回发 `MsgMinisterReportChunk` 与 `MsgMinisterMetrics`
-- 通过 `ExecuteActions()` 试图把 actions 写入 planning runtime
+- `Coordinator.Start()` 默认不再触发 `MinisterEngine.GenerateReports()`
+- planning 阶段的 `set_minister_directive` 也会显式返回 `invalid_directive`
+- `BuildSystem` 不再消费 `Planning.MinisterBuilds`
 
-当前真实接线状态：
+因此当前更准确的状态是：
 
-- `build`：已接线
-  - 写入 `Planning.MinisterBuilds`
-  - 会被 `BuildSystem` 消费
-- `move_units`：**未闭环**
-  - 只写入 `Planning.MinisterMoves`
-  - 默认结算主链没有消费这批 move
-- `redirect_flow`：当前只记录，不改真实配置
+- minister 代码仍存在
+- 但默认服务端运行时不会让它影响本回合裁决
 
 ### 13.2 War Zone
 
 当前 war zone 系统的状态是：
 
-- 玩家自定义 `WarZones` 会进 `PlayerView`
-- `WarZoneDirectives` 会进 planning snapshot
-- 默认 resolving 主链不会据此修改部队行为
+- 协议字段仍在
+- 服务端 planning 阶段显式拒绝
+- planning snapshot 与默认 resolving 主链都不再接线
 
-所以当前 war zone 更接近“结构化输入与展示接口”，不是已完成的自动化战争执行系统。
+所以当前 war zone 已从 MVP 主链移除，而不是“半接线的结构化输入接口”。
 
 ## 14. 子系统与代码组织总表
 
@@ -1004,8 +1006,7 @@ stateDiagram-v2
 | 建筑建造 | `production/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |
 | 配方生产 | `production/recipe.go` | `BuildingOperationComp` | `RecipeProgressedEvent`、`RecipeCompletedEvent`、`BuildingStatusChangedEvent` | 是 |
 | 生命周期 | `production/control.go` | `BuildingStateComp`、`FacilityTakeoverComp` | `FacilityTakeoverProgressedEvent`、`FacilityTakeoverCompletedEvent`、`CityCapturedEvent`、`BuildingRuinedEvent` | 是 |
-| Minister build | `engine/minister/*` | `Planning.MinisterBuilds` | `MinisterActedEvent` | 部分闭环 |
-| Minister move | `engine/minister/*` | `Planning.MinisterMoves` | `MinisterActedEvent` | 未闭环 |
+| Minister | `engine/minister/*` | 默认主链不接线 | `MinisterActedEvent` | 非 MVP，已从主链移除 |
 | War Zone | `planning/service.go` | 协议字段仍在，但服务端显式拒绝 | 无 | 非 MVP，已从主链移除 |
 
 ## 15. 当前已知差距与未闭环点

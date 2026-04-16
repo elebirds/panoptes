@@ -97,9 +97,7 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		msg := body.SetBuildingRecipe
 		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
 	case *pb.PlanningCommand_SetMinisterDirective:
-		msg := body.SetMinisterDirective
-		room.SetMinisterDirective(playerID, msg.GetContent())
-		return nil
+		return transportproblem.New("invalid_directive", "minister is not part of current MVP")
 	case *pb.PlanningCommand_SetWarZone:
 		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_WarZoneDirective:

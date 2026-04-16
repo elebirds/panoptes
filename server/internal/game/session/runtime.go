@@ -41,6 +41,7 @@ type Runtime struct {
 	state     *domain.GameState
 
 	bootstrapPlanningStartSent bool
+	planningStartPreparedTurn  int
 }
 
 func NewRuntime(id string, players []Player, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -165,6 +166,17 @@ func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.M
 		}
 	}
 	return fmt.Errorf("player %s not found", playerID)
+}
+
+func (r *Runtime) PreparePlanningStartStateIfNeeded() {
+	if r == nil || r.state == nil || r.state.Phase != domain.PhasePlanning.String() {
+		return
+	}
+	if r.planningStartPreparedTurn == r.state.Turn {
+		return
+	}
+	PreparePlanningStartState(r.state)
+	r.planningStartPreparedTurn = r.state.Turn
 }
 
 func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
@@ -392,9 +404,7 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 
 func (r *Runtime) sendBootstrapMessages() error {
 	r.bootstrapPlanningStartSent = false
-	if r.state != nil && r.state.Phase == domain.PhasePlanning.String() {
-		PreparePlanningStartState(r.state)
-	}
+	r.PreparePlanningStartStateIfNeeded()
 	for _, player := range r.players {
 		if player.IsBot() {
 			continue

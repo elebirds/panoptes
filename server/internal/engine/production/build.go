@@ -22,7 +22,6 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		return events
 	}
 	orders := append([]domain.BuildOrder{}, state.TurnRuntime.Planning.BuildOrders...)
-	orders = append(orders, state.TurnRuntime.Planning.MinisterBuilds...)
 	simulatedResources := make(map[string]domain.ResourceBag, len(state.Players))
 	simulatedPoints := make(map[string]domain.PointBag, len(state.Players))
 	reservedNodes := make(map[string]struct{}, len(orders))
