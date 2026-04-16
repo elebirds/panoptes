@@ -54,17 +54,18 @@ type authoredData struct {
 	Ministers jsonDocument[struct {
 		Pool []staticdata.Minister `json:"pool"`
 	}]
-	ResourceUI   jsonDocument[staticdata.ResourceCatalogUIFile]
-	PointUI      jsonDocument[staticdata.PointCatalogUIFile]
-	UnitUI       jsonDocument[staticdata.UnitCatalogUIFile]
-	BuildingUI   jsonDocument[staticdata.BuildingCatalogUIFile]
-	TechnologyUI jsonDocument[staticdata.TechnologyCatalogUIFile]
-	PolicyUI     jsonDocument[staticdata.PolicyCatalogUIFile]
-	RecipeUI     jsonDocument[staticdata.RecipeCatalogUIFile]
-	TerrainUI    jsonDocument[staticdata.TerrainCatalogUIFile]
-	MapDefs      map[string]jsonDocument[staticdata.MapDefinition]
-	MapUI        map[string]jsonDocument[staticdata.MapUICatalog]
-	MapIDs       []string
+	ResourceUI       jsonDocument[staticdata.ResourceCatalogUIFile]
+	PointUI          jsonDocument[staticdata.PointCatalogUIFile]
+	UnitUI           jsonDocument[staticdata.UnitCatalogUIFile]
+	BuildingUI       jsonDocument[staticdata.BuildingCatalogUIFile]
+	TechnologyUI     jsonDocument[staticdata.TechnologyCatalogUIFile]
+	TechnologyTreeUI jsonDocument[staticdata.TechnologyTreeLayoutFile]
+	PolicyUI         jsonDocument[staticdata.PolicyCatalogUIFile]
+	RecipeUI         jsonDocument[staticdata.RecipeCatalogUIFile]
+	TerrainUI        jsonDocument[staticdata.TerrainCatalogUIFile]
+	MapDefs          map[string]jsonDocument[staticdata.MapDefinition]
+	MapUI            map[string]jsonDocument[staticdata.MapUICatalog]
+	MapIDs           []string
 }
 
 type validationTarget struct {
@@ -156,6 +157,10 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	if err != nil {
 		return nil, err
 	}
+	technologyTreeUI, err := readJSONDocument[staticdata.TechnologyTreeLayoutFile](filepath.Join(repoRoot, "data/ui/layouts/technology_tree.json"))
+	if err != nil {
+		return nil, err
+	}
 	policyUI, err := readJSONDocument[staticdata.PolicyCatalogUIFile](filepath.Join(repoRoot, "data/ui/catalogs/policies.json"))
 	if err != nil {
 		return nil, err
@@ -175,28 +180,29 @@ func loadAuthoredData(repoRoot string) (*authoredData, error) {
 	}
 
 	return &authoredData{
-		Manifest:     manifest,
-		Resources:    resources,
-		Points:       points,
-		Units:        units,
-		Buildings:    buildings,
-		Technologies: technologies,
-		Policies:     policies,
-		Recipes:      recipes,
-		Terrains:     terrains,
-		Rules:        rules,
-		Ministers:    ministers,
-		ResourceUI:   resourceUI,
-		PointUI:      pointUI,
-		UnitUI:       unitUI,
-		BuildingUI:   buildingUI,
-		TechnologyUI: technologyUI,
-		PolicyUI:     policyUI,
-		RecipeUI:     recipeUI,
-		TerrainUI:    terrainUI,
-		MapDefs:      mapDefs,
-		MapUI:        mapUI,
-		MapIDs:       mapIDs,
+		Manifest:         manifest,
+		Resources:        resources,
+		Points:           points,
+		Units:            units,
+		Buildings:        buildings,
+		Technologies:     technologies,
+		Policies:         policies,
+		Recipes:          recipes,
+		Terrains:         terrains,
+		Rules:            rules,
+		Ministers:        ministers,
+		ResourceUI:       resourceUI,
+		PointUI:          pointUI,
+		UnitUI:           unitUI,
+		BuildingUI:       buildingUI,
+		TechnologyUI:     technologyUI,
+		TechnologyTreeUI: technologyTreeUI,
+		PolicyUI:         policyUI,
+		RecipeUI:         recipeUI,
+		TerrainUI:        terrainUI,
+		MapDefs:          mapDefs,
+		MapUI:            mapUI,
+		MapIDs:           mapIDs,
 	}, nil
 }
 
@@ -249,6 +255,7 @@ func buildValidationTargets(data *authoredData) []validationTarget {
 		{Path: data.UnitUI.Path, SchemaRel: filepath.Join("ui", "units.schema.json"), Raw: data.UnitUI.Raw},
 		{Path: data.BuildingUI.Path, SchemaRel: filepath.Join("ui", "buildings.schema.json"), Raw: data.BuildingUI.Raw},
 		{Path: data.TechnologyUI.Path, SchemaRel: filepath.Join("ui", "technologies.schema.json"), Raw: data.TechnologyUI.Raw},
+		{Path: data.TechnologyTreeUI.Path, SchemaRel: filepath.Join("ui", "technology_tree.schema.json"), Raw: data.TechnologyTreeUI.Raw},
 		{Path: data.PolicyUI.Path, SchemaRel: filepath.Join("ui", "policies.schema.json"), Raw: data.PolicyUI.Raw},
 		{Path: data.RecipeUI.Path, SchemaRel: filepath.Join("ui", "recipes.schema.json"), Raw: data.RecipeUI.Raw},
 		{Path: data.TerrainUI.Path, SchemaRel: filepath.Join("ui", "terrains.schema.json"), Raw: data.TerrainUI.Raw},

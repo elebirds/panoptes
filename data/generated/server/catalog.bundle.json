@@ -4,7 +4,81 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "9fe067b973b976630a0d5b955b33fe09ac9f3c1621e04cd321fa570298dd4c84"
+    "bundle_hash": "ecdcbd9a1b14385413f617dfd9e5001efffefeeff0d06c6ece742988de75c2c9",
+    "required_sections": [
+      "resources",
+      "points",
+      "units",
+      "buildings",
+      "technologies",
+      "policies",
+      "recipes",
+      "terrains",
+      "rules",
+      "ministers",
+      "maps",
+      "ui_tech_tree_layout",
+      "ui_build_menu_layout",
+      "ui_recipe_layout"
+    ],
+    "section_hashes": [
+      {
+        "section_name": "buildings",
+        "hash": "6efa1abaf3c7658991625504055b8bdbb8326b044d6c69b9d0c9f8df1a996644"
+      },
+      {
+        "section_name": "maps",
+        "hash": "f89cc1d153bc1049e31667ffb173d52ef7fedca04bad97633ea98537438d61af"
+      },
+      {
+        "section_name": "ministers",
+        "hash": "6fb1a0c98f97084a5e78520df153c639f790f037f23ab41fa0ea17a435b116bc"
+      },
+      {
+        "section_name": "points",
+        "hash": "c72551202bc42a5e53bac200335f5fbb61e305d3661dce35c6db5badb7360962"
+      },
+      {
+        "section_name": "policies",
+        "hash": "85eb09bcc9eb3d205de770a9e2e02d3f62b47ef42cf1ef9af9ea06a2db86a2eb"
+      },
+      {
+        "section_name": "recipes",
+        "hash": "c896ba0461dfc1ec122fdf5468af8ce4854b471e18f777952086163b8d9907f3"
+      },
+      {
+        "section_name": "resources",
+        "hash": "8dd94b07a91c0d47e2a7bb1364b2f78b9256e5e8ffd1425b2d420db1cc342494"
+      },
+      {
+        "section_name": "rules",
+        "hash": "f2eee51d50fc0aa8bbdb936a69fa216a66d236bc3395cb3cac45c6557a86a810"
+      },
+      {
+        "section_name": "technologies",
+        "hash": "98b3a604c02fa270f58b463be31defe5f13bf00271b6613cdc3b471017b28b81"
+      },
+      {
+        "section_name": "terrains",
+        "hash": "5ea18465e5a9b1279004f1c1f36e9c23d4076d88724d7b9089c13c4b8e309741"
+      },
+      {
+        "section_name": "ui_build_menu_layout",
+        "hash": "e98008d1f9995e0d01a4b8f3e80a9578e7ce552539cf9b3a70dff18b845356e0"
+      },
+      {
+        "section_name": "ui_recipe_layout",
+        "hash": "0568859401948f7ca2d6a4ab1e10d567ce23a43d39532c926ddd8b572ad93e0d"
+      },
+      {
+        "section_name": "ui_tech_tree_layout",
+        "hash": "169edbe3abeefadc6b141179b0e33f5c861103c223851a51b40f4fa5ca57928d"
+      },
+      {
+        "section_name": "units",
+        "hash": "cc69a89076ac589bba281093bf772009a0aa190222180d52c4897b070708c8a2"
+      }
+    ]
   },
   "resources": [
     {
@@ -673,5 +747,103 @@
         "pvp"
       ]
     }
-  ]
+  ],
+  "ui_tech_tree_layout": {
+    "config_version": "2026-04-17",
+    "nodes": [
+      {
+        "id": "node_agrarian_foundations",
+        "technology_id": "agrarian_foundations",
+        "title": "农业基础",
+        "description": "解锁农场与基础农耕配方",
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_organized_labor",
+        "technology_id": "organized_labor",
+        "title": "组织化劳动",
+        "description": "提升工业产出效率",
+        "x": 420,
+        "y": -140,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_civic_institutions",
+        "technology_id": "civic_institutions",
+        "title": "公共制度",
+        "description": "解锁制度候选并新增一个制度槽位",
+        "x": 420,
+        "y": 140,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_agrarian_foundations_to_organized_labor",
+        "from": "node_agrarian_foundations",
+        "to": "node_organized_labor",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 0
+          },
+          {
+            "x": 420,
+            "y": -140
+          }
+        ]
+      },
+      {
+        "id": "edge_agrarian_foundations_to_civic_institutions",
+        "from": "node_agrarian_foundations",
+        "to": "node_civic_institutions",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 0
+          },
+          {
+            "x": 420,
+            "y": 140
+          }
+        ]
+      }
+    ]
+  },
+  "ui_build_menu_layout": {
+    "config_version": "2026-04-17",
+    "building_order": [
+      "city_core",
+      "farm",
+      "mine",
+      "lumber",
+      "barracks",
+      "wall"
+    ],
+    "hidden_building_ids": [
+      "city_core"
+    ]
+  },
+  "ui_recipe_layout": {
+    "config_version": "2026-04-17",
+    "recipe_order": [
+      "city_core_settler",
+      "farm_food",
+      "mine_ore",
+      "lumber_wood",
+      "barracks_infantry"
+    ]
+  }
 }

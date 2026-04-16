@@ -158,6 +158,10 @@ func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
 			return "MsgStaticCatalogManifest", body.StaticCatalogManifest, true
 		case *pb.GameEvent_StaticCatalogSnapshot:
 			return "MsgStaticCatalogSnapshot", body.StaticCatalogSnapshot, true
+		case *pb.GameEvent_StaticCatalogSectionChunk:
+			return "MsgStaticCatalogSectionChunk", body.StaticCatalogSectionChunk, true
+		case *pb.GameEvent_StaticCatalogSyncComplete:
+			return "MsgStaticCatalogSyncComplete", body.StaticCatalogSyncComplete, true
 		case *pb.GameEvent_ConfigBatchJson:
 			return "MsgConfigBatchJson", body.ConfigBatchJson, true
 		case *pb.GameEvent_GameInit:

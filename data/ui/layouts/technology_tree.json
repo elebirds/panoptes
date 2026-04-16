@@ -1,0 +1,63 @@
+{
+  "$schema": "../../schema/ui/technology_tree.schema.json",
+  "config_version": "2026-04-17",
+  "nodes": [
+    {
+      "id": "node_agrarian_foundations",
+      "technology_id": "agrarian_foundations",
+      "title": "农业基础",
+      "description": "解锁农场与基础农耕配方",
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_organized_labor",
+      "technology_id": "organized_labor",
+      "title": "组织化劳动",
+      "description": "提升工业产出效率",
+      "x": 420,
+      "y": -140,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_civic_institutions",
+      "technology_id": "civic_institutions",
+      "title": "公共制度",
+      "description": "解锁制度候选并新增一个制度槽位",
+      "x": 420,
+      "y": 140,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_agrarian_foundations_to_organized_labor",
+      "from": "node_agrarian_foundations",
+      "to": "node_organized_labor",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 180, "y": 0 },
+        { "x": 420, "y": -140 }
+      ]
+    },
+    {
+      "id": "edge_agrarian_foundations_to_civic_institutions",
+      "from": "node_agrarian_foundations",
+      "to": "node_civic_institutions",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 180, "y": 0 },
+        { "x": 420, "y": 140 }
+      ]
+    }
+  ]
+}

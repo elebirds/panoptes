@@ -146,6 +146,9 @@ namespace Panoptes.Core.Application.App
             DontDestroyOnLoad(gameObject);
         }
 
+        private bool _pendingCatalogSync;
+        private MsgGameInit _deferredGameInit;
+
         void Start()
         {
             RegisterGlobalHandlers();
@@ -166,6 +169,8 @@ namespace Panoptes.Core.Application.App
                 MessageDispatcher.Instance.Unregister("MsgConfigBatchJson");
                 MessageDispatcher.Instance.Unregister("MsgGameInit");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
+                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSectionChunk");
+                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSyncComplete");
                 MessageDispatcher.Instance.Unregister("MsgStaticCatalogSnapshot");
                 MessageDispatcher.Instance.Unregister("Problem");
             }
@@ -176,6 +181,8 @@ namespace Panoptes.Core.Application.App
             State = newState;
             if (newState == AppState.Login)
             {
+                _pendingCatalogSync = false;
+                _deferredGameInit = null;
                 RoomCache.Instance?.Clear();
                 ClientRuntimeConfigCache.Instance?.Clear();
                 ConfigCache.Instance?.Clear();
@@ -216,6 +223,8 @@ namespace Panoptes.Core.Application.App
             MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
             MessageDispatcher.Instance.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
             MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
+            MessageDispatcher.Instance.Register<MsgStaticCatalogSectionChunk>("MsgStaticCatalogSectionChunk", OnStaticCatalogSectionChunk);
+            MessageDispatcher.Instance.Register<MsgStaticCatalogSyncComplete>("MsgStaticCatalogSyncComplete", OnStaticCatalogSyncComplete);
             MessageDispatcher.Instance.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
             MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
             MessageDispatcher.Instance.Register<Problem>("Problem", OnProblem);
@@ -233,7 +242,52 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
         {
-            StaticCatalogCache.EnsureInstance()?.ApplyManifest(msg?.Manifest);
+            var cache = StaticCatalogCache.EnsureInstance();
+            var decision = cache?.CompareManifest(msg?.Manifest) ?? new StaticCatalogCache.CatalogSyncDecision();
+            cache?.BeginSectionSync(msg?.Manifest, decision.RequestedSections);
+
+            _pendingCatalogSync = true;
+            _deferredGameInit = null;
+
+            var request = new MsgStaticCatalogSyncRequest
+            {
+                BundleHash = cache != null && cache.LocalManifest != null ? cache.LocalManifest.bundle_hash ?? string.Empty : string.Empty,
+                ForceFullSync = decision.ForceFullSync,
+            };
+            if (decision.RequestedSections != null && decision.RequestedSections.Length > 0)
+            {
+                request.SectionNames.Add(decision.RequestedSections);
+            }
+            MessageSender.Send(new MsgStaticCatalogSyncRequest
+            {
+                BundleHash = request.BundleHash,
+                ForceFullSync = request.ForceFullSync,
+                SectionNames = { request.SectionNames }
+            });
+        }
+
+        private void OnStaticCatalogSectionChunk(MsgStaticCatalogSectionChunk msg)
+        {
+            StaticCatalogCache.EnsureInstance()?.ApplySectionChunk(msg);
+        }
+
+        private void OnStaticCatalogSyncComplete(MsgStaticCatalogSyncComplete msg)
+        {
+            var synchronized = StaticCatalogCache.EnsureInstance()?.FinalizeSectionSync(msg) ?? false;
+            _pendingCatalogSync = false;
+            if (!synchronized)
+            {
+                _deferredGameInit = null;
+                return;
+            }
+
+            if (_deferredGameInit == null)
+            {
+                return;
+            }
+
+            ApplyGameInitAndTransition(_deferredGameInit);
+            _deferredGameInit = null;
         }
 
         private void OnStaticCatalogSnapshot(MsgStaticCatalogSnapshot msg)
@@ -242,6 +296,17 @@ namespace Panoptes.Core.Application.App
         }
 
         private void OnGameInit(MsgGameInit msg)
+        {
+            if (_pendingCatalogSync)
+            {
+                _deferredGameInit = msg;
+                return;
+            }
+
+            ApplyGameInitAndTransition(msg);
+        }
+
+        private void ApplyGameInitAndTransition(MsgGameInit msg)
         {
             GameStateCache.Instance?.ApplyGameInit(msg);
             TransitionTo(AppState.Game);

@@ -40,14 +40,18 @@ namespace Panoptes.Protocol.V1 {
             "IAEoCVILZGlzcGxheU5hbWUSIAoLZGVzY3JpcHRpb24YAyABKAlSC2Rlc2Ny",
             "aXB0aW9uEhkKCGljb25fa2V5GAQgASgJUgdpY29uS2V5Eh0KCnNvcnRfb3Jk",
             "ZXIYBSABKAVSCXNvcnRPcmRlchIkCg52aXNpYmxlX2luX2h1ZBgGIAEoCFIM",
-            "dmlzaWJsZUluSHVkItUBChVTdGF0aWNDYXRhbG9nTWFuaWZlc3QSJQoOc2No",
-            "ZW1hX3ZlcnNpb24YASABKAlSDXNjaGVtYVZlcnNpb24SJwoPY29udGVudF92",
-            "ZXJzaW9uGAIgASgJUg5jb250ZW50VmVyc2lvbhIfCgtidW5kbGVfaGFzaBgD",
-            "IAEoCVIKYnVuZGxlSGFzaBIlCg5kZWZhdWx0X2xvY2FsZRgEIAEoCVINZGVm",
-            "YXVsdExvY2FsZRIkCg5kZWZhdWx0X21hcF9pZBgFIAEoCVIMZGVmYXVsdE1h",
-            "cElkQlNaOmdpdGh1Yi5jb20vZWxlYmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwv",
-            "Z2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQYW5vcHRlcy5Qcm90b2NvbC5WMWIG",
-            "cHJvdG8z"));
+            "dmlzaWJsZUluSHVkIksKEkNhdGFsb2dTZWN0aW9uSGFzaBIhCgxzZWN0aW9u",
+            "X25hbWUYASABKAlSC3NlY3Rpb25OYW1lEhIKBGhhc2gYAiABKAlSBGhhc2gi",
+            "0AIKFVN0YXRpY0NhdGFsb2dNYW5pZmVzdBIlCg5zY2hlbWFfdmVyc2lvbhgB",
+            "IAEoCVINc2NoZW1hVmVyc2lvbhInCg9jb250ZW50X3ZlcnNpb24YAiABKAlS",
+            "DmNvbnRlbnRWZXJzaW9uEh8KC2J1bmRsZV9oYXNoGAMgASgJUgpidW5kbGVI",
+            "YXNoEiUKDmRlZmF1bHRfbG9jYWxlGAQgASgJUg1kZWZhdWx0TG9jYWxlEiQK",
+            "DmRlZmF1bHRfbWFwX2lkGAUgASgJUgxkZWZhdWx0TWFwSWQSKwoRcmVxdWly",
+            "ZWRfc2VjdGlvbnMYBiADKAlSEHJlcXVpcmVkU2VjdGlvbnMSTAoOc2VjdGlv",
+            "bl9oYXNoZXMYByADKAsyJS5wYW5vcHRlcy5wcm90by52MS5DYXRhbG9nU2Vj",
+            "dGlvbkhhc2hSDXNlY3Rpb25IYXNoZXNCU1o6Z2l0aHViLmNvbS9lbGViaXJk",
+            "cy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBh",
+            "bm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -57,7 +61,8 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PointBag), global::Panoptes.Protocol.V1.PointBag.Parser, new[]{ "Items" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResourceDescriptor), global::Panoptes.Protocol.V1.ResourceDescriptor.Parser, new[]{ "Key", "DisplayName", "Description", "IconKey", "SortOrder", "ProtoNumber", "VisibleInHud" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PointDescriptor), global::Panoptes.Protocol.V1.PointDescriptor.Parser, new[]{ "Key", "DisplayName", "Description", "IconKey", "SortOrder", "VisibleInHud" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogManifest), global::Panoptes.Protocol.V1.StaticCatalogManifest.Parser, new[]{ "SchemaVersion", "ContentVersion", "BundleHash", "DefaultLocale", "DefaultMapId" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.CatalogSectionHash), global::Panoptes.Protocol.V1.CatalogSectionHash.Parser, new[]{ "SectionName", "Hash" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.StaticCatalogManifest), global::Panoptes.Protocol.V1.StaticCatalogManifest.Parser, new[]{ "SchemaVersion", "ContentVersion", "BundleHash", "DefaultLocale", "DefaultMapId", "RequiredSections", "SectionHashes" }, null, null, null, null)
           }));
     }
     #endregion
@@ -1712,6 +1717,241 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class CatalogSectionHash : pb::IMessage<CatalogSectionHash>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<CatalogSectionHash> _parser = new pb::MessageParser<CatalogSectionHash>(() => new CatalogSectionHash());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<CatalogSectionHash> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor.MessageTypes[6]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public CatalogSectionHash() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public CatalogSectionHash(CatalogSectionHash other) : this() {
+      sectionName_ = other.sectionName_;
+      hash_ = other.hash_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public CatalogSectionHash Clone() {
+      return new CatalogSectionHash(this);
+    }
+
+    /// <summary>Field number for the "section_name" field.</summary>
+    public const int SectionNameFieldNumber = 1;
+    private string sectionName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SectionName {
+      get { return sectionName_; }
+      set {
+        sectionName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "hash" field.</summary>
+    public const int HashFieldNumber = 2;
+    private string hash_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Hash {
+      get { return hash_; }
+      set {
+        hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as CatalogSectionHash);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(CatalogSectionHash other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SectionName != other.SectionName) return false;
+      if (Hash != other.Hash) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SectionName.Length != 0) hash ^= SectionName.GetHashCode();
+      if (Hash.Length != 0) hash ^= Hash.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SectionName.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SectionName);
+      }
+      if (Hash.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Hash);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SectionName.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SectionName);
+      }
+      if (Hash.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Hash);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SectionName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SectionName);
+      }
+      if (Hash.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hash);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(CatalogSectionHash other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SectionName.Length != 0) {
+        SectionName = other.SectionName;
+      }
+      if (other.Hash.Length != 0) {
+        Hash = other.Hash;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            SectionName = input.ReadString();
+            break;
+          }
+          case 18: {
+            Hash = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            SectionName = input.ReadString();
+            break;
+          }
+          case 18: {
+            Hash = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class StaticCatalogManifest : pb::IMessage<StaticCatalogManifest>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1726,7 +1966,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1751,6 +1991,8 @@ namespace Panoptes.Protocol.V1 {
       bundleHash_ = other.bundleHash_;
       defaultLocale_ = other.defaultLocale_;
       defaultMapId_ = other.defaultMapId_;
+      requiredSections_ = other.requiredSections_.Clone();
+      sectionHashes_ = other.sectionHashes_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1820,6 +2062,28 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "required_sections" field.</summary>
+    public const int RequiredSectionsFieldNumber = 6;
+    private static readonly pb::FieldCodec<string> _repeated_requiredSections_codec
+        = pb::FieldCodec.ForString(50);
+    private readonly pbc::RepeatedField<string> requiredSections_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> RequiredSections {
+      get { return requiredSections_; }
+    }
+
+    /// <summary>Field number for the "section_hashes" field.</summary>
+    public const int SectionHashesFieldNumber = 7;
+    private static readonly pb::FieldCodec<global::Panoptes.Protocol.V1.CatalogSectionHash> _repeated_sectionHashes_codec
+        = pb::FieldCodec.ForMessage(58, global::Panoptes.Protocol.V1.CatalogSectionHash.Parser);
+    private readonly pbc::RepeatedField<global::Panoptes.Protocol.V1.CatalogSectionHash> sectionHashes_ = new pbc::RepeatedField<global::Panoptes.Protocol.V1.CatalogSectionHash>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Panoptes.Protocol.V1.CatalogSectionHash> SectionHashes {
+      get { return sectionHashes_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1840,6 +2104,8 @@ namespace Panoptes.Protocol.V1 {
       if (BundleHash != other.BundleHash) return false;
       if (DefaultLocale != other.DefaultLocale) return false;
       if (DefaultMapId != other.DefaultMapId) return false;
+      if(!requiredSections_.Equals(other.requiredSections_)) return false;
+      if(!sectionHashes_.Equals(other.sectionHashes_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1852,6 +2118,8 @@ namespace Panoptes.Protocol.V1 {
       if (BundleHash.Length != 0) hash ^= BundleHash.GetHashCode();
       if (DefaultLocale.Length != 0) hash ^= DefaultLocale.GetHashCode();
       if (DefaultMapId.Length != 0) hash ^= DefaultMapId.GetHashCode();
+      hash ^= requiredSections_.GetHashCode();
+      hash ^= sectionHashes_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1890,6 +2158,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(42);
         output.WriteString(DefaultMapId);
       }
+      requiredSections_.WriteTo(output, _repeated_requiredSections_codec);
+      sectionHashes_.WriteTo(output, _repeated_sectionHashes_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1920,6 +2190,8 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(42);
         output.WriteString(DefaultMapId);
       }
+      requiredSections_.WriteTo(ref output, _repeated_requiredSections_codec);
+      sectionHashes_.WriteTo(ref output, _repeated_sectionHashes_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1945,6 +2217,8 @@ namespace Panoptes.Protocol.V1 {
       if (DefaultMapId.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(DefaultMapId);
       }
+      size += requiredSections_.CalculateSize(_repeated_requiredSections_codec);
+      size += sectionHashes_.CalculateSize(_repeated_sectionHashes_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1972,6 +2246,8 @@ namespace Panoptes.Protocol.V1 {
       if (other.DefaultMapId.Length != 0) {
         DefaultMapId = other.DefaultMapId;
       }
+      requiredSections_.Add(other.requiredSections_);
+      sectionHashes_.Add(other.sectionHashes_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -2011,6 +2287,14 @@ namespace Panoptes.Protocol.V1 {
             DefaultMapId = input.ReadString();
             break;
           }
+          case 50: {
+            requiredSections_.AddEntriesFrom(input, _repeated_requiredSections_codec);
+            break;
+          }
+          case 58: {
+            sectionHashes_.AddEntriesFrom(input, _repeated_sectionHashes_codec);
+            break;
+          }
         }
       }
     #endif
@@ -2048,6 +2332,14 @@ namespace Panoptes.Protocol.V1 {
           }
           case 42: {
             DefaultMapId = input.ReadString();
+            break;
+          }
+          case 50: {
+            requiredSections_.AddEntriesFrom(ref input, _repeated_requiredSections_codec);
+            break;
+          }
+          case 58: {
+            sectionHashes_.AddEntriesFrom(ref input, _repeated_sectionHashes_codec);
             break;
           }
         }

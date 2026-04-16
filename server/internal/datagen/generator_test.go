@@ -38,8 +38,16 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 		"data/schema/ui/resources.schema.json",
 		"data/schema/ui/units.schema.json",
 		"data/schema/ui/buildings.schema.json",
+		"data/schema/ui/technology_tree.schema.json",
 		"data/schema/ui/terrains.schema.json",
 		"data/schema/ui/maps/catalog.schema.json",
+		"data/generated/server/sections/resources.json",
+		"data/generated/server/sections/technologies.json",
+		"data/generated/server/sections/ui_tech_tree_layout.json",
+		"data/generated/server/sections/ui_build_menu_layout.json",
+		"data/generated/server/sections/ui_recipe_layout.json",
+		"client/Assets/Resources/Data/sections/resources.json",
+		"client/Assets/Resources/Data/sections/ui_tech_tree_layout.json",
 	} {
 		if _, err := os.Stat(filepath.Join(repoRoot, rel)); err != nil {
 			t.Fatalf("expected generated schema %q: %v", rel, err)
@@ -60,7 +68,10 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileNotContains(t, filepath.Join(repoRoot, "data/schema/content/rules.schema.json"), `"`+strings.Join([]string{"tokens", "recu" + "peration", "bonus"}, "_")+`"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/content/maps/definition.schema.json"), `"forest"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/maps/catalog.schema.json"), `"thumbnail_key"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/schema/ui/technology_tree.schema.json"), `"technology_id"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"bundle_hash"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"required_sections"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"section_hashes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"technologies"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"recipes"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"points"`)
@@ -68,10 +79,17 @@ func TestGenerateProducesSchemasBundlesAndGeneratedSources(t *testing.T) {
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"city_core"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/catalog.bundle.json"), `"infantry"`)
 	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/maps/default.runtime.json"), `"nodes"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/sections/ui_tech_tree_layout.json"), `"agrarian_foundations"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/sections/ui_build_menu_layout.json"), `"building_order"`)
+	assertFileContains(t, filepath.Join(repoRoot, "data/generated/server/sections/ui_recipe_layout.json"), `"recipe_order"`)
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message ResourceBag")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message PointBag")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message PointDescriptor")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_types.proto"), "message CatalogSectionHash")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogManifest")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogSyncRequest")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogSectionChunk")
+	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message MsgStaticCatalogSyncComplete")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message PolicyCatalogEntry")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message TechnologyCatalogEntry")
 	assertFileContains(t, filepath.Join(repoRoot, "protocol/data_catalog.proto"), "message RecipeCatalogEntry")
@@ -824,6 +842,27 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
   "technologies": [
     { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁农场与基础农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] },
     { "id": "organized_labor", "name": "组织化劳动", "description": "提升工业产出效率", "icon_key": "tech_organized_labor", "sort_order": 20, "tags": ["governance"] }
+  ]
+}`,
+		"data/ui/layouts/technology_tree.json": `{
+  "$schema": "../../schema/ui/technology_tree.schema.json",
+  "config_version": "2026-04-17",
+  "nodes": [
+    { "id": "node_agri", "technology_id": "agrarian_foundations", "title": "农业基础", "description": "解锁农场与基础农耕配方", "x": 0, "y": 0, "width": 360, "height": 104, "visible": true },
+    { "id": "node_labor", "technology_id": "organized_labor", "title": "组织化劳动", "description": "提升工业产出效率", "x": 420, "y": 0, "width": 360, "height": 104, "visible": true }
+  ],
+  "edges": [
+    {
+      "id": "edge_agri_labor",
+      "from": "node_agri",
+      "to": "node_labor",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 180, "y": 0 },
+        { "x": 420, "y": 0 }
+      ]
+    }
   ]
 }`,
 		"data/ui/catalogs/policies.json": `{

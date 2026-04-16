@@ -7,24 +7,27 @@
 package staticdata
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 )
 
 type Catalog struct {
-	bundle       CatalogBundle
-	resources    map[string]ResourceDescriptor
-	points       map[string]PointDescriptor
-	units        map[string]UnitDefinition
-	buildings    map[string]BuildingDefinition
-	technologies map[string]TechnologyDefinition
-	policies     map[string]PolicyDefinition
-	recipes      map[string]RecipeDefinition
-	terrains     map[string]TerrainDefinition
-	maps         map[string]*MapRuntimeBundle
+	bundle          CatalogBundle
+	resources       map[string]ResourceDescriptor
+	points          map[string]PointDescriptor
+	units           map[string]UnitDefinition
+	buildings       map[string]BuildingDefinition
+	technologies    map[string]TechnologyDefinition
+	policies        map[string]PolicyDefinition
+	recipes         map[string]RecipeDefinition
+	terrains        map[string]TerrainDefinition
+	maps            map[string]*MapRuntimeBundle
+	sectionPayloads map[string][]byte
 }
 
 var (
@@ -74,17 +77,36 @@ func LoadDir(dir string) (*Catalog, error) {
 }
 
 func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
+	sectionPayloads, sectionHashes, err := BuildSectionPayloads(bundle)
+	if err != nil {
+		panic(fmt.Errorf("build section payloads: %w", err))
+	}
+	if len(bundle.Manifest.RequiredSections) == 0 {
+		bundle.Manifest.RequiredSections = RequiredCatalogSections()
+	}
+	if len(bundle.Manifest.SectionHashes) == 0 {
+		bundle.Manifest.SectionHashes = sectionHashes
+	}
+	if bundle.Manifest.BundleHash == "" {
+		hash, err := computeCatalogBundleHash(bundle, maps)
+		if err != nil {
+			panic(fmt.Errorf("compute bundle hash: %w", err))
+		}
+		bundle.Manifest.BundleHash = hash
+	}
+
 	catalog := &Catalog{
-		bundle:       bundle,
-		resources:    make(map[string]ResourceDescriptor, len(bundle.Resources)),
-		points:       make(map[string]PointDescriptor, len(bundle.Points)),
-		units:        make(map[string]UnitDefinition, len(bundle.Units)),
-		buildings:    make(map[string]BuildingDefinition, len(bundle.Buildings)),
-		technologies: make(map[string]TechnologyDefinition, len(bundle.Technologies)),
-		policies:     make(map[string]PolicyDefinition, len(bundle.Policies)),
-		recipes:      make(map[string]RecipeDefinition, len(bundle.Recipes)),
-		terrains:     make(map[string]TerrainDefinition, len(bundle.Terrains)),
-		maps:         make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
+		bundle:          bundle,
+		resources:       make(map[string]ResourceDescriptor, len(bundle.Resources)),
+		points:          make(map[string]PointDescriptor, len(bundle.Points)),
+		units:           make(map[string]UnitDefinition, len(bundle.Units)),
+		buildings:       make(map[string]BuildingDefinition, len(bundle.Buildings)),
+		technologies:    make(map[string]TechnologyDefinition, len(bundle.Technologies)),
+		policies:        make(map[string]PolicyDefinition, len(bundle.Policies)),
+		recipes:         make(map[string]RecipeDefinition, len(bundle.Recipes)),
+		terrains:        make(map[string]TerrainDefinition, len(bundle.Terrains)),
+		maps:            make(map[string]*MapRuntimeBundle, len(bundle.Maps)+len(maps)),
+		sectionPayloads: sectionPayloads,
 	}
 
 	for _, resource := range bundle.Resources {
@@ -120,6 +142,34 @@ func NewCatalog(bundle CatalogBundle, maps ...*MapRuntimeBundle) *Catalog {
 	}
 
 	return catalog
+}
+
+func computeCatalogBundleHash(bundle CatalogBundle, maps []*MapRuntimeBundle) (string, error) {
+	hash := sha256.New()
+	raw, err := json.Marshal(bundle)
+	if err != nil {
+		return "", err
+	}
+	_, _ = hash.Write(raw)
+
+	mapByID := make(map[string]*MapRuntimeBundle, len(maps))
+	ids := make([]string, 0, len(maps))
+	for _, runtime := range maps {
+		if runtime == nil || runtime.ID == "" {
+			continue
+		}
+		mapByID[runtime.ID] = runtime
+		ids = append(ids, runtime.ID)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		raw, err := json.Marshal(mapByID[id])
+		if err != nil {
+			return "", err
+		}
+		_, _ = hash.Write(raw)
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
 func (c *Catalog) Manifest() Manifest {
@@ -223,4 +273,17 @@ func (c *Catalog) GetMap(id string) (*MapRuntimeBundle, bool) {
 	}
 	m, ok := c.maps[id]
 	return m, ok
+}
+
+func (c *Catalog) SectionPayload(sectionName string) ([]byte, bool) {
+	if c == nil {
+		return nil, false
+	}
+	payload, ok := c.sectionPayloads[sectionName]
+	if !ok {
+		return nil, false
+	}
+	out := make([]byte, len(payload))
+	copy(out, payload)
+	return out, true
 }

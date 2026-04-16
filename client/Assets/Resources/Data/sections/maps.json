@@ -1,0 +1,15 @@
+{
+  "maps": [
+    {
+      "id": "default",
+      "name": "标准地图",
+      "description": "默认对战地图",
+      "thumbnail_key": "map_default",
+      "width": 2,
+      "height": 2,
+      "tags": [
+        "pvp"
+      ]
+    }
+  ]
+}

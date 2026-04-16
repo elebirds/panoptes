@@ -1,0 +1,120 @@
+{
+  "recipes": [
+    {
+      "id": "city_core_settler",
+      "name": "组织开拓",
+      "description": "产出开拓者",
+      "icon_key": "recipe_city_core_settler",
+      "building_id": "city_core",
+      "resource_inputs": {
+        "food": 2,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "settler"
+        ]
+      },
+      "sort_order": 10,
+      "tags": [
+        "expansion"
+      ]
+    },
+    {
+      "id": "farm_food",
+      "name": "基础农耕",
+      "description": "产出粮食",
+      "icon_key": "recipe_farm_food",
+      "building_id": "farm",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 2
+        }
+      },
+      "sort_order": 20,
+      "tags": [
+        "food"
+      ]
+    },
+    {
+      "id": "mine_ore",
+      "name": "基础采矿",
+      "description": "产出矿石",
+      "icon_key": "recipe_mine_ore",
+      "building_id": "mine",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "ore": 2
+        }
+      },
+      "sort_order": 30,
+      "tags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "lumber_wood",
+      "name": "基础伐木",
+      "description": "产出木材",
+      "icon_key": "recipe_lumber_wood",
+      "building_id": "lumber",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "wood": 2
+        }
+      },
+      "sort_order": 40,
+      "tags": [
+        "wood"
+      ]
+    },
+    {
+      "id": "barracks_infantry",
+      "name": "训练步兵",
+      "description": "产出步兵",
+      "icon_key": "recipe_barracks_infantry",
+      "building_id": "barracks",
+      "resource_inputs": {
+        "food": 1,
+        "ore": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "infantry"
+        ]
+      },
+      "sort_order": 50,
+      "tags": [
+        "military"
+      ]
+    }
+  ]
+}
