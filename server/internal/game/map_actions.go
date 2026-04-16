@@ -11,21 +11,21 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/yohamta/donburi"
 )
 
-func (r *GameRoom) applyPlannedMapActions() []*pb.TurnEvent {
+func (r *GameRoom) plannedMapActionEvents() []event.Event {
 	state := r.State()
 	if r == nil || state == nil {
 		return nil
 	}
-	events := make([]*pb.TurnEvent, 0)
+	events := make([]event.Event, 0)
 	for _, directive := range state.TurnRuntime.Planning.UnitOrders {
 		switch gameorders.UnitAction(directive.Action) {
 		case gameorders.ActionSettleCity:
-			if evt, ok := r.applySettleCityOrder(directive); ok {
+			if evt, ok := r.cityFoundingEvent(directive); ok {
 				events = append(events, evt)
 			}
 		}
@@ -33,76 +33,52 @@ func (r *GameRoom) applyPlannedMapActions() []*pb.TurnEvent {
 	return events
 }
 
-func (r *GameRoom) applySettleCityOrder(order domain.UnitDirective) (*pb.TurnEvent, bool) {
+func (r *GameRoom) cityFoundingEvent(order domain.UnitDirective) (event.Event, bool) {
 	state := r.State()
 	if r == nil || state == nil {
 		return nil, false
 	}
 	unitEntry, ok := findUnitEntryByID(state.World, order.UnitID)
 	if !ok {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "unit_not_found"}}, true
+		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "unit_not_found"}, true
 	}
 
 	stats := ecs.UnitStatsC.Get(unitEntry)
 	if stats.Faction != order.PlayerID || !isTerritoryExpansionUnit(stats.Type) {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "invalid_unit_type"}}, true
+		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "invalid_unit_type"}, true
 	}
 
 	unitPos := ecs.PositionC.Get(unitEntry)
 	centerEntry, ok := domain.GetNodeAt(state.World, domain.Position{X: unitPos.X, Y: unitPos.Y})
 	if !ok {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "invalid_target"}}, true
+		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "invalid_target"}, true
 	}
 	centerNodeID := ecs.NodeC.Get(centerEntry).ID
 	if target := strings.TrimSpace(order.TargetNodeID); target != "" && target != centerNodeID {
 		targetEntry, found := r.NodeByID(target)
 		if !found {
-			return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": "invalid_target"}}, true
+			return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "invalid_target"}, true
 		}
 		centerEntry = targetEntry
 		centerNodeID = target
 	}
 
 	if ok, reason := ecs.CanFoundCityAt(state, centerEntry); !ok {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": reason}}, true
+		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: reason}, true
 	}
-	footprintEntries, footprintIDs, reason := ecs.TerritoryFootprint(state, centerEntry)
+	_, footprintIDs, reason := ecs.TerritoryFootprint(state, centerEntry)
 	if reason != "" {
-		return &pb.TurnEvent{Type: "settle_city_failed", Data: map[string]string{"unit_id": order.UnitID, "reason": reason}}, true
+		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: reason}, true
 	}
 
-	for _, entry := range footprintEntries {
-		node := ecs.NodeC.Get(entry)
-		node.TerritoryOwner = order.PlayerID
-		node.Owner = order.PlayerID
-	}
-	setBuildingOnNode(state, centerEntry, "city_core", order.PlayerID, centerNodeID, state.Turn+1)
-	cityState := state.EnsureCityState(order.PlayerID, centerNodeID)
-	if cityState != nil {
-		cityState.OnlineOnTurn = state.Turn + 1
-	}
-	state.World.Remove(unitEntry.Entity())
-
-	return &pb.TurnEvent{
-		Type: "city_founded",
-		Data: map[string]string{
-			"player_id":        order.PlayerID,
-			"unit_id":          order.UnitID,
-			"city_id":          centerNodeID,
-			"center_node_id":   centerNodeID,
-			"updated_nodes":    strings.Join(footprintIDs, ","),
-		},
+	return event.CityFoundedEvent{
+		PlayerID:     order.PlayerID,
+		UnitID:       order.UnitID,
+		CityID:       centerNodeID,
+		CenterNodeID: centerNodeID,
+		TerritoryIDs: append([]string(nil), footprintIDs...),
+		OnlineOnTurn: state.Turn + 1,
 	}, true
-}
-
-func setBuildingOnNode(state *domain.GameState, nodeEntry *donburi.Entry, buildingType, owner string, cityID string, onlineOnTurn int) {
-	if state == nil || state.World == nil || nodeEntry == nil {
-		return
-	}
-	ecs.CreateBuilding(state.World, buildingType, owner, cityID, nodeEntry)
-	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, "pending_activation", onlineOnTurn)
-	node := ecs.NodeC.Get(nodeEntry)
-	node.Owner = owner
 }
 
 func findUnitEntryByID(world donburi.World, unitID string) (*donburi.Entry, bool) {

@@ -20,6 +20,7 @@ import (
 	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
 	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
+	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
 )
@@ -100,28 +101,9 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		room.SetMinisterDirective(playerID, msg.GetContent())
 		return nil
 	case *pb.PlanningCommand_SetWarZone:
-		msg := body.SetWarZone
-		updated := false
-		for _, zone := range playerState.WarZones {
-			if zone.ID == msg.GetZoneId() {
-				zone.Name = msg.GetName()
-				zone.NodeIDs = msg.GetNodeIds()
-				updated = true
-				break
-			}
-		}
-		if !updated {
-			playerState.WarZones = append(playerState.WarZones, &domain.WarZone{ID: msg.GetZoneId(), Name: msg.GetName(), NodeIDs: msg.GetNodeIds()})
-		}
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_WarZoneDirective:
-		msg := body.WarZoneDirective
-		directives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
-		directives = append(directives, domain.WarZoneDirective{ZoneID: msg.GetZoneId(), Directive: msg.GetDirective(), TargetNode: msg.GetTargetNode()})
-		room.SetWarDirectives(playerID, directives)
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_IssueUnitOrder:
 		msg := body.IssueUnitOrder
 		return s.handleIssueUnitOrder(eventCtx, room, playerID, msg)

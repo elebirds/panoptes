@@ -9,18 +9,7 @@ import (
 )
 
 func PreparePlanningStartState(state *domain.GameState) {
-	if state == nil {
-		return
-	}
-	for _, playerState := range state.Players {
-		if playerState == nil {
-			continue
-		}
-		playerState.Research.EnsureProgressMaps()
-		playerState.Institutions.EnsureMaps()
-	}
-	activatePendingTechnologies(state)
-	promoteInstitutionLoadouts(state)
+	NewPlanningStartRunner().Run(state)
 }
 
 func activatePendingTechnologies(state *domain.GameState) {
