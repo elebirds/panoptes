@@ -2,8 +2,8 @@
  * Project: Panoptes
  * File: TopDownCameraController.cs
  * Author: Panoptes Team
- * Date: 2026-04-05
- * Description: RTS-style top-down camera controls.
+ * Date: 2026-04-17
+ * Description: Fixed strategic camera driven by map camera context.
  *************************************************/
 
 using UnityEngine;
@@ -19,107 +19,88 @@ namespace Panoptes.Presentation.Map
     {
         [Header("Time")]
         [SerializeField] private bool useUnscaledTime = true;
-        [Header("UI Input Block")]
+
+        [Header("Input Gate")]
         [SerializeField] private bool blockCameraInputWhenPointerOverUI = true;
         [SerializeField] private bool blockZoomWhenPointerOverUI = true;
         [SerializeField] private bool blockDragWhenPointerOverUI = true;
         [SerializeField] private bool blockEdgePanWhenPointerOverUI = true;
 
-        [Header("Pan - Drag")]
+        [Header("Pan")]
         [SerializeField] private bool enableDragPan = true;
-        [SerializeField] private bool invertDrag = true;
-        [SerializeField] private float dragPanSpeed = 0.02f; // world units per pixel
-
-        [Header("Pan - Keyboard")]
         [SerializeField] private bool enableKeyboardPan = true;
         [SerializeField] private bool enableArrowKeyPan = true;
-        [SerializeField] private float keyboardPanSpeed = 14f; // world units / second
-
-        [Header("Pan - Edge Scroll")]
-        [SerializeField] private bool enableEdgeScroll = false;
-        [SerializeField] private bool edgeScrollWhileDragging = false;
-        [SerializeField] private float edgeThreshold = 24f; // px
-        [SerializeField] private float edgePanSpeed = 14f;  // world units / second
-
-        [Header("Movement Smoothing")]
+        [SerializeField] private bool enableEdgePan = false;
+        [SerializeField] private float edgePanThreshold = 24f;
+        [SerializeField] private float nearPanSpeed = 8f;
+        [SerializeField] private float farPanSpeed = 28f;
         [SerializeField] private float moveSmoothTime = 0.08f;
 
         [Header("Zoom")]
-        [SerializeField] private float scrollZoomSpeed = 4f;
+        [SerializeField] private float nearDistance = 6.2f;
+        [SerializeField] private float farDistance = 36f;
+        [SerializeField] private float zoomSmoothTime = 0.06f;
+        [SerializeField] private float scrollZoomStep = 0.12f;
         [SerializeField] private float inputSystemScrollScale = 0.01f;
-        [SerializeField] private float scrollZoomMultiplier = 3f;
-        [SerializeField] private float scrollSensitivity = 2f;
-        [SerializeField] private float maxZoomStepPerFrame = 1.2f;
         [SerializeField] private bool invertScrollDirection = false;
-        [SerializeField] private bool perspectiveZoomByFov = true;
-        [SerializeField] private bool alsoDollyWhenPerspectiveZoomByFov = true;
-        [SerializeField] private float perspectiveDollySpeed = 2.2f;
-        [SerializeField] private float minOrthoSize = 5f;
-        [SerializeField] private float maxOrthoSize = 28f;
-        [SerializeField] private float minFov = 25f;
-        [SerializeField] private float maxFov = 60f;
-        [SerializeField] private float minHeight = 1.5f;
-        [SerializeField] private float maxHeight = 60f;
+        [Range(0f, 1f)] [SerializeField] private float initialZoomNormalized = 0.22f;
 
-        [Header("Zoom - Perspective Tilt")]
-        [SerializeField] private bool enableZoomTiltInPerspective = true;
-        [SerializeField] private bool keepGroundFocusWhenTilt = true;
-        [SerializeField] private float farZoomPitch = 58f;
-        [SerializeField] private float nearZoomPitch = 24f;
-        [SerializeField] private float tiltSmoothTime = 0.12f;
-        
-        [Header("Start Pose Guard")]
-        [SerializeField] private bool autoFixInvalidStartPose = true;
-        [SerializeField] private float fallbackStartHeight = 14f;
-        [SerializeField] private float fallbackStartPitch = 50f;
-
-        [Header("Bounds")]
-        [SerializeField] private bool clampToBounds = true;
-        [SerializeField] private Vector2 xBounds = new Vector2(0f, 19f);
-        [SerializeField] private Vector2 zBounds = new Vector2(0f, 19f);
-        [SerializeField] private float boundsPadding = 0f;
-        [SerializeField] private float boundsLeftPadding = 0f;
-        [SerializeField] private float boundsRightPadding = 0f;
-        [SerializeField] private float boundsBottomPadding = 0f;
-        [SerializeField] private float boundsTopPadding = 0f;
-        [SerializeField] private float boundaryDamping = 14f;
-        [SerializeField] private bool useViewportGroundBounds = true;
-        [SerializeField] private float boundsGroundY = 0f;
+        [Header("Fixed Rig")]
+        [SerializeField] private float fixedYaw = 0f;
+        [SerializeField] private float fixedPitch = 45f;
+        [SerializeField] private float fixedFieldOfView = 50f;
+        [SerializeField] private string anchorRootName = "AnchorRoot";
+        [SerializeField] private string yawPivotName = "YawPivot";
+        [SerializeField] private string pitchPivotName = "PitchPivot";
 
         private Camera _camera;
-        private Vector3 _targetPosition;
-        private Vector3 _moveVelocity;
-        private float _tiltPitchVelocity;
+        private Transform _anchorRoot;
+        private Transform _yawPivot;
+        private Transform _pitchPivot;
+        private MapRenderer _mapRenderer;
+        private MapCameraContext _cameraContext;
+        private bool _hasCameraContext;
         private bool _dragging;
-        private Vector3 _lastMousePosition;
-        private bool _hasMouse;
+        private Vector3 _dragGroundPoint;
+        private bool _hasDragGroundPoint;
+        private Vector2 _currentAnchorXZ;
+        private Vector2 _targetAnchorXZ;
+        private Vector2 _anchorVelocity;
+        private float _currentZoomNormalized;
+        private float _targetZoomNormalized;
+        private float _zoomVelocity;
+        private bool _hasSafeViewportOverride;
+        private Rect _safeViewportOverride = new Rect(0f, 0f, 1f, 1f);
 
         private void Awake()
         {
-            _camera = GetComponent<Camera>();
-            if (_camera == null)
-            {
-                _camera = Camera.main;
-            }
+            EnsureCameraReference();
+            EnsureRigHierarchy();
+            InitializeStateFromRig();
         }
 
         private void OnEnable()
         {
-            EnsureZoomRanges();
-            ApplyStartPoseGuard();
-            _targetPosition = transform.position;
-            ClampCurrentZoomToRange();
+            EnsureCameraReference();
+            EnsureRigHierarchy();
+            InitializeStateFromRig();
+            SubscribeToMapRenderer();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromMapRenderer();
+            _dragging = false;
+            _hasDragGroundPoint = false;
         }
 
         private void Update()
         {
-            if (_camera == null)
-            {
-                return;
-            }
+            EnsureCameraReference();
+            EnsureRigHierarchy();
+            SubscribeToMapRenderer();
 
-            _hasMouse = HasMouse();
-            if (!_hasMouse)
+            if (_camera == null)
             {
                 return;
             }
@@ -130,526 +111,311 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-            var pointerOverUi = IsPointerOverUI();
-            HandleZoom(pointerOverUi);
-            HandlePerspectiveZoomTilt(dt);
+            _camera.orthographic = false;
+            _camera.fieldOfView = fixedFieldOfView;
 
-            var dragDelta = (pointerOverUi && blockDragWhenPointerOverUI) ? Vector3.zero : GetDragPanDelta();
-            var keyboardDelta = GetKeyboardPanDelta(dt);
-            var edgeDelta = (pointerOverUi && blockEdgePanWhenPointerOverUI) ? Vector3.zero : GetEdgePanDelta(dt);
-            var panDelta = dragDelta + keyboardDelta + edgeDelta;
-            _targetPosition += panDelta;
+            var pointerOverUI = IsPointerOverUI();
+            HandleZoom(pointerOverUI);
 
-            if (clampToBounds)
+            var panDelta = Vector2.zero;
+            panDelta += GetKeyboardPanDelta(dt);
+            panDelta += GetEdgePanDelta(dt, pointerOverUI);
+            panDelta += GetDragPanDelta(pointerOverUI);
+            _targetAnchorXZ += panDelta;
+
+            var safeViewport = ResolveSafeViewportRect();
+            _targetZoomNormalized = ClampZoomForContext(_targetZoomNormalized, safeViewport);
+            _targetAnchorXZ = ClampAnchorForContext(_targetAnchorXZ, _targetZoomNormalized, safeViewport);
+
+            var immediate = _dragging;
+            if (immediate)
             {
-                ApplyBounds(dt, panDelta.sqrMagnitude > 0.000001f);
+                _currentAnchorXZ = _targetAnchorXZ;
+                _currentZoomNormalized = _targetZoomNormalized;
+                _anchorVelocity = Vector2.zero;
+                _zoomVelocity = 0f;
+            }
+            else
+            {
+                _currentAnchorXZ = Vector2.SmoothDamp(
+                    _currentAnchorXZ,
+                    _targetAnchorXZ,
+                    ref _anchorVelocity,
+                    moveSmoothTime,
+                    Mathf.Infinity,
+                    dt);
+                _currentZoomNormalized = Mathf.SmoothDamp(
+                    _currentZoomNormalized,
+                    _targetZoomNormalized,
+                    ref _zoomVelocity,
+                    zoomSmoothTime,
+                    Mathf.Infinity,
+                    dt);
             }
 
-            transform.position = Vector3.SmoothDamp(
-                transform.position,
-                _targetPosition,
-                ref _moveVelocity,
-                moveSmoothTime,
-                Mathf.Infinity,
-                dt);
+            SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, safeViewport);
         }
 
-        public void SetWorldBounds(float minX, float maxX, float minZ, float maxZ, float padding = 0f)
+        public void ApplyCameraContext(MapCameraContext context, bool snapInstantly = true)
         {
-            xBounds = new Vector2(minX, maxX);
-            zBounds = new Vector2(minZ, maxZ);
-            boundsPadding = padding;
-        }
+            _cameraContext = context;
+            _hasCameraContext = context.IsValid;
+            EnsureRigHierarchy();
 
-        public void SetBoundsGroundY(float y)
-        {
-            boundsGroundY = y;
+            _targetZoomNormalized = ClampZoomForContext(Mathf.Clamp01(initialZoomNormalized), ResolveSafeViewportRect());
+            _currentZoomNormalized = snapInstantly ? _targetZoomNormalized : _currentZoomNormalized;
+
+            if (_hasCameraContext)
+            {
+                FocusWorldPoint(context.initialFocusPoint, snapInstantly);
+                return;
+            }
+
+            if (snapInstantly)
+            {
+                SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, ResolveSafeViewportRect());
+            }
         }
 
         public void SnapTargetToCurrentPosition()
         {
-            _targetPosition = transform.position;
-            _moveVelocity = Vector3.zero;
+            InitializeStateFromRig();
         }
 
         public void SetManualTargetPosition(Vector3 position, bool snapInstantly = false)
         {
-            _targetPosition = position;
-            if (snapInstantly)
+            _targetAnchorXZ = new Vector2(position.x, position.z);
+            _targetAnchorXZ = ClampAnchorForContext(_targetAnchorXZ, _targetZoomNormalized, ResolveSafeViewportRect());
+
+            if (!snapInstantly)
             {
-                transform.position = position;
-                _moveVelocity = Vector3.zero;
+                return;
             }
+
+            _currentAnchorXZ = _targetAnchorXZ;
+            _anchorVelocity = Vector2.zero;
+            SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, ResolveSafeViewportRect());
         }
 
         public bool FocusWorldPoint(Vector3 worldPoint, bool snapInstantly = true)
         {
-            if (_camera == null)
-            {
-                _camera = GetComponent<Camera>();
-                if (_camera == null)
-                {
-                    _camera = Camera.main;
-                }
-            }
-
+            EnsureCameraReference();
             if (_camera == null)
             {
                 return false;
             }
 
-            var targetGroundPoint = new Vector3(worldPoint.x, boundsGroundY, worldPoint.z);
-            if (TryProjectViewportPointToGround(new Vector2(0.5f, 0.5f), Vector3.zero, out var currentCenterGround))
+            var focusPoint = _hasCameraContext ? _cameraContext.ClampGroundPoint(worldPoint) : new Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+            focusPoint.y = GetGroundY();
+
+            _targetAnchorXZ = ClampAnchorForContext(new Vector2(focusPoint.x, focusPoint.z), _targetZoomNormalized, ResolveSafeViewportRect());
+
+            if (!snapInstantly)
             {
-                var delta = targetGroundPoint - currentCenterGround;
-                delta.y = 0f;
-                _targetPosition += delta;
-            }
-            else
-            {
-                _targetPosition = new Vector3(targetGroundPoint.x, _targetPosition.y, targetGroundPoint.z);
+                return true;
             }
 
-            if (clampToBounds)
-            {
-                ApplyBounds(1f / 60f, true);
-            }
-
-            if (snapInstantly)
-            {
-                transform.position = _targetPosition;
-                _moveVelocity = Vector3.zero;
-            }
-
+            _currentAnchorXZ = _targetAnchorXZ;
+            _anchorVelocity = Vector2.zero;
+            SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, ResolveSafeViewportRect());
             return true;
         }
 
-        // ===== Zoom Runtime API (for UI panel bindings) =====
-        // Suggested slider convention: 0 = far, 1 = near.
         public void SetZoomNormalized(float normalized)
         {
-            EnsureZoomRanges();
-            var t = Mathf.Clamp01(normalized);
-
-            if (_camera == null)
-            {
-                _camera = GetComponent<Camera>();
-                if (_camera == null)
-                {
-                    _camera = Camera.main;
-                }
-            }
-
-            if (_camera == null)
-            {
-                return;
-            }
-
-            if (_camera.orthographic)
-            {
-                _camera.orthographicSize = Mathf.Lerp(maxOrthoSize, minOrthoSize, t);
-            }
-            else if (perspectiveZoomByFov)
-            {
-                _camera.fieldOfView = Mathf.Lerp(maxFov, minFov, t);
-            }
-            else
-            {
-                _targetPosition = new Vector3(
-                    _targetPosition.x,
-                    Mathf.Lerp(maxHeight, minHeight, t),
-                    _targetPosition.z);
-            }
+            _targetZoomNormalized = ClampZoomForContext(Mathf.Clamp01(normalized), ResolveSafeViewportRect());
         }
 
         public float GetZoomNormalized()
         {
-            EnsureZoomRanges();
+            return _currentZoomNormalized;
+        }
 
+        public Vector3 GetAnchorWorldPoint()
+        {
+            return new Vector3(_currentAnchorXZ.x, GetGroundY(), _currentAnchorXZ.y);
+        }
+
+        public GroundBoundsResult TryGetCurrentVisibleGroundBounds()
+        {
+            if (TryGetVisibleGroundBounds(_currentAnchorXZ, _currentZoomNormalized, ResolveSafeViewportRect(), out var bounds))
+            {
+                return new GroundBoundsResult(true, bounds);
+            }
+
+            return new GroundBoundsResult(false, default);
+        }
+
+        public void UpdateImmediateForTests()
+        {
+            EnsureCameraReference();
+            EnsureRigHierarchy();
+            var safeViewport = ResolveSafeViewportRect();
+            _targetZoomNormalized = ClampZoomForContext(_targetZoomNormalized, safeViewport);
+            _targetAnchorXZ = ClampAnchorForContext(_targetAnchorXZ, _targetZoomNormalized, safeViewport);
+            _currentAnchorXZ = _targetAnchorXZ;
+            _currentZoomNormalized = _targetZoomNormalized;
+            _anchorVelocity = Vector2.zero;
+            _zoomVelocity = 0f;
+            SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, safeViewport);
+        }
+
+        public void SetSafeViewportOverride(Rect viewport)
+        {
+            _safeViewportOverride = viewport;
+            _hasSafeViewportOverride = true;
+        }
+
+        public void ClearSafeViewportOverride()
+        {
+            _hasSafeViewportOverride = false;
+        }
+
+        private void HandleMapCameraContextReady(MapCameraContext context)
+        {
+            ApplyCameraContext(context, true);
+        }
+
+        private void SubscribeToMapRenderer()
+        {
+            var renderer = MapRenderer.Instance != null ? MapRenderer.Instance : FindAnyObjectByType<MapRenderer>();
+            if (renderer == null || renderer == _mapRenderer)
+            {
+                if (renderer != null && renderer.TryGetCameraContext(out var existingContext) && (!_hasCameraContext || !SameContext(existingContext, _cameraContext)))
+                {
+                    HandleMapCameraContextReady(existingContext);
+                }
+                return;
+            }
+
+            UnsubscribeFromMapRenderer();
+            _mapRenderer = renderer;
+            _mapRenderer.CameraContextReady += HandleMapCameraContextReady;
+
+            if (_mapRenderer.TryGetCameraContext(out var context))
+            {
+                HandleMapCameraContextReady(context);
+            }
+        }
+
+        private void UnsubscribeFromMapRenderer()
+        {
+            if (_mapRenderer == null)
+            {
+                return;
+            }
+
+            _mapRenderer.CameraContextReady -= HandleMapCameraContextReady;
+            _mapRenderer = null;
+        }
+
+        private void EnsureCameraReference()
+        {
+            if (_camera != null)
+            {
+                return;
+            }
+
+            _camera = GetComponent<Camera>();
             if (_camera == null)
             {
-                return 0f;
-            }
-
-            if (_camera.orthographic)
-            {
-                var denom = Mathf.Max(0.0001f, maxOrthoSize - minOrthoSize);
-                return Mathf.Clamp01((maxOrthoSize - _camera.orthographicSize) / denom);
-            }
-
-            if (perspectiveZoomByFov)
-            {
-                var denom = Mathf.Max(0.0001f, maxFov - minFov);
-                return Mathf.Clamp01((maxFov - _camera.fieldOfView) / denom);
-            }
-
-            var heightDenom = Mathf.Max(0.0001f, maxHeight - minHeight);
-            return Mathf.Clamp01((maxHeight - _targetPosition.y) / heightDenom);
-        }
-
-        public void SetScrollZoomSpeed(float value)
-        {
-            scrollZoomSpeed = Mathf.Max(0f, value);
-        }
-
-        public void SetInputSystemScrollScale(float value)
-        {
-            inputSystemScrollScale = Mathf.Max(0f, value);
-        }
-
-        public void SetScrollZoomMultiplier(float value)
-        {
-            scrollZoomMultiplier = Mathf.Max(0f, value);
-        }
-
-        public void SetInvertScrollDirection(bool enabled)
-        {
-            invertScrollDirection = enabled;
-        }
-
-        public void SetPerspectiveZoomByFov(bool enabled)
-        {
-            perspectiveZoomByFov = enabled;
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetAlsoDollyWhenPerspectiveZoomByFov(bool enabled)
-        {
-            alsoDollyWhenPerspectiveZoomByFov = enabled;
-        }
-
-        public void SetPerspectiveDollySpeed(float value)
-        {
-            perspectiveDollySpeed = Mathf.Max(0f, value);
-        }
-
-        public void SetZoomTiltEnabled(bool enabled)
-        {
-            enableZoomTiltInPerspective = enabled;
-        }
-
-        public void SetZoomTiltPitchRange(float farPitchValue, float nearPitchValue)
-        {
-            farZoomPitch = Mathf.Clamp(farPitchValue, -89f, 89f);
-            nearZoomPitch = Mathf.Clamp(nearPitchValue, -89f, 89f);
-        }
-
-        public void SetZoomTiltSmoothTime(float value)
-        {
-            tiltSmoothTime = Mathf.Max(0.01f, value);
-        }
-
-        public void SetKeepGroundFocusWhenTilt(bool enabled)
-        {
-            keepGroundFocusWhenTilt = enabled;
-        }
-
-        public void SetMinOrthoSize(float value)
-        {
-            minOrthoSize = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetMaxOrthoSize(float value)
-        {
-            maxOrthoSize = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetMinFov(float value)
-        {
-            minFov = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetMaxFov(float value)
-        {
-            maxFov = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetMinHeight(float value)
-        {
-            minHeight = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        public void SetMaxHeight(float value)
-        {
-            maxHeight = value;
-            EnsureZoomRanges();
-            ClampCurrentZoomToRange();
-        }
-
-        private void HandleZoom(bool pointerOverUi)
-        {
-            var rawScroll = GetScrollDeltaY();
-            if (Mathf.Abs(rawScroll) <= 0.0001f)
-            {
-                return;
-            }
-            if (pointerOverUi && blockZoomWhenPointerOverUI)
-            {
-                return;
-            }
-
-            // Normalize wheel burst values (Windows often reports +/-120) into stable per-frame input.
-            var normalizedScroll = Mathf.Clamp(rawScroll, -1f, 1f);
-            var zoomDelta = normalizedScroll * scrollZoomMultiplier * Mathf.Max(0f, scrollSensitivity) * (invertScrollDirection ? -1f : 1f);
-            zoomDelta = Mathf.Clamp(zoomDelta, -Mathf.Max(0.01f, maxZoomStepPerFrame), Mathf.Max(0.01f, maxZoomStepPerFrame));
-            if (Mathf.Abs(zoomDelta) <= 0.0001f)
-            {
-                return;
-            }
-
-            if (_camera.orthographic)
-            {
-                var current = _camera.orthographicSize;
-                var next = Mathf.Clamp(current - zoomDelta * scrollZoomSpeed, minOrthoSize, maxOrthoSize);
-                if (Mathf.Abs(next - current) <= 0.0001f)
-                {
-                    return;
-                }
-
-                _camera.orthographicSize = next;
-                return;
-            }
-
-            if (perspectiveZoomByFov)
-            {
-                var currentFov = _camera.fieldOfView;
-                var nextFov = Mathf.Clamp(currentFov - zoomDelta * scrollZoomSpeed, minFov, maxFov);
-                var appliedFovDelta = currentFov - nextFov;
-                var hasFovChange = Mathf.Abs(appliedFovDelta) > 0.0001f;
-                if (hasFovChange)
-                {
-                    _camera.fieldOfView = nextFov;
-                }
-
-                if (alsoDollyWhenPerspectiveZoomByFov && perspectiveDollySpeed > 0f)
-                {
-                    // If FOV is clamped, still allow a controlled dolly so forward scroll doesn't "die".
-                    var appliedZoomDelta = hasFovChange
-                        ? (appliedFovDelta / Mathf.Max(0.0001f, scrollZoomSpeed))
-                        : zoomDelta;
-                    var desiredMove = transform.forward * (appliedZoomDelta * perspectiveDollySpeed);
-
-                    var currentY = _targetPosition.y;
-                    var desiredY = currentY + desiredMove.y;
-                    var clampedY = Mathf.Clamp(desiredY, minHeight, maxHeight);
-                    var yDenom = desiredY - currentY;
-                    var yRatio = Mathf.Abs(yDenom) > 0.0001f
-                        ? Mathf.Clamp01((clampedY - currentY) / yDenom)
-                        : 1f;
-
-                    _targetPosition += desiredMove * yRatio;
-                    _targetPosition = new Vector3(_targetPosition.x, clampedY, _targetPosition.z);
-                }
-
-                if (!hasFovChange)
-                {
-                    // FOV reached boundary and no dolly effect available: hard-stop.
-                    return;
-                }
-
-                return;
-            }
-
-            // Alternate perspective zoom: move camera along Y.
-            var targetY = _targetPosition.y;
-            var desiredTargetY = targetY + (-zoomDelta * scrollZoomSpeed);
-            var nextTargetY = Mathf.Clamp(desiredTargetY, minHeight, maxHeight);
-            if (Mathf.Abs(nextTargetY - targetY) <= 0.0001f)
-            {
-                // At zoom limit: block.
-                return;
-            }
-
-            _targetPosition = new Vector3(_targetPosition.x, nextTargetY, _targetPosition.z);
-        }
-
-        private void HandlePerspectiveZoomTilt(float dt)
-        {
-            if (_camera == null || _camera.orthographic || !enableZoomTiltInPerspective)
-            {
-                return;
-            }
-
-            var currentEuler = transform.eulerAngles;
-            var currentPitch = NormalizeAngle180(currentEuler.x);
-            var targetPitch = Mathf.Lerp(farZoomPitch, nearZoomPitch, GetZoomNormalized());
-            var nextPitch = Mathf.SmoothDampAngle(
-                currentPitch,
-                targetPitch,
-                ref _tiltPitchVelocity,
-                Mathf.Max(0.01f, tiltSmoothTime),
-                Mathf.Infinity,
-                dt);
-
-            if (Mathf.Abs(Mathf.DeltaAngle(currentPitch, nextPitch)) < 0.01f)
-            {
-                return;
-            }
-
-            var yaw = currentEuler.y;
-            var previousRotation = transform.rotation;
-            var nextRotation = Quaternion.Euler(nextPitch, yaw, 0f);
-
-            Vector3 focusBefore = default;
-            var hasFocus = false;
-            if (keepGroundFocusWhenTilt)
-            {
-                hasFocus = TryProjectCameraForwardToGround(transform.position, previousRotation, out focusBefore);
-            }
-
-            transform.rotation = nextRotation;
-
-            if (hasFocus && TryProjectCameraForwardToGround(transform.position, nextRotation, out var focusAfter))
-            {
-                var correction = focusBefore - focusAfter;
-                correction.y = 0f;
-                transform.position += correction;
-                _targetPosition += correction;
+                _camera = Camera.main;
             }
         }
 
-        private void EnsureZoomRanges()
+        private void EnsureRigHierarchy()
         {
-            if (minOrthoSize > maxOrthoSize)
-            {
-                (minOrthoSize, maxOrthoSize) = (maxOrthoSize, minOrthoSize);
-            }
-
-            if (minFov > maxFov)
-            {
-                (minFov, maxFov) = (maxFov, minFov);
-            }
-
-            if (minHeight > maxHeight)
-            {
-                (minHeight, maxHeight) = (maxHeight, minHeight);
-            }
-        }
-
-        private void ClampCurrentZoomToRange()
-        {
+            EnsureCameraReference();
             if (_camera == null)
             {
                 return;
             }
 
-            if (_camera.orthographic)
+            if (transform.parent != null
+                && transform.parent.name == pitchPivotName
+                && transform.parent.parent != null
+                && transform.parent.parent.name == yawPivotName
+                && transform.parent.parent.parent != null
+                && transform.parent.parent.parent.name == anchorRootName)
             {
-                _camera.orthographicSize = Mathf.Clamp(_camera.orthographicSize, minOrthoSize, maxOrthoSize);
+                _pitchPivot = transform.parent;
+                _yawPivot = _pitchPivot.parent;
+                _anchorRoot = _yawPivot.parent;
                 return;
             }
 
-            if (perspectiveZoomByFov)
+            var cameraTransform = _camera.transform;
+            var groundY = GetGroundY();
+            var anchorPoint = TryProjectRayToGround(cameraTransform.position, cameraTransform.forward, groundY, out var projected)
+                ? projected
+                : new Vector3(cameraTransform.position.x, groundY, cameraTransform.position.z);
+
+            var anchorRoot = new GameObject(anchorRootName).transform;
+            var yawPivot = new GameObject(yawPivotName).transform;
+            var pitchPivot = new GameObject(pitchPivotName).transform;
+
+            anchorRoot.position = new Vector3(anchorPoint.x, groundY, anchorPoint.z);
+            yawPivot.SetParent(anchorRoot, false);
+            pitchPivot.SetParent(yawPivot, false);
+            cameraTransform.SetParent(pitchPivot, true);
+
+            _anchorRoot = anchorRoot;
+            _yawPivot = yawPivot;
+            _pitchPivot = pitchPivot;
+        }
+
+        private void InitializeStateFromRig()
+        {
+            if (_anchorRoot == null)
             {
-                _camera.fieldOfView = Mathf.Clamp(_camera.fieldOfView, minFov, maxFov);
+                return;
+            }
+
+            _currentZoomNormalized = DistanceToZoomNormalized(GetCurrentDistance());
+            _targetZoomNormalized = _currentZoomNormalized;
+
+            var safeViewport = ResolveSafeViewportRect();
+            if (TryGetGroundPointAtViewportFromCurrentCamera(safeViewport.center, out var logicalAnchor))
+            {
+                _currentAnchorXZ = new Vector2(logicalAnchor.x, logicalAnchor.z);
             }
             else
             {
-                _targetPosition = new Vector3(
-                    _targetPosition.x,
-                    Mathf.Clamp(_targetPosition.y, minHeight, maxHeight),
-                    _targetPosition.z);
+                _currentAnchorXZ = new Vector2(_anchorRoot.position.x, _anchorRoot.position.z);
             }
+
+            _targetAnchorXZ = _currentAnchorXZ;
+            _anchorVelocity = Vector2.zero;
+            _zoomVelocity = 0f;
+            SyncRigToState(_currentAnchorXZ, _currentZoomNormalized, safeViewport);
         }
 
-        private void ApplyStartPoseGuard()
+        private void SyncRigToState(Vector2 anchorXZ, float zoomNormalized, Rect safeViewport)
         {
-            if (!autoFixInvalidStartPose || _camera == null || _camera.orthographic)
+            if (_anchorRoot == null || _yawPivot == null || _pitchPivot == null || _camera == null)
             {
                 return;
             }
 
-            var pos = transform.position;
-            var euler = transform.eulerAngles;
-            var changed = false;
+            _camera.orthographic = false;
+            _camera.fieldOfView = fixedFieldOfView;
 
-            if (pos.y <= 0.01f)
-            {
-                pos.y = Mathf.Clamp(fallbackStartHeight, minHeight, maxHeight);
-                changed = true;
-            }
-
-            // Scene/default camera rotation (pitch almost 0) causes horizon/black view in top-down map.
-            if (Mathf.Abs(transform.forward.y) < 0.05f)
-            {
-                euler.x = fallbackStartPitch;
-                euler.z = 0f;
-                changed = true;
-            }
-
-            if (!changed)
-            {
-                return;
-            }
-
-            transform.SetPositionAndRotation(pos, Quaternion.Euler(euler));
+            var groundY = GetGroundY();
+            var rigRoot = GetRigRootForLogicalAnchor(anchorXZ, zoomNormalized, safeViewport);
+            _anchorRoot.position = new Vector3(rigRoot.x, groundY, rigRoot.y);
+            _yawPivot.localPosition = Vector3.zero;
+            _yawPivot.localRotation = Quaternion.Euler(0f, fixedYaw, 0f);
+            _pitchPivot.localPosition = Vector3.zero;
+            _pitchPivot.localRotation = Quaternion.Euler(fixedPitch, 0f, 0f);
+            _camera.transform.localPosition = new Vector3(0f, 0f, -GetDistanceForZoomNormalized(zoomNormalized));
+            _camera.transform.localRotation = Quaternion.identity;
         }
 
-        private Vector3 GetDragPanDelta()
-        {
-            if (!enableDragPan)
-            {
-                return Vector3.zero;
-            }
-
-            if (GetPanMouseButtonDown())
-            {
-                _dragging = true;
-                _lastMousePosition = GetMousePosition();
-            }
-            else if (GetPanMouseButtonUp())
-            {
-                _dragging = false;
-            }
-
-            if (!_dragging)
-            {
-                return Vector3.zero;
-            }
-
-            var current = GetMousePosition();
-            var delta = current - _lastMousePosition;
-            _lastMousePosition = current;
-
-            if (delta.sqrMagnitude < 0.0001f)
-            {
-                return Vector3.zero;
-            }
-
-            var right = transform.right;
-            right.y = 0f;
-            right.Normalize();
-
-            var forward = transform.forward;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f)
-            {
-                forward = Vector3.forward;
-            }
-            forward.Normalize();
-
-            var directionSign = invertDrag ? -1f : 1f;
-            // Reduce drag pan speed to half for finer control.
-            return (right * delta.x + forward * delta.y) * directionSign * dragPanSpeed * 0.5f;
-        }
-
-        private Vector3 GetKeyboardPanDelta(float dt)
+        private Vector2 GetKeyboardPanDelta(float dt)
         {
             if (!enableKeyboardPan || dt <= 0f)
             {
-                return Vector3.zero;
+                return Vector2.zero;
             }
 
             var horizontal = GetHorizontalAxis();
@@ -657,7 +423,7 @@ namespace Panoptes.Presentation.Map
             var input = new Vector2(horizontal, vertical);
             if (input.sqrMagnitude < 0.0001f)
             {
-                return Vector3.zero;
+                return Vector2.zero;
             }
 
             if (input.sqrMagnitude > 1f)
@@ -665,233 +431,381 @@ namespace Panoptes.Presentation.Map
                 input.Normalize();
             }
 
-            var right = transform.right;
-            right.y = 0f;
-            if (right.sqrMagnitude < 0.0001f)
-            {
-                right = Vector3.right;
-            }
-            right.Normalize();
-
-            var forward = transform.forward;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f)
-            {
-                forward = Vector3.forward;
-            }
-            forward.Normalize();
-
-            return (right * input.x + forward * input.y) * (keyboardPanSpeed * dt);
+            return input * (GetPanSpeed() * dt);
         }
 
-        private Vector3 GetEdgePanDelta(float dt)
+        private Vector2 GetEdgePanDelta(float dt, bool pointerOverUI)
         {
-            if (!enableEdgeScroll)
+            if (!enableEdgePan || dt <= 0f || pointerOverUI && blockEdgePanWhenPointerOverUI || !HasMouse())
             {
-                return Vector3.zero;
-            }
-
-            if (_dragging && !edgeScrollWhileDragging)
-            {
-                return Vector3.zero;
+                return Vector2.zero;
             }
 
             var mouse = GetMousePosition();
             if (mouse.x < 0f || mouse.y < 0f || mouse.x > Screen.width || mouse.y > Screen.height)
             {
-                return Vector3.zero;
+                return Vector2.zero;
             }
 
-            var left = Mathf.InverseLerp(edgeThreshold, 0f, mouse.x);
-            var rightEdge = Mathf.InverseLerp(Screen.width - edgeThreshold, Screen.width, mouse.x);
-            var bottom = Mathf.InverseLerp(edgeThreshold, 0f, mouse.y);
-            var top = Mathf.InverseLerp(Screen.height - edgeThreshold, Screen.height, mouse.y);
+            var left = Mathf.InverseLerp(edgePanThreshold, 0f, mouse.x);
+            var right = Mathf.InverseLerp(Screen.width - edgePanThreshold, Screen.width, mouse.x);
+            var bottom = Mathf.InverseLerp(edgePanThreshold, 0f, mouse.y);
+            var top = Mathf.InverseLerp(Screen.height - edgePanThreshold, Screen.height, mouse.y);
 
-            var horizontal = rightEdge - left;
-            var vertical = top - bottom;
-            if (Mathf.Abs(horizontal) < 0.0001f && Mathf.Abs(vertical) < 0.0001f)
+            var delta = new Vector2(right - left, top - bottom);
+            if (delta.sqrMagnitude < 0.0001f)
             {
-                return Vector3.zero;
+                return Vector2.zero;
             }
 
-            var right = transform.right;
-            right.y = 0f;
-            right.Normalize();
-
-            var forward = transform.forward;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f)
-            {
-                forward = Vector3.forward;
-            }
-            forward.Normalize();
-
-            return (right * horizontal + forward * vertical) * (edgePanSpeed * dt);
+            return delta * (GetPanSpeed() * dt);
         }
 
-        private void ApplyBounds(float dt, bool hasPanInput)
+        private Vector2 GetDragPanDelta(bool pointerOverUI)
         {
-            var minX = Mathf.Min(xBounds.x, xBounds.y) + boundsPadding - boundsLeftPadding;
-            var maxX = Mathf.Max(xBounds.x, xBounds.y) - boundsPadding + boundsRightPadding;
-            var minZ = Mathf.Min(zBounds.x, zBounds.y) + boundsPadding - boundsBottomPadding;
-            var maxZ = Mathf.Max(zBounds.x, zBounds.y) - boundsPadding + boundsTopPadding;
-
-            if (minX > maxX)
+            if (!enableDragPan || !HasMouse())
             {
-                var mid = (minX + maxX) * 0.5f;
-                minX = mid;
-                maxX = mid;
+                return Vector2.zero;
             }
 
-            if (minZ > maxZ)
+            if (GetPanMouseButtonDown())
             {
-                var mid = (minZ + maxZ) * 0.5f;
-                minZ = mid;
-                maxZ = mid;
-            }
-
-            var clamped = _targetPosition;
-            if (useViewportGroundBounds && TryGetViewportGroundExtents(_targetPosition, out var viewMinX, out var viewMaxX, out var viewMinZ, out var viewMaxZ))
-            {
-                var allowedWidth = maxX - minX;
-                var viewWidth = viewMaxX - viewMinX;
-                if (viewWidth >= allowedWidth)
+                if (pointerOverUI && blockDragWhenPointerOverUI)
                 {
-                    clamped.x = (minX + maxX) * 0.5f;
+                    _dragging = false;
+                    _hasDragGroundPoint = false;
+                    return Vector2.zero;
+                }
+
+                _dragging = TryGetGroundPointUnderPointer(out _dragGroundPoint);
+                _hasDragGroundPoint = _dragging;
+                return Vector2.zero;
+            }
+
+            if (GetPanMouseButtonUp())
+            {
+                _dragging = false;
+                _hasDragGroundPoint = false;
+                return Vector2.zero;
+            }
+
+            if (!_dragging || !_hasDragGroundPoint)
+            {
+                return Vector2.zero;
+            }
+
+            if (!TryGetGroundPointUnderPointer(out var currentGround))
+            {
+                return Vector2.zero;
+            }
+
+            var delta = _dragGroundPoint - currentGround;
+            delta.y = 0f;
+            if (delta.sqrMagnitude < 0.0001f)
+            {
+                return Vector2.zero;
+            }
+
+            return new Vector2(delta.x, delta.z);
+        }
+
+        private bool TryGetGroundPointUnderPointer(out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (_camera == null || !HasMouse())
+            {
+                return false;
+            }
+
+            var ray = _camera.ScreenPointToRay(GetMousePosition());
+            return TryProjectRayToGround(ray.origin, ray.direction, GetGroundY(), out point);
+        }
+
+        private void HandleZoom(bool pointerOverUI)
+        {
+            if (_camera == null || pointerOverUI && blockZoomWhenPointerOverUI)
+            {
+                return;
+            }
+
+            var rawScroll = GetScrollDeltaY();
+            if (Mathf.Abs(rawScroll) <= 0.0001f)
+            {
+                return;
+            }
+
+            var scrollDirection = invertScrollDirection ? -1f : 1f;
+            var normalizedScroll = Mathf.Clamp(rawScroll, -1f, 1f);
+            _targetZoomNormalized = Mathf.Clamp01(_targetZoomNormalized + normalizedScroll * scrollZoomStep * scrollDirection);
+        }
+
+        private float ClampZoomForContext(float desiredZoomNormalized, Rect safeViewport)
+        {
+            desiredZoomNormalized = Mathf.Clamp01(desiredZoomNormalized);
+            if (!_hasCameraContext)
+            {
+                return desiredZoomNormalized;
+            }
+
+            var minimumZoomNormalized = FindMinimumZoomThatFitsContext(safeViewport);
+            return Mathf.Clamp(desiredZoomNormalized, minimumZoomNormalized, 1f);
+        }
+
+        private float FindMinimumZoomThatFitsContext(Rect safeViewport)
+        {
+            if (!_hasCameraContext)
+            {
+                return 0f;
+            }
+
+            if (DoesZoomFitContext(0f, safeViewport))
+            {
+                return 0f;
+            }
+
+            var low = 0f;
+            var high = 1f;
+            for (var i = 0; i < 18; i++)
+            {
+                var mid = (low + high) * 0.5f;
+                if (DoesZoomFitContext(mid, safeViewport))
+                {
+                    high = mid;
                 }
                 else
                 {
-                    if (viewMinX < minX)
-                    {
-                        clamped.x += minX - viewMinX;
-                    }
-                    else if (viewMaxX > maxX)
-                    {
-                        clamped.x -= viewMaxX - maxX;
-                    }
+                    low = mid;
                 }
+            }
 
-                var allowedHeight = maxZ - minZ;
-                var viewHeight = viewMaxZ - viewMinZ;
-                if (viewHeight >= allowedHeight)
-                {
-                    clamped.z = (minZ + maxZ) * 0.5f;
-                }
-                else
-                {
-                    if (viewMinZ < minZ)
-                    {
-                        clamped.z += minZ - viewMinZ;
-                    }
-                    else if (viewMaxZ > maxZ)
-                    {
-                        clamped.z -= viewMaxZ - maxZ;
-                    }
-                }
+            return high;
+        }
+
+        private bool DoesZoomFitContext(float zoomNormalized, Rect safeViewport)
+        {
+            if (!_hasCameraContext)
+            {
+                return true;
+            }
+
+            if (!TryGetLogicalRelativeGroundBounds(zoomNormalized, safeViewport, out var relativeBounds))
+            {
+                return true;
+            }
+
+            var halfWorldWidth = _cameraContext.worldRect.width * 0.5f + 0.001f;
+            var halfWorldHeight = _cameraContext.worldRect.height * 0.5f + 0.001f;
+            return Mathf.Abs(relativeBounds.xMin) <= halfWorldWidth
+                && Mathf.Abs(relativeBounds.xMax) <= halfWorldWidth
+                && Mathf.Abs(relativeBounds.yMin) <= halfWorldHeight
+                && Mathf.Abs(relativeBounds.yMax) <= halfWorldHeight;
+        }
+
+        private Vector2 ClampAnchorForContext(Vector2 desiredAnchor, float zoomNormalized, Rect safeViewport)
+        {
+            if (!_hasCameraContext)
+            {
+                return desiredAnchor;
+            }
+
+            if (!TryGetLogicalRelativeGroundBounds(zoomNormalized, safeViewport, out var relativeBounds))
+            {
+                return desiredAnchor;
+            }
+
+            const float clampSafetyPadding = 0.002f;
+            var minAllowedX = _cameraContext.worldRect.xMin - relativeBounds.xMin + clampSafetyPadding;
+            var maxAllowedX = _cameraContext.worldRect.xMax - relativeBounds.xMax - clampSafetyPadding;
+            var minAllowedZ = _cameraContext.worldRect.yMin - relativeBounds.yMin + clampSafetyPadding;
+            var maxAllowedZ = _cameraContext.worldRect.yMax - relativeBounds.yMax - clampSafetyPadding;
+
+            if (minAllowedX > maxAllowedX)
+            {
+                desiredAnchor.x = _cameraContext.worldRect.center.x;
             }
             else
             {
-                clamped.x = Mathf.Clamp(clamped.x, minX, maxX);
-                clamped.z = Mathf.Clamp(clamped.z, minZ, maxZ);
+                desiredAnchor.x = Mathf.Clamp(desiredAnchor.x, minAllowedX, maxAllowedX);
             }
 
-            if (hasPanInput)
+            if (minAllowedZ > maxAllowedZ)
             {
-                // While actively panning, use hard clamp to avoid "push-back" feel at edges.
-                _targetPosition = clamped;
-                return;
+                desiredAnchor.y = _cameraContext.worldRect.center.y;
             }
-
-            if (boundaryDamping <= 0f)
+            else
             {
-                _targetPosition = clamped;
-                return;
+                desiredAnchor.y = Mathf.Clamp(desiredAnchor.y, minAllowedZ, maxAllowedZ);
             }
 
-            // Soft boundary feel instead of instant hard-stop.
-            var t = 1f - Mathf.Exp(-boundaryDamping * dt);
-            _targetPosition = Vector3.Lerp(_targetPosition, clamped, t);
+            return desiredAnchor;
         }
 
-        private bool TryGetViewportGroundExtents(Vector3 candidatePosition, out float minX, out float maxX, out float minZ, out float maxZ)
+        private bool TryGetCurrentVisibleGroundBoundsInternal(out Rect bounds)
         {
-            minX = float.MaxValue;
-            maxX = float.MinValue;
-            minZ = float.MaxValue;
-            maxZ = float.MinValue;
+            return TryGetVisibleGroundBounds(_currentAnchorXZ, _currentZoomNormalized, ResolveSafeViewportRect(), out bounds);
+        }
 
-            var currentPosition = _camera.transform.position;
-            var offset = candidatePosition - currentPosition;
-            if (!TryProjectViewportPointToGround(new Vector2(0f, 0f), offset, out var p0) ||
-                !TryProjectViewportPointToGround(new Vector2(1f, 0f), offset, out var p1) ||
-                !TryProjectViewportPointToGround(new Vector2(0f, 1f), offset, out var p2) ||
-                !TryProjectViewportPointToGround(new Vector2(1f, 1f), offset, out var p3))
+        private bool TryGetVisibleGroundBounds(Vector2 anchorXZ, float zoomNormalized, Rect safeViewport, out Rect bounds)
+        {
+            bounds = default;
+            if (!TryGetLogicalRelativeGroundBounds(zoomNormalized, safeViewport, out var relativeBounds))
             {
                 return false;
             }
 
-            minX = Mathf.Min(p0.x, p1.x, p2.x, p3.x);
-            maxX = Mathf.Max(p0.x, p1.x, p2.x, p3.x);
-            minZ = Mathf.Min(p0.z, p1.z, p2.z, p3.z);
-            maxZ = Mathf.Max(p0.z, p1.z, p2.z, p3.z);
+            bounds = new Rect(
+                anchorXZ.x + relativeBounds.xMin,
+                anchorXZ.y + relativeBounds.yMin,
+                relativeBounds.width,
+                relativeBounds.height);
             return true;
         }
 
-        private bool TryProjectViewportPointToGround(Vector2 viewport, Vector3 cameraOffset, out Vector3 point)
+        private bool TryGetLogicalRelativeGroundBounds(float zoomNormalized, Rect safeViewport, out Rect bounds)
         {
-            var ray = _camera.ViewportPointToRay(new Vector3(viewport.x, viewport.y, 0f));
-            ray.origin += cameraOffset;
-
-            var dy = ray.direction.y;
-            if (Mathf.Abs(dy) < 0.00001f)
+            bounds = default;
+            if (!TryGetRootRelativeGroundBounds(zoomNormalized, safeViewport, out var rootRelativeBounds))
             {
-                point = Vector3.zero;
                 return false;
             }
 
-            var t = (boundsGroundY - ray.origin.y) / dy;
-            if (t < 0f)
+            if (!TryGetSafeCenterGroundOffset(zoomNormalized, safeViewport, out var safeCenterGround))
             {
-                point = Vector3.zero;
                 return false;
             }
 
-            point = ray.origin + ray.direction * t;
+            bounds = Rect.MinMaxRect(
+                rootRelativeBounds.xMin - safeCenterGround.x,
+                rootRelativeBounds.yMin - safeCenterGround.z,
+                rootRelativeBounds.xMax - safeCenterGround.x,
+                rootRelativeBounds.yMax - safeCenterGround.z);
             return true;
         }
 
-        private bool TryProjectCameraForwardToGround(Vector3 origin, Quaternion rotation, out Vector3 point)
+        private bool TryGetRootRelativeGroundBounds(float zoomNormalized, Rect safeViewport, out Rect bounds)
         {
-            var direction = rotation * Vector3.forward;
-            if (Mathf.Abs(direction.y) < 0.00001f)
+            bounds = default;
+            if (_camera == null)
             {
-                point = Vector3.zero;
                 return false;
             }
 
-            var t = (boundsGroundY - origin.y) / direction.y;
-            if (t < 0f)
+            var candidateAnchor = Vector2.zero;
+            if (!TryGetGroundPointAtViewport(new Vector2(safeViewport.xMin, safeViewport.yMin), candidateAnchor, zoomNormalized, out var bottomLeft)
+                || !TryGetGroundPointAtViewport(new Vector2(safeViewport.xMax, safeViewport.yMin), candidateAnchor, zoomNormalized, out var bottomRight)
+                || !TryGetGroundPointAtViewport(new Vector2(safeViewport.xMin, safeViewport.yMax), candidateAnchor, zoomNormalized, out var topLeft)
+                || !TryGetGroundPointAtViewport(new Vector2(safeViewport.xMax, safeViewport.yMax), candidateAnchor, zoomNormalized, out var topRight))
             {
-                point = Vector3.zero;
                 return false;
             }
 
-            point = origin + direction * t;
+            var minX = Mathf.Min(bottomLeft.x, bottomRight.x, topLeft.x, topRight.x);
+            var maxX = Mathf.Max(bottomLeft.x, bottomRight.x, topLeft.x, topRight.x);
+            var minZ = Mathf.Min(bottomLeft.z, bottomRight.z, topLeft.z, topRight.z);
+            var maxZ = Mathf.Max(bottomLeft.z, bottomRight.z, topLeft.z, topRight.z);
+            bounds = Rect.MinMaxRect(minX, minZ, maxX, maxZ);
             return true;
         }
 
-        private static float NormalizeAngle180(float angle)
+        private bool TryGetSafeCenterGroundOffset(float zoomNormalized, Rect safeViewport, out Vector3 point)
         {
-            var normalized = angle % 360f;
-            if (normalized > 180f)
+            return TryGetGroundPointAtViewport(safeViewport.center, Vector2.zero, zoomNormalized, out point);
+        }
+
+        private bool TryGetGroundPointAtViewport(Vector2 viewportPoint, Vector2 anchorXZ, float zoomNormalized, out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (_camera == null)
             {
-                normalized -= 360f;
+                return false;
             }
-            if (normalized < -180f)
+
+            var ray = _camera.ViewportPointToRay(new Vector3(viewportPoint.x, viewportPoint.y, 0f));
+            var candidateCameraPosition = CalculateCameraWorldPosition(anchorXZ, zoomNormalized);
+            var cameraOffset = candidateCameraPosition - _camera.transform.position;
+            return TryProjectRayToGround(ray.origin + cameraOffset, ray.direction, GetGroundY(), out point);
+        }
+
+        private bool TryGetGroundPointAtViewportFromCurrentCamera(Vector2 viewportPoint, out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (_camera == null)
             {
-                normalized += 360f;
+                return false;
             }
-            return normalized;
+
+            var ray = _camera.ViewportPointToRay(new Vector3(viewportPoint.x, viewportPoint.y, 0f));
+            return TryProjectRayToGround(ray.origin, ray.direction, GetGroundY(), out point);
+        }
+
+        private Vector3 CalculateCameraWorldPosition(Vector2 anchorXZ, float zoomNormalized)
+        {
+            var anchor = new Vector3(anchorXZ.x, GetGroundY(), anchorXZ.y);
+            var rotation = Quaternion.Euler(fixedPitch, fixedYaw, 0f);
+            return anchor + rotation * new Vector3(0f, 0f, -GetDistanceForZoomNormalized(zoomNormalized));
+        }
+
+        private Vector2 GetRigRootForLogicalAnchor(Vector2 anchorXZ, float zoomNormalized, Rect safeViewport)
+        {
+            if (!TryGetSafeCenterGroundOffset(zoomNormalized, safeViewport, out var safeCenterGround))
+            {
+                return anchorXZ;
+            }
+
+            return new Vector2(anchorXZ.x - safeCenterGround.x, anchorXZ.y - safeCenterGround.z);
+        }
+
+        private float GetDistanceForZoomNormalized(float zoomNormalized)
+        {
+            return Mathf.Lerp(farDistance, nearDistance, Mathf.Clamp01(zoomNormalized));
+        }
+
+        private float DistanceToZoomNormalized(float distance)
+        {
+            if (Mathf.Abs(farDistance - nearDistance) < 0.001f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(Mathf.InverseLerp(farDistance, nearDistance, distance));
+        }
+
+        private float GetCurrentDistance()
+        {
+            return _camera != null ? Mathf.Max(nearDistance, Mathf.Abs(_camera.transform.localPosition.z)) : nearDistance;
+        }
+
+        private float GetPanSpeed()
+        {
+            return Mathf.Lerp(farPanSpeed, nearPanSpeed, Mathf.Clamp01(_currentZoomNormalized));
+        }
+
+        private Rect ResolveSafeViewportRect()
+        {
+            var rect = _hasSafeViewportOverride ? _safeViewportOverride : CameraSafeAreaRegistry.GetSafeViewportRect();
+            rect.xMin = Mathf.Clamp01(rect.xMin);
+            rect.yMin = Mathf.Clamp01(rect.yMin);
+            rect.xMax = Mathf.Clamp01(rect.xMax);
+            rect.yMax = Mathf.Clamp01(rect.yMax);
+
+            if (rect.width <= 0.05f || rect.height <= 0.05f)
+            {
+                return new Rect(0f, 0f, 1f, 1f);
+            }
+
+            return rect;
+        }
+
+        private float GetGroundY()
+        {
+            return _hasCameraContext ? _cameraContext.groundY : 0f;
+        }
+
+        private static bool SameContext(MapCameraContext lhs, MapCameraContext rhs)
+        {
+            return lhs.groundY == rhs.groundY
+                && lhs.worldRect == rhs.worldRect
+                && lhs.initialFocusPoint == rhs.initialFocusPoint;
         }
 
         private bool IsPointerOverUI()
@@ -902,16 +816,25 @@ namespace Panoptes.Presentation.Map
             }
 
             var eventSystem = EventSystem.current;
-            if (eventSystem == null)
+            return eventSystem != null && eventSystem.IsPointerOverGameObject();
+        }
+
+        private static bool TryProjectRayToGround(Vector3 origin, Vector3 direction, float groundY, out Vector3 point)
+        {
+            point = Vector3.zero;
+            if (Mathf.Abs(direction.y) < 0.0001f)
             {
                 return false;
             }
 
-#if ENABLE_INPUT_SYSTEM
-            return eventSystem.IsPointerOverGameObject();
-#else
-            return eventSystem.IsPointerOverGameObject();
-#endif
+            var t = (groundY - origin.y) / direction.y;
+            if (t < 0f)
+            {
+                return false;
+            }
+
+            point = origin + direction * t;
+            return true;
         }
 
         private bool HasMouse()
@@ -926,8 +849,7 @@ namespace Panoptes.Presentation.Map
         private Vector3 GetMousePosition()
         {
 #if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null ? (Vector3)mouse.position.ReadValue() : Vector3.zero;
+            return Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Vector3.zero;
 #else
             return Input.mousePosition;
 #endif
@@ -936,14 +858,7 @@ namespace Panoptes.Presentation.Map
         private float GetScrollDeltaY()
         {
 #if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            if (mouse == null)
-            {
-                return 0f;
-            }
-
-            var raw = mouse.scroll.ReadValue().y;
-            return raw * inputSystemScrollScale;
+            return Mouse.current != null ? Mouse.current.scroll.ReadValue().y * inputSystemScrollScale : 0f;
 #else
             return Input.mouseScrollDelta.y;
 #endif
@@ -952,8 +867,7 @@ namespace Panoptes.Presentation.Map
         private bool GetPanMouseButtonDown()
         {
 #if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null && mouse.middleButton.wasPressedThisFrame;
+            return Mouse.current != null && Mouse.current.middleButton.wasPressedThisFrame;
 #else
             return Input.GetMouseButtonDown(2);
 #endif
@@ -962,8 +876,7 @@ namespace Panoptes.Presentation.Map
         private bool GetPanMouseButtonUp()
         {
 #if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null && mouse.middleButton.wasReleasedThisFrame;
+            return Mouse.current != null && Mouse.current.middleButton.wasReleasedThisFrame;
 #else
             return Input.GetMouseButtonUp(2);
 #endif
@@ -978,31 +891,30 @@ namespace Panoptes.Presentation.Map
                 return 0f;
             }
 
-            float value = 0f;
-            if (keyboard.aKey.isPressed || (enableArrowKeyPan && keyboard.leftArrowKey.isPressed))
+            var value = 0f;
+            if (keyboard.aKey.isPressed)
             {
                 value -= 1f;
             }
-
-            if (keyboard.dKey.isPressed || (enableArrowKeyPan && keyboard.rightArrowKey.isPressed))
+            if (keyboard.dKey.isPressed)
             {
                 value += 1f;
+            }
+            if (enableArrowKeyPan)
+            {
+                if (keyboard.leftArrowKey.isPressed)
+                {
+                    value -= 1f;
+                }
+                if (keyboard.rightArrowKey.isPressed)
+                {
+                    value += 1f;
+                }
             }
 
             return Mathf.Clamp(value, -1f, 1f);
 #else
-            float value = 0f;
-            if (Input.GetKey(KeyCode.A) || (enableArrowKeyPan && Input.GetKey(KeyCode.LeftArrow)))
-            {
-                value -= 1f;
-            }
-
-            if (Input.GetKey(KeyCode.D) || (enableArrowKeyPan && Input.GetKey(KeyCode.RightArrow)))
-            {
-                value += 1f;
-            }
-
-            return Mathf.Clamp(value, -1f, 1f);
+            return Mathf.Clamp(Input.GetAxisRaw("Horizontal"), -1f, 1f);
 #endif
         }
 
@@ -1015,70 +927,31 @@ namespace Panoptes.Presentation.Map
                 return 0f;
             }
 
-            float value = 0f;
-            if (keyboard.sKey.isPressed || (enableArrowKeyPan && keyboard.downArrowKey.isPressed))
+            var value = 0f;
+            if (keyboard.sKey.isPressed)
             {
                 value -= 1f;
             }
-
-            if (keyboard.wKey.isPressed || (enableArrowKeyPan && keyboard.upArrowKey.isPressed))
+            if (keyboard.wKey.isPressed)
             {
                 value += 1f;
+            }
+            if (enableArrowKeyPan)
+            {
+                if (keyboard.downArrowKey.isPressed)
+                {
+                    value -= 1f;
+                }
+                if (keyboard.upArrowKey.isPressed)
+                {
+                    value += 1f;
+                }
             }
 
             return Mathf.Clamp(value, -1f, 1f);
 #else
-            float value = 0f;
-            if (Input.GetKey(KeyCode.S) || (enableArrowKeyPan && Input.GetKey(KeyCode.DownArrow)))
-            {
-                value -= 1f;
-            }
-
-            if (Input.GetKey(KeyCode.W) || (enableArrowKeyPan && Input.GetKey(KeyCode.UpArrow)))
-            {
-                value += 1f;
-            }
-
-            return Mathf.Clamp(value, -1f, 1f);
+            return Mathf.Clamp(Input.GetAxisRaw("Vertical"), -1f, 1f);
 #endif
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            EnsureZoomRanges();
-            scrollZoomMultiplier = Mathf.Max(0f, scrollZoomMultiplier);
-            scrollSensitivity = Mathf.Max(0f, scrollSensitivity);
-            maxZoomStepPerFrame = Mathf.Max(0.01f, maxZoomStepPerFrame);
-            perspectiveDollySpeed = Mathf.Max(0f, perspectiveDollySpeed);
-            tiltSmoothTime = Mathf.Max(0.01f, tiltSmoothTime);
-            farZoomPitch = Mathf.Clamp(farZoomPitch, -89f, 89f);
-            nearZoomPitch = Mathf.Clamp(nearZoomPitch, -89f, 89f);
-            fallbackStartHeight = Mathf.Max(0.1f, fallbackStartHeight);
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (!clampToBounds)
-            {
-                return;
-            }
-
-            var minX = Mathf.Min(xBounds.x, xBounds.y) + boundsPadding - boundsLeftPadding;
-            var maxX = Mathf.Max(xBounds.x, xBounds.y) - boundsPadding + boundsRightPadding;
-            var minZ = Mathf.Min(zBounds.x, zBounds.y) + boundsPadding - boundsBottomPadding;
-            var maxZ = Mathf.Max(zBounds.x, zBounds.y) - boundsPadding + boundsTopPadding;
-
-            Gizmos.color = new Color(0.15f, 0.9f, 1f, 0.9f);
-            var a = new Vector3(minX, transform.position.y, minZ);
-            var b = new Vector3(maxX, transform.position.y, minZ);
-            var c = new Vector3(maxX, transform.position.y, maxZ);
-            var d = new Vector3(minX, transform.position.y, maxZ);
-            Gizmos.DrawLine(a, b);
-            Gizmos.DrawLine(b, c);
-            Gizmos.DrawLine(c, d);
-            Gizmos.DrawLine(d, a);
-        }
-#endif
     }
 }

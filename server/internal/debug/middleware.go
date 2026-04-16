@@ -158,6 +158,8 @@ func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
 			return "MsgStaticCatalogManifest", body.StaticCatalogManifest, true
 		case *pb.GameEvent_StaticCatalogSnapshot:
 			return "MsgStaticCatalogSnapshot", body.StaticCatalogSnapshot, true
+		case *pb.GameEvent_ConfigBatchJson:
+			return "MsgConfigBatchJson", body.ConfigBatchJson, true
 		case *pb.GameEvent_GameInit:
 			return "MsgGameInit", body.GameInit, true
 		case *pb.GameEvent_PlanningStart:

@@ -172,12 +172,10 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private float wheelScrollStepPixels = 110f;
         [SerializeField] private float inputSystemWheelScale = 0.01f;
 
-        [Header("Build Config Source")]
+        [Header("Build Catalog Source")]
         [SerializeField] private bool applyConfigToButtons = true;
         [SerializeField] private bool useConfigPlacementRule = true;
-        [SerializeField] private bool preferServerPushedConfig = true;
-        [SerializeField] private string serverConfigKey = "buildconfig";
-        [SerializeField] private bool listenServerConfigUpdates = true;
+        [SerializeField] private bool listenCatalogUpdates = true;
         [SerializeField] private TextAsset buildConfigJson;
         [Tooltip("Used when Build Config Json is empty. Relative to Resources/, without extension.")]
         [SerializeField] private string buildConfigResourcesPath = "Config/buildconfig";
@@ -207,7 +205,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private void OnEnable()
         {
             _loggedMissingBuildConfigThisEnable = false;
-            SubscribeServerConfig();
+            SubscribeCatalogUpdates();
             ResolveMapInputHandler();
             LoadBuildConfig();
             BindButtons();
@@ -220,7 +218,7 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             UnbindButtons();
             UnbindModeToggles();
-            UnsubscribeServerConfig();
+            UnsubscribeCatalogUpdates();
             if (tooltipView != null)
             {
                 tooltipView.Hide();
@@ -1365,9 +1363,9 @@ namespace Panoptes.Presentation.UI.Domestic
             trigger.Configure(tooltipView, text.Trim());
         }
 
-        private void SubscribeServerConfig()
+        private void SubscribeCatalogUpdates()
         {
-            if (!listenServerConfigUpdates)
+            if (!listenCatalogUpdates)
             {
                 return;
             }
@@ -1375,20 +1373,20 @@ namespace Panoptes.Presentation.UI.Domestic
             _catalogCache = StaticCatalogCache.EnsureInstance();
             if (_catalogCache != null)
             {
-                _catalogCache.CatalogChanged += OnServerConfigUpdated;
+                _catalogCache.CatalogChanged += OnCatalogUpdated;
             }
         }
 
-        private void UnsubscribeServerConfig()
+        private void UnsubscribeCatalogUpdates()
         {
             if (_catalogCache != null)
             {
-                _catalogCache.CatalogChanged -= OnServerConfigUpdated;
+                _catalogCache.CatalogChanged -= OnCatalogUpdated;
                 _catalogCache = null;
             }
         }
 
-        private void OnServerConfigUpdated()
+        private void OnCatalogUpdated()
         {
             LoadBuildConfig();
             BindButtons();
