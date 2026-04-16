@@ -801,15 +801,11 @@ DamagePhase 当前顺序是：
 
 当前兵营出兵、主城出开拓者、农场产粮都已经统一走 recipe 体系，不再依赖旧的固定生产系统。
 
-### 9.7 当前仍为空壳的经济步骤
+### 9.7 已删除的旧经济壳
 
-以下系统目前保留在链路中，但真实逻辑为空：
+旧的 `FlowSystem`、`ProductionSystem`、`RechargeSystem`、`UpkeepSystem` 已从代码中删除。
 
-- `FlowSystem`
-- `ProductionSystem`
-- `production.UpkeepSystem`
-
-这代表当前新版生产主线已经全部统一进 `RecipeSystem`，旧的固定产出链只保留了壳。
+当前经济主线只保留 `Runner + 7 个 stage` 这套实现，不再保留旧生产链占位文件。
 
 ## 10. 建筑生命周期、设施接管、城市陷落子系统
 
@@ -1057,10 +1053,11 @@ stateDiagram-v2
 - `MinisterMoves`
 - 大部分 map action 枚举，如修路、修复、建改良、修复改良
 
-### 15.3 保留代码文件，但已不在默认主链顺序中
+### 15.3 已删除的旧经济文件
 
 - `economy.FlowSystem`
 - `economy.ProductionSystem`
+- `economy.RechargeSystem`
 - `economy.UpkeepSystem`
 
 ### 15.4 需要额外注意的实现现状
