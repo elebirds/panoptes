@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **状态更新（2026-04-16）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成，Chunk 3 与 Chunk 4 已按 revised plan 落地到 `main`。当前仓库已补齐主城 bootstrap、建城/建筑放置统一校验、配方低效推进、城市陷落与设施延时接管，以及对应的 settlement/report 与无头验证覆盖；本文档中的 Chunk 1-4 勾选状态已同步到当前实现现状。
+> **状态更新（2026-04-16）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成，Chunk 3、Chunk 4 与 Chunk 6 已按 revised/final plan 落地到 `main`。当前仓库已补齐主城 bootstrap、建城/建筑放置统一校验、配方低效推进、城市陷落与设施延时接管，以及基于 `MsgIssueUnitOrderResult + can_attack_structures + Targetable combat` 的主线战争闭环；本文档中的 Chunk 1-4、Chunk 6 勾选状态已同步到当前实现现状。
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
@@ -113,9 +113,12 @@
 - Chunk 3 已按 revised plan 完成主干收口：经济 resolving 改为单一 orchestrator，点数预算已从 `ResourceBag` 拆分为 resolving 内部 `PointBag`，`PlayerView.points` 保持“有效产出预览”语义，建筑来源修正已正式纳入 `staticdata + datagen + content + generated bundle` 链路。
 - 统一修正公式现已切到 `((base*(1+percent))+flat)*multiplier`，并补上了 combat regression 与结算事件映射；点数刷新、点数消耗、建造跳过/配方阻塞都能进入 settlement/report。
 - Chunk 4 已按 revised plan 完成主干收口：runtime 程序化开局会主动 bootstrap 主城，`CapitalCityID / OnlineOnTurn / building lifecycle status` 已成为统一运行时状态；建城、建筑放置、配方低效推进、非主城城市陷落、设施延时接管与 settlement/report 可观测性均已接入主线。
+- Chunk 6 已按 final plan 完成主干收口：`IssueUnitOrder` 现在会先返回 typed `MsgIssueUnitOrderResult`，`flags.can_attack_structures` 已贯通作者源、schema、proto、staticdata、ECS 与客户端本地 catalog，`infantry` 可通过 `attack + target_node_id` 命中敌方建筑与主城核心。
+- 主线单位结算已切到 shared `Targetable` combat：`lockPlanningInputs()` 继续在 combat 之前执行，fatal `city_core_destroyed` 会短路 `CombatUpkeep / marches / map / lifecycle / economy`，但 settlement 仍保留 `lockInEvents` 到 `economy` section；非 fatal 回合的 `CombatUpkeep` 仍归入 `unit` section。
+- Chunk 7 的规则矩阵与 harness 也已覆盖到 Chunk 6：当前测试与场景可验证非法 node-target attack 的 typed result、步兵伤害普通建筑、步兵摧毁主城核心并判负、fatal turn 跳过后续 resolving，以及非 fatal 回合继续执行 upkeep。
 - Chunk 7 的无头验证场景已继续扩到 Chunk 4：当前规则级测试与 harness 场景已能验证研究解锁次回合建造、共享工业点预算耗尽、settlement 重校验建造草案、低效推进/阻塞、开拓者建城、设施接管完成转移归属、非主城城市陷落、普通建筑废墟化与主城摧毁判负。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
-- 当前主工作区验证结果：`cd server && go test ./...` 已于 2026-04-16 在 `main` 上通过。
+- 当前主工作区验证结果：`make gen` 与 `cd server && go test ./...` 已于 2026-04-16 在 `main` 上通过。
 - Windows Unity batchmode 当前已可完成脚本编译并退出，但 `-runTests -testPlatform EditMode` 仍未稳定产出 `-testResults` XML，因此客户端 EditMode 自动化验证暂时仍记为“未最终确认通过”。
 
 ## 5. 推荐排期
@@ -542,6 +545,28 @@ Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属�
 
 ## 11. Chunk 6：单位、战争与胜负
 
+### 11.0 完成说明（2026-04-16）
+
+Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资格 + shared Targetable combat”的最终收口方案，当前已经完成以下内容：
+
+- `IssueUnitOrder` 的业务反馈已从通用 `Problem` 分离，改为 typed `MsgIssueUnitOrderResult`；非法 `attack + target_node_id` 会返回 `success=false` 且不覆盖旧草案、不发送新 snapshot。
+- 单位结构攻击资格已由作者源字段 `flags.can_attack_structures` 统一驱动，并贯通 `schema -> datagen -> staticdata -> generated bundle -> proto contract -> ECS -> client local catalog`；当前主线只有 `infantry` 具备该能力。
+- 主线战斗已改为 shared `Targetable` 结算：单位目标攻击与节点目标攻击共用同一条伤害投递链，建筑仍阻挡移动，`attack + target_node_id` 为 stationary attack，不引入 move-and-attack。
+- turn settlement 继续保留 Chunk 5 的 planning lock-in 语义：`lockPlanningInputs()` 先于 combat 执行，fatal `city_core_destroyed` 只短路 `CombatUpkeep / marches / map / lifecycle / economy`，不会丢掉 lock-in 事件；fatal turn 的 `economy` section 只保留 `lockInEvents`。
+- 客户端已补齐最小垂直切片：本地 `StaticCatalogCache` 可读取 `can_attack_structures`，地图攻击模式可对敌方建筑/城市核心下发 `attack + target_node_id`，并能消费 `MsgIssueUnitOrderResult` 进行即时反馈。
+
+本 Chunk 的完成验证口径为：
+
+- `make gen`
+- `cd server && go test ./...`
+- subagent review 已复核 `GameEvent` tag 兼容性、客户端建筑攻击点击链路与 `SiegeSystem` 的主线依赖边界；当前结论是 Chunk 6 主线已完成，`SiegeSystem` 仅剩扩展骨架用途，不再参与 MVP 主线结算。
+
+范围说明：
+
+- `CanSiege` / `SiegeSystem` 保留为未来扩展骨架，但主线作者源、主线场景和主线 turn settlement 已不再依赖它们。
+- 当前主线被动防御仍限定为 authored HP、阻挡与主城核心胜负语义；`wall_level` / `tower counterfire` 等数值效果继续留待后续数据链支持后再启用。
+- 客户端侧当前已完成最小命令与反馈接线，但 Unity EditMode 自动化结果仍未在本轮作为最终通过口径锁定。
+
 ### Task 16: 收敛 MVP 单位谱系与初始对局配置
 
 **Files:**
@@ -552,10 +577,12 @@ Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属�
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/ecs/factory_test.go`
 
-- [ ] **Step 1: 当前对局只保留开拓者与步兵两类单位，并清理与未启用谱系强耦合的默认内容**
-- [ ] **Step 2: 让单位目录与地图初始编成严格匹配 GDD 当前基线**
-- [ ] **Step 3: 保证开拓者与步兵在协议、视图、动画和交互层都能被清晰区分**
-- [ ] **Step 4: 用测试覆盖初始编成、单位工厂和目录映射**
+- [x] **Step 1: 当前对局只保留开拓者与步兵两类单位，并清理与未启用谱系强耦合的默认内容**
+- [x] **Step 2: 让单位目录与地图初始编成严格匹配 GDD 当前基线**
+- [x] **Step 3: 保证开拓者与步兵在协议、视图、动画和交互层都能被清晰区分**
+- [x] **Step 4: 用测试覆盖初始编成、单位工厂和目录映射**
+
+当前状态：主线作者源与 UI catalog 仍只暴露 `settler / infantry`，`scenario.capital_destroy_gameover` 已改为 `infantry + attack(target_node)` 路径；`factory_test` 已补齐 `can_attack_structures` 的作者源映射断言，客户端现有交互也已按“开拓者建城 / 步兵战斗”最小语义收口。
 
 ### Task 17: 对齐战争闭环与被动防御
 
@@ -568,10 +595,12 @@ Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属�
 - Modify: `server/internal/engine/combat/single_step_resolver_test.go`
 - Modify: `server/internal/engine/combat/route_planner_test.go`
 
-- [ ] **Step 1: 保持当前直接指挥战斗闭环，但把城市核心、防御建筑和建筑状态纳入统一战斗后果**
-- [ ] **Step 2: 让军事建筑在 MVP 只承担被动防御、耐久和守城修正，不提前接入主动攻击循环**
-- [ ] **Step 3: 用主城核心生命归零作为默认判负规则，并在结算报告中明确给出失败原因**
-- [ ] **Step 4: 让战斗、建筑受损、设施停用与胜负检测共享同一结算顺序**
+- [x] **Step 1: 保持当前直接指挥战斗闭环，但把城市核心、防御建筑和建筑状态纳入统一战斗后果**
+- [x] **Step 2: 让军事建筑在 MVP 只承担被动防御、耐久和守城修正，不提前接入主动攻击循环**
+- [x] **Step 3: 用主城核心生命归零作为默认判负规则，并在结算报告中明确给出失败原因**
+- [x] **Step 4: 让战斗、建筑受损、设施停用与胜负检测共享同一结算顺序**
+
+当前状态：主线 combat 已通过 typed target reference 支持 `unit / structure / city_core` 三类目标，`infantry` 可在最终邻接校验通过后伤害普通建筑与主城核心；fatal `city_core_destroyed` 会在保留 planning lock-in settlement 的前提下短路后续 resolving，非 fatal 回合仍继续执行 `CombatUpkeep` 并把其事件并入 `unit` section。当前 MVP 不启用建筑主动攻击循环，也不引入未数据化的墙/塔数值反击。
 
 ## 12. Chunk 7：无客户端调试与规则验证基础设施
 
