@@ -20,14 +20,18 @@ type DamagePhase struct{}
 func (DamagePhase) Apply(ctx *ResolutionContext) {
 	// 先处理冲突，再处理显式 attack / charge，形成稳定事件顺序。
 	// 虽然规格上属于同一伤害窗口，但内部仍需固定遍历顺序来保证联机确定性。
-	for _, conflict := range ctx.Conflicts {
-		ctx.Events = append(ctx.Events, event.ConflictResolvedEvent{
-			UnitAID:      conflict.UnitAID,
-			UnitBID:      conflict.UnitBID,
-			Location:     conflict.Location,
-			ConflictType: conflict.ConflictType,
-		})
-		resolveConflictDamage(ctx, conflict)
+	for _, group := range ctx.ConflictGroups {
+		// group 是内部真相，但协议仍暴露二元 conflict event。
+		// 因此这里先把组展开成稳定 hostile pair，再逐对发事件并结算伤害。
+		for _, pair := range group.HostilePairs {
+			ctx.Events = append(ctx.Events, event.ConflictResolvedEvent{
+				UnitAID:      pair.UnitAID,
+				UnitBID:      pair.UnitBID,
+				Location:     group.Location,
+				ConflictType: group.ConflictType,
+			})
+			resolveConflictPairDamage(ctx, group.Location, pair)
+		}
 	}
 
 	for _, unitID := range ctx.UnitIDs() {
@@ -49,11 +53,19 @@ type StaticSnapshotBlockRule struct{}
 
 func (StaticSnapshotBlockRule) SourceFor(ctx *ResolutionContext, unit SnapshotUnit, pos domain.Position) (BlockSource, bool) {
 	// 只读取快照阻断，不读取实时位置，这是“阻断格全回合不更新”的具体实现。
-	source, ok := ctx.Snapshot.BlockSources[pos]
-	if !ok || source.Owner == unit.PlayerID {
+	sources, ok := ctx.Snapshot.BlockSources[pos]
+	if !ok {
 		return BlockSource{}, false
 	}
-	return source, true
+	// 优先级固定为 Unit > Structure。
+	// 这样 charge 遇到“单位站在建筑格上”时仍会锁定第一接敌单位。
+	if sources.Unit != nil && sources.Unit.Owner != unit.PlayerID {
+		return *sources.Unit, true
+	}
+	if sources.Structure != nil && sources.Structure.Owner != unit.PlayerID {
+		return *sources.Structure, true
+	}
+	return BlockSource{}, false
 }
 
 type DefaultRetaliationPolicy struct{}
@@ -81,26 +93,28 @@ func (DefaultDamageResolver) Ranged(ctx *ResolutionContext, attackerID, defender
 	return resolveDamageAmount(ctx, attackerID, defenderID, pos, 1)
 }
 
-func resolveConflictDamage(ctx *ResolutionContext, conflict domain.Conflict) {
-	a, okA := ctx.SnapshotUnit(conflict.UnitAID)
-	b, okB := ctx.SnapshotUnit(conflict.UnitBID)
+func resolveConflictPairDamage(ctx *ResolutionContext, location domain.Position, pair ConflictPair) {
+	a, okA := ctx.SnapshotUnit(pair.UnitAID)
+	b, okB := ctx.SnapshotUnit(pair.UnitBID)
 	if !okA || !okB || ctx.IsDead(a.UnitID) || ctx.IsDead(b.UnitID) {
 		return
 	}
 
+	// 冲突伤害不区分 edge/node 的公式分支；
+	// 区别已经在前面的分组与落位阶段体现，伤害这里只按 pair 的能力关系统一处理。
 	switch {
 	case a.Capabilities.Civilian && b.Capabilities.Melee:
-		killUnit(ctx, a.UnitID, b.UnitID, conflict.Location)
+		killUnit(ctx, a.UnitID, b.UnitID, location)
 	case b.Capabilities.Civilian && a.Capabilities.Melee:
-		killUnit(ctx, b.UnitID, a.UnitID, conflict.Location)
+		killUnit(ctx, b.UnitID, a.UnitID, location)
 	case a.Capabilities.Melee && b.Capabilities.Melee:
 		// 近战冲突天然互殴，属于显式 attack 之外的基础接敌伤害。
-		damageUnit(ctx, b.UnitID, ctx.DamageResolver.Melee(ctx, a.UnitID, b.UnitID, conflict.Location, 1), "combat", a.UnitID, conflict.Location)
-		damageUnit(ctx, a.UnitID, ctx.DamageResolver.Melee(ctx, b.UnitID, a.UnitID, conflict.Location, 1), "combat", b.UnitID, conflict.Location)
+		damageUnit(ctx, b.UnitID, ctx.DamageResolver.Melee(ctx, a.UnitID, b.UnitID, location, 1), "combat", a.UnitID, location)
+		damageUnit(ctx, a.UnitID, ctx.DamageResolver.Melee(ctx, b.UnitID, a.UnitID, location, 1), "combat", b.UnitID, location)
 	case a.Capabilities.Melee:
-		damageUnit(ctx, b.UnitID, ctx.DamageResolver.Melee(ctx, a.UnitID, b.UnitID, conflict.Location, 1), "combat", a.UnitID, conflict.Location)
+		damageUnit(ctx, b.UnitID, ctx.DamageResolver.Melee(ctx, a.UnitID, b.UnitID, location, 1), "combat", a.UnitID, location)
 	case b.Capabilities.Melee:
-		damageUnit(ctx, a.UnitID, ctx.DamageResolver.Melee(ctx, b.UnitID, a.UnitID, conflict.Location, 1), "combat", b.UnitID, conflict.Location)
+		damageUnit(ctx, a.UnitID, ctx.DamageResolver.Melee(ctx, b.UnitID, a.UnitID, location, 1), "combat", b.UnitID, location)
 	}
 }
 
@@ -124,6 +138,7 @@ func resolveChargeAttack(ctx *ResolutionContext, attacker SnapshotUnit, plan *Or
 		return
 	}
 	if ctx.CurrentPosition(attacker.UnitID).DistanceTo(ctx.CurrentPosition(target.UnitID)) != 1 {
+		// 即使规划阶段锁定了 charge target，真正能否命中仍以伤害窗口开始时的最终位置为准。
 		return
 	}
 	if target.Capabilities.Civilian {

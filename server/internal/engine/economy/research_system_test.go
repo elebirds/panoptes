@@ -4,21 +4,21 @@
 // Updated: 2026-04-15 16:20:00 +0800
 // Description: 验证经济结算引擎在新版静态数据语义下的核心回归。
 
-package production_test
+package economy_test
 
 import (
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
-	"github.com/elebirds/panoptes/internal/engine"
+	"github.com/elebirds/panoptes/internal/engine/economy"
 	"github.com/elebirds/panoptes/internal/event"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
-func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
+func TestEconomyRunnerResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -63,7 +63,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 		{PlayerID: "player-1", NodeID: "A1", BuildingType: "farm", CityID: "C1"},
 	}
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("building should remain unavailable until next turn")
@@ -83,7 +83,7 @@ func TestEconomyPipelineResearchUnlockDoesNotEnableSameTurnBuild(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
+func TestEconomyRunnerRecipeProducesResources(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -118,7 +118,7 @@ func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 2 {
 		t.Fatalf("food after recipe = %d, want 2", got)
@@ -129,7 +129,7 @@ func TestEconomyPipelineRecipeProducesResources(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
+func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Units: []staticdata.UnitDefinition{
@@ -159,7 +159,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	state.Players["player-1"].Research.CurrentProgress = 1
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "militia_mobilization"
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
 		t.Fatalf("food after completion turn = %d, want 0", got)
@@ -179,7 +179,7 @@ func TestEconomyPipelineResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *testing.T) {
+func TestEconomyRunnerRechargeAppliesResearchOutputModifierNextTurnPreview(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
@@ -201,7 +201,7 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *
 	state.Players["player-1"].Research.CurrentProgress = 1
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "research_boost"
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 	if got := state.EffectiveResearchOutput("player-1"); got != 1 {
 		t.Fatalf("research output during completion turn = %d, want 1", got)
 	}
@@ -213,7 +213,7 @@ func TestEconomyPipelineRechargeAppliesResearchOutputModifierNextTurnPreview(t *
 	}
 }
 
-func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
+func TestEconomyRunnerResearchUnlockClearsCurrentTarget(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Technologies: []staticdata.TechnologyDefinition{
@@ -232,14 +232,14 @@ func TestEconomyPipelineResearchUnlockClearsCurrentTarget(t *testing.T) {
 	state.Players["player-1"].Research.CurrentTargetTechnologyID = "agrarian_foundations"
 	state.Players["player-1"].Research.CurrentProgress = 1
 
-	engine.NewEconomyPipeline().Run(world, state)
+	economy.NewRunner().Run(world, state)
 
 	if got := state.Players["player-1"].Research.CurrentTargetTechnologyID; got != "" {
 		t.Fatalf("current target after unlock = %q, want empty", got)
 	}
 }
 
-func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
+func TestEconomyRunnerConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -290,7 +290,7 @@ func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 		{PlayerID: "player-1", NodeID: "A2", BuildingType: "farm", CityID: "C1"},
 	}
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if !entryA.HasComponent(ecs.BuildingC) {
 		t.Fatalf("first build should consume the only available industry budget: %#v", events)
@@ -309,7 +309,7 @@ func TestEconomyPipelineConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T) {
+func TestEconomyRunnerBuildingModifiersAffectNextTurnPointPreview(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -334,7 +334,7 @@ func TestEconomyPipelineBuildingModifiersAffectNextTurnPointPreview(t *testing.T
 	}
 }
 
-func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
+func TestEconomyRunnerBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -358,7 +358,7 @@ func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	node.Owner = "player-2"
 	node.TerritoryOwner = "player-2"
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if nodeEntry.HasComponent(ecs.BuildingC) {
 		t.Fatalf("build should be rejected once placement becomes invalid at settlement")
@@ -371,7 +371,7 @@ func TestEconomyPipelineBuildRevalidatesPlacementAtSettlement(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
+func TestEconomyRunnerReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -411,7 +411,7 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if !hasEventKind(events, "recipe_skipped") {
 		t.Fatalf("events should include recipe_skipped: %#v", events)
@@ -421,7 +421,7 @@ func TestEconomyPipelineReportsSkippedRecipeWhenBuildingDisabled(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineLowEfficiencyRecipeConsumesPartialInputAndProgress(t *testing.T) {
+func TestEconomyRunnerLowEfficiencyRecipeConsumesPartialInputAndProgress(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -444,7 +444,7 @@ func TestEconomyPipelineLowEfficiencyRecipeConsumesPartialInputAndProgress(t *te
 	state.Players["player-1"].Research.UnlockBuilding("barracks")
 	state.Players["player-1"].Research.UnlockRecipe("train_infantry")
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	operation := ecs.BuildingOperationC.Get(nodeEntry)
 	if got := operation.ProgressTurns; got != 1 {
@@ -492,7 +492,7 @@ func TestEffectiveIndustryOutputIgnoresPendingActivationUntilOnline(t *testing.T
 	}
 }
 
-func TestEconomyPipelineCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
+func TestEconomyRunnerCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: newPipelineRules(),
 		Buildings: []staticdata.BuildingDefinition{
@@ -542,7 +542,7 @@ func TestEconomyPipelineCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	state.EnsureCityState("player-2", "E5")
 	state.Players["player-2"].CapitalCityID = "E5"
 
-	events := engine.NewEconomyPipeline().Run(world, state)
+	events := economy.NewRunner().Run(world, state)
 
 	if state.IsOver {
 		t.Fatalf("state.IsOver = true, want false")
@@ -571,7 +571,7 @@ func TestEconomyPipelineCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	}
 }
 
-func TestEconomyPipelineCompletesFacilityTakeoverAfterConsecutiveControl(t *testing.T) {
+func TestEconomyRunnerCompletesFacilityTakeoverAfterConsecutiveControl(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -620,7 +620,7 @@ func TestEconomyPipelineCompletesFacilityTakeoverAfterConsecutiveControl(t *test
 	state.EnsureCityState("player-2", "E5")
 	state.Players["player-2"].CapitalCityID = "E5"
 
-	firstTurnEvents := engine.NewEconomyPipeline().Run(world, state)
+	firstTurnEvents := economy.NewRunner().Run(world, state)
 	if !hasEventKind(firstTurnEvents, "facility_takeover_progressed") {
 		t.Fatalf("first turn should include facility_takeover_progressed: %#v", firstTurnEvents)
 	}
@@ -629,7 +629,7 @@ func TestEconomyPipelineCompletesFacilityTakeoverAfterConsecutiveControl(t *test
 	}
 	state.Turn++
 
-	secondTurnEvents := engine.NewEconomyPipeline().Run(world, state)
+	secondTurnEvents := economy.NewRunner().Run(world, state)
 	if !hasEventKind(secondTurnEvents, "facility_takeover_completed") {
 		t.Fatalf("second turn should include facility_takeover_completed: %#v", secondTurnEvents)
 	}

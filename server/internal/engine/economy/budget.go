@@ -1,60 +1,12 @@
-package production
+package economy
 
 import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
-	"github.com/yohamta/donburi"
 )
 
-// EconomyRunner executes economy resolution in a fixed order while keeping
-// the global pipeline semantics unchanged for other subsystems.
-type EconomyRunner struct{}
-
-func (r *EconomyRunner) Run(world donburi.World, state *domain.GameState) []event.Event {
-	if state == nil {
-		return nil
-	}
-
-	allEvents := make([]event.Event, 0)
-	applyNow := func(events []event.Event) {
-		if len(events) == 0 {
-			return
-		}
-		allEvents = append(allEvents, events...)
-		for _, evt := range events {
-			if evt != nil {
-				evt.Apply(world, state)
-			}
-		}
-	}
-	appendOnly := func(events []event.Event) {
-		if len(events) == 0 {
-			return
-		}
-		allEvents = append(allEvents, events...)
-	}
-	applyExisting := func(events []event.Event) {
-		for _, evt := range events {
-			if evt != nil {
-				evt.Apply(world, state)
-			}
-		}
-	}
-
-	applyNow((&BuildingLifecycleSystem{}).Run(world, state))
-	applyNow(refreshPointBudgets(state))
-	applyNow(applyResearchProgress(state))
-
-	deferredResearch := (&ResearchSystem{}).Run(world, state)
-	applyNow((&BuildSystem{}).Run(world, state))
-	applyNow((&RecipeSystem{}).Run(world, state))
-	appendOnly(deferredResearch)
-	applyExisting(deferredResearch)
-
-	state.ClearPointBudgets()
-	return allEvents
-}
-
+// refreshPointBudgets 负责把“这一回合玩家理论可用的点数产出”写成临时预算。
+// 预算不是跨回合资源，只在当前 resolving 期内用于 build / research / recipe 等系统竞争消耗。
 func refreshPointBudgets(state *domain.GameState) []event.Event {
 	if state == nil {
 		return nil
@@ -77,6 +29,8 @@ func refreshPointBudgets(state *domain.GameState) []event.Event {
 	return events
 }
 
+// applyResearchProgress 只做 research_output -> 当前科技进度 的投入。
+// 它不负责判定科技是否完成，完成判定留给后续 ResearchCompletionStage。
 func applyResearchProgress(state *domain.GameState) []event.Event {
 	if state == nil {
 		return nil

@@ -3,6 +3,8 @@ package game
 import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine"
+	"github.com/elebirds/panoptes/internal/engine/economy"
+	"github.com/elebirds/panoptes/internal/event"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 )
 
@@ -12,6 +14,8 @@ type ResolutionContext struct {
 	Collector *gameresolution.Collector
 }
 
+// TurnResolutionRunner 是 resolving 期的顶层真相。
+// 它不直接实现具体规则，而是只固定主链顺序，并决定哪些阶段会在 fatal state 后提前停止。
 type StageOutcome struct {
 	Stop bool
 }
@@ -37,8 +41,10 @@ type EconomyStage struct{}
 func NewTurnResolutionRunner() *TurnResolutionRunner {
 	return &TurnResolutionRunner{
 		stages: []ResolutionStage{
+			// 先把 planning 草案 lock-in 成正式输入，再冻结单位命令。
 			PlanningCommitStage{},
 			OrderFreezeStage{},
+			// 单位与地图动作跑完以后，经济阶段才能读取这回合已经稳定下来的占领与建筑状态。
 			UnitResolutionStage{},
 			MapActionStage{},
 			EconomyStage{},
@@ -105,6 +111,10 @@ func (EconomyStage) Run(ctx *ResolutionContext) StageOutcome {
 	if ctx.State.IsOver {
 		return StageOutcome{Stop: true}
 	}
-	ctx.Collector.AppendDeferred(gameresolution.ChannelEconomy, engine.NewEconomyPipeline().Run(ctx.State.World, ctx.State)...)
+	// 经济 runner 内部仍按 stage 运行，但这里要求它把每个 stage 的事件立即写入 collector。
+	// 这样 settlement 投影拿到的是已经按真实时序生效过的 economy 事件流。
+	economy.NewRunner().RunWithApplier(ctx.State.World, ctx.State, func(_ economy.Stage, events []event.Event) {
+		ctx.Collector.ApplyNow(gameresolution.ChannelEconomy, ctx.State.World, ctx.State, events...)
+	})
 	return StageOutcome{}
 }

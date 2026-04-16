@@ -6,34 +6,46 @@
 
 package combat
 
-import "github.com/elebirds/panoptes/internal/domain"
+import (
+	"sort"
+
+	"github.com/elebirds/panoptes/internal/domain"
+)
 
 type ConflictPhase struct{}
 
 func (ConflictPhase) Apply(ctx *ResolutionContext) {
-	conflicts := make([]domain.Conflict, 0)
+	// 这一阶段只回答两件事：
+	// 1. 哪些单位属于同一个冲突组
+	// 2. 这些组属于 edge 还是 node
+	// 真正的伤害与事件投影都留给 DamagePhase。
+	groups := make([]ConflictGroup, 0)
 	for _, detector := range ctx.ConflictDetectors {
 		found := detector.Detect(ctx)
-		conflicts = append(conflicts, found...)
+		groups = append(groups, found...)
 	}
-	sortConflictSlice(conflicts)
-	ctx.Conflicts = conflicts
-	for _, conflict := range conflicts {
-		switch conflict.ConflictType {
+	sortConflictGroups(groups)
+	ctx.ConflictGroups = groups
+	for _, group := range groups {
+		// 这里先把“命中过哪类冲突”记到单位级标记上，
+		// MovementApplyPhase 会据此决定回起点还是退到 fallback。
+		switch group.ConflictType {
 		case "edge":
-			ctx.EdgeConflictUnits[conflict.UnitAID] = true
-			ctx.EdgeConflictUnits[conflict.UnitBID] = true
+			for _, unitID := range group.Members {
+				ctx.EdgeConflictUnits[unitID] = true
+			}
 		case "node":
-			ctx.NodeConflictUnits[conflict.UnitAID] = true
-			ctx.NodeConflictUnits[conflict.UnitBID] = true
+			for _, unitID := range group.Members {
+				ctx.NodeConflictUnits[unitID] = true
+			}
 		}
 	}
 }
 
 type EdgeConflictDetector struct{}
 
-func (EdgeConflictDetector) Detect(ctx *ResolutionContext) []domain.Conflict {
-	conflicts := make([]domain.Conflict, 0)
+func (EdgeConflictDetector) Detect(ctx *ResolutionContext) []ConflictGroup {
+	groups := make([]ConflictGroup, 0)
 	unitIDs := ctx.UnitIDs()
 	for i := 0; i < len(unitIDs); i++ {
 		a := ctx.Snapshot.Units[unitIDs[i]]
@@ -54,48 +66,71 @@ func (EdgeConflictDetector) Detect(ctx *ResolutionContext) []domain.Conflict {
 			if a.Position.DistanceTo(b.Position) != 1 {
 				continue
 			}
-			conflicts = append(conflicts, domain.Conflict{
-				UnitAID:      a.UnitID,
-				UnitBID:      b.UnitID,
-				Location:     midpoint(a.Position, b.Position),
+			members := []string{a.UnitID, b.UnitID}
+			sort.Strings(members)
+			groups = append(groups, ConflictGroup{
 				ConflictType: "edge",
+				Location:     midpoint(a.Position, b.Position),
+				Members:      members,
+				// edge conflict 仍然保持严格二元定义，因此 hostile pair 与 members 一一对应。
+				HostilePairs: []ConflictPair{{UnitAID: members[0], UnitBID: members[1]}},
 			})
 		}
 	}
-	return conflicts
+	return groups
 }
 
 type NodeConflictDetector struct{}
 
-func (NodeConflictDetector) Detect(ctx *ResolutionContext) []domain.Conflict {
+func (NodeConflictDetector) Detect(ctx *ResolutionContext) []ConflictGroup {
 	grouped := make(map[domain.Position][]string)
 	for _, unitID := range ctx.UnitIDs() {
 		plan := ctx.Plans[unitID]
 		if ctx.EdgeConflictUnits[unitID] {
+			// 先命中 edge conflict 的单位，本回合节点归类按“回到起点后所在格”处理。
 			grouped[plan.Start] = append(grouped[plan.Start], unitID)
 			continue
 		}
 		grouped[plan.Candidate] = append(grouped[plan.Candidate], unitID)
 	}
 
-	conflicts := make([]domain.Conflict, 0)
+	groups := make([]ConflictGroup, 0)
 	for pos, unitIDs := range grouped {
 		if len(unitIDs) < 2 {
 			continue
 		}
-		// V1 明确不引入三方冲突专门规则，因此这里只取首个异阵营配对。
-		// 若未来支持多野怪/多方会战，可替换成 ConflictGroupResolver。
-		a := ctx.Snapshot.Units[unitIDs[0]]
-		b := ctx.Snapshot.Units[unitIDs[1]]
-		if a.PlayerID == b.PlayerID {
+		sort.Strings(unitIDs)
+		pairs := buildHostilePairs(ctx, unitIDs)
+		if len(pairs) == 0 {
 			continue
 		}
-		conflicts = append(conflicts, domain.Conflict{
-			UnitAID:      a.UnitID,
-			UnitBID:      b.UnitID,
-			Location:     pos,
+		groups = append(groups, ConflictGroup{
 			ConflictType: "node",
+			Location:     pos,
+			Members:      append([]string(nil), unitIDs...),
+			// 对外协议仍是二元 conflict event，因此 group 会在 DamagePhase 被展开为稳定 hostile pair 序列。
+			HostilePairs: pairs,
 		})
 	}
-	return conflicts
+	return groups
+}
+
+func buildHostilePairs(ctx *ResolutionContext, members []string) []ConflictPair {
+	pairs := make([]ConflictPair, 0)
+	for i := 0; i < len(members); i++ {
+		a := ctx.Snapshot.Units[members[i]]
+		for j := i + 1; j < len(members); j++ {
+			b := ctx.Snapshot.Units[members[j]]
+			if a.PlayerID == b.PlayerID {
+				continue
+			}
+			// group conflict 采用“整组互殴，但只计算敌对 pair”：
+			// A,A,B 会得到 A1-B 与 A2-B，不会生成 A1-A2。
+			pairs = append(pairs, ConflictPair{
+				UnitAID: a.UnitID,
+				UnitBID: b.UnitID,
+			})
+		}
+	}
+	return pairs
 }

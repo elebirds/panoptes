@@ -36,6 +36,8 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		})
 	}
 
+	// PlayerView 返回的是“当前已生效的权威状态”。
+	// 它不会把 planning 草案混进来；草案只出现在 planning snapshot。
 	return &pb.PlayerView{
 		Id:       playerState.PlayerID,
 		Username: playerState.Username,
@@ -87,6 +89,8 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		enemyCount += len(units)
 	}
 
+	// NodeView 是客户端最直接读取建筑运行态的入口：
+	// controller / territory / building_status / operation / takeover 都在这里汇总投影。
 	view := &pb.NodeView{
 		Id:                     node.ID,
 		Pos:                    &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
@@ -108,6 +112,8 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 				baseProgress = recipe.BaseProgress
 			}
 		}
+		// operation 只表达配方操作态：
+		// 当前 recipe、当前累计进度、所需工时、基础推进速率、当前阻塞原因。
 		view.Operation = &pb.BuildingOperationView{
 			SelectedRecipeId: operation.SelectedRecipeID,
 			CurrentProgress:  int32(operation.ProgressTurns),
@@ -124,6 +130,8 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		view.CityId = ecs.ResolveCityID(entry)
 		view.ServiceCityId = ecs.ResolveServiceCityID(entry)
 		status, takeoverProgress, takeoverRequired := ecs.BuildingRuntimeState(entry, state.Turn)
+		// runtime state 会把 pending_activation / blocked / contested / takeover 等运行态
+		// 统一折叠成客户端可直接展示的 building_status 与 takeover 字段。
 		view.BuildingStatus = status
 		view.TakeoverProgress = int32(takeoverProgress)
 		view.TakeoverRequired = int32(takeoverRequired)
@@ -171,6 +179,8 @@ func ToProtoPointBag(state *domain.GameState, playerID string) *pb.PointBag {
 	if state == nil {
 		return &pb.PointBag{}
 	}
+	// PlayerView.Points 展示的是“当前有效产出能力”，不是 resolving 中那份临时预算余额。
+	// 临时预算只在服务端结算期间存在，不直接暴露给客户端。
 	return &pb.PointBag{
 		Items: []*pb.PointValue{
 			{Key: "research_output", Amount: int32(state.EffectiveResearchOutput(playerID))},
@@ -180,6 +190,10 @@ func ToProtoPointBag(state *domain.GameState, playerID string) *pb.PointBag {
 }
 
 func buildResearchStateView(research domain.ResearchState) *pb.ResearchStateView {
+	// 这里把科研拆成三层对外展示：
+	// 1. current target / current progress
+	// 2. completed 但尚未激活的 pending activation
+	// 3. 已正式 active 的 technologies
 	view := &pb.ResearchStateView{
 		CurrentTargetTechnologyId:      research.CurrentTargetTechnologyID,
 		CurrentProgress:                int32(research.CurrentTargetProgress()),

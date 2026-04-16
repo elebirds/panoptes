@@ -20,6 +20,8 @@ func (PathPlanningPhase) Apply(ctx *ResolutionContext) {
 		if !ok {
 			resolver = HoldResolver{}
 		}
+		// 规划阶段的输出只有 OrderPlan，不产生任何正式状态修改。
+		// 这样 conflict / movement / damage 都能围绕同一份候选计划继续裁决。
 		ctx.Plans[unitID] = resolver.Plan(ctx, unit)
 	}
 }
@@ -112,6 +114,7 @@ func planMovement(ctx *ResolutionContext, unit SnapshotUnit, goal domain.Positio
 		plan.BlockedAt = &blockedPos
 		// charge 只允许把路径上的第一处敌方单位接敌点记为冲锋目标，
 		// 不能穿过第一道敌线去命中后排。
+		// 这也是为什么 BlockRule 会优先返回同格单位而不是建筑。
 		if allowCharge && source.Kind == "unit" {
 			plan.ChargeTargetID = source.UnitID
 		}

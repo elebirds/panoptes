@@ -22,6 +22,8 @@ func (r *GameRoom) plannedMapActionEvents() []event.Event {
 		return nil
 	}
 	events := make([]event.Event, 0)
+	// 当前 MVP 主链里，map action 只保留 settle_city。
+	// 其它 action 即使协议枚举还在，也不会进入默认 resolving 路径。
 	for _, directive := range state.TurnRuntime.Planning.UnitOrders {
 		switch gameorders.UnitAction(directive.Action) {
 		case gameorders.ActionSettleCity:
@@ -38,6 +40,8 @@ func (r *GameRoom) cityFoundingEvent(order domain.UnitDirective) (event.Event, b
 	if r == nil || state == nil {
 		return nil, false
 	}
+	// 这里的职责只有“把建城命令翻译成领域事件”，不直接改 ECS。
+	// 真正的状态落地统一交给 CityFoundedEvent.Apply()。
 	unitEntry, ok := findUnitEntryByID(state.World, order.UnitID)
 	if !ok {
 		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "unit_not_found"}, true
@@ -71,6 +75,8 @@ func (r *GameRoom) cityFoundingEvent(order domain.UnitDirective) (event.Event, b
 		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: reason}, true
 	}
 
+	// 成功事件里只携带 Apply 所需的最小闭包：
+	// 新城中心、3x3 territory、被消耗的 settler，以及下一回合上线时机。
 	return event.CityFoundedEvent{
 		PlayerID:     order.PlayerID,
 		UnitID:       order.UnitID,
