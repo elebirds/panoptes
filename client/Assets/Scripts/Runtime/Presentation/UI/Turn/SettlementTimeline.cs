@@ -23,10 +23,11 @@ namespace Panoptes.Presentation.UI.Turn
         [SerializeField] private TextMeshProUGUI timelineText;
 
         private GameStateCache _cache;
+        private bool _warnedMissingUi;
 
         private void Awake()
         {
-            EnsureUi();
+            TryResolveUiReferences(false);
             _cache = GameStateCache.Instance;
         }
 
@@ -49,11 +50,15 @@ namespace Panoptes.Presentation.UI.Turn
 
         private void OnTurnSettled(TurnSettledEvent evt)
         {
-            EnsureUi();
-            titleText.text = "结算时间线";
+            if (!TryResolveUiReferences(true))
+            {
+                return;
+            }
+
+            titleText.text = "Settlement Timeline";
             if (evt?.Settlement?.Sections == null || evt.Settlement.Sections.Count == 0)
             {
-                timelineText.text = "本回合无可播放结算";
+                timelineText.text = "No settlement sections this turn";
                 return;
             }
 
@@ -67,9 +72,9 @@ namespace Panoptes.Presentation.UI.Turn
                 }
 
                 builder.Append(section.Section);
-                builder.Append(" · ");
+                builder.Append(" - ");
                 builder.Append(section.Events != null ? section.Events.Count : 0);
-                builder.Append(" 事件");
+                builder.Append(" events");
                 if (i < evt.Settlement.Sections.Count - 1)
                 {
                     builder.Append('\n');
@@ -79,69 +84,51 @@ namespace Panoptes.Presentation.UI.Turn
             timelineText.text = builder.ToString();
         }
 
-        private void EnsureUi()
+        private bool TryResolveUiReferences(bool logWarning)
         {
-            root ??= GetComponent<RectTransform>() ?? gameObject.AddComponent<RectTransform>();
-            root.anchorMin = new Vector2(0f, 0f);
-            root.anchorMax = new Vector2(0f, 0f);
-            root.pivot = new Vector2(0f, 0f);
-            root.anchoredPosition = new Vector2(24f, 24f);
-            root.sizeDelta = new Vector2(280f, 150f);
-
-            background = EnsureImage("Background");
-            background.color = new Color(0.08f, 0.09f, 0.13f, 0.88f);
-            titleText ??= CreateText("Title", new Vector2(16f, -16f), new Vector2(248f, 24f), 24f, FontStyles.Bold);
-            timelineText ??= CreateText("Timeline", new Vector2(16f, -50f), new Vector2(248f, 84f), 18f, FontStyles.Normal);
-        }
-
-        private Image EnsureImage(string objectName)
-        {
-            var existing = root.Find(objectName) as RectTransform;
-            var rect = existing;
-            if (rect == null)
+            if (root == null)
             {
-                var go = new GameObject(objectName, typeof(RectTransform), typeof(Image));
-                go.transform.SetParent(root, false);
-                rect = go.GetComponent<RectTransform>();
+                root = GetComponent<RectTransform>();
             }
 
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            return rect.GetComponent<Image>();
-        }
-
-        private TextMeshProUGUI CreateText(string objectName, Vector2 anchoredPosition, Vector2 size, float fontSize, FontStyles style)
-        {
-            var rect = EnsureRect(objectName, anchoredPosition, size);
-            var text = rect.GetComponent<TextMeshProUGUI>() ?? rect.gameObject.AddComponent<TextMeshProUGUI>();
-            text.font = TMP_Settings.defaultFontAsset;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = Color.white;
-            text.alignment = TextAlignmentOptions.TopLeft;
-            text.raycastTarget = false;
-            return text;
-        }
-
-        private RectTransform EnsureRect(string objectName, Vector2 anchoredPosition, Vector2 size)
-        {
-            var existing = root.Find(objectName) as RectTransform;
-            var rect = existing;
-            if (rect == null)
+            if (root != null)
             {
-                var go = new GameObject(objectName, typeof(RectTransform));
-                go.transform.SetParent(root, false);
-                rect = go.GetComponent<RectTransform>();
+                if (background == null)
+                {
+                    var bgTransform = root.Find("Background");
+                    if (bgTransform != null)
+                    {
+                        background = bgTransform.GetComponent<Image>();
+                    }
+                }
+
+                if (titleText == null)
+                {
+                    var titleTransform = root.Find("Title");
+                    if (titleTransform != null)
+                    {
+                        titleText = titleTransform.GetComponent<TextMeshProUGUI>();
+                    }
+                }
+
+                if (timelineText == null)
+                {
+                    var timelineTransform = root.Find("Timeline");
+                    if (timelineTransform != null)
+                    {
+                        timelineText = timelineTransform.GetComponent<TextMeshProUGUI>();
+                    }
+                }
             }
 
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            return rect;
+            var ok = root != null && background != null && titleText != null && timelineText != null;
+            if (!ok && logWarning && !_warnedMissingUi)
+            {
+                _warnedMissingUi = true;
+                Debug.LogWarning("[SettlementTimeline] Missing UI references. Assign root/background/titleText/timelineText in prefab.");
+            }
+
+            return ok;
         }
     }
 }
