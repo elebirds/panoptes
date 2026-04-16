@@ -20,6 +20,7 @@ func midpoint(a, b domain.Position) domain.Position {
 }
 
 func readHP(overrides map[string]int, unitID string, base int) int {
+	// 旧系统删除后，仍有少量“按临时 HP 继续结算”的逻辑需要复用这个 helper。
 	if hp, ok := overrides[unitID]; ok {
 		return hp
 	}
@@ -34,6 +35,7 @@ func maxInt(a, b int) int {
 }
 
 func findUnit(world donburi.World, unitID string) (*donburi.Entry, bool) {
+	// 这是 combat 包内部的小型查询 helper，不作为权威状态入口扩散到外层包。
 	var found *donburi.Entry
 	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
 		if found != nil {

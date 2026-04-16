@@ -15,6 +15,10 @@ import (
 type ConflictPhase struct{}
 
 func (ConflictPhase) Apply(ctx *ResolutionContext) {
+	// 这一阶段只回答两件事：
+	// 1. 哪些单位属于同一个冲突组
+	// 2. 这些组属于 edge 还是 node
+	// 真正的伤害与事件投影都留给 DamagePhase。
 	groups := make([]ConflictGroup, 0)
 	for _, detector := range ctx.ConflictDetectors {
 		found := detector.Detect(ctx)
@@ -23,6 +27,8 @@ func (ConflictPhase) Apply(ctx *ResolutionContext) {
 	sortConflictGroups(groups)
 	ctx.ConflictGroups = groups
 	for _, group := range groups {
+		// 这里先把“命中过哪类冲突”记到单位级标记上，
+		// MovementApplyPhase 会据此决定回起点还是退到 fallback。
 		switch group.ConflictType {
 		case "edge":
 			for _, unitID := range group.Members {
@@ -66,6 +72,7 @@ func (EdgeConflictDetector) Detect(ctx *ResolutionContext) []ConflictGroup {
 				ConflictType: "edge",
 				Location:     midpoint(a.Position, b.Position),
 				Members:      members,
+				// edge conflict 仍然保持严格二元定义，因此 hostile pair 与 members 一一对应。
 				HostilePairs: []ConflictPair{{UnitAID: members[0], UnitBID: members[1]}},
 			})
 		}
@@ -101,6 +108,7 @@ func (NodeConflictDetector) Detect(ctx *ResolutionContext) []ConflictGroup {
 			ConflictType: "node",
 			Location:     pos,
 			Members:      append([]string(nil), unitIDs...),
+			// 对外协议仍是二元 conflict event，因此 group 会在 DamagePhase 被展开为稳定 hostile pair 序列。
 			HostilePairs: pairs,
 		})
 	}
