@@ -128,6 +128,12 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool autoInjectResourcePointsWhenSparse = true;
         [SerializeField] private int minimumResourcePoints = 18;
 
+        [Header("Terrain Decorations")]
+        [SerializeField] private bool autoSpawnTerrainDecorations = true;
+
+        [Header("Map Backdrop")]
+        [SerializeField] private bool autoSpawnMapBackdrop = true;
+
         private const int DebugMapSize = 30;
         private const int DebugTerritorySize = 3;
 
@@ -139,6 +145,8 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, string> _unitNodeById = new();
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
         private UnitView _baseVehiclePrefabCache;
+        private TerrainDecorationSpawner _terrainDecorationSpawner;
+        private MapBackdropSpawner _mapBackdropSpawner;
 
         private readonly List<UnitDto> _jsonUnits = new();
         private StaticCatalogCache _catalogCache;
@@ -254,6 +262,12 @@ namespace Panoptes.Presentation.Map
             {
                 var go = new GameObject("CastleHpBarOverlayController");
                 go.AddComponent<CastleHpBarOverlayController>();
+            }
+
+            if (UnityEngine.Object.FindAnyObjectByType<BuildingConstructionOverlayController>() == null)
+            {
+                var go = new GameObject("BuildingConstructionOverlayController");
+                go.AddComponent<BuildingConstructionOverlayController>();
             }
 
             var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
@@ -1277,6 +1291,9 @@ namespace Panoptes.Presentation.Map
                 _nodeStates[node.Id] = node;
             }
 
+            RebuildTerrainDecorations(nodeList);
+            RebuildMapBackdrop();
+
             RebuildUnitsForCurrentSource();
 
             var focusedOnBaseVehicle = false;
@@ -1289,6 +1306,46 @@ namespace Panoptes.Presentation.Map
             {
                 FocusCameraToCenter();
             }
+        }
+
+        private void RebuildTerrainDecorations(List<NodeDto> nodeList)
+        {
+            if (!autoSpawnTerrainDecorations)
+            {
+                return;
+            }
+
+            if (_terrainDecorationSpawner == null)
+            {
+                _terrainDecorationSpawner = GetComponent<TerrainDecorationSpawner>();
+            }
+
+            if (_terrainDecorationSpawner == null)
+            {
+                _terrainDecorationSpawner = gameObject.AddComponent<TerrainDecorationSpawner>();
+            }
+
+            _terrainDecorationSpawner.RebuildDecorations(nodeList, _tileViews);
+        }
+
+        private void RebuildMapBackdrop()
+        {
+            if (!autoSpawnMapBackdrop)
+            {
+                return;
+            }
+
+            if (_mapBackdropSpawner == null)
+            {
+                _mapBackdropSpawner = GetComponent<MapBackdropSpawner>();
+            }
+
+            if (_mapBackdropSpawner == null)
+            {
+                _mapBackdropSpawner = gameObject.AddComponent<MapBackdropSpawner>();
+            }
+
+            _mapBackdropSpawner.RebuildBackdrop(_tileViews);
         }
 
         private void PrepareRuntimeRoots()

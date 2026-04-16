@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Panoptes.Protocol.V1;
 using UnityEngine;
 
@@ -72,6 +73,16 @@ namespace Panoptes.Core.Application.Cache
             public string branch;
             public int tier;
             public int research_cost;
+            public int sort_order;
+            public string[] tags;
+            public PrerequisiteEntryJson[] prerequisites;
+        }
+
+        [Serializable]
+        public sealed class PrerequisiteEntryJson
+        {
+            public string type;
+            public string target_id;
         }
 
         [Serializable]
@@ -95,6 +106,27 @@ namespace Panoptes.Core.Application.Cache
             public string building_id;
             public int work_amount;
             public int base_progress;
+            public int sort_order;
+            public string[] tags;
+            public IntAmountEntryJson[] resource_inputs;
+            public IntAmountEntryJson[] point_inputs;
+            public RecipeOutputsJson outputs;
+        }
+
+        [Serializable]
+        public sealed class RecipeOutputsJson
+        {
+            public IntAmountEntryJson[] resources;
+            public string[] units;
+            public IntAmountEntryJson[] point_progress;
+            public IntAmountEntryJson[] state_changes;
+        }
+
+        [Serializable]
+        public sealed class IntAmountEntryJson
+        {
+            public string key;
+            public int amount;
         }
 
         [Serializable]
@@ -318,6 +350,36 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
+        public void ApplySnapshot(StaticCatalogSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            ApplyManifest(snapshot.Manifest);
+
+            // Keep richer local-only fields (e.g. prerequisites) when server snapshot schema is narrower.
+            var oldTechnologies = new Dictionary<string, TechnologyEntryJson>(_technologiesById, StringComparer.OrdinalIgnoreCase);
+            var oldRecipes = new Dictionary<string, RecipeEntryJson>(_recipesById, StringComparer.OrdinalIgnoreCase);
+
+            RebuildIndex(_resourcesByKey, ConvertResources(snapshot.Resources), entry => entry != null ? entry.key : string.Empty);
+            RebuildIndex(_pointsByKey, ConvertPoints(snapshot.Points), entry => entry != null ? entry.key : string.Empty);
+            RebuildIndex(_unitsById, ConvertUnits(snapshot.Units), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_buildingsById, ConvertBuildings(snapshot.Buildings), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_technologiesById, ConvertTechnologies(snapshot.Technologies, oldTechnologies), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_policiesById, ConvertPolicies(snapshot.Policies), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_recipesById, ConvertRecipes(snapshot.Recipes, oldRecipes), entry => entry != null ? entry.id : string.Empty);
+            RebuildIndex(_terrainsById, ConvertTerrains(snapshot.Terrains), entry => entry != null ? entry.id : string.Empty);
+
+            if (logStatus)
+            {
+                Debug.Log($"[StaticCatalogCache] Applied server snapshot: techs={_technologiesById.Count} recipes={_recipesById.Count}.");
+            }
+
+            CatalogChanged?.Invoke();
+        }
+
         public bool TryGetBuilding(string buildingId, out BuildingEntryJson entry)
         {
             return _buildingsById.TryGetValue(Normalize(buildingId), out entry);
@@ -438,6 +500,227 @@ namespace Panoptes.Core.Application.Cache
 
                 target[key] = entry;
             }
+        }
+
+        private static ResourceEntryJson[] ConvertResources(System.Collections.Generic.IList<ResourceDescriptor> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<ResourceEntryJson>();
+            }
+
+            var result = new ResourceEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new ResourceEntryJson
+                {
+                    key = item != null ? item.Key : string.Empty,
+                    display_name = item != null ? item.DisplayName : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    sort_order = item != null ? item.SortOrder : 0,
+                    visible_in_hud = item != null && item.VisibleInHud
+                };
+            }
+
+            return result;
+        }
+
+        private static PointEntryJson[] ConvertPoints(System.Collections.Generic.IList<PointDescriptor> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<PointEntryJson>();
+            }
+
+            var result = new PointEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new PointEntryJson
+                {
+                    key = item != null ? item.Key : string.Empty,
+                    display_name = item != null ? item.DisplayName : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    sort_order = item != null ? item.SortOrder : 0,
+                    visible_in_hud = item != null && item.VisibleInHud
+                };
+            }
+
+            return result;
+        }
+
+        private static UnitEntryJson[] ConvertUnits(System.Collections.Generic.IList<UnitCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<UnitEntryJson>();
+            }
+
+            var result = new UnitEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new UnitEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    prefab_key = item != null ? item.PrefabKey : string.Empty,
+                    tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
+                };
+            }
+
+            return result;
+        }
+
+        private static BuildingEntryJson[] ConvertBuildings(System.Collections.Generic.IList<BuildingCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<BuildingEntryJson>();
+            }
+
+            var result = new BuildingEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new BuildingEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    prefab_key = item != null ? item.PrefabKey : string.Empty,
+                    placement_kind = item != null ? item.PlacementKind : string.Empty,
+                    building_scope = item != null ? item.BuildingScope : string.Empty,
+                    required_resource_type = item != null ? item.RequiredResourceType : string.Empty,
+                    takeover_mode = item != null ? item.TakeoverMode : string.Empty
+                };
+            }
+
+            return result;
+        }
+
+        private static TechnologyEntryJson[] ConvertTechnologies(
+            System.Collections.Generic.IList<TechnologyCatalogEntry> source,
+            IReadOnlyDictionary<string, TechnologyEntryJson> previous)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<TechnologyEntryJson>();
+            }
+
+            var result = new TechnologyEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                var id = item != null ? item.Id : string.Empty;
+                previous.TryGetValue(Normalize(id), out var old);
+                result[i] = new TechnologyEntryJson
+                {
+                    id = id,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    branch = item != null ? item.Branch : string.Empty,
+                    tier = item != null ? item.Tier : 0,
+                    research_cost = item != null ? item.ResearchCost : 0,
+                    tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
+                    sort_order = old != null ? old.sort_order : 0,
+                    prerequisites = old != null ? old.prerequisites : Array.Empty<PrerequisiteEntryJson>()
+                };
+            }
+
+            return result;
+        }
+
+        private static PolicyEntryJson[] ConvertPolicies(System.Collections.Generic.IList<PolicyCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<PolicyEntryJson>();
+            }
+
+            var result = new PolicyEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new PolicyEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    layer = item != null ? item.Layer : string.Empty,
+                    activation_timing = item != null ? item.ActivationTiming : string.Empty
+                };
+            }
+
+            return result;
+        }
+
+        private static RecipeEntryJson[] ConvertRecipes(
+            System.Collections.Generic.IList<RecipeCatalogEntry> source,
+            IReadOnlyDictionary<string, RecipeEntryJson> previous)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<RecipeEntryJson>();
+            }
+
+            var result = new RecipeEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                var id = item != null ? item.Id : string.Empty;
+                previous.TryGetValue(Normalize(id), out var old);
+                result[i] = new RecipeEntryJson
+                {
+                    id = id,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    building_id = item != null ? item.BuildingId : string.Empty,
+                    work_amount = item != null ? item.WorkAmount : 0,
+                    base_progress = item != null ? item.BaseProgress : 0,
+                    tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
+                    sort_order = old != null ? old.sort_order : 0,
+                    resource_inputs = old != null ? old.resource_inputs : Array.Empty<IntAmountEntryJson>(),
+                    point_inputs = old != null ? old.point_inputs : Array.Empty<IntAmountEntryJson>(),
+                    outputs = old != null ? old.outputs : new RecipeOutputsJson()
+                };
+            }
+
+            return result;
+        }
+
+        private static TerrainEntryJson[] ConvertTerrains(System.Collections.Generic.IList<TerrainCatalogEntry> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<TerrainEntryJson>();
+            }
+
+            var result = new TerrainEntryJson[source.Count];
+            for (var i = 0; i < source.Count; i++)
+            {
+                var item = source[i];
+                result[i] = new TerrainEntryJson
+                {
+                    id = item != null ? item.Id : string.Empty,
+                    name = item != null ? item.Name : string.Empty,
+                    description = item != null ? item.Description : string.Empty,
+                    icon_key = item != null ? item.IconKey : string.Empty,
+                    material_key = item != null ? item.MaterialKey : string.Empty,
+                    tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
+                };
+            }
+
+            return result;
         }
 
         private static string Normalize(string value)

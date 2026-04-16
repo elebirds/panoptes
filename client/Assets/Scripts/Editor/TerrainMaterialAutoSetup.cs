@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,17 +10,27 @@ namespace Panoptes.Editor
     public static class TerrainMaterialAutoSetup
     {
         private const string TextureRoot = "Assets/Art/textures";
+        private const string AmbientCgTextureRoot = "Assets/Art/textures/terrain/ambientcg";
         private const string MaterialRoot = "Assets/Art/Materials/Terrain";
         private const string NodeTilePrefabPath = "Assets/Prefabs/Map/NodeTile3D.prefab";
+        private const string AutoSetupSignatureKey = "Panoptes.TerrainMaterialAutoSetup.Signature";
 
         private sealed class TerrainSet
         {
             public string key;
-            public string texturePrefix;
+            public string[] diffuseExactNames;
+            public string[] diffusePrefixes;
+            public string[] normalExactNames;
+            public string[] normalPrefixes;
             public Color baseTint = Color.white;
             public float smoothness = 0.2f;
-            public float normalScale = 1.0f;
-            public float tiling = 2.0f;
+            public float normalScale = 1f;
+        }
+
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoad()
+        {
+            EditorApplication.delayCall += TryAutoSetupStylizedTerrain;
         }
 
         [MenuItem("Panoptes/Terrain/Generate Materials From Art/textures")]
@@ -64,7 +75,6 @@ namespace Panoptes.Editor
             try
             {
                 var nodeView = FindNodeViewComponent(nodeRoot);
-
                 if (nodeView == null)
                 {
                     Debug.LogError("[TerrainMaterialAutoSetup] NodeView component not found in NodeTile3D prefab.");
@@ -99,6 +109,71 @@ namespace Panoptes.Editor
             AssetDatabase.Refresh();
         }
 
+        private static void TryAutoSetupStylizedTerrain()
+        {
+            if (!AssetDatabase.IsValidFolder(AmbientCgTextureRoot))
+            {
+                return;
+            }
+
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating || Application.isPlaying)
+            {
+                EditorApplication.delayCall += TryAutoSetupStylizedTerrain;
+                return;
+            }
+
+            var signature = BuildTextureSignature(AmbientCgTextureRoot);
+            if (string.IsNullOrEmpty(signature))
+            {
+                return;
+            }
+
+            var appliedSignature = EditorPrefs.GetString(AutoSetupSignatureKey, string.Empty);
+            if (string.Equals(signature, appliedSignature, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            // Mark before running to prevent repeated re-entry during reimport/domain reload.
+            EditorPrefs.SetString(AutoSetupSignatureKey, signature);
+            GenerateAndAssignNodeTile();
+            Debug.Log("[TerrainMaterialAutoSetup] Terrain textures detected, auto-applied.");
+        }
+
+        private static string BuildTextureSignature(params string[] rootFolders)
+        {
+            if (rootFolders == null || rootFolders.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var allGuids = new List<string>();
+            for (var i = 0; i < rootFolders.Length; i++)
+            {
+                var folder = rootFolders[i];
+                if (string.IsNullOrWhiteSpace(folder) || !AssetDatabase.IsValidFolder(folder))
+                {
+                    continue;
+                }
+
+                var guids = AssetDatabase.FindAssets("t:Texture2D", new[] { folder });
+                if (guids == null || guids.Length == 0)
+                {
+                    continue;
+                }
+
+                allGuids.AddRange(guids);
+            }
+
+            if (allGuids.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            allGuids.Sort(StringComparer.Ordinal);
+            return string.Join("|", allGuids);
+        }
+
         private static MonoBehaviour FindNodeViewComponent(GameObject root)
         {
             if (root == null)
@@ -128,23 +203,84 @@ namespace Panoptes.Editor
         {
             return new[]
             {
-                new TerrainSet { key = "plain", texturePrefix = "grass_bermuda_01", baseTint = new Color(1f, 1f, 1f), smoothness = 0.18f, normalScale = 1f, tiling = 2.4f },
-                new TerrainSet { key = "forest", texturePrefix = "muddy_tracks", baseTint = new Color(0.92f, 1.0f, 0.92f), smoothness = 0.15f, normalScale = 1f, tiling = 2.0f },
-                new TerrainSet { key = "mountain", texturePrefix = "rocky_terrain_02", baseTint = new Color(1f, 1f, 1f), smoothness = 0.08f, normalScale = 1f, tiling = 1.6f },
-                new TerrainSet { key = "river", texturePrefix = "rock_tile_floor", baseTint = new Color(0.72f, 0.82f, 0.95f), smoothness = 0.35f, normalScale = 0.8f, tiling = 2.0f },
-                new TerrainSet { key = "snow", texturePrefix = "snow_01", baseTint = new Color(1f, 1f, 1f), smoothness = 0.42f, normalScale = 0.55f, tiling = 2.2f },
-                new TerrainSet { key = "forbidden", texturePrefix = "slate_floor_03", baseTint = new Color(0.72f, 0.72f, 0.72f), smoothness = 0.12f, normalScale = 1f, tiling = 1.8f }
+                new TerrainSet
+                {
+                    key = "plain",
+                    diffuseExactNames = new[]
+                    {
+                        "Grass001_2K-JPG_Color.jpg",
+                        "Grass001.png"
+                    },
+                    normalExactNames = new[] { "Grass001_2K-JPG_NormalGL.jpg" },
+                    smoothness = 0.18f
+                },
+                new TerrainSet
+                {
+                    key = "forest",
+                    diffuseExactNames = new[]
+                    {
+                        "Ground020_2K-JPG_Color.jpg",
+                        "Ground020.png"
+                    },
+                    normalExactNames = new[] { "Ground020_2K-JPG_NormalGL.jpg" },
+                    baseTint = new Color(0.92f, 1f, 0.92f),
+                    smoothness = 0.12f
+                },
+                new TerrainSet
+                {
+                    key = "mountain",
+                    diffuseExactNames = new[]
+                    {
+                        "Ground014_2K-JPG_Color.jpg",
+                        "Ground014.png"
+                    },
+                    normalExactNames = new[] { "Ground014_2K-JPG_NormalGL.jpg" },
+                    smoothness = 0.08f
+                },
+                new TerrainSet
+                {
+                    key = "river",
+                    diffuseExactNames = new[]
+                    {
+                        "Ground074_2K-JPG_Color.jpg",
+                        "Ground074.png"
+                    },
+                    normalExactNames = new[] { "Ground074_2K-JPG_NormalGL.jpg" },
+                    baseTint = new Color(0.72f, 0.86f, 1f),
+                    smoothness = 0.35f,
+                    normalScale = 0.8f
+                },
+                new TerrainSet
+                {
+                    key = "snow",
+                    diffuseExactNames = new[] { "Ground074_2K-JPG_Color.jpg" },
+                    normalExactNames = new[] { "Ground074_2K-JPG_NormalGL.jpg" },
+                    smoothness = 0.42f,
+                    normalScale = 0.55f
+                },
+                new TerrainSet
+                {
+                    key = "forbidden",
+                    diffuseExactNames = new[]
+                    {
+                        "PavingStones050_2K-JPG_Color.jpg",
+                        "PavingStones050.png"
+                    },
+                    normalExactNames = new[] { "PavingStones050_2K-JPG_NormalGL.jpg" },
+                    baseTint = new Color(0.72f, 0.72f, 0.72f),
+                    smoothness = 0.12f
+                }
             };
         }
 
         private static void CreateOrUpdateMaterial(Dictionary<string, string> textureIndex, TerrainSet set)
         {
-            var diffPath = FindTexture(textureIndex, set.texturePrefix, "_diff_");
-            var normalPath = FindTexture(textureIndex, set.texturePrefix, "_nor_");
+            var diffPath = FindTexture(textureIndex, set.diffuseExactNames, set.diffusePrefixes, "_diff_");
+            var normalPath = FindTexture(textureIndex, set.normalExactNames, set.normalPrefixes, "_nor_");
 
             if (string.IsNullOrEmpty(diffPath))
             {
-                Debug.LogWarning($"[TerrainMaterialAutoSetup] Skip '{set.key}': diffuse map missing for prefix '{set.texturePrefix}'.");
+                Debug.LogWarning($"[TerrainMaterialAutoSetup] Skip '{set.key}': diffuse map not found.");
                 return;
             }
 
@@ -176,9 +312,14 @@ namespace Panoptes.Editor
 
             var diffTex = AssetDatabase.LoadAssetAtPath<Texture2D>(diffPath);
             material.SetTexture("_BaseMap", diffTex);
+            material.SetTexture("_MainTex", diffTex);
             material.SetColor("_BaseColor", set.baseTint);
+            material.SetColor("_Color", set.baseTint);
             material.SetFloat("_Smoothness", set.smoothness);
             material.SetFloat("_Metallic", 0f);
+            material.SetFloat("_OcclusionStrength", 1f);
+            material.SetTextureScale("_BaseMap", Vector2.one);
+            material.SetTextureScale("_MainTex", Vector2.one);
 
             if (!string.IsNullOrEmpty(normalPath))
             {
@@ -187,8 +328,12 @@ namespace Panoptes.Editor
                 material.SetFloat("_BumpScale", set.normalScale);
                 material.EnableKeyword("_NORMALMAP");
             }
+            else
+            {
+                material.SetTexture("_BumpMap", null);
+                material.DisableKeyword("_NORMALMAP");
+            }
 
-            material.SetTextureScale("_BaseMap", new Vector2(set.tiling, set.tiling));
             EditorUtility.SetDirty(material);
         }
 
@@ -221,16 +366,49 @@ namespace Panoptes.Editor
             return index;
         }
 
-        private static string FindTexture(Dictionary<string, string> index, string prefix, string token)
+        private static string FindTexture(
+            IReadOnlyDictionary<string, string> index,
+            IReadOnlyList<string> exactNames,
+            IReadOnlyList<string> prefixes,
+            string containsToken)
         {
-            var p = prefix.ToLowerInvariant();
-            var t = token.ToLowerInvariant();
-            foreach (var pair in index)
+            if (exactNames != null)
             {
-                var file = pair.Key;
-                if (file.Contains(p) && file.Contains(t))
+                for (var i = 0; i < exactNames.Count; i++)
                 {
-                    return pair.Value;
+                    var key = (exactNames[i] ?? string.Empty).Trim().ToLowerInvariant();
+                    if (string.IsNullOrEmpty(key))
+                    {
+                        continue;
+                    }
+
+                    if (index.TryGetValue(key, out var exactPath))
+                    {
+                        return exactPath;
+                    }
+                }
+            }
+
+            if (prefixes == null || prefixes.Count == 0)
+            {
+                return null;
+            }
+
+            var token = (containsToken ?? string.Empty).ToLowerInvariant();
+            for (var i = 0; i < prefixes.Count; i++)
+            {
+                var prefix = (prefixes[i] ?? string.Empty).Trim().ToLowerInvariant();
+                if (string.IsNullOrEmpty(prefix))
+                {
+                    continue;
+                }
+
+                var path = index
+                    .FirstOrDefault(pair => pair.Key.Contains(prefix) && (string.IsNullOrEmpty(token) || pair.Key.Contains(token)))
+                    .Value;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return path;
                 }
             }
 

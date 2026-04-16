@@ -40,6 +40,20 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Material riverMaterial;
         [SerializeField] private Material snowMaterial;
         [SerializeField] private Material forbiddenMaterial;
+        
+        [Header("Terrain UV Continuity")]
+        [SerializeField] private bool useContinuousTerrainUv = true;
+        [SerializeField] private float plainUvWorldSize = 2.6f;
+        [SerializeField] private float mountainUvWorldSize = 2.1f;
+        [SerializeField] private float forestUvWorldSize = 2.4f;
+        [SerializeField] private float riverUvWorldSize = 3.2f;
+        [SerializeField] private float snowUvWorldSize = 2.8f;
+        [SerializeField] private float forbiddenUvWorldSize = 2.2f;
+
+        [Header("Terrain Color Variation")]
+        [SerializeField] private bool useTerrainColorVariation = false;
+        [Range(0f, 0.3f)]
+        [SerializeField] private float terrainColorVariationStrength = 0.02f;
 
         [Header("Resource")]
         [SerializeField] private ResourcePointView resourcePointPrefab;
@@ -77,6 +91,13 @@ namespace Panoptes.Presentation.Map
         private Renderer _moveDestinationRenderer;
         private MaterialPropertyBlock _moveMarkerBlock;
         private Material _moveMarkerMaterial;
+        private MaterialPropertyBlock _groundBlock;
+
+        private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
+        private static readonly int MainTexStId = Shader.PropertyToID("_MainTex_ST");
+        private static readonly int BumpMapStId = Shader.PropertyToID("_BumpMap_ST");
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         private void Awake()
         {
@@ -121,6 +142,8 @@ namespace Panoptes.Presentation.Map
             {
                 groundRenderer.sharedMaterial = material;
             }
+
+            ApplyContinuousTerrainUv(terrain);
         }
 
         public void SetRoadVisible(bool isVisible)
@@ -541,6 +564,100 @@ namespace Panoptes.Presentation.Map
                     return forbiddenMaterial != null ? forbiddenMaterial : mountainMaterial;
                 default:
                     return plainMaterial;
+            }
+        }
+
+        private void ApplyContinuousTerrainUv(string terrain)
+        {
+            if (groundRenderer == null)
+            {
+                return;
+            }
+
+            if (!useContinuousTerrainUv)
+            {
+                if (_groundBlock != null)
+                {
+                    _groundBlock.Clear();
+                    groundRenderer.SetPropertyBlock(_groundBlock);
+                }
+                return;
+            }
+
+            if (_groundBlock == null)
+            {
+                _groundBlock = new MaterialPropertyBlock();
+            }
+
+            var worldSize = Mathf.Max(0.01f, GetTerrainUvWorldSize(terrain));
+            var scale = 1f / worldSize;
+            var worldPos = transform.position;
+            var offset = new Vector2(
+                Mathf.Repeat(worldPos.x * scale, 1f),
+                Mathf.Repeat(worldPos.z * scale, 1f));
+            var st = new Vector4(scale, scale, offset.x, offset.y);
+
+            groundRenderer.GetPropertyBlock(_groundBlock);
+            _groundBlock.SetVector(BaseMapStId, st);
+            _groundBlock.SetVector(MainTexStId, st);
+            _groundBlock.SetVector(BumpMapStId, st);
+
+            var groundMaterial = groundRenderer.sharedMaterial;
+            var baseColor = Color.white;
+            if (groundMaterial != null)
+            {
+                if (groundMaterial.HasProperty(BaseColorId))
+                {
+                    baseColor = groundMaterial.GetColor(BaseColorId);
+                }
+                else if (groundMaterial.HasProperty(ColorId))
+                {
+                    baseColor = groundMaterial.GetColor(ColorId);
+                }
+            }
+
+            if (useTerrainColorVariation && terrainColorVariationStrength > 0f)
+            {
+                var noise = Mathf.PerlinNoise(
+                    (GridPos.x + 37.13f) * 0.311f,
+                    (GridPos.y - 11.77f) * 0.311f);
+                var shade = Mathf.Lerp(1f - terrainColorVariationStrength, 1f + terrainColorVariationStrength, noise);
+                var variedColor = new Color(
+                    Mathf.Clamp01(baseColor.r * shade),
+                    Mathf.Clamp01(baseColor.g * shade),
+                    Mathf.Clamp01(baseColor.b * shade),
+                    baseColor.a);
+
+                _groundBlock.SetColor(BaseColorId, variedColor);
+                _groundBlock.SetColor(ColorId, variedColor);
+            }
+            else
+            {
+                _groundBlock.SetColor(BaseColorId, baseColor);
+                _groundBlock.SetColor(ColorId, baseColor);
+            }
+
+            groundRenderer.SetPropertyBlock(_groundBlock);
+        }
+
+        private float GetTerrainUvWorldSize(string terrain)
+        {
+            switch (NormalizeToken(terrain))
+            {
+                case "mountain":
+                    return mountainUvWorldSize;
+                case "forest":
+                    return forestUvWorldSize;
+                case "river":
+                case "water":
+                    return riverUvWorldSize;
+                case "snow":
+                    return snowUvWorldSize;
+                case "forbidden":
+                case "blocked":
+                    return forbiddenUvWorldSize;
+                default:
+                    return plainUvWorldSize;
             }
         }
 
