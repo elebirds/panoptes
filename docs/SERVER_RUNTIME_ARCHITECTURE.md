@@ -1,310 +1,1050 @@
-# Panoptes 服务端回合结算架构说明
+# Panoptes 服务端运行时与规则现状说明
 
-> 废弃说明：本文描述的是旧的“内政规划/结算 + 战斗规划/结算”运行时架构，已被 `docs/TURN_V2_REFACTOR_PLAN.md` 取代。本文保留仅用于历史对照。
+> 更新时间：2026-04-16  
+> 适用范围：当前仓库服务端真实实现  
+> 本文描述“代码现在是如何工作的”，不是目标设计稿，也不是历史方案。若本文与 `server/internal/*` 当前实现不一致，应以代码为准，并尽快回写本文。
+>
+> 目标设计与本轮架构裁决见：`docs/2026-04-16-server-runtime-unification-plan.md`。本文只记录“现状”，不替代那份设计文档。
 
-本文档说明当前服务端回合系统的实现架构，覆盖 Event、Engine Pipeline、回合状态机、内政/战斗结算、部长系统接入与消息路由。
+## 1. 文档定位
 
-## 1. 总体目标
+Panoptes 当前服务端已经切到统一的 `planning / resolving` 回合模型，但很多文档仍混有旧架构、目标设计和历史方案。为了让后续开发、调试、补测试和排查规则问题时有一份能直接对照代码的说明，本文只回答三类问题：
 
-当前实现将游戏主循环统一为：
+- 当前运行时是怎样组织的。
+- 每个游戏子系统由哪些 `domain / ecs / event / engine / game` 模块实现。
+- 每条关键规则在当前代码里的实际生效时机是什么。
 
-1. 内政阶段收集指令
-2. 内政结算（Pipeline）
-3. 战斗阶段收集指令
-4. 战斗结算（Pipeline）
-5. 胜负检测 / 回合推进
+本文不承担以下职责：
 
-并通过 Event 机制保证状态变更只在 Event.Apply 中发生，System 仅负责读状态并产出事件。
+- 不替代 GDD；GDD 负责目标设计。
+- 不替代实现计划；计划文档负责里程碑与任务拆解。
+- 不承诺“未来应该怎么做”；这里只记录“现在已经怎么做了”。
 
-## 2. 核心分层
+## 2. 总体架构
 
-### 2.1 Event 层
+当前服务端主循环可以概括为：
 
-文件：
-- server/internal/event/interface.go
-- server/internal/event/combat.go
-- server/internal/event/production.go
-- server/internal/event/minister.go
-- server/internal/event/game.go
+1. 进入 `planning`。
+2. 向玩家发送 `MsgPlanningStart` 与当前 planning snapshot。
+3. 在 planning 阶段收集草案输入。
+4. 所有玩家提交或超时后进入 `resolving`。
+5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、经济结算。
+6. 生成 `MsgTurnSettlement`，并把新的权威状态投影为 `PlayerView / NodeView / UnitView`。
+7. 若未终局，则推进到下一回合的 planning。
 
-核心接口：
-
-```go
-type Event interface {
-    Apply(world donburi.World, state *domain.GameState)
-    ClientPayload() *pb.CombatEvent
-    String() string
-}
+```mermaid
+flowchart LR
+    A["Coordinator.Start"] --> B["PlanningStartRunner"]
+    B --> C["NotifyTurn(planning)"]
+    C --> D["planning.Service 收集草案"]
+    D --> E["所有玩家提交 / 超时"]
+    E --> F["TurnResolutionRunner"]
+    F --> G["PlanningCommitStage"]
+    G --> H["UnitResolutionStage"]
+    H --> I["MapActionStage"]
+    I --> J["EconomyStage"]
+    J --> K["BuildTurnSettlement"]
+    K --> L["checkGameOver / turn++"]
 ```
 
-职责：
-- Apply：执行真实状态变更（ECS 组件、GameState 字段、资源数值等）
-- ClientPayload：将战斗事件序列化为客户端可播放动画事件
-- String：用于日志和内政变更摘要
+### 2.1 分层关系
 
-实现分类：
-- combat 事件：UnitMoved/UnitDamaged/UnitDied/CastleDamaged/CastleDestroyed/RoadDestroyed/BuildingDamaged/ConflictResolved
-- production 事件：BuildingBuilt/ResourceProduced/ResourceFlowed/RoadBuilt/UnitProduced/BuildPointsRecharged/UpkeepPaid/UnitStarving/BuildingDeactivated
-- minister 事件：MinisterActed/PolicyChanged/TokenUsed
-- game 事件：TurnStarted/PhaseChanged/GameOver/PlayerReconnected
+当前真实依赖关系仍然符合项目总规则：
 
-### 2.2 Engine 层
+`transport -> game -> engine -> domain`
 
-文件：
-- server/internal/engine/pipeline.go
-- server/internal/engine/production/*.go
-- server/internal/engine/combat/*.go
+同时：
 
-核心接口：
+- `ecs` 提供实体装配与查询。
+- `event` 提供统一状态写入口。
+- `game/query` 与 `game/resolution/report` 负责把权威状态投影成客户端消息。
 
-```go
-type System interface {
-    Run(world donburi.World, state *domain.GameState) []event.Event
-}
+### 2.2 当前“唯一写入口”的准确说法
+
+需要特别说明一个实际情况：
+
+- **Engine 子系统内部**遵循“只读状态、产出事件、由 `Event.Apply()` 写回”的规则。
+- **Planning 草案写入**不是 engine system，它会直接写 `TurnRuntime.Planning`。
+- **PlanningStartRunner** 也不是 engine system，它会在回合开始前提升科技和 institution 生效状态，并显式承接 refresh 语义。
+
+所以更准确的描述是：
+
+- “结算阶段的正式裁决写回，主要通过 `event.Apply()` 完成。”
+- “planning 草案与 planning-start promotion 属于运行时编排层的直接状态写入例外。”
+
+## 3. 权威状态模型
+
+核心状态根是 `server/internal/domain/state.go` 中的 `GameState`。
+
+### 3.1 `GameState`
+
+`GameState` 当前至少承载以下权威信息：
+
+- 对局级状态：`GameID`、`Turn`、`Phase`、`IsOver`、`WinnerID`、`OverReason`、`Narrative`
+- ECS 世界：`World`
+- 地图索引：`Map`、`NodeIndex`
+- 玩家状态：`Players`
+- 回合临时态：`TurnRuntime`
+
+其中 `TurnRuntime` 又分为两层：
+
+- `PlanningInputs`
+  - `BuildOrders`
+  - `RecipeSelections`
+  - `MinisterBuilds`
+  - `MinisterMoves`
+  - `MinisterDirectives`
+  - `PendingPolicies`
+  - `PendingResearch`
+  - `PendingInstitutions`
+  - `WarDirectives`
+  - `UnitOrders`
+- `ResolvingState`
+  - `UnitOrders`
+  - `ActiveMarches`
+  - `PendingMoves`
+  - `Conflicts`
+  - `PointBudgets`
+
+### 3.2 ECS 组件
+
+当前运行时的核心 ECS 组件定义在 `server/internal/domain/components.go`，`server/internal/ecs/components.go` 只是别名转发。
+
+最关键的组件有：
+
+- 地图节点
+  - `PositionComp`
+  - `NodeComp`
+- 建筑
+  - `BuildingComp`
+  - `BuildingOperationComp`
+  - `BuildingStateComp`
+  - `CityCoreComp`
+  - `ServiceCityComp`
+  - `FacilityBindingComp`
+  - `FacilityTakeoverComp`
+- 单位
+  - `UnitStatsComp`
+  - `UnitCategoryComp`
+  - `UnitCapabilitiesComp`
+  - `SiegeAbilityComp`
+  - `DestroyAbilityComp`
+  - `RangedAbilityComp`
+  - `ChargeAbilityComp`
+  - `StarvingComp`
+
+### 3.3 建筑作用域与绑定关系
+
+建筑创建时由 `ecs.CreateBuilding()` 按静态数据自动装配作用域组件：
+
+- `city_core` 作用域挂 `CityCoreComp`
+- `out_of_city` 设施挂 `FacilityBindingComp`
+- 只要有 `cityID`，就挂 `ServiceCityComp`
+- takeover mode 不是 `disabled` 的建筑会挂 `FacilityTakeoverComp`
+
+这意味着当前代码里“建筑归哪座城管理”不是只看 `BuildingComp.CityID`，还要结合：
+
+- `CityCoreComp.CityID`
+- `ServiceCityComp.CityID`
+- `FacilityBindingComp.CityID`
+
+查询时统一走：
+
+- `ecs.ResolveCityID()`
+- `ecs.ResolveServiceCityID()`
+
+## 4. 回合编排子系统
+
+### 4.1 入口与主循环
+
+回合主循环入口在 `server/internal/game/turn/coordinator.go` 的 `Coordinator.Start()`。
+
+当前行为：
+
+1. 读取 `staticdata.Rules().TurnTimeLimitPlanning`
+2. 进入 planning
+3. `planning.Service.Enter()` 初始化草案 map
+4. `session.NewPlanningStartRunner().Run()` 处理延迟生效内容
+5. `host.NotifyTurn("planning")` 推送 planning start
+6. 异步触发部长汇报生成
+7. 等待所有玩家提交或超时
+8. 切到 resolving
+9. `host.RunTurnResolution()`
+10. 若未结束则 `state.Turn++`
+
+### 4.2 PlanningStart 的延迟激活
+
+`session.PreparePlanningStartState()` 现在只是 `PlanningStartRunner` 的兼容包装。真正的回合开始时机整理已经收敛到 `PlanningStartRunner` 的 3 个 stage：
+
+- `TechnologyActivationStage`
+- `InstitutionPromotionStage`
+- `PlanningRefreshStage`
+
+当前分别负责：
+
+- `activatePendingTechnologies()`
+  - 把上回合已完成但尚未正式生效的科技标成 active
+  - 解析科技的显式效果
+  - 正式解锁 building / recipe / policy candidate
+  - 增加 institution slot
+  - 处理科技 grant 的资源和单位
+- `promoteInstitutionLoadouts()`
+  - 把 `PendingPolicyIDs` 提升到 `ActivePolicyIDs`
+  - 只在 `PendingActivationTurn <= state.Turn` 时生效
+- `PlanningRefreshStage`
+  - 承接“开回合刷新”规则的统一入口
+  - 当前 MVP 明确保持 token 不在 planning start 自动恢复
+
+这就是当前“科技完成本回合显示、下回合正式生效”和“institution 下回合生效”的真实实现落点。
+
+### 4.3 Resolving 总入口
+
+统一结算入口在 `server/internal/game/settlement.go` 的 `RunTurnResolution()`，其内部已经改为调用 `TurnResolutionRunner`。
+
+当前固定顺序是：
+
+1. `PlanningCommitStage`
+2. `OrderFreezeStage`
+3. `UnitResolutionStage`
+4. `MapActionStage`
+5. `EconomyStage`
+6. `broadcastTurnSettlement()`
+7. `checkGameOver()`
+8. 清理本回合 planning / resolving 临时数据
+
+需要注意两点：
+
+- fatal turn 会在 combat 后直接终止后续 map/economy 链。
+- planning lock-in 事件不再散落在 `RunTurnResolution()` 顶层手写 apply，而是统一由 `PlanningCommitStage + ResolutionCollector.ApplyNow()` 完成。
+
+## 5. Planning 子系统
+
+Planning 命令处理入口是 `server/internal/game/planning/service.go`。
+
+### 5.1 Planning 的本质
+
+planning 阶段当前不是直接改世界，而是写入两类“待结算输入”：
+
+- 玩家国策/科研/机构装填等草案
+- 本回合将要执行的建造、配方切换、单位指令
+
+这些草案会被 `game/query/planning.go` 投影为 `MsgPlanningSnapshot` 回给客户端。  
+需要注意：war zone 相关 proto 字段虽然仍存在，但当前服务端已将其视为非 MVP 输入并显式拒绝，不再写入 snapshot。
+
+### 5.2 当前已接入的 planning 命令
+
+- `set_policy`
+- `set_institution_loadout`
+- `build_structure`
+- `reveal_node`
+- `set_research_target`
+- `set_building_recipe`
+- `set_minister_directive`
+- `issue_unit_order`
+- `cancel_unit_order`
+- `planning_path_preview_request`
+- `submit_turn`
+
+协议中仍存在、但当前会直接返回 `invalid_directive` 的非 MVP 入口：
+
+- `set_war_zone`
+- `war_zone_directive`
+
+### 5.3 国策与科研目标
+
+#### 国策
+
+`handleSetPolicy()` 当前规则：
+
+- policy 必须存在
+- layer 必须是 `national`
+- prerequisite 必须满足
+- 成功后写入 `TurnRuntime.Planning.PendingPolicies`
+- 本回合结算开始时通过 `PolicyChangedEvent` lock-in
+
+#### 科研
+
+`handleResearchRequest()` 当前规则：
+
+- technology 必须存在
+- 已完成或已正式解锁的科技不能再次研究
+- prerequisite 必须满足
+- 成功后写入 `TurnRuntime.Planning.PendingResearch`
+- 本回合结算中先消耗 `research_output` 推进进度
+- 达到 cost 时发 `TechnologyUnlockedEvent`
+- 下一 planning start 才把显式效果正式激活
+
+### 5.4 Institution loadout
+
+`handleInstitutionLoadout()` 当前规则：
+
+- 选择列表先做去重与排序
+- 不能超过 `SlotCount`
+- 每个 policy 必须存在、layer 为 `institutional`
+- prerequisite 必须满足
+- 必须已在玩家的 institution candidate 池中
+- 成功后写入 `PendingInstitutions`
+- resolving lock-in 时记录 `PendingActivationTurn = state.Turn + 1`
+- 下一 planning start 才进入 `ActivePolicyIDs`
+
+### 5.5 建造草案
+
+`handleBuildRequest()` 的即时校验规则：
+
+- 非“替换同节点草案”时需要有 token
+- 节点必须存在
+- 节点上不能已有建筑
+- building type 必须存在
+- 玩家必须已经解锁该 building
+- `ecs.ValidateBuildingPlacement()` 必须通过
+- 玩家当前全局资源必须可支付
+
+成功后的即时效果：
+
+- build order 写入 `TurnRuntime.Planning.BuildOrders`
+- 若不是替换同节点草案，则 `TokensLeft--`
+- 回客户端 `MsgBuildStructureResult` 和最新 planning snapshot
+
+### 5.6 配方切换草案
+
+`handleSetBuildingRecipe()` 当前规则：
+
+- 目标节点必须存在且有建筑
+- recipe 必须存在
+- 建筑必须由当前玩家拥有或控制
+- recipe 必须在该 building 的允许列表中
+- `recipe.BuildingID` 必须与建筑类型匹配
+- 玩家必须已解锁该 recipe
+
+成功后只是把 selection 写到 `TurnRuntime.Planning.RecipeSelections`，真正切换发生在 economy pipeline 的 recipe 阶段。
+
+### 5.7 单位指令
+
+单位命令在 planning 层的统一结构是 `game/orders.UnitOrder`，结算层统一结构是 `domain.UnitResolutionOrder`。
+
+当前有效的单位动作分成两类：
+
+- 进入单位结算链的动作
+  - `move`
+  - `attack`
+  - `hold`
+  - `charge`
+- 进入地图动作链的动作
+  - `settle_city`
+
+当前协议里还有 `build_road / repair_road / build_improvement / repair_improvement`，但默认 resolving 主链没有把它们真正接入结算。
+
+#### `move`
+
+- 只要求目标 node 存在
+- 写入 planning unit order
+- 同步更新 `Resolving.ActiveMarches`
+
+#### `attack`
+
+规则：
+
+- 必须二选一地指定 `target_unit_id` 或 `target_node_id`
+- 单位必须具备攻击能力
+- 打单位时，目标必须存在且不能是己方
+- 打建筑时，目标 node 必须存在且有敌方建筑
+- 打建筑还要求单位具备 `CanAttackStructures`
+- 打建筑时 planning 层就先检查攻击距离
+
+#### `charge`
+
+- 单位必须具备 charge 能力
+- 实际命中目标在 resolving 阶段按路径阻断与最终位置再判定
+
+#### `settle_city`
+
+- planning 阶段只接收草案
+- 真正合法性校验在地图动作阶段做
+
+### 5.8 Reveal
+
+`reveal_node` 当前是 planning 阶段的即时动作：
+
+- 必须有 token
+- 目标 node 必须存在
+- 扣 token
+- 立即返回服务器权威的 `NodeView`
+
+### 5.9 War zone 与 minister directive
+
+当前状态：
+
+- `set_war_zone` 会更新玩家持久 `WarZones`
+- `war_zone_directive` 会写入 `TurnRuntime.Planning.WarDirectives`
+- `set_minister_directive` 会写入 `TurnRuntime.Planning.MinisterDirectives`
+
+但默认 resolving 主链并不会消费 `WarDirectives`，它当前主要仍是 planning snapshot 可见信息。
+
+## 6. 行军与路径预览子系统
+
+### 6.1 Active march
+
+长程移动当前不是“每回合重新发一遍 move”，而是保存在 `Resolving.ActiveMarches` 的持续命令：
+
+- `DestinationNodeID`
+- `LastPreview`
+
+`move` 指令进入 `GameRoom.SetUnitOrder()` 后，若成功转成 resolution order，就会同步维护 active march。
+
+### 6.2 路径预览
+
+服务器使用 `combat.WeightedRoutePlanner` 生成权威路线摘要：
+
+- `PathNodeIDs`
+- `FirstTurnNodeID`
+- `TotalTurns`
+- `TurnStops`
+
+这份预览是“静态地形 + 当前运动能力”的战略路径，不承诺规避本回合的同步冲突。
+
+### 6.3 Settlement 后的 march 维护
+
+每回合单位结算后，`refreshActiveMarchesAfterSettlement()` 会：
+
+- 若单位已死，删除 active march
+- 若单位已到终点，删除 active march
+- 若还能沿原路径继续走，则裁掉已走过部分后重建 preview
+- 否则重新寻路
+
+## 7. 单位结算与战斗子系统
+
+### 7.1 当前正式主链
+
+当前正式主链走的是 `engine.UnitResolutionRunner`：
+
+- 先跑 `combat.NewSingleStepResolver()`
+- 立刻 Apply 所有 combat events
+- 若已经 `state.IsOver`，直接跳过 combat upkeep
+- 否则再跑 `CombatUpkeepSystem`
+
+需要特别说明：
+
+- `engine.NewUnitResolutionPipeline()` 仍然存在，但当前 `RunTurnResolution()` 并不走这条通用 pipeline。
+- `DestroySystem` 也存在，但当前没有接进默认主链。
+
+### 7.2 SingleStepResolver 的阶段
+
+当前固定阶段顺序：
+
+1. `SnapshotPhase`
+2. `PathPlanningPhase`
+3. `ConflictPhase`
+4. `MovementApplyPhase`
+5. `DamagePhase`
+6. `CleanupPhase`
+
+### 7.3 SnapshotPhase
+
+SnapshotPhase 会冻结：
+
+- 所有单位的起始位置、HP、攻击、射程、移动力、能力位、resolution order
+- 所有建筑/结构的归属、位置、HP、是否 city core、是否 capital core
+- 所有阻断源
+
+其中“阻断源”很关键：
+
+- 敌方单位起始格会进入 `BlockSources`
+- 敌方建筑所在格也会进入 `BlockSources`
+- 这张阻断表在整次结算中保持不变
+
+这意味着当前规则是：
+
+- **本回合的移动阻断基于回合开始时的快照**
+- **不会因为某单位在本回合前半段已经移动开，就让后续单位穿过去**
+
+### 7.4 PathPlanningPhase
+
+该阶段把每个单位的指令解释成 `OrderPlan`。
+
+#### `hold`
+
+- 不移动
+- 候选落点和回退落点都等于起点
+
+#### `move`
+
+- 优先用 planning path preview 给的 `PathNodeIDs`
+- 没有就实时寻路
+- 按单位移动预算截断可达部分
+- 若路径上遇到阻断源，则把该格记为 `BlockedAt`
+
+#### `attack`
+
+- 位移计划固定为原地
+- 只记录攻击目标，是否命中留给 DamagePhase 用“最终位置”再判断
+
+#### `charge`
+
+- 先按移动规划
+- 只允许把路径上的第一处敌方单位阻断点记为冲锋目标
+- 若最终没有合法 charge target，则自动退化为普通 `move`
+
+### 7.5 ConflictPhase
+
+当前只实现两类冲突：
+
+- `edge conflict`
+  - 双方都把对方起始格视为自己的首个阻断点
+  - 且两者相邻
+- `node conflict`
+  - 双方候选落点落到同一格
+
+当前没有专门的三方冲突规则；node conflict 只取首个异阵营配对。
+
+### 7.6 MovementApplyPhase
+
+冲突后的落点规则固定为：
+
+- edge conflict：回到起点
+- node conflict：退到最后合法非冲突格
+- 无冲突：到达 candidate
+
+如果最终位置与起点不同，就发 `UnitMovedEvent`。
+
+### 7.7 DamagePhase
+
+DamagePhase 当前顺序是：
+
+1. 先处理冲突伤害
+2. 再处理显式 `attack`
+3. 最后处理 `charge`
+
+#### 冲突伤害
+
+当前规则：
+
+- civilian 被 melee 接敌时直接死亡
+- melee vs melee 会互殴
+- 只有一方是 melee 时，由 melee 一方造成伤害
+
+#### 显式 attack
+
+规则：
+
+- 打单位时，以“双方最终位置”判断是否仍在射程内
+- 远程单位若仍在射程内，造成 ranged 伤害，不触发近战反击
+- 近战打 civilian 直接击杀
+- 近战命中后，若对方具备基础近战反击资格且最终仍相邻，则发生反击
+
+#### charge
+
+规则：
+
+- 只能打路径上的首个敌方接敌点
+- 若目标在伤害窗口开始前已死，则 charge 只保留位移
+- 若仍保持接敌，则按 `ChargeBonus` 提高近战伤害
+- 目标若可反击，仍会反击
+
+### 7.8 攻击建筑与主城判负
+
+显式 `attack` 可以直接指定建筑 node 作为目标。
+
+当前规则：
+
+- 单位必须有 `CanAttackStructures`
+- 目标必须是敌方建筑
+- 最终距离必须在攻击范围内
+
+对建筑造成伤害时：
+
+- 普通建筑归零会触发 `BuildingRuinedEvent`
+- `city_core` 归零会触发 `CityCoreDamagedEvent`
+- 若该 core 同时是对方 capital city core，则触发 `CityCoreDestroyedEvent`
+
+`CityCoreDestroyedEvent.Apply()` 会：
+
+- 把 core 节点与建筑 owner 改成征服者
+- `state.IsOver = true`
+- `state.WinnerID = conqueror`
+- `state.OverReason = "city_core_destroyed"`
+
+### 7.9 Combat upkeep
+
+`CombatUpkeepSystem` 在战斗后单独运行。
+
+规则：
+
+- 统计每玩家所有单位的 food upkeep
+- 先发 `UpkeepPaidEvent`
+- 若玩家当前食物不足，则为该玩家所有单位发 `UnitStarvingEvent`
+
+这意味着当前饥饿规则是“粮不足时全军一起吃饥饿伤害”，而不是按优先级或逐单位分配有限口粮。
+
+## 8. 地图动作与建城子系统
+
+### 8.1 当前已接线的 map action
+
+当前真正接入 `applyPlannedMapActions()` 的只有 `settle_city`。
+
+其他 map action 类型虽在协议和 `orders/types.go` 中有枚举，但默认结算主链没有执行它们。
+
+### 8.2 建城合法性
+
+建城合法性由两层函数决定：
+
+- `ecs.TerritoryFootprint()`
+- `ecs.CanFoundCityAt()`
+
+当前具体规则：
+
+- 城市足迹固定为中心点周围 `3x3`
+- 足迹不能越界
+- 足迹内不能覆盖资源点
+- 足迹内不能覆盖现有建筑
+- 若规则表设置了 `MinimumCityDistance`，还必须满足与其他 city core 的最小曼哈顿距离
+
+### 8.3 建城结算
+
+`applySettleCityOrder()` 当前会：
+
+- 找到开拓者
+- 检查单位属于该玩家且类型属于 territory expansion unit
+- 允许使用显式 `TargetNodeID` 作为建城中心
+- 再次做建城合法性校验
+- 把 `3x3` 足迹内节点的 `Owner/TerritoryOwner` 都改成该玩家
+- 在中心放置 `city_core`
+- 给新城写 `CityState`
+- 新城与新核心都标成 `pending_activation` 到下一回合
+- 删除开拓者
+- 发出 `city_founded` map event
+
+这意味着当前建城规则是：
+
+- **地图控制与中心建筑本回合就可见**
+- **新城完整在线与其建筑资格从下一回合开始**
+
+## 9. 经济、生产、科研子系统
+
+### 9.1 EconomyRunner 的必要性
+
+经济链没有直接复用通用 `engine.Pipeline`，而是使用 `production.EconomyRunner`。
+
+原因是经济系统要求“阶段之间立刻 Apply”：
+
+- 建筑生命周期变化必须先生效，再决定后续 recipe 能不能运行
+- 点数预算要先刷新，再能推进研究与建造
+- 研究完成要晚于当回合 build/recipe，避免同回合反向改变合法性
+
+### 9.2 当前固定顺序
+
+当前 `EconomyRunner.Run()` 的顺序是：
+
+1. `BuildingLifecycleSystem`
+2. `refreshPointBudgets`
+3. `applyResearchProgress`
+4. `ResearchSystem` 产出 deferred research events
+5. `BuildSystem`
+6. `RecipeSystem`
+7. Apply deferred research events
+8. 清空 `PointBudgets`
+
+### 9.3 点数预算
+
+点数不是库存，而是每回合预算，存放在：
+
+- `TurnRuntime.Resolving.PointBudgets[playerID]`
+
+当前只正式使用两类点数：
+
+- `research_output`
+- `industry_output`
+
+刷新逻辑：
+
+- `research_output = state.EffectiveResearchOutput(playerID)`
+- `industry_output = state.EffectiveIndustryOutput(playerID)`
+
+建造与配方会共同消耗 `industry_output`。
+
+### 9.4 科研推进
+
+科研当前分两步：
+
+#### 第一步：推进研究进度
+
+`applyResearchProgress()` 会：
+
+- 读取本回合的 `research_output` 预算
+- 先发 `PointSpentEvent(reason=research_progress)`
+- 再发 `ResearchProgressAppliedEvent`
+
+`ResearchProgressAppliedEvent.Apply()` 会把进度写到当前研究目标科技上，并受 `EffectiveResearchCap` 限制。
+
+#### 第二步：判定是否完成
+
+`ResearchSystem.Run()` 当前规则：
+
+- 玩家必须有当前研究目标
+- 科技必须存在
+- 该科技尚未完成
+- 当前累计进度必须达到 `ResearchCost`
+- prerequisite 必须满足
+
+满足后发出 `TechnologyUnlockedEvent`。
+
+`TechnologyUnlockedEvent.Apply()` 当前只会：
+
+- 把科技进度补齐到 cost
+- 记录 completed turn
+- 若它是当前目标，则清空当前目标
+
+真正的 building/recipe/policy 解锁，下一回合才在 `PreparePlanningStartState()` 生效。
+
+### 9.5 建造结算
+
+`BuildSystem` 当前规则：
+
+- 读取 `Planning.BuildOrders + Planning.MinisterBuilds`
+- 逐条顺序模拟，不是并行批量扣费
+- 同回合内先成功的订单会占用资源、点数和节点
+- 后续订单可能因为预算耗尽或节点已被占而失败
+
+当前检查顺序：
+
+1. 玩家是否存在
+2. building 是否已解锁
+3. 静态 building 定义是否存在
+4. 目标 node 是否存在
+5. 该 node 是否已被前序订单或现有建筑占用
+6. `ValidateBuildingPlacement()` 是否通过
+7. 资源是否足够
+8. 点数是否足够
+
+成功后发：
+
+- 必要的 `PointSpentEvent(reason=build_structure)`
+- `BuildingBuiltEvent`
+
+`BuildingBuiltEvent.Apply()` 会：
+
+- 真正创建建筑
+- 设置 `disabled + pending_activation`
+- `OnlineOnTurn = state.Turn + 1`
+- 扣除玩家全局资源库存
+
+### 9.6 配方结算
+
+`RecipeSystem` 是当前经济子系统里最复杂的一层。
+
+当前逻辑分三段：
+
+1. 先应用玩家这回合切换了哪些 recipe
+2. 再按建筑当前运行态推进 recipe
+3. 最后根据是否完成，发 `recipe_progressed / recipe_completed / building_status_changed`
+
+#### 关键规则一：建筑必须处于 operational 状态
+
+若建筑生命周期状态是以下任意一种，则不可运行：
+
+- `disabled`
+- `contested`
+- `takeover`
+- `ruined`
+
+同时，如果设施绑定的 `service city` 尚未 online，也不能运行。
+
+#### 关键规则二：配方支持低效推进
+
+当前不是“资源不足就完全停工”，而是：
+
+- 先计算资源可支付比例
+- 再计算点数可支付比例
+- `efficiency = min(resourceRatio, pointRatio)`
+
+因此当输入不足但仍大于 0 时，配方会：
+
+- 按比例推进部分进度
+- 按比例累计 consumed resources / points
+- 在后续回合继续衔接
+
+#### 关键规则三：配方完成会重置 operation 并产出
+
+`RecipeCompletedEvent.Apply()` 会：
+
+- 重置 `BuildingOperationComp` 的 progress / blocked / consumed 状态
+- 给玩家增加资源产出
+- 在建筑节点生成单位产出
+
+当前兵营出兵、主城出开拓者、农场产粮都已经统一走 recipe 体系，不再依赖旧的固定生产系统。
+
+### 9.7 当前仍为空壳的经济步骤
+
+以下系统目前保留在链路中，但真实逻辑为空：
+
+- `FlowSystem`
+- `ProductionSystem`
+- `production.UpkeepSystem`
+
+这代表当前新版生产主线已经全部统一进 `RecipeSystem`，旧的固定产出链只保留了壳。
+
+## 10. 建筑生命周期、设施接管、城市陷落子系统
+
+### 10.1 生命周期状态模型
+
+建筑运行态当前由 `domain.BuildingLifecycleStateAtTurn()` 统一解释。
+
+已使用的状态有：
+
+- `empty`
+- `idle`
+- `active`
+- `blocked`
+- `disabled`
+- `contested`
+- `takeover`
+- `ruined`
+
+其中：
+
+- `pending_activation` 不是独立状态，而是 `disabled + reason=pending_activation + online_on_turn`
+- 到达 `online_on_turn` 后会自动视为 `idle`
+
+```mermaid
+stateDiagram-v2
+    [*] --> disabled: "新建筑/新城/接管后"
+    disabled --> idle: "到达 online_on_turn"
+    idle --> active: "有合法 recipe 且正常推进"
+    active --> blocked: "输入或点数不足"
+    blocked --> active: "恢复供给"
+    idle --> takeover: "被单一敌方连续控制"
+    idle --> contested: "被多方争夺"
+    takeover --> disabled: "接管完成，等待下回合上线"
+    idle --> ruined: "攻城摧毁 / 城市陷落转废墟"
 ```
 
-Pipeline 行为：
-1. 按顺序执行每个 System.Run 收集事件
-2. 统一对事件调用 Apply
-3. 返回完整事件列表供结算推送
+### 10.2 设施接管
 
-内政 Pipeline 顺序：
-- BuildSystem
-- FlowSystem
-- ProductionSystem
-- UpkeepSystem
-- RechargeSystem
+设施接管逻辑在 `BuildingLifecycleSystem.advanceFacilityTakeover()`。
 
-战斗 Pipeline 顺序：
-- MovementSystem
-- ConflictSystem
-- BattleSystem
-- SiegeSystem
-- RangedSystem
-- DestroySystem
-- CombatUpkeepSystem
+当前规则：
 
-## 3. GameState 扩展
+- 只对 `out_of_city` 建筑生效
+- takeover 回合数来自 `Rules.FacilityTakeoverTurns`
+- 若同格是多方争夺，设施进入 `contested`
+- 若没有敌方唯一控制者，则设施回到 `idle` 或继续保持 `pending_activation`
+- 若有单一敌方控制者，则 takeover 进度推进
+- 达到阈值后发 `FacilityTakeoverCompletedEvent`
 
-文件：server/internal/domain/state.go
+`FacilityTakeoverCompletedEvent.Apply()` 当前会同时做以下事：
 
-为了支持结算与跨系统临时数据，GameState 增加了：
+- 建筑 owner 改为新拥有者
+- 建筑 `CityID` 改为新的 service city
+- `node.Owner` 与 `node.TerritoryOwner` 改为新拥有者
+- 更新 `ServiceCityComp / FacilityBindingComp`
+- takeover runtime 标记为 completed
+- 建筑进入 `pending_activation`，下一回合才重新运作
 
-- 对局终局字段：IsOver、WinnerID、OverReason、Narrative
-- 指令队列：PendingBuilds、MinisterBuildOrders、MinisterMoveOrders
-- 战斗临时数据：PendingMoves、PendingConflicts
+### 10.3 非主城城市陷落
 
-这使系统间通信可通过 state 临时字段完成，而不是系统互相调用。
+`BuildingLifecycleSystem.captureCityIfNeeded()` 当前只处理：
 
-## 4. 回合状态机
+- city core HP 已降到 0
+- 且它不是对方 capital city core
+- 且该格形成唯一敌方控制
 
-文件：
-- server/internal/game/phase/interface.go
-- server/internal/game/phase/domestic.go
-- server/internal/game/phase/combat.go
-- server/internal/game/room.go
-- server/internal/game/settlement.go
+满足后发 `CityCapturedEvent`。
 
-### 4.1 Phase 抽象
+`CityCapturedEvent.Apply()` 的实际行为是：
 
-```go
-type Phase interface {
-    Name() string
-    Enter(room Room)
-    HandleMessage(room Room, playerID string, msgType string, payload []byte) error
-    Timeout(room Room)
-}
-```
+- 把 `CityState` 从旧拥有者转移给新拥有者
+- 核心重新绑定到新城市与新拥有者
+- 核心血量恢复到满值
+- 核心变成 `pending_activation`
+- 该城足迹内节点刷新 `Owner/TerritoryOwner`
+- 同城、同旧拥有者的城内建筑一起迁移
+- `defense/governance` 标签建筑转 `ruined`
+- 其余城内建筑转 `pending_activation`
 
-Room 在 phase 包内暴露最小能力接口，避免 phase 依赖具体实现细节。
+### 10.4 主城不走城市接管
 
-### 4.2 DomesticPhase
+若被打爆的是 capital city core，当前不会走 `CityCapturedEvent`，而是直接：
 
-职责：
-- Enter 时重置提交状态并补充 tokens
-- 处理 MsgSetPolicy / MsgTokenBuild / MsgTokenReveal / MsgMinisterDirective / MsgSubmitDomestic
-- 令牌建造经过安全区、建筑占位、资源可支付校验
-- 超时时通过 Submit("timeout") 结束等待
+- `CityCoreDestroyedEvent`
+- `state.IsOver = true`
+- `winner = conqueror`
 
-### 4.3 CombatPhase
+## 11. 修正系统、科技、国策、institution 子系统
 
-职责：
-- Enter 时重置提交与战区指令缓存
-- 处理 MsgSetWarZone / MsgWarZoneDirective / MsgTokenVetoCombat / MsgTokenMicro / MsgSubmitCombat
-- 令牌微操与否决操作会消耗 token
-- 超时时通过 Submit("timeout") 结束等待
+### 11.1 修正的统一入口
 
-### 4.4 GameRoom 主循环
+当前所有数值修正都通过 `GameState.ActiveModifierEffects()` 与 `ApplyFloatModifier()` 统一读取。
 
-当前 runLoop：
-1. 每回合开始触发部长汇报生成
-2. 进入 DomesticPhase，等待提交或超时
-3. RunDomesticSettlement
-4. 若未结束，进入 CombatPhase，等待提交或超时
-5. RunCombatSettlement
-6. 回合 +1，检查 MaxTurns
+修正来源包括：
 
-同时加入默认超时兜底：
-- domestic 默认 15s
-- combat 默认 20s
+- 已正式 active 的科技
+- 当前生效中的 national policy
+- 当前生效中的 institution policy
+- 当前处于 operational 状态的本方建筑 modifier
 
-避免配置为 0 时出现自旋。
+聚合顺序固定为：
 
-### 4.5 Settlement
+1. `percent`
+2. `flat`
+3. `multiplier`
 
-- RunDomesticSettlement：同步 room.pendingBuilds 到 state，执行内政 pipeline，推送内政结算，检测胜负
-- RunCombatSettlement：先把指令写回 MoveIntent，再执行战斗 pipeline，推送战斗结算，检测胜负
+### 11.2 当前已走统一修正入口的内容
 
-## 5. 战斗系统实现摘要
+- `EffectiveResearchOutput`
+- `EffectiveIndustryOutput`
+- building resource cost
+- building point cost
+- recipe resource input
+- recipe point input
+- recipe resource output
+- recipe work amount
+- recipe base progress
+- combat 中单位 attack / move / siege 等若调用对应 helper，也会经过 state modifier
 
-文件：server/internal/engine/combat/*.go
+### 11.3 时机规则
 
-### 5.1 MovementSystem
+当前代码里的时机口径是：
 
-- 读取 MoveIntent 单位
-- 若无路径则调用 A* 计算
-- 按速度截断路径
-- 产出 UnitMovedEvent
-- 同时写入 state.PendingMoves 供冲突系统使用
+- 国策：本回合 resolving 开始时 lock-in，并立即影响后续本回合结算
+- 科技完成：本回合 settlement 可见，但正式解锁效果下回合 planning start 生效
+- institution loadout：本回合 lock-in，下一回合 planning start 生效
+- 建筑 modifier：只有建筑 operational 时才参与修正
 
-### 5.2 ConflictSystem
+## 12. 查询与结算投影子系统
 
-按双单位组合检测：
-- 边冲突（反向换边）
-- 节点冲突（同终点）
-- 追及冲突（同向追上）
+### 12.1 PlanningStart
 
-并按规则排序：
-- time_step 升序
-- 同步内 max_speed 降序
+`BuildPlanningStartMessage()` 会组装：
 
-结果写入 state.PendingConflicts，并产出 ConflictResolvedEvent。
+- `Timeout`
+- `Turn`
+- `Tokens`
+- `Phase`
+- `ActiveNationalPolicyId`
+- `MyPlayer`
+- `Nodes`
+- `Units`
+- `Snapshot`
 
-### 5.3 BattleSystem
+### 12.2 NodeView
 
-- 读取 PendingConflicts 逐条结算
-- 伤害由 attack、克制系数、地形系数组合计算
-- 产出 UnitDamagedEvent，HP<=0 追加 UnitDiedEvent
+`BuildNodeView()` 当前会把以下运行态直接投影给客户端：
 
-### 5.4 SiegeSystem
+- `controller_player_id`
+- `territory_owner_player_id`
+- `my_unit_count / enemy_unit_count`
+- `is_resource_point / resource_type`
+- `is_safe_zone`
+- `building_type_id`
+- `building_hp`
+- `is_city_core`
+- `city_id`
+- `service_city_id`
+- `building_status`
+- `takeover_progress / takeover_required`
+- 当前选中 recipe 与 operation 进度
 
-- Siege 单位攻击同格敌方城堡建筑
-- 墙体减伤后产出 CastleDamagedEvent
-- 城堡归零产出 CastleDestroyedEvent
-- 箭塔反击产出 UnitDamagedEvent / UnitDiedEvent
+### 12.3 TurnSettlement
 
-### 5.5 RangedSystem
+`BuildTurnSettlement()` 会把结果按三段分组：
 
-- 在射程内选 HP 最低敌方单位
-- 计算远程伤害（含地形）
-- 产出 UnitDamagedEvent / UnitDiedEvent
+- `unit`
+- `map`
+- `economy`
 
-### 5.6 DestroySystem
+并附带：
 
-- 对当前格及相邻格执行破坏逻辑
-- 道路破坏：RoadDestroyedEvent
-- 建筑破坏：BuildingDamagedEvent
+- `Nodes`
+- `Units`
+- `MyPlayerAfter`
 
-### 5.7 CombatUpkeepSystem
+这意味着 settlement 不是只发事件日志，而是带有“回合后完整权威投影”的混合消息。
 
-- 统计每玩家单位粮耗
-- 产出 UpkeepPaidEvent
-- 粮不足时为全部单位产出 UnitStarvingEvent
+## 13. Minister 与 War Zone 的当前接线状态
 
-## 6. 内政系统实现摘要
+### 13.1 Minister
 
-文件：server/internal/engine/production/*.go
+`MinisterEngine.GenerateReports()` 会：
 
-- BuildSystem：消费 PendingBuilds + MinisterBuildOrders，校验资源并产出 BuildingBuiltEvent
-- FlowSystem：资源点建筑产出 ResourceProducedEvent + ResourceFlowedEvent
-- ProductionSystem：兵营类建筑满足输入资源时产出 UnitProducedEvent
-- UpkeepSystem：建筑维持消耗，不足产出 BuildingDeactivatedEvent
-- RechargeSystem：每回合为玩家产出 BuildPointsRechargedEvent
+- 为每个玩家、每个部长 profile 生成报告
+- 解析 LLM JSON 输出
+- 回发 `MsgMinisterReportChunk` 与 `MsgMinisterMetrics`
+- 通过 `ExecuteActions()` 试图把 actions 写入 planning runtime
 
-## 7. 部长系统接入
+当前真实接线状态：
 
-文件：server/internal/engine/minister/*.go
+- `build`：已接线
+  - 写入 `Planning.MinisterBuilds`
+  - 会被 `BuildSystem` 消费
+- `move_units`：**未闭环**
+  - 只写入 `Planning.MinisterMoves`
+  - 默认结算主链没有消费这批 move
+- `redirect_flow`：当前只记录，不改真实配置
 
-### 7.1 Memory
+### 13.2 War Zone
 
-- MinisterMemory 维护最近 5 条记录
-- Add/Recent/ToPromptString 均为并发安全（RWMutex）
+当前 war zone 系统的状态是：
 
-### 7.2 Prompt
+- 玩家自定义 `WarZones` 会进 `PlayerView`
+- `WarZoneDirectives` 会进 planning snapshot
+- 默认 resolving 主链不会据此修改部队行为
 
-BuildMinisterPrompt 由：
-- 角色设定
-- 局势摘要
-- 历史记忆
-- 当前国策
-- JSON 输出约束
+所以当前 war zone 更接近“结构化输入与展示接口”，不是已完成的自动化战争执行系统。
 
-组成 llm.CompletionRequest。
+## 14. 子系统与代码组织总表
 
-### 7.3 Parser + Actions
+| 子系统 | 主入口 | 关键状态 | 主要事件 | 当前是否闭环 |
+|---|---|---|---|---|
+| 回合编排 | `game/turn/coordinator.go` | `GameState.Phase`、`TurnRuntime` | `PolicyChangedEvent`、`ResearchTargetChangedEvent` 等 lock-in 事件 | 是 |
+| Planning 草案 | `game/planning/service.go` | `TurnRuntime.Planning.*` | 即时返回 result 消息，不直接写世界 | 是 |
+| 行军与路径预览 | `game/room_march.go`、`combat/route_planner.go` | `Resolving.ActiveMarches` | 无专门 event，结果进入 snapshot / queued orders | 是 |
+| 单位结算 | `engine/unit_resolution_runner.go`、`combat/*` | `Resolving.UnitOrders`、combat snapshot | `UnitMovedEvent`、`UnitDamagedEvent`、`UnitDiedEvent`、`CityCoreDestroyedEvent` | 是 |
+| 地图动作 | `game/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
+| 经济点数 | `production/orchestrator.go`、`domain/economy.go` | `PointBudgets`、玩家资源 | `PointBudgetRefreshedEvent`、`PointSpentEvent` | 是 |
+| 科研 | `production/research.go`、`session/turn_start.go` | `ResearchState` | `ResearchProgressAppliedEvent`、`TechnologyUnlockedEvent`、`TechnologyGrantAppliedEvent` | 是 |
+| 建筑建造 | `production/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |
+| 配方生产 | `production/recipe.go` | `BuildingOperationComp` | `RecipeProgressedEvent`、`RecipeCompletedEvent`、`BuildingStatusChangedEvent` | 是 |
+| 生命周期 | `production/control.go` | `BuildingStateComp`、`FacilityTakeoverComp` | `FacilityTakeoverProgressedEvent`、`FacilityTakeoverCompletedEvent`、`CityCapturedEvent`、`BuildingRuinedEvent` | 是 |
+| Minister build | `engine/minister/*` | `Planning.MinisterBuilds` | `MinisterActedEvent` | 部分闭环 |
+| Minister move | `engine/minister/*` | `Planning.MinisterMoves` | `MinisterActedEvent` | 未闭环 |
+| War Zone | `planning/service.go` | 协议字段仍在，但服务端显式拒绝 | 无 | 非 MVP，已从主链移除 |
 
-ParseMinisterResponse 解析 JSON 输出为：
-- report
-- metrics
-- actions
-- action_id
+## 15. 当前已知差距与未闭环点
 
-ExecuteActions 支持：
-- build -> 进入 MinisterBuildOrders
-- repair_road -> 直接 RoadBuiltEvent
-- move_units -> 进入 MinisterMoveOrders
-- redirect_flow -> 当前保留
+为了避免把“有入口”误写成“已完工系统”，这里单独列当前现状中的缺口。
 
-### 7.4 Engine
+### 15.1 已存在但未接进默认主链
 
-- GenerateReports 为每玩家/部长生成汇报
-- LLM 可用时异步并发流式发送 MsgMinisterReportChunk
-- LLM 不可用时走同步 fallback，发送默认汇报
-- 汇报结束发送 MsgMinisterMetrics
-- actions 执行后写回状态并记录 MinisterActedEvent
+- `combat.DestroySystem` 存在，但 `UnitResolutionRunner` 不会执行它
+- `engine.NewUnitResolutionPipeline()` 存在，但 `RunTurnResolution()` 当前不用它
 
-## 8. 路由与消息入口
+### 15.2 仅有输入/展示，没有真正规则执行
 
-文件：server/internal/transport/websocket/router.go
+- `WarZoneDirectives`
+- `MinisterMoves`
+- 大部分 map action 枚举，如修路、修复、建改良、修复改良
 
-新增阶段消息路由：
-- MsgSetPolicy
-- MsgTokenBuild
-- MsgTokenReveal
-- MsgMinisterDirective
-- MsgSetWarZone
-- MsgWarZoneDirective
-- MsgTokenVetoCombat
-- MsgTokenMicro
+### 15.3 保留代码文件，但已不在默认主链顺序中
 
-流程：
-1. 根据 playerID 找 GameRoom
-2. 调用 OnHumanMessage 转发给当前 Phase
-3. 若找不到房间返回 game_not_found
+- `production.FlowSystem`
+- `production.ProductionSystem`
+- `production.UpkeepSystem`
 
-## 9. 算法基础模块
+### 15.4 需要额外注意的实现现状
 
-为战斗与资源链路补充了可复用算法组件：
+- token 当前在建局时初始化，我没有在默认 planning start 链路里看到统一“每回合回满”逻辑
+- building / recipe 的大量合法性是“planning 先做一轮即时校验，settlement 再做一轮最终校验”
+- 当前客户端看到的 `NodeView.building_status` 已经是服务端根据运行态即时投影的结果，不是客户端自行推导
 
-- server/internal/algo/pathfinding/astar.go：A* 寻路
-- server/internal/algo/geometry/distance.go：曼哈顿距离
-- server/internal/algo/graph/flow.go：最大流基础实现
+## 16. 阅读建议
 
-## 10. 关键工程约束落地情况
+如果后续需要继续维护这套实现，推荐按下面顺序读代码：
 
-- System 不直接改状态：通过返回 event 列表，由 pipeline 统一 Apply
-- 结算推送统一由 room.broadcastSettlement 输出
-- GameOver 统一由 room.checkGameOver / handleDraw 触发广播与注销
-- 测试稳定性：
-  - 默认回合超时兜底避免 0 值自旋
-  - 部长记忆并发安全
-  - 无 LLM 时同步汇报，避免测试 transport 并发写崩溃
+1. `server/internal/game/turn/coordinator.go`
+2. `server/internal/game/settlement.go`
+3. `server/internal/engine/unit_resolution_runner.go`
+4. `server/internal/engine/combat/*`
+5. `server/internal/engine/production/*`
+6. `server/internal/event/*`
+7. `server/internal/game/query/*`
 
-## 11. 当前边界与后续建议
-
-已实现完整可运行框架与真实基础结算；后续可继续增强：
-
-- 将 ResourceFlowedEvent 从占位“同节点流”升级为真实图流路径
-- 完善冲突系统对多单位链式冲突的二次迭代结算
-- 将 redirect_flow 行动真正接入资源流配置
-- 为事件和系统补充更细粒度单元测试（尤其 battle/siege/destroy 数值回归）
+这样能先抓住“回合骨架”，再下钻每个子系统的真实裁决细节。

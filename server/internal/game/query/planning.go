@@ -106,36 +106,6 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 		})
 	}
 
-	warDirectives := append([]domain.WarZoneDirective(nil), state.TurnRuntime.Planning.WarDirectives[playerID]...)
-	sort.Slice(warDirectives, func(i, j int) bool {
-		if warDirectives[i].ZoneID == warDirectives[j].ZoneID {
-			if warDirectives[i].Directive == warDirectives[j].Directive {
-				return warDirectives[i].TargetNode < warDirectives[j].TargetNode
-			}
-			return warDirectives[i].Directive < warDirectives[j].Directive
-		}
-		return warDirectives[i].ZoneID < warDirectives[j].ZoneID
-	})
-	for _, directive := range warDirectives {
-		msg.WarZoneDirectives = append(msg.WarZoneDirectives, &pb.QueuedWarZoneDirective{
-			ZoneId:     directive.ZoneID,
-			Directive:  directive.Directive,
-			TargetNode: directive.TargetNode,
-		})
-	}
-
-	if playerState := state.Players[playerID]; playerState != nil {
-		for _, zone := range playerState.WarZones {
-			msg.WarZones = append(msg.WarZones, &pb.WarZone{
-				Id:         zone.ID,
-				Name:       zone.Name,
-				NodeIds:    append([]string(nil), zone.NodeIDs...),
-				Directive:  zone.Directive,
-				TargetNode: zone.Target,
-			})
-		}
-	}
-
 	return msg
 }
 

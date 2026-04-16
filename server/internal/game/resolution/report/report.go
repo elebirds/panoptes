@@ -14,6 +14,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
+	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
@@ -24,12 +25,10 @@ func BuildTurnSettlement(
 	turn int32,
 	phase string,
 	nextPhase string,
-	unitEvents []event.Event,
-	mapEvents []*pb.TurnEvent,
-	economyEvents []event.Event,
+	collector *gameresolution.Collector,
 ) *pb.MsgTurnSettlement {
 	msg := &pb.MsgTurnSettlement{
-		Sections:  SettlementSections(unitEvents, mapEvents, economyEvents),
+		Sections:  SettlementSections(collector),
 		Turn:      turn,
 		Phase:     phase,
 		NextPhase: nextPhase,
@@ -44,17 +43,18 @@ func BuildTurnSettlement(
 	return msg
 }
 
-func SettlementSections(unitEvents []event.Event, mapEvents []*pb.TurnEvent, economyEvents []event.Event) []*pb.SettlementSection {
+func SettlementSections(collector *gameresolution.Collector) []*pb.SettlementSection {
+	if collector == nil {
+		collector = gameresolution.NewCollector()
+	}
 	sections := make([]*pb.SettlementSection, 0, 3)
-	if events := TurnEvents(unitEvents); len(events) > 0 {
+	if events := TurnEvents(collector.Events(gameresolution.ChannelUnit)); len(events) > 0 {
 		sections = append(sections, &pb.SettlementSection{Section: "unit", Events: events})
 	}
-	if len(mapEvents) > 0 {
-		sections = append(sections, &pb.SettlementSection{
-			Section: "map",
-			Events:  append([]*pb.TurnEvent(nil), mapEvents...),
-		})
+	if events := TurnEvents(collector.Events(gameresolution.ChannelMap)); len(events) > 0 {
+		sections = append(sections, &pb.SettlementSection{Section: "map", Events: events})
 	}
+	economyEvents := append(collector.Events(gameresolution.ChannelPlanning), collector.Events(gameresolution.ChannelEconomy)...)
 	if events := TurnEvents(economyEvents); len(events) > 0 {
 		sections = append(sections, &pb.SettlementSection{Section: "economy", Events: events})
 	}
@@ -272,6 +272,28 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
 		}
 		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.CityFoundedEvent:
+		data := map[string]string{
+			"player_id":      strings.TrimSpace(e.PlayerID),
+			"city_id":        strings.TrimSpace(e.CityID),
+			"center_node_id": strings.TrimSpace(e.CenterNodeID),
+		}
+		if len(e.TerritoryIDs) > 0 {
+			data["territory_node_ids"] = strings.Join(e.TerritoryIDs, ",")
+		}
+		if e.OnlineOnTurn > 0 {
+			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
+	case event.CityFoundingFailedEvent:
+		return &pb.TurnEvent{
+			Type: e.Kind(),
+			Data: map[string]string{
+				"player_id": strings.TrimSpace(e.PlayerID),
+				"unit_id":   strings.TrimSpace(e.UnitID),
+				"reason":    strings.TrimSpace(e.Reason),
+			},
+		}
 	case event.MinisterActedEvent:
 		return &pb.TurnEvent{
 			Type: e.Kind(),
@@ -418,6 +440,9 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 }
 
 func shouldSkipSettlementEvent(evt event.Event) bool {
+	if evt == nil {
+		return true
+	}
 	switch evt.(type) {
 	case event.RecipeSelectionChangedEvent:
 		return true

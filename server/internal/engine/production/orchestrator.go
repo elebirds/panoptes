@@ -50,9 +50,6 @@ func (r *EconomyRunner) Run(world donburi.World, state *domain.GameState) []even
 	applyNow((&RecipeSystem{}).Run(world, state))
 	appendOnly(deferredResearch)
 	applyExisting(deferredResearch)
-	applyNow((&FlowSystem{}).Run(world, state))
-	applyNow((&ProductionSystem{}).Run(world, state))
-	applyNow((&UpkeepSystem{}).Run(world, state))
 
 	state.ClearPointBudgets()
 	return allEvents

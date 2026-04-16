@@ -285,35 +285,87 @@ func TestSetBuildingRecipeReplacesDraftOnSameNode(t *testing.T) {
 	}
 }
 
-func TestWarZoneDirectiveReplacesDraftOnSameZone(t *testing.T) {
+func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	session := newPlanningSessionStub(state)
 	service := &Service{}
 
-	for _, directive := range []struct {
-		action string
-		target string
-	}{
-		{action: "attack", target: "A1"},
-		{action: "hold", target: "B2"},
-	} {
-		err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-			Body: &pb.PlanningCommand_WarZoneDirective{
-				WarZoneDirective: &pb.MsgWarZoneDirective{ZoneId: "north", Directive: directive.action, TargetNode: directive.target},
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetWarZone{
+			SetWarZone: &pb.MsgSetWarZone{ZoneId: "north", Name: "North Front", NodeIds: []string{"A1", "A2"}},
+		},
+	})
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
+	}
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
+		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	}
+	if got := state.Players["player-1"].WarZones; len(got) != 0 {
+		t.Fatalf("war zones = %#v, want empty", got)
+	}
+	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
+		t.Fatalf("planning war directives = %#v, want empty", got)
+	}
+	if len(session.sent["player-1"]) != 0 {
+		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
+	}
+}
+
+func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_WarZoneDirective{
+			WarZoneDirective: &pb.MsgWarZoneDirective{ZoneId: "north", Directive: "attack", TargetNode: "A1"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
+	}
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
+		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	}
+	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
+		t.Fatalf("planning war directives = %#v, want empty", got)
+	}
+	if len(session.sent["player-1"]) != 0 {
+		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
+	}
+}
+
+func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
+	state := newStructureAttackPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          "infantry-1",
+				Action:          "build_road",
+				TargetNodeId:    "A2",
+				SecondaryNodeId: "A3",
 			},
-		})
-		if err != nil {
-			t.Fatalf("HandleCommand(%s) error = %v", directive.action, err)
-		}
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
 	}
 
-	got := state.TurnRuntime.Planning.WarDirectives["player-1"]
-	if len(got) != 1 || got[0].Directive != "hold" || got[0].TargetNode != "B2" {
-		t.Fatalf("war directives = %#v, want latest hold/B2 only", got)
+	result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("unit order result = %#v, want invalid_directive", result)
 	}
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || len(snapshot.GetWarZoneDirectives()) != 1 || snapshot.GetWarZoneDirectives()[0].GetDirective() != "hold" {
-		t.Fatalf("snapshot war directives = %#v, want latest hold draft", snapshot.GetWarZoneDirectives())
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+	}
+	if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
+		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
 	}
 }
 
