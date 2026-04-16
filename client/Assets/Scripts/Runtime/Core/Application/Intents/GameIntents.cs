@@ -96,6 +96,22 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetInstitutionLoadout");
         }
 
+        public static void SetBuildingRecipe(string nodeId, string recipeId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgSetBuildingRecipe
+            {
+                NodeId = nodeId ?? string.Empty,
+                RecipeId = recipeId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+            Debug.Log($"[GameIntents] SetBuildingRecipe node={msg.NodeId} recipe={msg.RecipeId}");
+        }
+
         public static void BuildToken(string nodeId, string buildingTypeId, string cityId = null)
         {
             if (ActionLock.IsLocked)

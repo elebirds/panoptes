@@ -357,6 +357,76 @@ namespace Panoptes.Core.Application.Cache
             return SnapshotResources(MyPlayer);
         }
 
+        public Dictionary<string, int> GetMyResourceAmounts()
+        {
+            return SnapshotAmounts(MyPlayer != null ? MyPlayer.Resources : null);
+        }
+
+        public Dictionary<string, int> GetMyPointAmounts()
+        {
+            return SnapshotPointAmounts(MyPlayer != null ? MyPlayer.Points : null);
+        }
+
+        public IReadOnlyList<string> GetCompletedTechnologyIds()
+        {
+            if (MyPlayer?.Research?.CompletedTechnologyIds == null || MyPlayer.Research.CompletedTechnologyIds.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var result = new List<string>(MyPlayer.Research.CompletedTechnologyIds.Count);
+            for (var i = 0; i < MyPlayer.Research.CompletedTechnologyIds.Count; i++)
+            {
+                var id = MyPlayer.Research.CompletedTechnologyIds[i];
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
+        }
+
+        public IReadOnlyList<string> GetActiveTechnologyIds()
+        {
+            if (MyPlayer?.Research?.ActiveTechnologyIds == null || MyPlayer.Research.ActiveTechnologyIds.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var result = new List<string>(MyPlayer.Research.ActiveTechnologyIds.Count);
+            for (var i = 0; i < MyPlayer.Research.ActiveTechnologyIds.Count; i++)
+            {
+                var id = MyPlayer.Research.ActiveTechnologyIds[i];
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
+        }
+
+        public IReadOnlyList<string> GetPendingActivationTechnologyIds()
+        {
+            if (MyPlayer?.Research?.PendingActivationTechnologyIds == null || MyPlayer.Research.PendingActivationTechnologyIds.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var result = new List<string>(MyPlayer.Research.PendingActivationTechnologyIds.Count);
+            for (var i = 0; i < MyPlayer.Research.PendingActivationTechnologyIds.Count; i++)
+            {
+                var id = MyPlayer.Research.PendingActivationTechnologyIds[i];
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
+        }
+
         public void UpsertRuntimeUnit(UnitDto unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
@@ -953,6 +1023,50 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Empty;
+        }
+
+        private static Dictionary<string, int> SnapshotAmounts(ResourceBag bag)
+        {
+            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (bag?.Items == null)
+            {
+                return values;
+            }
+
+            for (var i = 0; i < bag.Items.Count; i++)
+            {
+                var item = bag.Items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.Key))
+                {
+                    continue;
+                }
+
+                values[item.Key.Trim()] = item.Amount;
+            }
+
+            return values;
+        }
+
+        private static Dictionary<string, int> SnapshotPointAmounts(PointBag bag)
+        {
+            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (bag?.Items == null)
+            {
+                return values;
+            }
+
+            for (var i = 0; i < bag.Items.Count; i++)
+            {
+                var item = bag.Items[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.Key))
+                {
+                    continue;
+                }
+
+                values[item.Key.Trim()] = item.Amount;
+            }
+
+            return values;
         }
 
         private static int FindPointAmount(PointBag bag, string key)

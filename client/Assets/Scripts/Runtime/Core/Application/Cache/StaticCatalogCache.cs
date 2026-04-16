@@ -76,6 +76,15 @@ namespace Panoptes.Core.Application.Cache
             public int sort_order;
             public string[] tags;
             public PrerequisiteEntryJson[] prerequisites;
+            public ExplicitEffectEntryJson[] explicit_effects;
+        }
+
+        [Serializable]
+        public sealed class ExplicitEffectEntryJson
+        {
+            public string type;
+            public string target_id;
+            public int institution_slots;
         }
 
         [Serializable]
@@ -624,7 +633,8 @@ namespace Panoptes.Core.Application.Cache
                     research_cost = item != null ? item.ResearchCost : 0,
                     tags = item != null ? item.Tags.ToArray() : (old != null ? old.tags : Array.Empty<string>()),
                     sort_order = old != null ? old.sort_order : 0,
-                    prerequisites = old != null ? old.prerequisites : Array.Empty<PrerequisiteEntryJson>()
+                    prerequisites = old != null ? old.prerequisites : Array.Empty<PrerequisiteEntryJson>(),
+                    explicit_effects = old != null ? old.explicit_effects : Array.Empty<ExplicitEffectEntryJson>()
                 };
             }
 
