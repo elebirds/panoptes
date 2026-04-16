@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:client/Assets/Scripts/Runtime/Presentation/UI/Turn.meta
+guid: 75afe6e7469c5d4479975feb3ee24dd9
+folderAsset: yes
+DefaultImporter:
+========
+guid: 3e377422c8f71c64c868314d25a0890b
+PrefabImporter:
+>>>>>>>> 4210c1b (feat(client): 界面与动画修改):client/Assets/Prefabs/UI/ResourcePanel.prefab.meta
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
