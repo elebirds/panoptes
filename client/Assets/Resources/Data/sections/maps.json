@@ -2,13 +2,15 @@
   "maps": [
     {
       "id": "default",
-      "name": "标准地图",
-      "description": "默认对战地图",
+      "name": "双隘争衡",
+      "description": "36x36 严格镜像 1v1 地图，左下与右上起城，中场双隘口争夺。",
       "thumbnail_key": "map_default",
-      "width": 2,
-      "height": 2,
+      "width": 36,
+      "height": 36,
       "tags": [
-        "pvp"
+        "pvp",
+        "1v1",
+        "mirror"
       ]
     }
   ]

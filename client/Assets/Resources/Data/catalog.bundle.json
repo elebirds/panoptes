@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "ecdcbd9a1b14385413f617dfd9e5001efffefeeff0d06c6ece742988de75c2c9",
+    "bundle_hash": "00e9a6c75dbea33aff90471f0e66ea091e1a240b9cec242e8254ed4c285687e7",
     "required_sections": [
       "resources",
       "points",
@@ -28,7 +28,7 @@
       },
       {
         "section_name": "maps",
-        "hash": "f89cc1d153bc1049e31667ffb173d52ef7fedca04bad97633ea98537438d61af"
+        "hash": "95b31443ff42f6ca863a38c837e5f5fb90c9248936013ee6ce694b3f039f2e0c"
       },
       {
         "section_name": "ministers",
@@ -738,13 +738,15 @@
   "maps": [
     {
       "id": "default",
-      "name": "标准地图",
-      "description": "默认对战地图",
+      "name": "双隘争衡",
+      "description": "36x36 严格镜像 1v1 地图，左下与右上起城，中场双隘口争夺。",
       "thumbnail_key": "map_default",
-      "width": 2,
-      "height": 2,
+      "width": 36,
+      "height": 36,
       "tags": [
-        "pvp"
+        "pvp",
+        "1v1",
+        "mirror"
       ]
     }
   ],
