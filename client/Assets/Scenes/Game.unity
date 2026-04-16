@@ -1706,10 +1706,6 @@ MonoBehaviour:
   serverMapConfigKey: mapconfig
   listenServerMapConfigUpdates: 1
   autoEnsureRuntimeControllers: 1
-  autoFocusCameraOnMapBuild: 0
-  autoFocusCameraOnMyBaseVehicleOnMapBuild: 1
-  autoApplyCameraBoundsOnMapBuild: 0
-  autoForceGameplayCameraPoseOnMapBuild: 0
   nodeTilePrefab: {fileID: 5107247747950518977, guid: 65c27a253136f5543ad363e4d250a016, type: 3}
   tilesRoot: {fileID: 1808281991}
   tileSize: 1
@@ -2280,8 +2276,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1814507006}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalRotation: {x: 0.38268346, y: 0, z: 0, w: 0.9238795}
+  m_LocalPosition: {x: 0, y: 7.071068, z: -7.071068}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2305,50 +2301,26 @@ MonoBehaviour:
   blockDragWhenPointerOverUI: 1
   blockEdgePanWhenPointerOverUI: 1
   enableDragPan: 1
-  invertDrag: 1
-  dragPanSpeed: 0.02
   enableKeyboardPan: 1
   enableArrowKeyPan: 1
-  keyboardPanSpeed: 14
-  enableEdgeScroll: 1
-  edgeScrollWhileDragging: 0
-  edgeThreshold: 24
-  edgePanSpeed: 14
+  enableEdgePan: 0
+  edgePanThreshold: 24
+  nearPanSpeed: 8
+  farPanSpeed: 28
   moveSmoothTime: 0.08
-  scrollZoomSpeed: 4
+  nearDistance: 6.2
+  farDistance: 36
+  zoomSmoothTime: 0.06
+  scrollZoomStep: 0.12
   inputSystemScrollScale: 0.01
-  scrollZoomMultiplier: 5
-  scrollSensitivity: 2
-  maxZoomStepPerFrame: 1.2
   invertScrollDirection: 0
-  perspectiveZoomByFov: 1
-  alsoDollyWhenPerspectiveZoomByFov: 1
-  perspectiveDollySpeed: 2.2
-  minOrthoSize: 5
-  maxOrthoSize: 28
-  minFov: 25
-  maxFov: 60
-  minHeight: 8
-  maxHeight: 40
-  enableZoomTiltInPerspective: 1
-  keepGroundFocusWhenTilt: 1
-  farZoomPitch: 58
-  nearZoomPitch: 24
-  tiltSmoothTime: 0.12
-  autoFixInvalidStartPose: 1
-  fallbackStartHeight: 7.5
-  fallbackStartPitch: 50
-  clampToBounds: 1
-  xBounds: {x: -12.8, y: 31.6}
-  zBounds: {x: -1.1, y: 28.5}
-  boundsPadding: 0
-  boundsLeftPadding: 0
-  boundsRightPadding: 0
-  boundsBottomPadding: 0
-  boundsTopPadding: 0
-  boundaryDamping: 14
-  useViewportGroundBounds: 1
-  boundsGroundY: 0
+  initialZoomNormalized: 0.22
+  fixedYaw: 0
+  fixedPitch: 45
+  fixedFieldOfView: 50
+  anchorRootName: AnchorRoot
+  yawPivotName: YawPivot
+  pitchPivotName: PitchPivot
 --- !u!114 &1814507011
 MonoBehaviour:
   m_ObjectHideFlags: 0
