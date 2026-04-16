@@ -46,6 +46,9 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly List<RecipeSynthesisItemView> _itemViews = new();
         private readonly Dictionary<string, RecipeSynthesisItemView> _itemByRecipeId = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, int> _quantityByRecipeId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Dictionary<string, int>> _quantityByNodeId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _selectedRecipeByNodeId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _lastSentRecipeByNodeId = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _knownLockedRecipeIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _knownUnlockedRecipeIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, HashSet<string>> _recipeUnlockTechMap = new(StringComparer.OrdinalIgnoreCase);
@@ -65,10 +68,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private void Awake()
         {
             if (panelRoot == null) panelRoot = transform as RectTransform;
-            if (slideToggle == null)
-            {
-                slideToggle = GetComponentInParent<BuildPanelSlideToggle>(true);
-            }
+            ResolveSlideToggleReference();
 
             if (slideToggle != null)
             {
@@ -140,8 +140,13 @@ namespace Panoptes.Presentation.UI.Domestic
                 panelRoot.gameObject.SetActive(true);
             }
 
+            ResolveSlideToggleReference();
             if (slideToggle != null)
             {
+                if (!slideToggle.gameObject.activeSelf)
+                {
+                    slideToggle.gameObject.SetActive(true);
+                }
                 slideToggle.Expand();
             }
 
@@ -182,6 +187,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         public void SetSlideToggleButtonVisible(bool visible)
         {
+            ResolveSlideToggleReference();
             if (slideToggle == null)
             {
                 return;
@@ -193,6 +199,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void Hide(bool immediate)
         {
+            ResolveSlideToggleReference();
             if (slideToggle != null)
             {
                 slideToggle.SetCollapsed(true, immediate);
@@ -203,6 +210,39 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             UpdateVisibilityIfChanged(force: true);
+        }
+
+        private void ResolveSlideToggleReference()
+        {
+            if (panelRoot == null)
+            {
+                panelRoot = transform as RectTransform;
+            }
+
+            if (slideToggle == null && panelRoot != null)
+            {
+                slideToggle = panelRoot.GetComponent<BuildPanelSlideToggle>();
+            }
+
+            if (slideToggle == null && panelRoot != null)
+            {
+                slideToggle = panelRoot.GetComponentInChildren<BuildPanelSlideToggle>(true);
+            }
+
+            if (slideToggle == null)
+            {
+                slideToggle = GetComponent<BuildPanelSlideToggle>();
+            }
+
+            if (slideToggle == null)
+            {
+                slideToggle = GetComponentInChildren<BuildPanelSlideToggle>(true);
+            }
+
+            if (slideToggle == null)
+            {
+                slideToggle = GetComponentInParent<BuildPanelSlideToggle>(true);
+            }
         }
 
         private void OnCatalogChanged()
@@ -223,6 +263,12 @@ namespace Panoptes.Presentation.UI.Domestic
         private void OnGameError(GameErrorEvent evt)
         {
             if (evt == null || !string.Equals(NormalizeToken(evt.Code), "invalid_directive", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var runtimeConfig = ClientRuntimeConfigCache.Instance;
+            if (runtimeConfig != null && runtimeConfig.DevMode)
             {
                 return;
             }
@@ -269,8 +315,11 @@ namespace Panoptes.Presentation.UI.Domestic
 
             if (string.Equals(_selectedRecipeId, recipeId, StringComparison.Ordinal))
             {
-                _selectedRecipeId = string.Empty;
+                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
             }
+
+            _quantityByRecipeId.Remove(recipeId);
+            SaveCurrentSelectionToLocalCache();
         }
 
         private void RefreshList()
@@ -351,6 +400,8 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
+            var runtimeConfig = ClientRuntimeConfigCache.Instance;
+            var devModeUnlocked = runtimeConfig != null && runtimeConfig.DevMode;
             BuildRecipeUnlockTechIndex();
             var completedTech = GetCompletedTechnologySet();
             var ownedByMe = IsActiveNodeOwnedByMe();
@@ -367,6 +418,12 @@ namespace Panoptes.Presentation.UI.Domestic
                 if (!ownedByMe)
                 {
                     recipe.IsLocked = true;
+                    continue;
+                }
+
+                if (devModeUnlocked)
+                {
+                    recipe.IsLocked = false;
                     continue;
                 }
 
@@ -519,6 +576,12 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
+            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
+            {
+                SaveCurrentSelectionToLocalCache();
+                return;
+            }
+
             var draft = PlanningDraftCache.Instance;
             if (draft != null && draft.RecipeSelections != null)
             {
@@ -534,6 +597,8 @@ namespace Panoptes.Presentation.UI.Domestic
                     {
                         _selectedRecipeId = NormalizeToken(selection.RecipeId);
                         _quantityByRecipeId[_selectedRecipeId] = 1;
+                        _lastSentRecipeByNodeId[_activeNodeId] = _selectedRecipeId;
+                        SaveCurrentSelectionToLocalCache();
                         return;
                     }
                 }
@@ -545,7 +610,10 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _selectedRecipeId = NormalizeToken(node.OperationSelectedRecipeId);
                 _quantityByRecipeId[_selectedRecipeId] = 1;
+                _lastSentRecipeByNodeId[_activeNodeId] = _selectedRecipeId;
             }
+
+            SaveCurrentSelectionToLocalCache();
         }
 
         private int ResolveInitialQuantity(string recipeId)
@@ -577,35 +645,221 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            _quantityByRecipeId[recipeId] = Mathf.Max(0, quantity);
+            var clamped = Mathf.Max(0, quantity);
+            if (clamped <= 0)
+            {
+                _quantityByRecipeId.Remove(recipeId);
+            }
+            else
+            {
+                _quantityByRecipeId[recipeId] = clamped;
+            }
+
             if (quantity <= 0)
             {
                 if (string.Equals(_selectedRecipeId, recipeId, StringComparison.Ordinal))
                 {
-                    _selectedRecipeId = string.Empty;
+                    _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities(recipeId);
                 }
-                return;
+            }
+            else
+            {
+                _selectedRecipeId = recipeId;
+                _knownUnlockedRecipeIds.Add(recipeId);
+                _knownLockedRecipeIds.Remove(recipeId);
             }
 
-            _selectedRecipeId = recipeId;
-            _knownUnlockedRecipeIds.Add(recipeId);
-            _knownLockedRecipeIds.Remove(recipeId);
-
-            for (var i = 0; i < _itemViews.Count; i++)
+            if (string.IsNullOrWhiteSpace(_selectedRecipeId))
             {
-                var other = _itemViews[i];
-                if (other == null || ReferenceEquals(other, item))
+                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
+            }
+
+            SaveCurrentSelectionToLocalCache();
+            SendRecipeSelectionChangeToServer();
+        }
+
+        private bool TryRestoreSelectionFromLocalCache(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            if (!_quantityByNodeId.TryGetValue(nodeId, out var recipeQuantities) ||
+                recipeQuantities == null)
+            {
+                return false;
+            }
+
+            foreach (var pair in recipeQuantities)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
                 {
                     continue;
                 }
 
-                other.SetQuantity(0, notify: false);
+                var amount = Mathf.Max(0, pair.Value);
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
+                _quantityByRecipeId[NormalizeToken(pair.Key)] = amount;
             }
 
-            if (!string.IsNullOrWhiteSpace(_activeNodeId))
+            if (_selectedRecipeByNodeId.TryGetValue(nodeId, out var selected))
             {
-                GameIntents.SetBuildingRecipe(_activeNodeId, recipeId);
+                _selectedRecipeId = NormalizeToken(selected);
             }
+
+            if (string.IsNullOrWhiteSpace(_selectedRecipeId) || !_quantityByRecipeId.ContainsKey(_selectedRecipeId))
+            {
+                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
+            }
+
+            return true;
+        }
+
+        private void SaveCurrentSelectionToLocalCache()
+        {
+            if (string.IsNullOrWhiteSpace(_activeNodeId))
+            {
+                return;
+            }
+
+            if (!_quantityByNodeId.TryGetValue(_activeNodeId, out var cache))
+            {
+                cache = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                _quantityByNodeId[_activeNodeId] = cache;
+            }
+
+            cache.Clear();
+            foreach (var pair in _quantityByRecipeId)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                var amount = Mathf.Max(0, pair.Value);
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
+                cache[NormalizeToken(pair.Key)] = amount;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
+            {
+                _selectedRecipeByNodeId[_activeNodeId] = NormalizeToken(_selectedRecipeId);
+            }
+            else
+            {
+                _selectedRecipeByNodeId.Remove(_activeNodeId);
+            }
+        }
+
+        private string ResolvePreferredRecipeFromLocalQuantities(string preferredRecipeId = null)
+        {
+            var normalizedPreferred = NormalizeToken(preferredRecipeId);
+            if (!string.IsNullOrWhiteSpace(normalizedPreferred) &&
+                _quantityByRecipeId.TryGetValue(normalizedPreferred, out var preferredAmount) &&
+                preferredAmount > 0)
+            {
+                return normalizedPreferred;
+            }
+
+            var bestRecipe = string.Empty;
+            var bestAmount = int.MinValue;
+            foreach (var pair in _quantityByRecipeId)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                var amount = Mathf.Max(0, pair.Value);
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
+                if (amount > bestAmount ||
+                    (amount == bestAmount && string.Compare(pair.Key, bestRecipe, StringComparison.OrdinalIgnoreCase) < 0))
+                {
+                    bestAmount = amount;
+                    bestRecipe = pair.Key;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(bestRecipe))
+            {
+                return NormalizeToken(bestRecipe);
+            }
+
+            return string.Empty;
+        }
+
+        private string ResolvePreferredRecipeForCurrentNode(string preferredRecipeId = null)
+        {
+            var local = ResolvePreferredRecipeFromLocalQuantities(preferredRecipeId);
+            if (!string.IsNullOrWhiteSpace(local))
+            {
+                return local;
+            }
+
+            var serverSelected = NormalizeToken(ResolveServerSelectedRecipeForActiveNode());
+            return string.IsNullOrWhiteSpace(serverSelected) ? string.Empty : serverSelected;
+        }
+
+        private string ResolveServerSelectedRecipeForActiveNode()
+        {
+            if (string.IsNullOrWhiteSpace(_activeNodeId))
+            {
+                return string.Empty;
+            }
+
+            var draft = PlanningDraftCache.Instance;
+            if (draft != null && draft.RecipeSelections != null)
+            {
+                for (var i = draft.RecipeSelections.Count - 1; i >= 0; i--)
+                {
+                    var selection = draft.RecipeSelections[i];
+                    if (selection == null || !string.Equals(selection.NodeId, _activeNodeId, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(selection.RecipeId))
+                    {
+                        return selection.RecipeId;
+                    }
+                }
+            }
+
+            var cache = _stateCache ?? GameStateCache.Instance;
+            var node = cache?.GetNode(_activeNodeId);
+            return node != null ? (node.OperationSelectedRecipeId ?? string.Empty) : string.Empty;
+        }
+
+        private void SendRecipeSelectionChangeToServer()
+        {
+            if (string.IsNullOrWhiteSpace(_activeNodeId))
+            {
+                return;
+            }
+
+            var recipeToSend = ResolvePreferredRecipeForCurrentNode();
+            if (string.IsNullOrWhiteSpace(recipeToSend))
+            {
+                Debug.Log($"[RecipeSynthesisPanel] Recipe quantities changed for node={_activeNodeId}, but no selectable recipe to sync.");
+                return;
+            }
+
+            var normalized = NormalizeToken(recipeToSend);
+            GameIntents.SetBuildingRecipe(_activeNodeId, normalized);
+            _lastSentRecipeByNodeId[_activeNodeId] = normalized;
         }
 
         private List<RecipeViewData> LoadRecipeData()
