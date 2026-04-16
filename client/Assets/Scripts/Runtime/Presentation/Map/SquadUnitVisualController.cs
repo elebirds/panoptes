@@ -444,6 +444,14 @@ namespace Panoptes.Presentation.Map
                 member.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 member.animator.applyRootMotion = false;
 
+                if (member.animator.runtimeAnimatorController == null && unarmedAnimatorController != null)
+                {
+                    // Ensure members always have a playable baseline controller even before unit bind.
+                    member.animator.runtimeAnimatorController = unarmedAnimatorController;
+                    member.animator.Rebind();
+                    member.animator.Update(0f);
+                }
+
                 var hasController = member.animator.runtimeAnimatorController != null;
                 if (!hasController)
                 {

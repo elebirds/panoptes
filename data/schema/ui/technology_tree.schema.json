@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "config_version": {
+      "type": "string"
+    },
+    "edges": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "arrow": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "type": "object"
+            },
+            "minItems": 2,
+            "type": "array"
+          },
+          "show_arrow": {
+            "type": "boolean"
+          },
+          "thickness": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "show_arrow",
+          "thickness",
+          "points"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "nodes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "height": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "technology_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "width": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "x",
+          "y",
+          "width",
+          "height",
+          "visible"
+        ],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "config_version",
+    "nodes",
+    "edges"
+  ],
+  "type": "object"
+}

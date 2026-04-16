@@ -1,0 +1,390 @@
+fileFormatVersion: 2
+guid: 86a19e7e1cd9ee94ca552788790bd83d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8905152256107170719
+    second: Leaves_NormalTree_C_0
+  - first:
+      213: 3598235284056235878
+    second: Leaves_NormalTree_C_1
+  - first:
+      213: 6183297044747453204
+    second: Leaves_NormalTree_C_2
+  - first:
+      213: 5263614467342240344
+    second: Leaves_NormalTree_C_3
+  - first:
+      213: -4675057574351382314
+    second: Leaves_NormalTree_C_4
+  - first:
+      213: -5197417894515191966
+    second: Leaves_NormalTree_C_5
+  - first:
+      213: 5118345402839672423
+    second: Leaves_NormalTree_C_6
+  - first:
+      213: -3905262923299383114
+    second: Leaves_NormalTree_C_7
+  - first:
+      213: -943483843767922996
+    second: Leaves_NormalTree_C_8
+  - first:
+      213: -4969380301257659120
+    second: Leaves_NormalTree_C_9
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_0
+      rect:
+        serializedVersion: 2
+        x: 188
+        y: 578
+        width: 216
+        height: 193
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 164b6ff543b8a6480800000000000000
+      internalID: -8905152256107170719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_1
+      rect:
+        serializedVersion: 2
+        x: 432
+        y: 625
+        width: 184
+        height: 284
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66fd2743def7fe130800000000000000
+      internalID: 3598235284056235878
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_2
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 697
+        width: 152
+        height: 168
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41305e4d6eb7fc550800000000000000
+      internalID: 6183297044747453204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_3
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 422
+        width: 217
+        height: 157
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85a8a80687d1c0940800000000000000
+      internalID: 5263614467342240344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_4
+      rect:
+        serializedVersion: 2
+        x: 323
+        y: 240
+        width: 222
+        height: 326
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d85948d7ebde1fb0800000000000000
+      internalID: -4675057574351382314
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_5
+      rect:
+        serializedVersion: 2
+        x: 631
+        y: 449
+        width: 244
+        height: 240
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26fc92846ff0fd7b0800000000000000
+      internalID: -5197417894515191966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_6
+      rect:
+        serializedVersion: 2
+        x: 118
+        y: 218
+        width: 164
+        height: 160
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76623069604080740800000000000000
+      internalID: 5118345402839672423
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_7
+      rect:
+        serializedVersion: 2
+        x: 521
+        y: 119
+        width: 195
+        height: 272
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b89c3eef08bdc9c0800000000000000
+      internalID: -3905262923299383114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_8
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 315
+        width: 216
+        height: 106
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cce84e0617218e2f0800000000000000
+      internalID: -943483843767922996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Leaves_NormalTree_C_9
+      rect:
+        serializedVersion: 2
+        x: 412
+        y: 90
+        width: 84
+        height: 163
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 01da6b5e1f6390bb0800000000000000
+      internalID: -4969380301257659120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Leaves_NormalTree_C_0: -8905152256107170719
+      Leaves_NormalTree_C_1: 3598235284056235878
+      Leaves_NormalTree_C_2: 6183297044747453204
+      Leaves_NormalTree_C_3: 5263614467342240344
+      Leaves_NormalTree_C_4: -4675057574351382314
+      Leaves_NormalTree_C_5: -5197417894515191966
+      Leaves_NormalTree_C_6: 5118345402839672423
+      Leaves_NormalTree_C_7: -3905262923299383114
+      Leaves_NormalTree_C_8: -943483843767922996
+      Leaves_NormalTree_C_9: -4969380301257659120
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
