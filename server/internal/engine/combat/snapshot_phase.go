@@ -18,6 +18,9 @@ import (
 type SnapshotPhase struct{}
 
 func (SnapshotPhase) Apply(ctx *ResolutionContext) {
+	// SnapshotPhase 的职责不是“复制一份世界状态”这么简单，
+	// 而是明确划定：本回合后续所有战斗裁决都只能读取这份冻结输入。
+	// 一旦快照建立完成，后续 phase 不再回头读取 ECS 当前值做重新判断。
 	snapshot := CombatSnapshot{
 		Units:          make(map[string]SnapshotUnit),
 		Structures:     make(map[string]SnapshotStructure),
@@ -102,6 +105,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		}
 		ctx.CurrentStructureHP[node.ID] = building.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
+		// 这里有意不覆盖同格单位阻断，因为 charge 的第一接敌目标必须保留为单位。
 		blockPos := domain.Position{X: pos.X, Y: pos.Y}
 		sources := snapshot.BlockSources[blockPos]
 		source := BlockSource{

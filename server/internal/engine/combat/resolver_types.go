@@ -129,7 +129,11 @@ type BlockSource struct {
 }
 
 type BlockSourcesAtPos struct {
-	Unit      *BlockSource
+	// Unit 表示该格在回合起点被冻结的敌方单位阻断。
+	// charge 必须优先读取它，否则“单位站在建筑格上”时会丢失第一接敌目标。
+	Unit *BlockSource
+	// Structure 表示同格上的敌方建筑阻断。
+	// 它不会覆盖 Unit，而是作为次级阻断来源保留下来。
 	Structure *BlockSource
 }
 
@@ -257,6 +261,8 @@ func (ctx *ResolutionContext) IsDead(unitID string) bool {
 
 func sortConflictGroups(groups []ConflictGroup) {
 	// 结算事件必须稳定排序，否则同输入多次运行会得到不同的事件顺序。
+	// 这里先按冲突类型、坐标，再按成员序列排序。
+	// 这样 group 内 hostile pair 的发射顺序也就能间接稳定下来。
 	sort.Slice(groups, func(i, j int) bool {
 		if groups[i].ConflictType != groups[j].ConflictType {
 			return groups[i].ConflictType < groups[j].ConflictType

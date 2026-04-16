@@ -21,6 +21,8 @@ func (DamagePhase) Apply(ctx *ResolutionContext) {
 	// 先处理冲突，再处理显式 attack / charge，形成稳定事件顺序。
 	// 虽然规格上属于同一伤害窗口，但内部仍需固定遍历顺序来保证联机确定性。
 	for _, group := range ctx.ConflictGroups {
+		// group 是内部真相，但协议仍暴露二元 conflict event。
+		// 因此这里先把组展开成稳定 hostile pair，再逐对发事件并结算伤害。
 		for _, pair := range group.HostilePairs {
 			ctx.Events = append(ctx.Events, event.ConflictResolvedEvent{
 				UnitAID:      pair.UnitAID,
@@ -55,6 +57,8 @@ func (StaticSnapshotBlockRule) SourceFor(ctx *ResolutionContext, unit SnapshotUn
 	if !ok {
 		return BlockSource{}, false
 	}
+	// 优先级固定为 Unit > Structure。
+	// 这样 charge 遇到“单位站在建筑格上”时仍会锁定第一接敌单位。
 	if sources.Unit != nil && sources.Unit.Owner != unit.PlayerID {
 		return *sources.Unit, true
 	}
@@ -96,6 +100,8 @@ func resolveConflictPairDamage(ctx *ResolutionContext, location domain.Position,
 		return
 	}
 
+	// 冲突伤害不区分 edge/node 的公式分支；
+	// 区别已经在前面的分组与落位阶段体现，伤害这里只按 pair 的能力关系统一处理。
 	switch {
 	case a.Capabilities.Civilian && b.Capabilities.Melee:
 		killUnit(ctx, a.UnitID, b.UnitID, location)
@@ -132,6 +138,7 @@ func resolveChargeAttack(ctx *ResolutionContext, attacker SnapshotUnit, plan *Or
 		return
 	}
 	if ctx.CurrentPosition(attacker.UnitID).DistanceTo(ctx.CurrentPosition(target.UnitID)) != 1 {
+		// 即使规划阶段锁定了 charge target，真正能否命中仍以伤害窗口开始时的最终位置为准。
 		return
 	}
 	if target.Capabilities.Civilian {
