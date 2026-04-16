@@ -21,7 +21,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 	snapshot := CombatSnapshot{
 		Units:          make(map[string]SnapshotUnit),
 		Structures:     make(map[string]SnapshotStructure),
-		BlockSources:   make(map[domain.Position]BlockSource),
+		BlockSources:   make(map[domain.Position]BlockSourcesAtPos),
 		OrderedUnitIDs: make([]string, 0),
 	}
 
@@ -62,12 +62,15 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		snapshot.OrderedUnitIDs = append(snapshot.OrderedUnitIDs, stats.ID)
 		// 单位起始占位直接进入阻断快照。
 		// 根据 V1 规格，这个阻断信息在整次结算中不会因为单位本回合移动而更新。
-		snapshot.BlockSources[unit.Position] = BlockSource{
+		sources := snapshot.BlockSources[unit.Position]
+		source := BlockSource{
 			Kind:     "unit",
 			Owner:    unit.PlayerID,
 			Position: unit.Position,
 			UnitID:   unit.UnitID,
 		}
+		sources.Unit = &source
+		snapshot.BlockSources[unit.Position] = sources
 		ctx.CurrentHP[unit.UnitID] = unit.HP
 	})
 
@@ -99,12 +102,16 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		}
 		ctx.CurrentStructureHP[node.ID] = building.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
-		snapshot.BlockSources[domain.Position{X: pos.X, Y: pos.Y}] = BlockSource{
+		blockPos := domain.Position{X: pos.X, Y: pos.Y}
+		sources := snapshot.BlockSources[blockPos]
+		source := BlockSource{
 			Kind:     "building",
 			Owner:    building.Owner,
-			Position: domain.Position{X: pos.X, Y: pos.Y},
+			Position: blockPos,
 			NodeID:   node.ID,
 		}
+		sources.Structure = &source
+		snapshot.BlockSources[blockPos] = sources
 	})
 
 	sort.Strings(snapshot.OrderedUnitIDs)

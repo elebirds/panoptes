@@ -35,7 +35,6 @@ func RunTurnResolution(room *GameRoom) {
 	state.TurnRuntime.Planning.RecipeSelections = state.TurnRuntime.Planning.RecipeSelections[:0]
 	state.TurnRuntime.Planning.MinisterBuilds = state.TurnRuntime.Planning.MinisterBuilds[:0]
 	state.TurnRuntime.Planning.MinisterMoves = state.TurnRuntime.Planning.MinisterMoves[:0]
-	state.TurnRuntime.Resolving.Conflicts = state.TurnRuntime.Resolving.Conflicts[:0]
 	clear(state.TurnRuntime.Planning.UnitOrders)
 	clear(state.TurnRuntime.Planning.MinisterDirectives)
 	clear(state.TurnRuntime.Planning.PendingPolicies)

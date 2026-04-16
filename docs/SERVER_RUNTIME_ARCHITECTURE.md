@@ -102,8 +102,6 @@ flowchart LR
 - `ResolvingState`
   - `UnitOrders`
   - `ActiveMarches`
-  - `PendingMoves`
-  - `Conflicts`
   - `PointBudgets`
 
 ### 3.2 ECS 组件
@@ -432,8 +430,8 @@ planning 阶段当前不是直接改世界，而是写入两类“待结算输�
 
 需要特别说明：
 
-- `engine.NewUnitResolutionPipeline()` 仍然存在，但当前 `RunTurnResolution()` 并不走这条通用 pipeline。
-- `DestroySystem` 也存在，但当前没有接进默认主链。
+- 当前默认主链不再保留 `Battle/Conflict/Destroy/SiegeSystem` 这套旧 combat systems。
+- 战斗规则的唯一正式入口就是 `SingleStepResolver`。
 
 ### 7.2 SingleStepResolver 的阶段
 
@@ -456,8 +454,9 @@ SnapshotPhase 会冻结：
 
 其中“阻断源”很关键：
 
-- 敌方单位起始格会进入 `BlockSources`
-- 敌方建筑所在格也会进入 `BlockSources`
+- 敌方单位起始格会进入 `BlockSources.Unit`
+- 敌方建筑所在格会进入 `BlockSources.Structure`
+- 同一格若既有单位也有建筑，两者会同时保留
 - 这张阻断表在整次结算中保持不变
 
 这意味着当前规则是：
@@ -490,6 +489,7 @@ SnapshotPhase 会冻结：
 
 - 先按移动规划
 - 只允许把路径上的第一处敌方单位阻断点记为冲锋目标
+- 若同一格既有敌方单位又有敌方建筑，优先以前者作为 charge 接敌目标
 - 若最终没有合法 charge target，则自动退化为普通 `move`
 
 ### 7.5 ConflictPhase
@@ -500,9 +500,14 @@ SnapshotPhase 会冻结：
   - 双方都把对方起始格视为自己的首个阻断点
   - 且两者相邻
 - `node conflict`
-  - 双方候选落点落到同一格
+  - 所有候选落点相同、且组内至少存在两个不同阵营单位
 
-当前没有专门的三方冲突规则；node conflict 只取首个异阵营配对。
+当前 `node conflict` 已升级为 group conflict：
+
+- 同一格的所有成员共同组成一个 conflict group
+- movement 上，整组都不能占住该格，并统一按 fallback 规则回退
+- damage 上，组内每个敌对 pair 结算一次冲突伤害
+- 同阵营成员不会互相造成冲突伤害
 
 ### 7.6 MovementApplyPhase
 
@@ -529,6 +534,7 @@ DamagePhase 当前顺序是：
 - civilian 被 melee 接敌时直接死亡
 - melee vs melee 会互殴
 - 只有一方是 melee 时，由 melee 一方造成伤害
+- 若是 group conflict，则上述规则会对组内每个敌对 pair 依次执行
 
 #### 显式 attack
 
@@ -1040,10 +1046,10 @@ stateDiagram-v2
 
 为了避免把“有入口”误写成“已完工系统”，这里单独列当前现状中的缺口。
 
-### 15.1 已存在但未接进默认主链
+### 15.1 已从默认主链移除的旧壳
 
-- `combat.DestroySystem` 存在，但 `UnitResolutionRunner` 不会执行它
-- `engine.NewUnitResolutionPipeline()` 存在，但 `RunTurnResolution()` 当前不用它
+- 旧 `Battle/Conflict/Destroy/SiegeSystem` 已删除
+- 旧 `engine.NewUnitResolutionPipeline()` 已删除
 
 ### 15.2 仅有输入/展示，没有真正规则执行
 

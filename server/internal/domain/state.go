@@ -49,8 +49,6 @@ type PlanningInputs struct {
 type ResolvingState struct {
 	UnitOrders    map[string]UnitResolutionOrder
 	ActiveMarches map[string]ActiveMarch
-	PendingMoves  []PendingMove
-	Conflicts     []Conflict
 	PointBudgets  map[string]PointBag
 }
 
@@ -436,23 +434,6 @@ type MoveOrder struct {
 	PlayerID string
 	UnitID   string
 	Target   Position
-}
-
-type Conflict struct {
-	UnitAID      string
-	UnitBID      string
-	Location     Position
-	ConflictType string
-	TimeStep     int
-	MaxSpeed     int
-}
-
-type PendingMove struct {
-	UnitID    string
-	Faction   string
-	Speed     int
-	Path      []Position
-	Timestamp int
 }
 
 func NewGameState(gameID string, playerIDs []string, usernames []string, mapData *MapData) *GameState {
