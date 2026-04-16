@@ -67,6 +67,7 @@ func (r *GameRoom) Start() {
 	if r == nil || r.runtime == nil {
 		return
 	}
+	Registry.InvalidateRoomsForPlayersExcept(r.ID, r.PlayerIDs())
 	var err error
 	if r.prepared != nil {
 		err = r.runtime.InitializePrepared(r.prepared)
@@ -127,6 +128,7 @@ func (r *GameRoom) SendToPlayer(ctx context.Context, playerID string, msg proto.
 	if r == nil || r.runtime == nil {
 		return nil
 	}
+	ctx = transport.ContextWithGameSessionID(ctx, r.ID)
 	if hooks := currentDebugHooks(); hooks.RecordOutgoingMessage != nil {
 		hooks.RecordOutgoingMessage(r.ID, playerID, msg, transport.EventMetaFromContext(ctx))
 	}
@@ -256,12 +258,13 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
 			hooks.RecordSettlement(r.ID, player.PlayerID(), msg)
 		}
-		_ = player.Send(context.Background(), msg)
+		_ = r.SendToPlayer(context.Background(), player.PlayerID(), msg)
 	}
 }
 
 func (r *GameRoom) Broadcast(ctx context.Context, msg proto.Message) {
 	if r != nil && r.runtime != nil {
+		ctx = transport.ContextWithGameSessionID(ctx, r.ID)
 		r.runtime.Broadcast(ctx, msg)
 	}
 }

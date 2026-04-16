@@ -40,3 +40,18 @@ func EventMetaFromInbound(ctx dispatch.InboundContext) *pb.EventMeta {
 		TraceId:   ctx.TraceID,
 	}
 }
+
+func ContextWithGameSessionID(ctx context.Context, gameSessionID string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if gameSessionID == "" {
+		return ctx
+	}
+	meta := EventMetaFromContext(ctx)
+	if meta == nil {
+		meta = &pb.EventMeta{}
+	}
+	meta.GameSessionId = gameSessionID
+	return ContextWithEventMeta(ctx, meta)
+}

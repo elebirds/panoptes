@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/transport/codec"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
 )
 
 func TestTransportSendWrapsLobbyEventInServerFrame(t *testing.T) {
@@ -17,7 +18,10 @@ func TestTransportSendWrapsLobbyEventInServerFrame(t *testing.T) {
 	hub.clients["host-1"] = client
 
 	transport := NewTransport(hub)
-	if err := transport.Send(context.Background(), "host-1", &pb.MsgRoomCreated{
+	ctx := coretransport.ContextWithEventMeta(context.Background(), &pb.EventMeta{
+		GameSessionId: "game-1",
+	})
+	if err := transport.Send(ctx, "host-1", &pb.MsgRoomCreated{
 		RoomId:   "room-1",
 		RoomCode: "ABCD12",
 	}); err != nil {
@@ -32,6 +36,9 @@ func TestTransportSendWrapsLobbyEventInServerFrame(t *testing.T) {
 
 	if frame.GetLobby().GetRoomCreated().GetRoomCode() != "ABCD12" {
 		t.Fatalf("room_code = %q", frame.GetLobby().GetRoomCreated().GetRoomCode())
+	}
+	if frame.GetMeta().GetGameSessionId() != "game-1" {
+		t.Fatalf("game_session_id = %q, want game-1", frame.GetMeta().GetGameSessionId())
 	}
 	if frame.GetMeta().GetServerUnixMillis() == 0 {
 		t.Fatalf("server_unix_millis = 0, want non-zero")

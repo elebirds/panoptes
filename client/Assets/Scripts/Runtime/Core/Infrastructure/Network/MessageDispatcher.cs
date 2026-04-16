@@ -214,6 +214,10 @@ namespace Panoptes.Core.Infrastructure.Network
 
             var entry = new DispatchEntry(frame, messageType, message, payloadJson);
             OnDispatching?.Invoke(entry);
+            if (!GameEventSessionGate.ShouldDispatch(entry))
+            {
+                return;
+            }
 
             var hasRawHandlers = _rawHandlers.TryGetValue(messageType, out var rawHandlers) &&
                                  rawHandlers != null &&

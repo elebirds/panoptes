@@ -69,7 +69,10 @@ func (c *Coordinator) Start() {
 		} else {
 			c.host.NotifyTurn(domain.PhasePlanning.String())
 		}
-		c.waitAllSubmit(time.Duration(planningTimeoutSec) * time.Second)
+		c.waitAllSubmit(ctx, time.Duration(planningTimeoutSec)*time.Second)
+		if ctx.Err() != nil {
+			return
+		}
 		c.runtime.State().Phase = domain.PhaseResolving.String()
 		c.host.RunTurnResolution()
 		if c.runtime.State().IsOver {
@@ -121,7 +124,7 @@ func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.Pla
 	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
 }
 
-func (c *Coordinator) waitAllSubmit(timeout time.Duration) {
+func (c *Coordinator) waitAllSubmit(ctx context.Context, timeout time.Duration) {
 	if c.runtime == nil {
 		return
 	}
@@ -131,6 +134,8 @@ func (c *Coordinator) waitAllSubmit(timeout time.Duration) {
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case playerID := <-c.runtime.SubmitChannel():
 			if playerID == "timeout" {
 				return

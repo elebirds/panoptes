@@ -94,6 +94,10 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	if start.GetSnapshot().GetTurn() != 7 || start.GetSnapshot().GetPhase() != domain.PhasePlanning.String() {
 		t.Fatalf("snapshot payload = %#v", start.GetSnapshot())
 	}
+	meta := tp.sentMeta["player-1"][0]
+	if got := turnMetaGameSessionID(meta); got != "game-1" {
+		t.Fatalf("meta.game_session_id = %q, want game-1", got)
+	}
 }
 
 func TestHumanPlayerNotifyTurnPrefersUnifiedPlanningTimeout(t *testing.T) {
@@ -718,6 +722,17 @@ func hasSettlementEvent(msg *pb.MsgTurnSettlement, section string, eventType str
 		}
 	}
 	return false
+}
+
+func turnMetaGameSessionID(meta *pb.EventMeta) string {
+	if meta == nil {
+		return ""
+	}
+	field := meta.ProtoReflect().Descriptor().Fields().ByName("game_session_id")
+	if field == nil {
+		return ""
+	}
+	return meta.ProtoReflect().Get(field).String()
 }
 
 func firstMessage[T proto.Message](msgs []proto.Message) T {
