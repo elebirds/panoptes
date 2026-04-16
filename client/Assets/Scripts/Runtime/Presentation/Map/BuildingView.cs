@@ -42,44 +42,44 @@ namespace Panoptes.Presentation.Map
 
         [Header("Damage Threshold")]
         [SerializeField] private int lowHitPointThreshold = 30;
-        [SerializeField] private int defaultCastleMaxHp = 100;
+        [SerializeField] private int defaultCityCoreMaxHp = 100;
 
-        [Header("Castle HP Bar")]
-        [SerializeField] private bool enableCastleHpBar = true;
-        [SerializeField] private CastleHPBar castleHpBarPrefab;
-        [SerializeField] private bool autoLoadCastleHpBarPrefab = true;
-        [SerializeField] private string castleHpBarResourcesPath = "Prefabs/UI/CastleHPBar";
-        [SerializeField] private string castleDisplayName = "City Core";
-        [SerializeField] private float castleHpBarWidth = 1.8f;
-        [SerializeField] private float castleHpBarHeight = 0.2f;
-        [SerializeField] private float castleHpBarVerticalPadding = 0.35f;
-        [SerializeField] private float castleHpBarScreenScale = 0.001f;
-        [SerializeField] private float castleHpBarMinScale = 0.0035f;
-        [SerializeField] private float castleHpBarMaxScale = 0.016f;
-        [SerializeField] private bool lockCastleHpBarWorldRotation = true;
-        [SerializeField] private bool castleHpBarUseCameraUpVector = false;
-        [SerializeField] private bool castleHpBarAllowRoll = false;
-        [SerializeField] private float castleHpBarFacingYawOffset = 180f;
-        [SerializeField] private float castleHpBarFixedYaw = 0f;
-        [SerializeField] private Color castleHpBarFillColor = new Color(0.2f, 0.95f, 0.35f, 1f);
-        [SerializeField] private Color castleHpBarBackgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+        [Header("City Core HP Bar")]
+        [SerializeField] private bool enableCityCoreHpBar = true;
+        [SerializeField] private CityCoreHPBar cityCoreHpBarPrefab;
+        [SerializeField] private bool autoLoadCityCoreHpBarPrefab = true;
+        [SerializeField] private string cityCoreHpBarResourcesPath = "Prefabs/UI/CityCoreHPBar";
+        [SerializeField] private string cityCoreDisplayName = "City Core";
+        [SerializeField] private float cityCoreHpBarWidth = 1.8f;
+        [SerializeField] private float cityCoreHpBarHeight = 0.2f;
+        [SerializeField] private float cityCoreHpBarVerticalPadding = 0.35f;
+        [SerializeField] private float cityCoreHpBarScreenScale = 0.001f;
+        [SerializeField] private float cityCoreHpBarMinScale = 0.0035f;
+        [SerializeField] private float cityCoreHpBarMaxScale = 0.016f;
+        [SerializeField] private bool lockCityCoreHpBarWorldRotation = true;
+        [SerializeField] private bool cityCoreHpBarUseCameraUpVector = false;
+        [SerializeField] private bool cityCoreHpBarAllowRoll = false;
+        [SerializeField] private float cityCoreHpBarFacingYawOffset = 180f;
+        [SerializeField] private float cityCoreHpBarFixedYaw = 0f;
+        [SerializeField] private Color cityCoreHpBarFillColor = new Color(0.2f, 0.95f, 0.35f, 1f);
+        [SerializeField] private Color cityCoreHpBarBackgroundColor = new Color(0.1f, 0.1f, 0.1f, 0.9f);
 
         public string BuildingType => buildingType;
         public string OwnerId { get; private set; } = string.Empty;
         public int HitPoints { get; private set; }
         public int MaxHitPoints { get; private set; }
         public bool IsGhost { get; private set; }
-        public bool IsCastle => IsCastleBuildingType();
-        public bool IsCastleHpBarEnabled => enableCastleHpBar;
+        public bool IsCityCore => IsCityCoreBuildingType();
+        public bool IsCityCoreHpBarEnabled => enableCityCoreHpBar;
 
         private Renderer[] _allRenderers;
-        private Transform _castleHpBarRoot;
-        private CastleHPBar _castleHpBarView;
-        private float _castleHpNormalized = 1f;
+        private Transform _cityCoreHpBarRoot;
+        private CityCoreHPBar _cityCoreHpBarView;
+        private float _cityCoreHpNormalized = 1f;
 
         private void LateUpdate()
         {
-            UpdateCastleHpBarTransform();
+            UpdateCityCoreHpBarTransform();
         }
 
         public void SetBuildingType(string value)
@@ -90,8 +90,8 @@ namespace Panoptes.Presentation.Map
                 name = $"Building_{buildingType}";
             }
 
-            EnsureCastleHpBarState();
-            UpdateCastleHpBarName();
+            EnsureCityCoreHpBarState();
+            UpdateCityCoreHpBarName();
         }
 
         public void SetOwner(string ownerId)
@@ -100,9 +100,9 @@ namespace Panoptes.Presentation.Map
             var color = ResolveOwnerColor(OwnerId);
 
             ApplyOwnerTint(color);
-            if (_castleHpBarView != null)
+            if (_cityCoreHpBarView != null)
             {
-                _castleHpBarView.SetFactionColor(color);
+                _cityCoreHpBarView.SetFactionColor(color);
             }
         }
 
@@ -117,9 +117,9 @@ namespace Panoptes.Presentation.Map
             {
                 // When protocol doesn't provide max HP, treat first observed HP as max to avoid fake half-HP display.
                 // If current HP is zero (e.g. transient state), fallback to city core default.
-                if (IsCastleBuildingType() && HitPoints <= 0)
+                if (IsCityCoreBuildingType() && HitPoints <= 0)
                 {
-                    MaxHitPoints = Mathf.Max(1, defaultCastleMaxHp);
+                    MaxHitPoints = Mathf.Max(1, defaultCityCoreMaxHp);
                 }
                 else
                 {
@@ -128,13 +128,13 @@ namespace Panoptes.Presentation.Map
             }
 
             UpdateDamageMark();
-            UpdateCastleHpBarValue();
+            UpdateCityCoreHpBarValue();
         }
 
-        public void SetCastleHpBarEnabled(bool enabled)
+        public void SetCityCoreHpBarEnabled(bool enabled)
         {
-            enableCastleHpBar = enabled;
-            EnsureCastleHpBarState();
+            enableCityCoreHpBar = enabled;
+            EnsureCityCoreHpBarState();
         }
 
         public void SetSelected(bool isSelected)
@@ -157,7 +157,7 @@ namespace Panoptes.Presentation.Map
             EnsureAllRenderers();
             if (_allRenderers == null || _allRenderers.Length == 0)
             {
-                UpdateCastleHpBarVisibility();
+                UpdateCityCoreHpBarVisibility();
                 return;
             }
 
@@ -199,7 +199,7 @@ namespace Panoptes.Presentation.Map
                 ApplyOwnerTint(ResolveOwnerColor(OwnerId));
             }
 
-            UpdateCastleHpBarVisibility();
+            UpdateCityCoreHpBarVisibility();
         }
 
         private void UpdateDamageMark()
@@ -271,7 +271,7 @@ namespace Panoptes.Presentation.Map
                         continue;
                     }
 
-                    if (_castleHpBarRoot != null && renderer.transform.IsChildOf(_castleHpBarRoot))
+                    if (_cityCoreHpBarRoot != null && renderer.transform.IsChildOf(_cityCoreHpBarRoot))
                     {
                         continue;
                     }
@@ -400,94 +400,94 @@ namespace Panoptes.Presentation.Map
                 : enemyOwnerColor;
         }
 
-        private void EnsureCastleHpBarState()
+        private void EnsureCityCoreHpBarState()
         {
-            if (!enableCastleHpBar)
+            if (!enableCityCoreHpBar)
             {
-                DestroyCastleHpBar();
+                DestroyCityCoreHpBar();
                 return;
             }
 
-            if (IsCastleBuildingType())
+            if (IsCityCoreBuildingType())
             {
-                CreateCastleHpBarIfNeeded();
-                UpdateCastleHpBarValue();
-                UpdateCastleHpBarVisibility();
+                CreateCityCoreHpBarIfNeeded();
+                UpdateCityCoreHpBarValue();
+                UpdateCityCoreHpBarVisibility();
             }
             else
             {
-                DestroyCastleHpBar();
+                DestroyCityCoreHpBar();
             }
         }
 
-        private void CreateCastleHpBarIfNeeded()
+        private void CreateCityCoreHpBarIfNeeded()
         {
-            if (_castleHpBarView != null && _castleHpBarRoot != null)
+            if (_cityCoreHpBarView != null && _cityCoreHpBarRoot != null)
             {
                 return;
             }
 
-            var prefab = ResolveCastleHpBarPrefab();
+            var prefab = ResolveCityCoreHpBarPrefab();
             if (prefab != null)
             {
-                _castleHpBarView = Instantiate(prefab, transform);
+                _cityCoreHpBarView = Instantiate(prefab, transform);
             }
             else
             {
-                var fallbackRoot = new GameObject("CastleHpBarRoot", typeof(RectTransform));
+                var fallbackRoot = new GameObject("CityCoreHpBarRoot", typeof(RectTransform));
                 fallbackRoot.transform.SetParent(transform, false);
-                _castleHpBarView = fallbackRoot.AddComponent<CastleHPBar>();
-                _castleHpBarView.EditorRebuildUiForPrefab();
+                _cityCoreHpBarView = fallbackRoot.AddComponent<CityCoreHPBar>();
+                _cityCoreHpBarView.EditorRebuildUiForPrefab();
             }
 
-            _castleHpBarRoot = _castleHpBarView != null ? _castleHpBarView.transform : null;
-            if (_castleHpBarView != null)
+            _cityCoreHpBarRoot = _cityCoreHpBarView != null ? _cityCoreHpBarView.transform : null;
+            if (_cityCoreHpBarView != null)
             {
-                _castleHpBarView.SetBarColors(castleHpBarBackgroundColor, castleHpBarFillColor);
-                _castleHpBarView.SetFactionColor(ResolveOwnerColor(OwnerId));
-                UpdateCastleHpBarName();
-                _castleHpBarView.SetHpRatio(_castleHpNormalized);
+                _cityCoreHpBarView.SetBarColors(cityCoreHpBarBackgroundColor, cityCoreHpBarFillColor);
+                _cityCoreHpBarView.SetFactionColor(ResolveOwnerColor(OwnerId));
+                UpdateCityCoreHpBarName();
+                _cityCoreHpBarView.SetHpRatio(_cityCoreHpNormalized);
             }
 
             _allRenderers = null;
         }
 
-        private void DestroyCastleHpBar()
+        private void DestroyCityCoreHpBar()
         {
-            if (_castleHpBarRoot != null)
+            if (_cityCoreHpBarRoot != null)
             {
-                Destroy(_castleHpBarRoot.gameObject);
-                _castleHpBarRoot = null;
-                _castleHpBarView = null;
+                Destroy(_cityCoreHpBarRoot.gameObject);
+                _cityCoreHpBarRoot = null;
+                _cityCoreHpBarView = null;
                 _allRenderers = null;
             }
         }
 
-        private void UpdateCastleHpBarValue()
+        private void UpdateCityCoreHpBarValue()
         {
             var maxHp = Mathf.Max(1, MaxHitPoints);
-            _castleHpNormalized = Mathf.Clamp01(HitPoints / (float)maxHp);
+            _cityCoreHpNormalized = Mathf.Clamp01(HitPoints / (float)maxHp);
 
-            if (_castleHpBarView != null)
+            if (_cityCoreHpBarView != null)
             {
-                _castleHpBarView.SetHpRatio(_castleHpNormalized);
+                _cityCoreHpBarView.SetHpRatio(_cityCoreHpNormalized);
             }
         }
 
-        private void UpdateCastleHpBarVisibility()
+        private void UpdateCityCoreHpBarVisibility()
         {
-            if (_castleHpBarRoot == null)
+            if (_cityCoreHpBarRoot == null)
             {
                 return;
             }
 
-            var visible = enableCastleHpBar && IsCastleBuildingType() && !IsGhost;
-            _castleHpBarRoot.gameObject.SetActive(visible);
+            var visible = enableCityCoreHpBar && IsCityCoreBuildingType() && !IsGhost;
+            _cityCoreHpBarRoot.gameObject.SetActive(visible);
         }
 
-        private void UpdateCastleHpBarTransform()
+        private void UpdateCityCoreHpBarTransform()
         {
-            if (_castleHpBarRoot == null || !_castleHpBarRoot.gameObject.activeSelf)
+            if (_cityCoreHpBarRoot == null || !_cityCoreHpBarRoot.gameObject.activeSelf)
             {
                 return;
             }
@@ -498,22 +498,22 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var anchorPosition = transform.position + Vector3.up * Mathf.Max(0.1f, castleHpBarVerticalPadding);
+            var anchorPosition = transform.position + Vector3.up * Mathf.Max(0.1f, cityCoreHpBarVerticalPadding);
             if (TryGetVisualBounds(out var bounds))
             {
-                anchorPosition = new Vector3(bounds.center.x, bounds.max.y + Mathf.Max(0.05f, castleHpBarVerticalPadding), bounds.center.z);
+                anchorPosition = new Vector3(bounds.center.x, bounds.max.y + Mathf.Max(0.05f, cityCoreHpBarVerticalPadding), bounds.center.z);
             }
 
-            _castleHpBarRoot.position = anchorPosition;
+            _cityCoreHpBarRoot.position = anchorPosition;
 
-            var toCameraForScale = _castleHpBarRoot.position - cam.transform.position;
-            if (lockCastleHpBarWorldRotation)
+            var toCameraForScale = _cityCoreHpBarRoot.position - cam.transform.position;
+            if (lockCityCoreHpBarWorldRotation)
             {
                 // Face camera with height (pitch + yaw), and keep stable up vector to prevent odd letter tilt.
-                var toCamera = cam.transform.position - _castleHpBarRoot.position;
+                var toCamera = cam.transform.position - _cityCoreHpBarRoot.position;
                 if (toCamera.sqrMagnitude > 0.0001f)
                 {
-                    var up = castleHpBarUseCameraUpVector ? cam.transform.up : Vector3.up;
+                    var up = cityCoreHpBarUseCameraUpVector ? cam.transform.up : Vector3.up;
                     var forward = toCamera.normalized;
 
                     // Avoid degenerate LookRotation when up is nearly parallel to forward.
@@ -526,23 +526,23 @@ namespace Panoptes.Presentation.Map
                         }
                     }
 
-                    var rotation = Quaternion.LookRotation(forward, up) * Quaternion.Euler(0f, castleHpBarFacingYawOffset, 0f);
-                    if (!castleHpBarAllowRoll)
+                    var rotation = Quaternion.LookRotation(forward, up) * Quaternion.Euler(0f, cityCoreHpBarFacingYawOffset, 0f);
+                    if (!cityCoreHpBarAllowRoll)
                     {
                         var euler = rotation.eulerAngles;
                         rotation = Quaternion.Euler(euler.x, euler.y, 0f);
                     }
 
-                    _castleHpBarRoot.rotation = rotation;
+                    _cityCoreHpBarRoot.rotation = rotation;
                 }
             }
             else
             {
                 // Optional fallback: fixed world yaw.
-                _castleHpBarRoot.rotation = Quaternion.Euler(0f, castleHpBarFixedYaw, 0f);
+                _cityCoreHpBarRoot.rotation = Quaternion.Euler(0f, cityCoreHpBarFixedYaw, 0f);
             }
 
-            var sizeFactor = Mathf.Max(0.001f, castleHpBarScreenScale);
+            var sizeFactor = Mathf.Max(0.001f, cityCoreHpBarScreenScale);
             float worldScale;
             if (cam.orthographic)
             {
@@ -554,8 +554,8 @@ namespace Panoptes.Presentation.Map
                 worldScale = distance * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) * sizeFactor;
             }
 
-            worldScale = Mathf.Clamp(worldScale, castleHpBarMinScale, castleHpBarMaxScale);
-            _castleHpBarRoot.localScale = Vector3.one * worldScale;
+            worldScale = Mathf.Clamp(worldScale, cityCoreHpBarMinScale, cityCoreHpBarMaxScale);
+            _cityCoreHpBarRoot.localScale = Vector3.one * worldScale;
         }
 
         private bool TryGetVisualBounds(out Bounds bounds)
@@ -591,36 +591,36 @@ namespace Panoptes.Presentation.Map
             return hasBounds;
         }
 
-        private CastleHPBar ResolveCastleHpBarPrefab()
+        private CityCoreHPBar ResolveCityCoreHpBarPrefab()
         {
-            if (castleHpBarPrefab != null)
+            if (cityCoreHpBarPrefab != null)
             {
-                return castleHpBarPrefab;
+                return cityCoreHpBarPrefab;
             }
 
-            if (!autoLoadCastleHpBarPrefab || string.IsNullOrWhiteSpace(castleHpBarResourcesPath))
+            if (!autoLoadCityCoreHpBarPrefab || string.IsNullOrWhiteSpace(cityCoreHpBarResourcesPath))
             {
                 return null;
             }
 
-            castleHpBarPrefab = Resources.Load<CastleHPBar>(castleHpBarResourcesPath);
-            return castleHpBarPrefab;
+            cityCoreHpBarPrefab = Resources.Load<CityCoreHPBar>(cityCoreHpBarResourcesPath);
+            return cityCoreHpBarPrefab;
         }
 
-        private void UpdateCastleHpBarName()
+        private void UpdateCityCoreHpBarName()
         {
-            if (_castleHpBarView == null)
+            if (_cityCoreHpBarView == null)
             {
                 return;
             }
 
-            var label = string.IsNullOrWhiteSpace(castleDisplayName)
+            var label = string.IsNullOrWhiteSpace(cityCoreDisplayName)
                 ? "City Core"
-                : castleDisplayName.Trim();
-            _castleHpBarView.SetName(label);
+                : cityCoreDisplayName.Trim();
+            _cityCoreHpBarView.SetName(label);
         }
 
-        private bool IsCastleBuildingType()
+        private bool IsCityCoreBuildingType()
         {
             return string.Equals(buildingType, "city_core", StringComparison.Ordinal);
         }
@@ -658,16 +658,16 @@ namespace Panoptes.Presentation.Map
         {
             // Intentionally not auto-filling renderer list.
             // This prevents tinting the whole building by mistake.
-            castleHpBarWidth = Mathf.Max(0.1f, castleHpBarWidth);
-            castleHpBarHeight = Mathf.Max(0.05f, castleHpBarHeight);
-            castleHpBarVerticalPadding = Mathf.Max(0.01f, castleHpBarVerticalPadding);
-            castleHpBarScreenScale = Mathf.Max(0.00005f, castleHpBarScreenScale);
-            castleHpBarMinScale = Mathf.Max(0.0001f, castleHpBarMinScale);
-            castleHpBarMaxScale = Mathf.Max(castleHpBarMinScale, castleHpBarMaxScale);
-            castleHpBarFacingYawOffset = NormalizeAngle180(castleHpBarFacingYawOffset);
-            castleHpBarFixedYaw = NormalizeAngle180(castleHpBarFixedYaw);
-            castleDisplayName = string.IsNullOrWhiteSpace(castleDisplayName) ? "Castle" : castleDisplayName.Trim();
-            defaultCastleMaxHp = Mathf.Max(1, defaultCastleMaxHp);
+            cityCoreHpBarWidth = Mathf.Max(0.1f, cityCoreHpBarWidth);
+            cityCoreHpBarHeight = Mathf.Max(0.05f, cityCoreHpBarHeight);
+            cityCoreHpBarVerticalPadding = Mathf.Max(0.01f, cityCoreHpBarVerticalPadding);
+            cityCoreHpBarScreenScale = Mathf.Max(0.00005f, cityCoreHpBarScreenScale);
+            cityCoreHpBarMinScale = Mathf.Max(0.0001f, cityCoreHpBarMinScale);
+            cityCoreHpBarMaxScale = Mathf.Max(cityCoreHpBarMinScale, cityCoreHpBarMaxScale);
+            cityCoreHpBarFacingYawOffset = NormalizeAngle180(cityCoreHpBarFacingYawOffset);
+            cityCoreHpBarFixedYaw = NormalizeAngle180(cityCoreHpBarFixedYaw);
+            cityCoreDisplayName = string.IsNullOrWhiteSpace(cityCoreDisplayName) ? "City Core" : cityCoreDisplayName.Trim();
+            defaultCityCoreMaxHp = Mathf.Max(1, defaultCityCoreMaxHp);
             EnsureAllRenderers();
         }
 

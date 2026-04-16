@@ -1,9 +1,9 @@
 /*************************************************
  * Project: Panoptes
- * File: CastleHPBar.cs
+ * File: CityCoreHPBar.cs
  * Author: Panoptes Team
  * Date: 2026-04-12
- * Description: World-space castle HP bar view (bar + name + faction plate).
+ * Description: World-space city core HP bar view (bar + name + faction plate).
  *************************************************/
 
 using TMPro;
@@ -15,7 +15,7 @@ using UnityEditor;
 
 namespace Panoptes.Presentation.UI.HUD
 {
-    public sealed class CastleHPBar : MonoBehaviour
+    public sealed class CityCoreHPBar : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private Canvas worldCanvas;
@@ -42,7 +42,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Color nameColor = Color.white;
         [SerializeField] private Color hpBarBackgroundColor = new Color(0.08f, 0.08f, 0.08f, 0.9f);
         [SerializeField] private Color hpBarFillColor = new Color(0.2f, 0.95f, 0.35f, 1f);
-        [SerializeField] private string defaultDisplayName = "Castle";
+        [SerializeField] private string defaultDisplayName = "City Core";
 
         private static readonly Color TransparentWhite = new Color(1f, 1f, 1f, 0f);
         private static Sprite _defaultUiSprite;
@@ -114,7 +114,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (nameText != null)
             {
-                nameText.text = string.IsNullOrWhiteSpace(defaultDisplayName) ? "Castle" : defaultDisplayName;
+                nameText.text = string.IsNullOrWhiteSpace(defaultDisplayName) ? "City Core" : defaultDisplayName;
                 nameText.color = nameColor;
                 nameText.fontSize = Mathf.Max(10f, nameFontSize);
                 nameText.fontStyle = nameFontStyle;
@@ -306,7 +306,7 @@ namespace Panoptes.Presentation.UI.HUD
                 tmp = go.AddComponent<TextMeshProUGUI>();
             }
 
-            tmp.text = "Castle";
+            tmp.text = "City Core";
             tmp.fontSize = 16f;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;

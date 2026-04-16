@@ -755,7 +755,7 @@ namespace Panoptes.Presentation.Map
                 case "engineer_camp":
                     return "engineer";
                 case "city_core":
-                    return "castle";
+                    return "city_core";
                 default:
                     return token;
             }

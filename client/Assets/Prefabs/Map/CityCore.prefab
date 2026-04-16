@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3303210597913559520}
   - component: {fileID: 8465135733123450000}
   m_Layer: 0
-  m_Name: Castle
+  m_Name: CityCore
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9d9615020d8958499357da6adf912c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.BuildingView
-  buildingType: castle
+  buildingType: city_core
   ownerTintRenderers: []
   tintOnlyMatchingMaterials: 1
   tintMaterialIndices: 05000000
@@ -65,16 +65,16 @@ MonoBehaviour:
   defaultGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.9}
   ghostTintStrength: 0.85
   lowHitPointThreshold: 30
-  defaultCastleMaxHp: 200
-  enableCastleHpBar: 0
-  castleHpBarWidth: 1.8
-  castleHpBarHeight: 0.2
-  castleHpBarVerticalPadding: 0.35
-  castleHpBarScreenScale: 0.001
-  castleHpBarMinScale: 0.0035
-  castleHpBarMaxScale: 0.016
-  castleHpBarFillColor: {r: 0.2, g: 0.95, b: 0.35, a: 1}
-  castleHpBarBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.9}
+  defaultCityCoreMaxHp: 200
+  enableCityCoreHpBar: 0
+  cityCoreHpBarWidth: 1.8
+  cityCoreHpBarHeight: 0.2
+  cityCoreHpBarVerticalPadding: 0.35
+  cityCoreHpBarScreenScale: 0.001
+  cityCoreHpBarMinScale: 0.0035
+  cityCoreHpBarMaxScale: 0.016
+  cityCoreHpBarFillColor: {r: 0.2, g: 0.95, b: 0.35, a: 1}
+  cityCoreHpBarBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.9}
 --- !u!1 &6787967239105697608
 GameObject:
   m_ObjectHideFlags: 0
@@ -117,7 +117,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
       propertyPath: m_Name
-      value: Castle
+      value: City Core
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
       propertyPath: m_LocalScale.x

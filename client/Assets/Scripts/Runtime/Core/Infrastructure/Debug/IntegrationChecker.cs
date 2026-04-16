@@ -80,6 +80,34 @@ namespace Panoptes.DebugTools
                 return;
             }
 
+            var localPlayerId = NormalizePlayerId(cache.MyPlayerID, cache.MyPlayer.Id);
+            if (string.IsNullOrWhiteSpace(localPlayerId))
+            {
+                Fail("MsgGameInit 后缺少本地玩家标识");
+                return;
+            }
+
+            var ownedCityCoreCount = 0;
+            foreach (var node in cache.Nodes.Values)
+            {
+                if (node == null || !string.Equals(Normalize(node.BuildingType), "city_core", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var ownerId = NormalizePlayerId(node.Owner, node.TerritoryOwner);
+                if (string.Equals(ownerId, localPlayerId, System.StringComparison.Ordinal))
+                {
+                    ownedCityCoreCount++;
+                }
+            }
+
+            if (ownedCityCoreCount <= 0)
+            {
+                Fail("MsgGameInit 后缺少己方 city_core");
+                return;
+            }
+
             _initChecked = true;
             if (cache.Phase == "planning" && cache.TokensLeft == 3)
             {
@@ -156,6 +184,22 @@ namespace Panoptes.DebugTools
 
             _failed = true;
             Debug.LogError($"[Integration] ✗ 检查失败: {reason}");
+        }
+
+        private static string NormalizePlayerId(string primary, string fallback)
+        {
+            var normalizedPrimary = Normalize(primary);
+            if (!string.IsNullOrEmpty(normalizedPrimary))
+            {
+                return normalizedPrimary;
+            }
+
+            return Normalize(fallback);
+        }
+
+        private static string Normalize(string value)
+        {
+            return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
     }
 }

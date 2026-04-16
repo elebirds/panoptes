@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 22400000}
   - component: {fileID: 11400000}
   m_Layer: 5
-  m_Name: CastleProductionPanel
+  m_Name: CityCoreProductionPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,7 +48,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c76c46babce468fb3edaaab34d9c28e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Domestic.CastleProductionPanel
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Domestic.CityCoreProductionPanel
   panelRoot: {fileID: 100001}
   startHidden: 1
   autoBuildFallbackUi: 1
@@ -71,9 +71,9 @@ MonoBehaviour:
   archeryHintText: {fileID: 0}
   saveButton: {fileID: 0}
   closeButton: {fileID: 0}
-  castleBuildingType: castle
+  cityCoreBuildingType: city_core
   requireLocalOwnership: 1
-  requireCastleBuildingType: 1
+  requireCityCoreBuildingType: 1
   fallbackWorkshopCapacity: 20
   fallbackArcheryCapacity: 10
   woodEssencePerUnit: 1
@@ -81,7 +81,7 @@ MonoBehaviour:
   tryReadCapacityFromConfig: 1
   buildConfigKey: buildconfig
   armyConfigKey: armyconfig
-  saveKeyPrefix: castle_production_plan
+  saveKeyPrefix: city_core_production_plan
 --- !u!1 &100001
 GameObject:
   m_ObjectHideFlags: 0

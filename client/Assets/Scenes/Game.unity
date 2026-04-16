@@ -1798,13 +1798,13 @@ MonoBehaviour:
   - archery
   - barracks
   - blacksmith
-  - castle
+  - city_core
   globalPlacementBuildingTypes:
   - tower
   - atktower
   - watchtower
   - viewtower
-  disallowManualCastlePlacement: 1
+  disallowManualCityCorePlacement: 1
   autoCreateCornerCityZones: 1
   cornerInset: 2
   cityZones: []

@@ -196,7 +196,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, Sprite> _spriteCache = new();
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
-        private string _activeCastleNodeId = string.Empty;
+        private string _activeCityCoreNodeId = string.Empty;
         private Vector2 _buildListBaseAnchoredPos;
         private float _buildListScrollOffset;
         private bool _buildListScrollInitialized;
@@ -255,15 +255,15 @@ namespace Panoptes.Presentation.UI.Domestic
             mapInputHandler?.CancelCurrentMode();
         }
 
-        public void SetCastleContext(string castleNodeId)
+        public void SetCityCoreContext(string cityCoreNodeId)
         {
-            _activeCastleNodeId = (castleNodeId ?? string.Empty).Trim();
+            _activeCityCoreNodeId = (cityCoreNodeId ?? string.Empty).Trim();
             RefreshBuildItems();
         }
 
-        public void ClearCastleContext()
+        public void ClearCityCoreContext()
         {
-            _activeCastleNodeId = string.Empty;
+            _activeCityCoreNodeId = string.Empty;
         }
 
         public void RefreshBuildItems()
@@ -1097,13 +1097,13 @@ namespace Panoptes.Presentation.UI.Domestic
             switch (rule)
             {
                 case BuildRule.ResourceOnly:
-                    mapInputHandler.EnterBuildPlacementResource(normalized, _activeCastleNodeId);
+                    mapInputHandler.EnterBuildPlacementResource(normalized, _activeCityCoreNodeId);
                     break;
                 case BuildRule.CityOnly:
-                    mapInputHandler.EnterBuildPlacementCity(normalized, _activeCastleNodeId);
+                    mapInputHandler.EnterBuildPlacementCity(normalized, _activeCityCoreNodeId);
                     break;
                 default:
-                    mapInputHandler.EnterBuildPlacementAny(normalized, _activeCastleNodeId);
+                    mapInputHandler.EnterBuildPlacementAny(normalized, _activeCityCoreNodeId);
                     break;
             }
         }
