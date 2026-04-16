@@ -11,6 +11,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -19,6 +20,7 @@ type SnapshotPhase struct{}
 func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 	snapshot := CombatSnapshot{
 		Units:          make(map[string]SnapshotUnit),
+		Structures:     make(map[string]SnapshotStructure),
 		BlockSources:   make(map[domain.Position]BlockSource),
 		OrderedUnitIDs: make([]string, 0),
 	}
@@ -30,7 +32,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		if entry.HasComponent(ecs.UnitCapabilitiesC) {
 			caps = *ecs.UnitCapabilitiesC.Get(entry)
 		} else {
-			caps = inferCapabilities(entry)
+			caps = inferCapabilities(entry, stats.Type)
 		}
 
 		// 快照阶段就把缺省指令归一成 hold，避免后续阶段重复兜底。
@@ -76,6 +78,26 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		}
 		pos := ecs.PositionC.Get(entry)
 		node := ecs.NodeC.Get(entry)
+		cityID := ecs.ResolveCityID(entry)
+		isCityCore := entry.HasComponent(ecs.CityCoreC)
+		isCapitalCore := false
+		if isCityCore && ctx.State != nil {
+			if ownerState, ok := ctx.State.Players[building.Owner]; ok && ownerState != nil && cityID != "" && cityID == ownerState.CapitalCityID {
+				isCapitalCore = true
+			}
+		}
+		snapshot.Structures[node.ID] = SnapshotStructure{
+			NodeID:        node.ID,
+			PlayerID:      building.Owner,
+			CityID:        cityID,
+			Type:          building.Type,
+			Position:      domain.Position{X: pos.X, Y: pos.Y},
+			HP:            building.HP,
+			MaxHP:         building.MaxHP,
+			IsCityCore:    isCityCore,
+			IsCapitalCore: isCapitalCore,
+		}
+		ctx.CurrentStructureHP[node.ID] = building.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
 		snapshot.BlockSources[domain.Position{X: pos.X, Y: pos.Y}] = BlockSource{
 			Kind:     "building",
@@ -89,14 +111,19 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 	ctx.Snapshot = snapshot
 }
 
-func inferCapabilities(entry *donburi.Entry) domain.UnitCapabilities {
+func inferCapabilities(entry *donburi.Entry, unitType domain.UnitType) domain.UnitCapabilities {
 	// 兼容旧存档/旧测试中尚未挂 UnitCapabilities 组件的单位。
 	// 这是迁移保护逻辑，正常新单位应优先使用静态数据生成后的能力组件。
+	canAttackStructures := false
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		canAttackStructures = cfg.Flags.CanAttackStructures
+	}
 	return domain.UnitCapabilities{
-		Melee:       !entry.HasComponent(ecs.RangedAbilityC),
-		Ranged:      entry.HasComponent(ecs.RangedAbilityC),
-		Charge:      entry.HasComponent(ecs.ChargeAbilityC),
-		Siege:       entry.HasComponent(ecs.SiegeAbilityC),
-		DestroyRoad: entry.HasComponent(ecs.DestroyAbilityC),
+		Melee:               !entry.HasComponent(ecs.RangedAbilityC),
+		Ranged:              entry.HasComponent(ecs.RangedAbilityC),
+		Charge:              entry.HasComponent(ecs.ChargeAbilityC),
+		Siege:               entry.HasComponent(ecs.SiegeAbilityC),
+		CanAttackStructures: canAttackStructures,
+		DestroyRoad:         entry.HasComponent(ecs.DestroyAbilityC),
 	}
 }

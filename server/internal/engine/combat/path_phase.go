@@ -52,16 +52,16 @@ type AttackResolver struct{}
 
 func (AttackResolver) Action() domain.UnitResolutionAction { return domain.UnitResolutionActionAttack }
 
-func (AttackResolver) Plan(_ *ResolutionContext, unit SnapshotUnit) *OrderPlan {
+func (AttackResolver) Plan(ctx *ResolutionContext, unit SnapshotUnit) *OrderPlan {
 	// attack 的位移计划固定为原地，实际是否命中留到伤害窗口按最终位置判定。
 	return &OrderPlan{
-		UnitID:         unit.UnitID,
-		Action:         domain.UnitResolutionActionAttack,
-		Start:          unit.Position,
-		Path:           []domain.Position{unit.Position},
-		Candidate:      unit.Position,
-		Fallback:       unit.Position,
-		AttackTargetID: unit.Order.TargetUnitID,
+		UnitID:       unit.UnitID,
+		Action:       domain.UnitResolutionActionAttack,
+		Start:        unit.Position,
+		Path:         []domain.Position{unit.Position},
+		Candidate:    unit.Position,
+		Fallback:     unit.Position,
+		AttackTarget: resolveAttackTarget(ctx, unit.Order),
 	}
 }
 
@@ -171,4 +171,21 @@ func resolveChargeGoal(ctx *ResolutionContext, order domain.UnitResolutionOrder)
 		}
 	}
 	return resolveTargetNode(ctx, order.TargetNodeID)
+}
+
+func resolveAttackTarget(ctx *ResolutionContext, order domain.UnitResolutionOrder) CombatTargetRef {
+	if order.TargetUnitID != "" {
+		return CombatTargetRef{Kind: CombatTargetKindUnit, UnitID: order.TargetUnitID}
+	}
+	if order.TargetNodeID == "" {
+		return CombatTargetRef{}
+	}
+	if structure, ok := ctx.Structure(order.TargetNodeID); ok {
+		kind := CombatTargetKindStructure
+		if structure.IsCityCore {
+			kind = CombatTargetKindCityCore
+		}
+		return CombatTargetRef{Kind: kind, NodeID: order.TargetNodeID}
+	}
+	return CombatTargetRef{Kind: CombatTargetKindStructure, NodeID: order.TargetNodeID}
 }

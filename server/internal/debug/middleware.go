@@ -172,8 +172,16 @@ func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
 			return "MsgRevealResult", body.RevealResult, true
 		case *pb.GameEvent_ResearchResult:
 			return "MsgResearchResult", body.ResearchResult, true
+		case *pb.GameEvent_SetPolicyResult:
+			return "MsgSetPolicyResult", body.SetPolicyResult, true
+		case *pb.GameEvent_SetInstitutionLoadoutResult:
+			return "MsgSetInstitutionLoadoutResult", body.SetInstitutionLoadoutResult, true
+		case *pb.GameEvent_IssueUnitOrderResult:
+			return "MsgIssueUnitOrderResult", body.IssueUnitOrderResult, true
 		case *pb.GameEvent_SetBuildingRecipeResult:
 			return "MsgSetBuildingRecipeResult", body.SetBuildingRecipeResult, true
+		case *pb.GameEvent_BuildStructureResult:
+			return "MsgBuildStructureResult", body.BuildStructureResult, true
 		case *pb.GameEvent_TurnReport:
 			return "MsgTurnReport", body.TurnReport, true
 		case *pb.GameEvent_TurnSettlement:

@@ -139,7 +139,7 @@ func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 
 	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
 		infantryID: {PlayerID: "player-a", UnitID: infantryID, Action: domain.UnitResolutionActionAttack, TargetUnitID: settlerID},
-		settlerID: {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
+		settlerID:  {PlayerID: "player-b", UnitID: settlerID, Action: domain.UnitResolutionActionHold},
 	}
 
 	resolver := NewSingleStepResolver()
@@ -148,6 +148,111 @@ func TestSingleStepResolver_SettlerIsRemovedWhenCaughtByMelee(t *testing.T) {
 
 	if _, ok := findUnitEntry(state.World, settlerID); ok {
 		t.Fatalf("settler should be removed after melee contact")
+	}
+}
+
+func TestSingleStepResolver_AttackDamagesHostileBuildingByNodeTarget(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 0, 0, "attacker-1")
+	spawnTestBuilding(state.World, state, "N1_0", "farm", "player-b", "city-b")
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N1_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countBuildingDamageEvents(events, "N1_0"); got != 1 {
+		t.Fatalf("building damage events = %d, want 1", got)
+	}
+	nodeEntry, ok := state.GetNode("N1_0")
+	if !ok {
+		t.Fatalf("missing node N1_0")
+	}
+	if got := ecs.BuildingC.Get(nodeEntry).HP; got >= 20 {
+		t.Fatalf("building HP = %d, want reduced below 20", got)
+	}
+}
+
+func TestSingleStepResolver_AttackDestroysCapitalCityCoreByNodeTarget(t *testing.T) {
+	state := newCombatTestState(t, 2)
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 1, 0, "attacker-1")
+	spawnTestBuilding(state.World, state, "N0_0", "city_core", "player-b", "N0_0")
+	state.EnsureCityState("player-b", "N0_0")
+	state.Players["player-b"].CapitalCityID = "N0_0"
+	state.Players["player-b"].CapitalCityCoreHP = 10
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N0_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countEventKind(events, "city_core_destroyed"); got != 1 {
+		t.Fatalf("city_core_destroyed events = %d, want 1", got)
+	}
+	if !state.IsOver {
+		t.Fatalf("state.IsOver = false, want true")
+	}
+	if state.WinnerID != "player-a" {
+		t.Fatalf("winner_id = %q, want player-a", state.WinnerID)
+	}
+}
+
+func TestSingleStepResolver_DeadUnitCannotAttackStructureLaterThisTurn(t *testing.T) {
+	state := newCombatTestState(t, 3)
+	killerID := spawnTestUnitWithID(state.World, "infantry", "player-b", 0, 0, "a-killer")
+	attackerID := spawnTestUnitWithID(state.World, "infantry", "player-a", 1, 0, "z-attacker")
+	spawnTestBuilding(state.World, state, "N2_0", "farm", "player-b", "city-b")
+
+	attackerEntry, ok := findUnitEntry(state.World, attackerID)
+	if !ok {
+		t.Fatalf("attacker not found")
+	}
+	ecs.UnitStatsC.Get(attackerEntry).HP = 1
+
+	state.TurnRuntime.Resolving.UnitOrders = map[string]domain.UnitResolutionOrder{
+		killerID: {
+			PlayerID:     "player-b",
+			UnitID:       killerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetUnitID: attackerID,
+		},
+		attackerID: {
+			PlayerID:     "player-a",
+			UnitID:       attackerID,
+			Action:       domain.UnitResolutionActionAttack,
+			TargetNodeID: "N2_0",
+		},
+	}
+
+	resolver := NewSingleStepResolver()
+	events := resolver.Run(state.World, state)
+	applyCombatEvents(state, events)
+
+	if got := countBuildingDamageEvents(events, "N2_0"); got != 0 {
+		t.Fatalf("building damage events = %d, want 0 after attacker dies first", got)
+	}
+	nodeEntry, ok := state.GetNode("N2_0")
+	if !ok {
+		t.Fatalf("missing node N2_0")
+	}
+	if got := ecs.BuildingC.Get(nodeEntry).HP; got != 20 {
+		t.Fatalf("building HP = %d, want unchanged 20", got)
 	}
 }
 
@@ -163,9 +268,13 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Tags: []string{"civilian"}},
-			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"melee"}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}, Tags: []string{"melee"}},
 			{ID: "archer", Class: "ranged", MaxHP: 20, Attack: 8, AttackRange: 2, MoveRange: 2, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 1}, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"ranged"}},
 			{ID: "cavalry", Class: "mobile", MaxHP: 25, Attack: 12, AttackRange: 1, MoveRange: 3, VisionRange: 4, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{"food": 2}, Multipliers: map[string]float64{}, ChargeBonus: 1.5, Flags: staticdata.UnitFlags{CanCapture: true}, Tags: []string{"charge"}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 10, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 20, TakeoverMode: "city_capture"},
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", MoveCostNoRoad: 2, Passable: true},
@@ -198,6 +307,23 @@ func newCombatTestState(t *testing.T, width int) *domain.GameState {
 func spawnTestUnit(world donburi.World, unitType string, faction string, x, y int) string {
 	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
 	return ecs.UnitStatsC.Get(entry).ID
+}
+
+func spawnTestUnitWithID(world donburi.World, unitType string, faction string, x, y int, unitID string) string {
+	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
+	ecs.UnitStatsC.Get(entry).ID = unitID
+	return unitID
+}
+
+func spawnTestBuilding(world donburi.World, state *domain.GameState, nodeID string, buildingType string, owner string, cityID string) {
+	nodeEntry, ok := state.GetNode(nodeID)
+	if !ok {
+		panic("missing test node: " + nodeID)
+	}
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = owner
+	node.TerritoryOwner = owner
+	ecs.CreateBuilding(world, buildingType, owner, cityID, nodeEntry)
 }
 
 func applyCombatEvents(state *domain.GameState, events []event.Event) {
@@ -233,6 +359,26 @@ func countDamageEventsForUnit(events []event.Event, unitID string) int {
 	count := 0
 	for _, evt := range events {
 		if dmg, ok := evt.(event.UnitDamagedEvent); ok && dmg.UnitID == unitID {
+			count++
+		}
+	}
+	return count
+}
+
+func countBuildingDamageEvents(events []event.Event, nodeID string) int {
+	count := 0
+	for _, evt := range events {
+		if dmg, ok := evt.(event.BuildingDamagedEvent); ok && dmg.NodeID == nodeID {
+			count++
+		}
+	}
+	return count
+}
+
+func countEventKind(events []event.Event, kind string) int {
+	count := 0
+	for _, evt := range events {
+		if evt != nil && evt.Kind() == kind {
 			count++
 		}
 	}

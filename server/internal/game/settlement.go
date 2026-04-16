@@ -13,6 +13,7 @@ import (
 	"github.com/elebirds/panoptes/internal/engine"
 	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
+	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
 // RunTurnResolution executes the unified Turn V2 resolving pipeline.
@@ -23,14 +24,16 @@ func RunTurnResolution(room *GameRoom) {
 
 	lockInEvents := room.lockPlanningInputs()
 	room.lockUnitResolutionOrders()
-	unitResolutionPipeline := engine.NewUnitResolutionPipeline()
-	unitEvents := unitResolutionPipeline.Run(room.State().World, room.State())
-	room.refreshActiveMarchesAfterSettlement()
-	mapEvents := room.applyPlannedMapActions()
-	economyPipeline := engine.NewEconomyPipeline()
-	economyEvents := economyPipeline.Run(room.State().World, room.State())
-	if len(lockInEvents) > 0 {
-		economyEvents = append(lockInEvents, economyEvents...)
+	unitResolutionRunner := engine.NewUnitResolutionRunner()
+	combatEvents, upkeepEvents := unitResolutionRunner.Run(room.State().World, room.State())
+	unitEvents := append(combatEvents, upkeepEvents...)
+	mapEvents := make([]*pb.TurnEvent, 0)
+	economyEvents := append([]event.Event(nil), lockInEvents...)
+	if !room.State().IsOver {
+		room.refreshActiveMarchesAfterSettlement()
+		mapEvents = room.applyPlannedMapActions()
+		economyPipeline := engine.NewEconomyPipeline()
+		economyEvents = append(economyEvents, economyPipeline.Run(room.State().World, room.State())...)
 	}
 
 	room.broadcastTurnSettlement(unitEvents, mapEvents, economyEvents)

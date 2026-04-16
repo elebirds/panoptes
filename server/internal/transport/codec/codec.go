@@ -97,8 +97,16 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_RevealResult{RevealResult: typed}}}
 	case *pb.MsgResearchResult:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_ResearchResult{ResearchResult: typed}}}
+	case *pb.MsgSetPolicyResult:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_SetPolicyResult{SetPolicyResult: typed}}}
+	case *pb.MsgSetInstitutionLoadoutResult:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_SetInstitutionLoadoutResult{SetInstitutionLoadoutResult: typed}}}
+	case *pb.MsgIssueUnitOrderResult:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_IssueUnitOrderResult{IssueUnitOrderResult: typed}}}
 	case *pb.MsgSetBuildingRecipeResult:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_SetBuildingRecipeResult{SetBuildingRecipeResult: typed}}}
+	case *pb.MsgBuildStructureResult:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_BuildStructureResult{BuildStructureResult: typed}}}
 	case *pb.MsgTurnReport:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_TurnReport{TurnReport: typed}}}
 	case *pb.MsgTurnSettlement:
