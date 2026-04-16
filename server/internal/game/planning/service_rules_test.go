@@ -317,6 +317,104 @@ func TestWarZoneDirectiveReplacesDraftOnSameZone(t *testing.T) {
 	}
 }
 
+func TestSetPolicyRejectsInstitutionLayer(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+			{ID: "academy_charter", Layer: "institutional", ActivationTiming: "next_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "academy_charter"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("set policy result = %#v, want invalid_directive", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty", got)
+	}
+}
+
+func TestSetPolicyRejectsUnmetPrerequisite(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{
+				ID:    "centralization",
+				Layer: "national",
+				Prerequisites: []staticdata.Prerequisite{
+					{Type: "technology_unlocked", TargetID: "civic_institutions"},
+				},
+			},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "civic_institutions", ResearchCost: 2},
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "centralization"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("set policy result = %#v, want invalid_directive", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty", got)
+	}
+}
+
+func TestSetPolicyQueuesDraftAndSnapshot(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "expansion", Layer: "national", ActivationTiming: "same_turn"},
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "expansion"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() {
+		t.Fatalf("set policy result = %#v, want success", result)
+	}
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
+		t.Fatalf("pending policy = %q, want expansion", got)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || snapshot.GetPlannedNationalPolicyId() != "expansion" {
+		t.Fatalf("planned national policy = %#v, want expansion", snapshot)
+	}
+}
+
 func TestSetInstitutionLoadoutRejectsNonInstitutionPolicy(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Policies: []staticdata.PolicyDefinition{
