@@ -320,6 +320,8 @@ namespace Panoptes.Core.Application.Cache
                 return;
             }
 
+            _nodes.TryGetValue(node.Id, out var previousNode);
+            StabilizeNodeTerrain(node, previousNode);
             _nodes[node.Id] = node;
             Fire(OnNodeChanged, new NodeChangedEvent
             {
@@ -609,6 +611,7 @@ namespace Panoptes.Core.Application.Cache
 
         private void ReplaceNodes(System.Collections.Generic.IEnumerable<NodeView> nodes, bool publishChanges, string changeType)
         {
+            var previousNodes = CloneNodeMap(_nodes);
             _nodes.Clear();
             if (nodes == null)
             {
@@ -623,6 +626,8 @@ namespace Panoptes.Core.Application.Cache
                 }
 
                 var dto = NodeMapper.ToDto(node);
+                previousNodes.TryGetValue(node.Id, out var previousNode);
+                StabilizeNodeTerrain(dto, previousNode);
                 _nodes[node.Id] = dto;
                 if (publishChanges)
                 {
@@ -649,7 +654,10 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    nextNodes[node.Id] = NodeMapper.ToDto(node);
+                    var dto = NodeMapper.ToDto(node);
+                    previousNodes.TryGetValue(node.Id, out var previousNode);
+                    StabilizeNodeTerrain(dto, previousNode);
+                    nextNodes[node.Id] = dto;
                 }
             }
 
@@ -1046,6 +1054,48 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Empty;
+        }
+
+        private static void StabilizeNodeTerrain(NodeDto incoming, NodeDto previous)
+        {
+            if (incoming == null)
+            {
+                return;
+            }
+
+            var terrain = TrimOrEmpty(incoming.Terrain);
+            var type = TrimOrEmpty(incoming.Type);
+            var previousTerrain = TrimOrEmpty(previous?.Terrain);
+            var previousType = TrimOrEmpty(previous?.Type);
+
+            // Debounce: if settlement/planning snapshot accidentally omits terrain fields,
+            // keep previous terrain to avoid full-map visual flicker/regression.
+            if (string.IsNullOrEmpty(terrain))
+            {
+                terrain = !string.IsNullOrEmpty(previousTerrain)
+                    ? previousTerrain
+                    : previousType;
+            }
+
+            if (string.IsNullOrEmpty(type))
+            {
+                type = !string.IsNullOrEmpty(terrain)
+                    ? terrain
+                    : (!string.IsNullOrEmpty(previousType) ? previousType : previousTerrain);
+            }
+
+            if (string.IsNullOrEmpty(terrain) && !string.IsNullOrEmpty(type))
+            {
+                terrain = type;
+            }
+
+            incoming.Terrain = terrain;
+            incoming.Type = type;
+        }
+
+        private static string TrimOrEmpty(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
         private static Dictionary<string, int> SnapshotAmounts(ResourceBag bag)

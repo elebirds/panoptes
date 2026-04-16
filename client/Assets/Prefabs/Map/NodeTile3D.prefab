@@ -449,6 +449,7 @@ MonoBehaviour:
     prefab: {fileID: 8465135733123450000, guid: d756ecddff37936469d7fe188ad876e2, type: 3}
   - buildingType: lumber
     prefab: {fileID: 8465135733123450000, guid: d72d9ee662b098b49a0452d4b4bfb86b, type: 3}
+  buildingPrefabResourcesRoot: Prefabs/Buildings
   autoCreateMoveMarker: 1
   moveMarkerY: 0.13
   moveArrowScale: {x: 0.12, y: 0.01, z: 0.42}

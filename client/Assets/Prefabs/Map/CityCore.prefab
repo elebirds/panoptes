@@ -67,12 +67,21 @@ MonoBehaviour:
   lowHitPointThreshold: 30
   defaultCityCoreMaxHp: 200
   enableCityCoreHpBar: 0
+  cityCoreHpBarPrefab: {fileID: 0}
+  autoLoadCityCoreHpBarPrefab: 1
+  cityCoreHpBarResourcesPath: Prefabs/UI/CityCoreHPBar
+  cityCoreDisplayName: City Core
   cityCoreHpBarWidth: 1.8
   cityCoreHpBarHeight: 0.2
   cityCoreHpBarVerticalPadding: 0.35
   cityCoreHpBarScreenScale: 0.001
   cityCoreHpBarMinScale: 0.0035
   cityCoreHpBarMaxScale: 0.016
+  lockCityCoreHpBarWorldRotation: 1
+  cityCoreHpBarUseCameraUpVector: 0
+  cityCoreHpBarAllowRoll: 0
+  cityCoreHpBarFacingYawOffset: 180
+  cityCoreHpBarFixedYaw: 0
   cityCoreHpBarFillColor: {r: 0.2, g: 0.95, b: 0.35, a: 1}
   cityCoreHpBarBackgroundColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.9}
 --- !u!1 &6787967239105697608
@@ -141,7 +150,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.365
+      value: -0.004
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 637b3bb1a53fd584b8b2f29eddb05290, type: 3}
       propertyPath: m_LocalRotation.w
