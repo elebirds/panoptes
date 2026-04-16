@@ -120,17 +120,17 @@ message GameEvent {
     MsgPlanningPathPreviewResponse planning_path_preview_response = 6;
     MsgTokenResult token_result = 7;
     MsgRevealResult reveal_result = 8;
-    MsgIssueUnitOrderResult issue_unit_order_result = 9;
-    MsgResearchResult research_result = 10;
-    MsgSetPolicyResult set_policy_result = 11;
-    MsgSetBuildingRecipeResult set_building_recipe_result = 12;
-    MsgBuildStructureResult build_structure_result = 13;
-    MsgTurnReport turn_report = 14;
-    MsgTurnSettlement turn_settlement = 15;
-    MsgGameOver game_over = 16;
-    MsgMinisterReportChunk minister_report_chunk = 17;
-    MsgMinisterMetrics minister_metrics = 18;
-    MsgSetInstitutionLoadoutResult set_institution_loadout_result = 19;
+    MsgResearchResult research_result = 9;
+    MsgSetPolicyResult set_policy_result = 10;
+    MsgSetBuildingRecipeResult set_building_recipe_result = 11;
+    MsgBuildStructureResult build_structure_result = 12;
+    MsgTurnReport turn_report = 13;
+    MsgTurnSettlement turn_settlement = 14;
+    MsgGameOver game_over = 15;
+    MsgMinisterReportChunk minister_report_chunk = 16;
+    MsgMinisterMetrics minister_metrics = 17;
+    MsgSetInstitutionLoadoutResult set_institution_loadout_result = 18;
+    MsgIssueUnitOrderResult issue_unit_order_result = 19;
   }
 }
 

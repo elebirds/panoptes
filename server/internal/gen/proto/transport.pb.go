@@ -1175,7 +1175,6 @@ type GameEvent struct {
 	//	*GameEvent_PlanningPathPreviewResponse
 	//	*GameEvent_TokenResult
 	//	*GameEvent_RevealResult
-	//	*GameEvent_IssueUnitOrderResult
 	//	*GameEvent_ResearchResult
 	//	*GameEvent_SetPolicyResult
 	//	*GameEvent_SetBuildingRecipeResult
@@ -1186,6 +1185,7 @@ type GameEvent struct {
 	//	*GameEvent_MinisterReportChunk
 	//	*GameEvent_MinisterMetrics
 	//	*GameEvent_SetInstitutionLoadoutResult
+	//	*GameEvent_IssueUnitOrderResult
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1300,15 +1300,6 @@ func (x *GameEvent) GetRevealResult() *MsgRevealResult {
 	return nil
 }
 
-func (x *GameEvent) GetIssueUnitOrderResult() *MsgIssueUnitOrderResult {
-	if x != nil {
-		if x, ok := x.Body.(*GameEvent_IssueUnitOrderResult); ok {
-			return x.IssueUnitOrderResult
-		}
-	}
-	return nil
-}
-
 func (x *GameEvent) GetResearchResult() *MsgResearchResult {
 	if x != nil {
 		if x, ok := x.Body.(*GameEvent_ResearchResult); ok {
@@ -1399,6 +1390,15 @@ func (x *GameEvent) GetSetInstitutionLoadoutResult() *MsgSetInstitutionLoadoutRe
 	return nil
 }
 
+func (x *GameEvent) GetIssueUnitOrderResult() *MsgIssueUnitOrderResult {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_IssueUnitOrderResult); ok {
+			return x.IssueUnitOrderResult
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1435,48 +1435,48 @@ type GameEvent_RevealResult struct {
 	RevealResult *MsgRevealResult `protobuf:"bytes,8,opt,name=reveal_result,json=revealResult,proto3,oneof"`
 }
 
-type GameEvent_IssueUnitOrderResult struct {
-	IssueUnitOrderResult *MsgIssueUnitOrderResult `protobuf:"bytes,9,opt,name=issue_unit_order_result,json=issueUnitOrderResult,proto3,oneof"`
-}
-
 type GameEvent_ResearchResult struct {
-	ResearchResult *MsgResearchResult `protobuf:"bytes,10,opt,name=research_result,json=researchResult,proto3,oneof"`
+	ResearchResult *MsgResearchResult `protobuf:"bytes,9,opt,name=research_result,json=researchResult,proto3,oneof"`
 }
 
 type GameEvent_SetPolicyResult struct {
-	SetPolicyResult *MsgSetPolicyResult `protobuf:"bytes,11,opt,name=set_policy_result,json=setPolicyResult,proto3,oneof"`
+	SetPolicyResult *MsgSetPolicyResult `protobuf:"bytes,10,opt,name=set_policy_result,json=setPolicyResult,proto3,oneof"`
 }
 
 type GameEvent_SetBuildingRecipeResult struct {
-	SetBuildingRecipeResult *MsgSetBuildingRecipeResult `protobuf:"bytes,12,opt,name=set_building_recipe_result,json=setBuildingRecipeResult,proto3,oneof"`
+	SetBuildingRecipeResult *MsgSetBuildingRecipeResult `protobuf:"bytes,11,opt,name=set_building_recipe_result,json=setBuildingRecipeResult,proto3,oneof"`
 }
 
 type GameEvent_BuildStructureResult struct {
-	BuildStructureResult *MsgBuildStructureResult `protobuf:"bytes,13,opt,name=build_structure_result,json=buildStructureResult,proto3,oneof"`
+	BuildStructureResult *MsgBuildStructureResult `protobuf:"bytes,12,opt,name=build_structure_result,json=buildStructureResult,proto3,oneof"`
 }
 
 type GameEvent_TurnReport struct {
-	TurnReport *MsgTurnReport `protobuf:"bytes,14,opt,name=turn_report,json=turnReport,proto3,oneof"`
+	TurnReport *MsgTurnReport `protobuf:"bytes,13,opt,name=turn_report,json=turnReport,proto3,oneof"`
 }
 
 type GameEvent_TurnSettlement struct {
-	TurnSettlement *MsgTurnSettlement `protobuf:"bytes,15,opt,name=turn_settlement,json=turnSettlement,proto3,oneof"`
+	TurnSettlement *MsgTurnSettlement `protobuf:"bytes,14,opt,name=turn_settlement,json=turnSettlement,proto3,oneof"`
 }
 
 type GameEvent_GameOver struct {
-	GameOver *MsgGameOver `protobuf:"bytes,16,opt,name=game_over,json=gameOver,proto3,oneof"`
+	GameOver *MsgGameOver `protobuf:"bytes,15,opt,name=game_over,json=gameOver,proto3,oneof"`
 }
 
 type GameEvent_MinisterReportChunk struct {
-	MinisterReportChunk *MsgMinisterReportChunk `protobuf:"bytes,17,opt,name=minister_report_chunk,json=ministerReportChunk,proto3,oneof"`
+	MinisterReportChunk *MsgMinisterReportChunk `protobuf:"bytes,16,opt,name=minister_report_chunk,json=ministerReportChunk,proto3,oneof"`
 }
 
 type GameEvent_MinisterMetrics struct {
-	MinisterMetrics *MsgMinisterMetrics `protobuf:"bytes,18,opt,name=minister_metrics,json=ministerMetrics,proto3,oneof"`
+	MinisterMetrics *MsgMinisterMetrics `protobuf:"bytes,17,opt,name=minister_metrics,json=ministerMetrics,proto3,oneof"`
 }
 
 type GameEvent_SetInstitutionLoadoutResult struct {
-	SetInstitutionLoadoutResult *MsgSetInstitutionLoadoutResult `protobuf:"bytes,19,opt,name=set_institution_loadout_result,json=setInstitutionLoadoutResult,proto3,oneof"`
+	SetInstitutionLoadoutResult *MsgSetInstitutionLoadoutResult `protobuf:"bytes,18,opt,name=set_institution_loadout_result,json=setInstitutionLoadoutResult,proto3,oneof"`
+}
+
+type GameEvent_IssueUnitOrderResult struct {
+	IssueUnitOrderResult *MsgIssueUnitOrderResult `protobuf:"bytes,19,opt,name=issue_unit_order_result,json=issueUnitOrderResult,proto3,oneof"`
 }
 
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
@@ -1494,8 +1494,6 @@ func (*GameEvent_PlanningPathPreviewResponse) isGameEvent_Body() {}
 func (*GameEvent_TokenResult) isGameEvent_Body() {}
 
 func (*GameEvent_RevealResult) isGameEvent_Body() {}
-
-func (*GameEvent_IssueUnitOrderResult) isGameEvent_Body() {}
 
 func (*GameEvent_ResearchResult) isGameEvent_Body() {}
 
@@ -1516,6 +1514,8 @@ func (*GameEvent_MinisterReportChunk) isGameEvent_Body() {}
 func (*GameEvent_MinisterMetrics) isGameEvent_Body() {}
 
 func (*GameEvent_SetInstitutionLoadoutResult) isGameEvent_Body() {}
+
+func (*GameEvent_IssueUnitOrderResult) isGameEvent_Body() {}
 
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1735,20 +1735,20 @@ const file_transport_proto_rawDesc = "" +
 	"\x11planning_snapshot\x18\x05 \x01(\v2&.panoptes.proto.v1.MsgPlanningSnapshotH\x00R\x10planningSnapshot\x12x\n" +
 	"\x1eplanning_path_preview_response\x18\x06 \x01(\v21.panoptes.proto.v1.MsgPlanningPathPreviewResponseH\x00R\x1bplanningPathPreviewResponse\x12F\n" +
 	"\ftoken_result\x18\a \x01(\v2!.panoptes.proto.v1.MsgTokenResultH\x00R\vtokenResult\x12I\n" +
-	"\rreveal_result\x18\b \x01(\v2\".panoptes.proto.v1.MsgRevealResultH\x00R\frevealResult\x12c\n" +
-	"\x17issue_unit_order_result\x18\t \x01(\v2*.panoptes.proto.v1.MsgIssueUnitOrderResultH\x00R\x14issueUnitOrderResult\x12O\n" +
-	"\x0fresearch_result\x18\n" +
-	" \x01(\v2$.panoptes.proto.v1.MsgResearchResultH\x00R\x0eresearchResult\x12S\n" +
-	"\x11set_policy_result\x18\v \x01(\v2%.panoptes.proto.v1.MsgSetPolicyResultH\x00R\x0fsetPolicyResult\x12l\n" +
-	"\x1aset_building_recipe_result\x18\f \x01(\v2-.panoptes.proto.v1.MsgSetBuildingRecipeResultH\x00R\x17setBuildingRecipeResult\x12b\n" +
-	"\x16build_structure_result\x18\r \x01(\v2*.panoptes.proto.v1.MsgBuildStructureResultH\x00R\x14buildStructureResult\x12C\n" +
-	"\vturn_report\x18\x0e \x01(\v2 .panoptes.proto.v1.MsgTurnReportH\x00R\n" +
+	"\rreveal_result\x18\b \x01(\v2\".panoptes.proto.v1.MsgRevealResultH\x00R\frevealResult\x12O\n" +
+	"\x0fresearch_result\x18\t \x01(\v2$.panoptes.proto.v1.MsgResearchResultH\x00R\x0eresearchResult\x12S\n" +
+	"\x11set_policy_result\x18\n" +
+	" \x01(\v2%.panoptes.proto.v1.MsgSetPolicyResultH\x00R\x0fsetPolicyResult\x12l\n" +
+	"\x1aset_building_recipe_result\x18\v \x01(\v2-.panoptes.proto.v1.MsgSetBuildingRecipeResultH\x00R\x17setBuildingRecipeResult\x12b\n" +
+	"\x16build_structure_result\x18\f \x01(\v2*.panoptes.proto.v1.MsgBuildStructureResultH\x00R\x14buildStructureResult\x12C\n" +
+	"\vturn_report\x18\r \x01(\v2 .panoptes.proto.v1.MsgTurnReportH\x00R\n" +
 	"turnReport\x12O\n" +
-	"\x0fturn_settlement\x18\x0f \x01(\v2$.panoptes.proto.v1.MsgTurnSettlementH\x00R\x0eturnSettlement\x12=\n" +
-	"\tgame_over\x18\x10 \x01(\v2\x1e.panoptes.proto.v1.MsgGameOverH\x00R\bgameOver\x12_\n" +
-	"\x15minister_report_chunk\x18\x11 \x01(\v2).panoptes.proto.v1.MsgMinisterReportChunkH\x00R\x13ministerReportChunk\x12R\n" +
-	"\x10minister_metrics\x18\x12 \x01(\v2%.panoptes.proto.v1.MsgMinisterMetricsH\x00R\x0fministerMetrics\x12x\n" +
-	"\x1eset_institution_loadout_result\x18\x13 \x01(\v21.panoptes.proto.v1.MsgSetInstitutionLoadoutResultH\x00R\x1bsetInstitutionLoadoutResultB\x06\n" +
+	"\x0fturn_settlement\x18\x0e \x01(\v2$.panoptes.proto.v1.MsgTurnSettlementH\x00R\x0eturnSettlement\x12=\n" +
+	"\tgame_over\x18\x0f \x01(\v2\x1e.panoptes.proto.v1.MsgGameOverH\x00R\bgameOver\x12_\n" +
+	"\x15minister_report_chunk\x18\x10 \x01(\v2).panoptes.proto.v1.MsgMinisterReportChunkH\x00R\x13ministerReportChunk\x12R\n" +
+	"\x10minister_metrics\x18\x11 \x01(\v2%.panoptes.proto.v1.MsgMinisterMetricsH\x00R\x0fministerMetrics\x12x\n" +
+	"\x1eset_institution_loadout_result\x18\x12 \x01(\v21.panoptes.proto.v1.MsgSetInstitutionLoadoutResultH\x00R\x1bsetInstitutionLoadoutResult\x12c\n" +
+	"\x17issue_unit_order_result\x18\x13 \x01(\v2*.panoptes.proto.v1.MsgIssueUnitOrderResultH\x00R\x14issueUnitOrderResultB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -1824,17 +1824,17 @@ var file_transport_proto_goTypes = []any{
 	(*MsgPlanningPathPreviewResponse)(nil), // 48: panoptes.proto.v1.MsgPlanningPathPreviewResponse
 	(*MsgTokenResult)(nil),                 // 49: panoptes.proto.v1.MsgTokenResult
 	(*MsgRevealResult)(nil),                // 50: panoptes.proto.v1.MsgRevealResult
-	(*MsgIssueUnitOrderResult)(nil),        // 51: panoptes.proto.v1.MsgIssueUnitOrderResult
-	(*MsgResearchResult)(nil),              // 52: panoptes.proto.v1.MsgResearchResult
-	(*MsgSetPolicyResult)(nil),             // 53: panoptes.proto.v1.MsgSetPolicyResult
-	(*MsgSetBuildingRecipeResult)(nil),     // 54: panoptes.proto.v1.MsgSetBuildingRecipeResult
-	(*MsgBuildStructureResult)(nil),        // 55: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgTurnReport)(nil),                  // 56: panoptes.proto.v1.MsgTurnReport
-	(*MsgTurnSettlement)(nil),              // 57: panoptes.proto.v1.MsgTurnSettlement
-	(*MsgGameOver)(nil),                    // 58: panoptes.proto.v1.MsgGameOver
-	(*MsgMinisterReportChunk)(nil),         // 59: panoptes.proto.v1.MsgMinisterReportChunk
-	(*MsgMinisterMetrics)(nil),             // 60: panoptes.proto.v1.MsgMinisterMetrics
-	(*MsgSetInstitutionLoadoutResult)(nil), // 61: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgResearchResult)(nil),              // 51: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetPolicyResult)(nil),             // 52: panoptes.proto.v1.MsgSetPolicyResult
+	(*MsgSetBuildingRecipeResult)(nil),     // 53: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MsgBuildStructureResult)(nil),        // 54: panoptes.proto.v1.MsgBuildStructureResult
+	(*MsgTurnReport)(nil),                  // 55: panoptes.proto.v1.MsgTurnReport
+	(*MsgTurnSettlement)(nil),              // 56: panoptes.proto.v1.MsgTurnSettlement
+	(*MsgGameOver)(nil),                    // 57: panoptes.proto.v1.MsgGameOver
+	(*MsgMinisterReportChunk)(nil),         // 58: panoptes.proto.v1.MsgMinisterReportChunk
+	(*MsgMinisterMetrics)(nil),             // 59: panoptes.proto.v1.MsgMinisterMetrics
+	(*MsgSetInstitutionLoadoutResult)(nil), // 60: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgIssueUnitOrderResult)(nil),        // 61: panoptes.proto.v1.MsgIssueUnitOrderResult
 }
 var file_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
@@ -1881,17 +1881,17 @@ var file_transport_proto_depIdxs = []int32{
 	48, // 41: panoptes.proto.v1.GameEvent.planning_path_preview_response:type_name -> panoptes.proto.v1.MsgPlanningPathPreviewResponse
 	49, // 42: panoptes.proto.v1.GameEvent.token_result:type_name -> panoptes.proto.v1.MsgTokenResult
 	50, // 43: panoptes.proto.v1.GameEvent.reveal_result:type_name -> panoptes.proto.v1.MsgRevealResult
-	51, // 44: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
-	52, // 45: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
-	53, // 46: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
-	54, // 47: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
-	55, // 48: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
-	56, // 49: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
-	57, // 50: panoptes.proto.v1.GameEvent.turn_settlement:type_name -> panoptes.proto.v1.MsgTurnSettlement
-	58, // 51: panoptes.proto.v1.GameEvent.game_over:type_name -> panoptes.proto.v1.MsgGameOver
-	59, // 52: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
-	60, // 53: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
-	61, // 54: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	51, // 44: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
+	52, // 45: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
+	53, // 46: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
+	54, // 47: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
+	55, // 48: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
+	56, // 49: panoptes.proto.v1.GameEvent.turn_settlement:type_name -> panoptes.proto.v1.MsgTurnSettlement
+	57, // 50: panoptes.proto.v1.GameEvent.game_over:type_name -> panoptes.proto.v1.MsgGameOver
+	58, // 51: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
+	59, // 52: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
+	60, // 53: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	61, // 54: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
 	1,  // 55: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
 	9,  // 56: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
 	10, // 57: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
@@ -1975,7 +1975,6 @@ func file_transport_proto_init() {
 		(*GameEvent_PlanningPathPreviewResponse)(nil),
 		(*GameEvent_TokenResult)(nil),
 		(*GameEvent_RevealResult)(nil),
-		(*GameEvent_IssueUnitOrderResult)(nil),
 		(*GameEvent_ResearchResult)(nil),
 		(*GameEvent_SetPolicyResult)(nil),
 		(*GameEvent_SetBuildingRecipeResult)(nil),
@@ -1986,6 +1985,7 @@ func file_transport_proto_init() {
 		(*GameEvent_MinisterReportChunk)(nil),
 		(*GameEvent_MinisterMetrics)(nil),
 		(*GameEvent_SetInstitutionLoadoutResult)(nil),
+		(*GameEvent_IssueUnitOrderResult)(nil),
 	}
 	file_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),
