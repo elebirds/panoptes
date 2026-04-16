@@ -228,6 +228,17 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] AttackUnit");
         }
 
+        public static void AttackNode(string unitId, string targetNodeId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            IssueUnitOrder(unitId, "attack", targetNodeId, null, null);
+            Debug.Log("[GameIntents] AttackNode");
+        }
+
         public static void HoldUnit(string unitId)
         {
             if (ActionLock.IsLocked)

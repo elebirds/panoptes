@@ -36,6 +36,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
+            dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
             dispatcher.Register<MsgResearchResult>("MsgResearchResult", OnResearchResult);
             dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
             dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
@@ -61,6 +62,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
+            dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
             dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", OnResearchResult);
             dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
             dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
@@ -167,6 +169,23 @@ namespace Panoptes.Core.Application.Handler
                 TrueState = trueState
             });
             Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
+        }
+
+        private static void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!msg.Success)
+            {
+                PublishGameError(msg.ErrorCode, $"{msg.UnitId}:{msg.Action}:{msg.TargetNodeId}:{msg.TargetUnitId}");
+                Debug.LogWarning($"[Game] 单位命令失败 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId} error={msg.ErrorCode}");
+                return;
+            }
+
+            Debug.Log($"[Game] 单位命令草案已接受 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId}");
         }
 
         private static void OnResearchResult(MsgResearchResult msg)

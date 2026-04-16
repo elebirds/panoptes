@@ -221,6 +221,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.PlanningPathPreviewResponse => evt.PlanningPathPreviewResponse,
                 GameEvent.BodyOneofCase.TokenResult => evt.TokenResult,
                 GameEvent.BodyOneofCase.RevealResult => evt.RevealResult,
+                GameEvent.BodyOneofCase.IssueUnitOrderResult => evt.IssueUnitOrderResult,
                 GameEvent.BodyOneofCase.ResearchResult => evt.ResearchResult,
                 GameEvent.BodyOneofCase.SetPolicyResult => evt.SetPolicyResult,
                 GameEvent.BodyOneofCase.SetInstitutionLoadoutResult => evt.SetInstitutionLoadoutResult,
