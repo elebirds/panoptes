@@ -1,18 +1,44 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Panoptes.Core.Application.Cache;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    /// <summary>
-    /// Recipe synthesis panel prefab.
-    /// Sized and anchored like build panel, with slide toggle and recipe list content.
-    /// </summary>
     public sealed class RecipeSynthesisPanel : MonoBehaviour
     {
-        [Header("Auto Build")]
-        [SerializeField] private bool autoBuildFallbackUi = false;
-        [SerializeField] private bool startHidden = true;
+        [Serializable] private sealed class Root { public RecipeCfg[] recipes; public RecipeCfg[] entries; }
+        [Serializable] private sealed class RecipeCfg
+        {
+            public string id;
+            public string name;
+            public string description;
+            public string icon_key;
+            public string building_id;
+            public int work_amount;
+            public int base_progress;
+            public int sort_order;
+            public AmountCfg[] resource_inputs;
+            public AmountCfg[] point_inputs;
+            public OutputCfg outputs;
+        }
+        [Serializable] private sealed class OutputCfg { public AmountCfg[] resources; public string[] units; public AmountCfg[] point_progress; }
+        [Serializable] private sealed class AmountCfg { public string key; public int amount; }
+
+        private sealed class RecipeViewData
+        {
+            public string Id;
+            public string Name;
+            public string IconKey;
+            public int TurnCost;
+            public int ProduceAmount;
+            public int SortOrder;
+            public readonly List<RecipeSynthesisItemView.IngredientViewData> Inputs = new();
+            public readonly List<RecipeSynthesisItemView.IngredientViewData> Outputs = new();
+        }
 
         [Header("Refs")]
         [SerializeField] private RectTransform panelRoot;
@@ -21,139 +47,243 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private RecipeSynthesisItemView recipeItemPrefab;
         [SerializeField] private Button closeButton;
 
-        [Header("Style")]
-        [SerializeField] private Vector2 panelSize = new Vector2(456f, 1080f);
-        [SerializeField] private Color panelColor = new Color(0.06f, 0.09f, 0.16f, 0.95f);
+        [Header("Data Source")]
+        [SerializeField] private bool startHidden = true;
+        [SerializeField] private bool preferServerPushedConfig = true;
+        [SerializeField] private bool listenServerUpdates = true;
+        [SerializeField] private string[] serverConfigKeys = { "recipeconfig", "recipesconfig", "recipe_catalog", "recipes" };
+        [SerializeField] private string[] iconRoots = { "Icons/Recipes", "Icons/Resources", "Icons/Units", "Icons/Points" };
+
+        private readonly List<RecipeSynthesisItemView> _itemViews = new();
+        private StaticCatalogCache _catalog;
+        private ConfigCache _config;
 
         private void Awake()
         {
-            if (panelRoot == null)
-            {
-                panelRoot = transform as RectTransform;
-            }
-
-            if (autoBuildFallbackUi)
-            {
-                EnsureFallbackLayout();
-            }
-
+            if (panelRoot == null) panelRoot = transform as RectTransform;
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveListener(Hide);
                 closeButton.onClick.AddListener(Hide);
             }
 
-            if (startHidden)
+            if (startHidden) Hide();
+        }
+
+        private void OnEnable()
+        {
+            _catalog = StaticCatalogCache.EnsureInstance();
+            if (_catalog != null) { _catalog.CatalogChanged -= RefreshList; _catalog.CatalogChanged += RefreshList; }
+            if (listenServerUpdates)
             {
-                Hide();
+                _config = ConfigCache.EnsureInstance();
+                if (_config != null) { _config.ConfigUpdated -= OnConfigUpdated; _config.ConfigUpdated += OnConfigUpdated; }
+            }
+            RefreshList();
+        }
+
+        private void OnDisable()
+        {
+            if (_catalog != null) _catalog.CatalogChanged -= RefreshList;
+            if (_config != null) _config.ConfigUpdated -= OnConfigUpdated;
+        }
+
+        public void Show() { if (panelRoot != null) panelRoot.gameObject.SetActive(true); RefreshList(); }
+        public void Hide() { if (panelRoot != null) panelRoot.gameObject.SetActive(false); }
+
+        private void OnConfigUpdated(string key)
+        {
+            var normalized = Key(key);
+            for (var i = 0; i < serverConfigKeys.Length; i++)
+            {
+                if (normalized == Key(serverConfigKeys[i])) { RefreshList(); return; }
             }
         }
 
-        public void Show()
+        private void RefreshList()
         {
-            if (panelRoot != null)
+            if (listContent == null) return;
+            ClearItems();
+            var recipes = LoadRecipeData();
+            recipes.Sort((a, b) =>
             {
-                panelRoot.gameObject.SetActive(true);
+                var sortCmp = a.SortOrder.CompareTo(b.SortOrder);
+                if (sortCmp != 0) return sortCmp;
+                return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+            });
+            for (var i = 0; i < recipes.Count; i++)
+            {
+                var item = CreateItem();
+                if (item == null) continue;
+                var r = recipes[i];
+                item.Configure(r.Outputs, r.Inputs, r.ProduceAmount, r.TurnCost);
+                item.SetQuantity(0);
             }
         }
 
-        public void Hide()
+        private List<RecipeViewData> LoadRecipeData()
         {
-            if (panelRoot != null)
-            {
-                panelRoot.gameObject.SetActive(false);
-            }
+            var fromConfig = LoadFromConfig();
+            if (fromConfig.Count > 0) return fromConfig;
+            return LoadFromCatalog();
         }
 
-        private void EnsureFallbackLayout()
+        private List<RecipeViewData> LoadFromConfig()
         {
-            if (panelRoot == null)
+            var result = new List<RecipeViewData>();
+            if (!preferServerPushedConfig || _config == null) return result;
+            for (var i = 0; i < serverConfigKeys.Length; i++)
             {
-                return;
-            }
-
-            panelRoot.anchorMin = new Vector2(1f, 0.5f);
-            panelRoot.anchorMax = new Vector2(1f, 0.5f);
-            panelRoot.pivot = new Vector2(1f, 0.5f);
-            panelRoot.anchoredPosition = Vector2.zero;
-            panelRoot.sizeDelta = panelSize;
-
-            var bg = EnsureImage("Background", panelRoot, panelColor);
-            Stretch(bg.rectTransform, 0f, 0f, 0f, 0f);
-
-            var title = EnsureText("Title", panelRoot, "配方合成", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -16f), new Vector2(-16f, -16f));
-            title.alignment = TextAlignmentOptions.Left;
-            title.fontSize = 36f;
-
-            var viewport = EnsureRect("Viewport", panelRoot);
-            Stretch(viewport, 16f, 16f, 88f, 16f);
-            EnsureImage(viewport.gameObject, new Color(0f, 0f, 0f, 0.08f));
-            var mask = viewport.GetComponent<Mask>();
-            if (mask == null)
-            {
-                mask = viewport.gameObject.AddComponent<Mask>();
-            }
-            mask.showMaskGraphic = false;
-
-            listContent = EnsureRect("Content", viewport);
-            listContent.anchorMin = new Vector2(0f, 1f);
-            listContent.anchorMax = new Vector2(1f, 1f);
-            listContent.pivot = new Vector2(0.5f, 1f);
-            listContent.anchoredPosition = Vector2.zero;
-            listContent.sizeDelta = new Vector2(-8f, 0f);
-
-            var vLayout = listContent.GetComponent<VerticalLayoutGroup>();
-            if (vLayout == null)
-            {
-                vLayout = listContent.gameObject.AddComponent<VerticalLayoutGroup>();
-            }
-            vLayout.padding = new RectOffset(0, 0, 0, 0);
-            vLayout.spacing = 10f;
-            vLayout.childControlWidth = true;
-            vLayout.childControlHeight = false;
-            vLayout.childForceExpandWidth = true;
-            vLayout.childForceExpandHeight = false;
-
-            var fitter = listContent.GetComponent<ContentSizeFitter>();
-            if (fitter == null)
-            {
-                fitter = listContent.gameObject.AddComponent<ContentSizeFitter>();
-            }
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-            if (listScrollRect == null)
-            {
-                listScrollRect = panelRoot.GetComponent<ScrollRect>();
-                if (listScrollRect == null)
+                if (!_config.TryGetJson(serverConfigKeys[i], out var json) || string.IsNullOrWhiteSpace(json)) continue;
+                Root root = null; try { root = JsonUtility.FromJson<Root>(json); } catch { }
+                var source = root?.recipes != null && root.recipes.Length > 0 ? root.recipes : root?.entries;
+                if (source == null || source.Length == 0) continue;
+                for (var r = 0; r < source.Length; r++)
                 {
-                    listScrollRect = panelRoot.gameObject.AddComponent<ScrollRect>();
+                    var cfg = source[r]; if (cfg == null || string.IsNullOrWhiteSpace(cfg.id)) continue;
+                    result.Add(BuildRecipeFromConfig(cfg));
+                }
+                if (result.Count > 0) return result;
+            }
+            return result;
+        }
+
+        private RecipeViewData BuildRecipeFromConfig(RecipeCfg cfg)
+        {
+            var view = new RecipeViewData
+            {
+                Id = cfg.id.Trim(),
+                Name = string.IsNullOrWhiteSpace(cfg.name) ? cfg.id.Trim() : cfg.name.Trim(),
+                IconKey = cfg.icon_key ?? string.Empty,
+                TurnCost = Mathf.Max(1, cfg.work_amount),
+                ProduceAmount = Mathf.Max(1, cfg.base_progress),
+                SortOrder = cfg.sort_order
+            };
+
+            AddAmounts(view.Inputs, cfg.resource_inputs);
+            AddAmounts(view.Inputs, cfg.point_inputs);
+            if (cfg.outputs != null)
+            {
+                AddAmounts(view.Outputs, cfg.outputs.resources);
+                AddAmounts(view.Outputs, cfg.outputs.point_progress);
+                if (cfg.outputs.units != null)
+                {
+                    for (var i = 0; i < cfg.outputs.units.Length; i++)
+                    {
+                        var id = (cfg.outputs.units[i] ?? string.Empty).Trim();
+                        if (!string.IsNullOrEmpty(id))
+                        {
+                            view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(id, 1, LoadIcon(id)));
+                        }
+                    }
                 }
             }
-            listScrollRect.viewport = viewport;
-            listScrollRect.content = listContent;
-            listScrollRect.horizontal = false;
-            listScrollRect.vertical = true;
-            listScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
-            closeButton = EnsureButton("BtnClose", panelRoot, new Vector2(1f, 1f), new Vector2(-16f, -16f), new Vector2(96f, 40f), "关闭");
-            closeButton.onClick.RemoveListener(Hide);
-            closeButton.onClick.AddListener(Hide);
-
-            var toggleBtn = EnsureButton("BtnSlide", panelRoot, new Vector2(1f, 0.5f), new Vector2(64f, 0f), new Vector2(92f, 88f), "<<");
-            var slide = toggleBtn.GetComponent<BuildPanelSlideToggle>();
-            if (slide == null)
+            if (view.Outputs.Count == 0)
             {
-                slide = toggleBtn.gameObject.AddComponent<BuildPanelSlideToggle>();
+                view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(view.IconKey, 1, LoadIcon(view.IconKey)));
             }
 
-            if (listContent.childCount == 0)
+            if (view.Inputs.Count == 0)
             {
-                EnsurePlaceholderItem();
+                view.Inputs.Add(new RecipeSynthesisItemView.IngredientViewData("input", 1, null));
+            }
+
+            view.ProduceAmount = Mathf.Max(1, view.Outputs.Sum(x => Mathf.Max(1, x.Amount)));
+            return view;
+        }
+
+        private List<RecipeViewData> LoadFromCatalog()
+        {
+            var result = new List<RecipeViewData>();
+            if (_catalog == null || _catalog.Recipes == null) return result;
+            foreach (var pair in _catalog.Recipes)
+            {
+                var r = pair.Value; if (r == null || string.IsNullOrWhiteSpace(r.id)) continue;
+                var view = new RecipeViewData
+                {
+                    Id = r.id.Trim(),
+                    Name = string.IsNullOrWhiteSpace(r.name) ? r.id.Trim() : r.name.Trim(),
+                    IconKey = r.icon_key ?? string.Empty,
+                    TurnCost = Mathf.Max(1, r.work_amount),
+                    ProduceAmount = Mathf.Max(1, r.base_progress),
+                    SortOrder = r.sort_order
+                };
+
+                AddAmounts(view.Inputs, r.resource_inputs);
+                AddAmounts(view.Inputs, r.point_inputs);
+                if (r.outputs != null)
+                {
+                    AddAmounts(view.Outputs, r.outputs.resources);
+                    AddAmounts(view.Outputs, r.outputs.point_progress);
+                    if (r.outputs.units != null)
+                    {
+                        for (var i = 0; i < r.outputs.units.Length; i++)
+                        {
+                            var unit = (r.outputs.units[i] ?? string.Empty).Trim();
+                            if (!string.IsNullOrEmpty(unit))
+                            {
+                                view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(unit, 1, LoadIcon(unit)));
+                            }
+                        }
+                    }
+                }
+
+                if (view.Outputs.Count == 0)
+                {
+                    view.Outputs.Add(new RecipeSynthesisItemView.IngredientViewData(view.IconKey, 1, LoadIcon(view.IconKey)));
+                }
+
+                if (view.Inputs.Count == 0)
+                {
+                    view.Inputs.Add(new RecipeSynthesisItemView.IngredientViewData("input", 1, null));
+                }
+
+                view.ProduceAmount = Mathf.Max(1, view.Outputs.Sum(x => Mathf.Max(1, x.Amount)));
+                result.Add(view);
+            }
+            return result;
+        }
+
+        private void AddAmounts(List<RecipeSynthesisItemView.IngredientViewData> target, AmountCfg[] source)
+        {
+            if (target == null || source == null) return;
+            for (var i = 0; i < source.Length; i++)
+            {
+                var amount = source[i];
+                if (amount == null || string.IsNullOrWhiteSpace(amount.key)) continue;
+                var key = amount.key.Trim();
+                target.Add(new RecipeSynthesisItemView.IngredientViewData(key, Mathf.Max(0, amount.amount), LoadIcon(key)));
             }
         }
 
-        private void EnsurePlaceholderItem()
+        private void AddAmounts(List<RecipeSynthesisItemView.IngredientViewData> target, StaticCatalogCache.IntAmountEntryJson[] source)
+        {
+            if (target == null || source == null) return;
+            for (var i = 0; i < source.Length; i++)
+            {
+                var amount = source[i];
+                if (amount == null || string.IsNullOrWhiteSpace(amount.key)) continue;
+                var key = amount.key.Trim();
+                target.Add(new RecipeSynthesisItemView.IngredientViewData(key, Mathf.Max(0, amount.amount), LoadIcon(key)));
+            }
+        }
+
+        private Sprite LoadIcon(string key)
+        {
+            key = (key ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(key)) return null;
+            for (var i = 0; i < iconRoots.Length; i++)
+            {
+                var root = (iconRoots[i] ?? string.Empty).Trim().Trim('/');
+                if (string.IsNullOrEmpty(root)) continue;
+                var sprite = Resources.Load<Sprite>($"{root}/{key}");
+                if (sprite != null) return sprite;
+            }
+            return Resources.Load<Sprite>(key);
+        }
+
+        private RecipeSynthesisItemView CreateItem()
         {
             RecipeSynthesisItemView view = null;
             if (recipeItemPrefab != null)
@@ -167,98 +297,22 @@ namespace Panoptes.Presentation.UI.Domestic
                 rect.SetParent(listContent, false);
                 view = go.AddComponent<RecipeSynthesisItemView>();
             }
-
-            if (view != null)
-            {
-                view.SetQuantity(0);
-            }
+            _itemViews.Add(view);
+            return view;
         }
 
-        private static RectTransform EnsureRect(string name, RectTransform parent)
+        private void ClearItems()
         {
-            var existing = parent.Find(name) as RectTransform;
-            if (existing != null)
+            for (var i = 0; i < _itemViews.Count; i++)
             {
-                return existing;
+                if (_itemViews[i] != null)
+                {
+                    Destroy(_itemViews[i].gameObject);
+                }
             }
-
-            var go = new GameObject(name, typeof(RectTransform));
-            var rect = go.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
+            _itemViews.Clear();
         }
 
-        private static Image EnsureImage(string name, RectTransform parent, Color color)
-        {
-            var rect = EnsureRect(name, parent);
-            return EnsureImage(rect.gameObject, color);
-        }
-
-        private static Image EnsureImage(GameObject go, Color color)
-        {
-            var image = go.GetComponent<Image>();
-            if (image == null)
-            {
-                image = go.AddComponent<Image>();
-            }
-            image.color = color;
-            return image;
-        }
-
-        private static TMP_Text EnsureText(string name, RectTransform parent, string value, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
-        {
-            var rect = EnsureRect(name, parent);
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.offsetMin = offsetMin;
-            rect.offsetMax = offsetMax;
-
-            var text = rect.GetComponent<TextMeshProUGUI>();
-            if (text == null)
-            {
-                text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            }
-            text.text = value;
-            text.color = Color.white;
-            text.fontSize = 24f;
-            text.enableWordWrapping = false;
-            text.overflowMode = TextOverflowModes.Truncate;
-            if (TMP_Settings.defaultFontAsset != null)
-            {
-                text.font = TMP_Settings.defaultFontAsset;
-            }
-            return text;
-        }
-
-        private static Button EnsureButton(string name, RectTransform parent, Vector2 anchor, Vector2 anchoredPos, Vector2 size, string label)
-        {
-            var rect = EnsureRect(name, parent);
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = anchoredPos;
-            rect.sizeDelta = size;
-
-            var image = EnsureImage(rect.gameObject, new Color(0.2f, 0.45f, 0.8f, 0.92f));
-            var button = rect.GetComponent<Button>();
-            if (button == null)
-            {
-                button = rect.gameObject.AddComponent<Button>();
-            }
-            button.targetGraphic = image;
-
-            var text = EnsureText("Label", rect, label, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            text.alignment = TextAlignmentOptions.Center;
-            text.fontSize = 20f;
-            return button;
-        }
-
-        private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
-        {
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(left, bottom);
-            rect.offsetMax = new Vector2(-right, -top);
-        }
+        private static string Key(string value) => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
     }
 }

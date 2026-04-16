@@ -264,6 +264,12 @@ namespace Panoptes.Presentation.Map
                 go.AddComponent<CastleHpBarOverlayController>();
             }
 
+            if (UnityEngine.Object.FindAnyObjectByType<BuildingConstructionOverlayController>() == null)
+            {
+                var go = new GameObject("BuildingConstructionOverlayController");
+                go.AddComponent<BuildingConstructionOverlayController>();
+            }
+
             var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
             if (unitInfoPanel == null)
             {
