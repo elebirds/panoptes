@@ -35,14 +35,15 @@ func (r *SingleStepResolver) Resolve(world donburi.World, state *domain.GameStat
 	// 所有策略对象都挂在上下文上，而不是散落在各阶段内部，
 	// 这样后续要替换 block / retaliation / damage 策略时不需要重写主 resolver。
 	ctx := &ResolutionContext{
-		World:             world,
-		State:             state,
-		Plans:             make(map[string]*OrderPlan),
-		ActualPositions:   make(map[string]domain.Position),
-		CurrentHP:         make(map[string]int),
-		DeadUnits:         make(map[string]bool),
-		EdgeConflictUnits: make(map[string]bool),
-		NodeConflictUnits: make(map[string]bool),
+		World:              world,
+		State:              state,
+		Plans:              make(map[string]*OrderPlan),
+		ActualPositions:    make(map[string]domain.Position),
+		CurrentHP:          make(map[string]int),
+		CurrentStructureHP: make(map[string]int),
+		DeadUnits:          make(map[string]bool),
+		EdgeConflictUnits:  make(map[string]bool),
+		NodeConflictUnits:  make(map[string]bool),
 		OrderResolvers: map[domain.UnitResolutionAction]OrderResolver{
 			domain.UnitResolutionActionMove:   MoveResolver{},
 			domain.UnitResolutionActionAttack: AttackResolver{},

@@ -63,12 +63,13 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 	})
 	UnitCategoryC.SetValue(entry, UnitCategoryComp{Category: cfg.Class})
 	UnitCapabilitiesC.SetValue(entry, UnitCapabilitiesComp{
-		Civilian:    cfg.Class == "civilian",
-		Melee:       cfg.Class != "civilian" && cfg.AttackRange <= 1,
-		Ranged:      cfg.AttackRange > 1,
-		Charge:      cfg.ChargeBonus > 0,
-		Siege:       cfg.Flags.CanSiege,
-		DestroyRoad: cfg.Flags.CanDestroyRoad,
+		Civilian:            cfg.Class == "civilian",
+		Melee:               cfg.Class != "civilian" && cfg.AttackRange <= 1,
+		Ranged:              cfg.AttackRange > 1,
+		Charge:              cfg.ChargeBonus > 0,
+		Siege:               cfg.Flags.CanSiege,
+		CanAttackStructures: cfg.Flags.CanAttackStructures,
+		DestroyRoad:         cfg.Flags.CanDestroyRoad,
 	})
 
 	if cfg.Flags.CanSiege {
@@ -106,9 +107,10 @@ func fallbackUnitDefinition(unitType string) (staticdata.UnitDefinition, bool) {
 			Upkeep:      staticdata.ResourceAmounts{},
 			Multipliers: map[string]float64{},
 			Flags: staticdata.UnitFlags{
-				CanSiege:       false,
-				CanDestroyRoad: false,
-				CanCapture:     false,
+				CanSiege:            false,
+				CanAttackStructures: false,
+				CanDestroyRoad:      false,
+				CanCapture:          false,
 			},
 		}, true
 	default:

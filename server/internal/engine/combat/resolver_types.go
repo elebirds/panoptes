@@ -92,6 +92,33 @@ type SnapshotUnit struct {
 	Order        domain.UnitResolutionOrder
 }
 
+type CombatTargetKind string
+
+const (
+	CombatTargetKindNone      CombatTargetKind = ""
+	CombatTargetKindUnit      CombatTargetKind = "unit"
+	CombatTargetKindStructure CombatTargetKind = "structure"
+	CombatTargetKindCityCore  CombatTargetKind = "city_core"
+)
+
+type CombatTargetRef struct {
+	Kind   CombatTargetKind
+	UnitID string
+	NodeID string
+}
+
+type SnapshotStructure struct {
+	NodeID        string
+	PlayerID      string
+	CityID        string
+	Type          domain.BuildingType
+	Position      domain.Position
+	HP            int
+	MaxHP         int
+	IsCityCore    bool
+	IsCapitalCore bool
+}
+
 // BlockSource 记录阻断来源，既能表达敌方单位，也能表达敌方建筑/城堡。
 type BlockSource struct {
 	Kind     string
@@ -105,6 +132,7 @@ type BlockSource struct {
 // V1 明确规定：阻断格基于这里生成，并在本次结算过程中保持不变。
 type CombatSnapshot struct {
 	Units          map[string]SnapshotUnit
+	Structures     map[string]SnapshotStructure
 	OrderedUnitIDs []string
 	BlockSources   map[domain.Position]BlockSource
 }
@@ -119,31 +147,32 @@ type OrderPlan struct {
 	Candidate      domain.Position
 	Fallback       domain.Position
 	BlockedAt      *domain.Position
-	AttackTargetID string
+	AttackTarget   CombatTargetRef
 	ChargeTargetID string
 }
 
 // ResolutionContext 是本次战斗结算的唯一工作区。
 // 所有阶段都围绕它读写中间结果，从而把“快照、规划、冲突、伤害、事件输出”串成一条清晰流水线。
 type ResolutionContext struct {
-	World             donburi.World
-	State             *domain.GameState
-	Snapshot          CombatSnapshot
-	Plans             map[string]*OrderPlan
-	ActualPositions   map[string]domain.Position
-	CurrentHP         map[string]int
-	DeadUnits         map[string]bool
-	Conflicts         []domain.Conflict
-	EdgeConflictUnits map[string]bool
-	NodeConflictUnits map[string]bool
-	Events            []event.Event
-	OrderResolvers    map[domain.UnitResolutionAction]OrderResolver
-	BlockRule         BlockRule
-	ConflictDetectors []ConflictDetector
-	RetaliationPolicy RetaliationPolicy
-	DamageResolver    DamageResolver
-	RoutePlanner      RoutePlanner
-	TurnPlanner       TurnSegmentPlanner
+	World              donburi.World
+	State              *domain.GameState
+	Snapshot           CombatSnapshot
+	Plans              map[string]*OrderPlan
+	ActualPositions    map[string]domain.Position
+	CurrentHP          map[string]int
+	CurrentStructureHP map[string]int
+	DeadUnits          map[string]bool
+	Conflicts          []domain.Conflict
+	EdgeConflictUnits  map[string]bool
+	NodeConflictUnits  map[string]bool
+	Events             []event.Event
+	OrderResolvers     map[domain.UnitResolutionAction]OrderResolver
+	BlockRule          BlockRule
+	ConflictDetectors  []ConflictDetector
+	RetaliationPolicy  RetaliationPolicy
+	DamageResolver     DamageResolver
+	RoutePlanner       RoutePlanner
+	TurnPlanner        TurnSegmentPlanner
 }
 
 func (ctx *ResolutionContext) UnitIDs() []string {
@@ -175,6 +204,28 @@ func (ctx *ResolutionContext) HP(unitID string) int {
 		return unit.HP
 	}
 	return 0
+}
+
+func (ctx *ResolutionContext) Structure(nodeID string) (SnapshotStructure, bool) {
+	if ctx == nil {
+		return SnapshotStructure{}, false
+	}
+	structure, ok := ctx.Snapshot.Structures[nodeID]
+	return structure, ok
+}
+
+func (ctx *ResolutionContext) StructureHP(nodeID string) int {
+	if hp, ok := ctx.CurrentStructureHP[nodeID]; ok {
+		return hp
+	}
+	if structure, ok := ctx.Structure(nodeID); ok {
+		return structure.HP
+	}
+	return 0
+}
+
+func (ctx *ResolutionContext) SetStructureHP(nodeID string, hp int) {
+	ctx.CurrentStructureHP[nodeID] = hp
 }
 
 func (ctx *ResolutionContext) SetHP(unitID string, hp int) {

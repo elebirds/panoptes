@@ -105,31 +105,11 @@ func resolveConflictDamage(ctx *ResolutionContext, conflict domain.Conflict) {
 }
 
 func resolveExplicitAttack(ctx *ResolutionContext, attacker SnapshotUnit, plan *OrderPlan) {
-	targetID := plan.AttackTargetID
-	target, ok := ctx.SnapshotUnit(targetID)
-	if !ok || ctx.IsDead(targetID) {
-		return
-	}
-	// attack 以最终位置判定是否仍然合法命中，这是 attack-vs-move 规则的落点。
-	if ctx.CurrentPosition(attacker.UnitID).DistanceTo(ctx.CurrentPosition(targetID)) > attacker.AttackRange {
-		return
-	}
-
-	source := "combat"
-	if attacker.Capabilities.Ranged && attacker.AttackRange > 1 {
-		source = "ranged"
-		damageUnit(ctx, targetID, ctx.DamageResolver.Ranged(ctx, attacker.UnitID, targetID, ctx.CurrentPosition(targetID)), source, attacker.UnitID, ctx.CurrentPosition(targetID))
-		return
-	}
-
-	if target.Capabilities.Civilian && attacker.Capabilities.Melee {
-		killUnit(ctx, targetID, attacker.UnitID, ctx.CurrentPosition(targetID))
-		return
-	}
-
-	damageUnit(ctx, targetID, ctx.DamageResolver.Melee(ctx, attacker.UnitID, targetID, ctx.CurrentPosition(targetID), 1), source, attacker.UnitID, ctx.CurrentPosition(targetID))
-	if ctx.RetaliationPolicy.CanRetaliate(ctx, attacker.UnitID, targetID) {
-		damageUnit(ctx, attacker.UnitID, ctx.DamageResolver.Melee(ctx, targetID, attacker.UnitID, ctx.CurrentPosition(attacker.UnitID), 1), "combat", targetID, ctx.CurrentPosition(attacker.UnitID))
+	switch plan.AttackTarget.Kind {
+	case CombatTargetKindUnit:
+		resolveUnitTargetAttack(ctx, attacker, plan.AttackTarget.UnitID)
+	case CombatTargetKindStructure, CombatTargetKindCityCore:
+		resolveStructureTargetAttack(ctx, attacker, plan.AttackTarget)
 	}
 }
 
@@ -159,6 +139,49 @@ func resolveChargeAttack(ctx *ResolutionContext, attacker SnapshotUnit, plan *Or
 	if ctx.RetaliationPolicy.CanRetaliate(ctx, attacker.UnitID, targetID) {
 		damageUnit(ctx, attacker.UnitID, ctx.DamageResolver.Melee(ctx, targetID, attacker.UnitID, ctx.CurrentPosition(attacker.UnitID), 1), "combat", targetID, ctx.CurrentPosition(attacker.UnitID))
 	}
+}
+
+func resolveUnitTargetAttack(ctx *ResolutionContext, attacker SnapshotUnit, targetID string) {
+	target, ok := ctx.SnapshotUnit(targetID)
+	if !ok || ctx.IsDead(targetID) {
+		return
+	}
+	// attack 以最终位置判定是否仍然合法命中，这是 attack-vs-move 规则的落点。
+	if ctx.CurrentPosition(attacker.UnitID).DistanceTo(ctx.CurrentPosition(targetID)) > attacker.AttackRange {
+		return
+	}
+
+	source := "combat"
+	if attacker.Capabilities.Ranged && attacker.AttackRange > 1 {
+		source = "ranged"
+		damageUnit(ctx, targetID, ctx.DamageResolver.Ranged(ctx, attacker.UnitID, targetID, ctx.CurrentPosition(targetID)), source, attacker.UnitID, ctx.CurrentPosition(targetID))
+		return
+	}
+
+	if target.Capabilities.Civilian && attacker.Capabilities.Melee {
+		killUnit(ctx, targetID, attacker.UnitID, ctx.CurrentPosition(targetID))
+		return
+	}
+
+	damageUnit(ctx, targetID, ctx.DamageResolver.Melee(ctx, attacker.UnitID, targetID, ctx.CurrentPosition(targetID), 1), source, attacker.UnitID, ctx.CurrentPosition(targetID))
+	if ctx.RetaliationPolicy.CanRetaliate(ctx, attacker.UnitID, targetID) {
+		damageUnit(ctx, attacker.UnitID, ctx.DamageResolver.Melee(ctx, targetID, attacker.UnitID, ctx.CurrentPosition(attacker.UnitID), 1), "combat", targetID, ctx.CurrentPosition(attacker.UnitID))
+	}
+}
+
+func resolveStructureTargetAttack(ctx *ResolutionContext, attacker SnapshotUnit, target CombatTargetRef) {
+	if !attacker.Capabilities.CanAttackStructures {
+		return
+	}
+	structure, ok := ctx.Structure(target.NodeID)
+	if !ok || structure.PlayerID == "" || structure.PlayerID == attacker.PlayerID {
+		return
+	}
+	if ctx.CurrentPosition(attacker.UnitID).DistanceTo(structure.Position) > attacker.AttackRange {
+		return
+	}
+	damage := resolveStructureDamageAmount(ctx, attacker.UnitID, structure.Position)
+	damageStructure(ctx, structure, damage, attacker.UnitID)
 }
 
 func damageUnit(ctx *ResolutionContext, targetID string, damage int, source string, killerID string, pos domain.Position) {
@@ -201,6 +224,28 @@ func resolveDamageAmount(ctx *ResolutionContext, attackerID, defenderID string, 
 	}
 	// 伤害公式先保持简单稳定：基础攻击 * 克制倍率 * 地形修正 * 行为 bonus。
 	// 后续增添 Buff / 科技 / 将领效果时，优先在这里扩展而不是在各动作分支里散算。
+	terrainFactor := resolveTerrainFactor(ctx, pos)
+
+	dmg := int(math.Round(float64(attacker.Attack) * multiplier * terrainFactor * bonus))
+	if dmg < 1 {
+		dmg = 1
+	}
+	return dmg
+}
+
+func resolveStructureDamageAmount(ctx *ResolutionContext, attackerID string, pos domain.Position) int {
+	attacker, ok := ctx.SnapshotUnit(attackerID)
+	if !ok || attacker.Attack <= 0 {
+		return 0
+	}
+	dmg := int(math.Round(float64(attacker.Attack) * resolveTerrainFactor(ctx, pos)))
+	if dmg < 1 {
+		dmg = 1
+	}
+	return dmg
+}
+
+func resolveTerrainFactor(ctx *ResolutionContext, pos domain.Position) float64 {
 	terrainFactor := 1.0
 	if nodeEntry, ok := domain.GetNodeAt(ctx.World, pos); ok {
 		node := ecs.NodeC.Get(nodeEntry)
@@ -208,10 +253,54 @@ func resolveDamageAmount(ctx *ResolutionContext, attackerID, defenderID string, 
 			terrainFactor = math.Max(0.2, 1-terrain.DefenseBonus+terrain.AttackPenalty)
 		}
 	}
+	return terrainFactor
+}
 
-	dmg := int(math.Round(float64(attacker.Attack) * multiplier * terrainFactor * bonus))
-	if dmg < 1 {
-		dmg = 1
+func damageStructure(ctx *ResolutionContext, target SnapshotStructure, damage int, attackerID string) {
+	if damage <= 0 || target.NodeID == "" {
+		return
 	}
-	return dmg
+	current := ctx.StructureHP(target.NodeID)
+	if current <= 0 {
+		return
+	}
+	nextHP := current - damage
+	if nextHP < 0 {
+		nextHP = 0
+	}
+	ctx.SetStructureHP(target.NodeID, nextHP)
+	if target.IsCityCore {
+		ctx.Events = append(ctx.Events, event.CityCoreDamagedEvent{
+			NodeID:     target.NodeID,
+			Damage:     damage,
+			HPAfter:    nextHP,
+			AttackerID: attackerID,
+		})
+		if nextHP == 0 && target.IsCapitalCore {
+			ctx.Events = append(ctx.Events, event.CityCoreDestroyedEvent{
+				NodeID:           target.NodeID,
+				ConquerorFaction: attackerFaction(ctx, attackerID),
+			})
+		}
+		return
+	}
+
+	ctx.Events = append(ctx.Events, event.BuildingDamagedEvent{
+		NodeID:  target.NodeID,
+		Damage:  damage,
+		HPAfter: nextHP,
+	})
+	if nextHP == 0 {
+		ctx.Events = append(ctx.Events, event.BuildingRuinedEvent{
+			NodeID: target.NodeID,
+			Reason: "destroyed_in_combat",
+		})
+	}
+}
+
+func attackerFaction(ctx *ResolutionContext, attackerID string) string {
+	if attacker, ok := ctx.SnapshotUnit(attackerID); ok {
+		return attacker.PlayerID
+	}
+	return ""
 }

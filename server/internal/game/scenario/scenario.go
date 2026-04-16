@@ -434,23 +434,7 @@ func CapitalDestroyGameOver() (*Definition, error) {
 			{ID: "city_core_settler", BuildingID: "city_core", WorkAmount: 2, BaseProgress: 1},
 		},
 		Units: []staticdata.UnitDefinition{
-			{
-				ID:          "siege_engine",
-				Class:       "siege",
-				MaxHP:       20,
-				Attack:      10,
-				AttackRange: 1,
-				MoveRange:   1,
-				VisionRange: 2,
-				TrainCost:   staticdata.ResourceAmounts{},
-				Upkeep:      staticdata.ResourceAmounts{},
-				Multipliers: map[string]float64{},
-				Flags: staticdata.UnitFlags{
-					CanSiege:        true,
-					SiegeMultiplier: 1,
-					CanCapture:      true,
-				},
-			},
+			infantryDefinition(),
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", Passable: true, Buildable: true},
@@ -461,9 +445,15 @@ func CapitalDestroyGameOver() (*Definition, error) {
 	if err != nil {
 		return nil, err
 	}
-	entry := state.World.Entry(ecs.CreateUnit(state.World, "siege_engine", "player-2", domain.Position{X: 0, Y: 0}))
+	entry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 1, Y: 0}))
 	stats := ecs.UnitStatsC.Get(entry)
-	stats.ID = "siege-1"
+	stats.ID = "infantry-1"
+	state.TurnRuntime.Planning.UnitOrders["infantry-1"] = domain.UnitDirective{
+		PlayerID:     "player-2",
+		UnitID:       "infantry-1",
+		Action:       "attack",
+		TargetNodeID: "A1",
+	}
 	return &Definition{
 		Name:      "capital_destroy_gameover",
 		Catalog:   catalog,
@@ -522,13 +512,17 @@ func infantryDefinition() staticdata.UnitDefinition {
 		ID:          "infantry",
 		Class:       "melee",
 		MaxHP:       20,
-		Attack:      6,
+		Attack:      10,
 		AttackRange: 1,
 		MoveRange:   2,
 		VisionRange: 2,
 		TrainCost:   staticdata.ResourceAmounts{},
 		Upkeep:      staticdata.ResourceAmounts{},
 		Multipliers: map[string]float64{},
+		Flags: staticdata.UnitFlags{
+			CanCapture:          true,
+			CanAttackStructures: true,
+		},
 	}
 }
 
@@ -604,14 +598,15 @@ func capitalSiegeMap(id string) *staticdata.MapRuntimeBundle {
 		Height: 2,
 		SpawnPoints: []staticdata.SpawnPoint{
 			{Slot: 0, X: 0, Y: 0},
-			{Slot: 1, X: 1, Y: 1},
+			{Slot: 1, X: 1, Y: 0},
 		},
 		Nodes: []staticdata.MapRuntimeNode{
 			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "city_core"},
-			{ID: "B2", X: 1, Y: 1, Terrain: "plain", OwnerSlot: &one, TerritoryOwnerSlot: &one},
+			{ID: "B1", X: 1, Y: 0, Terrain: "plain", OwnerSlot: &one, TerritoryOwnerSlot: &one},
 		},
 		NamedNodes: map[string]string{
 			"A1": "主城",
+			"B1": "前线",
 		},
 	}
 }

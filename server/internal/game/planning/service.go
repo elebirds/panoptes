@@ -136,18 +136,7 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		return nil
 	case *pb.PlanningCommand_IssueUnitOrder:
 		msg := body.IssueUnitOrder
-		order := gameorders.UnitOrder{
-			PlayerID:        playerID,
-			UnitID:          strings.TrimSpace(msg.GetUnitId()),
-			Action:          gameorders.UnitAction(strings.TrimSpace(msg.GetAction())),
-			TargetNodeID:    strings.TrimSpace(msg.GetTargetNodeId()),
-			TargetUnitID:    strings.TrimSpace(msg.GetTargetUnitId()),
-			SecondaryNodeID: strings.TrimSpace(msg.GetSecondaryNodeId()),
-			Params:          cloneParams(msg.GetParams()),
-		}
-		room.SetUnitOrder(order)
-		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		return s.handleIssueUnitOrder(eventCtx, room, playerID, msg)
 	case *pb.PlanningCommand_CancelUnitOrder:
 		msg := body.CancelUnitOrder
 		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
@@ -174,6 +163,155 @@ func cloneParams(src map[string]string) map[string]string {
 		dst[k] = v
 	}
 	return dst
+}
+
+func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, playerID string, msg *pb.MsgIssueUnitOrder) error {
+	order := gameorders.UnitOrder{
+		PlayerID:        playerID,
+		UnitID:          strings.TrimSpace(msg.GetUnitId()),
+		Action:          gameorders.UnitAction(strings.TrimSpace(msg.GetAction())),
+		TargetNodeID:    strings.TrimSpace(msg.GetTargetNodeId()),
+		TargetUnitID:    strings.TrimSpace(msg.GetTargetUnitId()),
+		SecondaryNodeID: strings.TrimSpace(msg.GetSecondaryNodeId()),
+		Params:          cloneParams(msg.GetParams()),
+	}
+	if errCode := validateUnitOrder(room.State(), playerID, order); errCode != "" {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgIssueUnitOrderResult{
+			Success:      false,
+			UnitId:       order.UnitID,
+			Action:       string(order.Action),
+			TargetNodeId: order.TargetNodeID,
+			TargetUnitId: order.TargetUnitID,
+			ErrorCode:    errCode,
+		})
+		return nil
+	}
+
+	room.SetUnitOrder(order)
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgIssueUnitOrderResult{
+		Success:      true,
+		UnitId:       order.UnitID,
+		Action:       string(order.Action),
+		TargetNodeId: order.TargetNodeID,
+		TargetUnitId: order.TargetUnitID,
+	})
+	_ = room.SendPlanningSnapshot(ctx, playerID)
+	return nil
+}
+
+func validateUnitOrder(state *domain.GameState, playerID string, order gameorders.UnitOrder) string {
+	if state == nil || order.UnitID == "" || order.Action == "" {
+		return "invalid_request"
+	}
+	unitEntry, ok := findPreviewUnit(state, order.UnitID, playerID)
+	if !ok {
+		return "unit_not_found"
+	}
+	stats := ecs.UnitStatsC.Get(unitEntry)
+
+	switch order.Action {
+	case gameorders.ActionHold:
+		return ""
+	case gameorders.ActionMove:
+		if order.TargetNodeID == "" {
+			return "invalid_request"
+		}
+		if _, ok := state.GetNode(order.TargetNodeID); !ok {
+			return "invalid_target"
+		}
+		return ""
+	case gameorders.ActionAttack:
+		hasUnitTarget := order.TargetUnitID != ""
+		hasNodeTarget := order.TargetNodeID != ""
+		if hasUnitTarget == hasNodeTarget || !unitCanAttack(unitEntry, stats.Type) {
+			return "invalid_directive"
+		}
+		if hasUnitTarget {
+			targetEntry, ok := findAnyUnit(state, order.TargetUnitID)
+			if !ok {
+				return "invalid_target"
+			}
+			targetStats := ecs.UnitStatsC.Get(targetEntry)
+			if targetStats.Faction == playerID {
+				return "invalid_target"
+			}
+			return ""
+		}
+		nodeEntry, ok := state.GetNode(order.TargetNodeID)
+		if !ok || nodeEntry == nil || !nodeEntry.HasComponent(ecs.BuildingC) {
+			return "invalid_target"
+		}
+		building := ecs.BuildingC.Get(nodeEntry)
+		if building.Owner == "" || building.Owner == playerID {
+			return "invalid_target"
+		}
+		if !unitCanAttackStructures(unitEntry, stats.Type) {
+			return "invalid_directive"
+		}
+		if !isStructureTargetInRange(unitEntry, nodeEntry, stats.AttackRange) {
+			return "invalid_target"
+		}
+		return ""
+	case gameorders.ActionCharge:
+		if !unitCanCharge(unitEntry) {
+			return "invalid_directive"
+		}
+		return ""
+	case gameorders.ActionSettleCity:
+		return ""
+	default:
+		return "invalid_directive"
+	}
+}
+
+func unitCanAttack(entry *donburi.Entry, unitType domain.UnitType) bool {
+	if entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) {
+		return ecs.UnitCapabilitiesC.Get(entry).CanAttack()
+	}
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		return cfg.Attack > 0 && cfg.AttackRange > 0 && cfg.Class != "civilian"
+	}
+	return false
+}
+
+func unitCanAttackStructures(entry *donburi.Entry, unitType domain.UnitType) bool {
+	if entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) {
+		return ecs.UnitCapabilitiesC.Get(entry).CanAttackStructures
+	}
+	if cfg, ok := staticdata.Default().GetUnit(string(unitType)); ok {
+		return cfg.Flags.CanAttackStructures
+	}
+	return false
+}
+
+func unitCanCharge(entry *donburi.Entry) bool {
+	return entry != nil && entry.HasComponent(ecs.UnitCapabilitiesC) && ecs.UnitCapabilitiesC.Get(entry).Charge
+}
+
+func isStructureTargetInRange(unitEntry *donburi.Entry, nodeEntry *donburi.Entry, attackRange int) bool {
+	if unitEntry == nil || nodeEntry == nil || attackRange <= 0 {
+		return false
+	}
+	unitPos := ecs.PositionC.Get(unitEntry)
+	nodePos := ecs.PositionC.Get(nodeEntry)
+	return domain.Position{X: unitPos.X, Y: unitPos.Y}.DistanceTo(domain.Position{X: nodePos.X, Y: nodePos.Y}) <= attackRange
+}
+
+func findAnyUnit(state *domain.GameState, unitID string) (*donburi.Entry, bool) {
+	if state == nil || state.World == nil {
+		return nil, false
+	}
+	var found *donburi.Entry
+	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
+		if found != nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.ID == unitID {
+			found = entry
+		}
+	})
+	return found, found != nil
 }
 
 func (s *Service) handleResearchRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, technologyID string) error {

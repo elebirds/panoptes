@@ -107,6 +107,26 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	}
 }
 
+func TestCreateUnitUsesAuthorSourcedStructureAttackCapability(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Units: []staticdata.UnitDefinition{
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, MoveRange: 2, AttackRange: 0, Flags: staticdata.UnitFlags{CanAttackStructures: false}},
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, MoveRange: 2, AttackRange: 1, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	settler := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 0}))
+	infantry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{X: 1, Y: 0}))
+
+	if ecsCaps := donburi.Get[UnitCapabilitiesComp](settler, UnitCapabilitiesC); ecsCaps.CanAttackStructures {
+		t.Fatalf("settler should not inherit structure attack capability")
+	}
+	if ecsCaps := donburi.Get[UnitCapabilitiesComp](infantry, UnitCapabilitiesC); !ecsCaps.CanAttackStructures {
+		t.Fatalf("infantry should inherit structure attack capability from static data")
+	}
+}
+
 func TestCreateBuildingStoresOriginCityID(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
