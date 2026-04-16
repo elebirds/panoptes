@@ -7,8 +7,8 @@
  *************************************************/
 
 using System.Collections;
-using UnityEngine;
 using Panoptes.Presentation.Map;
+using UnityEngine;
 
 namespace Panoptes.Presentation.Animation
 {
@@ -21,6 +21,9 @@ namespace Panoptes.Presentation.Animation
             Camera followCamera,
             bool followCameraEnabled)
         {
+            _ = followCamera;
+            _ = followCameraEnabled;
+
             if (unitView == null)
             {
                 yield break;
@@ -28,14 +31,6 @@ namespace Panoptes.Presentation.Animation
 
             var startUnitPos = unitView.transform.position;
             var initialDir = targetWorldPos - startUnitPos;
-            Vector3 camOffset = Vector3.zero;
-            var camStartPos = Vector3.zero;
-
-            if (followCameraEnabled && followCamera != null)
-            {
-                camStartPos = followCamera.transform.position;
-                camOffset = camStartPos - startUnitPos;
-            }
 
             duration = Mathf.Max(0.01f, duration);
             var elapsed = 0f;
@@ -64,12 +59,6 @@ namespace Panoptes.Presentation.Animation
                 }
                 prevPos = unitPos;
 
-                // Follow camera using the unit's original relative offset.
-                if (followCameraEnabled && followCamera != null)
-                {
-                    followCamera.transform.position = unitPos + camOffset;
-                }
-
                 yield return null;
             }
 
@@ -80,10 +69,6 @@ namespace Panoptes.Presentation.Animation
 
             unitView.transform.position = targetWorldPos;
             unitView.SetMovingVisual(false, 0f, Vector3.zero);
-            if (followCameraEnabled && followCamera != null)
-            {
-                followCamera.transform.position = targetWorldPos + camOffset;
-            }
         }
     }
 }

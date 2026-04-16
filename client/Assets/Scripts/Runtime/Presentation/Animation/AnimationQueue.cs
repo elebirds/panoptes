@@ -29,7 +29,6 @@ namespace Panoptes.Presentation.Animation
         [Header("Unit Move")]
         [SerializeField] private float moveDuration = 0.35f;
         [SerializeField] private bool followCameraOnMove = true;
-        [SerializeField] private bool lockManualCameraInputDuringFollow = true;
 
         private readonly Queue<UnitMoveCommand> _unitMoveQueue = new();
         private bool _isPlayingUnitMoves;
@@ -99,13 +98,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             var camera = Camera.main;
-            var camController = camera != null ? camera.GetComponent<TopDownCameraController>() : null;
             var follow = followCameraOnMove && cmd.followCamera && camera != null;
-
-            if (follow && lockManualCameraInputDuringFollow && camController != null)
-            {
-                camController.enabled = false;
-            }
 
             var target = nodeView.UnitAnchor != null
                 ? nodeView.UnitAnchor.position
@@ -121,12 +114,6 @@ namespace Panoptes.Presentation.Animation
             if (map.TryGetUnitView(cmd.unitId, out var stillAliveUnit) && stillAliveUnit != null)
             {
                 map.SetUnitNode(cmd.unitId, cmd.targetNodeId);
-            }
-
-            if (follow && lockManualCameraInputDuringFollow && camController != null)
-            {
-                camController.enabled = true;
-                camController.SnapTargetToCurrentPosition();
             }
         }
 
