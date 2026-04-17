@@ -10,6 +10,7 @@ namespace Panoptes.Tests.EditMode.Debug
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
+        private readonly string _gameChatPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/GameChatPanelController.cs");
         private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
         private readonly string _networkManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/NetworkManager.cs");
         private readonly string _messageSenderPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSender.cs");
@@ -129,6 +130,16 @@ namespace Panoptes.Tests.EditMode.Debug
         }
 
         [Test]
+        public void AppManager_ShouldBootstrapGameChatCache()
+        {
+            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+
+            var content = File.ReadAllText(_appManagerPath);
+            StringAssert.Contains("EnsureComponent<GameChatCache>(managers);", content,
+                "Managers 应挂载 GameChatCache，保证 HUD 可以直接订阅聊天流。");
+        }
+
+        [Test]
         public void GameMessageHandler_ShouldRegisterTurnV2MessagesOnly()
         {
             Assert.That(File.Exists(_gameMessageHandlerPath), Is.True, "GameMessageHandler.cs 不存在。");
@@ -140,6 +151,8 @@ namespace Panoptes.Tests.EditMode.Debug
             StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
             StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", OnResearchResult);", content);
             StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", OnSetBuildingRecipeResult);", content);
+            StringAssert.Contains("Register<MsgGameChatPosted>(\"MsgGameChatPosted\", OnGameChatPosted);", content);
+            StringAssert.Contains("Register<MsgGameChatSync>(\"MsgGameChatSync\", OnGameChatSync);", content);
             Assert.That(content, Does.Not.Contain("Register<ErrorResponse>(\"ErrorResponse\", OnGameError);"),
                 "GameMessageHandler 不应继续注册旧 ErrorResponse。");
             Assert.That(content, Does.Not.Contain("MsgDomesticPhaseStart"));
@@ -172,6 +185,19 @@ namespace Panoptes.Tests.EditMode.Debug
                 "build success 文案应明确表示只是记录 planning 草案。");
             Assert.That(content, Does.Not.Contain("建筑建造已排队"),
                 "build success 文案不应继续暗示 resolving 预算已经锁定。");
+        }
+
+        [Test]
+        public void GameChatPanelController_ShouldExposeUiHooks_WithoutReferencingProtocol()
+        {
+            Assert.That(File.Exists(_gameChatPanelControllerPath), Is.True, "GameChatPanelController.cs 不存在。");
+
+            var content = File.ReadAllText(_gameChatPanelControllerPath);
+            StringAssert.Contains("SendThumbsUp()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
+            StringAssert.Contains("SendThinking()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
+            StringAssert.Contains("GameIntents.SendChatEmote", content, "聊天面板应通过 GameIntents 发送表情。");
+            Assert.That(content, Does.Not.Contain("Panoptes.Protocol.V1"),
+                "Presentation 层聊天脚本不应直接依赖 protocol。");
         }
 
         [Test]

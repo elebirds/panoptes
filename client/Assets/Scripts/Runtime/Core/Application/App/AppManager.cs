@@ -65,6 +65,7 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<StaticCatalogCache>(managers);
             EnsureComponent<RoomCache>(managers);
             EnsureComponent<GameStateCache>(managers);
+            EnsureComponent<GameChatCache>(managers);
             EnsureComponent<PlanningDraftCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
             EnsureComponent<GameMessageHandler>(managers);
@@ -187,6 +188,7 @@ namespace Panoptes.Core.Application.App
                 ClientRuntimeConfigCache.Instance?.Clear();
                 ConfigCache.Instance?.Clear();
                 GameStateCache.Instance?.Clear();
+                GameChatCache.Instance?.Clear();
             }
 
             EnsureRealtimeConnectionIfNeeded(newState);
@@ -308,6 +310,7 @@ namespace Panoptes.Core.Application.App
 
         private void ApplyGameInitAndTransition(MsgGameInit msg)
         {
+            GameChatCache.Instance?.Clear();
             GameStateCache.Instance?.ApplyGameInit(msg);
             RoomCache.Instance?.Clear();
             TransitionTo(AppState.Game);

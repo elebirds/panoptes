@@ -544,6 +544,7 @@ namespace Panoptes.Core.Application.Cache
             _researchState = new TechnologyDto();
             _institutionState = new InstitutionStateDto();
             PlanningDraftCache.Instance?.ClearAll();
+            GameChatCache.Instance?.Clear();
             OnStateChanged?.Invoke();
         }
 

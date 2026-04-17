@@ -4,6 +4,7 @@ using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
 using UnityEngine;
 
@@ -225,6 +226,19 @@ namespace Panoptes.Core.Application.Intents
             MessageSender.Send(new MsgSubmitTurn());
             Debug.Log("[GameIntents] SubmitTurn");
             TurnSubmitRequested?.Invoke();
+        }
+
+        public static void SendChatEmote(GameChatEmoteKind emote)
+        {
+            var msg = new MsgSendGameChat
+            {
+                Payload = new ChatPayload
+                {
+                    Emote = GameChatMapper.ToProtocol(emote)
+                }
+            };
+            MessageSender.Send(msg);
+            Debug.Log($"[GameIntents] SendChatEmote emote={emote}");
         }
 
         public static void SetWarZone(List<string> nodeIds)
