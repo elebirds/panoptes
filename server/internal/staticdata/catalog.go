@@ -291,6 +291,22 @@ func (c *Catalog) Buildings() []BuildingDefinition {
 	return out
 }
 
+func (c *Catalog) BuildingIDs() []string {
+	if c == nil {
+		return nil
+	}
+
+	ids := make([]string, 0, len(c.buildings))
+	for id := range c.buildings {
+		if id == "" {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
+}
+
 func (c *Catalog) Recipes() []RecipeDefinition {
 	if c == nil {
 		return nil
@@ -305,6 +321,22 @@ func (c *Catalog) Recipes() []RecipeDefinition {
 		out = append(out, c.recipes[id])
 	}
 	return out
+}
+
+func (c *Catalog) RecipeIDs() []string {
+	if c == nil {
+		return nil
+	}
+
+	ids := make([]string, 0, len(c.recipes))
+	for id := range c.recipes {
+		if id == "" {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func (c *Catalog) GetTerrain(id string) (TerrainDefinition, bool) {

@@ -844,9 +844,10 @@ namespace Panoptes.Core.Application.Cache
                     if (MyPlayer != null)
                     {
                         MyPlayer.CapitalCityCoreHp = node.BuildingHp;
-                        if (MyPlayer.CapitalCityCoreMaxHp < node.BuildingHp)
+                        var nodeMaxHp = node.BuildingMaxHp > 0 ? node.BuildingMaxHp : node.BuildingHp;
+                        if (MyPlayer.CapitalCityCoreMaxHp < nodeMaxHp)
                         {
-                            MyPlayer.CapitalCityCoreMaxHp = node.BuildingHp;
+                            MyPlayer.CapitalCityCoreMaxHp = nodeMaxHp;
                         }
                     }
 
@@ -854,7 +855,7 @@ namespace Panoptes.Core.Application.Cache
                 }
 
                 EnemyCityCoreHP = Math.Max(EnemyCityCoreHP, node.BuildingHp);
-                EnemyMaxCityCoreHP = Math.Max(EnemyMaxCityCoreHP, node.BuildingHp);
+                EnemyMaxCityCoreHP = Math.Max(EnemyMaxCityCoreHP, node.BuildingMaxHp > 0 ? node.BuildingMaxHp : node.BuildingHp);
             }
         }
 
