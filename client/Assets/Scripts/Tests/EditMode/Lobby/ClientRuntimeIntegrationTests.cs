@@ -642,8 +642,11 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "AppManager 必须显式跟踪 Catalog 同步中的 bootstrap 状态。");
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
+            var clearRoomIndex = content.IndexOf("RoomCache.Instance?.Clear();", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
+            Assert.That(clearRoomIndex, Is.GreaterThan(applyIndex), "进入 Game 前必须清空大厅房间缓存，避免返回 Lobby 时残留旧房间。");
+            Assert.That(transitionIndex, Is.GreaterThan(clearRoomIndex), "AppManager 必须在清理大厅房间缓存之后再切换 Game 场景。");
             Assert.That(transitionIndex, Is.GreaterThan(applyIndex), "AppManager 必须在 ApplyGameInit 之后再切换 Game 场景。");
         }
 
