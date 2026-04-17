@@ -61,6 +61,24 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color visibleObservationTint = Color.white;
         [SerializeField] private Color memoryObservationTint = new Color(0.72f, 0.72f, 0.72f, 1f);
         [SerializeField] private Color unknownObservationTint = new Color(0.46f, 0.46f, 0.46f, 1f);
+        [SerializeField] private bool hideUnknownDetails = true;
+        [SerializeField] private bool hideGroundWhenUnknown = true;
+
+        [Header("Observation Fog Overlay")]
+        [SerializeField] private bool enableObservationFogOverlay = false;
+        [SerializeField] private bool autoCreateFogOverlay = true;
+        [SerializeField] private Renderer fogOverlayRenderer;
+        [SerializeField] private Texture2D fogOverlayTexture;
+        [SerializeField] private string fogOverlayTextureResourcesPath = "Textures/Fog/fog01";
+        [SerializeField] private Color fogOverlayColor = new Color(1f, 1f, 1f, 1f);
+        [Range(0f, 1f)] [SerializeField] private float fogUnknownAlpha = 0.82f;
+        [Range(0f, 1f)] [SerializeField] private float fogMemoryAlpha = 0.42f;
+        [Range(0f, 1f)] [SerializeField] private float fogVisibleAlpha = 0f;
+        [SerializeField] private float fogUvWorldSize = 3.2f;
+        [SerializeField] private Vector2 fogUvScrollSpeed = new Vector2(0.01f, 0.006f);
+        [SerializeField] private float fogUvUpdateInterval = 0.08f;
+        [SerializeField] private float fogOverlayHeight = 0.03f;
+        [SerializeField] private Vector2 fogOverlayScale = new Vector2(1f, 1f);
 
         [Header("Resource")]
         [SerializeField] private ResourcePointView resourcePointPrefab;
@@ -97,6 +115,10 @@ namespace Panoptes.Presentation.Map
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;
         private string _buildingType = string.Empty;
+        private bool _roadVisibleWanted;
+        private bool _resourceVisibleWanted;
+        private bool _isCurrentlyVisible = true;
+        private bool _isMemoryVisible;
         private MaterialPropertyBlock _highlightBlock;
         private Transform _moveMarkerRoot;
         private Transform _moveArrowRoot;
@@ -107,18 +129,51 @@ namespace Panoptes.Presentation.Map
         private MaterialPropertyBlock _moveMarkerBlock;
         private Material _moveMarkerMaterial;
         private MaterialPropertyBlock _groundBlock;
+        private MaterialPropertyBlock _fogOverlayBlock;
+        private Material _fogOverlayMaterial;
+        private Mesh _fogOverlayMeshInstance;
+        private Vector2[] _fogOverlayBaseUv;
+        private float _currentFogAlpha;
+        private float _nextFogUvUpdateTime;
+        private bool _fogTextureLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
             new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
 
+        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
+        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int MainTexStId = Shader.PropertyToID("_MainTex_ST");
         private static readonly int BumpMapStId = Shader.PropertyToID("_BumpMap_ST");
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static Material SharedFogOverlayMaterial;
 
         private void Awake()
         {
             EnsureHighlightBlock();
+            if (enableObservationFogOverlay)
+            {
+                EnsureObservationFogOverlay();
+            }
+        }
+
+        private void Update()
+        {
+            if (enableObservationFogOverlay)
+            {
+                UpdateObservationFogAnimation();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            _fogOverlayMaterial = null;
+            if (_fogOverlayMeshInstance != null)
+            {
+                Destroy(_fogOverlayMeshInstance);
+                _fogOverlayMeshInstance = null;
+            }
+            _fogOverlayBaseUv = null;
         }
 
         /// <summary>
@@ -178,53 +233,351 @@ namespace Panoptes.Presentation.Map
 
         public void SetRoadVisible(bool isVisible)
         {
+            _roadVisibleWanted = isVisible;
             if (roadOverlay != null)
             {
                 roadOverlay.SetActive(isVisible);
             }
+            ApplyObservationDetailVisibility();
         }
 
         private void ApplyObservationState(NodeDto node)
         {
-            if (!enableObservationTint || node == null || groundRenderer == null)
+            if (node == null)
             {
                 return;
             }
 
-            if (_groundBlock == null)
-            {
-                _groundBlock = new MaterialPropertyBlock();
-            }
+            _isCurrentlyVisible = node.IsVisible;
+            _isMemoryVisible = node.IsMemory;
 
-            var baseColor = Color.white;
-            var groundMaterial = groundRenderer.sharedMaterial;
-            if (groundMaterial != null)
+            if (enableObservationTint && groundRenderer != null)
             {
-                if (groundMaterial.HasProperty(BaseColorId))
+                if (_groundBlock == null)
                 {
-                    baseColor = groundMaterial.GetColor(BaseColorId);
+                    _groundBlock = new MaterialPropertyBlock();
                 }
-                else if (groundMaterial.HasProperty(ColorId))
+
+                var baseColor = Color.white;
+                var groundMaterial = groundRenderer.sharedMaterial;
+                if (groundMaterial != null)
                 {
-                    baseColor = groundMaterial.GetColor(ColorId);
+                    if (groundMaterial.HasProperty(BaseColorId))
+                    {
+                        baseColor = groundMaterial.GetColor(BaseColorId);
+                    }
+                    else if (groundMaterial.HasProperty(ColorId))
+                    {
+                        baseColor = groundMaterial.GetColor(ColorId);
+                    }
+                }
+
+                var tint = visibleObservationTint;
+                if (!node.IsVisible)
+                {
+                    tint = node.IsMemory ? memoryObservationTint : unknownObservationTint;
+                }
+                var finalColor = new Color(
+                    Mathf.Clamp01(baseColor.r * tint.r),
+                    Mathf.Clamp01(baseColor.g * tint.g),
+                    Mathf.Clamp01(baseColor.b * tint.b),
+                    baseColor.a);
+
+                groundRenderer.GetPropertyBlock(_groundBlock);
+                _groundBlock.SetColor(BaseColorId, finalColor);
+                _groundBlock.SetColor(ColorId, finalColor);
+                groundRenderer.SetPropertyBlock(_groundBlock);
+            }
+
+            ApplyObservationFogState(ResolveObservationFogAlpha(node), forceUvRefresh: true);
+            ApplyObservationDetailVisibility();
+        }
+
+        private float ResolveObservationFogAlpha(NodeDto node)
+        {
+            if (node == null)
+            {
+                return fogUnknownAlpha;
+            }
+
+            if (node.IsVisible)
+            {
+                return Mathf.Clamp01(fogVisibleAlpha);
+            }
+
+            return Mathf.Clamp01(node.IsMemory ? fogMemoryAlpha : fogUnknownAlpha);
+        }
+
+        private void ApplyObservationFogState(float alpha, bool forceUvRefresh)
+        {
+            _currentFogAlpha = Mathf.Clamp01(alpha);
+
+            if (!enableObservationFogOverlay)
+            {
+                if (fogOverlayRenderer != null)
+                {
+                    fogOverlayRenderer.enabled = false;
+                }
+                return;
+            }
+
+            if (!EnsureObservationFogOverlay())
+            {
+                return;
+            }
+
+            UpdateFogOverlayVisual(_currentFogAlpha, forceUvRefresh);
+            if (fogOverlayRenderer != null)
+            {
+                fogOverlayRenderer.enabled = _currentFogAlpha > 0.001f;
+            }
+        }
+
+        private void UpdateObservationFogAnimation()
+        {
+            if (!enableObservationFogOverlay || fogOverlayRenderer == null || !fogOverlayRenderer.enabled)
+            {
+                return;
+            }
+
+            if (Mathf.Abs(fogUvScrollSpeed.x) <= 0.00001f && Mathf.Abs(fogUvScrollSpeed.y) <= 0.00001f)
+            {
+                return;
+            }
+
+            var now = Time.unscaledTime;
+            if (now < _nextFogUvUpdateTime)
+            {
+                return;
+            }
+
+            _nextFogUvUpdateTime = now + Mathf.Max(0.01f, fogUvUpdateInterval);
+            UpdateFogOverlayVisual(_currentFogAlpha, forceUvRefresh: true);
+        }
+
+        private bool EnsureObservationFogOverlay()
+        {
+            if (fogOverlayRenderer == null && autoCreateFogOverlay)
+            {
+                var fogGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                fogGo.name = "ObservationFogOverlay";
+                fogGo.transform.SetParent(transform, false);
+                fogGo.transform.localPosition = new Vector3(0f, fogOverlayHeight, 0f);
+                fogGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                fogGo.transform.localScale = new Vector3(
+                    Mathf.Max(0.01f, fogOverlayScale.x),
+                    Mathf.Max(0.01f, fogOverlayScale.y),
+                    1f);
+                DestroyRuntimeCollider(fogGo);
+                fogOverlayRenderer = fogGo.GetComponent<Renderer>();
+            }
+
+            if (fogOverlayRenderer == null)
+            {
+                return false;
+            }
+
+            EnsureFogOverlayMaterial();
+            if (_fogOverlayMaterial == null)
+            {
+                return false;
+            }
+
+            EnsureFogOverlayMeshUv();
+            fogOverlayRenderer.sharedMaterial = _fogOverlayMaterial;
+            fogOverlayRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            fogOverlayRenderer.receiveShadows = false;
+            return true;
+        }
+
+        private void EnsureFogOverlayMeshUv()
+        {
+            if (fogOverlayRenderer == null)
+            {
+                return;
+            }
+
+            var meshFilter = fogOverlayRenderer.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                return;
+            }
+
+            if (_fogOverlayMeshInstance == null)
+            {
+                _fogOverlayMeshInstance = Instantiate(meshFilter.sharedMesh);
+                _fogOverlayMeshInstance.name = "NodeFogOverlayMesh_Runtime";
+                _fogOverlayMeshInstance.hideFlags = HideFlags.DontSave;
+                meshFilter.sharedMesh = _fogOverlayMeshInstance;
+                var originalUv = _fogOverlayMeshInstance.uv;
+                if (originalUv != null && originalUv.Length > 0)
+                {
+                    _fogOverlayBaseUv = (Vector2[])originalUv.Clone();
                 }
             }
 
-            var tint = visibleObservationTint;
-            if (!node.IsVisible)
+            var sourceUv = _fogOverlayBaseUv;
+            if (sourceUv == null || sourceUv.Length == 0)
             {
-                tint = node.IsMemory ? memoryObservationTint : unknownObservationTint;
+                return;
             }
-            var finalColor = new Color(
-                Mathf.Clamp01(baseColor.r * tint.r),
-                Mathf.Clamp01(baseColor.g * tint.g),
-                Mathf.Clamp01(baseColor.b * tint.b),
-                baseColor.a);
 
-            groundRenderer.GetPropertyBlock(_groundBlock);
-            _groundBlock.SetColor(BaseColorId, finalColor);
-            _groundBlock.SetColor(ColorId, finalColor);
-            groundRenderer.SetPropertyBlock(_groundBlock);
+            var worldSize = Mathf.Max(0.01f, fogUvWorldSize);
+
+            var tileHalfX = Mathf.Max(0.01f, fogOverlayScale.x) * 0.5f;
+            var tileHalfY = Mathf.Max(0.01f, fogOverlayScale.y) * 0.5f;
+            var worldPos = transform.position;
+            var minX = worldPos.x - tileHalfX;
+            var maxX = worldPos.x + tileHalfX;
+            var minZ = worldPos.z - tileHalfY;
+            var maxZ = worldPos.z + tileHalfY;
+
+            var u0 = minX / worldSize;
+            var u1 = maxX / worldSize;
+            var v0 = minZ / worldSize;
+            var v1 = maxZ / worldSize;
+
+            var mappedUv = new Vector2[sourceUv.Length];
+            for (int i = 0; i < sourceUv.Length; i++)
+            {
+                var uv = sourceUv[i];
+                mappedUv[i] = new Vector2(
+                    Mathf.Lerp(u0, u1, uv.x),
+                    Mathf.Lerp(v0, v1, uv.y));
+            }
+
+            _fogOverlayMeshInstance.uv = mappedUv;
+        }
+
+        private void EnsureFogOverlayMaterial()
+        {
+            if (_fogOverlayMaterial == null && SharedFogOverlayMaterial != null)
+            {
+                _fogOverlayMaterial = SharedFogOverlayMaterial;
+            }
+
+            if (_fogOverlayMaterial != null)
+            {
+                return;
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Texture");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            if (shader == null)
+            {
+                return;
+            }
+
+            _fogOverlayMaterial = new Material(shader)
+            {
+                name = "NodeFogOverlayMat_Runtime",
+                hideFlags = HideFlags.DontSave
+            };
+            SharedFogOverlayMaterial = _fogOverlayMaterial;
+
+            if (_fogOverlayMaterial.HasProperty("_Surface"))
+            {
+                _fogOverlayMaterial.SetFloat("_Surface", 1f);
+            }
+            if (_fogOverlayMaterial.HasProperty("_Blend"))
+            {
+                _fogOverlayMaterial.SetFloat("_Blend", 0f);
+            }
+            if (_fogOverlayMaterial.HasProperty("_SrcBlend"))
+            {
+                _fogOverlayMaterial.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            }
+            if (_fogOverlayMaterial.HasProperty("_DstBlend"))
+            {
+                _fogOverlayMaterial.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            }
+            if (_fogOverlayMaterial.HasProperty("_ZWrite"))
+            {
+                _fogOverlayMaterial.SetFloat("_ZWrite", 0f);
+            }
+            if (_fogOverlayMaterial.HasProperty("_Cull"))
+            {
+                _fogOverlayMaterial.SetFloat("_Cull", 0f);
+            }
+            if (_fogOverlayMaterial.HasProperty(BaseMapId))
+            {
+                _fogOverlayMaterial.SetTexture(BaseMapId, ResolveFogOverlayTexture());
+            }
+            if (_fogOverlayMaterial.HasProperty(MainTexId))
+            {
+                _fogOverlayMaterial.SetTexture(MainTexId, ResolveFogOverlayTexture());
+            }
+            if (_fogOverlayMaterial.HasProperty(BaseColorId))
+            {
+                _fogOverlayMaterial.SetColor(BaseColorId, Color.white);
+            }
+            if (_fogOverlayMaterial.HasProperty(ColorId))
+            {
+                _fogOverlayMaterial.SetColor(ColorId, Color.white);
+            }
+        }
+
+        private void UpdateFogOverlayVisual(float alpha, bool forceUvRefresh)
+        {
+            if (fogOverlayRenderer == null)
+            {
+                return;
+            }
+
+            if (_fogOverlayBlock == null)
+            {
+                _fogOverlayBlock = new MaterialPropertyBlock();
+            }
+
+            var now = Time.unscaledTime;
+            var scroll = fogUvScrollSpeed * now;
+            var st = new Vector4(
+                1f,
+                1f,
+                Mathf.Repeat(scroll.x, 1f),
+                Mathf.Repeat(scroll.y, 1f));
+
+            fogOverlayRenderer.GetPropertyBlock(_fogOverlayBlock);
+            if (forceUvRefresh)
+            {
+                _fogOverlayBlock.SetVector(BaseMapStId, st);
+                _fogOverlayBlock.SetVector(MainTexStId, st);
+            }
+
+            var fogTexture = ResolveFogOverlayTexture();
+            _fogOverlayBlock.SetTexture(BaseMapId, fogTexture);
+            _fogOverlayBlock.SetTexture(MainTexId, fogTexture);
+
+            var finalColor = fogOverlayColor;
+            finalColor.a = Mathf.Clamp01(finalColor.a * Mathf.Clamp01(alpha));
+            _fogOverlayBlock.SetColor(BaseColorId, finalColor);
+            _fogOverlayBlock.SetColor(ColorId, finalColor);
+            fogOverlayRenderer.SetPropertyBlock(_fogOverlayBlock);
+        }
+
+        private Texture2D ResolveFogOverlayTexture()
+        {
+            if (fogOverlayTexture != null)
+            {
+                return fogOverlayTexture;
+            }
+
+            if (!_fogTextureLoadAttempted && !string.IsNullOrWhiteSpace(fogOverlayTextureResourcesPath))
+            {
+                _fogTextureLoadAttempted = true;
+                fogOverlayTexture = Resources.Load<Texture2D>(fogOverlayTextureResourcesPath.Trim());
+            }
+
+            return fogOverlayTexture != null ? fogOverlayTexture : Texture2D.whiteTexture;
         }
 
         public void SetHighlightVisible(bool isVisible)
@@ -489,6 +842,7 @@ namespace Panoptes.Presentation.Map
         /// </summary>
         public void SetResource(bool isResourcePoint, string resourceType, bool isHighValue = false)
         {
+            _resourceVisibleWanted = isResourcePoint;
             if (!isResourcePoint)
             {
                 ClearResource();
@@ -510,6 +864,7 @@ namespace Panoptes.Presentation.Map
             _resourceInstance.SetType(normalized);
             _resourceInstance.SetHighValue(isHighValue);
             _resourceType = normalized;
+            ApplyObservationDetailVisibility();
         }
 
         /// <summary>
@@ -552,6 +907,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _buildingType = normalized;
+            ApplyObservationDetailVisibility();
         }
 
         public void SetBuildingGhost(string buildingType, string ownerId, Color ghostColor)
@@ -582,6 +938,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _buildingType = normalized;
+            ApplyObservationDetailVisibility();
         }
 
         public void ClearResource()
@@ -592,6 +949,8 @@ namespace Panoptes.Presentation.Map
                 _resourceInstance = null;
             }
             _resourceType = string.Empty;
+            _resourceVisibleWanted = false;
+            ApplyObservationDetailVisibility();
         }
 
         public void ClearBuilding()
@@ -602,6 +961,7 @@ namespace Panoptes.Presentation.Map
                 _buildingInstance = null;
             }
             _buildingType = string.Empty;
+            ApplyObservationDetailVisibility();
         }
 
         private void ReplaceBuildingInstance(string buildingType)
@@ -833,6 +1193,53 @@ namespace Panoptes.Presentation.Map
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        public void SetPerTileObservationFogEnabled(bool enabled)
+        {
+            enableObservationFogOverlay = enabled;
+            if (!enabled && fogOverlayRenderer != null)
+            {
+                fogOverlayRenderer.enabled = false;
+            }
+            else if (enabled)
+            {
+                EnsureObservationFogOverlay();
+                ApplyObservationFogState(_currentFogAlpha, forceUvRefresh: true);
+            }
+        }
+
+        public void SetUnknownDetailCulling(bool enabled, bool hideGround)
+        {
+            hideUnknownDetails = enabled;
+            hideGroundWhenUnknown = hideGround;
+            ApplyObservationDetailVisibility();
+        }
+
+        private void ApplyObservationDetailVisibility()
+        {
+            var known = _isCurrentlyVisible || _isMemoryVisible;
+            var hideDetails = hideUnknownDetails && !known;
+
+            if (groundRenderer != null)
+            {
+                groundRenderer.enabled = !(hideDetails && hideGroundWhenUnknown);
+            }
+
+            if (roadOverlay != null)
+            {
+                roadOverlay.SetActive(_roadVisibleWanted && !hideDetails);
+            }
+
+            if (_resourceInstance != null)
+            {
+                _resourceInstance.gameObject.SetActive(_resourceVisibleWanted && !hideDetails);
+            }
+
+            if (_buildingInstance != null)
+            {
+                _buildingInstance.gameObject.SetActive(!string.IsNullOrEmpty(_buildingType) && !hideDetails);
+            }
         }
 
 #if UNITY_EDITOR

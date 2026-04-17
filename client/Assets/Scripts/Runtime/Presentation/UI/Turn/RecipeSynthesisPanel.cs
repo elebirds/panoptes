@@ -386,7 +386,10 @@ namespace Panoptes.Presentation.UI.Domestic
                 _lastRecipeFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.ErrorCode);
             }
 
-            ClearLocalSelectionCache(_activeNodeId);
+            if (!evt.Success)
+            {
+                ClearLocalSelectionCache(_activeNodeId);
+            }
             SeedSelectionFromState();
             if (IsVisible)
             {
@@ -438,16 +441,17 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 view.SetLockedVisual(lockedStateIcon, lockedStateText);
                 view.SetLocked(true);
-                view.SetQuantity(0, notify: false);
+                view.SetActiveState(false, notify: false);
             }
 
             if (string.Equals(_selectedRecipeId, recipeId, StringComparison.Ordinal))
             {
-                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
+                _selectedRecipeId = string.Empty;
             }
 
             _quantityByRecipeId.Remove(recipeId);
             SaveCurrentSelectionToLocalCache();
+            RefreshItemActivationStates();
             RefreshStatusMessage();
         }
 
@@ -488,9 +492,9 @@ namespace Panoptes.Presentation.UI.Domestic
                 item.Configure(recipe.Outputs, recipe.Inputs, recipe.ProduceAmount, recipe.TurnCost);
                 item.SetLockedVisual(lockedStateIcon, lockedStateText);
                 item.SetLocked(recipe.IsLocked);
-                item.SetQuantity(ResolveInitialQuantity(recipe.Id), notify: false);
-                item.QuantityChanged -= OnItemQuantityChanged;
-                item.QuantityChanged += OnItemQuantityChanged;
+                item.SetActiveState(string.Equals(NormalizeToken(recipe.Id), NormalizeToken(_selectedRecipeId), StringComparison.Ordinal), notify: false);
+                item.ActivationChanged -= OnItemActivationChanged;
+                item.ActivationChanged += OnItemActivationChanged;
                 item.HoverEntered -= OnItemHoverEntered;
                 item.HoverEntered += OnItemHoverEntered;
                 item.HoverExited -= OnItemHoverExited;
@@ -721,44 +725,32 @@ namespace Panoptes.Presentation.UI.Domestic
 
             RefreshActiveBuildingContextFromAuthority();
 
+            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
+            {
+                SyncSelectionCacheFromSelectedRecipe();
+                SaveCurrentSelectionToLocalCache();
+                return;
+            }
+
             if (TryRestoreSelectionFromDraft(_activeNodeId))
             {
+                SyncSelectionCacheFromSelectedRecipe();
                 SaveCurrentSelectionToLocalCache();
                 return;
             }
 
             if (TryRestoreSelectionFromAuthoritativeBuilding(_activeNodeId))
             {
+                SyncSelectionCacheFromSelectedRecipe();
                 SaveCurrentSelectionToLocalCache();
                 return;
             }
 
-            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
-            {
-                SaveCurrentSelectionToLocalCache();
-                return;
-            }
-
+            SyncSelectionCacheFromSelectedRecipe();
             SaveCurrentSelectionToLocalCache();
         }
 
-        private int ResolveInitialQuantity(string recipeId)
-        {
-            var key = NormalizeToken(recipeId);
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                return 0;
-            }
-
-            if (_quantityByRecipeId.TryGetValue(key, out var amount))
-            {
-                return Mathf.Max(0, amount);
-            }
-
-            return string.Equals(_selectedRecipeId, key, StringComparison.Ordinal) ? 1 : 0;
-        }
-
-        private void OnItemQuantityChanged(RecipeSynthesisItemView item, int quantity)
+        private void OnItemActivationChanged(RecipeSynthesisItemView item, bool isActive)
         {
             if (item == null || item.IsLocked)
             {
@@ -771,36 +763,26 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            var clamped = Mathf.Max(0, quantity);
-            if (clamped <= 0)
-            {
-                _quantityByRecipeId.Remove(recipeId);
-            }
-            else
-            {
-                _quantityByRecipeId[recipeId] = clamped;
-            }
-
-            if (quantity <= 0)
+            if (!isActive)
             {
                 if (string.Equals(_selectedRecipeId, recipeId, StringComparison.Ordinal))
                 {
-                    _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities(recipeId);
+                    _selectedRecipeId = string.Empty;
                 }
-            }
-            else
-            {
-                _selectedRecipeId = recipeId;
-                _knownUnlockedRecipeIds.Add(recipeId);
-                _knownLockedRecipeIds.Remove(recipeId);
+
+                _quantityByRecipeId.Remove(recipeId);
+                SaveCurrentSelectionToLocalCache();
+                RefreshItemActivationStates();
+                return;
             }
 
-            if (string.IsNullOrWhiteSpace(_selectedRecipeId))
-            {
-                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
-            }
+            _selectedRecipeId = recipeId;
+            _knownUnlockedRecipeIds.Add(recipeId);
+            _knownLockedRecipeIds.Remove(recipeId);
+            SyncSelectionCacheFromSelectedRecipe();
 
             SaveCurrentSelectionToLocalCache();
+            RefreshItemActivationStates();
             SendRecipeSelectionChangeToServer();
         }
 
@@ -868,30 +850,30 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
-            foreach (var pair in recipeQuantities)
-            {
-                if (string.IsNullOrWhiteSpace(pair.Key))
-                {
-                    continue;
-                }
-
-                var amount = Mathf.Max(0, pair.Value);
-                if (amount <= 0)
-                {
-                    continue;
-                }
-
-                _quantityByRecipeId[NormalizeToken(pair.Key)] = amount;
-            }
+            _quantityByRecipeId.Clear();
 
             if (_selectedRecipeByNodeId.TryGetValue(nodeId, out var selected))
             {
                 _selectedRecipeId = NormalizeToken(selected);
             }
 
-            if (string.IsNullOrWhiteSpace(_selectedRecipeId) || !_quantityByRecipeId.ContainsKey(_selectedRecipeId))
+            if (string.IsNullOrWhiteSpace(_selectedRecipeId))
             {
-                _selectedRecipeId = ResolvePreferredRecipeFromLocalQuantities();
+                foreach (var pair in recipeQuantities)
+                {
+                    if (string.IsNullOrWhiteSpace(pair.Key))
+                    {
+                        continue;
+                    }
+
+                    if (Mathf.Max(0, pair.Value) <= 0)
+                    {
+                        continue;
+                    }
+
+                    _selectedRecipeId = NormalizeToken(pair.Key);
+                    break;
+                }
             }
 
             return true;
@@ -909,7 +891,6 @@ namespace Panoptes.Presentation.UI.Domestic
             _selectedRecipeId = NormalizeToken(selection.RecipeId);
             if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
             {
-                _quantityByRecipeId[_selectedRecipeId] = 1;
                 _lastSentRecipeByNodeId[nodeId] = _selectedRecipeId;
                 return true;
             }
@@ -929,7 +910,6 @@ namespace Panoptes.Presentation.UI.Domestic
             _selectedRecipeId = NormalizeToken(building.OperationSelectedRecipeId);
             if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
             {
-                _quantityByRecipeId[_selectedRecipeId] = 1;
                 _lastSentRecipeByNodeId[nodeId] = _selectedRecipeId;
                 return true;
             }
@@ -951,20 +931,9 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             cache.Clear();
-            foreach (var pair in _quantityByRecipeId)
+            if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
             {
-                if (string.IsNullOrWhiteSpace(pair.Key))
-                {
-                    continue;
-                }
-
-                var amount = Mathf.Max(0, pair.Value);
-                if (amount <= 0)
-                {
-                    continue;
-                }
-
-                cache[NormalizeToken(pair.Key)] = amount;
+                cache[NormalizeToken(_selectedRecipeId)] = 1;
             }
 
             if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
@@ -974,6 +943,33 @@ namespace Panoptes.Presentation.UI.Domestic
             else
             {
                 _selectedRecipeByNodeId.Remove(_activeNodeId);
+            }
+        }
+
+        private void SyncSelectionCacheFromSelectedRecipe()
+        {
+            _quantityByRecipeId.Clear();
+            if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
+            {
+                _quantityByRecipeId[NormalizeToken(_selectedRecipeId)] = 1;
+            }
+        }
+
+        private void RefreshItemActivationStates()
+        {
+            foreach (var pair in _itemByRecipeId)
+            {
+                var recipeId = pair.Key;
+                var item = pair.Value;
+                if (item == null)
+                {
+                    continue;
+                }
+
+                item.SetActiveState(
+                    !string.IsNullOrWhiteSpace(_selectedRecipeId) &&
+                    string.Equals(recipeId, NormalizeToken(_selectedRecipeId), StringComparison.Ordinal),
+                    notify: false);
             }
         }
 
@@ -1142,7 +1138,7 @@ namespace Panoptes.Presentation.UI.Domestic
             var recipeToSend = ResolvePreferredRecipeForCurrentNode();
             if (string.IsNullOrWhiteSpace(recipeToSend))
             {
-                Debug.Log($"[RecipeSynthesisPanel] Recipe quantities changed for node={_activeNodeId}, but no selectable recipe to sync.");
+                Debug.Log($"[RecipeSynthesisPanel] No active recipe for node={_activeNodeId}, skip sync.");
                 return;
             }
 
@@ -1340,7 +1336,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 var item = _itemViews[i];
                 if (item != null)
                 {
-                    item.QuantityChanged -= OnItemQuantityChanged;
+                    item.ActivationChanged -= OnItemActivationChanged;
                     Destroy(item.gameObject);
                 }
             }

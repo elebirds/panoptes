@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    public sealed class RecipeSynthesisItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public sealed class RecipeSynthesisItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public readonly struct IngredientViewData
         {
@@ -65,10 +65,12 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private float preferredItemHeight = 178f;
         [SerializeField] private float minItemHeight = 156f;
 
-        [Header("Quantity")]
-        [SerializeField] private int quantity;
-        [SerializeField] private int minQuantity;
-        [SerializeField] private int maxQuantity = 99;
+        [Header("Activation")]
+        [SerializeField] private bool isActive;
+        [SerializeField] private string activeLabel = "\u6FC0\u6D3B";
+        [SerializeField] private Image activeStateIcon;
+        [SerializeField] private Sprite activeStatePlaceholderSprite;
+        [SerializeField] private Color activeStateIconColor = new Color(1f, 1f, 1f, 0.16f);
 
         [Header("Locked State")]
         [SerializeField] private GameObject lockedOverlayRoot;
@@ -82,12 +84,13 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly List<SlotView> _inputSlots = new();
         private LayoutElement _layoutElement;
 
-        public event Action<RecipeSynthesisItemView, int> QuantityChanged;
+        public event Action<RecipeSynthesisItemView, bool> ActivationChanged;
         public event Action<RecipeSynthesisItemView> HoverEntered;
         public event Action<RecipeSynthesisItemView> HoverExited;
 
         public string RecipeId { get; private set; } = string.Empty;
         public bool IsLocked { get; private set; }
+        public bool IsActiveState => isActive;
 
         private void Awake()
         {
@@ -100,7 +103,9 @@ namespace Panoptes.Presentation.UI.Domestic
             EnsureRoots();
             BindButtons();
             HideLegacyRefs();
-            RefreshQuantityText();
+            EnsureActivationVisual();
+            HideLegacyActivationButtons();
+            RefreshActivationStateVisual();
             EnsureLockOverlay();
             SetLocked(false);
         }
@@ -110,16 +115,21 @@ namespace Panoptes.Presentation.UI.Domestic
             RecipeId = string.IsNullOrWhiteSpace(recipeId) ? string.Empty : recipeId.Trim();
         }
 
-        public void SetQuantity(int value, bool notify = false)
+        public void SetActiveState(bool active, bool notify = false)
         {
-            var next = Mathf.Clamp(value, minQuantity, maxQuantity);
-            var changed = next != quantity;
-            quantity = next;
-            RefreshQuantityText();
+            var changed = isActive != active;
+            isActive = active;
+            RefreshActivationStateVisual();
             if (notify && changed)
             {
-                QuantityChanged?.Invoke(this, quantity);
+                ActivationChanged?.Invoke(this, isActive);
             }
+        }
+
+        // Keep compatibility with older call sites during merge transitions.
+        public void SetQuantity(int value, bool notify = false)
+        {
+            SetActiveState(value > 0, notify);
         }
 
         public void Configure(
@@ -156,13 +166,15 @@ namespace Panoptes.Presentation.UI.Domestic
 
             if (minusButton != null)
             {
-                minusButton.interactable = !locked;
+                minusButton.interactable = !locked && isActive;
             }
 
             if (plusButton != null)
             {
-                plusButton.interactable = !locked;
+                plusButton.interactable = !locked && !isActive;
             }
+
+            RefreshActivationStateVisual();
         }
 
         public void SetLockedVisual(Sprite icon, string text = null)
@@ -185,35 +197,45 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             if (minusButton != null)
             {
-                minusButton.onClick.RemoveListener(DecreaseQuantity);
-                minusButton.onClick.AddListener(DecreaseQuantity);
+                minusButton.onClick.RemoveListener(SetInactive);
+                minusButton.onClick.AddListener(SetInactive);
             }
 
             if (plusButton != null)
             {
-                plusButton.onClick.RemoveListener(IncreaseQuantity);
-                plusButton.onClick.AddListener(IncreaseQuantity);
+                plusButton.onClick.RemoveListener(SetActive);
+                plusButton.onClick.AddListener(SetActive);
             }
         }
 
-        private void IncreaseQuantity()
+        private void SetActive()
         {
             if (IsLocked)
             {
                 return;
             }
 
-            SetQuantity(quantity + 1, true);
+            SetActiveState(true, true);
         }
 
-        private void DecreaseQuantity()
+        private void SetInactive()
         {
             if (IsLocked)
             {
                 return;
             }
 
-            SetQuantity(quantity - 1, true);
+            SetActiveState(false, true);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (IsLocked || eventData == null || eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
+            SetActiveState(!isActive, true);
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -226,11 +248,83 @@ namespace Panoptes.Presentation.UI.Domestic
             HoverExited?.Invoke(this);
         }
 
-        private void RefreshQuantityText()
+        private void RefreshActivationStateVisual()
         {
             if (quantityValueText != null)
             {
-                quantityValueText.text = quantity.ToString();
+                quantityValueText.text = activeLabel;
+                quantityValueText.gameObject.SetActive(isActive);
+            }
+
+            if (minusButton != null)
+            {
+                minusButton.interactable = !IsLocked && isActive;
+            }
+
+            if (plusButton != null)
+            {
+                plusButton.interactable = !IsLocked && !isActive;
+            }
+
+            if (activeStateIcon != null)
+            {
+                activeStateIcon.gameObject.SetActive(isActive);
+            }
+        }
+
+        private void HideLegacyActivationButtons()
+        {
+            if (minusButton != null)
+            {
+                minusButton.gameObject.SetActive(false);
+            }
+
+            if (plusButton != null)
+            {
+                plusButton.gameObject.SetActive(false);
+            }
+        }
+
+        private void EnsureActivationVisual()
+        {
+            if (root == null)
+            {
+                root = transform as RectTransform;
+            }
+
+            if (root == null)
+            {
+                return;
+            }
+
+            if (activeStateIcon == null)
+            {
+                var existing = root.Find("ActiveStateIcon") as RectTransform;
+                if (existing != null)
+                {
+                    activeStateIcon = existing.GetComponent<Image>();
+                }
+            }
+
+            if (activeStateIcon == null)
+            {
+                var iconGo = new GameObject("ActiveStateIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var rect = iconGo.GetComponent<RectTransform>();
+                rect.SetParent(root, false);
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = Vector2.zero;
+                activeStateIcon = iconGo.GetComponent<Image>();
+                iconGo.transform.SetSiblingIndex(1);
+            }
+
+            if (activeStateIcon != null)
+            {
+                activeStateIcon.sprite = activeStatePlaceholderSprite;
+                activeStateIcon.color = activeStateIconColor;
+                activeStateIcon.raycastTarget = false;
             }
         }
 
