@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -17,6 +18,7 @@ import (
 	"github.com/elebirds/panoptes/internal/engine/combat"
 	"github.com/elebirds/panoptes/internal/engine/economy"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	coretransport "github.com/elebirds/panoptes/internal/transport"
@@ -28,6 +30,7 @@ import (
 
 type Session interface {
 	State() *domain.GameState
+	Participant(participantID string) (participant.Participant, bool)
 	Submit(playerID string)
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
 	IsDevMode() bool
@@ -44,6 +47,19 @@ type Session interface {
 }
 
 type Service struct{}
+
+type handleIntentResult struct {
+	accepted  bool
+	errorCode string
+}
+
+func acceptedHandleIntentResult() handleIntentResult {
+	return handleIntentResult{accepted: true}
+}
+
+func rejectedHandleIntentResult(errorCode string) handleIntentResult {
+	return handleIntentResult{accepted: false, errorCode: errorCode}
+}
 
 func (s *Service) Enter(room Session) {
 	if room == nil || room.State() == nil {
@@ -87,38 +103,62 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 	if state == nil {
 		return errors.New("state is nil")
 	}
+
+	currentParticipant, ok := room.Participant(playerID)
+	if !ok {
+		currentParticipant = participant.Participant{ID: playerID, Kind: participant.KindHuman}
+	}
+	record := DebugIntentRecordFor(currentParticipant.Kind, playerID, envelope.Intent)
+	baseAttrs := []any{
+		"component", "planning_intent",
+		"participant_id", playerID,
+		"participant_kind", string(currentParticipant.Kind),
+		"source", record.Source,
+		"turn", state.Turn,
+		"phase", state.Phase,
+		"intent_type", record.IntentType,
+		"intent_label", record.IntentLabel,
+	}
+	baseAttrs = append(baseAttrs, record.FieldAttrs()...)
+	slog.Debug("planning 操作尝试", append(append([]any{}, baseAttrs...), "summary", record.AttemptSummary(), "outcome", "attempt")...)
+
 	playerState, ok := state.Players[playerID]
 	if !ok || playerState == nil {
+		s.logIntentResult(baseAttrs, record, rejectedHandleIntentResult(""), errors.New("player not found"))
 		return errors.New("player not found")
 	}
 
 	eventCtx := intentContext(envelope)
+	result := acceptedHandleIntentResult()
+	var err error
 	switch intent := envelope.Intent.(type) {
 	case SetPolicyIntent:
-		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
+		result, err = s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
 	case SetInstitutionLoadoutIntent:
-		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, intent.PolicyIDs)
+		result, err = s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, intent.PolicyIDs)
 	case BuildStructureIntent:
-		return s.handleBuildRequest(eventCtx, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
+		result, err = s.handleBuildRequest(eventCtx, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
 	case RevealNodeIntent:
 		if playerState.TokensLeft <= 0 {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
-			return nil
+			result = rejectedHandleIntentResult("no_tokens_left")
+			break
 		}
 		nodeView := room.BuildNodeViewForPlayer(intent.NodeID, playerID)
 		if nodeView == nil {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
-			return nil
+			result = rejectedHandleIntentResult("invalid_target")
+			break
 		}
 		playerState.TokensLeft--
 		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgRevealResult{NodeId: intent.NodeID, TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
-		return nil
+		result = acceptedHandleIntentResult()
 	case SetResearchTargetIntent:
-		return s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
+		result, err = s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
 	case SetBuildingRecipeIntent:
-		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
+		result, err = s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
 	case IssueUnitOrderIntent:
-		return s.handleIssueUnitOrder(eventCtx, room, playerID, &pb.MsgIssueUnitOrder{
+		result, err = s.handleIssueUnitOrder(eventCtx, room, playerID, &pb.MsgIssueUnitOrder{
 			UnitId:          intent.UnitID,
 			Action:          intent.Action,
 			TargetNodeId:    intent.TargetNodeID,
@@ -129,15 +169,18 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 	case CancelUnitOrderIntent:
 		room.CancelUnitOrder(playerID, strings.TrimSpace(intent.UnitID))
 		_ = room.SendPlanningSnapshot(eventCtx, playerID)
-		return nil
+		result = acceptedHandleIntentResult()
 	case SubmitTurnIntent:
 		room.Submit(playerID)
-		return nil
+		result = acceptedHandleIntentResult()
 	case nil:
-		return transportproblem.InvalidRequest("planning intent is nil")
+		err = transportproblem.InvalidRequest("planning intent is nil")
 	default:
-		return transportproblem.InvalidRequest("unsupported planning intent")
+		err = transportproblem.InvalidRequest("unsupported planning intent")
 	}
+
+	s.logIntentResult(baseAttrs, record, result, err)
+	return err
 }
 
 func intentContext(envelope IntentEnvelope) context.Context {
@@ -162,7 +205,7 @@ func cloneParams(src map[string]string) map[string]string {
 	return dst
 }
 
-func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, playerID string, msg *pb.MsgIssueUnitOrder) error {
+func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, playerID string, msg *pb.MsgIssueUnitOrder) (handleIntentResult, error) {
 	order := gameorders.UnitOrder{
 		PlayerID:        playerID,
 		UnitID:          strings.TrimSpace(msg.GetUnitId()),
@@ -181,7 +224,7 @@ func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, player
 			TargetUnitId: order.TargetUnitID,
 			ErrorCode:    errCode,
 		})
-		return nil
+		return rejectedHandleIntentResult(errCode), nil
 	}
 
 	room.SetUnitOrder(order)
@@ -193,7 +236,7 @@ func (s *Service) handleIssueUnitOrder(ctx context.Context, room Session, player
 		TargetUnitId: order.TargetUnitID,
 	})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
 }
 
 func validateUnitOrder(state *domain.GameState, playerID string, order gameorders.UnitOrder) string {
@@ -311,67 +354,67 @@ func findAnyUnit(state *domain.GameState, unitID string) (*donburi.Entry, bool) 
 	return found, found != nil
 }
 
-func (s *Service) handleSetPolicy(ctx context.Context, room Session, playerID string, policyID string) error {
+func (s *Service) handleSetPolicy(ctx context.Context, room Session, playerID string, policyID string) (handleIntentResult, error) {
 	if policyID == "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: "invalid_request"})
-		return nil
+		return rejectedHandleIntentResult("invalid_request"), nil
 	}
 
 	if _, errCode := validatePolicySelection(room.State(), playerID, policyID, "national"); errCode != "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: errCode})
-		return nil
+		return rejectedHandleIntentResult(errCode), nil
 	}
 
 	room.State().TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
 }
 
-func (s *Service) handleResearchRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, technologyID string) error {
+func (s *Service) handleResearchRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, technologyID string) (handleIntentResult, error) {
 	if playerState == nil || technologyID == "" {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: "invalid_request"})
-		return nil
+		return rejectedHandleIntentResult("invalid_request"), nil
 	}
 
 	state := room.State()
 	validation := economy.ValidateResearchTarget(state, playerID, technologyID)
 	if !validation.OK {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: validation.ErrorCode})
-		return nil
+		return rejectedHandleIntentResult(validation.ErrorCode), nil
 	}
 
 	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
 }
 
-func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) error {
+func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) (handleIntentResult, error) {
 	if playerState == nil {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, ErrorCode: "invalid_request"})
-		return nil
+		return rejectedHandleIntentResult("invalid_request"), nil
 	}
 	state := room.State()
 	normalized := domain.NormalizePolicyIDList(policyIDs)
 	if len(normalized) > playerState.Institutions.SlotCount {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-		return nil
+		return rejectedHandleIntentResult("invalid_directive"), nil
 	}
 	for _, policyID := range normalized {
 		if _, errCode := validatePolicySelection(state, playerID, policyID, "institutional"); errCode != "" {
 			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: errCode})
-			return nil
+			return rejectedHandleIntentResult(errCode), nil
 		}
 		if !playerState.Institutions.HasCandidate(policyID) {
 			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: false, PolicyIds: normalized, ErrorCode: "invalid_directive"})
-			return nil
+			return rejectedHandleIntentResult("invalid_directive"), nil
 		}
 	}
 	room.SetInstitutionLoadout(playerID, normalized)
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetInstitutionLoadoutResult{Success: true, PolicyIds: normalized})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
 }
 
 func validatePolicySelection(state *domain.GameState, playerID string, policyID string, requiredLayer string) (staticdata.PolicyDefinition, string) {
@@ -407,7 +450,7 @@ func validatePrerequisites(state *domain.GameState, playerID string, prerequisit
 	return ""
 }
 
-func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, playerID string, nodeID string, recipeID string) error {
+func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, playerID string, nodeID string, recipeID string) (handleIntentResult, error) {
 	eval := evaluateRecipeCommand(room.State(), playerID, nodeID, recipeID)
 	if !eval.OK {
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{
@@ -418,7 +461,7 @@ func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, pla
 			FeedbackMessage: eval.FeedbackMessage,
 			FeedbackDetails: eval.FeedbackDetails,
 		})
-		return nil
+		return rejectedHandleIntentResult(eval.ErrorCode), nil
 	}
 
 	room.QueueRecipeSelection(domain.RecipeSelectionOrder{
@@ -432,12 +475,12 @@ func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, pla
 		RecipeId: strings.TrimSpace(recipeID),
 	})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
 }
 
-func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, cityID string) error {
+func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, cityID string) (handleIntentResult, error) {
 	if playerState == nil {
-		return errors.New("player not found")
+		return handleIntentResult{}, errors.New("player not found")
 	}
 	eval := evaluateBuildCommand(room, playerID, playerState, nodeID, buildingType, cityID)
 	if !eval.OK {
@@ -450,7 +493,7 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 			FeedbackMessage: eval.FeedbackMessage,
 			FeedbackDetails: eval.FeedbackDetails,
 		})
-		return nil
+		return rejectedHandleIntentResult(eval.ErrorCode), nil
 	}
 
 	nodeID = strings.TrimSpace(nodeID)
@@ -468,7 +511,29 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 	}
 	_ = room.SendPlanningSnapshot(ctx, playerID)
-	return nil
+	return acceptedHandleIntentResult(), nil
+}
+
+func (s *Service) logIntentResult(baseAttrs []any, record DebugIntentRecord, result handleIntentResult, err error) {
+	attrs := append([]any{}, baseAttrs...)
+	if err != nil {
+		attrs = append(attrs, "summary", record.ResultSummary(false), "outcome", "rejected", "outcome_label", "失败")
+		if problem, ok := transportproblem.AsProblem(err); ok && problem.GetCode() != "" {
+			attrs = append(attrs, "error_code", problem.GetCode())
+		}
+		slog.Debug("planning 操作结果", attrs...)
+		return
+	}
+	if result.accepted {
+		attrs = append(attrs, "summary", record.ResultSummary(true), "outcome", "accepted", "outcome_label", "成功")
+		slog.Debug("planning 操作结果", attrs...)
+		return
+	}
+	attrs = append(attrs, "summary", record.ResultSummary(false), "outcome", "rejected", "outcome_label", "失败")
+	if result.errorCode != "" {
+		attrs = append(attrs, "error_code", result.errorCode)
+	}
+	slog.Debug("planning 操作结果", attrs...)
 }
 
 func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {
