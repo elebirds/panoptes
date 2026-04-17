@@ -14,9 +14,9 @@ import (
 )
 
 type GameRoomRegistry struct {
-	rooms   map[string]*GameRoom
-	players map[string]string
-	mu      sync.RWMutex
+	rooms        map[string]*GameRoom
+	participants map[string]string
+	mu           sync.RWMutex
 }
 
 var Registry = NewGameRoomRegistry()
@@ -25,8 +25,8 @@ var _ transport.GameRoomRegistry = (*GameRoomRegistry)(nil)
 
 func NewGameRoomRegistry() *GameRoomRegistry {
 	return &GameRoomRegistry{
-		rooms:   make(map[string]*GameRoom),
-		players: make(map[string]string),
+		rooms:        make(map[string]*GameRoom),
+		participants: make(map[string]string),
 	}
 }
 
@@ -34,54 +34,54 @@ func (r *GameRoomRegistry) Register(room *GameRoom) {
 	if room == nil {
 		return
 	}
-	r.InvalidateRoomsForPlayersExcept(room.ID, room.PlayerIDs())
+	r.InvalidateRoomsForParticipantsExcept(room.ID, room.ParticipantIDs())
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.rooms[room.ID] = room
-	for _, player := range room.Players {
-		r.players[player.PlayerID()] = room.ID
+	for _, participantID := range room.ParticipantIDs() {
+		r.participants[participantID] = room.ID
 	}
 }
 
-func (r *GameRoomRegistry) InvalidateRoomsForPlayersExcept(keepRoomID string, playerIDs []string) {
-	if r == nil || len(playerIDs) == 0 {
+func (r *GameRoomRegistry) InvalidateRoomsForParticipantsExcept(keepRoomID string, participantIDs []string) {
+	if r == nil || len(participantIDs) == 0 {
 		return
 	}
 
-	uniquePlayerIDs := make(map[string]struct{}, len(playerIDs))
-	for _, playerID := range playerIDs {
-		if playerID == "" {
+	uniqueParticipantIDs := make(map[string]struct{}, len(participantIDs))
+	for _, participantID := range participantIDs {
+		if participantID == "" {
 			continue
 		}
-		uniquePlayerIDs[playerID] = struct{}{}
+		uniqueParticipantIDs[participantID] = struct{}{}
 	}
-	if len(uniquePlayerIDs) == 0 {
+	if len(uniqueParticipantIDs) == 0 {
 		return
 	}
 
 	roomsToCancel := make(map[string]*GameRoom)
-	overlappingPlayers := make(map[string][]string)
+	overlappingParticipants := make(map[string][]string)
 
 	r.mu.Lock()
-	for playerID := range uniquePlayerIDs {
-		roomID, ok := r.players[playerID]
+	for participantID := range uniqueParticipantIDs {
+		roomID, ok := r.participants[participantID]
 		if !ok || roomID == "" || roomID == keepRoomID {
 			continue
 		}
 		room, ok := r.rooms[roomID]
 		if !ok || room == nil {
-			delete(r.players, playerID)
+			delete(r.participants, participantID)
 			continue
 		}
 		roomsToCancel[roomID] = room
-		overlappingPlayers[roomID] = append(overlappingPlayers[roomID], playerID)
+		overlappingParticipants[roomID] = append(overlappingParticipants[roomID], participantID)
 	}
 	for roomID, room := range roomsToCancel {
 		delete(r.rooms, roomID)
-		for _, player := range room.Players {
-			delete(r.players, player.PlayerID())
+		for _, participantID := range room.ParticipantIDs() {
+			delete(r.participants, participantID)
 		}
 	}
 	r.mu.Unlock()
@@ -90,8 +90,8 @@ func (r *GameRoomRegistry) InvalidateRoomsForPlayersExcept(keepRoomID string, pl
 		slog.Info("旧对局已失效",
 			"old_room_id", roomID,
 			"new_room_id", keepRoomID,
-			"player_ids", overlappingPlayers[roomID],
-			"reason", "player_joined_new_game_session",
+			"participant_ids", overlappingParticipants[roomID],
+			"reason", "participant_joined_new_game_session",
 		)
 		if room.runtime != nil {
 			room.runtime.Cancel()
@@ -108,16 +108,16 @@ func (r *GameRoomRegistry) Unregister(roomID string) {
 		return
 	}
 	delete(r.rooms, roomID)
-	for _, player := range room.Players {
-		delete(r.players, player.PlayerID())
+	for _, participantID := range room.ParticipantIDs() {
+		delete(r.participants, participantID)
 	}
 }
 
-func (r *GameRoomRegistry) GetRoomByPlayerID(playerID string) (transport.GameRoom, bool) {
+func (r *GameRoomRegistry) GetRoomByParticipantID(participantID string) (transport.GameRoom, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	roomID, ok := r.players[playerID]
+	roomID, ok := r.participants[participantID]
 	if !ok {
 		return nil, false
 	}
@@ -126,4 +126,30 @@ func (r *GameRoomRegistry) GetRoomByPlayerID(playerID string) (transport.GameRoo
 		return nil, false
 	}
 	return room, true
+}
+
+func (r *GameRoomRegistry) HandleParticipantDisconnect(participantID string) {
+	if r == nil || participantID == "" {
+		return
+	}
+
+	r.mu.RLock()
+	roomID, ok := r.participants[participantID]
+	if !ok {
+		r.mu.RUnlock()
+		return
+	}
+	room := r.rooms[roomID]
+	r.mu.RUnlock()
+
+	if room == nil {
+		return
+	}
+	if !room.IsHumanParticipant(participantID) {
+		return
+	}
+
+	if room.forfeitDisconnectedPlayer(participantID) {
+		r.Unregister(room.ID)
+	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	gamefeedback "github.com/elebirds/panoptes/internal/game/feedback"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -121,6 +122,7 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 			RequiredProgress: int32(operation.RequiredTurns),
 			BaseProgress:     int32(baseProgress),
 			BlockedReason:    operation.BlockedReason,
+			BlockedMessage:   gamefeedback.RuntimeReasonMessage(operation.BlockedReason),
 		}
 	}
 	if entry.HasComponent(ecs.BuildingC) {

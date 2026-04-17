@@ -880,6 +880,7 @@ namespace Panoptes.Core.Application.Cache
                     OperationRequiredProgress = node.OperationRequiredProgress,
                     OperationBaseProgress = node.OperationBaseProgress,
                     OperationBlockedReason = TrimOrEmpty(node.OperationBlockedReason),
+                    OperationBlockedMessage = TrimOrEmpty(node.OperationBlockedMessage),
                     TakeoverProgress = node.TakeoverProgress,
                     TakeoverRequired = node.TakeoverRequired,
                     IsCityCore = node.IsCityCore,
@@ -1086,6 +1087,7 @@ namespace Panoptes.Core.Application.Cache
                 OperationRequiredProgress = source.OperationRequiredProgress,
                 OperationBaseProgress = source.OperationBaseProgress,
                 OperationBlockedReason = source.OperationBlockedReason,
+                OperationBlockedMessage = source.OperationBlockedMessage,
                 CityId = source.CityId,
                 ServiceCityId = source.ServiceCityId,
                 TakeoverProgress = source.TakeoverProgress,
@@ -1127,6 +1129,7 @@ namespace Panoptes.Core.Application.Cache
                    left.OperationRequiredProgress == right.OperationRequiredProgress &&
                    left.OperationBaseProgress == right.OperationBaseProgress &&
                    string.Equals(left.OperationBlockedReason, right.OperationBlockedReason, StringComparison.Ordinal) &&
+                   string.Equals(left.OperationBlockedMessage, right.OperationBlockedMessage, StringComparison.Ordinal) &&
                    string.Equals(left.CityId, right.CityId, StringComparison.Ordinal) &&
                    string.Equals(left.ServiceCityId, right.ServiceCityId, StringComparison.Ordinal) &&
                    left.TakeoverProgress == right.TakeoverProgress &&
@@ -1252,6 +1255,7 @@ namespace Panoptes.Core.Application.Cache
                     OperationRequiredProgress = source.OperationRequiredProgress,
                     OperationBaseProgress = source.OperationBaseProgress,
                     OperationBlockedReason = source.OperationBlockedReason,
+                    OperationBlockedMessage = source.OperationBlockedMessage,
                     TakeoverProgress = source.TakeoverProgress,
                     TakeoverRequired = source.TakeoverRequired,
                     IsCityCore = source.IsCityCore,

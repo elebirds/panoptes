@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    public sealed class RecipeSynthesisItemView : MonoBehaviour
+    public sealed class RecipeSynthesisItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         public readonly struct IngredientViewData
         {
@@ -82,6 +83,8 @@ namespace Panoptes.Presentation.UI.Domestic
         private LayoutElement _layoutElement;
 
         public event Action<RecipeSynthesisItemView, int> QuantityChanged;
+        public event Action<RecipeSynthesisItemView> HoverEntered;
+        public event Action<RecipeSynthesisItemView> HoverExited;
 
         public string RecipeId { get; private set; } = string.Empty;
         public bool IsLocked { get; private set; }
@@ -211,6 +214,16 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             SetQuantity(quantity - 1, true);
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            HoverEntered?.Invoke(this);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            HoverExited?.Invoke(this);
         }
 
         private void RefreshQuantityText()

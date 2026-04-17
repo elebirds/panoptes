@@ -99,9 +99,7 @@ namespace Panoptes.Presentation.UI.Game
             BindBackButton();
             transform.SetAsLastSibling();
 
-            titleText.text = evt.IsWinner
-                ? "Victory"
-                : evt.Reason == "timeout_draw" ? "Draw" : "Defeat";
+            titleText.text = MapTitle(evt.IsWinner, evt.Reason);
             reasonText.text = MapReason(evt.Reason);
             winnerIdText.text = $"Winner ID: {SafeId(evt.WinnerID)}";
 
@@ -276,6 +274,18 @@ namespace Panoptes.Presentation.UI.Game
             return button;
         }
 
+        private static string MapTitle(bool isWinner, string reason)
+        {
+            return reason switch
+            {
+                "player_disconnected" when isWinner => "Opponent Disconnected",
+                "player_disconnected" => "Disconnected",
+                "timeout_draw" => "Draw",
+                _ when isWinner => "Victory",
+                _ => "Defeat"
+            };
+        }
+
         private static string SafeId(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "unknown" : value.Trim();
@@ -287,6 +297,7 @@ namespace Panoptes.Presentation.UI.Game
             {
                 "city_core_destroyed" => "City core destroyed",
                 "timeout_draw" => "Turn limit reached, draw",
+                "player_disconnected" => "The match ended because a player disconnected.",
                 _ => string.IsNullOrWhiteSpace(reason) ? "Game ended" : reason
             };
         }

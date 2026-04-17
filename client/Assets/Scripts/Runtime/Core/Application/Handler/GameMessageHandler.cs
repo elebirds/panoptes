@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
@@ -33,6 +35,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
             dispatcher.Register<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
             dispatcher.Register<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
+            dispatcher.Register<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
+            dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
@@ -59,6 +63,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
             dispatcher.Unregister<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
             dispatcher.Unregister<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
+            dispatcher.Unregister<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
+            dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
             dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
@@ -102,6 +108,24 @@ namespace Panoptes.Core.Application.Handler
             if (msg != null)
             {
                 Debug.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
+            }
+        }
+
+        private static void OnBuildStructurePreviewResponse(MsgBuildStructurePreviewResponse msg)
+        {
+            PlanningDraftCache.EnsureInstance()?.ApplyBuildPreviewResponse(msg);
+            if (msg != null)
+            {
+                Debug.Log($"[Game] 建造预览 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} valid={msg.Valid} error={msg.ErrorCode}");
+            }
+        }
+
+        private static void OnSetBuildingRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
+        {
+            PlanningDraftCache.EnsureInstance()?.ApplyRecipePreviewResponse(msg);
+            if (msg != null)
+            {
+                Debug.Log($"[Game] 配方预览 node={msg.NodeId} recipe={msg.RecipeId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
@@ -186,12 +210,22 @@ namespace Panoptes.Core.Application.Handler
                 PrimaryId = msg.UnitId ?? string.Empty,
                 SecondaryId = msg.TargetNodeId ?? string.Empty,
                 TertiaryId = msg.TargetUnitId ?? string.Empty,
-                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = ResolveFailureMessage(msg.Success, string.Empty, msg.ErrorCode),
+                Details = BuildDetails(
+                    ("unit_id", msg.UnitId),
+                    ("action", msg.Action),
+                    ("target_node_id", msg.TargetNodeId),
+                    ("target_unit_id", msg.TargetUnitId))
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, $"{msg.UnitId}:{msg.Action}:{msg.TargetNodeId}:{msg.TargetUnitId}");
+                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(
+                    ("unit_id", msg.UnitId),
+                    ("action", msg.Action),
+                    ("target_node_id", msg.TargetNodeId),
+                    ("target_unit_id", msg.TargetUnitId)));
                 Debug.LogWarning($"[Game] 单位命令失败 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId} error={msg.ErrorCode}");
                 return;
             }
@@ -209,14 +243,17 @@ namespace Panoptes.Core.Application.Handler
             PublishPlanningCommandResult(new PlanningCommandResultEvent
             {
                 CommandType = "research",
+                Action = "set_research",
                 Success = msg.Success,
                 PrimaryId = msg.TechnologyId ?? string.Empty,
-                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = ResolveFailureMessage(msg.Success, string.Empty, msg.ErrorCode),
+                Details = BuildDetails(("technology_id", msg.TechnologyId))
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, msg.TechnologyId);
+                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("technology_id", msg.TechnologyId)));
                 Debug.LogWarning($"[Game] 研究目标设置失败 tech={msg.TechnologyId} error={msg.ErrorCode}");
                 return;
             }
@@ -234,14 +271,17 @@ namespace Panoptes.Core.Application.Handler
             PublishPlanningCommandResult(new PlanningCommandResultEvent
             {
                 CommandType = "policy",
+                Action = "set_policy",
                 Success = msg.Success,
                 PrimaryId = msg.NationalPolicyId ?? string.Empty,
-                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = ResolveFailureMessage(msg.Success, string.Empty, msg.ErrorCode),
+                Details = BuildDetails(("national_policy_id", msg.NationalPolicyId))
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, msg.NationalPolicyId);
+                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("national_policy_id", msg.NationalPolicyId)));
                 Debug.LogWarning($"[Game] 国策设置失败 policy={msg.NationalPolicyId} error={msg.ErrorCode}");
                 return;
             }
@@ -259,15 +299,18 @@ namespace Panoptes.Core.Application.Handler
             PublishPlanningCommandResult(new PlanningCommandResultEvent
             {
                 CommandType = "institution_loadout",
+                Action = "set_institution_loadout",
                 Success = msg.Success,
                 PrimaryId = msg.PolicyIds.Count > 0 ? msg.PolicyIds[0] : string.Empty,
                 ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = ResolveFailureMessage(msg.Success, string.Empty, msg.ErrorCode),
+                Details = BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))),
                 RelatedIds = new System.Collections.Generic.List<string>(msg.PolicyIds)
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, string.Join(",", msg.PolicyIds));
+                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
                 Debug.LogWarning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
                 return;
             }
@@ -282,18 +325,23 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            var details = ToDetailMap(msg.FeedbackDetails);
+            var message = ResolveFailureMessage(msg.Success, msg.FeedbackMessage, msg.ErrorCode);
             PublishPlanningCommandResult(new PlanningCommandResultEvent
             {
                 CommandType = "building_recipe",
+                Action = "set_building_recipe",
                 Success = msg.Success,
                 PrimaryId = msg.NodeId ?? string.Empty,
                 SecondaryId = msg.RecipeId ?? string.Empty,
-                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = message,
+                Details = details
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, $"{msg.NodeId}:{msg.RecipeId}");
+                PublishGameError(msg.ErrorCode, message, details);
                 Debug.LogWarning($"[Game] 生产配方设置失败 node={msg.NodeId} recipe={msg.RecipeId} error={msg.ErrorCode}");
                 return;
             }
@@ -308,19 +356,24 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            var details = ToDetailMap(msg.FeedbackDetails);
+            var message = ResolveFailureMessage(msg.Success, msg.FeedbackMessage, msg.ErrorCode);
             PublishPlanningCommandResult(new PlanningCommandResultEvent
             {
                 CommandType = "build",
+                Action = "build_structure",
                 Success = msg.Success,
                 PrimaryId = msg.NodeId ?? string.Empty,
                 SecondaryId = msg.BuildingTypeId ?? string.Empty,
                 TertiaryId = msg.CityId ?? string.Empty,
-                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                Message = message,
+                Details = details
             });
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, $"{msg.NodeId}:{msg.BuildingTypeId}:{msg.CityId}");
+                PublishGameError(msg.ErrorCode, message, details);
                 Debug.LogWarning($"[Game] 建筑建造失败 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} error={msg.ErrorCode}");
                 return;
             }
@@ -368,13 +421,61 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
         }
 
-        private static void PublishGameError(string code, string message)
+        private static void PublishGameError(string code, string message, Dictionary<string, string> details = null)
         {
             GameStateCache.Instance?.PublishGameError(new GameErrorEvent
             {
                 Code = code ?? string.Empty,
-                Message = message ?? string.Empty
+                Message = message ?? string.Empty,
+                Details = details
             });
+        }
+
+        private static string ResolveFailureMessage(bool success, string serverMessage, string code)
+        {
+            return success ? string.Empty : GameplayFeedbackText.ResolveMessage(serverMessage, code);
+        }
+
+        private static Dictionary<string, string> ToDetailMap(IEnumerable<FeedbackDetail> details)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (details == null)
+            {
+                return result;
+            }
+
+            foreach (var detail in details)
+            {
+                if (detail == null || string.IsNullOrWhiteSpace(detail.Key))
+                {
+                    continue;
+                }
+
+                result[detail.Key] = detail.Value ?? string.Empty;
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, string> BuildDetails(params (string Key, string Value)[] pairs)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (pairs == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < pairs.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(pairs[i].Key))
+                {
+                    continue;
+                }
+
+                result[pairs[i].Key] = pairs[i].Value ?? string.Empty;
+            }
+
+            return result;
         }
 
         private static void PublishPlanningCommandResult(PlanningCommandResultEvent evt)

@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
+using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
 using TMPro;
 using UnityEngine;
@@ -154,6 +156,7 @@ namespace Panoptes.Presentation.UI.Domestic
         };
         [SerializeField] private Button cancelButton;
         [SerializeField] private BuildTooltipView tooltipView;
+        [SerializeField] private TMP_Text buildStatusText;
 
         [Header("Dynamic BuildItem")]
         [SerializeField] private bool useDynamicBuildItemList = true;
@@ -194,7 +197,10 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, Sprite> _spriteCache = new();
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
+        private GameStateCache _gameStateCache;
+        private PlanningDraftCache _planningDraftCache;
         private string _activeCityCoreNodeId = string.Empty;
+        private string _lastBuildFailureMessage = string.Empty;
         private Vector2 _buildListBaseAnchoredPos;
         private float _buildListScrollOffset;
         private bool _buildListScrollInitialized;
@@ -212,6 +218,8 @@ namespace Panoptes.Presentation.UI.Domestic
             BindModeToggles();
             SetMode(defaultMode, true);
             ResetBuildListScroll(true);
+            SubscribeFeedbackEvents();
+            RefreshBuildStatus();
         }
 
         private void OnDisable()
@@ -225,6 +233,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
             _buildListScrollInitialized = false;
             _loggedMissingBuildConfigThisEnable = false;
+            UnsubscribeFeedbackEvents();
         }
 
         private void Update()
@@ -262,6 +271,7 @@ namespace Panoptes.Presentation.UI.Domestic
         public void ClearCityCoreContext()
         {
             _activeCityCoreNodeId = string.Empty;
+            RefreshBuildStatus();
         }
 
         public void RefreshBuildItems()
@@ -1115,6 +1125,9 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
+            _lastBuildFailureMessage = string.Empty;
+            RefreshBuildStatus();
+
             switch (rule)
             {
                 case BuildRule.ResourceOnly:
@@ -1127,6 +1140,100 @@ namespace Panoptes.Presentation.UI.Domestic
                     mapInputHandler.EnterBuildPlacementAny(normalized, _activeCityCoreNodeId);
                     break;
             }
+        }
+
+        private void SubscribeFeedbackEvents()
+        {
+            _gameStateCache = GameStateCache.Instance;
+            if (_gameStateCache != null)
+            {
+                _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
+                _gameStateCache.OnPlanningCommandResult += OnPlanningCommandResult;
+            }
+
+            _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+            if (_planningDraftCache != null)
+            {
+                _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
+                _planningDraftCache.BuildPreviewChanged += OnBuildPreviewChanged;
+            }
+        }
+
+        private void UnsubscribeFeedbackEvents()
+        {
+            if (_gameStateCache != null)
+            {
+                _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
+                _gameStateCache = null;
+            }
+
+            if (_planningDraftCache != null)
+            {
+                _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
+                _planningDraftCache = null;
+            }
+        }
+
+        private void OnBuildPreviewChanged()
+        {
+            RefreshBuildStatus();
+        }
+
+        private void OnPlanningCommandResult(PlanningCommandResultEvent evt)
+        {
+            if (evt == null || !string.Equals(NormalizeToken(evt.CommandType), "build", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (evt.Success)
+            {
+                _lastBuildFailureMessage = string.Empty;
+            }
+            else
+            {
+                _lastBuildFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.ErrorCode);
+            }
+
+            RefreshBuildStatus();
+        }
+
+        private void RefreshBuildStatus()
+        {
+            if (buildStatusText == null)
+            {
+                return;
+            }
+
+            var preview = (_planningDraftCache ?? PlanningDraftCache.Instance)?.CurrentBuildPreview;
+            if (preview != null)
+            {
+                if (string.Equals(preview.Message, "检查中", StringComparison.Ordinal))
+                {
+                    buildStatusText.text = "检查中";
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(preview.Message) || !string.IsNullOrWhiteSpace(preview.ErrorCode))
+                {
+                    buildStatusText.text = preview.Valid
+                        ? preview.Message
+                        : GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);
+                    if (string.IsNullOrWhiteSpace(buildStatusText.text))
+                    {
+                        buildStatusText.text = preview.Valid ? "当前位置可提交建造" : string.Empty;
+                    }
+                    return;
+                }
+
+                if (preview.Valid)
+                {
+                    buildStatusText.text = "当前位置可提交建造";
+                    return;
+                }
+            }
+
+            buildStatusText.text = _lastBuildFailureMessage ?? string.Empty;
         }
 
         private void ResolveMapInputHandler()

@@ -30,6 +30,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 OperationRequiredProgress = view.Operation != null ? view.Operation.RequiredProgress : 0,
                 OperationBaseProgress = view.Operation != null ? view.Operation.BaseProgress : 0,
                 OperationBlockedReason = view.Operation != null ? view.Operation.BlockedReason : string.Empty,
+                OperationBlockedMessage = view.Operation != null ? view.Operation.BlockedMessage : string.Empty,
                 CityId = view.CityId,
                 ServiceCityId = view.ServiceCityId,
                 TakeoverProgress = view.TakeoverProgress,

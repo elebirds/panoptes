@@ -644,6 +644,7 @@ type BuildingOperationView struct {
 	RequiredProgress int32                  `protobuf:"varint,3,opt,name=required_progress,json=requiredProgress,proto3" json:"required_progress,omitempty"`
 	BaseProgress     int32                  `protobuf:"varint,4,opt,name=base_progress,json=baseProgress,proto3" json:"base_progress,omitempty"`
 	BlockedReason    string                 `protobuf:"bytes,5,opt,name=blocked_reason,json=blockedReason,proto3" json:"blocked_reason,omitempty"`
+	BlockedMessage   string                 `protobuf:"bytes,6,opt,name=blocked_message,json=blockedMessage,proto3" json:"blocked_message,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -709,6 +710,13 @@ func (x *BuildingOperationView) GetBaseProgress() int32 {
 func (x *BuildingOperationView) GetBlockedReason() string {
 	if x != nil {
 		return x.BlockedReason
+	}
+	return ""
+}
+
+func (x *BuildingOperationView) GetBlockedMessage() string {
+	if x != nil {
+		return x.BlockedMessage
 	}
 	return ""
 }
@@ -1101,13 +1109,14 @@ const file_game_state_proto_rawDesc = "" +
 	"\n" +
 	"slot_count\x18\x01 \x01(\x05R\tslotCount\x120\n" +
 	"\x14candidate_policy_ids\x18\x02 \x03(\tR\x12candidatePolicyIds\x12*\n" +
-	"\x11active_policy_ids\x18\x03 \x03(\tR\x0factivePolicyIds\"\xe9\x01\n" +
+	"\x11active_policy_ids\x18\x03 \x03(\tR\x0factivePolicyIds\"\x92\x02\n" +
 	"\x15BuildingOperationView\x12,\n" +
 	"\x12selected_recipe_id\x18\x01 \x01(\tR\x10selectedRecipeId\x12)\n" +
 	"\x10current_progress\x18\x02 \x01(\x05R\x0fcurrentProgress\x12+\n" +
 	"\x11required_progress\x18\x03 \x01(\x05R\x10requiredProgress\x12#\n" +
 	"\rbase_progress\x18\x04 \x01(\x05R\fbaseProgress\x12%\n" +
-	"\x0eblocked_reason\x18\x05 \x01(\tR\rblockedReason\"\x87\x01\n" +
+	"\x0eblocked_reason\x18\x05 \x01(\tR\rblockedReason\x12'\n" +
+	"\x0fblocked_message\x18\x06 \x01(\tR\x0eblockedMessage\"\x87\x01\n" +
 	"\aWarZone\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +

@@ -22,6 +22,29 @@ namespace Panoptes.Core.Domain
         public List<MarchTurnStopDto> TurnStops;
     }
 
+    public sealed class BuildPreviewDto
+    {
+        public string RequestId;
+        public string NodeId;
+        public string BuildingTypeId;
+        public string CityId;
+        public bool Valid;
+        public string ErrorCode;
+        public string Message;
+        public Dictionary<string, string> Details;
+    }
+
+    public sealed class RecipePreviewDto
+    {
+        public string RequestId;
+        public string NodeId;
+        public string RecipeId;
+        public bool Valid;
+        public string ErrorCode;
+        public string Message;
+        public Dictionary<string, string> Details;
+    }
+
     public sealed class QueuedUnitOrderDto
     {
         public string UnitId;
@@ -106,6 +129,8 @@ namespace Panoptes.Core.Domain
         public string Section;
         public string Type;
         public Dictionary<string, string> Data;
+        public string ReasonMessage;
+        public string BlockedReasonMessage;
         public string UnitId;
         public string TargetUnitId;
         public string EnemyUnitId;

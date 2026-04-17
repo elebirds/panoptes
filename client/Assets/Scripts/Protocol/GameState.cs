@@ -76,31 +76,32 @@ namespace Panoptes.Protocol.V1 {
             "Z3Jlc3MikwEKFEluc3RpdHV0aW9uU3RhdGVWaWV3Eh0KCnNsb3RfY291bnQY",
             "ASABKAVSCXNsb3RDb3VudBIwChRjYW5kaWRhdGVfcG9saWN5X2lkcxgCIAMo",
             "CVISY2FuZGlkYXRlUG9saWN5SWRzEioKEWFjdGl2ZV9wb2xpY3lfaWRzGAMg",
-            "AygJUg9hY3RpdmVQb2xpY3lJZHMi6QEKFUJ1aWxkaW5nT3BlcmF0aW9uVmll",
+            "AygJUg9hY3RpdmVQb2xpY3lJZHMikgIKFUJ1aWxkaW5nT3BlcmF0aW9uVmll",
             "dxIsChJzZWxlY3RlZF9yZWNpcGVfaWQYASABKAlSEHNlbGVjdGVkUmVjaXBl",
             "SWQSKQoQY3VycmVudF9wcm9ncmVzcxgCIAEoBVIPY3VycmVudFByb2dyZXNz",
             "EisKEXJlcXVpcmVkX3Byb2dyZXNzGAMgASgFUhByZXF1aXJlZFByb2dyZXNz",
             "EiMKDWJhc2VfcHJvZ3Jlc3MYBCABKAVSDGJhc2VQcm9ncmVzcxIlCg5ibG9j",
-            "a2VkX3JlYXNvbhgFIAEoCVINYmxvY2tlZFJlYXNvbiKHAQoHV2FyWm9uZRIO",
-            "CgJpZBgBIAEoCVICaWQSEgoEbmFtZRgCIAEoCVIEbmFtZRIZCghub2RlX2lk",
-            "cxgDIAMoCVIHbm9kZUlkcxIcCglkaXJlY3RpdmUYBCABKAlSCWRpcmVjdGl2",
-            "ZRIfCgt0YXJnZXRfbm9kZRgFIAEoCVIKdGFyZ2V0Tm9kZSJyCgxNaW5pc3Rl",
-            "clZpZXcSEgoEcm9sZRgBIAEoCVIEcm9sZRISCgRuYW1lGAIgASgJUgRuYW1l",
-            "EhgKB2FiaWxpdHkYAyABKAVSB2FiaWxpdHkSIAoLcGVyc29uYWxpdHkYBCAB",
-            "KAlSC3BlcnNvbmFsaXR5IpMDCgtNc2dHYW1lSW5pdBIXCgdnYW1lX2lkGAEg",
-            "ASgJUgZnYW1lSWQSJAoOeW91cl9wbGF5ZXJfaWQYAiABKAlSDHlvdXJQbGF5",
-            "ZXJJZBISCgR0dXJuGAMgASgFUgR0dXJuEhQKBXBoYXNlGAQgASgJUgVwaGFz",
-            "ZRIxCgVub2RlcxgFIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYxLk5vZGVWaWV3",
-            "UgVub2RlcxIxCgV1bml0cxgGIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlVu",
-            "aXRWaWV3UgV1bml0cxI6CglteV9wbGF5ZXIYByABKAsyHS5wYW5vcHRlcy5w",
-            "cm90by52MS5QbGF5ZXJWaWV3UghteVBsYXllchI9CgltaW5pc3RlcnMYCCAD",
-            "KAsyHy5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlclZpZXdSCW1pbmlzdGVy",
-            "cxIbCgltYXBfd2lkdGgYCSABKAVSCG1hcFdpZHRoEh0KCm1hcF9oZWlnaHQY",
-            "CiABKAVSCW1hcEhlaWdodCJgCgtNc2dHYW1lT3ZlchIbCgl3aW5uZXJfaWQY",
-            "ASABKAlSCHdpbm5lcklkEhYKBnJlYXNvbhgCIAEoCVIGcmVhc29uEhwKCW5h",
-            "cnJhdGl2ZRgDIAEoCVIJbmFycmF0aXZlQlNaOmdpdGh1Yi5jb20vZWxlYmly",
-            "ZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvL3YxO3Byb3RvdjGqAhRQ",
-            "YW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "a2VkX3JlYXNvbhgFIAEoCVINYmxvY2tlZFJlYXNvbhInCg9ibG9ja2VkX21l",
+            "c3NhZ2UYBiABKAlSDmJsb2NrZWRNZXNzYWdlIocBCgdXYXJab25lEg4KAmlk",
+            "GAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVfaWRzGAMg",
+            "AygJUgdub2RlSWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0aXZlEh8K",
+            "C3RhcmdldF9ub2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlzdGVyVmll",
+            "dxISCgRyb2xlGAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5hbWUSGAoH",
+            "YWJpbGl0eRgDIAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgEIAEoCVIL",
+            "cGVyc29uYWxpdHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASABKAlS",
+            "BmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXllcklk",
+            "EhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlEjEK",
+            "BW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdSBW5v",
+            "ZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5pdFZp",
+            "ZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMoCzIf",
+            "LnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJzEhsK",
+            "CW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgKIAEo",
+            "BVIJbWFwSGVpZ2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9pZBgBIAEo",
+            "CVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJbmFycmF0",
+            "aXZlGAMgASgJUgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9w",
+            "YW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9w",
+            "dGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -110,7 +111,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchProgressEntry), global::Panoptes.Protocol.V1.ResearchProgressEntry.Parser, new[]{ "TechnologyId", "CurrentProgress", "RequiredProgress" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InstitutionStateView), global::Panoptes.Protocol.V1.InstitutionStateView.Parser, new[]{ "SlotCount", "CandidatePolicyIds", "ActivePolicyIds" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason", "BlockedMessage" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight" }, null, null, null, null),
@@ -2963,6 +2964,7 @@ namespace Panoptes.Protocol.V1 {
       requiredProgress_ = other.requiredProgress_;
       baseProgress_ = other.baseProgress_;
       blockedReason_ = other.blockedReason_;
+      blockedMessage_ = other.blockedMessage_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3032,6 +3034,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "blocked_message" field.</summary>
+    public const int BlockedMessageFieldNumber = 6;
+    private string blockedMessage_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string BlockedMessage {
+      get { return blockedMessage_; }
+      set {
+        blockedMessage_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -3052,6 +3066,7 @@ namespace Panoptes.Protocol.V1 {
       if (RequiredProgress != other.RequiredProgress) return false;
       if (BaseProgress != other.BaseProgress) return false;
       if (BlockedReason != other.BlockedReason) return false;
+      if (BlockedMessage != other.BlockedMessage) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3064,6 +3079,7 @@ namespace Panoptes.Protocol.V1 {
       if (RequiredProgress != 0) hash ^= RequiredProgress.GetHashCode();
       if (BaseProgress != 0) hash ^= BaseProgress.GetHashCode();
       if (BlockedReason.Length != 0) hash ^= BlockedReason.GetHashCode();
+      if (BlockedMessage.Length != 0) hash ^= BlockedMessage.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3102,6 +3118,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(42);
         output.WriteString(BlockedReason);
       }
+      if (BlockedMessage.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(BlockedMessage);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3132,6 +3152,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(42);
         output.WriteString(BlockedReason);
       }
+      if (BlockedMessage.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(BlockedMessage);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3156,6 +3180,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (BlockedReason.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(BlockedReason);
+      }
+      if (BlockedMessage.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(BlockedMessage);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3183,6 +3210,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.BlockedReason.Length != 0) {
         BlockedReason = other.BlockedReason;
+      }
+      if (other.BlockedMessage.Length != 0) {
+        BlockedMessage = other.BlockedMessage;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -3223,6 +3253,10 @@ namespace Panoptes.Protocol.V1 {
             BlockedReason = input.ReadString();
             break;
           }
+          case 50: {
+            BlockedMessage = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -3260,6 +3294,10 @@ namespace Panoptes.Protocol.V1 {
           }
           case 42: {
             BlockedReason = input.ReadString();
+            break;
+          }
+          case 50: {
+            BlockedMessage = input.ReadString();
             break;
           }
         }

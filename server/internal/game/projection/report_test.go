@@ -76,6 +76,9 @@ func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
 	if got := turnEvent.GetData()["reason"]; got != "insufficient_resources" {
 		t.Fatalf("reason = %q, want insufficient_resources", got)
 	}
+	if got := turnEvent.GetData()["reason_message"]; got != "生产所需资源不足，本回合无法推进。" {
+		t.Fatalf("reason_message = %q, want localized reason message", got)
+	}
 	if got := turnEvent.GetData()["online_on_turn"]; got != "3" {
 		t.Fatalf("online_on_turn = %q, want 3", got)
 	}
@@ -150,6 +153,45 @@ func TestTurnEventFromEventMapsRecipeSkippedEvent(t *testing.T) {
 	if got := turnEvent.GetData()["reason"]; got != "building_disabled" {
 		t.Fatalf("reason = %q, want building_disabled", got)
 	}
+	if got := turnEvent.GetData()["reason_message"]; got != "建筑当前停摆，本回合不会生产。" {
+		t.Fatalf("reason_message = %q, want localized reason message", got)
+	}
+}
+
+func TestTurnEventFromEventMapsRecipeProgressedBlockedReasonMessage(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.RecipeProgressedEvent{
+		NodeID:        "A1",
+		ProgressTurns: 1,
+		RequiredTurns: 3,
+		BlockedReason: "insufficient_points",
+	})
+
+	if turnEvent.GetType() != "recipe_progressed" {
+		t.Fatalf("type = %q, want recipe_progressed", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["blocked_reason_message"]; got != "生产所需点数不足，本回合无法推进。" {
+		t.Fatalf("blocked_reason_message = %q, want localized blocked message", got)
+	}
+}
+
+func TestTurnEventFromEventMapsBuildSkippedReasonMessage(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := TurnEventFromEvent(event.BuildSkippedEvent{
+		PlayerID:     "player-1",
+		NodeID:       "A2",
+		BuildingType: "farm",
+		Reason:       "outside_territory",
+	})
+
+	if turnEvent.GetType() != "building_skipped" {
+		t.Fatalf("type = %q, want building_skipped", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["reason_message"]; got != "该节点不在你的有效辖区内，当前不能建造。" {
+		t.Fatalf("reason_message = %q, want localized build skip message", got)
+	}
 }
 
 func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
@@ -182,6 +224,9 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 	}
 	if got := progressed.GetData()["status"]; got != "takeover" {
 		t.Fatalf("facility_takeover_progressed status = %q, want takeover", got)
+	}
+	if got := progressed.GetData()["reason_message"]; got != "建筑正处于敌方控制下，当前无法正常运作。" {
+		t.Fatalf("facility_takeover_progressed reason_message = %q, want localized reason message", got)
 	}
 
 	completed := TurnEventFromEvent(event.FacilityTakeoverCompletedEvent{

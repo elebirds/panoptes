@@ -263,7 +263,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	transport := debug.NewCaptureTransport()
 	room := game.NewPreparedRoom(
 		def.State.GameID,
-		[]game.Player{game.NewHumanPlayer("player-1", "alice", transport)},
+		[]game.ParticipantSpec{game.NewHumanParticipantSpec("player-1", "alice")},
 		transport,
 		&config.Config{DevMode: true, MapID: def.State.Map.ID},
 		def.State,
