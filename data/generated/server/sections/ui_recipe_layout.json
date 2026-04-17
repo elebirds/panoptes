@@ -3,8 +3,12 @@
   "recipe_order": [
     "city_core_settler",
     "farm_food",
-    "mine_ore",
+    "farm_harvest",
     "lumber_wood",
-    "barracks_infantry"
+    "lumber_sawmill",
+    "mine_ore",
+    "mine_deep_ore",
+    "barracks_infantry",
+    "archery_archer"
   ]
 }

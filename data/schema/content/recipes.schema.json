@@ -50,12 +50,14 @@
           },
           "building_id": {
             "enum": [
+              "archery",
               "barracks",
               "city_core",
               "farm",
               "lumber",
               "mine",
-              "wall"
+              "wall",
+              "workshop"
             ],
             "type": "string"
           },
@@ -80,6 +82,7 @@
               "units": {
                 "items": {
                   "enum": [
+                    "archer",
                     "infantry",
                     "settler"
                   ],

@@ -40,6 +40,7 @@ func (e PolicyChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
 		return
 	}
 	playerState.Policy = domain.Policy(e.NewPolicy)
+	state.RefreshBuildingMaxHPForPlayer(e.PlayerID)
 }
 
 func (e PolicyChangedEvent) Kind() string { return "national_policy_changed" }

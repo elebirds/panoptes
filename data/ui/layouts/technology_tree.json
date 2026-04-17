@@ -6,7 +6,18 @@
       "id": "node_agrarian_foundations",
       "technology_id": "agrarian_foundations",
       "title": "农业基础",
-      "description": "解锁农场与基础农耕配方",
+      "description": "解锁高产农耕配方",
+      "x": 0,
+      "y": -180,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_forestry",
+      "technology_id": "forestry",
+      "title": "林业组织",
+      "description": "解锁高产伐木配方",
       "x": 0,
       "y": 0,
       "width": 360,
@@ -17,9 +28,9 @@
       "id": "node_organized_labor",
       "technology_id": "organized_labor",
       "title": "组织化劳动",
-      "description": "提升工业产出效率",
-      "x": 420,
-      "y": -140,
+      "description": "每回合工业产出 +1",
+      "x": 0,
+      "y": 180,
       "width": 360,
       "height": 104,
       "visible": true
@@ -28,9 +39,64 @@
       "id": "node_civic_institutions",
       "technology_id": "civic_institutions",
       "title": "公共制度",
-      "description": "解锁制度候选并新增一个制度槽位",
-      "x": 420,
-      "y": 140,
+      "description": "解锁学院特许并新增一个制度槽位",
+      "x": 0,
+      "y": 360,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_mining_survey",
+      "technology_id": "mining_survey",
+      "title": "矿脉勘测",
+      "description": "解锁矿山与基础采矿",
+      "x": 460,
+      "y": 180,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_workshop_methods",
+      "technology_id": "workshop_methods",
+      "title": "工坊法",
+      "description": "解锁工坊与深层采矿",
+      "x": 460,
+      "y": 0,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_militia_mobilization",
+      "technology_id": "militia_mobilization",
+      "title": "民兵动员",
+      "description": "解锁兵营与步兵训练",
+      "x": 920,
+      "y": 180,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_ranged_drill",
+      "technology_id": "ranged_drill",
+      "title": "远射操典",
+      "description": "解锁靶场与弓手训练",
+      "x": 1380,
+      "y": 80,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_fortifications",
+      "technology_id": "fortifications",
+      "title": "筑垒术",
+      "description": "解锁城墙并提升耐久",
+      "x": 1380,
+      "y": 280,
       "width": 360,
       "height": 104,
       "visible": true
@@ -38,25 +104,75 @@
   ],
   "edges": [
     {
-      "id": "edge_agrarian_foundations_to_organized_labor",
-      "from": "node_agrarian_foundations",
-      "to": "node_organized_labor",
+      "id": "edge_organized_labor_to_mining_survey",
+      "from": "node_organized_labor",
+      "to": "node_mining_survey",
       "show_arrow": true,
       "thickness": 3,
       "points": [
-        { "x": 180, "y": 0 },
-        { "x": 420, "y": -140 }
+        { "x": 180, "y": 180 },
+        { "x": 460, "y": 180 }
       ]
     },
     {
-      "id": "edge_agrarian_foundations_to_civic_institutions",
-      "from": "node_agrarian_foundations",
-      "to": "node_civic_institutions",
+      "id": "edge_organized_labor_to_workshop_methods",
+      "from": "node_organized_labor",
+      "to": "node_workshop_methods",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 180, "y": 180 },
+        { "x": 300, "y": 180 },
+        { "x": 300, "y": 0 },
+        { "x": 460, "y": 0 }
+      ]
+    },
+    {
+      "id": "edge_forestry_to_workshop_methods",
+      "from": "node_forestry",
+      "to": "node_workshop_methods",
       "show_arrow": true,
       "thickness": 3,
       "points": [
         { "x": 180, "y": 0 },
-        { "x": 420, "y": 140 }
+        { "x": 460, "y": 0 }
+      ]
+    },
+    {
+      "id": "edge_mining_survey_to_militia_mobilization",
+      "from": "node_mining_survey",
+      "to": "node_militia_mobilization",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 640, "y": 180 },
+        { "x": 920, "y": 180 }
+      ]
+    },
+    {
+      "id": "edge_militia_mobilization_to_ranged_drill",
+      "from": "node_militia_mobilization",
+      "to": "node_ranged_drill",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 1100, "y": 180 },
+        { "x": 1220, "y": 180 },
+        { "x": 1220, "y": 80 },
+        { "x": 1380, "y": 80 }
+      ]
+    },
+    {
+      "id": "edge_militia_mobilization_to_fortifications",
+      "from": "node_militia_mobilization",
+      "to": "node_fortifications",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        { "x": 1100, "y": 180 },
+        { "x": 1220, "y": 180 },
+        { "x": 1220, "y": 280 },
+        { "x": 1380, "y": 280 }
       ]
     }
   ]

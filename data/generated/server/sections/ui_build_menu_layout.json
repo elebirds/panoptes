@@ -3,9 +3,11 @@
   "building_order": [
     "city_core",
     "farm",
-    "mine",
     "lumber",
+    "mine",
+    "workshop",
     "barracks",
+    "archery",
     "wall"
   ],
   "hidden_building_ids": [

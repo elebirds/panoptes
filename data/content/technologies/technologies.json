@@ -8,8 +8,18 @@
       "research_cost": 1,
       "prerequisites": [],
       "explicit_effects": [
-        { "type": "unlock_building", "target_id": "farm" },
-        { "type": "unlock_recipe", "target_id": "farm_food" }
+        { "type": "unlock_recipe", "target_id": "farm_harvest" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "forestry",
+      "branch": "agriculture",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        { "type": "unlock_recipe", "target_id": "lumber_sawmill" }
       ],
       "modifier_effects": []
     },
@@ -33,13 +43,96 @@
       "id": "civic_institutions",
       "branch": "governance",
       "tier": 1,
-      "research_cost": 1,
+      "research_cost": 2,
       "prerequisites": [],
       "explicit_effects": [
         { "type": "unlock_policy", "target_id": "academy_charter" },
         { "type": "add_institution_slots", "institution_slots": 1 }
       ],
       "modifier_effects": []
+    },
+    {
+      "id": "mining_survey",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "organized_labor" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "mine" },
+        { "type": "unlock_recipe", "target_id": "mine_ore" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "workshop_methods",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "organized_labor" },
+        { "type": "technology_unlocked", "target_id": "forestry" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "workshop" },
+        { "type": "unlock_recipe", "target_id": "mine_deep_ore" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "militia_mobilization",
+      "branch": "military",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "mining_survey" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "barracks" },
+        { "type": "unlock_recipe", "target_id": "barracks_infantry" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "ranged_drill",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "militia_mobilization" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "archery" },
+        { "type": "unlock_recipe", "target_id": "archery_archer" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "fortifications",
+      "branch": "defense",
+      "tier": 4,
+      "research_cost": 2,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "militia_mobilization" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "wall" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 30
+        },
+        {
+          "trigger": "building.max_hp",
+          "target_id": "wall",
+          "modifier_type": "flat",
+          "value": 30
+        }
+      ]
     }
   ]
 }

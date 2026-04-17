@@ -48,6 +48,7 @@ func (e InstitutionLoadoutActivatedEvent) Apply(_ donburi.World, state *domain.G
 	playerState.Institutions.ActivePolicyIDs = append([]string(nil), e.PolicyIDs...)
 	playerState.Institutions.PendingPolicyIDs = nil
 	playerState.Institutions.PendingActivationTurn = 0
+	state.RefreshBuildingMaxHPForPlayer(e.PlayerID)
 }
 
 func (e InstitutionLoadoutActivatedEvent) Kind() string { return "institution_loadout_activated" }
