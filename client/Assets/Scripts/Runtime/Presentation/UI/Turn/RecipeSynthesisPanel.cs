@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using TMPro;
 using UnityEngine;
@@ -55,6 +56,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private StaticCatalogCache _catalog;
         private GameStateCache _stateCache;
+        private PlanningDraftCache _draftCache;
         private bool _lastVisible;
         private string _activeNodeId = string.Empty;
         private string _activeBuildingTypeId = string.Empty;
@@ -101,8 +103,17 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _stateCache.OnGameError -= OnGameError;
                 _stateCache.OnGameError += OnGameError;
+                _stateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
+                _stateCache.OnPlanningCommandResult += OnPlanningCommandResult;
                 _stateCache.OnStateChanged -= OnStateChanged;
                 _stateCache.OnStateChanged += OnStateChanged;
+            }
+
+            _draftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+            if (_draftCache != null)
+            {
+                _draftCache.OrdersChanged -= OnPlanningDraftChanged;
+                _draftCache.OrdersChanged += OnPlanningDraftChanged;
             }
 
             RefreshList();
@@ -115,7 +126,12 @@ namespace Panoptes.Presentation.UI.Domestic
             if (_stateCache != null)
             {
                 _stateCache.OnGameError -= OnGameError;
+                _stateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
                 _stateCache.OnStateChanged -= OnStateChanged;
+            }
+            if (_draftCache != null)
+            {
+                _draftCache.OrdersChanged -= OnPlanningDraftChanged;
             }
         }
 
@@ -129,6 +145,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _activeNodeId = string.IsNullOrWhiteSpace(nodeId) ? string.Empty : nodeId.Trim();
             _activeBuildingTypeId = NormalizeToken(buildingTypeId);
             _activeOwnerPlayerId = string.IsNullOrWhiteSpace(ownerPlayerId) ? string.Empty : ownerPlayerId.Trim();
+            RefreshActiveBuildingContextFromAuthority();
             SeedSelectionFromState();
             Show();
         }
@@ -257,7 +274,41 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
+            RefreshActiveBuildingContextFromAuthority();
+            SeedSelectionFromState();
             RefreshList();
+        }
+
+        private void OnPlanningDraftChanged()
+        {
+            if (string.IsNullOrWhiteSpace(_activeNodeId))
+            {
+                return;
+            }
+
+            SeedSelectionFromState();
+            if (IsVisible)
+            {
+                RefreshList();
+            }
+        }
+
+        private void OnPlanningCommandResult(PlanningCommandResultEvent evt)
+        {
+            if (evt == null ||
+                evt.Success ||
+                !string.Equals(NormalizeToken(evt.CommandType), "building_recipe", StringComparison.Ordinal) ||
+                !string.Equals(evt.PrimaryId ?? string.Empty, _activeNodeId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            ClearLocalSelectionCache(_activeNodeId);
+            SeedSelectionFromState();
+            if (IsVisible)
+            {
+                RefreshList();
+            }
         }
 
         private void OnGameError(GameErrorEvent evt)
@@ -523,7 +574,7 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var cache = _stateCache ?? GameStateCache.Instance;
-            var completedIds = cache != null ? cache.GetCompletedTechnologyIds() : null;
+            var completedIds = cache?.GetCurrentResearchState()?.CompletedTechnologyIds;
             if (completedIds == null || completedIds.Count == 0)
             {
                 return set;
@@ -554,21 +605,26 @@ namespace Panoptes.Presentation.UI.Domestic
                 return true;
             }
 
-            var node = cache.GetNode(_activeNodeId);
-            if (node == null)
-            {
-                return true;
-            }
-
             var me = NormalizeToken(cache.MyPlayerID);
-            var owner = NormalizeToken(!string.IsNullOrWhiteSpace(_activeOwnerPlayerId) ? _activeOwnerPlayerId : node.Owner);
-            var territoryOwner = NormalizeToken(node.TerritoryOwner);
             if (string.IsNullOrWhiteSpace(me))
             {
                 return true;
             }
 
-            return string.Equals(owner, me, StringComparison.Ordinal) || string.Equals(territoryOwner, me, StringComparison.Ordinal);
+            var owner = NormalizeToken(_activeOwnerPlayerId);
+            if (string.IsNullOrWhiteSpace(owner) &&
+                TryGetAuthoritativeBuilding(_activeNodeId, out var building) &&
+                building != null)
+            {
+                owner = NormalizeToken(ResolveBuildingOwner(cache, building));
+            }
+
+            if (string.IsNullOrWhiteSpace(owner))
+            {
+                return true;
+            }
+
+            return string.Equals(owner, me, StringComparison.Ordinal);
         }
 
         private void SeedSelectionFromState()
@@ -581,41 +637,24 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
+            RefreshActiveBuildingContextFromAuthority();
+
+            if (TryRestoreSelectionFromDraft(_activeNodeId))
             {
                 SaveCurrentSelectionToLocalCache();
                 return;
             }
 
-            var draft = PlanningDraftCache.Instance;
-            if (draft != null && draft.RecipeSelections != null)
+            if (TryRestoreSelectionFromAuthoritativeBuilding(_activeNodeId))
             {
-                for (var i = draft.RecipeSelections.Count - 1; i >= 0; i--)
-                {
-                    var selection = draft.RecipeSelections[i];
-                    if (selection == null || !string.Equals(selection.NodeId, _activeNodeId, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(selection.RecipeId))
-                    {
-                        _selectedRecipeId = NormalizeToken(selection.RecipeId);
-                        _quantityByRecipeId[_selectedRecipeId] = 1;
-                        _lastSentRecipeByNodeId[_activeNodeId] = _selectedRecipeId;
-                        SaveCurrentSelectionToLocalCache();
-                        return;
-                    }
-                }
+                SaveCurrentSelectionToLocalCache();
+                return;
             }
 
-            var cache = _stateCache ?? GameStateCache.Instance;
-            var node = cache?.GetNode(_activeNodeId);
-            if (node != null && !string.IsNullOrWhiteSpace(node.OperationSelectedRecipeId))
+            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
             {
-                _selectedRecipeId = NormalizeToken(node.OperationSelectedRecipeId);
-                _quantityByRecipeId[_selectedRecipeId] = 1;
-                _lastSentRecipeByNodeId[_activeNodeId] = _selectedRecipeId;
+                SaveCurrentSelectionToLocalCache();
+                return;
             }
 
             SaveCurrentSelectionToLocalCache();
@@ -725,6 +764,46 @@ namespace Panoptes.Presentation.UI.Domestic
             return true;
         }
 
+        private bool TryRestoreSelectionFromDraft(string nodeId)
+        {
+            if (!TryGetDraftRecipeSelection(nodeId, out var selection) ||
+                selection == null ||
+                string.IsNullOrWhiteSpace(selection.RecipeId))
+            {
+                return false;
+            }
+
+            _selectedRecipeId = NormalizeToken(selection.RecipeId);
+            if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
+            {
+                _quantityByRecipeId[_selectedRecipeId] = 1;
+                _lastSentRecipeByNodeId[nodeId] = _selectedRecipeId;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryRestoreSelectionFromAuthoritativeBuilding(string nodeId)
+        {
+            if (!TryGetAuthoritativeBuilding(nodeId, out var building) ||
+                building == null ||
+                string.IsNullOrWhiteSpace(building.OperationSelectedRecipeId))
+            {
+                return false;
+            }
+
+            _selectedRecipeId = NormalizeToken(building.OperationSelectedRecipeId);
+            if (!string.IsNullOrWhiteSpace(_selectedRecipeId))
+            {
+                _quantityByRecipeId[_selectedRecipeId] = 1;
+                _lastSentRecipeByNodeId[nodeId] = _selectedRecipeId;
+                return true;
+            }
+
+            return false;
+        }
+
         private void SaveCurrentSelectionToLocalCache()
         {
             if (string.IsNullOrWhiteSpace(_activeNodeId))
@@ -763,6 +842,84 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _selectedRecipeByNodeId.Remove(_activeNodeId);
             }
+        }
+
+        private void ClearLocalSelectionCache(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return;
+            }
+
+            _quantityByNodeId.Remove(nodeId);
+            _selectedRecipeByNodeId.Remove(nodeId);
+        }
+
+        private void RefreshActiveBuildingContextFromAuthority()
+        {
+            if (string.IsNullOrWhiteSpace(_activeNodeId))
+            {
+                return;
+            }
+
+            var cache = _stateCache ?? GameStateCache.Instance;
+            if (!TryGetAuthoritativeBuilding(_activeNodeId, out var building) || building == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(building.BuildingTypeId))
+            {
+                _activeBuildingTypeId = NormalizeToken(building.BuildingTypeId);
+            }
+
+            var owner = ResolveBuildingOwner(cache, building);
+            if (!string.IsNullOrWhiteSpace(owner))
+            {
+                _activeOwnerPlayerId = owner;
+            }
+        }
+
+        private bool TryGetDraftRecipeSelection(string nodeId, out QueuedRecipeSelectionDto selection)
+        {
+            selection = null;
+            var draft = _draftCache ?? PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+            _draftCache = draft;
+            return draft != null && draft.TryGetRecipeSelection(nodeId, out selection);
+        }
+
+        private bool TryGetAuthoritativeBuilding(string nodeId, out BuildingDto building)
+        {
+            building = null;
+            var cache = _stateCache ?? GameStateCache.Instance;
+            return cache != null && cache.TryGetBuilding(nodeId, out building);
+        }
+
+        private static string ResolveBuildingOwner(GameStateCache cache, BuildingDto building)
+        {
+            if (building == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(building.OwnerId))
+            {
+                return building.OwnerId.Trim();
+            }
+
+            var cityId = !string.IsNullOrWhiteSpace(building.CityId)
+                ? building.CityId
+                : building.ServiceCityId;
+            if (cache != null &&
+                !string.IsNullOrWhiteSpace(cityId) &&
+                cache.TryGetCity(cityId, out var city) &&
+                city != null &&
+                !string.IsNullOrWhiteSpace(city.OwnerId))
+            {
+                return city.OwnerId.Trim();
+            }
+
+            return string.Empty;
         }
 
         private string ResolvePreferredRecipeFromLocalQuantities(string preferredRecipeId = null)
@@ -825,27 +982,16 @@ namespace Panoptes.Presentation.UI.Domestic
                 return string.Empty;
             }
 
-            var draft = PlanningDraftCache.Instance;
-            if (draft != null && draft.RecipeSelections != null)
+            if (TryGetDraftRecipeSelection(_activeNodeId, out var selection) &&
+                selection != null &&
+                !string.IsNullOrWhiteSpace(selection.RecipeId))
             {
-                for (var i = draft.RecipeSelections.Count - 1; i >= 0; i--)
-                {
-                    var selection = draft.RecipeSelections[i];
-                    if (selection == null || !string.Equals(selection.NodeId, _activeNodeId, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(selection.RecipeId))
-                    {
-                        return selection.RecipeId;
-                    }
-                }
+                return selection.RecipeId;
             }
 
-            var cache = _stateCache ?? GameStateCache.Instance;
-            var node = cache?.GetNode(_activeNodeId);
-            return node != null ? (node.OperationSelectedRecipeId ?? string.Empty) : string.Empty;
+            return TryGetAuthoritativeBuilding(_activeNodeId, out var building) && building != null
+                ? (building.OperationSelectedRecipeId ?? string.Empty)
+                : string.Empty;
         }
 
         private void SendRecipeSelectionChangeToServer()

@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
 using Panoptes.Protocol.V1;
 
 namespace Panoptes.Tests.EditMode.UI
@@ -19,6 +21,10 @@ namespace Panoptes.Tests.EditMode.UI
 
             var inputType = builderType.GetNestedType("BuildInput", BindingFlags.Public);
             Assert.That(inputType, Is.Not.Null, "TechTreePanelStateBuilder 必须暴露 BuildInput。");
+            Assert.That(inputType!.GetProperty("Research"), Is.Null,
+                "BuildInput 不应继续暴露旧的 object Research 输入。");
+            Assert.That(inputType.GetProperty("ResearchState"), Is.Not.Null,
+                "BuildInput 必须改为强类型 ResearchState 输入。");
 
             var input = Activator.CreateInstance(inputType);
             Assert.That(input, Is.Not.Null);
@@ -31,23 +37,16 @@ namespace Panoptes.Tests.EditMode.UI
                 CreateTechnology("tech_pending", 2),
                 CreateTechnology("tech_active", 1)
             });
-            SetProperty(inputType, input, "Research", new ResearchStateView
-            {
-                CurrentTargetTechnologyId = "tech_available",
-                CurrentProgress = 1,
-                RequiredProgress = 2,
-                PendingActivationTechnologyIds = { "tech_pending" },
-                ActiveTechnologyIds = { "tech_active" },
-                SavedProgress =
+            SetProperty(inputType, input, "ResearchState", CreateResearchStateDto(
+                currentTargetTechnologyId: "tech_available",
+                currentProgress: 1,
+                requiredProgress: 2,
+                pendingActivationTechnologyIds: new[] { "tech_pending" },
+                activeTechnologyIds: new[] { "tech_active" },
+                savedProgressEntries: new[]
                 {
-                    new ResearchProgressEntry
-                    {
-                        TechnologyId = "tech_selected",
-                        CurrentProgress = 3,
-                        RequiredProgress = 5
-                    }
-                }
-            });
+                    ("tech_selected", 3, 5)
+                }));
             SetProperty(inputType, input, "PlannedResearchTargetTechnologyId", "tech_selected");
             SetProperty(inputType, input, "Phase", "planning");
             SetProperty(inputType, input, "IsActionLocked", false);
@@ -84,7 +83,7 @@ namespace Panoptes.Tests.EditMode.UI
             {
                 CreateTechnology("tech_available", 2)
             });
-            SetProperty(inputType, input, "Research", new ResearchStateView());
+            SetProperty(inputType, input, "ResearchState", new TechnologyDto());
             SetProperty(inputType, input, "PlannedResearchTargetTechnologyId", string.Empty);
             SetProperty(inputType, input, "Phase", "resolving");
             SetProperty(inputType, input, "IsActionLocked", true);
@@ -96,6 +95,50 @@ namespace Panoptes.Tests.EditMode.UI
             Assert.That(result, Is.Not.Null);
 
             AssertState(result, "tech_available", "Available", 0, 2, false);
+        }
+
+        private static TechnologyDto CreateResearchStateDto(
+            string currentTargetTechnologyId,
+            int currentProgress,
+            int requiredProgress,
+            IEnumerable<string> pendingActivationTechnologyIds,
+            IEnumerable<string> activeTechnologyIds,
+            IEnumerable<(string technologyId, int currentProgress, int requiredProgress)> savedProgressEntries)
+        {
+            var dto = new TechnologyDto
+            {
+                TechnologyId = currentTargetTechnologyId,
+                CurrentProgress = currentProgress,
+                RequiredProgress = requiredProgress,
+                PendingActivationTechnologyIds = pendingActivationTechnologyIds != null
+                    ? new List<string>(pendingActivationTechnologyIds)
+                    : new List<string>(),
+                ActiveTechnologyIds = activeTechnologyIds != null
+                    ? new List<string>(activeTechnologyIds)
+                    : new List<string>()
+            };
+
+            var savedProgressField = typeof(TechnologyDto).GetField("SavedProgress", BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(savedProgressField, Is.Not.Null, "TechnologyDto 必须暴露 SavedProgress 集合。");
+            Assert.That(savedProgressField!.FieldType.IsGenericType, Is.True, "SavedProgress 必须是强类型列表。");
+
+            var savedProgressList = Activator.CreateInstance(savedProgressField.FieldType) as IList;
+            Assert.That(savedProgressList, Is.Not.Null, "SavedProgress 必须可实例化。");
+
+            var itemType = savedProgressField.FieldType.GetGenericArguments()[0];
+            foreach (var (technologyId, entryCurrentProgress, entryRequiredProgress) in savedProgressEntries)
+            {
+                var entry = Activator.CreateInstance(itemType);
+                Assert.That(entry, Is.Not.Null, "SavedProgress 项必须可实例化。");
+
+                SetField(itemType, entry, "TechnologyId", technologyId);
+                SetField(itemType, entry, "CurrentProgress", entryCurrentProgress);
+                SetField(itemType, entry, "RequiredProgress", entryRequiredProgress);
+                savedProgressList!.Add(entry);
+            }
+
+            savedProgressField.SetValue(dto, savedProgressList);
+            return dto;
         }
 
         private static StaticCatalogCache.TechnologyEntryJson CreateTechnology(string id, int cost, params string[] prerequisites)
@@ -155,6 +198,13 @@ namespace Panoptes.Tests.EditMode.UI
             var property = targetType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
             Assert.That(property, Is.Not.Null, $"缺少属性 {propertyName}。");
             property!.SetValue(target, value);
+        }
+
+        private static void SetField(Type targetType, object target, string fieldName, object value)
+        {
+            var field = targetType.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(field, Is.Not.Null, $"缺少字段 {fieldName}。");
+            field!.SetValue(target, value);
         }
     }
 }

@@ -822,14 +822,27 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
+            var cache = GameStateCache.Instance;
+            if (cache == null || !cache.TryGetBuilding(nodeId, out var building) || building == null)
+            {
+                return false;
+            }
+
             var map = MapRenderer.Instance;
             if (map != null && map.TryGetNodeState(nodeId, out var mapNode))
             {
                 node = mapNode;
             }
-            else if (GameStateCache.Instance != null)
+            else
             {
-                node = GameStateCache.Instance.GetNode(nodeId);
+                node = cache.GetNode(nodeId) ?? new NodeDto
+                {
+                    Id = building.NodeId,
+                    BuildingType = building.BuildingTypeId,
+                    CityId = building.CityId,
+                    ServiceCityId = building.ServiceCityId,
+                    IsCityCore = building.IsCityCore
+                };
             }
 
             if (node == null)
@@ -837,7 +850,9 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
-            if (requireCityCoreBuildingType && !MatchesCityCoreBuildingType(node.BuildingType))
+            if (requireCityCoreBuildingType &&
+                !building.IsCityCore &&
+                !MatchesCityCoreBuildingType(building.BuildingTypeId))
             {
                 return false;
             }
@@ -845,11 +860,13 @@ namespace Panoptes.Presentation.UI.Domestic
             if (requireLocalOwnership)
             {
                 var localPlayerId = Normalize(ResolveLocalPlayerId());
-                var owner = Normalize(node.Owner);
-                var territoryOwner = Normalize(node.TerritoryOwner);
-                var ownerMatch = !string.IsNullOrEmpty(owner) && string.Equals(owner, localPlayerId, StringComparison.Ordinal);
-                var territoryOwnerMatch = !string.IsNullOrEmpty(territoryOwner) && string.Equals(territoryOwner, localPlayerId, StringComparison.Ordinal);
-                if (!ownerMatch && !territoryOwnerMatch)
+                if (string.IsNullOrEmpty(localPlayerId))
+                {
+                    return false;
+                }
+
+                var owner = Normalize(ResolveAuthoritativeBuildingOwner(cache, building));
+                if (string.IsNullOrEmpty(owner) || !string.Equals(owner, localPlayerId, StringComparison.Ordinal))
                 {
                     return false;
                 }
@@ -865,7 +882,34 @@ namespace Panoptes.Presentation.UI.Domestic
                 return GameStateCache.Instance.MyPlayerID.Trim();
             }
 
-            return "blue";
+            return string.Empty;
+        }
+
+        private static string ResolveAuthoritativeBuildingOwner(GameStateCache cache, BuildingDto building)
+        {
+            if (building == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(building.OwnerId))
+            {
+                return building.OwnerId.Trim();
+            }
+
+            var cityId = !string.IsNullOrWhiteSpace(building.CityId)
+                ? building.CityId
+                : building.ServiceCityId;
+            if (cache != null &&
+                !string.IsNullOrWhiteSpace(cityId) &&
+                cache.TryGetCity(cityId, out var city) &&
+                city != null &&
+                !string.IsNullOrWhiteSpace(city.OwnerId))
+            {
+                return city.OwnerId.Trim();
+            }
+
+            return string.Empty;
         }
 
         private void SetStatus(string message)
