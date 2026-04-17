@@ -28,6 +28,17 @@ func ProjectTurnSettlement(
 	nextPhase string,
 	collector *gameresolution.Collector,
 ) *pb.MsgTurnSettlement {
+	return ProjectTurnSettlementFromObservation(state, gamequery.NewObservationStore().BuildObservation(state, playerID), turn, phase, nextPhase, collector)
+}
+
+func ProjectTurnSettlementFromObservation(
+	state *domain.GameState,
+	observation *gamequery.ObservationSnapshot,
+	turn int32,
+	phase string,
+	nextPhase string,
+	collector *gameresolution.Collector,
+) *pb.MsgTurnSettlement {
 	// settlement 只关心 resolving 这条链上发生过什么，以及结算后的最终权威快照。
 	msg := &pb.MsgTurnSettlement{
 		Sections:  SettlementSections(collector),
@@ -39,9 +50,22 @@ func ProjectTurnSettlement(
 		return msg
 	}
 
-	msg.Nodes = gamequery.BuildNodeViews(state, playerID)
-	msg.Units = gamequery.BuildUnitViews(state)
-	msg.MyPlayerAfter = gamequery.BuildPlayerView(state, playerID)
+	playerID := ""
+	if observation != nil {
+		playerID = observation.ViewerID
+		msg.Nodes = observation.Nodes
+		msg.Units = observation.Units
+		msg.MyPlayerAfter = observation.MyPlayer
+	}
+	if msg.MyPlayerAfter == nil {
+		msg.MyPlayerAfter = gamequery.BuildPlayerView(state, playerID)
+	}
+	if msg.Nodes == nil {
+		msg.Nodes = gamequery.BuildNodeViews(state, playerID)
+	}
+	if msg.Units == nil {
+		msg.Units = gamequery.BuildUnitViews(state)
+	}
 	return msg
 }
 

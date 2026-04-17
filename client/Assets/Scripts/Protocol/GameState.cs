@@ -25,7 +25,7 @@ namespace Panoptes.Protocol.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBnYW1lX3N0YXRlLnByb3RvEhFwYW5vcHRlcy5wcm90by52MRoMY29tbW9u",
-            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIqUGCghOb2RlVmlldxIOCgJpZBgB",
+            "LnByb3RvGhBkYXRhX3R5cGVzLnByb3RvIqIHCghOb2RlVmlldxIOCgJpZBgB",
             "IAEoCVICaWQSLQoDcG9zGAIgASgLMhsucGFub3B0ZXMucHJvdG8udjEuUG9z",
             "aXRpb25SA3BvcxIYCgd0ZXJyYWluGAMgASgJUgd0ZXJyYWluEjAKFGNvbnRy",
             "b2xsZXJfcGxheWVyX2lkGAQgASgJUhJjb250cm9sbGVyUGxheWVySWQSKAoQ",
@@ -43,69 +43,72 @@ namespace Panoptes.Protocol.V1 {
             "dmljZV9jaXR5X2lkGBEgASgJUg1zZXJ2aWNlQ2l0eUlkEiAKDGlzX2NpdHlf",
             "Y29yZRgSIAEoCFIKaXNDaXR5Q29yZRIrChF0YWtlb3Zlcl9wcm9ncmVzcxgT",
             "IAEoBVIQdGFrZW92ZXJQcm9ncmVzcxIrChF0YWtlb3Zlcl9yZXF1aXJlZBgU",
-            "IAEoBVIQdGFrZW92ZXJSZXF1aXJlZCKnAQoIVW5pdFZpZXcSDgoCaWQYASAB",
-            "KAlSAmlkEhgKB2ZhY3Rpb24YAiABKAlSB2ZhY3Rpb24SGwoJdW5pdF90eXBl",
-            "GAMgASgJUgh1bml0VHlwZRIOCgJocBgEIAEoBVICaHASFQoGbWF4X2hwGAUg",
-            "ASgFUgVtYXhIcBItCgNwb3MYBiABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Q",
-            "b3NpdGlvblIDcG9zIrgECgpQbGF5ZXJWaWV3Eg4KAmlkGAEgASgJUgJpZBIa",
-            "Cgh1c2VybmFtZRgCIAEoCVIIdXNlcm5hbWUSPAoJcmVzb3VyY2VzGAMgASgL",
-            "Mh4ucGFub3B0ZXMucHJvdG8udjEuUmVzb3VyY2VCYWdSCXJlc291cmNlcxIz",
-            "CgZwb2ludHMYBCABKAsyGy5wYW5vcHRlcy5wcm90by52MS5Qb2ludEJhZ1IG",
-            "cG9pbnRzEh8KC3Rva2Vuc19sZWZ0GAUgASgFUgp0b2tlbnNMZWZ0EjkKGWFj",
-            "dGl2ZV9uYXRpb25hbF9wb2xpY3lfaWQYBiABKAlSFmFjdGl2ZU5hdGlvbmFs",
-            "UG9saWN5SWQSLwoUY2FwaXRhbF9jaXR5X2NvcmVfaHAYByABKAVSEWNhcGl0",
-            "YWxDaXR5Q29yZUhwEjYKGGNhcGl0YWxfY2l0eV9jb3JlX21heF9ocBgIIAEo",
-            "BVIUY2FwaXRhbENpdHlDb3JlTWF4SHASNwoJd2FyX3pvbmVzGAkgAygLMhou",
-            "cGFub3B0ZXMucHJvdG8udjEuV2FyWm9uZVIId2FyWm9uZXMSQAoIcmVzZWFy",
-            "Y2gYCiABKAsyJC5wYW5vcHRlcy5wcm90by52MS5SZXNlYXJjaFN0YXRlVmll",
-            "d1IIcmVzZWFyY2gSSwoMaW5zdGl0dXRpb25zGAsgASgLMicucGFub3B0ZXMu",
-            "cHJvdG8udjEuSW5zdGl0dXRpb25TdGF0ZVZpZXdSDGluc3RpdHV0aW9ucyK2",
-            "AwoRUmVzZWFyY2hTdGF0ZVZpZXcSPwocY3VycmVudF90YXJnZXRfdGVjaG5v",
-            "bG9neV9pZBgBIAEoCVIZY3VycmVudFRhcmdldFRlY2hub2xvZ3lJZBIpChBj",
-            "dXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVx",
-            "dWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSOAoYY29t",
-            "cGxldGVkX3RlY2hub2xvZ3lfaWRzGAQgAygJUhZjb21wbGV0ZWRUZWNobm9s",
-            "b2d5SWRzEjIKFWFjdGl2ZV90ZWNobm9sb2d5X2lkcxgFIAMoCVITYWN0aXZl",
-            "VGVjaG5vbG9neUlkcxJJCiFwZW5kaW5nX2FjdGl2YXRpb25fdGVjaG5vbG9n",
-            "eV9pZHMYBiADKAlSHnBlbmRpbmdBY3RpdmF0aW9uVGVjaG5vbG9neUlkcxJP",
-            "Cg5zYXZlZF9wcm9ncmVzcxgHIAMoCzIoLnBhbm9wdGVzLnByb3RvLnYxLlJl",
-            "c2VhcmNoUHJvZ3Jlc3NFbnRyeVINc2F2ZWRQcm9ncmVzcyKUAQoVUmVzZWFy",
-            "Y2hQcm9ncmVzc0VudHJ5EiMKDXRlY2hub2xvZ3lfaWQYASABKAlSDHRlY2hu",
-            "b2xvZ3lJZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJv",
-            "Z3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJv",
-            "Z3Jlc3MikwEKFEluc3RpdHV0aW9uU3RhdGVWaWV3Eh0KCnNsb3RfY291bnQY",
-            "ASABKAVSCXNsb3RDb3VudBIwChRjYW5kaWRhdGVfcG9saWN5X2lkcxgCIAMo",
-            "CVISY2FuZGlkYXRlUG9saWN5SWRzEioKEWFjdGl2ZV9wb2xpY3lfaWRzGAMg",
-            "AygJUg9hY3RpdmVQb2xpY3lJZHMikgIKFUJ1aWxkaW5nT3BlcmF0aW9uVmll",
-            "dxIsChJzZWxlY3RlZF9yZWNpcGVfaWQYASABKAlSEHNlbGVjdGVkUmVjaXBl",
-            "SWQSKQoQY3VycmVudF9wcm9ncmVzcxgCIAEoBVIPY3VycmVudFByb2dyZXNz",
-            "EisKEXJlcXVpcmVkX3Byb2dyZXNzGAMgASgFUhByZXF1aXJlZFByb2dyZXNz",
-            "EiMKDWJhc2VfcHJvZ3Jlc3MYBCABKAVSDGJhc2VQcm9ncmVzcxIlCg5ibG9j",
-            "a2VkX3JlYXNvbhgFIAEoCVINYmxvY2tlZFJlYXNvbhInCg9ibG9ja2VkX21l",
-            "c3NhZ2UYBiABKAlSDmJsb2NrZWRNZXNzYWdlIocBCgdXYXJab25lEg4KAmlk",
-            "GAEgASgJUgJpZBISCgRuYW1lGAIgASgJUgRuYW1lEhkKCG5vZGVfaWRzGAMg",
-            "AygJUgdub2RlSWRzEhwKCWRpcmVjdGl2ZRgEIAEoCVIJZGlyZWN0aXZlEh8K",
-            "C3RhcmdldF9ub2RlGAUgASgJUgp0YXJnZXROb2RlInIKDE1pbmlzdGVyVmll",
-            "dxISCgRyb2xlGAEgASgJUgRyb2xlEhIKBG5hbWUYAiABKAlSBG5hbWUSGAoH",
-            "YWJpbGl0eRgDIAEoBVIHYWJpbGl0eRIgCgtwZXJzb25hbGl0eRgEIAEoCVIL",
-            "cGVyc29uYWxpdHkikwMKC01zZ0dhbWVJbml0EhcKB2dhbWVfaWQYASABKAlS",
-            "BmdhbWVJZBIkCg55b3VyX3BsYXllcl9pZBgCIAEoCVIMeW91clBsYXllcklk",
-            "EhIKBHR1cm4YAyABKAVSBHR1cm4SFAoFcGhhc2UYBCABKAlSBXBoYXNlEjEK",
-            "BW5vZGVzGAUgAygLMhsucGFub3B0ZXMucHJvdG8udjEuTm9kZVZpZXdSBW5v",
-            "ZGVzEjEKBXVuaXRzGAYgAygLMhsucGFub3B0ZXMucHJvdG8udjEuVW5pdFZp",
-            "ZXdSBXVuaXRzEjoKCW15X3BsYXllchgHIAEoCzIdLnBhbm9wdGVzLnByb3Rv",
-            "LnYxLlBsYXllclZpZXdSCG15UGxheWVyEj0KCW1pbmlzdGVycxgIIAMoCzIf",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1pbmlzdGVyVmlld1IJbWluaXN0ZXJzEhsK",
-            "CW1hcF93aWR0aBgJIAEoBVIIbWFwV2lkdGgSHQoKbWFwX2hlaWdodBgKIAEo",
-            "BVIJbWFwSGVpZ2h0ImAKC01zZ0dhbWVPdmVyEhsKCXdpbm5lcl9pZBgBIAEo",
-            "CVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFzb24SHAoJbmFycmF0",
-            "aXZlGAMgASgJUgluYXJyYXRpdmVCU1o6Z2l0aHViLmNvbS9lbGViaXJkcy9w",
-            "YW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG8vdjE7cHJvdG92MaoCFFBhbm9w",
-            "dGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
+            "IAEoBVIQdGFrZW92ZXJSZXF1aXJlZBIwChRpc19jdXJyZW50bHlfdmlzaWJs",
+            "ZRgVIAEoCFISaXNDdXJyZW50bHlWaXNpYmxlEhsKCWlzX21lbW9yeRgWIAEo",
+            "CFIIaXNNZW1vcnkSLAoSbGFzdF9vYnNlcnZlZF90dXJuGBcgASgFUhBsYXN0",
+            "T2JzZXJ2ZWRUdXJuIqcBCghVbml0VmlldxIOCgJpZBgBIAEoCVICaWQSGAoH",
+            "ZmFjdGlvbhgCIAEoCVIHZmFjdGlvbhIbCgl1bml0X3R5cGUYAyABKAlSCHVu",
+            "aXRUeXBlEg4KAmhwGAQgASgFUgJocBIVCgZtYXhfaHAYBSABKAVSBW1heEhw",
+            "Ei0KA3BvcxgGIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgNw",
+            "b3MiuAQKClBsYXllclZpZXcSDgoCaWQYASABKAlSAmlkEhoKCHVzZXJuYW1l",
+            "GAIgASgJUgh1c2VybmFtZRI8CglyZXNvdXJjZXMYAyABKAsyHi5wYW5vcHRl",
+            "cy5wcm90by52MS5SZXNvdXJjZUJhZ1IJcmVzb3VyY2VzEjMKBnBvaW50cxgE",
+            "IAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvaW50QmFnUgZwb2ludHMSHwoL",
+            "dG9rZW5zX2xlZnQYBSABKAVSCnRva2Vuc0xlZnQSOQoZYWN0aXZlX25hdGlv",
+            "bmFsX3BvbGljeV9pZBgGIAEoCVIWYWN0aXZlTmF0aW9uYWxQb2xpY3lJZBIv",
+            "ChRjYXBpdGFsX2NpdHlfY29yZV9ocBgHIAEoBVIRY2FwaXRhbENpdHlDb3Jl",
+            "SHASNgoYY2FwaXRhbF9jaXR5X2NvcmVfbWF4X2hwGAggASgFUhRjYXBpdGFs",
+            "Q2l0eUNvcmVNYXhIcBI3Cgl3YXJfem9uZXMYCSADKAsyGi5wYW5vcHRlcy5w",
+            "cm90by52MS5XYXJab25lUgh3YXJab25lcxJACghyZXNlYXJjaBgKIAEoCzIk",
+            "LnBhbm9wdGVzLnByb3RvLnYxLlJlc2VhcmNoU3RhdGVWaWV3UghyZXNlYXJj",
+            "aBJLCgxpbnN0aXR1dGlvbnMYCyABKAsyJy5wYW5vcHRlcy5wcm90by52MS5J",
+            "bnN0aXR1dGlvblN0YXRlVmlld1IMaW5zdGl0dXRpb25zIrYDChFSZXNlYXJj",
+            "aFN0YXRlVmlldxI/ChxjdXJyZW50X3RhcmdldF90ZWNobm9sb2d5X2lkGAEg",
+            "ASgJUhljdXJyZW50VGFyZ2V0VGVjaG5vbG9neUlkEikKEGN1cnJlbnRfcHJv",
+            "Z3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9wcm9n",
+            "cmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcxI4Chhjb21wbGV0ZWRfdGVj",
+            "aG5vbG9neV9pZHMYBCADKAlSFmNvbXBsZXRlZFRlY2hub2xvZ3lJZHMSMgoV",
+            "YWN0aXZlX3RlY2hub2xvZ3lfaWRzGAUgAygJUhNhY3RpdmVUZWNobm9sb2d5",
+            "SWRzEkkKIXBlbmRpbmdfYWN0aXZhdGlvbl90ZWNobm9sb2d5X2lkcxgGIAMo",
+            "CVIecGVuZGluZ0FjdGl2YXRpb25UZWNobm9sb2d5SWRzEk8KDnNhdmVkX3By",
+            "b2dyZXNzGAcgAygLMigucGFub3B0ZXMucHJvdG8udjEuUmVzZWFyY2hQcm9n",
+            "cmVzc0VudHJ5Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJjaFByb2dyZXNz",
+            "RW50cnkSIwoNdGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5vbG9neUlkEikK",
+            "EGN1cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFy",
+            "ZXF1aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKTAQoU",
+            "SW5zdGl0dXRpb25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xv",
+            "dENvdW50EjAKFGNhbmRpZGF0ZV9wb2xpY3lfaWRzGAIgAygJUhJjYW5kaWRh",
+            "dGVQb2xpY3lJZHMSKgoRYWN0aXZlX3BvbGljeV9pZHMYAyADKAlSD2FjdGl2",
+            "ZVBvbGljeUlkcyKSAgoVQnVpbGRpbmdPcGVyYXRpb25WaWV3EiwKEnNlbGVj",
+            "dGVkX3JlY2lwZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJZBIpChBjdXJy",
+            "ZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVxdWly",
+            "ZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSIwoNYmFzZV9w",
+            "cm9ncmVzcxgEIAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2NrZWRfcmVhc29u",
+            "GAUgASgJUg1ibG9ja2VkUmVhc29uEicKD2Jsb2NrZWRfbWVzc2FnZRgGIAEo",
+            "CVIOYmxvY2tlZE1lc3NhZ2UihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlk",
+            "EhIKBG5hbWUYAiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJ",
+            "ZHMSHAoJZGlyZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25v",
+            "ZGUYBSABKAlSCnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUY",
+            "ASABKAlSBHJvbGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMg",
+            "ASgFUgdhYmlsaXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0",
+            "eSKTAwoLTXNnR2FtZUluaXQSFwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQK",
+            "DnlvdXJfcGxheWVyX2lkGAIgASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgD",
+            "IAEoBVIEdHVybhIUCgVwaGFzZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSAD",
+            "KAsyGy5wYW5vcHRlcy5wcm90by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5p",
+            "dHMYBiADKAsyGy5wYW5vcHRlcy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMS",
+            "OgoJbXlfcGxheWVyGAcgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVy",
+            "Vmlld1IIbXlQbGF5ZXISPQoJbWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMu",
+            "cHJvdG8udjEuTWluaXN0ZXJWaWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRo",
+            "GAkgASgFUghtYXBXaWR0aBIdCgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWln",
+            "aHQiYAoLTXNnR2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJUgh3aW5uZXJJ",
+            "ZBIWCgZyZWFzb24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRpdmUYAyABKAlS",
+            "CW5hcnJhdGl2ZUJTWjpnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2lu",
+            "dGVybmFsL2dlbi9wcm90by92MTtwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9j",
+            "b2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired", "IsCurrentlyVisible", "IsMemory", "LastObservedTurn" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
@@ -177,6 +180,9 @@ namespace Panoptes.Protocol.V1 {
       isCityCore_ = other.isCityCore_;
       takeoverProgress_ = other.takeoverProgress_;
       takeoverRequired_ = other.takeoverRequired_;
+      isCurrentlyVisible_ = other.isCurrentlyVisible_;
+      isMemory_ = other.isMemory_;
+      lastObservedTurn_ = other.lastObservedTurn_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -426,6 +432,42 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "is_currently_visible" field.</summary>
+    public const int IsCurrentlyVisibleFieldNumber = 21;
+    private bool isCurrentlyVisible_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IsCurrentlyVisible {
+      get { return isCurrentlyVisible_; }
+      set {
+        isCurrentlyVisible_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "is_memory" field.</summary>
+    public const int IsMemoryFieldNumber = 22;
+    private bool isMemory_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IsMemory {
+      get { return isMemory_; }
+      set {
+        isMemory_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "last_observed_turn" field.</summary>
+    public const int LastObservedTurnFieldNumber = 23;
+    private int lastObservedTurn_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int LastObservedTurn {
+      get { return lastObservedTurn_; }
+      set {
+        lastObservedTurn_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -461,6 +503,9 @@ namespace Panoptes.Protocol.V1 {
       if (IsCityCore != other.IsCityCore) return false;
       if (TakeoverProgress != other.TakeoverProgress) return false;
       if (TakeoverRequired != other.TakeoverRequired) return false;
+      if (IsCurrentlyVisible != other.IsCurrentlyVisible) return false;
+      if (IsMemory != other.IsMemory) return false;
+      if (LastObservedTurn != other.LastObservedTurn) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -488,6 +533,9 @@ namespace Panoptes.Protocol.V1 {
       if (IsCityCore != false) hash ^= IsCityCore.GetHashCode();
       if (TakeoverProgress != 0) hash ^= TakeoverProgress.GetHashCode();
       if (TakeoverRequired != 0) hash ^= TakeoverRequired.GetHashCode();
+      if (IsCurrentlyVisible != false) hash ^= IsCurrentlyVisible.GetHashCode();
+      if (IsMemory != false) hash ^= IsMemory.GetHashCode();
+      if (LastObservedTurn != 0) hash ^= LastObservedTurn.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -586,6 +634,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(160, 1);
         output.WriteInt32(TakeoverRequired);
       }
+      if (IsCurrentlyVisible != false) {
+        output.WriteRawTag(168, 1);
+        output.WriteBool(IsCurrentlyVisible);
+      }
+      if (IsMemory != false) {
+        output.WriteRawTag(176, 1);
+        output.WriteBool(IsMemory);
+      }
+      if (LastObservedTurn != 0) {
+        output.WriteRawTag(184, 1);
+        output.WriteInt32(LastObservedTurn);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -676,6 +736,18 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(160, 1);
         output.WriteInt32(TakeoverRequired);
       }
+      if (IsCurrentlyVisible != false) {
+        output.WriteRawTag(168, 1);
+        output.WriteBool(IsCurrentlyVisible);
+      }
+      if (IsMemory != false) {
+        output.WriteRawTag(176, 1);
+        output.WriteBool(IsMemory);
+      }
+      if (LastObservedTurn != 0) {
+        output.WriteRawTag(184, 1);
+        output.WriteInt32(LastObservedTurn);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -745,6 +817,15 @@ namespace Panoptes.Protocol.V1 {
       }
       if (TakeoverRequired != 0) {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(TakeoverRequired);
+      }
+      if (IsCurrentlyVisible != false) {
+        size += 2 + 1;
+      }
+      if (IsMemory != false) {
+        size += 2 + 1;
+      }
+      if (LastObservedTurn != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(LastObservedTurn);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -823,6 +904,15 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.TakeoverRequired != 0) {
         TakeoverRequired = other.TakeoverRequired;
+      }
+      if (other.IsCurrentlyVisible != false) {
+        IsCurrentlyVisible = other.IsCurrentlyVisible;
+      }
+      if (other.IsMemory != false) {
+        IsMemory = other.IsMemory;
+      }
+      if (other.LastObservedTurn != 0) {
+        LastObservedTurn = other.LastObservedTurn;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -929,6 +1019,18 @@ namespace Panoptes.Protocol.V1 {
             TakeoverRequired = input.ReadInt32();
             break;
           }
+          case 168: {
+            IsCurrentlyVisible = input.ReadBool();
+            break;
+          }
+          case 176: {
+            IsMemory = input.ReadBool();
+            break;
+          }
+          case 184: {
+            LastObservedTurn = input.ReadInt32();
+            break;
+          }
         }
       }
     #endif
@@ -1032,6 +1134,18 @@ namespace Panoptes.Protocol.V1 {
           }
           case 160: {
             TakeoverRequired = input.ReadInt32();
+            break;
+          }
+          case 168: {
+            IsCurrentlyVisible = input.ReadBool();
+            break;
+          }
+          case 176: {
+            IsMemory = input.ReadBool();
+            break;
+          }
+          case 184: {
+            LastObservedTurn = input.ReadInt32();
             break;
           }
         }

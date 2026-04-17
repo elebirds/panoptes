@@ -1094,6 +1094,8 @@ namespace Panoptes.Core.Application.Cache
                 TakeoverRequired = source.TakeoverRequired,
                 IsCityCore = source.IsCityCore,
                 IsVisible = source.IsVisible,
+                IsMemory = source.IsMemory,
+                LastObservedTurn = source.LastObservedTurn,
                 HasRoad = source.HasRoad,
                 Terrain = source.Terrain,
                 IsResourcePoint = source.IsResourcePoint,
@@ -1136,6 +1138,8 @@ namespace Panoptes.Core.Application.Cache
                    left.TakeoverRequired == right.TakeoverRequired &&
                    left.IsCityCore == right.IsCityCore &&
                    left.IsVisible == right.IsVisible &&
+                   left.IsMemory == right.IsMemory &&
+                   left.LastObservedTurn == right.LastObservedTurn &&
                    left.HasRoad == right.HasRoad &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&

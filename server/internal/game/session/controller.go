@@ -2,11 +2,15 @@ package session
 
 import (
 	"context"
+	"encoding/binary"
+	"hash/fnv"
+	"math/rand"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/game/ai"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
+	gamequery "github.com/elebirds/panoptes/internal/game/query"
 )
 
 type IntentSubmitter interface {
@@ -15,14 +19,14 @@ type IntentSubmitter interface {
 
 type Controller interface {
 	IsAutonomous() bool
-	BeginPlanning(ctx context.Context, participant participant.Participant, state *domain.GameState, submitter IntentSubmitter) error
+	BeginPlanning(ctx context.Context, participant participant.Participant, state *domain.GameState, observation *gamequery.ObservationSnapshot, submitter IntentSubmitter) error
 }
 
 type HumanController struct{}
 
 func (HumanController) IsAutonomous() bool { return false }
 
-func (HumanController) BeginPlanning(context.Context, participant.Participant, *domain.GameState, IntentSubmitter) error {
+func (HumanController) BeginPlanning(context.Context, participant.Participant, *domain.GameState, *gamequery.ObservationSnapshot, IntentSubmitter) error {
 	return nil
 }
 
@@ -36,13 +40,15 @@ func NewAutonomousController(provider ai.Provider) AutonomousController {
 
 func (c AutonomousController) IsAutonomous() bool { return true }
 
-func (c AutonomousController) BeginPlanning(ctx context.Context, p participant.Participant, state *domain.GameState, submitter IntentSubmitter) error {
+func (c AutonomousController) BeginPlanning(ctx context.Context, p participant.Participant, state *domain.GameState, observation *gamequery.ObservationSnapshot, submitter IntentSubmitter) error {
 	if c.provider == nil || submitter == nil {
 		return nil
 	}
 	intents, err := c.provider.BuildPlanningIntents(ctx, ai.Request{
 		Participant: p,
 		State:       state,
+		Observation: observation,
+		RNG:         newDeterministicPlanningRNG(state, p.ID),
 	})
 	if err != nil {
 		return err
@@ -59,4 +65,16 @@ func (c AutonomousController) BeginPlanning(ctx context.Context, p participant.P
 		}
 	}
 	return nil
+}
+
+func newDeterministicPlanningRNG(state *domain.GameState, participantID string) *rand.Rand {
+	hasher := fnv.New64a()
+	if state != nil {
+		_, _ = hasher.Write([]byte(state.GameID))
+		var turnBytes [8]byte
+		binary.LittleEndian.PutUint64(turnBytes[:], uint64(state.Turn))
+		_, _ = hasher.Write(turnBytes[:])
+	}
+	_, _ = hasher.Write([]byte(participantID))
+	return rand.New(rand.NewSource(int64(hasher.Sum64())))
 }

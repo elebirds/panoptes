@@ -106,7 +106,7 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 		if !ok || controller == nil || !controller.IsAutonomous() {
 			continue
 		}
-		if err := controller.BeginPlanning(ctx, currentParticipant, c.runtime.State(), submitter); err != nil {
+		if err := controller.BeginPlanning(ctx, currentParticipant, c.runtime.State(), c.runtime.BuildObservation(currentParticipant.ID), submitter); err != nil {
 			slog.Warn("controller begin planning failed", "participant_id", currentParticipant.ID, "err", err)
 		}
 	}

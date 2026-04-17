@@ -24,6 +24,8 @@ namespace Panoptes.Core.Domain
         public int TakeoverRequired;
         public bool IsCityCore;
         public bool IsVisible;
+        public bool IsMemory;
+        public int LastObservedTurn;
         public bool HasRoad;
         public string Terrain;
         public bool IsResourcePoint;
