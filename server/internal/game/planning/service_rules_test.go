@@ -293,6 +293,14 @@ func TestSetBuildingRecipeRejectedIncludesSpecificFeedback(t *testing.T) {
 		Recipes: []staticdata.RecipeDefinition{
 			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
 		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID: "militia_mobilization",
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_recipe", TargetID: "train_infantry"},
+				},
+			},
+		},
 	}))
 
 	world := donburi.NewWorld()

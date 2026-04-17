@@ -397,7 +397,10 @@ func (s *GameState) IsBuildingUnlocked(playerID string, buildingID string) bool 
 	if !ok || playerState == nil {
 		return false
 	}
-	return playerState.Research.HasBuilding(buildingID)
+	if playerState.Research.HasBuilding(buildingID) {
+		return true
+	}
+	return !technologyExplicitlyUnlocks("unlock_building", buildingID)
 }
 
 func (s *GameState) IsRecipeUnlocked(playerID string, recipeID string) bool {
@@ -408,7 +411,10 @@ func (s *GameState) IsRecipeUnlocked(playerID string, recipeID string) bool {
 	if !ok || playerState == nil {
 		return false
 	}
-	return playerState.Research.HasRecipe(recipeID)
+	if playerState.Research.HasRecipe(recipeID) {
+		return true
+	}
+	return !technologyExplicitlyUnlocks("unlock_recipe", recipeID)
 }
 
 func (s *GameState) IsPolicyActive(playerID string, policyID string) bool {
@@ -425,6 +431,74 @@ func (s *GameState) IsPolicyActive(playerID string, policyID string) bool {
 	for _, activeID := range playerState.Institutions.ActivePolicyIDs {
 		if activeID == policyID {
 			return true
+		}
+	}
+	return false
+}
+
+func (s *GameState) RefreshBuildingMaxHPForPlayer(playerID string) {
+	if s == nil || s.World == nil || playerID == "" {
+		return
+	}
+	nodeQuery.Each(s.World, func(entry *donburi.Entry) {
+		if entry == nil || !entry.HasComponent(BuildingC) {
+			return
+		}
+		building := BuildingC.Get(entry)
+		if building.Owner != playerID {
+			return
+		}
+		s.RefreshBuildingMaxHPAtEntry(entry)
+	})
+}
+
+func (s *GameState) RefreshBuildingMaxHPAtEntry(entry *donburi.Entry) {
+	if s == nil || entry == nil || !entry.HasComponent(BuildingC) {
+		return
+	}
+	building := BuildingC.Get(entry)
+	cfg, ok := staticdata.Default().GetBuilding(string(building.Type))
+	if !ok {
+		return
+	}
+	base := cfg.MaxHP
+	if base <= 0 {
+		return
+	}
+	maxHP := s.ApplyScalarModifier(building.Owner, string(staticdata.ModifierTriggerBuildingMaxHP), string(building.Type), "", base)
+	if maxHP <= 0 {
+		maxHP = 1
+	}
+	if maxHP == building.MaxHP {
+		if building.HP > building.MaxHP {
+			building.HP = building.MaxHP
+		}
+		return
+	}
+	delta := maxHP - building.MaxHP
+	building.MaxHP = maxHP
+	building.HP += delta
+	if building.HP > building.MaxHP {
+		building.HP = building.MaxHP
+	}
+	if building.HP < 0 {
+		building.HP = 0
+	}
+}
+
+func technologyExplicitlyUnlocks(effectType string, targetID string) bool {
+	if targetID == "" {
+		return false
+	}
+	catalog := staticdata.Default()
+	if catalog == nil {
+		return false
+	}
+	for _, technology := range catalog.Technologies() {
+		for _, effect := range technology.ExplicitEffects {
+			if effect.Type == effectType && effect.TargetID == targetID {
+				return true
+			}
 		}
 	}
 	return false

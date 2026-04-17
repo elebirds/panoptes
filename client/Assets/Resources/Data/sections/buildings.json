@@ -44,7 +44,8 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "farm_food"
+        "farm_food",
+        "farm_harvest"
       ],
       "default_recipe_id": "farm_food",
       "explicit_effects": [],
@@ -72,14 +73,15 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "mine_ore"
+        "mine_ore",
+        "mine_deep_ore"
       ],
       "default_recipe_id": "mine_ore",
       "explicit_effects": [],
       "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "eco"
       ]
@@ -100,22 +102,57 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "lumber_wood"
+        "lumber_wood",
+        "lumber_sawmill"
       ],
       "default_recipe_id": "lumber_wood",
       "explicit_effects": [],
       "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
-      "sort_order": 40,
+      "sort_order": 30,
       "tags": [
         "eco"
       ]
     },
     {
+      "id": "workshop",
+      "name": "工坊",
+      "description": "上线后为城市额外提供工业产出。",
+      "icon_key": "building_lumber",
+      "prefab_key": "Workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 50,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
       "id": "barracks",
       "name": "兵营",
-      "description": "基础军队训练建筑",
+      "description": "基础步兵训练建筑",
       "icon_key": "building_barracks",
       "prefab_key": "Barracks",
       "placement_kind": "city_territory",
@@ -136,7 +173,35 @@
       "modifier_effects": [],
       "max_hp": 90,
       "takeover_mode": "city_capture",
-      "sort_order": 50,
+      "sort_order": 60,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "archery",
+      "name": "靶场",
+      "description": "训练远程弓手的城市建筑。",
+      "icon_key": "building_barracks",
+      "prefab_key": "Archery",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "archery_archer"
+      ],
+      "default_recipe_id": "archery_archer",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 70,
       "tags": [
         "military"
       ]
@@ -144,7 +209,7 @@
     {
       "id": "wall",
       "name": "城墙",
-      "description": "基础被动防御建筑",
+      "description": "提升城市正面防守能力。",
       "icon_key": "building_wall",
       "prefab_key": "Wall",
       "placement_kind": "city_territory",
@@ -163,7 +228,7 @@
       "modifier_effects": [],
       "max_hp": 120,
       "takeover_mode": "city_capture",
-      "sort_order": 60,
+      "sort_order": 80,
       "tags": [
         "defense"
       ]

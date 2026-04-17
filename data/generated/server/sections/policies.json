@@ -3,13 +3,20 @@
     {
       "id": "expansion",
       "name": "扩张",
-      "description": "优先扩张国家边界。",
+      "description": "开拓者组织工时 -1。",
       "icon_key": "policy_expansion",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "city_core_settler",
+          "modifier_type": "flat",
+          "value": -1
+        }
+      ],
       "sort_order": 10,
       "tags": [
         "national"
@@ -18,13 +25,26 @@
     {
       "id": "war_preparedness",
       "name": "备战",
-      "description": "优先军事准备。",
+      "description": "步兵与弓手训练工时 -1。",
       "icon_key": "policy_war_preparedness",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "barracks_infantry",
+          "modifier_type": "flat",
+          "value": -1
+        },
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "archery_archer",
+          "modifier_type": "flat",
+          "value": -1
+        }
+      ],
       "sort_order": 20,
       "tags": [
         "national"
@@ -33,13 +53,28 @@
     {
       "id": "recovery",
       "name": "恢复",
-      "description": "优先恢复国家秩序。",
+      "description": "农耕相关配方额外产出粮食。",
       "icon_key": "policy_recovery",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "farm_food",
+          "resource_key": "food",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "farm_harvest",
+          "resource_key": "food",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "sort_order": 30,
       "tags": [
         "national"
@@ -48,13 +83,20 @@
     {
       "id": "reorganization",
       "name": "整饬",
-      "description": "优先整顿国家结构。",
+      "description": "每回合工业产出 +1。",
       "icon_key": "policy_reorganization",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "sort_order": 40,
       "tags": [
         "national"

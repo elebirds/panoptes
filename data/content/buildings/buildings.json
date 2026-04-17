@@ -23,7 +23,7 @@
       "required_resource_type": "food",
       "resource_costs": { "wood": 1 },
       "point_costs": { "industry_output": 1 },
-      "recipe_ids": ["farm_food"],
+      "recipe_ids": ["farm_food", "farm_harvest"],
       "default_recipe_id": "farm_food",
       "explicit_effects": [],
       "modifier_effects": [],
@@ -38,7 +38,7 @@
       "required_resource_type": "ore",
       "resource_costs": { "wood": 1 },
       "point_costs": { "industry_output": 1 },
-      "recipe_ids": ["mine_ore"],
+      "recipe_ids": ["mine_ore", "mine_deep_ore"],
       "default_recipe_id": "mine_ore",
       "explicit_effects": [],
       "modifier_effects": [],
@@ -53,13 +53,35 @@
       "required_resource_type": "wood",
       "resource_costs": { "wood": 1 },
       "point_costs": { "industry_output": 1 },
-      "recipe_ids": ["lumber_wood"],
+      "recipe_ids": ["lumber_wood", "lumber_sawmill"],
       "default_recipe_id": "lumber_wood",
       "explicit_effects": [],
       "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
       "tags": ["extraction"]
+    },
+    {
+      "id": "workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 1, "ore": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "industry"]
     },
     {
       "id": "barracks",
@@ -75,6 +97,21 @@
       "max_hp": 90,
       "takeover_mode": "city_capture",
       "tags": ["production"]
+    },
+    {
+      "id": "archery",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["archery_archer"],
+      "default_recipe_id": "archery_archer",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "military"]
     },
     {
       "id": "wall",

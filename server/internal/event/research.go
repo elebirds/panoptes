@@ -103,6 +103,7 @@ func (e TechnologyActivatedEvent) Apply(_ donburi.World, state *domain.GameState
 		}
 	}
 	playerState.Institutions.SlotCount += e.AddInstitutionSlots
+	state.RefreshBuildingMaxHPForPlayer(e.PlayerID)
 }
 
 func (e TechnologyActivatedEvent) Kind() string { return "technology_activated" }

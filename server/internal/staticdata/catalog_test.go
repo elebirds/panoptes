@@ -134,37 +134,37 @@ func TestGeneratedDefaultMapMatchesOneVsOneLayout(t *testing.T) {
 	if !ok {
 		t.Fatalf("GetMap(default) missing")
 	}
-	if m.Width != 36 || m.Height != 36 {
-		t.Fatalf("map size = %dx%d, want 36x36", m.Width, m.Height)
+	if m.Width != 24 || m.Height != 24 {
+		t.Fatalf("map size = %dx%d, want 24x24", m.Width, m.Height)
 	}
-	if len(m.Nodes) != 36*36 {
-		t.Fatalf("nodes len = %d, want %d", len(m.Nodes), 36*36)
+	if len(m.Nodes) != 24*24 {
+		t.Fatalf("nodes len = %d, want %d", len(m.Nodes), 24*24)
 	}
 	if len(m.SpawnPoints) != 2 {
 		t.Fatalf("spawn points len = %d, want 2", len(m.SpawnPoints))
 	}
 
-	assertSpawnPoint(t, m, 0, 4, 31)
-	assertSpawnPoint(t, m, 1, 31, 4)
+	assertSpawnPoint(t, m, 0, 5, 18)
+	assertSpawnPoint(t, m, 1, 18, 5)
 	assertMainDiagonalMirror(t, m)
 
 	if got := countRoadNodes(m); got != 0 {
 		t.Fatalf("road nodes = %d, want 0", got)
 	}
-	if got := countResourceNodes(m); got < 20 {
-		t.Fatalf("resource nodes = %d, want at least 20", got)
+	if got := countResourceNodes(m); got != 12 {
+		t.Fatalf("resource nodes = %d, want 12", got)
 	}
 
-	if node := runtimeNodeAt(t, m, 4, 31); node.NodeName != "西南王庭" {
-		t.Fatalf("spawn node name = %q, want 西南王庭", node.NodeName)
+	if node := runtimeNodeAt(t, m, 5, 18); node.NodeName != "西南营地" {
+		t.Fatalf("spawn node name = %q, want 西南营地", node.NodeName)
 	}
-	if node := runtimeNodeAt(t, m, 31, 4); node.NodeName != "东北王庭" {
-		t.Fatalf("spawn node name = %q, want 东北王庭", node.NodeName)
+	if node := runtimeNodeAt(t, m, 18, 5); node.NodeName != "东北营地" {
+		t.Fatalf("spawn node name = %q, want 东北营地", node.NodeName)
 	}
-	if node := runtimeNodeAt(t, m, 14, 21); node.NodeName != "南隘口" {
+	if node := runtimeNodeAt(t, m, 10, 15); node.NodeName != "南前矿道" {
 		t.Fatalf("south pass node = %#v", node)
 	}
-	if node := runtimeNodeAt(t, m, 21, 14); node.NodeName != "北隘口" {
+	if node := runtimeNodeAt(t, m, 15, 10); node.NodeName != "北前矿道" {
 		t.Fatalf("north pass node = %#v", node)
 	}
 }

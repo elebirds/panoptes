@@ -39,6 +39,7 @@ func (e CityFoundedEvent) Apply(world donburi.World, state *domain.GameState) {
 		return
 	}
 	ecs.CreateBuilding(world, "city_core", e.PlayerID, e.CityID, centerEntry)
+	state.RefreshBuildingMaxHPAtEntry(centerEntry)
 	// 新城核心不会在创建当回合立刻上线，仍然遵守 pending_activation -> next turn online 的统一生命周期规则。
 	domain.SetBuildingLifecycleState(centerEntry, domain.BuildingStatusDisabled, "pending_activation", e.OnlineOnTurn)
 	centerNode := ecs.NodeC.Get(centerEntry)
