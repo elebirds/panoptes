@@ -29,6 +29,13 @@ namespace Panoptes.Core.Application.Cache
         private string _pendingUnitId = string.Empty;
         private string _pendingAction = string.Empty;
         private string _pendingTargetNodeId = string.Empty;
+        private string _pendingBuildPreviewRequestId = string.Empty;
+        private string _pendingBuildPreviewNodeId = string.Empty;
+        private string _pendingBuildPreviewBuildingTypeId = string.Empty;
+        private string _pendingBuildPreviewCityId = string.Empty;
+        private string _pendingRecipePreviewRequestId = string.Empty;
+        private string _pendingRecipePreviewNodeId = string.Empty;
+        private string _pendingRecipePreviewRecipeId = string.Empty;
 
         public IReadOnlyDictionary<string, QueuedUnitOrderDto> OrdersByUnitId => _ordersByUnitId;
         public IReadOnlyList<QueuedBuildOrderDto> BuildOrders => _buildOrders;
@@ -36,6 +43,8 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyList<QueuedWarZoneDirectiveDto> WarZoneDirectives => _warZoneDirectives;
         public IReadOnlyList<PlanningWarZoneDto> WarZones => _warZones;
         public PathPreviewDto CurrentPreview { get; private set; }
+        public BuildPreviewDto CurrentBuildPreview { get; private set; }
+        public RecipePreviewDto CurrentRecipePreview { get; private set; }
         public int SnapshotTurn { get; private set; }
         public string SnapshotPhase { get; private set; } = string.Empty;
         public string PlannedResearchTargetTechnologyId { get; private set; } = string.Empty;
@@ -44,6 +53,8 @@ namespace Panoptes.Core.Application.Cache
         private readonly List<string> _plannedInstitutionPolicyIds = new();
 
         public event Action PreviewChanged;
+        public event Action BuildPreviewChanged;
+        public event Action RecipePreviewChanged;
         public event Action OrdersChanged;
 
         private void Awake()
@@ -118,9 +129,49 @@ namespace Panoptes.Core.Application.Cache
             _pendingTargetNodeId = targetNodeId ?? string.Empty;
         }
 
+        public void TrackBuildPreviewRequest(string requestId, string nodeId, string buildingTypeId, string cityId)
+        {
+            _pendingBuildPreviewRequestId = requestId ?? string.Empty;
+            _pendingBuildPreviewNodeId = nodeId ?? string.Empty;
+            _pendingBuildPreviewBuildingTypeId = buildingTypeId ?? string.Empty;
+            _pendingBuildPreviewCityId = cityId ?? string.Empty;
+            CurrentBuildPreview = new BuildPreviewDto
+            {
+                RequestId = _pendingBuildPreviewRequestId,
+                NodeId = _pendingBuildPreviewNodeId,
+                BuildingTypeId = _pendingBuildPreviewBuildingTypeId,
+                CityId = _pendingBuildPreviewCityId,
+                Valid = false,
+                ErrorCode = string.Empty,
+                Message = "检查中",
+                Details = new Dictionary<string, string>()
+            };
+            BuildPreviewChanged?.Invoke();
+        }
+
+        public void TrackRecipePreviewRequest(string requestId, string nodeId, string recipeId)
+        {
+            _pendingRecipePreviewRequestId = requestId ?? string.Empty;
+            _pendingRecipePreviewNodeId = nodeId ?? string.Empty;
+            _pendingRecipePreviewRecipeId = recipeId ?? string.Empty;
+            CurrentRecipePreview = new RecipePreviewDto
+            {
+                RequestId = _pendingRecipePreviewRequestId,
+                NodeId = _pendingRecipePreviewNodeId,
+                RecipeId = _pendingRecipePreviewRecipeId,
+                Valid = false,
+                ErrorCode = string.Empty,
+                Message = "检查中",
+                Details = new Dictionary<string, string>()
+            };
+            RecipePreviewChanged?.Invoke();
+        }
+
         public void ApplyPlanningSnapshot(MsgPlanningSnapshot msg)
         {
             ClearPreview();
+            ClearBuildPreview();
+            ClearRecipePreview();
             SnapshotTurn = msg != null ? msg.Turn : 0;
             SnapshotPhase = msg != null ? (msg.Phase ?? string.Empty) : string.Empty;
             PlannedResearchTargetTechnologyId = msg != null ? (msg.PlannedResearchTargetTechnologyId ?? string.Empty) : string.Empty;
@@ -270,6 +321,70 @@ namespace Panoptes.Core.Application.Cache
             PreviewChanged?.Invoke();
         }
 
+        public void ApplyBuildPreviewResponse(MsgBuildStructurePreviewResponse msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingBuildPreviewRequestId) &&
+                !string.Equals(msg.RequestId, _pendingBuildPreviewRequestId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingBuildPreviewNodeId) &&
+                !string.Equals(msg.NodeId, _pendingBuildPreviewNodeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingBuildPreviewBuildingTypeId) &&
+                !string.Equals(msg.BuildingTypeId, _pendingBuildPreviewBuildingTypeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingBuildPreviewCityId) &&
+                !string.Equals(msg.CityId, _pendingBuildPreviewCityId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            CurrentBuildPreview = MapBuildPreview(msg);
+            BuildPreviewChanged?.Invoke();
+        }
+
+        public void ApplyRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingRecipePreviewRequestId) &&
+                !string.Equals(msg.RequestId, _pendingRecipePreviewRequestId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingRecipePreviewNodeId) &&
+                !string.Equals(msg.NodeId, _pendingRecipePreviewNodeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingRecipePreviewRecipeId) &&
+                !string.Equals(msg.RecipeId, _pendingRecipePreviewRecipeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            CurrentRecipePreview = MapRecipePreview(msg);
+            RecipePreviewChanged?.Invoke();
+        }
+
         public void ClearPreview()
         {
             _pendingRequestId = string.Empty;
@@ -278,6 +393,25 @@ namespace Panoptes.Core.Application.Cache
             _pendingTargetNodeId = string.Empty;
             CurrentPreview = null;
             PreviewChanged?.Invoke();
+        }
+
+        public void ClearBuildPreview()
+        {
+            _pendingBuildPreviewRequestId = string.Empty;
+            _pendingBuildPreviewNodeId = string.Empty;
+            _pendingBuildPreviewBuildingTypeId = string.Empty;
+            _pendingBuildPreviewCityId = string.Empty;
+            CurrentBuildPreview = null;
+            BuildPreviewChanged?.Invoke();
+        }
+
+        public void ClearRecipePreview()
+        {
+            _pendingRecipePreviewRequestId = string.Empty;
+            _pendingRecipePreviewNodeId = string.Empty;
+            _pendingRecipePreviewRecipeId = string.Empty;
+            CurrentRecipePreview = null;
+            RecipePreviewChanged?.Invoke();
         }
 
         public void ClearOrders()
@@ -298,6 +432,8 @@ namespace Panoptes.Core.Application.Cache
         public void ClearAll()
         {
             ClearPreview();
+            ClearBuildPreview();
+            ClearRecipePreview();
             ClearOrders();
         }
 
@@ -333,6 +469,56 @@ namespace Panoptes.Core.Application.Cache
                 TotalTurns = msg.TotalTurns,
                 TurnStops = MapTurnStops(msg.TurnStops)
             };
+        }
+
+        private static BuildPreviewDto MapBuildPreview(MsgBuildStructurePreviewResponse msg)
+        {
+            return new BuildPreviewDto
+            {
+                RequestId = msg.RequestId,
+                NodeId = msg.NodeId,
+                BuildingTypeId = msg.BuildingTypeId,
+                CityId = msg.CityId,
+                Valid = msg.Valid,
+                ErrorCode = msg.ErrorCode,
+                Message = msg.FeedbackMessage,
+                Details = MapFeedbackDetails(msg.FeedbackDetails)
+            };
+        }
+
+        private static RecipePreviewDto MapRecipePreview(MsgSetBuildingRecipePreviewResponse msg)
+        {
+            return new RecipePreviewDto
+            {
+                RequestId = msg.RequestId,
+                NodeId = msg.NodeId,
+                RecipeId = msg.RecipeId,
+                Valid = msg.Valid,
+                ErrorCode = msg.ErrorCode,
+                Message = msg.FeedbackMessage,
+                Details = MapFeedbackDetails(msg.FeedbackDetails)
+            };
+        }
+
+        private static Dictionary<string, string> MapFeedbackDetails(IEnumerable<FeedbackDetail> details)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (details == null)
+            {
+                return result;
+            }
+
+            foreach (var detail in details)
+            {
+                if (detail == null || string.IsNullOrWhiteSpace(detail.Key))
+                {
+                    continue;
+                }
+
+                result[detail.Key] = detail.Value ?? string.Empty;
+            }
+
+            return result;
         }
 
         private static List<MarchTurnStopDto> MapTurnStops(System.Collections.Generic.IEnumerable<MarchTurnStop> turnStops)

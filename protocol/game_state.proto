@@ -82,6 +82,7 @@ message BuildingOperationView {
   int32 required_progress = 3;
   int32 base_progress = 4;
   string blocked_reason = 5;
+  string blocked_message = 6;
 }
 
 message WarZone {

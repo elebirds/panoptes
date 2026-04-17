@@ -15,6 +15,7 @@ namespace Panoptes.Core.Domain
         public int OperationRequiredProgress;
         public int OperationBaseProgress;
         public string OperationBlockedReason;
+        public string OperationBlockedMessage;
         public int TakeoverProgress;
         public int TakeoverRequired;
         public bool IsCityCore;

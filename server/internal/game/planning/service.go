@@ -53,7 +53,36 @@ func (s *Service) Enter(room Session) {
 }
 
 func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
-	playerID := inbound.PlayerID
+	if cmd == nil || cmd.GetBody() == nil {
+		return errors.New("planning command is nil")
+	}
+
+	envelope, handled, err := EnvelopeFromPlanningCommand(inbound, cmd)
+	if err != nil {
+		return err
+	}
+	if !handled {
+		eventCtx := coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(inbound))
+		switch body := cmd.GetBody().(type) {
+		case *pb.PlanningCommand_PlanningPathPreviewRequest:
+			_ = room.SendToPlayer(eventCtx, inbound.PlayerID, buildPlanningPathPreviewResponse(room.State(), inbound.PlayerID, body.PlanningPathPreviewRequest))
+		case *pb.PlanningCommand_BuildStructurePreview:
+			_ = room.SendToPlayer(eventCtx, inbound.PlayerID, buildStructurePreviewResponse(room, inbound.PlayerID, body.BuildStructurePreview))
+		case *pb.PlanningCommand_SetBuildingRecipePreview:
+			_ = room.SendToPlayer(eventCtx, inbound.PlayerID, setBuildingRecipePreviewResponse(room.State(), inbound.PlayerID, body.SetBuildingRecipePreview))
+		default:
+			return transportproblem.InvalidRequest("unsupported planning preview command")
+		}
+		return nil
+	}
+	return s.HandleIntent(room, envelope)
+}
+
+func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
+	if room == nil {
+		return errors.New("session is nil")
+	}
+	playerID := envelope.ParticipantID
 	state := room.State()
 	if state == nil {
 		return errors.New("state is nil")
@@ -62,65 +91,64 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 	if !ok || playerState == nil {
 		return errors.New("player not found")
 	}
-	if cmd == nil || cmd.Body == nil {
-		return errors.New("planning command is nil")
-	}
-	eventCtx := coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(inbound))
 
-	switch body := cmd.Body.(type) {
-	case *pb.PlanningCommand_SetPolicy:
-		msg := body.SetPolicy
-		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(msg.GetNationalPolicyId()))
-	case *pb.PlanningCommand_SetInstitutionLoadout:
-		msg := body.SetInstitutionLoadout
-		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, msg.GetPolicyIds())
-	case *pb.PlanningCommand_BuildStructure:
-		msg := body.BuildStructure
-		return s.handleBuildRequest(eventCtx, room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingTypeId(), msg.GetCityId())
-	case *pb.PlanningCommand_RevealNode:
-		msg := body.RevealNode
+	eventCtx := intentContext(envelope)
+	switch intent := envelope.Intent.(type) {
+	case SetPolicyIntent:
+		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
+	case SetInstitutionLoadoutIntent:
+		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, intent.PolicyIDs)
+	case BuildStructureIntent:
+		return s.handleBuildRequest(eventCtx, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
+	case RevealNodeIntent:
 		if playerState.TokensLeft <= 0 {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
 			return nil
 		}
-		nodeView := room.BuildNodeViewForPlayer(msg.GetNodeId(), playerID)
+		nodeView := room.BuildNodeViewForPlayer(intent.NodeID, playerID)
 		if nodeView == nil {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
 			return nil
 		}
 		playerState.TokensLeft--
-		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgRevealResult{NodeId: msg.GetNodeId(), TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
+		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgRevealResult{NodeId: intent.NodeID, TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-	case *pb.PlanningCommand_SetResearchTarget:
-		msg := body.SetResearchTarget
-		return s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
-	case *pb.PlanningCommand_SetBuildingRecipe:
-		msg := body.SetBuildingRecipe
-		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
-	case *pb.PlanningCommand_SetMinisterDirective:
-		return transportproblem.New("invalid_directive", "minister is not part of current MVP")
-	case *pb.PlanningCommand_SetWarZone:
-		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
-	case *pb.PlanningCommand_WarZoneDirective:
-		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
-	case *pb.PlanningCommand_IssueUnitOrder:
-		msg := body.IssueUnitOrder
-		return s.handleIssueUnitOrder(eventCtx, room, playerID, msg)
-	case *pb.PlanningCommand_CancelUnitOrder:
-		msg := body.CancelUnitOrder
-		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
+	case SetResearchTargetIntent:
+		return s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
+	case SetBuildingRecipeIntent:
+		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
+	case IssueUnitOrderIntent:
+		return s.handleIssueUnitOrder(eventCtx, room, playerID, &pb.MsgIssueUnitOrder{
+			UnitId:          intent.UnitID,
+			Action:          intent.Action,
+			TargetNodeId:    intent.TargetNodeID,
+			TargetUnitId:    intent.TargetUnitID,
+			SecondaryNodeId: intent.SecondaryNodeID,
+			Params:          cloneParams(intent.Params),
+		})
+	case CancelUnitOrderIntent:
+		room.CancelUnitOrder(playerID, strings.TrimSpace(intent.UnitID))
 		_ = room.SendPlanningSnapshot(eventCtx, playerID)
 		return nil
-	case *pb.PlanningCommand_PlanningPathPreviewRequest:
-		msg := body.PlanningPathPreviewRequest
-		_ = room.SendToPlayer(eventCtx, playerID, buildPlanningPathPreviewResponse(room.State(), playerID, msg))
-		return nil
-	case *pb.PlanningCommand_SubmitTurn:
+	case SubmitTurnIntent:
 		room.Submit(playerID)
 		return nil
+	case nil:
+		return transportproblem.InvalidRequest("planning intent is nil")
+	default:
+		return transportproblem.InvalidRequest("unsupported planning intent")
 	}
+}
 
-	return nil
+func intentContext(envelope IntentEnvelope) context.Context {
+	meta := &pb.EventMeta{
+		RequestId: envelope.RequestID,
+		TraceId:   envelope.TraceID,
+	}
+	if meta.RequestId == "" && meta.TraceId == "" {
+		return context.Background()
+	}
+	return coretransport.ContextWithEventMeta(context.Background(), meta)
 }
 
 func cloneParams(src map[string]string) map[string]string {
@@ -380,17 +408,29 @@ func validatePrerequisites(state *domain.GameState, playerID string, prerequisit
 }
 
 func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, playerID string, nodeID string, recipeID string) error {
-	if nodeID == "" || recipeID == "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
+	eval := evaluateRecipeCommand(room.State(), playerID, nodeID, recipeID)
+	if !eval.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{
+			Success:         false,
+			NodeId:          strings.TrimSpace(nodeID),
+			RecipeId:        strings.TrimSpace(recipeID),
+			ErrorCode:       eval.ErrorCode,
+			FeedbackMessage: eval.FeedbackMessage,
+			FeedbackDetails: eval.FeedbackDetails,
+		})
 		return nil
 	}
-	validation := economy.ValidateRecipeSelection(room.State(), playerID, nodeID, recipeID)
-	if !validation.OK {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: validation.ErrorCode})
-		return nil
-	}
-	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
-	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: true, NodeId: nodeID, RecipeId: recipeID})
+
+	room.QueueRecipeSelection(domain.RecipeSelectionOrder{
+		PlayerID: playerID,
+		NodeID:   strings.TrimSpace(nodeID),
+		RecipeID: strings.TrimSpace(recipeID),
+	})
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{
+		Success:  true,
+		NodeId:   strings.TrimSpace(nodeID),
+		RecipeId: strings.TrimSpace(recipeID),
+	})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }
@@ -399,44 +439,31 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	if playerState == nil {
 		return errors.New("player not found")
 	}
+	eval := evaluateBuildCommand(room, playerID, playerState, nodeID, buildingType, cityID)
+	if !eval.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{
+			Success:         false,
+			NodeId:          strings.TrimSpace(nodeID),
+			BuildingTypeId:  strings.TrimSpace(buildingType),
+			CityId:          strings.TrimSpace(cityID),
+			ErrorCode:       eval.ErrorCode,
+			FeedbackMessage: eval.FeedbackMessage,
+			FeedbackDetails: eval.FeedbackDetails,
+		})
+		return nil
+	}
+
 	nodeID = strings.TrimSpace(nodeID)
 	buildingType = strings.TrimSpace(buildingType)
 	cityID = strings.TrimSpace(cityID)
-	replacingExistingDraft := room.State().TurnRuntime.Planning.HasBuildOrder(playerID, nodeID)
-
-	if !replacingExistingDraft && playerState.TokensLeft <= 0 {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "no_tokens_left"})
-		return nil
-	}
-	nodeEntry, ok := room.NodeByID(nodeID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	if nodeEntry.HasComponent(ecs.BuildingC) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "building_exists"})
-		return nil
-	}
-
-	validation := economy.ValidateBuildOrder(room.State(), playerID, nodeID, buildingType, cityID)
-	if !validation.OK {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: validation.ErrorCode})
-		return nil
-	}
-
-	cost, err := domain.ResourceBagFromAmounts(validation.Building.ResourceCosts)
-	if err != nil {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	if !room.State().CanAffordResources(playerID, cost) && !room.IsDevMode() {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "insufficient_resources"})
-		return nil
-	}
-
 	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
-	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: true, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID})
-	if !replacingExistingDraft {
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{
+		Success:        true,
+		NodeId:         nodeID,
+		BuildingTypeId: buildingType,
+		CityId:         cityID,
+	})
+	if !eval.ReplacingDraft {
 		playerState.TokensLeft--
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 	}

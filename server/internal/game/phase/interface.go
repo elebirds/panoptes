@@ -9,7 +9,6 @@ import (
 
 type Room interface {
 	State() *domain.GameState
-	NotifyTurn(phase string)
 	Submit(playerID string)
 	SendToPlayer(playerID string, msg proto.Message) error
 	QueueBuildOrder(order domain.BuildOrder)

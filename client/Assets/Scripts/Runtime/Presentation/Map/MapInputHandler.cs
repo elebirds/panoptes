@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.UI.HUD;
@@ -103,8 +104,10 @@ namespace Panoptes.Presentation.Map
         [Header("Build")]
         [SerializeField] private Color buildValidColor = new Color(0.35f, 1f, 0.35f, 0.92f);
         [SerializeField] private Color buildInvalidColor = new Color(1f, 0.3f, 0.3f, 0.92f);
+        [SerializeField] private Color buildPendingColor = new Color(1f, 0.82f, 0.35f, 0.92f);
         [SerializeField] private Color buildPlacedGhostColor = new Color(0.6f, 1f, 0.6f, 0.92f);
         [SerializeField] private Color territoryHighlightColor = new Color(0.28f, 0.72f, 1f, 0.72f);
+        [SerializeField] private float buildPreviewRequestThrottleSeconds = 0.1f;
         [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
@@ -147,8 +150,11 @@ namespace Panoptes.Presentation.Map
         private bool _cacheEventsSubscribed;
         private float _ignoreInputUntilTime;
         private float _nextMovePreviewRequestAt;
+        private float _nextBuildPreviewRequestAt;
         private int _movePreviewRequestSequence;
+        private int _buildPreviewRequestSequence;
         private string _hoverPreviewNodeId = string.Empty;
+        private string _hoverBuildPreviewNodeId = string.Empty;
         private readonly List<RaycastResult> _uiRaycastResults = new();
         private UnitInfoPanelController _unitInfoPanelController;
         private UnitView _buildingInfoProxy;
@@ -528,6 +534,7 @@ namespace Panoptes.Presentation.Map
             _activeBuildCityId = string.Empty;
             _hoverNode = null;
             DestroyHoverGhost();
+            ClearBuildPreviewState();
         }
 
         private void HandleCombatSelectionClick()
@@ -1085,6 +1092,7 @@ namespace Panoptes.Presentation.Map
                 RestoreNodeHighlightAfterHover(_hoverNode);
                 _hoverNode = null;
                 DestroyHoverGhost();
+                ClearBuildPreviewState();
                 return;
             }
 
@@ -1094,6 +1102,7 @@ namespace Panoptes.Presentation.Map
                 RestoreNodeHighlightAfterHover(_hoverNode);
                 _hoverNode = null;
                 DestroyHoverGhost();
+                ClearBuildPreviewState();
 
                 if (GetLeftMouseButtonDown() && !IsPointerOverUI() && logInvalidBuildClick)
                 {
@@ -1102,15 +1111,21 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var highlightColor = ResolveBuildPreviewColor(node.NodeId);
-
             if (_hoverNode != node)
             {
                 RestoreNodeHighlightAfterHover(_hoverNode);
 
                 _hoverNode = node;
                 RecreateHoverGhost(node);
+                RequestBuildPreview(node.NodeId);
             }
+            else if (!TryGetCurrentBuildPreview(node.NodeId, out _) &&
+                     Time.unscaledTime >= _nextBuildPreviewRequestAt)
+            {
+                RequestBuildPreview(node.NodeId);
+            }
+
+            var highlightColor = ResolveBuildPreviewColor(node.NodeId);
 
             if (_hoverNode != null)
             {
@@ -1130,6 +1145,12 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var backendBuildingType = ResolveBackendBuildingType(_buildType);
+                if (TryGetCurrentBuildPreview(node.NodeId, out var preview) &&
+                    preview != null &&
+                    !preview.Valid)
+                {
+                    ShowUserError(ResolveBuildPreviewMessage(preview));
+                }
                 if (!SendBuildCommand(backendBuildingType, node.NodeId))
                 {
                     return;
@@ -1153,8 +1174,7 @@ namespace Panoptes.Presentation.Map
 
         private Color ResolveBuildPreviewColor(string nodeId)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || string.IsNullOrEmpty(nodeId))
+            if (string.IsNullOrEmpty(nodeId))
             {
                 return buildInvalidColor;
             }
@@ -1164,13 +1184,13 @@ namespace Panoptes.Presentation.Map
                 return buildPlacedGhostColor;
             }
 
-            if (!map.TryGetNodeState(nodeId, out var nodeState) || nodeState == null)
+            if (TryGetCurrentBuildPreview(nodeId, out var preview) && preview != null)
             {
-                return buildInvalidColor;
+                return preview.Valid ? buildValidColor : buildInvalidColor;
             }
 
-            return string.IsNullOrWhiteSpace(nodeState.BuildingType)
-                ? buildValidColor
+            return string.Equals(_hoverBuildPreviewNodeId, nodeId, StringComparison.Ordinal)
+                ? buildPendingColor
                 : buildInvalidColor;
         }
 
@@ -1443,6 +1463,8 @@ namespace Panoptes.Presentation.Map
 
             _draftCache.PreviewChanged -= OnPreviewChanged;
             _draftCache.PreviewChanged += OnPreviewChanged;
+            _draftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
+            _draftCache.BuildPreviewChanged += OnBuildPreviewChanged;
             _draftCache.OrdersChanged -= OnOrdersChanged;
             _draftCache.OrdersChanged += OnOrdersChanged;
             RefreshQueuedMovePathMarkers();
@@ -1476,6 +1498,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _draftCache.PreviewChanged -= OnPreviewChanged;
+            _draftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
             _draftCache.OrdersChanged -= OnOrdersChanged;
             _draftCache = null;
         }
@@ -1705,6 +1728,11 @@ namespace Panoptes.Presentation.Map
         private void OnPreviewChanged()
         {
             RefreshPreviewVisuals();
+        }
+
+        private void OnBuildPreviewChanged()
+        {
+            RefreshBuildPreviewVisuals();
         }
 
         private void OnOrdersChanged()
@@ -2885,6 +2913,74 @@ namespace Panoptes.Presentation.Map
                 draftCache.OrdersByUnitId,
                 movePathArrowColor,
                 movePathDestinationColor);
+        }
+
+        private void RefreshBuildPreviewVisuals()
+        {
+            if (_mode != Mode.Build || _hoverNode == null)
+            {
+                return;
+            }
+
+            var color = ResolveBuildPreviewColor(_hoverNode.NodeId);
+            _hoverNode.SetHighlight(true, color);
+            if (_hoverGhost != null)
+            {
+                _hoverGhost.SetPlacementGhost(true, color);
+            }
+        }
+
+        private void RequestBuildPreview(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) ||
+                string.IsNullOrWhiteSpace(_buildType) ||
+                string.IsNullOrWhiteSpace(_activeBuildCityId))
+            {
+                return;
+            }
+
+            _hoverBuildPreviewNodeId = nodeId.Trim();
+            _nextBuildPreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, buildPreviewRequestThrottleSeconds);
+            _buildPreviewRequestSequence++;
+            var requestId = $"build-preview-{_buildType}-{_buildPreviewRequestSequence}";
+            var draftCache = PlanningDraftCache.EnsureInstance();
+            draftCache?.TrackBuildPreviewRequest(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
+            GameIntents.PreviewBuild(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
+        }
+
+        private bool TryGetCurrentBuildPreview(string nodeId, out BuildPreviewDto preview)
+        {
+            preview = null;
+            if (string.IsNullOrWhiteSpace(nodeId) ||
+                string.IsNullOrWhiteSpace(_buildType) ||
+                string.IsNullOrWhiteSpace(_activeBuildCityId))
+            {
+                return false;
+            }
+
+            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
+            preview = draftCache != null ? draftCache.CurrentBuildPreview : null;
+            return preview != null &&
+                   string.Equals(preview.NodeId, nodeId.Trim(), StringComparison.Ordinal) &&
+                   string.Equals(preview.BuildingTypeId, _buildType, StringComparison.Ordinal) &&
+                   string.Equals(preview.CityId, _activeBuildCityId, StringComparison.Ordinal);
+        }
+
+        private void ClearBuildPreviewState()
+        {
+            _hoverBuildPreviewNodeId = string.Empty;
+            _nextBuildPreviewRequestAt = 0f;
+            (_draftCache ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
+        }
+
+        private static string ResolveBuildPreviewMessage(BuildPreviewDto preview)
+        {
+            if (preview == null)
+            {
+                return "检查中";
+            }
+
+            return GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);
         }
 
         private void ClearAllMovePreviews()

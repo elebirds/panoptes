@@ -42,18 +42,18 @@ func NewHarness(def *scenario.Definition) (*Harness, error) {
 	}
 
 	transport := NewCaptureTransport()
-	players := make([]game.Player, 0, len(def.PlayerIDs))
+	participants := make([]game.ParticipantSpec, 0, len(def.PlayerIDs))
 	for idx, playerID := range def.PlayerIDs {
 		username := playerID
 		if idx < len(def.Usernames) && def.Usernames[idx] != "" {
 			username = def.Usernames[idx]
 		}
-		players = append(players, game.NewHumanPlayer(playerID, username, transport))
+		participants = append(participants, game.NewHumanParticipantSpec(playerID, username))
 	}
 
 	room := game.NewPreparedRoom(
 		def.State.GameID,
-		players,
+		participants,
 		transport,
 		&config.Config{DevMode: true, MapID: def.State.Map.ID},
 		def.State,

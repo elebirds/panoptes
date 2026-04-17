@@ -96,6 +96,8 @@ namespace Panoptes.Core.Events
         public string SecondaryId;
         public string TertiaryId;
         public string ErrorCode;
+        public string Message;
+        public Dictionary<string, string> Details;
         public List<string> RelatedIds;
     }
 
@@ -112,5 +114,6 @@ namespace Panoptes.Core.Events
     {
         public string Code;
         public string Message;
+        public Dictionary<string, string> Details;
     }
 }

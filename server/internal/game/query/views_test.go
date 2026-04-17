@@ -205,6 +205,9 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	if got := farmView.GetOperation().GetBaseProgress(); got != 4 {
 		t.Fatalf("farm base_progress = %d, want 4", got)
 	}
+	if got := farmView.GetOperation().GetBlockedMessage(); got != "生产所需资源不足，本回合无法推进。" {
+		t.Fatalf("farm blocked_message = %q, want localized blocked message", got)
+	}
 
 	emptyView := BuildNodeView(state, emptyEntry, "player-1")
 	if got := emptyView.GetBuildingStatus(); got != "empty" {

@@ -20,7 +20,7 @@ func (h *RegistryCommandHandler) HandleGameCommand(ctx cmddispatch.InboundContex
 		return transportproblem.InternalError("game room registry is not configured")
 	}
 
-	room, ok := h.rooms.GetRoomByPlayerID(ctx.PlayerID)
+	room, ok := h.rooms.GetRoomByParticipantID(ctx.PlayerID)
 	if !ok {
 		return transportproblem.New("game_not_found", "game not found")
 	}
