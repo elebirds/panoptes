@@ -23,6 +23,13 @@ type MinisterOutput struct {
 	ActionID string
 }
 
+type DraftOutput struct {
+	Title     string
+	Summary   string
+	Rationale string
+	RiskNote  string
+}
+
 type MinisterActionItem struct {
 	Type   string
 	Params map[string]any
@@ -64,6 +71,24 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 		out.Actions = append(out.Actions, MinisterActionItem{Type: a.Type, Params: a.Params})
 	}
 	return out, nil
+}
+
+func ParseDraftResponse(response string) (*DraftOutput, error) {
+	var raw struct {
+		Title     string `json:"title"`
+		Summary   string `json:"summary"`
+		Rationale string `json:"rationale"`
+		RiskNote  string `json:"risk_note"`
+	}
+	if err := json.Unmarshal([]byte(response), &raw); err != nil {
+		return nil, err
+	}
+	return &DraftOutput{
+		Title:     raw.Title,
+		Summary:   raw.Summary,
+		Rationale: raw.Rationale,
+		RiskNote:  raw.RiskNote,
+	}, nil
 }
 
 type ActionRoom interface {

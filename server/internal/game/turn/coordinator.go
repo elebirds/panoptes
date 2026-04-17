@@ -104,6 +104,7 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 			}
 		}
 	}
+	c.runtime.GenerateMinisterReports(ctx)
 
 	submitter := coordinatorIntentSubmitter{coordinator: c}
 	for _, currentParticipant := range c.runtime.Participants() {

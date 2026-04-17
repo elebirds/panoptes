@@ -7,6 +7,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	"github.com/elebirds/panoptes/internal/game/scenario"
@@ -748,6 +749,86 @@ func TestStaleMinisterDraftCanBeAcceptedAgain(t *testing.T) {
 	}
 }
 
+func TestMinisterDirectiveTransitionsRecordDomesticMemory(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	if len(session.memoryEntries) == 0 {
+		t.Fatalf("memoryEntries = 0, want accepted domestic draft recorded")
+	}
+	last := session.memoryEntries[len(session.memoryEntries)-1]
+	if last.Role != "domestic" || last.Entry.Outcome != "accepted" {
+		t.Fatalf("last memory entry = %#v, want domestic accepted", last)
+	}
+}
+
+func TestManualPolicyChangeRecordsStaleMinisterMemory(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusAccepted,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("expansion"))
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "reorganization"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	if len(session.memoryEntries) == 0 {
+		t.Fatalf("memoryEntries = 0, want stale transition recorded")
+	}
+	last := session.memoryEntries[len(session.memoryEntries)-1]
+	if last.Role != "domestic" || last.Entry.Outcome != "stale" {
+		t.Fatalf("last memory entry = %#v, want domestic stale", last)
+	}
+}
+
 func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	session := newPlanningSessionStub(state)
@@ -1067,10 +1148,17 @@ func TestHandleIntentSubmitTurnCallsSessionSubmit(t *testing.T) {
 }
 
 type planningSessionStub struct {
-	state     *domain.GameState
-	sent      map[string][]proto.Message
-	devMode   bool
-	submitted []string
+	state         *domain.GameState
+	sent          map[string][]proto.Message
+	devMode       bool
+	submitted     []string
+	memoryEntries []planningSessionMemoryRecord
+}
+
+type planningSessionMemoryRecord struct {
+	PlayerID string
+	Role     string
+	Entry    ministerengine.MemoryEntry
 }
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
@@ -1212,6 +1300,14 @@ func (s *planningSessionStub) BuildNodeViewForPlayer(nodeID string, viewerID str
 
 func (s *planningSessionStub) NodeByID(nodeID string) (*donburi.Entry, bool) {
 	return s.state.GetNode(nodeID)
+}
+
+func (s *planningSessionStub) RecordMinisterMemory(playerID string, role string, entry ministerengine.MemoryEntry) {
+	s.memoryEntries = append(s.memoryEntries, planningSessionMemoryRecord{
+		PlayerID: playerID,
+		Role:     role,
+		Entry:    entry,
+	})
 }
 
 func lastMessage[T proto.Message](msgs []proto.Message) T {
