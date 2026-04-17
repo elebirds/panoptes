@@ -103,9 +103,27 @@ namespace Panoptes.Presentation.Map
                         case "unit_died":
                             yield return PlayDeath(evt);
                             break;
+                        case "city_founded":
                         case "building_built":
+                        case "building_status_changed":
+                        case "facility_takeover_progressed":
+                        case "facility_takeover_completed":
+                        case "building_ruined":
+                        case "building_damaged":
+                        case "city_core_damaged":
+                        case "city_core_destroyed":
                         case "road_built":
                             yield return PlayMapPulse(evt);
+                            break;
+                        case "recipe_progressed":
+                        case "recipe_skipped":
+                        case "recipe_completed":
+                        case "technology_completed":
+                        case "technology_activated":
+                        case "technology_grant_applied":
+                        case "national_policy_changed":
+                        case "institution_loadout_activated":
+                            yield return PlayAuthorityCue(evt);
                             break;
                         default:
                             yield return null;
@@ -173,6 +191,24 @@ namespace Panoptes.Presentation.Map
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
+        }
+
+        private IEnumerator PlayAuthorityCue(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                yield break;
+            }
+
+            if (TryResolveNodeForEvent(evt, out var node) && node != null)
+            {
+                node.SetHighlight(true, new Color(1f, 0.9f, 0.35f, 1f));
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, sectionPauseSeconds));
+                node.SetHighlightVisible(false);
+                yield break;
+            }
+
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.03f, sectionPauseSeconds * 0.5f));
         }
 
         private IEnumerator PulseUnit(Transform target, float duration, float scaleMultiplier)

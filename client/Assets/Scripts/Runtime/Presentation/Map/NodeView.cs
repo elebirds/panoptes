@@ -79,6 +79,13 @@ namespace Panoptes.Presentation.Map
         public Transform BuildingAnchor => buildingAnchor;
         public BuildingView BuildingInstance => _buildingInstance;
         public string BuildingType => _buildingType;
+        public string BuildingStatus { get; private set; } = string.Empty;
+        public string CityId { get; private set; } = string.Empty;
+        public string ServiceCityId { get; private set; } = string.Empty;
+        public int TakeoverProgress { get; private set; }
+        public int TakeoverRequired { get; private set; }
+        public bool IsCityCoreNode { get; private set; }
+        public bool IsSafeZoneNode { get; private set; }
 
         private ResourcePointView _resourceInstance;
         private string _resourceType = string.Empty;
@@ -122,11 +129,22 @@ namespace Panoptes.Presentation.Map
             NodeId = node.Id ?? string.Empty;
             GridPos = new Vector2Int(node.X, node.Y);
             name = $"Node_{NodeId}";
+            BuildingStatus = NormalizeToken(node.BuildingStatus);
+            CityId = node.CityId ?? string.Empty;
+            ServiceCityId = node.ServiceCityId ?? string.Empty;
+            TakeoverProgress = node.TakeoverProgress;
+            TakeoverRequired = node.TakeoverRequired;
+            IsCityCoreNode = node.IsCityCore;
+            IsSafeZoneNode = node.IsSafeZone;
 
             SetTerrain(string.IsNullOrWhiteSpace(node.Terrain) ? node.Type : node.Terrain);
             SetRoadVisible(node.HasRoad);
             SetResource(node.IsResourcePoint, node.ResourceType);
             SetBuilding(node.BuildingType, node.Owner, node.BuildingHp, node.BuildingMaxHp, false);
+            if (_buildingInstance != null)
+            {
+                _buildingInstance.ApplyRuntimeState(node);
+            }
             SetHighlightVisible(false);
         }
 
