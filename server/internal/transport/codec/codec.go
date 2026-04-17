@@ -89,6 +89,10 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_StaticCatalogSyncComplete{StaticCatalogSyncComplete: typed}}}
 	case *pb.MsgConfigBatchJson:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_ConfigBatchJson{ConfigBatchJson: typed}}}
+	case *pb.MsgGameChatPosted:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameChatPosted{GameChatPosted: typed}}}
+	case *pb.MsgGameChatSync:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameChatSync{GameChatSync: typed}}}
 	case *pb.MsgGameInit:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameInit{GameInit: typed}}}
 	case *pb.MsgPlanningStart:

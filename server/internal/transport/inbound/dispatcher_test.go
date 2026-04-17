@@ -78,3 +78,38 @@ func TestDispatcherRoutesGameTarget(t *testing.T) {
 		t.Fatalf("planning.submit_turn = nil")
 	}
 }
+
+func TestDispatcherRoutesGameChatTarget(t *testing.T) {
+	gameHandler := &stubGameHandler{}
+	dispatcher := Dispatcher{Game: gameHandler}
+
+	err := dispatcher.Dispatch(cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.ClientFrame{
+		Meta: &pb.CommandMeta{RequestId: "req-chat-2"},
+		Target: &pb.ClientFrame_Game{
+			Game: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_Emote{
+										Emote: pb.ChatEmote_CHAT_EMOTE_WARNING,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Dispatch() error = %v", err)
+	}
+	if gameHandler.command == nil {
+		t.Fatalf("game handler not called")
+	}
+	if gameHandler.command.GetChat().GetSendGameChat() == nil {
+		t.Fatalf("chat.send_game_chat = nil")
+	}
+}

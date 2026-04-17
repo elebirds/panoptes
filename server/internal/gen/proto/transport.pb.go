@@ -809,6 +809,7 @@ type GameCommand struct {
 	//
 	//	*GameCommand_Planning
 	//	*GameCommand_StaticCatalogSyncRequest
+	//	*GameCommand_Chat
 	Body          isGameCommand_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -869,6 +870,15 @@ func (x *GameCommand) GetStaticCatalogSyncRequest() *MsgStaticCatalogSyncRequest
 	return nil
 }
 
+func (x *GameCommand) GetChat() *ChatCommand {
+	if x != nil {
+		if x, ok := x.Body.(*GameCommand_Chat); ok {
+			return x.Chat
+		}
+	}
+	return nil
+}
+
 type isGameCommand_Body interface {
 	isGameCommand_Body()
 }
@@ -881,9 +891,15 @@ type GameCommand_StaticCatalogSyncRequest struct {
 	StaticCatalogSyncRequest *MsgStaticCatalogSyncRequest `protobuf:"bytes,2,opt,name=static_catalog_sync_request,json=staticCatalogSyncRequest,proto3,oneof"`
 }
 
+type GameCommand_Chat struct {
+	Chat *ChatCommand `protobuf:"bytes,3,opt,name=chat,proto3,oneof"`
+}
+
 func (*GameCommand_Planning) isGameCommand_Body() {}
 
 func (*GameCommand_StaticCatalogSyncRequest) isGameCommand_Body() {}
+
+func (*GameCommand_Chat) isGameCommand_Body() {}
 
 type ClientFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1247,6 +1263,8 @@ type GameEvent struct {
 	//	*GameEvent_StaticCatalogSyncComplete
 	//	*GameEvent_BuildStructurePreviewResponse
 	//	*GameEvent_SetBuildingRecipePreviewResponse
+	//	*GameEvent_GameChatPosted
+	//	*GameEvent_GameChatSync
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1505,6 +1523,24 @@ func (x *GameEvent) GetSetBuildingRecipePreviewResponse() *MsgSetBuildingRecipeP
 	return nil
 }
 
+func (x *GameEvent) GetGameChatPosted() *MsgGameChatPosted {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_GameChatPosted); ok {
+			return x.GameChatPosted
+		}
+	}
+	return nil
+}
+
+func (x *GameEvent) GetGameChatSync() *MsgGameChatSync {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_GameChatSync); ok {
+			return x.GameChatSync
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1605,6 +1641,14 @@ type GameEvent_SetBuildingRecipePreviewResponse struct {
 	SetBuildingRecipePreviewResponse *MsgSetBuildingRecipePreviewResponse `protobuf:"bytes,24,opt,name=set_building_recipe_preview_response,json=setBuildingRecipePreviewResponse,proto3,oneof"`
 }
 
+type GameEvent_GameChatPosted struct {
+	GameChatPosted *MsgGameChatPosted `protobuf:"bytes,25,opt,name=game_chat_posted,json=gameChatPosted,proto3,oneof"`
+}
+
+type GameEvent_GameChatSync struct {
+	GameChatSync *MsgGameChatSync `protobuf:"bytes,26,opt,name=game_chat_sync,json=gameChatSync,proto3,oneof"`
+}
+
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
 
 func (*GameEvent_StaticCatalogSnapshot) isGameEvent_Body() {}
@@ -1652,6 +1696,10 @@ func (*GameEvent_StaticCatalogSyncComplete) isGameEvent_Body() {}
 func (*GameEvent_BuildStructurePreviewResponse) isGameEvent_Body() {}
 
 func (*GameEvent_SetBuildingRecipePreviewResponse) isGameEvent_Body() {}
+
+func (*GameEvent_GameChatPosted) isGameEvent_Body() {}
+
+func (*GameEvent_GameChatSync) isGameEvent_Body() {}
 
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1780,7 +1828,8 @@ var File_transport_proto protoreflect.FileDescriptor
 const file_transport_proto_rawDesc = "" +
 	"\n" +
 	"\x0ftransport.proto\x12\x11panoptes.proto.v1\x1a\n" +
-	"auth.proto\x1a\fcommon.proto\x1a\fconfig.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
+	"auth.proto\x1a\n" +
+	"chat.proto\x1a\fcommon.proto\x1a\fconfig.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
 	"turn.proto\"\x92\x01\n" +
 	"\vCommandMeta\x12\x1d\n" +
 	"\n" +
@@ -1840,10 +1889,11 @@ const file_transport_proto_rawDesc = "" +
 	"\x17set_institution_loadout\x18\r \x01(\v2+.panoptes.proto.v1.MsgSetInstitutionLoadoutH\x00R\x15setInstitutionLoadout\x12l\n" +
 	"\x17build_structure_preview\x18\x0e \x01(\v22.panoptes.proto.v1.MsgBuildStructurePreviewRequestH\x00R\x15buildStructurePreview\x12v\n" +
 	"\x1bset_building_recipe_preview\x18\x0f \x01(\v25.panoptes.proto.v1.MsgSetBuildingRecipePreviewRequestH\x00R\x18setBuildingRecipePreviewB\x06\n" +
-	"\x04body\"\xc8\x01\n" +
+	"\x04body\"\xfe\x01\n" +
 	"\vGameCommand\x12@\n" +
 	"\bplanning\x18\x01 \x01(\v2\".panoptes.proto.v1.PlanningCommandH\x00R\bplanning\x12o\n" +
-	"\x1bstatic_catalog_sync_request\x18\x02 \x01(\v2..panoptes.proto.v1.MsgStaticCatalogSyncRequestH\x00R\x18staticCatalogSyncRequestB\x06\n" +
+	"\x1bstatic_catalog_sync_request\x18\x02 \x01(\v2..panoptes.proto.v1.MsgStaticCatalogSyncRequestH\x00R\x18staticCatalogSyncRequest\x124\n" +
+	"\x04chat\x18\x03 \x01(\v2\x1e.panoptes.proto.v1.ChatCommandH\x00R\x04chatB\x06\n" +
 	"\x04body\"\xf0\x01\n" +
 	"\vClientFrame\x122\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1e.panoptes.proto.v1.CommandMetaR\x04meta\x124\n" +
@@ -1867,7 +1917,7 @@ const file_transport_proto_rawDesc = "" +
 	"\rplayer_kicked\x18\x04 \x01(\v2\".panoptes.proto.v1.MsgPlayerKickedH\x00R\fplayerKicked\x12C\n" +
 	"\vlobby_error\x18\x05 \x01(\v2 .panoptes.proto.v1.MsgLobbyErrorH\x00R\n" +
 	"lobbyErrorB\x06\n" +
-	"\x04body\"\xfb\x11\n" +
+	"\x04body\"\x99\x13\n" +
 	"\tGameEvent\x12e\n" +
 	"\x17static_catalog_manifest\x18\x01 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogManifestH\x00R\x15staticCatalogManifest\x12e\n" +
 	"\x17static_catalog_snapshot\x18\x02 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogSnapshotH\x00R\x15staticCatalogSnapshot\x12=\n" +
@@ -1894,7 +1944,9 @@ const file_transport_proto_rawDesc = "" +
 	"\x1cstatic_catalog_section_chunk\x18\x15 \x01(\v2/.panoptes.proto.v1.MsgStaticCatalogSectionChunkH\x00R\x19staticCatalogSectionChunk\x12r\n" +
 	"\x1cstatic_catalog_sync_complete\x18\x16 \x01(\v2/.panoptes.proto.v1.MsgStaticCatalogSyncCompleteH\x00R\x19staticCatalogSyncComplete\x12~\n" +
 	" build_structure_preview_response\x18\x17 \x01(\v23.panoptes.proto.v1.MsgBuildStructurePreviewResponseH\x00R\x1dbuildStructurePreviewResponse\x12\x88\x01\n" +
-	"$set_building_recipe_preview_response\x18\x18 \x01(\v26.panoptes.proto.v1.MsgSetBuildingRecipePreviewResponseH\x00R setBuildingRecipePreviewResponseB\x06\n" +
+	"$set_building_recipe_preview_response\x18\x18 \x01(\v26.panoptes.proto.v1.MsgSetBuildingRecipePreviewResponseH\x00R setBuildingRecipePreviewResponse\x12P\n" +
+	"\x10game_chat_posted\x18\x19 \x01(\v2$.panoptes.proto.v1.MsgGameChatPostedH\x00R\x0egameChatPosted\x12J\n" +
+	"\x0egame_chat_sync\x18\x1a \x01(\v2\".panoptes.proto.v1.MsgGameChatSyncH\x00R\fgameChatSyncB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -1957,38 +2009,41 @@ var file_transport_proto_goTypes = []any{
 	(*MsgBuildStructurePreviewRequest)(nil),     // 35: panoptes.proto.v1.MsgBuildStructurePreviewRequest
 	(*MsgSetBuildingRecipePreviewRequest)(nil),  // 36: panoptes.proto.v1.MsgSetBuildingRecipePreviewRequest
 	(*MsgStaticCatalogSyncRequest)(nil),         // 37: panoptes.proto.v1.MsgStaticCatalogSyncRequest
-	(*MsgLoginSuccess)(nil),                     // 38: panoptes.proto.v1.MsgLoginSuccess
-	(*MsgAuthError)(nil),                        // 39: panoptes.proto.v1.MsgAuthError
-	(*MsgClientRuntimeConfig)(nil),              // 40: panoptes.proto.v1.MsgClientRuntimeConfig
-	(*MsgRoomCreated)(nil),                      // 41: panoptes.proto.v1.MsgRoomCreated
-	(*MsgRoomState)(nil),                        // 42: panoptes.proto.v1.MsgRoomState
-	(*MsgGameStarting)(nil),                     // 43: panoptes.proto.v1.MsgGameStarting
-	(*MsgPlayerKicked)(nil),                     // 44: panoptes.proto.v1.MsgPlayerKicked
-	(*MsgLobbyError)(nil),                       // 45: panoptes.proto.v1.MsgLobbyError
-	(*MsgStaticCatalogManifest)(nil),            // 46: panoptes.proto.v1.MsgStaticCatalogManifest
-	(*MsgStaticCatalogSnapshot)(nil),            // 47: panoptes.proto.v1.MsgStaticCatalogSnapshot
-	(*MsgGameInit)(nil),                         // 48: panoptes.proto.v1.MsgGameInit
-	(*MsgPlanningStart)(nil),                    // 49: panoptes.proto.v1.MsgPlanningStart
-	(*MsgPlanningSnapshot)(nil),                 // 50: panoptes.proto.v1.MsgPlanningSnapshot
-	(*MsgPlanningPathPreviewResponse)(nil),      // 51: panoptes.proto.v1.MsgPlanningPathPreviewResponse
-	(*MsgTokenResult)(nil),                      // 52: panoptes.proto.v1.MsgTokenResult
-	(*MsgRevealResult)(nil),                     // 53: panoptes.proto.v1.MsgRevealResult
-	(*MsgResearchResult)(nil),                   // 54: panoptes.proto.v1.MsgResearchResult
-	(*MsgSetPolicyResult)(nil),                  // 55: panoptes.proto.v1.MsgSetPolicyResult
-	(*MsgSetBuildingRecipeResult)(nil),          // 56: panoptes.proto.v1.MsgSetBuildingRecipeResult
-	(*MsgBuildStructureResult)(nil),             // 57: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgTurnReport)(nil),                       // 58: panoptes.proto.v1.MsgTurnReport
-	(*MsgTurnSettlement)(nil),                   // 59: panoptes.proto.v1.MsgTurnSettlement
-	(*MsgGameOver)(nil),                         // 60: panoptes.proto.v1.MsgGameOver
-	(*MsgMinisterReportChunk)(nil),              // 61: panoptes.proto.v1.MsgMinisterReportChunk
-	(*MsgMinisterMetrics)(nil),                  // 62: panoptes.proto.v1.MsgMinisterMetrics
-	(*MsgSetInstitutionLoadoutResult)(nil),      // 63: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
-	(*MsgIssueUnitOrderResult)(nil),             // 64: panoptes.proto.v1.MsgIssueUnitOrderResult
-	(*MsgConfigBatchJson)(nil),                  // 65: panoptes.proto.v1.MsgConfigBatchJson
-	(*MsgStaticCatalogSectionChunk)(nil),        // 66: panoptes.proto.v1.MsgStaticCatalogSectionChunk
-	(*MsgStaticCatalogSyncComplete)(nil),        // 67: panoptes.proto.v1.MsgStaticCatalogSyncComplete
-	(*MsgBuildStructurePreviewResponse)(nil),    // 68: panoptes.proto.v1.MsgBuildStructurePreviewResponse
-	(*MsgSetBuildingRecipePreviewResponse)(nil), // 69: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
+	(*ChatCommand)(nil),                         // 38: panoptes.proto.v1.ChatCommand
+	(*MsgLoginSuccess)(nil),                     // 39: panoptes.proto.v1.MsgLoginSuccess
+	(*MsgAuthError)(nil),                        // 40: panoptes.proto.v1.MsgAuthError
+	(*MsgClientRuntimeConfig)(nil),              // 41: panoptes.proto.v1.MsgClientRuntimeConfig
+	(*MsgRoomCreated)(nil),                      // 42: panoptes.proto.v1.MsgRoomCreated
+	(*MsgRoomState)(nil),                        // 43: panoptes.proto.v1.MsgRoomState
+	(*MsgGameStarting)(nil),                     // 44: panoptes.proto.v1.MsgGameStarting
+	(*MsgPlayerKicked)(nil),                     // 45: panoptes.proto.v1.MsgPlayerKicked
+	(*MsgLobbyError)(nil),                       // 46: panoptes.proto.v1.MsgLobbyError
+	(*MsgStaticCatalogManifest)(nil),            // 47: panoptes.proto.v1.MsgStaticCatalogManifest
+	(*MsgStaticCatalogSnapshot)(nil),            // 48: panoptes.proto.v1.MsgStaticCatalogSnapshot
+	(*MsgGameInit)(nil),                         // 49: panoptes.proto.v1.MsgGameInit
+	(*MsgPlanningStart)(nil),                    // 50: panoptes.proto.v1.MsgPlanningStart
+	(*MsgPlanningSnapshot)(nil),                 // 51: panoptes.proto.v1.MsgPlanningSnapshot
+	(*MsgPlanningPathPreviewResponse)(nil),      // 52: panoptes.proto.v1.MsgPlanningPathPreviewResponse
+	(*MsgTokenResult)(nil),                      // 53: panoptes.proto.v1.MsgTokenResult
+	(*MsgRevealResult)(nil),                     // 54: panoptes.proto.v1.MsgRevealResult
+	(*MsgResearchResult)(nil),                   // 55: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetPolicyResult)(nil),                  // 56: panoptes.proto.v1.MsgSetPolicyResult
+	(*MsgSetBuildingRecipeResult)(nil),          // 57: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MsgBuildStructureResult)(nil),             // 58: panoptes.proto.v1.MsgBuildStructureResult
+	(*MsgTurnReport)(nil),                       // 59: panoptes.proto.v1.MsgTurnReport
+	(*MsgTurnSettlement)(nil),                   // 60: panoptes.proto.v1.MsgTurnSettlement
+	(*MsgGameOver)(nil),                         // 61: panoptes.proto.v1.MsgGameOver
+	(*MsgMinisterReportChunk)(nil),              // 62: panoptes.proto.v1.MsgMinisterReportChunk
+	(*MsgMinisterMetrics)(nil),                  // 63: panoptes.proto.v1.MsgMinisterMetrics
+	(*MsgSetInstitutionLoadoutResult)(nil),      // 64: panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	(*MsgIssueUnitOrderResult)(nil),             // 65: panoptes.proto.v1.MsgIssueUnitOrderResult
+	(*MsgConfigBatchJson)(nil),                  // 66: panoptes.proto.v1.MsgConfigBatchJson
+	(*MsgStaticCatalogSectionChunk)(nil),        // 67: panoptes.proto.v1.MsgStaticCatalogSectionChunk
+	(*MsgStaticCatalogSyncComplete)(nil),        // 68: panoptes.proto.v1.MsgStaticCatalogSyncComplete
+	(*MsgBuildStructurePreviewResponse)(nil),    // 69: panoptes.proto.v1.MsgBuildStructurePreviewResponse
+	(*MsgSetBuildingRecipePreviewResponse)(nil), // 70: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
+	(*MsgGameChatPosted)(nil),                   // 71: panoptes.proto.v1.MsgGameChatPosted
+	(*MsgGameChatSync)(nil),                     // 72: panoptes.proto.v1.MsgGameChatSync
 }
 var file_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
@@ -2018,52 +2073,55 @@ var file_transport_proto_depIdxs = []int32{
 	36, // 24: panoptes.proto.v1.PlanningCommand.set_building_recipe_preview:type_name -> panoptes.proto.v1.MsgSetBuildingRecipePreviewRequest
 	6,  // 25: panoptes.proto.v1.GameCommand.planning:type_name -> panoptes.proto.v1.PlanningCommand
 	37, // 26: panoptes.proto.v1.GameCommand.static_catalog_sync_request:type_name -> panoptes.proto.v1.MsgStaticCatalogSyncRequest
-	0,  // 27: panoptes.proto.v1.ClientFrame.meta:type_name -> panoptes.proto.v1.CommandMeta
-	4,  // 28: panoptes.proto.v1.ClientFrame.auth:type_name -> panoptes.proto.v1.AuthCommand
-	5,  // 29: panoptes.proto.v1.ClientFrame.lobby:type_name -> panoptes.proto.v1.LobbyCommand
-	7,  // 30: panoptes.proto.v1.ClientFrame.game:type_name -> panoptes.proto.v1.GameCommand
-	38, // 31: panoptes.proto.v1.AuthEvent.login_success:type_name -> panoptes.proto.v1.MsgLoginSuccess
-	39, // 32: panoptes.proto.v1.AuthEvent.auth_error:type_name -> panoptes.proto.v1.MsgAuthError
-	40, // 33: panoptes.proto.v1.AuthEvent.client_runtime_config:type_name -> panoptes.proto.v1.MsgClientRuntimeConfig
-	41, // 34: panoptes.proto.v1.LobbyEvent.room_created:type_name -> panoptes.proto.v1.MsgRoomCreated
-	42, // 35: panoptes.proto.v1.LobbyEvent.room_state:type_name -> panoptes.proto.v1.MsgRoomState
-	43, // 36: panoptes.proto.v1.LobbyEvent.game_starting:type_name -> panoptes.proto.v1.MsgGameStarting
-	44, // 37: panoptes.proto.v1.LobbyEvent.player_kicked:type_name -> panoptes.proto.v1.MsgPlayerKicked
-	45, // 38: panoptes.proto.v1.LobbyEvent.lobby_error:type_name -> panoptes.proto.v1.MsgLobbyError
-	46, // 39: panoptes.proto.v1.GameEvent.static_catalog_manifest:type_name -> panoptes.proto.v1.MsgStaticCatalogManifest
-	47, // 40: panoptes.proto.v1.GameEvent.static_catalog_snapshot:type_name -> panoptes.proto.v1.MsgStaticCatalogSnapshot
-	48, // 41: panoptes.proto.v1.GameEvent.game_init:type_name -> panoptes.proto.v1.MsgGameInit
-	49, // 42: panoptes.proto.v1.GameEvent.planning_start:type_name -> panoptes.proto.v1.MsgPlanningStart
-	50, // 43: panoptes.proto.v1.GameEvent.planning_snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
-	51, // 44: panoptes.proto.v1.GameEvent.planning_path_preview_response:type_name -> panoptes.proto.v1.MsgPlanningPathPreviewResponse
-	52, // 45: panoptes.proto.v1.GameEvent.token_result:type_name -> panoptes.proto.v1.MsgTokenResult
-	53, // 46: panoptes.proto.v1.GameEvent.reveal_result:type_name -> panoptes.proto.v1.MsgRevealResult
-	54, // 47: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
-	55, // 48: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
-	56, // 49: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
-	57, // 50: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
-	58, // 51: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
-	59, // 52: panoptes.proto.v1.GameEvent.turn_settlement:type_name -> panoptes.proto.v1.MsgTurnSettlement
-	60, // 53: panoptes.proto.v1.GameEvent.game_over:type_name -> panoptes.proto.v1.MsgGameOver
-	61, // 54: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
-	62, // 55: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
-	63, // 56: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
-	64, // 57: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
-	65, // 58: panoptes.proto.v1.GameEvent.config_batch_json:type_name -> panoptes.proto.v1.MsgConfigBatchJson
-	66, // 59: panoptes.proto.v1.GameEvent.static_catalog_section_chunk:type_name -> panoptes.proto.v1.MsgStaticCatalogSectionChunk
-	67, // 60: panoptes.proto.v1.GameEvent.static_catalog_sync_complete:type_name -> panoptes.proto.v1.MsgStaticCatalogSyncComplete
-	68, // 61: panoptes.proto.v1.GameEvent.build_structure_preview_response:type_name -> panoptes.proto.v1.MsgBuildStructurePreviewResponse
-	69, // 62: panoptes.proto.v1.GameEvent.set_building_recipe_preview_response:type_name -> panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
-	1,  // 63: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
-	9,  // 64: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
-	10, // 65: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
-	11, // 66: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
-	3,  // 67: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
-	68, // [68:68] is the sub-list for method output_type
-	68, // [68:68] is the sub-list for method input_type
-	68, // [68:68] is the sub-list for extension type_name
-	68, // [68:68] is the sub-list for extension extendee
-	0,  // [0:68] is the sub-list for field type_name
+	38, // 27: panoptes.proto.v1.GameCommand.chat:type_name -> panoptes.proto.v1.ChatCommand
+	0,  // 28: panoptes.proto.v1.ClientFrame.meta:type_name -> panoptes.proto.v1.CommandMeta
+	4,  // 29: panoptes.proto.v1.ClientFrame.auth:type_name -> panoptes.proto.v1.AuthCommand
+	5,  // 30: panoptes.proto.v1.ClientFrame.lobby:type_name -> panoptes.proto.v1.LobbyCommand
+	7,  // 31: panoptes.proto.v1.ClientFrame.game:type_name -> panoptes.proto.v1.GameCommand
+	39, // 32: panoptes.proto.v1.AuthEvent.login_success:type_name -> panoptes.proto.v1.MsgLoginSuccess
+	40, // 33: panoptes.proto.v1.AuthEvent.auth_error:type_name -> panoptes.proto.v1.MsgAuthError
+	41, // 34: panoptes.proto.v1.AuthEvent.client_runtime_config:type_name -> panoptes.proto.v1.MsgClientRuntimeConfig
+	42, // 35: panoptes.proto.v1.LobbyEvent.room_created:type_name -> panoptes.proto.v1.MsgRoomCreated
+	43, // 36: panoptes.proto.v1.LobbyEvent.room_state:type_name -> panoptes.proto.v1.MsgRoomState
+	44, // 37: panoptes.proto.v1.LobbyEvent.game_starting:type_name -> panoptes.proto.v1.MsgGameStarting
+	45, // 38: panoptes.proto.v1.LobbyEvent.player_kicked:type_name -> panoptes.proto.v1.MsgPlayerKicked
+	46, // 39: panoptes.proto.v1.LobbyEvent.lobby_error:type_name -> panoptes.proto.v1.MsgLobbyError
+	47, // 40: panoptes.proto.v1.GameEvent.static_catalog_manifest:type_name -> panoptes.proto.v1.MsgStaticCatalogManifest
+	48, // 41: panoptes.proto.v1.GameEvent.static_catalog_snapshot:type_name -> panoptes.proto.v1.MsgStaticCatalogSnapshot
+	49, // 42: panoptes.proto.v1.GameEvent.game_init:type_name -> panoptes.proto.v1.MsgGameInit
+	50, // 43: panoptes.proto.v1.GameEvent.planning_start:type_name -> panoptes.proto.v1.MsgPlanningStart
+	51, // 44: panoptes.proto.v1.GameEvent.planning_snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
+	52, // 45: panoptes.proto.v1.GameEvent.planning_path_preview_response:type_name -> panoptes.proto.v1.MsgPlanningPathPreviewResponse
+	53, // 46: panoptes.proto.v1.GameEvent.token_result:type_name -> panoptes.proto.v1.MsgTokenResult
+	54, // 47: panoptes.proto.v1.GameEvent.reveal_result:type_name -> panoptes.proto.v1.MsgRevealResult
+	55, // 48: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
+	56, // 49: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
+	57, // 50: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
+	58, // 51: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
+	59, // 52: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
+	60, // 53: panoptes.proto.v1.GameEvent.turn_settlement:type_name -> panoptes.proto.v1.MsgTurnSettlement
+	61, // 54: panoptes.proto.v1.GameEvent.game_over:type_name -> panoptes.proto.v1.MsgGameOver
+	62, // 55: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
+	63, // 56: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
+	64, // 57: panoptes.proto.v1.GameEvent.set_institution_loadout_result:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadoutResult
+	65, // 58: panoptes.proto.v1.GameEvent.issue_unit_order_result:type_name -> panoptes.proto.v1.MsgIssueUnitOrderResult
+	66, // 59: panoptes.proto.v1.GameEvent.config_batch_json:type_name -> panoptes.proto.v1.MsgConfigBatchJson
+	67, // 60: panoptes.proto.v1.GameEvent.static_catalog_section_chunk:type_name -> panoptes.proto.v1.MsgStaticCatalogSectionChunk
+	68, // 61: panoptes.proto.v1.GameEvent.static_catalog_sync_complete:type_name -> panoptes.proto.v1.MsgStaticCatalogSyncComplete
+	69, // 62: panoptes.proto.v1.GameEvent.build_structure_preview_response:type_name -> panoptes.proto.v1.MsgBuildStructurePreviewResponse
+	70, // 63: panoptes.proto.v1.GameEvent.set_building_recipe_preview_response:type_name -> panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
+	71, // 64: panoptes.proto.v1.GameEvent.game_chat_posted:type_name -> panoptes.proto.v1.MsgGameChatPosted
+	72, // 65: panoptes.proto.v1.GameEvent.game_chat_sync:type_name -> panoptes.proto.v1.MsgGameChatSync
+	1,  // 66: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
+	9,  // 67: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
+	10, // 68: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
+	11, // 69: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
+	3,  // 70: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
+	71, // [71:71] is the sub-list for method output_type
+	71, // [71:71] is the sub-list for method input_type
+	71, // [71:71] is the sub-list for extension type_name
+	71, // [71:71] is the sub-list for extension extendee
+	0,  // [0:71] is the sub-list for field type_name
 }
 
 func init() { file_transport_proto_init() }
@@ -2072,6 +2130,7 @@ func file_transport_proto_init() {
 		return
 	}
 	file_auth_proto_init()
+	file_chat_proto_init()
 	file_common_proto_init()
 	file_config_proto_init()
 	file_data_catalog_proto_init()
@@ -2114,6 +2173,7 @@ func file_transport_proto_init() {
 	file_transport_proto_msgTypes[7].OneofWrappers = []any{
 		(*GameCommand_Planning)(nil),
 		(*GameCommand_StaticCatalogSyncRequest)(nil),
+		(*GameCommand_Chat)(nil),
 	}
 	file_transport_proto_msgTypes[8].OneofWrappers = []any{
 		(*ClientFrame_Auth)(nil),
@@ -2157,6 +2217,8 @@ func file_transport_proto_init() {
 		(*GameEvent_StaticCatalogSyncComplete)(nil),
 		(*GameEvent_BuildStructurePreviewResponse)(nil),
 		(*GameEvent_SetBuildingRecipePreviewResponse)(nil),
+		(*GameEvent_GameChatPosted)(nil),
+		(*GameEvent_GameChatSync)(nil),
 	}
 	file_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),

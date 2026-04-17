@@ -280,6 +280,13 @@ func (r *GameRoom) Broadcast(ctx context.Context, msg proto.Message) {
 	}
 }
 
+func (r *GameRoom) NextChatSequence() int64 {
+	if r == nil || r.runtime == nil {
+		return 0
+	}
+	return r.runtime.NextChatSequence()
+}
+
 func (r *GameRoom) RunTurnResolution() {
 	RunTurnResolution(r)
 }

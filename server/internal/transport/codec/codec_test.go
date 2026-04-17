@@ -47,6 +47,50 @@ func TestEncodeDecodeClientFrameRoundTrip(t *testing.T) {
 	}
 }
 
+func TestEncodeDecodeClientFrameRoundTripForGameChat(t *testing.T) {
+	frame := &pb.ClientFrame{
+		Meta: &pb.CommandMeta{
+			RequestId: "req-chat-1",
+			TraceId:   "trace-chat-1",
+		},
+		Target: &pb.ClientFrame_Game{
+			Game: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_Emote{
+										Emote: pb.ChatEmote_CHAT_EMOTE_THUMBS_UP,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	raw, err := EncodeClientFrame(frame)
+	if err != nil {
+		t.Fatalf("EncodeClientFrame() error = %v", err)
+	}
+
+	decoded, err := DecodeClientFrame(raw)
+	if err != nil {
+		t.Fatalf("DecodeClientFrame() error = %v", err)
+	}
+
+	send := decoded.GetGame().GetChat().GetSendGameChat()
+	if send == nil {
+		t.Fatalf("game.chat.send_game_chat = nil")
+	}
+	if send.GetPayload().GetEmote() != pb.ChatEmote_CHAT_EMOTE_THUMBS_UP {
+		t.Fatalf("payload.emote = %v, want %v", send.GetPayload().GetEmote(), pb.ChatEmote_CHAT_EMOTE_THUMBS_UP)
+	}
+}
+
 func TestDecodeClientFrameRejectsMissingRequestID(t *testing.T) {
 	raw := []byte(`{"lobby":{"createRoom":{"name":"room-a","maxPlayers":4}}}`)
 
@@ -61,6 +105,62 @@ func TestDecodeClientFrameRejectsMissingRequestID(t *testing.T) {
 	}
 	if problem.GetCode() != "invalid_request" {
 		t.Fatalf("problem.code = %q", problem.GetCode())
+	}
+}
+
+func TestWrapServerMessageForGameChatPosted(t *testing.T) {
+	frame, err := WrapServerMessage(&pb.MsgGameChatPosted{
+		Entry: &pb.ChatEntry{
+			Sequence:       7,
+			SenderPlayerId: "player-1",
+			Turn:           3,
+			Phase:          "planning",
+			Payload: &pb.ChatPayload{
+				Body: &pb.ChatPayload_Emote{
+					Emote: pb.ChatEmote_CHAT_EMOTE_LAUGH,
+				},
+			},
+		},
+	}, &pb.EventMeta{RequestId: "req-chat-posted"})
+	if err != nil {
+		t.Fatalf("WrapServerMessage() error = %v", err)
+	}
+
+	posted := frame.GetGame().GetGameChatPosted()
+	if posted == nil {
+		t.Fatalf("game.game_chat_posted = nil")
+	}
+	if posted.GetEntry().GetSequence() != 7 {
+		t.Fatalf("entry.sequence = %d, want 7", posted.GetEntry().GetSequence())
+	}
+}
+
+func TestWrapServerMessageForGameChatSync(t *testing.T) {
+	frame, err := WrapServerMessage(&pb.MsgGameChatSync{
+		Entries: []*pb.ChatEntry{
+			{
+				Sequence:       1,
+				SenderPlayerId: "player-1",
+				Turn:           1,
+				Phase:          "planning",
+				Payload: &pb.ChatPayload{
+					Body: &pb.ChatPayload_Emote{
+						Emote: pb.ChatEmote_CHAT_EMOTE_GG,
+					},
+				},
+			},
+		},
+	}, &pb.EventMeta{RequestId: "req-chat-sync"})
+	if err != nil {
+		t.Fatalf("WrapServerMessage() error = %v", err)
+	}
+
+	sync := frame.GetGame().GetGameChatSync()
+	if sync == nil {
+		t.Fatalf("game.game_chat_sync = nil")
+	}
+	if len(sync.GetEntries()) != 1 {
+		t.Fatalf("entries len = %d, want 1", len(sync.GetEntries()))
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/game/chat"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/game/session"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -23,6 +24,7 @@ import (
 var ErrPhaseMismatch = errors.New("phase_mismatch")
 
 type Host interface {
+	chat.Session
 	planning.Session
 	RunTurnResolution()
 	ShouldStopAfterResolution() bool
@@ -33,6 +35,7 @@ type Host interface {
 type Coordinator struct {
 	runtime         *session.Runtime
 	host            Host
+	chatService     *chat.Service
 	planningService *planning.Service
 }
 
@@ -40,6 +43,7 @@ func NewCoordinator(runtime *session.Runtime, host Host) *Coordinator {
 	return &Coordinator{
 		runtime:         runtime,
 		host:            host,
+		chatService:     &chat.Service{},
 		planningService: &planning.Service{},
 	}
 }
@@ -142,7 +146,8 @@ func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.
 	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
 		return ErrPhaseMismatch
 	}
-	if _, ok := cmd.Body.(*pb.GameCommand_StaticCatalogSyncRequest); ok {
+	switch cmd.Body.(type) {
+	case *pb.GameCommand_StaticCatalogSyncRequest, *pb.GameCommand_Chat:
 		return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
 	}
 	if c.runtime.State().Phase != domain.PhasePlanning.String() {
@@ -161,6 +166,13 @@ func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.Pla
 		return ErrPhaseMismatch
 	}
 	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
+}
+
+func (h gameCommandHandler) Chat(ctx cmddispatch.InboundContext, cmd *pb.ChatCommand) error {
+	if h.coordinator == nil {
+		return ErrPhaseMismatch
+	}
+	return h.coordinator.chatService.HandleCommand(h.coordinator.host, ctx, cmd)
 }
 
 func (h gameCommandHandler) StaticCatalogSyncRequest(ctx cmddispatch.InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {

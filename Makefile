@@ -7,6 +7,7 @@ PROTO_GEN_PATHS = \
 	--path data_catalog.proto \
 	--path map_catalog.proto \
 	--path auth.proto \
+	--path chat.proto \
 	--path lobby.proto \
 	--path game_state.proto \
 	--path minister.proto \

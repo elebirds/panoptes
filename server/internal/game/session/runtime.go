@@ -50,6 +50,9 @@ type Runtime struct {
 	bootstrapMu                sync.RWMutex
 	bootstrapPlanningStartSent bool
 	bootstrapReadyByPlayer     map[string]bool
+	chatMu                     sync.Mutex
+	chatHistory                []*pb.ChatEntry
+	nextChatSequence           int64
 	// 同一回合内，bootstrap 消息与正式 planning 广播都必须看到同一份 planning-start 结果，
 	// 不能因为重复 Prepare 而重复激活 technology / institution。
 	planningStartPreparedTurn int
@@ -287,6 +290,32 @@ func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
 		}
 		_ = r.transport.Send(ctx, binding.Participant.ID, msg)
 	}
+}
+
+func (r *Runtime) NextChatSequence() int64 {
+	if r == nil {
+		return 0
+	}
+	r.chatMu.Lock()
+	defer r.chatMu.Unlock()
+	r.nextChatSequence++
+	return r.nextChatSequence
+}
+
+func (r *Runtime) ChatHistorySnapshot() []*pb.ChatEntry {
+	if r == nil {
+		return nil
+	}
+	r.chatMu.Lock()
+	defer r.chatMu.Unlock()
+	out := make([]*pb.ChatEntry, 0, len(r.chatHistory))
+	for _, entry := range r.chatHistory {
+		if entry == nil {
+			continue
+		}
+		out = append(out, proto.Clone(entry).(*pb.ChatEntry))
+	}
+	return out
 }
 
 func (r *Runtime) gameSessionID() string {
