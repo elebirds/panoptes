@@ -295,25 +295,25 @@ namespace Panoptes.Core.Application.Intents
             MoveUnit(unitId, targetNodeId);
         }
 
-        public static void AttackUnit(string unitId, string targetUnitId)
+        public static void AttackUnit(string unitId, string targetUnitId, string secondaryNodeId = null)
         {
             if (ActionLock.IsLocked)
             {
                 return;
             }
 
-            IssueUnitOrder(unitId, "attack", null, targetUnitId, null);
+            IssueUnitOrder(unitId, "attack", null, targetUnitId, secondaryNodeId);
             Debug.Log("[GameIntents] AttackUnit");
         }
 
-        public static void AttackNode(string unitId, string targetNodeId)
+        public static void AttackNode(string unitId, string targetNodeId, string secondaryNodeId = null)
         {
             if (ActionLock.IsLocked)
             {
                 return;
             }
 
-            IssueUnitOrder(unitId, "attack", targetNodeId, null, null);
+            IssueUnitOrder(unitId, "attack", targetNodeId, null, secondaryNodeId);
             Debug.Log("[GameIntents] AttackNode");
         }
 

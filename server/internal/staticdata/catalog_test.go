@@ -9,6 +9,7 @@ package staticdata_test
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 
@@ -166,6 +167,31 @@ func TestGeneratedDefaultMapMatchesOneVsOneLayout(t *testing.T) {
 	}
 	if node := runtimeNodeAt(t, m, 15, 10); node.NodeName != "北前矿道" {
 		t.Fatalf("north pass node = %#v", node)
+	}
+}
+
+func TestCatalogBuildingAndRecipeIDsAreSorted(t *testing.T) {
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "watchtower"},
+			{ID: "barracks"},
+			{ID: "city_core"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "zeta_recipe"},
+			{ID: "alpha_recipe"},
+			{ID: "barracks_infantry"},
+		},
+	})
+
+	wantBuildings := []string{"barracks", "city_core", "watchtower"}
+	if got := catalog.BuildingIDs(); !reflect.DeepEqual(got, wantBuildings) {
+		t.Fatalf("BuildingIDs() = %#v, want %#v", got, wantBuildings)
+	}
+
+	wantRecipes := []string{"alpha_recipe", "barracks_infantry", "zeta_recipe"}
+	if got := catalog.RecipeIDs(); !reflect.DeepEqual(got, wantRecipes) {
+		t.Fatalf("RecipeIDs() = %#v, want %#v", got, wantRecipes)
 	}
 }
 

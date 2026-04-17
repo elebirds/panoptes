@@ -209,6 +209,24 @@ func (r *GameRoom) SetUnitOrder(order gameorders.UnitOrder) {
 	if order.PlayerID == "" {
 		order.PlayerID = r.playerIDForUnit(order.UnitID)
 	}
+
+	// Preserve the latest planned march path when replacing move->attack in the same planning window.
+	// This allows settlement to resolve "move then attack" from the moved position.
+	if order.Action == gameorders.ActionAttack && len(order.PathNodeIDs) == 0 {
+		if march, ok := state.TurnRuntime.Resolving.ActiveMarches[order.UnitID]; ok {
+			if len(march.LastPreview.PathNodeIDs) > 0 {
+				order.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
+			} else if preview, ok := r.buildRoutePreview(order.UnitID, march.DestinationNodeID); ok && len(preview.PathNodeIDs) > 0 {
+				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
+			}
+		}
+		if len(order.PathNodeIDs) == 0 && order.SecondaryNodeID != "" {
+			if preview, ok := r.buildRoutePreview(order.UnitID, order.SecondaryNodeID); ok && len(preview.PathNodeIDs) > 0 {
+				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
+			}
+		}
+	}
+
 	state.TurnRuntime.Planning.UnitOrders[order.UnitID] = order.ToDirective()
 	if resolutionOrder, ok := order.ToResolutionOrder(); ok && resolutionOrder.Action == domain.UnitResolutionActionMove {
 		r.syncActiveMarchWithOrder(resolutionOrder)

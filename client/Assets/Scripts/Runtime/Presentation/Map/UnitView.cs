@@ -60,9 +60,13 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string speedFloatParam = "moveSpeed";
         [SerializeField] private string attackTriggerParam = "attack";
         [SerializeField] private string idleStateName = "Idle";
-        [SerializeField] private bool forceIdleAnimation = true;
-        [SerializeField] private bool forceIdleAnimationOnBind = true;
+        [SerializeField] private bool forceIdleAnimation = false;
+        [SerializeField] private bool forceIdleAnimationOnBind = false;
+        [SerializeField] private bool forceUnscaledAnimatorUpdate = true;
+        [SerializeField] private bool enforceContinuousMoveIdleState = true;
         [SerializeField] private float rotateLerpSpeed = 18f;
+        [SerializeField] private bool enableAnimationDiagnostics = true;
+        [SerializeField] private bool logMoveRequestTransitions = true;
 
         [Header("Movement")]
         [SerializeField] private float moveArcHeight = 0.08f;
@@ -86,9 +90,22 @@ namespace Panoptes.Presentation.Map
         private int _speedFloatHash;
         private int _attackTriggerHash;
         private int _idleStateHash;
+        private bool _hasMovingBoolParam;
+        private bool _hasSpeedFloatParam;
+        private RuntimeAnimatorController _cachedAnimatorController;
         private Renderer _selectionBeamRenderer;
         private Material _selectionBeamMaterial;
         private MaterialPropertyBlock _selectionBeamBlock;
+        private bool _warnedForceIdleBlocksMove;
+        private bool _warnedNoAnimationDriver;
+        private bool _warnedMissingMoveBoolParam;
+        private bool _warnedMissingSpeedFloatParam;
+        private bool _warnedAnimatorSpeedReset;
+        private bool _warnedLayerWeightReset;
+        private bool _lastRequestedMovingState;
+        private bool _hasLastRequestedMovingState;
+        private bool _persistentIsMoving;
+        private float _persistentNormalizedSpeed;
 
         private void Awake()
         {
@@ -100,6 +117,11 @@ namespace Panoptes.Presentation.Map
             if (animator == null)
             {
                 animator = GetComponentInChildren<Animator>(true);
+            }
+
+            if (animator != null && forceUnscaledAnimatorUpdate)
+            {
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
             }
 
             if (visualRoot == null)
@@ -123,6 +145,7 @@ namespace Panoptes.Presentation.Map
             _speedFloatHash = string.IsNullOrWhiteSpace(speedFloatParam) ? 0 : Animator.StringToHash(speedFloatParam);
             _attackTriggerHash = string.IsNullOrWhiteSpace(attackTriggerParam) ? 0 : Animator.StringToHash(attackTriggerParam);
             _idleStateHash = string.IsNullOrWhiteSpace(idleStateName) ? 0 : Animator.StringToHash(idleStateName);
+            RefreshAnimatorParameterAvailability();
             EnsureSelectionBeam();
 
             if (GetComponent<Collider>() == null)
@@ -133,6 +156,16 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void Update()
+        {
+            if (!enforceContinuousMoveIdleState)
+            {
+                return;
+            }
+
+            EnforcePersistentLocomotionState();
+        }
+
         public void Bind(UnitDto unit, Vector3 worldPosition)
         {
             if (unit == null)
@@ -140,7 +173,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            UnitId = unit.Id ?? string.Empty;
+            var incomingUnitId = unit.Id ?? string.Empty;
+            var isNewVisualBinding = string.IsNullOrEmpty(UnitId) || !string.Equals(UnitId, incomingUnitId, StringComparison.Ordinal);
+
+            UnitId = incomingUnitId;
             Faction = unit.Owner ?? string.Empty;
             UnitType = unit.Type ?? string.Empty;
             HitPoints = unit.Hp;
@@ -155,12 +191,29 @@ namespace Panoptes.Presentation.Map
                 squadVisualController.OnUnitBound(UnitId, UnitType, Faction);
             }
 
-            if (forceIdleAnimationOnBind)
+            _warnedForceIdleBlocksMove = false;
+            _warnedNoAnimationDriver = false;
+            _warnedMissingMoveBoolParam = false;
+            _warnedMissingSpeedFloatParam = false;
+            _warnedAnimatorSpeedReset = false;
+            _warnedLayerWeightReset = false;
+            _hasLastRequestedMovingState = false;
+            if (isNewVisualBinding)
+            {
+                _persistentIsMoving = false;
+                _persistentNormalizedSpeed = 0f;
+            }
+            RefreshAnimatorParameterAvailability();
+
+            if (forceIdleAnimationOnBind && isNewVisualBinding)
             {
                 SetForceIdleAnimation(true);
             }
-            else if (forceIdleAnimation)
+            else if (isNewVisualBinding)
             {
+                // Always reset to idle once when a unit is bound so newly created units
+                // start in a stable idle pose. For repeated binds of the same unit id,
+                // keep current move/idle playback instead of resetting each update.
                 PlayIdleAnimation();
             }
 
@@ -216,28 +269,75 @@ namespace Panoptes.Presentation.Map
 
         public void SetMovingVisual(bool isMoving, float normalizedSpeed, Vector3 worldMoveDirection)
         {
+            _persistentIsMoving = isMoving;
+            _persistentNormalizedSpeed = Mathf.Max(0f, normalizedSpeed);
+
+            if (enableAnimationDiagnostics && logMoveRequestTransitions)
+            {
+                if (!_hasLastRequestedMovingState || _lastRequestedMovingState != isMoving)
+                {
+                    _hasLastRequestedMovingState = true;
+                    _lastRequestedMovingState = isMoving;
+                    Debug.Log($"[UnitView] Unit '{UnitId}' SetMovingVisual isMoving={isMoving} speed={normalizedSpeed:0.00}", this);
+                }
+            }
+
             if (forceIdleAnimation)
             {
+                if (isMoving && !_warnedForceIdleBlocksMove && enableAnimationDiagnostics)
+                {
+                    _warnedForceIdleBlocksMove = true;
+                    Debug.LogWarning($"[UnitView] Unit '{UnitId}' move visual blocked by forceIdleAnimation=true.", this);
+                }
                 PlayIdleAnimation();
             }
             else
             {
                 if (animator != null)
                 {
-                    if (_movingBoolHash != 0)
+                    EnsureAnimatorParameterCacheCurrent();
+                    EnsurePrimaryLayerWeight();
+                    if (animator.speed <= 0f)
+                    {
+                        animator.speed = 1f;
+                        if (!_warnedAnimatorSpeedReset && enableAnimationDiagnostics)
+                        {
+                            _warnedAnimatorSpeedReset = true;
+                            Debug.LogWarning($"[UnitView] Unit '{UnitId}' animator.speed<=0, force set to 1.", this);
+                        }
+                    }
+
+                    if (_movingBoolHash != 0 && _hasMovingBoolParam)
                     {
                         animator.SetBool(_movingBoolHash, isMoving);
                     }
+                    else if (_movingBoolHash != 0 && !_hasMovingBoolParam && !_warnedMissingMoveBoolParam && enableAnimationDiagnostics)
+                    {
+                        _warnedMissingMoveBoolParam = true;
+                        var controllerName = animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "<null>";
+                        Debug.LogWarning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing bool param '{movingBoolParam}' (hash={_movingBoolHash}).", this);
+                    }
 
-                    if (_speedFloatHash != 0)
+                    if (_speedFloatHash != 0 && _hasSpeedFloatParam)
                     {
                         animator.SetFloat(_speedFloatHash, Mathf.Max(0f, normalizedSpeed));
+                    }
+                    else if (_speedFloatHash != 0 && !_hasSpeedFloatParam && !_warnedMissingSpeedFloatParam && enableAnimationDiagnostics)
+                    {
+                        _warnedMissingSpeedFloatParam = true;
+                        var controllerName = animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "<null>";
+                        Debug.LogWarning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing float param '{speedFloatParam}' (hash={_speedFloatHash}).", this);
                     }
                 }
 
                 if (squadVisualController != null)
                 {
                     squadVisualController.ApplyMoveState(isMoving, normalizedSpeed);
+                }
+                else if (animator == null && isMoving && !_warnedNoAnimationDriver && enableAnimationDiagnostics)
+                {
+                    _warnedNoAnimationDriver = true;
+                    Debug.LogWarning($"[UnitView] Unit '{UnitId}' has no Animator and no SquadUnitVisualController, cannot play move animation.", this);
                 }
             }
 
@@ -284,14 +384,20 @@ namespace Panoptes.Presentation.Map
 
         public void PlayIdleAnimation()
         {
+            _persistentIsMoving = false;
+            _persistentNormalizedSpeed = 0f;
+
             if (animator != null)
             {
-                if (_movingBoolHash != 0)
+                EnsureAnimatorParameterCacheCurrent();
+                EnsurePrimaryLayerWeight();
+
+                if (_movingBoolHash != 0 && _hasMovingBoolParam)
                 {
                     animator.SetBool(_movingBoolHash, false);
                 }
 
-                if (_speedFloatHash != 0)
+                if (_speedFloatHash != 0 && _hasSpeedFloatParam)
                 {
                     animator.SetFloat(_speedFloatHash, 0f);
                 }
@@ -585,6 +691,114 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private void EnsureAnimatorParameterCacheCurrent()
+        {
+            if (animator == null)
+            {
+                return;
+            }
+
+            if (forceUnscaledAnimatorUpdate)
+            {
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
+
+            if (!ReferenceEquals(_cachedAnimatorController, animator.runtimeAnimatorController))
+            {
+                RefreshAnimatorParameterAvailability();
+            }
+        }
+
+        private void EnforcePersistentLocomotionState()
+        {
+            if (forceIdleAnimation)
+            {
+                _persistentIsMoving = false;
+                _persistentNormalizedSpeed = 0f;
+            }
+
+            if (squadVisualController != null)
+            {
+                squadVisualController.ApplyMoveState(_persistentIsMoving, _persistentNormalizedSpeed);
+                return;
+            }
+
+            if (animator == null)
+            {
+                return;
+            }
+
+            EnsureAnimatorParameterCacheCurrent();
+            EnsurePrimaryLayerWeight();
+
+            if (_movingBoolHash != 0 && _hasMovingBoolParam)
+            {
+                animator.SetBool(_movingBoolHash, _persistentIsMoving);
+            }
+
+            if (_speedFloatHash != 0 && _hasSpeedFloatParam)
+            {
+                animator.SetFloat(_speedFloatHash, _persistentIsMoving ? _persistentNormalizedSpeed : 0f);
+            }
+
+            if (_persistentIsMoving)
+            {
+                return;
+            }
+
+            if (_idleStateHash != 0 && animator.runtimeAnimatorController != null && animator.HasState(0, _idleStateHash))
+            {
+                var state = animator.GetCurrentAnimatorStateInfo(0);
+                if (state.shortNameHash != _idleStateHash && state.fullPathHash != _idleStateHash)
+                {
+                    animator.CrossFade(_idleStateHash, 0.05f, 0);
+                }
+            }
+        }
+
+        private void EnsurePrimaryLayerWeight()
+        {
+            if (animator == null || animator.runtimeAnimatorController == null || animator.layerCount <= 0)
+            {
+                return;
+            }
+
+            var layerWeight = animator.GetLayerWeight(0);
+            if (layerWeight > 0.0001f)
+            {
+                return;
+            }
+
+            animator.SetLayerWeight(0, 1f);
+            if (!_warnedLayerWeightReset && enableAnimationDiagnostics)
+            {
+                _warnedLayerWeightReset = true;
+                Debug.LogWarning($"[UnitView] Unit '{UnitId}' layer0 weight was {layerWeight:0.###}, force set to 1.", this);
+            }
+        }
+
+        private void RefreshAnimatorParameterAvailability()
+        {
+            _cachedAnimatorController = animator != null ? animator.runtimeAnimatorController : null;
+            _hasMovingBoolParam = false;
+            _hasSpeedFloatParam = false;
+
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+
+            if (_movingBoolHash != 0)
+            {
+                _hasMovingBoolParam = HasAnimatorParameter(animator, _movingBoolHash, AnimatorControllerParameterType.Bool);
+            }
+
+            if (_speedFloatHash != 0)
+            {
+                _hasSpeedFloatParam = HasAnimatorParameter(animator, _speedFloatHash, AnimatorControllerParameterType.Float);
+            }
         }
 
         private bool IsBaseVehicleUnitType(string unitType)

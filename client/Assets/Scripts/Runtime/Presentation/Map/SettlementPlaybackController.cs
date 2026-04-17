@@ -22,6 +22,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float damagePulseSeconds = 0.16f;
         [SerializeField] private float damagePulseScale = 1.14f;
         [SerializeField] private float sectionPauseSeconds = 0.14f;
+        [SerializeField] private bool enableDamagePopups = true;
+        [SerializeField] private DamageNumberPopupController damagePopupController;
 
         private GameStateCache _cache;
         private Coroutine _playbackCoroutine;
@@ -29,6 +31,7 @@ namespace Panoptes.Presentation.Map
         private void Awake()
         {
             _cache = GameStateCache.Instance;
+            EnsureDamagePopupController();
         }
 
         private void OnEnable()
@@ -109,11 +112,13 @@ namespace Panoptes.Presentation.Map
                         case "facility_takeover_progressed":
                         case "facility_takeover_completed":
                         case "building_ruined":
+                        case "road_built":
+                            yield return PlayMapPulse(evt);
+                            break;
                         case "building_damaged":
                         case "city_core_damaged":
                         case "city_core_destroyed":
-                        case "road_built":
-                            yield return PlayMapPulse(evt);
+                            yield return PlayBuildingDamage(evt);
                             break;
                         case "recipe_progressed":
                         case "recipe_skipped":
@@ -166,6 +171,7 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
+            TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
         }
 
@@ -177,8 +183,24 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
+            TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             map.RemoveRuntimeUnit(evt.UnitId, false);
+        }
+
+        private IEnumerator PlayBuildingDamage(TurnEventDto evt)
+        {
+            if (!TryResolveNodeForEvent(evt, out var node) || node == null)
+            {
+                yield break;
+            }
+
+            var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
+            TryShowDamagePopup(popupTarget, evt, isBuilding: true);
+
+            node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
+            node.SetHighlightVisible(false);
         }
 
         private IEnumerator PlayMapPulse(TurnEventDto evt)
@@ -242,6 +264,77 @@ namespace Panoptes.Presentation.Map
             target.localScale = startScale;
         }
 
+        private void TryShowDamagePopup(Transform target, TurnEventDto evt, bool isBuilding)
+        {
+            if (!enableDamagePopups || target == null)
+            {
+                return;
+            }
+
+            EnsureDamagePopupController();
+            if (damagePopupController == null)
+            {
+                return;
+            }
+
+            var damage = ResolveDamageValue(evt);
+            if (damage <= 0)
+            {
+                return;
+            }
+
+            damagePopupController.ShowDamage(target, damage, isBuilding);
+        }
+
+        private static int ResolveDamageValue(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return 0;
+            }
+
+            if (evt.Damage > 0)
+            {
+                return evt.Damage;
+            }
+
+            var hpBefore = ReadEventInt(evt, "hp_before", "unit_hp_before", "building_hp_before");
+            var hpAfter = evt.HpAfter > 0
+                ? evt.HpAfter
+                : ReadEventInt(evt, "hp_after", "unit_hp_after", "building_hp_after", "building_hp");
+
+            if (hpBefore > 0 && hpAfter >= 0 && hpBefore > hpAfter)
+            {
+                return hpBefore - hpAfter;
+            }
+
+            return 0;
+        }
+
+        private static int ReadEventInt(TurnEventDto evt, params string[] keys)
+        {
+            if (evt?.Data == null || keys == null)
+            {
+                return 0;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (evt.Data.TryGetValue(key, out var raw) && int.TryParse(raw, out var parsed))
+                {
+                    return parsed;
+                }
+            }
+
+            return 0;
+        }
+
         private static bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
         {
             node = null;
@@ -273,6 +366,23 @@ namespace Panoptes.Presentation.Map
 
             var go = new GameObject("AnimationQueue");
             go.AddComponent<AnimationQueue>();
+        }
+
+        private void EnsureDamagePopupController()
+        {
+            if (!enableDamagePopups || damagePopupController != null)
+            {
+                return;
+            }
+
+            damagePopupController = FindAnyObjectByType<DamageNumberPopupController>();
+            if (damagePopupController != null)
+            {
+                return;
+            }
+
+            var popupRoot = new GameObject("DamageNumberPopupController");
+            damagePopupController = popupRoot.AddComponent<DamageNumberPopupController>();
         }
     }
 }

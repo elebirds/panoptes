@@ -86,6 +86,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool onlyControlOwnUnits = true;
         [SerializeField] private Color movePathArrowColor = new Color(0.35f, 1f, 0.45f, 0.92f);
         [SerializeField] private Color movePathDestinationColor = new Color(0.25f, 0.95f, 0.55f, 0.95f);
+        [SerializeField] private Color attackRangeHighlightColor = new Color(1f, 0.45f, 0.25f, 0.9f);
 
         [Header("Move Preview Ghost")]
         [SerializeField] private bool enableMovePreviewGhost = true;
@@ -116,6 +117,11 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private int cornerInset = 2;
         [SerializeField] private CityZone[] cityZones;
 
+        [Header("Damage Popup")]
+        [SerializeField] private bool enableUnitDamagePopupFallback = true;
+        [SerializeField] private float damagePopupRepeatCooldownSeconds = 0.12f;
+        [SerializeField] private DamageNumberPopupController damagePopupController;
+
         [Header("Deploy")]
         [SerializeField] private string[] territoryExpansionUnitTypes =
         {
@@ -133,6 +139,8 @@ namespace Panoptes.Presentation.Map
         private readonly HashSet<string> _pendingMoveUnitIds = new();
         private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
         private readonly List<UnitView> _nodeClickUnits = new();
+        private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
+        private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
         private Material _movePreviewProxyMaterial;
 
         private Mode _mode = Mode.None;
@@ -210,6 +218,8 @@ namespace Panoptes.Presentation.Map
             DisposeMovePreviewProxyMaterial();
             ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
+            _knownUnitHpByUnitId.Clear();
+            _lastDamagePopupTimeByUnitId.Clear();
             if (_buildingInfoProxy != null)
             {
                 Destroy(_buildingInfoProxy.gameObject);
@@ -251,6 +261,30 @@ namespace Panoptes.Presentation.Map
             {
                 if (IsPointerOverUI())
                 {
+                    return;
+                }
+
+                // In attack targeting mode, consume click as combat command first.
+                // This prevents building/resource info panels from hijacking the click.
+                if (_combatActionMode == CombatActionMode.Attack)
+                {
+                    ClearTerritoryHighlights();
+                    NonBuildingMapClicked?.Invoke();
+
+                    if (TryGetClickedNodeContext(out var attackNode, out _) &&
+                        attackNode != null &&
+                        !string.IsNullOrWhiteSpace(attackNode.NodeId) &&
+                        IsEnemyStructureNode(attackNode.NodeId))
+                    {
+                        if (TryIssueStructureTargetOrder(attackNode.NodeId))
+                        {
+                            _combatActionMode = CombatActionMode.None;
+                            NotifyCombatSelectionChanged();
+                        }
+                        return;
+                    }
+
+                    HandleCombatSelectionClick();
                     return;
                 }
 
@@ -344,6 +378,7 @@ namespace Panoptes.Presentation.Map
             ExitBuildMode();
             ClearMovePreviewState();
             _combatActionMode = CombatActionMode.Attack;
+            RefreshAttackRangeHighlights();
             NotifyCombatSelectionChanged();
             BlockInputAfterModeSwitch();
         }
@@ -395,7 +430,7 @@ namespace Panoptes.Presentation.Map
             if (string.IsNullOrWhiteSpace(centerNodeId))
             {
                 ClearPendingDeployCityCoreGhostForUnit(_selectedUnit.UnitId);
-                ShowUserError("缺少建城目标节点，无法发送指令");
+                ShowUserError("Missing deploy target node.");
                 return false;
             }
 
@@ -422,7 +457,7 @@ namespace Panoptes.Presentation.Map
             if (string.IsNullOrWhiteSpace(resolvedCenterNodeId))
             {
                 ClearPendingDeployCityCoreGhostForUnit(unitId);
-                ShowUserError("缺少建城目标节点，无法发送指令");
+                ShowUserError("Missing deploy target node.");
                 return false;
             }
 
@@ -512,7 +547,7 @@ namespace Panoptes.Presentation.Map
             if (string.IsNullOrEmpty(_activeBuildCityId))
             {
                 Debug.LogWarning($"[MapInputHandler] Missing build city context before entering build mode. building={_buildType}");
-                ShowUserError("缺少建造城市上下文，无法进入建造模式");
+                ShowUserError("Missing build city context.");
                 ExitBuildMode();
                 return;
             }
@@ -539,6 +574,20 @@ namespace Panoptes.Presentation.Map
 
         private void HandleCombatSelectionClick()
         {
+            if (_combatActionMode == CombatActionMode.Attack &&
+                TryGetClickedNodeContext(out var attackNodeView, out _) &&
+                attackNodeView != null &&
+                !string.IsNullOrWhiteSpace(attackNodeView.NodeId) &&
+                IsEnemyStructureNode(attackNodeView.NodeId))
+            {
+                if (TryIssueStructureTargetOrder(attackNodeView.NodeId))
+                {
+                    _combatActionMode = CombatActionMode.None;
+                    NotifyCombatSelectionChanged();
+                }
+                return;
+            }
+
             if (TryRaycastUnit(out var unit) && unit != null)
             {
                 if (IsHostileTarget(unit))
@@ -601,8 +650,35 @@ namespace Panoptes.Presentation.Map
 
         private void UpdateCombatMode()
         {
-            if (_selectedUnit == null || _combatActionMode != CombatActionMode.Move)
+            if (_selectedUnit == null)
             {
+                if (!string.IsNullOrEmpty(_hoverPreviewNodeId))
+                {
+                    ClearMovePreviewState();
+                }
+
+                if (_highlightNodeIds.Count > 0)
+                {
+                    ClearNodeHighlights();
+                }
+                return;
+            }
+
+            if (_combatActionMode == CombatActionMode.Attack)
+            {
+                if (_highlightNodeIds.Count == 0)
+                {
+                    RefreshAttackRangeHighlights();
+                }
+                return;
+            }
+
+            if (_combatActionMode != CombatActionMode.Move)
+            {
+                if (_highlightNodeIds.Count > 0)
+                {
+                    ClearNodeHighlights();
+                }
                 if (!string.IsNullOrEmpty(_hoverPreviewNodeId))
                 {
                     ClearMovePreviewState();
@@ -673,7 +749,7 @@ namespace Panoptes.Presentation.Map
             _movePreviewRequestSequence++;
             var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
             PlanningDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, _selectedUnit.UnitId, "move", targetNodeId);
-            Debug.Log($"[MapInputHandler] 请求路径预览 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
+            Debug.Log($"[MapInputHandler] 璇锋眰璺緞棰勮 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
             GameIntents.PreviewMove(requestId, _selectedUnit.UnitId, targetNodeId);
         }
 
@@ -696,7 +772,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            Debug.Log($"[MapInputHandler] 下达移动命令 unit={_selectedUnit.UnitId} target={targetNodeId} preview_valid={preview.Valid} preview_nodes={preview.PathNodeIds.Count}");
+            Debug.Log($"[MapInputHandler] 涓嬭揪绉诲姩鍛戒护 unit={_selectedUnit.UnitId} target={targetNodeId} preview_valid={preview.Valid} preview_nodes={preview.PathNodeIds.Count}");
             SendMoveCommand(_selectedUnit.UnitId, targetNodeId);
             return true;
         }
@@ -711,7 +787,15 @@ namespace Panoptes.Presentation.Map
             switch (_combatActionMode)
             {
                 case CombatActionMode.Attack:
-                    GameIntents.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId);
+                    if (!IsGridWithinSelectedAttackRange(targetUnit.GridPos))
+                    {
+                        ShowUserError("Target is out of attack range.");
+                        return false;
+                    }
+
+                    TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
+                    ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
+                    GameIntents.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
                     _combatActionMode = CombatActionMode.None;
                     NotifyCombatSelectionChanged();
                     return true;
@@ -775,16 +859,51 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null ||
                 _combatActionMode != CombatActionMode.Attack ||
-                string.IsNullOrWhiteSpace(nodeId) ||
-                !CanSelectedUnitAttackStructures())
+                string.IsNullOrWhiteSpace(nodeId))
             {
                 return false;
             }
 
-            GameIntents.AttackNode(_selectedUnit.UnitId, nodeId);
+            if (!IsNodeWithinSelectedAttackRange(nodeId))
+            {
+                ShowUserError("Target is out of attack range.");
+                return false;
+            }
+
+            TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
+            ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
+            GameIntents.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
             _combatActionMode = CombatActionMode.None;
             NotifyCombatSelectionChanged();
             return true;
+        }
+
+        private bool IsEnemyStructureNode(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetNodeState(nodeId.Trim(), out var nodeState) || nodeState == null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(nodeState.BuildingType))
+            {
+                return false;
+            }
+
+            var localOwner = NormalizeToken(GetLocalOwnerId());
+            var owner = NormalizeToken(nodeState.Owner);
+            if (string.IsNullOrWhiteSpace(owner))
+            {
+                return false;
+            }
+
+            return !string.Equals(owner, localOwner, StringComparison.Ordinal);
         }
 
         private bool TryOpenBuildingInfoFromClick()
@@ -1297,7 +1416,7 @@ namespace Panoptes.Presentation.Map
 
             if (!string.IsNullOrWhiteSpace(nodeId) && _highlightNodeIds.Contains(nodeId))
             {
-                node.SetHighlight(true, moveHighlightColor);
+                node.SetHighlight(true, attackRangeHighlightColor);
                 return;
             }
 
@@ -1376,7 +1495,7 @@ namespace Panoptes.Presentation.Map
                 {
                     if (_highlightNodeIds.Contains(nodeId))
                     {
-                        nodeView.SetHighlight(true, moveHighlightColor);
+                        nodeView.SetHighlight(true, attackRangeHighlightColor);
                     }
                     else if (_movePreviewOverlay != null && _movePreviewOverlay.TryRestorePreviewHighlight(nodeId, nodeView))
                     {
@@ -1407,7 +1526,7 @@ namespace Panoptes.Presentation.Map
             {
                 _movePathOverlay?.ClearMovePathMarkersForUnit(unitId);
             }
-            Debug.Log($"[MapInputHandler] 发送移动消息 unit={unitId} target={targetNodeId}");
+            Debug.Log($"[MapInputHandler] 鍙戦€佺Щ鍔ㄦ秷鎭?unit={unitId} target={targetNodeId}");
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
             ClearNodeHighlights();
@@ -1419,7 +1538,7 @@ namespace Panoptes.Presentation.Map
             if (string.IsNullOrWhiteSpace(_activeBuildCityId))
             {
                 Debug.LogWarning($"[MapInputHandler] Missing build city context. node={nodeId} building={buildingType}");
-                ShowUserError("当前节点缺少城市上下文，无法发送建造指令");
+                ShowUserError("Current node is missing city context.");
                 return false;
             }
 
@@ -1665,7 +1784,7 @@ namespace Panoptes.Presentation.Map
                 }
                 else if (_highlightNodeIds.Contains(evt.NodeID))
                 {
-                    nodeView.SetHighlight(true, moveHighlightColor);
+                    nodeView.SetHighlight(true, attackRangeHighlightColor);
                 }
                 else if (_movePreviewOverlay != null && _movePreviewOverlay.TryRestorePreviewHighlight(evt.NodeID, nodeView))
                 {
@@ -1703,6 +1822,8 @@ namespace Panoptes.Presentation.Map
                     _pendingMoveTargetNodeByUnitId.Remove(normalizedRemovedId);
                     _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedRemovedId);
                     ClearPendingDeployCityCoreGhostForUnit(normalizedRemovedId);
+                    _knownUnitHpByUnitId.Remove(normalizedRemovedId);
+                    _lastDamagePopupTimeByUnitId.Remove(normalizedRemovedId);
                     if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
                     {
                         ClearMoveSelection();
@@ -1721,8 +1842,93 @@ namespace Panoptes.Presentation.Map
                     }
 
                     map.TrySpawnRuntimeUnit(added, true, false);
+                    var addedId = string.IsNullOrWhiteSpace(added.Id) ? string.Empty : added.Id.Trim();
+                    if (!string.IsNullOrEmpty(addedId))
+                    {
+                        _knownUnitHpByUnitId[addedId] = Mathf.Max(0, added.Hp);
+                    }
                 }
             }
+
+            if (evt.Moved != null)
+            {
+                var allowFallbackPopup = enableUnitDamagePopupFallback &&
+                                         !string.Equals(evt.ChangeType, "settlement", StringComparison.OrdinalIgnoreCase);
+                for (var i = 0; i < evt.Moved.Count; i++)
+                {
+                    var moved = evt.Moved[i];
+                    if (moved == null || string.IsNullOrWhiteSpace(moved.Id))
+                    {
+                        continue;
+                    }
+
+                    var unitId = moved.Id.Trim();
+                    var hpAfter = Mathf.Max(0, moved.Hp);
+
+                    if (!_knownUnitHpByUnitId.TryGetValue(unitId, out var hpBefore))
+                    {
+                        if (map.TryGetUnitView(unitId, out var unitView) && unitView != null)
+                        {
+                            hpBefore = Mathf.Max(0, unitView.HitPoints);
+                        }
+                        else
+                        {
+                            hpBefore = hpAfter;
+                        }
+                    }
+
+                    _knownUnitHpByUnitId[unitId] = hpAfter;
+
+                    var damage = hpBefore - hpAfter;
+                    if (allowFallbackPopup && damage > 0)
+                    {
+                        TryShowUnitDamagePopup(unitId, damage);
+                    }
+                }
+            }
+
+            if (_selectedUnit != null && _combatActionMode == CombatActionMode.Attack)
+            {
+                RefreshAttackRangeHighlights();
+            }
+        }
+
+        private void TryShowUnitDamagePopup(string unitId, int damage)
+        {
+            if (string.IsNullOrWhiteSpace(unitId) || damage <= 0)
+            {
+                return;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            if (_lastDamagePopupTimeByUnitId.TryGetValue(normalizedUnitId, out var lastPopupAt))
+            {
+                var cooldown = Mathf.Max(0f, damagePopupRepeatCooldownSeconds);
+                if (Time.unscaledTime - lastPopupAt < cooldown)
+                {
+                    return;
+                }
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetUnitView(normalizedUnitId, out var unitView) || unitView == null)
+            {
+                return;
+            }
+
+            if (damagePopupController == null)
+            {
+                damagePopupController = FindAnyObjectByType<DamageNumberPopupController>();
+            }
+
+            if (damagePopupController == null)
+            {
+                var popupRoot = new GameObject("DamageNumberPopupController_Fallback");
+                damagePopupController = popupRoot.AddComponent<DamageNumberPopupController>();
+            }
+
+            damagePopupController.ShowDamage(unitView.transform, damage, isBuilding: false);
+            _lastDamagePopupTimeByUnitId[normalizedUnitId] = Time.unscaledTime;
         }
 
         private void OnPreviewChanged()
@@ -1738,6 +1944,192 @@ namespace Panoptes.Presentation.Map
         private void OnOrdersChanged()
         {
             RefreshQueuedMovePathMarkers();
+            if (_selectedUnit != null && _combatActionMode == CombatActionMode.Attack)
+            {
+                RefreshAttackRangeHighlights();
+            }
+        }
+
+        private void RefreshAttackRangeHighlights()
+        {
+            ClearNodeHighlights();
+
+            if (_selectedUnit == null || _combatActionMode != CombatActionMode.Attack)
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || map.TileViews == null || map.TileViews.Count == 0)
+            {
+                return;
+            }
+
+            if (!TryResolveSelectedAttackOrigin(out var originGrid, out _))
+            {
+                return;
+            }
+
+            var attackRange = ResolveSelectedUnitAttackRange();
+            if (attackRange <= 0)
+            {
+                return;
+            }
+
+            foreach (var pair in map.TileViews)
+            {
+                var nodeId = pair.Key;
+                var nodeView = pair.Value;
+                if (nodeView == null || string.IsNullOrWhiteSpace(nodeId))
+                {
+                    continue;
+                }
+
+                if (ManhattanDistance(originGrid, nodeView.GridPos) > attackRange)
+                {
+                    continue;
+                }
+
+                nodeView.SetHighlight(true, attackRangeHighlightColor);
+                _highlightNodeIds.Add(nodeId);
+            }
+        }
+
+        private bool IsNodeWithinSelectedAttackRange(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetNodeView(nodeId.Trim(), out var nodeView) || nodeView == null)
+            {
+                return false;
+            }
+
+            return IsGridWithinSelectedAttackRange(nodeView.GridPos);
+        }
+
+        private bool IsGridWithinSelectedAttackRange(Vector2Int targetGrid)
+        {
+            if (!TryResolveSelectedAttackOrigin(out var originGrid, out _))
+            {
+                return false;
+            }
+
+            return ManhattanDistance(originGrid, targetGrid) <= ResolveSelectedUnitAttackRange();
+        }
+
+        private bool TryResolveSelectedAttackOrigin(out Vector2Int originGrid, out string originNodeId)
+        {
+            originGrid = _selectedUnit != null ? _selectedUnit.GridPos : default;
+            originNodeId = string.Empty;
+
+            if (_selectedUnit == null)
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return true;
+            }
+
+            if (TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedTargetNodeId) &&
+                map.TryGetNodeView(plannedTargetNodeId, out var plannedNode) &&
+                plannedNode != null)
+            {
+                originGrid = plannedNode.GridPos;
+                originNodeId = plannedNode.NodeId;
+                return true;
+            }
+
+            if (map.TryGetNodeIdByGrid(_selectedUnit.GridPos, out var currentNodeId))
+            {
+                originNodeId = currentNodeId;
+            }
+
+            return true;
+        }
+
+        private bool TryResolvePlannedMoveTargetNodeId(string unitId, out string targetNodeId)
+        {
+            targetNodeId = string.Empty;
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            if (_pendingMoveTargetNodeByUnitId.TryGetValue(normalizedUnitId, out var pendingTargetNodeId) &&
+                !string.IsNullOrWhiteSpace(pendingTargetNodeId))
+            {
+                targetNodeId = pendingTargetNodeId.Trim();
+                return true;
+            }
+
+            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
+            if (draftCache == null ||
+                !draftCache.OrdersByUnitId.TryGetValue(normalizedUnitId, out var order) ||
+                order == null ||
+                !string.Equals(order.Action, "move", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (order.PathNodeIds != null)
+            {
+                for (var i = order.PathNodeIds.Count - 1; i >= 0; i--)
+                {
+                    var pathNodeId = order.PathNodeIds[i];
+                    if (string.IsNullOrWhiteSpace(pathNodeId))
+                    {
+                        continue;
+                    }
+
+                    targetNodeId = pathNodeId.Trim();
+                    return true;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(order.TargetNodeId))
+            {
+                targetNodeId = order.TargetNodeId.Trim();
+                return true;
+            }
+
+            return false;
+        }
+
+        private int ResolveSelectedUnitAttackRange()
+        {
+            if (TryGetSelectedUnitCatalog(out var entry) && entry != null)
+            {
+                return Mathf.Max(1, entry.attack_range);
+            }
+
+            return 1;
+        }
+
+        private void ClearPendingMoveStateForUnit(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            _pendingMoveUnitIds.Remove(normalizedUnitId);
+            _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
+            _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedUnitId);
+            RemoveMovePreview(normalizedUnitId);
+        }
+
+        private static int ManhattanDistance(Vector2Int a, Vector2Int b)
+        {
+            return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
         }
 
         private bool TryGetCurrentMovePreview(string unitId, string targetNodeId, out PathPreviewDto preview)
@@ -1917,15 +2309,15 @@ namespace Panoptes.Presentation.Map
         {
             if (preview == null)
             {
-                return "等待服务端确认可行路径";
+                return "Waiting for server path preview confirmation.";
             }
 
             return preview.ErrorCode switch
             {
-                "invalid_target" => $"目标节点 {targetNodeId} 当前无法抵达",
-                "unit_not_found" => "该单位当前不可用",
-                "invalid_directive" => "当前动作不支持该目标",
-                _ => "等待服务端确认可行路径"
+                "invalid_target" => $"鐩爣鑺傜偣 {targetNodeId} 褰撳墠鏃犳硶鎶佃揪",
+                "unit_not_found" => "璇ュ崟浣嶅綋鍓嶄笉鍙敤",
+                "invalid_directive" => "褰撳墠鍔ㄤ綔涓嶆敮鎸佽鐩爣",
+                _ => "Waiting for server path preview confirmation."
             };
         }
 
@@ -2387,15 +2779,15 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null)
             {
-                return "点击己方单位开始下达命令";
+                return "Select your unit to start issuing commands.";
             }
 
             return _combatActionMode switch
             {
-                CombatActionMode.Move => "悬停节点等待服务端路径预览，确认后点击下达持久行军目标",
-                CombatActionMode.Attack => "点击敌方单位或敌方建筑，发送攻击命令",
-                CombatActionMode.Charge => "点击敌方单位，发送冲锋命令",
-                _ => "选择动作后再指定目标"
+                CombatActionMode.Move => "Hover a node to request path preview, then click to issue move.",
+                CombatActionMode.Attack => "Click an enemy unit or enemy structure to issue attack.",
+                CombatActionMode.Charge => "Click an enemy unit to issue charge.",
+                _ => "閫夋嫨鍔ㄤ綔鍚庡啀鎸囧畾鐩爣"
             };
         }
 
@@ -2977,7 +3369,7 @@ namespace Panoptes.Presentation.Map
         {
             if (preview == null)
             {
-                return "检查中";
+                return "妫€鏌ヤ腑";
             }
 
             return GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);

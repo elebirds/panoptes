@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
@@ -651,6 +652,65 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 	}
 	if got := start.GetPlanningStartEvents()[0].GetType(); got != "technology_activated" {
 		t.Fatalf("planning_start_events[0].type = %q, want technology_activated", got)
+	}
+}
+
+func TestRuntimeInitializePreparedDevModeUnlocksAllBuildingsOnly(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks"},
+			{ID: "farm"},
+			{ID: "watchtower"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "barracks_infantry"},
+			{ID: "farm_food"},
+		},
+	}))
+
+	runtime := NewRuntime("game-dev", nil, nil, &config.Config{DevMode: true})
+	state := domain.NewGameState("game-dev", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.World = donburi.NewWorld()
+
+	if err := runtime.InitializePrepared(state); err != nil {
+		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+
+	for _, buildingID := range []string{"barracks", "farm", "watchtower"} {
+		if !runtime.state.IsBuildingUnlocked("player-1", buildingID) {
+			t.Fatalf("building %q should be unlocked in dev mode", buildingID)
+		}
+	}
+	for _, recipeID := range []string{"barracks_infantry", "farm_food"} {
+		if runtime.state.Players["player-1"].Research.HasRecipe(recipeID) {
+			t.Fatalf("recipe %q should not be force-unlocked in dev mode", recipeID)
+		}
+	}
+}
+
+func TestRuntimeInitializePreparedNonDevModeKeepsBuildingAndRecipeLocked(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "barracks_infantry"},
+		},
+	}))
+
+	runtime := NewRuntime("game-prod", nil, nil, &config.Config{DevMode: false})
+	state := domain.NewGameState("game-prod", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.World = donburi.NewWorld()
+
+	if err := runtime.InitializePrepared(state); err != nil {
+		t.Fatalf("InitializePrepared() error = %v", err)
+	}
+
+	if runtime.state.IsBuildingUnlocked("player-1", "barracks") {
+		t.Fatalf("building barracks should remain locked when dev mode is disabled")
+	}
+	if runtime.state.IsRecipeUnlocked("player-1", "barracks_infantry") {
+		t.Fatalf("recipe barracks_infantry should remain locked when dev mode is disabled")
 	}
 }
 
