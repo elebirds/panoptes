@@ -131,6 +131,11 @@ namespace Panoptes.Presentation.Map
         [Header("Map Backdrop")]
         [SerializeField] private bool autoSpawnMapBackdrop = true;
 
+        [Header("Observation Fog")]
+        [SerializeField] private bool useGlobalObservationFog = true;
+        [SerializeField] private bool hideUnknownNodeDetails = true;
+        [SerializeField] private bool hideUnknownGround = true;
+
         private const int DebugMapSize = 30;
         private const int DebugTerritorySize = 3;
 
@@ -144,6 +149,7 @@ namespace Panoptes.Presentation.Map
         private UnitView _baseVehiclePrefabCache;
         private TerrainDecorationSpawner _terrainDecorationSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
+        private MapFogOverlayController _mapFogOverlayController;
         private MapCameraContext _currentCameraContext;
         private bool _hasCameraContext;
 
@@ -659,6 +665,8 @@ namespace Panoptes.Presentation.Map
             {
                 view.Bind(node);
             }
+
+            RefreshObservationPresentation(fullRebuildFog: false, snapshotNode: node);
 
             return true;
         }
@@ -1333,6 +1341,7 @@ namespace Panoptes.Presentation.Map
 
             RebuildTerrainDecorations(nodeList);
             RebuildMapBackdrop();
+            RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
             RebuildUnitsForCurrentSource();
             PublishCameraContext();
@@ -1383,6 +1392,62 @@ namespace Panoptes.Presentation.Map
             }
 
             _terrainDecorationSpawner.RebuildDecorations(nodeList, _tileViews);
+        }
+
+        private void RefreshObservationPresentation(bool fullRebuildFog, NodeDto snapshotNode)
+        {
+            if (useGlobalObservationFog)
+            {
+                if (_mapFogOverlayController == null)
+                {
+                    _mapFogOverlayController = GetComponent<MapFogOverlayController>();
+                }
+
+                if (_mapFogOverlayController == null)
+                {
+                    _mapFogOverlayController = gameObject.AddComponent<MapFogOverlayController>();
+                }
+
+                _mapFogOverlayController.ConfigureUnknownCulling(hideUnknownNodeDetails, hideUnknownGround);
+
+                if (fullRebuildFog)
+                {
+                    _mapFogOverlayController.Rebuild(_tileViews, _nodeStates, tileSize);
+                }
+                else if (snapshotNode != null)
+                {
+                    _mapFogOverlayController.ApplyNodeSnapshot(snapshotNode);
+                }
+            }
+            else
+            {
+                if (_mapFogOverlayController == null)
+                {
+                    _mapFogOverlayController = GetComponent<MapFogOverlayController>();
+                }
+
+                if (_mapFogOverlayController != null)
+                {
+                    _mapFogOverlayController.ClearOverlay();
+                }
+
+                foreach (var pair in _tileViews)
+                {
+                    var tile = pair.Value;
+                    if (tile == null)
+                    {
+                        continue;
+                    }
+
+                    tile.SetPerTileObservationFogEnabled(true);
+                    tile.SetUnknownDetailCulling(false, false);
+                }
+            }
+
+            if (_terrainDecorationSpawner != null)
+            {
+                _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetails);
+            }
         }
 
         private void RebuildMapBackdrop()
@@ -1799,6 +1864,10 @@ namespace Panoptes.Presentation.Map
             _tileViews.Clear();
             _tileViewsByGrid.Clear();
             _nodeStates.Clear();
+            if (_mapFogOverlayController != null)
+            {
+                _mapFogOverlayController.ClearOverlay();
+            }
         }
 
         private void ClearUnits()

@@ -20,10 +20,10 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.24, g: 0.28, b: 0.35, a: 1}
-  m_AmbientEquatorColor: {r: 0.13, g: 0.15, b: 0.19, a: 1}
-  m_AmbientGroundColor: {r: 0.06, g: 0.07, b: 0.1, a: 1}
-  m_AmbientIntensity: 0.62
+  m_AmbientSkyColor: {r: 0.31, g: 0.35, b: 0.42, a: 1}
+  m_AmbientEquatorColor: {r: 0.2, g: 0.22, b: 0.27, a: 1}
+  m_AmbientGroundColor: {r: 0.11, g: 0.12, b: 0.15, a: 1}
+  m_AmbientIntensity: 0.9
   m_AmbientMode: 1
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: cc258e41745ef0947891a3ba2799a3a3, type: 2}
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 1
-  m_ReflectionIntensity: 0.72
+  m_ReflectionIntensity: 0.95
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1693350156}
   m_UseRadianceAmbientProbe: 0
@@ -1720,6 +1720,14 @@ PrefabInstance:
       propertyPath: m_AnchorMin.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2274049074370358003, guid: 62a25cbab7c3e174cbf9499f54b3bfa9, type: 3}
+      propertyPath: portraitHeightOffset
+      value: -0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2274049074370358003, guid: 62a25cbab7c3e174cbf9499f54b3bfa9, type: 3}
+      propertyPath: portraitDistanceOffset
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 3537405132778839573, guid: 62a25cbab7c3e174cbf9499f54b3bfa9, type: 3}
       propertyPath: m_Pivot.x
       value: 1
@@ -1976,6 +1984,9 @@ MonoBehaviour:
   minimumResourcePoints: 18
   autoSpawnTerrainDecorations: 1
   autoSpawnMapBackdrop: 1
+  useGlobalObservationFog: 1
+  hideUnknownNodeDetails: 1
+  hideUnknownGround: 1
 --- !u!114 &990100004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2017,23 +2028,13 @@ MonoBehaviour:
   movePreviewKeepTextureColor: 1
   buildValidColor: {r: 0.35, g: 1, b: 0.35, a: 0.92}
   buildInvalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.92}
+  buildPendingColor: {r: 1, g: 0.82, b: 0.35, a: 0.92}
   buildPlacedGhostColor: {r: 0.6, g: 1, b: 0.6, a: 0.92}
   territoryHighlightColor: {r: 0.28, g: 0.72, b: 1, a: 0.72}
+  buildPreviewRequestThrottleSeconds: 0.1
   logInvalidBuildClick: 1
   localOwnerIdOverride: 
   useSafeZoneFallbackForCityPlacement: 1
-  territoryOnlyBuildingTypes:
-  - engineer
-  - workshop
-  - archery
-  - barracks
-  - blacksmith
-  - city_core
-  globalPlacementBuildingTypes:
-  - tower
-  - atktower
-  - watchtower
-  - viewtower
   disallowManualCityCorePlacement: 1
   autoCreateCornerCityZones: 1
   cornerInset: 2
@@ -2383,7 +2384,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.9647059, b: 0.92156863, a: 1}
-  m_Intensity: 1.35
+  m_Intensity: 1.6
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -2392,7 +2393,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
+    m_Strength: 0.82
     m_Bias: 0.03
     m_NormalBias: 0.25
     m_NearPlane: 0.2
