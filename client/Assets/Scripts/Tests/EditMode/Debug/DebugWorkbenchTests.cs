@@ -11,6 +11,7 @@ namespace Panoptes.Tests.EditMode.Debug
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
         private readonly string _gameChatPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/GameChatPanelController.cs");
+        private readonly string _debugPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugPanel.cs");
         private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
         private readonly string _networkManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/NetworkManager.cs");
         private readonly string _messageSenderPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSender.cs");
@@ -115,6 +116,23 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_appManagerPath);
             StringAssert.Contains("EnsureComponent<DebugPanel>(managers);", content,
                 "多 Tab DebugPanel 应从 Managers 全局挂载，覆盖 Login/Lobby/Game。");
+        }
+
+        [Test]
+        public void DebugPanel_ShouldSupportReleaseBuildOverrideSymbol()
+        {
+            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_debugPanelPath), Is.True, "DebugPanel.cs 不存在。");
+
+            var appManagerContent = File.ReadAllText(_appManagerPath);
+            var debugPanelContent = File.ReadAllText(_debugPanelPath);
+
+            StringAssert.Contains("PANOPTES_DEBUG_PANEL", appManagerContent,
+                "AppManager 应允许通过自定义编译符号在正式包中挂载 DebugPanel。");
+            StringAssert.Contains("PANOPTES_DEBUG_PANEL", debugPanelContent,
+                "DebugPanel 应允许通过自定义编译符号编进正式包。");
+            StringAssert.Contains("IsClientDebugPanelBuildEnabled() || (config != null && config.DevMode)", debugPanelContent,
+                "DebugPanel 显示条件应支持客户端正式包显式开启，而不只依赖服务端 DevMode。");
         }
 
         [Test]

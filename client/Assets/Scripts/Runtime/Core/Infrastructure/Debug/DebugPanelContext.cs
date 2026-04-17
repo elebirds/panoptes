@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Network;

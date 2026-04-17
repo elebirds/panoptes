@@ -44,6 +44,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _cityCorePrefabAssetPath = Path.GetFullPath("Assets/Prefabs/Map/CityCore.prefab");
         private readonly string _cityCoreHpBarPrefabPath = Path.GetFullPath("Assets/Prefabs/UI/CityCoreHPBar.prefab");
         private readonly string _cityCoreProductionPanelPrefabPath = Path.GetFullPath("Assets/Prefabs/UI/CityCoreProductionPanel.prefab");
+        private readonly string _lobbySceneAssetPath = Path.GetFullPath("Assets/Scenes/Lobby.unity");
         private readonly string _gameSceneAssetPath = Path.GetFullPath("Assets/Scenes/Game.unity");
         private readonly string _integrationCheckerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/IntegrationChecker.cs");
         private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
@@ -1003,6 +1004,21 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "大厅错误提示应走 ErrorToast。");
             StringAssert.Contains("ShowToast($\"房间已创建，邀请码：{roomCode}\", true);", content,
                 "创建房间成功后应给出 toast 反馈。");
+        }
+
+        [Test]
+        public void LobbyScene_ShouldBindJoinButton_ToLobbyPanelController()
+        {
+            Assert.That(File.Exists(_lobbySceneAssetPath), Is.True, "Lobby.unity 不存在。");
+
+            var content = File.ReadAllText(_lobbySceneAssetPath);
+            var controllerIndex = content.IndexOf("LobbyPanelController", StringComparison.Ordinal);
+            Assert.That(controllerIndex, Is.GreaterThanOrEqualTo(0), "LobbyPanelController 序列化块不存在。");
+
+            var snippetLength = Math.Min(400, content.Length - controllerIndex);
+            var snippet = content.Substring(controllerIndex, snippetLength);
+            StringAssert.Contains("joinButton: {fileID: 999761490}", snippet,
+                "Lobby 场景必须把 JoinButton 组件绑定给 LobbyPanelController，否则加入房间按钮不会注册点击事件。");
         }
 
         [Test]

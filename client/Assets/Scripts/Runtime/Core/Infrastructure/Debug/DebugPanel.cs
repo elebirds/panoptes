@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using UnityEngine;
@@ -88,7 +88,18 @@ namespace Panoptes.DebugTools
         private static bool ShouldDisplay()
         {
             var config = ClientRuntimeConfigCache.Instance;
-            return config != null && config.DevMode;
+            return IsClientDebugPanelBuildEnabled() || (config != null && config.DevMode);
+        }
+
+        // Allow shipping the debug workbench in non-development builds only when the client
+        // explicitly opts in via a scripting define symbol.
+        private static bool IsClientDebugPanelBuildEnabled()
+        {
+#if PANOPTES_DEBUG_PANEL
+            return true;
+#else
+            return false;
+#endif
         }
 
         private void DrawStatusBar(Rect area)

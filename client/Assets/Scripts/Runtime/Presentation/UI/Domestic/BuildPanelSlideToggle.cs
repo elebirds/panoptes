@@ -333,14 +333,14 @@ namespace Panoptes.Presentation.UI.Domestic
                         var owner = buildPanelRoot.GetComponentInParent<BuildCommandPanel>(true);
                         if (!ReferenceEquals(owner, buildPanel))
                         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
                             Debug.LogWarning(
                                 $"[BuildPanelSlideToggle] Invalid buildPanelRoot '{buildPanelRoot.name}' bound to '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
 #endif
                         }
                         else
                         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
                             Debug.LogWarning(
                                 $"[BuildPanelSlideToggle] Non-root buildPanelRoot '{buildPanelRoot.name}' on '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
 #endif
