@@ -411,7 +411,88 @@ func validateCrossReferences(data *authoredData) error {
 		}
 	}
 
+	if err := validateTechnologyTreeLayout(data.Technologies.Value.Technologies, data.TechnologyTreeUI.Value, data.TechnologyTreeUI.Path); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func validateTechnologyTreeLayout(technologies []staticdata.TechnologyDefinition, layout staticdata.TechnologyTreeLayoutFile, path string) error {
+	nodeTechByID := make(map[string]string, len(layout.Nodes))
+	techNodeByID := make(map[string]string, len(layout.Nodes))
+	technologyIDs := make(map[string]struct{}, len(technologies))
+	expectedEdges := make(map[string]struct{})
+	actualEdges := make(map[string]struct{})
+
+	for _, technology := range technologies {
+		technologyIDs[technology.ID] = struct{}{}
+		for _, prereq := range technology.Prerequisites {
+			if prereq.Type != "technology_unlocked" || strings.TrimSpace(prereq.TargetID) == "" {
+				continue
+			}
+			expectedEdges[technologyTreeEdgeKey(prereq.TargetID, technology.ID)] = struct{}{}
+		}
+	}
+
+	for _, node := range layout.Nodes {
+		if strings.TrimSpace(node.ID) == "" {
+			continue
+		}
+		technologyID := strings.TrimSpace(node.TechnologyID)
+		if technologyID == "" {
+			return fmt.Errorf("semantic validation failed for %s: node %q missing technology_id", path, node.ID)
+		}
+		if _, ok := technologyIDs[technologyID]; !ok {
+			return fmt.Errorf("semantic validation failed for %s: node %q references unknown technology %q", path, node.ID, technologyID)
+		}
+		if existingNodeID, exists := techNodeByID[technologyID]; exists && existingNodeID != node.ID {
+			return fmt.Errorf("semantic validation failed for %s: technology %q is bound to multiple nodes (%q, %q)", path, technologyID, existingNodeID, node.ID)
+		}
+		nodeTechByID[node.ID] = technologyID
+		techNodeByID[technologyID] = node.ID
+	}
+
+	for _, edge := range layout.Edges {
+		fromTech, ok := nodeTechByID[edge.From]
+		if !ok {
+			return fmt.Errorf("semantic validation failed for %s: edge %q references unknown from node %q", path, edge.ID, edge.From)
+		}
+		toTech, ok := nodeTechByID[edge.To]
+		if !ok {
+			return fmt.Errorf("semantic validation failed for %s: edge %q references unknown to node %q", path, edge.ID, edge.To)
+		}
+		actualEdges[technologyTreeEdgeKey(fromTech, toTech)] = struct{}{}
+	}
+
+	for key := range expectedEdges {
+		if _, ok := actualEdges[key]; ok {
+			continue
+		}
+		fromTech, toTech := parseTechnologyTreeEdgeKey(key)
+		return fmt.Errorf("semantic validation failed for %s: missing prerequisite edge %q -> %q", path, fromTech, toTech)
+	}
+	for key := range actualEdges {
+		if _, ok := expectedEdges[key]; ok {
+			continue
+		}
+		fromTech, toTech := parseTechnologyTreeEdgeKey(key)
+		return fmt.Errorf("semantic validation failed for %s: unexpected prerequisite edge %q -> %q", path, fromTech, toTech)
+	}
+
+	return nil
+}
+
+func technologyTreeEdgeKey(fromTech string, toTech string) string {
+	return fromTech + "->" + toTech
+}
+
+func parseTechnologyTreeEdgeKey(key string) (string, string) {
+	parts := strings.SplitN(key, "->", 2)
+	if len(parts) != 2 {
+		return key, ""
+	}
+	return parts[0], parts[1]
 }
 
 func validatePrerequisites(prereqs []staticdata.Prerequisite, technologyIDs map[string]struct{}, policyIDs map[string]struct{}, path string) error {

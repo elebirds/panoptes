@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **状态更新（2026-04-16）**：M1 / Chunk 1 已完成，Chunk 2 已按“最小收口”定义完成，Chunk 3、Chunk 4 与 Chunk 6 已按 revised/final plan 落地到 `main`。当前仓库已补齐主城 bootstrap、建城/建筑放置统一校验、配方低效推进、城市陷落与设施延时接管，以及基于 `MsgIssueUnitOrderResult + can_attack_structures + Targetable combat` 的主线战争闭环；本文档中的 Chunk 1-4、Chunk 6 勾选状态已同步到当前实现现状。
+> **状态更新（2026-04-17）**：M1 已完成并复核通过，M2 已按“服务端规则闭环”口径完成并在当前工作区复核通过。Chunk 1-4、Chunk 6、Chunk 7 与 Task 25 的勾选状态已同步到当前实现现状；Chunk 8 已完成 Task 21 与 Task 23 的主干接线，Task 22 已有主线 UI 落地但仍未完全收口，Task 24 与 Task 26 仍待完成。当前仓库已补齐主城 bootstrap、建城/建筑放置统一校验、配方低效推进、城市陷落与设施延时接管，以及基于 `MsgIssueUnitOrderResult + can_attack_structures + Targetable combat` 的主线战争闭环，并已落地主线客户端缓存、规划草稿、科技树/建造/配方/单位指令面板与 unified settlement 回放的第一版实现。
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
@@ -98,13 +98,13 @@
 | 里程碑 | 目标 | 完成标志 |
 |---|---|---|
 | M1 数据与协议对齐（已完成） | 让 GDD 当前基线拥有稳定作者源和跨端契约 | `make data-validate`、`make gen` 稳定通过 |
-| M2 服务端规则闭环 | 服务端能够独立跑通一局 MVP | `go test ./...` 通过；无头对局 harness 能稳定跑通场景化对局 |
-| M3 客户端垂直切片 | Unity 客户端可完成一局基本对局 | 可从房间进入游戏，完成研究、建造、建城、战斗与结算 |
-| M4 内容与验收 | 内容、数值、提示、结算信息达到可试玩标准 | 数据包定版，完成手工冒烟与规则回归 |
+| M2 服务端规则闭环（已完成） | 服务端能够独立跑通一局 MVP | `go test ./...` 通过；无头对局 harness 能稳定跑通场景化对局 |
+| M3 客户端垂直切片（进行中） | Unity 客户端可完成一局基本对局 | 可从房间进入游戏，完成研究、建造、建城、战斗与结算 |
+| M4 内容与验收（进行中） | 内容、数值、提示、结算信息达到可试玩标准 | 数据包定版，完成手工冒烟与规则回归 |
 
 里程碑必须顺序推进。不得在 M1 尚未稳定时切客户端玩法 UI；不得在 M2 未闭环时接入复杂中期系统。
 
-### 4.1 当前进度（2026-04-16）
+### 4.1 当前进度（2026-04-17）
 
 - `main` 已集成“无客户端调试与规则验证”首批服务端实现，包含 prepared room、deterministic scenario、headless harness、结构化状态摘要、结算记录器与 `DEV_MODE` HTTP 调试入口。
 - `M2` 相关基础设施已明显前移：服务端现在可以在不依赖客户端的情况下，用规则级测试与 harness 场景测试复现 `planning -> settlement` 的关键裁决。
@@ -117,8 +117,11 @@
 - 主线单位结算已切到 shared `Targetable` combat：`lockPlanningInputs()` 继续在 combat 之前执行，fatal `city_core_destroyed` 会短路 `CombatUpkeep / marches / map / lifecycle / economy`，但 settlement 仍保留 `lockInEvents` 到 `economy` section；非 fatal 回合的 `CombatUpkeep` 仍归入 `unit` section。
 - Chunk 7 的规则矩阵与 harness 也已覆盖到 Chunk 6：当前测试与场景可验证非法 node-target attack 的 typed result、步兵伤害普通建筑、步兵摧毁主城核心并判负、fatal turn 跳过后续 resolving，以及非 fatal 回合继续执行 upkeep。
 - Chunk 7 的无头验证场景已继续扩到 Chunk 4：当前规则级测试与 harness 场景已能验证研究解锁次回合建造、共享工业点预算耗尽、settlement 重校验建造草案、低效推进/阻塞、开拓者建城、设施接管完成转移归属、非主城城市陷落、普通建筑废墟化与主城摧毁判负。
+- Chunk 8 已落地主干客户端接线：`GameStateCache / PlanningDraftCache / GameMessageHandler` 已可消费新版 `game_state / planning snapshot / settlement` 字段，客户端领域 DTO 已补齐研究、制度、城市、建筑投影，并已有 EditMode 断言覆盖研究/制度/城市/建筑查询、planning snapshot 草稿覆盖、规划结果反馈与 unified settlement 回放事件消费。
+- 客户端主线 UI 已有第一版垂直切片：`ResourceHUD`、`TurnHUD`、`TechTreePanelController`、`BuildCommandPanel`、`RecipeSynthesisPanel`、`UnitInfoPanelController`、`SettlementPlaybackController` 与地图建筑状态展示已接入现行主流程；其中 `StrategicPanel`、`UnitOrdersPanel` 已按实际实现并入既有入口，不再作为独立运行时面板保留。
+- Chunk 8 当前剩余缺口主要在 UI 收口而不是协议接线：正式国策/制度展示仍未形成稳定 HUD 入口，部分城市核心生产表现仍保留占位实现，且“提交前草稿可见且可撤销”的玩家理解反馈还未达到计划中的最终形态。
 - `M4` 中“开发态调试接口”已提前落地，但这不代表 Chunk 6/7 以外的玩法内容已整体完成。
-- 当前主工作区验证结果：`make gen` 与 `cd server && go test ./...` 已于 2026-04-16 在 `main` 上通过。
+- 当前主工作区验证结果：`make data-validate`、`cd server && go test ./...` 与 `cd server && go build ./...` 已于 2026-04-17 在当前工作区通过。
 - Windows Unity batchmode 当前已可完成脚本编译并退出，但 `-runTests -testPlatform EditMode` 仍未稳定产出 `-testResults` XML，因此客户端 EditMode 自动化验证暂时仍记为“未最终确认通过”。
 
 ## 5. 推荐排期
@@ -659,6 +662,13 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 
 ## 13. Chunk 8：客户端垂直切片
 
+### 13.0 当前状态（2026-04-17）
+
+- Chunk 8 不再是“未开始”状态。当前仓库已完成客户端缓存、规划草稿、统一消息处理、科技树、建造面板、配方面板、单位指令面板、地图建筑状态展示与 unified settlement 回放的第一版主干接线。
+- Task 21 可视为已完成：新版 DTO、缓存与消息处理主链已经稳定消费当前协议，并有 EditMode 断言覆盖 planning snapshot、研究/制度/城市/建筑权威投影、规划结果反馈与关键 settlement 事件消费。
+- Task 22 目前属于“部分完成”：研究、建造、配方、单位命令与主城血条展示已进入主线，但正式国策/制度 HUD、部分城市信息展示与提交前草稿解释层仍未收口。
+- Task 23 目前属于“主干已落地、体验未定稿”：地图上已经消费城市核心/建筑状态/服务城市/接管进度字段，settlement 回放也已接入建城、建筑状态变化、设施接管、科技完成/激活与主城摧毁等关键事件；但表现清晰度与手工冒烟尚未完成。
+
 ### Task 21: 更新客户端缓存、DTO 与消息处理
 
 **Files:**
@@ -674,10 +684,10 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - Create: `client/Assets/Scripts/Runtime/Core/Foundation/Domain/CityDto.cs`
 - Create: `client/Assets/Scripts/Runtime/Core/Foundation/Domain/BuildingDto.cs`
 
-- [ ] **Step 1: 让客户端缓存能读取新的玩家点数、科技目标、科技进度、城市/建筑状态和政策信息**
-- [ ] **Step 2: 让映射层以纯展示方式消费 `game_state`、`planning snapshot` 和 `settlement` 新字段**
-- [ ] **Step 3: 保持客户端不做任何合法性推断，只显示服务端给出的可见状态**
-- [ ] **Step 4: 用消息处理测试和运行时检查确认旧字段删除后仍能完成进入游戏与回合同步**
+- [x] **Step 1: 让客户端缓存能读取新的玩家点数、科技目标、科技进度、城市/建筑状态和政策信息**
+- [x] **Step 2: 让映射层以纯展示方式消费 `game_state`、`planning snapshot` 和 `settlement` 新字段**
+- [x] **Step 3: 保持客户端不做任何合法性推断，只显示服务端给出的可见状态**
+- [x] **Step 4: 用消息处理测试和运行时检查确认旧字段删除后仍能完成进入游戏与回合同步**
 
 ### Task 22: 补齐 MVP 规划 UI
 
@@ -697,6 +707,8 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - [ ] **Step 3: 为单位信息面板保留开拓者建城和步兵基础指令，并隐藏未实现谱系动作**
 - [ ] **Step 4: 让“提交回合”前的草稿状态可见且可撤销，确保玩家理解自己本回合做了什么**
 
+当前状态：`ResourceHUD / TurnHUD / TechTreePanelController / BuildCommandPanel / RecipeSynthesisPanel / UnitInfoPanelController / CityCoreHpBarOverlayController` 已接入主线，且单位指令与建城入口已经并入 `UnitInfoPanelController`；但正式国策/制度 HUD 尚未接到稳定入口，`CityCoreProductionPanel` 仍保留占位逻辑，草稿解释与撤销体验也还未按计划完全收口。
+
 ### Task 23: 地图展示与结算回放
 
 **Files:**
@@ -707,10 +719,12 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - Modify: `client/Assets/Scripts/Runtime/Presentation/UI/Turn/SettlementTimeline.cs`
 - Modify: `client/Assets/Scripts/Runtime/Presentation/UI/Turn/TurnReportPanel.cs`
 
-- [ ] **Step 1: 在地图上区分城市核心、普通建筑、城外设施、建筑状态和主城/新城差异**
-- [ ] **Step 2: 让结算回放能播放建城、建筑落地、战斗、设施停用/接管、科技完成和胜负事件**
+- [x] **Step 1: 在地图上区分城市核心、普通建筑、城外设施、建筑状态和主城/新城差异**
+- [x] **Step 2: 让结算回放能播放建城、建筑落地、战斗、设施停用/接管、科技完成和胜负事件**
 - [ ] **Step 3: 保证“地图本回合可见、持续收益次回合生效”的反馈在表现层上清晰可理解**
 - [ ] **Step 4: 用手工冒烟覆盖一整回合的规划、提交、结算和地图刷新流程**
+
+当前状态：`NodeView / BuildingView / MapRenderer / SettlementPlaybackController / SettlementTimeline / TurnReportPanel` 已消费当前统一事件模型；当前剩余工作主要是把“本回合可见、次回合生效”的反馈讲清楚，并完成一整回合的手工冒烟。
 
 ## 14. Chunk 9：内容定版与验收
 
@@ -726,6 +740,8 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - [ ] **Step 2: 让内容包能够支撑“主城开局 -> 采集/建造 -> 研究 -> 建城 -> 训练 -> 战斗 -> 判负”的完整闭环**
 - [ ] **Step 3: 统一图标 key、prefab key、展示排序和文本描述，避免出现数据存在但客户端无表现的情况**
 - [ ] **Step 4: 重新生成并校验服务端 bundle，保证 catalog 测试稳定通过**
+
+当前状态：服务端真实内容 happy path 已可稳定跑通，但内容作者源还没有按“最终可试玩包”口径统一 UI key、展示排序、图标与表现资源映射，因此本 Task 仍保持未完成。
 
 ### Task 25: 后端验证与回归
 
@@ -756,6 +772,8 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - [ ] **Step 2: 验证研究目标切换、国策切换、建筑放置、配方切换、开拓者建城和战斗回放**
 - [ ] **Step 3: 验证断线重连或重复消息情况下，客户端展示仍以服务端最新状态为准**
 - [ ] **Step 4: 把剩余问题按“规则 bug / 协议 bug / 表现 bug / 内容 bug”分类记录**
+
+当前状态：`IntegrationChecker` 已能检查 `MsgGameInit / MsgPlanningStart / MsgTurnSettlement` 的基础展示链路，EditMode 侧也已有一批客户端结构断言；但完整联机冒烟清单、断线重连验证与问题分类记录仍未建立，因此本 Task 继续保持未完成。
 
 ## 15. 延后实施清单
 

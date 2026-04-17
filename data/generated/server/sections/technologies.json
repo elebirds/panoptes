@@ -3,7 +3,7 @@
     {
       "id": "agrarian_foundations",
       "name": "农业基础",
-      "description": "解锁农场与基础农耕配方",
+      "description": "解锁高产农耕配方",
       "icon_key": "tech_agrarian_foundations",
       "branch": "agriculture",
       "tier": 1,
@@ -11,12 +11,8 @@
       "prerequisites": [],
       "explicit_effects": [
         {
-          "type": "unlock_building",
-          "target_id": "farm"
-        },
-        {
           "type": "unlock_recipe",
-          "target_id": "farm_food"
+          "target_id": "farm_harvest"
         }
       ],
       "modifier_effects": [],
@@ -26,9 +22,30 @@
       ]
     },
     {
+      "id": "forestry",
+      "name": "林业组织",
+      "description": "解锁高产伐木配方",
+      "icon_key": "tech_agrarian_foundations",
+      "branch": "agriculture",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_recipe",
+          "target_id": "lumber_sawmill"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 20,
+      "tags": [
+        "agriculture"
+      ]
+    },
+    {
       "id": "organized_labor",
       "name": "组织化劳动",
-      "description": "提升工业产出效率",
+      "description": "每回合工业产出 +1",
       "icon_key": "tech_organized_labor",
       "branch": "governance",
       "tier": 1,
@@ -43,19 +60,20 @@
           "value": 1
         }
       ],
-      "sort_order": 20,
+      "sort_order": 30,
       "tags": [
-        "governance"
+        "governance",
+        "industry"
       ]
     },
     {
       "id": "civic_institutions",
       "name": "公共制度",
-      "description": "解锁制度候选并新增一个制度槽位",
+      "description": "解锁学院特许并新增一个制度槽位",
       "icon_key": "tech_civic_institutions",
       "branch": "governance",
       "tier": 1,
-      "research_cost": 1,
+      "research_cost": 2,
       "prerequisites": [],
       "explicit_effects": [
         {
@@ -68,10 +86,173 @@
         }
       ],
       "modifier_effects": [],
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "governance",
         "institution"
+      ]
+    },
+    {
+      "id": "mining_survey",
+      "name": "矿脉勘测",
+      "description": "解锁矿山与基础采矿配方",
+      "icon_key": "tech_organized_labor",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "organized_labor"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "mine"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "mine_ore"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 50,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "workshop_methods",
+      "name": "工坊法",
+      "description": "解锁工坊与深层采矿配方",
+      "icon_key": "tech_organized_labor",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "organized_labor"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "forestry"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "workshop"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "mine_deep_ore"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 60,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "militia_mobilization",
+      "name": "民兵动员",
+      "description": "解锁兵营与步兵训练",
+      "icon_key": "tech_civic_institutions",
+      "branch": "military",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "mining_survey"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "barracks"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "barracks_infantry"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 70,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "ranged_drill",
+      "name": "远射操典",
+      "description": "解锁靶场与弓手训练",
+      "icon_key": "tech_civic_institutions",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "archery"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "archery_archer"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 80,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "fortifications",
+      "name": "筑垒术",
+      "description": "解锁城墙并提升主城与城墙耐久",
+      "icon_key": "tech_civic_institutions",
+      "branch": "defense",
+      "tier": 4,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "wall"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 30
+        },
+        {
+          "trigger": "building.max_hp",
+          "target_id": "wall",
+          "modifier_type": "flat",
+          "value": 30
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "defense"
       ]
     }
   ]

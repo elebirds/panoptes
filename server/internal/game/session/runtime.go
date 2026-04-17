@@ -431,6 +431,7 @@ func (r *Runtime) ensureCapitalAtSpawn(playerID string, spawnEntry *donburi.Entr
 
 	if !spawnEntry.HasComponent(ecs.BuildingC) {
 		ecs.CreateBuilding(r.state.World, "city_core", playerID, ecs.NodeC.Get(spawnEntry).ID, spawnEntry)
+		r.state.RefreshBuildingMaxHPAtEntry(spawnEntry)
 	}
 	if !spawnEntry.HasComponent(ecs.BuildingC) {
 		return

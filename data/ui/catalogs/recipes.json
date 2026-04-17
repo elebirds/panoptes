@@ -3,8 +3,12 @@
   "recipes": [
     { "id": "city_core_settler", "name": "组织开拓", "description": "产出开拓者", "icon_key": "recipe_city_core_settler", "sort_order": 10, "tags": ["expansion"] },
     { "id": "farm_food", "name": "基础农耕", "description": "产出粮食", "icon_key": "recipe_farm_food", "sort_order": 20, "tags": ["food"] },
-    { "id": "mine_ore", "name": "基础采矿", "description": "产出矿石", "icon_key": "recipe_mine_ore", "sort_order": 30, "tags": ["ore"] },
+    { "id": "farm_harvest", "name": "增产收割", "description": "消耗更多工时换取高额粮食产出", "icon_key": "recipe_farm_food", "sort_order": 30, "tags": ["food"] },
     { "id": "lumber_wood", "name": "基础伐木", "description": "产出木材", "icon_key": "recipe_lumber_wood", "sort_order": 40, "tags": ["wood"] },
-    { "id": "barracks_infantry", "name": "训练步兵", "description": "产出步兵", "icon_key": "recipe_barracks_infantry", "sort_order": 50, "tags": ["military"] }
+    { "id": "lumber_sawmill", "name": "锯木加工", "description": "高效率产出木材", "icon_key": "recipe_lumber_wood", "sort_order": 50, "tags": ["wood"] },
+    { "id": "mine_ore", "name": "基础采矿", "description": "产出矿石", "icon_key": "recipe_mine_ore", "sort_order": 60, "tags": ["ore"] },
+    { "id": "mine_deep_ore", "name": "深层采掘", "description": "高效率产出矿石", "icon_key": "recipe_mine_ore", "sort_order": 70, "tags": ["ore"] },
+    { "id": "barracks_infantry", "name": "训练步兵", "description": "产出步兵", "icon_key": "recipe_barracks_infantry", "sort_order": 80, "tags": ["military"] },
+    { "id": "archery_archer", "name": "训练弓手", "description": "产出远程弓手", "icon_key": "recipe_barracks_infantry", "sort_order": 90, "tags": ["military", "ranged"] }
   ]
 }

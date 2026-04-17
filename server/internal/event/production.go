@@ -36,6 +36,7 @@ func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) 
 	}
 	ecs.CreateBuilding(world, e.BuildingType, e.Owner, e.CityID, nodeEntry)
 	if state != nil {
+		state.RefreshBuildingMaxHPAtEntry(nodeEntry)
 		onlineOnTurn := e.OnlineOnTurn
 		if onlineOnTurn <= 0 {
 			onlineOnTurn = state.Turn + 1

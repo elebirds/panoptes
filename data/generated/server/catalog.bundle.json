@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "00e9a6c75dbea33aff90471f0e66ea091e1a240b9cec242e8254ed4c285687e7",
+    "bundle_hash": "e5b0b57a7f1c988a79ea650d6c41507525351156c17795c0b03509665c7f4582",
     "required_sections": [
       "resources",
       "points",
@@ -24,11 +24,11 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "6efa1abaf3c7658991625504055b8bdbb8326b044d6c69b9d0c9f8df1a996644"
+        "hash": "9522d435add087a6c56039899227669fac508e47a7e6932098b8bd6745a313ad"
       },
       {
         "section_name": "maps",
-        "hash": "95b31443ff42f6ca863a38c837e5f5fb90c9248936013ee6ce694b3f039f2e0c"
+        "hash": "0fbeaceba555e71b00ddf67cccb7e22b93877ed52793c0d05777498227b9bc80"
       },
       {
         "section_name": "ministers",
@@ -40,11 +40,11 @@
       },
       {
         "section_name": "policies",
-        "hash": "85eb09bcc9eb3d205de770a9e2e02d3f62b47ef42cf1ef9af9ea06a2db86a2eb"
+        "hash": "8a6842fced6058b196e2593efca7963cb790f92b78b6d86f90335ad0d193726f"
       },
       {
         "section_name": "recipes",
-        "hash": "c896ba0461dfc1ec122fdf5468af8ce4854b471e18f777952086163b8d9907f3"
+        "hash": "020f3bad74d20a25f0b5f14393e25cd8b45a9a582a158f26cdba2d819cb02a0b"
       },
       {
         "section_name": "resources",
@@ -56,7 +56,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "98b3a604c02fa270f58b463be31defe5f13bf00271b6613cdc3b471017b28b81"
+        "hash": "95a171b126c1a0ed1f556ac4307356b4435fcb63b0e61d5f3b2164b7646aad27"
       },
       {
         "section_name": "terrains",
@@ -64,19 +64,19 @@
       },
       {
         "section_name": "ui_build_menu_layout",
-        "hash": "e98008d1f9995e0d01a4b8f3e80a9578e7ce552539cf9b3a70dff18b845356e0"
+        "hash": "c7396d452098beaa7c192ba63b5bbabbe9d2c7644909df1ce42bc6a977592f76"
       },
       {
         "section_name": "ui_recipe_layout",
-        "hash": "0568859401948f7ca2d6a4ab1e10d567ce23a43d39532c926ddd8b572ad93e0d"
+        "hash": "607ae22bcfd97cc7210181215a97cf160608a3e55b8e91aba64b4ba8b46aba70"
       },
       {
         "section_name": "ui_tech_tree_layout",
-        "hash": "169edbe3abeefadc6b141179b0e33f5c861103c223851a51b40f4fa5ca57928d"
+        "hash": "4fddf991261e9c51ede73bb5db2e0303fe7055d305d898ccad5b194d0982c95e"
       },
       {
         "section_name": "units",
-        "hash": "cc69a89076ac589bba281093bf772009a0aa190222180d52c4897b070708c8a2"
+        "hash": "f16e0bdbcf03da9b02a1a15e3cdacb155cca35686beadd0cdabc608e8506d0ba"
       }
     ]
   },
@@ -204,6 +204,37 @@
       "tags": [
         "frontline"
       ]
+    },
+    {
+      "id": "archer",
+      "name": "弓手",
+      "description": "基础远程压制单位。",
+      "icon_key": "unit_infantry",
+      "prefab_key": "Fighter",
+      "class": "ranged",
+      "max_hp": 20,
+      "attack": 8,
+      "attack_range": 2,
+      "move_range": 2,
+      "vision_range": 4,
+      "train_cost": {
+        "food": 1,
+        "wood": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_attack_structures": false,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 30,
+      "tags": [
+        "ranged"
+      ]
     }
   ],
   "buildings": [
@@ -251,7 +282,8 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "farm_food"
+        "farm_food",
+        "farm_harvest"
       ],
       "default_recipe_id": "farm_food",
       "explicit_effects": [],
@@ -279,14 +311,15 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "mine_ore"
+        "mine_ore",
+        "mine_deep_ore"
       ],
       "default_recipe_id": "mine_ore",
       "explicit_effects": [],
       "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "eco"
       ]
@@ -307,22 +340,57 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "lumber_wood"
+        "lumber_wood",
+        "lumber_sawmill"
       ],
       "default_recipe_id": "lumber_wood",
       "explicit_effects": [],
       "modifier_effects": [],
       "max_hp": 80,
       "takeover_mode": "delayed",
-      "sort_order": 40,
+      "sort_order": 30,
       "tags": [
         "eco"
       ]
     },
     {
+      "id": "workshop",
+      "name": "工坊",
+      "description": "上线后为城市额外提供工业产出。",
+      "icon_key": "building_lumber",
+      "prefab_key": "Workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 50,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
       "id": "barracks",
       "name": "兵营",
-      "description": "基础军队训练建筑",
+      "description": "基础步兵训练建筑",
       "icon_key": "building_barracks",
       "prefab_key": "Barracks",
       "placement_kind": "city_territory",
@@ -343,7 +411,35 @@
       "modifier_effects": [],
       "max_hp": 90,
       "takeover_mode": "city_capture",
-      "sort_order": 50,
+      "sort_order": 60,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "archery",
+      "name": "靶场",
+      "description": "训练远程弓手的城市建筑。",
+      "icon_key": "building_barracks",
+      "prefab_key": "Archery",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "archery_archer"
+      ],
+      "default_recipe_id": "archery_archer",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 70,
       "tags": [
         "military"
       ]
@@ -351,7 +447,7 @@
     {
       "id": "wall",
       "name": "城墙",
-      "description": "基础被动防御建筑",
+      "description": "提升城市正面防守能力。",
       "icon_key": "building_wall",
       "prefab_key": "Wall",
       "placement_kind": "city_territory",
@@ -370,7 +466,7 @@
       "modifier_effects": [],
       "max_hp": 120,
       "takeover_mode": "city_capture",
-      "sort_order": 60,
+      "sort_order": 80,
       "tags": [
         "defense"
       ]
@@ -380,7 +476,7 @@
     {
       "id": "agrarian_foundations",
       "name": "农业基础",
-      "description": "解锁农场与基础农耕配方",
+      "description": "解锁高产农耕配方",
       "icon_key": "tech_agrarian_foundations",
       "branch": "agriculture",
       "tier": 1,
@@ -388,12 +484,8 @@
       "prerequisites": [],
       "explicit_effects": [
         {
-          "type": "unlock_building",
-          "target_id": "farm"
-        },
-        {
           "type": "unlock_recipe",
-          "target_id": "farm_food"
+          "target_id": "farm_harvest"
         }
       ],
       "modifier_effects": [],
@@ -403,9 +495,30 @@
       ]
     },
     {
+      "id": "forestry",
+      "name": "林业组织",
+      "description": "解锁高产伐木配方",
+      "icon_key": "tech_agrarian_foundations",
+      "branch": "agriculture",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [
+        {
+          "type": "unlock_recipe",
+          "target_id": "lumber_sawmill"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 20,
+      "tags": [
+        "agriculture"
+      ]
+    },
+    {
       "id": "organized_labor",
       "name": "组织化劳动",
-      "description": "提升工业产出效率",
+      "description": "每回合工业产出 +1",
       "icon_key": "tech_organized_labor",
       "branch": "governance",
       "tier": 1,
@@ -420,19 +533,20 @@
           "value": 1
         }
       ],
-      "sort_order": 20,
+      "sort_order": 30,
       "tags": [
-        "governance"
+        "governance",
+        "industry"
       ]
     },
     {
       "id": "civic_institutions",
       "name": "公共制度",
-      "description": "解锁制度候选并新增一个制度槽位",
+      "description": "解锁学院特许并新增一个制度槽位",
       "icon_key": "tech_civic_institutions",
       "branch": "governance",
       "tier": 1,
-      "research_cost": 1,
+      "research_cost": 2,
       "prerequisites": [],
       "explicit_effects": [
         {
@@ -445,10 +559,173 @@
         }
       ],
       "modifier_effects": [],
-      "sort_order": 30,
+      "sort_order": 40,
       "tags": [
         "governance",
         "institution"
+      ]
+    },
+    {
+      "id": "mining_survey",
+      "name": "矿脉勘测",
+      "description": "解锁矿山与基础采矿配方",
+      "icon_key": "tech_organized_labor",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "organized_labor"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "mine"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "mine_ore"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 50,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "workshop_methods",
+      "name": "工坊法",
+      "description": "解锁工坊与深层采矿配方",
+      "icon_key": "tech_organized_labor",
+      "branch": "industry",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "organized_labor"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "forestry"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "workshop"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "mine_deep_ore"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 60,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "militia_mobilization",
+      "name": "民兵动员",
+      "description": "解锁兵营与步兵训练",
+      "icon_key": "tech_civic_institutions",
+      "branch": "military",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "mining_survey"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "barracks"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "barracks_infantry"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 70,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "ranged_drill",
+      "name": "远射操典",
+      "description": "解锁靶场与弓手训练",
+      "icon_key": "tech_civic_institutions",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "archery"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "archery_archer"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 80,
+      "tags": [
+        "military"
+      ]
+    },
+    {
+      "id": "fortifications",
+      "name": "筑垒术",
+      "description": "解锁城墙并提升主城与城墙耐久",
+      "icon_key": "tech_civic_institutions",
+      "branch": "defense",
+      "tier": 4,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "wall"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "building.max_hp",
+          "target_id": "city_core",
+          "modifier_type": "flat",
+          "value": 30
+        },
+        {
+          "trigger": "building.max_hp",
+          "target_id": "wall",
+          "modifier_type": "flat",
+          "value": 30
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "defense"
       ]
     }
   ],
@@ -456,13 +733,20 @@
     {
       "id": "expansion",
       "name": "扩张",
-      "description": "优先扩张国家边界。",
+      "description": "开拓者组织工时 -1。",
       "icon_key": "policy_expansion",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "city_core_settler",
+          "modifier_type": "flat",
+          "value": -1
+        }
+      ],
       "sort_order": 10,
       "tags": [
         "national"
@@ -471,13 +755,26 @@
     {
       "id": "war_preparedness",
       "name": "备战",
-      "description": "优先军事准备。",
+      "description": "步兵与弓手训练工时 -1。",
       "icon_key": "policy_war_preparedness",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "barracks_infantry",
+          "modifier_type": "flat",
+          "value": -1
+        },
+        {
+          "trigger": "recipe.work_amount",
+          "target_id": "archery_archer",
+          "modifier_type": "flat",
+          "value": -1
+        }
+      ],
       "sort_order": 20,
       "tags": [
         "national"
@@ -486,13 +783,28 @@
     {
       "id": "recovery",
       "name": "恢复",
-      "description": "优先恢复国家秩序。",
+      "description": "农耕相关配方额外产出粮食。",
       "icon_key": "policy_recovery",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "farm_food",
+          "resource_key": "food",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.resource_output",
+          "target_id": "farm_harvest",
+          "resource_key": "food",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "sort_order": 30,
       "tags": [
         "national"
@@ -501,13 +813,20 @@
     {
       "id": "reorganization",
       "name": "整饬",
-      "description": "优先整顿国家结构。",
+      "description": "每回合工业产出 +1。",
       "icon_key": "policy_reorganization",
       "layer": "national",
       "activation_timing": "same_turn",
       "prerequisites": [],
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "sort_order": 40,
       "tags": [
         "national"
@@ -585,6 +904,28 @@
       ]
     },
     {
+      "id": "farm_harvest",
+      "name": "增产收割",
+      "description": "消耗更多工时换取高额粮食产出",
+      "icon_key": "recipe_farm_food",
+      "building_id": "farm",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 5
+        }
+      },
+      "sort_order": 30,
+      "tags": [
+        "food"
+      ]
+    },
+    {
       "id": "mine_ore",
       "name": "基础采矿",
       "description": "产出矿石",
@@ -601,7 +942,29 @@
           "ore": 2
         }
       },
-      "sort_order": 30,
+      "sort_order": 60,
+      "tags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "mine_deep_ore",
+      "name": "深层采掘",
+      "description": "高效率产出矿石",
+      "icon_key": "recipe_mine_ore",
+      "building_id": "mine",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "ore": 5
+        }
+      },
+      "sort_order": 70,
       "tags": [
         "ore"
       ]
@@ -629,6 +992,28 @@
       ]
     },
     {
+      "id": "lumber_sawmill",
+      "name": "锯木加工",
+      "description": "高效率产出木材",
+      "icon_key": "recipe_lumber_wood",
+      "building_id": "lumber",
+      "resource_inputs": {},
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "wood": 5
+        }
+      },
+      "sort_order": 50,
+      "tags": [
+        "wood"
+      ]
+    },
+    {
       "id": "barracks_infantry",
       "name": "训练步兵",
       "description": "产出步兵",
@@ -648,9 +1033,35 @@
           "infantry"
         ]
       },
-      "sort_order": 50,
+      "sort_order": 80,
       "tags": [
         "military"
+      ]
+    },
+    {
+      "id": "archery_archer",
+      "name": "训练弓手",
+      "description": "产出远程弓手",
+      "icon_key": "recipe_barracks_infantry",
+      "building_id": "archery",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "archer"
+        ]
+      },
+      "sort_order": 90,
+      "tags": [
+        "military",
+        "ranged"
       ]
     }
   ],
@@ -738,15 +1149,30 @@
   "maps": [
     {
       "id": "default",
+      "name": "前锋走廊",
+      "description": "24x24 紧凑镜像 1v1 地图，出生区资源安全，中场双点位迫使双方在第 6-8 回合接敌。",
+      "thumbnail_key": "map_default",
+      "width": 24,
+      "height": 24,
+      "tags": [
+        "pvp",
+        "1v1",
+        "mirror",
+        "compact"
+      ]
+    },
+    {
+      "id": "duel_large",
       "name": "双隘争衡",
-      "description": "36x36 严格镜像 1v1 地图，左下与右上起城，中场双隘口争夺。",
+      "description": "36x36 大图 1v1 对战地图，保留更长展开与更深中场争夺。",
       "thumbnail_key": "map_default",
       "width": 36,
       "height": 36,
       "tags": [
         "pvp",
         "1v1",
-        "mirror"
+        "mirror",
+        "large"
       ]
     }
   ],
@@ -757,7 +1183,18 @@
         "id": "node_agrarian_foundations",
         "technology_id": "agrarian_foundations",
         "title": "农业基础",
-        "description": "解锁农场与基础农耕配方",
+        "description": "解锁高产农耕配方",
+        "x": 0,
+        "y": -180,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_forestry",
+        "technology_id": "forestry",
+        "title": "林业组织",
+        "description": "解锁高产伐木配方",
         "x": 0,
         "y": 0,
         "width": 360,
@@ -768,9 +1205,9 @@
         "id": "node_organized_labor",
         "technology_id": "organized_labor",
         "title": "组织化劳动",
-        "description": "提升工业产出效率",
-        "x": 420,
-        "y": -140,
+        "description": "每回合工业产出 +1",
+        "x": 0,
+        "y": 180,
         "width": 360,
         "height": 104,
         "visible": true
@@ -779,9 +1216,64 @@
         "id": "node_civic_institutions",
         "technology_id": "civic_institutions",
         "title": "公共制度",
-        "description": "解锁制度候选并新增一个制度槽位",
-        "x": 420,
-        "y": 140,
+        "description": "解锁学院特许并新增一个制度槽位",
+        "x": 0,
+        "y": 360,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_mining_survey",
+        "technology_id": "mining_survey",
+        "title": "矿脉勘测",
+        "description": "解锁矿山与基础采矿",
+        "x": 460,
+        "y": 180,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_workshop_methods",
+        "technology_id": "workshop_methods",
+        "title": "工坊法",
+        "description": "解锁工坊与深层采矿",
+        "x": 460,
+        "y": 0,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_militia_mobilization",
+        "technology_id": "militia_mobilization",
+        "title": "民兵动员",
+        "description": "解锁兵营与步兵训练",
+        "x": 920,
+        "y": 180,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_ranged_drill",
+        "technology_id": "ranged_drill",
+        "title": "远射操典",
+        "description": "解锁靶场与弓手训练",
+        "x": 1380,
+        "y": 80,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_fortifications",
+        "technology_id": "fortifications",
+        "title": "筑垒术",
+        "description": "解锁城墙并提升耐久",
+        "x": 1380,
+        "y": 280,
         "width": 360,
         "height": 104,
         "visible": true
@@ -789,26 +1281,51 @@
     ],
     "edges": [
       {
-        "id": "edge_agrarian_foundations_to_organized_labor",
-        "from": "node_agrarian_foundations",
-        "to": "node_organized_labor",
+        "id": "edge_organized_labor_to_mining_survey",
+        "from": "node_organized_labor",
+        "to": "node_mining_survey",
         "show_arrow": true,
         "thickness": 3,
         "points": [
           {
             "x": 180,
-            "y": 0
+            "y": 180
           },
           {
-            "x": 420,
-            "y": -140
+            "x": 460,
+            "y": 180
           }
         ]
       },
       {
-        "id": "edge_agrarian_foundations_to_civic_institutions",
-        "from": "node_agrarian_foundations",
-        "to": "node_civic_institutions",
+        "id": "edge_organized_labor_to_workshop_methods",
+        "from": "node_organized_labor",
+        "to": "node_workshop_methods",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 180
+          },
+          {
+            "x": 300,
+            "y": 180
+          },
+          {
+            "x": 300,
+            "y": 0
+          },
+          {
+            "x": 460,
+            "y": 0
+          }
+        ]
+      },
+      {
+        "id": "edge_forestry_to_workshop_methods",
+        "from": "node_forestry",
+        "to": "node_workshop_methods",
         "show_arrow": true,
         "thickness": 3,
         "points": [
@@ -817,8 +1334,75 @@
             "y": 0
           },
           {
-            "x": 420,
-            "y": 140
+            "x": 460,
+            "y": 0
+          }
+        ]
+      },
+      {
+        "id": "edge_mining_survey_to_militia_mobilization",
+        "from": "node_mining_survey",
+        "to": "node_militia_mobilization",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 640,
+            "y": 180
+          },
+          {
+            "x": 920,
+            "y": 180
+          }
+        ]
+      },
+      {
+        "id": "edge_militia_mobilization_to_ranged_drill",
+        "from": "node_militia_mobilization",
+        "to": "node_ranged_drill",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1100,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 80
+          },
+          {
+            "x": 1380,
+            "y": 80
+          }
+        ]
+      },
+      {
+        "id": "edge_militia_mobilization_to_fortifications",
+        "from": "node_militia_mobilization",
+        "to": "node_fortifications",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1100,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 280
+          },
+          {
+            "x": 1380,
+            "y": 280
           }
         ]
       }
@@ -829,9 +1413,11 @@
     "building_order": [
       "city_core",
       "farm",
-      "mine",
       "lumber",
+      "mine",
+      "workshop",
       "barracks",
+      "archery",
       "wall"
     ],
     "hidden_building_ids": [
@@ -843,9 +1429,13 @@
     "recipe_order": [
       "city_core_settler",
       "farm_food",
-      "mine_ore",
+      "farm_harvest",
       "lumber_wood",
-      "barracks_infantry"
+      "lumber_sawmill",
+      "mine_ore",
+      "mine_deep_ore",
+      "barracks_infantry",
+      "archery_archer"
     ]
   }
 }
