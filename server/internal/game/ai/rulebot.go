@@ -323,6 +323,9 @@ func (p *ruleBotPlanner) chooseExpansionIntents() []planning.Intent {
 	if p.req.State == nil {
 		return nil
 	}
+	if p.shouldPauseExpansionForMilitaryBuildout() {
+		return nil
+	}
 	candidates := make([]expansionCandidate, 0)
 	for _, entry := range p.ownedUnitEntries() {
 		stats := ecs.UnitStatsC.Get(entry)
@@ -471,6 +474,18 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 		}
 	}
 
+	if targetNodeID := p.closestExplorationTargetNode(unitID, unitPos); targetNodeID != "" {
+		return combatCandidate{
+			key:   unitID + ":explore:" + targetNodeID,
+			score: 20,
+			intent: planning.IssueUnitOrderIntent{
+				UnitID:       unitID,
+				Action:       string(gameorders.ActionMove),
+				TargetNodeID: targetNodeID,
+			},
+		}
+	}
+
 	return combatCandidate{
 		key:   unitID + ":hold",
 		score: 1,
@@ -515,6 +530,16 @@ func (p *ruleBotPlanner) scoreTechnology(tech staticdata.TechnologyDefinition) i
 	score += matchKeywordScore(tech.ID, tech.Name, tech.Description, []string{"farm", "food", "agri", "agrarian"}, 120)
 	score += matchKeywordScore(tech.ID, tech.Name, tech.Description, []string{"settler", "expan", "city"}, 80)
 	score += matchKeywordScore(tech.ID, tech.Name, tech.Description, []string{"barracks", "infantry", "archer", "cavalry", "military", "war"}, 60)
+	if p.needsBarracksTechPath() {
+		switch strings.TrimSpace(tech.ID) {
+		case "organized_labor":
+			score += 150
+		case "mining_survey":
+			score += 170
+		case "militia_mobilization":
+			score += 210
+		}
+	}
 	if p.threatLevel > 0 {
 		score += matchKeywordScore(tech.ID, tech.Name, tech.Description, []string{"barracks", "infantry", "archer", "cavalry", "military", "war"}, 60)
 	}
@@ -599,15 +624,24 @@ func (p *ruleBotPlanner) scoreBuild(node *pb.NodeView, building staticdata.Build
 	if len(p.player.Cities) < 2 {
 		score += matchKeywordScore(building.ID, building.Name, building.Description, []string{"farm", "industry", "workshop"}, 30)
 	}
+	if p.needsSettlerProductionBuilding() && p.isSettlerProductionBuilding(building.ID) {
+		score += 140
+	}
+	if p.needsFirstBarracks() && strings.EqualFold(building.ID, "barracks") {
+		score += 180
+	}
+	if p.needsMoreMilitaryProduction() && p.isCombatProductionBuilding(building.ID) {
+		score += 95
+		if !p.hasOwnedBuildingType(building.ID) {
+			score += 15
+		}
+	}
 	return score
 }
 
 func (p *ruleBotPlanner) scoreRecipe(node *pb.NodeView, recipe staticdata.RecipeDefinition) int {
 	score := 0
 	if node.GetBuildingTypeId() == "city_core" {
-		if len(p.player.Cities) < 2 || p.countOwnedUnitType("settler") == 0 {
-			score += matchKeywordScore(recipe.ID, recipe.Name, recipe.Description, []string{"settler", "expand", "city"}, 120)
-		}
 		if p.threatLevel > 0 {
 			score += matchKeywordScore(recipe.ID, recipe.Name, recipe.Description, []string{"infantry", "archer", "cavalry"}, 80)
 		}
@@ -618,6 +652,11 @@ func (p *ruleBotPlanner) scoreRecipe(node *pb.NodeView, recipe staticdata.Recipe
 	for _, unitID := range recipe.Outputs.Units {
 		score += matchKeywordScore(unitID, "", "", []string{"settler"}, 90)
 		score += matchKeywordScore(unitID, "", "", []string{"infantry", "archer", "cavalry"}, 70)
+	}
+	if p.needsSettlerProductionBuilding() {
+		for _, unitID := range recipe.Outputs.Units {
+			score += matchKeywordScore(unitID, "", "", []string{"settler"}, 120)
+		}
 	}
 	if p.threatLevel > 0 {
 		for _, unitID := range recipe.Outputs.Units {
@@ -758,6 +797,152 @@ func (p *ruleBotPlanner) foodAmount() int {
 	return p.player.Resources.Get(domain.ResourceFood)
 }
 
+func (p *ruleBotPlanner) needsBarracksTechPath() bool {
+	if p.req.State == nil {
+		return false
+	}
+	if p.req.State.IsBuildingUnlocked(p.playerID, "barracks") || p.hasOwnedBuildingType("barracks") {
+		return false
+	}
+	return true
+}
+
+func (p *ruleBotPlanner) needsFirstBarracks() bool {
+	if p.req.State == nil {
+		return false
+	}
+	if !p.req.State.IsBuildingUnlocked(p.playerID, "barracks") {
+		return false
+	}
+	return p.countOwnedCombatProductionBuildings() == 0
+}
+
+func (p *ruleBotPlanner) needsMoreMilitaryProduction() bool {
+	return p.countOwnedCombatProductionBuildings() > 0 && p.countOwnedCombatProductionBuildings() < 2 && p.countOwnedCombatUnits() <= 1
+}
+
+func (p *ruleBotPlanner) shouldPauseExpansionForMilitaryBuildout() bool {
+	return p.needsBarracksTechPath() || p.needsFirstBarracks() || p.needsMoreMilitaryProduction()
+}
+
+func (p *ruleBotPlanner) needsSettlerProductionBuilding() bool {
+	if p.shouldPauseExpansionForMilitaryBuildout() {
+		return false
+	}
+	return len(p.player.Cities) < 2 && p.countOwnedSettlerProductionBuildings() == 0
+}
+
+func (p *ruleBotPlanner) countOwnedCombatUnits() int {
+	count := 0
+	for _, entry := range p.ownedUnitEntries() {
+		stats := ecs.UnitStatsC.Get(entry)
+		if isCivilianUnit(string(stats.Type)) {
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+func (p *ruleBotPlanner) hasOwnedBuildingType(buildingType string) bool {
+	return p.countOwnedBuildingType(buildingType) > 0
+}
+
+func (p *ruleBotPlanner) countOwnedBuildingType(buildingType string) int {
+	if p.req.State == nil || p.req.State.World == nil {
+		return 0
+	}
+	count := 0
+	ecs.NodesWithBuilding(p.req.State.World).Each(p.req.State.World, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+		building := ecs.BuildingC.Get(entry)
+		if building.Owner == p.playerID && strings.EqualFold(string(building.Type), buildingType) {
+			count++
+		}
+	})
+	return count
+}
+
+func (p *ruleBotPlanner) countOwnedCombatProductionBuildings() int {
+	if p.req.State == nil || p.req.State.World == nil {
+		return 0
+	}
+	count := 0
+	ecs.NodesWithBuilding(p.req.State.World).Each(p.req.State.World, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+		building := ecs.BuildingC.Get(entry)
+		if building.Owner != p.playerID || !p.isCombatProductionBuilding(string(building.Type)) {
+			return
+		}
+		count++
+	})
+	return count
+}
+
+func (p *ruleBotPlanner) countOwnedSettlerProductionBuildings() int {
+	if p.req.State == nil || p.req.State.World == nil {
+		return 0
+	}
+	count := 0
+	ecs.NodesWithBuilding(p.req.State.World).Each(p.req.State.World, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+		building := ecs.BuildingC.Get(entry)
+		if building.Owner != p.playerID || !p.isSettlerProductionBuilding(string(building.Type)) {
+			return
+		}
+		count++
+	})
+	return count
+}
+
+func (p *ruleBotPlanner) isCombatProductionBuilding(buildingID string) bool {
+	return p.buildingProducesNonCivilianUnits(buildingID)
+}
+
+func (p *ruleBotPlanner) isSettlerProductionBuilding(buildingID string) bool {
+	building, ok := staticdata.Default().GetBuilding(strings.TrimSpace(buildingID))
+	if !ok {
+		return false
+	}
+	for _, recipeID := range building.RecipeIDs {
+		recipe, ok := staticdata.Default().GetRecipe(strings.TrimSpace(recipeID))
+		if !ok {
+			continue
+		}
+		for _, unitID := range recipe.Outputs.Units {
+			if isCivilianUnit(unitID) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (p *ruleBotPlanner) buildingProducesNonCivilianUnits(buildingID string) bool {
+	building, ok := staticdata.Default().GetBuilding(strings.TrimSpace(buildingID))
+	if !ok {
+		return false
+	}
+	for _, recipeID := range building.RecipeIDs {
+		recipe, ok := staticdata.Default().GetRecipe(strings.TrimSpace(recipeID))
+		if !ok {
+			continue
+		}
+		for _, unitID := range recipe.Outputs.Units {
+			if !isCivilianUnit(unitID) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (p *ruleBotPlanner) closestCityID(nodeID string) string {
 	if p.player == nil || len(p.player.Cities) == 0 {
 		return ""
@@ -871,6 +1056,34 @@ func (p *ruleBotPlanner) closestEnemyTargetNode(unitPos domain.Position, visible
 		}
 		distance := unitPos.DistanceTo(domain.Position{X: int(node.GetPos().GetX()), Y: int(node.GetPos().GetY())})
 		if distance < bestDistance {
+			bestDistance = distance
+			bestNodeID = node.GetId()
+		}
+	}
+	return bestNodeID
+}
+
+func (p *ruleBotPlanner) closestExplorationTargetNode(unitID string, unitPos domain.Position) string {
+	if p.req.State == nil || p.req.State.World == nil || p.observation == nil || unitID == "" {
+		return ""
+	}
+
+	bestNodeID := ""
+	bestDistance := intMax
+	for _, node := range p.observation.Nodes {
+		if node == nil || strings.TrimSpace(node.GetId()) == "" || node.GetIsCurrentlyVisible() {
+			continue
+		}
+		targetEntry, ok := p.req.State.GetNode(node.GetId())
+		if !ok || targetEntry == nil {
+			continue
+		}
+		targetPos := ecs.PositionC.Get(targetEntry)
+		distance := unitPos.DistanceTo(domain.Position{X: targetPos.X, Y: targetPos.Y})
+		if distance <= 0 || distance > bestDistance {
+			continue
+		}
+		if distance < bestDistance || bestNodeID == "" || node.GetId() < bestNodeID {
 			bestDistance = distance
 			bestNodeID = node.GetId()
 		}

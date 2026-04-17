@@ -112,6 +112,48 @@ func TestRuleBotProviderAttacksVisibleEnemyUnit(t *testing.T) {
 	}
 }
 
+func TestRuleBotProviderMovesInfantryToExploreHiddenFrontier(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 1, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
+		ecs.UnitStatsC.Get(unitEntry).ID = "ally-1"
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(13)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	move := findIntent[planning.IssueUnitOrderIntent](intents)
+	if move == nil {
+		t.Fatalf("expected unit order intent, got %#v", intents)
+	}
+	if move.Action != "move" || move.TargetNodeID != "N2" {
+		t.Fatalf("unit order = %#v, want move to hidden frontier N2", *move)
+	}
+}
+
 func TestBuildDomesticDraftCandidates_MatchesRuleBotResearchAndPolicyChoices(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
@@ -178,6 +220,170 @@ func TestBuildDomesticDraftCandidates_MatchesRuleBotResearchAndPolicyChoices(t *
 	}
 	if policyCandidate.TargetID != policyIntent.NationalPolicyID {
 		t.Fatalf("policy candidate target = %q, want %q", policyCandidate.TargetID, policyIntent.NationalPolicyID)
+	}
+}
+
+func TestRuleBotProviderBuildsBarracksWithoutImmediateThreat(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2},
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "workshop", Name: "Workshop", Description: "Industrial workshop", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+			{ID: "barracks", Name: "Barracks", Description: "Military barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 90, TakeoverMode: "city_capture"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		ecs.CreateBuilding(world, "city_core", "bot-1", "N0", world.Entry(mapData.NodeIndex["N0"]))
+		state.Players["bot-1"].Research.UnlockBuilding("workshop")
+		state.Players["bot-1"].Research.UnlockBuilding("barracks")
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(31)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	buildIntent := findIntent[planning.BuildStructureIntent](intents)
+	if buildIntent == nil {
+		t.Fatalf("expected build intent, got %#v", intents)
+	}
+	if buildIntent.NodeID != "N1" || buildIntent.BuildingTypeID != "barracks" {
+		t.Fatalf("build intent = %#v, want barracks at N1", *buildIntent)
+	}
+}
+
+func TestRuleBotProviderKeepsMilitaryBuildOptionsAfterFirstBarracks(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2},
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "workshop", Name: "Workshop", Description: "Industrial workshop", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+			{ID: "barracks", Name: "Barracks", Description: "Military barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 90, TakeoverMode: "city_capture"},
+			{ID: "archery", Name: "Archery", Description: "Military archery range", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 90, TakeoverMode: "city_capture"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		ecs.CreateBuilding(world, "city_core", "bot-1", "N0", world.Entry(mapData.NodeIndex["N0"]))
+		state.Players["bot-1"].Research.UnlockBuilding("workshop")
+		state.Players["bot-1"].Research.UnlockBuilding("barracks")
+		state.Players["bot-1"].Research.UnlockBuilding("archery")
+
+		node := ecs.NodeC.Get(world.Entry(mapData.NodeIndex["N2"]))
+		node.Owner = "bot-1"
+		node.TerritoryOwner = "bot-1"
+
+		ecs.CreateBuilding(world, "barracks", "bot-1", "N0", world.Entry(mapData.NodeIndex["N1"]))
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(37)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	buildIntent := findIntent[planning.BuildStructureIntent](intents)
+	if buildIntent == nil {
+		t.Fatalf("expected build intent, got %#v", intents)
+	}
+	if buildIntent.NodeID != "N2" {
+		t.Fatalf("build intent node = %q, want N2", buildIntent.NodeID)
+	}
+	if buildIntent.BuildingTypeID != "barracks" && buildIntent.BuildingTypeID != "archery" {
+		t.Fatalf("build intent = %#v, want military building at N2", *buildIntent)
+	}
+}
+
+func TestRuleBotProviderBuildsFrontierOfficeWhenExpansionNeedsSettlerSource(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2},
+			{ID: "settler", Class: "civilian", MaxHP: 12, Attack: 0, AttackRange: 0, MoveRange: 2, VisionRange: 2},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "workshop", Name: "Workshop", Description: "Industrial workshop", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+			{ID: "barracks", Name: "Barracks", Description: "Military barracks", PlacementKind: "city_territory", BuildingScope: "in_city", RecipeIDs: []string{"barracks_infantry"}, DefaultRecipeID: "barracks_infantry", MaxHP: 90, TakeoverMode: "city_capture"},
+			{ID: "frontier_office", Name: "Frontier Office", Description: "Expansion office that trains settlers", PlacementKind: "city_territory", BuildingScope: "in_city", RecipeIDs: []string{"city_core_settler"}, DefaultRecipeID: "city_core_settler", MaxHP: 90, TakeoverMode: "city_capture"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "barracks_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1, Outputs: staticdata.RecipeOutputs{Units: []string{"infantry"}}},
+			{ID: "city_core_settler", BuildingID: "frontier_office", WorkAmount: 2, BaseProgress: 1, Outputs: staticdata.RecipeOutputs{Units: []string{"settler"}}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		ecs.CreateBuilding(world, "city_core", "bot-1", "N0", world.Entry(mapData.NodeIndex["N0"]))
+		state.Players["bot-1"].Research.UnlockBuilding("workshop")
+		state.Players["bot-1"].Research.UnlockBuilding("barracks")
+		state.Players["bot-1"].Research.UnlockBuilding("frontier_office")
+		ecs.CreateBuilding(world, "barracks", "bot-1", "N0", world.Entry(mapData.NodeIndex["N2"]))
+		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0})
+		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0})
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(41)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	buildIntent := findIntent[planning.BuildStructureIntent](intents)
+	if buildIntent == nil {
+		t.Fatalf("expected build intent, got %#v", intents)
+	}
+	if buildIntent.NodeID != "N1" || buildIntent.BuildingTypeID != "frontier_office" {
+		t.Fatalf("build intent = %#v, want frontier_office at N1", *buildIntent)
 	}
 }
 

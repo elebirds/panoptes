@@ -8,10 +8,17 @@
       "required_resource_type": "",
       "resource_costs": { "wood": 2 },
       "point_costs": { "industry_output": 1 },
-      "recipe_ids": ["city_core_settler"],
-      "default_recipe_id": "city_core_settler",
+      "recipe_ids": ["city_core_provisions"],
+      "default_recipe_id": "city_core_provisions",
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "max_hp": 100,
       "takeover_mode": "disabled",
       "tags": ["core", "governance"]
@@ -82,6 +89,21 @@
       "max_hp": 90,
       "takeover_mode": "city_capture",
       "tags": ["production", "industry"]
+    },
+    {
+      "id": "frontier_office",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 1, "food": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["city_core_settler"],
+      "default_recipe_id": "city_core_settler",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "expansion"]
     },
     {
       "id": "barracks",

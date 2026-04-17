@@ -1,6 +1,7 @@
 {
   "config_version": "2026-04-17",
   "recipe_order": [
+    "city_core_provisions",
     "city_core_settler",
     "farm_food",
     "farm_harvest",

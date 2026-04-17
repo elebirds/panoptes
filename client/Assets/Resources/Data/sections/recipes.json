@@ -1,11 +1,32 @@
 {
   "recipes": [
     {
+      "id": "city_core_provisions",
+      "name": "城市供给",
+      "description": "为城市提供基础粮食与运转保障。",
+      "icon_key": "recipe_farm_food",
+      "building_id": "city_core",
+      "resource_inputs": {},
+      "point_inputs": {},
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 1
+        }
+      },
+      "sort_order": 5,
+      "tags": [
+        "core",
+        "food"
+      ]
+    },
+    {
       "id": "city_core_settler",
       "name": "组织开拓",
       "description": "产出开拓者",
       "icon_key": "recipe_city_core_settler",
-      "building_id": "city_core",
+      "building_id": "frontier_office",
       "resource_inputs": {
         "food": 2,
         "wood": 1
