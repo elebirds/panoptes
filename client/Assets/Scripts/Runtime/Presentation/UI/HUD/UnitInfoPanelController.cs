@@ -73,6 +73,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         [Header("Slide")]
         [SerializeField] private float hiddenOffsetX = 420f;
+        [SerializeField] private float hiddenBottomMargin = 16f;
         [SerializeField] private float shownRightMargin = 16f;
         [SerializeField] private float shownBottomMargin = 16f;
         [SerializeField] private float slideDuration = 0.2f;
@@ -1517,8 +1518,20 @@ namespace Panoptes.Presentation.UI.HUD
                 y = dockRightOfRect.anchoredPosition.y;
             }
 
+            var panelHeight = 0f;
+            if (panelRoot != null)
+            {
+                panelHeight = Mathf.Max(Mathf.Abs(panelRoot.rect.height), Mathf.Abs(panelRoot.sizeDelta.y));
+            }
+            if (panelHeight <= 0.01f)
+            {
+                panelHeight = 280f;
+            }
+
             _shownAnchoredPos = new Vector2(x, y);
-            _hiddenAnchoredPos = new Vector2(x + Mathf.Abs(hiddenOffsetX), y);
+            _hiddenAnchoredPos = new Vector2(
+                x + Mathf.Abs(hiddenOffsetX),
+                -panelHeight - Mathf.Max(0f, hiddenBottomMargin));
         }
 
         private void AnimateVisibility(bool open)
@@ -1600,7 +1613,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Vector2 GetTargetAnchoredPosition(bool open)
         {
             var basePos = open ? _shownAnchoredPos : _hiddenAnchoredPos;
-            return basePos + _externalOffset;
+            return open ? basePos + _externalOffset : basePos;
         }
 
         private ActionButtonSlot BuildDefaultButtonSlot(string actionId, string defaultLabel)

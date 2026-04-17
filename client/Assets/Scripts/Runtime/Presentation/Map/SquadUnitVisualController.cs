@@ -20,6 +20,7 @@ namespace Panoptes.Presentation.Map
         {
             public Transform root;
             [NonSerialized] public Animator animator;
+            [NonSerialized] public string debugName;
             [NonSerialized] public bool hasMoveBoolParam;
             [NonSerialized] public bool hasMoveSpeedParam;
             [NonSerialized] public int moveBoolHash;
@@ -31,6 +32,13 @@ namespace Panoptes.Presentation.Map
             [NonSerialized] public bool hasMoveState;
             [NonSerialized] public float lastIdleNormalizedTime;
             [NonSerialized] public int idleStallFrames;
+            [NonSerialized] public bool warnedMissingController;
+            [NonSerialized] public bool warnedMissingIdleState;
+            [NonSerialized] public bool warnedMissingMoveState;
+            [NonSerialized] public bool warnedMoveStateNotEntered;
+            [NonSerialized] public bool warnedIdleStateNotEntered;
+            [NonSerialized] public bool warnedAnimatorSpeedReset;
+            [NonSerialized] public bool warnedLayerWeightReset;
         }
 
         [Header("Members")]
@@ -44,6 +52,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string attackTriggerParam = "attack";
         [SerializeField] private string attackStateName = "Attack";
         [SerializeField] private bool useStateFallbackWhenNoParams = false;
+        [SerializeField] private bool forceStatePlayback = true;
+        [SerializeField] private bool preferDirectStatePlay = true;
         [SerializeField] private string idleStateName = "Idle";
         [SerializeField] private string moveStateName = "Run";
         [SerializeField] private float stateCrossFadeSeconds = 0.08f;
@@ -56,7 +66,10 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private int bodyVariantIndex = -1;
         [SerializeField] private int headVariantIndex = -1;
         [SerializeField] private int weaponVariantIndex = -1;
+        [SerializeField] private bool forceSingleBodyVariant = true;
+        [SerializeField] private bool forceSingleHeadVariant = true;
         [SerializeField] private bool randomizeVariantPerMember = false;
+        [SerializeField] private bool forceApplyConfiguredVariantsOnBind = true;
         [SerializeField] private string[] bodyNamePrefixes = { "body_" };
         [SerializeField] private string[] headNamePrefixes = { "head_" };
         [SerializeField] private string[] weaponNamePrefixes = { "weapon_", "w_", "sword_", "bow_", "crossbow_", "spear_", "halberd_", "staff_", "hammer_", "shield_" };
@@ -85,7 +98,14 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private int maxVisibleRenderersPerMember = 6;
         [SerializeField] private bool disableCastShadows = true;
         [SerializeField] private bool disableReceiveShadows = true;
+        [SerializeField] private bool autoApplyRenderBudgetWhenOverdrawRiskHigh = true;
+        [SerializeField] private int highRendererCountThresholdPerMember = 18;
         [SerializeField] private string[] rendererPriorityKeywords = { "body", "head", "weapon", "shield", "helmet", "cape", "cloak" };
+
+        [Header("Diagnostics")]
+        [SerializeField] private bool enableAnimationDiagnostics = true;
+        [SerializeField] private bool logMemberBindingDetails = true;
+        [SerializeField] private bool logMoveStateTransitions = true;
 
         private readonly List<GameObject> _variantBuffer = new();
         private readonly List<GameObject> _weaponBuffer = new();
@@ -151,6 +171,28 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                if (member.animator.runtimeAnimatorController == null)
+                {
+                    if (!member.warnedMissingController)
+                    {
+                        member.warnedMissingController = true;
+                        LogAnimationWarning($"Member '{member.debugName}' has no RuntimeAnimatorController, cannot play move/idle states.");
+                    }
+                    continue;
+                }
+
+                EnsurePrimaryLayerWeight(member);
+
+                if (member.animator.speed <= 0f)
+                {
+                    member.animator.speed = 1f;
+                    if (!member.warnedAnimatorSpeedReset)
+                    {
+                        member.warnedAnimatorSpeedReset = true;
+                        LogAnimationWarning($"Member '{member.debugName}' animator.speed<=0, force set to 1.");
+                    }
+                }
+
                 if (member.hasMoveBoolParam)
                 {
                     member.animator.SetBool(member.moveBoolHash, isMoving);
@@ -161,25 +203,81 @@ namespace Panoptes.Presentation.Map
                     member.animator.SetFloat(member.moveSpeedHash, Mathf.Max(0f, normalizedSpeed));
                 }
 
-                if (!useStateFallbackWhenNoParams || member.hasMoveBoolParam || member.hasMoveSpeedParam)
+                var shouldUseStatePlayback = forceStatePlayback
+                                             || (useStateFallbackWhenNoParams && !member.hasMoveBoolParam && !member.hasMoveSpeedParam);
+                if (!shouldUseStatePlayback)
                 {
                     if (isMoving)
                     {
                         member.idleStallFrames = 0;
                         member.lastIdleNormalizedTime = -1f;
                     }
+                    else
+                    {
+                        member.isMoveStatePlaying = false;
+                    }
                     continue;
                 }
 
                 if (isMoving && member.hasMoveState && !member.isMoveStatePlaying)
                 {
-                    member.animator.CrossFade(member.moveStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
+                    if (logMoveStateTransitions)
+                    {
+                        var stateBefore = member.animator.GetCurrentAnimatorStateInfo(0);
+                        LogAnimationInfo(
+                            $"MoveStart member='{member.debugName}' fromShort={stateBefore.shortNameHash} " +
+                            $"toMove='{moveStateName}' hash={member.moveStateHash} fade={Mathf.Max(0f, stateCrossFadeSeconds)}");
+                    }
+                    PlayState(member.animator, member.moveStateHash, restartAtZero: true);
                     member.isMoveStatePlaying = true;
+                    member.warnedMoveStateNotEntered = false;
+                }
+                else if (isMoving && !member.hasMoveState && !member.warnedMissingMoveState)
+                {
+                    member.warnedMissingMoveState = true;
+                    LogAnimationWarning($"Member '{member.debugName}' missing move state '{moveStateName}'.");
+                }
+                else if (isMoving && member.hasMoveState && member.isMoveStatePlaying && !IsAnimatorInState(member.animator, member.moveStateHash))
+                {
+                    if (!member.warnedMoveStateNotEntered)
+                    {
+                        member.warnedMoveStateNotEntered = true;
+                        var current = member.animator.GetCurrentAnimatorStateInfo(0);
+                        LogAnimationWarning(
+                            $"MoveStateNotEntered member='{member.debugName}' expected='{moveStateName}' hash={member.moveStateHash} " +
+                            $"currentShort={current.shortNameHash} currentNorm={current.normalizedTime:0.000}");
+                    }
                 }
                 else if (!isMoving && member.hasIdleState && member.isMoveStatePlaying)
                 {
-                    member.animator.CrossFade(member.idleStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
+                    if (logMoveStateTransitions)
+                    {
+                        var stateBefore = member.animator.GetCurrentAnimatorStateInfo(0);
+                        LogAnimationInfo(
+                            $"MoveStop member='{member.debugName}' fromShort={stateBefore.shortNameHash} " +
+                            $"toIdle='{idleStateName}' hash={member.idleStateHash} fade={Mathf.Max(0f, stateCrossFadeSeconds)}");
+                    }
+                    PlayState(member.animator, member.idleStateHash, restartAtZero: false);
                     member.isMoveStatePlaying = false;
+                    member.warnedIdleStateNotEntered = false;
+                }
+                else if (!isMoving && member.hasIdleState && !IsAnimatorInState(member.animator, member.idleStateHash))
+                {
+                    PlayState(member.animator, member.idleStateHash, restartAtZero: false);
+                    member.isMoveStatePlaying = false;
+                    if (!member.warnedIdleStateNotEntered)
+                    {
+                        member.warnedIdleStateNotEntered = true;
+                        var current = member.animator.GetCurrentAnimatorStateInfo(0);
+                        LogAnimationWarning(
+                            $"IdleStateNotEntered member='{member.debugName}' expected='{idleStateName}' hash={member.idleStateHash} " +
+                            $"currentShort={current.shortNameHash} currentNorm={current.normalizedTime:0.000}");
+                    }
+                }
+                else if (!isMoving && !member.hasIdleState && !member.warnedMissingIdleState)
+                {
+                    member.warnedMissingIdleState = true;
+                    LogAnimationWarning($"Member '{member.debugName}' missing idle state '{idleStateName}'.");
                 }
 
                 if (isMoving)
@@ -273,20 +371,29 @@ namespace Panoptes.Presentation.Map
         public void OnUnitBound(string unitId, string unitType, string faction)
         {
             var seed = string.Concat(unitId ?? string.Empty, "|", unitType ?? string.Empty, "|", faction ?? string.Empty);
-            if (applyAppearanceOnBind)
+            if (ShouldApplyAppearanceOnBind())
             {
                 ApplyAppearance(seed);
             }
 
             if (applyRoleVariantOnBind)
             {
-                ApplyRoleVariant(ResolveRoleVariant(unitType));
+                var roleVariant = ResolveRoleVariant(unitType);
+                ApplyRoleVariant(roleVariant);
+                LogAnimationInfo($"OnUnitBound unitId='{unitId}' unitType='{unitType}' role='{roleVariant}' members={(members == null ? 0 : members.Length)} idle='{idleStateName}' move='{moveStateName}'.");
             }
 
             if (applyRenderBudgetOnBind)
             {
                 ApplyRenderBudget();
             }
+            else if (autoApplyRenderBudgetWhenOverdrawRiskHigh && IsRendererCountOverThreshold())
+            {
+                ApplyRenderBudget();
+            }
+
+            // Ensure freshly bound/created units land in idle pose immediately.
+            ForceIdlePose();
         }
 
         public void ApplyAppearance(string seed)
@@ -296,7 +403,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (bodyVariantIndex < 0 && headVariantIndex < 0 && weaponVariantIndex < 0)
+            var shouldApplyBody = forceSingleBodyVariant || bodyVariantIndex >= 0;
+            var shouldApplyHead = forceSingleHeadVariant || headVariantIndex >= 0;
+            var shouldApplyWeapon = weaponVariantIndex >= 0;
+            if (!shouldApplyBody && !shouldApplyHead && !shouldApplyWeapon)
             {
                 return;
             }
@@ -313,9 +423,26 @@ namespace Panoptes.Presentation.Map
 
                 var memberSeed = unchecked((int)(baseSeed + (uint)(i * 2654435761)));
 
-                ApplyVariantSet(member.root, bodyNamePrefixes, ResolveVariantIndex(bodyVariantIndex, memberSeed ^ 0x13579BDF));
-                ApplyVariantSet(member.root, headNamePrefixes, ResolveVariantIndex(headVariantIndex, memberSeed ^ 0x2468ACE0));
-                ApplyVariantSet(member.root, weaponNamePrefixes, ResolveVariantIndex(weaponVariantIndex, memberSeed ^ 0x5A5A5A5A));
+                if (shouldApplyBody)
+                {
+                    var resolvedBodyIndex = bodyVariantIndex >= 0
+                        ? bodyVariantIndex
+                        : 0;
+                    ApplyVariantSet(member.root, bodyNamePrefixes, ResolveVariantIndex(resolvedBodyIndex, memberSeed ^ 0x13579BDF));
+                }
+
+                if (shouldApplyHead)
+                {
+                    var resolvedHeadIndex = headVariantIndex >= 0
+                        ? headVariantIndex
+                        : 0;
+                    ApplyVariantSet(member.root, headNamePrefixes, ResolveVariantIndex(resolvedHeadIndex, memberSeed ^ 0x2468ACE0));
+                }
+
+                if (shouldApplyWeapon)
+                {
+                    ApplyVariantSet(member.root, weaponNamePrefixes, ResolveVariantIndex(weaponVariantIndex, memberSeed ^ 0x5A5A5A5A));
+                }
             }
         }
 
@@ -332,6 +459,26 @@ namespace Panoptes.Presentation.Map
             }
 
             return Mathf.Abs(configuredIndex + memberSeed);
+        }
+
+        private bool ShouldApplyAppearanceOnBind()
+        {
+            if (applyAppearanceOnBind)
+            {
+                return true;
+            }
+
+            if (forceSingleBodyVariant || forceSingleHeadVariant)
+            {
+                return true;
+            }
+
+            if (!forceApplyConfiguredVariantsOnBind)
+            {
+                return false;
+            }
+
+            return bodyVariantIndex >= 0 || headVariantIndex >= 0 || weaponVariantIndex >= 0;
         }
 
         private void CollectMembersFromFormationRoot()
@@ -375,7 +522,8 @@ namespace Panoptes.Presentation.Map
                     collected.Add(new MemberBinding
                     {
                         root = animator.transform,
-                        animator = animator
+                        animator = animator,
+                        debugName = animator.name
                     });
                 }
             }
@@ -399,7 +547,8 @@ namespace Panoptes.Presentation.Map
                     collected.Add(new MemberBinding
                     {
                         root = animator.transform,
-                        animator = animator
+                        animator = animator,
+                        debugName = animator.name
                     });
                 }
             }
@@ -435,10 +584,25 @@ namespace Panoptes.Presentation.Map
                 member.animator = member.animator != null
                     ? member.animator
                     : member.root.GetComponentInChildren<Animator>(true);
+                member.debugName = member.animator != null ? member.animator.name : member.root.name;
+                member.warnedMissingController = false;
+                member.warnedMissingIdleState = false;
+                member.warnedMissingMoveState = false;
+                member.warnedMoveStateNotEntered = false;
+                member.warnedIdleStateNotEntered = false;
+                member.warnedAnimatorSpeedReset = false;
+                member.warnedLayerWeightReset = false;
 
                 if (member.animator == null)
                 {
+                    LogAnimationWarning($"Member '{member.debugName}' has no Animator component.");
                     continue;
+                }
+
+                if (!member.animator.enabled)
+                {
+                    member.animator.enabled = true;
+                    LogAnimationWarning($"Member '{member.debugName}' Animator was disabled; force-enabled.");
                 }
 
                 member.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
@@ -464,7 +628,15 @@ namespace Panoptes.Presentation.Map
                     member.hasIdleState = false;
                     member.hasMoveState = false;
                     member.isMoveStatePlaying = false;
+                    LogAnimationWarning($"Member '{member.debugName}' still has no RuntimeAnimatorController after bind.");
                     continue;
+                }
+
+                EnsurePrimaryLayerWeight(member);
+                if (member.animator.speed <= 0f)
+                {
+                    member.animator.speed = 1f;
+                    LogAnimationWarning($"Member '{member.debugName}' animator.speed<=0 on bind, force set to 1.");
                 }
 
                 member.moveBoolHash = moveBoolHash;
@@ -480,6 +652,18 @@ namespace Panoptes.Presentation.Map
                 member.isMoveStatePlaying = false;
                 member.lastIdleNormalizedTime = -1f;
                 member.idleStallFrames = 0;
+
+                if (logMemberBindingDetails)
+                {
+                    var controllerName = member.animator.runtimeAnimatorController != null
+                        ? member.animator.runtimeAnimatorController.name
+                        : "<null>";
+                    LogAnimationInfo(
+                        $"Bind member='{member.debugName}' controller='{controllerName}' " +
+                        $"boolParam={member.hasMoveBoolParam} speedParam={member.hasMoveSpeedParam} " +
+                        $"idleState='{idleStateName}' exists={member.hasIdleState} " +
+                        $"moveState='{moveStateName}' exists={member.hasMoveState}");
+                }
             }
         }
 
@@ -631,7 +815,7 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private static bool ShouldGroupByVariantFamilies(string[] prefixes)
+        private bool ShouldGroupByVariantFamilies(string[] prefixes)
         {
             if (prefixes == null || prefixes.Length == 0)
             {
@@ -641,8 +825,12 @@ namespace Panoptes.Presentation.Map
             for (var i = 0; i < prefixes.Length; i++)
             {
                 var prefix = NormalizeToken(prefixes[i]);
-                if (prefix == "body_" || prefix == "head_")
+                if (prefix == "body_")
                 {
+                    if (forceSingleBodyVariant)
+                    {
+                        return false;
+                    }
                     return true;
                 }
             }
@@ -731,6 +919,71 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private static bool IsAnimatorInState(Animator animator, int stateHash)
+        {
+            if (animator == null || stateHash == 0)
+            {
+                return false;
+            }
+
+            var state = animator.GetCurrentAnimatorStateInfo(0);
+            return state.shortNameHash == stateHash || state.fullPathHash == stateHash;
+        }
+
+        private void EnsurePrimaryLayerWeight(MemberBinding member)
+        {
+            if (member == null || member.animator == null)
+            {
+                return;
+            }
+
+            if (member.animator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+
+            if (member.animator.layerCount <= 0)
+            {
+                return;
+            }
+
+            var layerWeight = member.animator.GetLayerWeight(0);
+            if (layerWeight > 0.0001f)
+            {
+                return;
+            }
+
+            member.animator.SetLayerWeight(0, 1f);
+            if (!member.warnedLayerWeightReset)
+            {
+                member.warnedLayerWeightReset = true;
+                LogAnimationWarning($"Member '{member.debugName}' layer0 weight was {layerWeight:0.###}, force set to 1.");
+            }
+        }
+
+        private void PlayState(Animator animator, int stateHash, bool restartAtZero)
+        {
+            if (animator == null || stateHash == 0)
+            {
+                return;
+            }
+
+            if (preferDirectStatePlay)
+            {
+                var normalizedTime = 0f;
+                if (!restartAtZero)
+                {
+                    var current = animator.GetCurrentAnimatorStateInfo(0);
+                    normalizedTime = Mathf.Repeat(current.normalizedTime, 1f);
+                }
+                animator.Play(stateHash, 0, normalizedTime);
+                animator.Update(0f);
+                return;
+            }
+
+            animator.CrossFade(stateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
         }
 
         private static bool HasAnimatorParameter(Animator animator, int hash, AnimatorControllerParameterType type)
@@ -1049,6 +1302,26 @@ namespace Panoptes.Presentation.Map
             return false;
         }
 
+        private void LogAnimationInfo(string message)
+        {
+            if (!enableAnimationDiagnostics || string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            Debug.Log($"[SquadUnitVisualController] {message}", this);
+        }
+
+        private void LogAnimationWarning(string message)
+        {
+            if (!enableAnimationDiagnostics || string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            Debug.LogWarning($"[SquadUnitVisualController] {message}", this);
+        }
+
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
@@ -1188,6 +1461,47 @@ namespace Panoptes.Presentation.Map
             }
 
             return score;
+        }
+
+        private bool IsRendererCountOverThreshold()
+        {
+            if (members == null || members.Length == 0)
+            {
+                return false;
+            }
+
+            var threshold = Mathf.Max(1, highRendererCountThresholdPerMember);
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.root == null)
+                {
+                    continue;
+                }
+
+                var renderers = member.root.GetComponentsInChildren<Renderer>(true);
+                if (renderers == null || renderers.Length == 0)
+                {
+                    continue;
+                }
+
+                var activeRendererCount = 0;
+                for (var r = 0; r < renderers.Length; r++)
+                {
+                    var renderer = renderers[r];
+                    if (renderer != null && renderer.gameObject != null && renderer.gameObject.activeInHierarchy)
+                    {
+                        activeRendererCount++;
+                    }
+                }
+
+                if (activeRendererCount > threshold)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
