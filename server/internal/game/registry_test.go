@@ -12,8 +12,8 @@ func TestRegistryRegisterCancelsPreviousRoomForOverlappingPlayer(t *testing.T) {
 	registry := NewGameRoomRegistry()
 	transport := newStubTransport()
 
-	oldRoom := NewRoom("game-old", []Player{
-		NewHumanPlayer("player-1", "alice", transport),
+	oldRoom := NewRoom("game-old", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
 	}, transport, &config.Config{})
 	oldCanceled := false
 	oldRoom.runtime.SetCancelFunc(func() {
@@ -21,8 +21,8 @@ func TestRegistryRegisterCancelsPreviousRoomForOverlappingPlayer(t *testing.T) {
 	})
 	registry.Register(oldRoom)
 
-	newRoom := NewRoom("game-new", []Player{
-		NewHumanPlayer("player-1", "alice", transport),
+	newRoom := NewRoom("game-new", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
 	}, transport, &config.Config{})
 	registry.Register(newRoom)
 
@@ -32,7 +32,7 @@ func TestRegistryRegisterCancelsPreviousRoomForOverlappingPlayer(t *testing.T) {
 	if _, exists := registry.rooms["game-old"]; exists {
 		t.Fatalf("previous room should be removed from registry.rooms")
 	}
-	room, ok := registry.GetRoomByPlayerID("player-1")
+	room, ok := registry.GetRoomByParticipantID("player-1")
 	if !ok {
 		t.Fatalf("player-1 should still resolve to an active room")
 	}
@@ -41,12 +41,12 @@ func TestRegistryRegisterCancelsPreviousRoomForOverlappingPlayer(t *testing.T) {
 	}
 }
 
-func TestRegistryHandlePlayerDisconnectEndsActiveGame(t *testing.T) {
+func TestRegistryHandleParticipantDisconnectEndsActiveGame(t *testing.T) {
 	registry := NewGameRoomRegistry()
 	transport := newStubTransport()
-	room := NewRoom("game-1", []Player{
-		NewHumanPlayer("player-1", "alice", transport),
-		NewHumanPlayer("player-2", "bob", transport),
+	room := NewRoom("game-1", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewHumanParticipantSpec("player-2", "bob"),
 	}, transport, &config.Config{})
 	room.runtime.SetState(domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{}))
 
@@ -56,7 +56,7 @@ func TestRegistryHandlePlayerDisconnectEndsActiveGame(t *testing.T) {
 	})
 
 	registry.Register(room)
-	registry.HandlePlayerDisconnect("player-1")
+	registry.HandleParticipantDisconnect("player-1")
 
 	state := room.State()
 	if !state.IsOver {
@@ -71,10 +71,10 @@ func TestRegistryHandlePlayerDisconnectEndsActiveGame(t *testing.T) {
 	if !canceled {
 		t.Fatalf("runtime should be canceled after disconnect forfeit")
 	}
-	if _, ok := registry.GetRoomByPlayerID("player-1"); ok {
+	if _, ok := registry.GetRoomByParticipantID("player-1"); ok {
 		t.Fatalf("player-1 should be removed from active registry after disconnect forfeit")
 	}
-	if _, ok := registry.GetRoomByPlayerID("player-2"); ok {
+	if _, ok := registry.GetRoomByParticipantID("player-2"); ok {
 		t.Fatalf("player-2 should be removed from active registry after disconnect forfeit")
 	}
 
@@ -89,5 +89,28 @@ func TestRegistryHandlePlayerDisconnectEndsActiveGame(t *testing.T) {
 		if gameOver.GetReason() != "player_disconnected" {
 			t.Fatalf("%s game over reason = %q, want player_disconnected", playerID, gameOver.GetReason())
 		}
+	}
+}
+
+func TestRegistryHandleParticipantDisconnectIgnoresBotParticipants(t *testing.T) {
+	registry := NewGameRoomRegistry()
+	transport := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewBotParticipantSpec("bot-1", "bot"),
+	}, transport, &config.Config{})
+	room.runtime.SetState(domain.NewGameState("game-1", []string{"player-1", "bot-1"}, []string{"alice", "bot"}, &domain.MapData{}))
+	registry.Register(room)
+
+	registry.HandleParticipantDisconnect("bot-1")
+
+	if room.State().IsOver {
+		t.Fatalf("bot disconnect should not end the game")
+	}
+	if _, ok := registry.GetRoomByParticipantID("player-1"); !ok {
+		t.Fatalf("human participant should remain registered")
+	}
+	if _, ok := registry.GetRoomByParticipantID("bot-1"); !ok {
+		t.Fatalf("bot participant should remain registered")
 	}
 }
