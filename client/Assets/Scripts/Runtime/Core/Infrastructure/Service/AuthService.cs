@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using Panoptes.Core.Infrastructure.Network;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -40,9 +41,12 @@ namespace Panoptes.Core.Infrastructure.Service
             public string error;
         }
 
-        public AuthService(string baseUrl = "http://localhost:8080")
+        public AuthService(string baseUrl = null)
         {
-            _baseUrl = baseUrl.TrimEnd('/');
+            var resolvedBaseUrl = string.IsNullOrWhiteSpace(baseUrl)
+                ? ServerEndpointResolver.ResolveHttpBaseUrl(ServerEndpointResolver.ResolveCurrentWebSocketUrl())
+                : ServerEndpointResolver.ResolveHttpBaseUrl(baseUrl);
+            _baseUrl = resolvedBaseUrl.TrimEnd('/');
         }
 
         public Task<AuthResult> RegisterAsync(string username, string password)
