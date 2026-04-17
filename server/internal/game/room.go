@@ -16,6 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	gameprojection "github.com/elebirds/panoptes/internal/game/projection"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
@@ -99,6 +100,13 @@ func (r *GameRoom) ParticipantIDs() []string {
 		return nil
 	}
 	return r.runtime.ParticipantIDs()
+}
+
+func (r *GameRoom) Participant(participantID string) (participant.Participant, bool) {
+	if r == nil || r.runtime == nil {
+		return participant.Participant{}, false
+	}
+	return r.runtime.Participant(participantID)
 }
 
 func (r *GameRoom) PlayerIDs() []string {
