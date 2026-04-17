@@ -707,7 +707,7 @@ Chunk 6 实际落地时采用了“typed 命令反馈 + 作者源结构攻击资
 - [ ] **Step 3: 为单位信息面板保留开拓者建城和步兵基础指令，并隐藏未实现谱系动作**
 - [ ] **Step 4: 让“提交回合”前的草稿状态可见且可撤销，确保玩家理解自己本回合做了什么**
 
-当前状态：`ResourceHUD / TurnHUD / TechTreePanelController / BuildCommandPanel / RecipeSynthesisPanel / UnitInfoPanelController / CityCoreHpBarOverlayController` 已接入主线，且单位指令与建城入口已经并入 `UnitInfoPanelController`；但正式国策/制度 HUD 尚未接到稳定入口，`CityCoreProductionPanel` 仍保留占位逻辑，草稿解释与撤销体验也还未按计划完全收口。
+当前状态：`ResourceHUD / TurnHUD / TechTreePanelController / BuildCommandPanel / RecipeSynthesisPanel / UnitInfoPanelController / CityCoreHpBarOverlayController` 已接入主线，且单位指令与建城入口已经并入 `UnitInfoPanelController`；`CityCoreProductionPanel` 已删除，城市核心运营入口已收口为 `Build + Synthesis/Recipe`，科技树只保留 `ResourceHUD` 全局入口；但正式国策/制度 HUD 与草稿解释/撤销体验仍未按计划完全收口。
 
 ### Task 23: 地图展示与结算回放
 

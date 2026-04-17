@@ -24,6 +24,7 @@ namespace Panoptes.Core.Application.Cache
         private readonly List<QueuedRecipeSelectionDto> _recipeSelections = new();
         private readonly List<QueuedWarZoneDirectiveDto> _warZoneDirectives = new();
         private readonly List<PlanningWarZoneDto> _warZones = new();
+        private readonly List<MinisterDraftDto> _ministerDrafts = new();
 
         private string _pendingRequestId = string.Empty;
         private string _pendingUnitId = string.Empty;
@@ -42,6 +43,7 @@ namespace Panoptes.Core.Application.Cache
         public IReadOnlyList<QueuedRecipeSelectionDto> RecipeSelections => _recipeSelections;
         public IReadOnlyList<QueuedWarZoneDirectiveDto> WarZoneDirectives => _warZoneDirectives;
         public IReadOnlyList<PlanningWarZoneDto> WarZones => _warZones;
+        public IReadOnlyList<MinisterDraftDto> MinisterDrafts => _ministerDrafts;
         public PathPreviewDto CurrentPreview { get; private set; }
         public BuildPreviewDto CurrentBuildPreview { get; private set; }
         public RecipePreviewDto CurrentRecipePreview { get; private set; }
@@ -121,6 +123,28 @@ namespace Panoptes.Core.Application.Cache
             return false;
         }
 
+        public List<MinisterDraftDto> GetDomesticMinisterDrafts(bool includeRejected = false)
+        {
+            var result = new List<MinisterDraftDto>();
+            for (var i = 0; i < _ministerDrafts.Count; i++)
+            {
+                var draft = _ministerDrafts[i];
+                if (draft == null || !draft.IsDomestic)
+                {
+                    continue;
+                }
+
+                if (!includeRejected && draft.IsRejected)
+                {
+                    continue;
+                }
+
+                result.Add(draft);
+            }
+
+            return result;
+        }
+
         public void TrackPreviewRequest(string requestId, string unitId, string action, string targetNodeId)
         {
             _pendingRequestId = requestId ?? string.Empty;
@@ -182,6 +206,7 @@ namespace Panoptes.Core.Application.Cache
             _recipeSelections.Clear();
             _warZoneDirectives.Clear();
             _warZones.Clear();
+            _ministerDrafts.Clear();
 
             if (msg != null && msg.UnitOrders != null)
             {
@@ -267,6 +292,17 @@ namespace Panoptes.Core.Application.Cache
                         Directive = zone.Directive,
                         TargetNode = zone.TargetNode
                     });
+                }
+            }
+            if (msg != null && msg.MinisterDrafts != null)
+            {
+                for (var i = 0; i < msg.MinisterDrafts.Count; i++)
+                {
+                    var draft = MinisterDraftDto.FromView(msg.MinisterDrafts[i]);
+                    if (draft != null)
+                    {
+                        _ministerDrafts.Add(draft);
+                    }
                 }
             }
             if (msg != null && msg.PlannedInstitutionPolicyIds != null)
@@ -426,6 +462,7 @@ namespace Panoptes.Core.Application.Cache
             _recipeSelections.Clear();
             _warZoneDirectives.Clear();
             _warZones.Clear();
+            _ministerDrafts.Clear();
             OrdersChanged?.Invoke();
         }
 

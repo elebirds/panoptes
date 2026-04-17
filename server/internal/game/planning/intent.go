@@ -50,6 +50,14 @@ type SetBuildingRecipeIntent struct {
 
 func (SetBuildingRecipeIntent) isPlanningIntent() {}
 
+type SetMinisterDirectiveIntent struct {
+	MinisterRole  string
+	DirectiveType string
+	DraftID       string
+}
+
+func (SetMinisterDirectiveIntent) isPlanningIntent() {}
+
 type IssueUnitOrderIntent struct {
 	UnitID          string
 	Action          string

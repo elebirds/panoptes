@@ -12,6 +12,9 @@ func (p *PlanningInputs) EnsureDraftMaps() {
 	if p == nil {
 		return
 	}
+	if p.MinisterDrafts == nil {
+		p.MinisterDrafts = make(map[string][]MinisterDraft)
+	}
 	if p.MinisterDirectives == nil {
 		p.MinisterDirectives = make(map[string]string)
 	}

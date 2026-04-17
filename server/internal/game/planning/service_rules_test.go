@@ -2,10 +2,12 @@ package planning
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	"github.com/elebirds/panoptes/internal/game/scenario"
@@ -565,28 +567,265 @@ func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	}
 }
 
-func TestSetMinisterDirectiveRejectedAsNonMVP(t *testing.T) {
-	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+func TestSetMinisterDirectiveAcceptsResearchDraftAndRefreshesSnapshot(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-research-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "agrarian_foundations",
+			TargetLabel:  "Agrarian Foundations",
+			Title:        "建议优先农业基础",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
 
 	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{Content: "build more farms"},
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"accept","draft_id":"draft-research-1"}`,
+			},
 		},
 	})
-	if err == nil {
-		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
 	}
-	problem, ok := cmddispatch.AsProblem(err)
-	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
-		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	result := lastMessage[*pb.MsgResearchResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
+		t.Fatalf("research result = %#v, want accepted agrarian_foundations", result)
 	}
-	if got := state.TurnRuntime.Planning.MinisterDirectives["player-1"]; got != "" {
-		t.Fatalf("minister directive = %q, want empty", got)
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
 	}
-	if len(session.sent["player-1"]) != 0 {
-		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || snapshot.GetPlannedResearchTargetTechnologyId() != "agrarian_foundations" {
+		t.Fatalf("planning snapshot = %#v, want agrarian_foundations", snapshot)
+	}
+	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-research-1")
+	if status != "accepted" {
+		t.Fatalf("draft status = %q, want accepted", status)
+	}
+}
+
+func TestSetMinisterDirectiveRejectsDraftAndMarksItUnavailable(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"reject","draft_id":"draft-policy-1"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil {
+		t.Fatalf("planning snapshot is nil")
+	}
+	if got := len(snapshot.GetMinisterDrafts()); got != 1 {
+		t.Fatalf("minister draft count = %d, want 1", got)
+	}
+	if snapshot.GetMinisterDrafts()[0].GetAvailable() {
+		t.Fatalf("rejected draft should be unavailable")
+	}
+	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
+	if status != "rejected" {
+		t.Fatalf("draft status = %q, want rejected", status)
+	}
+}
+
+func TestManualPolicyChangeMarksAcceptedDraftStale(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusAccepted,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("expansion"))
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "reorganization"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || snapshot.GetPlannedNationalPolicyId() != "reorganization" {
+		t.Fatalf("planning snapshot = %#v, want reorganization", snapshot)
+	}
+	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
+	if status != "stale" {
+		t.Fatalf("draft status = %q, want stale", status)
+	}
+}
+
+func TestStaleMinisterDraftCanBeAcceptedAgain(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusStale,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("reorganization"))
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
+	if result == nil || !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
+		t.Fatalf("policy result = %#v, want accepted expansion", result)
+	}
+
+	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
+	if snapshot == nil || snapshot.GetPlannedNationalPolicyId() != "expansion" {
+		t.Fatalf("planning snapshot = %#v, want expansion", snapshot)
+	}
+	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
+	if status != "accepted" {
+		t.Fatalf("draft status = %q, want accepted", status)
+	}
+}
+
+func TestMinisterDirectiveTransitionsRecordDomesticMemory(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetMinisterDirective{
+			SetMinisterDirective: &pb.MsgSetMinisterDirective{
+				MinisterRole: "domestic",
+				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	if len(session.memoryEntries) == 0 {
+		t.Fatalf("memoryEntries = 0, want accepted domestic draft recorded")
+	}
+	last := session.memoryEntries[len(session.memoryEntries)-1]
+	if last.Role != "domestic" || last.Entry.Outcome != "accepted" {
+		t.Fatalf("last memory entry = %#v, want domestic accepted", last)
+	}
+}
+
+func TestManualPolicyChangeRecordsStaleMinisterMemory(t *testing.T) {
+	state := newMinisterDraftPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张",
+			Status:       domain.MinisterDraftStatusAccepted,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("expansion"))
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetPolicy{
+			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: "reorganization"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	if len(session.memoryEntries) == 0 {
+		t.Fatalf("memoryEntries = 0, want stale transition recorded")
+	}
+	last := session.memoryEntries[len(session.memoryEntries)-1]
+	if last.Role != "domestic" || last.Entry.Outcome != "stale" {
+		t.Fatalf("last memory entry = %#v, want domestic stale", last)
 	}
 }
 
@@ -613,6 +852,52 @@ func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
 	if len(session.sent["player-1"]) != 0 {
 		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
 	}
+}
+
+func newMinisterDraftPlanningState(t *testing.T) *domain.GameState {
+	t.Helper()
+
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 2,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 3},
+			{ID: "bronze_working", Name: "Bronze Working", ResearchCost: 4},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+	}))
+
+	state := domain.NewGameState("game-minister-draft", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	state.Players["player-1"].Policy = domain.Policy("reorganization")
+	return state
+}
+
+func decodeMinisterDraftStatus(t *testing.T, drafts []*pb.MinisterDraftView, draftID string) string {
+	t.Helper()
+	for _, draft := range drafts {
+		if draft == nil {
+			continue
+		}
+		var payload struct {
+			DraftID string `json:"draft_id"`
+			Status  string `json:"status"`
+		}
+		if err := json.Unmarshal([]byte(draft.GetJsonPayload()), &payload); err != nil {
+			t.Fatalf("unmarshal minister draft payload: %v", err)
+		}
+		if payload.DraftID == draftID {
+			return payload.Status
+		}
+	}
+	t.Fatalf("draft %q not found in %#v", draftID, drafts)
+	return ""
 }
 
 func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
@@ -863,10 +1148,17 @@ func TestHandleIntentSubmitTurnCallsSessionSubmit(t *testing.T) {
 }
 
 type planningSessionStub struct {
-	state     *domain.GameState
-	sent      map[string][]proto.Message
-	devMode   bool
-	submitted []string
+	state         *domain.GameState
+	sent          map[string][]proto.Message
+	devMode       bool
+	submitted     []string
+	memoryEntries []planningSessionMemoryRecord
+}
+
+type planningSessionMemoryRecord struct {
+	PlayerID string
+	Role     string
+	Entry    ministerengine.MemoryEntry
 }
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
@@ -1008,6 +1300,14 @@ func (s *planningSessionStub) BuildNodeViewForPlayer(nodeID string, viewerID str
 
 func (s *planningSessionStub) NodeByID(nodeID string) (*donburi.Entry, bool) {
 	return s.state.GetNode(nodeID)
+}
+
+func (s *planningSessionStub) RecordMinisterMemory(playerID string, role string, entry ministerengine.MemoryEntry) {
+	s.memoryEntries = append(s.memoryEntries, planningSessionMemoryRecord{
+		PlayerID: playerID,
+		Role:     role,
+		Entry:    entry,
+	})
 }
 
 func lastMessage[T proto.Message](msgs []proto.Message) T {

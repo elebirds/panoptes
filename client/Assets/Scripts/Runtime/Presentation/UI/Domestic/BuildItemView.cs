@@ -2,8 +2,8 @@
  * Project: Panoptes
  * File: BuildItemView.cs
  * Author: Panoptes Team
- * Date: 2026-04-16
- * Description: Build list item view (icon + name + desc + material requirements).
+ * Date: 2026-04-17
+ * Description: Build list item view for grouped build panel.
  *************************************************/
 
 using System;
@@ -11,11 +11,12 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
-    public sealed class BuildItemView : MonoBehaviour
+    public sealed class BuildItemView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [Serializable]
         public struct MaterialRequirement
@@ -27,34 +28,48 @@ namespace Panoptes.Presentation.UI.Domestic
         }
 
         [Serializable]
-        private sealed class MaterialSlot
+        private sealed class MetricSlot
         {
             public RectTransform root;
-            public Image icon;
-            public TMP_Text amountText;
+            public Image backgroundImage;
+            public Image iconImage;
+            public TMP_Text text;
         }
 
         [Header("Item Root")]
         [SerializeField] private Button clickButton;
+        [SerializeField] private Image backgroundImage;
         [SerializeField] private Image buildingIcon;
         [SerializeField] private TMP_Text buildingNameText;
         [SerializeField] private TMP_Text buildDescriptionText;
-
-        [Header("NeedMatrialList")]
-        [SerializeField] private RectTransform needMatrialListRoot;
-        [SerializeField] private RectTransform materialSlotTemplate;
+        [SerializeField] private RectTransform metricsRoot;
+        [SerializeField] private RectTransform metricTemplate;
         [SerializeField] private bool autoFindReferences = true;
-        [SerializeField] private string amountFormat = "x{0}";
 
         [Header("Locked State")]
         [SerializeField] private GameObject lockOverlayRoot;
         [SerializeField] private Image lockMaskImage;
         [SerializeField] private Image lockIconImage;
         [SerializeField] private Sprite fallbackLockIcon;
-        [SerializeField] private Color lockMaskColor = new Color(0f, 0f, 0f, 0.55f);
+        [SerializeField] private Color lockMaskColor = new(0f, 0f, 0f, 0.55f);
         [SerializeField] private Color lockIconColor = Color.white;
 
-        private readonly List<MaterialSlot> _slots = new();
+        [Header("State Colors")]
+        [SerializeField] private Color availableBackgroundColor = new(0.035f, 0.12f, 0.2f, 0.98f);
+        [SerializeField] private Color availableHoverBackgroundColor = new(0.065f, 0.18f, 0.29f, 0.99f);
+        [SerializeField] private Color pendingBackgroundColor = new(0.13f, 0.14f, 0.19f, 0.98f);
+        [SerializeField] private Color pendingHoverBackgroundColor = new(0.19f, 0.16f, 0.15f, 0.99f);
+        [SerializeField] private Color lockedBackgroundColor = new(0.043f, 0.085f, 0.13f, 0.98f);
+        [SerializeField] private Color lockedHoverBackgroundColor = new(0.06f, 0.105f, 0.15f, 0.99f);
+        [SerializeField] private Color defaultTextColor = new(0.95f, 0.93f, 0.86f, 1f);
+        [SerializeField] private Color lockedTextColor = new(0.73f, 0.78f, 0.84f, 0.92f);
+        [SerializeField] private Color metricChipColor = new(0.11f, 0.2f, 0.3f, 0.9f);
+        [SerializeField] private Color pendingMetricChipColor = new(0.28f, 0.2f, 0.12f, 0.9f);
+        [SerializeField] private Color lockedMetricChipColor = new(0.11f, 0.16f, 0.22f, 0.88f);
+
+        private readonly List<MetricSlot> _metricSlots = new();
+        private BuildItemAvailabilityState _availabilityState = BuildItemAvailabilityState.Available;
+        private bool _isHovered;
 
         public Button ClickButton => clickButton;
 
@@ -62,9 +77,42 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             EnsureReferences();
             EnsureButton();
-            RebuildMaterialSlots();
+            EnsureLayoutElement();
+            EnsureMetricTemplate();
+            RebuildMetricSlots();
             EnsureLockOverlay();
-            SetLocked(false);
+            ApplyVisualState();
+        }
+
+        public void Bind(BuildItemRenderModel model)
+        {
+            EnsureReferences();
+            EnsureButton();
+            EnsureLayoutElement();
+            EnsureMetricTemplate();
+            RebuildMetricSlots();
+
+            if (buildingNameText != null)
+            {
+                buildingNameText.text = string.IsNullOrWhiteSpace(model?.Title) ? "Unknown Building" : model.Title;
+            }
+
+            if (buildDescriptionText != null)
+            {
+                buildDescriptionText.text = model?.ShortDescription ?? string.Empty;
+                buildDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(buildDescriptionText.text));
+            }
+
+            if (buildingIcon != null)
+            {
+                buildingIcon.sprite = model != null ? model.Icon : null;
+                buildingIcon.enabled = buildingIcon.sprite != null;
+                buildingIcon.preserveAspect = true;
+            }
+
+            _availabilityState = model != null ? model.AvailabilityState : BuildItemAvailabilityState.Available;
+            ApplyMetrics(model != null ? model.SummaryMetrics : null);
+            ApplyVisualState();
         }
 
         public void ConfigureVisual(
@@ -73,26 +121,29 @@ namespace Panoptes.Presentation.UI.Domestic
             Sprite buildingSprite,
             IReadOnlyList<MaterialRequirement> requirements)
         {
-            EnsureReferences();
-            RebuildMaterialSlots();
-
-            if (buildingNameText != null)
+            var model = new BuildItemRenderModel
             {
-                buildingNameText.text = string.IsNullOrWhiteSpace(buildingName) ? "Unknown Building" : buildingName;
+                Title = buildingName,
+                ShortDescription = buildingDescription,
+                Icon = buildingSprite,
+                AvailabilityState = BuildItemAvailabilityState.Available
+            };
+
+            if (requirements != null)
+            {
+                for (var i = 0; i < requirements.Count && model.SummaryMetrics.Count < 3; i++)
+                {
+                    var requirement = requirements[i];
+                    model.SummaryMetrics.Add(new BuildMetricRenderModel
+                    {
+                        Key = requirement.key ?? string.Empty,
+                        Text = $"{(string.IsNullOrWhiteSpace(requirement.displayName) ? requirement.key : requirement.displayName)} x{Mathf.Max(0, requirement.amount)}",
+                        Icon = requirement.icon
+                    });
+                }
             }
 
-            if (buildDescriptionText != null)
-            {
-                buildDescriptionText.text = buildingDescription ?? string.Empty;
-            }
-
-            if (buildingIcon != null && buildingSprite != null)
-            {
-                buildingIcon.sprite = buildingSprite;
-                buildingIcon.preserveAspect = true;
-            }
-
-            ApplyRequirements(requirements);
+            Bind(model);
         }
 
         public void SetClickAction(UnityAction action)
@@ -120,39 +171,33 @@ namespace Panoptes.Presentation.UI.Domestic
 
         public void SetLocked(bool isLocked, Sprite lockIcon = null)
         {
-            EnsureReferences();
             EnsureLockOverlay();
-            EnsureButton();
-
-            if (lockOverlayRoot != null)
+            if (isLocked)
             {
-                lockOverlayRoot.SetActive(isLocked);
-            }
-
-            if (lockMaskImage != null)
-            {
-                lockMaskImage.color = lockMaskColor;
-            }
-
-            if (lockIconImage != null)
-            {
-                var resolvedIcon = lockIcon != null ? lockIcon : fallbackLockIcon;
-                if (resolvedIcon != null)
+                _availabilityState = BuildItemAvailabilityState.Locked;
+                if (lockIcon != null)
                 {
-                    lockIconImage.sprite = resolvedIcon;
-                    lockIconImage.color = lockIconColor;
-                    lockIconImage.enabled = true;
-                }
-                else
-                {
-                    lockIconImage.enabled = false;
+                    fallbackLockIcon = lockIcon;
                 }
             }
-
-            if (clickButton != null)
+            else if (_availabilityState == BuildItemAvailabilityState.Locked)
             {
-                clickButton.interactable = true;
+                _availabilityState = BuildItemAvailabilityState.Available;
             }
+
+            ApplyVisualState();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            _isHovered = true;
+            ApplyVisualState();
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            _isHovered = false;
+            ApplyVisualState();
         }
 
         private void EnsureReferences()
@@ -160,6 +205,20 @@ namespace Panoptes.Presentation.UI.Domestic
             if (!autoFindReferences)
             {
                 return;
+            }
+
+            if (backgroundImage == null)
+            {
+                var panelNode = transform.Find("Panel");
+                if (panelNode != null)
+                {
+                    backgroundImage = panelNode.GetComponent<Image>();
+                }
+
+                if (backgroundImage == null)
+                {
+                    backgroundImage = GetComponent<Image>();
+                }
             }
 
             if (buildingIcon == null)
@@ -172,7 +231,15 @@ namespace Panoptes.Presentation.UI.Domestic
 
                 if (buildingIcon == null)
                 {
-                    buildingIcon = GetComponentInChildren<Image>(true);
+                    var images = GetComponentsInChildren<Image>(true);
+                    for (var i = 0; i < images.Length; i++)
+                    {
+                        if (images[i] != null && !ReferenceEquals(images[i], backgroundImage) && !ReferenceEquals(images[i], lockIconImage))
+                        {
+                            buildingIcon = images[i];
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -204,18 +271,28 @@ namespace Panoptes.Presentation.UI.Domestic
                 }
             }
 
-            if (needMatrialListRoot == null)
+            if (metricsRoot == null)
             {
-                var listNode = transform.Find("NeedMatrialList");
-                if (listNode != null)
+                var rootNode = transform.Find("MetricsRoot");
+                if (rootNode == null)
                 {
-                    needMatrialListRoot = listNode as RectTransform;
+                    var panelNode = transform.Find("Panel");
+                    rootNode = panelNode != null ? panelNode.Find("MetricsRoot") : null;
+                }
+
+                if (rootNode != null)
+                {
+                    metricsRoot = rootNode as RectTransform;
                 }
             }
 
-            if (materialSlotTemplate == null && needMatrialListRoot != null && needMatrialListRoot.childCount > 0)
+            if (metricTemplate == null && metricsRoot != null)
             {
-                materialSlotTemplate = needMatrialListRoot.GetChild(0) as RectTransform;
+                var templateNode = metricsRoot.Find("MetricTemplate");
+                if (templateNode != null)
+                {
+                    metricTemplate = templateNode as RectTransform;
+                }
             }
 
             if (lockOverlayRoot == null)
@@ -225,10 +302,23 @@ namespace Panoptes.Presentation.UI.Domestic
                 {
                     lockOverlayRoot = lockNode.gameObject;
                     lockMaskImage = lockNode.GetComponent<Image>();
-                    var iconNode = lockNode.Find("LockIcon");
-                    if (iconNode != null)
+                }
+            }
+
+            if (lockIconImage == null)
+            {
+                var lockIconNode = transform.Find("LockIcon");
+                if (lockIconNode != null)
+                {
+                    lockIconImage = lockIconNode.GetComponent<Image>();
+                }
+
+                if (lockIconImage == null && lockOverlayRoot != null)
+                {
+                    var nestedLockIcon = lockOverlayRoot.transform.Find("LockIcon");
+                    if (nestedLockIcon != null)
                     {
-                        lockIconImage = iconNode.GetComponent<Image>();
+                        lockIconImage = nestedLockIcon.GetComponent<Image>();
                     }
                 }
             }
@@ -267,165 +357,325 @@ namespace Panoptes.Presentation.UI.Domestic
                 clickButton.transition = Selectable.Transition.ColorTint;
             }
 
-            var target = clickButton.targetGraphic;
-            if (target == null)
+            if (clickButton.targetGraphic == null)
             {
-                var image = GetComponent<Image>();
-                if (image == null)
-                {
-                    image = gameObject.AddComponent<Image>();
-                    image.color = new Color(1f, 1f, 1f, 0f);
-                }
-
-                clickButton.targetGraphic = image;
+                clickButton.targetGraphic = backgroundImage != null ? backgroundImage : GetComponent<Image>();
             }
+        }
+
+        private void EnsureLayoutElement()
+        {
+            var layout = GetComponent<LayoutElement>();
+            if (layout == null)
+            {
+                layout = gameObject.AddComponent<LayoutElement>();
+            }
+
+            layout.minHeight = 104f;
+            layout.preferredHeight = 104f;
+            layout.flexibleHeight = 0f;
+        }
+
+        private void EnsureMetricTemplate()
+        {
+            if (metricsRoot == null)
+            {
+                var parent = backgroundImage != null ? backgroundImage.transform : transform;
+                var metricsRootObject = new GameObject("MetricsRoot", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                metricsRootObject.transform.SetParent(parent, false);
+                metricsRoot = metricsRootObject.GetComponent<RectTransform>();
+                metricsRoot.anchorMin = new Vector2(1f, 0f);
+                metricsRoot.anchorMax = new Vector2(1f, 0f);
+                metricsRoot.pivot = new Vector2(1f, 0f);
+                metricsRoot.anchoredPosition = new Vector2(-18f, 10f);
+                metricsRoot.sizeDelta = new Vector2(164f, 28f);
+
+                var layoutGroup = metricsRootObject.GetComponent<HorizontalLayoutGroup>();
+                layoutGroup.spacing = 6f;
+                layoutGroup.childAlignment = TextAnchor.MiddleRight;
+                layoutGroup.childControlWidth = false;
+                layoutGroup.childControlHeight = true;
+                layoutGroup.childForceExpandWidth = false;
+                layoutGroup.childForceExpandHeight = false;
+            }
+
+            if (metricTemplate != null)
+            {
+                metricTemplate.gameObject.SetActive(false);
+                return;
+            }
+
+            var templateObject = new GameObject("MetricTemplate", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            templateObject.transform.SetParent(metricsRoot, false);
+            metricTemplate = templateObject.GetComponent<RectTransform>();
+            metricTemplate.anchorMin = new Vector2(1f, 0.5f);
+            metricTemplate.anchorMax = new Vector2(1f, 0.5f);
+            metricTemplate.pivot = new Vector2(1f, 0.5f);
+            metricTemplate.sizeDelta = new Vector2(94f, 26f);
+
+            var layoutElement = templateObject.GetComponent<LayoutElement>();
+            layoutElement.minWidth = 72f;
+            layoutElement.preferredWidth = 94f;
+            layoutElement.minHeight = 26f;
+            layoutElement.preferredHeight = 26f;
+
+            var chipImage = templateObject.GetComponent<Image>();
+            chipImage.type = Image.Type.Sliced;
+            chipImage.color = metricChipColor;
+
+            var iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+            iconObject.transform.SetParent(templateObject.transform, false);
+            var iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(8f, 0f);
+            iconRect.sizeDelta = new Vector2(16f, 16f);
+            iconObject.GetComponent<Image>().preserveAspect = true;
+
+            var textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(templateObject.transform, false);
+            var textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = new Vector2(0f, 0f);
+            textRect.anchorMax = new Vector2(1f, 1f);
+            textRect.offsetMin = new Vector2(28f, 0f);
+            textRect.offsetMax = new Vector2(-8f, 0f);
+
+            var text = textObject.GetComponent<TextMeshProUGUI>();
+            text.fontSize = 13f;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.enableWordWrapping = false;
+            text.color = defaultTextColor;
+
+            metricTemplate.gameObject.SetActive(false);
         }
 
         private void EnsureLockOverlay()
         {
-            if (lockMaskImage == null && lockOverlayRoot != null)
-            {
-                lockMaskImage = lockOverlayRoot.GetComponent<Image>();
-            }
-
-            if (lockIconImage == null && lockOverlayRoot != null)
-            {
-                var icon = lockOverlayRoot.transform.Find("LockIcon");
-                if (icon != null)
-                {
-                    lockIconImage = icon.GetComponent<Image>();
-                }
-            }
-
             if (lockMaskImage != null)
             {
+                lockMaskImage.color = lockMaskColor;
                 lockMaskImage.raycastTarget = false;
             }
 
             if (lockIconImage != null)
             {
+                lockIconImage.color = lockIconColor;
                 lockIconImage.raycastTarget = false;
             }
         }
 
-        private void RebuildMaterialSlots()
+        private void RebuildMetricSlots()
         {
-            _slots.Clear();
-            if (needMatrialListRoot == null)
+            _metricSlots.Clear();
+            if (metricsRoot == null)
             {
                 return;
             }
 
-            for (var i = 0; i < needMatrialListRoot.childCount; i++)
+            for (var i = 0; i < metricsRoot.childCount; i++)
             {
-                var child = needMatrialListRoot.GetChild(i) as RectTransform;
+                var child = metricsRoot.GetChild(i) as RectTransform;
                 if (child == null)
                 {
                     continue;
                 }
 
-                var slot = BuildSlot(child);
+                var slot = BuildMetricSlot(child);
                 if (slot != null)
                 {
-                    _slots.Add(slot);
+                    _metricSlots.Add(slot);
                 }
             }
         }
 
-        private MaterialSlot BuildSlot(RectTransform root)
+        private MetricSlot BuildMetricSlot(RectTransform root)
         {
             if (root == null)
             {
                 return null;
             }
 
-            var icon = root.GetComponentInChildren<Image>(true);
-            var amount = root.GetComponentInChildren<TMP_Text>(true);
-            return new MaterialSlot
+            return new MetricSlot
             {
                 root = root,
-                icon = icon,
-                amountText = amount
+                backgroundImage = root.GetComponent<Image>(),
+                iconImage = FindNamedImage(root, "Icon"),
+                text = root.GetComponentInChildren<TMP_Text>(true)
             };
         }
 
-        private void ApplyRequirements(IReadOnlyList<MaterialRequirement> requirements)
+        private static Image FindNamedImage(RectTransform root, string childName)
         {
-            if (needMatrialListRoot == null)
+            if (root == null)
+            {
+                return null;
+            }
+
+            var child = root.Find(childName);
+            return child != null ? child.GetComponent<Image>() : null;
+        }
+
+        private void ApplyMetrics(IReadOnlyList<BuildMetricRenderModel> metrics)
+        {
+            if (metricsRoot == null)
             {
                 return;
             }
 
-            var count = requirements != null ? requirements.Count : 0;
-            EnsureSlotCount(count);
+            var metricCount = metrics != null ? Mathf.Min(3, metrics.Count) : 0;
+            EnsureMetricSlotCount(metricCount);
 
-            for (var i = 0; i < _slots.Count; i++)
+            for (var i = 0; i < _metricSlots.Count; i++)
             {
-                var slot = _slots[i];
-                if (slot == null || slot.root == null)
+                var slot = _metricSlots[i];
+                if (slot == null || slot.root == null || ReferenceEquals(slot.root, metricTemplate))
                 {
                     continue;
                 }
 
-                if (i >= count)
+                if (i >= metricCount)
                 {
                     slot.root.gameObject.SetActive(false);
                     continue;
                 }
 
-                var req = requirements[i];
+                var metric = metrics[i];
                 slot.root.gameObject.SetActive(true);
-                if (slot.icon != null)
+                if (slot.iconImage != null)
                 {
-                    if (req.icon != null)
-                    {
-                        slot.icon.sprite = req.icon;
-                    }
-                    slot.icon.preserveAspect = true;
+                    slot.iconImage.sprite = metric.Icon;
+                    slot.iconImage.enabled = metric.Icon != null;
+                    slot.iconImage.preserveAspect = true;
                 }
 
-                if (slot.amountText != null)
+                if (slot.text != null)
                 {
-                    var format = string.IsNullOrWhiteSpace(amountFormat) ? "x{0}" : amountFormat;
-                    slot.amountText.text = string.Format(format, Mathf.Max(0, req.amount));
+                    slot.text.text = metric.Text ?? string.Empty;
                 }
             }
         }
 
-        private void EnsureSlotCount(int requiredCount)
+        private void EnsureMetricSlotCount(int requiredCount)
         {
-            if (requiredCount <= _slots.Count)
+            if (metricTemplate == null || metricsRoot == null)
             {
                 return;
             }
 
-            if (needMatrialListRoot == null)
+            var available = 0;
+            for (var i = 0; i < _metricSlots.Count; i++)
             {
-                return;
+                if (_metricSlots[i] != null && _metricSlots[i].root != null && !ReferenceEquals(_metricSlots[i].root, metricTemplate))
+                {
+                    available++;
+                }
             }
 
-            if (materialSlotTemplate == null && _slots.Count > 0)
+            while (available < requiredCount)
             {
-                materialSlotTemplate = _slots[0].root;
-            }
-
-            if (materialSlotTemplate == null)
-            {
-                return;
-            }
-
-            while (_slots.Count < requiredCount)
-            {
-                var clone = Instantiate(materialSlotTemplate.gameObject, needMatrialListRoot, false);
-                clone.name = $"{materialSlotTemplate.name}_{_slots.Count + 1}";
-                var slot = BuildSlot(clone.transform as RectTransform);
+                var clone = Instantiate(metricTemplate.gameObject, metricsRoot, false);
+                clone.name = $"Metric_{available + 1}";
+                clone.SetActive(true);
+                var slot = BuildMetricSlot(clone.transform as RectTransform);
                 if (slot == null)
                 {
                     break;
                 }
 
-                _slots.Add(slot);
+                _metricSlots.Add(slot);
+                available++;
             }
+
+            if (_metricSlots.Count == 0)
+            {
+                RebuildMetricSlots();
+            }
+        }
+
+        private void ApplyVisualState()
+        {
+            EnsureLockOverlay();
+
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = ResolveBackgroundColor();
+            }
+
+            var textColor = _availabilityState == BuildItemAvailabilityState.Locked ? lockedTextColor : defaultTextColor;
+            if (buildingNameText != null)
+            {
+                buildingNameText.color = textColor;
+            }
+
+            if (buildDescriptionText != null)
+            {
+                buildDescriptionText.color = textColor;
+            }
+
+            var metricColor = ResolveMetricChipColor();
+            for (var i = 0; i < _metricSlots.Count; i++)
+            {
+                var slot = _metricSlots[i];
+                if (slot == null || slot.root == null || ReferenceEquals(slot.root, metricTemplate))
+                {
+                    continue;
+                }
+
+                if (slot.backgroundImage != null)
+                {
+                    slot.backgroundImage.color = metricColor;
+                }
+
+                if (slot.text != null)
+                {
+                    slot.text.color = textColor;
+                }
+            }
+
+            if (lockOverlayRoot != null)
+            {
+                lockOverlayRoot.SetActive(_availabilityState == BuildItemAvailabilityState.Locked);
+            }
+
+            if (lockIconImage != null)
+            {
+                var resolvedIcon = fallbackLockIcon;
+                if (resolvedIcon != null)
+                {
+                    lockIconImage.sprite = resolvedIcon;
+                    lockIconImage.enabled = _availabilityState == BuildItemAvailabilityState.Locked;
+                }
+                else
+                {
+                    lockIconImage.enabled = false;
+                }
+            }
+
+            if (clickButton != null)
+            {
+                clickButton.interactable = true;
+            }
+        }
+
+        private Color ResolveBackgroundColor()
+        {
+            return _availabilityState switch
+            {
+                BuildItemAvailabilityState.Pending => _isHovered ? pendingHoverBackgroundColor : pendingBackgroundColor,
+                BuildItemAvailabilityState.Locked => _isHovered ? lockedHoverBackgroundColor : lockedBackgroundColor,
+                _ => _isHovered ? availableHoverBackgroundColor : availableBackgroundColor
+            };
+        }
+
+        private Color ResolveMetricChipColor()
+        {
+            return _availabilityState switch
+            {
+                BuildItemAvailabilityState.Pending => pendingMetricChipColor,
+                BuildItemAvailabilityState.Locked => lockedMetricChipColor,
+                _ => metricChipColor
+            };
         }
     }
 }

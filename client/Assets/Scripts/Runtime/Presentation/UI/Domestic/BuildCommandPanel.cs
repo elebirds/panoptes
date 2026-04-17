@@ -2,8 +2,8 @@
  * Project: Panoptes
  * File: BuildCommandPanel.cs
  * Author: Panoptes Team
- * Date: 2026-04-06
- * Description: UI bridge for build placement buttons.
+ * Date: 2026-04-17
+ * Description: Prefab-driven grouped build panel controller.
  *************************************************/
 
 using System;
@@ -13,63 +13,22 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
 using UnityEngine.UI;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace Panoptes.Presentation.UI.Domestic
 {
     public sealed class BuildCommandPanel : MonoBehaviour
     {
-        public enum PanelMode
-        {
-            Governance = 0,
-            Build = 1
-        }
-
-        public enum BuildingType
-        {
-            Mine = 0,
-            Farm = 1,
-            Smelter = 2,
-            Workshop = 3,
-            Barracks = 4,
-            EngineerCamp = 5,
-            Wall = 6,
-            Tower = 7,
-            Watchtower = 8,
-            Archery = 9,
-            Blacksmith = 10,
-            Lumberyard = 11,
-            Engineer = 12,
-            Custom = 100
-        }
-
         public enum BuildRule
         {
             AnyTerrain = 0,
             ResourceOnly = 1,
             CityOnly = 2
-        }
-
-        [Serializable]
-        private struct BuildButtonBinding
-        {
-            public Button button;
-            public Image iconImage;
-            public TMP_Text labelText;
-            [Tooltip("Used when config icon is missing or not configured.")]
-            public Sprite fallbackIcon;
-            public BuildingType buildingType;
-            [Tooltip("Only used when Building Type = Custom")]
-            public string customBuildingType;
-            [TextArea] public string tooltipText;
-            public BuildRule rule;
         }
 
         [Serializable]
@@ -95,29 +54,29 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private readonly struct BuildCostEntry
         {
-            public readonly string key;
-            public readonly int amount;
-            public readonly bool isPoint;
+            public readonly string Key;
+            public readonly int Amount;
+            public readonly bool IsPoint;
 
             public BuildCostEntry(string key, int amount, bool isPoint)
             {
-                this.key = key;
-                this.amount = amount;
-                this.isPoint = isPoint;
+                Key = key;
+                Amount = amount;
+                IsPoint = isPoint;
             }
         }
 
         private readonly struct DynamicBuildRenderEntry
         {
-            public readonly string buildingId;
-            public readonly BuildConfigEntry config;
-            public readonly BuildRule rule;
+            public readonly string BuildingId;
+            public readonly BuildConfigEntry Config;
+            public readonly BuildRule Rule;
 
             public DynamicBuildRenderEntry(string buildingId, BuildConfigEntry config, BuildRule rule)
             {
-                this.buildingId = buildingId;
-                this.config = config;
-                this.rule = rule;
+                BuildingId = buildingId;
+                Config = config;
+                Rule = rule;
             }
         }
 
@@ -125,23 +84,17 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private Image emblemImage;
         [SerializeField] private Sprite fallbackEmblem;
 
-        [Header("Mode Toggles")]
-        [SerializeField] private ToggleGroup modeToggleGroup;
-        [SerializeField] private Toggle governanceToggle;
-        [SerializeField] private Toggle buildToggle;
-        [SerializeField] private PanelMode defaultMode = PanelMode.Build;
-
-        [Header("Mode Content Roots")]
-        [SerializeField] private GameObject governanceContentRoot;
-        [SerializeField] private GameObject buildContentRoot;
-
         [Header("Bindings")]
         [SerializeField] private MapInputHandler mapInputHandler;
         [SerializeField] private bool autoFindMapInputHandler = true;
-        [SerializeField] private BuildButtonBinding[] buildButtons;
-        [SerializeField] private bool autoGenerateBuildButtons = true;
-        [SerializeField] private Transform buildButtonsRoot;
-        [SerializeField] private bool cloneTemplateButtons = true;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private BuildTooltipView tooltipView;
+        [SerializeField] private ScrollRect listScrollRect;
+        [SerializeField] private RectTransform listContent;
+        [SerializeField] private BuildGroupView buildGroupPrefab;
+        [SerializeField] private BuildItemView buildItemPrefab;
+
+        [Header("Build Layout")]
         [SerializeField] private string[] runtimeBuildOrder =
         {
             "farm",
@@ -154,36 +107,24 @@ namespace Panoptes.Presentation.UI.Domestic
             "tower",
             "watchtower"
         };
-        [SerializeField] private Button cancelButton;
-        [SerializeField] private BuildTooltipView tooltipView;
-        [SerializeField] private TMP_Text buildStatusText;
-
-        [Header("Dynamic BuildItem")]
-        [SerializeField] private bool useDynamicBuildItemList = true;
-        [SerializeField] private RectTransform buildItemListRoot;
-        [SerializeField] private BuildItemView buildItemTemplate;
-        [SerializeField] private bool hideUnusedBuildItems = true;
         [SerializeField] private bool includeUnknownRuntimeBuildOrderEntries = false;
         [SerializeField] private bool includeCityFoundationBuilding = false;
         [SerializeField] private string[] hiddenBuildingTypes = { "city_core" };
+
+        [Header("Catalog Assets")]
         [SerializeField] private string localCatalogBundleResourcePath = "Data/catalog.bundle";
+        [SerializeField] private string iconResourcesRoot = "Icons/Buildings";
         [SerializeField] private string[] materialIconResourcesRoots = { "Icons/Resources", "Icons/Points", "Icons" };
         [SerializeField] private Sprite fallbackMaterialIcon;
         [SerializeField] private Sprite buildItemLockedIcon;
         [SerializeField] private string buildItemLockedTooltipSuffix = "Locked: requires technology unlock";
-        [SerializeField] private bool enableWheelScrollOnBuildList = true;
-        [SerializeField] private float wheelScrollStepPixels = 110f;
-        [SerializeField] private float inputSystemWheelScale = 0.01f;
 
         [Header("Build Catalog Source")]
         [SerializeField] private bool applyConfigToButtons = true;
         [SerializeField] private bool useConfigPlacementRule = true;
         [SerializeField] private bool listenCatalogUpdates = true;
         [SerializeField] private TextAsset buildConfigJson;
-        [Tooltip("Used when Build Config Json is empty. Relative to Resources/, without extension.")]
         [SerializeField] private string buildConfigResourcesPath = "Config/buildconfig";
-        [Tooltip("Icon load path under Resources/. Final path: <Icon Resources Root>/<icon_key>")]
-        [SerializeField] private string iconResourcesRoot = "Icons/Buildings";
         [SerializeField] private bool logConfigWarnings = true;
 
         private readonly List<Button> _boundButtons = new();
@@ -195,15 +136,12 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, List<string>> _requiredTechsByBuilding = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _activeTechnologyIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _spriteCache = new();
+
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
         private GameStateCache _gameStateCache;
         private PlanningDraftCache _planningDraftCache;
         private string _activeCityCoreNodeId = string.Empty;
-        private string _lastBuildFailureMessage = string.Empty;
-        private Vector2 _buildListBaseAnchoredPos;
-        private float _buildListScrollOffset;
-        private bool _buildListScrollInitialized;
         private bool _loggedMissingBuildConfigThisEnable;
 
         private static readonly Regex NumberPairRegex = new("\"([^\"]+)\"\\s*:\\s*(-?\\d+)", RegexOptions.Compiled);
@@ -212,33 +150,21 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             _loggedMissingBuildConfigThisEnable = false;
             SubscribeCatalogUpdates();
-            ResolveMapInputHandler();
-            LoadBuildConfig();
-            BindButtons();
-            BindModeToggles();
-            SetMode(defaultMode, true);
-            ResetBuildListScroll(true);
             SubscribeFeedbackEvents();
-            RefreshBuildStatus();
+            ResolveMapInputHandler();
+            ResolveViewReferences();
+            RefreshBuildItems();
         }
 
         private void OnDisable()
         {
             UnbindButtons();
-            UnbindModeToggles();
             UnsubscribeCatalogUpdates();
+            UnsubscribeFeedbackEvents();
             if (tooltipView != null)
             {
                 tooltipView.Hide();
             }
-            _buildListScrollInitialized = false;
-            _loggedMissingBuildConfigThisEnable = false;
-            UnsubscribeFeedbackEvents();
-        }
-
-        private void Update()
-        {
-            HandleBuildListWheelScroll();
         }
 
         public void TriggerAny(string buildingType)
@@ -271,14 +197,15 @@ namespace Panoptes.Presentation.UI.Domestic
         public void ClearCityCoreContext()
         {
             _activeCityCoreNodeId = string.Empty;
-            RefreshBuildStatus();
+            RefreshBuildItems();
         }
 
         public void RefreshBuildItems()
         {
+            ResolveViewReferences();
             LoadBuildConfig();
-            BindButtons();
-            ResetBuildListScroll(true);
+            RenderBuildItems();
+            ResetScrollPosition();
         }
 
         public void SetCancelButtonVisible(bool visible)
@@ -287,16 +214,6 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 cancelButton.gameObject.SetActive(visible);
             }
-        }
-
-        public void SelectGovernanceMode()
-        {
-            SetMode(PanelMode.Governance, true);
-        }
-
-        public void SelectBuildMode()
-        {
-            SetMode(PanelMode.Build, true);
         }
 
         public void SetEmblemSprite(Sprite sprite)
@@ -312,8 +229,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         public void SetEmblemFromResources(string resourcePath)
         {
-            var sprite = Resources.Load<Sprite>(resourcePath);
-            SetEmblemSprite(sprite);
+            SetEmblemSprite(Resources.Load<Sprite>(resourcePath));
         }
 
         public void SetEmblemFromUrl(string imageUrl)
@@ -331,328 +247,445 @@ namespace Panoptes.Presentation.UI.Domestic
             _emblemLoadRoutine = StartCoroutine(LoadEmblemCoroutine(imageUrl));
         }
 
-        private void BindButtons()
+        private void RenderBuildItems()
         {
             UnbindButtons();
-
-            if (TryBindDynamicBuildItems())
-            {
-                BindCancelButton();
-                return;
-            }
-
-            var effectiveButtons = GetEffectiveBuildButtons();
-            if (effectiveButtons != null)
-            {
-                for (int i = 0; i < effectiveButtons.Length; i++)
-                {
-                    var binding = effectiveButtons[i];
-                    if (binding.button == null)
-                    {
-                        continue;
-                    }
-
-                    var requestedType = ResolveBuildingTypeToken(binding);
-                    var buildingType = ResolveConfiguredBuildingType(requestedType);
-                    var configEntry = GetBuildConfigEntry(buildingType);
-                    var rule = ResolveBuildRule(binding.rule, configEntry);
-                    UnityAction action = () => TriggerBuild(buildingType, rule);
-                    binding.button.onClick.AddListener(action);
-                    _boundButtons.Add(binding.button);
-                    _boundActions.Add(action);
-
-                    ApplyButtonPresentation(binding, buildingType, configEntry);
-                    var tooltip = ResolveTooltipText(binding, configEntry);
-                    InstallTooltip(binding.button, tooltip);
-                }
-            }
-
             BindCancelButton();
-        }
 
-        private void BindCancelButton()
-        {
-            if (cancelButton != null)
+            if (!ResolveViewReferences())
             {
-                UnityAction cancelAction = CancelPlacement;
-                cancelButton.onClick.AddListener(cancelAction);
-                _boundButtons.Add(cancelButton);
-                _boundActions.Add(cancelAction);
-            }
-        }
-
-        private bool TryBindDynamicBuildItems()
-        {
-            if (!useDynamicBuildItemList)
-            {
-                return false;
-            }
-
-            var listRoot = ResolveBuildItemListRoot();
-            if (listRoot == null)
-            {
-                if (logConfigWarnings)
-                {
-                    Debug.LogWarning("[BuildCommandPanel] Build list root is missing.");
-                }
-                return true;
+                WarnMissingBuildConfigOnce("[BuildCommandPanel] Build panel list references are missing.");
+                return;
             }
 
             var renderEntries = BuildDynamicRenderEntries();
             if (renderEntries.Count == 0)
             {
-                HideAllBuildItemViews(listRoot);
+                ClearRenderedItems();
                 WarnMissingBuildConfigOnce("[BuildCommandPanel] Build list config is empty. Waiting for server/static catalog.");
-                return true;
-            }
-
-            var views = CollectBuildItemViews(listRoot);
-            if (views.Count == 0 && buildItemTemplate != null)
-            {
-                var first = CreateBuildItemClone(listRoot);
-                if (first != null)
-                {
-                    views.Add(first);
-                }
-            }
-
-            if (views.Count == 0)
-            {
-                WarnMissingBuildConfigOnce("[BuildCommandPanel] BuildItem template is missing. Cannot render dynamic build list.");
-                return true;
-            }
-
-            if (buildItemTemplate == null)
-            {
-                buildItemTemplate = views[0];
+                return;
             }
 
             RebuildRequiredTechMap();
             RebuildActiveTechnologySet();
 
+            var sources = BuildItemSources(renderEntries);
+            var groups = BuildPanelRenderBuilder.Build(sources);
+            RebuildListContent(groups);
+        }
+
+        private void BindCancelButton()
+        {
+            if (cancelButton == null)
+            {
+                return;
+            }
+
+            UnityAction cancelAction = CancelPlacement;
+            cancelButton.onClick.AddListener(cancelAction);
+            _boundButtons.Add(cancelButton);
+            _boundActions.Add(cancelAction);
+        }
+
+        private List<BuildItemRenderSource> BuildItemSources(IReadOnlyList<DynamicBuildRenderEntry> renderEntries)
+        {
+            var result = new List<BuildItemRenderSource>(renderEntries.Count);
             for (var i = 0; i < renderEntries.Count; i++)
             {
-                var view = i < views.Count ? views[i] : CreateBuildItemClone(listRoot);
-                if (view == null)
-                {
-                    continue;
-                }
-
                 var renderEntry = renderEntries[i];
-                var config = renderEntry.config;
-                var icon = config != null ? LoadIconByKey(config.icon_key) : null;
-                var displayName = config != null && !string.IsNullOrWhiteSpace(config.name)
-                    ? config.name.Trim()
-                    : renderEntry.buildingId;
-                var description = config != null ? (config.description ?? string.Empty) : string.Empty;
-                var requirements = BuildRequirements(renderEntry.buildingId);
-                var isUnlocked = IsBuildingUnlockedForLocalPlayer(renderEntry.buildingId);
-
-                view.gameObject.SetActive(true);
-                view.ConfigureVisual(displayName, description, icon, requirements);
-                view.SetLocked(!isUnlocked, buildItemLockedIcon);
-
-                UnityAction action = () => TriggerBuild(renderEntry.buildingId, renderEntry.rule);
-                view.SetClickAction(action);
-                if (view.ClickButton != null)
+                var config = renderEntry.Config;
+                var buildingId = renderEntry.BuildingId;
+                var availability = ResolveAvailabilityState(buildingId);
+                var source = new BuildItemRenderSource
                 {
-                    _boundButtons.Add(view.ClickButton);
-                    _boundActions.Add(action);
+                    BuildingId = buildingId,
+                    Title = config != null && !string.IsNullOrWhiteSpace(config.name) ? config.name.Trim() : buildingId,
+                    Description = config != null ? (config.description ?? string.Empty) : string.Empty,
+                    PlacementKind = config != null ? (!string.IsNullOrWhiteSpace(config.placement_kind) ? config.placement_kind : config.placement_rule) : string.Empty,
+                    RequiredResourceType = config != null ? config.required_resource_type : string.Empty,
+                    Icon = config != null ? LoadIconByKey(config.icon_key) : null,
+                    AvailabilityState = availability,
+                    LockedSuffix = buildItemLockedTooltipSuffix
+                };
+
+                var costSources = BuildMetricSources(buildingId);
+                for (var costIndex = 0; costIndex < costSources.Count; costIndex++)
+                {
+                    source.Costs.Add(costSources[costIndex]);
                 }
 
-                if (view.ClickButton != null)
+                var techNames = ResolveRequiredTechnologyNames(buildingId);
+                for (var techIndex = 0; techIndex < techNames.Count; techIndex++)
                 {
-                    var tooltip = isUnlocked
-                        ? description
-                        : BuildLockedTooltip(description);
-                    InstallTooltip(view.ClickButton, tooltip);
+                    source.RequiredTechNames.Add(techNames[techIndex]);
                 }
+
+                result.Add(source);
             }
 
-            if (hideUnusedBuildItems)
-            {
-                for (var i = renderEntries.Count; i < views.Count; i++)
-                {
-                    if (views[i] == null)
-                    {
-                        continue;
-                    }
-
-                    views[i].ClearClickAction();
-                    views[i].gameObject.SetActive(false);
-                }
-            }
-
-            return true;
+            return result;
         }
 
-        private void HideAllBuildItemViews(RectTransform listRoot)
+        private void RebuildListContent(IReadOnlyList<BuildGroupRenderModel> groups)
         {
-            if (listRoot == null)
+            ClearRenderedItems();
+            if (groups == null || groups.Count == 0)
             {
                 return;
             }
 
-            for (var i = 0; i < listRoot.childCount; i++)
+            for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
             {
-                var child = listRoot.GetChild(i);
-                if (child != null)
-                {
-                    child.gameObject.SetActive(false);
-                }
-            }
-        }
-
-        private void WarnMissingBuildConfigOnce(string message)
-        {
-            if (!logConfigWarnings || _loggedMissingBuildConfigThisEnable)
-            {
-                return;
-            }
-
-            Debug.LogWarning(message);
-            _loggedMissingBuildConfigThisEnable = true;
-        }
-
-        private string BuildLockedTooltip(string description)
-        {
-            if (string.IsNullOrWhiteSpace(buildItemLockedTooltipSuffix))
-            {
-                return description;
-            }
-
-            if (string.IsNullOrWhiteSpace(description))
-            {
-                return buildItemLockedTooltipSuffix;
-            }
-
-            return $"{description}\n{buildItemLockedTooltipSuffix}";
-        }
-
-        private void RebuildRequiredTechMap()
-        {
-            _requiredTechsByBuilding.Clear();
-
-            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
-            if (cache == null || cache.Technologies == null || cache.Technologies.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var pair in cache.Technologies)
-            {
-                var technology = pair.Value;
-                if (technology == null || technology.explicit_effects == null || technology.explicit_effects.Length == 0)
+                var groupModel = groups[groupIndex];
+                if (groupModel == null || groupModel.Items.Count == 0)
                 {
                     continue;
                 }
 
-                var technologyId = NormalizeToken(technology.id);
-                if (string.IsNullOrWhiteSpace(technologyId))
+                var groupView = InstantiateGroupView();
+                if (groupView == null)
                 {
                     continue;
                 }
 
-                for (var i = 0; i < technology.explicit_effects.Length; i++)
+                groupView.Bind(groupModel.Title);
+                groupView.gameObject.SetActive(true);
+
+                for (var itemIndex = 0; itemIndex < groupModel.Items.Count; itemIndex++)
                 {
-                    var effect = technology.explicit_effects[i];
-                    if (effect == null)
+                    var itemModel = groupModel.Items[itemIndex];
+                    var itemView = InstantiateItemView();
+                    if (itemView == null)
                     {
                         continue;
                     }
 
-                    if (!string.Equals(NormalizeToken(effect.type), "unlock_building", StringComparison.Ordinal))
+                    itemView.Bind(itemModel);
+                    itemView.SetLocked(itemModel.AvailabilityState == BuildItemAvailabilityState.Locked, buildItemLockedIcon);
+
+                    var targetBuilding = itemModel.BuildingId;
+                    var rule = ResolveBuildRuleFor(targetBuilding);
+                    UnityAction action = () => TriggerBuild(targetBuilding, rule);
+                    itemView.SetClickAction(action);
+                    if (itemView.ClickButton != null)
                     {
-                        continue;
+                        _boundButtons.Add(itemView.ClickButton);
+                        _boundActions.Add(action);
+                        InstallTooltip(itemView.ClickButton, itemModel.TooltipText);
                     }
 
-                    var targetBuilding = ResolveConfiguredBuildingType(effect.target_id);
-                    if (string.IsNullOrWhiteSpace(targetBuilding))
-                    {
-                        continue;
-                    }
-
-                    if (!_requiredTechsByBuilding.TryGetValue(targetBuilding, out var requiredTechs))
-                    {
-                        requiredTechs = new List<string>();
-                        _requiredTechsByBuilding[targetBuilding] = requiredTechs;
-                    }
-
-                    if (!requiredTechs.Contains(technologyId))
-                    {
-                        requiredTechs.Add(technologyId);
-                    }
+                    itemView.gameObject.SetActive(true);
                 }
             }
         }
 
-        private void RebuildActiveTechnologySet()
+        private BuildGroupView InstantiateGroupView()
         {
-            _activeTechnologyIds.Clear();
+            var template = ResolveGroupPrefab();
+            if (template == null || listContent == null)
+            {
+                return null;
+            }
 
-            var cache = GameStateCache.Instance;
-            if (cache == null)
+            var instance = Instantiate(template.gameObject, listContent, false);
+            instance.name = "BuildGroup";
+            return instance.GetComponent<BuildGroupView>();
+        }
+
+        private BuildItemView InstantiateItemView()
+        {
+            var template = ResolveItemPrefab();
+            if (template == null || listContent == null)
+            {
+                return null;
+            }
+
+            var instance = Instantiate(template.gameObject, listContent, false);
+            instance.name = "BuildItem";
+            return instance.GetComponent<BuildItemView>();
+        }
+
+        private void ClearRenderedItems()
+        {
+            if (listContent == null)
             {
                 return;
             }
 
-            var activeTechs = cache.GetCurrentResearchState()?.ActiveTechnologyIds;
-            if (activeTechs == null || activeTechs.Count == 0)
+            for (var i = listContent.childCount - 1; i >= 0; i--)
             {
-                return;
-            }
-
-            for (var i = 0; i < activeTechs.Count; i++)
-            {
-                var techId = NormalizeToken(activeTechs[i]);
-                if (!string.IsNullOrWhiteSpace(techId))
+                var child = listContent.GetChild(i);
+                if (child == null || IsTemplateTransform(child))
                 {
-                    _activeTechnologyIds.Add(techId);
+                    continue;
                 }
+
+                DestroyUiObject(child.gameObject);
             }
         }
 
-        private bool IsBuildingUnlockedForLocalPlayer(string buildingType)
+        private bool IsTemplateTransform(Transform child)
         {
-            var normalizedBuilding = ResolveConfiguredBuildingType(buildingType);
-            if (string.IsNullOrWhiteSpace(normalizedBuilding))
+            if (child == null)
             {
                 return false;
             }
 
-            var runtimeConfig = ClientRuntimeConfigCache.Instance;
-            if (runtimeConfig != null && runtimeConfig.DevMode)
+            return (buildGroupPrefab != null && ReferenceEquals(child, buildGroupPrefab.transform))
+                   || (buildItemPrefab != null && ReferenceEquals(child, buildItemPrefab.transform));
+        }
+
+        private static void DestroyUiObject(UnityEngine.Object target)
+        {
+            if (target == null)
             {
-                return true;
+                return;
             }
 
-            if (!_requiredTechsByBuilding.TryGetValue(normalizedBuilding, out var requiredTechs) ||
-                requiredTechs == null || requiredTechs.Count == 0)
+            if (Application.isPlaying)
             {
-                return true;
+                Destroy(target);
+            }
+            else
+            {
+                DestroyImmediate(target);
+            }
+        }
+
+        private bool ResolveViewReferences()
+        {
+            ResolveTooltipView();
+            ResolveScrollRect();
+            ResolveListContent();
+            ResolveGroupPrefab();
+            ResolveItemPrefab();
+
+            return listContent != null && ResolveItemPrefab() != null && ResolveGroupPrefab() != null;
+        }
+
+        private void ResolveTooltipView()
+        {
+            if (tooltipView != null)
+            {
+                return;
             }
 
-            for (var i = 0; i < requiredTechs.Count; i++)
+            tooltipView = GetComponentInChildren<BuildTooltipView>(true);
+            if (tooltipView == null)
             {
-                if (_activeTechnologyIds.Contains(NormalizeToken(requiredTechs[i])))
+                tooltipView = UnityEngine.Object.FindAnyObjectByType<BuildTooltipView>();
+            }
+        }
+
+        private void ResolveScrollRect()
+        {
+            if (listScrollRect == null)
+            {
+                listScrollRect = GetComponent<ScrollRect>();
+            }
+
+            if (listScrollRect == null)
+            {
+                listScrollRect = gameObject.AddComponent<ScrollRect>();
+            }
+
+            listScrollRect.horizontal = false;
+            listScrollRect.vertical = true;
+            listScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            listScrollRect.scrollSensitivity = 20f;
+        }
+
+        private void ResolveListContent()
+        {
+            if (listContent == null && listScrollRect != null && listScrollRect.content != null)
+            {
+                listContent = listScrollRect.content;
+            }
+
+            var viewport = transform.Find("Viewport") as RectTransform;
+            if (viewport == null)
+            {
+                var legacyViewport = transform.Find("OneGroup") as RectTransform;
+                if (legacyViewport != null)
                 {
-                    return true;
+                    viewport = legacyViewport;
+                    legacyViewport.name = "Viewport";
                 }
             }
 
-            return false;
-        }
-
-        private RectTransform ResolveBuildItemListRoot()
-        {
-            if (buildItemListRoot != null)
+            if (viewport == null)
             {
-                return buildItemListRoot;
+                viewport = CreateViewport();
             }
 
-            var root = ResolveBuildButtonsRoot();
-            buildItemListRoot = root as RectTransform;
-            return buildItemListRoot;
+            EnsureViewportComponents(viewport);
+
+            if (listContent == null)
+            {
+                var existingContent = viewport.Find("Content") as RectTransform;
+                listContent = existingContent != null ? existingContent : CreateContentRoot(viewport);
+            }
+
+            EnsureContentLayout(listContent);
+            listScrollRect.viewport = viewport;
+            listScrollRect.content = listContent;
+        }
+
+        private RectTransform CreateViewport()
+        {
+            var viewportGo = new GameObject("Viewport", typeof(RectTransform));
+            viewportGo.transform.SetParent(transform, false);
+            var viewport = viewportGo.GetComponent<RectTransform>();
+            viewport.anchorMin = new Vector2(0f, 0f);
+            viewport.anchorMax = new Vector2(1f, 1f);
+            viewport.pivot = new Vector2(0.5f, 0.5f);
+            viewport.anchoredPosition = new Vector2(0f, -28f);
+            viewport.sizeDelta = new Vector2(-20f, -120f);
+            return viewport;
+        }
+
+        private static void EnsureViewportComponents(RectTransform viewport)
+        {
+            if (viewport == null)
+            {
+                return;
+            }
+
+            var image = viewport.GetComponent<Image>();
+            if (image == null)
+            {
+                image = viewport.gameObject.AddComponent<Image>();
+            }
+
+            image.color = new Color(0.02f, 0.03f, 0.06f, 0.15f);
+            var mask = viewport.GetComponent<Mask>();
+            if (mask == null)
+            {
+                mask = viewport.gameObject.AddComponent<Mask>();
+            }
+
+            mask.showMaskGraphic = false;
+        }
+
+        private static RectTransform CreateContentRoot(RectTransform viewport)
+        {
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(viewport, false);
+            var content = contentGo.GetComponent<RectTransform>();
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = new Vector2(-6f, 0f);
+            return content;
+        }
+
+        private static void EnsureContentLayout(RectTransform content)
+        {
+            if (content == null)
+            {
+                return;
+            }
+
+            var layout = content.GetComponent<VerticalLayoutGroup>();
+            if (layout == null)
+            {
+                layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            }
+
+            layout.padding = new RectOffset(0, 0, 0, 12);
+            layout.spacing = 10f;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+            {
+                fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            }
+
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        private BuildGroupView ResolveGroupPrefab()
+        {
+            if (buildGroupPrefab != null)
+            {
+                buildGroupPrefab.gameObject.SetActive(false);
+                return buildGroupPrefab;
+            }
+
+            buildGroupPrefab = GetComponentInChildren<BuildGroupView>(true);
+            if (buildGroupPrefab != null)
+            {
+                buildGroupPrefab.gameObject.SetActive(false);
+            }
+
+            return buildGroupPrefab;
+        }
+
+        private BuildItemView ResolveItemPrefab()
+        {
+            if (buildItemPrefab != null)
+            {
+                buildItemPrefab.gameObject.SetActive(false);
+                return buildItemPrefab;
+            }
+
+            var candidates = GetComponentsInChildren<BuildItemView>(true);
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                var candidate = candidates[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                if (candidate.GetComponent<BuildGroupView>() != null)
+                {
+                    continue;
+                }
+
+                buildItemPrefab = candidate;
+                buildItemPrefab.gameObject.SetActive(false);
+                break;
+            }
+
+            return buildItemPrefab;
+        }
+
+        private void ResetScrollPosition()
+        {
+            if (listScrollRect == null)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            listScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        private void ResolveMapInputHandler()
+        {
+            if (mapInputHandler != null)
+            {
+                return;
+            }
+
+            if (!autoFindMapInputHandler)
+            {
+                return;
+            }
+
+            mapInputHandler = MapInputHandler.Instance;
+            if (mapInputHandler == null)
+            {
+                mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+            }
         }
 
         private List<DynamicBuildRenderEntry> BuildDynamicRenderEntries()
@@ -666,12 +699,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 for (var i = 0; i < buildOrder.Length; i++)
                 {
                     var resolvedId = ResolveConfiguredBuildingType(buildOrder[i]);
-                    if (string.IsNullOrWhiteSpace(resolvedId) || visited.Contains(resolvedId))
-                    {
-                        continue;
-                    }
-
-                    if (IsHiddenBuildingType(resolvedId))
+                    if (string.IsNullOrWhiteSpace(resolvedId) || visited.Contains(resolvedId) || IsHiddenBuildingType(resolvedId))
                     {
                         continue;
                     }
@@ -682,8 +710,10 @@ namespace Panoptes.Presentation.UI.Domestic
                         continue;
                     }
 
-                    var rule = ResolveBuildRule(ResolveDefaultRule(resolvedId), config);
-                    result.Add(new DynamicBuildRenderEntry(resolvedId, config, rule));
+                    result.Add(new DynamicBuildRenderEntry(
+                        resolvedId,
+                        config,
+                        ResolveBuildRule(ResolveDefaultRule(resolvedId), config)));
                     visited.Add(resolvedId);
                 }
             }
@@ -697,12 +727,9 @@ namespace Panoptes.Presentation.UI.Domestic
             remaining.Sort((left, right) =>
             {
                 var sortCompare = left.sort_order.CompareTo(right.sort_order);
-                if (sortCompare != 0)
-                {
-                    return sortCompare;
-                }
-
-                return string.Compare(left.id, right.id, StringComparison.OrdinalIgnoreCase);
+                return sortCompare != 0
+                    ? sortCompare
+                    : string.Compare(left.id, right.id, StringComparison.OrdinalIgnoreCase);
             });
 
             for (var i = 0; i < remaining.Count; i++)
@@ -714,18 +741,15 @@ namespace Panoptes.Presentation.UI.Domestic
                 }
 
                 var resolvedId = ResolveConfiguredBuildingType(config.id);
-                if (string.IsNullOrWhiteSpace(resolvedId) || visited.Contains(resolvedId))
+                if (string.IsNullOrWhiteSpace(resolvedId) || visited.Contains(resolvedId) || IsHiddenBuildingType(resolvedId))
                 {
                     continue;
                 }
 
-                if (IsHiddenBuildingType(resolvedId))
-                {
-                    continue;
-                }
-
-                var rule = ResolveBuildRule(ResolveDefaultRule(resolvedId), config);
-                result.Add(new DynamicBuildRenderEntry(resolvedId, config, rule));
+                result.Add(new DynamicBuildRenderEntry(
+                    resolvedId,
+                    config,
+                    ResolveBuildRule(ResolveDefaultRule(resolvedId), config)));
                 visited.Add(resolvedId);
             }
 
@@ -780,107 +804,6 @@ namespace Panoptes.Presentation.UI.Domestic
             return placementKind == "city_foundation_center";
         }
 
-        private List<BuildItemView> CollectBuildItemViews(RectTransform listRoot)
-        {
-            var result = new List<BuildItemView>();
-            if (listRoot == null)
-            {
-                return result;
-            }
-
-            for (var i = 0; i < listRoot.childCount; i++)
-            {
-                var child = listRoot.GetChild(i);
-                if (child == null)
-                {
-                    continue;
-                }
-
-                var view = child.GetComponent<BuildItemView>();
-                if (view == null)
-                {
-                    view = child.gameObject.AddComponent<BuildItemView>();
-                }
-                result.Add(view);
-            }
-
-            return result;
-        }
-
-        private BuildItemView CreateBuildItemClone(RectTransform listRoot)
-        {
-            if (buildItemTemplate == null || listRoot == null)
-            {
-                return null;
-            }
-
-            var clone = Instantiate(buildItemTemplate.gameObject, listRoot, false);
-            clone.name = $"BuildItem_{listRoot.childCount}";
-            var view = clone.GetComponent<BuildItemView>();
-            if (view == null)
-            {
-                view = clone.AddComponent<BuildItemView>();
-            }
-            return view;
-        }
-
-        private BuildButtonBinding[] GetEffectiveBuildButtons()
-        {
-            if (!autoGenerateBuildButtons)
-            {
-                return buildButtons;
-            }
-
-            var root = ResolveBuildButtonsRoot();
-            if (root == null)
-            {
-                return buildButtons;
-            }
-
-            var buttons = CollectButtons(root);
-            if (buttons.Count == 0)
-            {
-                return buildButtons;
-            }
-
-            var buildOrder = ResolveRuntimeBuildOrder();
-            if (buildOrder == null || buildOrder.Length == 0)
-            {
-                return buildButtons;
-            }
-
-            if (cloneTemplateButtons && buttons.Count < buildOrder.Length)
-            {
-                ExpandButtons(root, buttons, buildOrder.Length);
-                buttons = CollectButtons(root);
-            }
-
-            var count = Mathf.Min(buttons.Count, buildOrder.Length);
-            if (count <= 0)
-            {
-                return buildButtons;
-            }
-
-            var generated = new BuildButtonBinding[count];
-            for (int i = 0; i < count; i++)
-            {
-                var button = buttons[i];
-                generated[i] = new BuildButtonBinding
-                {
-                    button = button,
-                    iconImage = ResolveIconImage(button),
-                    labelText = ResolveLabelText(button),
-                    fallbackIcon = null,
-                    buildingType = BuildingType.Custom,
-                    customBuildingType = NormalizeToken(buildOrder[i]),
-                    tooltipText = string.Empty,
-                    rule = ResolveDefaultRule(buildOrder[i])
-                };
-            }
-
-            return generated;
-        }
-
         private string[] ResolveRuntimeBuildOrder()
         {
             var layout = (_catalogCache != null ? _catalogCache : StaticCatalogCache.Instance)?.BuildMenuLayout;
@@ -892,221 +815,40 @@ namespace Panoptes.Presentation.UI.Domestic
             return runtimeBuildOrder;
         }
 
-        private Transform ResolveBuildButtonsRoot()
-        {
-            if (buildButtonsRoot != null)
-            {
-                return buildButtonsRoot;
-            }
-
-            if (buildContentRoot != null)
-            {
-                var grid = buildContentRoot.transform.Find("BuildGrid");
-                if (grid != null)
-                {
-                    buildButtonsRoot = grid;
-                    return buildButtonsRoot;
-                }
-
-                buildButtonsRoot = buildContentRoot.transform;
-                return buildButtonsRoot;
-            }
-
-            return null;
-        }
-
-        private static List<Button> CollectButtons(Transform root)
-        {
-            var result = new List<Button>(16);
-            if (root == null)
-            {
-                return result;
-            }
-
-            CollectButtonsRecursive(root, result);
-
-            return result;
-        }
-
-        private static void CollectButtonsRecursive(Transform node, List<Button> result)
-        {
-            if (node == null || result == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < node.childCount; i++)
-            {
-                var child = node.GetChild(i);
-                if (child == null)
-                {
-                    continue;
-                }
-
-                var button = child.GetComponent<Button>();
-                if (button != null)
-                {
-                    result.Add(button);
-                }
-
-                if (child.childCount > 0)
-                {
-                    CollectButtonsRecursive(child, result);
-                }
-            }
-        }
-
-        private static void ExpandButtons(Transform root, List<Button> buttons, int targetCount)
-        {
-            if (root == null || buttons == null || buttons.Count == 0 || targetCount <= buttons.Count)
-            {
-                return;
-            }
-
-            var template = buttons[0];
-            if (template == null)
-            {
-                return;
-            }
-
-            while (buttons.Count < targetCount)
-            {
-                var clone = Instantiate(template.gameObject, root, false);
-                clone.name = $"BuildBtn_{buttons.Count + 1}";
-                var cloneButton = clone.GetComponent<Button>();
-                if (cloneButton == null)
-                {
-                    cloneButton = clone.GetComponentInChildren<Button>(true);
-                }
-
-                if (cloneButton != null)
-                {
-                    buttons.Add(cloneButton);
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-
-        private static Image ResolveIconImage(Button button)
-        {
-            if (button == null)
-            {
-                return null;
-            }
-
-            var icon = button.transform.Find("Icon");
-            if (icon != null)
-            {
-                var image = icon.GetComponent<Image>();
-                if (image != null)
-                {
-                    return image;
-                }
-            }
-
-            var images = button.GetComponentsInChildren<Image>(true);
-            for (int i = 0; i < images.Length; i++)
-            {
-                if (images[i] != null && images[i].gameObject != button.gameObject)
-                {
-                    return images[i];
-                }
-            }
-
-            return null;
-        }
-
-        private static TMP_Text ResolveLabelText(Button button)
-        {
-            if (button == null)
-            {
-                return null;
-            }
-
-            var label = button.transform.Find("Label");
-            if (label != null)
-            {
-                var text = label.GetComponent<TMP_Text>();
-                if (text != null)
-                {
-                    return text;
-                }
-            }
-
-            return button.GetComponentInChildren<TMP_Text>(true);
-        }
-
         private static BuildRule ResolveDefaultRule(string buildingType)
         {
-            switch (NormalizeToken(buildingType))
+            return NormalizeToken(buildingType) switch
             {
-                case "farm":
-                case "lumberyard":
-                case "smelter":
-                case "mine":
-                case "lumber":
-                    return BuildRule.ResourceOnly;
-                default:
-                    return BuildRule.CityOnly;
-            }
+                "farm" => BuildRule.ResourceOnly,
+                "mine" => BuildRule.ResourceOnly,
+                "lumberyard" => BuildRule.ResourceOnly,
+                "lumber" => BuildRule.ResourceOnly,
+                "smelter" => BuildRule.ResourceOnly,
+                _ => BuildRule.CityOnly
+            };
+        }
+
+        private BuildRule ResolveBuildRuleFor(string buildingType)
+        {
+            var config = GetBuildConfigEntry(buildingType);
+            return ResolveBuildRule(ResolveDefaultRule(buildingType), config);
         }
 
         private void UnbindButtons()
         {
             var count = Mathf.Min(_boundButtons.Count, _boundActions.Count);
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
-                var btn = _boundButtons[i];
+                var button = _boundButtons[i];
                 var action = _boundActions[i];
-                if (btn != null && action != null)
+                if (button != null && action != null)
                 {
-                    btn.onClick.RemoveListener(action);
+                    button.onClick.RemoveListener(action);
                 }
             }
 
             _boundButtons.Clear();
             _boundActions.Clear();
-        }
-
-        private void BindModeToggles()
-        {
-            if (modeToggleGroup != null)
-            {
-                if (governanceToggle != null)
-                {
-                    governanceToggle.group = modeToggleGroup;
-                }
-                if (buildToggle != null)
-                {
-                    buildToggle.group = modeToggleGroup;
-                }
-            }
-
-            if (governanceToggle != null)
-            {
-                governanceToggle.onValueChanged.AddListener(OnGovernanceToggleChanged);
-            }
-
-            if (buildToggle != null)
-            {
-                buildToggle.onValueChanged.AddListener(OnBuildToggleChanged);
-            }
-        }
-
-        private void UnbindModeToggles()
-        {
-            if (governanceToggle != null)
-            {
-                governanceToggle.onValueChanged.RemoveListener(OnGovernanceToggleChanged);
-            }
-
-            if (buildToggle != null)
-            {
-                buildToggle.onValueChanged.RemoveListener(OnBuildToggleChanged);
-            }
         }
 
         private void TriggerBuild(string buildingType, BuildRule rule)
@@ -1124,9 +866,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 Debug.LogWarning("[BuildCommandPanel] Building type is empty.");
                 return;
             }
-
-            _lastBuildFailureMessage = string.Empty;
-            RefreshBuildStatus();
 
             switch (rule)
             {
@@ -1149,6 +888,8 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
                 _gameStateCache.OnPlanningCommandResult += OnPlanningCommandResult;
+                _gameStateCache.OnStateChanged -= OnGameStateChanged;
+                _gameStateCache.OnStateChanged += OnGameStateChanged;
             }
 
             _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
@@ -1156,6 +897,8 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
                 _planningDraftCache.BuildPreviewChanged += OnBuildPreviewChanged;
+                _planningDraftCache.OrdersChanged -= OnOrdersChanged;
+                _planningDraftCache.OrdersChanged += OnOrdersChanged;
             }
         }
 
@@ -1164,19 +907,31 @@ namespace Panoptes.Presentation.UI.Domestic
             if (_gameStateCache != null)
             {
                 _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
+                _gameStateCache.OnStateChanged -= OnGameStateChanged;
                 _gameStateCache = null;
             }
 
             if (_planningDraftCache != null)
             {
                 _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
+                _planningDraftCache.OrdersChanged -= OnOrdersChanged;
                 _planningDraftCache = null;
             }
         }
 
+        private void OnOrdersChanged()
+        {
+            RefreshBuildItems();
+        }
+
         private void OnBuildPreviewChanged()
         {
-            RefreshBuildStatus();
+            RefreshBuildItems();
+        }
+
+        private void OnGameStateChanged()
+        {
+            RefreshBuildItems();
         }
 
         private void OnPlanningCommandResult(PlanningCommandResultEvent evt)
@@ -1186,300 +941,28 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            if (evt.Success)
+            if (!evt.Success)
             {
-                _lastBuildFailureMessage = string.Empty;
-            }
-            else
-            {
-                _lastBuildFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.ErrorCode);
-            }
-
-            RefreshBuildStatus();
-        }
-
-        private void RefreshBuildStatus()
-        {
-            if (buildStatusText == null)
-            {
-                return;
-            }
-
-            var preview = (_planningDraftCache ?? PlanningDraftCache.Instance)?.CurrentBuildPreview;
-            if (preview != null)
-            {
-                if (string.Equals(preview.Message, "检查中", StringComparison.Ordinal))
+                var message = GameplayFeedbackText.ResolveMessage(evt.Message, evt.ErrorCode);
+                if (!string.IsNullOrWhiteSpace(message))
                 {
-                    buildStatusText.text = "检查中";
-                    return;
-                }
-
-                if (!string.IsNullOrWhiteSpace(preview.Message) || !string.IsNullOrWhiteSpace(preview.ErrorCode))
-                {
-                    buildStatusText.text = preview.Valid
-                        ? preview.Message
-                        : GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);
-                    if (string.IsNullOrWhiteSpace(buildStatusText.text))
+                    if (ErrorToast.Instance != null)
                     {
-                        buildStatusText.text = preview.Valid ? "当前位置可提交建造" : string.Empty;
+                        ErrorToast.Instance.Show(message, false);
                     }
-                    return;
-                }
-
-                if (preview.Valid)
-                {
-                    buildStatusText.text = "当前位置可提交建造";
-                    return;
+                    else
+                    {
+                        Debug.LogWarning($"[BuildCommandPanel] {message}");
+                    }
                 }
             }
 
-            buildStatusText.text = _lastBuildFailureMessage ?? string.Empty;
-        }
-
-        private void ResolveMapInputHandler()
-        {
-            if (mapInputHandler != null)
-            {
-                return;
-            }
-
-            if (!autoFindMapInputHandler)
-            {
-                return;
-            }
-
-            mapInputHandler = MapInputHandler.Instance;
-            if (mapInputHandler == null)
-            {
-                mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
-            }
-        }
-
-        private void OnGovernanceToggleChanged(bool isOn)
-        {
-            if (isOn)
-            {
-                SetMode(PanelMode.Governance, false);
-            }
-        }
-
-        private void OnBuildToggleChanged(bool isOn)
-        {
-            if (isOn)
-            {
-                SetMode(PanelMode.Build, false);
-            }
-        }
-
-        private void SetMode(PanelMode mode, bool syncToggles)
-        {
-            if (governanceContentRoot != null)
-            {
-                governanceContentRoot.SetActive(mode == PanelMode.Governance);
-            }
-
-            if (buildContentRoot != null)
-            {
-                buildContentRoot.SetActive(mode == PanelMode.Build);
-            }
-
-            if (syncToggles)
-            {
-                if (governanceToggle != null)
-                {
-                    governanceToggle.SetIsOnWithoutNotify(mode == PanelMode.Governance);
-                }
-
-                if (buildToggle != null)
-                {
-                    buildToggle.SetIsOnWithoutNotify(mode == PanelMode.Build);
-                }
-            }
-
-            if (mode == PanelMode.Governance)
-            {
-                CancelPlacement();
-            }
-            else if (mode == PanelMode.Build)
-            {
-                BindButtons();
-                ResetBuildListScroll(true);
-            }
-        }
-
-        private void HandleBuildListWheelScroll()
-        {
-            if (!enableWheelScrollOnBuildList)
-            {
-                return;
-            }
-
-            if (buildContentRoot == null || !buildContentRoot.activeInHierarchy)
-            {
-                return;
-            }
-
-            var listRoot = ResolveBuildItemListRoot();
-            if (listRoot == null)
-            {
-                return;
-            }
-
-            if (!IsPointerOverRect(buildContentRoot.transform as RectTransform))
-            {
-                return;
-            }
-
-            var rawScroll = GetMouseWheelDeltaY();
-            if (Mathf.Abs(rawScroll) <= 0.0001f)
-            {
-                return;
-            }
-
-            EnsureBuildListScrollInitialized(listRoot);
-
-            var maxOffset = Mathf.Max(0f, CalculateBuildListOverflow(listRoot));
-            if (maxOffset <= 0.01f)
-            {
-                _buildListScrollOffset = 0f;
-                listRoot.anchoredPosition = _buildListBaseAnchoredPos;
-                return;
-            }
-
-            var step = Mathf.Max(1f, wheelScrollStepPixels);
-            var direction = Mathf.Sign(rawScroll);
-            _buildListScrollOffset = Mathf.Clamp(_buildListScrollOffset - direction * step, 0f, maxOffset);
-            listRoot.anchoredPosition = _buildListBaseAnchoredPos + new Vector2(0f, _buildListScrollOffset);
-        }
-
-        private void EnsureBuildListScrollInitialized(RectTransform listRoot)
-        {
-            if (_buildListScrollInitialized)
-            {
-                return;
-            }
-
-            _buildListBaseAnchoredPos = listRoot.anchoredPosition;
-            _buildListScrollOffset = 0f;
-            _buildListScrollInitialized = true;
-        }
-
-        private void ResetBuildListScroll(bool force)
-        {
-            var listRoot = ResolveBuildItemListRoot();
-            if (listRoot == null)
-            {
-                return;
-            }
-
-            if (!_buildListScrollInitialized || force)
-            {
-                _buildListBaseAnchoredPos = listRoot.anchoredPosition;
-            }
-
-            _buildListScrollOffset = 0f;
-            listRoot.anchoredPosition = _buildListBaseAnchoredPos;
-            _buildListScrollInitialized = true;
-        }
-
-        private float CalculateBuildListOverflow(RectTransform listRoot)
-        {
-            if (listRoot == null || buildContentRoot == null)
-            {
-                return 0f;
-            }
-
-            var viewportHeight = Mathf.Max(0f, (buildContentRoot.transform as RectTransform)?.rect.height ?? 0f);
-            if (viewportHeight <= 0.01f)
-            {
-                return 0f;
-            }
-
-            var layout = listRoot.GetComponent<GridLayoutGroup>();
-            if (layout == null)
-            {
-                return 0f;
-            }
-
-            var activeCount = 0;
-            for (var i = 0; i < listRoot.childCount; i++)
-            {
-                var child = listRoot.GetChild(i);
-                if (child != null && child.gameObject.activeSelf)
-                {
-                    activeCount++;
-                }
-            }
-
-            if (activeCount <= 0)
-            {
-                return 0f;
-            }
-
-            var columns = 1;
-            if (layout.constraint == GridLayoutGroup.Constraint.FixedColumnCount)
-            {
-                columns = Mathf.Max(1, layout.constraintCount);
-            }
-            else if (layout.constraint == GridLayoutGroup.Constraint.FixedRowCount)
-            {
-                var rowsFixed = Mathf.Max(1, layout.constraintCount);
-                columns = Mathf.Max(1, Mathf.CeilToInt(activeCount / (float)rowsFixed));
-            }
-
-            var rows = Mathf.Max(1, Mathf.CeilToInt(activeCount / (float)columns));
-            var contentHeight =
-                layout.padding.top +
-                layout.padding.bottom +
-                rows * layout.cellSize.y +
-                Mathf.Max(0, rows - 1) * layout.spacing.y;
-
-            return Mathf.Max(0f, contentHeight - viewportHeight);
-        }
-
-        private bool IsPointerOverRect(RectTransform rect)
-        {
-            if (rect == null)
-            {
-                return false;
-            }
-
-            var pointer = GetMousePosition();
-            var canvas = rect.GetComponentInParent<Canvas>();
-            var camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? canvas.worldCamera
-                : null;
-            return RectTransformUtility.RectangleContainsScreenPoint(rect, pointer, camera);
-        }
-
-        private float GetMouseWheelDeltaY()
-        {
-#if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            if (mouse == null)
-            {
-                return 0f;
-            }
-
-            return mouse.scroll.ReadValue().y * inputSystemWheelScale;
-#else
-            return Input.mouseScrollDelta.y;
-#endif
-        }
-
-        private Vector2 GetMousePosition()
-        {
-#if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null ? mouse.position.ReadValue() : Vector2.zero;
-#else
-            return Input.mousePosition;
-#endif
+            RefreshBuildItems();
         }
 
         private void InstallTooltip(Button button, string text)
         {
-            if (button == null || tooltipView == null || string.IsNullOrWhiteSpace(text))
+            if (button == null)
             {
                 return;
             }
@@ -1488,6 +971,12 @@ namespace Panoptes.Presentation.UI.Domestic
             if (trigger == null)
             {
                 trigger = button.gameObject.AddComponent<BuildTooltipTrigger>();
+            }
+
+            if (tooltipView == null || string.IsNullOrWhiteSpace(text))
+            {
+                trigger.Configure(null, string.Empty);
+                return;
             }
 
             trigger.Configure(tooltipView, text.Trim());
@@ -1503,6 +992,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _catalogCache = StaticCatalogCache.EnsureInstance();
             if (_catalogCache != null)
             {
+                _catalogCache.CatalogChanged -= OnCatalogUpdated;
                 _catalogCache.CatalogChanged += OnCatalogUpdated;
             }
         }
@@ -1518,8 +1008,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void OnCatalogUpdated()
         {
-            LoadBuildConfig();
-            BindButtons();
+            RefreshBuildItems();
         }
 
         private void LoadBuildConfig()
@@ -1534,7 +1023,6 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             var loadedFromCatalog = TryLoadBuildConfigFromStaticCatalog();
-
             if (!loadedFromCatalog)
             {
                 var source = buildConfigJson;
@@ -1549,6 +1037,7 @@ namespace Panoptes.Presentation.UI.Domestic
                     {
                         Debug.LogWarning("[BuildCommandPanel] Build config JSON is missing.");
                     }
+
                     return;
                 }
 
@@ -1587,24 +1076,30 @@ namespace Panoptes.Presentation.UI.Domestic
                 };
             }
 
-            foreach (var pair in cache.Resources)
+            if (cache.Resources != null)
             {
-                if (pair.Value == null || string.IsNullOrWhiteSpace(pair.Value.key))
+                foreach (var pair in cache.Resources)
                 {
-                    continue;
-                }
+                    if (pair.Value == null || string.IsNullOrWhiteSpace(pair.Value.key))
+                    {
+                        continue;
+                    }
 
-                _resourceMetaByKey[NormalizeToken(pair.Value.key)] = pair.Value;
+                    _resourceMetaByKey[NormalizeToken(pair.Value.key)] = pair.Value;
+                }
             }
 
-            foreach (var pair in cache.Points)
+            if (cache.Points != null)
             {
-                if (pair.Value == null || string.IsNullOrWhiteSpace(pair.Value.key))
+                foreach (var pair in cache.Points)
                 {
-                    continue;
-                }
+                    if (pair.Value == null || string.IsNullOrWhiteSpace(pair.Value.key))
+                    {
+                        continue;
+                    }
 
-                _pointMetaByKey[NormalizeToken(pair.Value.key)] = pair.Value;
+                    _pointMetaByKey[NormalizeToken(pair.Value.key)] = pair.Value;
+                }
             }
 
             return _buildConfigById.Count > 0;
@@ -1617,7 +1112,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
-            BuildConfigRoot config = null;
+            BuildConfigRoot config;
             try
             {
                 config = JsonUtility.FromJson<BuildConfigRoot>(jsonText);
@@ -1628,19 +1123,16 @@ namespace Panoptes.Presentation.UI.Domestic
                 {
                     Debug.LogWarning($"[BuildCommandPanel] Failed to parse build config JSON: {ex.Message}");
                 }
+
                 return false;
             }
 
             if (config == null || config.buildings == null || config.buildings.Length == 0)
             {
-                if (logConfigWarnings)
-                {
-                    Debug.LogWarning("[BuildCommandPanel] Build config JSON has no buildings array.");
-                }
                 return false;
             }
 
-            for (int i = 0; i < config.buildings.Length; i++)
+            for (var i = 0; i < config.buildings.Length; i++)
             {
                 var entry = config.buildings[i];
                 var id = NormalizeToken(entry != null ? entry.id : string.Empty);
@@ -1668,22 +1160,12 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            ParseBuildCostsFromCatalogJson(asset.text);
-        }
-
-        private void ParseBuildCostsFromCatalogJson(string catalogJson)
-        {
-            EnumerateArrayObjects(catalogJson, "buildings", ParseSingleBuildingCostObject);
+            EnumerateArrayObjects(asset.text, "buildings", ParseSingleBuildingCostObject);
         }
 
         private void ParseSingleBuildingCostObject(string objectText)
         {
-            if (string.IsNullOrWhiteSpace(objectText))
-            {
-                return;
-            }
-
-            if (!TryExtractStringField(objectText, "id", out var id))
+            if (string.IsNullOrWhiteSpace(objectText) || !TryExtractStringField(objectText, "id", out var id))
             {
                 return;
             }
@@ -1699,6 +1181,7 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 AppendCostEntries(costs, resourceCosts, false);
             }
+
             if (TryExtractObjectField(objectText, "point_costs", out var pointCosts))
             {
                 AppendCostEntries(costs, pointCosts, true);
@@ -1771,6 +1254,7 @@ namespace Panoptes.Presentation.UI.Domestic
                     {
                         objectStart = i;
                     }
+
                     depth++;
                     continue;
                 }
@@ -1788,6 +1272,7 @@ namespace Panoptes.Presentation.UI.Domestic
                         consume(jsonText.Substring(objectStart, i - objectStart + 1));
                         objectStart = -1;
                     }
+
                     continue;
                 }
 
@@ -1931,7 +1416,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             var aliases = GetAliasKeys(key);
-            for (int i = 0; i < aliases.Length; i++)
+            for (var i = 0; i < aliases.Length; i++)
             {
                 if (_buildConfigById.TryGetValue(aliases[i], out entry))
                 {
@@ -1956,7 +1441,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             var aliases = GetAliasKeys(key);
-            for (int i = 0; i < aliases.Length; i++)
+            for (var i = 0; i < aliases.Length; i++)
             {
                 if (_buildConfigById.ContainsKey(aliases[i]))
                 {
@@ -1967,16 +1452,14 @@ namespace Panoptes.Presentation.UI.Domestic
             return key;
         }
 
-        private List<BuildItemView.MaterialRequirement> BuildRequirements(string buildingType)
+        private List<BuildMetricSource> BuildMetricSources(string buildingType)
         {
-            var result = new List<BuildItemView.MaterialRequirement>();
+            var result = new List<BuildMetricSource>();
             var normalizedBuilding = NormalizeToken(buildingType);
-            if (string.IsNullOrWhiteSpace(normalizedBuilding))
-            {
-                return result;
-            }
-
-            if (!_buildCostsById.TryGetValue(normalizedBuilding, out var costs) || costs == null || costs.Count == 0)
+            if (string.IsNullOrWhiteSpace(normalizedBuilding) ||
+                !_buildCostsById.TryGetValue(normalizedBuilding, out var costs) ||
+                costs == null ||
+                costs.Count == 0)
             {
                 return result;
             }
@@ -1984,16 +1467,16 @@ namespace Panoptes.Presentation.UI.Domestic
             for (var i = 0; i < costs.Count; i++)
             {
                 var cost = costs[i];
-                if (string.IsNullOrWhiteSpace(cost.key) || cost.amount <= 0)
+                if (string.IsNullOrWhiteSpace(cost.Key) || cost.Amount <= 0)
                 {
                     continue;
                 }
 
-                var displayName = cost.key;
+                var displayName = cost.Key;
                 var iconKey = string.Empty;
-                if (cost.isPoint)
+                if (cost.IsPoint)
                 {
-                    if (_pointMetaByKey.TryGetValue(cost.key, out var pointMeta) && pointMeta != null)
+                    if (_pointMetaByKey.TryGetValue(cost.Key, out var pointMeta) && pointMeta != null)
                     {
                         displayName = string.IsNullOrWhiteSpace(pointMeta.display_name)
                             ? displayName
@@ -2001,27 +1484,220 @@ namespace Panoptes.Presentation.UI.Domestic
                         iconKey = pointMeta.icon_key;
                     }
                 }
-                else
+                else if (_resourceMetaByKey.TryGetValue(cost.Key, out var resourceMeta) && resourceMeta != null)
                 {
-                    if (_resourceMetaByKey.TryGetValue(cost.key, out var resourceMeta) && resourceMeta != null)
-                    {
-                        displayName = string.IsNullOrWhiteSpace(resourceMeta.display_name)
-                            ? displayName
-                            : resourceMeta.display_name.Trim();
-                        iconKey = resourceMeta.icon_key;
-                    }
+                    displayName = string.IsNullOrWhiteSpace(resourceMeta.display_name)
+                        ? displayName
+                        : resourceMeta.display_name.Trim();
+                    iconKey = resourceMeta.icon_key;
                 }
 
-                result.Add(new BuildItemView.MaterialRequirement
-                {
-                    key = cost.key,
-                    displayName = displayName,
-                    amount = cost.amount,
-                    icon = LoadMaterialIconByKey(iconKey)
-                });
+                result.Add(new BuildMetricSource(
+                    cost.Key,
+                    displayName,
+                    cost.Amount,
+                    LoadMaterialIconByKey(iconKey),
+                    cost.IsPoint));
             }
 
             return result;
+        }
+
+        private void RebuildRequiredTechMap()
+        {
+            _requiredTechsByBuilding.Clear();
+
+            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
+            if (cache == null || cache.Technologies == null || cache.Technologies.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in cache.Technologies)
+            {
+                var technology = pair.Value;
+                if (technology == null || technology.explicit_effects == null || technology.explicit_effects.Length == 0)
+                {
+                    continue;
+                }
+
+                var technologyId = NormalizeToken(technology.id);
+                if (string.IsNullOrWhiteSpace(technologyId))
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < technology.explicit_effects.Length; i++)
+                {
+                    var effect = technology.explicit_effects[i];
+                    if (effect == null || !string.Equals(NormalizeToken(effect.type), "unlock_building", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var targetBuilding = ResolveConfiguredBuildingType(effect.target_id);
+                    if (string.IsNullOrWhiteSpace(targetBuilding))
+                    {
+                        continue;
+                    }
+
+                    if (!_requiredTechsByBuilding.TryGetValue(targetBuilding, out var requiredTechs))
+                    {
+                        requiredTechs = new List<string>();
+                        _requiredTechsByBuilding[targetBuilding] = requiredTechs;
+                    }
+
+                    if (!requiredTechs.Contains(technologyId))
+                    {
+                        requiredTechs.Add(technologyId);
+                    }
+                }
+            }
+        }
+
+        private void RebuildActiveTechnologySet()
+        {
+            _activeTechnologyIds.Clear();
+
+            var activeTechs = GameStateCache.Instance?.GetCurrentResearchState()?.ActiveTechnologyIds;
+            if (activeTechs == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < activeTechs.Count; i++)
+            {
+                var techId = NormalizeToken(activeTechs[i]);
+                if (!string.IsNullOrWhiteSpace(techId))
+                {
+                    _activeTechnologyIds.Add(techId);
+                }
+            }
+        }
+
+        private BuildItemAvailabilityState ResolveAvailabilityState(string buildingType)
+        {
+            if (IsBuildingPending(buildingType))
+            {
+                return BuildItemAvailabilityState.Pending;
+            }
+
+            return IsBuildingUnlockedForLocalPlayer(buildingType)
+                ? BuildItemAvailabilityState.Available
+                : BuildItemAvailabilityState.Locked;
+        }
+
+        private bool IsBuildingUnlockedForLocalPlayer(string buildingType)
+        {
+            var normalizedBuilding = ResolveConfiguredBuildingType(buildingType);
+            if (string.IsNullOrWhiteSpace(normalizedBuilding))
+            {
+                return false;
+            }
+
+            var runtimeConfig = ClientRuntimeConfigCache.Instance;
+            if (runtimeConfig != null && runtimeConfig.DevMode)
+            {
+                return true;
+            }
+
+            if (!_requiredTechsByBuilding.TryGetValue(normalizedBuilding, out var requiredTechs) ||
+                requiredTechs == null ||
+                requiredTechs.Count == 0)
+            {
+                return true;
+            }
+
+            for (var i = 0; i < requiredTechs.Count; i++)
+            {
+                if (_activeTechnologyIds.Contains(NormalizeToken(requiredTechs[i])))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private List<string> ResolveRequiredTechnologyNames(string buildingType)
+        {
+            var result = new List<string>();
+            var normalizedBuilding = ResolveConfiguredBuildingType(buildingType);
+            if (string.IsNullOrWhiteSpace(normalizedBuilding) ||
+                !_requiredTechsByBuilding.TryGetValue(normalizedBuilding, out var requiredTechs) ||
+                requiredTechs == null ||
+                requiredTechs.Count == 0)
+            {
+                return result;
+            }
+
+            var technologies = (_catalogCache != null ? _catalogCache : StaticCatalogCache.Instance)?.Technologies;
+            for (var i = 0; i < requiredTechs.Count; i++)
+            {
+                var techId = NormalizeToken(requiredTechs[i]);
+                if (string.IsNullOrWhiteSpace(techId))
+                {
+                    continue;
+                }
+
+                if (technologies != null && technologies.TryGetValue(techId, out var technology) && technology != null)
+                {
+                    result.Add(string.IsNullOrWhiteSpace(technology.name) ? techId : technology.name.Trim());
+                }
+                else
+                {
+                    result.Add(techId);
+                }
+            }
+
+            return result;
+        }
+
+        private bool IsBuildingPending(string buildingType)
+        {
+            var normalizedBuilding = NormalizeToken(buildingType);
+            if (string.IsNullOrWhiteSpace(normalizedBuilding))
+            {
+                return false;
+            }
+
+            var draftCache = _planningDraftCache ?? PlanningDraftCache.Instance;
+            if (draftCache == null)
+            {
+                return false;
+            }
+
+            var preview = draftCache.CurrentBuildPreview;
+            if (preview != null &&
+                string.Equals(NormalizeToken(preview.BuildingTypeId), normalizedBuilding, StringComparison.Ordinal) &&
+                (string.IsNullOrWhiteSpace(_activeCityCoreNodeId) ||
+                 string.Equals(preview.CityId, _activeCityCoreNodeId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            var orders = draftCache.BuildOrders;
+            for (var i = 0; i < orders.Count; i++)
+            {
+                var order = orders[i];
+                if (order == null)
+                {
+                    continue;
+                }
+
+                if (!string.Equals(NormalizeToken(order.BuildingTypeId), normalizedBuilding, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(_activeCityCoreNodeId) ||
+                    string.Equals(order.CityId, _activeCityCoreNodeId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private BuildRule ResolveBuildRule(BuildRule fallback, BuildConfigEntry entry)
@@ -2035,69 +1711,16 @@ namespace Panoptes.Presentation.UI.Domestic
                 ? entry.placement_kind
                 : entry.placement_rule);
 
-            switch (placementRule)
+            return placementRule switch
             {
-                case "resource_only":
-                case "resource_node":
-                    return BuildRule.ResourceOnly;
-                case "city_only":
-                case "city_territory":
-                    return BuildRule.CityOnly;
-                case "any_terrain":
-                case "any":
-                    return BuildRule.AnyTerrain;
-                default:
-                    return fallback;
-            }
-        }
-
-        private string ResolveTooltipText(BuildButtonBinding binding, BuildConfigEntry entry)
-        {
-            if (applyConfigToButtons && entry != null && !string.IsNullOrWhiteSpace(entry.description))
-            {
-                return entry.description.Trim();
-            }
-
-            return binding.tooltipText;
-        }
-
-        private void ApplyButtonPresentation(BuildButtonBinding binding, string buildingType, BuildConfigEntry entry)
-        {
-            if (!applyConfigToButtons)
-            {
-                return;
-            }
-
-            var displayName = (entry != null && !string.IsNullOrWhiteSpace(entry.name))
-                ? entry.name.Trim()
-                : buildingType;
-
-            if (binding.labelText != null && !string.IsNullOrWhiteSpace(displayName))
-            {
-                binding.labelText.text = displayName;
-            }
-
-            if (binding.iconImage == null)
-            {
-                return;
-            }
-
-            Sprite sprite = null;
-            if (entry != null)
-            {
-                sprite = LoadIconByKey(entry.icon_key);
-            }
-
-            if (sprite == null)
-            {
-                sprite = binding.fallbackIcon;
-            }
-
-            if (sprite != null)
-            {
-                binding.iconImage.sprite = sprite;
-                binding.iconImage.preserveAspect = true;
-            }
+                "resource_only" => BuildRule.ResourceOnly,
+                "resource_node" => BuildRule.ResourceOnly,
+                "city_only" => BuildRule.CityOnly,
+                "city_territory" => BuildRule.CityOnly,
+                "any_terrain" => BuildRule.AnyTerrain,
+                "any" => BuildRule.AnyTerrain,
+                _ => fallback
+            };
         }
 
         private Sprite LoadIconByKey(string iconKey)
@@ -2167,35 +1790,44 @@ namespace Panoptes.Presentation.UI.Domestic
                 yield break;
             }
 
-            using (var request = UnityWebRequestTexture.GetTexture(imageUrl))
-            {
-                yield return request.SendWebRequest();
+            using var request = UnityWebRequestTexture.GetTexture(imageUrl);
+            yield return request.SendWebRequest();
 
 #if UNITY_2020_1_OR_NEWER
-                var failed = request.result != UnityWebRequest.Result.Success;
+            var failed = request.result != UnityWebRequest.Result.Success;
 #else
-                var failed = request.isNetworkError || request.isHttpError;
+            var failed = request.isNetworkError || request.isHttpError;
 #endif
-                if (failed)
-                {
-                    Debug.LogWarning($"[BuildCommandPanel] Failed to load emblem: {request.error}");
-                    SetEmblemSprite(null);
-                    yield break;
-                }
-
-                var texture = DownloadHandlerTexture.GetContent(request);
-                if (texture == null)
-                {
-                    SetEmblemSprite(null);
-                    yield break;
-                }
-
-                var sprite = Sprite.Create(
-                    texture,
-                    new Rect(0f, 0f, texture.width, texture.height),
-                    new Vector2(0.5f, 0.5f));
-                SetEmblemSprite(sprite);
+            if (failed)
+            {
+                Debug.LogWarning($"[BuildCommandPanel] Failed to load emblem: {request.error}");
+                SetEmblemSprite(null);
+                yield break;
             }
+
+            var texture = DownloadHandlerTexture.GetContent(request);
+            if (texture == null)
+            {
+                SetEmblemSprite(null);
+                yield break;
+            }
+
+            var sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f));
+            SetEmblemSprite(sprite);
+        }
+
+        private void WarnMissingBuildConfigOnce(string message)
+        {
+            if (!logConfigWarnings || _loggedMissingBuildConfigThisEnable)
+            {
+                return;
+            }
+
+            Debug.LogWarning(message);
+            _loggedMissingBuildConfigThisEnable = true;
         }
 
         private static string NormalizeToken(string value)
@@ -2205,67 +1837,20 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private static string[] GetAliasKeys(string key)
         {
-            switch (NormalizeToken(key))
+            return NormalizeToken(key) switch
             {
-                case "lumberyard":
-                    return new[] { "lumber" };
-                case "lumber":
-                    return new[] { "lumberyard" };
-                case "engineer":
-                    return new[] { "engineer_camp" };
-                case "engineer_camp":
-                    return new[] { "engineer" };
-                case "archery":
-                    return new[] { "barracks" };
-                case "barracks":
-                    return new[] { "archery" };
-                case "blacksmith":
-                case "backsmith":
-                    return new[] { "workshop" };
-                case "atktower":
-                    return new[] { "tower" };
-                case "viewtower":
-                    return new[] { "watchtower" };
-                default:
-                    return System.Array.Empty<string>();
-            }
-        }
-
-        private static string ResolveBuildingTypeToken(BuildButtonBinding binding)
-        {
-            switch (binding.buildingType)
-            {
-                case BuildingType.Mine:
-                    return "mine";
-                case BuildingType.Farm:
-                    return "farm";
-                case BuildingType.Lumberyard:
-                    return "lumberyard";
-                case BuildingType.Smelter:
-                    return "smelter";
-                case BuildingType.Workshop:
-                    return "workshop";
-                case BuildingType.Barracks:
-                    return "barracks";
-                case BuildingType.EngineerCamp:
-                    return "engineer_camp";
-                case BuildingType.Engineer:
-                    return "engineer";
-                case BuildingType.Wall:
-                    return "wall";
-                case BuildingType.Tower:
-                    return "tower";
-                case BuildingType.Watchtower:
-                    return "watchtower";
-                case BuildingType.Archery:
-                    return "archery";
-                case BuildingType.Blacksmith:
-                    return "blacksmith";
-                case BuildingType.Custom:
-                    return NormalizeToken(binding.customBuildingType);
-                default:
-                    return string.Empty;
-            }
+                "lumberyard" => new[] { "lumber" },
+                "lumber" => new[] { "lumberyard" },
+                "engineer" => new[] { "engineer_camp" },
+                "engineer_camp" => new[] { "engineer" },
+                "archery" => new[] { "barracks" },
+                "barracks" => new[] { "archery" },
+                "blacksmith" => new[] { "workshop" },
+                "backsmith" => new[] { "workshop" },
+                "atktower" => new[] { "tower" },
+                "viewtower" => new[] { "watchtower" },
+                _ => Array.Empty<string>()
+            };
         }
     }
 }
