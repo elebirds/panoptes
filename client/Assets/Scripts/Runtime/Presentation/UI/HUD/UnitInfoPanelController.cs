@@ -1048,8 +1048,10 @@ namespace Panoptes.Presentation.UI.HUD
         {
             var interactive = IsInteractivePlanning();
             var controllable = IsCurrentUnitControllable();
+            var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
+            var canMove = CanSelectedUnitMove(unitType);
             var militaryUnit = IsCurrentSelectionMilitaryUnit();
-            var showDirectOrderButtons = interactive && controllable && militaryUnit;
+            var showDirectOrderButtons = interactive && controllable && (canMove || militaryUnit);
 
             if (directOrderButtonsRoot != null)
             {
@@ -1065,11 +1067,10 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
-            SetDirectOrderButtonState(moveButton, "Move", true, true);
-            SetDirectOrderButtonState(attackButton, "Attack", true, CanSelectedUnitAttack(unitType));
-            SetDirectOrderButtonState(holdButton, "Hold", true, true);
-            SetDirectOrderButtonState(chargeButton, "Charge", true, CanSelectedUnitCharge(unitType));
+            SetDirectOrderButtonState(moveButton, "Move", true, canMove);
+            SetDirectOrderButtonState(attackButton, "Attack", militaryUnit, militaryUnit && CanSelectedUnitAttack(unitType));
+            SetDirectOrderButtonState(holdButton, "Hold", militaryUnit, militaryUnit);
+            SetDirectOrderButtonState(chargeButton, "Charge", militaryUnit, militaryUnit && CanSelectedUnitCharge(unitType));
         }
 
         private bool IsInteractivePlanning()
@@ -1096,6 +1097,30 @@ namespace Panoptes.Presentation.UI.HUD
         {
             return TryGetUnitCatalog(unitType, out var entry) && HasTag(entry, "charge");
         }
+
+        private bool CanSelectedUnitMove(string unitType)
+        {
+            var normalizedType = NormalizeToken(unitType);
+            if (string.IsNullOrWhiteSpace(normalizedType))
+            {
+                return false;
+            }
+
+            if (string.Equals(normalizedType, "resource_point", StringComparison.Ordinal) ||
+                normalizedType.StartsWith("resource_", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var catalog = StaticCatalogCache.EnsureInstance();
+            if (catalog != null && catalog.TryGetBuilding(normalizedType, out _))
+            {
+                return false;
+            }
+
+            return TryGetUnitCatalog(normalizedType, out _);
+        }
+
         private bool IsCurrentSelectionMilitaryUnit()
         {
             if (_currentUnit == null)
