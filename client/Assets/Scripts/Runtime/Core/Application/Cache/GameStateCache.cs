@@ -40,9 +40,13 @@ namespace Panoptes.Core.Application.Cache
 
         private readonly Dictionary<string, List<CityBuiltBuildingDto>> _cityBuiltBuildings = new();
         private readonly Dictionary<string, ResourceDto> _cityResources = new();
+        private readonly Dictionary<string, CityDto> _citiesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, BuildingDto> _buildingsByNodeId = new(StringComparer.OrdinalIgnoreCase);
         // 这里保留最近一次 planning start 的事件，主要给客户端调试、日志和轻量展示使用。
         // 本轮先不接动画播放，但把 activation 边界明确缓存下来，后续需要展示时可直接复用。
         private readonly List<TurnEventDto> _lastPlanningStartEvents = new();
+        private TechnologyDto _researchState = new();
+        private InstitutionStateDto _institutionState = new();
 
         public PlayerView MyPlayer { get; private set; }
         public IReadOnlyList<TurnEventDto> LastPlanningStartEvents => _lastPlanningStartEvents;
@@ -66,6 +70,7 @@ namespace Panoptes.Core.Application.Cache
         public event Action<MinisterMetricsEvent> OnMinisterMetrics;
         public event Action<TokenResultEvent> OnTokenResult;
         public event Action<RevealResultEvent> OnRevealResult;
+        public event Action<PlanningCommandResultEvent> OnPlanningCommandResult;
         public event Action<GameOverEvent> OnGameOver;
         public event Action<GameErrorEvent> OnGameError;
 
@@ -131,6 +136,7 @@ namespace Panoptes.Core.Application.Cache
             SeedCityResourcesFromCurrentState();
             SynchronizeCityCoreState();
             _lastPlanningStartEvents.Clear();
+            RebuildAuthoritativeProjections();
 
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
@@ -186,6 +192,7 @@ namespace Panoptes.Core.Application.Cache
             // 这样客户端既拿到“当前已经生效后的快照”，也保留“这次为什么生效”的事件面。
             _lastPlanningStartEvents.Clear();
             _lastPlanningStartEvents.AddRange(SettlementMapper.ToPlanningStartEvents(msg));
+            RebuildAuthoritativeProjections();
             PublishPhaseState(Turn, Phase, msg.Timeout, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
         }
@@ -234,6 +241,7 @@ namespace Panoptes.Core.Application.Cache
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
             SeedCityResourcesFromCurrentState();
             SynchronizeCityCoreState();
+            RebuildAuthoritativeProjections();
 
             var resourcesAfter = SnapshotResources(MyPlayer);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
@@ -323,6 +331,7 @@ namespace Panoptes.Core.Application.Cache
             _nodes.TryGetValue(node.Id, out var previousNode);
             StabilizeNodeTerrain(node, previousNode);
             _nodes[node.Id] = node;
+            RebuildAuthoritativeProjections();
             Fire(OnNodeChanged, new NodeChangedEvent
             {
                 NodeID = node.Id,
@@ -443,6 +452,53 @@ namespace Panoptes.Core.Application.Cache
             return result;
         }
 
+        public TechnologyDto GetCurrentResearchState()
+        {
+            return CloneTechnologyDto(_researchState);
+        }
+
+        public InstitutionStateDto GetInstitutionState()
+        {
+            return CloneInstitutionStateDto(_institutionState);
+        }
+
+        public IReadOnlyList<CityDto> GetCities()
+        {
+            return _citiesById.Values
+                .OrderBy(city => city.CityId, StringComparer.OrdinalIgnoreCase)
+                .Select(CloneCityDto)
+                .ToList();
+        }
+
+        public bool TryGetCity(string cityId, out CityDto city)
+        {
+            city = null;
+            if (string.IsNullOrWhiteSpace(cityId) || !_citiesById.TryGetValue(cityId.Trim(), out var projectedCity) || projectedCity == null)
+            {
+                return false;
+            }
+
+            city = CloneCityDto(projectedCity);
+            return true;
+        }
+
+        public bool TryGetBuilding(string nodeId, out BuildingDto building)
+        {
+            building = null;
+            if (string.IsNullOrWhiteSpace(nodeId) || !_buildingsByNodeId.TryGetValue(nodeId.Trim(), out var projectedBuilding) || projectedBuilding == null)
+            {
+                return false;
+            }
+
+            building = CloneBuildingDto(projectedBuilding);
+            return true;
+        }
+
+        public IReadOnlyList<TurnEventDto> GetPlanningStartEvents()
+        {
+            return LastPlanningStartEvents;
+        }
+
         public void UpsertRuntimeUnit(UnitDto unit)
         {
             if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
@@ -477,12 +533,16 @@ namespace Panoptes.Core.Application.Cache
             _units.Clear();
             _cityBuiltBuildings.Clear();
             _cityResources.Clear();
+            _citiesById.Clear();
+            _buildingsByNodeId.Clear();
             _lastPlanningStartEvents.Clear();
             _ministers.Clear();
             MyPlayer = null;
             TokensLeft = 0;
             EnemyCityCoreHP = 0;
             EnemyMaxCityCoreHP = 0;
+            _researchState = new TechnologyDto();
+            _institutionState = new InstitutionStateDto();
             PlanningDraftCache.Instance?.ClearAll();
             OnStateChanged?.Invoke();
         }
@@ -499,6 +559,7 @@ namespace Panoptes.Core.Application.Cache
         public void PublishMinisterMetrics(MinisterMetricsEvent evtArgs) => Fire(OnMinisterMetrics, evtArgs, nameof(OnMinisterMetrics));
         public void PublishTokenResult(TokenResultEvent evtArgs) => Fire(OnTokenResult, evtArgs, nameof(OnTokenResult));
         public void PublishRevealResult(RevealResultEvent evtArgs) => Fire(OnRevealResult, evtArgs, nameof(OnRevealResult));
+        public void PublishPlanningCommandResult(PlanningCommandResultEvent evtArgs) => Fire(OnPlanningCommandResult, evtArgs, nameof(OnPlanningCommandResult));
         public void PublishGameOver(GameOverEvent evtArgs) => Fire(OnGameOver, evtArgs, nameof(OnGameOver));
         public void PublishGameError(GameErrorEvent evtArgs) => Fire(OnGameError, evtArgs, nameof(OnGameError));
 
@@ -781,6 +842,127 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
+        private void RebuildAuthoritativeProjections()
+        {
+            _researchState = ProjectResearchState(MyPlayer?.Research);
+            _institutionState = ProjectInstitutionState(MyPlayer?.Institutions);
+            _citiesById.Clear();
+            _buildingsByNodeId.Clear();
+
+            foreach (var node in _nodes.Values)
+            {
+                if (node == null)
+                {
+                    continue;
+                }
+
+                var hasBuildingProjection = !string.IsNullOrWhiteSpace(node.BuildingType) ||
+                                            node.IsCityCore ||
+                                            !string.IsNullOrWhiteSpace(node.CityId) ||
+                                            !string.IsNullOrWhiteSpace(node.ServiceCityId);
+                if (!hasBuildingProjection)
+                {
+                    continue;
+                }
+
+                var building = new BuildingDto
+                {
+                    NodeId = TrimOrEmpty(node.Id),
+                    BuildingTypeId = TrimOrEmpty(node.BuildingType),
+                    OwnerId = NormalizePlayerId(node.Owner, node.TerritoryOwner),
+                    CityId = TrimOrEmpty(node.CityId),
+                    ServiceCityId = TrimOrEmpty(node.ServiceCityId),
+                    Status = TrimOrEmpty(node.BuildingStatus),
+                    HitPoints = node.BuildingHp,
+                    MaxHitPoints = node.BuildingMaxHp,
+                    OperationSelectedRecipeId = TrimOrEmpty(node.OperationSelectedRecipeId),
+                    OperationCurrentProgress = node.OperationCurrentProgress,
+                    OperationRequiredProgress = node.OperationRequiredProgress,
+                    OperationBaseProgress = node.OperationBaseProgress,
+                    OperationBlockedReason = TrimOrEmpty(node.OperationBlockedReason),
+                    TakeoverProgress = node.TakeoverProgress,
+                    TakeoverRequired = node.TakeoverRequired,
+                    IsCityCore = node.IsCityCore,
+                    IsSafeZone = node.IsSafeZone
+                };
+
+                if (!string.IsNullOrWhiteSpace(building.NodeId))
+                {
+                    _buildingsByNodeId[building.NodeId] = building;
+                }
+
+                var cityId = !string.IsNullOrWhiteSpace(building.CityId)
+                    ? building.CityId
+                    : building.ServiceCityId;
+                if (string.IsNullOrWhiteSpace(cityId))
+                {
+                    continue;
+                }
+
+                if (!_citiesById.TryGetValue(cityId, out var city))
+                {
+                    city = new CityDto
+                    {
+                        CityId = cityId,
+                        OwnerId = building.OwnerId,
+                        CoreNodeId = string.Empty
+                    };
+                    _citiesById[cityId] = city;
+                }
+
+                if (string.IsNullOrWhiteSpace(city.OwnerId) && !string.IsNullOrWhiteSpace(building.OwnerId))
+                {
+                    city.OwnerId = building.OwnerId;
+                }
+
+                if (!string.IsNullOrWhiteSpace(building.NodeId) && !city.BuildingNodeIds.Contains(building.NodeId))
+                {
+                    city.BuildingNodeIds.Add(building.NodeId);
+                }
+
+                if (building.IsCityCore || string.Equals(building.BuildingTypeId, "city_core", StringComparison.OrdinalIgnoreCase))
+                {
+                    city.CoreNodeId = building.NodeId;
+                }
+            }
+
+            foreach (var city in _citiesById.Values)
+            {
+                city.BuildingNodeIds.Sort(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        private static TechnologyDto ProjectResearchState(ResearchStateView research)
+        {
+            var projected = new TechnologyDto();
+            if (research == null)
+            {
+                return projected;
+            }
+
+            projected.TechnologyId = TrimOrEmpty(research.CurrentTargetTechnologyId);
+            projected.CurrentProgress = research.CurrentProgress;
+            projected.RequiredProgress = research.RequiredProgress;
+            projected.CompletedTechnologyIds = SnapshotStringList(research.CompletedTechnologyIds);
+            projected.ActiveTechnologyIds = SnapshotStringList(research.ActiveTechnologyIds);
+            projected.PendingActivationTechnologyIds = SnapshotStringList(research.PendingActivationTechnologyIds);
+            return projected;
+        }
+
+        private static InstitutionStateDto ProjectInstitutionState(InstitutionStateView institution)
+        {
+            var projected = new InstitutionStateDto();
+            if (institution == null)
+            {
+                return projected;
+            }
+
+            projected.SlotCount = institution.SlotCount;
+            projected.CandidatePolicyIds = SnapshotStringList(institution.CandidatePolicyIds);
+            projected.ActivePolicyIds = SnapshotStringList(institution.ActivePolicyIds);
+            return projected;
+        }
+
         private string ResolveLikelyLoserId(string winnerId, bool isWinner)
         {
             var winner = NormalizePlayerId(winnerId);
@@ -955,6 +1137,92 @@ namespace Panoptes.Core.Application.Cache
                    left.IsResourcePoint == right.IsResourcePoint &&
                    string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&
                    left.IsSafeZone == right.IsSafeZone;
+        }
+
+        private static TechnologyDto CloneTechnologyDto(TechnologyDto source)
+        {
+            return source == null
+                ? new TechnologyDto()
+                : new TechnologyDto
+                {
+                    TechnologyId = source.TechnologyId,
+                    CurrentProgress = source.CurrentProgress,
+                    RequiredProgress = source.RequiredProgress,
+                    CompletedTechnologyIds = source.CompletedTechnologyIds != null ? new List<string>(source.CompletedTechnologyIds) : new List<string>(),
+                    ActiveTechnologyIds = source.ActiveTechnologyIds != null ? new List<string>(source.ActiveTechnologyIds) : new List<string>(),
+                    PendingActivationTechnologyIds = source.PendingActivationTechnologyIds != null ? new List<string>(source.PendingActivationTechnologyIds) : new List<string>()
+                };
+        }
+
+        private static InstitutionStateDto CloneInstitutionStateDto(InstitutionStateDto source)
+        {
+            return source == null
+                ? new InstitutionStateDto()
+                : new InstitutionStateDto
+                {
+                    SlotCount = source.SlotCount,
+                    CandidatePolicyIds = source.CandidatePolicyIds != null ? new List<string>(source.CandidatePolicyIds) : new List<string>(),
+                    ActivePolicyIds = source.ActivePolicyIds != null ? new List<string>(source.ActivePolicyIds) : new List<string>()
+                };
+        }
+
+        private static CityDto CloneCityDto(CityDto source)
+        {
+            return source == null
+                ? null
+                : new CityDto
+                {
+                    CityId = source.CityId,
+                    OwnerId = source.OwnerId,
+                    CoreNodeId = source.CoreNodeId,
+                    BuildingNodeIds = source.BuildingNodeIds != null ? new List<string>(source.BuildingNodeIds) : new List<string>()
+                };
+        }
+
+        private static BuildingDto CloneBuildingDto(BuildingDto source)
+        {
+            return source == null
+                ? null
+                : new BuildingDto
+                {
+                    NodeId = source.NodeId,
+                    BuildingTypeId = source.BuildingTypeId,
+                    OwnerId = source.OwnerId,
+                    CityId = source.CityId,
+                    ServiceCityId = source.ServiceCityId,
+                    Status = source.Status,
+                    HitPoints = source.HitPoints,
+                    MaxHitPoints = source.MaxHitPoints,
+                    OperationSelectedRecipeId = source.OperationSelectedRecipeId,
+                    OperationCurrentProgress = source.OperationCurrentProgress,
+                    OperationRequiredProgress = source.OperationRequiredProgress,
+                    OperationBaseProgress = source.OperationBaseProgress,
+                    OperationBlockedReason = source.OperationBlockedReason,
+                    TakeoverProgress = source.TakeoverProgress,
+                    TakeoverRequired = source.TakeoverRequired,
+                    IsCityCore = source.IsCityCore,
+                    IsSafeZone = source.IsSafeZone
+                };
+        }
+
+        private static List<string> SnapshotStringList(System.Collections.Generic.IEnumerable<string> values)
+        {
+            if (values == null)
+            {
+                return new List<string>();
+            }
+
+            var result = new List<string>();
+            foreach (var value in values)
+            {
+                var normalized = TrimOrEmpty(value);
+                if (!string.IsNullOrWhiteSpace(normalized))
+                {
+                    result.Add(normalized);
+                }
+            }
+
+            return result;
         }
 
         private static UnitDto CloneUnitDto(UnitDto source)
