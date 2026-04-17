@@ -96,6 +96,21 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] SetInstitutionLoadout");
         }
 
+        public static void SetResearchTarget(string technologyId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgSetResearchTarget
+            {
+                TechnologyId = technologyId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+            Debug.Log($"[GameIntents] SetResearchTarget tech={msg.TechnologyId}");
+        }
+
         public static void SetBuildingRecipe(string nodeId, string recipeId)
         {
             if (ActionLock.IsLocked)
