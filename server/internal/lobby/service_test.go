@@ -268,12 +268,8 @@ func TestLobbyServiceStartGameStartsCountdownAfterReadyUp(t *testing.T) {
 		t.Fatalf("game start callback not called")
 	}
 
-	roomAfter, err := store.GetRoom(context.Background(), "room-1")
-	if err != nil {
-		t.Fatalf("GetRoom() error = %v", err)
-	}
-	if roomAfter.Status != RoomStatusInGame {
-		t.Fatalf("room status = %q", roomAfter.Status)
+	if _, err := store.GetRoom(context.Background(), "room-1"); !errors.Is(err, ErrRoomNotFound) {
+		t.Fatalf("GetRoom() error = %v, want %v", err, ErrRoomNotFound)
 	}
 
 	msgs := transport.sent["guest-1"]
@@ -451,6 +447,61 @@ func TestLobbyServiceStartGameStartsCountdownWhenHostConfirms(t *testing.T) {
 	}
 	if !foundStarting {
 		t.Fatalf("guest should receive MsgGameStarting")
+	}
+}
+
+func TestLobbyServiceStartGameRemovesLobbyMembershipAfterCountdown(t *testing.T) {
+	store := newMemoryLobbyStore()
+	transport := newStubTransport()
+	authSvc := auth.NewService(&stubUserStore{
+		users: map[string]*auth.User{
+			"host-1":  {ID: "host-1", Username: "host"},
+			"guest-1": {ID: "guest-1", Username: "guest"},
+		},
+	}, "secret", 60)
+
+	svc := NewService(store, transport, authSvc, 4, false)
+	svc.countdownDelay = 10 * time.Millisecond
+
+	room := &Room{
+		ID:         "room-start-cleanup",
+		Code:       "ABCD26",
+		Name:       "cleanup-room",
+		HostID:     "host-1",
+		MaxPlayers: 4,
+		Status:     RoomStatusReady,
+		Players: []*RoomPlayer{
+			{PlayerID: "host-1", Username: "host", IsReady: true},
+			{PlayerID: "guest-1", Username: "guest", IsReady: true},
+		},
+	}
+	if err := store.CreateRoom(context.Background(), room); err != nil {
+		t.Fatalf("CreateRoom() error = %v", err)
+	}
+
+	started := make(chan *Room, 1)
+	svc.SetGameStartCallback(func(room *Room) {
+		started <- room
+	})
+
+	if err := svc.StartGame(context.Background(), "host-1"); err != nil {
+		t.Fatalf("StartGame() error = %v", err)
+	}
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatalf("game start callback not called")
+	}
+
+	if _, err := store.GetRoom(context.Background(), "room-start-cleanup"); !errors.Is(err, ErrRoomNotFound) {
+		t.Fatalf("GetRoom() error = %v, want %v", err, ErrRoomNotFound)
+	}
+	if _, err := store.GetRoomByPlayerID(context.Background(), "host-1"); !errors.Is(err, ErrRoomNotFound) {
+		t.Fatalf("GetRoomByPlayerID(host) error = %v, want %v", err, ErrRoomNotFound)
+	}
+	if _, err := store.GetRoomByPlayerID(context.Background(), "guest-1"); !errors.Is(err, ErrRoomNotFound) {
+		t.Fatalf("GetRoomByPlayerID(guest) error = %v, want %v", err, ErrRoomNotFound)
 	}
 }
 

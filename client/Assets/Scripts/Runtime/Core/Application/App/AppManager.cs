@@ -309,6 +309,7 @@ namespace Panoptes.Core.Application.App
         private void ApplyGameInitAndTransition(MsgGameInit msg)
         {
             GameStateCache.Instance?.ApplyGameInit(msg);
+            RoomCache.Instance?.Clear();
             TransitionTo(AppState.Game);
         }
 

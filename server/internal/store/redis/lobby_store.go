@@ -70,7 +70,17 @@ func (s *LobbyStore) GetRoomByCode(ctx context.Context, code string) (*lobby.Roo
 		return nil, fmt.Errorf("get room by code %s: %w", code, err)
 	}
 
-	return s.GetRoom(ctx, roomID)
+	room, err := s.GetRoom(ctx, roomID)
+	if errors.Is(err, lobby.ErrRoomNotFound) {
+		if delErr := s.client.Del(ctx, codeKey(code)).Err(); delErr != nil {
+			return nil, fmt.Errorf("delete stale code key %s: %w", code, delErr)
+		}
+		return nil, lobby.ErrRoomNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
 }
 
 func (s *LobbyStore) UpdateRoom(ctx context.Context, room *lobby.Room) error {
@@ -139,7 +149,23 @@ func (s *LobbyStore) GetRoomByPlayerID(ctx context.Context, playerID string) (*l
 		return nil, fmt.Errorf("get room by player %s: %w", playerID, err)
 	}
 
-	return s.GetRoom(ctx, roomID)
+	room, err := s.GetRoom(ctx, roomID)
+	if errors.Is(err, lobby.ErrRoomNotFound) {
+		if delErr := s.client.Del(ctx, playerKey(playerID)).Err(); delErr != nil {
+			return nil, fmt.Errorf("delete stale player key %s: %w", playerID, delErr)
+		}
+		return nil, lobby.ErrRoomNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := room.GetPlayer(playerID); !ok {
+		if delErr := s.client.Del(ctx, playerKey(playerID)).Err(); delErr != nil {
+			return nil, fmt.Errorf("delete mismatched player key %s: %w", playerID, delErr)
+		}
+		return nil, lobby.ErrRoomNotFound
+	}
+	return room, nil
 }
 
 func (s *LobbyStore) ensureClient() error {

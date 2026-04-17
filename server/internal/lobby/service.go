@@ -161,6 +161,13 @@ func (s *LobbyService) LeaveRoom(ctx context.Context, playerID string) error {
 	return s.sendRoomState(ctx, room)
 }
 
+func (s *LobbyService) HandleDisconnect(ctx context.Context, playerID string) error {
+	if err := s.LeaveRoom(ctx, playerID); err != nil && !errors.Is(err, ErrRoomNotFound) {
+		return err
+	}
+	return nil
+}
+
 func (s *LobbyService) ReadyUp(ctx context.Context, playerID string) error {
 	room, err := s.store.GetRoomByPlayerID(ctx, playerID)
 	if err != nil {
@@ -307,10 +314,11 @@ func (s *LobbyService) startCountdown(ctx context.Context, room *Room) {
 			return
 		}
 		currentRoom.SetDevMode(s.devMode)
+		roomForGame := cloneRoomValue(currentRoom)
+		roomForGame.Status = RoomStatusInGame
 
-		currentRoom.Status = RoomStatusInGame
-		if err := s.store.UpdateRoom(context.Background(), currentRoom); err != nil {
-			slog.Warn("更新房间游戏状态失败", "room_id", currentRoom.ID, "error", err)
+		if err := s.store.DeleteRoom(context.Background(), currentRoom.ID); err != nil {
+			slog.Warn("删除大厅房间失败", "room_id", currentRoom.ID, "error", err)
 			return
 		}
 
@@ -319,7 +327,7 @@ func (s *LobbyService) startCountdown(ctx context.Context, room *Room) {
 		s.mu.RUnlock()
 
 		if onGameStart != nil {
-			onGameStart(cloneRoomValue(currentRoom))
+			onGameStart(roomForGame)
 		}
 	}()
 }
