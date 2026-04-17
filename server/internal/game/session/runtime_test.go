@@ -9,6 +9,8 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	"github.com/elebirds/panoptes/internal/game/ai"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -32,6 +34,72 @@ func (p *capturePlayer) Send(_ context.Context, msg proto.Message) error {
 	return nil
 }
 
+type captureBotPlayer struct {
+	playerID string
+	username string
+}
+
+func (p *captureBotPlayer) PlayerID() string { return p.playerID }
+
+func (p *captureBotPlayer) Username() string { return p.username }
+
+func (p *captureBotPlayer) IsBot() bool { return true }
+
+func (p *captureBotPlayer) Send(context.Context, proto.Message) error { return nil }
+
+type captureTransport struct {
+	humans map[string]*capturePlayer
+}
+
+func (t *captureTransport) Send(_ context.Context, participantID string, msg proto.Message) error {
+	if t == nil || t.humans == nil {
+		return nil
+	}
+	player := t.humans[participantID]
+	if player == nil {
+		return nil
+	}
+	player.sent = append(player.sent, msg)
+	return nil
+}
+
+func (t *captureTransport) Broadcast(context.Context, string, proto.Message) error { return nil }
+
+func (t *captureTransport) Stream(context.Context, string, <-chan proto.Message) error { return nil }
+
+func newTestRuntime(id string, humans []*capturePlayer, bots []*captureBotPlayer) *Runtime {
+	transport := &captureTransport{humans: make(map[string]*capturePlayer, len(humans))}
+	bindings := make([]ParticipantBinding, 0, len(humans)+len(bots))
+	for _, human := range humans {
+		if human == nil {
+			continue
+		}
+		transport.humans[human.playerID] = human
+		bindings = append(bindings, ParticipantBinding{
+			Participant: participant.Participant{
+				ID:       human.playerID,
+				Username: human.username,
+				Kind:     participant.KindHuman,
+			},
+			Controller: HumanController{},
+		})
+	}
+	for _, bot := range bots {
+		if bot == nil {
+			continue
+		}
+		bindings = append(bindings, ParticipantBinding{
+			Participant: participant.Participant{
+				ID:       bot.playerID,
+				Username: bot.username,
+				Kind:     participant.KindBot,
+			},
+			Controller: NewAutonomousController(ai.RuleBotProvider{}),
+		})
+	}
+	return NewRuntime(id, bindings, transport, nil)
+}
+
 func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentTokens(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "default"},
@@ -50,7 +118,7 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Turn = 4
 	state.Phase = domain.PhasePlanning.String()
@@ -160,7 +228,7 @@ func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Turn = 4
 	state.Phase = domain.PhaseResolving.String()
@@ -209,7 +277,7 @@ func TestRuntimeInitializePreparedSendsManifestOnlyUntilCatalogSyncRequest(t *te
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Phase = domain.PhaseResolving.String()
 
@@ -245,7 +313,7 @@ func TestRuntimeCatalogSyncRequestWithMatchingHashSendsSyncCompleteThenBootstrap
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Phase = domain.PhaseResolving.String()
 
@@ -352,7 +420,7 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
 	state.Turn = 4
 	state.Phase = domain.PhasePlanning.String()
@@ -420,7 +488,7 @@ func TestRuntimeInitializeBootstrapsCapitalOnProceduralSpawn(t *testing.T) {
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 
 	if err := runtime.Initialize(); err != nil {
 		t.Fatalf("Initialize() error = %v", err)
@@ -518,7 +586,7 @@ func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
 	}))
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 
 	if err := runtime.Initialize(); err != nil {
 		t.Fatalf("Initialize() error = %v", err)
@@ -537,7 +605,7 @@ func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
 	}
 }
 
-func TestRuntimeInitializeFailsWithoutHumanPlayers(t *testing.T) {
+func TestRuntimeInitializeIncludesBotParticipantsInAuthoritativeState(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{
 			SchemaVersion:  "2026-04-15",
@@ -581,9 +649,96 @@ func TestRuntimeInitializeFailsWithoutHumanPlayers(t *testing.T) {
 		Nodes:  runtimeBootstrapNodes(8, 8),
 	}))
 
-	runtime := NewRuntime("game-1", nil, nil, nil)
-	if err := runtime.Initialize(); err == nil {
-		t.Fatalf("Initialize() error = nil, want bootstrap invariant failure")
+	human := &capturePlayer{playerID: "player-1", username: "alice"}
+	bot := &captureBotPlayer{playerID: "bot-1", username: "Bot"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{human}, []*captureBotPlayer{bot})
+	if err := runtime.Initialize(); err != nil {
+		t.Fatalf("Initialize() error = %v", err)
+	}
+
+	state := runtime.State()
+	if state == nil {
+		t.Fatalf("state is nil")
+	}
+
+	for _, playerID := range []string{"player-1", "bot-1"} {
+		playerState := state.Players[playerID]
+		if playerState == nil {
+			t.Fatalf("%s missing from authoritative state", playerID)
+		}
+		if playerState.CapitalCityID == "" {
+			t.Fatalf("%s CapitalCityID should be initialized", playerID)
+		}
+		if _, ok := state.Map.PlayerSpawns[playerID]; !ok {
+			t.Fatalf("%s spawn missing", playerID)
+		}
+	}
+}
+
+func TestRuntimeInitializeSupportsBotOnlyParticipants(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{
+			SchemaVersion:  "2026-04-15",
+			ContentVersion: "runtime-bootstrap-test",
+			BundleHash:     "runtime-bootstrap-test",
+			DefaultLocale:  "zh-CN",
+			DefaultMapID:   "runtime_bootstrap",
+		},
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      30,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			SafeZoneRadius:             3,
+			FacilityTakeoverTurns:      2,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			MinimumCityDistance:        2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+			{ID: "forest", Passable: true, Buildable: true},
+			{ID: "mountain", Passable: false, Buildable: false},
+			{ID: "river", Passable: false, Buildable: false},
+			{ID: "snow", Passable: true, Buildable: true},
+		},
+	}, &staticdata.MapRuntimeBundle{
+		ID:     "runtime_bootstrap",
+		Name:   "runtime_bootstrap",
+		Width:  8,
+		Height: 8,
+		Nodes:  runtimeBootstrapNodes(8, 8),
+	}))
+
+	runtime := newTestRuntime("game-1", nil, []*captureBotPlayer{
+		{playerID: "bot-1", username: "Bot"},
+	})
+	if err := runtime.Initialize(); err != nil {
+		t.Fatalf("Initialize() error = %v", err)
+	}
+
+	state := runtime.State()
+	if state == nil {
+		t.Fatalf("state is nil")
+	}
+	botState := state.Players["bot-1"]
+	if botState == nil {
+		t.Fatalf("bot-1 missing from authoritative state")
+	}
+	if botState.CapitalCityID == "" {
+		t.Fatalf("bot-1 CapitalCityID should be initialized")
+	}
+	if _, ok := state.Map.PlayerSpawns["bot-1"]; !ok {
+		t.Fatalf("bot-1 spawn missing")
 	}
 }
 
@@ -658,7 +813,7 @@ func TestBootstrapStartingPlayersFailsWhenPlayerSpawnMissing(t *testing.T) {
 	state.World = world
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
-	runtime := NewRuntime("game-1", []Player{player}, nil, nil)
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	runtime.state = state
 
 	err = runtime.bootstrapStartingPlayers()

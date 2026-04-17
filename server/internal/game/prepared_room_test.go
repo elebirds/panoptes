@@ -111,7 +111,7 @@ func TestPreparedRoomStartUsesProvidedStateAndSendsGameInitBeforeOtherGameEvents
 	tp := newAsyncCaptureTransport()
 	room := NewPreparedRoom(
 		state.GameID,
-		[]Player{NewHumanPlayer("player-1", "alice", tp)},
+		[]ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")},
 		tp,
 		&config.Config{DevMode: true},
 		state,
