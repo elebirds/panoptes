@@ -39,7 +39,13 @@ func (a *App) buildServer() *http.Server {
 		Lobby: lobby.NewCommandHandler(lobbySvc),
 		Game:  game.NewRegistryCommandHandler(game.Registry),
 	})
-	wsHub.SetLeaveRoomFunc(lobbySvc.HandleDisconnect)
+	wsHub.SetLeaveRoomFunc(func(ctx context.Context, playerID string) error {
+		if err := lobbySvc.HandleDisconnect(ctx, playerID); err != nil {
+			return err
+		}
+		game.Registry.HandlePlayerDisconnect(playerID)
+		return nil
+	})
 	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
 		return a.gameTransport.Send(ctx, playerID, &pb.MsgClientRuntimeConfig{
 			DevMode: a.cfg.DevMode,

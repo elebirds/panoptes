@@ -329,6 +329,41 @@ func (r *GameRoom) handleDraw() {
 	}
 }
 
+func (r *GameRoom) forfeitDisconnectedPlayer(playerID string) bool {
+	state := r.State()
+	if state == nil || state.IsOver {
+		return false
+	}
+
+	winnerID := r.firstPlayerExcept(playerID)
+	if winnerID == "" {
+		return false
+	}
+
+	state.IsOver = true
+	state.WinnerID = winnerID
+	state.OverReason = "player_disconnected"
+	msg := &pb.MsgGameOver{WinnerId: winnerID, Reason: "player_disconnected"}
+	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
+		hooks.RecordGameOver(r.ID, msg)
+	}
+	r.Broadcast(context.Background(), msg)
+	if r.runtime != nil {
+		r.runtime.Cancel()
+	}
+	return true
+}
+
+func (r *GameRoom) firstPlayerExcept(playerID string) string {
+	for _, player := range r.Players {
+		if player == nil || player.PlayerID() == "" || player.PlayerID() == playerID {
+			continue
+		}
+		return player.PlayerID()
+	}
+	return ""
+}
+
 func (r *GameRoom) nodeIDAt(pos domain.Position) string {
 	state := r.State()
 	if state == nil || state.World == nil {
