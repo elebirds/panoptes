@@ -83,6 +83,33 @@ namespace Panoptes.Core.Application.Cache
                 .ToList();
         }
 
+        public bool TryGetRecipeSelection(string nodeId, out QueuedRecipeSelectionDto selection)
+        {
+            selection = null;
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            for (var i = _recipeSelections.Count - 1; i >= 0; i--)
+            {
+                var candidate = _recipeSelections[i];
+                if (candidate == null || !string.Equals(candidate.NodeId, nodeId.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                selection = new QueuedRecipeSelectionDto
+                {
+                    NodeId = candidate.NodeId,
+                    RecipeId = candidate.RecipeId
+                };
+                return true;
+            }
+
+            return false;
+        }
+
         public void TrackPreviewRequest(string requestId, string unitId, string action, string targetNodeId)
         {
             _pendingRequestId = requestId ?? string.Empty;

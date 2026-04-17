@@ -442,19 +442,12 @@ namespace Panoptes.Presentation.UI.Domestic
                 view.ConfigureVisual(displayName, description, icon, requirements);
                 view.SetLocked(!isUnlocked, buildItemLockedIcon);
 
-                if (isUnlocked)
+                UnityAction action = () => TriggerBuild(renderEntry.buildingId, renderEntry.rule);
+                view.SetClickAction(action);
+                if (view.ClickButton != null)
                 {
-                    UnityAction action = () => TriggerBuild(renderEntry.buildingId, renderEntry.rule);
-                    view.SetClickAction(action);
-                    if (view.ClickButton != null)
-                    {
-                        _boundButtons.Add(view.ClickButton);
-                        _boundActions.Add(action);
-                    }
-                }
-                else
-                {
-                    view.ClearClickAction();
+                    _boundButtons.Add(view.ClickButton);
+                    _boundActions.Add(action);
                 }
 
                 if (view.ClickButton != null)
@@ -593,7 +586,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            var activeTechs = cache.GetActiveTechnologyIds();
+            var activeTechs = cache.GetCurrentResearchState()?.ActiveTechnologyIds;
             if (activeTechs == null || activeTechs.Count == 0)
             {
                 return;

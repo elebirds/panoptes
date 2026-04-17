@@ -1193,14 +1193,13 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             nodeId = unit.UnitId;
-            var node = cache.GetNode(nodeId);
-            if (node == null)
+            if (!cache.TryGetBuilding(nodeId, out var building) || building == null)
             {
                 return false;
             }
 
-            buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? unit.UnitType : node.BuildingType);
-            ownerId = string.IsNullOrWhiteSpace(node.Owner) ? node.TerritoryOwner : node.Owner;
+            buildingType = NormalizeToken(building.BuildingTypeId);
+            ownerId = ResolveAuthoritativeBuildingOwner(cache, building);
             return !string.IsNullOrWhiteSpace(nodeId) && !string.IsNullOrWhiteSpace(buildingType);
         }
 
@@ -1223,36 +1222,24 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            var fallbackType = NormalizeToken(unit.UnitType);
-            if (!IsCityCoreBuildingType(fallbackType))
-            {
-                return false;
-            }
-
-            // If node id is missing or backend owner fields are temporarily empty, fall back to proxy faction.
             if (string.IsNullOrWhiteSpace(unit.UnitId))
             {
-                return string.Equals(NormalizeToken(unit.Faction), localOwner, StringComparison.Ordinal);
+                return false;
             }
 
-            var node = cache.GetNode(unit.UnitId);
-            if (node == null)
-            {
-                return string.Equals(NormalizeToken(unit.Faction), localOwner, StringComparison.Ordinal);
-            }
-
-            var buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? fallbackType : node.BuildingType);
-            if (!IsCityCoreBuildingType(buildingType))
+            if (!cache.TryGetBuilding(unit.UnitId, out var building) || building == null)
             {
                 return false;
             }
 
-            var owner = NormalizeToken(node.Owner);
-            var territoryOwner = NormalizeToken(node.TerritoryOwner);
-            var faction = NormalizeToken(unit.Faction);
-            return string.Equals(owner, localOwner, StringComparison.Ordinal)
-                   || string.Equals(territoryOwner, localOwner, StringComparison.Ordinal)
-                   || string.Equals(faction, localOwner, StringComparison.Ordinal);
+            var buildingType = NormalizeToken(building.BuildingTypeId);
+            if (!building.IsCityCore && !IsCityCoreBuildingType(buildingType))
+            {
+                return false;
+            }
+
+            var owner = NormalizeToken(ResolveAuthoritativeBuildingOwner(cache, building));
+            return string.Equals(owner, localOwner, StringComparison.Ordinal);
         }
 
         private bool IsOwnedRecipeBuildingProxy(UnitView unit)
@@ -1268,8 +1255,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            var node = cache.GetNode(unit.UnitId);
-            if (node == null)
+            if (!cache.TryGetBuilding(unit.UnitId, out var building) || building == null)
             {
                 return false;
             }
@@ -1280,16 +1266,13 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            var owner = NormalizeToken(node.Owner);
-            var territoryOwner = NormalizeToken(node.TerritoryOwner);
-            var owned = string.Equals(owner, localOwner, StringComparison.Ordinal)
-                        || string.Equals(territoryOwner, localOwner, StringComparison.Ordinal);
-            if (!owned)
+            var owner = NormalizeToken(ResolveAuthoritativeBuildingOwner(cache, building));
+            if (!string.Equals(owner, localOwner, StringComparison.Ordinal))
             {
                 return false;
             }
 
-            var buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? unit.UnitType : node.BuildingType);
+            var buildingType = NormalizeToken(building.BuildingTypeId);
             if (string.IsNullOrWhiteSpace(buildingType))
             {
                 return false;
@@ -1301,15 +1284,42 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            if (!catalog.TryGetBuilding(buildingType, out var building) || building == null)
+            if (!catalog.TryGetBuilding(buildingType, out var catalogBuilding) || catalogBuilding == null)
             {
                 return false;
             }
 
-            var recipeIds = building.recipe_ids;
+            var recipeIds = catalogBuilding.recipe_ids;
             var hasRecipeIds = recipeIds != null && recipeIds.Length > 0;
-            var hasDefaultRecipe = !string.IsNullOrWhiteSpace(building.default_recipe_id);
+            var hasDefaultRecipe = !string.IsNullOrWhiteSpace(catalogBuilding.default_recipe_id);
             return hasRecipeIds || hasDefaultRecipe;
+        }
+
+        private static string ResolveAuthoritativeBuildingOwner(GameStateCache cache, Panoptes.Core.Domain.BuildingDto building)
+        {
+            if (building == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(building.OwnerId))
+            {
+                return building.OwnerId.Trim();
+            }
+
+            var cityId = !string.IsNullOrWhiteSpace(building.CityId)
+                ? building.CityId
+                : building.ServiceCityId;
+            if (cache != null &&
+                !string.IsNullOrWhiteSpace(cityId) &&
+                cache.TryGetCity(cityId, out var city) &&
+                city != null &&
+                !string.IsNullOrWhiteSpace(city.OwnerId))
+            {
+                return city.OwnerId.Trim();
+            }
+
+            return string.Empty;
         }
 
         private static string NormalizeToken(string value)

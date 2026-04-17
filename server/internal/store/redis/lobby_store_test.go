@@ -86,3 +86,60 @@ func TestLobbyStoreCRUD(t *testing.T) {
 		t.Fatalf("GetRoom() error = %v", err)
 	}
 }
+
+func TestLobbyStoreGetRoomByPlayerIDRemovesOrphanPlayerBinding(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis.Run() error = %v", err)
+	}
+	defer mr.Close()
+
+	client := &Client{Client: goredis.NewClient(&goredis.Options{Addr: mr.Addr()})}
+	store := NewLobbyStore(client)
+	ctx := context.Background()
+
+	if err := client.Set(ctx, playerKey("ghost-1"), "missing-room", lobbyTTL).Err(); err != nil {
+		t.Fatalf("Set() error = %v", err)
+	}
+
+	if _, err := store.GetRoomByPlayerID(ctx, "ghost-1"); err != lobby.ErrRoomNotFound {
+		t.Fatalf("GetRoomByPlayerID() error = %v, want %v", err, lobby.ErrRoomNotFound)
+	}
+	if mr.Exists(playerKey("ghost-1")) {
+		t.Fatalf("orphan player key %q should be deleted", playerKey("ghost-1"))
+	}
+}
+
+func TestClearLobbyNamespaceRemovesOnlyLobbyKeys(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis.Run() error = %v", err)
+	}
+	defer mr.Close()
+
+	client := &Client{Client: goredis.NewClient(&goredis.Options{Addr: mr.Addr()})}
+	ctx := context.Background()
+
+	if err := client.Set(ctx, roomKey("room-1"), "room", lobbyTTL).Err(); err != nil {
+		t.Fatalf("Set room key error = %v", err)
+	}
+	if err := client.Set(ctx, codeKey("ABC234"), "room-1", lobbyTTL).Err(); err != nil {
+		t.Fatalf("Set code key error = %v", err)
+	}
+	if err := client.Set(ctx, playerKey("host-1"), "room-1", lobbyTTL).Err(); err != nil {
+		t.Fatalf("Set player key error = %v", err)
+	}
+	if err := client.Set(ctx, "game:keep", "ok", lobbyTTL).Err(); err != nil {
+		t.Fatalf("Set keep key error = %v", err)
+	}
+
+	if err := ClearLobbyNamespace(ctx, client); err != nil {
+		t.Fatalf("ClearLobbyNamespace() error = %v", err)
+	}
+	if mr.Exists(roomKey("room-1")) || mr.Exists(codeKey("ABC234")) || mr.Exists(playerKey("host-1")) {
+		t.Fatalf("lobby namespace keys should be deleted")
+	}
+	if !mr.Exists("game:keep") {
+		t.Fatalf("non-lobby key should be preserved")
+	}
+}

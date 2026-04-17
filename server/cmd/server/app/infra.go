@@ -47,13 +47,16 @@ func (a *App) initInfra(ctx context.Context) error {
 		if err := rc.Ping(ctx); err != nil {
 			slog.Warn("Redis 连接失败，已跳过", "错误", err)
 		} else {
+			if err := redis.ClearLobbyNamespace(ctx, rc); err != nil {
+				return fmt.Errorf("清理大厅 Redis 命名空间失败: %w", err)
+			}
 			a.infra.redisClient = rc
 			a.infra.cleanups = append(a.infra.cleanups, func() {
 				if err := rc.Close(); err != nil {
 					slog.Warn("Redis 关闭失败", "错误", err)
 				}
 			})
-			slog.Info("Redis 连接成功")
+			slog.Info("Redis 连接成功，已清理大厅残留")
 		}
 	}
 

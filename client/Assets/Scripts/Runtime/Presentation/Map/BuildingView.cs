@@ -8,9 +8,10 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.UI.HUD;
+using UnityEngine;
 
 namespace Panoptes.Presentation.Map
 {
@@ -71,6 +72,12 @@ namespace Panoptes.Presentation.Map
         public bool IsGhost { get; private set; }
         public bool IsCityCore => IsCityCoreBuildingType();
         public bool IsCityCoreHpBarEnabled => enableCityCoreHpBar;
+        public string Status { get; private set; } = string.Empty;
+        public string CityId { get; private set; } = string.Empty;
+        public string ServiceCityId { get; private set; } = string.Empty;
+        public int TakeoverProgress { get; private set; }
+        public int TakeoverRequired { get; private set; }
+        public bool IsSafeZone { get; private set; }
 
         private Renderer[] _allRenderers;
         private Transform _cityCoreHpBarRoot;
@@ -200,6 +207,16 @@ namespace Panoptes.Presentation.Map
             }
 
             UpdateCityCoreHpBarVisibility();
+        }
+
+        public void ApplyRuntimeState(NodeDto node)
+        {
+            Status = node != null ? NormalizeToken(node.BuildingStatus) : string.Empty;
+            CityId = node != null ? (node.CityId ?? string.Empty) : string.Empty;
+            ServiceCityId = node != null ? (node.ServiceCityId ?? string.Empty) : string.Empty;
+            TakeoverProgress = node != null ? node.TakeoverProgress : 0;
+            TakeoverRequired = node != null ? node.TakeoverRequired : 0;
+            IsSafeZone = node != null && node.IsSafeZone;
         }
 
         private void UpdateDamageMark()

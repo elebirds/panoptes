@@ -108,23 +108,6 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool logInvalidBuildClick = true;
         [SerializeField] private string localOwnerIdOverride = string.Empty;
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
-        [SerializeField] private string[] territoryOnlyBuildingTypes =
-        {
-            "city_core",
-            "engineer",
-            "engineer_camp",
-            "workshop",
-            "archery",
-            "barracks",
-            "blacksmith"
-        };
-        [SerializeField] private string[] globalPlacementBuildingTypes =
-        {
-            "tower",
-            "atktower",
-            "watchtower",
-            "viewtower"
-        };
         [SerializeField] private bool disallowManualCityCorePlacement = true;
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
@@ -142,7 +125,6 @@ namespace Panoptes.Presentation.Map
         private readonly HashSet<string> _highlightNodeIds = new();
         private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly List<PendingBuildRecord> _pendingBuilds = new();
-        private readonly Queue<string> _pendingBuildTokenNodeQueue = new();
         private readonly Dictionary<string, string> _pendingDeployGhostNodeByUnitId = new();
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
         private readonly HashSet<string> _pendingMoveUnitIds = new();
@@ -220,7 +202,6 @@ namespace Panoptes.Presentation.Map
             _movePathOverlay?.ClearAllMovePathMarkers();
             _movePreviewOverlay?.ClearPreview();
             DisposeMovePreviewProxyMaterial();
-            _pendingBuildTokenNodeQueue.Clear();
             ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
             if (_buildingInfoProxy != null)
@@ -308,7 +289,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return TryGetAttackableStructureNode(node.NodeId, out _);
+            return true;
         }
 
         public void EnterBuildPlacementAny(string buildingType, string cityId)
@@ -405,10 +386,10 @@ namespace Panoptes.Presentation.Map
             }
 
             var centerNodeId = ResolveExpandCenterNodeId(_selectedUnit.UnitId, _selectedUnit.GridPos);
-            if (!TryValidateTerritoryExpandRequest(_selectedUnit.UnitId, centerNodeId, out var validationError))
+            if (string.IsNullOrWhiteSpace(centerNodeId))
             {
                 ClearPendingDeployCityCoreGhostForUnit(_selectedUnit.UnitId);
-                ShowUserError(validationError);
+                ShowUserError("缺少建城目标节点，无法发送指令");
                 return false;
             }
 
@@ -432,10 +413,10 @@ namespace Panoptes.Presentation.Map
                 resolvedCenterNodeId = ResolveExpandCenterNodeId(unitId, default);
             }
 
-            if (!TryValidateTerritoryExpandRequest(unitId, resolvedCenterNodeId, out var validationError))
+            if (string.IsNullOrWhiteSpace(resolvedCenterNodeId))
             {
                 ClearPendingDeployCityCoreGhostForUnit(unitId);
-                ShowUserError(validationError);
+                ShowUserError("缺少建城目标节点，无法发送指令");
                 return false;
             }
 
@@ -536,7 +517,6 @@ namespace Panoptes.Presentation.Map
 
             ClearCombatSelection();
             DestroyHoverGhost();
-            EnsureCityZones();
         }
 
         private void ExitBuildMode()
@@ -794,47 +774,10 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (!TryGetAttackableStructureNode(nodeId, out _))
-            {
-                return false;
-            }
-
             GameIntents.AttackNode(_selectedUnit.UnitId, nodeId);
+            _combatActionMode = CombatActionMode.None;
+            NotifyCombatSelectionChanged();
             return true;
-        }
-
-        private bool TryGetAttackableStructureNode(string nodeId, out NodeDto nodeState)
-        {
-            nodeState = null;
-            if (string.IsNullOrWhiteSpace(nodeId))
-            {
-                return false;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
-            {
-                nodeState = mapNode;
-            }
-            else if (GameStateCache.Instance != null)
-            {
-                nodeState = GameStateCache.Instance.GetNode(nodeId);
-            }
-
-            if (nodeState == null)
-            {
-                return false;
-            }
-
-            var buildingType = NormalizeToken(nodeState.BuildingType);
-            if (string.IsNullOrEmpty(buildingType))
-            {
-                return false;
-            }
-
-            var localOwner = NormalizeToken(GetLocalOwnerId());
-            var targetOwner = NormalizeToken(string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.TerritoryOwner : nodeState.Owner);
-            return !string.IsNullOrEmpty(targetOwner) && !string.Equals(targetOwner, localOwner, StringComparison.Ordinal);
         }
 
         private bool TryOpenBuildingInfoFromClick()
@@ -1159,8 +1102,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var canPlace = CanPlaceBuildingAt(node.NodeId);
-            var highlightColor = canPlace ? buildValidColor : buildInvalidColor;
+            var highlightColor = ResolveBuildPreviewColor(node.NodeId);
 
             if (_hoverNode != node)
             {
@@ -1187,15 +1129,6 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
-                if (!canPlace)
-                {
-                    if (logInvalidBuildClick)
-                    {
-                        Debug.LogWarning($"[MapInputHandler] Invalid build target at node '{node.NodeId}' for type '{_buildType}'.");
-                    }
-                    return;
-                }
-
                 var backendBuildingType = ResolveBackendBuildingType(_buildType);
                 if (!SendBuildCommand(backendBuildingType, node.NodeId))
                 {
@@ -1203,7 +1136,10 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var ownerId = GetLocalOwnerId();
-                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
+                if (ShouldRenderPendingBuildGhost(node.NodeId))
+                {
+                    map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
+                }
                 _pendingBuilds.Add(new PendingBuildRecord
                 {
                     buildingType = backendBuildingType,
@@ -1215,208 +1151,40 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private bool CanPlaceBuildingAt(string nodeId)
+        private Color ResolveBuildPreviewColor(string nodeId)
         {
             var map = MapRenderer.Instance;
             if (map == null || string.IsNullOrEmpty(nodeId))
             {
-                return false;
+                return buildInvalidColor;
             }
 
             if (HasPendingBuild(nodeId))
             {
-                return false;
+                return buildPlacedGhostColor;
             }
 
-            if (!map.IsNodeBuildBaseAvailable(nodeId))
+            if (!map.TryGetNodeState(nodeId, out var nodeState) || nodeState == null)
             {
-                return false;
+                return buildInvalidColor;
             }
 
-            var backendBuildingType = ResolveBackendBuildingType(_buildType);
-            if (TryGetServerPlacementRule(backendBuildingType, out var placementRule, out var requiredResourceType))
-            {
-                switch (placementRule)
-                {
-                    case "resource_only":
-                        return map.IsNodeResourcePoint(nodeId)
-                               && IsNodeResourceTypeMatch(nodeId, requiredResourceType);
-                    case "city_only":
-                        return CanPlaceCityBuilding(nodeId);
-                    case "any_terrain":
-                        return true;
-                }
-            }
-
-            if (IsTerritoryOnlyBuildingType(backendBuildingType) && !CanPlaceCityBuilding(nodeId))
-            {
-                return false;
-            }
-
-            if (IsGlobalPlacementBuildingType(backendBuildingType))
-            {
-                return true;
-            }
-
-            switch (_buildRule)
-            {
-                case BuildPlacementRule.ResourceOnly:
-                    return map.IsNodeResourcePoint(nodeId);
-                case BuildPlacementRule.CityOnly:
-                    return CanPlaceCityBuilding(nodeId);
-                default:
-                    return true;
-            }
+            return string.IsNullOrWhiteSpace(nodeState.BuildingType)
+                ? buildValidColor
+                : buildInvalidColor;
         }
 
-        private bool CanPlaceCityBuilding(string nodeId)
-        {
-            return IsInsideLocalTerritory(nodeId);
-        }
-
-        private bool IsNodeResourceTypeMatch(string nodeId, string requiredResourceType)
-        {
-            var required = NormalizeToken(requiredResourceType);
-            if (string.IsNullOrEmpty(required))
-            {
-                return true;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetNodeState(nodeId, out var node) || node == null)
-            {
-                return false;
-            }
-
-            return string.Equals(NormalizeToken(node.ResourceType), required, StringComparison.Ordinal);
-        }
-
-        private bool IsInsideLocalTerritory(string nodeId)
+        private bool ShouldRenderPendingBuildGhost(string nodeId)
         {
             var map = MapRenderer.Instance;
-            if (map == null || string.IsNullOrEmpty(nodeId))
+            if (map == null || string.IsNullOrWhiteSpace(nodeId))
             {
                 return false;
             }
 
-            if (!map.TryGetNodeState(nodeId, out var node) || node == null)
-            {
-                return false;
-            }
-
-            var ownerId = NormalizeToken(GetLocalOwnerId());
-            var territoryOwner = NormalizeToken(node.TerritoryOwner);
-            if (string.IsNullOrEmpty(territoryOwner))
-            {
-                return false;
-            }
-
-            return string.Equals(territoryOwner, ownerId, StringComparison.Ordinal);
-        }
-
-        private bool IsTerritoryOnlyBuildingType(string buildingType)
-        {
-            if (string.IsNullOrWhiteSpace(buildingType) ||
-                territoryOnlyBuildingTypes == null ||
-                territoryOnlyBuildingTypes.Length == 0)
-            {
-                return false;
-            }
-
-            var normalized = NormalizeToken(buildingType);
-            for (int i = 0; i < territoryOnlyBuildingTypes.Length; i++)
-            {
-                if (string.Equals(normalized, NormalizeToken(territoryOnlyBuildingTypes[i]), StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool IsGlobalPlacementBuildingType(string buildingType)
-        {
-            if (string.IsNullOrWhiteSpace(buildingType) ||
-                globalPlacementBuildingTypes == null ||
-                globalPlacementBuildingTypes.Length == 0)
-            {
-                return false;
-            }
-
-            var normalized = NormalizeToken(buildingType);
-            for (int i = 0; i < globalPlacementBuildingTypes.Length; i++)
-            {
-                if (string.Equals(normalized, NormalizeToken(globalPlacementBuildingTypes[i]), StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool IsInsideLocalCityZone(string nodeId)
-        {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetNodeView(nodeId, out var nodeView) || nodeView == null)
-            {
-                return false;
-            }
-
-            EnsureCityZones();
-            var ownerId = GetLocalOwnerId();
-            if (cityZones == null || cityZones.Length == 0)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < cityZones.Length; i++)
-            {
-                var zone = cityZones[i];
-                if (!string.IsNullOrEmpty(zone.ownerId) && !string.Equals(zone.ownerId, ownerId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                var halfX = Mathf.Max(0, zone.size.x / 2);
-                var halfY = Mathf.Max(0, zone.size.y / 2);
-                if (Mathf.Abs(nodeView.GridPos.x - zone.center.x) <= halfX &&
-                    Mathf.Abs(nodeView.GridPos.y - zone.center.y) <= halfY)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void EnsureCityZones()
-        {
-            if (!autoCreateCornerCityZones)
-            {
-                return;
-            }
-
-            if (cityZones != null && cityZones.Length > 0)
-            {
-                return;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetGridBounds(out var minX, out var maxX, out var minY, out var maxY))
-            {
-                return;
-            }
-
-            var localOwner = GetLocalOwnerId();
-            cityZones = new[]
-            {
-                new CityZone { ownerId = localOwner, center = new Vector2Int(minX + cornerInset, minY + cornerInset), size = new Vector2Int(3, 3) },
-                new CityZone { ownerId = "red", center = new Vector2Int(maxX - cornerInset, minY + cornerInset), size = new Vector2Int(3, 3) },
-                new CityZone { ownerId = "green", center = new Vector2Int(minX + cornerInset, maxY - cornerInset), size = new Vector2Int(3, 3) },
-                new CityZone { ownerId = "yellow", center = new Vector2Int(maxX - cornerInset, maxY - cornerInset), size = new Vector2Int(3, 3) }
-            };
+            return map.TryGetNodeState(nodeId, out var nodeState) &&
+                   nodeState != null &&
+                   string.IsNullOrWhiteSpace(nodeState.BuildingType);
         }
 
         private void RecreateHoverGhost(NodeView node)
@@ -1635,11 +1403,6 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(nodeId))
-            {
-                _pendingBuildTokenNodeQueue.Enqueue(nodeId.Trim());
-            }
-
             GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);
             BuildCommandSent?.Invoke(buildingType, nodeId);
             return true;
@@ -1663,6 +1426,7 @@ namespace Panoptes.Presentation.Map
             _cache.OnNodeChanged += OnNodeChanged;
             _cache.OnUnitsChanged += OnUnitsChanged;
             _cache.OnTokenResult += OnTokenResult;
+            _cache.OnPlanningCommandResult += OnPlanningCommandResult;
             _cacheEventsSubscribed = true;
         }
 
@@ -1697,6 +1461,7 @@ namespace Panoptes.Presentation.Map
                 _cache.OnNodeChanged -= OnNodeChanged;
                 _cache.OnUnitsChanged -= OnUnitsChanged;
                 _cache.OnTokenResult -= OnTokenResult;
+                _cache.OnPlanningCommandResult -= OnPlanningCommandResult;
             }
 
             _cache = null;
@@ -1720,7 +1485,6 @@ namespace Panoptes.Presentation.Map
             ClearCombatSelection();
             _pendingMoveUnitIds.Clear();
             _pendingMoveTargetNodeByUnitId.Clear();
-            _pendingBuildTokenNodeQueue.Clear();
             _movePathOverlay?.ClearAllMovePathMarkers();
 
             var settlement = settledEvent?.Settlement;
@@ -1807,28 +1571,52 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (!string.Equals(action, "build", StringComparison.Ordinal))
+            if (string.Equals(action, "build", StringComparison.Ordinal) && !e.Success)
+            {
+                RollbackPendingBuild(GetLastPendingBuildNodeId());
+            }
+        }
+
+        private void OnPlanningCommandResult(PlanningCommandResultEvent evt)
+        {
+            if (evt == null)
             {
                 return;
             }
 
-            string nodeId = null;
-            if (_pendingBuildTokenNodeQueue.Count > 0)
+            if (string.Equals(NormalizeToken(evt.CommandType), "build", StringComparison.Ordinal))
             {
-                nodeId = _pendingBuildTokenNodeQueue.Dequeue();
+                if (!evt.Success)
+                {
+                    RollbackPendingBuild(evt.PrimaryId);
+                }
+                return;
             }
 
-            if (e.Success)
+            if (!string.Equals(NormalizeToken(evt.CommandType), "unit_order", StringComparison.Ordinal) || evt.Success)
             {
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(nodeId))
+            var action = NormalizeToken(evt.Action);
+            if (string.Equals(action, "move", StringComparison.Ordinal))
             {
-                nodeId = GetLastPendingBuildNodeId();
+                var unitId = evt.PrimaryId?.Trim();
+                if (!string.IsNullOrWhiteSpace(unitId))
+                {
+                    _pendingMoveUnitIds.Remove(unitId);
+                    _pendingMoveTargetNodeByUnitId.Remove(unitId);
+                    _movePathOverlay?.ClearMovePathMarkersForUnit(unitId);
+                    RemoveMovePreview(unitId);
+                }
+
+                return;
             }
 
-            RollbackPendingBuild(nodeId);
+            if (string.Equals(action, "settle_city", StringComparison.Ordinal))
+            {
+                ClearPendingDeployCityCoreGhostForUnit(evt.PrimaryId);
+            }
         }
 
         private void OnNodeChanged(NodeChangedEvent evt)
@@ -2390,6 +2178,12 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (!ShouldRenderPendingBuildGhost(normalizedNodeId))
+            {
+                _pendingDeployGhostNodeByUnitId.Remove(normalizedUnitId);
+                return;
+            }
+
             map.ApplyBuildingPlacement(normalizedNodeId, "city_core", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
             _pendingDeployGhostNodeByUnitId[normalizedUnitId] = normalizedNodeId;
         }
@@ -2540,96 +2334,6 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
-        }
-
-        private bool TryValidateTerritoryExpandRequest(string unitId, string centerNodeId, out string errorMessage)
-        {
-            errorMessage = string.Empty;
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                errorMessage = "Deploy failed: map is not initialized.";
-                return false;
-            }
-
-            var normalizedUnitId = string.IsNullOrWhiteSpace(unitId) ? string.Empty : unitId.Trim();
-            if (string.IsNullOrEmpty(normalizedUnitId))
-            {
-                errorMessage = "Deploy failed: unit id is empty.";
-                return false;
-            }
-
-            if (!map.TryGetUnitView(normalizedUnitId, out var unitView) || unitView == null)
-            {
-                errorMessage = "Deploy failed: settler unit not found.";
-                return false;
-            }
-
-            if (!CanControlUnit(unitView))
-            {
-                errorMessage = "Deploy failed: only your own settler can deploy.";
-                return false;
-            }
-
-            if (!IsTerritoryExpansionUnitType(unitView.UnitType))
-            {
-                errorMessage = "Deploy failed: this unit type cannot expand territory.";
-                return false;
-            }
-
-            var normalizedCenterNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
-            if (string.IsNullOrEmpty(normalizedCenterNodeId))
-            {
-                errorMessage = "Deploy failed: invalid target node.";
-                return false;
-            }
-
-            if (!map.TryGetNodeView(normalizedCenterNodeId, out var centerNode) || centerNode == null)
-            {
-                errorMessage = "Cannot deploy here: target node does not exist.";
-                return false;
-            }
-
-            var centerGrid = centerNode.GridPos;
-            for (var dy = -1; dy <= 1; dy++)
-            {
-                for (var dx = -1; dx <= 1; dx++)
-                {
-                    var grid = new Vector2Int(centerGrid.x + dx, centerGrid.y + dy);
-                    if (!map.TryGetNodeViewByGrid(grid, out var node) || node == null)
-                    {
-                        errorMessage = "Cannot deploy here: 3x3 territory is out of map bounds.";
-                        return false;
-                    }
-
-                    if (!map.TryGetNodeState(node.NodeId, out var nodeState) || nodeState == null)
-                    {
-                        errorMessage = "Cannot deploy here: target node state is unavailable.";
-                        return false;
-                    }
-
-                    if (nodeState.IsResourcePoint)
-                    {
-                        errorMessage = "Cannot deploy here: 3x3 territory contains resource points.";
-                        return false;
-                    }
-
-                    var buildingType = NormalizeToken(nodeState.BuildingType);
-                    if (!string.IsNullOrEmpty(buildingType))
-                    {
-                        // Allow already-expanded center city core only for idempotent retry.
-                        var allowCenterCityCore = dx == 0 && dy == 0 && string.Equals(buildingType, "city_core", StringComparison.Ordinal);
-                        if (!allowCenterCityCore)
-                        {
-                            errorMessage = "Cannot deploy here: 3x3 territory contains existing buildings.";
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return true;
         }
 
         private bool IsTerritoryExpansionUnitType(string unitType)
