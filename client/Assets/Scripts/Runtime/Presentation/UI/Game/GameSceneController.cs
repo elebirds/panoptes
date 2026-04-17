@@ -1,4 +1,5 @@
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
@@ -89,7 +90,7 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            ShowToast(MapGameError(evt.Code), false);
+            ShowToast(GameplayFeedbackText.ResolveMessage(evt.Message, evt.Code), false);
         }
 
         private void OnTokenResult(TokenResultEvent evt)
@@ -99,7 +100,7 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            ShowToast(MapGameError(evt.ErrorCode), false);
+            ShowToast(GameplayFeedbackText.ResolveMessage(string.Empty, evt.ErrorCode), false);
         }
 
         private void OnGameOver(GameOverEvent _)
@@ -221,19 +222,6 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             Debug.LogWarning($"[GameScene] {message}");
-        }
-
-        private static string MapGameError(string code)
-        {
-            return code switch
-            {
-                "phase_mismatch" => "当前阶段不支持此操作",
-                "game_not_found" => "当前对局不存在",
-                "invalid_request" => "请求格式错误",
-                "unauthorized" => "请重新登录",
-                "internal_error" => "服务器错误，请稍后重试",
-                _ => string.IsNullOrWhiteSpace(code) ? "未知错误" : code
-            };
         }
     }
 }

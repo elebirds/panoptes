@@ -91,6 +91,45 @@ message MsgPlanningPathPreviewResponse {
   repeated MarchTurnStop turn_stops = 10;
 }
 
+message FeedbackDetail {
+  string key = 1;
+  string value = 2;
+}
+
+message MsgBuildStructurePreviewRequest {
+  string request_id = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+}
+
+message MsgBuildStructurePreviewResponse {
+  string request_id = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+  bool valid = 5;
+  string error_code = 6;
+  string feedback_message = 7;
+  repeated FeedbackDetail feedback_details = 8;
+}
+
+message MsgSetBuildingRecipePreviewRequest {
+  string request_id = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+}
+
+message MsgSetBuildingRecipePreviewResponse {
+  string request_id = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+  bool valid = 4;
+  string error_code = 5;
+  string feedback_message = 6;
+  repeated FeedbackDetail feedback_details = 7;
+}
+
 message MsgTokenResult {
   bool success = 1;
   string action = 2;
@@ -127,6 +166,8 @@ message MsgSetBuildingRecipeResult {
   string node_id = 2;
   string recipe_id = 3;
   string error_code = 4;
+  string feedback_message = 5;
+  repeated FeedbackDetail feedback_details = 6;
 }
 
 message MsgBuildStructureResult {
@@ -135,6 +176,8 @@ message MsgBuildStructureResult {
   string building_type_id = 3;
   string city_id = 4;
   string error_code = 5;
+  string feedback_message = 6;
+  repeated FeedbackDetail feedback_details = 7;
 }
 
 message MsgIssueUnitOrderResult {

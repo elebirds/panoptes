@@ -13,6 +13,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
+	gamefeedback "github.com/elebirds/panoptes/internal/game/feedback"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -167,14 +168,18 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			},
 		}
 	case event.BuildSkippedEvent:
+		data := map[string]string{
+			"player_id":     strings.TrimSpace(e.PlayerID),
+			"node_id":       strings.TrimSpace(e.NodeID),
+			"building_type": strings.TrimSpace(e.BuildingType),
+			"reason":        strings.TrimSpace(e.Reason),
+		}
+		if reasonMessage := gamefeedback.BuildReasonMessage(e.Reason); reasonMessage != "" {
+			data["reason_message"] = reasonMessage
+		}
 		return &pb.TurnEvent{
 			Type: e.Kind(),
-			Data: map[string]string{
-				"player_id":     strings.TrimSpace(e.PlayerID),
-				"node_id":       strings.TrimSpace(e.NodeID),
-				"building_type": strings.TrimSpace(e.BuildingType),
-				"reason":        strings.TrimSpace(e.Reason),
-			},
+			Data: data,
 		}
 	case event.IndustryOutputRefreshedEvent:
 		return &pb.TurnEvent{
@@ -245,25 +250,33 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		// 客户端在结算后直接从 NodeView.Operation 看到新的 recipe 选择即可。
 		return &pb.TurnEvent{Type: "unknown", Data: map[string]string{}}
 	case event.RecipeSkippedEvent:
+		data := map[string]string{
+			"node_id":   strings.TrimSpace(e.NodeID),
+			"recipe_id": strings.TrimSpace(e.RecipeID),
+			"reason":    strings.TrimSpace(e.Reason),
+		}
+		if reasonMessage := gamefeedback.RecipeReasonMessage(e.Reason); reasonMessage != "" {
+			data["reason_message"] = reasonMessage
+		}
 		return &pb.TurnEvent{
 			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id":   strings.TrimSpace(e.NodeID),
-				"recipe_id": strings.TrimSpace(e.RecipeID),
-				"reason":    strings.TrimSpace(e.Reason),
-			},
+			Data: data,
 		}
 	case event.RecipeProgressedEvent:
 		// recipe_progressed 是经济链的关键反馈：
 		// 它让客户端知道当前建筑推进到了哪里，以及是否因为 blocked reason 停在这里。
+		data := map[string]string{
+			"node_id":        strings.TrimSpace(e.NodeID),
+			"progress_turns": strconv.Itoa(e.ProgressTurns),
+			"required_turns": strconv.Itoa(e.RequiredTurns),
+			"blocked_reason": strings.TrimSpace(e.BlockedReason),
+		}
+		if blockedReasonMessage := gamefeedback.RuntimeReasonMessage(e.BlockedReason); blockedReasonMessage != "" {
+			data["blocked_reason_message"] = blockedReasonMessage
+		}
 		return &pb.TurnEvent{
 			Type: e.Kind(),
-			Data: map[string]string{
-				"node_id":        strings.TrimSpace(e.NodeID),
-				"progress_turns": strconv.Itoa(e.ProgressTurns),
-				"required_turns": strconv.Itoa(e.RequiredTurns),
-				"blocked_reason": strings.TrimSpace(e.BlockedReason),
-			},
+			Data: data,
 		}
 	case event.RecipeDelayedEvent:
 		return &pb.TurnEvent{
@@ -291,6 +304,9 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 			"node_id": strings.TrimSpace(e.NodeID),
 			"status":  strings.TrimSpace(e.Status),
 			"reason":  strings.TrimSpace(e.Reason),
+		}
+		if reasonMessage := gamefeedback.RuntimeReasonMessage(e.Reason); reasonMessage != "" {
+			data["reason_message"] = reasonMessage
 		}
 		if e.OnlineOnTurn > 0 {
 			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
@@ -428,14 +444,18 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		}
 		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.FacilityTakeoverProgressedEvent:
-		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
+		data := map[string]string{
 			"node_id":              e.NodeID,
 			"controller_player_id": e.ControllerPlayerID,
 			"progress":             strconv.Itoa(e.Progress),
 			"required":             strconv.Itoa(e.Required),
 			"status":               e.Status,
 			"reason":               e.Reason,
-		}}
+		}
+		if reasonMessage := gamefeedback.RuntimeReasonMessage(e.Reason); reasonMessage != "" {
+			data["reason_message"] = reasonMessage
+		}
+		return &pb.TurnEvent{Type: e.Kind(), Data: data}
 	case event.FacilityTakeoverCompletedEvent:
 		data := map[string]string{
 			"node_id":         e.NodeID,

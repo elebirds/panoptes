@@ -115,6 +115,14 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 		msg := body.PlanningPathPreviewRequest
 		_ = room.SendToPlayer(eventCtx, playerID, buildPlanningPathPreviewResponse(room.State(), playerID, msg))
 		return nil
+	case *pb.PlanningCommand_BuildStructurePreview:
+		msg := body.BuildStructurePreview
+		_ = room.SendToPlayer(eventCtx, playerID, buildStructurePreviewResponse(room, playerID, msg))
+		return nil
+	case *pb.PlanningCommand_SetBuildingRecipePreview:
+		msg := body.SetBuildingRecipePreview
+		_ = room.SendToPlayer(eventCtx, playerID, setBuildingRecipePreviewResponse(room.State(), playerID, msg))
+		return nil
 	case *pb.PlanningCommand_SubmitTurn:
 		room.Submit(playerID)
 		return nil
@@ -380,17 +388,29 @@ func validatePrerequisites(state *domain.GameState, playerID string, prerequisit
 }
 
 func (s *Service) handleSetBuildingRecipe(ctx context.Context, room Session, playerID string, nodeID string, recipeID string) error {
-	if nodeID == "" || recipeID == "" {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: "invalid_request"})
+	eval := evaluateRecipeCommand(room.State(), playerID, nodeID, recipeID)
+	if !eval.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{
+			Success:         false,
+			NodeId:          strings.TrimSpace(nodeID),
+			RecipeId:        strings.TrimSpace(recipeID),
+			ErrorCode:       eval.ErrorCode,
+			FeedbackMessage: eval.FeedbackMessage,
+			FeedbackDetails: eval.FeedbackDetails,
+		})
 		return nil
 	}
-	validation := economy.ValidateRecipeSelection(room.State(), playerID, nodeID, recipeID)
-	if !validation.OK {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: false, NodeId: nodeID, RecipeId: recipeID, ErrorCode: validation.ErrorCode})
-		return nil
-	}
-	room.QueueRecipeSelection(domain.RecipeSelectionOrder{PlayerID: playerID, NodeID: nodeID, RecipeID: recipeID})
-	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{Success: true, NodeId: nodeID, RecipeId: recipeID})
+
+	room.QueueRecipeSelection(domain.RecipeSelectionOrder{
+		PlayerID: playerID,
+		NodeID:   strings.TrimSpace(nodeID),
+		RecipeID: strings.TrimSpace(recipeID),
+	})
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetBuildingRecipeResult{
+		Success:  true,
+		NodeId:   strings.TrimSpace(nodeID),
+		RecipeId: strings.TrimSpace(recipeID),
+	})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return nil
 }
@@ -399,44 +419,31 @@ func (s *Service) handleBuildRequest(ctx context.Context, room Session, playerID
 	if playerState == nil {
 		return errors.New("player not found")
 	}
+	eval := evaluateBuildCommand(room, playerID, playerState, nodeID, buildingType, cityID)
+	if !eval.OK {
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{
+			Success:         false,
+			NodeId:          strings.TrimSpace(nodeID),
+			BuildingTypeId:  strings.TrimSpace(buildingType),
+			CityId:          strings.TrimSpace(cityID),
+			ErrorCode:       eval.ErrorCode,
+			FeedbackMessage: eval.FeedbackMessage,
+			FeedbackDetails: eval.FeedbackDetails,
+		})
+		return nil
+	}
+
 	nodeID = strings.TrimSpace(nodeID)
 	buildingType = strings.TrimSpace(buildingType)
 	cityID = strings.TrimSpace(cityID)
-	replacingExistingDraft := room.State().TurnRuntime.Planning.HasBuildOrder(playerID, nodeID)
-
-	if !replacingExistingDraft && playerState.TokensLeft <= 0 {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "no_tokens_left"})
-		return nil
-	}
-	nodeEntry, ok := room.NodeByID(nodeID)
-	if !ok {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_target"})
-		return nil
-	}
-	if nodeEntry.HasComponent(ecs.BuildingC) {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "building_exists"})
-		return nil
-	}
-
-	validation := economy.ValidateBuildOrder(room.State(), playerID, nodeID, buildingType, cityID)
-	if !validation.OK {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: validation.ErrorCode})
-		return nil
-	}
-
-	cost, err := domain.ResourceBagFromAmounts(validation.Building.ResourceCosts)
-	if err != nil {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "invalid_directive"})
-		return nil
-	}
-	if !room.State().CanAffordResources(playerID, cost) && !room.IsDevMode() {
-		_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: false, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID, ErrorCode: "insufficient_resources"})
-		return nil
-	}
-
 	room.QueueBuildOrder(domain.BuildOrder{PlayerID: playerID, NodeID: nodeID, BuildingType: buildingType, CityID: cityID})
-	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{Success: true, NodeId: nodeID, BuildingTypeId: buildingType, CityId: cityID})
-	if !replacingExistingDraft {
+	_ = room.SendToPlayer(ctx, playerID, &pb.MsgBuildStructureResult{
+		Success:        true,
+		NodeId:         nodeID,
+		BuildingTypeId: buildingType,
+		CityId:         cityID,
+	})
+	if !eval.ReplacingDraft {
 		playerState.TokensLeft--
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgTokenResult{Success: true, Action: "build", TokensLeft: int32(playerState.TokensLeft)})
 	}
