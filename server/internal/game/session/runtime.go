@@ -43,6 +43,7 @@ type Runtime struct {
 	participants []ParticipantBinding
 	cfg          *config.Config
 	transport    transport.GameTransport
+	observations *gamequery.ObservationStore
 	submitCh     chan string
 	cancelFn     context.CancelFunc
 	state        *domain.GameState
@@ -65,6 +66,7 @@ func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTr
 		participants:           append([]ParticipantBinding(nil), participants...),
 		cfg:                    cfg,
 		transport:              t,
+		observations:           gamequery.NewObservationStore(),
 		submitCh:               make(chan string, len(participants)*4+16),
 		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
 	}
@@ -95,6 +97,11 @@ func (r *Runtime) Initialize() error {
 	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	} else {
+		r.observations.Reset()
+	}
 	if err := r.bootstrapStartingPlayers(); err != nil {
 		return err
 	}
@@ -115,6 +122,11 @@ func (r *Runtime) InitializePrepared(state *domain.GameState) error {
 	}
 
 	r.state = state
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	} else {
+		r.observations.Reset()
+	}
 	if r.state.GameID == "" {
 		r.state.GameID = r.ID
 	}
@@ -136,6 +148,11 @@ func (r *Runtime) State() *domain.GameState {
 
 func (r *Runtime) SetState(state *domain.GameState) {
 	r.state = state
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	} else {
+		r.observations.Reset()
+	}
 	r.planningStartPreparedTurn = 0
 	r.planningStartResult = nil
 	r.bootstrapMu.Lock()
@@ -272,7 +289,7 @@ func (r *Runtime) SendPlanningStart(ctx context.Context, participantID string) e
 	if r.planningStartResult != nil {
 		planningStartEvents = r.planningStartResult.Events
 	}
-	msg := BuildPlanningStartMessage(r.state, participantID, r.state.Phase, planningStartEvents)
+	msg := BuildPlanningStartMessageFromObservation(r.state, r.BuildObservation(participantID), r.state.Phase, planningStartEvents)
 	if msg == nil {
 		return nil
 	}
@@ -547,6 +564,7 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 	if r.state == nil {
 		return
 	}
+	observation := r.BuildObservation(p.ID)
 	msg := &pb.MsgGameInit{
 		GameId:       r.state.GameID,
 		YourPlayerId: p.ID,
@@ -554,12 +572,60 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 		Phase:        r.state.Phase,
 		MapWidth:     int32(r.state.Map.Width),
 		MapHeight:    int32(r.state.Map.Height),
-		MyPlayer:     gamequery.BuildPlayerView(r.state, p.ID),
+		MyPlayer:     observation.MyPlayer,
 		Ministers:    nil,
-		Nodes:        gamequery.BuildNodeViews(r.state, p.ID),
-		Units:        gamequery.BuildUnitViews(r.state),
+		Nodes:        observation.Nodes,
+		Units:        observation.Units,
 	}
 	_ = r.SendToParticipant(context.Background(), p.ID, msg)
+}
+
+func (r *Runtime) BuildObservation(participantID string) *gamequery.ObservationSnapshot {
+	if r == nil {
+		return nil
+	}
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	}
+	return r.observations.BuildObservation(r.state, participantID)
+}
+
+func (r *Runtime) SetDebugFullMapVisibility(participantID string, enabled bool) {
+	if r == nil {
+		return
+	}
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	}
+	r.observations.SetOmniscient(participantID, enabled)
+}
+
+func (r *Runtime) DebugFullMapVisibility(participantID string) bool {
+	if r == nil || r.observations == nil {
+		return false
+	}
+	return r.observations.IsOmniscient(participantID)
+}
+
+func (r *Runtime) RefreshDebugView(ctx context.Context, participantID string) (bool, error) {
+	if r == nil || r.state == nil || r.state.Phase != domain.PhasePlanning.String() {
+		return false, nil
+	}
+	p, ok := r.findParticipant(participantID)
+	if !ok || !p.IsHuman() {
+		return false, nil
+	}
+	return true, r.SendPlanningStart(ctx, participantID)
+}
+
+func (r *Runtime) RevealNodeView(participantID string, nodeID string) *pb.NodeView {
+	if r == nil {
+		return nil
+	}
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	}
+	return r.observations.RevealNodeView(r.state, participantID, nodeID)
 }
 
 func (r *Runtime) sendStaticCatalogManifest(p participant.Participant) {
@@ -692,7 +758,7 @@ func (r *Runtime) sendBootstrapRemainder(p participant.Participant) {
 	if r.planningStartResult != nil {
 		planningStartEvents = r.planningStartResult.Events
 	}
-	if msg := BuildPlanningStartMessage(r.state, p.ID, r.state.Phase, planningStartEvents); msg != nil {
+	if msg := BuildPlanningStartMessageFromObservation(r.state, r.BuildObservation(p.ID), r.state.Phase, planningStartEvents); msg != nil {
 		_ = r.SendToParticipant(context.Background(), p.ID, msg)
 		r.bootstrapMu.Lock()
 		r.bootstrapPlanningStartSent = true

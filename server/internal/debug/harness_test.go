@@ -491,8 +491,8 @@ func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *
 				t.Fatalf("turn 2 missing facility_takeover_completed event")
 			}
 			nodeView := settlementNodeView(t, record.Settlement, "C2")
-			if nodeView.GetControllerPlayerId() != "player-2" || nodeView.GetTerritoryOwnerPlayerId() != "player-2" || nodeView.GetCityId() != "E2" || nodeView.GetServiceCityId() != "E2" || nodeView.GetBuildingStatus() != "disabled" {
-				t.Fatalf("turn 2 node view = %#v, want player-2/E2 disabled", nodeView)
+			if nodeView.GetControllerPlayerId() != "player-2" || !nodeView.GetIsMemory() || nodeView.GetIsCurrentlyVisible() {
+				t.Fatalf("turn 2 node view = %#v, want remembered player-2 takeover state", nodeView)
 			}
 			nodeEntry, ok := h.room.State().GetNode("C2")
 			if !ok {

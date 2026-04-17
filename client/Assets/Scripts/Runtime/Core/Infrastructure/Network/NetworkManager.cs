@@ -28,6 +28,7 @@ namespace Panoptes.Core.Infrastructure.Network
         [Header("Config")]
         [SerializeField] private string serverUrl = "ws://localhost:8080/ws";
 
+        public string ServerUrl => serverUrl;
         public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
         public bool IsConnecting { get; private set; }
 

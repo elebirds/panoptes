@@ -40,6 +40,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useHashedColorWhenNoMyPlayerId = false;
         [SerializeField] private Color defaultGhostColor = new Color(0.6f, 1f, 0.6f, 0.9f);
         [Range(0f, 1f)] [SerializeField] private float ghostTintStrength = 0.85f;
+        [SerializeField] private Color memoryTintColor = new Color(0.76f, 0.76f, 0.76f, 1f);
+        [SerializeField] private Color unknownTintColor = new Color(0.55f, 0.55f, 0.55f, 1f);
 
         [Header("Damage Threshold")]
         [SerializeField] private int lowHitPointThreshold = 30;
@@ -217,6 +219,66 @@ namespace Panoptes.Presentation.Map
             TakeoverProgress = node != null ? node.TakeoverProgress : 0;
             TakeoverRequired = node != null ? node.TakeoverRequired : 0;
             IsSafeZone = node != null && node.IsSafeZone;
+        }
+
+        public void SetObservationState(bool isVisible, bool isMemory)
+        {
+            EnsureAllRenderers();
+            if (_allRenderers == null || _allRenderers.Length == 0)
+            {
+                return;
+            }
+
+            if (isVisible)
+            {
+                for (var r = 0; r < _allRenderers.Length; r++)
+                {
+                    var renderer = _allRenderers[r];
+                    if (renderer == null)
+                    {
+                        continue;
+                    }
+
+                    var materials = renderer.sharedMaterials;
+                    if (materials == null)
+                    {
+                        continue;
+                    }
+
+                    for (var i = 0; i < materials.Length; i++)
+                    {
+                        renderer.SetPropertyBlock(new MaterialPropertyBlock(), i);
+                    }
+                }
+
+                ApplyOwnerTint(ResolveOwnerColor(OwnerId));
+                return;
+            }
+
+            var tint = isMemory ? memoryTintColor : unknownTintColor;
+            for (var r = 0; r < _allRenderers.Length; r++)
+            {
+                var renderer = _allRenderers[r];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var materials = renderer.sharedMaterials;
+                if (materials == null)
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < materials.Length; i++)
+                {
+                    var block = new MaterialPropertyBlock();
+                    renderer.GetPropertyBlock(block, i);
+                    block.SetColor("_BaseColor", tint);
+                    block.SetColor("_Color", tint);
+                    renderer.SetPropertyBlock(block, i);
+                }
+            }
         }
 
         private void UpdateDamageMark()
