@@ -152,6 +152,41 @@ namespace Panoptes.Core.Application.Handler
 
                 Debug.Log($"  section={section.Section} events={section.Events.Count}");
             }
+
+            // Combat diagnostics: quickly surface whether structure damage actually arrived from server.
+            var settlement = SettlementMapper.ToDto(msg);
+            if (settlement?.Sections == null)
+            {
+                return;
+            }
+
+            for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
+            {
+                var section = settlement.Sections[sectionIndex];
+                if (section?.Events == null)
+                {
+                    continue;
+                }
+
+                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
+                {
+                    var evt = section.Events[eventIndex];
+                    if (evt == null)
+                    {
+                        continue;
+                    }
+
+                    var eventType = evt.Type ?? string.Empty;
+                    if (!string.Equals(eventType, "city_core_damaged", StringComparison.Ordinal) &&
+                        !string.Equals(eventType, "building_damaged", StringComparison.Ordinal) &&
+                        !string.Equals(eventType, "unit_died", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    Debug.Log($"[Game][SettlementEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
+                }
+            }
         }
 
         private static void OnTokenResult(MsgTokenResult msg)

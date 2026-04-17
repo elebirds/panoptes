@@ -1,19 +1,16 @@
 fileFormatVersion: 2
-guid: a802cf77a2f5db14d8c42b5e67c1d71a
+guid: 9c13d20883e942849b6f70de8b4a5982
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3124025909825846039
-    second: fog01_0
-  - first:
-      213: -4152464573335517770
-    second: fog01_1
+      213: 6550981928016342150
+    second: war3_fog_cloud_layers_2k_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
-    sRGBTexture: 0
+    sRGBTexture: 1
     linearTexture: 0
     fadeOut: 0
     borderMipMap: 0
@@ -27,7 +24,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 1
+  isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -43,13 +40,13 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 0
-    wrapV: 0
-    wrapW: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -60,7 +57,7 @@ TextureImporter:
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
-  textureType: 0
+  textureType: 8
   textureShape: 1
   singleChannelComponent: 0
   flipbookRows: 1
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: fog01_0
+      name: war3_fog_cloud_layers_2k_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1024
-        height: 433
+        width: 2048
+        height: 1024
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 71b39406305ca5b20800000000000000
-      internalID: 3124025909825846039
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: fog01_1
-      rect:
-        serializedVersion: 2
-        x: 601
-        y: 427
-        width: 10
-        height: 10
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 6b541f3a87b7f56c0800000000000000
-      internalID: -4152464573335517770
+      spriteID: 68cea6dda53c9ea50800000000000000
+      internalID: 6550981928016342150
       vertices: []
       indices: 
       edges: []
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      fog01_0: 3124025909825846039
-      fog01_1: -4152464573335517770
+      war3_fog_cloud_layers_2k_0: 6550981928016342150
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

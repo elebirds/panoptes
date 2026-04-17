@@ -674,29 +674,43 @@ namespace Panoptes.Core.Application.Cache
         private void ReplaceNodes(System.Collections.Generic.IEnumerable<NodeView> nodes, bool publishChanges, string changeType)
         {
             var previousNodes = CloneNodeMap(_nodes);
+            var nextNodes = new Dictionary<string, NodeDto>();
+            if (nodes != null)
+            {
+                foreach (var node in nodes)
+                {
+                    if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                    {
+                        continue;
+                    }
+
+                    var dto = NodeMapper.ToDto(node);
+                    previousNodes.TryGetValue(node.Id, out var previousNode);
+                    StabilizeNodeTerrain(dto, previousNode);
+                    nextNodes[node.Id] = dto;
+                }
+            }
+
             _nodes.Clear();
-            if (nodes == null)
+            foreach (var pair in nextNodes)
+            {
+                _nodes[pair.Key] = pair.Value;
+            }
+
+            if (!publishChanges)
             {
                 return;
             }
 
-            foreach (var node in nodes)
+            foreach (var pair in nextNodes)
             {
-                if (node == null || string.IsNullOrWhiteSpace(node.Id))
-                {
-                    continue;
-                }
-
-                var dto = NodeMapper.ToDto(node);
-                previousNodes.TryGetValue(node.Id, out var previousNode);
-                StabilizeNodeTerrain(dto, previousNode);
-                _nodes[node.Id] = dto;
-                if (publishChanges)
+                if (!previousNodes.TryGetValue(pair.Key, out var previous) ||
+                    !NodeEquals(previous, pair.Value, ignoreLastObservedTurn: true))
                 {
                     Fire(OnNodeChanged, new NodeChangedEvent
                     {
-                        NodeID = dto.Id,
-                        Node = CloneNodeDto(dto),
+                        NodeID = pair.Value.Id,
+                        Node = CloneNodeDto(pair.Value),
                         ChangeType = changeType ?? string.Empty
                     }, nameof(OnNodeChanged));
                 }
@@ -731,7 +745,8 @@ namespace Panoptes.Core.Application.Cache
 
             foreach (var pair in nextNodes)
             {
-                if (!previousNodes.TryGetValue(pair.Key, out var previous) || !NodeEquals(previous, pair.Value))
+                if (!previousNodes.TryGetValue(pair.Key, out var previous) ||
+                    !NodeEquals(previous, pair.Value, ignoreLastObservedTurn: true))
                 {
                     Fire(OnNodeChanged, new NodeChangedEvent
                     {
@@ -829,9 +844,10 @@ namespace Panoptes.Core.Application.Cache
                     if (MyPlayer != null)
                     {
                         MyPlayer.CapitalCityCoreHp = node.BuildingHp;
-                        if (MyPlayer.CapitalCityCoreMaxHp < node.BuildingHp)
+                        var nodeMaxHp = node.BuildingMaxHp > 0 ? node.BuildingMaxHp : node.BuildingHp;
+                        if (MyPlayer.CapitalCityCoreMaxHp < nodeMaxHp)
                         {
-                            MyPlayer.CapitalCityCoreMaxHp = node.BuildingHp;
+                            MyPlayer.CapitalCityCoreMaxHp = nodeMaxHp;
                         }
                     }
 
@@ -839,7 +855,7 @@ namespace Panoptes.Core.Application.Cache
                 }
 
                 EnemyCityCoreHP = Math.Max(EnemyCityCoreHP, node.BuildingHp);
-                EnemyMaxCityCoreHP = Math.Max(EnemyMaxCityCoreHP, node.BuildingHp);
+                EnemyMaxCityCoreHP = Math.Max(EnemyMaxCityCoreHP, node.BuildingMaxHp > 0 ? node.BuildingMaxHp : node.BuildingHp);
             }
         }
 
@@ -1055,10 +1071,10 @@ namespace Panoptes.Core.Application.Cache
 
         private static IDictionary<string, NodeDto> CloneNodeMap(IDictionary<string, NodeDto> source)
         {
-            var clone = new Dictionary<string, NodeDto>();
+            var clone = new Dictionary<string, NodeDto>(source.Count);
             foreach (var pair in source)
             {
-                clone[pair.Key] = CloneNodeDto(pair.Value);
+                clone[pair.Key] = pair.Value;
             }
 
             return clone;
@@ -1105,7 +1121,7 @@ namespace Panoptes.Core.Application.Cache
             };
         }
 
-        private static bool NodeEquals(NodeDto left, NodeDto right)
+        private static bool NodeEquals(NodeDto left, NodeDto right, bool ignoreLastObservedTurn = false)
         {
             if (ReferenceEquals(left, right))
             {
@@ -1140,7 +1156,7 @@ namespace Panoptes.Core.Application.Cache
                    left.IsCityCore == right.IsCityCore &&
                    left.IsVisible == right.IsVisible &&
                    left.IsMemory == right.IsMemory &&
-                   left.LastObservedTurn == right.LastObservedTurn &&
+                   (ignoreLastObservedTurn || left.LastObservedTurn == right.LastObservedTurn) &&
                    left.HasRoad == right.HasRoad &&
                    string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
                    left.IsResourcePoint == right.IsResourcePoint &&

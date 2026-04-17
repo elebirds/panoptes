@@ -405,12 +405,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            var runtimeConfig = ClientRuntimeConfigCache.Instance;
-            if (runtimeConfig != null && runtimeConfig.DevMode)
-            {
-                return;
-            }
-
             _lastRecipeFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.Code);
             if (evt.Details == null ||
                 !evt.Details.TryGetValue("node_id", out var nodeId) ||
@@ -542,8 +536,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            var runtimeConfig = ClientRuntimeConfigCache.Instance;
-            var devModeUnlocked = runtimeConfig != null && runtimeConfig.DevMode;
             BuildRecipeUnlockTechIndex();
             var completedTech = GetCompletedTechnologySet();
             var ownedByMe = IsActiveNodeOwnedByMe();
@@ -560,12 +552,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 if (!ownedByMe)
                 {
                     recipe.IsLocked = true;
-                    continue;
-                }
-
-                if (devModeUnlocked)
-                {
-                    recipe.IsLocked = false;
                     continue;
                 }
 
