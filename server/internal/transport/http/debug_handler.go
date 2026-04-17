@@ -215,7 +215,7 @@ func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool
 		return "", nil, false
 	}
 
-	room, ok := h.rooms.GetRoomByPlayerID(playerID)
+	room, ok := h.rooms.GetRoomByParticipantID(playerID)
 	if !ok {
 		return "", nil, false
 	}

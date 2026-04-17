@@ -43,7 +43,7 @@ func (a *App) buildServer() *http.Server {
 		if err := lobbySvc.HandleDisconnect(ctx, playerID); err != nil {
 			return err
 		}
-		game.Registry.HandlePlayerDisconnect(playerID)
+		game.Registry.HandleParticipantDisconnect(playerID)
 		return nil
 	})
 	wsHub.SetConnectFunc(func(ctx context.Context, playerID string) error {
@@ -92,27 +92,19 @@ func (a *App) onGameStart(lobbyRoom *lobby.Room) {
 		return
 	}
 
-	var players []game.Player
+	var participants []game.ParticipantSpec
 	for _, player := range lobbyRoom.Players {
 		if player.IsBot {
-			players = append(players, game.NewBotPlayer(
-				player.PlayerID,
-				player.Username,
-				&game.RandomStrategy{},
-			))
+			participants = append(participants, game.NewBotParticipantSpec(player.PlayerID, player.Username))
 			continue
 		}
 
-		players = append(players, game.NewHumanPlayer(
-			player.PlayerID,
-			player.Username,
-			a.gameTransport,
-		))
+		participants = append(participants, game.NewHumanParticipantSpec(player.PlayerID, player.Username))
 	}
 
 	room := game.NewRoom(
 		uuid.NewString(),
-		players,
+		participants,
 		a.gameTransport,
 		a.cfg,
 	)

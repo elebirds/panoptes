@@ -560,9 +560,61 @@ func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
 	}
 }
 
+func TestEnvelopeFromPlanningCommandBuildStructure(t *testing.T) {
+	envelope, handled, err := EnvelopeFromPlanningCommand(cmddispatch.InboundContext{
+		PlayerID:  "player-1",
+		RequestID: "req-build",
+	}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{
+				NodeId:         "A2",
+				BuildingTypeId: "farm",
+				CityId:         "A1",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("EnvelopeFromPlanningCommand() error = %v", err)
+	}
+	if !handled {
+		t.Fatalf("handled = false, want true")
+	}
+	if envelope.ParticipantID != "player-1" {
+		t.Fatalf("participant id = %q, want player-1", envelope.ParticipantID)
+	}
+	if envelope.RequestID != "req-build" {
+		t.Fatalf("request id = %q, want req-build", envelope.RequestID)
+	}
+	intent, ok := envelope.Intent.(BuildStructureIntent)
+	if !ok {
+		t.Fatalf("intent type = %T, want BuildStructureIntent", envelope.Intent)
+	}
+	if intent.NodeID != "A2" || intent.BuildingTypeID != "farm" || intent.CityID != "A1" {
+		t.Fatalf("build intent = %#v", intent)
+	}
+}
+
+func TestHandleIntentSubmitTurnCallsSessionSubmit(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		RequestID:     "req-submit",
+		Intent:        SubmitTurnIntent{},
+	})
+	if err != nil {
+		t.Fatalf("HandleIntent() error = %v", err)
+	}
+	if len(session.submitted) != 1 || session.submitted[0] != "player-1" {
+		t.Fatalf("submitted = %#v, want [player-1]", session.submitted)
+	}
+}
+
 type planningSessionStub struct {
-	state *domain.GameState
-	sent  map[string][]proto.Message
+	state     *domain.GameState
+	sent      map[string][]proto.Message
+	submitted []string
 }
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
@@ -642,7 +694,9 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 
 func (s *planningSessionStub) State() *domain.GameState { return s.state }
 
-func (s *planningSessionStub) Submit(string) {}
+func (s *planningSessionStub) Submit(playerID string) {
+	s.submitted = append(s.submitted, playerID)
+}
 
 func (s *planningSessionStub) SendToPlayer(_ context.Context, playerID string, msg proto.Message) error {
 	s.sent[playerID] = append(s.sent[playerID], msg)

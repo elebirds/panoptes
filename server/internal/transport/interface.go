@@ -29,5 +29,5 @@ type GameRoom interface {
 
 // GameRoomRegistry 是运行中对局房间的最小查询接口。
 type GameRoomRegistry interface {
-	GetRoomByPlayerID(playerID string) (GameRoom, bool)
+	GetRoomByParticipantID(participantID string) (GameRoom, bool)
 }

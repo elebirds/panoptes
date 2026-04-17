@@ -53,7 +53,28 @@ func (s *Service) Enter(room Session) {
 }
 
 func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
-	playerID := inbound.PlayerID
+	if cmd == nil || cmd.GetBody() == nil {
+		return errors.New("planning command is nil")
+	}
+
+	envelope, handled, err := EnvelopeFromPlanningCommand(inbound, cmd)
+	if err != nil {
+		return err
+	}
+	if !handled {
+		msg := cmd.GetPlanningPathPreviewRequest()
+		eventCtx := coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(inbound))
+		_ = room.SendToPlayer(eventCtx, inbound.PlayerID, buildPlanningPathPreviewResponse(room.State(), inbound.PlayerID, msg))
+		return nil
+	}
+	return s.HandleIntent(room, envelope)
+}
+
+func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
+	if room == nil {
+		return errors.New("session is nil")
+	}
+	playerID := envelope.ParticipantID
 	state := room.State()
 	if state == nil {
 		return errors.New("state is nil")
@@ -62,65 +83,64 @@ func (s *Service) HandleCommand(room Session, inbound cmddispatch.InboundContext
 	if !ok || playerState == nil {
 		return errors.New("player not found")
 	}
-	if cmd == nil || cmd.Body == nil {
-		return errors.New("planning command is nil")
-	}
-	eventCtx := coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(inbound))
 
-	switch body := cmd.Body.(type) {
-	case *pb.PlanningCommand_SetPolicy:
-		msg := body.SetPolicy
-		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(msg.GetNationalPolicyId()))
-	case *pb.PlanningCommand_SetInstitutionLoadout:
-		msg := body.SetInstitutionLoadout
-		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, msg.GetPolicyIds())
-	case *pb.PlanningCommand_BuildStructure:
-		msg := body.BuildStructure
-		return s.handleBuildRequest(eventCtx, room, playerID, playerState, msg.GetNodeId(), msg.GetBuildingTypeId(), msg.GetCityId())
-	case *pb.PlanningCommand_RevealNode:
-		msg := body.RevealNode
+	eventCtx := intentContext(envelope)
+	switch intent := envelope.Intent.(type) {
+	case SetPolicyIntent:
+		return s.handleSetPolicy(eventCtx, room, playerID, strings.TrimSpace(intent.NationalPolicyID))
+	case SetInstitutionLoadoutIntent:
+		return s.handleInstitutionLoadout(eventCtx, room, playerID, playerState, intent.PolicyIDs)
+	case BuildStructureIntent:
+		return s.handleBuildRequest(eventCtx, room, playerID, playerState, intent.NodeID, intent.BuildingTypeID, intent.CityID)
+	case RevealNodeIntent:
 		if playerState.TokensLeft <= 0 {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "no_tokens_left"})
 			return nil
 		}
-		nodeView := room.BuildNodeViewForPlayer(msg.GetNodeId(), playerID)
+		nodeView := room.BuildNodeViewForPlayer(intent.NodeID, playerID)
 		if nodeView == nil {
 			_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgTokenResult{Success: false, Action: "reveal", TokensLeft: int32(playerState.TokensLeft), ErrorCode: "invalid_target"})
 			return nil
 		}
 		playerState.TokensLeft--
-		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgRevealResult{NodeId: msg.GetNodeId(), TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
+		_ = room.SendToPlayer(eventCtx, playerID, &pb.MsgRevealResult{NodeId: intent.NodeID, TrueState: nodeView, TokensLeft: int32(playerState.TokensLeft)})
 		return nil
-	case *pb.PlanningCommand_SetResearchTarget:
-		msg := body.SetResearchTarget
-		return s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(msg.GetTechnologyId()))
-	case *pb.PlanningCommand_SetBuildingRecipe:
-		msg := body.SetBuildingRecipe
-		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(msg.GetNodeId()), strings.TrimSpace(msg.GetRecipeId()))
-	case *pb.PlanningCommand_SetMinisterDirective:
-		return transportproblem.New("invalid_directive", "minister is not part of current MVP")
-	case *pb.PlanningCommand_SetWarZone:
-		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
-	case *pb.PlanningCommand_WarZoneDirective:
-		return transportproblem.New("invalid_directive", "war zone is not part of current MVP")
-	case *pb.PlanningCommand_IssueUnitOrder:
-		msg := body.IssueUnitOrder
-		return s.handleIssueUnitOrder(eventCtx, room, playerID, msg)
-	case *pb.PlanningCommand_CancelUnitOrder:
-		msg := body.CancelUnitOrder
-		room.CancelUnitOrder(playerID, strings.TrimSpace(msg.GetUnitId()))
+	case SetResearchTargetIntent:
+		return s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
+	case SetBuildingRecipeIntent:
+		return s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
+	case IssueUnitOrderIntent:
+		return s.handleIssueUnitOrder(eventCtx, room, playerID, &pb.MsgIssueUnitOrder{
+			UnitId:          intent.UnitID,
+			Action:          intent.Action,
+			TargetNodeId:    intent.TargetNodeID,
+			TargetUnitId:    intent.TargetUnitID,
+			SecondaryNodeId: intent.SecondaryNodeID,
+			Params:          cloneParams(intent.Params),
+		})
+	case CancelUnitOrderIntent:
+		room.CancelUnitOrder(playerID, strings.TrimSpace(intent.UnitID))
 		_ = room.SendPlanningSnapshot(eventCtx, playerID)
 		return nil
-	case *pb.PlanningCommand_PlanningPathPreviewRequest:
-		msg := body.PlanningPathPreviewRequest
-		_ = room.SendToPlayer(eventCtx, playerID, buildPlanningPathPreviewResponse(room.State(), playerID, msg))
-		return nil
-	case *pb.PlanningCommand_SubmitTurn:
+	case SubmitTurnIntent:
 		room.Submit(playerID)
 		return nil
+	case nil:
+		return transportproblem.InvalidRequest("planning intent is nil")
+	default:
+		return transportproblem.InvalidRequest("unsupported planning intent")
 	}
+}
 
-	return nil
+func intentContext(envelope IntentEnvelope) context.Context {
+	meta := &pb.EventMeta{
+		RequestId: envelope.RequestID,
+		TraceId:   envelope.TraceID,
+	}
+	if meta.RequestId == "" && meta.TraceId == "" {
+		return context.Background()
+	}
+	return coretransport.ContextWithEventMeta(context.Background(), meta)
 }
 
 func cloneParams(src map[string]string) map[string]string {
