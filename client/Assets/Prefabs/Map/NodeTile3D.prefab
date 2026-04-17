@@ -118,7 +118,7 @@ Transform:
   m_GameObject: {fileID: 1084501715393880173}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0.101, z: 0}
+  m_LocalPosition: {x: 0, y: 0.62, z: -0.06}
   m_LocalScale: {x: 1, y: 0.33, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -414,6 +414,24 @@ MonoBehaviour:
   forbiddenUvWorldSize: 2.2
   useTerrainColorVariation: 0
   terrainColorVariationStrength: 0.02
+  enableObservationTint: 1
+  visibleObservationTint: {r: 1, g: 1, b: 1, a: 1}
+  memoryObservationTint: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+  unknownObservationTint: {r: 0.46, g: 0.46, b: 0.46, a: 1}
+  enableObservationFogOverlay: 1
+  autoCreateFogOverlay: 1
+  fogOverlayRenderer: {fileID: 0}
+  fogOverlayTexture: {fileID: 0}
+  fogOverlayTextureResourcesPath: Textures/Fog/fog01
+  fogOverlayColor: {r: 1, g: 1, b: 1, a: 1}
+  fogUnknownAlpha: 0.82
+  fogMemoryAlpha: 0.42
+  fogVisibleAlpha: 0
+  fogUvWorldSize: 3.2
+  fogUvScrollSpeed: {x: 0.01, y: 0.006}
+  fogUvUpdateInterval: 0.08
+  fogOverlayHeight: 0.03
+  fogOverlayScale: {x: 1, y: 1}
   resourcePointPrefab: {fileID: 6119559488442800000, guid: a53b34b039682fa4a9d4ed3ecdfd9549, type: 3}
   defaultBuildingPrefab: {fileID: 8465135733123450000, guid: 36fe37ddaca302d4d9a1fd34eebd5b1e, type: 3}
   buildingPrefabs:

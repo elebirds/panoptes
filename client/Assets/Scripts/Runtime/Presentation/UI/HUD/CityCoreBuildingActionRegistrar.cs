@@ -100,21 +100,9 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureInitialPanelState();
 
             registry.RegisterAction(
-                productionActionId,
-                OnProductionActionClicked,
-                string.IsNullOrWhiteSpace(productionActionLabel) ? "Production" : productionActionLabel,
-                IsOwnedCityCoreBuildingProxy);
-
-            registry.RegisterAction(
                 buildActionId,
                 OnBuildActionClicked,
                 string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
-                IsOwnedCityCoreBuildingProxy);
-
-            registry.RegisterAction(
-                techTreeActionId,
-                OnTechTreeActionClicked,
-                string.IsNullOrWhiteSpace(techTreeActionLabel) ? "Tech Tree" : techTreeActionLabel,
                 IsOwnedCityCoreBuildingProxy);
 
             registry.RegisterAction(

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Domain;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -36,12 +37,18 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float transitionJitter = 0.12f;
         [SerializeField] private float transitionScaleMultiplier = 0.55f;
         [SerializeField] private bool disableDecorColliders = true;
+        [SerializeField] private bool optimizeDecorRenderers = true;
+        [SerializeField] private bool disableDecorShadows = true;
+        [SerializeField] private bool disableDecorProbes = true;
+        [SerializeField] private bool enableMaterialInstancing = true;
         [SerializeField] private Transform decorRoot;
 
         [Header("Rules")]
         [SerializeField] private TerrainDecorRule[] rules;
 
         private readonly List<GameObject> _spawned = new();
+        private readonly Dictionary<string, List<GameObject>> _spawnedByNodeId =
+            new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
         private static readonly Vector2Int[] CardinalDirs =
         {
             new Vector2Int(1, 0),
@@ -148,7 +155,10 @@ namespace Panoptes.Presentation.Map
                     DisableAllColliders(instance);
                 }
 
+                OptimizeDecorInstance(instance);
+
                 _spawned.Add(instance);
+                RegisterSpawn(node.Id, instance);
             }
         }
 
@@ -263,7 +273,11 @@ namespace Panoptes.Presentation.Map
                     DisableAllColliders(instance);
                 }
 
+                OptimizeDecorInstance(instance);
+
                 _spawned.Add(instance);
+                RegisterSpawn(node.Id, instance);
+                RegisterSpawn(neighbor.Id, instance);
             }
         }
 
@@ -303,6 +317,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _spawned.Clear();
+            _spawnedByNodeId.Clear();
 
             if (decorRoot == null)
             {
@@ -535,6 +550,148 @@ namespace Panoptes.Presentation.Map
         private static string Normalize(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private void OptimizeDecorInstance(GameObject instance)
+        {
+            if (!optimizeDecorRenderers || instance == null)
+            {
+                return;
+            }
+
+            var renderers = instance.GetComponentsInChildren<Renderer>(true);
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (disableDecorShadows)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
+
+                if (disableDecorProbes)
+                {
+                    renderer.lightProbeUsage = LightProbeUsage.Off;
+                    renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                }
+
+                if (!enableMaterialInstancing)
+                {
+                    continue;
+                }
+
+                var mats = renderer.sharedMaterials;
+                if (mats == null)
+                {
+                    continue;
+                }
+
+                for (var m = 0; m < mats.Length; m++)
+                {
+                    var mat = mats[m];
+                    if (mat != null && !mat.enableInstancing)
+                    {
+                        mat.enableInstancing = true;
+                    }
+                }
+            }
+        }
+
+        public void ApplyObservationState(IReadOnlyDictionary<string, NodeDto> nodesById, bool hideUnknownDecor)
+        {
+            if (_spawned.Count == 0)
+            {
+                return;
+            }
+
+            if (!hideUnknownDecor || nodesById == null)
+            {
+                for (var i = 0; i < _spawned.Count; i++)
+                {
+                    var go = _spawned[i];
+                    if (go != null && !go.activeSelf)
+                    {
+                        go.SetActive(true);
+                    }
+                }
+                return;
+            }
+
+            var visibleByObject = new Dictionary<GameObject, bool>(_spawned.Count);
+            for (var i = 0; i < _spawned.Count; i++)
+            {
+                var go = _spawned[i];
+                if (go != null)
+                {
+                    visibleByObject[go] = false;
+                }
+            }
+
+            foreach (var pair in _spawnedByNodeId)
+            {
+                if (!nodesById.TryGetValue(pair.Key, out var node) || node == null)
+                {
+                    continue;
+                }
+
+                if (!node.IsVisible && !node.IsMemory)
+                {
+                    continue;
+                }
+
+                var list = pair.Value;
+                if (list == null)
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < list.Count; i++)
+                {
+                    var go = list[i];
+                    if (go != null)
+                    {
+                        visibleByObject[go] = true;
+                    }
+                }
+            }
+
+            foreach (var pair in visibleByObject)
+            {
+                if (pair.Key != null && pair.Key.activeSelf != pair.Value)
+                {
+                    pair.Key.SetActive(pair.Value);
+                }
+            }
+        }
+
+        private void RegisterSpawn(string nodeId, GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            var normalizedNodeId = (nodeId ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(normalizedNodeId))
+            {
+                return;
+            }
+
+            if (!_spawnedByNodeId.TryGetValue(normalizedNodeId, out var list) || list == null)
+            {
+                list = new List<GameObject>();
+                _spawnedByNodeId[normalizedNodeId] = list;
+            }
+
+            if (!list.Contains(instance))
+            {
+                list.Add(instance);
+            }
         }
 
         private static GameObject[] LoadDefaultPrefabs(params string[] fileNames)

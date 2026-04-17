@@ -29,6 +29,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Image panelBackground;
         [SerializeField] private Image unitIcon;
         [SerializeField] private TMP_Text unitNameText;
+        [SerializeField] private TMP_Text unitDescriptionText;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMP_Text hpValueText;
         [SerializeField] private RectTransform actionButtonsRoot;
@@ -53,14 +54,22 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Portrait Camera")]
         [SerializeField] private RawImage unitPortraitRawImage;
         [SerializeField] private bool enablePortraitCamera = true;
-        [SerializeField] private bool portraitRealtime = true;
+        [SerializeField] private bool portraitRealtime = false;
         [SerializeField] private bool portraitKeepSceneBackground = true;
         [SerializeField] private int portraitTextureSize = 256;
         [SerializeField] private float portraitFov = 30f;
         [SerializeField] private float portraitMinDistance = 0.9f;
         [SerializeField] private float portraitDistanceScale = 1.15f;
+        [SerializeField] private float portraitDistanceOffset = 0.5f;
         [SerializeField] private float portraitHeightOffset = 0.2f;
         [SerializeField] private float portraitCameraVerticalOffsetScale = -0.1f;
+        [SerializeField] private bool enablePortraitFillLight = true;
+        [SerializeField] private Color portraitFillLightColor = new Color(1f, 0.97f, 0.9f, 1f);
+        [SerializeField] private float portraitFillLightIntensity = 1.8f;
+        [SerializeField] private float portraitFillLightRange = 18f;
+        [SerializeField] private float portraitFillLightSpotAngle = 80f;
+        [SerializeField] private float portraitFillLightVerticalOffset = 0.06f;
+        [SerializeField] private float portraitFillLightForwardOffset = -0.05f;
 
         [Header("Slide")]
         [SerializeField] private float hiddenOffsetX = 420f;
@@ -90,6 +99,7 @@ namespace Panoptes.Presentation.UI.HUD
         private static Texture2D _fallbackButtonTexture;
         private Camera _portraitCamera;
         private RenderTexture _portraitRenderTexture;
+        private Light _portraitFillLight;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _isOpen;
 
@@ -110,6 +120,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 EnsureDefaultLayout();
             }
+            EnsureUnitDescriptionUi();
             HideLegacyPlanningTexts();
             EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
@@ -347,9 +358,17 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            EnsureUnitDescriptionUi();
+            ResolveUnitDisplayTexts(_currentUnit, out var displayName, out var description);
             if (unitNameText != null)
             {
-                unitNameText.text = BuildUnitDisplayName(_currentUnit);
+                unitNameText.text = displayName;
+            }
+
+            if (unitDescriptionText != null)
+            {
+                unitDescriptionText.text = description;
+                unitDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(description));
             }
 
             RefreshUnitHpFromCache();
@@ -474,7 +493,23 @@ namespace Panoptes.Presentation.UI.HUD
                 _portraitCamera.targetTexture != null &&
                 (!portraitRealtime || forceRender))
             {
-                _portraitCamera.Render();
+                var usePortraitFillLight = _portraitFillLight != null && enablePortraitFillLight;
+                if (usePortraitFillLight)
+                {
+                    _portraitFillLight.enabled = true;
+                }
+
+                try
+                {
+                    _portraitCamera.Render();
+                }
+                finally
+                {
+                    if (usePortraitFillLight)
+                    {
+                        _portraitFillLight.enabled = false;
+                    }
+                }
             }
 
             return true;
@@ -539,6 +574,65 @@ namespace Panoptes.Presentation.UI.HUD
             unitPortraitRawImage.texture = _portraitRenderTexture;
         }
 
+        private void EnsureUnitDescriptionUi()
+        {
+            if (panelRoot == null)
+            {
+                return;
+            }
+
+            RectTransform descriptionRect = null;
+            var createdNow = false;
+            if (unitDescriptionText == null)
+            {
+                descriptionRect = panelRoot.Find("UnitDescription") as RectTransform;
+                if (descriptionRect == null)
+                {
+                    descriptionRect = EnsureChild("UnitDescription");
+                    createdNow = true;
+                }
+
+                unitDescriptionText = descriptionRect != null
+                    ? descriptionRect.GetComponent<TextMeshProUGUI>()
+                    : null;
+                if (unitDescriptionText == null && descriptionRect != null)
+                {
+                    unitDescriptionText = descriptionRect.gameObject.AddComponent<TextMeshProUGUI>();
+                    createdNow = true;
+                }
+            }
+
+            if (unitDescriptionText == null)
+            {
+                return;
+            }
+
+            if (unitDescriptionText.font == null && TMP_Settings.defaultFontAsset != null)
+            {
+                unitDescriptionText.font = TMP_Settings.defaultFontAsset;
+            }
+
+            descriptionRect = unitDescriptionText.rectTransform;
+            if (createdNow && descriptionRect != null)
+            {
+                descriptionRect.anchorMin = new Vector2(0f, 1f);
+                descriptionRect.anchorMax = new Vector2(0f, 1f);
+                descriptionRect.pivot = new Vector2(0f, 1f);
+                descriptionRect.anchoredPosition = new Vector2(102f, -78f);
+                descriptionRect.sizeDelta = new Vector2(300f, 30f);
+                unitDescriptionText.fontSize = 14f;
+                unitDescriptionText.color = new Color(0.86f, 0.9f, 0.95f, 0.95f);
+            }
+
+            unitDescriptionText.alignment = TextAlignmentOptions.TopLeft;
+            unitDescriptionText.textWrappingMode = TextWrappingModes.Normal;
+            unitDescriptionText.overflowMode = TextOverflowModes.Ellipsis;
+            if (unitDescriptionText.text == null)
+            {
+                unitDescriptionText.text = string.Empty;
+            }
+        }
+
         private bool EnsurePortraitCameraAndTexture()
         {
             if (!enablePortraitCamera)
@@ -593,6 +687,8 @@ namespace Panoptes.Presentation.UI.HUD
             _portraitCamera.cullingMask = ~0;
             _portraitCamera.targetTexture = _portraitRenderTexture;
             ConfigurePortraitCameraClearFlags();
+            EnsurePortraitFillLight();
+            ConfigurePortraitFillLight();
 
             if (unitPortraitRawImage != null)
             {
@@ -626,6 +722,47 @@ namespace Panoptes.Presentation.UI.HUD
             _portraitCamera.backgroundColor = Color.black;
         }
 
+        private void EnsurePortraitFillLight()
+        {
+            if (_portraitCamera == null)
+            {
+                _portraitFillLight = null;
+                return;
+            }
+
+            if (_portraitFillLight != null)
+            {
+                return;
+            }
+
+            var fillLightGo = new GameObject("UnitPortraitFillLight_Runtime", typeof(Light));
+            fillLightGo.hideFlags = HideFlags.DontSave;
+            fillLightGo.transform.SetParent(_portraitCamera.transform, false);
+            _portraitFillLight = fillLightGo.GetComponent<Light>();
+        }
+
+        private void ConfigurePortraitFillLight()
+        {
+            if (_portraitFillLight == null)
+            {
+                return;
+            }
+
+            _portraitFillLight.enabled = false;
+            _portraitFillLight.type = LightType.Spot;
+            _portraitFillLight.shadows = LightShadows.None;
+            _portraitFillLight.renderMode = LightRenderMode.ForcePixel;
+            _portraitFillLight.cullingMask = _portraitCamera != null ? _portraitCamera.cullingMask : ~0;
+            _portraitFillLight.color = portraitFillLightColor;
+            _portraitFillLight.intensity = Mathf.Max(0f, portraitFillLightIntensity);
+            _portraitFillLight.range = Mathf.Max(1f, portraitFillLightRange);
+            _portraitFillLight.spotAngle = Mathf.Clamp(portraitFillLightSpotAngle, 15f, 150f);
+            _portraitFillLight.innerSpotAngle = Mathf.Clamp(
+                _portraitFillLight.spotAngle * 0.65f,
+                1f,
+                _portraitFillLight.spotAngle - 0.1f);
+        }
+
         private bool UpdatePortraitCameraPose(UnitView unit)
         {
             if (_portraitCamera == null || unit == null)
@@ -654,7 +791,8 @@ namespace Panoptes.Presentation.UI.HUD
             var lookAt = bounds.center + Vector3.up * (bounds.size.y * 0.15f + portraitHeightOffset);
             var distance = Mathf.Max(
                 Mathf.Max(0.01f, portraitMinDistance),
-                bounds.extents.magnitude * Mathf.Max(0.01f, portraitDistanceScale));
+                bounds.extents.magnitude * Mathf.Max(0.01f, portraitDistanceScale))
+                + Mathf.Max(0f, portraitDistanceOffset);
             var camPos = lookAt - forward * distance + Vector3.up * (bounds.size.y * portraitCameraVerticalOffsetScale);
             var lookDir = lookAt - camPos;
             if (lookDir.sqrMagnitude <= 0.0001f)
@@ -665,7 +803,30 @@ namespace Panoptes.Presentation.UI.HUD
             _portraitCamera.transform.SetPositionAndRotation(
                 camPos,
                 Quaternion.LookRotation(lookDir.normalized, Vector3.up));
+            UpdatePortraitFillLightPose(lookAt);
             return true;
+        }
+
+        private void UpdatePortraitFillLightPose(Vector3 lookAt)
+        {
+            if (_portraitFillLight == null || _portraitCamera == null)
+            {
+                return;
+            }
+
+            var cameraTransform = _portraitCamera.transform;
+            var fillPosition = cameraTransform.position +
+                               cameraTransform.up * portraitFillLightVerticalOffset +
+                               cameraTransform.forward * portraitFillLightForwardOffset;
+            var lightDirection = lookAt - fillPosition;
+            if (lightDirection.sqrMagnitude <= 0.0001f)
+            {
+                lightDirection = cameraTransform.forward;
+            }
+
+            _portraitFillLight.transform.SetPositionAndRotation(
+                fillPosition,
+                Quaternion.LookRotation(lightDirection.normalized, Vector3.up));
         }
 
         private static bool TryComputeUnitBounds(UnitView unit, out Bounds bounds)
@@ -736,6 +897,11 @@ namespace Panoptes.Presentation.UI.HUD
                                unitPortraitRawImage.enabled &&
                                _portraitRenderTexture != null;
             _portraitCamera.enabled = shouldEnable;
+
+            if (_portraitFillLight != null)
+            {
+                _portraitFillLight.enabled = false;
+            }
         }
 
         private void DisablePortraitCamera()
@@ -743,6 +909,11 @@ namespace Panoptes.Presentation.UI.HUD
             if (_portraitCamera != null)
             {
                 _portraitCamera.enabled = false;
+            }
+
+            if (_portraitFillLight != null)
+            {
+                _portraitFillLight.enabled = false;
             }
         }
 
@@ -753,6 +924,12 @@ namespace Panoptes.Presentation.UI.HUD
             if (_portraitCamera != null && _portraitCamera.targetTexture == _portraitRenderTexture)
             {
                 _portraitCamera.targetTexture = null;
+            }
+
+            if (_portraitFillLight != null)
+            {
+                _portraitFillLight.enabled = false;
+                _portraitFillLight = null;
             }
 
             if (unitPortraitRawImage != null && unitPortraitRawImage.texture == _portraitRenderTexture)
@@ -1235,6 +1412,8 @@ namespace Panoptes.Presentation.UI.HUD
                 unitNameText.alignment = TextAlignmentOptions.Left;
             }
 
+            EnsureUnitDescriptionUi();
+
             if (hpSlider == null)
             {
                 var sliderRT = EnsureChild("HpBar");
@@ -1699,6 +1878,56 @@ namespace Panoptes.Presentation.UI.HUD
             rect.anchorMax = Vector2.one;
             rect.offsetMin = offsetMin;
             rect.offsetMax = offsetMax;
+        }
+
+        private void ResolveUnitDisplayTexts(UnitView unit, out string displayName, out string description)
+        {
+            displayName = BuildUnitDisplayName(unit);
+            description = string.Empty;
+            if (unit == null)
+            {
+                return;
+            }
+
+            var unitType = NormalizeToken(unit.UnitType);
+            if (string.IsNullOrWhiteSpace(unitType))
+            {
+                return;
+            }
+
+            var catalog = StaticCatalogCache.EnsureInstance();
+            if (catalog == null)
+            {
+                return;
+            }
+
+            if (catalog.TryGetUnit(unitType, out var unitEntry) && unitEntry != null)
+            {
+                if (!string.IsNullOrWhiteSpace(unitEntry.name))
+                {
+                    displayName = unitEntry.name.Trim();
+                }
+
+                if (!string.IsNullOrWhiteSpace(unitEntry.description))
+                {
+                    description = unitEntry.description.Trim();
+                }
+
+                return;
+            }
+
+            if (catalog.TryGetBuilding(unitType, out var buildingEntry) && buildingEntry != null)
+            {
+                if (!string.IsNullOrWhiteSpace(buildingEntry.name))
+                {
+                    displayName = buildingEntry.name.Trim();
+                }
+
+                if (!string.IsNullOrWhiteSpace(buildingEntry.description))
+                {
+                    description = buildingEntry.description.Trim();
+                }
+            }
         }
 
         private static string BuildUnitDisplayName(UnitView unit)
