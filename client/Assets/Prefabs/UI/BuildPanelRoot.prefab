@@ -401,9 +401,7 @@ MonoBehaviour:
   inputSystemWheelScale: 0.01
   applyConfigToButtons: 1
   useConfigPlacementRule: 1
-  preferServerPushedConfig: 1
-  serverConfigKey: buildconfig
-  listenServerConfigUpdates: 1
+  listenCatalogUpdates: 1
   buildConfigJson: {fileID: 0}
   buildConfigResourcesPath: Config/buildconfig
   iconResourcesRoot: Icons/Buildings
