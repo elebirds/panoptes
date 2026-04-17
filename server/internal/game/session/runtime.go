@@ -198,6 +198,10 @@ func (r *Runtime) Participants() []participant.Participant {
 	return out
 }
 
+func (r *Runtime) Participant(participantID string) (participant.Participant, bool) {
+	return r.findParticipant(participantID)
+}
+
 func (r *Runtime) Controller(participantID string) (Controller, bool) {
 	binding, ok := r.findParticipantBinding(participantID)
 	if !ok || binding.Controller == nil {
