@@ -9,8 +9,10 @@
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Core.Application.Intents;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -29,6 +31,12 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TextMeshProUGUI externalPhaseText;
         [SerializeField] private string externalTurnTextFormat = "当前回合数：{0}\n当前回合倒计时：{1}";
 
+        [Header("Submit Button")]
+        [SerializeField] private Button nextStageButton;
+        [SerializeField] private bool autoFindNextStageButton = true;
+        [SerializeField] private string nextStageButtonName = "NextStageBtn";
+        [SerializeField] private bool disableNextStageWhenUnavailable = true;
+
         private GameStateCache _cache;
         private float _deadline = -1f;
         private string _currentPhase = string.Empty;
@@ -37,17 +45,22 @@ namespace Panoptes.Presentation.UI.HUD
         private bool _isInteractive;
         private bool _gameEnded;
         private int _lastRemainingSeconds = int.MinValue;
+        private bool _nextStageBound;
 
         private void Awake()
         {
             ResolveExternalTurnPanelReferences();
+            ResolveNextStageButtonReference();
             EnsureUi();
             _cache = GameStateCache.Instance;
+            BindNextStageButton();
+            RefreshNextStageInteractable();
         }
 
         private void OnEnable()
         {
             ResolveExternalTurnPanelReferences();
+            ResolveNextStageButtonReference();
             _cache = GameStateCache.Instance;
             if (_cache != null)
             {
@@ -56,11 +69,17 @@ namespace Panoptes.Presentation.UI.HUD
                 _cache.OnStateChanged += RefreshFromCache;
             }
 
+            ActionLock.OnChanged -= OnActionLockChanged;
+            ActionLock.OnChanged += OnActionLockChanged;
+            BindNextStageButton();
             RefreshFromCache();
         }
 
         private void OnDisable()
         {
+            ActionLock.OnChanged -= OnActionLockChanged;
+            UnbindNextStageButton();
+
             if (_cache == null)
             {
                 return;
@@ -100,6 +119,7 @@ namespace Panoptes.Presentation.UI.HUD
             _gameEnded = false;
             _lastRemainingSeconds = int.MinValue;
             RefreshText();
+            RefreshNextStageInteractable();
         }
 
         private void OnGameOver(GameOverEvent _)
@@ -108,6 +128,7 @@ namespace Panoptes.Presentation.UI.HUD
             _deadline = -1f;
             _lastRemainingSeconds = int.MinValue;
             RefreshText();
+            RefreshNextStageInteractable();
         }
 
         private void RefreshFromCache()
@@ -128,6 +149,24 @@ namespace Panoptes.Presentation.UI.HUD
 
             _lastRemainingSeconds = int.MinValue;
             RefreshText();
+            RefreshNextStageInteractable();
+        }
+
+        private void OnActionLockChanged(bool _)
+        {
+            RefreshNextStageInteractable();
+        }
+
+        private void OnNextStageButtonClicked()
+        {
+            if (_gameEnded || !_isInteractive || ActionLock.IsLocked)
+            {
+                RefreshNextStageInteractable();
+                return;
+            }
+
+            GameIntents.SubmitTurn();
+            RefreshNextStageInteractable();
         }
 
         private void RefreshText()
@@ -232,6 +271,65 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 externalPhaseText = FindTextByName(externalTurnPanelRoot, "phaseText");
             }
+        }
+
+        private void ResolveNextStageButtonReference()
+        {
+            if (nextStageButton != null || !autoFindNextStageButton)
+            {
+                return;
+            }
+
+            var allButtons = UnityEngine.Object.FindObjectsByType<Button>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (var i = 0; i < allButtons.Length; i++)
+            {
+                var button = allButtons[i];
+                if (button == null || string.IsNullOrWhiteSpace(button.name))
+                {
+                    continue;
+                }
+
+                if (string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    nextStageButton = button;
+                    break;
+                }
+            }
+        }
+
+        private void BindNextStageButton()
+        {
+            if (nextStageButton == null || _nextStageBound)
+            {
+                return;
+            }
+
+            nextStageButton.onClick.AddListener(OnNextStageButtonClicked);
+            _nextStageBound = true;
+        }
+
+        private void UnbindNextStageButton()
+        {
+            if (nextStageButton == null || !_nextStageBound)
+            {
+                return;
+            }
+
+            nextStageButton.onClick.RemoveListener(OnNextStageButtonClicked);
+            _nextStageBound = false;
+        }
+
+        private void RefreshNextStageInteractable()
+        {
+            if (nextStageButton == null || !disableNextStageWhenUnavailable)
+            {
+                return;
+            }
+
+            nextStageButton.interactable = !_gameEnded && _isInteractive && !ActionLock.IsLocked;
         }
 
         private static RectTransform FindRectByName(string name)

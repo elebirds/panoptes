@@ -18,6 +18,8 @@ namespace Panoptes.Presentation.UI.HUD
     [DisallowMultipleComponent]
     public sealed class CityCoreHpBarOverlayController : MonoBehaviour
     {
+        private static int s_uiSuppressionCount;
+
         [Header("Auto Setup")]
         [SerializeField] private bool autoCreateOverlayCanvas = true;
         [SerializeField] private string canvasName = "CityCoreHpOverlayCanvas";
@@ -61,6 +63,18 @@ namespace Panoptes.Presentation.UI.HUD
         private GameStateCache _cache;
         private Sprite _defaultUiSprite;
 
+        public static void PushUiSuppression()
+        {
+            s_uiSuppressionCount = Mathf.Max(0, s_uiSuppressionCount) + 1;
+        }
+
+        public static void PopUiSuppression()
+        {
+            s_uiSuppressionCount = Mathf.Max(0, s_uiSuppressionCount - 1);
+        }
+
+        public static bool IsUiSuppressed => s_uiSuppressionCount > 0;
+
         private void Awake()
         {
             _cache = GameStateCache.Instance;
@@ -74,6 +88,22 @@ namespace Panoptes.Presentation.UI.HUD
             if (_canvasRect == null || targetCamera == null)
             {
                 return;
+            }
+
+            if (IsUiSuppressed)
+            {
+                if (_canvas != null && _canvas.enabled)
+                {
+                    _canvas.enabled = false;
+                }
+
+                HideAll();
+                return;
+            }
+
+            if (_canvas != null && !_canvas.enabled)
+            {
+                _canvas.enabled = true;
             }
 
             var map = MapRenderer.Instance;
