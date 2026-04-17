@@ -2,13 +2,13 @@
   "$schema": "../../schema/ui/technologies.schema.json",
   "technologies": [
     { "id": "agrarian_foundations", "name": "农业基础", "description": "解锁高产农耕配方", "icon_key": "tech_agrarian_foundations", "sort_order": 10, "tags": ["agriculture"] },
-    { "id": "forestry", "name": "林业组织", "description": "解锁高产伐木配方", "icon_key": "tech_agrarian_foundations", "sort_order": 20, "tags": ["agriculture"] },
+    { "id": "forestry", "name": "林业组织", "description": "解锁高产伐木配方", "icon_key": "tech_forestry", "sort_order": 20, "tags": ["agriculture"] },
     { "id": "organized_labor", "name": "组织化劳动", "description": "每回合工业产出 +1", "icon_key": "tech_organized_labor", "sort_order": 30, "tags": ["governance", "industry"] },
     { "id": "civic_institutions", "name": "公共制度", "description": "解锁学院特许并新增一个制度槽位", "icon_key": "tech_civic_institutions", "sort_order": 40, "tags": ["governance", "institution"] },
-    { "id": "mining_survey", "name": "矿脉勘测", "description": "解锁矿山与基础采矿配方", "icon_key": "tech_organized_labor", "sort_order": 50, "tags": ["industry"] },
-    { "id": "workshop_methods", "name": "工坊法", "description": "解锁工坊与深层采矿配方", "icon_key": "tech_organized_labor", "sort_order": 60, "tags": ["industry"] },
-    { "id": "militia_mobilization", "name": "民兵动员", "description": "解锁兵营与步兵训练", "icon_key": "tech_civic_institutions", "sort_order": 70, "tags": ["military"] },
-    { "id": "ranged_drill", "name": "远射操典", "description": "解锁靶场与弓手训练", "icon_key": "tech_civic_institutions", "sort_order": 80, "tags": ["military"] },
-    { "id": "fortifications", "name": "筑垒术", "description": "解锁城墙并提升主城与城墙耐久", "icon_key": "tech_civic_institutions", "sort_order": 90, "tags": ["defense"] }
+    { "id": "mining_survey", "name": "矿脉勘测", "description": "解锁矿山与基础采矿配方", "icon_key": "tech_mining_survey", "sort_order": 50, "tags": ["industry"] },
+    { "id": "workshop_methods", "name": "工坊法", "description": "解锁工坊与深层采矿配方", "icon_key": "tech_workshop_methods", "sort_order": 60, "tags": ["industry"] },
+    { "id": "militia_mobilization", "name": "民兵动员", "description": "解锁兵营与步兵训练", "icon_key": "tech_militia_mobilization", "sort_order": 70, "tags": ["military"] },
+    { "id": "ranged_drill", "name": "远射操典", "description": "解锁靶场与弓手训练", "icon_key": "tech_militia_mobilization", "sort_order": 80, "tags": ["military"] },
+    { "id": "fortifications", "name": "筑垒术", "description": "解锁城墙并提升主城与城墙耐久", "icon_key": "tech_fortifications", "sort_order": 90, "tags": ["defense"] }
   ]
 }
