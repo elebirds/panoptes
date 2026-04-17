@@ -5,6 +5,10 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+[Aa]ssets/[Pp]refabs/[Uu][Ii]/[Bb]uild/
+[Aa]ssets/[Pp]refabs/[Uu][Ii]/[Bb]uild/**
+![Aa]ssets/[Pp]refabs/[Uu][Ii]/[Bb]uild/
+![Aa]ssets/[Pp]refabs/[Uu][Ii]/[Bb]uild/**
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 [Mm]emory[Cc]aptures/
