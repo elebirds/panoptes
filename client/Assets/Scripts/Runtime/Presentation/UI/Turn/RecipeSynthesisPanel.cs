@@ -147,6 +147,10 @@ namespace Panoptes.Presentation.UI.Domestic
                 {
                     slideToggle.gameObject.SetActive(true);
                 }
+                if (!slideToggle.IsCollapsed)
+                {
+                    slideToggle.SetCollapsed(true, true);
+                }
                 slideToggle.Expand();
             }
 
@@ -219,29 +223,70 @@ namespace Panoptes.Presentation.UI.Domestic
                 panelRoot = transform as RectTransform;
             }
 
-            if (slideToggle == null && panelRoot != null)
+            if (slideToggle != null && !slideToggle.ControlsPanel(panelRoot))
             {
-                slideToggle = panelRoot.GetComponent<BuildPanelSlideToggle>();
+                slideToggle = null;
             }
 
             if (slideToggle == null && panelRoot != null)
             {
-                slideToggle = panelRoot.GetComponentInChildren<BuildPanelSlideToggle>(true);
+                var candidate = panelRoot.GetComponent<BuildPanelSlideToggle>();
+                if (candidate != null && candidate.ControlsPanel(panelRoot))
+                {
+                    slideToggle = candidate;
+                }
+            }
+
+            if (slideToggle == null && panelRoot != null)
+            {
+                var candidates = panelRoot.GetComponentsInChildren<BuildPanelSlideToggle>(true);
+                if (candidates != null)
+                {
+                    for (var i = 0; i < candidates.Length; i++)
+                    {
+                        var candidate = candidates[i];
+                        if (candidate != null && candidate.ControlsPanel(panelRoot))
+                        {
+                            slideToggle = candidate;
+                            break;
+                        }
+                    }
+                }
             }
 
             if (slideToggle == null)
             {
-                slideToggle = GetComponent<BuildPanelSlideToggle>();
+                var candidate = GetComponent<BuildPanelSlideToggle>();
+                if (candidate != null && candidate.ControlsPanel(panelRoot))
+                {
+                    slideToggle = candidate;
+                }
             }
 
             if (slideToggle == null)
             {
-                slideToggle = GetComponentInChildren<BuildPanelSlideToggle>(true);
+                var candidates = GetComponentsInChildren<BuildPanelSlideToggle>(true);
+                if (candidates != null)
+                {
+                    for (var i = 0; i < candidates.Length; i++)
+                    {
+                        var candidate = candidates[i];
+                        if (candidate != null && candidate.ControlsPanel(panelRoot))
+                        {
+                            slideToggle = candidate;
+                            break;
+                        }
+                    }
+                }
             }
 
             if (slideToggle == null)
             {
-                slideToggle = GetComponentInParent<BuildPanelSlideToggle>(true);
+                var candidate = GetComponentInParent<BuildPanelSlideToggle>(true);
+                if (candidate != null && candidate.ControlsPanel(panelRoot))
+                {
+                    slideToggle = candidate;
+                }
             }
         }
 

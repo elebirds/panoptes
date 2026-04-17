@@ -2962,7 +2962,7 @@ PrefabInstance:
     - target: {fileID: 1690531846092756716, guid: 5719eb2ff9a982f49a85e44ac6b8e8b7, type: 3}
       propertyPath: buildPanelRoot
       value: 
-      objectReference: {fileID: 782103882}
+      objectReference: {fileID: 1472178928}
     - target: {fileID: 1810141379063886207, guid: 5719eb2ff9a982f49a85e44ac6b8e8b7, type: 3}
       propertyPath: m_Pivot.x
       value: 1

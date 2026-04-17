@@ -829,7 +829,7 @@ MonoBehaviour:
   extraHiddenPadding: 24
   keepButtonPartiallyVisible: 1
   buttonVisiblePixelsWhenHidden: 40
-  startCollapsed: 0
+  startCollapsed: 1
 --- !u!1 &8418851563535764489
 GameObject:
   m_ObjectHideFlags: 0

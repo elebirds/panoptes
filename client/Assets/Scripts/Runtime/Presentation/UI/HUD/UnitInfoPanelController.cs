@@ -50,6 +50,17 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string unitIconResourcesRoot = "Icons/Units";
         [SerializeField] private string buildingIconResourcesRoot = "Icons/Buildings";
 
+        [Header("Portrait Camera")]
+        [SerializeField] private RawImage unitPortraitRawImage;
+        [SerializeField] private bool enablePortraitCamera = true;
+        [SerializeField] private bool portraitRealtime = true;
+        [SerializeField] private bool portraitKeepSceneBackground = true;
+        [SerializeField] private int portraitTextureSize = 256;
+        [SerializeField] private float portraitFov = 30f;
+        [SerializeField] private float portraitMinDistance = 0.9f;
+        [SerializeField] private float portraitDistanceScale = 1.15f;
+        [SerializeField] private float portraitHeightOffset = 0.2f;
+
         [Header("Slide")]
         [SerializeField] private float hiddenOffsetX = 420f;
         [SerializeField] private float shownRightMargin = 16f;
@@ -58,6 +69,8 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private AnimationCurve slideCurve = null;
         [SerializeField] private float externalOffsetSlideDuration = 0.2f;
         [SerializeField] private AnimationCurve externalOffsetCurve = null;
+        [SerializeField] private RectTransform dockRightOfRect;
+        [SerializeField] private float dockSpacing = 12f;
 
         [Header("Button Repair")]
         [SerializeField] private bool autoRepairActionButtons = true;
@@ -74,6 +87,8 @@ namespace Panoptes.Presentation.UI.HUD
         private bool _unitSelectionSubscribed;
         private static Sprite _fallbackButtonSprite;
         private static Texture2D _fallbackButtonTexture;
+        private Camera _portraitCamera;
+        private RenderTexture _portraitRenderTexture;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _isOpen;
 
@@ -93,6 +108,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 EnsureDefaultLayout();
             }
+            EnsurePortraitUi();
             HideLegacyPlanningTexts();
             EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
@@ -102,6 +118,7 @@ namespace Panoptes.Presentation.UI.HUD
             BindDirectOrderButtons();
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
+            SetPortraitVisible(false);
         }
 
         private void OnEnable()
@@ -121,6 +138,13 @@ namespace Panoptes.Presentation.UI.HUD
             ActionLock.OnChanged += OnActionLockChanged;
         }
 
+        private void Start()
+        {
+            // Prefabs are kept active for authoring, so enforce the runtime hidden state after all
+            // scene references such as NextStageBtn have had a chance to dock this panel.
+            ForceHideImmediate();
+        }
+
         private void OnDisable()
         {
             UnsubscribeUnitSelection();
@@ -135,6 +159,12 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             ActionLock.OnChanged -= OnActionLockChanged;
+            DisablePortraitCamera();
+        }
+
+        private void OnDestroy()
+        {
+            ReleasePortraitResources();
         }
 
         private void LateUpdate()
@@ -148,6 +178,15 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 ResolveReferences();
                 TrySubscribeActionRegistry();
+            }
+
+            if (_isOpen && _currentUnit != null && enablePortraitCamera && portraitRealtime)
+            {
+                if (!TryRefreshUnitPortrait(forceRender: false))
+                {
+                    SetPortraitVisible(false);
+                    RefreshUnitIcon();
+                }
             }
         }
 
@@ -167,7 +206,34 @@ namespace Panoptes.Presentation.UI.HUD
         public void Close()
         {
             _currentUnit = null;
+            DisablePortraitCamera();
+            SetPortraitVisible(false);
             AnimateVisibility(false);
+        }
+
+        public void ForceHideImmediate()
+        {
+            _currentUnit = null;
+
+            if (_slideRoutine != null)
+            {
+                StopCoroutine(_slideRoutine);
+                _slideRoutine = null;
+            }
+
+            if (_externalOffsetRoutine != null)
+            {
+                StopCoroutine(_externalOffsetRoutine);
+                _externalOffsetRoutine = null;
+            }
+
+            ResolveReferences();
+            ResolveAnchoredPositions();
+            SetPanelVisibleImmediate(false);
+            DisablePortraitCamera();
+            SetPortraitVisible(false);
+            RefreshActionButtons();
+            RefreshPlanningUi();
         }
 
         public void SetExternalOffset(Vector2 offset, bool immediate = false)
@@ -319,6 +385,26 @@ namespace Panoptes.Presentation.UI.HUD
             if (hpValueText != null)
             {
                 hpValueText.text = $"{Mathf.Clamp(hp, 0, maxHp)}/{maxHp}";
+            }
+        }
+
+        public void SetDockRightOf(RectTransform target, float spacing = -1f, bool immediate = true)
+        {
+            if (ReferenceEquals(dockRightOfRect, target) && spacing < 0f)
+            {
+                return;
+            }
+
+            dockRightOfRect = target;
+            if (spacing >= 0f)
+            {
+                dockSpacing = spacing;
+            }
+
+            ResolveAnchoredPositions();
+            if (immediate && panelRoot != null)
+            {
+                panelRoot.anchoredPosition = GetTargetAnchoredPosition(_isOpen);
             }
         }
 
@@ -898,6 +984,12 @@ namespace Panoptes.Presentation.UI.HUD
         {
             var y = shownBottomMargin;
             var x = -shownRightMargin;
+            if (dockRightOfRect != null)
+            {
+                x = dockRightOfRect.anchoredPosition.x - Mathf.Abs(dockRightOfRect.rect.width) - Mathf.Max(0f, dockSpacing);
+                y = dockRightOfRect.anchoredPosition.y;
+            }
+
             _shownAnchoredPos = new Vector2(x, y);
             _hiddenAnchoredPos = new Vector2(x + Mathf.Abs(hiddenOffsetX), y);
         }
