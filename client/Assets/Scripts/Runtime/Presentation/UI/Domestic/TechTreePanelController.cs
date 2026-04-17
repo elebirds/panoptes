@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Presentation.UI.HUD;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,6 +64,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private GameStateCache _gameState;
         private PlanningDraftCache _planningDraft;
         private bool _loggedMissingConfigThisEnable;
+        private bool _cityCoreOverlaySuppressed;
 
         private void Awake()
         {
@@ -78,12 +80,42 @@ namespace Panoptes.Presentation.UI.Domestic
             EnsureCloseButton();
             RefreshSubscriptions();
             Refresh();
+            ApplyCityCoreOverlaySuppression(true);
         }
 
         private void OnDisable()
         {
             Unsubscribe();
             _loggedMissingConfigThisEnable = false;
+            ApplyCityCoreOverlaySuppression(false);
+        }
+
+        private void OnDestroy()
+        {
+            ApplyCityCoreOverlaySuppression(false);
+        }
+
+        private void ApplyCityCoreOverlaySuppression(bool suppress)
+        {
+            if (suppress)
+            {
+                if (_cityCoreOverlaySuppressed)
+                {
+                    return;
+                }
+
+                CityCoreHpBarOverlayController.PushUiSuppression();
+                _cityCoreOverlaySuppressed = true;
+                return;
+            }
+
+            if (!_cityCoreOverlaySuppressed)
+            {
+                return;
+            }
+
+            CityCoreHpBarOverlayController.PopUiSuppression();
+            _cityCoreOverlaySuppressed = false;
         }
 
         private void OnActionLockChanged(bool _)
