@@ -16,16 +16,18 @@ import (
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/observe"
 	"github.com/elebirds/panoptes/internal/transport"
 )
 
 type App struct {
-	cfg           *config.Config
-	logger        *slog.Logger
-	infra         *infrastructure
-	server        *http.Server
-	gameTransport transport.GameTransport
+	cfg               *config.Config
+	logger            *slog.Logger
+	infra             *infrastructure
+	server            *http.Server
+	gameTransport     transport.GameTransport
+	newMinisterEngine func() *ministerengine.MinisterEngine
 }
 
 func New() *App {
@@ -45,6 +47,7 @@ func (a *App) Run() {
 		Format: a.cfg.LogFormat,
 	})
 	slog.SetDefault(a.logger)
+	a.newMinisterEngine = buildMinisterEngineFactory(a.cfg)
 
 	if err := a.initInfra(context.Background()); err != nil {
 		a.logger.Error("基础设施初始化失败", "错误", err)

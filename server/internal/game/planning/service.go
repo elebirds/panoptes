@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/combat"
 	"github.com/elebirds/panoptes/internal/engine/economy"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -47,6 +49,16 @@ type Session interface {
 }
 
 type Service struct{}
+
+type ministerMemoryRecorder interface {
+	RecordMinisterMemory(playerID string, role string, entry ministerengine.MemoryEntry)
+}
+
+type ministerDraftTransition struct {
+	Draft      domain.MinisterDraft
+	FromStatus domain.MinisterDraftStatus
+	ToStatus   domain.MinisterDraftStatus
+}
 
 type handleIntentResult struct {
 	accepted  bool
@@ -368,9 +380,10 @@ func (s *Service) handleSetPolicy(ctx context.Context, room Session, playerID st
 	}
 
 	room.State().TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
-	reconcileMinisterDraftBindings(room.State(), playerID, "")
+	transitions := reconcileMinisterDraftBindings(room.State(), playerID, "")
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
+	recordMinisterDraftTransitions(room, playerID, room.State().Turn, transitions)
 	return acceptedHandleIntentResult(), nil
 }
 
@@ -388,9 +401,10 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 	}
 
 	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
-	reconcileMinisterDraftBindings(state, playerID, "")
+	transitions := reconcileMinisterDraftBindings(state, playerID, "")
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
+	recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
 	return acceptedHandleIntentResult(), nil
 }
 
@@ -411,10 +425,16 @@ func (s *Service) handleMinisterDirective(ctx context.Context, room Session, pla
 	case "accept":
 		return s.acceptMinisterDraft(ctx, room, playerID, draft)
 	case "reject":
+		before := draft.Status
 		draft.Status = domain.MinisterDraftStatusRejected
 		draft.Available = false
 		state.TurnRuntime.Planning.ReplaceMinisterDraft(playerID, idx, draft)
 		_ = room.SendPlanningSnapshot(ctx, playerID)
+		recordMinisterDraftTransitions(room, playerID, state.Turn, []ministerDraftTransition{{
+			Draft:      draft,
+			FromStatus: before,
+			ToStatus:   draft.Status,
+		}})
 		return acceptedHandleIntentResult(), nil
 	default:
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister directive type")
@@ -440,9 +460,10 @@ func (s *Service) acceptMinisterDraft(ctx context.Context, room Session, playerI
 			return rejectedHandleIntentResult(validation.ErrorCode), nil
 		}
 		state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
-		reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
 		_ = room.SendPlanningSnapshot(ctx, playerID)
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
 		return acceptedHandleIntentResult(), nil
 	case domain.MinisterDraftKindPolicy:
 		policyID := strings.TrimSpace(draft.TargetID)
@@ -451,29 +472,32 @@ func (s *Service) acceptMinisterDraft(ctx context.Context, room Session, playerI
 			return rejectedHandleIntentResult(errCode), nil
 		}
 		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
-		reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
 		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
 		_ = room.SendPlanningSnapshot(ctx, playerID)
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
 		return acceptedHandleIntentResult(), nil
 	default:
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister draft kind")
 	}
 }
 
-func reconcileMinisterDraftBindings(state *domain.GameState, playerID string, acceptedDraftID string) {
+func reconcileMinisterDraftBindings(state *domain.GameState, playerID string, acceptedDraftID string) []ministerDraftTransition {
 	if state == nil {
-		return
+		return nil
 	}
 	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
 	if len(drafts) == 0 {
-		return
+		return nil
 	}
 	currentResearch := strings.TrimSpace(state.TurnRuntime.Planning.PendingResearchTarget(playerID))
 	currentPolicy := strings.TrimSpace(string(state.TurnRuntime.Planning.PendingPolicy(playerID)))
 	acceptedDraftID = strings.TrimSpace(acceptedDraftID)
+	transitions := make([]ministerDraftTransition, 0, len(drafts))
 
 	for idx := range drafts {
 		draft := drafts[idx]
+		before := draft.Status
 		if draft.Status == domain.MinisterDraftStatusRejected {
 			draft.Available = false
 			drafts[idx] = draft
@@ -482,6 +506,13 @@ func reconcileMinisterDraftBindings(state *domain.GameState, playerID string, ac
 		draft.Available = true
 		if acceptedDraftID != "" && strings.TrimSpace(draft.DraftID) == acceptedDraftID {
 			draft.Status = domain.MinisterDraftStatusAccepted
+			if before != draft.Status {
+				transitions = append(transitions, ministerDraftTransition{
+					Draft:      draft,
+					FromStatus: before,
+					ToStatus:   draft.Status,
+				})
+			}
 			drafts[idx] = draft
 			continue
 		}
@@ -495,9 +526,17 @@ func reconcileMinisterDraftBindings(state *domain.GameState, playerID string, ac
 				draft.Status = domain.MinisterDraftStatusStale
 			}
 		}
+		if before != draft.Status {
+			transitions = append(transitions, ministerDraftTransition{
+				Draft:      draft,
+				FromStatus: before,
+				ToStatus:   draft.Status,
+			})
+		}
 		drafts[idx] = draft
 	}
 	state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
+	return transitions
 }
 
 func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) (handleIntentResult, error) {
@@ -644,6 +683,27 @@ func (s *Service) logIntentResult(baseAttrs []any, record DebugIntentRecord, res
 		attrs = append(attrs, "error_code", result.errorCode)
 	}
 	slog.Debug("planning 操作结果", attrs...)
+}
+
+func recordMinisterDraftTransitions(room Session, playerID string, turn int, transitions []ministerDraftTransition) {
+	recorder, ok := room.(ministerMemoryRecorder)
+	if !ok || recorder == nil || len(transitions) == 0 {
+		return
+	}
+	for _, transition := range transitions {
+		role := strings.TrimSpace(transition.Draft.MinisterRole)
+		if role == "" {
+			continue
+		}
+		content := fmt.Sprintf("%s:%s", strings.TrimSpace(string(transition.Draft.Kind)), strings.TrimSpace(transition.Draft.TargetLabel))
+		recorder.RecordMinisterMemory(playerID, role, ministerengine.MemoryEntry{
+			Turn:       turn,
+			Type:       "draft_feedback",
+			Content:    content,
+			Outcome:    string(transition.ToStatus),
+			PlayerResp: string(transition.ToStatus),
+		})
+	}
 }
 
 func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {
