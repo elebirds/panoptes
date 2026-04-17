@@ -83,9 +83,13 @@ MonoBehaviour:
   outputSpacing: 10
   inputSpacing: 8
   maxSlotsPerSide: 3
-  quantity: 0
-  minQuantity: 0
-  maxQuantity: 99
+  preferredItemHeight: 178
+  minItemHeight: 156
+  isActive: 0
+  activeLabel: "\u6FC0\u6D3B"
+  activeStateIcon: {fileID: 0}
+  activeStatePlaceholderSprite: {fileID: 0}
+  activeStateIconColor: {r: 1, g: 1, b: 1, a: 0.16}
   lockedOverlayRoot: {fileID: 2600}
   lockedOverlayMask: {fileID: 2603}
   lockedIcon: {fileID: 2703}
@@ -1884,7 +1888,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2601
 RectTransform:
   m_ObjectHideFlags: 0

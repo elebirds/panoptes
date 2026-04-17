@@ -655,16 +655,22 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 	}
 }
 
-func TestRuntimeInitializePreparedDevModeUnlocksAllBuildingsOnly(t *testing.T) {
+func TestRuntimeInitializePreparedDevModeKeepsBuildingAndRecipeLocked(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "barracks"},
-			{ID: "farm"},
-			{ID: "watchtower"},
 		},
 		Recipes: []staticdata.RecipeDefinition{
 			{ID: "barracks_infantry"},
-			{ID: "farm_food"},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID: "military_foundation",
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "barracks"},
+					{Type: "unlock_recipe", TargetID: "barracks_infantry"},
+				},
+			},
 		},
 	}))
 
@@ -676,15 +682,11 @@ func TestRuntimeInitializePreparedDevModeUnlocksAllBuildingsOnly(t *testing.T) {
 		t.Fatalf("InitializePrepared() error = %v", err)
 	}
 
-	for _, buildingID := range []string{"barracks", "farm", "watchtower"} {
-		if !runtime.state.IsBuildingUnlocked("player-1", buildingID) {
-			t.Fatalf("building %q should be unlocked in dev mode", buildingID)
-		}
+	if runtime.state.IsBuildingUnlocked("player-1", "barracks") {
+		t.Fatalf("building barracks should remain locked in dev mode")
 	}
-	for _, recipeID := range []string{"barracks_infantry", "farm_food"} {
-		if runtime.state.Players["player-1"].Research.HasRecipe(recipeID) {
-			t.Fatalf("recipe %q should not be force-unlocked in dev mode", recipeID)
-		}
+	if runtime.state.IsRecipeUnlocked("player-1", "barracks_infantry") {
+		t.Fatalf("recipe barracks_infantry should remain locked in dev mode")
 	}
 }
 
@@ -695,6 +697,15 @@ func TestRuntimeInitializePreparedNonDevModeKeepsBuildingAndRecipeLocked(t *test
 		},
 		Recipes: []staticdata.RecipeDefinition{
 			{ID: "barracks_infantry"},
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{
+				ID: "military_foundation",
+				ExplicitEffects: []staticdata.ExplicitEffect{
+					{Type: "unlock_building", TargetID: "barracks"},
+					{Type: "unlock_recipe", TargetID: "barracks_infantry"},
+				},
+			},
 		},
 	}))
 

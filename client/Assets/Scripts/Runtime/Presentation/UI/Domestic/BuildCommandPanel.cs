@@ -1595,12 +1595,6 @@ namespace Panoptes.Presentation.UI.Domestic
                 return false;
             }
 
-            var runtimeConfig = ClientRuntimeConfigCache.Instance;
-            if (runtimeConfig != null && runtimeConfig.DevMode)
-            {
-                return true;
-            }
-
             if (!_requiredTechsByBuilding.TryGetValue(normalizedBuilding, out var requiredTechs) ||
                 requiredTechs == null ||
                 requiredTechs.Count == 0)
