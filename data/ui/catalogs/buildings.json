@@ -3,9 +3,11 @@
   "buildings": [
     { "id": "city_core", "name": "城市核心", "description": "定义城市存在与归属的核心建筑。", "icon_key": "building_city_core", "prefab_key": "CityCore", "sort_order": 10, "tags": ["core"] },
     { "id": "farm", "name": "农场", "description": "基础粮食产出建筑", "icon_key": "building_farm", "prefab_key": "Farm", "sort_order": 20, "tags": ["eco"] },
-    { "id": "mine", "name": "矿山", "description": "基础矿石产出建筑", "icon_key": "building_mine", "prefab_key": "Mine", "sort_order": 30, "tags": ["eco"] },
-    { "id": "lumber", "name": "伐木场", "description": "基础木材产出建筑", "icon_key": "building_lumber", "prefab_key": "Lumber", "sort_order": 40, "tags": ["eco"] },
-    { "id": "barracks", "name": "兵营", "description": "基础军队训练建筑", "icon_key": "building_barracks", "prefab_key": "Barracks", "sort_order": 50, "tags": ["military"] },
-    { "id": "wall", "name": "城墙", "description": "基础被动防御建筑", "icon_key": "building_wall", "prefab_key": "Wall", "sort_order": 60, "tags": ["defense"] }
+    { "id": "lumber", "name": "伐木场", "description": "基础木材产出建筑", "icon_key": "building_lumber", "prefab_key": "Lumber", "sort_order": 30, "tags": ["eco"] },
+    { "id": "mine", "name": "矿山", "description": "基础矿石产出建筑", "icon_key": "building_mine", "prefab_key": "Mine", "sort_order": 40, "tags": ["eco"] },
+    { "id": "workshop", "name": "工坊", "description": "上线后为城市额外提供工业产出。", "icon_key": "building_lumber", "prefab_key": "Workshop", "sort_order": 50, "tags": ["industry"] },
+    { "id": "barracks", "name": "兵营", "description": "基础步兵训练建筑", "icon_key": "building_barracks", "prefab_key": "Barracks", "sort_order": 60, "tags": ["military"] },
+    { "id": "archery", "name": "靶场", "description": "训练远程弓手的城市建筑。", "icon_key": "building_barracks", "prefab_key": "Archery", "sort_order": 70, "tags": ["military"] },
+    { "id": "wall", "name": "城墙", "description": "提升城市正面防守能力。", "icon_key": "building_wall", "prefab_key": "Wall", "sort_order": 80, "tags": ["defense"] }
   ]
 }

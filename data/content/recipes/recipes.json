@@ -20,6 +20,15 @@
       "outputs": { "resources": { "food": 2 } }
     },
     {
+      "id": "farm_harvest",
+      "building_id": "farm",
+      "resource_inputs": {},
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "food": 5 } }
+    },
+    {
       "id": "mine_ore",
       "building_id": "mine",
       "resource_inputs": {},
@@ -27,6 +36,15 @@
       "work_amount": 1,
       "base_progress": 1,
       "outputs": { "resources": { "ore": 2 } }
+    },
+    {
+      "id": "mine_deep_ore",
+      "building_id": "mine",
+      "resource_inputs": {},
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "ore": 5 } }
     },
     {
       "id": "lumber_wood",
@@ -38,6 +56,15 @@
       "outputs": { "resources": { "wood": 2 } }
     },
     {
+      "id": "lumber_sawmill",
+      "building_id": "lumber",
+      "resource_inputs": {},
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "wood": 5 } }
+    },
+    {
       "id": "barracks_infantry",
       "building_id": "barracks",
       "resource_inputs": { "food": 1, "ore": 1 },
@@ -45,6 +72,15 @@
       "work_amount": 2,
       "base_progress": 1,
       "outputs": { "units": ["infantry"] }
+    },
+    {
+      "id": "archery_archer",
+      "building_id": "archery",
+      "resource_inputs": { "food": 1, "wood": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "units": ["archer"] }
     }
   ]
 }

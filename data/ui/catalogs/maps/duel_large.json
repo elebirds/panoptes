@@ -1,8 +1,8 @@
 {
   "$schema": "../../../schema/ui/maps/catalog.schema.json",
-  "id": "default",
-  "name": "前锋走廊",
-  "description": "24x24 紧凑镜像 1v1 地图，出生区资源安全，中场双点位迫使双方在第 6-8 回合接敌。",
+  "id": "duel_large",
+  "name": "双隘争衡",
+  "description": "36x36 大图 1v1 对战地图，保留更长展开与更深中场争夺。",
   "thumbnail_key": "map_default",
   "legend": [
     { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" }

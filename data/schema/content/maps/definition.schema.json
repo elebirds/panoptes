@@ -460,12 +460,14 @@
           },
           "building_type": {
             "enum": [
+              "archery",
               "barracks",
               "city_core",
               "farm",
               "lumber",
               "mine",
               "wall",
+              "workshop",
               ""
             ],
             "type": "string"

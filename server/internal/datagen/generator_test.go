@@ -397,6 +397,56 @@ func TestGenerateRejectsInvalidAuthoringSources(t *testing.T) {
 	}
 }
 
+func TestGenerateRejectsTechnologyTreeEdgeMismatch(t *testing.T) {
+	repoRoot := t.TempDir()
+	writeFixtureRepo(t, repoRoot)
+	writeRepoFile(t, repoRoot, "data/content/technologies/technologies.json", `{
+  "$schema": "../../schema/content/technologies.schema.json",
+  "technologies": [
+    {
+      "id": "agrarian_foundations",
+      "branch": "agriculture",
+      "tier": 1,
+      "research_cost": 1,
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": []
+    },
+    {
+      "id": "organized_labor",
+      "branch": "governance",
+      "tier": 1,
+      "research_cost": 2,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "agrarian_foundations" }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": []
+    }
+  ]
+}`)
+	writeRepoFile(t, repoRoot, "data/ui/layouts/technology_tree.json", `{
+  "$schema": "../../schema/ui/technology_tree.schema.json",
+  "config_version": "2026-04-17",
+  "nodes": [
+    { "id": "node_agri", "technology_id": "agrarian_foundations", "title": "农业基础", "description": "农业", "x": 0, "y": 0, "width": 360, "height": 104, "visible": true },
+    { "id": "node_labor", "technology_id": "organized_labor", "title": "组织化劳动", "description": "工业", "x": 420, "y": 0, "width": 360, "height": 104, "visible": true }
+  ],
+  "edges": []
+}`)
+
+	err := Generate(Options{RepoRoot: repoRoot})
+	if err == nil {
+		t.Fatalf("Generate() error = nil, want technology tree validation failure")
+	}
+	if !strings.Contains(err.Error(), "data/ui/layouts/technology_tree.json") {
+		t.Fatalf("Generate() error = %v, want technology_tree path", err)
+	}
+	if !strings.Contains(err.Error(), "agrarian_foundations") || !strings.Contains(err.Error(), "organized_labor") {
+		t.Fatalf("Generate() error = %v, want missing prerequisite edge detail", err)
+	}
+}
+
 func writeFixtureRepo(t *testing.T, repoRoot string) {
 	t.Helper()
 
@@ -595,7 +645,9 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
       "branch": "governance",
       "tier": 1,
       "research_cost": 2,
-      "prerequisites": [],
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "agrarian_foundations" }
+      ],
       "explicit_effects": [],
       "modifier_effects": [
         {
