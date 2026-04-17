@@ -303,6 +303,19 @@ func validateUnitOrder(state *domain.GameState, playerID string, order gameorder
 			return "invalid_directive"
 		}
 		if !isStructureTargetInRange(unitEntry, nodeEntry, stats.AttackRange) {
+			// Allow "move then attack" drafts: attack range can be validated from planned move destination.
+			if state != nil && state.TurnRuntime.Resolving.ActiveMarches != nil {
+				if march, ok := state.TurnRuntime.Resolving.ActiveMarches[order.UnitID]; ok && march.DestinationNodeID != "" {
+					if marchNodeEntry, ok := state.GetNode(march.DestinationNodeID); ok && isStructureTargetInRangeFromNode(marchNodeEntry, nodeEntry, stats.AttackRange) {
+						return ""
+					}
+				}
+			}
+			if order.SecondaryNodeID != "" {
+				if secondaryNodeEntry, ok := state.GetNode(order.SecondaryNodeID); ok && isStructureTargetInRangeFromNode(secondaryNodeEntry, nodeEntry, stats.AttackRange) {
+					return ""
+				}
+			}
 			return "invalid_target"
 		}
 		return ""
@@ -349,6 +362,15 @@ func isStructureTargetInRange(unitEntry *donburi.Entry, nodeEntry *donburi.Entry
 	unitPos := ecs.PositionC.Get(unitEntry)
 	nodePos := ecs.PositionC.Get(nodeEntry)
 	return domain.Position{X: unitPos.X, Y: unitPos.Y}.DistanceTo(domain.Position{X: nodePos.X, Y: nodePos.Y}) <= attackRange
+}
+
+func isStructureTargetInRangeFromNode(fromNodeEntry *donburi.Entry, targetNodeEntry *donburi.Entry, attackRange int) bool {
+	if fromNodeEntry == nil || targetNodeEntry == nil || attackRange <= 0 {
+		return false
+	}
+	fromPos := ecs.PositionC.Get(fromNodeEntry)
+	targetPos := ecs.PositionC.Get(targetNodeEntry)
+	return domain.Position{X: fromPos.X, Y: fromPos.Y}.DistanceTo(domain.Position{X: targetPos.X, Y: targetPos.Y}) <= attackRange
 }
 
 func findAnyUnit(state *domain.GameState, unitID string) (*donburi.Entry, bool) {
