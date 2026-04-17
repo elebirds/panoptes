@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
@@ -56,7 +56,7 @@ namespace Panoptes.Presentation.UI.Domestic
             public IReadOnlyCollection<StaticCatalogCache.TechnologyEntryJson> Technologies { get; set; } =
                 Array.Empty<StaticCatalogCache.TechnologyEntryJson>();
 
-            public object Research { get; set; }
+            public TechnologyDto ResearchState { get; set; }
             public string PlannedResearchTargetTechnologyId { get; set; } = string.Empty;
             public string Phase { get; set; } = string.Empty;
             public bool IsActionLocked { get; set; }
@@ -70,11 +70,11 @@ namespace Panoptes.Presentation.UI.Domestic
                 return result;
             }
 
-            var research = input.Research;
-            var activeTechnologyIds = ToNormalizedSet(GetStringSequenceProperty(research, "ActiveTechnologyIds"));
-            var pendingTechnologyIds = ToNormalizedSet(GetStringSequenceProperty(research, "PendingActivationTechnologyIds"));
+            var research = input.ResearchState ?? new TechnologyDto();
+            var activeTechnologyIds = ToNormalizedSet(research.ActiveTechnologyIds);
+            var pendingTechnologyIds = ToNormalizedSet(research.PendingActivationTechnologyIds);
             var selectedTechnologyId = Normalize(input.PlannedResearchTargetTechnologyId);
-            var currentTargetTechnologyId = Normalize(GetStringProperty(research, "CurrentTargetTechnologyId"));
+            var currentTargetTechnologyId = Normalize(research.TechnologyId);
             var savedProgress = BuildSavedProgressIndex(research);
             var canInteract = string.Equals(Normalize(input.Phase), "planning", StringComparison.Ordinal) && !input.IsActionLocked;
 
@@ -105,8 +105,8 @@ namespace Panoptes.Presentation.UI.Domestic
 
                 if (string.Equals(technologyId, currentTargetTechnologyId, StringComparison.Ordinal))
                 {
-                    currentProgress = Math.Max(0, GetIntProperty(research, "CurrentProgress"));
-                    var currentRequiredProgress = GetIntProperty(research, "RequiredProgress");
+                    currentProgress = Math.Max(0, research.CurrentProgress);
+                    var currentRequiredProgress = research.RequiredProgress;
                     if (currentRequiredProgress > 0)
                     {
                         requiredProgress = currentRequiredProgress;
@@ -156,7 +156,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 Technologies = catalog != null
                     ? new List<StaticCatalogCache.TechnologyEntryJson>(catalog.Technologies.Values)
                     : Array.Empty<StaticCatalogCache.TechnologyEntryJson>(),
-                Research = GetPropertyValue(GetPropertyValue(gameState, "MyPlayer"), "Research"),
+                ResearchState = gameState != null ? gameState.GetCurrentResearchState() : new TechnologyDto(),
                 PlannedResearchTargetTechnologyId = planningDraft != null ? planningDraft.PlannedResearchTargetTechnologyId : string.Empty,
                 Phase = gameState != null ? gameState.Phase : string.Empty,
                 IsActionLocked = ActionLock.IsLocked
@@ -235,90 +235,33 @@ namespace Panoptes.Presentation.UI.Domestic
             return true;
         }
 
-        private static Dictionary<string, ProgressState> BuildSavedProgressIndex(object research)
+        private static Dictionary<string, ProgressState> BuildSavedProgressIndex(TechnologyDto research)
         {
             var result = new Dictionary<string, ProgressState>(StringComparer.OrdinalIgnoreCase);
-            var savedProgress = GetObjectSequenceProperty(research, "SavedProgress");
-            if (savedProgress == null)
+            if (research?.SavedProgress == null)
             {
                 return result;
             }
 
-            foreach (var progress in savedProgress)
+            foreach (var progress in research.SavedProgress)
             {
-                var technologyId = GetStringProperty(progress, "TechnologyId");
+                if (progress == null)
+                {
+                    continue;
+                }
+
+                var technologyId = progress.TechnologyId;
                 if (string.IsNullOrWhiteSpace(technologyId))
                 {
                     continue;
                 }
 
                 result[Normalize(technologyId)] = new ProgressState(
-                    Math.Max(0, GetIntProperty(progress, "CurrentProgress")),
-                    Math.Max(0, GetIntProperty(progress, "RequiredProgress")));
+                    Math.Max(0, progress.CurrentProgress),
+                    Math.Max(0, progress.RequiredProgress));
             }
 
             return result;
-        }
-
-        private static IEnumerable<string> GetStringSequenceProperty(object target, string propertyName)
-        {
-            var value = GetPropertyValue(target, propertyName);
-            if (value is not IEnumerable enumerable)
-            {
-                yield break;
-            }
-
-            foreach (var entry in enumerable)
-            {
-                if (entry is string text)
-                {
-                    yield return text;
-                }
-            }
-        }
-
-        private static IEnumerable<object> GetObjectSequenceProperty(object target, string propertyName)
-        {
-            var value = GetPropertyValue(target, propertyName);
-            if (value is not IEnumerable enumerable)
-            {
-                yield break;
-            }
-
-            foreach (var entry in enumerable)
-            {
-                if (entry != null)
-                {
-                    yield return entry;
-                }
-            }
-        }
-
-        private static string GetStringProperty(object target, string propertyName)
-        {
-            return GetPropertyValue(target, propertyName) as string ?? string.Empty;
-        }
-
-        private static int GetIntProperty(object target, string propertyName)
-        {
-            var value = GetPropertyValue(target, propertyName);
-            return value switch
-            {
-                int intValue => intValue,
-                long longValue => (int)longValue,
-                _ => 0
-            };
-        }
-
-        private static object GetPropertyValue(object target, string propertyName)
-        {
-            if (target == null || string.IsNullOrWhiteSpace(propertyName))
-            {
-                return null;
-            }
-
-            var property = target.GetType().GetProperty(propertyName);
-            return property != null ? property.GetValue(target) : null;
         }
 
         private static HashSet<string> ToNormalizedSet(IEnumerable<string> values)

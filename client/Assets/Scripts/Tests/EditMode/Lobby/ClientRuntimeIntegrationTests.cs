@@ -477,6 +477,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(research.CompletedTechnologyIds, Is.EquivalentTo(new[] { "organized_labor" }));
             Assert.That(research.ActiveTechnologyIds, Is.EquivalentTo(new[] { "organized_labor" }));
             Assert.That(research.PendingActivationTechnologyIds, Is.EquivalentTo(new[] { "logistics" }));
+            var savedProgressField = research.GetType().GetField("SavedProgress");
+            Assert.That(savedProgressField, Is.Not.Null, "研究 DTO 必须暴露 SavedProgress 集合。");
 
             var institutions = cache.GetInstitutionState();
             Assert.That(institutions, Is.Not.Null, "缓存应提供制度状态投影。");
@@ -693,6 +695,65 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "CityCoreProductionPanel 不应继续读取 buildconfig。");
             Assert.That(cityCoreContent, Does.Not.Contain("armyConfigKey = \"armyconfig\""),
                 "CityCoreProductionPanel 不应继续读取 armyconfig。");
+        }
+
+        [Test]
+        public void PlanningDraftCache_ShouldExposeRecipeSelectionLookup_ForUiConsumers()
+        {
+            var cache = PlanningDraftCache.EnsureInstance();
+            cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
+            {
+                RecipeSelections =
+                {
+                    new QueuedRecipeSelection
+                    {
+                        NodeId = "A2",
+                        RecipeId = "grain_mill"
+                    }
+                }
+            });
+
+            var lookupMethod = typeof(PlanningDraftCache).GetMethod("TryGetRecipeSelection");
+            Assert.That(lookupMethod, Is.Not.Null,
+                "PlanningDraftCache 应提供按 nodeId 查询配方草稿的 helper。");
+
+            var args = new object[] { "A2", null };
+            var resolved = (bool)lookupMethod!.Invoke(cache, args);
+            Assert.That(resolved, Is.True, "现有配方草稿应支持按 nodeId 直接查询。");
+
+            var selection = args[1];
+            Assert.That(selection, Is.Not.Null);
+            Assert.That(selection!.GetType().GetField("RecipeId")?.GetValue(selection) as string, Is.EqualTo("grain_mill"));
+        }
+
+        [Test]
+        public void TechnologyAndBuildingUi_ShouldAlignToDtoQueries_AndAvoidLegacyFallbacks()
+        {
+            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
+
+            var techTreeContent = File.ReadAllText(_techTreePanelPath);
+            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var cityCoreContent = File.ReadAllText(_cityCoreProductionPanelPath);
+            var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+
+            StringAssert.Contains("GetCurrentResearchState()", techTreeContent,
+                "科技树状态构建应直接消费权威研究 DTO。");
+            Assert.That(techTreeContent, Does.Not.Contain("GetPropertyValue(GetPropertyValue(gameState, \"MyPlayer\"), \"Research\")"),
+                "科技树不应继续通过 MyPlayer.Research 反射取状态。");
+
+            StringAssert.Contains("OnPlanningCommandResult", recipeContent,
+                "配方面板应订阅统一规划命令结果事件以便失败回滚。");
+            StringAssert.Contains("TryGetRecipeSelection(", recipeContent,
+                "配方面板应通过 PlanningDraftCache helper 读取当前节点的配方草稿。");
+
+            Assert.That(cityCoreContent, Does.Not.Contain("return \"blue\";"),
+                "主城生产面板不应继续使用 blue 作为本地玩家默认值。");
+
+            StringAssert.Contains("TryGetBuilding(", registrarContent,
+                "主城建筑入口应优先通过 BuildingDto 查询建筑业务状态。");
         }
 
         [Test]

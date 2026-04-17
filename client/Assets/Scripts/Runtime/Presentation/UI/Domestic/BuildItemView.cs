@@ -151,7 +151,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
             if (clickButton != null)
             {
-                clickButton.interactable = !isLocked;
+                clickButton.interactable = true;
             }
         }
 
@@ -295,6 +295,16 @@ namespace Panoptes.Presentation.UI.Domestic
                 {
                     lockIconImage = icon.GetComponent<Image>();
                 }
+            }
+
+            if (lockMaskImage != null)
+            {
+                lockMaskImage.raycastTarget = false;
+            }
+
+            if (lockIconImage != null)
+            {
+                lockIconImage.raycastTarget = false;
             }
         }
 

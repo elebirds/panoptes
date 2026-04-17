@@ -394,15 +394,15 @@ namespace Panoptes.Core.Application.Cache
 
         public IReadOnlyList<string> GetCompletedTechnologyIds()
         {
-            if (MyPlayer?.Research?.CompletedTechnologyIds == null || MyPlayer.Research.CompletedTechnologyIds.Count == 0)
+            if (_researchState?.CompletedTechnologyIds == null || _researchState.CompletedTechnologyIds.Count == 0)
             {
                 return Array.Empty<string>();
             }
 
-            var result = new List<string>(MyPlayer.Research.CompletedTechnologyIds.Count);
-            for (var i = 0; i < MyPlayer.Research.CompletedTechnologyIds.Count; i++)
+            var result = new List<string>(_researchState.CompletedTechnologyIds.Count);
+            for (var i = 0; i < _researchState.CompletedTechnologyIds.Count; i++)
             {
-                var id = MyPlayer.Research.CompletedTechnologyIds[i];
+                var id = _researchState.CompletedTechnologyIds[i];
                 if (!string.IsNullOrWhiteSpace(id))
                 {
                     result.Add(id);
@@ -414,15 +414,15 @@ namespace Panoptes.Core.Application.Cache
 
         public IReadOnlyList<string> GetActiveTechnologyIds()
         {
-            if (MyPlayer?.Research?.ActiveTechnologyIds == null || MyPlayer.Research.ActiveTechnologyIds.Count == 0)
+            if (_researchState?.ActiveTechnologyIds == null || _researchState.ActiveTechnologyIds.Count == 0)
             {
                 return Array.Empty<string>();
             }
 
-            var result = new List<string>(MyPlayer.Research.ActiveTechnologyIds.Count);
-            for (var i = 0; i < MyPlayer.Research.ActiveTechnologyIds.Count; i++)
+            var result = new List<string>(_researchState.ActiveTechnologyIds.Count);
+            for (var i = 0; i < _researchState.ActiveTechnologyIds.Count; i++)
             {
-                var id = MyPlayer.Research.ActiveTechnologyIds[i];
+                var id = _researchState.ActiveTechnologyIds[i];
                 if (!string.IsNullOrWhiteSpace(id))
                 {
                     result.Add(id);
@@ -434,15 +434,15 @@ namespace Panoptes.Core.Application.Cache
 
         public IReadOnlyList<string> GetPendingActivationTechnologyIds()
         {
-            if (MyPlayer?.Research?.PendingActivationTechnologyIds == null || MyPlayer.Research.PendingActivationTechnologyIds.Count == 0)
+            if (_researchState?.PendingActivationTechnologyIds == null || _researchState.PendingActivationTechnologyIds.Count == 0)
             {
                 return Array.Empty<string>();
             }
 
-            var result = new List<string>(MyPlayer.Research.PendingActivationTechnologyIds.Count);
-            for (var i = 0; i < MyPlayer.Research.PendingActivationTechnologyIds.Count; i++)
+            var result = new List<string>(_researchState.PendingActivationTechnologyIds.Count);
+            for (var i = 0; i < _researchState.PendingActivationTechnologyIds.Count; i++)
             {
-                var id = MyPlayer.Research.PendingActivationTechnologyIds[i];
+                var id = _researchState.PendingActivationTechnologyIds[i];
                 if (!string.IsNullOrWhiteSpace(id))
                 {
                     result.Add(id);
@@ -946,6 +946,7 @@ namespace Panoptes.Core.Application.Cache
             projected.CompletedTechnologyIds = SnapshotStringList(research.CompletedTechnologyIds);
             projected.ActiveTechnologyIds = SnapshotStringList(research.ActiveTechnologyIds);
             projected.PendingActivationTechnologyIds = SnapshotStringList(research.PendingActivationTechnologyIds);
+            projected.SavedProgress = SnapshotResearchProgress(research.SavedProgress);
             return projected;
         }
 
@@ -1150,8 +1151,61 @@ namespace Panoptes.Core.Application.Cache
                     RequiredProgress = source.RequiredProgress,
                     CompletedTechnologyIds = source.CompletedTechnologyIds != null ? new List<string>(source.CompletedTechnologyIds) : new List<string>(),
                     ActiveTechnologyIds = source.ActiveTechnologyIds != null ? new List<string>(source.ActiveTechnologyIds) : new List<string>(),
-                    PendingActivationTechnologyIds = source.PendingActivationTechnologyIds != null ? new List<string>(source.PendingActivationTechnologyIds) : new List<string>()
+                    PendingActivationTechnologyIds = source.PendingActivationTechnologyIds != null ? new List<string>(source.PendingActivationTechnologyIds) : new List<string>(),
+                    SavedProgress = CloneTechnologyProgressList(source.SavedProgress)
                 };
+        }
+
+        private static List<TechnologyProgressDto> SnapshotResearchProgress(System.Collections.Generic.IEnumerable<ResearchProgressEntry> entries)
+        {
+            var result = new List<TechnologyProgressDto>();
+            if (entries == null)
+            {
+                return result;
+            }
+
+            foreach (var entry in entries)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.TechnologyId))
+                {
+                    continue;
+                }
+
+                result.Add(new TechnologyProgressDto
+                {
+                    TechnologyId = TrimOrEmpty(entry.TechnologyId),
+                    CurrentProgress = entry.CurrentProgress,
+                    RequiredProgress = entry.RequiredProgress
+                });
+            }
+
+            return result;
+        }
+
+        private static List<TechnologyProgressDto> CloneTechnologyProgressList(System.Collections.Generic.IEnumerable<TechnologyProgressDto> entries)
+        {
+            var result = new List<TechnologyProgressDto>();
+            if (entries == null)
+            {
+                return result;
+            }
+
+            foreach (var entry in entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                result.Add(new TechnologyProgressDto
+                {
+                    TechnologyId = entry.TechnologyId,
+                    CurrentProgress = entry.CurrentProgress,
+                    RequiredProgress = entry.RequiredProgress
+                });
+            }
+
+            return result;
         }
 
         private static InstitutionStateDto CloneInstitutionStateDto(InstitutionStateDto source)
