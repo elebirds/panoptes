@@ -18,7 +18,7 @@ const (
 )
 
 func qwenDefaults() clientCfg {
-	return clientCfg{defaultModel: "qwen-turbo", temperature: 0.8, topP: 0.8, maxTokens: 1500}
+	return clientCfg{defaultModel: "qwen3.6-flash", temperature: 0.8, topP: 0.8, maxTokens: 1500}
 }
 
 func deepSeekDefaults() clientCfg {

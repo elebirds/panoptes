@@ -7,6 +7,7 @@
 package planning
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -91,6 +92,24 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	state.TurnRuntime.Planning.SetPendingResearchTarget("player-1", "agrarian_foundations")
 	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.PolicyExpansion)
 	state.TurnRuntime.Planning.SetPendingInstitutionLoadout("player-1", []string{"academy_charter"})
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:       "draft-research-1",
+			PlayerID:      "player-1",
+			MinisterRole:  "domestic",
+			Kind:          domain.MinisterDraftKindResearch,
+			TargetID:      "agrarian_foundations",
+			TargetLabel:   "Agrarian Foundations",
+			Title:         "建议优先推进农业根基",
+			Summary:       "粮食与开局扩张更稳。",
+			Rationale:     "当前局势适合优先补足基础生产。",
+			RiskNote:      "会推迟军事科技。",
+			Status:        domain.MinisterDraftStatusPending,
+			Available:     true,
+			Turn:          1,
+			Source:        domain.MinisterDraftSourceRuleOnly,
+		},
+	})
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
 		{PlayerID: "player-1", NodeID: "N1_0", BuildingType: "farm", CityID: "C1"},
 		{PlayerID: "player-2", NodeID: "N2_0", BuildingType: "mine", CityID: "C2"},
@@ -134,6 +153,24 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	}
 	if got := len(snapshot.GetWarZones()); got != 0 {
 		t.Fatalf("war zone count = %d, want 0 in MVP snapshot", got)
+	}
+	if got := len(snapshot.GetMinisterDrafts()); got != 1 {
+		t.Fatalf("minister draft count = %d, want 1", got)
+	}
+	draft := snapshot.GetMinisterDrafts()[0]
+	if draft.GetMinisterRole() != "domestic" || !draft.GetAvailable() {
+		t.Fatalf("minister draft header = %#v, want domestic available", draft)
+	}
+	var payload struct {
+		DraftID string `json:"draft_id"`
+		Kind    string `json:"kind"`
+		Status  string `json:"status"`
+	}
+	if err := json.Unmarshal([]byte(draft.GetJsonPayload()), &payload); err != nil {
+		t.Fatalf("unmarshal minister draft payload: %v", err)
+	}
+	if payload.DraftID != "draft-research-1" || payload.Kind != "research" || payload.Status != "pending" {
+		t.Fatalf("minister draft payload = %#v, want draft-research-1/research/pending", payload)
 	}
 }
 

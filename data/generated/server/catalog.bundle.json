@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "e5b0b57a7f1c988a79ea650d6c41507525351156c17795c0b03509665c7f4582",
+    "bundle_hash": "c77e8b4aafee6a1928374c96bdf423917388ee32e971ac2f807be56311751cab",
     "required_sections": [
       "resources",
       "points",
@@ -32,7 +32,7 @@
       },
       {
         "section_name": "ministers",
-        "hash": "6fb1a0c98f97084a5e78520df153c639f790f037f23ab41fa0ea17a435b116bc"
+        "hash": "28106d6f11e9afcdd6e6e638a7d790a5b61eb854292b4a2a7f88b4d9a82cda75"
       },
       {
         "section_name": "points",
@@ -1144,6 +1144,16 @@
       "personality_desc": "果敢激进",
       "loyalty": 7,
       "ambition": 6
+    },
+    {
+      "id": "m002",
+      "name": "沈衡",
+      "role": "domestic",
+      "ability": 7,
+      "personality": "steady",
+      "personality_desc": "稳健审慎",
+      "loyalty": 8,
+      "ambition": 4
     }
   ],
   "maps": [

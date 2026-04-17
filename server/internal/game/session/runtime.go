@@ -22,6 +22,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
@@ -58,6 +59,9 @@ type Runtime struct {
 	// 不能因为重复 Prepare 而重复激活 technology / institution。
 	planningStartPreparedTurn int
 	planningStartResult       *PlanningStartResult
+	preparedMinisterDrafts    map[int]map[string][]domain.MinisterDraft
+	preparedMinisterDraftsMu  sync.RWMutex
+	ministerEngine            *ministerengine.MinisterEngine
 }
 
 func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -69,6 +73,7 @@ func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTr
 		observations:           gamequery.NewObservationStore(),
 		submitCh:               make(chan string, len(participants)*4+16),
 		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
+		preparedMinisterDrafts: make(map[int]map[string][]domain.MinisterDraft),
 	}
 }
 
@@ -153,8 +158,11 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	} else {
 		r.observations.Reset()
 	}
+	r.preparedMinisterDraftsMu.Lock()
 	r.planningStartPreparedTurn = 0
 	r.planningStartResult = nil
+	r.preparedMinisterDrafts = make(map[int]map[string][]domain.MinisterDraft)
+	r.preparedMinisterDraftsMu.Unlock()
 	r.bootstrapMu.Lock()
 	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.participants))
 	r.bootstrapPlanningStartSent = false
@@ -261,23 +269,56 @@ func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.M
 	return r.SendToParticipant(ctx, playerID, msg)
 }
 
+func (r *Runtime) HumanPlayerIDs() []string {
+	humans := r.HumanParticipants()
+	ids := make([]string, 0, len(humans))
+	for _, currentParticipant := range humans {
+		ids = append(ids, currentParticipant.ID)
+	}
+	return ids
+}
+
+func (r *Runtime) SetMinisterEngine(engine *ministerengine.MinisterEngine) {
+	if r == nil {
+		return
+	}
+	r.ministerEngine = engine
+}
+
+func (r *Runtime) RecordMinisterMemory(playerID string, role string, entry ministerengine.MemoryEntry) {
+	if r == nil || r.ministerEngine == nil {
+		return
+	}
+	r.ministerEngine.RecordMemory(playerID, role, entry)
+}
+
 func (r *Runtime) PreparePlanningStartStateIfNeeded() {
 	if r == nil || r.state == nil || r.state.Phase != domain.PhasePlanning.String() {
 		return
 	}
+	r.preparedMinisterDraftsMu.RLock()
 	if r.planningStartPreparedTurn == r.state.Turn {
+		r.preparedMinisterDraftsMu.RUnlock()
 		return
 	}
+	r.preparedMinisterDraftsMu.RUnlock()
 	// 这里是 planning-start 状态推进的唯一受控入口。
 	// 其它调用方只读取缓存结果，不再各自直接推进状态。
-	r.planningStartResult = PreparePlanningStartState(r.state)
+	result := PreparePlanningStartState(r.state)
+	r.PrepareMinisterDraftCacheForTurn(r.state.Turn)
+	r.ApplyPreparedMinisterDrafts(r.state.Turn)
+	r.preparedMinisterDraftsMu.Lock()
+	r.planningStartResult = result
 	r.planningStartPreparedTurn = r.state.Turn
+	r.preparedMinisterDraftsMu.Unlock()
 }
 
 func (r *Runtime) PlanningStartResult() *PlanningStartResult {
 	if r == nil {
 		return nil
 	}
+	r.preparedMinisterDraftsMu.RLock()
+	defer r.preparedMinisterDraftsMu.RUnlock()
 	return r.planningStartResult
 }
 
@@ -290,14 +331,23 @@ func (r *Runtime) SendPlanningStart(ctx context.Context, participantID string) e
 		return nil
 	}
 	var planningStartEvents []event.Event
+	r.preparedMinisterDraftsMu.RLock()
 	if r.planningStartResult != nil {
 		planningStartEvents = r.planningStartResult.Events
 	}
+	r.preparedMinisterDraftsMu.RUnlock()
 	msg := BuildPlanningStartMessageFromObservation(r.state, r.BuildObservation(participantID), r.state.Phase, planningStartEvents)
 	if msg == nil {
 		return nil
 	}
 	return r.SendToParticipant(ctx, participantID, msg)
+}
+
+func (r *Runtime) GenerateMinisterReports(ctx context.Context) {
+	if r == nil || r.ministerEngine == nil {
+		return
+	}
+	r.ministerEngine.GenerateReports(ctx, r)
 }
 
 func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
@@ -578,7 +628,7 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 		MapWidth:     int32(r.state.Map.Width),
 		MapHeight:    int32(r.state.Map.Height),
 		MyPlayer:     observation.MyPlayer,
-		Ministers:    nil,
+		Ministers:    gamequery.BuildMinisterRosterViews(),
 		Nodes:        observation.Nodes,
 		Units:        observation.Units,
 	}

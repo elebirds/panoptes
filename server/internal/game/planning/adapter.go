@@ -1,6 +1,7 @@
 package planning
 
 import (
+	"encoding/json"
 	"strings"
 
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -40,7 +41,11 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 			RecipeID: strings.TrimSpace(body.SetBuildingRecipe.GetRecipeId()),
 		}
 	case *pb.PlanningCommand_SetMinisterDirective:
-		return IntentEnvelope{}, false, transportproblem.New("invalid_directive", "minister is not part of current MVP")
+		intent, err := ministerDirectiveIntent(body.SetMinisterDirective)
+		if err != nil {
+			return IntentEnvelope{}, false, err
+		}
+		envelope.Intent = intent
 	case *pb.PlanningCommand_SetWarZone:
 		return IntentEnvelope{}, false, transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_WarZoneDirective:
@@ -69,4 +74,35 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 	}
 
 	return envelope, true, nil
+}
+
+func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirectiveIntent, error) {
+	if msg == nil {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "minister directive is nil")
+	}
+	if strings.TrimSpace(msg.GetMinisterRole()) != "domestic" {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister role")
+	}
+	var payload struct {
+		DirectiveType string `json:"directive_type"`
+		DraftID       string `json:"draft_id"`
+	}
+	if err := json.Unmarshal([]byte(msg.GetContent()), &payload); err != nil {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "invalid minister directive payload")
+	}
+	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
+	payload.DraftID = strings.TrimSpace(payload.DraftID)
+	switch payload.DirectiveType {
+	case "accept", "reject":
+	default:
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
+	}
+	if payload.DraftID == "" {
+		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "draft_id is required")
+	}
+	return SetMinisterDirectiveIntent{
+		MinisterRole:  "domestic",
+		DirectiveType: payload.DirectiveType,
+		DraftID:       payload.DraftID,
+	}, nil
 }

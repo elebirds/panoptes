@@ -89,6 +89,7 @@ func (c *Coordinator) Start() {
 			break
 		}
 		c.runtime.State().Turn++
+		c.runtime.PrepareMinisterDraftCacheForTurn(c.runtime.State().Turn)
 	}
 }
 
@@ -103,6 +104,7 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 			}
 		}
 	}
+	c.runtime.GenerateMinisterReports(ctx)
 
 	submitter := coordinatorIntentSubmitter{coordinator: c}
 	for _, currentParticipant := range c.runtime.Participants() {

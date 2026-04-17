@@ -4,14 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/game/ai"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
+	"github.com/elebirds/panoptes/internal/llm"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 	"google.golang.org/protobuf/proto"
@@ -67,6 +71,45 @@ func (t *captureTransport) Broadcast(context.Context, string, proto.Message) err
 
 func (t *captureTransport) Stream(context.Context, string, <-chan proto.Message) error { return nil }
 
+type scriptedLLMClient struct {
+	mu       sync.Mutex
+	chunks   []string
+	err      error
+	gate     <-chan struct{}
+	requests []llm.CompletionRequest
+}
+
+func (c *scriptedLLMClient) Stream(ctx context.Context, req llm.CompletionRequest) (<-chan string, error) {
+	c.mu.Lock()
+	c.requests = append(c.requests, req)
+	err := c.err
+	chunks := append([]string(nil), c.chunks...)
+	gate := c.gate
+	c.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan string, len(chunks))
+	go func() {
+		defer close(out)
+		if gate != nil {
+			select {
+			case <-gate:
+			case <-ctx.Done():
+				return
+			}
+		}
+		for _, chunk := range chunks {
+			select {
+			case <-ctx.Done():
+				return
+			case out <- chunk:
+			}
+		}
+	}()
+	return out, nil
+}
+
 func newTestRuntime(id string, humans []*capturePlayer, bots []*captureBotPlayer) *Runtime {
 	transport := &captureTransport{humans: make(map[string]*capturePlayer, len(humans))}
 	bindings := make([]ParticipantBinding, 0, len(humans)+len(bots))
@@ -104,6 +147,16 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "default"},
 		Rules:    staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+		Ministers: []staticdata.Minister{
+			{ID: "m002", Name: "沈衡", Role: "domestic", Ability: 7, Personality: "steady"},
+		},
 		Maps: []staticdata.MapCatalogEntry{
 			{ID: "default", Name: "Default", Width: 2, Height: 2},
 		},
@@ -123,6 +176,7 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	state.Turn = 4
 	state.Phase = domain.PhasePlanning.String()
 	state.Players["player-1"].TokensLeft = 1
+	state.Players["player-1"].Policy = domain.Policy("reorganization")
 
 	if err := runtime.InitializePrepared(state); err != nil {
 		t.Fatalf("InitializePrepared() error = %v", err)
@@ -185,8 +239,15 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		t.Fatalf("mapconfig nodes = %+v, want A1", payload.Nodes)
 	}
 
-	if got := player.sent[3].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
+	gameInit, ok := player.sent[3].(*pb.MsgGameInit)
+	if !ok {
+		t.Fatalf("message[3] type = %T, want MsgGameInit", player.sent[3])
+	}
+	if got := gameInit.ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
 		t.Fatalf("message[3] = %s, want MsgGameInit", got)
+	}
+	if len(gameInit.GetMinisters()) != 1 || gameInit.GetMinisters()[0].GetRole() != "domestic" {
+		t.Fatalf("game init ministers = %#v, want domestic roster", gameInit.GetMinisters())
 	}
 
 	start, ok := player.sent[4].(*pb.MsgPlanningStart)
@@ -204,6 +265,23 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	}
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
+	}
+	if len(start.GetMinisterDrafts()) == 0 {
+		t.Fatalf("planning start should include minister drafts")
+	}
+	if len(start.GetSnapshot().GetMinisterDrafts()) == 0 {
+		t.Fatalf("planning snapshot should include minister drafts")
+	}
+	var ministerPayload struct {
+		DraftID      string `json:"draft_id"`
+		MinisterRole string `json:"minister_role"`
+		Status       string `json:"status"`
+	}
+	if err := json.Unmarshal([]byte(start.GetMinisterDrafts()[0].GetJsonPayload()), &ministerPayload); err != nil {
+		t.Fatalf("unmarshal planning start minister draft payload: %v", err)
+	}
+	if ministerPayload.DraftID == "" || ministerPayload.MinisterRole != "domestic" || ministerPayload.Status != "pending" {
+		t.Fatalf("planning start minister payload = %+v, want domestic pending draft", ministerPayload)
 	}
 	if len(start.GetPlanningStartEvents()) != 0 {
 		t.Fatalf("planning_start_events len = %d, want 0 without pending activations", len(start.GetPlanningStartEvents()))
@@ -407,6 +485,130 @@ func TestPreparePlanningStartStateIfNeededRunsOnlyOncePerTurn(t *testing.T) {
 	}
 	if runtime.PlanningStartResult() == firstResult {
 		t.Fatalf("planning start result should refresh after turn advance")
+	}
+}
+
+func TestPreparePlanningStartStateIfNeededAppliesPreparedMinisterDrafts(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Phase = domain.PhasePlanning.String()
+	runtime.state.Turn = 3
+	runtime.state.Players["player-1"].Policy = domain.Policy("reorganization")
+
+	runtime.PrepareMinisterDraftCacheForTurn(3)
+	clear(runtime.state.TurnRuntime.Planning.MinisterDrafts)
+	runtime.PreparePlanningStartStateIfNeeded()
+
+	drafts := runtime.state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) == 0 {
+		t.Fatalf("planning start should apply prepared minister drafts")
+	}
+	if drafts[0].MinisterRole != "domestic" || drafts[0].Turn != 3 {
+		t.Fatalf("minister drafts = %#v, want domestic turn 3 draft", drafts)
+	}
+}
+
+func TestPrepareMinisterDraftCacheForTurnPolishesDraftsWithMinisterEngine(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TokensPerTurn: 3, BaseResearchOutputPerTurn: 1},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Ministers: []staticdata.Minister{
+			{ID: "m002", Name: "沈衡", Role: "domestic", Ability: 7, Personality: "steady", PersonalityDesc: "稳健审慎", Loyalty: 8, Ambition: 4},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Turn = 3
+	runtime.state.Phase = domain.PhaseResolving.String()
+
+	llmClient := &scriptedLLMClient{
+		chunks: []string{`{"title":"稳住粮秣","summary":"先把农业基础稳住。","rationale":"当前局势更适合补基础产能。","risk_note":"会延后更激进的路线。"}`},
+	}
+	engine := ministerengine.NewMinisterEngine(llmClient)
+	engine.SetEnabledRoles([]string{"domestic"})
+	runtime.SetMinisterEngine(engine)
+
+	runtime.PrepareMinisterDraftCacheForTurn(3)
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		runtime.preparedMinisterDraftsMu.RLock()
+		drafts := append([]domain.MinisterDraft(nil), runtime.preparedMinisterDrafts[3]["player-1"]...)
+		runtime.preparedMinisterDraftsMu.RUnlock()
+		if len(drafts) == 1 && drafts[0].Source == domain.MinisterDraftSourceRuleLLM {
+			if drafts[0].Title != "稳住粮秣" || drafts[0].Summary != "先把农业基础稳住。" {
+				t.Fatalf("polished draft = %#v, want LLM text applied", drafts[0])
+			}
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("drafts were not polished in time, got %#v", drafts)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestPrepareMinisterDraftCacheForTurnDropsLatePolishAfterPlanningStartPrepared(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{TokensPerTurn: 3, BaseResearchOutputPerTurn: 1},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Ministers: []staticdata.Minister{
+			{ID: "m002", Name: "沈衡", Role: "domestic", Ability: 7, Personality: "steady", PersonalityDesc: "稳健审慎", Loyalty: 8, Ambition: 4},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Turn = 4
+	runtime.state.Phase = domain.PhasePlanning.String()
+
+	release := make(chan struct{})
+	llmClient := &scriptedLLMClient{
+		chunks: []string{`{"title":"晚到建议","summary":"不该覆盖已开回合卡片。","rationale":"测试晚到丢弃。","risk_note":"无。"}`},
+		gate:   release,
+	}
+	engine := ministerengine.NewMinisterEngine(llmClient)
+	engine.SetEnabledRoles([]string{"domestic"})
+	runtime.SetMinisterEngine(engine)
+
+	runtime.PrepareMinisterDraftCacheForTurn(4)
+	runtime.PreparePlanningStartStateIfNeeded()
+	close(release)
+	time.Sleep(50 * time.Millisecond)
+
+	runtime.preparedMinisterDraftsMu.RLock()
+	drafts := append([]domain.MinisterDraft(nil), runtime.preparedMinisterDrafts[4]["player-1"]...)
+	runtime.preparedMinisterDraftsMu.RUnlock()
+	if len(drafts) != 1 {
+		t.Fatalf("draft count = %d, want 1", len(drafts))
+	}
+	if drafts[0].Source != domain.MinisterDraftSourceRuleOnly {
+		t.Fatalf("draft source = %q, want rule_only for late polish", drafts[0].Source)
+	}
+	if drafts[0].Title == "晚到建议" {
+		t.Fatalf("late LLM polish should be dropped, got %#v", drafts[0])
 	}
 }
 

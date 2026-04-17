@@ -31,6 +31,7 @@ func BuildPlanningSnapshot(state *domain.GameState, playerID string) *pb.MsgPlan
 	msg.PlannedResearchTargetTechnologyId = state.TurnRuntime.Planning.PendingResearchTarget(playerID)
 	msg.PlannedNationalPolicyId = string(state.TurnRuntime.Planning.PendingPolicy(playerID))
 	msg.PlannedInstitutionPolicyIds = state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
+	msg.MinisterDrafts = BuildMinisterDraftViews(state, playerID)
 
 	ordersByUnit := make(map[string]*pb.QueuedUnitOrder)
 	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
