@@ -56,6 +56,12 @@ namespace Panoptes.Presentation.Map
         [Range(0f, 0.3f)]
         [SerializeField] private float terrainColorVariationStrength = 0.02f;
 
+        [Header("Observation")]
+        [SerializeField] private bool enableObservationTint = true;
+        [SerializeField] private Color visibleObservationTint = Color.white;
+        [SerializeField] private Color memoryObservationTint = new Color(0.72f, 0.72f, 0.72f, 1f);
+        [SerializeField] private Color unknownObservationTint = new Color(0.46f, 0.46f, 0.46f, 1f);
+
         [Header("Resource")]
         [SerializeField] private ResourcePointView resourcePointPrefab;
 
@@ -144,7 +150,9 @@ namespace Panoptes.Presentation.Map
             if (_buildingInstance != null)
             {
                 _buildingInstance.ApplyRuntimeState(node);
+                _buildingInstance.SetObservationState(node.IsVisible, node.IsMemory);
             }
+            ApplyObservationState(node);
             SetHighlightVisible(false);
         }
 
@@ -174,6 +182,49 @@ namespace Panoptes.Presentation.Map
             {
                 roadOverlay.SetActive(isVisible);
             }
+        }
+
+        private void ApplyObservationState(NodeDto node)
+        {
+            if (!enableObservationTint || node == null || groundRenderer == null)
+            {
+                return;
+            }
+
+            if (_groundBlock == null)
+            {
+                _groundBlock = new MaterialPropertyBlock();
+            }
+
+            var baseColor = Color.white;
+            var groundMaterial = groundRenderer.sharedMaterial;
+            if (groundMaterial != null)
+            {
+                if (groundMaterial.HasProperty(BaseColorId))
+                {
+                    baseColor = groundMaterial.GetColor(BaseColorId);
+                }
+                else if (groundMaterial.HasProperty(ColorId))
+                {
+                    baseColor = groundMaterial.GetColor(ColorId);
+                }
+            }
+
+            var tint = visibleObservationTint;
+            if (!node.IsVisible)
+            {
+                tint = node.IsMemory ? memoryObservationTint : unknownObservationTint;
+            }
+            var finalColor = new Color(
+                Mathf.Clamp01(baseColor.r * tint.r),
+                Mathf.Clamp01(baseColor.g * tint.g),
+                Mathf.Clamp01(baseColor.b * tint.b),
+                baseColor.a);
+
+            groundRenderer.GetPropertyBlock(_groundBlock);
+            _groundBlock.SetColor(BaseColorId, finalColor);
+            _groundBlock.SetColor(ColorId, finalColor);
+            groundRenderer.SetPropertyBlock(_groundBlock);
         }
 
         public void SetHighlightVisible(bool isVisible)

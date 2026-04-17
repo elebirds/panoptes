@@ -243,6 +243,70 @@ func (c *Catalog) GetRecipe(id string) (RecipeDefinition, bool) {
 	return recipe, ok
 }
 
+func (c *Catalog) Technologies() []TechnologyDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.technologies))
+	for id := range c.technologies {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]TechnologyDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.technologies[id])
+	}
+	return out
+}
+
+func (c *Catalog) Policies() []PolicyDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.policies))
+	for id := range c.policies {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]PolicyDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.policies[id])
+	}
+	return out
+}
+
+func (c *Catalog) Buildings() []BuildingDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.buildings))
+	for id := range c.buildings {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]BuildingDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.buildings[id])
+	}
+	return out
+}
+
+func (c *Catalog) Recipes() []RecipeDefinition {
+	if c == nil {
+		return nil
+	}
+	ids := make([]string, 0, len(c.recipes))
+	for id := range c.recipes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]RecipeDefinition, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, c.recipes[id])
+	}
+	return out
+}
+
 func (c *Catalog) GetTerrain(id string) (TerrainDefinition, bool) {
 	if c == nil {
 		return TerrainDefinition{}, false

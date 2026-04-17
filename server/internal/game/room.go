@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
@@ -227,16 +228,51 @@ func (r *GameRoom) SendPlanningSnapshot(ctx context.Context, playerID string) er
 	return r.SendToPlayer(ctx, playerID, gamequery.BuildPlanningSnapshot(r.State(), playerID))
 }
 
+func (r *GameRoom) HasParticipant(participantID string) bool {
+	if strings.TrimSpace(participantID) == "" {
+		return false
+	}
+	for _, id := range r.ParticipantIDs() {
+		if id == participantID {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *GameRoom) SetDebugFullMapVisibility(participantID string, enabled bool) {
+	if r == nil || r.runtime == nil {
+		return
+	}
+	r.runtime.SetDebugFullMapVisibility(participantID, enabled)
+}
+
+func (r *GameRoom) DebugFullMapVisibility(participantID string) bool {
+	if r == nil || r.runtime == nil {
+		return false
+	}
+	return r.runtime.DebugFullMapVisibility(participantID)
+}
+
+func (r *GameRoom) BuildObservationForParticipant(participantID string) *gamequery.ObservationSnapshot {
+	if r == nil || r.runtime == nil {
+		return nil
+	}
+	return r.runtime.BuildObservation(participantID)
+}
+
+func (r *GameRoom) RefreshDebugView(ctx context.Context, participantID string) (bool, error) {
+	if r == nil || r.runtime == nil {
+		return false, nil
+	}
+	return r.runtime.RefreshDebugView(ctx, participantID)
+}
+
 func (r *GameRoom) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
-	state := r.State()
-	if state == nil {
+	if r == nil || r.runtime == nil {
 		return nil
 	}
-	nodeEntry, ok := state.GetNode(nodeID)
-	if !ok {
-		return nil
-	}
-	return gamequery.BuildNodeView(state, nodeEntry, viewerID)
+	return r.runtime.RevealNodeView(viewerID, nodeID)
 }
 
 func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
@@ -258,9 +294,9 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 		nextPhase = ""
 	}
 	for _, participantID := range r.HumanParticipantIDs() {
-		msg := gameprojection.ProjectTurnSettlement(
+		msg := gameprojection.ProjectTurnSettlementFromObservation(
 			state,
-			participantID,
+			r.runtime.BuildObservation(participantID),
 			int32(state.Turn),
 			domain.PhaseResolving.String(),
 			nextPhase,

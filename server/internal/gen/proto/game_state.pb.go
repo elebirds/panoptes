@@ -43,6 +43,9 @@ type NodeView struct {
 	IsCityCore             bool                   `protobuf:"varint,18,opt,name=is_city_core,json=isCityCore,proto3" json:"is_city_core,omitempty"`
 	TakeoverProgress       int32                  `protobuf:"varint,19,opt,name=takeover_progress,json=takeoverProgress,proto3" json:"takeover_progress,omitempty"`
 	TakeoverRequired       int32                  `protobuf:"varint,20,opt,name=takeover_required,json=takeoverRequired,proto3" json:"takeover_required,omitempty"`
+	IsCurrentlyVisible     bool                   `protobuf:"varint,21,opt,name=is_currently_visible,json=isCurrentlyVisible,proto3" json:"is_currently_visible,omitempty"`
+	IsMemory               bool                   `protobuf:"varint,22,opt,name=is_memory,json=isMemory,proto3" json:"is_memory,omitempty"`
+	LastObservedTurn       int32                  `protobuf:"varint,23,opt,name=last_observed_turn,json=lastObservedTurn,proto3" json:"last_observed_turn,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -213,6 +216,27 @@ func (x *NodeView) GetTakeoverProgress() int32 {
 func (x *NodeView) GetTakeoverRequired() int32 {
 	if x != nil {
 		return x.TakeoverRequired
+	}
+	return 0
+}
+
+func (x *NodeView) GetIsCurrentlyVisible() bool {
+	if x != nil {
+		return x.IsCurrentlyVisible
+	}
+	return false
+}
+
+func (x *NodeView) GetIsMemory() bool {
+	if x != nil {
+		return x.IsMemory
+	}
+	return false
+}
+
+func (x *NodeView) GetLastObservedTurn() int32 {
+	if x != nil {
+		return x.LastObservedTurn
 	}
 	return 0
 }
@@ -1045,7 +1069,7 @@ var File_game_state_proto protoreflect.FileDescriptor
 
 const file_game_state_proto_rawDesc = "" +
 	"\n" +
-	"\x10game_state.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10data_types.proto\"\xa5\x06\n" +
+	"\x10game_state.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10data_types.proto\"\xa2\a\n" +
 	"\bNodeView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
 	"\x03pos\x18\x02 \x01(\v2\x1b.panoptes.proto.v1.PositionR\x03pos\x12\x18\n" +
@@ -1070,7 +1094,10 @@ const file_game_state_proto_rawDesc = "" +
 	"\fis_city_core\x18\x12 \x01(\bR\n" +
 	"isCityCore\x12+\n" +
 	"\x11takeover_progress\x18\x13 \x01(\x05R\x10takeoverProgress\x12+\n" +
-	"\x11takeover_required\x18\x14 \x01(\x05R\x10takeoverRequired\"\xa7\x01\n" +
+	"\x11takeover_required\x18\x14 \x01(\x05R\x10takeoverRequired\x120\n" +
+	"\x14is_currently_visible\x18\x15 \x01(\bR\x12isCurrentlyVisible\x12\x1b\n" +
+	"\tis_memory\x18\x16 \x01(\bR\bisMemory\x12,\n" +
+	"\x12last_observed_turn\x18\x17 \x01(\x05R\x10lastObservedTurn\"\xa7\x01\n" +
 	"\bUnitView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\afaction\x18\x02 \x01(\tR\afaction\x12\x1b\n" +

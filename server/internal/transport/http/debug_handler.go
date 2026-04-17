@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/debug"
@@ -28,6 +29,11 @@ type debugCommandRequest struct {
 	Planning  json.RawMessage `json:"planning"`
 }
 
+type debugVisionRequest struct {
+	ParticipantID string `json:"participant_id"`
+	FullMap       *bool  `json:"full_map"`
+}
+
 type debugCommandResponse struct {
 	RequestID  string             `json:"request_id,omitempty"`
 	State      debug.StateSummary `json:"state"`
@@ -50,6 +56,15 @@ type debugStepTurnResponse struct {
 	TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement,omitempty"`
 	GameOver       *pb.MsgGameOver       `json:"game_over,omitempty"`
 	State          debug.StateSummary    `json:"state"`
+}
+
+type debugVisionResponse struct {
+	ParticipantID    string `json:"participant_id"`
+	FullMap          bool   `json:"full_map"`
+	VisibleNodeCount int    `json:"visible_node_count"`
+	TotalNodeCount   int    `json:"total_node_count"`
+	VisibleUnitCount int    `json:"visible_unit_count"`
+	Refreshed        bool   `json:"refreshed"`
 }
 
 func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.SettlementRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
@@ -177,6 +192,56 @@ func (h *DebugHandler) StepTurn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal_error")
 		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *DebugHandler) Vision(w http.ResponseWriter, r *http.Request) {
+	authParticipantID, room, ok := h.lookupRoom(r)
+	if !ok {
+		writeError(w, http.StatusNotFound, "game_not_found")
+		return
+	}
+
+	var req debugVisionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_request")
+		return
+	}
+	if req.FullMap == nil {
+		writeError(w, http.StatusBadRequest, "invalid_request")
+		return
+	}
+
+	targetParticipantID := strings.TrimSpace(req.ParticipantID)
+	if targetParticipantID == "" {
+		targetParticipantID = authParticipantID
+	}
+	if !room.HasParticipant(targetParticipantID) {
+		writeError(w, http.StatusBadRequest, "invalid_target")
+		return
+	}
+
+	room.SetDebugFullMapVisibility(targetParticipantID, *req.FullMap)
+	observation := room.BuildObservationForParticipant(targetParticipantID)
+	refreshed, err := room.RefreshDebugView(r.Context(), targetParticipantID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal_error")
+		return
+	}
+	if observation == nil {
+		observation = room.BuildObservationForParticipant(targetParticipantID)
+	}
+
+	resp := debugVisionResponse{
+		ParticipantID: targetParticipantID,
+		FullMap:       room.DebugFullMapVisibility(targetParticipantID),
+		Refreshed:     refreshed,
+	}
+	if observation != nil {
+		resp.VisibleNodeCount = len(observation.VisibleNodes)
+		resp.TotalNodeCount = len(observation.Nodes)
+		resp.VisibleUnitCount = len(observation.Units)
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
