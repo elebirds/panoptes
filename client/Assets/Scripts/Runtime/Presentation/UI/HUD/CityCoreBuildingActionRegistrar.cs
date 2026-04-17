@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Domestic;
@@ -81,6 +82,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Vector2 _turnPanelBaseAnchoredPos;
         private Coroutine _nextStageShiftRoutine;
         private Coroutine _panelSwitchRoutine;
+        private Coroutine _initialPanelStateRoutine;
         private MapInputHandler _subscribedMapInputHandler;
         private string _activeUnitInfoNodeId = string.Empty;
         private bool _lastBuildPanelVisible;
@@ -140,9 +142,24 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureInitialPanelState();
         }
 
+        private void Start()
+        {
+            if (_initialPanelStateRoutine != null)
+            {
+                StopCoroutine(_initialPanelStateRoutine);
+            }
+
+            _initialPanelStateRoutine = StartCoroutine(ForceInitialPanelStateAfterLayout());
+        }
+
         private void OnDisable()
         {
             UnsubscribeInputEvents();
+            if (_initialPanelStateRoutine != null)
+            {
+                StopCoroutine(_initialPanelStateRoutine);
+                _initialPanelStateRoutine = null;
+            }
 
             UnsubscribeProductionPanelEvents();
             UnsubscribeRecipePanelEvents();
@@ -416,6 +433,11 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
+            if (unitInfoPanelController != null && nextStageButtonRect != null)
+            {
+                unitInfoPanelController.SetDockRightOf(nextStageButtonRect);
+            }
+
             if (turnPanelRect == null && autoFindTurnPanel)
             {
                 var allRects = UnityEngine.Object.FindObjectsByType<RectTransform>(
@@ -442,7 +464,15 @@ namespace Panoptes.Presentation.UI.HUD
             SubscribeRecipePanelEvents();
         }
 
-        private void EnsureInitialPanelState()
+        private IEnumerator ForceInitialPanelStateAfterLayout()
+        {
+            yield return null;
+            ResolveReferences();
+            EnsureInitialPanelState(forceUnitInfoHidden: true);
+            _initialPanelStateRoutine = null;
+        }
+
+        private void EnsureInitialPanelState(bool forceUnitInfoHidden = false)
         {
             EnsureRightGroupAnimationCurve();
             CacheRightGroupBasePositionIfNeeded();
@@ -452,6 +482,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 if (collapseBuildPanelOnStartup)
                 {
+                    buildPanelSlideToggle.ForceRecalculatePositions();
                     buildPanelSlideToggle.SetCollapsed(true, true);
                     _buildPanelOpen = false;
                 }
@@ -493,6 +524,11 @@ namespace Panoptes.Presentation.UI.HUD
             if (hideRecipePanelOnStart && recipeSynthesisPanel != null)
             {
                 recipeSynthesisPanel.Hide();
+            }
+
+            if (forceUnitInfoHidden && unitInfoPanelController != null)
+            {
+                unitInfoPanelController.ForceHideImmediate();
             }
 
             UpdateDerivedPanelVisibilitySnapshot();
@@ -786,12 +822,21 @@ namespace Panoptes.Presentation.UI.HUD
                 buildCommandPanel.SetCityCoreContext(nodeId);
             }
 
+            var buildPanelRect = buildCommandPanel != null ? buildCommandPanel.transform as RectTransform : null;
+            if (buildPanelSlideToggle == null ||
+                (buildPanelRect != null && !buildPanelSlideToggle.ControlsPanel(buildPanelRect)))
+            {
+                buildPanelSlideToggle = ResolveBuildPanelSlideToggleForBuildPanel(buildCommandPanel);
+            }
+
             if (buildPanelSlideToggle != null)
             {
                 if (!buildPanelSlideToggle.gameObject.activeSelf)
                 {
                     buildPanelSlideToggle.gameObject.SetActive(true);
                 }
+                buildPanelSlideToggle.ForceRecalculatePositions();
+                buildPanelSlideToggle.SetCollapsed(true, true);
                 buildPanelSlideToggle.Expand();
             }
             else if (fallbackHideBuildPanelGameObjectWhenNoSlideToggle && buildCommandPanel != null)
@@ -1110,13 +1155,13 @@ namespace Panoptes.Presentation.UI.HUD
                 }
 
                 var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
-                if (ReferenceEquals(owner, panel))
+                if (ReferenceEquals(owner, panel) && candidate.ControlsPanel(panel.transform as RectTransform))
                 {
                     return candidate;
                 }
             }
 
-            return toggles[0];
+            return null;
         }
 
         private bool TryResolveCityCoreNodeId(UnitView unit, out string nodeId)

@@ -47,6 +47,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private bool _isCollapsed;
         private bool _positionsInitialized;
         private bool _moveButtonIndependently;
+        private bool _warnedInvalidRootBinding;
         private Coroutine _animRoutine;
         public bool IsCollapsed => _isCollapsed;
 
@@ -171,6 +172,37 @@ namespace Panoptes.Presentation.UI.Domestic
             return Mathf.Max(0.01f, duration);
         }
 
+        public bool ControlsPanel(RectTransform panel)
+        {
+            ResolveReferences();
+            return panel != null && ReferenceEquals(buildPanelRoot, panel);
+        }
+
+        public void ResetShownPositionFromCurrent()
+        {
+            ResolveReferences();
+            if (buildPanelRoot == null)
+            {
+                return;
+            }
+
+            _panelShownPos = buildPanelRoot.anchoredPosition;
+            if (toggleButtonRect != null)
+            {
+                _buttonShownPos = toggleButtonRect.anchoredPosition;
+            }
+
+            _positionsInitialized = true;
+            RecalculatePositions();
+        }
+
+        public void ForceRecalculatePositions()
+        {
+            ResolveReferences();
+            _positionsInitialized = false;
+            RecalculatePositions();
+        }
+
         private void RecalculatePositions()
         {
             if (buildPanelRoot == null)
@@ -180,7 +212,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
             if (!_positionsInitialized)
             {
-                _panelShownPos = buildPanelRoot.anchoredPosition;
+                _panelShownPos = ResolveDefaultShownPosition(buildPanelRoot);
                 if (toggleButtonRect != null)
                 {
                     _buttonShownPos = toggleButtonRect.anchoredPosition;
@@ -202,6 +234,43 @@ namespace Panoptes.Presentation.UI.Domestic
                     : panelOffset;
                 _buttonHiddenPos = _buttonShownPos + buttonOffset;
             }
+        }
+
+        private Vector2 ResolveDefaultShownPosition(RectTransform panel)
+        {
+            if (panel == null)
+            {
+                return Vector2.zero;
+            }
+
+            var result = panel.anchoredPosition;
+            const float epsilon = 0.001f;
+            var anchoredRight = Mathf.Abs(panel.anchorMin.x - 1f) < epsilon &&
+                                Mathf.Abs(panel.anchorMax.x - 1f) < epsilon &&
+                                Mathf.Abs(panel.pivot.x - 1f) < epsilon;
+            var anchoredLeft = Mathf.Abs(panel.anchorMin.x) < epsilon &&
+                               Mathf.Abs(panel.anchorMax.x) < epsilon &&
+                               Mathf.Abs(panel.pivot.x) < epsilon;
+            var anchoredTop = Mathf.Abs(panel.anchorMin.y - 1f) < epsilon &&
+                              Mathf.Abs(panel.anchorMax.y - 1f) < epsilon &&
+                              Mathf.Abs(panel.pivot.y - 1f) < epsilon;
+            var anchoredBottom = Mathf.Abs(panel.anchorMin.y) < epsilon &&
+                                 Mathf.Abs(panel.anchorMax.y) < epsilon &&
+                                 Mathf.Abs(panel.pivot.y) < epsilon;
+
+            if ((hideDirection == SlideDirection.Right && anchoredRight) ||
+                (hideDirection == SlideDirection.Left && anchoredLeft))
+            {
+                result.x = 0f;
+            }
+
+            if ((hideDirection == SlideDirection.Up && anchoredTop) ||
+                (hideDirection == SlideDirection.Down && anchoredBottom))
+            {
+                result.y = 0f;
+            }
+
+            return result;
         }
 
         private Vector2 ComputePanelOffset(RectTransform panel)
@@ -253,12 +322,34 @@ namespace Panoptes.Presentation.UI.Domestic
                 toggleButtonRect = toggleButton.transform as RectTransform;
             }
 
-            if (buildPanelRoot == null)
+            var buildPanel = GetComponentInParent<BuildCommandPanel>(true);
+            var panelRect = buildPanel != null ? buildPanel.transform as RectTransform : null;
+            if (panelRect != null)
             {
-                var buildPanel = GetComponentInParent<BuildCommandPanel>(true);
-                if (buildPanel != null)
+                if (!ReferenceEquals(buildPanelRoot, panelRect))
                 {
-                    buildPanelRoot = buildPanel.transform as RectTransform;
+                    if (buildPanelRoot != null && !_warnedInvalidRootBinding)
+                    {
+                        var owner = buildPanelRoot.GetComponentInParent<BuildCommandPanel>(true);
+                        if (!ReferenceEquals(owner, buildPanel))
+                        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogWarning(
+                                $"[BuildPanelSlideToggle] Invalid buildPanelRoot '{buildPanelRoot.name}' bound to '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
+#endif
+                        }
+                        else
+                        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogWarning(
+                                $"[BuildPanelSlideToggle] Non-root buildPanelRoot '{buildPanelRoot.name}' on '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
+#endif
+                        }
+
+                        _warnedInvalidRootBinding = true;
+                    }
+
+                    buildPanelRoot = panelRect;
                 }
             }
 
