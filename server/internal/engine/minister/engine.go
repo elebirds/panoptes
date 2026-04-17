@@ -24,18 +24,68 @@ import (
 
 type RuntimeRoom interface {
 	State() *domain.GameState
-	PlayerIDs() []string
+	HumanPlayerIDs() []string
 	SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error
+	BuildMinisterReportInput(playerID string, role string) ReportPromptInput
 }
 
 type MinisterEngine struct {
-	llmClient llm.LLMClient
-	memories  map[string]*MinisterMemory
-	mu        sync.Mutex
+	llmClient      llm.LLMClient
+	memories       map[string]*MinisterMemory
+	enabledRoles   map[string]struct{}
+	requestTimeout time.Duration
+	model          string
+	mu             sync.Mutex
 }
 
 func NewMinisterEngine(client llm.LLMClient) *MinisterEngine {
-	return &MinisterEngine{llmClient: client, memories: make(map[string]*MinisterMemory)}
+	return &MinisterEngine{
+		llmClient:      client,
+		memories:       make(map[string]*MinisterMemory),
+		enabledRoles:   make(map[string]struct{}),
+		requestTimeout: 5 * time.Second,
+	}
+}
+
+func (e *MinisterEngine) SetEnabledRoles(roles []string) {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.enabledRoles = make(map[string]struct{}, len(roles))
+	for _, role := range roles {
+		role = strings.TrimSpace(role)
+		if role == "" {
+			continue
+		}
+		e.enabledRoles[role] = struct{}{}
+	}
+}
+
+func (e *MinisterEngine) SetTimeout(timeout time.Duration) {
+	if e == nil || timeout <= 0 {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.requestTimeout = timeout
+}
+
+func (e *MinisterEngine) SetModel(model string) {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.model = strings.TrimSpace(model)
+}
+
+func (e *MinisterEngine) RecordMemory(playerID string, role string, entry MemoryEntry) {
+	if e == nil {
+		return
+	}
+	e.getOrCreateMemory(playerID, role).Add(entry)
 }
 
 func (e *MinisterEngine) GenerateReports(ctx context.Context, room RuntimeRoom) {
@@ -43,8 +93,11 @@ func (e *MinisterEngine) GenerateReports(ctx context.Context, room RuntimeRoom) 
 		return
 	}
 	syncMode := e.llmClient == nil
-	for _, playerID := range room.PlayerIDs() {
+	for _, playerID := range room.HumanPlayerIDs() {
 		for _, profile := range pickProfiles() {
+			if !e.roleEnabled(profile.Role) {
+				continue
+			}
 			if syncMode {
 				e.generateOneReport(ctx, playerID, profile, room)
 				continue
@@ -55,10 +108,12 @@ func (e *MinisterEngine) GenerateReports(ctx context.Context, room RuntimeRoom) 
 }
 
 func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string, profile MinisterProfile, room RuntimeRoom) {
-	state := room.State()
+	input := room.BuildMinisterReportInput(playerID, profile.Role)
 	memory := e.getOrCreateMemory(playerID, profile.Role)
-	prompt := BuildMinisterPrompt(profile.Role, profile, state, playerID, memory)
-	prompt.SessionID = fmt.Sprintf("%s:%s:%d", playerID, profile.Role, state.Turn)
+	input.Memory = memory
+	prompt := BuildReportPrompt(profile, input)
+	prompt.Model = e.requestModel()
+	prompt.SessionID = fmt.Sprintf("%s:%s:%d", playerID, profile.Role, input.Turn)
 
 	raw, ok := e.streamOrFallback(ctx, room, playerID, profile.Role, prompt)
 	if !ok {
@@ -73,18 +128,46 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 		slog.Warn("send minister metrics failed", "player_id", playerID, "role", profile.Role, "err", err)
 	}
 
-	actionEvents := ExecuteActions(output.Actions, actionRoom{state: state}, playerID)
-	for _, ev := range actionEvents {
-		ev.Apply(state.World, state)
+	state := room.State()
+	if len(output.Actions) > 0 {
+		slog.Info("minister actions ignored in current MVP", "player_id", playerID, "role", profile.Role, "count", len(output.Actions))
 	}
-	event.MinisterActedEvent{
-		MinisterRole: profile.Role,
-		PlayerID:     playerID,
-		ActionID:     output.ActionID,
-		Report:       output.Report,
-	}.Apply(state.World, state)
+	if state != nil && state.World != nil {
+		event.MinisterActedEvent{
+			MinisterRole: profile.Role,
+			PlayerID:     playerID,
+			ActionID:     output.ActionID,
+			Report:       output.Report,
+		}.Apply(state.World, state)
+	}
 
-	memory.Add(MemoryEntry{Turn: state.Turn, Type: "action", Content: output.Report, Outcome: "executed", PlayerResp: "ignored"})
+	memory.Add(MemoryEntry{Turn: input.Turn, Type: "report", Content: output.Report, Outcome: "generated", PlayerResp: "ignored"})
+}
+
+func (e *MinisterEngine) PolishDraft(ctx context.Context, playerID string, draft domain.MinisterDraft, input DraftPromptInput) (*DraftOutput, bool) {
+	if e == nil || !e.roleEnabled(draft.MinisterRole) || e.llmClient == nil {
+		return nil, false
+	}
+	profile, ok := profileForRole(draft.MinisterRole)
+	if !ok {
+		return nil, false
+	}
+	input.Draft = draft
+	input.Memory = e.getOrCreateMemory(playerID, draft.MinisterRole)
+	req := BuildDraftPrompt(profile, input)
+	req.Model = e.requestModel()
+	req.SessionID = fmt.Sprintf("%s:%s:%s:%d", playerID, draft.MinisterRole, draft.DraftID, input.Turn)
+
+	raw, ok := e.collectText(ctx, req)
+	if !ok {
+		return nil, false
+	}
+	output, err := ParseDraftResponse(raw)
+	if err != nil {
+		slog.Warn("parse minister draft response failed", "player_id", playerID, "role", draft.MinisterRole, "draft_id", draft.DraftID, "err", err)
+		return nil, false
+	}
+	return output, true
 }
 
 func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom, playerID, role string, req llm.CompletionRequest) (string, bool) {
@@ -94,7 +177,7 @@ func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom,
 		return fallbackJSON(fallback), true
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 	stream, err := e.llmClient.Stream(ctx, req)
 	if err != nil {
@@ -113,6 +196,27 @@ func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom,
 		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: chunk, IsFinal: false})
 	}
 	_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: "", IsFinal: true})
+	return b.String(), true
+}
+
+func (e *MinisterEngine) collectText(ctx context.Context, req llm.CompletionRequest) (string, bool) {
+	if e == nil || e.llmClient == nil {
+		return "", false
+	}
+	ctx, cancel := context.WithTimeout(ctx, e.timeout())
+	defer cancel()
+	stream, err := e.llmClient.Stream(ctx, req)
+	if err != nil {
+		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "err", err)
+		return "", false
+	}
+	var b strings.Builder
+	for chunk := range stream {
+		if chunk == "" {
+			continue
+		}
+		b.WriteString(chunk)
+	}
 	return b.String(), true
 }
 
@@ -149,14 +253,51 @@ func pickProfiles() []MinisterProfile {
 	return out
 }
 
+func profileForRole(role string) (MinisterProfile, bool) {
+	role = strings.TrimSpace(role)
+	for _, profile := range pickProfiles() {
+		if strings.TrimSpace(profile.Role) == role {
+			return profile, true
+		}
+	}
+	return MinisterProfile{}, false
+}
+
+func (e *MinisterEngine) roleEnabled(role string) bool {
+	if e == nil {
+		return false
+	}
+	role = strings.TrimSpace(role)
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if len(e.enabledRoles) == 0 {
+		return true
+	}
+	_, ok := e.enabledRoles[role]
+	return ok
+}
+
+func (e *MinisterEngine) timeout() time.Duration {
+	if e == nil || e.requestTimeout <= 0 {
+		return 5 * time.Second
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.requestTimeout <= 0 {
+		return 5 * time.Second
+	}
+	return e.requestTimeout
+}
+
+func (e *MinisterEngine) requestModel() string {
+	if e == nil {
+		return ""
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return strings.TrimSpace(e.model)
+}
+
 func fallbackJSON(report string) string {
 	return `{"report":"` + report + `","metrics":[],"actions":[],"action_id":"fallback"}`
-}
-
-type actionRoom struct {
-	state *domain.GameState
-}
-
-func (r actionRoom) State() *domain.GameState {
-	return r.state
 }

@@ -8,7 +8,6 @@ package minister
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -26,66 +25,102 @@ type MinisterProfile struct {
 	Ambition        int
 }
 
-func BuildMinisterPrompt(role string, profile MinisterProfile, state *domain.GameState, playerID string, memory *MinisterMemory) llm.CompletionRequest {
+type ReportPromptInput struct {
+	Turn               int
+	Phase              string
+	PlayerID           string
+	ObservationSummary string
+	CurrentPolicy      string
+	CurrentResearch    string
+	Memory             *MinisterMemory
+}
+
+type DraftPromptInput struct {
+	Turn               int
+	PlayerID           string
+	ObservationSummary string
+	CurrentPolicy      string
+	CurrentResearch    string
+	Draft              domain.MinisterDraft
+	Memory             *MinisterMemory
+}
+
+func BuildReportPrompt(profile MinisterProfile, input ReportPromptInput) llm.CompletionRequest {
 	return llm.CompletionRequest{
-		SystemPrompt: buildSystemPrompt(role, profile),
-		UserPrompt:   buildUserPrompt(state, playerID, memory, profile),
+		SystemPrompt: buildReportSystemPrompt(profile),
+		UserPrompt:   buildReportUserPrompt(input),
 	}
 }
 
-func buildSystemPrompt(role string, profile MinisterProfile) string {
+func BuildDraftPrompt(profile MinisterProfile, input DraftPromptInput) llm.CompletionRequest {
+	return llm.CompletionRequest{
+		SystemPrompt: buildDraftSystemPrompt(profile),
+		UserPrompt:   buildDraftUserPrompt(input),
+	}
+}
+
+func buildBaseSystemPrompt(profile MinisterProfile) string {
 	return fmt.Sprintf(
-		"你是Panoptes中的%s部长。姓名:%s。性格:%s。描述:%s。能力:%d。请在职责内给出汇报和行动建议，并严格输出JSON。",
-		role,
-		profile.Name,
-		profile.Personality,
-		profile.PersonalityDesc,
+		"你是 Panoptes 中的 %s 大臣。姓名：%s。性格：%s。描述：%s。能力：%d。忠诚：%d。野心：%d。只能基于玩家视角信息发言，不得编造隐藏信息，不得替玩家做不可逆决定，必须严格输出JSON。",
+		strings.TrimSpace(profile.Role),
+		strings.TrimSpace(profile.Name),
+		strings.TrimSpace(profile.Personality),
+		strings.TrimSpace(profile.PersonalityDesc),
 		profile.Ability,
+		profile.Loyalty,
+		profile.Ambition,
 	)
 }
 
-func buildUserPrompt(state *domain.GameState, playerID string, memory *MinisterMemory, profile MinisterProfile) string {
-	var player *domain.PlayerState
-	if state != nil {
-		player = state.Players[playerID]
-	}
-
-	resources := ""
-	currentPolicy := ""
-	turn := 0
-	phase := ""
-	if state != nil {
-		turn = state.Turn
-		phase = state.Phase
-	}
-	if player != nil {
-		keys := player.Resources.Keys()
-		sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-		parts := make([]string, 0, len(keys))
-		for _, k := range keys {
-			parts = append(parts, fmt.Sprintf("%s=%d", k, player.Resources.Get(k)))
-		}
-		resources = strings.Join(parts, ", ")
-		currentPolicy = string(player.Policy)
-	}
-
-	stateDesc := fmt.Sprintf("turn=%d phase=%s player=%s resources={%s}", turn, phase, playerID, resources)
-	if profile.Loyalty < 5 {
-		stateDesc += "；注意：你掌握的信息可能有偏差，不要给出过度确定表述。"
-	}
-
-	return fmt.Sprintf(`
-当前局势：%s
-历史记忆：
-%s
-当前国策：%s
-
-输出必须是JSON：
-{
-  "report": "叙事轨文字",
-  "metrics": [{"label":"","value":"","trend":"","confidence":"","is_delayed":false}],
-  "actions": [{"type":"","params":{}}],
-  "action_id": "uuid"
+func buildReportSystemPrompt(profile MinisterProfile) string {
+	return buildBaseSystemPrompt(profile) + "当前任务是 planning 阶段的局势汇报，只能输出 report、metrics、actions、action_id 四个字段。当前 MVP 中 actions 必须为空数组。"
 }
-`, stateDesc, memory.ToPromptString(), currentPolicy)
+
+func buildDraftSystemPrompt(profile MinisterProfile) string {
+	return buildBaseSystemPrompt(profile) + "当前任务是润色一张已由规则层选定目标的大臣建议卡。不得改写目标，不得新增字段，只能输出 title、summary、rationale、risk_note 四个字符串字段。"
+}
+
+func buildReportUserPrompt(input ReportPromptInput) string {
+	return fmt.Sprintf(
+		"turn=%d\nphase=%s\nplayer=%s\ncurrent_policy=%s\ncurrent_research=%s\nobservation_summary=%s\nmemory=\n%s\n\n输出必须是 JSON：\n{\n  \"report\": \"\",\n  \"metrics\": [{\"label\":\"\",\"value\":\"\",\"trend\":\"up|down|stable\",\"confidence\":\"high|medium|low\",\"is_delayed\":false}],\n  \"actions\": [],\n  \"action_id\": \"\"\n}\n",
+		input.Turn,
+		strings.TrimSpace(input.Phase),
+		strings.TrimSpace(input.PlayerID),
+		emptyFallback(input.CurrentPolicy, "(none)"),
+		emptyFallback(input.CurrentResearch, "(none)"),
+		emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
+		memoryPrompt(input.Memory),
+	)
+}
+
+func buildDraftUserPrompt(input DraftPromptInput) string {
+	return fmt.Sprintf(
+		"turn=%d\nplayer=%s\ndraft_id=%s\nminister_role=%s\nkind=%s\ntarget_id=%s\ntarget_label=%s\ncurrent_policy=%s\ncurrent_research=%s\nobservation_summary=%s\nmemory=\n%s\n\n输出必须是 JSON：\n{\n  \"title\": \"\",\n  \"summary\": \"\",\n  \"rationale\": \"\",\n  \"risk_note\": \"\"\n}\n",
+		input.Turn,
+		strings.TrimSpace(input.PlayerID),
+		strings.TrimSpace(input.Draft.DraftID),
+		strings.TrimSpace(input.Draft.MinisterRole),
+		strings.TrimSpace(string(input.Draft.Kind)),
+		strings.TrimSpace(input.Draft.TargetID),
+		strings.TrimSpace(input.Draft.TargetLabel),
+		emptyFallback(input.CurrentPolicy, "(none)"),
+		emptyFallback(input.CurrentResearch, "(none)"),
+		emptyFallback(input.ObservationSummary, "(暂无观察摘要)"),
+		memoryPrompt(input.Memory),
+	)
+}
+
+func memoryPrompt(memory *MinisterMemory) string {
+	if memory == nil {
+		return "(暂无历史记忆)"
+	}
+	return memory.ToPromptString()
+}
+
+func emptyFallback(v string, fallback string) string {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return fallback
+	}
+	return v
 }

@@ -7,13 +7,13 @@
 package config
 
 type Config struct {
-	Port      string `env:"PORT" envDefault:"8080"`
-	LogLevel  string `env:"LOG_LEVEL" envDefault:"info"`
-	LogFormat string `env:"LOG_FORMAT" envDefault:"auto"`
-	DevMode   bool   `env:"DEV_MODE" envDefault:"false"`
-	DataRoot  string `env:"DATA_ROOT" envDefault:"../data"`
-	MapID     string `env:"MAP_ID" envDefault:""`
-	UseProceduralMap bool `env:"USE_PROCEDURAL_MAP" envDefault:"false"`
+	Port             string `env:"PORT" envDefault:"8080"`
+	LogLevel         string `env:"LOG_LEVEL" envDefault:"info"`
+	LogFormat        string `env:"LOG_FORMAT" envDefault:"auto"`
+	DevMode          bool   `env:"DEV_MODE" envDefault:"false"`
+	DataRoot         string `env:"DATA_ROOT" envDefault:"../data"`
+	MapID            string `env:"MAP_ID" envDefault:""`
+	UseProceduralMap bool   `env:"USE_PROCEDURAL_MAP" envDefault:"false"`
 
 	// PostgreSQL 配置
 	PostgresDSN string `env:"POSTGRES_DSN" envDefault:"postgres://panoptes:panoptes_dev@localhost:5432/panoptes?sslmode=disable"`
@@ -33,4 +33,10 @@ type Config struct {
 	// LLM 配置
 	QwenAPIKey     string `env:"QWEN_API_KEY" envDefault:""`
 	DeepSeekAPIKey string `env:"DEEPSEEK_API_KEY" envDefault:""`
+
+	// Minister LLM 配置
+	MinisterLLMEnabled   bool   `env:"MINISTER_LLM_ENABLED" envDefault:"false"`
+	MinisterLLMProvider  string `env:"MINISTER_LLM_PROVIDER" envDefault:"qwen"`
+	MinisterLLMModel     string `env:"MINISTER_LLM_MODEL" envDefault:""`
+	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"5000"`
 }
