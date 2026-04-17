@@ -60,6 +60,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private float portraitMinDistance = 0.9f;
         [SerializeField] private float portraitDistanceScale = 1.15f;
         [SerializeField] private float portraitHeightOffset = 0.2f;
+        [SerializeField] private float portraitCameraVerticalOffsetScale = -0.1f;
 
         [Header("Slide")]
         [SerializeField] private float hiddenOffsetX = 420f;
@@ -104,11 +105,11 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 externalOffsetCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
+            EnsurePortraitUi();
             if (autoBuildDefaultLayout)
             {
                 EnsureDefaultLayout();
             }
-            EnsurePortraitUi();
             HideLegacyPlanningTexts();
             EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
@@ -352,6 +353,13 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             RefreshUnitHpFromCache();
+            if (TryRefreshUnitPortrait(forceRender: true))
+            {
+                SetPortraitVisible(true);
+                return;
+            }
+
+            SetPortraitVisible(false);
             RefreshUnitIcon();
         }
 
@@ -431,6 +439,339 @@ namespace Panoptes.Presentation.UI.HUD
             }
             unitIcon.sprite = sprite;
             unitIcon.color = sprite == null ? new Color(0.3f, 0.3f, 0.3f, 1f) : Color.white;
+        }
+
+        private bool TryRefreshUnitPortrait(bool forceRender)
+        {
+            if (!enablePortraitCamera || _currentUnit == null)
+            {
+                DisablePortraitCamera();
+                return false;
+            }
+
+            EnsurePortraitUi();
+            if (unitPortraitRawImage == null)
+            {
+                DisablePortraitCamera();
+                return false;
+            }
+
+            if (!EnsurePortraitCameraAndTexture())
+            {
+                DisablePortraitCamera();
+                return false;
+            }
+
+            if (!UpdatePortraitCameraPose(_currentUnit))
+            {
+                DisablePortraitCamera();
+                return false;
+            }
+
+            UpdatePortraitCameraEnabledState();
+
+            if (_portraitCamera != null &&
+                _portraitCamera.targetTexture != null &&
+                (!portraitRealtime || forceRender))
+            {
+                _portraitCamera.Render();
+            }
+
+            return true;
+        }
+
+        private void EnsurePortraitUi()
+        {
+            if (panelRoot == null)
+            {
+                return;
+            }
+
+            RectTransform portraitRect;
+            if (unitPortraitRawImage == null)
+            {
+                portraitRect = panelRoot.Find("UnitPortrait") as RectTransform;
+                if (portraitRect == null)
+                {
+                    portraitRect = EnsureChild("UnitPortrait");
+                }
+
+                unitPortraitRawImage = portraitRect.GetComponent<RawImage>();
+                if (unitPortraitRawImage == null)
+                {
+                    unitPortraitRawImage = portraitRect.gameObject.AddComponent<RawImage>();
+                }
+            }
+
+            if (unitPortraitRawImage == null)
+            {
+                return;
+            }
+
+            portraitRect = unitPortraitRawImage.rectTransform;
+            if (unitIcon != null)
+            {
+                var iconRect = unitIcon.rectTransform;
+                portraitRect.anchorMin = iconRect.anchorMin;
+                portraitRect.anchorMax = iconRect.anchorMax;
+                portraitRect.pivot = iconRect.pivot;
+                portraitRect.anchoredPosition = iconRect.anchoredPosition;
+                portraitRect.sizeDelta = iconRect.sizeDelta;
+
+                if (panelRoot != null)
+                {
+                    var maxSibling = Mathf.Max(0, panelRoot.childCount - 1);
+                    var targetSibling = Mathf.Clamp(iconRect.GetSiblingIndex() + 1, 0, maxSibling);
+                    portraitRect.SetSiblingIndex(targetSibling);
+                }
+            }
+            else
+            {
+                portraitRect.anchorMin = new Vector2(0f, 0f);
+                portraitRect.anchorMax = new Vector2(0f, 0f);
+                portraitRect.pivot = new Vector2(0f, 0f);
+                portraitRect.anchoredPosition = new Vector2(14f, 14f);
+                portraitRect.sizeDelta = new Vector2(78f, 78f);
+            }
+
+            unitPortraitRawImage.raycastTarget = false;
+            unitPortraitRawImage.color = Color.white;
+            unitPortraitRawImage.texture = _portraitRenderTexture;
+        }
+
+        private bool EnsurePortraitCameraAndTexture()
+        {
+            if (!enablePortraitCamera)
+            {
+                return false;
+            }
+
+            var textureSize = Mathf.Clamp(portraitTextureSize, 64, 1024);
+            if (_portraitRenderTexture == null ||
+                _portraitRenderTexture.width != textureSize ||
+                _portraitRenderTexture.height != textureSize)
+            {
+                if (_portraitCamera != null && _portraitCamera.targetTexture == _portraitRenderTexture)
+                {
+                    _portraitCamera.targetTexture = null;
+                }
+
+                if (_portraitRenderTexture != null)
+                {
+                    _portraitRenderTexture.Release();
+                    Destroy(_portraitRenderTexture);
+                }
+
+                _portraitRenderTexture = new RenderTexture(textureSize, textureSize, 16, RenderTextureFormat.ARGB32)
+                {
+                    name = "UnitPortraitRT_Runtime",
+                    hideFlags = HideFlags.DontSave,
+                    antiAliasing = 1,
+                    useMipMap = false,
+                    autoGenerateMips = false
+                };
+                _portraitRenderTexture.Create();
+            }
+
+            if (_portraitCamera == null)
+            {
+                var cameraGo = new GameObject("UnitPortraitCamera_Runtime", typeof(Camera));
+                cameraGo.hideFlags = HideFlags.DontSave;
+                _portraitCamera = cameraGo.GetComponent<Camera>();
+            }
+
+            if (_portraitCamera == null || _portraitRenderTexture == null)
+            {
+                return false;
+            }
+
+            _portraitCamera.enabled = false;
+            _portraitCamera.orthographic = false;
+            _portraitCamera.fieldOfView = Mathf.Clamp(portraitFov, 10f, 80f);
+            _portraitCamera.nearClipPlane = 0.03f;
+            _portraitCamera.farClipPlane = 500f;
+            _portraitCamera.cullingMask = ~0;
+            _portraitCamera.targetTexture = _portraitRenderTexture;
+            ConfigurePortraitCameraClearFlags();
+
+            if (unitPortraitRawImage != null)
+            {
+                unitPortraitRawImage.texture = _portraitRenderTexture;
+            }
+
+            return true;
+        }
+
+        private void ConfigurePortraitCameraClearFlags()
+        {
+            if (_portraitCamera == null)
+            {
+                return;
+            }
+
+            if (!portraitKeepSceneBackground)
+            {
+                _portraitCamera.clearFlags = CameraClearFlags.SolidColor;
+                _portraitCamera.backgroundColor = Color.clear;
+                return;
+            }
+
+            if (RenderSettings.skybox != null)
+            {
+                _portraitCamera.clearFlags = CameraClearFlags.Skybox;
+                return;
+            }
+
+            _portraitCamera.clearFlags = CameraClearFlags.SolidColor;
+            _portraitCamera.backgroundColor = Color.black;
+        }
+
+        private bool UpdatePortraitCameraPose(UnitView unit)
+        {
+            if (_portraitCamera == null || unit == null)
+            {
+                return false;
+            }
+
+            if (!TryComputeUnitBounds(unit, out var bounds))
+            {
+                return false;
+            }
+
+            var visualRoot = unit.VisualRoot != null ? unit.VisualRoot : unit.transform;
+            var forward = visualRoot != null ? visualRoot.forward : unit.transform.forward;
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                forward = unit.transform.forward;
+            }
+
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+
+            forward.Normalize();
+            var lookAt = bounds.center + Vector3.up * (bounds.size.y * 0.15f + portraitHeightOffset);
+            var distance = Mathf.Max(
+                Mathf.Max(0.01f, portraitMinDistance),
+                bounds.extents.magnitude * Mathf.Max(0.01f, portraitDistanceScale));
+            var camPos = lookAt - forward * distance + Vector3.up * (bounds.size.y * portraitCameraVerticalOffsetScale);
+            var lookDir = lookAt - camPos;
+            if (lookDir.sqrMagnitude <= 0.0001f)
+            {
+                lookDir = forward;
+            }
+
+            _portraitCamera.transform.SetPositionAndRotation(
+                camPos,
+                Quaternion.LookRotation(lookDir.normalized, Vector3.up));
+            return true;
+        }
+
+        private static bool TryComputeUnitBounds(UnitView unit, out Bounds bounds)
+        {
+            bounds = default;
+            if (unit == null)
+            {
+                return false;
+            }
+
+            var renderers = unit.GetComponentsInChildren<Renderer>(true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return false;
+            }
+
+            var hasBounds = false;
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private void SetPortraitVisible(bool visible)
+        {
+            if (unitPortraitRawImage != null)
+            {
+                unitPortraitRawImage.enabled = visible;
+            }
+
+            if (unitIcon != null)
+            {
+                unitIcon.enabled = !visible;
+            }
+
+            UpdatePortraitCameraEnabledState();
+        }
+
+        private void UpdatePortraitCameraEnabledState()
+        {
+            if (_portraitCamera == null)
+            {
+                return;
+            }
+
+            var shouldEnable = enablePortraitCamera &&
+                               portraitRealtime &&
+                               isActiveAndEnabled &&
+                               _isOpen &&
+                               _currentUnit != null &&
+                               unitPortraitRawImage != null &&
+                               unitPortraitRawImage.enabled &&
+                               _portraitRenderTexture != null;
+            _portraitCamera.enabled = shouldEnable;
+        }
+
+        private void DisablePortraitCamera()
+        {
+            if (_portraitCamera != null)
+            {
+                _portraitCamera.enabled = false;
+            }
+        }
+
+        private void ReleasePortraitResources()
+        {
+            DisablePortraitCamera();
+
+            if (_portraitCamera != null && _portraitCamera.targetTexture == _portraitRenderTexture)
+            {
+                _portraitCamera.targetTexture = null;
+            }
+
+            if (unitPortraitRawImage != null && unitPortraitRawImage.texture == _portraitRenderTexture)
+            {
+                unitPortraitRawImage.texture = null;
+            }
+
+            if (_portraitCamera != null)
+            {
+                Destroy(_portraitCamera.gameObject);
+                _portraitCamera = null;
+            }
+
+            if (_portraitRenderTexture != null)
+            {
+                _portraitRenderTexture.Release();
+                Destroy(_portraitRenderTexture);
+                _portraitRenderTexture = null;
+            }
         }
 
         private void RefreshActionButtons()
@@ -782,6 +1123,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (panelBackground != null &&
                 unitIcon != null &&
+                unitPortraitRawImage != null &&
                 unitNameText != null &&
                 hpSlider != null &&
                 hpValueText != null &&
@@ -872,6 +1214,12 @@ namespace Panoptes.Presentation.UI.HUD
                 iconRT.anchoredPosition = new Vector2(14f, 14f);
                 iconRT.sizeDelta = new Vector2(78f, 78f);
                 unitIcon.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+            }
+
+            EnsurePortraitUi();
+            if (unitPortraitRawImage != null)
+            {
+                unitPortraitRawImage.enabled = false;
             }
 
             if (unitNameText == null)
@@ -1013,6 +1361,7 @@ namespace Panoptes.Presentation.UI.HUD
         private IEnumerator SlideRoutine(bool open)
         {
             _isOpen = open;
+            UpdatePortraitCameraEnabledState();
             var duration = Mathf.Max(0.01f, slideDuration);
             var from = panelRoot.anchoredPosition;
             var to = GetTargetAnchoredPosition(open);
@@ -1028,6 +1377,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             panelRoot.anchoredPosition = to;
+            UpdatePortraitCameraEnabledState();
             _slideRoutine = null;
         }
 
@@ -1038,6 +1388,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 panelRoot.anchoredPosition = GetTargetAnchoredPosition(open);
             }
+            UpdatePortraitCameraEnabledState();
         }
 
         private IEnumerator AnimateExternalOffset()
