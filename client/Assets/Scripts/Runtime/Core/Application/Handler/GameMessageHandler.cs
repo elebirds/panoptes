@@ -178,6 +178,17 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "unit_order",
+                Action = msg.Action ?? string.Empty,
+                Success = msg.Success,
+                PrimaryId = msg.UnitId ?? string.Empty,
+                SecondaryId = msg.TargetNodeId ?? string.Empty,
+                TertiaryId = msg.TargetUnitId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
+
             if (!msg.Success)
             {
                 PublishGameError(msg.ErrorCode, $"{msg.UnitId}:{msg.Action}:{msg.TargetNodeId}:{msg.TargetUnitId}");
@@ -194,6 +205,14 @@ namespace Panoptes.Core.Application.Handler
             {
                 return;
             }
+
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "research",
+                Success = msg.Success,
+                PrimaryId = msg.TechnologyId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
 
             if (!msg.Success)
             {
@@ -212,6 +231,14 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "policy",
+                Success = msg.Success,
+                PrimaryId = msg.NationalPolicyId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
+
             if (!msg.Success)
             {
                 PublishGameError(msg.ErrorCode, msg.NationalPolicyId);
@@ -228,6 +255,15 @@ namespace Panoptes.Core.Application.Handler
             {
                 return;
             }
+
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "institution_loadout",
+                Success = msg.Success,
+                PrimaryId = msg.PolicyIds.Count > 0 ? msg.PolicyIds[0] : string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty),
+                RelatedIds = new System.Collections.Generic.List<string>(msg.PolicyIds)
+            });
 
             if (!msg.Success)
             {
@@ -246,6 +282,15 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "building_recipe",
+                Success = msg.Success,
+                PrimaryId = msg.NodeId ?? string.Empty,
+                SecondaryId = msg.RecipeId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
+
             if (!msg.Success)
             {
                 PublishGameError(msg.ErrorCode, $"{msg.NodeId}:{msg.RecipeId}");
@@ -262,6 +307,16 @@ namespace Panoptes.Core.Application.Handler
             {
                 return;
             }
+
+            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            {
+                CommandType = "build",
+                Success = msg.Success,
+                PrimaryId = msg.NodeId ?? string.Empty,
+                SecondaryId = msg.BuildingTypeId ?? string.Empty,
+                TertiaryId = msg.CityId ?? string.Empty,
+                ErrorCode = msg.Success ? string.Empty : (msg.ErrorCode ?? string.Empty)
+            });
 
             if (!msg.Success)
             {
@@ -320,6 +375,16 @@ namespace Panoptes.Core.Application.Handler
                 Code = code ?? string.Empty,
                 Message = message ?? string.Empty
             });
+        }
+
+        private static void PublishPlanningCommandResult(PlanningCommandResultEvent evt)
+        {
+            if (evt == null)
+            {
+                return;
+            }
+
+            GameStateCache.Instance?.PublishPlanningCommandResult(evt);
         }
 
         private static string FormatPhaseStartLog(string text)

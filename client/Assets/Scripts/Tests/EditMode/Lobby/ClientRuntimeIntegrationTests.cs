@@ -24,6 +24,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
         private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
+        private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
         private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
         private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
@@ -391,6 +392,195 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void GameStateCache_ShouldProjectAuthoritativeResearchInstitutionCityAndBuildingQueries()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+
+            cache.ApplyGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 3,
+                Phase = "planning",
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 2,
+                    ActiveNationalPolicyId = "war_preparedness",
+                    CapitalCityCoreHp = 80,
+                    CapitalCityCoreMaxHp = 100,
+                    Research = new ResearchStateView
+                    {
+                        CurrentTargetTechnologyId = "agrarian_foundations",
+                        CurrentProgress = 3,
+                        RequiredProgress = 5,
+                        CompletedTechnologyIds = { "organized_labor" },
+                        ActiveTechnologyIds = { "organized_labor" },
+                        PendingActivationTechnologyIds = { "logistics" },
+                        SavedProgress =
+                        {
+                            new ResearchProgressEntry
+                            {
+                                TechnologyId = "agrarian_foundations",
+                                CurrentProgress = 3,
+                                RequiredProgress = 5
+                            }
+                        }
+                    },
+                    Institutions = new InstitutionStateView
+                    {
+                        SlotCount = 2,
+                        CandidatePolicyIds = { "academy_charter", "war_foundry" },
+                        ActivePolicyIds = { "academy_charter" }
+                    }
+                },
+                Nodes =
+                {
+                    new NodeView
+                    {
+                        Id = "A1",
+                        Pos = new Position { X = 0, Y = 0 },
+                        Terrain = "plain",
+                        ControllerPlayerId = "player-1",
+                        TerritoryOwnerPlayerId = "player-1",
+                        BuildingTypeId = "city_core",
+                        BuildingHp = 80,
+                        BuildingStatus = "active",
+                        CityId = "city-1",
+                        ServiceCityId = "city-1",
+                        IsCityCore = true
+                    },
+                    new NodeView
+                    {
+                        Id = "A2",
+                        Pos = new Position { X = 1, Y = 0 },
+                        Terrain = "plain",
+                        ControllerPlayerId = "player-1",
+                        TerritoryOwnerPlayerId = "player-1",
+                        BuildingTypeId = "farm",
+                        BuildingHp = 60,
+                        BuildingStatus = "takeover",
+                        CityId = string.Empty,
+                        ServiceCityId = "city-1",
+                        TakeoverProgress = 1,
+                        TakeoverRequired = 2
+                    }
+                }
+            });
+
+            var research = cache.GetCurrentResearchState();
+            Assert.That(research, Is.Not.Null, "缓存应提供当前研究状态投影。");
+            Assert.That(research.TechnologyId, Is.EqualTo("agrarian_foundations"));
+            Assert.That(research.CurrentProgress, Is.EqualTo(3));
+            Assert.That(research.RequiredProgress, Is.EqualTo(5));
+            Assert.That(research.CompletedTechnologyIds, Is.EquivalentTo(new[] { "organized_labor" }));
+            Assert.That(research.ActiveTechnologyIds, Is.EquivalentTo(new[] { "organized_labor" }));
+            Assert.That(research.PendingActivationTechnologyIds, Is.EquivalentTo(new[] { "logistics" }));
+            var savedProgressField = research.GetType().GetField("SavedProgress");
+            Assert.That(savedProgressField, Is.Not.Null, "研究 DTO 必须暴露 SavedProgress 集合。");
+
+            var institutions = cache.GetInstitutionState();
+            Assert.That(institutions, Is.Not.Null, "缓存应提供制度状态投影。");
+            Assert.That(institutions.SlotCount, Is.EqualTo(2));
+            Assert.That(institutions.CandidatePolicyIds, Is.EquivalentTo(new[] { "academy_charter", "war_foundry" }));
+            Assert.That(institutions.ActivePolicyIds, Is.EquivalentTo(new[] { "academy_charter" }));
+
+            var cities = cache.GetCities();
+            Assert.That(cities, Has.Count.EqualTo(1), "缓存应按权威节点重建城市索引。");
+            Assert.That(cache.TryGetCity("city-1", out var city), Is.True);
+            Assert.That(city, Is.Not.Null);
+            Assert.That(city.OwnerId, Is.EqualTo("player-1"));
+            Assert.That(city.CoreNodeId, Is.EqualTo("A1"));
+            Assert.That(city.BuildingNodeIds, Is.EquivalentTo(new[] { "A1", "A2" }));
+
+            Assert.That(cache.TryGetBuilding("A2", out var building), Is.True);
+            Assert.That(building, Is.Not.Null);
+            Assert.That(building.NodeId, Is.EqualTo("A2"));
+            Assert.That(building.CityId, Is.Empty);
+            Assert.That(building.ServiceCityId, Is.EqualTo("city-1"));
+            Assert.That(building.Status, Is.EqualTo("takeover"));
+            Assert.That(building.TakeoverProgress, Is.EqualTo(1));
+            Assert.That(building.TakeoverRequired, Is.EqualTo(2));
+            Assert.That(building.IsCityCore, Is.False);
+        }
+
+        [Test]
+        public void GameMessageHandler_ShouldPublishPlanningCommandResults_WithoutMutatingAuthoritativeState()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+            SetSingletonInstance(typeof(GameStateCache), cache);
+
+            cache.ApplyGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 4,
+                Phase = "planning",
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 2,
+                    ActiveNationalPolicyId = "recovery",
+                    Research = new ResearchStateView
+                    {
+                        CurrentTargetTechnologyId = "organized_labor",
+                        CurrentProgress = 1,
+                        RequiredProgress = 4
+                    }
+                }
+            });
+
+            PlanningCommandResultEvent researchResult = null;
+            PlanningCommandResultEvent policyResult = null;
+            GameErrorEvent policyError = null;
+            cache.OnPlanningCommandResult += evt =>
+            {
+                if (evt.CommandType == "research")
+                {
+                    researchResult = evt;
+                }
+                else if (evt.CommandType == "policy")
+                {
+                    policyResult = evt;
+                }
+            };
+            cache.OnGameError += evt => policyError = evt;
+
+            InvokeStaticMessageHandler("OnResearchResult", new MsgResearchResult
+            {
+                Success = true,
+                TechnologyId = "agrarian_foundations"
+            });
+            InvokeStaticMessageHandler("OnSetPolicyResult", new MsgSetPolicyResult
+            {
+                Success = false,
+                NationalPolicyId = "war_preparedness",
+                ErrorCode = "invalid_request"
+            });
+
+            Assert.That(researchResult, Is.Not.Null, "研究 typed result 应发布统一规划命令结果事件。");
+            Assert.That(researchResult.Success, Is.True);
+            Assert.That(researchResult.CommandType, Is.EqualTo("research"));
+            Assert.That(researchResult.PrimaryId, Is.EqualTo("agrarian_foundations"));
+
+            Assert.That(policyResult, Is.Not.Null, "国策失败也应发布统一规划命令结果事件。");
+            Assert.That(policyResult.Success, Is.False);
+            Assert.That(policyResult.CommandType, Is.EqualTo("policy"));
+            Assert.That(policyResult.PrimaryId, Is.EqualTo("war_preparedness"));
+            Assert.That(policyResult.ErrorCode, Is.EqualTo("invalid_request"));
+
+            Assert.That(policyError, Is.Not.Null, "规划命令失败应继续走 GameError 事件。");
+            Assert.That(policyError.Code, Is.EqualTo("invalid_request"));
+
+            Assert.That(cache.GetCurrentResearchState().TechnologyId, Is.EqualTo("organized_labor"),
+                "typed result 不应覆盖权威 active cache 中的研究目标。");
+            Assert.That(cache.MyPlayer.ActiveNationalPolicyId, Is.EqualTo("recovery"),
+                "typed result 不应覆盖权威 active cache 中的国策状态。");
+        }
+
+        [Test]
         public void LobbyService_ShouldExposeAddBotAndKickPlayerMessages()
         {
             Assert.That(File.Exists(_lobbyServicePath), Is.True, "LobbyService.cs 不存在。");
@@ -452,8 +642,11 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "AppManager 必须显式跟踪 Catalog 同步中的 bootstrap 状态。");
 
             var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
+            var clearRoomIndex = content.IndexOf("RoomCache.Instance?.Clear();", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
+            Assert.That(clearRoomIndex, Is.GreaterThan(applyIndex), "进入 Game 前必须清空大厅房间缓存，避免返回 Lobby 时残留旧房间。");
+            Assert.That(transitionIndex, Is.GreaterThan(clearRoomIndex), "AppManager 必须在清理大厅房间缓存之后再切换 Game 场景。");
             Assert.That(transitionIndex, Is.GreaterThan(applyIndex), "AppManager 必须在 ApplyGameInit 之后再切换 Game 场景。");
         }
 
@@ -505,6 +698,65 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "CityCoreProductionPanel 不应继续读取 buildconfig。");
             Assert.That(cityCoreContent, Does.Not.Contain("armyConfigKey = \"armyconfig\""),
                 "CityCoreProductionPanel 不应继续读取 armyconfig。");
+        }
+
+        [Test]
+        public void PlanningDraftCache_ShouldExposeRecipeSelectionLookup_ForUiConsumers()
+        {
+            var cache = PlanningDraftCache.EnsureInstance();
+            cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
+            {
+                RecipeSelections =
+                {
+                    new QueuedRecipeSelection
+                    {
+                        NodeId = "A2",
+                        RecipeId = "grain_mill"
+                    }
+                }
+            });
+
+            var lookupMethod = typeof(PlanningDraftCache).GetMethod("TryGetRecipeSelection");
+            Assert.That(lookupMethod, Is.Not.Null,
+                "PlanningDraftCache 应提供按 nodeId 查询配方草稿的 helper。");
+
+            var args = new object[] { "A2", null };
+            var resolved = (bool)lookupMethod!.Invoke(cache, args);
+            Assert.That(resolved, Is.True, "现有配方草稿应支持按 nodeId 直接查询。");
+
+            var selection = args[1];
+            Assert.That(selection, Is.Not.Null);
+            Assert.That(selection!.GetType().GetField("RecipeId")?.GetValue(selection) as string, Is.EqualTo("grain_mill"));
+        }
+
+        [Test]
+        public void TechnologyAndBuildingUi_ShouldAlignToDtoQueries_AndAvoidLegacyFallbacks()
+        {
+            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
+
+            var techTreeContent = File.ReadAllText(_techTreePanelPath);
+            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var cityCoreContent = File.ReadAllText(_cityCoreProductionPanelPath);
+            var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+
+            StringAssert.Contains("GetCurrentResearchState()", techTreeContent,
+                "科技树状态构建应直接消费权威研究 DTO。");
+            Assert.That(techTreeContent, Does.Not.Contain("GetPropertyValue(GetPropertyValue(gameState, \"MyPlayer\"), \"Research\")"),
+                "科技树不应继续通过 MyPlayer.Research 反射取状态。");
+
+            StringAssert.Contains("OnPlanningCommandResult", recipeContent,
+                "配方面板应订阅统一规划命令结果事件以便失败回滚。");
+            StringAssert.Contains("TryGetRecipeSelection(", recipeContent,
+                "配方面板应通过 PlanningDraftCache helper 读取当前节点的配方草稿。");
+
+            Assert.That(cityCoreContent, Does.Not.Contain("return \"blue\";"),
+                "主城生产面板不应继续使用 blue 作为本地玩家默认值。");
+
+            StringAssert.Contains("TryGetBuilding(", registrarContent,
+                "主城建筑入口应优先通过 BuildingDto 查询建筑业务状态。");
         }
 
         [Test]
@@ -633,6 +885,24 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "不应再在客户端本地猜测 cityId。");
             StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", content,
                 "缺少 cityId 时应在进入建造模式前直接失败。");
+        }
+
+        [Test]
+        public void MapInputHandler_ShouldNotGateCommandsByLocalPlacementOrTargetRules()
+        {
+            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var content = File.ReadAllText(_mapInputHandlerPath);
+            Assert.That(content, Does.Not.Contain("territoryOnlyBuildingTypes"),
+                "Chunk 8A 后不应再靠本地 territoryOnlyBuildingTypes 过滤发送建造。");
+            Assert.That(content, Does.Not.Contain("globalPlacementBuildingTypes"),
+                "Chunk 8A 后不应再靠本地 globalPlacementBuildingTypes 过滤发送建造。");
+            Assert.That(content, Does.Not.Contain("TryValidateTerritoryExpandRequest("),
+                "建城发送前不应继续做本地合法性校验。");
+            Assert.That(content, Does.Not.Contain("TryGetAttackableStructureNode("),
+                "结构攻击发送前不应继续做本地目标合法性推断。");
+            Assert.That(content, Does.Not.Contain("CanPlaceBuildingAt("),
+                "建造点击不应继续以本地规则否决发送。");
         }
 
         [Test]
@@ -784,6 +1054,28 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void SettlementPlaybackController_ShouldHandleUnifiedChunk8ASettlementEvents()
+        {
+            Assert.That(File.Exists(_settlementPlaybackControllerPath), Is.True, "SettlementPlaybackController.cs 不存在。");
+
+            var content = File.ReadAllText(_settlementPlaybackControllerPath);
+            StringAssert.Contains("case \"city_founded\":", content,
+                "结算回放应消费建城事件。");
+            StringAssert.Contains("case \"building_status_changed\":", content,
+                "结算回放应消费建筑状态变化事件。");
+            StringAssert.Contains("case \"facility_takeover_progressed\":", content,
+                "结算回放应消费设施接管推进事件。");
+            StringAssert.Contains("case \"facility_takeover_completed\":", content,
+                "结算回放应消费设施接管完成事件。");
+            StringAssert.Contains("case \"technology_completed\":", content,
+                "结算回放应消费科技完成事件。");
+            StringAssert.Contains("case \"technology_activated\":", content,
+                "结算回放应消费科技激活事件。");
+            StringAssert.Contains("case \"city_core_destroyed\":", content,
+                "结算回放应消费主城摧毁事件。");
+        }
+
+        [Test]
         public void StrategicPanel_RuntimeScript_ShouldBeRemoved_AfterCleanup()
         {
             Assert.That(File.Exists(_strategicPanelPath), Is.True, "StrategicPanel.cs 占位文件不存在。");
@@ -910,6 +1202,18 @@ namespace Panoptes.Tests.EditMode.Lobby
             }
 
             method.Invoke(instance, null);
+        }
+
+        private static void InvokeStaticMessageHandler(string methodName, object message)
+        {
+            var method = typeof(Panoptes.Core.Application.Handler.GameMessageHandler).GetMethod(methodName,
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new AssertionException($"缺少静态消息处理方法 {methodName}");
+            }
+
+            method.Invoke(null, new[] { message });
         }
 
         private static void SetSingletonInstance(Type type, object value)
