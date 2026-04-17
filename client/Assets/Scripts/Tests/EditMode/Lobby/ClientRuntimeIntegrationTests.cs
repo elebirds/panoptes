@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
@@ -53,6 +54,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             DestroySingleton("Panoptes.Core.Application.Cache.ClientRuntimeConfigCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.ConfigCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.GameStateCache, Panoptes.Core");
+            DestroySingleton("Panoptes.Core.Application.Cache.GameChatCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.StaticCatalogCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Application.Cache.PlanningDraftCache, Panoptes.Core");
             DestroySingleton("Panoptes.Core.Infrastructure.Network.MessageDispatcher, Panoptes.Core");
@@ -126,6 +128,101 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.GameID, Is.Empty);
             Assert.That(cache.MyPlayerID, Is.Empty);
             Assert.That(changedCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void GameChatCache_ShouldApplyPostedAndSync_ForPresentation()
+        {
+            var cacheObject = new GameObject("GameChatCache");
+            var cache = cacheObject.AddComponent<GameChatCache>();
+
+            var addedCount = 0;
+            var changedCount = 0;
+            GameChatEntryDto addedEntry = null;
+
+            cache.OnEntryAdded += entry =>
+            {
+                addedCount++;
+                addedEntry = entry;
+            };
+            cache.OnEntriesChanged += () => changedCount++;
+
+            cache.ApplyPosted(new MsgGameChatPosted
+            {
+                Entry = new ChatEntry
+                {
+                    Sequence = 1,
+                    SenderPlayerId = "player-1",
+                    Turn = 2,
+                    Phase = "planning",
+                    Payload = new ChatPayload
+                    {
+                        Emote = ChatEmote.Laugh
+                    }
+                }
+            });
+
+            Assert.That(cache.Entries.Count, Is.EqualTo(1));
+            Assert.That(addedCount, Is.EqualTo(1));
+            Assert.That(changedCount, Is.EqualTo(1));
+            Assert.That(addedEntry, Is.Not.Null);
+            Assert.That(addedEntry.Sequence, Is.EqualTo(1));
+            Assert.That(addedEntry.Payload.Kind, Is.EqualTo(GameChatPayloadKind.Emote));
+            Assert.That(addedEntry.Payload.Emote, Is.EqualTo(GameChatEmoteKind.Laugh));
+
+            cache.ApplySync(new MsgGameChatSync
+            {
+                Entries =
+                {
+                    new ChatEntry
+                    {
+                        Sequence = 3,
+                        SenderPlayerId = "player-2",
+                        Turn = 4,
+                        Phase = "resolving",
+                        Payload = new ChatPayload
+                        {
+                            Emote = ChatEmote.Warning
+                        }
+                    }
+                }
+            });
+
+            Assert.That(cache.Entries.Count, Is.EqualTo(1));
+            Assert.That(cache.Entries[0].Sequence, Is.EqualTo(3));
+            Assert.That(cache.Entries[0].Payload.Emote, Is.EqualTo(GameChatEmoteKind.Warning));
+            Assert.That(changedCount, Is.EqualTo(2));
+
+            cache.Clear();
+            Assert.That(cache.Entries, Is.Empty);
+            Assert.That(changedCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void GameMessageHandler_ShouldForwardGameChatPostedIntoChatCache()
+        {
+            var cacheObject = new GameObject("GameChatCache");
+            var cache = cacheObject.AddComponent<GameChatCache>();
+            SetSingletonInstance(typeof(GameChatCache), cache);
+
+            InvokeStaticMessageHandler("OnGameChatPosted", new MsgGameChatPosted
+            {
+                Entry = new ChatEntry
+                {
+                    Sequence = 5,
+                    SenderPlayerId = "player-2",
+                    Turn = 6,
+                    Phase = "settlement",
+                    Payload = new ChatPayload
+                    {
+                        Emote = ChatEmote.Angry
+                    }
+                }
+            });
+
+            Assert.That(cache.Entries.Count, Is.EqualTo(1));
+            Assert.That(cache.Entries[0].SenderPlayerId, Is.EqualTo("player-2"));
+            Assert.That(cache.Entries[0].Payload.Emote, Is.EqualTo(GameChatEmoteKind.Angry));
         }
 
         [Test]

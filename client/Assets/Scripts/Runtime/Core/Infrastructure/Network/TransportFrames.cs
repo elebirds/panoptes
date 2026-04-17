@@ -102,6 +102,9 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgSubmitTurn submitTurn:
                     frame = PlanningFrame(new PlanningCommand { SubmitTurn = submitTurn });
                     return true;
+                case MsgSendGameChat sendGameChat:
+                    frame = ChatFrame(new ChatCommand { SendGameChat = sendGameChat });
+                    return true;
                 case MsgStaticCatalogSyncRequest syncRequest:
                     frame = new ClientFrame
                     {
@@ -174,6 +177,18 @@ namespace Panoptes.Core.Infrastructure.Network
                 Game = new GameCommand
                 {
                     Planning = command
+                }
+            };
+        }
+
+        private static ClientFrame ChatFrame(ChatCommand command)
+        {
+            return new ClientFrame
+            {
+                Meta = BuildMeta(),
+                Game = new GameCommand
+                {
+                    Chat = command
                 }
             };
         }
@@ -253,6 +268,8 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.GameOver => evt.GameOver,
                 GameEvent.BodyOneofCase.MinisterReportChunk => evt.MinisterReportChunk,
                 GameEvent.BodyOneofCase.MinisterMetrics => evt.MinisterMetrics,
+                GameEvent.BodyOneofCase.GameChatPosted => evt.GameChatPosted,
+                GameEvent.BodyOneofCase.GameChatSync => evt.GameChatSync,
                 _ => null
             };
         }

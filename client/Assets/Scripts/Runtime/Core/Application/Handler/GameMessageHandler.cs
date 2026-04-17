@@ -48,6 +48,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
+            dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", OnGameChatPosted);
+            dispatcher.Register<MsgGameChatSync>("MsgGameChatSync", OnGameChatSync);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
             _registered = true;
         }
@@ -76,6 +78,8 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
+            dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", OnGameChatPosted);
+            dispatcher.Unregister<MsgGameChatSync>("MsgGameChatSync", OnGameChatSync);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
             _registered = false;
         }
@@ -408,6 +412,29 @@ namespace Panoptes.Core.Application.Handler
                 MinisterRole = msg.MinisterRole,
                 Metrics = MinisterMapper.ToDtoList(msg.Metrics)
             });
+        }
+
+        private static void OnGameChatPosted(MsgGameChatPosted msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            GameChatCache.EnsureInstance()?.ApplyPosted(msg);
+            var entry = msg.Entry;
+            Debug.Log($"[Game] 聊天表情 sender={entry?.SenderPlayerId} turn={entry?.Turn} phase={entry?.Phase} payload={entry?.Payload?.BodyCase}");
+        }
+
+        private static void OnGameChatSync(MsgGameChatSync msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            GameChatCache.EnsureInstance()?.ApplySync(msg);
+            Debug.Log($"[Game] 聊天同步 entries={msg.Entries.Count}");
         }
 
         private static void OnGameOver(MsgGameOver msg)
