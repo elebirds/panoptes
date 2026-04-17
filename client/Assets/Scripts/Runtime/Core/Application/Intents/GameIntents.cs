@@ -144,6 +144,39 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] BuildStructure");
         }
 
+        public static void PreviewBuild(string requestId, string nodeId, string buildingTypeId, string cityId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgBuildStructurePreviewRequest
+            {
+                RequestId = requestId ?? string.Empty,
+                NodeId = nodeId ?? string.Empty,
+                BuildingTypeId = buildingTypeId ?? string.Empty,
+                CityId = cityId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+        }
+
+        public static void PreviewRecipe(string requestId, string nodeId, string recipeId)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return;
+            }
+
+            var msg = new MsgSetBuildingRecipePreviewRequest
+            {
+                RequestId = requestId ?? string.Empty,
+                NodeId = nodeId ?? string.Empty,
+                RecipeId = recipeId ?? string.Empty
+            };
+            MessageSender.Send(msg);
+        }
+
         public static void ExpandTerritory(string unitId, string centerNodeId = null)
         {
             if (ActionLock.IsLocked)

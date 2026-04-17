@@ -581,6 +581,86 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void GameMessageHandler_ShouldPublishStructuredBuildAndRecipeFeedback()
+        {
+            var cacheObject = new GameObject("GameStateCache");
+            var cache = cacheObject.AddComponent<GameStateCache>();
+            SetSingletonInstance(typeof(GameStateCache), cache);
+
+            PlanningCommandResultEvent buildResult = null;
+            PlanningCommandResultEvent recipeResult = null;
+            var errors = new System.Collections.Generic.List<GameErrorEvent>();
+            cache.OnPlanningCommandResult += evt =>
+            {
+                if (evt.CommandType == "build")
+                {
+                    buildResult = evt;
+                }
+                else if (evt.CommandType == "building_recipe")
+                {
+                    recipeResult = evt;
+                }
+            };
+            cache.OnGameError += evt => errors.Add(evt);
+
+            InvokeStaticMessageHandler("OnBuildStructureResult", new MsgBuildStructureResult
+            {
+                Success = false,
+                NodeId = "A2",
+                BuildingTypeId = "farm",
+                CityId = "city-1",
+                ErrorCode = "resource_type_mismatch",
+                FeedbackMessage = "农场只能建在粮食资源点上",
+                FeedbackDetails =
+                {
+                    new FeedbackDetail { Key = "node_id", Value = "A2" },
+                    new FeedbackDetail { Key = "building_type_id", Value = "farm" },
+                    new FeedbackDetail { Key = "city_id", Value = "city-1" },
+                    new FeedbackDetail { Key = "required_resource_type", Value = "food" }
+                }
+            });
+
+            InvokeStaticMessageHandler("OnSetBuildingRecipeResult", new MsgSetBuildingRecipeResult
+            {
+                Success = false,
+                NodeId = "A2",
+                RecipeId = "smelt_iron",
+                ErrorCode = "invalid_recipe_selection",
+                FeedbackMessage = "该建筑当前不能切换到这个配方",
+                FeedbackDetails =
+                {
+                    new FeedbackDetail { Key = "node_id", Value = "A2" },
+                    new FeedbackDetail { Key = "recipe_id", Value = "smelt_iron" }
+                }
+            });
+
+            Assert.That(buildResult, Is.Not.Null, "建造失败应发布结构化规划结果事件。");
+            Assert.That(buildResult.Success, Is.False);
+            Assert.That(buildResult.Action, Is.EqualTo("build_structure"));
+            Assert.That(buildResult.PrimaryId, Is.EqualTo("A2"));
+            Assert.That(buildResult.SecondaryId, Is.EqualTo("farm"));
+            Assert.That(buildResult.TertiaryId, Is.EqualTo("city-1"));
+            Assert.That(buildResult.Message, Is.EqualTo("农场只能建在粮食资源点上"));
+            Assert.That(buildResult.Details, Is.Not.Null);
+            Assert.That(buildResult.Details["required_resource_type"], Is.EqualTo("food"));
+
+            Assert.That(recipeResult, Is.Not.Null, "配方失败应发布结构化规划结果事件。");
+            Assert.That(recipeResult.Success, Is.False);
+            Assert.That(recipeResult.Action, Is.EqualTo("set_building_recipe"));
+            Assert.That(recipeResult.PrimaryId, Is.EqualTo("A2"));
+            Assert.That(recipeResult.SecondaryId, Is.EqualTo("smelt_iron"));
+            Assert.That(recipeResult.Message, Is.EqualTo("该建筑当前不能切换到这个配方"));
+            Assert.That(recipeResult.Details, Is.Not.Null);
+            Assert.That(recipeResult.Details["recipe_id"], Is.EqualTo("smelt_iron"));
+
+            Assert.That(errors, Has.Count.EqualTo(2), "建造与配方失败都应继续发布 GameError。");
+            Assert.That(errors[0].Message, Is.EqualTo("农场只能建在粮食资源点上"));
+            Assert.That(errors[0].Details["node_id"], Is.EqualTo("A2"));
+            Assert.That(errors[1].Message, Is.EqualTo("该建筑当前不能切换到这个配方"));
+            Assert.That(errors[1].Details["recipe_id"], Is.EqualTo("smelt_iron"));
+        }
+
+        [Test]
         public void LobbyService_ShouldExposeAddBotAndKickPlayerMessages()
         {
             Assert.That(File.Exists(_lobbyServicePath), Is.True, "LobbyService.cs 不存在。");

@@ -75,6 +75,8 @@ message PlanningCommand {
     MsgPlanningPathPreviewRequest planning_path_preview_request = 11;
     MsgSubmitTurn submit_turn = 12;
     MsgSetInstitutionLoadout set_institution_loadout = 13;
+    MsgBuildStructurePreviewRequest build_structure_preview = 14;
+    MsgSetBuildingRecipePreviewRequest set_building_recipe_preview = 15;
   }
 }
 
@@ -137,6 +139,8 @@ message GameEvent {
     MsgConfigBatchJson config_batch_json = 20;
     MsgStaticCatalogSectionChunk static_catalog_section_chunk = 21;
     MsgStaticCatalogSyncComplete static_catalog_sync_complete = 22;
+    MsgBuildStructurePreviewResponse build_structure_preview_response = 23;
+    MsgSetBuildingRecipePreviewResponse set_building_recipe_preview_response = 24;
   }
 }
 

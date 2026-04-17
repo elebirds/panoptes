@@ -52,6 +52,12 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	if result == nil || result.GetErrorCode() != "outside_territory" {
 		t.Fatalf("build result = %#v, want outside_territory", result)
 	}
+	if got := result.GetFeedbackMessage(); got != "该节点不在你的有效辖区内，当前不能建造。" {
+		t.Fatalf("feedback_message = %q, want outside territory message", got)
+	}
+	assertFeedbackDetailValue(t, result.GetFeedbackDetails(), "node_id", "A2")
+	assertFeedbackDetailValue(t, result.GetFeedbackDetails(), "building_type_id", "farm")
+	assertFeedbackDetailValue(t, result.GetFeedbackDetails(), "city_id", "A1")
 	if len(state.TurnRuntime.Planning.BuildOrders) != 0 {
 		t.Fatalf("build orders = %#v, want empty", state.TurnRuntime.Planning.BuildOrders)
 	}
@@ -83,6 +89,243 @@ func TestBuildStructureRejectedWhenBuildingAlreadyExists(t *testing.T) {
 	result := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
 	if result == nil || result.GetErrorCode() != "building_exists" {
 		t.Fatalf("build result = %#v, want building_exists", result)
+	}
+	if got := result.GetFeedbackMessage(); got != "该节点已经有建筑，不能重复建造。" {
+		t.Fatalf("feedback_message = %q, want building exists message", got)
+	}
+}
+
+func TestBuildStructurePreviewRejectedOutsideTerritoryDoesNotMutateState(t *testing.T) {
+	def, err := scenario.ResearchUnlockBuild()
+	if err != nil {
+		t.Fatalf("ResearchUnlockBuild() error = %v", err)
+	}
+	staticdata.SetDefault(def.Catalog)
+
+	state := def.State
+	state.Players["player-1"].TokensLeft = 3
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
+
+	nodeEntry, ok := state.GetNode("A2")
+	if !ok {
+		t.Fatalf("missing node A2")
+	}
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-2"
+	node.TerritoryOwner = "player-2"
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err = service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructurePreview{
+			BuildStructurePreview: &pb.MsgBuildStructurePreviewRequest{
+				RequestId:      "preview-build-1",
+				NodeId:         "A2",
+				BuildingTypeId: "farm",
+				CityId:         "A1",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgBuildStructurePreviewResponse](session.sent["player-1"])
+	if result == nil || result.GetValid() || result.GetErrorCode() != "outside_territory" {
+		t.Fatalf("build preview result = %#v, want invalid outside_territory", result)
+	}
+	if got := result.GetFeedbackMessage(); got != "该节点不在你的有效辖区内，当前不能建造。" {
+		t.Fatalf("feedback_message = %q, want outside territory message", got)
+	}
+	if got := state.Players["player-1"].TokensLeft; got != 3 {
+		t.Fatalf("tokens left = %d, want unchanged 3", got)
+	}
+	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
+		t.Fatalf("build order count = %d, want 0", got)
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil for preview", snapshot)
+	}
+}
+
+func TestBuildStructureRejectedInsufficientPointsIncludesFeedback(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			CityCoreMaxHP:             100,
+			BaseResearchOutputPerTurn: 1,
+			BaseIndustryOutputPerTurn: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "out_of_city", PointCosts: staticdata.PointAmounts{"industry_output": 1}, MaxHP: 60, TakeoverMode: "delayed"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "point-preview", NodeIndex: map[string]donburi.Entity{}}
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	mapData.NodeIndex["C1"] = cityEntity
+	mapData.NodeIndex["N1"] = targetEntity
+	for _, entity := range []donburi.Entity{cityEntity, targetEntity} {
+		entry := world.Entry(entity)
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", world.Entry(cityEntity))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	state.Players["player-1"].TokensLeft = 3
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.Players["player-1"].Resources.Set(domain.ResourceWood, 10)
+	state.EnsureCityState("player-1", "C1")
+	state.Players["player-1"].CapitalCityID = "C1"
+
+	session := newPlanningSessionStub(state)
+	session.devMode = false
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{NodeId: "N1", BuildingTypeId: "farm", CityId: "C1"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgBuildStructureResult](session.sent["player-1"])
+	if result == nil || result.GetErrorCode() != "insufficient_points" {
+		t.Fatalf("build result = %#v, want insufficient_points", result)
+	}
+	if got := result.GetFeedbackMessage(); got != "工业点数不足，无法提交这条建造。" {
+		t.Fatalf("feedback_message = %q, want insufficient points message", got)
+	}
+	assertFeedbackDetailValue(t, result.GetFeedbackDetails(), "missing_point.industry_output", "1")
+	if got := len(state.TurnRuntime.Planning.BuildOrders); got != 0 {
+		t.Fatalf("build order count = %d, want 0", got)
+	}
+}
+
+func TestSetBuildingRecipePreviewWarnsWhenBuildingBlocked(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "out_of_city", MaxHP: 60, RecipeIDs: []string{"farm_food"}, TakeoverMode: "delayed"},
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "farm_food", BuildingID: "farm", WorkAmount: 2, BaseProgress: 1},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "recipe-preview", NodeIndex: map[string]donburi.Entity{}}
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	farmEntity := ecs.CreateNode(world, ecs.MapNode{ID: "F1", X: 1, Y: 0, Terrain: "plain"})
+	mapData.NodeIndex["C1"] = cityEntity
+	mapData.NodeIndex["F1"] = farmEntity
+	for _, entity := range []donburi.Entity{cityEntity, farmEntity} {
+		entry := world.Entry(entity)
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	ecs.CreateBuilding(world, "city_core", "player-1", "C1", world.Entry(cityEntity))
+	farmEntry := world.Entry(farmEntity)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
+	farmEntry.AddComponent(ecs.BuildingOperationC)
+	ecs.BuildingOperationC.SetValue(farmEntry, ecs.BuildingOperationComp{
+		SelectedRecipeID: "farm_food",
+		ProgressTurns:    1,
+		RequiredTurns:    2,
+		BlockedReason:    "insufficient_resources",
+	})
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	state.Players["player-1"].Research.UnlockRecipe("farm_food")
+	state.EnsureCityState("player-1", "C1")
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetBuildingRecipePreview{
+			SetBuildingRecipePreview: &pb.MsgSetBuildingRecipePreviewRequest{
+				RequestId: "preview-recipe-1",
+				NodeId:    "F1",
+				RecipeId:  "farm_food",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetBuildingRecipePreviewResponse](session.sent["player-1"])
+	if result == nil || !result.GetValid() || result.GetErrorCode() != "" {
+		t.Fatalf("recipe preview result = %#v, want valid warning", result)
+	}
+	if got := result.GetFeedbackMessage(); got != "生产所需资源不足，本回合无法推进。" {
+		t.Fatalf("feedback_message = %q, want blocked warning", got)
+	}
+	if got := len(state.TurnRuntime.Planning.RecipeSelections); got != 0 {
+		t.Fatalf("recipe selection count = %d, want 0", got)
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil for preview", snapshot)
+	}
+}
+
+func TestSetBuildingRecipeRejectedIncludesSpecificFeedback(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "barracks", BuildingScope: "in_city", MaxHP: 80, RecipeIDs: []string{"train_infantry"}},
+		},
+		Recipes: []staticdata.RecipeDefinition{
+			{ID: "train_infantry", BuildingID: "barracks", WorkAmount: 2, BaseProgress: 1},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	node := ecs.NodeC.Get(nodeEntry)
+	node.Owner = "player-1"
+	node.TerritoryOwner = "player-1"
+	ecs.CreateBuilding(world, "barracks", "player-1", "C1", nodeEntry)
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "default",
+		NodeIndex: map[string]donburi.Entity{"B1": nodeEntity},
+	})
+	state.World = world
+
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_SetBuildingRecipe{
+			SetBuildingRecipe: &pb.MsgSetBuildingRecipe{NodeId: "B1", RecipeId: "train_infantry"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgSetBuildingRecipeResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("recipe result = %#v, want invalid_directive", result)
+	}
+	if got := result.GetFeedbackMessage(); got != "该配方尚未解锁，当前不能设置。" {
+		t.Fatalf("feedback_message = %q, want recipe unlock message", got)
 	}
 }
 
@@ -563,12 +806,14 @@ func TestSetInstitutionLoadoutQueuesDraftAndSnapshot(t *testing.T) {
 type planningSessionStub struct {
 	state *domain.GameState
 	sent  map[string][]proto.Message
+	devMode bool
 }
 
 func newPlanningSessionStub(state *domain.GameState) *planningSessionStub {
 	return &planningSessionStub{
-		state: state,
-		sent:  make(map[string][]proto.Message),
+		state:   state,
+		sent:    make(map[string][]proto.Message),
+		devMode: true,
 	}
 }
 
@@ -649,7 +894,7 @@ func (s *planningSessionStub) SendToPlayer(_ context.Context, playerID string, m
 	return nil
 }
 
-func (s *planningSessionStub) IsDevMode() bool { return true }
+func (s *planningSessionStub) IsDevMode() bool { return s.devMode }
 
 func (s *planningSessionStub) QueueBuildOrder(order domain.BuildOrder) {
 	s.state.TurnRuntime.Planning.UpsertBuildOrder(order)
@@ -723,4 +968,18 @@ func firstMessage[T proto.Message](msgs []proto.Message) T {
 		}
 	}
 	return zero
+}
+
+func assertFeedbackDetailValue(t *testing.T, details []*pb.FeedbackDetail, key string, want string) {
+	t.Helper()
+	for _, detail := range details {
+		if detail == nil || detail.GetKey() != key {
+			continue
+		}
+		if got := detail.GetValue(); got != want {
+			t.Fatalf("feedback detail %q = %q, want %q", key, got, want)
+		}
+		return
+	}
+	t.Fatalf("feedback detail %q missing", key)
 }

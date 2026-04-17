@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
@@ -33,6 +34,7 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private RectTransform listContent;
         [SerializeField] private RecipeSynthesisItemView recipeItemPrefab;
         [SerializeField] private Button closeButton;
+        [SerializeField] private TMP_Text statusText;
         [SerializeField] private BuildPanelSlideToggle slideToggle;
         [SerializeField] private bool keepSlideToggleButtonVisible = true;
 
@@ -61,7 +63,13 @@ namespace Panoptes.Presentation.UI.Domestic
         private string _activeNodeId = string.Empty;
         private string _activeBuildingTypeId = string.Empty;
         private string _activeOwnerPlayerId = string.Empty;
+        private string _activeBlockedMessage = string.Empty;
         private string _selectedRecipeId = string.Empty;
+        private string _hoveredRecipeId = string.Empty;
+        private string _queuedPreviewRecipeId = string.Empty;
+        private string _lastRecipeFailureMessage = string.Empty;
+        private float _nextRecipePreviewAt;
+        private int _recipePreviewSequence;
 
         public event Action<bool> VisibilityChanged;
 
@@ -114,14 +122,20 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _draftCache.OrdersChanged -= OnPlanningDraftChanged;
                 _draftCache.OrdersChanged += OnPlanningDraftChanged;
+                _draftCache.RecipePreviewChanged -= OnRecipePreviewChanged;
+                _draftCache.RecipePreviewChanged += OnRecipePreviewChanged;
             }
 
             RefreshList();
+            RefreshStatusMessage();
             UpdateVisibilityIfChanged(force: true);
         }
 
         private void OnDisable()
         {
+            _hoveredRecipeId = string.Empty;
+            _queuedPreviewRecipeId = string.Empty;
+            (_draftCache ?? PlanningDraftCache.Instance)?.ClearRecipePreview();
             if (_catalog != null) _catalog.CatalogChanged -= OnCatalogChanged;
             if (_stateCache != null)
             {
@@ -132,11 +146,13 @@ namespace Panoptes.Presentation.UI.Domestic
             if (_draftCache != null)
             {
                 _draftCache.OrdersChanged -= OnPlanningDraftChanged;
+                _draftCache.RecipePreviewChanged -= OnRecipePreviewChanged;
             }
         }
 
         private void LateUpdate()
         {
+            TryDispatchQueuedRecipePreview();
             UpdateVisibilityIfChanged(force: false);
         }
 
@@ -145,6 +161,10 @@ namespace Panoptes.Presentation.UI.Domestic
             _activeNodeId = string.IsNullOrWhiteSpace(nodeId) ? string.Empty : nodeId.Trim();
             _activeBuildingTypeId = NormalizeToken(buildingTypeId);
             _activeOwnerPlayerId = string.IsNullOrWhiteSpace(ownerPlayerId) ? string.Empty : ownerPlayerId.Trim();
+            _hoveredRecipeId = string.Empty;
+            _queuedPreviewRecipeId = string.Empty;
+            _lastRecipeFailureMessage = string.Empty;
+            (_draftCache ?? PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance())?.ClearRecipePreview();
             RefreshActiveBuildingContextFromAuthority();
             SeedSelectionFromState();
             Show();
@@ -168,6 +188,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             RefreshList();
+            RefreshStatusMessage();
             UpdateVisibilityIfChanged(force: true);
         }
 
@@ -216,6 +237,9 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void Hide(bool immediate)
         {
+            _hoveredRecipeId = string.Empty;
+            _queuedPreviewRecipeId = string.Empty;
+            (_draftCache ?? PlanningDraftCache.Instance)?.ClearRecipePreview();
             ResolveSlideToggleReference();
             if (slideToggle != null)
             {
@@ -291,16 +315,30 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 RefreshList();
             }
+            RefreshStatusMessage();
+        }
+
+        private void OnRecipePreviewChanged()
+        {
+            RefreshStatusMessage();
         }
 
         private void OnPlanningCommandResult(PlanningCommandResultEvent evt)
         {
             if (evt == null ||
-                evt.Success ||
                 !string.Equals(NormalizeToken(evt.CommandType), "building_recipe", StringComparison.Ordinal) ||
                 !string.Equals(evt.PrimaryId ?? string.Empty, _activeNodeId, StringComparison.OrdinalIgnoreCase))
             {
                 return;
+            }
+
+            if (evt.Success)
+            {
+                _lastRecipeFailureMessage = string.Empty;
+            }
+            else
+            {
+                _lastRecipeFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.ErrorCode);
             }
 
             ClearLocalSelectionCache(_activeNodeId);
@@ -309,6 +347,7 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 RefreshList();
             }
+            RefreshStatusMessage();
         }
 
         private void OnGameError(GameErrorEvent evt)
@@ -324,27 +363,20 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(evt.Message))
+            _lastRecipeFailureMessage = GameplayFeedbackText.ResolveMessage(evt.Message, evt.Code);
+            if (evt.Details == null ||
+                !evt.Details.TryGetValue("node_id", out var nodeId) ||
+                !evt.Details.TryGetValue("recipe_id", out var recipeId) ||
+                string.IsNullOrWhiteSpace(nodeId) ||
+                string.IsNullOrWhiteSpace(recipeId))
             {
-                return;
-            }
-
-            var raw = evt.Message.Trim();
-            var parts = raw.Split(':');
-            if (parts.Length < 2)
-            {
-                return;
-            }
-
-            var nodeId = parts[0].Trim();
-            var recipeId = parts[1].Trim();
-            if (string.IsNullOrWhiteSpace(nodeId) || string.IsNullOrWhiteSpace(recipeId))
-            {
+                RefreshStatusMessage();
                 return;
             }
 
             if (!string.Equals(nodeId, _activeNodeId, StringComparison.Ordinal))
             {
+                RefreshStatusMessage();
                 return;
             }
 
@@ -371,6 +403,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
             _quantityByRecipeId.Remove(recipeId);
             SaveCurrentSelectionToLocalCache();
+            RefreshStatusMessage();
         }
 
         private void RefreshList()
@@ -413,6 +446,10 @@ namespace Panoptes.Presentation.UI.Domestic
                 item.SetQuantity(ResolveInitialQuantity(recipe.Id), notify: false);
                 item.QuantityChanged -= OnItemQuantityChanged;
                 item.QuantityChanged += OnItemQuantityChanged;
+                item.HoverEntered -= OnItemHoverEntered;
+                item.HoverEntered += OnItemHoverEntered;
+                item.HoverExited -= OnItemHoverExited;
+                item.HoverExited += OnItemHoverExited;
 
                 _itemByRecipeId[NormalizeToken(recipe.Id)] = item;
             }
@@ -722,6 +759,57 @@ namespace Panoptes.Presentation.UI.Domestic
             SendRecipeSelectionChangeToServer();
         }
 
+        private void OnItemHoverEntered(RecipeSynthesisItemView item)
+        {
+            var recipeId = item != null ? NormalizeToken(item.RecipeId) : string.Empty;
+            if (string.IsNullOrWhiteSpace(recipeId))
+            {
+                return;
+            }
+
+            _hoveredRecipeId = recipeId;
+            _queuedPreviewRecipeId = recipeId;
+            _nextRecipePreviewAt = Time.unscaledTime + 0.12f;
+            RefreshStatusMessage();
+        }
+
+        private void OnItemHoverExited(RecipeSynthesisItemView item)
+        {
+            var recipeId = item != null ? NormalizeToken(item.RecipeId) : string.Empty;
+            if (!string.IsNullOrWhiteSpace(recipeId) &&
+                string.Equals(_hoveredRecipeId, recipeId, StringComparison.Ordinal))
+            {
+                _hoveredRecipeId = string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(recipeId) &&
+                string.Equals(_queuedPreviewRecipeId, recipeId, StringComparison.Ordinal))
+            {
+                _queuedPreviewRecipeId = string.Empty;
+            }
+
+            _draftCache?.ClearRecipePreview();
+            RefreshStatusMessage();
+        }
+
+        private void TryDispatchQueuedRecipePreview()
+        {
+            if (string.IsNullOrWhiteSpace(_queuedPreviewRecipeId) ||
+                string.IsNullOrWhiteSpace(_activeNodeId) ||
+                Time.unscaledTime < _nextRecipePreviewAt)
+            {
+                return;
+            }
+
+            _recipePreviewSequence++;
+            var requestId = $"recipe-preview-{_activeNodeId}-{_recipePreviewSequence}";
+            var draft = _draftCache ?? PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+            _draftCache = draft;
+            draft?.TrackRecipePreviewRequest(requestId, _activeNodeId, _queuedPreviewRecipeId);
+            GameIntents.PreviewRecipe(requestId, _activeNodeId, _queuedPreviewRecipeId);
+            _queuedPreviewRecipeId = string.Empty;
+        }
+
         private bool TryRestoreSelectionFromLocalCache(string nodeId)
         {
             if (string.IsNullOrWhiteSpace(nodeId))
@@ -857,6 +945,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void RefreshActiveBuildingContextFromAuthority()
         {
+            _activeBlockedMessage = string.Empty;
             if (string.IsNullOrWhiteSpace(_activeNodeId))
             {
                 return;
@@ -878,6 +967,10 @@ namespace Panoptes.Presentation.UI.Domestic
             {
                 _activeOwnerPlayerId = owner;
             }
+
+            _activeBlockedMessage = !string.IsNullOrWhiteSpace(building.OperationBlockedMessage)
+                ? building.OperationBlockedMessage
+                : GameplayFeedbackText.ResolveMessage(building.OperationBlockedMessage, building.OperationBlockedReason);
         }
 
         private bool TryGetDraftRecipeSelection(string nodeId, out QueuedRecipeSelectionDto selection)
@@ -1011,6 +1104,64 @@ namespace Panoptes.Presentation.UI.Domestic
             var normalized = NormalizeToken(recipeToSend);
             GameIntents.SetBuildingRecipe(_activeNodeId, normalized);
             _lastSentRecipeByNodeId[_activeNodeId] = normalized;
+        }
+
+        private void RefreshStatusMessage()
+        {
+            if (statusText == null)
+            {
+                return;
+            }
+
+            if (TryGetCurrentRecipePreview(out var preview) && preview != null)
+            {
+                if (string.Equals(preview.Message, "检查中", StringComparison.Ordinal))
+                {
+                    statusText.text = "检查中";
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(preview.Message) || !string.IsNullOrWhiteSpace(preview.ErrorCode))
+                {
+                    statusText.text = preview.Valid
+                        ? preview.Message
+                        : GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);
+                    if (string.IsNullOrWhiteSpace(statusText.text))
+                    {
+                        statusText.text = preview.Valid ? "当前可切换到该配方" : string.Empty;
+                    }
+                    return;
+                }
+
+                if (preview.Valid)
+                {
+                    statusText.text = "当前可切换到该配方";
+                    return;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(_lastRecipeFailureMessage))
+            {
+                statusText.text = _lastRecipeFailureMessage;
+                return;
+            }
+
+            statusText.text = _activeBlockedMessage ?? string.Empty;
+        }
+
+        private bool TryGetCurrentRecipePreview(out RecipePreviewDto preview)
+        {
+            preview = null;
+            if (string.IsNullOrWhiteSpace(_activeNodeId) || string.IsNullOrWhiteSpace(_hoveredRecipeId))
+            {
+                return false;
+            }
+
+            var draft = _draftCache ?? PlanningDraftCache.Instance;
+            preview = draft != null ? draft.CurrentRecipePreview : null;
+            return preview != null &&
+                   string.Equals(preview.NodeId, _activeNodeId, StringComparison.Ordinal) &&
+                   string.Equals(NormalizeToken(preview.RecipeId), _hoveredRecipeId, StringComparison.Ordinal);
         }
 
         private List<RecipeViewData> LoadRecipeData()

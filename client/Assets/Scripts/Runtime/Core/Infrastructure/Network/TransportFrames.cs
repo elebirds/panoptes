@@ -72,6 +72,9 @@ namespace Panoptes.Core.Infrastructure.Network
                 case MsgBuildStructure buildStructure:
                     frame = PlanningFrame(new PlanningCommand { BuildStructure = buildStructure });
                     return true;
+                case MsgBuildStructurePreviewRequest buildStructurePreview:
+                    frame = PlanningFrame(new PlanningCommand { BuildStructurePreview = buildStructurePreview });
+                    return true;
                 case MsgRevealNode revealNode:
                     frame = PlanningFrame(new PlanningCommand { RevealNode = revealNode });
                     return true;
@@ -92,6 +95,9 @@ namespace Panoptes.Core.Infrastructure.Network
                     return true;
                 case MsgPlanningPathPreviewRequest planningPreview:
                     frame = PlanningFrame(new PlanningCommand { PlanningPathPreviewRequest = planningPreview });
+                    return true;
+                case MsgSetBuildingRecipePreviewRequest recipePreview:
+                    frame = PlanningFrame(new PlanningCommand { SetBuildingRecipePreview = recipePreview });
                     return true;
                 case MsgSubmitTurn submitTurn:
                     frame = PlanningFrame(new PlanningCommand { SubmitTurn = submitTurn });
@@ -232,6 +238,8 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.PlanningStart => evt.PlanningStart,
                 GameEvent.BodyOneofCase.PlanningSnapshot => evt.PlanningSnapshot,
                 GameEvent.BodyOneofCase.PlanningPathPreviewResponse => evt.PlanningPathPreviewResponse,
+                GameEvent.BodyOneofCase.BuildStructurePreviewResponse => evt.BuildStructurePreviewResponse,
+                GameEvent.BodyOneofCase.SetBuildingRecipePreviewResponse => evt.SetBuildingRecipePreviewResponse,
                 GameEvent.BodyOneofCase.TokenResult => evt.TokenResult,
                 GameEvent.BodyOneofCase.RevealResult => evt.RevealResult,
                 GameEvent.BodyOneofCase.IssueUnitOrderResult => evt.IssueUnitOrderResult,

@@ -136,6 +136,8 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Section = section,
                 Type = NormalizeToken(evt.Type),
                 Data = data,
+                ReasonMessage = ReadString(data, "reason_message"),
+                BlockedReasonMessage = ReadString(data, "blocked_reason_message"),
                 UnitId = ReadString(data, "unit_id", "attacker"),
                 TargetUnitId = ReadString(data, "target_unit_id"),
                 EnemyUnitId = ReadString(data, "enemy_unit_id", "unit_b_id"),
