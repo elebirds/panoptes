@@ -72,6 +72,13 @@ func DebugIntentRecordFor(kind participant.Kind, participantID string, intent In
 			"node_id":   strings.TrimSpace(typed.NodeID),
 			"recipe_id": strings.TrimSpace(typed.RecipeID),
 		}
+	case SetMinisterDirectiveIntent:
+		record.IntentType = "set_minister_directive"
+		record.IntentLabel = "处理大臣草案"
+		record.ActionSummary = joinNonEmpty("处理大臣草案", strings.TrimSpace(typed.MinisterRole), strings.TrimSpace(typed.DirectiveType), strings.TrimSpace(typed.DraftID))
+		record.Fields = map[string]any{
+			"directive_type": strings.TrimSpace(typed.DirectiveType),
+		}
 	case IssueUnitOrderIntent:
 		record.IntentType = "issue_unit_order"
 		record.IntentLabel = "下达单位指令"

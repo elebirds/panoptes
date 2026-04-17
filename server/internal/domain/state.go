@@ -38,6 +38,7 @@ type PlanningInputs struct {
 	RecipeSelections    []RecipeSelectionOrder
 	MinisterBuilds      []BuildOrder
 	MinisterMoves       []MoveOrder
+	MinisterDrafts      map[string][]MinisterDraft
 	MinisterDirectives  map[string]string
 	PendingPolicies     map[string]Policy
 	PendingResearch     map[string]string
@@ -521,6 +522,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		NodeIndex: make(map[string]donburi.Entity),
 		TurnRuntime: TurnRuntime{
 			Planning: PlanningInputs{
+				MinisterDrafts:      make(map[string][]MinisterDraft),
 				MinisterDirectives:  make(map[string]string),
 				PendingPolicies:     make(map[string]Policy),
 				PendingResearch:     make(map[string]string),

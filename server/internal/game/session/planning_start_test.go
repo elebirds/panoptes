@@ -1,6 +1,7 @@
 package session
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -65,6 +66,57 @@ func TestBuildPlanningStartMessageFromObservationUsesPerPlayerVisibility(t *test
 	}
 	if !hasPlanningStartUnit(right, "enemy-1") {
 		t.Fatalf("player-2 planning_start should include enemy-1")
+	}
+}
+
+func TestBuildPlanningStartMessageFromObservationIncludesMinisterDrafts(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      30,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+	}))
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "planning-start"})
+	state.Turn = 2
+	state.Phase = domain.PhasePlanning.String()
+	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
+		{
+			DraftID:       "draft-policy-1",
+			PlayerID:      "player-1",
+			MinisterRole:  "domestic",
+			Kind:          domain.MinisterDraftKindPolicy,
+			TargetID:      "expansion",
+			TargetLabel:   "Expansion",
+			Title:         "建议转向扩张国策",
+			Status:        domain.MinisterDraftStatusPending,
+			Available:     true,
+			Turn:          2,
+			Source:        domain.MinisterDraftSourceRuleOnly,
+		},
+	})
+
+	msg := BuildPlanningStartMessageFromObservation(state, nil, domain.PhasePlanning.String(), nil)
+	if msg == nil {
+		t.Fatalf("BuildPlanningStartMessageFromObservation() = nil")
+	}
+	if got := len(msg.GetMinisterDrafts()); got != 1 {
+		t.Fatalf("planning_start minister draft count = %d, want 1", got)
+	}
+	if got := len(msg.GetSnapshot().GetMinisterDrafts()); got != 1 {
+		t.Fatalf("snapshot minister draft count = %d, want 1", got)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(msg.GetMinisterDrafts()[0].GetJsonPayload()), &payload); err != nil {
+		t.Fatalf("unmarshal planning_start minister draft payload: %v", err)
+	}
+	if payload["draft_id"] != "draft-policy-1" {
+		t.Fatalf("planning_start draft_id = %#v, want draft-policy-1", payload["draft_id"])
 	}
 }
 

@@ -17,10 +17,7 @@ func BuildPlanningStartMessageFromObservation(state *domain.GameState, observati
 	if state == nil || phase != domain.PhasePlanning.String() {
 		return nil
 	}
-	playerID := ""
-	if observation != nil {
-		playerID = observation.ViewerID
-	}
+	playerID := resolvePlanningStartPlayerID(state, observation)
 
 	rules := staticdata.Default().Rules()
 	currentPolicy := ""
@@ -36,6 +33,7 @@ func BuildPlanningStartMessageFromObservation(state *domain.GameState, observati
 		Tokens:                 tokens,
 		Phase:                  phase,
 		ActiveNationalPolicyId: currentPolicy,
+		MinisterDrafts:         gamequery.BuildMinisterDraftViews(state, playerID),
 		MyPlayer:               resolveObservationPlayerView(state, playerID, observation),
 		Nodes:                  resolveObservationNodes(state, playerID, observation),
 		Units:                  resolveObservationUnits(state, playerID, observation),
@@ -68,4 +66,17 @@ func resolveObservationUnits(state *domain.GameState, playerID string, observati
 		return observation.Units
 	}
 	return gamequery.BuildUnitViews(state)
+}
+
+func resolvePlanningStartPlayerID(state *domain.GameState, observation *gamequery.ObservationSnapshot) string {
+	if observation != nil && observation.ViewerID != "" {
+		return observation.ViewerID
+	}
+	if state == nil || len(state.Players) != 1 {
+		return ""
+	}
+	for playerID := range state.Players {
+		return playerID
+	}
+	return ""
 }
