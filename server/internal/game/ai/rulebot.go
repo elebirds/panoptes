@@ -486,6 +486,18 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 		}
 	}
 
+	if targetNodeID := p.closestPressureTargetNode(unitPos); targetNodeID != "" {
+		return combatCandidate{
+			key:   unitID + ":pressure:" + targetNodeID,
+			score: 10,
+			intent: planning.IssueUnitOrderIntent{
+				UnitID:       unitID,
+				Action:       string(gameorders.ActionMove),
+				TargetNodeID: targetNodeID,
+			},
+		}
+	}
+
 	return combatCandidate{
 		key:   unitID + ":hold",
 		score: 1,
@@ -1089,6 +1101,60 @@ func (p *ruleBotPlanner) closestExplorationTargetNode(unitID string, unitPos dom
 		}
 	}
 	return bestNodeID
+}
+
+func (p *ruleBotPlanner) closestPressureTargetNode(unitPos domain.Position) string {
+	if p.observation == nil {
+		return ""
+	}
+
+	bestNodeID := ""
+	bestDistance := intMax
+	bestPriority := intMax
+	for _, node := range p.observation.Nodes {
+		if node == nil || strings.TrimSpace(node.GetId()) == "" {
+			continue
+		}
+		priority, ok := p.pressurePriority(node)
+		if !ok {
+			continue
+		}
+		if node.GetPos() == nil {
+			continue
+		}
+		distance := unitPos.DistanceTo(domain.Position{X: int(node.GetPos().GetX()), Y: int(node.GetPos().GetY())})
+		if distance <= 0 {
+			continue
+		}
+		if priority > bestPriority {
+			continue
+		}
+		if priority == bestPriority && distance > bestDistance {
+			continue
+		}
+		if priority < bestPriority || distance < bestDistance || bestNodeID == "" || node.GetId() < bestNodeID {
+			bestPriority = priority
+			bestDistance = distance
+			bestNodeID = node.GetId()
+		}
+	}
+	return bestNodeID
+}
+
+func (p *ruleBotPlanner) pressurePriority(node *pb.NodeView) (int, bool) {
+	if node == nil {
+		return 0, false
+	}
+	switch {
+	case node.GetControllerPlayerId() != "" && node.GetControllerPlayerId() != p.playerID:
+		return 0, true
+	case node.GetTerritoryOwnerPlayerId() != "" && node.GetTerritoryOwnerPlayerId() != p.playerID:
+		return 1, true
+	case node.GetControllerPlayerId() == "" && node.GetTerritoryOwnerPlayerId() == "":
+		return 2, true
+	default:
+		return 0, false
+	}
 }
 
 func (p *ruleBotPlanner) nodeIDAtPosition(x int, y int) string {

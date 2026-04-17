@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "0614babf60b5cce8cb5a5c3983d9849f9954bf2c2b48d7fa423d8080ab70b910",
+    "bundle_hash": "6a7af893209df62f76a5871a7968bd3ebfce4a8ea806008c14fdf194763f0206",
     "required_sections": [
       "resources",
       "points",
@@ -44,7 +44,7 @@
       },
       {
         "section_name": "recipes",
-        "hash": "76e132bb55f30756571f5621ecd18eb23ee4b7edbcc11e5847847bbf35f90c7a"
+        "hash": "534dd8d71605e55b0ae2b54eb0574f35189f67d93329375dddb6d2b91e45191e"
       },
       {
         "section_name": "resources",
@@ -56,7 +56,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "95a171b126c1a0ed1f556ac4307356b4435fcb63b0e61d5f3b2164b7646aad27"
+        "hash": "80a43b0ef1c0e6018e0f0b800f5895175fcd1bc88ac6973d50cd77df49c09f05"
       },
       {
         "section_name": "terrains",
@@ -534,7 +534,7 @@
       "id": "forestry",
       "name": "林业组织",
       "description": "解锁高产伐木配方",
-      "icon_key": "tech_agrarian_foundations",
+      "icon_key": "tech_forestry",
       "branch": "agriculture",
       "tier": 1,
       "research_cost": 1,
@@ -605,7 +605,7 @@
       "id": "mining_survey",
       "name": "矿脉勘测",
       "description": "解锁矿山与基础采矿配方",
-      "icon_key": "tech_organized_labor",
+      "icon_key": "tech_mining_survey",
       "branch": "industry",
       "tier": 2,
       "research_cost": 2,
@@ -635,7 +635,7 @@
       "id": "workshop_methods",
       "name": "工坊法",
       "description": "解锁工坊与深层采矿配方",
-      "icon_key": "tech_organized_labor",
+      "icon_key": "tech_workshop_methods",
       "branch": "industry",
       "tier": 2,
       "research_cost": 2,
@@ -669,7 +669,7 @@
       "id": "militia_mobilization",
       "name": "民兵动员",
       "description": "解锁兵营与步兵训练",
-      "icon_key": "tech_civic_institutions",
+      "icon_key": "tech_militia_mobilization",
       "branch": "military",
       "tier": 3,
       "research_cost": 3,
@@ -699,7 +699,7 @@
       "id": "ranged_drill",
       "name": "远射操典",
       "description": "解锁靶场与弓手训练",
-      "icon_key": "tech_civic_institutions",
+      "icon_key": "tech_militia_mobilization",
       "branch": "military",
       "tier": 4,
       "research_cost": 3,
@@ -729,7 +729,7 @@
       "id": "fortifications",
       "name": "筑垒术",
       "description": "解锁城墙并提升主城与城墙耐久",
-      "icon_key": "tech_civic_institutions",
+      "icon_key": "tech_fortifications",
       "branch": "defense",
       "tier": 4,
       "research_cost": 2,

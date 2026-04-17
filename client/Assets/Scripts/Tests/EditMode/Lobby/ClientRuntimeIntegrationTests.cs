@@ -7,9 +7,11 @@ using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
+using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.Game;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Panoptes.Tests.EditMode.Lobby
 {
@@ -1040,6 +1042,168 @@ namespace Panoptes.Tests.EditMode.Lobby
             LogAssert.NoUnexpectedReceived();
             controller.RefreshFromCache();
             LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
+        public void GameSceneController_ShouldShowSuccessToast_WhenOwnTechnologyCompletesOnSettlement()
+        {
+            Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
+
+            var catalogObject = new GameObject("StaticCatalogCache");
+            var cacheObject = new GameObject("GameStateCache");
+            var controllerObject = new GameObject("GameSceneController");
+            GameObject toastInstance = null;
+
+            try
+            {
+                var catalog = catalogObject.AddComponent<StaticCatalogCache>();
+                SetSingletonInstance(typeof(StaticCatalogCache), catalog);
+                Assert.That(catalog.LoadLocalCatalog(), Is.True, "StaticCatalogCache 本地目录加载失败。");
+                Assert.That(catalog.TryGetTechnology("agrarian_foundations", out var technology), Is.True, "测试依赖农业基础科技目录项。");
+                Assert.That(technology, Is.Not.Null);
+
+                var cache = cacheObject.AddComponent<GameStateCache>();
+                SetSingletonInstance(typeof(GameStateCache), cache);
+                cache.ApplyGameInit(new MsgGameInit
+                {
+                    GameId = "game-1",
+                    YourPlayerId = "player-1",
+                    Turn = 1,
+                    Phase = "planning",
+                    MapWidth = 1,
+                    MapHeight = 1,
+                    MyPlayer = new PlayerView
+                    {
+                        Id = "player-1",
+                        TokensLeft = 3,
+                        CapitalCityCoreHp = 100,
+                        CapitalCityCoreMaxHp = 100
+                    },
+                    Nodes =
+                    {
+                        new NodeView
+                        {
+                            Id = "A1",
+                            Pos = new Position { X = 0, Y = 0 },
+                            Terrain = "plain",
+                            ControllerPlayerId = "player-1",
+                            TerritoryOwnerPlayerId = "player-1",
+                            BuildingTypeId = "city_core",
+                            BuildingHp = 100
+                        }
+                    }
+                });
+
+                var toastPrefab = Resources.Load<GameObject>("Prefabs/UI/ErrorToast");
+                Assert.That(toastPrefab, Is.Not.Null, "ErrorToast 运行时 prefab 不存在。");
+
+                toastInstance = UnityEngine.Object.Instantiate(toastPrefab);
+                toastInstance.hideFlags = HideFlags.HideAndDontSave;
+
+                var toast = toastInstance.GetComponent<ErrorToast>();
+                Assert.That(toast, Is.Not.Null, "ErrorToast prefab 缺少脚本组件。");
+                InvokeLifecycle(toast, "Awake");
+                toast.Show("错误基线", false);
+
+                var background = toast.transform.Find("ToastRoot")?.GetComponent<Image>();
+                var message = toast.transform.Find("ToastRoot/Message")?.GetComponent<TMPro.TextMeshProUGUI>();
+                Assert.That(background, Is.Not.Null);
+                Assert.That(message, Is.Not.Null);
+                var errorColor = background.color;
+
+                var controller = controllerObject.AddComponent<GameSceneController>();
+                InvokeLifecycle(controller, "Awake");
+                InvokeLifecycle(controller, "OnEnable");
+
+                cache.ApplyTurnSettlement(new MsgTurnSettlement
+                {
+                    Turn = 1,
+                    Phase = "resolving",
+                    NextPhase = "planning",
+                    MyPlayerAfter = new PlayerView
+                    {
+                        Id = "player-1",
+                        TokensLeft = 3,
+                        CapitalCityCoreHp = 100,
+                        CapitalCityCoreMaxHp = 100
+                    },
+                    Nodes =
+                    {
+                        new NodeView
+                        {
+                            Id = "A1",
+                            Pos = new Position { X = 0, Y = 0 },
+                            Terrain = "plain",
+                            ControllerPlayerId = "player-1",
+                            TerritoryOwnerPlayerId = "player-1",
+                            BuildingTypeId = "city_core",
+                            BuildingHp = 100
+                        }
+                    },
+                    Sections =
+                    {
+                        new SettlementSection
+                        {
+                            Section = "economy",
+                            Events =
+                            {
+                                new TurnEvent
+                                {
+                                    Type = "technology_completed",
+                                    Data =
+                                    {
+                                        { "technology_id", "agrarian_foundations" },
+                                        { "player_id", "player-1" }
+                                    }
+                                },
+                                new TurnEvent
+                                {
+                                    Type = "technology_completed",
+                                    Data =
+                                    {
+                                        { "technology_id", "organized_labor" },
+                                        { "player_id", "player-2" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                Assert.That(message.text, Is.EqualTo("科技研究完成：农业基础"));
+                Assert.That(background.color, Is.Not.EqualTo(errorColor));
+                Assert.That(background.color.g, Is.GreaterThan(background.color.r),
+                    "科技完成提示应使用成功态绿色底。");
+
+                InvokeLifecycle(controller, "OnDisable");
+            }
+            finally
+            {
+                if (toastInstance != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(toastInstance);
+                }
+
+                UnityEngine.Object.DestroyImmediate(controllerObject);
+                UnityEngine.Object.DestroyImmediate(cacheObject);
+                UnityEngine.Object.DestroyImmediate(catalogObject);
+            }
+        }
+
+        [Test]
+        public void GameSceneController_ShouldSubscribeTurnSettlement_ForTechnologyCompletionToast()
+        {
+            Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
+
+            var content = File.ReadAllText(_gameSceneControllerPath);
+            StringAssert.Contains("_cache.OnTurnSettled += OnTurnSettled;", content,
+                "GameSceneController 应订阅结算事件以展示科技完成提示。");
+            StringAssert.Contains("_cache.OnTurnSettled -= OnTurnSettled;", content,
+                "GameSceneController 停用时应取消订阅结算事件。");
+            StringAssert.Contains("technology_completed", content,
+                "GameSceneController 应识别 technology_completed 结算事件。");
+            StringAssert.Contains("科技研究完成：", content,
+                "GameSceneController 应为科技完成生成明确 toast 文案。");
         }
 
         [Test]

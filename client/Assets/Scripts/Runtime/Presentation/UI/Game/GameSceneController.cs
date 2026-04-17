@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Intents;
@@ -38,6 +39,7 @@ namespace Panoptes.Presentation.UI.Game
                 _cache.OnStateChanged += RefreshFromCache;
                 _cache.OnGameError += OnGameError;
                 _cache.OnTokenResult += OnTokenResult;
+                _cache.OnTurnSettled += OnTurnSettled;
                 _cache.OnGameOver += OnGameOver;
             }
         }
@@ -54,6 +56,7 @@ namespace Panoptes.Presentation.UI.Game
                 _cache.OnStateChanged -= RefreshFromCache;
                 _cache.OnGameError -= OnGameError;
                 _cache.OnTokenResult -= OnTokenResult;
+                _cache.OnTurnSettled -= OnTurnSettled;
                 _cache.OnGameOver -= OnGameOver;
             }
 
@@ -109,6 +112,17 @@ namespace Panoptes.Presentation.UI.Game
             {
                 statusText.gameObject.SetActive(false);
             }
+        }
+
+        private void OnTurnSettled(TurnSettledEvent evt)
+        {
+            var completedTechnologyNames = CollectCompletedTechnologyNames(evt);
+            if (completedTechnologyNames.Count == 0)
+            {
+                return;
+            }
+
+            ShowToast(BuildTechnologyCompletedToastMessage(completedTechnologyNames), true);
         }
 
         private void HideFullscreenBackgroundIfNeeded()
@@ -205,6 +219,118 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             EnsureComponent<T>(parent, objectName);
+        }
+
+        private List<string> CollectCompletedTechnologyNames(TurnSettledEvent evt)
+        {
+            var result = new List<string>();
+            if (_cache == null || evt?.Settlement?.Sections == null || string.IsNullOrWhiteSpace(_cache.MyPlayerID))
+            {
+                return result;
+            }
+
+            var seenTechnologyIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            for (var sectionIndex = 0; sectionIndex < evt.Settlement.Sections.Count; sectionIndex++)
+            {
+                var section = evt.Settlement.Sections[sectionIndex];
+                if (section?.Events == null)
+                {
+                    continue;
+                }
+
+                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
+                {
+                    var turnEvent = section.Events[eventIndex];
+                    if (!IsOwnedTechnologyCompletion(turnEvent, _cache.MyPlayerID))
+                    {
+                        continue;
+                    }
+
+                    var technologyId = ReadEventData(turnEvent, "technology_id");
+                    if (string.IsNullOrWhiteSpace(technologyId) || !seenTechnologyIds.Add(technologyId.Trim()))
+                    {
+                        continue;
+                    }
+
+                    result.Add(ResolveTechnologyDisplayName(technologyId));
+                }
+            }
+
+            return result;
+        }
+
+        private static bool IsOwnedTechnologyCompletion(TurnEventDto evt, string playerId)
+        {
+            if (evt == null ||
+                !string.Equals(evt.Type, "technology_completed", System.StringComparison.Ordinal) ||
+                string.IsNullOrWhiteSpace(playerId))
+            {
+                return false;
+            }
+
+            var eventPlayerId = ReadEventData(evt, "player_id");
+            if (string.IsNullOrWhiteSpace(eventPlayerId))
+            {
+                eventPlayerId = evt.Source;
+            }
+
+            return string.Equals(eventPlayerId?.Trim(), playerId.Trim(), System.StringComparison.Ordinal);
+        }
+
+        private static string ResolveTechnologyDisplayName(string technologyId)
+        {
+            var normalizedTechnologyId = technologyId?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedTechnologyId))
+            {
+                return string.Empty;
+            }
+
+            var catalog = StaticCatalogCache.EnsureInstance();
+            if (catalog != null &&
+                catalog.TryGetTechnology(normalizedTechnologyId, out var technology) &&
+                technology != null &&
+                !string.IsNullOrWhiteSpace(technology.name))
+            {
+                return technology.name.Trim();
+            }
+
+            return normalizedTechnologyId;
+        }
+
+        private static string BuildTechnologyCompletedToastMessage(IReadOnlyList<string> technologyNames)
+        {
+            if (technologyNames == null || technologyNames.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return technologyNames.Count == 1
+                ? $"科技研究完成：{technologyNames[0]}"
+                : $"科技研究完成：{string.Join("、", technologyNames)}";
+        }
+
+        private static string ReadEventData(TurnEventDto evt, params string[] keys)
+        {
+            if (evt?.Data == null || keys == null)
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (evt.Data.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
         }
 
         private static void ShowToast(string message, bool success)
