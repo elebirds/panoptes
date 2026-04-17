@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/binary"
 	"hash/fnv"
+	"log/slog"
 	"math/rand"
+	"strings"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/game/ai"
@@ -51,8 +53,43 @@ func (c AutonomousController) BeginPlanning(ctx context.Context, p participant.P
 		RNG:         newDeterministicPlanningRNG(state, p.ID),
 	})
 	if err != nil {
+		slog.Debug("AI 规划摘要",
+			"component", "ai_planning_summary",
+			"participant_id", p.ID,
+			"participant_kind", string(p.Kind),
+			"turn", stateTurn(state),
+			"phase", statePhase(state),
+			"outcome", "build_failed",
+			"summary", "本回合计划生成失败",
+			"error", err.Error(),
+		)
 		return err
 	}
+	generatedTypes := make([]string, 0, len(intents))
+	generatedSummaries := make([]string, 0, len(intents))
+	for _, intent := range intents {
+		if intent == nil {
+			continue
+		}
+		record := planning.DebugIntentRecordFor(p.Kind, p.ID, intent)
+		generatedTypes = append(generatedTypes, record.IntentType)
+		generatedSummaries = append(generatedSummaries, record.ActionSummary)
+	}
+	summary := "本回合计划：无操作"
+	if len(generatedSummaries) > 0 {
+		summary = "本回合计划：" + strings.Join(generatedSummaries, " -> ")
+	}
+	slog.Debug("AI 规划摘要",
+		"component", "ai_planning_summary",
+		"participant_id", p.ID,
+		"participant_kind", string(p.Kind),
+		"turn", stateTurn(state),
+		"phase", statePhase(state),
+		"generated_intent_count", len(generatedTypes),
+		"generated_intent_types", generatedTypes,
+		"summary", summary,
+		"outcome", "generated",
+	)
 	for _, intent := range intents {
 		if intent == nil {
 			continue
@@ -65,6 +102,20 @@ func (c AutonomousController) BeginPlanning(ctx context.Context, p participant.P
 		}
 	}
 	return nil
+}
+
+func stateTurn(state *domain.GameState) int {
+	if state == nil {
+		return 0
+	}
+	return state.Turn
+}
+
+func statePhase(state *domain.GameState) string {
+	if state == nil {
+		return ""
+	}
+	return state.Phase
 }
 
 func newDeterministicPlanningRNG(state *domain.GameState, participantID string) *rand.Rand {
