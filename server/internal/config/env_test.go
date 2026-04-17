@@ -25,6 +25,10 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	t.Setenv("DEV_MODE", "true")
 	t.Setenv("DATA_ROOT", filepath.Join(repoRoot, "data"))
 	t.Setenv("MAP_ID", "default")
+	t.Setenv("MINISTER_LLM_ENABLED", "true")
+	t.Setenv("MINISTER_LLM_PROVIDER", "qwen")
+	t.Setenv("MINISTER_LLM_MODEL", "qwen-plus")
+	t.Setenv("MINISTER_LLM_TIMEOUT_MS", "4200")
 
 	cfg, err := Load()
 	if err != nil {
@@ -36,6 +40,18 @@ func TestLoadReadsDevModeAndGameDefaults(t *testing.T) {
 	}
 	if cfg.MapID != "default" {
 		t.Fatalf("MapID = %q", cfg.MapID)
+	}
+	if !cfg.MinisterLLMEnabled {
+		t.Fatalf("MinisterLLMEnabled = false")
+	}
+	if cfg.MinisterLLMProvider != "qwen" {
+		t.Fatalf("MinisterLLMProvider = %q", cfg.MinisterLLMProvider)
+	}
+	if cfg.MinisterLLMModel != "qwen-plus" {
+		t.Fatalf("MinisterLLMModel = %q", cfg.MinisterLLMModel)
+	}
+	if cfg.MinisterLLMTimeoutMs != 4200 {
+		t.Fatalf("MinisterLLMTimeoutMs = %d", cfg.MinisterLLMTimeoutMs)
 	}
 	if staticdata.Default() == nil {
 		t.Fatalf("static data default catalog not loaded")

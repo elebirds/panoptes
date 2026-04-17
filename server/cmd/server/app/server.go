@@ -108,6 +108,9 @@ func (a *App) onGameStart(lobbyRoom *lobby.Room) {
 		a.gameTransport,
 		a.cfg,
 	)
+	if a.newMinisterEngine != nil {
+		room.SetMinisterEngine(a.newMinisterEngine())
+	}
 
 	slog.Info("游戏开始", "room_id", lobbyRoom.ID, "players", len(lobbyRoom.Players), "game_room_id", room.ID)
 	go room.Start()

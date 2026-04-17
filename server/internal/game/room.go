@@ -15,6 +15,7 @@ import (
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
@@ -234,6 +235,20 @@ func (r *GameRoom) CancelUnitOrder(playerID string, unitID string) {
 
 func (r *GameRoom) SendPlanningSnapshot(ctx context.Context, playerID string) error {
 	return r.SendToPlayer(ctx, playerID, gamequery.BuildPlanningSnapshot(r.State(), playerID))
+}
+
+func (r *GameRoom) SetMinisterEngine(engine *ministerengine.MinisterEngine) {
+	if r == nil || r.runtime == nil {
+		return
+	}
+	r.runtime.SetMinisterEngine(engine)
+}
+
+func (r *GameRoom) RecordMinisterMemory(playerID string, role string, entry ministerengine.MemoryEntry) {
+	if r == nil || r.runtime == nil {
+		return
+	}
+	r.runtime.RecordMinisterMemory(playerID, role, entry)
 }
 
 func (r *GameRoom) HasParticipant(participantID string) bool {
