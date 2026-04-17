@@ -27,6 +27,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private RectTransform externalTurnPanelRoot;
         [SerializeField] private TextMeshProUGUI externalTurnNumText;
         [SerializeField] private TextMeshProUGUI externalPhaseText;
+        [SerializeField] private string externalTurnTextFormat = "当前回合数：{0}\n当前回合倒计时：{1}";
 
         private GameStateCache _cache;
         private float _deadline = -1f;
@@ -35,6 +36,7 @@ namespace Panoptes.Presentation.UI.HUD
         private int _currentTurn;
         private bool _isInteractive;
         private bool _gameEnded;
+        private int _lastRemainingSeconds = int.MinValue;
 
         private void Awake()
         {
@@ -71,16 +73,14 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Update()
         {
-            if (_deadline <= 0f || _gameEnded)
+            var remaining = GetRemainingSeconds();
+            if (remaining == _lastRemainingSeconds)
             {
                 return;
             }
 
-            var remaining = Mathf.Max(0, Mathf.CeilToInt(_deadline - Time.unscaledTime));
-            var text = remaining > 0
-                ? $"{remaining}s"
-                : "Waiting server";
-            SetDetailText(text);
+            _lastRemainingSeconds = remaining;
+            RefreshText();
         }
 
         private void OnPhaseChanged(PhaseChangedEvent evt)
@@ -98,6 +98,7 @@ namespace Panoptes.Presentation.UI.HUD
                 ? Time.unscaledTime + evt.TimeoutSeconds
                 : -1f;
             _gameEnded = false;
+            _lastRemainingSeconds = int.MinValue;
             RefreshText();
         }
 
@@ -105,6 +106,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _gameEnded = true;
             _deadline = -1f;
+            _lastRemainingSeconds = int.MinValue;
             RefreshText();
         }
 
@@ -124,6 +126,7 @@ namespace Panoptes.Presentation.UI.HUD
                 _deadline = -1f;
             }
 
+            _lastRemainingSeconds = int.MinValue;
             RefreshText();
         }
 
@@ -138,36 +141,26 @@ namespace Panoptes.Presentation.UI.HUD
             var turnNum = _currentTurn > 0 ? _currentTurn.ToString() : "--";
             if (externalTurnNumText != null)
             {
-                externalTurnNumText.text = turnNum;
+                externalTurnNumText.text = string.Format(
+                    externalTurnTextFormat,
+                    turnNum,
+                    ResolveCountdownDisplay());
             }
 
             if (titleText != null)
             {
                 titleText.text = _currentTurn > 0
-                    ? $"Turn {_currentTurn}"
-                    : "Waiting game start";
+                    ? $"当前回合数：{turnNum}"
+                    : "当前回合数：--";
             }
 
             if (_gameEnded)
             {
-                SetDetailText("Game Over");
+                SetDetailText("当前回合倒计时：--");
                 return;
             }
 
-            var phaseText = GamePhases.ToDisplayText(_currentPhase);
-            if (_isInteractive)
-            {
-                SetDetailText(phaseText);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(_nextPhase))
-            {
-                SetDetailText($"{phaseText}\nNext: {GamePhases.ToDisplayText(_nextPhase)}");
-                return;
-            }
-
-            SetDetailText(phaseText);
+            SetDetailText($"当前回合倒计时：{ResolveCountdownDisplay()}");
         }
 
         private void SetDetailText(string value)
@@ -179,8 +172,34 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (externalPhaseText != null)
             {
-                externalPhaseText.text = value;
+                externalPhaseText.text = string.Empty;
             }
+        }
+
+        private int GetRemainingSeconds()
+        {
+            if (_gameEnded || !_isInteractive || _deadline <= 0f)
+            {
+                return int.MinValue;
+            }
+
+            return Mathf.Max(0, Mathf.CeilToInt(_deadline - Time.unscaledTime));
+        }
+
+        private string ResolveCountdownDisplay()
+        {
+            if (_gameEnded || !_isInteractive)
+            {
+                return "--";
+            }
+
+            if (_deadline <= 0f)
+            {
+                return "--";
+            }
+
+            var remaining = Mathf.Max(0, Mathf.CeilToInt(_deadline - Time.unscaledTime));
+            return $"{remaining}s";
         }
 
         private void ResolveExternalTurnPanelReferences()
