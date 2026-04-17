@@ -31,8 +31,6 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TMP_Text unitNameText;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMP_Text hpValueText;
-        [SerializeField] private TMP_Text planningPromptText;
-        [SerializeField] private TMP_Text queuedOrderText;
         [SerializeField] private RectTransform actionButtonsRoot;
         [SerializeField] private RectTransform directOrderButtonsRoot;
         [SerializeField] private ActionButtonSlot[] actionButtons;
@@ -74,7 +72,6 @@ namespace Panoptes.Presentation.UI.HUD
         private Vector2 _externalOffset;
         private bool _isOpen;
         private bool _unitSelectionSubscribed;
-        private PlanningDraftCache _draftCache;
         private static Sprite _fallbackButtonSprite;
         private static Texture2D _fallbackButtonTexture;
         public UnitView CurrentUnit => _currentUnit;
@@ -83,6 +80,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void Awake()
         {
             ResolveReferences();
+            EnsureDefaultActionProviders();
             if (slideCurve == null || slideCurve.length == 0)
             {
                 slideCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -95,13 +93,13 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 EnsureDefaultLayout();
             }
+            HideLegacyPlanningTexts();
             EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
             {
                 RepairActionButtonLayoutAndVisuals();
             }
             BindDirectOrderButtons();
-            _draftCache = PlanningDraftCache.EnsureInstance();
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
         }
@@ -120,12 +118,6 @@ namespace Panoptes.Presentation.UI.HUD
                 cache.OnGameOver += OnGameOver;
             }
 
-            _draftCache = PlanningDraftCache.EnsureInstance();
-            if (_draftCache != null)
-            {
-                _draftCache.OrdersChanged += OnOrdersChanged;
-            }
-
             ActionLock.OnChanged += OnActionLockChanged;
         }
 
@@ -142,11 +134,6 @@ namespace Panoptes.Presentation.UI.HUD
                 cache.OnGameOver -= OnGameOver;
             }
 
-            if (_draftCache != null)
-            {
-                _draftCache.OrdersChanged -= OnOrdersChanged;
-            }
-
             ActionLock.OnChanged -= OnActionLockChanged;
         }
 
@@ -155,11 +142,6 @@ namespace Panoptes.Presentation.UI.HUD
             if (!_unitSelectionSubscribed || mapInputHandler == null)
             {
                 TrySubscribeUnitSelection();
-            }
-
-            if (_draftCache == null)
-            {
-                _draftCache = PlanningDraftCache.EnsureInstance();
             }
 
             if (actionRegistry == null)
@@ -264,17 +246,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             RefreshSelectionUi();
         }
-
-        private void OnOrdersChanged()
-        {
-            if (_currentUnit == null || !_isOpen)
-            {
-                return;
-            }
-
-            RefreshPlanningUi();
-        }
-
         private void OnActionLockChanged(bool _)
         {
             if (_currentUnit == null || !_isOpen)
@@ -422,6 +393,26 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private void HideLegacyPlanningTexts()
+        {
+            HideChildByName("PlanningPrompt");
+            HideChildByName("QueuedOrderText");
+        }
+
+        private void HideChildByName(string childName)
+        {
+            if (panelRoot == null || string.IsNullOrWhiteSpace(childName))
+            {
+                return;
+            }
+
+            var child = panelRoot.Find(childName);
+            if (child != null)
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+
         private void BindDirectOrderButtons()
         {
             if (moveButton != null)
@@ -448,51 +439,32 @@ namespace Panoptes.Presentation.UI.HUD
                 chargeButton.onClick.AddListener(() => mapInputHandler?.BeginChargeSelection());
             }
         }
-
         private void RefreshPlanningUi()
         {
-            if (planningPromptText == null || queuedOrderText == null)
-            {
-                return;
-            }
-
             var interactive = IsInteractivePlanning();
             var controllable = IsCurrentUnitControllable();
+            var militaryUnit = IsCurrentSelectionMilitaryUnit();
+            var showDirectOrderButtons = interactive && controllable && militaryUnit;
 
             if (directOrderButtonsRoot != null)
             {
-                directOrderButtonsRoot.gameObject.SetActive(interactive && controllable);
+                directOrderButtonsRoot.gameObject.SetActive(showDirectOrderButtons);
             }
 
-            if (!interactive)
+            if (!showDirectOrderButtons)
             {
-                planningPromptText.text = "等待规划阶段";
-                queuedOrderText.text = "当前不可提交单位命令";
-                SetDirectOrderButtonState(moveButton, "移动", false, true);
-                SetDirectOrderButtonState(attackButton, "攻击", false, false);
-                SetDirectOrderButtonState(holdButton, "待命", false, true);
-                SetDirectOrderButtonState(chargeButton, "冲锋", false, false);
+                SetDirectOrderButtonState(moveButton, "Move", false, false);
+                SetDirectOrderButtonState(attackButton, "Attack", false, false);
+                SetDirectOrderButtonState(holdButton, "Hold", false, false);
+                SetDirectOrderButtonState(chargeButton, "Charge", false, false);
                 return;
             }
 
-            if (!controllable)
-            {
-                planningPromptText.text = "只能对己方单位下达命令";
-                queuedOrderText.text = "该单位不接受本地规划草稿";
-                SetDirectOrderButtonState(moveButton, "移动", false, true);
-                SetDirectOrderButtonState(attackButton, "攻击", false, false);
-                SetDirectOrderButtonState(holdButton, "待命", false, true);
-                SetDirectOrderButtonState(chargeButton, "冲锋", false, false);
-                return;
-            }
-
-            planningPromptText.text = mapInputHandler != null ? mapInputHandler.CurrentCombatPrompt : "选择动作";
-            queuedOrderText.text = BuildOrdersSummary();
             var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
-            SetDirectOrderButtonState(moveButton, "移动", true, true);
-            SetDirectOrderButtonState(attackButton, "攻击", true, CanSelectedUnitAttack(unitType));
-            SetDirectOrderButtonState(holdButton, "待命", true, true);
-            SetDirectOrderButtonState(chargeButton, "冲锋", true, CanSelectedUnitCharge(unitType));
+            SetDirectOrderButtonState(moveButton, "Move", true, true);
+            SetDirectOrderButtonState(attackButton, "Attack", true, CanSelectedUnitAttack(unitType));
+            SetDirectOrderButtonState(holdButton, "Hold", true, true);
+            SetDirectOrderButtonState(chargeButton, "Charge", true, CanSelectedUnitCharge(unitType));
         }
 
         private bool IsInteractivePlanning()
@@ -519,6 +491,33 @@ namespace Panoptes.Presentation.UI.HUD
         {
             return TryGetUnitCatalog(unitType, out var entry) && HasTag(entry, "charge");
         }
+        private bool IsCurrentSelectionMilitaryUnit()
+        {
+            if (_currentUnit == null)
+            {
+                return false;
+            }
+
+            var normalizedType = NormalizeToken(_currentUnit.UnitType);
+            if (string.IsNullOrWhiteSpace(normalizedType))
+            {
+                return false;
+            }
+
+            if (string.Equals(normalizedType, "resource_point", StringComparison.Ordinal) ||
+                normalizedType.StartsWith("resource_", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var catalog = StaticCatalogCache.EnsureInstance();
+            if (catalog != null && catalog.TryGetBuilding(normalizedType, out _))
+            {
+                return false;
+            }
+
+            return TryGetUnitCatalog(normalizedType, out var entry) && !HasTag(entry, "civilian");
+        }
 
         private bool TryGetUnitCatalog(string unitType, out StaticCatalogCache.UnitEntryJson entry)
         {
@@ -526,41 +525,6 @@ namespace Panoptes.Presentation.UI.HUD
             return !string.IsNullOrWhiteSpace(unitType) &&
                    StaticCatalogCache.EnsureInstance() != null &&
                    StaticCatalogCache.Instance.TryGetUnit(unitType, out entry);
-        }
-
-        private string BuildOrdersSummary()
-        {
-            if (_draftCache == null)
-            {
-                return "等待服务器同步规划快照";
-            }
-
-            var orders = _draftCache.GetOrdersInDisplayOrder();
-            for (var i = 0; i < orders.Count; i++)
-            {
-                var order = orders[i];
-                if (order == null || !string.Equals(order.UnitId, _currentUnit != null ? _currentUnit.UnitId : string.Empty, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                return DescribeOrder(order);
-            }
-
-            return "该单位当前没有待提交命令";
-        }
-
-        private static string DescribeOrder(QueuedUnitOrderDto order)
-        {
-            return order.Action switch
-            {
-                "move" => $"{order.UnitId} -> 行军至 {FallbackText(order.TargetNodeId, "目标节点")}，预计 {Mathf.Max(1, order.TotalTurns)} 回合",
-                "attack" => $"{order.UnitId} -> 攻击 {FallbackText(order.TargetUnitId, "目标单位")}",
-                "charge" => $"{order.UnitId} -> 冲锋 {FallbackText(order.TargetUnitId, order.TargetNodeId)}",
-                "hold" => $"{order.UnitId} -> 待命",
-                "settle_city" => $"{order.UnitId} -> 坐城 {FallbackText(order.TargetNodeId, "目标节点")}",
-                _ => $"{order.UnitId} -> {FallbackText(order.Action, "未知动作")}"
-            };
         }
 
         private static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
@@ -579,11 +543,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return false;
-        }
-
-        private static string FallbackText(string value, string fallback)
-        {
-            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
         private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)
@@ -622,6 +581,23 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private void EnsureDefaultActionProviders()
+        {
+            // Some prefab variants only contain Settler registrar.
+            // Ensure city-core actions (Build/Production/Tech) can still be registered at runtime.
+            if (GetComponent<CityCoreBuildingActionRegistrar>() == null &&
+                UnityEngine.Object.FindAnyObjectByType<CityCoreBuildingActionRegistrar>() == null)
+            {
+                gameObject.AddComponent<CityCoreBuildingActionRegistrar>();
+            }
+
+            if (GetComponent<SettlerUnitActionRegistrar>() == null &&
+                UnityEngine.Object.FindAnyObjectByType<SettlerUnitActionRegistrar>() == null)
+            {
+                gameObject.AddComponent<SettlerUnitActionRegistrar>();
+            }
+        }
+
         private void ResolveReferences()
         {
             if (panelRoot == null)
@@ -654,8 +630,6 @@ namespace Panoptes.Presentation.UI.HUD
                     mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
                 }
             }
-
-            _draftCache ??= PlanningDraftCache.EnsureInstance();
         }
 
         private void TrySubscribeActionRegistry()
@@ -725,8 +699,6 @@ namespace Panoptes.Presentation.UI.HUD
                 unitNameText != null &&
                 hpSlider != null &&
                 hpValueText != null &&
-                planningPromptText != null &&
-                queuedOrderText != null &&
                 actionButtonsRoot != null &&
                 directOrderButtonsRoot != null &&
                 moveButton != null &&
@@ -827,34 +799,6 @@ namespace Panoptes.Presentation.UI.HUD
                 nameRT.sizeDelta = new Vector2(280f, 32f);
                 unitNameText.fontSize = 24f;
                 unitNameText.alignment = TextAlignmentOptions.Left;
-            }
-
-            if (planningPromptText == null)
-            {
-                var promptRT = EnsureChild("PlanningPrompt");
-                planningPromptText = CreateTmpText(promptRT, "选择动作");
-                promptRT.anchorMin = new Vector2(0f, 1f);
-                promptRT.anchorMax = new Vector2(0f, 1f);
-                promptRT.pivot = new Vector2(0f, 1f);
-                promptRT.anchoredPosition = new Vector2(102f, -84f);
-                promptRT.sizeDelta = new Vector2(286f, 24f);
-                planningPromptText.fontSize = 16f;
-                planningPromptText.alignment = TextAlignmentOptions.Left;
-            }
-
-            if (queuedOrderText == null)
-            {
-                var orderRT = EnsureChild("QueuedOrderText");
-                queuedOrderText = CreateTmpText(orderRT, "该单位当前没有待提交命令");
-                orderRT.anchorMin = new Vector2(0f, 1f);
-                orderRT.anchorMax = new Vector2(0f, 1f);
-                orderRT.pivot = new Vector2(0f, 1f);
-                orderRT.anchoredPosition = new Vector2(102f, -114f);
-                orderRT.sizeDelta = new Vector2(286f, 74f);
-                queuedOrderText.fontSize = 15f;
-                queuedOrderText.alignment = TextAlignmentOptions.TopLeft;
-                queuedOrderText.textWrappingMode = TextWrappingModes.Normal;
-                queuedOrderText.overflowMode = TextOverflowModes.Ellipsis;
             }
 
             if (hpSlider == null)

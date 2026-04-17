@@ -81,6 +81,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Vector2 _turnPanelBaseAnchoredPos;
         private Coroutine _nextStageShiftRoutine;
         private Coroutine _panelSwitchRoutine;
+        private MapInputHandler _subscribedMapInputHandler;
         private string _activeUnitInfoNodeId = string.Empty;
         private bool _lastBuildPanelVisible;
         private bool _lastProductionPanelVisible;
@@ -141,11 +142,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnDisable()
         {
-            if (mapInputHandler != null)
-            {
-                mapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-                mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
-            }
+            UnsubscribeInputEvents();
 
             UnsubscribeProductionPanelEvents();
             UnsubscribeRecipePanelEvents();
@@ -163,11 +160,47 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void LateUpdate()
         {
+            if (_subscribedMapInputHandler == null || !ReferenceEquals(_subscribedMapInputHandler, mapInputHandler))
+            {
+                ResolveReferences();
+                SubscribeInputEvents();
+            }
+
             SyncDerivedPanelStateFromVisibility();
 
             if (unitInfoPanelController != null && !unitInfoPanelController.IsOpen && IsAnyDerivedPanelVisible())
             {
                 CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: false);
+            }
+
+            var currentSelection = unitInfoPanelController != null ? unitInfoPanelController.CurrentUnit : null;
+            if (currentSelection == null && IsAnyDerivedPanelVisible())
+            {
+                CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: false);
+                return;
+            }
+
+            if (currentSelection != null && IsBuildPanelCurrentlyVisible() && !IsOwnedCityCoreBuildingProxy(currentSelection))
+            {
+                CloseBuildPanel(resetUnitInfoOffset: true);
+            }
+
+            if (currentSelection != null &&
+                cityCoreProductionPanel != null &&
+                cityCoreProductionPanel.IsVisible &&
+                !IsOwnedCityCoreBuildingProxy(currentSelection))
+            {
+                cityCoreProductionPanel.Close();
+                ReapplyRightBottomShift(false);
+            }
+
+            if (currentSelection != null &&
+                recipeSynthesisPanel != null &&
+                recipeSynthesisPanel.IsVisible &&
+                !IsOwnedRecipeBuildingProxy(currentSelection))
+            {
+                recipeSynthesisPanel.Hide();
+                ReapplyRightBottomShift(false);
             }
         }
 
@@ -178,11 +211,35 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            if (ReferenceEquals(_subscribedMapInputHandler, mapInputHandler))
+            {
+                return;
+            }
+
+            if (_subscribedMapInputHandler != null)
+            {
+                _subscribedMapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+                _subscribedMapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
+            }
+
             mapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
             mapInputHandler.NonBuildingMapClicked += OnNonBuildingMapClicked;
 
             mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
             mapInputHandler.UnitSelectionChanged += OnUnitSelectionChanged;
+            _subscribedMapInputHandler = mapInputHandler;
+        }
+
+        private void UnsubscribeInputEvents()
+        {
+            if (_subscribedMapInputHandler == null)
+            {
+                return;
+            }
+
+            _subscribedMapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+            _subscribedMapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
+            _subscribedMapInputHandler = null;
         }
 
         private void ResolveReferences()
@@ -289,7 +346,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildPanelSlideToggle == null && buildCommandPanel != null)
             {
-                buildPanelSlideToggle = buildCommandPanel.GetComponentInParent<BuildPanelSlideToggle>(true);
+                buildPanelSlideToggle = ResolveBuildPanelSlideToggleForBuildPanel(buildCommandPanel);
             }
 
             if (buildCommandPanel == null && buildPanelSlideToggle != null)
@@ -304,7 +361,26 @@ namespace Panoptes.Presentation.UI.HUD
                     FindObjectsSortMode.None);
                 if (toggles != null && toggles.Length > 0)
                 {
-                    buildPanelSlideToggle = toggles[0];
+                    for (var i = 0; i < toggles.Length; i++)
+                    {
+                        var candidate = toggles[i];
+                        if (candidate == null)
+                        {
+                            continue;
+                        }
+
+                        if (buildCommandPanel != null)
+                        {
+                            var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
+                            if (!ReferenceEquals(owner, buildCommandPanel))
+                            {
+                                continue;
+                            }
+                        }
+
+                        buildPanelSlideToggle = candidate;
+                        break;
+                    }
                 }
             }
 
@@ -703,11 +779,19 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (buildCommandPanel != null)
             {
+                if (!buildCommandPanel.gameObject.activeSelf)
+                {
+                    buildCommandPanel.gameObject.SetActive(true);
+                }
                 buildCommandPanel.SetCityCoreContext(nodeId);
             }
 
             if (buildPanelSlideToggle != null)
             {
+                if (!buildPanelSlideToggle.gameObject.activeSelf)
+                {
+                    buildPanelSlideToggle.gameObject.SetActive(true);
+                }
                 buildPanelSlideToggle.Expand();
             }
             else if (fallbackHideBuildPanelGameObjectWhenNoSlideToggle && buildCommandPanel != null)
@@ -1004,6 +1088,37 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private static BuildPanelSlideToggle ResolveBuildPanelSlideToggleForBuildPanel(BuildCommandPanel panel)
+        {
+            if (panel == null)
+            {
+                return null;
+            }
+
+            var toggles = panel.GetComponentsInChildren<BuildPanelSlideToggle>(true);
+            if (toggles == null || toggles.Length == 0)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < toggles.Length; i++)
+            {
+                var candidate = toggles[i];
+                if (candidate == null)
+                {
+                    continue;
+                }
+
+                var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
+                if (ReferenceEquals(owner, panel))
+                {
+                    return candidate;
+                }
+            }
+
+            return toggles[0];
+        }
+
         private bool TryResolveCityCoreNodeId(UnitView unit, out string nodeId)
         {
             nodeId = string.Empty;
@@ -1052,19 +1167,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var cache = GameStateCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(unit.UnitId))
-            {
-                return false;
-            }
-
-            var node = cache.GetNode(unit.UnitId);
-            if (node == null)
-            {
-                return false;
-            }
-
-            var buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? unit.UnitType : node.BuildingType);
-            if (!IsCityCoreBuildingType(buildingType))
+            if (cache == null)
             {
                 return false;
             }
@@ -1075,10 +1178,36 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
+            var fallbackType = NormalizeToken(unit.UnitType);
+            if (!IsCityCoreBuildingType(fallbackType))
+            {
+                return false;
+            }
+
+            // If node id is missing or backend owner fields are temporarily empty, fall back to proxy faction.
+            if (string.IsNullOrWhiteSpace(unit.UnitId))
+            {
+                return string.Equals(NormalizeToken(unit.Faction), localOwner, StringComparison.Ordinal);
+            }
+
+            var node = cache.GetNode(unit.UnitId);
+            if (node == null)
+            {
+                return string.Equals(NormalizeToken(unit.Faction), localOwner, StringComparison.Ordinal);
+            }
+
+            var buildingType = NormalizeToken(string.IsNullOrWhiteSpace(node.BuildingType) ? fallbackType : node.BuildingType);
+            if (!IsCityCoreBuildingType(buildingType))
+            {
+                return false;
+            }
+
             var owner = NormalizeToken(node.Owner);
             var territoryOwner = NormalizeToken(node.TerritoryOwner);
+            var faction = NormalizeToken(unit.Faction);
             return string.Equals(owner, localOwner, StringComparison.Ordinal)
-                   || string.Equals(territoryOwner, localOwner, StringComparison.Ordinal);
+                   || string.Equals(territoryOwner, localOwner, StringComparison.Ordinal)
+                   || string.Equals(faction, localOwner, StringComparison.Ordinal);
         }
 
         private bool IsOwnedRecipeBuildingProxy(UnitView unit)
@@ -1122,26 +1251,20 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog == null || catalog.Recipes == null || catalog.Recipes.Count == 0)
+            if (catalog == null)
             {
                 return false;
             }
 
-            foreach (var pair in catalog.Recipes)
+            if (!catalog.TryGetBuilding(buildingType, out var building) || building == null)
             {
-                var recipe = pair.Value;
-                if (recipe == null)
-                {
-                    continue;
-                }
-
-                if (string.Equals(NormalizeToken(recipe.building_id), buildingType, StringComparison.Ordinal))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            var recipeIds = building.recipe_ids;
+            var hasRecipeIds = recipeIds != null && recipeIds.Length > 0;
+            var hasDefaultRecipe = !string.IsNullOrWhiteSpace(building.default_recipe_id);
+            return hasRecipeIds || hasDefaultRecipe;
         }
 
         private static string NormalizeToken(string value)
