@@ -127,3 +127,26 @@ func (r *GameRoomRegistry) GetRoomByPlayerID(playerID string) (transport.GameRoo
 	}
 	return room, true
 }
+
+func (r *GameRoomRegistry) HandlePlayerDisconnect(playerID string) {
+	if r == nil || playerID == "" {
+		return
+	}
+
+	r.mu.RLock()
+	roomID, ok := r.players[playerID]
+	if !ok {
+		r.mu.RUnlock()
+		return
+	}
+	room := r.rooms[roomID]
+	r.mu.RUnlock()
+
+	if room == nil {
+		return
+	}
+
+	if room.forfeitDisconnectedPlayer(playerID) {
+		r.Unregister(room.ID)
+	}
+}
