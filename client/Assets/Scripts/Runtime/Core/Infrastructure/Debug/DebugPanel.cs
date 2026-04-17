@@ -7,6 +7,10 @@ namespace Panoptes.DebugTools
 {
     public sealed class DebugPanel : MonoBehaviour
     {
+        private const float PanelTopOffset = 60f; // default top(10) + 50px downward shift
+        private const float PanelSideMargin = 10f;
+        private const float PanelBottomMargin = 10f;
+
         private static DebugPanel _instance;
 
         private readonly DebugPanelContext.SharedState _sharedState = new();
@@ -54,7 +58,7 @@ namespace Panoptes.DebugTools
 
             if (!_expanded)
             {
-                if (GUI.Button(new Rect(10f, 10f, 96f, 30f), "[Debug]"))
+                if (GUI.Button(new Rect(PanelSideMargin, PanelTopOffset, 96f, 30f), "[Debug]"))
                 {
                     _expanded = true;
                 }
@@ -64,9 +68,10 @@ namespace Panoptes.DebugTools
 
             SyncRequestedTab();
 
-            var width = Mathf.Min(980f, Screen.width - 20f);
-            var height = Mathf.Min(720f, Screen.height - 20f);
-            var area = new Rect(10f, 10f, width, height);
+            var width = Mathf.Min(980f, Screen.width - PanelSideMargin * 2f);
+            var availableHeight = Mathf.Max(160f, Screen.height - PanelTopOffset - PanelBottomMargin);
+            var height = Mathf.Min(720f, availableHeight);
+            var area = new Rect(PanelSideMargin, PanelTopOffset, width, height);
 
             GUI.Box(area, string.Empty);
             GUI.Label(new Rect(area.x + 12f, area.y + 10f, 240f, 24f), "Panoptes Debug Workbench");

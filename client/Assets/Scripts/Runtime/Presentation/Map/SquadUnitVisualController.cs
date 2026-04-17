@@ -39,6 +39,11 @@ namespace Panoptes.Presentation.Map
             [NonSerialized] public bool warnedIdleStateNotEntered;
             [NonSerialized] public bool warnedAnimatorSpeedReset;
             [NonSerialized] public bool warnedLayerWeightReset;
+            [NonSerialized] public bool warnedNoWeightedSkinnedMesh;
+            [NonSerialized] public bool warnedStateTimeNotAdvancing;
+            [NonSerialized] public int lastObservedStateHash;
+            [NonSerialized] public float lastObservedNormalizedTime;
+            [NonSerialized] public int stalledStateFrames;
         }
 
         [Header("Members")]
@@ -60,6 +65,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool manualIdleSamplingFallback = true;
         [SerializeField] private int idleSamplingStallFrameThreshold = 10;
         [SerializeField] private float idleSamplingPlaybackSpeed = 1f;
+        [SerializeField] private bool forceContinuousIdleSamplingWhenStationary = true;
+        [SerializeField] private bool forceUnscaledAnimatorUpdate = true;
 
         [Header("Appearance")]
         [SerializeField] private bool applyAppearanceOnBind = false;
@@ -73,6 +80,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string[] bodyNamePrefixes = { "body_" };
         [SerializeField] private string[] headNamePrefixes = { "head_" };
         [SerializeField] private string[] weaponNamePrefixes = { "weapon_", "w_", "sword_", "bow_", "crossbow_", "spear_", "halberd_", "staff_", "hammer_", "shield_" };
+        [SerializeField] private bool enforceSingleModelForUnitTypes = true;
+        [SerializeField] private bool singleModelKeepsBody = true;
+        [SerializeField] private string[] singleModelUnitTypeAliases = { "settler" };
 
         [Header("Unit Role Variant")]
         [SerializeField] private bool applyRoleVariantOnBind = true;
@@ -98,7 +108,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private int maxVisibleRenderersPerMember = 6;
         [SerializeField] private bool disableCastShadows = true;
         [SerializeField] private bool disableReceiveShadows = true;
-        [SerializeField] private bool autoApplyRenderBudgetWhenOverdrawRiskHigh = true;
+        [SerializeField] private bool autoApplyRenderBudgetWhenOverdrawRiskHigh = false;
         [SerializeField] private int highRendererCountThresholdPerMember = 18;
         [SerializeField] private string[] rendererPriorityKeywords = { "body", "head", "weapon", "shield", "helmet", "cape", "cloak" };
 
@@ -106,6 +116,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool enableAnimationDiagnostics = true;
         [SerializeField] private bool logMemberBindingDetails = true;
         [SerializeField] private bool logMoveStateTransitions = true;
+        [SerializeField] private bool logSkinnedMeshDiagnostics = true;
 
         private readonly List<GameObject> _variantBuffer = new();
         private readonly List<GameObject> _weaponBuffer = new();
@@ -280,6 +291,12 @@ namespace Panoptes.Presentation.Map
                     LogAnimationWarning($"Member '{member.debugName}' missing idle state '{idleStateName}'.");
                 }
 
+                MonitorStateProgress(member, isMoving);
+                if (!isMoving)
+                {
+                    ApplyContinuousIdleSampling(member);
+                }
+
                 if (isMoving)
                 {
                     member.idleStallFrames = 0;
@@ -376,6 +393,8 @@ namespace Panoptes.Presentation.Map
                 ApplyAppearance(seed);
             }
 
+            ApplySingleModelOverride(unitType);
+
             if (applyRoleVariantOnBind)
             {
                 var roleVariant = ResolveRoleVariant(unitType);
@@ -385,15 +404,16 @@ namespace Panoptes.Presentation.Map
 
             if (applyRenderBudgetOnBind)
             {
+                LogAnimationInfo("ApplyRenderBudget on bind because applyRenderBudgetOnBind=true.");
                 ApplyRenderBudget();
             }
             else if (autoApplyRenderBudgetWhenOverdrawRiskHigh && IsRendererCountOverThreshold())
             {
+                LogAnimationInfo("ApplyRenderBudget on bind because renderer count exceeded threshold.");
                 ApplyRenderBudget();
             }
 
-            // Ensure freshly bound/created units land in idle pose immediately.
-            ForceIdlePose();
+            // Idle/move pose reset is driven by UnitView on first bind only.
         }
 
         public void ApplyAppearance(string seed)
@@ -592,6 +612,11 @@ namespace Panoptes.Presentation.Map
                 member.warnedIdleStateNotEntered = false;
                 member.warnedAnimatorSpeedReset = false;
                 member.warnedLayerWeightReset = false;
+                member.warnedNoWeightedSkinnedMesh = false;
+                member.warnedStateTimeNotAdvancing = false;
+                member.lastObservedStateHash = 0;
+                member.lastObservedNormalizedTime = -1f;
+                member.stalledStateFrames = 0;
 
                 if (member.animator == null)
                 {
@@ -605,6 +630,10 @@ namespace Panoptes.Presentation.Map
                     LogAnimationWarning($"Member '{member.debugName}' Animator was disabled; force-enabled.");
                 }
 
+                if (forceUnscaledAnimatorUpdate)
+                {
+                    member.animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+                }
                 member.animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 member.animator.applyRootMotion = false;
 
@@ -664,6 +693,8 @@ namespace Panoptes.Presentation.Map
                         $"idleState='{idleStateName}' exists={member.hasIdleState} " +
                         $"moveState='{moveStateName}' exists={member.hasMoveState}");
                 }
+
+                LogMemberSkinnedMeshStatus(member, "Bind");
             }
         }
 
@@ -685,6 +716,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                MonitorStateProgress(member, member.isMoveStatePlaying);
                 var state = member.animator.GetCurrentAnimatorStateInfo(0);
                 if (state.shortNameHash != member.idleStateHash && state.fullPathHash != member.idleStateHash)
                 {
@@ -710,6 +742,10 @@ namespace Panoptes.Presentation.Map
                 }
 
                 // Fallback path for import/runtime edge cases where idle state time freezes.
+                LogAnimationWarning(
+                    $"IdleSamplingFallback member='{member.debugName}' stateShort={state.shortNameHash} " +
+                    $"norm={normalized:0.000} stalledFrames={member.idleStallFrames} updateMode={member.animator.updateMode} " +
+                    $"speed={member.animator.speed:0.###} timeScale={Time.timeScale:0.###}");
                 member.animator.Play(member.idleStateHash, 0, Mathf.Repeat(Time.unscaledTime * playbackSpeed, 1f));
                 member.animator.Update(0f);
                 member.idleStallFrames = 0;
@@ -963,6 +999,76 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void ApplySingleModelOverride(string unitType)
+        {
+            if (!enforceSingleModelForUnitTypes || !MatchesAnyUnitTypeAlias(unitType, singleModelUnitTypeAliases))
+            {
+                return;
+            }
+
+            var prefixesToDisable = singleModelKeepsBody ? headNamePrefixes : bodyNamePrefixes;
+            if (prefixesToDisable == null || prefixesToDisable.Length == 0 || members == null || members.Length == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < members.Length; i++)
+            {
+                var member = members[i];
+                if (member == null || member.root == null)
+                {
+                    continue;
+                }
+
+                DisableVariantSet(member.root, prefixesToDisable);
+            }
+        }
+
+        private static void DisableVariantSet(Transform memberRoot, string[] prefixes)
+        {
+            if (memberRoot == null || prefixes == null || prefixes.Length == 0)
+            {
+                return;
+            }
+
+            var renderers = memberRoot.GetComponentsInChildren<Renderer>(true);
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var go = renderer.gameObject;
+                if (go == null || !NameStartsWithAny(go.name, prefixes))
+                {
+                    continue;
+                }
+
+                go.SetActive(false);
+            }
+        }
+
+        private static bool MatchesAnyUnitTypeAlias(string unitType, string[] aliases)
+        {
+            if (string.IsNullOrWhiteSpace(unitType) || aliases == null || aliases.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = NormalizeToken(unitType);
+            for (var i = 0; i < aliases.Length; i++)
+            {
+                if (string.Equals(normalized, NormalizeToken(aliases[i]), StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void PlayState(Animator animator, int stateHash, bool restartAtZero)
         {
             if (animator == null || stateHash == 0)
@@ -1088,6 +1194,7 @@ namespace Panoptes.Presentation.Map
         private void ApplyAnimatorController(RuntimeAnimatorController controller, string idleState, string moveState)
         {
             var changedController = false;
+            var changedStates = false;
 
             if (members != null)
             {
@@ -1099,7 +1206,7 @@ namespace Panoptes.Presentation.Map
                         continue;
                     }
 
-                    if (controller != null && member.animator.runtimeAnimatorController != controller)
+                    if (controller != null && !IsEquivalentController(member.animator.runtimeAnimatorController, controller))
                     {
                         member.animator.runtimeAnimatorController = controller;
                         member.animator.Rebind();
@@ -1109,25 +1216,39 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(idleState))
+            if (!string.IsNullOrWhiteSpace(idleState) && !string.Equals(idleStateName, idleState, StringComparison.Ordinal))
             {
                 idleStateName = idleState;
+                changedStates = true;
             }
 
-            if (!string.IsNullOrWhiteSpace(moveState))
+            if (!string.IsNullOrWhiteSpace(moveState) && !string.Equals(moveStateName, moveState, StringComparison.Ordinal))
             {
                 moveStateName = moveState;
+                changedStates = true;
             }
 
-            if (changedController)
+            if (changedController || changedStates)
             {
                 BindAnimators();
             }
-            else
+        }
+
+        private static bool IsEquivalentController(RuntimeAnimatorController current, RuntimeAnimatorController target)
+        {
+            if (ReferenceEquals(current, target))
             {
-                // Ensure hashes/states are refreshed if only state names changed.
-                BindAnimators();
+                return true;
             }
+
+            if (current == null || target == null)
+            {
+                return false;
+            }
+
+            // In some runtime paths Unity may provide cloned controller instances
+            // with different references but identical semantics.
+            return string.Equals(current.name, target.name, StringComparison.Ordinal);
         }
 
         private void ApplyWeaponVisualByRole(UnitRoleVariant variant)
@@ -1300,6 +1421,139 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private void LogMemberSkinnedMeshStatus(MemberBinding member, string phase)
+        {
+            if (!enableAnimationDiagnostics || !logSkinnedMeshDiagnostics || member == null || member.animator == null || member.root == null)
+            {
+                return;
+            }
+
+            var skinnedMeshes = member.root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            var totalSkinned = 0;
+            var activeSkinned = 0;
+            var weightedSkinned = 0;
+            var firstMeshName = "<none>";
+            for (var i = 0; i < skinnedMeshes.Length; i++)
+            {
+                var skinned = skinnedMeshes[i];
+                if (skinned == null)
+                {
+                    continue;
+                }
+
+                totalSkinned++;
+                if (string.Equals(firstMeshName, "<none>", StringComparison.Ordinal) && skinned.sharedMesh != null)
+                {
+                    firstMeshName = skinned.sharedMesh.name;
+                }
+
+                if (!skinned.enabled || skinned.gameObject == null || !skinned.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                activeSkinned++;
+                if (skinned.rootBone != null && skinned.bones != null && skinned.bones.Length > 0 && skinned.sharedMesh != null)
+                {
+                    weightedSkinned++;
+                }
+            }
+
+            var state = member.animator.GetCurrentAnimatorStateInfo(0);
+            var layerWeight = member.animator.layerCount > 0 ? member.animator.GetLayerWeight(0) : 0f;
+            var avatar = member.animator.avatar;
+            var avatarStatus = avatar == null ? "<null>" : $"valid={avatar.isValid} human={avatar.isHuman}";
+            var clips = member.animator.GetCurrentAnimatorClipInfo(0);
+            var clipName = clips != null && clips.Length > 0 && clips[0].clip != null ? clips[0].clip.name : "<none>";
+
+            LogAnimationInfo(
+                $"RigCheck[{phase}] member='{member.debugName}' controller='{member.animator.runtimeAnimatorController?.name ?? "<null>"}' " +
+                $"stateShort={state.shortNameHash} norm={state.normalizedTime:0.000} clip='{clipName}' " +
+                $"updateMode={member.animator.updateMode} speed={member.animator.speed:0.###} layer0={layerWeight:0.###} " +
+                $"timeScale={Time.timeScale:0.###} avatar={avatarStatus} skinnedTotal={totalSkinned} " +
+                $"skinnedActive={activeSkinned} skinnedWeighted={weightedSkinned} firstMesh='{firstMeshName}'");
+
+            if (weightedSkinned <= 0 && !member.warnedNoWeightedSkinnedMesh)
+            {
+                member.warnedNoWeightedSkinnedMesh = true;
+                LogAnimationWarning(
+                    $"Member '{member.debugName}' has no active weighted SkinnedMeshRenderer. " +
+                    "Animator state may change but no mesh is being deformed.");
+            }
+        }
+
+        private void MonitorStateProgress(MemberBinding member, bool isMoving)
+        {
+            if (!enableAnimationDiagnostics || member == null || member.animator == null || member.animator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+
+            var state = member.animator.GetCurrentAnimatorStateInfo(0);
+            if (state.shortNameHash != member.lastObservedStateHash)
+            {
+                member.lastObservedStateHash = state.shortNameHash;
+                member.lastObservedNormalizedTime = state.normalizedTime;
+                member.stalledStateFrames = 0;
+                member.warnedStateTimeNotAdvancing = false;
+                return;
+            }
+
+            if (member.lastObservedNormalizedTime >= 0f && Mathf.Abs(state.normalizedTime - member.lastObservedNormalizedTime) < 0.00001f)
+            {
+                member.stalledStateFrames++;
+            }
+            else
+            {
+                member.stalledStateFrames = 0;
+                member.warnedStateTimeNotAdvancing = false;
+            }
+
+            member.lastObservedNormalizedTime = state.normalizedTime;
+
+            var threshold = Mathf.Max(15, idleSamplingStallFrameThreshold * 2);
+            if (member.stalledStateFrames < threshold || member.warnedStateTimeNotAdvancing)
+            {
+                return;
+            }
+
+            var expectedStateHash = isMoving ? member.moveStateHash : member.idleStateHash;
+            if (expectedStateHash != 0 && state.shortNameHash != expectedStateHash && state.fullPathHash != expectedStateHash)
+            {
+                return;
+            }
+
+            member.warnedStateTimeNotAdvancing = true;
+            var clips = member.animator.GetCurrentAnimatorClipInfo(0);
+            var clipName = clips != null && clips.Length > 0 && clips[0].clip != null ? clips[0].clip.name : "<none>";
+            var clipLength = clips != null && clips.Length > 0 && clips[0].clip != null ? clips[0].clip.length : 0f;
+
+            LogAnimationWarning(
+                $"StateTimeNotAdvancing member='{member.debugName}' moving={isMoving} " +
+                $"stateShort={state.shortNameHash} norm={state.normalizedTime:0.000} stalledFrames={member.stalledStateFrames} " +
+                $"clip='{clipName}' clipLen={clipLength:0.###} updateMode={member.animator.updateMode} " +
+                $"speed={member.animator.speed:0.###} timeScale={Time.timeScale:0.###} hasBoundPlayables={member.animator.hasBoundPlayables}");
+            LogMemberSkinnedMeshStatus(member, "StateStall");
+        }
+
+        private void ApplyContinuousIdleSampling(MemberBinding member)
+        {
+            if (!forceContinuousIdleSamplingWhenStationary || member == null || member.animator == null || !member.hasIdleState)
+            {
+                return;
+            }
+
+            var state = member.animator.GetCurrentAnimatorStateInfo(0);
+            if (state.shortNameHash != member.idleStateHash && state.fullPathHash != member.idleStateHash)
+            {
+                return;
+            }
+
+            var playbackSpeed = Mathf.Max(0.01f, idleSamplingPlaybackSpeed);
+            member.animator.Play(member.idleStateHash, 0, Mathf.Repeat(Time.unscaledTime * playbackSpeed, 1f));
+            member.animator.Update(0f);
         }
 
         private void LogAnimationInfo(string message)

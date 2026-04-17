@@ -62,6 +62,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string idleStateName = "Idle";
         [SerializeField] private bool forceIdleAnimation = false;
         [SerializeField] private bool forceIdleAnimationOnBind = false;
+        [SerializeField] private bool forceUnscaledAnimatorUpdate = true;
+        [SerializeField] private bool enforceContinuousMoveIdleState = true;
         [SerializeField] private float rotateLerpSpeed = 18f;
         [SerializeField] private bool enableAnimationDiagnostics = true;
         [SerializeField] private bool logMoveRequestTransitions = true;
@@ -102,6 +104,8 @@ namespace Panoptes.Presentation.Map
         private bool _warnedLayerWeightReset;
         private bool _lastRequestedMovingState;
         private bool _hasLastRequestedMovingState;
+        private bool _persistentIsMoving;
+        private float _persistentNormalizedSpeed;
 
         private void Awake()
         {
@@ -113,6 +117,11 @@ namespace Panoptes.Presentation.Map
             if (animator == null)
             {
                 animator = GetComponentInChildren<Animator>(true);
+            }
+
+            if (animator != null && forceUnscaledAnimatorUpdate)
+            {
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
             }
 
             if (visualRoot == null)
@@ -147,6 +156,16 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void Update()
+        {
+            if (!enforceContinuousMoveIdleState)
+            {
+                return;
+            }
+
+            EnforcePersistentLocomotionState();
+        }
+
         public void Bind(UnitDto unit, Vector3 worldPosition)
         {
             if (unit == null)
@@ -154,7 +173,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            UnitId = unit.Id ?? string.Empty;
+            var incomingUnitId = unit.Id ?? string.Empty;
+            var isNewVisualBinding = string.IsNullOrEmpty(UnitId) || !string.Equals(UnitId, incomingUnitId, StringComparison.Ordinal);
+
+            UnitId = incomingUnitId;
             Faction = unit.Owner ?? string.Empty;
             UnitType = unit.Type ?? string.Empty;
             HitPoints = unit.Hp;
@@ -176,16 +198,22 @@ namespace Panoptes.Presentation.Map
             _warnedAnimatorSpeedReset = false;
             _warnedLayerWeightReset = false;
             _hasLastRequestedMovingState = false;
+            if (isNewVisualBinding)
+            {
+                _persistentIsMoving = false;
+                _persistentNormalizedSpeed = 0f;
+            }
             RefreshAnimatorParameterAvailability();
 
-            if (forceIdleAnimationOnBind)
+            if (forceIdleAnimationOnBind && isNewVisualBinding)
             {
                 SetForceIdleAnimation(true);
             }
-            else
+            else if (isNewVisualBinding)
             {
                 // Always reset to idle once when a unit is bound so newly created units
-                // start in a stable idle pose, while move state can still take over later.
+                // start in a stable idle pose. For repeated binds of the same unit id,
+                // keep current move/idle playback instead of resetting each update.
                 PlayIdleAnimation();
             }
 
@@ -241,6 +269,9 @@ namespace Panoptes.Presentation.Map
 
         public void SetMovingVisual(bool isMoving, float normalizedSpeed, Vector3 worldMoveDirection)
         {
+            _persistentIsMoving = isMoving;
+            _persistentNormalizedSpeed = Mathf.Max(0f, normalizedSpeed);
+
             if (enableAnimationDiagnostics && logMoveRequestTransitions)
             {
                 if (!_hasLastRequestedMovingState || _lastRequestedMovingState != isMoving)
@@ -353,6 +384,9 @@ namespace Panoptes.Presentation.Map
 
         public void PlayIdleAnimation()
         {
+            _persistentIsMoving = false;
+            _persistentNormalizedSpeed = 0f;
+
             if (animator != null)
             {
                 EnsureAnimatorParameterCacheCurrent();
@@ -666,9 +700,61 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (forceUnscaledAnimatorUpdate)
+            {
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
+
             if (!ReferenceEquals(_cachedAnimatorController, animator.runtimeAnimatorController))
             {
                 RefreshAnimatorParameterAvailability();
+            }
+        }
+
+        private void EnforcePersistentLocomotionState()
+        {
+            if (forceIdleAnimation)
+            {
+                _persistentIsMoving = false;
+                _persistentNormalizedSpeed = 0f;
+            }
+
+            if (squadVisualController != null)
+            {
+                squadVisualController.ApplyMoveState(_persistentIsMoving, _persistentNormalizedSpeed);
+                return;
+            }
+
+            if (animator == null)
+            {
+                return;
+            }
+
+            EnsureAnimatorParameterCacheCurrent();
+            EnsurePrimaryLayerWeight();
+
+            if (_movingBoolHash != 0 && _hasMovingBoolParam)
+            {
+                animator.SetBool(_movingBoolHash, _persistentIsMoving);
+            }
+
+            if (_speedFloatHash != 0 && _hasSpeedFloatParam)
+            {
+                animator.SetFloat(_speedFloatHash, _persistentIsMoving ? _persistentNormalizedSpeed : 0f);
+            }
+
+            if (_persistentIsMoving)
+            {
+                return;
+            }
+
+            if (_idleStateHash != 0 && animator.runtimeAnimatorController != null && animator.HasState(0, _idleStateHash))
+            {
+                var state = animator.GetCurrentAnimatorStateInfo(0);
+                if (state.shortNameHash != _idleStateHash && state.fullPathHash != _idleStateHash)
+                {
+                    animator.CrossFade(_idleStateHash, 0.05f, 0);
+                }
             }
         }
 

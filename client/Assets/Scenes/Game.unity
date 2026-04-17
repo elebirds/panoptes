@@ -1722,7 +1722,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2274049074370358003, guid: 62a25cbab7c3e174cbf9499f54b3bfa9, type: 3}
       propertyPath: portraitHeightOffset
-      value: -0.2
+      value: -0.38
       objectReference: {fileID: 0}
     - target: {fileID: 2274049074370358003, guid: 62a25cbab7c3e174cbf9499f54b3bfa9, type: 3}
       propertyPath: portraitDistanceOffset
@@ -2014,6 +2014,7 @@ MonoBehaviour:
   onlyControlOwnUnits: 1
   movePathArrowColor: {r: 0.35, g: 1, b: 0.45, a: 0.92}
   movePathDestinationColor: {r: 0.25, g: 0.95, b: 0.55, a: 0.95}
+  attackRangeHighlightColor: {r: 1, g: 0.45, b: 0.25, a: 0.9}
   enableMovePreviewGhost: 1
   movePreviewGhostColor: {r: 0.35, g: 1, b: 0.45, a: 0.72}
   movePreviewTravelDuration: 0.22
@@ -2039,6 +2040,9 @@ MonoBehaviour:
   autoCreateCornerCityZones: 1
   cornerInset: 2
   cityZones: []
+  enableUnitDamagePopupFallback: 1
+  damagePopupRepeatCooldownSeconds: 0.12
+  damagePopupController: {fileID: 0}
   territoryExpansionUnitTypes:
   - settler
   - pioneer
@@ -3623,7 +3627,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4264437872512284280, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 200
+      value: 237.7
       objectReference: {fileID: 0}
     - target: {fileID: 4264437872512284280, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
       propertyPath: m_SizeDelta.y
