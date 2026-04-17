@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Intents;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,37 +14,32 @@ namespace Panoptes.Presentation.UI.Domestic
         {
             public string Id;
             public string Name;
-            public string Desc;
-            public string Icon;
-            public string Branch;
+            public string Description;
+            public string IconKey;
             public int Tier;
-            public int Sort;
-            public int Column = -1;
-            public int Row = -1;
-            public Vector2 Pos;
-            public Vector2 Size = new Vector2(360f, 104f);
+            public int SortOrder;
+            public Vector2 Position;
+            public Vector2 Size = new(420f, 132f);
             public bool HasExplicitLayout;
             public RectTransform Rect;
-            public readonly HashSet<string> Pre = new(StringComparer.OrdinalIgnoreCase);
+            public readonly HashSet<string> Prerequisites = new(StringComparer.OrdinalIgnoreCase);
         }
 
         [Header("Binding")]
         [SerializeField] private RectTransform nodesRoot;
         [SerializeField] private RectTransform lineRoot;
         [SerializeField] private RectTransform panelRoot;
+        [SerializeField] private GameObject nodePrefab;
         [SerializeField] private RectTransform nodeTemplate;
 
         [Header("Line Style")]
-        [SerializeField] private Color lineColor = new Color(0.08f, 0.08f, 0.08f, 1f);
+        [SerializeField] private Color lineColor = new(0.08f, 0.08f, 0.08f, 1f);
         [SerializeField] private float defaultLineThickness = 3f;
-        [SerializeField] private TMP_FontAsset arrowFont;
-        [SerializeField] private int arrowFontSize = 24;
-        [SerializeField] private Color arrowColor = new Color(0.08f, 0.08f, 0.08f, 1f);
 
         [Header("Layout")]
-        [SerializeField] private Vector2 layoutOffset = new Vector2(0f, 160f);
+        [SerializeField] private Vector2 layoutOffset = new(0f, 160f);
         [SerializeField] private float columnSpacing = 300f;
-        [SerializeField] private float rowSpacing = 150f;
+        [SerializeField] private float rowSpacing = 190f;
         [SerializeField] private bool clearLegacyNodesOnRefresh = true;
 
         [Header("Source")]
@@ -57,40 +52,119 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private string closeButtonText = "Close";
         [SerializeField] private TMP_FontAsset closeButtonFont;
 
+        private readonly TechTreePanelStateBuilder _stateBuilder = new();
         private readonly List<GameObject> _runtimeNodes = new();
         private readonly List<GameObject> _runtimeLines = new();
-        private readonly Dictionary<string, NodeData> _dict = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, int> _cols = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, NodeData> _nodesById = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _columnsById = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _visiting = new(StringComparer.OrdinalIgnoreCase);
+
         private StaticCatalogCache _catalog;
+        private GameStateCache _gameState;
+        private PlanningDraftCache _planningDraft;
         private bool _loggedMissingConfigThisEnable;
 
         private void Awake()
         {
             EnsureRoots();
             EnsureCloseButton();
-            ResolveTemplate();
+            ResolveTemplateFallback();
         }
 
         private void OnEnable()
         {
             _loggedMissingConfigThisEnable = false;
-            _catalog = StaticCatalogCache.EnsureInstance();
-            if (_catalog != null) { _catalog.CatalogChanged -= Refresh; _catalog.CatalogChanged += Refresh; }
+            EnsureRoots();
+            EnsureCloseButton();
+            RefreshSubscriptions();
             Refresh();
         }
 
         private void OnDisable()
         {
-            if (_catalog != null) _catalog.CatalogChanged -= Refresh;
+            Unsubscribe();
             _loggedMissingConfigThisEnable = false;
+        }
+
+        private void OnActionLockChanged(bool _)
+        {
+            Refresh();
+        }
+
+        private void OnPlanningDraftChanged()
+        {
+            Refresh();
+        }
+
+        private void RefreshSubscriptions()
+        {
+            var nextCatalog = StaticCatalogCache.EnsureInstance();
+            var nextGameState = GameStateCache.Instance;
+            var nextPlanningDraft = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+
+            var changed = !ReferenceEquals(_catalog, nextCatalog) ||
+                          !ReferenceEquals(_gameState, nextGameState) ||
+                          !ReferenceEquals(_planningDraft, nextPlanningDraft);
+            if (!changed)
+            {
+                return;
+            }
+
+            Unsubscribe();
+
+            _catalog = nextCatalog;
+            _gameState = nextGameState;
+            _planningDraft = nextPlanningDraft;
+
+            if (_catalog != null)
+            {
+                _catalog.CatalogChanged -= Refresh;
+                _catalog.CatalogChanged += Refresh;
+            }
+
+            if (_gameState != null)
+            {
+                _gameState.OnStateChanged -= Refresh;
+                _gameState.OnStateChanged += Refresh;
+            }
+
+            if (_planningDraft != null)
+            {
+                _planningDraft.OrdersChanged -= OnPlanningDraftChanged;
+                _planningDraft.OrdersChanged += OnPlanningDraftChanged;
+            }
+
+            ActionLock.OnChanged -= OnActionLockChanged;
+            ActionLock.OnChanged += OnActionLockChanged;
+        }
+
+        private void Unsubscribe()
+        {
+            if (_catalog != null)
+            {
+                _catalog.CatalogChanged -= Refresh;
+            }
+
+            if (_gameState != null)
+            {
+                _gameState.OnStateChanged -= Refresh;
+            }
+
+            if (_planningDraft != null)
+            {
+                _planningDraft.OrdersChanged -= OnPlanningDraftChanged;
+            }
+
+            ActionLock.OnChanged -= OnActionLockChanged;
         }
 
         private void Refresh()
         {
             EnsureRoots();
-            ResolveTemplate();
-            if (_catalog == null) _catalog = StaticCatalogCache.Instance;
+            EnsureCloseButton();
+            ResolveTemplateFallback();
+            RefreshSubscriptions();
+
             if (_catalog == null)
             {
                 WarnMissingConfigOnce("[TechTreePanel] StaticCatalogCache missing.");
@@ -98,10 +172,615 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             var nodes = LoadFromCatalog();
-            if (nodes.Count == 0) { WarnMissingConfigOnce("[TechTreePanel] No technologies found in config/catalog."); return; }
+            if (nodes.Count == 0)
+            {
+                WarnMissingConfigOnce("[TechTreePanel] No technologies found in config/catalog.");
+                return;
+            }
 
             Layout(nodes);
-            Render(nodes);
+            var runtimeStates = _stateBuilder.BuildFromCaches(_catalog, _gameState, _planningDraft);
+            Render(nodes, runtimeStates);
+        }
+
+        private List<NodeData> LoadFromCatalog()
+        {
+            var result = new List<NodeData>();
+            var layoutByTechnology = new Dictionary<string, StaticCatalogCache.TechTreeLayoutNodeJson>(StringComparer.OrdinalIgnoreCase);
+            var layout = _catalog.TechTreeLayout;
+            if (layout?.nodes != null)
+            {
+                for (var i = 0; i < layout.nodes.Length; i++)
+                {
+                    var node = layout.nodes[i];
+                    if (node == null || string.IsNullOrWhiteSpace(node.technology_id) || !node.visible)
+                    {
+                        continue;
+                    }
+
+                    layoutByTechnology[Normalize(node.technology_id)] = node;
+                }
+            }
+
+            foreach (var pair in _catalog.Technologies)
+            {
+                var technology = pair.Value;
+                if (technology == null || string.IsNullOrWhiteSpace(technology.id))
+                {
+                    continue;
+                }
+
+                var node = new NodeData
+                {
+                    Id = Normalize(technology.id),
+                    Name = string.IsNullOrWhiteSpace(technology.name) ? technology.id.Trim() : technology.name.Trim(),
+                    Description = technology.description ?? string.Empty,
+                    IconKey = technology.icon_key ?? string.Empty,
+                    Tier = technology.tier,
+                    SortOrder = technology.sort_order
+                };
+
+                if (layoutByTechnology.TryGetValue(node.Id, out var layoutNode) && layoutNode != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(layoutNode.title))
+                    {
+                        node.Name = layoutNode.title;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(layoutNode.description))
+                    {
+                        node.Description = layoutNode.description;
+                    }
+
+                    node.Position = new Vector2(layoutOffset.x + layoutNode.x, layoutOffset.y - layoutNode.y);
+                    node.Size = new Vector2(Mathf.Max(1f, layoutNode.width), Mathf.Max(1f, layoutNode.height));
+                    node.HasExplicitLayout = true;
+                }
+
+                if (technology.prerequisites != null)
+                {
+                    for (var i = 0; i < technology.prerequisites.Length; i++)
+                    {
+                        var prerequisite = technology.prerequisites[i];
+                        if (prerequisite == null)
+                        {
+                            continue;
+                        }
+
+                        if (!string.Equals(Normalize(prerequisite.type), "technology_unlocked", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        var targetId = Normalize(prerequisite.target_id);
+                        if (!string.IsNullOrWhiteSpace(targetId))
+                        {
+                            node.Prerequisites.Add(targetId);
+                        }
+                    }
+                }
+
+                result.Add(node);
+            }
+
+            return result;
+        }
+
+        private void Layout(List<NodeData> nodes)
+        {
+            _nodesById.Clear();
+            _columnsById.Clear();
+            _visiting.Clear();
+
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                _nodesById[node.Id] = node;
+            }
+
+            foreach (var node in nodes)
+            {
+                ResolveColumn(node.Id);
+            }
+
+            var groups = new Dictionary<int, List<NodeData>>();
+            foreach (var node in nodes)
+            {
+                var column = _columnsById.TryGetValue(node.Id, out var value) ? value : 0;
+                if (!groups.TryGetValue(column, out var group))
+                {
+                    group = new List<NodeData>();
+                    groups[column] = group;
+                }
+
+                group.Add(node);
+            }
+
+            foreach (var pair in groups)
+            {
+                var column = pair.Key;
+                var group = pair.Value;
+                group.Sort((left, right) =>
+                {
+                    if (left.SortOrder != right.SortOrder)
+                    {
+                        return left.SortOrder.CompareTo(right.SortOrder);
+                    }
+
+                    if (left.Tier != right.Tier)
+                    {
+                        return left.Tier.CompareTo(right.Tier);
+                    }
+
+                    return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+                });
+
+                var startY = layoutOffset.y + (group.Count - 1) * rowSpacing * 0.5f;
+                for (var i = 0; i < group.Count; i++)
+                {
+                    if (group[i].HasExplicitLayout)
+                    {
+                        continue;
+                    }
+
+                    group[i].Position = new Vector2(layoutOffset.x + column * columnSpacing, startY - i * rowSpacing);
+                }
+            }
+        }
+
+        private int ResolveColumn(string technologyId)
+        {
+            if (string.IsNullOrWhiteSpace(technologyId))
+            {
+                return 0;
+            }
+
+            if (_columnsById.TryGetValue(technologyId, out var cached))
+            {
+                return cached;
+            }
+
+            if (!_nodesById.TryGetValue(technologyId, out var node) || node == null)
+            {
+                return 0;
+            }
+
+            if (!_visiting.Add(technologyId))
+            {
+                return 0;
+            }
+
+            var maxDependencyColumn = -1;
+            foreach (var prerequisite in node.Prerequisites)
+            {
+                if (_nodesById.ContainsKey(prerequisite))
+                {
+                    maxDependencyColumn = Mathf.Max(maxDependencyColumn, ResolveColumn(prerequisite));
+                }
+            }
+
+            _visiting.Remove(technologyId);
+            var fallbackColumn = node.Tier > 0 ? node.Tier - 1 : 0;
+            _columnsById[technologyId] = Mathf.Max(fallbackColumn, maxDependencyColumn + 1);
+            return _columnsById[technologyId];
+        }
+
+        private void Render(IReadOnlyList<NodeData> nodes, IReadOnlyDictionary<string, TechTreeNodeRuntimeState> runtimeStates)
+        {
+            for (var i = 0; i < _runtimeNodes.Count; i++)
+            {
+                if (_runtimeNodes[i] != null)
+                {
+                    Destroy(_runtimeNodes[i]);
+                }
+            }
+
+            for (var i = 0; i < _runtimeLines.Count; i++)
+            {
+                if (_runtimeLines[i] != null)
+                {
+                    Destroy(_runtimeLines[i]);
+                }
+            }
+
+            _runtimeNodes.Clear();
+            _runtimeLines.Clear();
+
+            if (clearLegacyNodesOnRefresh)
+            {
+                HideLegacyNodes();
+            }
+
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                nodes[i].Rect = CreateNode(nodes[i], runtimeStates);
+            }
+
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                var node = nodes[i];
+                foreach (var prerequisite in node.Prerequisites)
+                {
+                    if (!_nodesById.TryGetValue(prerequisite, out var prerequisiteNode) ||
+                        prerequisiteNode.Rect == null ||
+                        node.Rect == null)
+                    {
+                        continue;
+                    }
+
+                    CreateLine(
+                        ToLinePoint(prerequisiteNode.Rect, new Vector3(prerequisiteNode.Rect.rect.xMax, prerequisiteNode.Rect.rect.center.y, 0f)),
+                        ToLinePoint(node.Rect, new Vector3(node.Rect.rect.xMin, node.Rect.rect.center.y, 0f)));
+                }
+            }
+        }
+
+        private RectTransform CreateNode(NodeData node, IReadOnlyDictionary<string, TechTreeNodeRuntimeState> runtimeStates)
+        {
+            var view = CreateNodeViewInstance();
+            var rect = view.transform as RectTransform;
+            rect.name = $"TechNode_{node.Id}";
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = node.Position;
+            rect.sizeDelta = node.Size;
+
+            runtimeStates.TryGetValue(node.Id, out var runtimeState);
+            runtimeState ??= new TechTreeNodeRuntimeState
+            {
+                TechnologyId = node.Id,
+                Status = TechTreeNodeStatus.Locked,
+                CurrentProgress = 0,
+                RequiredProgress = 0,
+                IsInteractable = false
+            };
+
+            var model = new TechTreeNodeRenderModel
+            {
+                TechnologyId = node.Id,
+                Title = node.Name,
+                Description = node.Description,
+                IconKey = node.IconKey,
+                Status = runtimeState.Status,
+                StatusLabel = TechTreePanelStateBuilder.GetStatusLabel(runtimeState.Status),
+                CurrentProgress = runtimeState.CurrentProgress,
+                RequiredProgress = runtimeState.RequiredProgress,
+                IsInteractable = runtimeState.IsInteractable
+            };
+
+            view.Bind(model, LoadIcon(node.IconKey), OnTechnologyClicked);
+            _runtimeNodes.Add(rect.gameObject);
+            return rect;
+        }
+
+        private TechTreeNodeView CreateNodeViewInstance()
+        {
+            GameObject instance = null;
+            if (nodePrefab != null)
+            {
+                instance = Instantiate(nodePrefab, nodesRoot, false);
+            }
+            else if (nodeTemplate != null)
+            {
+                instance = Instantiate(nodeTemplate.gameObject, nodesRoot, false);
+                instance.SetActive(true);
+            }
+
+            if (instance == null)
+            {
+                return CreateFallbackNodeView();
+            }
+
+            var view = instance.GetComponent<TechTreeNodeView>();
+            if (view == null)
+            {
+                view = instance.AddComponent<TechTreeNodeView>();
+            }
+
+            return view;
+        }
+
+        private TechTreeNodeView CreateFallbackNodeView()
+        {
+            var root = CreateUiNode("TechNodeItem", nodesRoot, typeof(Image), typeof(Button), typeof(Outline));
+            root.GetComponent<Image>().color = new Color(0.94f, 0.95f, 0.98f, 0.98f);
+
+            var stateFrame = CreateUiNode("StateFrame", root.transform, typeof(Image));
+            ConfigureStretch(stateFrame.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            stateFrame.GetComponent<Image>().color = new Color(0.23f, 0.33f, 0.48f, 1f);
+
+            var icon = CreateUiNode("Icon", root.transform, typeof(Image));
+            ConfigureAnchored(icon.GetComponent<RectTransform>(), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(64f, 64f), new Vector2(0f, 0.5f));
+
+            var content = CreateUiNode("Content", root.transform);
+            ConfigureStretch(content.GetComponent<RectTransform>(), 104f, 18f, 26f, 54f);
+
+            var title = CreateTextNode("TitleText", content.transform, 26f, FontStyles.Bold);
+            ConfigureStretch(title.rectTransform, 0f, 0f, 0f, 32f);
+
+            var description = CreateTextNode("DescriptionText", content.transform, 18f, FontStyles.Normal);
+            ConfigureStretch(description.rectTransform, 0f, 0f, 36f, 0f);
+            description.textWrappingMode = TextWrappingModes.Normal;
+
+            var statusBadge = CreateUiNode("StatusBadge", root.transform, typeof(Image));
+            ConfigureAnchored(statusBadge.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -22f), new Vector2(154f, 34f), new Vector2(1f, 1f));
+            statusBadge.GetComponent<Image>().color = new Color(0.18f, 0.43f, 0.85f, 1f);
+
+            var statusText = CreateTextNode("StatusBadgeText", statusBadge.transform, 17f, FontStyles.Bold);
+            ConfigureStretch(statusText.rectTransform, 8f, 8f, 4f, 4f);
+            statusText.alignment = TextAlignmentOptions.Center;
+            statusText.color = Color.white;
+
+            var progressRoot = CreateUiNode("ProgressRoot", root.transform, typeof(Image));
+            ConfigureAnchored(progressRoot.GetComponent<RectTransform>(), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-20f, 18f), new Vector2(190f, 22f), new Vector2(1f, 0f));
+            progressRoot.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.12f);
+
+            var progressFill = CreateUiNode("ProgressFill", progressRoot.transform, typeof(Image));
+            ConfigureStretch(progressFill.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            progressFill.GetComponent<Image>().color = new Color(0.23f, 0.51f, 0.91f, 1f);
+
+            var progressText = CreateTextNode("ProgressText", progressRoot.transform, 15f, FontStyles.Normal);
+            ConfigureStretch(progressText.rectTransform, 8f, 8f, 0f, 0f);
+            progressText.alignment = TextAlignmentOptions.Center;
+
+            return root.AddComponent<TechTreeNodeView>();
+        }
+
+        private static GameObject CreateUiNode(string name, Transform parent, params Type[] components)
+        {
+            var componentTypes = new Type[components.Length + 2];
+            componentTypes[0] = typeof(RectTransform);
+            componentTypes[1] = typeof(CanvasRenderer);
+            for (var i = 0; i < components.Length; i++)
+            {
+                componentTypes[i + 2] = components[i];
+            }
+
+            var go = new GameObject(name, componentTypes);
+            var rect = go.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.localScale = Vector3.one;
+            return go;
+        }
+
+        private static TextMeshProUGUI CreateTextNode(string name, Transform parent, float fontSize, FontStyles fontStyle)
+        {
+            var go = CreateUiNode(name, parent);
+            var text = go.AddComponent<TextMeshProUGUI>();
+            text.fontSize = fontSize;
+            text.fontStyle = fontStyle;
+            text.color = new Color(0.1f, 0.12f, 0.16f, 1f);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.text = string.Empty;
+            return text;
+        }
+
+        private static void ConfigureStretch(RectTransform rect, float left, float right, float bottom, float top)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static void ConfigureAnchored(
+            RectTransform rect,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 anchoredPosition,
+            Vector2 sizeDelta,
+            Vector2 pivot)
+        {
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = pivot;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = sizeDelta;
+        }
+
+        private void OnTechnologyClicked(string technologyId)
+        {
+            if (string.IsNullOrWhiteSpace(technologyId))
+            {
+                return;
+            }
+
+            GameIntents.SetResearchTarget(technologyId);
+        }
+
+        private void CreateLine(Vector2 start, Vector2 end)
+        {
+            var root = lineRoot != null ? lineRoot : nodesRoot;
+            if (root == null)
+            {
+                return;
+            }
+
+            var go = new GameObject("TechEdge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var rect = go.transform as RectTransform;
+            rect.SetParent(root, false);
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+
+            var direction = end - start;
+            var length = Mathf.Max(1f, direction.magnitude);
+            rect.sizeDelta = new Vector2(length, Mathf.Max(1f, defaultLineThickness));
+            rect.anchoredPosition = (start + end) * 0.5f;
+            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+
+            var image = go.GetComponent<Image>();
+            image.color = lineColor;
+            image.raycastTarget = false;
+            _runtimeLines.Add(go);
+        }
+
+        private Vector2 ToLinePoint(RectTransform source, Vector3 localPosition)
+        {
+            var root = lineRoot != null ? lineRoot : nodesRoot;
+            return root.InverseTransformPoint(source.TransformPoint(localPosition));
+        }
+
+        private void EnsureRoots()
+        {
+            if (panelRoot == null)
+            {
+                panelRoot = transform as RectTransform;
+            }
+
+            if (nodesRoot == null)
+            {
+                nodesRoot = panelRoot != null ? panelRoot : transform as RectTransform;
+            }
+
+            if (lineRoot == null)
+            {
+                lineRoot = nodesRoot;
+            }
+        }
+
+        private void ResolveTemplateFallback()
+        {
+            if (nodeTemplate != null || nodesRoot == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < nodesRoot.childCount; i++)
+            {
+                if (nodesRoot.GetChild(i) is not RectTransform rect)
+                {
+                    continue;
+                }
+
+                if (!Key(rect.name).Contains("technodeitem"))
+                {
+                    continue;
+                }
+
+                nodeTemplate = rect;
+                nodeTemplate.gameObject.SetActive(false);
+                break;
+            }
+        }
+
+        private void HideLegacyNodes()
+        {
+            if (nodesRoot == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < nodesRoot.childCount; i++)
+            {
+                if (nodesRoot.GetChild(i) is not RectTransform rect)
+                {
+                    continue;
+                }
+
+                var key = Key(rect.name);
+                if (key.Contains("btnclose"))
+                {
+                    continue;
+                }
+
+                if (nodeTemplate != null && ReferenceEquals(rect, nodeTemplate))
+                {
+                    rect.gameObject.SetActive(false);
+                    continue;
+                }
+
+                if (_runtimeNodes.Contains(rect.gameObject) || _runtimeLines.Contains(rect.gameObject))
+                {
+                    continue;
+                }
+
+                rect.gameObject.SetActive(false);
+            }
+        }
+
+        private void EnsureCloseButton()
+        {
+            if (closeButton == null)
+            {
+                var existing = transform.Find("BtnCloseTechTree");
+                if (existing != null)
+                {
+                    closeButton = existing.GetComponent<Button>();
+                }
+            }
+
+            if (closeButton == null && autoCreateCloseButton && panelRoot != null)
+            {
+                var go = new GameObject("BtnCloseTechTree", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+                var rect = go.GetComponent<RectTransform>();
+                rect.SetParent(panelRoot, false);
+                rect.anchorMin = new Vector2(1f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(1f, 1f);
+                rect.anchoredPosition = new Vector2(-20f, -20f);
+                rect.sizeDelta = new Vector2(120f, 44f);
+
+                go.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+                closeButton = go.GetComponent<Button>();
+
+                var label = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI))
+                    .GetComponent<TextMeshProUGUI>();
+                var labelRect = label.rectTransform;
+                labelRect.SetParent(rect, false);
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(6f, 4f);
+                labelRect.offsetMax = new Vector2(-6f, -4f);
+                label.text = string.IsNullOrWhiteSpace(closeButtonText) ? "Close" : closeButtonText;
+                label.alignment = TextAlignmentOptions.Center;
+                label.fontSize = 20f;
+                label.color = Color.white;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                if (closeButtonFont == null)
+                {
+                    closeButtonFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
+                }
+
+                if (closeButtonFont != null)
+                {
+                    label.font = closeButtonFont;
+                }
+            }
+
+            if (closeButton != null)
+            {
+                closeButton.onClick.RemoveListener(HidePanel);
+                closeButton.onClick.AddListener(HidePanel);
+            }
+        }
+
+        private void HidePanel()
+        {
+            gameObject.SetActive(false);
+        }
+
+        private Sprite LoadIcon(string iconKey)
+        {
+            var normalizedIconKey = (iconKey ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(normalizedIconKey))
+            {
+                return null;
+            }
+
+            var normalizedRoot = (iconResourcesRoot ?? string.Empty).Trim().Trim('/');
+            if (!string.IsNullOrEmpty(normalizedRoot))
+            {
+                var sprite = Resources.Load<Sprite>($"{normalizedRoot}/{normalizedIconKey}");
+                if (sprite != null)
+                {
+                    return sprite;
+                }
+            }
+
+            return Resources.Load<Sprite>(normalizedIconKey);
         }
 
         private void WarnMissingConfigOnce(string message)
@@ -115,321 +794,14 @@ namespace Panoptes.Presentation.UI.Domestic
             _loggedMissingConfigThisEnable = true;
         }
 
-        private List<NodeData> LoadFromCatalog()
+        private static string Normalize(string value)
         {
-            var list = new List<NodeData>();
-            var layoutByTechnology = new Dictionary<string, StaticCatalogCache.TechTreeLayoutNodeJson>(StringComparer.OrdinalIgnoreCase);
-            var layout = _catalog.TechTreeLayout;
-            if (layout != null && layout.nodes != null)
-            {
-                for (var i = 0; i < layout.nodes.Length; i++)
-                {
-                    var node = layout.nodes[i];
-                    if (node == null || string.IsNullOrWhiteSpace(node.technology_id) || !node.visible)
-                    {
-                        continue;
-                    }
-                    layoutByTechnology[node.technology_id.Trim()] = node;
-                }
-            }
-            foreach (var pair in _catalog.Technologies)
-            {
-                var t = pair.Value; if (t == null || string.IsNullOrWhiteSpace(t.id)) continue;
-                var d = new NodeData { Id = t.id.Trim(), Name = string.IsNullOrWhiteSpace(t.name) ? t.id : t.name, Desc = t.description ?? string.Empty, Icon = t.icon_key ?? string.Empty, Branch = t.branch ?? string.Empty, Tier = t.tier, Sort = t.sort_order };
-                if (layoutByTechnology.TryGetValue(d.Id, out var layoutNode) && layoutNode != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(layoutNode.title)) d.Name = layoutNode.title;
-                    if (!string.IsNullOrWhiteSpace(layoutNode.description)) d.Desc = layoutNode.description;
-                    d.Pos = new Vector2(layoutOffset.x + layoutNode.x, layoutOffset.y - layoutNode.y);
-                    d.Size = new Vector2(Mathf.Max(1f, layoutNode.width), Mathf.Max(1f, layoutNode.height));
-                    d.HasExplicitLayout = true;
-                }
-                if (t.prerequisites != null)
-                {
-                    for (var i = 0; i < t.prerequisites.Length; i++)
-                    {
-                        var p = t.prerequisites[i];
-                        if (p != null && string.Equals((p.type ?? string.Empty).Trim(), "technology_unlocked", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(p.target_id))
-                            d.Pre.Add(p.target_id.Trim());
-                    }
-                }
-                list.Add(d);
-            }
-            return list;
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
         }
 
-        private void Layout(List<NodeData> nodes)
+        private static string Key(string value)
         {
-            _dict.Clear(); _cols.Clear(); _visiting.Clear();
-            for (var i = 0; i < nodes.Count; i++) { var n = nodes[i]; _dict[n.Id] = n; if (n.Column >= 0) _cols[n.Id] = n.Column; }
-            foreach (var n in nodes) ResolveCol(n.Id);
-
-            var groups = new Dictionary<int, List<NodeData>>();
-            foreach (var n in nodes)
-            {
-                var c = _cols.TryGetValue(n.Id, out var v) ? v : 0;
-                if (!groups.TryGetValue(c, out var g)) { g = new List<NodeData>(); groups[c] = g; }
-                g.Add(n);
-            }
-
-            foreach (var pair in groups)
-            {
-                var col = pair.Key; var g = pair.Value;
-                g.Sort((a, b) => a.Sort != b.Sort ? a.Sort.CompareTo(b.Sort) : (a.Tier != b.Tier ? a.Tier.CompareTo(b.Tier) : string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase)));
-                var startY = layoutOffset.y + (g.Count - 1) * rowSpacing * 0.5f;
-                for (var i = 0; i < g.Count; i++)
-                {
-                    if (g[i].HasExplicitLayout)
-                    {
-                        continue;
-                    }
-                    var row = g[i].Row >= 0 ? g[i].Row : i;
-                    var y = g[i].Row >= 0 ? layoutOffset.y - row * rowSpacing : startY - i * rowSpacing;
-                    g[i].Pos = new Vector2(layoutOffset.x + col * columnSpacing, y);
-                }
-            }
+            return Normalize(value);
         }
-
-        private int ResolveCol(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id)) return 0;
-            if (_cols.TryGetValue(id, out var c)) return Mathf.Max(0, c);
-            if (!_dict.TryGetValue(id, out var n) || n == null) return 0;
-            if (!_visiting.Add(id)) return 0;
-            var m = -1;
-            foreach (var pre in n.Pre)
-            {
-                if (_dict.ContainsKey(pre))
-                {
-                    m = Mathf.Max(m, ResolveCol(pre));
-                }
-            }
-
-            // Service-aligned fallback: when no explicit prerequisites are provided,
-            // keep a layered look by using tier as the implicit column.
-            var fallbackCol = n.Tier > 0 ? n.Tier - 1 : 0;
-            _visiting.Remove(id);
-            _cols[id] = Mathf.Max(fallbackCol, m + 1);
-            return _cols[id];
-        }
-
-        private void Render(List<NodeData> nodes)
-        {
-            for (var i = 0; i < _runtimeNodes.Count; i++) if (_runtimeNodes[i] != null) Destroy(_runtimeNodes[i]);
-            for (var i = 0; i < _runtimeLines.Count; i++) if (_runtimeLines[i] != null) Destroy(_runtimeLines[i]);
-            _runtimeNodes.Clear(); _runtimeLines.Clear();
-            if (clearLegacyNodesOnRefresh) HideLegacyNodes();
-
-            for (var i = 0; i < nodes.Count; i++) nodes[i].Rect = CreateNode(nodes[i]);
-            for (var i = 0; i < nodes.Count; i++)
-            {
-                var n = nodes[i];
-                foreach (var pre in n.Pre)
-                {
-                    if (!_dict.TryGetValue(pre, out var p) || p.Rect == null || n.Rect == null) continue;
-                    CreateLine(ToLinePoint(p.Rect, new Vector3(p.Rect.rect.xMax, p.Rect.rect.center.y, 0f)), ToLinePoint(n.Rect, new Vector3(n.Rect.rect.xMin, n.Rect.rect.center.y, 0f)));
-                }
-            }
-        }
-
-        private RectTransform CreateNode(NodeData n)
-        {
-            RectTransform rect;
-            if (nodeTemplate != null) { rect = Instantiate(nodeTemplate, nodesRoot, false); rect.gameObject.SetActive(true); }
-            else { rect = CreateFallbackNode(n); }
-            rect.name = $"TechNode_{n.Id}";
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = n.Pos;
-            rect.sizeDelta = n.Size;
-
-            var texts = rect.GetComponentsInChildren<TMP_Text>(true);
-            TMP_Text title = null, desc = null;
-            for (var i = 0; i < texts.Length; i++)
-            {
-                var k = Key(texts[i].gameObject.name);
-                if (title == null && (k.Contains("name") || k.Contains("title") || k == "label")) title = texts[i];
-                else if (desc == null && (k.Contains("desc") || k.Contains("detail"))) desc = texts[i];
-            }
-            if (title == null && texts.Length > 0) title = texts[0];
-            if (desc == null && texts.Length > 1) desc = texts[texts.Length - 1];
-            if (title != null) title.text = n.Name;
-            if (desc != null && !ReferenceEquals(desc, title)) desc.text = n.Desc;
-
-            var imgs = rect.GetComponentsInChildren<Image>(true);
-            for (var i = 0; i < imgs.Length; i++)
-            {
-                if (!Key(imgs[i].gameObject.name).Contains("icon")) continue;
-                var sp = LoadIcon(n.Icon); if (sp != null) { imgs[i].sprite = sp; imgs[i].color = Color.white; imgs[i].preserveAspect = true; } else imgs[i].color = new Color(1f, 1f, 1f, 0.75f);
-                break;
-            }
-
-            _runtimeNodes.Add(rect.gameObject);
-            return rect;
-        }
-
-        private RectTransform CreateFallbackNode(NodeData n)
-        {
-            var go = new GameObject("TechNode", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            var rect = go.transform as RectTransform;
-            rect.SetParent(nodesRoot, false);
-            rect.sizeDelta = n.Size;
-
-            var background = go.GetComponent<Image>();
-            background.color = new Color(0.18f, 0.19f, 0.23f, 0.96f);
-            background.raycastTarget = false;
-
-            var iconGO = new GameObject("TechNodeIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            var iconRect = iconGO.GetComponent<RectTransform>();
-            iconRect.SetParent(rect, false);
-            iconRect.anchorMin = new Vector2(0f, 0.5f);
-            iconRect.anchorMax = new Vector2(0f, 0.5f);
-            iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.anchoredPosition = new Vector2(18f, 0f);
-            iconRect.sizeDelta = new Vector2(56f, 56f);
-
-            var iconImage = iconGO.GetComponent<Image>();
-            var sprite = LoadIcon(n.Icon);
-            if (sprite != null)
-            {
-                iconImage.sprite = sprite;
-                iconImage.color = Color.white;
-                iconImage.preserveAspect = true;
-            }
-            else
-            {
-                iconImage.color = new Color(1f, 1f, 1f, 0.28f);
-            }
-            iconImage.raycastTarget = false;
-
-            var titleGO = new GameObject("TechNodeTitle", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            var title = titleGO.GetComponent<TextMeshProUGUI>();
-            var titleRect = title.rectTransform;
-            titleRect.SetParent(rect, false);
-            titleRect.anchorMin = new Vector2(0f, 1f);
-            titleRect.anchorMax = new Vector2(1f, 1f);
-            titleRect.pivot = new Vector2(0f, 1f);
-            titleRect.offsetMin = new Vector2(88f, -42f);
-            titleRect.offsetMax = new Vector2(-18f, -10f);
-            title.text = n.Name;
-            title.fontSize = 24f;
-            title.enableWordWrapping = false;
-            title.color = Color.white;
-            title.raycastTarget = false;
-
-            var descGO = new GameObject("TechNodeDescription", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            var desc = descGO.GetComponent<TextMeshProUGUI>();
-            var descRect = desc.rectTransform;
-            descRect.SetParent(rect, false);
-            descRect.anchorMin = new Vector2(0f, 0f);
-            descRect.anchorMax = new Vector2(1f, 1f);
-            descRect.offsetMin = new Vector2(88f, 12f);
-            descRect.offsetMax = new Vector2(-18f, -44f);
-            desc.text = n.Desc;
-            desc.fontSize = 17f;
-            desc.enableWordWrapping = true;
-            desc.color = new Color(0.89f, 0.91f, 0.95f, 0.94f);
-            desc.raycastTarget = false;
-
-            return rect;
-        }
-
-        private void CreateLine(Vector2 start, Vector2 end)
-        {
-            var root = lineRoot != null ? lineRoot : nodesRoot; if (root == null) return;
-            var go = new GameObject("TechEdge", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            var rect = go.transform as RectTransform; rect.SetParent(root, false);
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            var dir = end - start; var len = Mathf.Max(1f, dir.magnitude);
-            rect.sizeDelta = new Vector2(len, Mathf.Max(1f, defaultLineThickness));
-            rect.anchoredPosition = (start + end) * 0.5f;
-            rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
-            var img = go.GetComponent<Image>(); img.color = lineColor; img.raycastTarget = false;
-            _runtimeLines.Add(go);
-        }
-
-        private Vector2 ToLinePoint(RectTransform source, Vector3 local)
-        {
-            var root = lineRoot != null ? lineRoot : nodesRoot;
-            return root.InverseTransformPoint(source.TransformPoint(local));
-        }
-
-        private void EnsureRoots()
-        {
-            if (panelRoot == null) panelRoot = transform as RectTransform;
-            if (nodesRoot == null) nodesRoot = panelRoot != null ? panelRoot : transform as RectTransform;
-            if (lineRoot == null) lineRoot = nodesRoot;
-        }
-
-        private void ResolveTemplate()
-        {
-            if (nodesRoot == null) return;
-            if (nodeTemplate != null) { nodeTemplate.gameObject.SetActive(false); return; }
-            for (var i = 0; i < nodesRoot.childCount; i++)
-            {
-                var c = nodesRoot.GetChild(i) as RectTransform; if (c == null) continue;
-                if (Key(c.name).Contains("technodeitem")) { nodeTemplate = c; nodeTemplate.gameObject.SetActive(false); break; }
-            }
-        }
-
-        private void HideLegacyNodes()
-        {
-            if (nodesRoot == null) return;
-            for (var i = 0; i < nodesRoot.childCount; i++)
-            {
-                var c = nodesRoot.GetChild(i) as RectTransform; if (c == null) continue;
-                var k = Key(c.name);
-                if (k.Contains("btnclose")) continue;
-                if (nodeTemplate != null && ReferenceEquals(c, nodeTemplate)) { c.gameObject.SetActive(false); continue; }
-                if (_runtimeNodes.Contains(c.gameObject) || _runtimeLines.Contains(c.gameObject)) continue;
-                c.gameObject.SetActive(false);
-            }
-        }
-
-        private void EnsureCloseButton()
-        {
-            if (closeButton == null)
-            {
-                var existing = transform.Find("BtnCloseTechTree");
-                if (existing != null) closeButton = existing.GetComponent<Button>();
-            }
-
-            if (closeButton == null && autoCreateCloseButton && panelRoot != null)
-            {
-                var go = new GameObject("BtnCloseTechTree", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
-                var rect = go.GetComponent<RectTransform>();
-                rect.SetParent(panelRoot, false); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
-                rect.anchoredPosition = new Vector2(-20f, -20f); rect.sizeDelta = new Vector2(120f, 44f);
-                go.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-                closeButton = go.GetComponent<Button>();
-                var label = new GameObject("Label", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
-                var lr = label.rectTransform; lr.SetParent(rect, false); lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = new Vector2(6f, 4f); lr.offsetMax = new Vector2(-6f, -4f);
-                label.text = string.IsNullOrWhiteSpace(closeButtonText) ? "Close" : closeButtonText; label.alignment = TextAlignmentOptions.Center; label.fontSize = 20f; label.color = Color.white; label.enableWordWrapping = false;
-                if (closeButtonFont == null) closeButtonFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Panoptes CJK Fallback");
-                if (closeButtonFont != null) label.font = closeButtonFont;
-            }
-
-            if (closeButton != null)
-            {
-                closeButton.onClick.RemoveListener(HidePanel);
-                closeButton.onClick.AddListener(HidePanel);
-            }
-        }
-
-        private void HidePanel() => gameObject.SetActive(false);
-
-        private Sprite LoadIcon(string iconKey)
-        {
-            iconKey = (iconKey ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(iconKey)) return null;
-            var root = (iconResourcesRoot ?? string.Empty).Trim().Trim('/');
-            if (!string.IsNullOrEmpty(root))
-            {
-                var sp = Resources.Load<Sprite>($"{root}/{iconKey}");
-                if (sp != null) return sp;
-            }
-            return Resources.Load<Sprite>(iconKey);
-        }
-
-        private static string Key(string s) => string.IsNullOrWhiteSpace(s) ? string.Empty : s.Trim().ToLowerInvariant();
     }
 }
