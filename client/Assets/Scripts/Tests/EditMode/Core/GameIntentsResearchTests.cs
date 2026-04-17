@@ -85,5 +85,56 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(sendChat.Payload.HasEmote, Is.True);
             Assert.That(sendChat.Payload.Emote, Is.EqualTo(ChatEmote.Thinking));
         }
+
+        [Test]
+        public void AcceptAndRejectMinisterAction_ShouldSendDomesticDirectivePayload()
+        {
+            ActionLock.Release();
+
+            var intentsType = Type.GetType("Panoptes.Core.Application.Intents.GameIntents, Panoptes.Core");
+            Assert.That(intentsType, Is.Not.Null, "缺少 GameIntents。");
+
+            var acceptMethod = intentsType!.GetMethod("AcceptMinisterAction", BindingFlags.Public | BindingFlags.Static);
+            var rejectMethod = intentsType.GetMethod("RejectMinisterAction", BindingFlags.Public | BindingFlags.Static);
+            Assert.That(acceptMethod, Is.Not.Null, "GameIntents 必须提供 AcceptMinisterAction(string)。");
+            Assert.That(rejectMethod, Is.Not.Null, "GameIntents 必须提供 RejectMinisterAction(string)。");
+
+            MsgSetMinisterDirective acceptedMessage = null;
+            MsgSetMinisterDirective rejectedMessage = null;
+            var sendCount = 0;
+
+            void OnSend(string _, IMessage message)
+            {
+                sendCount++;
+                if (sendCount == 1)
+                {
+                    acceptedMessage = message as MsgSetMinisterDirective;
+                    return;
+                }
+
+                rejectedMessage = message as MsgSetMinisterDirective;
+            }
+
+            MessageSender.OnSendIntercepted += OnSend;
+            try
+            {
+                acceptMethod!.Invoke(null, new object[] { "draft-research-1" });
+                rejectMethod!.Invoke(null, new object[] { "draft-policy-1" });
+            }
+            finally
+            {
+                MessageSender.OnSendIntercepted -= OnSend;
+            }
+
+            Assert.That(acceptedMessage, Is.Not.Null);
+            Assert.That(acceptedMessage!.MinisterRole, Is.EqualTo("domestic"));
+            StringAssert.Contains("\"directive_type\":\"accept\"", acceptedMessage.Content);
+            StringAssert.Contains("\"draft_id\":\"draft-research-1\"", acceptedMessage.Content);
+
+            Assert.That(rejectedMessage, Is.Not.Null);
+            Assert.That(rejectedMessage!.MinisterRole, Is.EqualTo("domestic"));
+            StringAssert.Contains("\"directive_type\":\"reject\"", rejectedMessage.Content);
+            StringAssert.Contains("\"draft_id\":\"draft-policy-1\"", rejectedMessage.Content);
+        }
     }
 }

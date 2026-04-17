@@ -344,6 +344,50 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void PlanningDraftCache_ShouldParseAndFilterMinisterDrafts_FromPlanningSnapshot()
+        {
+            var cache = PlanningDraftCache.EnsureInstance();
+
+            cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
+            {
+                Turn = 3,
+                Phase = "planning",
+                MinisterDrafts =
+                {
+                    new MinisterDraftView
+                    {
+                        MinisterRole = "domestic",
+                        Available = true,
+                        JsonPayload = "{\"draft_id\":\"draft-research-1\",\"player_id\":\"player-1\",\"minister_role\":\"domestic\",\"kind\":\"research\",\"target_id\":\"agrarian_foundations\",\"target_label\":\"Agrarian Foundations\",\"title\":\"锁定科研目标\",\"summary\":\"建议先研究农业基础。\",\"rationale\":\"它能更快展开后续发展。\",\"risk_note\":\"若你改选其他科技，此卡会变为已偏离。\",\"status\":\"stale\",\"available\":true,\"turn\":3,\"source\":\"rule_only\"}"
+                    },
+                    new MinisterDraftView
+                    {
+                        MinisterRole = "domestic",
+                        Available = false,
+                        JsonPayload = "{\"draft_id\":\"draft-policy-1\",\"player_id\":\"player-1\",\"minister_role\":\"domestic\",\"kind\":\"policy\",\"target_id\":\"expansion\",\"target_label\":\"Expansion\",\"title\":\"调整国家政策\",\"summary\":\"建议转向扩张。\",\"rationale\":\"局势适合加快外扩。\",\"risk_note\":\"如果你拒绝，本回合不会再出现替代建议。\",\"status\":\"rejected\",\"available\":false,\"turn\":3,\"source\":\"rule_only\"}"
+                    },
+                    new MinisterDraftView
+                    {
+                        MinisterRole = "military",
+                        Available = true,
+                        JsonPayload = "{\"draft_id\":\"draft-war-1\",\"player_id\":\"player-1\",\"minister_role\":\"military\",\"kind\":\"operation\",\"target_id\":\"north_front\",\"target_label\":\"North Front\",\"title\":\"北线推进\",\"summary\":\"建议推进北线。\",\"rationale\":\"敌军压力偏低。\",\"risk_note\":\"侧翼暴露。\",\"status\":\"pending\",\"available\":true,\"turn\":3,\"source\":\"rule_only\"}"
+                    }
+                }
+            });
+
+            Assert.That(cache.MinisterDrafts.Count, Is.EqualTo(3), "缓存应保留完整草稿列表以支持 reconnect/snapshot 一致性。");
+
+            var domesticDrafts = cache.GetDomesticMinisterDrafts();
+            Assert.That(domesticDrafts.Count, Is.EqualTo(1), "主列表应过滤 rejected 与非 domestic 草稿。");
+
+            var draft = domesticDrafts.Single();
+            Assert.That(draft.DraftId, Is.EqualTo("draft-research-1"));
+            Assert.That(draft.Kind, Is.EqualTo("research"));
+            Assert.That(draft.IsInteractive, Is.True);
+            Assert.That(draft.DisplayStatus, Is.EqualTo("已偏离，可重新采纳"));
+        }
+
+        [Test]
         public void GameStateCache_ShouldRefreshPlanningStartWithoutSettlementReplay()
         {
             var cacheObject = new GameObject("GameStateCache");
@@ -437,6 +481,15 @@ namespace Panoptes.Tests.EditMode.Lobby
                 {
                     Turn = 2,
                     Phase = "planning",
+                    MinisterDrafts =
+                    {
+                        new MinisterDraftView
+                        {
+                            MinisterRole = "domestic",
+                            Available = true,
+                            JsonPayload = "{\"draft_id\":\"draft-research-2\",\"player_id\":\"player-1\",\"minister_role\":\"domestic\",\"kind\":\"research\",\"target_id\":\"agrarian_foundations\",\"target_label\":\"Agrarian Foundations\",\"title\":\"锁定科研目标\",\"summary\":\"建议先研究农业基础。\",\"rationale\":\"它能更快展开后续发展。\",\"risk_note\":\"若你改选其他科技，此卡会变为已偏离。\",\"status\":\"pending\",\"available\":true,\"turn\":2,\"source\":\"rule_only\"}"
+                        }
+                    },
                     PlannedInstitutionPolicyIds = { "academy_charter" }
                 },
                 Nodes =
@@ -474,6 +527,7 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
             Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
             Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
+            Assert.That(PlanningDraftCache.EnsureInstance().GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
             Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);

@@ -157,6 +157,8 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 		result, err = s.handleResearchRequest(eventCtx, room, playerID, playerState, strings.TrimSpace(intent.TechnologyID))
 	case SetBuildingRecipeIntent:
 		result, err = s.handleSetBuildingRecipe(eventCtx, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
+	case SetMinisterDirectiveIntent:
+		result, err = s.handleMinisterDirective(eventCtx, room, playerID, intent)
 	case IssueUnitOrderIntent:
 		result, err = s.handleIssueUnitOrder(eventCtx, room, playerID, &pb.MsgIssueUnitOrder{
 			UnitId:          intent.UnitID,
@@ -366,6 +368,7 @@ func (s *Service) handleSetPolicy(ctx context.Context, room Session, playerID st
 	}
 
 	room.State().TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
+	reconcileMinisterDraftBindings(room.State(), playerID, "")
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return acceptedHandleIntentResult(), nil
@@ -385,9 +388,116 @@ func (s *Service) handleResearchRequest(ctx context.Context, room Session, playe
 	}
 
 	state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
+	reconcileMinisterDraftBindings(state, playerID, "")
 	_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
 	_ = room.SendPlanningSnapshot(ctx, playerID)
 	return acceptedHandleIntentResult(), nil
+}
+
+func (s *Service) handleMinisterDirective(ctx context.Context, room Session, playerID string, intent SetMinisterDirectiveIntent) (handleIntentResult, error) {
+	state := room.State()
+	if state == nil {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
+	}
+	draft, idx, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
+	if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
+	}
+	if intent.DirectiveType == "accept" && !draft.Available {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft is unavailable")
+	}
+
+	switch intent.DirectiveType {
+	case "accept":
+		return s.acceptMinisterDraft(ctx, room, playerID, draft)
+	case "reject":
+		draft.Status = domain.MinisterDraftStatusRejected
+		draft.Available = false
+		state.TurnRuntime.Planning.ReplaceMinisterDraft(playerID, idx, draft)
+		_ = room.SendPlanningSnapshot(ctx, playerID)
+		return acceptedHandleIntentResult(), nil
+	default:
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister directive type")
+	}
+}
+
+func (s *Service) acceptMinisterDraft(ctx context.Context, room Session, playerID string, draft domain.MinisterDraft) (handleIntentResult, error) {
+	state := room.State()
+	if state == nil {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "player not found")
+	}
+
+	switch draft.Kind {
+	case domain.MinisterDraftKindResearch:
+		technologyID := strings.TrimSpace(draft.TargetID)
+		validation := economy.ValidateResearchTarget(state, playerID, technologyID)
+		if !validation.OK {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: false, TechnologyId: technologyID, ErrorCode: validation.ErrorCode})
+			return rejectedHandleIntentResult(validation.ErrorCode), nil
+		}
+		state.TurnRuntime.Planning.SetPendingResearchTarget(playerID, technologyID)
+		reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgResearchResult{Success: true, TechnologyId: technologyID})
+		_ = room.SendPlanningSnapshot(ctx, playerID)
+		return acceptedHandleIntentResult(), nil
+	case domain.MinisterDraftKindPolicy:
+		policyID := strings.TrimSpace(draft.TargetID)
+		if _, errCode := validatePolicySelection(state, playerID, policyID, "national"); errCode != "" {
+			_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: false, NationalPolicyId: policyID, ErrorCode: errCode})
+			return rejectedHandleIntentResult(errCode), nil
+		}
+		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
+		reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		_ = room.SendToPlayer(ctx, playerID, &pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
+		_ = room.SendPlanningSnapshot(ctx, playerID)
+		return acceptedHandleIntentResult(), nil
+	default:
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister draft kind")
+	}
+}
+
+func reconcileMinisterDraftBindings(state *domain.GameState, playerID string, acceptedDraftID string) {
+	if state == nil {
+		return
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
+	if len(drafts) == 0 {
+		return
+	}
+	currentResearch := strings.TrimSpace(state.TurnRuntime.Planning.PendingResearchTarget(playerID))
+	currentPolicy := strings.TrimSpace(string(state.TurnRuntime.Planning.PendingPolicy(playerID)))
+	acceptedDraftID = strings.TrimSpace(acceptedDraftID)
+
+	for idx := range drafts {
+		draft := drafts[idx]
+		if draft.Status == domain.MinisterDraftStatusRejected {
+			draft.Available = false
+			drafts[idx] = draft
+			continue
+		}
+		draft.Available = true
+		if acceptedDraftID != "" && strings.TrimSpace(draft.DraftID) == acceptedDraftID {
+			draft.Status = domain.MinisterDraftStatusAccepted
+			drafts[idx] = draft
+			continue
+		}
+		switch draft.Kind {
+		case domain.MinisterDraftKindResearch:
+			if draft.Status == domain.MinisterDraftStatusAccepted && strings.TrimSpace(draft.TargetID) != currentResearch {
+				draft.Status = domain.MinisterDraftStatusStale
+			}
+		case domain.MinisterDraftKindPolicy:
+			if draft.Status == domain.MinisterDraftStatusAccepted && strings.TrimSpace(draft.TargetID) != currentPolicy {
+				draft.Status = domain.MinisterDraftStatusStale
+			}
+		}
+		drafts[idx] = draft
+	}
+	state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
 }
 
 func (s *Service) handleInstitutionLoadout(ctx context.Context, room Session, playerID string, playerState *domain.PlayerState, policyIDs []string) (handleIntentResult, error) {

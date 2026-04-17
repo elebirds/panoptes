@@ -19,6 +19,9 @@ func TestNewGameStateInitializesTurnRuntimeContainers(t *testing.T) {
 	if state.TurnRuntime.Planning.MinisterDirectives == nil {
 		t.Fatalf("planning minister directives map is nil")
 	}
+	if state.TurnRuntime.Planning.MinisterDrafts == nil {
+		t.Fatalf("planning minister drafts map is nil")
+	}
 	if state.TurnRuntime.Planning.WarDirectives == nil {
 		t.Fatalf("planning war directives map is nil")
 	}

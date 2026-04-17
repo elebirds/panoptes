@@ -10,6 +10,16 @@
       "personality_desc": "果敢激进",
       "loyalty": 7,
       "ambition": 6
+    },
+    {
+      "id": "m002",
+      "name": "沈衡",
+      "role": "domestic",
+      "ability": 7,
+      "personality": "steady",
+      "personality_desc": "稳健审慎",
+      "loyalty": 8,
+      "ambition": 4
     }
   ]
 }

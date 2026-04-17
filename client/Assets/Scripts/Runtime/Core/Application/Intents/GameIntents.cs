@@ -16,7 +16,7 @@ namespace Panoptes.Core.Application.Intents
         private sealed class MinisterDirectivePayload
         {
             public string directive_type;
-            public string action_id;
+            public string draft_id;
         }
 
         private static GameStateCache _cache;
@@ -339,7 +339,7 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] ChargeUnit");
         }
 
-        public static void AcceptMinisterAction(string actionId)
+        public static void AcceptMinisterAction(string draftId)
         {
             if (ActionLock.IsLocked)
             {
@@ -348,14 +348,14 @@ namespace Panoptes.Core.Application.Intents
 
             var msg = new MsgSetMinisterDirective
             {
-                MinisterRole = string.Empty,
-                Content = BuildMinisterDirectiveContent("accept", actionId)
+                MinisterRole = "domestic",
+                Content = BuildMinisterDirectiveContent("accept", draftId)
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] AcceptMinisterAction");
         }
 
-        public static void RejectMinisterAction(string actionId)
+        public static void RejectMinisterAction(string draftId)
         {
             if (ActionLock.IsLocked)
             {
@@ -364,8 +364,8 @@ namespace Panoptes.Core.Application.Intents
 
             var msg = new MsgSetMinisterDirective
             {
-                MinisterRole = string.Empty,
-                Content = BuildMinisterDirectiveContent("reject", actionId)
+                MinisterRole = "domestic",
+                Content = BuildMinisterDirectiveContent("reject", draftId)
             };
             MessageSender.Send(msg);
             Debug.Log("[GameIntents] RejectMinisterAction");
@@ -405,12 +405,12 @@ namespace Panoptes.Core.Application.Intents
             Debug.Log("[GameIntents] GameOver -> unlock");
         }
 
-        private static string BuildMinisterDirectiveContent(string directiveType, string actionId)
+        private static string BuildMinisterDirectiveContent(string directiveType, string draftId)
         {
             var payload = new MinisterDirectivePayload
             {
                 directive_type = directiveType,
-                action_id = actionId ?? string.Empty
+                draft_id = draftId ?? string.Empty
             };
             return JsonUtility.ToJson(payload);
         }
