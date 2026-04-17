@@ -68,6 +68,26 @@ func DispatchLobbyCommand(ctx InboundContext, cmd *pb.LobbyCommand, handler Lobb
 	}
 }
 
+type ChatHandler interface {
+	SendGameChat(ctx InboundContext, cmd *pb.MsgSendGameChat) error
+}
+
+func DispatchChatCommand(ctx InboundContext, cmd *pb.ChatCommand, handler ChatHandler) error {
+	if cmd == nil || cmd.Body == nil {
+		return transportproblem.InvalidRequest("chat command body is required")
+	}
+	if handler == nil {
+		return transportproblem.InternalError("chat handler is not configured")
+	}
+
+	switch body := cmd.Body.(type) {
+	case *pb.ChatCommand_SendGameChat:
+		return handler.SendGameChat(ctx, body.SendGameChat)
+	default:
+		return transportproblem.UnsupportedCommand("unsupported chat command")
+	}
+}
+
 type PlanningHandler interface {
 	SetPolicy(ctx InboundContext, cmd *pb.MsgSetPolicy) error
 	SetResearchTarget(ctx InboundContext, cmd *pb.MsgSetResearchTarget) error
@@ -133,6 +153,7 @@ func DispatchPlanningCommand(ctx InboundContext, cmd *pb.PlanningCommand, handle
 type GameHandler interface {
 	Planning(ctx InboundContext, cmd *pb.PlanningCommand) error
 	StaticCatalogSyncRequest(ctx InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error
+	Chat(ctx InboundContext, cmd *pb.ChatCommand) error
 }
 
 func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHandler) error {
@@ -148,6 +169,8 @@ func DispatchGameCommand(ctx InboundContext, cmd *pb.GameCommand, handler GameHa
 		return handler.Planning(ctx, body.Planning)
 	case *pb.GameCommand_StaticCatalogSyncRequest:
 		return handler.StaticCatalogSyncRequest(ctx, body.StaticCatalogSyncRequest)
+	case *pb.GameCommand_Chat:
+		return handler.Chat(ctx, body.Chat)
 	default:
 		return transportproblem.UnsupportedCommand("unsupported game command")
 	}

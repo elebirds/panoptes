@@ -40,6 +40,14 @@ func main() {
 			unsupported:   "unsupported lobby command",
 		},
 		{
+			interfaceName: "ChatHandler",
+			dispatchName:  "DispatchChatCommand",
+			message:       (&pb.ChatCommand{}).ProtoReflect().Descriptor(),
+			nilBody:       "chat command body is required",
+			nilHandler:    "chat handler is not configured",
+			unsupported:   "unsupported chat command",
+		},
+		{
 			interfaceName: "PlanningHandler",
 			dispatchName:  "DispatchPlanningCommand",
 			message:       (&pb.PlanningCommand{}).ProtoReflect().Descriptor(),

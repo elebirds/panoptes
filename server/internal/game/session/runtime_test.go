@@ -208,6 +208,11 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	if len(start.GetPlanningStartEvents()) != 0 {
 		t.Fatalf("planning_start_events len = %d, want 0 without pending activations", len(start.GetPlanningStartEvents()))
 	}
+	for idx, msg := range player.sent {
+		if _, ok := msg.(*pb.MsgGameChatSync); ok {
+			t.Fatalf("message[%d] unexpectedly sends MsgGameChatSync in current MVP", idx)
+		}
+	}
 }
 
 func TestRuntimeBootstrapOutsidePlanningDoesNotSendPlanningStart(t *testing.T) {

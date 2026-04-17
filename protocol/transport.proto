@@ -3,6 +3,7 @@ syntax = "proto3";
 package panoptes.proto.v1;
 
 import "auth.proto";
+import "chat.proto";
 import "common.proto";
 import "config.proto";
 import "data_catalog.proto";
@@ -84,6 +85,7 @@ message GameCommand {
   oneof body {
     PlanningCommand planning = 1;
     MsgStaticCatalogSyncRequest static_catalog_sync_request = 2;
+    ChatCommand chat = 3;
   }
 }
 
@@ -141,6 +143,8 @@ message GameEvent {
     MsgStaticCatalogSyncComplete static_catalog_sync_complete = 22;
     MsgBuildStructurePreviewResponse build_structure_preview_response = 23;
     MsgSetBuildingRecipePreviewResponse set_building_recipe_preview_response = 24;
+    MsgGameChatPosted game_chat_posted = 25;
+    MsgGameChatSync game_chat_sync = 26;
   }
 }
 

@@ -129,6 +129,8 @@ func (h *stubCoordinatorHost) Submit(playerID string) {
 func (h *stubCoordinatorHost) SendToPlayer(context.Context, string, proto.Message) error {
 	return nil
 }
+func (h *stubCoordinatorHost) Broadcast(context.Context, proto.Message) {}
+func (h *stubCoordinatorHost) NextChatSequence() int64                  { return 1 }
 func (h *stubCoordinatorHost) IsDevMode() bool                                    { return false }
 func (h *stubCoordinatorHost) QueueBuildOrder(domain.BuildOrder)                  {}
 func (h *stubCoordinatorHost) QueueRecipeSelection(domain.RecipeSelectionOrder)   {}

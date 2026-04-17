@@ -299,6 +299,197 @@ func TestHandleGameCommandSetResearchTargetQueuesDraftWithoutUpdatingActiveState
 	}
 }
 
+func TestHandleGameCommandChatBroadcastsToAllHumanParticipantsWithMeta(t *testing.T) {
+	tp := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewHumanParticipantSpec("player-2", "bob"),
+		NewBotParticipantSpec("bot-1", "bot"),
+	}, tp, &config.Config{})
+	room.runtime.SetState(domain.NewGameState(
+		"game-1",
+		[]string{"player-1", "player-2", "bot-1"},
+		[]string{"alice", "bob", "bot"},
+		&domain.MapData{},
+	))
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+	room.State().Turn = 5
+
+	err := room.HandleGameCommand(cmddispatch.InboundContext{
+		PlayerID:  "player-1",
+		RequestID: "req-chat-broadcast",
+		TraceID:   "trace-chat-broadcast",
+	}, &pb.GameCommand{
+		Body: &pb.GameCommand_Chat{
+			Chat: &pb.ChatCommand{
+				Body: &pb.ChatCommand_SendGameChat{
+					SendGameChat: &pb.MsgSendGameChat{
+						Payload: &pb.ChatPayload{
+							Body: &pb.ChatPayload_Emote{
+								Emote: pb.ChatEmote_CHAT_EMOTE_LAUGH,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleGameCommand() error = %v", err)
+	}
+
+	for _, playerID := range []string{"player-1", "player-2"} {
+		msgs := tp.sent[playerID]
+		if len(msgs) != 1 {
+			t.Fatalf("%s send count = %d, want 1", playerID, len(msgs))
+		}
+		posted, ok := msgs[0].(*pb.MsgGameChatPosted)
+		if !ok {
+			t.Fatalf("%s message type = %T, want MsgGameChatPosted", playerID, msgs[0])
+		}
+		if posted.GetEntry().GetSenderPlayerId() != "player-1" {
+			t.Fatalf("%s sender_player_id = %q, want player-1", playerID, posted.GetEntry().GetSenderPlayerId())
+		}
+		if posted.GetEntry().GetTurn() != 5 {
+			t.Fatalf("%s turn = %d, want 5", playerID, posted.GetEntry().GetTurn())
+		}
+		if posted.GetEntry().GetPayload().GetEmote() != pb.ChatEmote_CHAT_EMOTE_LAUGH {
+			t.Fatalf("%s emote = %v, want %v", playerID, posted.GetEntry().GetPayload().GetEmote(), pb.ChatEmote_CHAT_EMOTE_LAUGH)
+		}
+		meta := tp.sentMeta[playerID][0]
+		if meta == nil {
+			t.Fatalf("%s meta is nil", playerID)
+		}
+		if meta.GetRequestId() != "req-chat-broadcast" {
+			t.Fatalf("%s request_id = %q, want req-chat-broadcast", playerID, meta.GetRequestId())
+		}
+		if meta.GetTraceId() != "trace-chat-broadcast" {
+			t.Fatalf("%s trace_id = %q, want trace-chat-broadcast", playerID, meta.GetTraceId())
+		}
+	}
+	if msgs := tp.sent["bot-1"]; len(msgs) != 0 {
+		t.Fatalf("bot-1 send count = %d, want 0", len(msgs))
+	}
+}
+
+func TestHandleGameCommandChatAllowedOutsidePlanning(t *testing.T) {
+	tp := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+
+	for _, phase := range []string{domain.PhaseResolving.String(), "settlement"} {
+		room.State().Phase = phase
+		tp.sent["player-1"] = nil
+		tp.sentMeta["player-1"] = nil
+
+		err := room.HandleGameCommand(cmddispatch.InboundContext{
+			PlayerID: "player-1",
+		}, &pb.GameCommand{
+			Body: &pb.GameCommand_Chat{
+				Chat: &pb.ChatCommand{
+					Body: &pb.ChatCommand_SendGameChat{
+						SendGameChat: &pb.MsgSendGameChat{
+							Payload: &pb.ChatPayload{
+								Body: &pb.ChatPayload_Emote{
+									Emote: pb.ChatEmote_CHAT_EMOTE_THINKING,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if err != nil {
+			t.Fatalf("phase %q HandleGameCommand() error = %v", phase, err)
+		}
+		if len(tp.sent["player-1"]) != 1 {
+			t.Fatalf("phase %q send count = %d, want 1", phase, len(tp.sent["player-1"]))
+		}
+	}
+}
+
+func TestHandleGameCommandChatRejectsUnsupportedPayloads(t *testing.T) {
+	tp := newStubTransport()
+	room := NewRoom("game-1", []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}, tp, &config.Config{})
+	room.runtime = newTestRuntime("game-1", tp)
+	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
+	room.State().Phase = domain.PhasePlanning.String()
+
+	testCases := []struct {
+		name string
+		cmd  *pb.GameCommand
+	}{
+		{
+			name: "missing payload",
+			cmd: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "text payload",
+			cmd: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_Text{
+										Text: "hello",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "invalid emote",
+			cmd: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_Emote{
+										Emote: pb.ChatEmote(99),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := room.HandleGameCommand(cmddispatch.InboundContext{
+				PlayerID: "player-1",
+			}, tc.cmd)
+			if err == nil {
+				t.Fatalf("HandleGameCommand() error = nil")
+			}
+			problem, ok := cmddispatch.AsProblem(err)
+			if !ok || problem == nil {
+				t.Fatalf("problem = %#v, want invalid_request", problem)
+			}
+			if problem.GetCode() != "invalid_request" {
+				t.Fatalf("problem.code = %q, want invalid_request", problem.GetCode())
+			}
+		})
+	}
+}
+
 func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{

@@ -25,6 +25,7 @@ func (h *stubLobbyHandler) KickPlayer(InboundContext, *pb.MsgKickPlayer) error {
 type stubGameHandler struct {
 	planning *pb.PlanningCommand
 	syncReq  *pb.MsgStaticCatalogSyncRequest
+	chat     *pb.ChatCommand
 }
 
 func (h *stubGameHandler) Planning(_ InboundContext, cmd *pb.PlanningCommand) error {
@@ -34,6 +35,11 @@ func (h *stubGameHandler) Planning(_ InboundContext, cmd *pb.PlanningCommand) er
 
 func (h *stubGameHandler) StaticCatalogSyncRequest(_ InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {
 	h.syncReq = cmd
+	return nil
+}
+
+func (h *stubGameHandler) Chat(_ InboundContext, cmd *pb.ChatCommand) error {
+	h.chat = cmd
 	return nil
 }
 
@@ -125,6 +131,43 @@ func TestDispatcherRoutesStaticCatalogSyncRequest(t *testing.T) {
 	}
 	if gameHandler.syncReq.GetBundleHash() != "bundle-1" {
 		t.Fatalf("static_catalog_sync_request.bundle_hash = %q", gameHandler.syncReq.GetBundleHash())
+	}
+}
+
+func TestDispatcherRoutesGameChat(t *testing.T) {
+	gameHandler := &stubGameHandler{}
+	dispatcher := Dispatcher{
+		Game: gameHandler,
+	}
+
+	err := dispatcher.Dispatch(InboundContext{PlayerID: "player-1"}, &pb.ClientFrame{
+		Meta: &pb.CommandMeta{RequestId: "req-chat-3"},
+		Target: &pb.ClientFrame_Game{
+			Game: &pb.GameCommand{
+				Body: &pb.GameCommand_Chat{
+					Chat: &pb.ChatCommand{
+						Body: &pb.ChatCommand_SendGameChat{
+							SendGameChat: &pb.MsgSendGameChat{
+								Payload: &pb.ChatPayload{
+									Body: &pb.ChatPayload_Emote{
+										Emote: pb.ChatEmote_CHAT_EMOTE_ANGRY,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Dispatch() error = %v", err)
+	}
+	if gameHandler.chat == nil {
+		t.Fatalf("game chat handler not called")
+	}
+	if gameHandler.chat.GetSendGameChat() == nil {
+		t.Fatalf("chat.send_game_chat = nil")
 	}
 }
 
