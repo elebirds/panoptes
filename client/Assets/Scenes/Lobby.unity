@@ -3715,7 +3715,7 @@ MonoBehaviour:
   maxPlayersDropdown: {fileID: 1093601317}
   createButton: {fileID: 1173653844}
   roomCodeField: {fileID: 1665154597}
-  joinButton: {fileID: 0}
+  joinButton: {fileID: 999761490}
   errorText: {fileID: 1696838060}
   usernameText: {fileID: 0}
 --- !u!114 &896095994

@@ -12,7 +12,7 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using Panoptes.DebugTools;
 #endif
 using System;
@@ -69,7 +69,7 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<PlanningDraftCache>(managers);
             EnsureComponent<LobbyMessageHandler>(managers);
             EnsureComponent<GameMessageHandler>(managers);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
             EnsureComponent<DebugPanel>(managers);
 #endif
             EnsureOptionalLoadingOverlay(managers);

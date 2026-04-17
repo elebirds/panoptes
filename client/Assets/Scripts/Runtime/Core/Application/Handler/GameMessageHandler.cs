@@ -552,7 +552,7 @@ namespace Panoptes.Core.Application.Handler
 
         private static string FormatPhaseStartLog(string text)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
             return Panoptes.DebugTools.MessageLogger.WrapPhaseStartColor(text);
 #else
             return text;
