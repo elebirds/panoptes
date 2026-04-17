@@ -29,7 +29,6 @@ namespace Panoptes.DebugTools
 
     public sealed class DebugGameHttpService
     {
-        private const string DefaultBaseUrl = "http://localhost:8080";
         private readonly string _baseUrlOverride;
 
         [Serializable]
@@ -107,33 +106,7 @@ namespace Panoptes.DebugTools
 
         public static string ResolveBaseUrl(string endpoint)
         {
-            if (string.IsNullOrWhiteSpace(endpoint))
-            {
-                return DefaultBaseUrl;
-            }
-
-            var normalized = endpoint.Trim().TrimEnd('/');
-            if (!Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
-            {
-                return normalized;
-            }
-
-            if (!string.Equals(uri.Scheme, "ws", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(uri.Scheme, "wss", StringComparison.OrdinalIgnoreCase))
-            {
-                return normalized;
-            }
-
-            var scheme = string.Equals(uri.Scheme, "wss", StringComparison.OrdinalIgnoreCase) ? "https" : "http";
-            var path = uri.AbsolutePath.TrimEnd('/');
-            if (path.EndsWith("/ws", StringComparison.OrdinalIgnoreCase))
-            {
-                path = path.Substring(0, path.Length - 3);
-            }
-
-            return string.IsNullOrWhiteSpace(path)
-                ? $"{scheme}://{uri.Authority}"
-                : $"{scheme}://{uri.Authority}{path}";
+            return ServerEndpointResolver.ResolveHttpBaseUrl(endpoint);
         }
 
         private static string ParseErrorCode(string json)

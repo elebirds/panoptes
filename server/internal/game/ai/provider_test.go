@@ -154,6 +154,97 @@ func TestRuleBotProviderMovesInfantryToExploreHiddenFrontier(t *testing.T) {
 	}
 }
 
+func TestRuleBotProviderMovesInfantryUnderOmniscientVision(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 1, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, _ := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
+		ecs.UnitStatsC.Get(unitEntry).ID = "ally-1"
+	})
+	store := gamequery.NewObservationStore()
+	store.SetOmniscient("bot-1", true)
+	botObservation := store.BuildObservation(state, "bot-1")
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(17)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	move := findIntent[planning.IssueUnitOrderIntent](intents)
+	if move == nil {
+		t.Fatalf("expected unit order intent, got %#v", intents)
+	}
+	if move.Action != "move" || move.TargetNodeID != "N2" {
+		t.Fatalf("unit order = %#v, want move to enemy frontier N2 under omniscient vision", *move)
+	}
+}
+
+func TestRuleBotProviderAttacksEnemyCityCore(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", BuildingScope: "in_city", PlacementKind: "city_center", MaxHP: 100, TakeoverMode: "city_capture"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 1, Y: 0}))
+		ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
+		ecs.CreateBuilding(world, "city_core", "player-2", "N2", world.Entry(mapData.NodeIndex["N2"]))
+	})
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(19)),
+	})
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+
+	attack := findIntent[planning.IssueUnitOrderIntent](intents)
+	if attack == nil {
+		t.Fatalf("expected unit order intent, got %#v", intents)
+	}
+	if attack.Action != "attack" || attack.TargetNodeID != "N2" {
+		t.Fatalf("unit order = %#v, want attack enemy city core at N2", *attack)
+	}
+}
+
 func TestBuildDomesticDraftCandidates_MatchesRuleBotResearchAndPolicyChoices(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
