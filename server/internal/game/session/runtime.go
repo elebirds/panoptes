@@ -111,7 +111,6 @@ func (r *Runtime) Initialize() error {
 		return err
 	}
 	r.grantDevStartingResources()
-	r.grantDevStartingUnlocks(catalog)
 	r.initializeCityStates()
 	return r.sendBootstrapMessages()
 }
@@ -145,7 +144,6 @@ func (r *Runtime) InitializePrepared(state *domain.GameState) error {
 		}
 	}
 	r.grantDevStartingResources()
-	r.grantDevStartingUnlocks(staticdata.Default())
 	r.initializeCityStates()
 	return r.sendBootstrapMessages()
 }
@@ -433,30 +431,6 @@ func (r *Runtime) grantDevStartingResources() {
 		player.Resources.Set(domain.ResourceOre, 200)
 		player.Resources.Set(domain.ResourceWood, 200)
 		player.Resources.Set(domain.ResourceFood, 200)
-	}
-}
-
-func (r *Runtime) grantDevStartingUnlocks(catalog *staticdata.Catalog) {
-	if r == nil || r.state == nil || !r.IsDevMode() || catalog == nil {
-		return
-	}
-
-	buildingIDs := catalog.BuildingIDs()
-	if len(buildingIDs) == 0 {
-		return
-	}
-
-	for _, player := range r.state.Players {
-		if player == nil {
-			continue
-		}
-
-		for _, buildingID := range buildingIDs {
-			if strings.TrimSpace(buildingID) == "" {
-				continue
-			}
-			player.Research.UnlockBuilding(buildingID)
-		}
 	}
 }
 
