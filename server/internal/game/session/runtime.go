@@ -23,6 +23,7 @@ import (
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
 	"github.com/elebirds/panoptes/internal/event"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -32,21 +33,19 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type Player interface {
-	PlayerID() string
-	Username() string
-	IsBot() bool
-	Send(ctx context.Context, msg proto.Message) error
+type ParticipantBinding struct {
+	Participant participant.Participant
+	Controller  Controller
 }
 
 type Runtime struct {
-	ID        string
-	players   []Player
-	cfg       *config.Config
-	transport transport.GameTransport
-	submitCh  chan string
-	cancelFn  context.CancelFunc
-	state     *domain.GameState
+	ID           string
+	participants []ParticipantBinding
+	cfg          *config.Config
+	transport    transport.GameTransport
+	submitCh     chan string
+	cancelFn     context.CancelFunc
+	state        *domain.GameState
 
 	bootstrapMu                sync.RWMutex
 	bootstrapPlanningStartSent bool
@@ -57,14 +56,14 @@ type Runtime struct {
 	planningStartResult       *PlanningStartResult
 }
 
-func NewRuntime(id string, players []Player, t transport.GameTransport, cfg *config.Config) *Runtime {
+func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTransport, cfg *config.Config) *Runtime {
 	return &Runtime{
 		ID:                     id,
-		players:                append([]Player(nil), players...),
+		participants:           append([]ParticipantBinding(nil), participants...),
 		cfg:                    cfg,
 		transport:              t,
-		submitCh:               make(chan string, len(players)*4+16),
-		bootstrapReadyByPlayer: make(map[string]bool, len(players)),
+		submitCh:               make(chan string, len(participants)*4+16),
+		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
 	}
 }
 
@@ -83,8 +82,8 @@ func (r *Runtime) Initialize() error {
 	}
 
 	world := donburi.NewWorld()
-	playerIDs := r.humanPlayerIDs()
-	usernames := r.humanUsernames()
+	playerIDs := r.participantIDs()
+	usernames := r.participantUsernames()
 	seed := time.Now().UnixNano()
 	runtimeMap := maploader.GenerateProceduralMap(baseMap, len(playerIDs), seed)
 	if runtimeMap == nil {
@@ -137,7 +136,7 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	r.planningStartPreparedTurn = 0
 	r.planningStartResult = nil
 	r.bootstrapMu.Lock()
-	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.players))
+	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.participants))
 	r.bootstrapPlanningStartSent = false
 	r.bootstrapMu.Unlock()
 }
@@ -160,16 +159,53 @@ func (r *Runtime) IsDevMode() bool {
 	return r != nil && r.cfg != nil && r.cfg.DevMode
 }
 
+func (r *Runtime) ParticipantIDs() []string {
+	return r.participantIDs()
+}
+
 func (r *Runtime) PlayerIDs() []string {
-	ids := make([]string, 0, len(r.players))
-	for _, player := range r.players {
-		ids = append(ids, player.PlayerID())
+	return r.ParticipantIDs()
+}
+
+func (r *Runtime) Participants() []participant.Participant {
+	if r == nil {
+		return nil
 	}
-	return ids
+	out := make([]participant.Participant, 0, len(r.participants))
+	for _, binding := range r.participants {
+		out = append(out, binding.Participant)
+	}
+	return out
+}
+
+func (r *Runtime) Controller(participantID string) (Controller, bool) {
+	binding, ok := r.findParticipantBinding(participantID)
+	if !ok || binding.Controller == nil {
+		return nil, false
+	}
+	return binding.Controller, true
+}
+
+func (r *Runtime) HumanParticipants() []participant.Participant {
+	if r == nil {
+		return nil
+	}
+	out := make([]participant.Participant, 0, len(r.participants))
+	for _, binding := range r.participants {
+		if !binding.Participant.IsHuman() {
+			continue
+		}
+		out = append(out, binding.Participant)
+	}
+	return out
+}
+
+func (r *Runtime) ParticipantCount() int {
+	return len(r.participants)
 }
 
 func (r *Runtime) PlayerCount() int {
-	return len(r.players)
+	return r.ParticipantCount()
 }
 
 func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
@@ -185,14 +221,20 @@ func (r *Runtime) ConsumeBootstrapPlanningStart() bool {
 	return true
 }
 
-func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
+func (r *Runtime) SendToParticipant(ctx context.Context, participantID string, msg proto.Message) error {
 	ctx = transport.ContextWithGameSessionID(ctx, r.gameSessionID())
-	for _, player := range r.players {
-		if player.PlayerID() == playerID {
-			return player.Send(ctx, msg)
-		}
+	binding, ok := r.findParticipantBinding(participantID)
+	if !ok {
+		return fmt.Errorf("participant %s not found", participantID)
 	}
-	return fmt.Errorf("player %s not found", playerID)
+	if !binding.Participant.IsHuman() || r.transport == nil {
+		return nil
+	}
+	return r.transport.Send(ctx, participantID, msg)
+}
+
+func (r *Runtime) SendToPlayer(ctx context.Context, playerID string, msg proto.Message) error {
+	return r.SendToParticipant(ctx, playerID, msg)
 }
 
 func (r *Runtime) PreparePlanningStartStateIfNeeded() {
@@ -215,10 +257,35 @@ func (r *Runtime) PlanningStartResult() *PlanningStartResult {
 	return r.planningStartResult
 }
 
+func (r *Runtime) SendPlanningStart(ctx context.Context, participantID string) error {
+	if r == nil || r.state == nil {
+		return nil
+	}
+	p, ok := r.findParticipant(participantID)
+	if !ok || !p.IsHuman() {
+		return nil
+	}
+	var planningStartEvents []event.Event
+	if r.planningStartResult != nil {
+		planningStartEvents = r.planningStartResult.Events
+	}
+	msg := BuildPlanningStartMessage(r.state, participantID, r.state.Phase, planningStartEvents)
+	if msg == nil {
+		return nil
+	}
+	return r.SendToParticipant(ctx, participantID, msg)
+}
+
 func (r *Runtime) Broadcast(ctx context.Context, msg proto.Message) {
 	ctx = transport.ContextWithGameSessionID(ctx, r.gameSessionID())
-	for _, player := range r.players {
-		_ = player.Send(ctx, msg)
+	if r.transport == nil {
+		return
+	}
+	for _, binding := range r.participants {
+		if !binding.Participant.IsHuman() {
+			continue
+		}
+		_ = r.transport.Send(ctx, binding.Participant.ID, msg)
 	}
 }
 
@@ -232,22 +299,21 @@ func (r *Runtime) gameSessionID() string {
 	return r.ID
 }
 
-func (r *Runtime) humanPlayerIDs() []string {
-	ids := make([]string, 0, len(r.players))
-	for _, player := range r.players {
-		if !player.IsBot() {
-			ids = append(ids, player.PlayerID())
+func (r *Runtime) participantIDs() []string {
+	ids := make([]string, 0, len(r.participants))
+	for _, binding := range r.participants {
+		if strings.TrimSpace(binding.Participant.ID) == "" {
+			continue
 		}
+		ids = append(ids, binding.Participant.ID)
 	}
 	return ids
 }
 
-func (r *Runtime) humanUsernames() []string {
-	usernames := make([]string, 0, len(r.players))
-	for _, player := range r.players {
-		if !player.IsBot() {
-			usernames = append(usernames, player.Username())
-		}
+func (r *Runtime) participantUsernames() []string {
+	usernames := make([]string, 0, len(r.participants))
+	for _, binding := range r.participants {
+		usernames = append(usernames, binding.Participant.Username)
 	}
 	return usernames
 }
@@ -272,7 +338,7 @@ func (r *Runtime) bootstrapStartingPlayers() error {
 		return nil
 	}
 
-	for _, rawPlayerID := range r.humanPlayerIDs() {
+	for _, rawPlayerID := range r.participantIDs() {
 		playerID := strings.TrimSpace(rawPlayerID)
 		if playerID == "" {
 			continue
@@ -363,9 +429,9 @@ func (r *Runtime) validateBootstrapState() error {
 		return fmt.Errorf("state missing")
 	}
 
-	playerIDs := r.humanPlayerIDs()
+	playerIDs := r.participantIDs()
 	if len(playerIDs) == 0 {
-		return fmt.Errorf("no human players available for bootstrap")
+		return fmt.Errorf("no participants available for bootstrap")
 	}
 
 	for _, rawPlayerID := range playerIDs {
@@ -448,26 +514,26 @@ func (r *Runtime) initializeCityStates() {
 	})
 }
 
-func (r *Runtime) sendGameInit(p Player) {
+func (r *Runtime) sendGameInit(p participant.Participant) {
 	if r.state == nil {
 		return
 	}
 	msg := &pb.MsgGameInit{
 		GameId:       r.state.GameID,
-		YourPlayerId: p.PlayerID(),
+		YourPlayerId: p.ID,
 		Turn:         int32(r.state.Turn),
 		Phase:        r.state.Phase,
 		MapWidth:     int32(r.state.Map.Width),
 		MapHeight:    int32(r.state.Map.Height),
-		MyPlayer:     gamequery.BuildPlayerView(r.state, p.PlayerID()),
+		MyPlayer:     gamequery.BuildPlayerView(r.state, p.ID),
 		Ministers:    nil,
-		Nodes:        gamequery.BuildNodeViews(r.state, p.PlayerID()),
+		Nodes:        gamequery.BuildNodeViews(r.state, p.ID),
 		Units:        gamequery.BuildUnitViews(r.state),
 	}
-	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+	_ = r.SendToParticipant(context.Background(), p.ID, msg)
 }
 
-func (r *Runtime) sendStaticCatalogManifest(p Player) {
+func (r *Runtime) sendStaticCatalogManifest(p participant.Participant) {
 	manifest := staticdata.Default().Manifest()
 	hashes := make([]*pb.CatalogSectionHash, 0, len(manifest.SectionHashes))
 	for _, entry := range manifest.SectionHashes {
@@ -487,13 +553,16 @@ func (r *Runtime) sendStaticCatalogManifest(p Player) {
 			SectionHashes:    hashes,
 		},
 	}
-	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+	_ = r.SendToParticipant(context.Background(), p.ID, msg)
 }
 
 func (r *Runtime) HandleStaticCatalogSyncRequest(ctx context.Context, playerID string, req *pb.MsgStaticCatalogSyncRequest) error {
-	player, ok := r.findPlayer(playerID)
+	p, ok := r.findParticipant(playerID)
 	if !ok {
-		return transportproblem.InvalidRequest("player not found for static catalog sync")
+		return transportproblem.InvalidRequest("participant not found for static catalog sync")
+	}
+	if !p.IsHuman() {
+		return transportproblem.InvalidRequest("static catalog sync only supports human participants")
 	}
 	if r.isBootstrapReady(playerID) {
 		return nil
@@ -511,17 +580,17 @@ func (r *Runtime) HandleStaticCatalogSyncRequest(ctx context.Context, playerID s
 		}
 	}
 
-	_ = player.Send(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), &pb.MsgStaticCatalogSyncComplete{
+	_ = r.SendToParticipant(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), p.ID, &pb.MsgStaticCatalogSyncComplete{
 		AppliedBundleHash: catalog.BundleHash(),
 		Success:           true,
 	})
 
-	r.sendBootstrapRemainder(player)
+	r.sendBootstrapRemainder(p)
 	r.markBootstrapReady(playerID)
 	return nil
 }
 
-func (r *Runtime) sendConfigBatch(p Player) {
+func (r *Runtime) sendConfigBatch(p participant.Participant) {
 	mapBundle := r.resolveBootstrapMapBundle()
 	if mapBundle == nil {
 		return
@@ -530,7 +599,7 @@ func (r *Runtime) sendConfigBatch(p Player) {
 	raw, err := json.Marshal(mapBundle)
 	if err != nil {
 		slog.Warn("marshal bootstrap map config failed",
-			"player_id", p.PlayerID(),
+			"player_id", p.ID,
 			"map_id", mapBundle.ID,
 			"error", err,
 		)
@@ -545,7 +614,7 @@ func (r *Runtime) sendConfigBatch(p Player) {
 			},
 		},
 	}
-	_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+	_ = r.SendToParticipant(context.Background(), p.ID, msg)
 }
 
 func (r *Runtime) resolveBootstrapMapBundle() *staticdata.MapRuntimeBundle {
@@ -574,18 +643,19 @@ func (r *Runtime) resolveBootstrapMapBundle() *staticdata.MapRuntimeBundle {
 func (r *Runtime) sendBootstrapMessages() error {
 	r.bootstrapMu.Lock()
 	r.bootstrapPlanningStartSent = false
-	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.players))
+	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.participants))
 	r.bootstrapMu.Unlock()
-	for _, player := range r.players {
-		if player.IsBot() {
+	for _, binding := range r.participants {
+		if !binding.Participant.IsHuman() {
+			r.markBootstrapReady(binding.Participant.ID)
 			continue
 		}
-		r.sendStaticCatalogManifest(player)
+		r.sendStaticCatalogManifest(binding.Participant)
 	}
 	return nil
 }
 
-func (r *Runtime) sendBootstrapRemainder(p Player) {
+func (r *Runtime) sendBootstrapRemainder(p participant.Participant) {
 	r.PreparePlanningStartStateIfNeeded()
 	r.sendConfigBatch(p)
 	r.sendGameInit(p)
@@ -593,8 +663,8 @@ func (r *Runtime) sendBootstrapRemainder(p Player) {
 	if r.planningStartResult != nil {
 		planningStartEvents = r.planningStartResult.Events
 	}
-	if msg := BuildPlanningStartMessage(r.state, p.PlayerID(), r.state.Phase, planningStartEvents); msg != nil {
-		_ = r.SendToPlayer(context.Background(), p.PlayerID(), msg)
+	if msg := BuildPlanningStartMessage(r.state, p.ID, r.state.Phase, planningStartEvents); msg != nil {
+		_ = r.SendToParticipant(context.Background(), p.ID, msg)
 		r.bootstrapMu.Lock()
 		r.bootstrapPlanningStartSent = true
 		r.bootstrapMu.Unlock()
@@ -627,11 +697,11 @@ func (r *Runtime) WaitBootstrapReady(ctx context.Context) bool {
 func (r *Runtime) allHumanPlayersBootstrapReady() bool {
 	r.bootstrapMu.RLock()
 	defer r.bootstrapMu.RUnlock()
-	for _, player := range r.players {
-		if player == nil || player.IsBot() {
+	for _, binding := range r.participants {
+		if !binding.Participant.IsHuman() {
 			continue
 		}
-		if !r.bootstrapReadyByPlayer[player.PlayerID()] {
+		if !r.bootstrapReadyByPlayer[binding.Participant.ID] {
 			return false
 		}
 	}
@@ -650,13 +720,22 @@ func (r *Runtime) markBootstrapReady(playerID string) {
 	r.bootstrapReadyByPlayer[playerID] = true
 }
 
-func (r *Runtime) findPlayer(playerID string) (Player, bool) {
-	for _, player := range r.players {
-		if player != nil && player.PlayerID() == playerID {
-			return player, true
+func (r *Runtime) findParticipant(playerID string) (participant.Participant, bool) {
+	for _, binding := range r.participants {
+		if binding.Participant.ID == playerID {
+			return binding.Participant, true
 		}
 	}
-	return nil, false
+	return participant.Participant{}, false
+}
+
+func (r *Runtime) findParticipantBinding(participantID string) (ParticipantBinding, bool) {
+	for _, binding := range r.participants {
+		if binding.Participant.ID == participantID {
+			return binding, true
+		}
+	}
+	return ParticipantBinding{}, false
 }
 
 func resolveRequestedSections(catalog *staticdata.Catalog, req *pb.MsgStaticCatalogSyncRequest) []string {
@@ -720,7 +799,7 @@ func (r *Runtime) sendCatalogSection(ctx context.Context, playerID string, catal
 	}
 	chunks := splitCatalogSection(compressed, 32*1024)
 	for i, chunk := range chunks {
-		if err := r.SendToPlayer(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), playerID, &pb.MsgStaticCatalogSectionChunk{
+		if err := r.SendToParticipant(transport.ContextWithGameSessionID(ctx, r.gameSessionID()), playerID, &pb.MsgStaticCatalogSectionChunk{
 			SectionName: sectionName,
 			SectionHash: hash,
 			ChunkIndex:  uint32(i),

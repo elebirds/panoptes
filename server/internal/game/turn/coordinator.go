@@ -9,6 +9,7 @@ package turn
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/domain"
@@ -23,8 +24,6 @@ var ErrPhaseMismatch = errors.New("phase_mismatch")
 
 type Host interface {
 	planning.Session
-	PlayerIDs() []string
-	NotifyTurn(phase string)
 	RunTurnResolution()
 	ShouldStopAfterResolution() bool
 	HandleDraw()
@@ -67,10 +66,9 @@ func (c *Coordinator) Start() {
 		c.planningService.Enter(c.host)
 		c.runtime.State().Phase = domain.PhasePlanning.String()
 		c.runtime.PreparePlanningStartStateIfNeeded()
+		c.beginPlanning(ctx, !skipNotify)
 		if skipNotify {
 			skipNotify = false
-		} else {
-			c.host.NotifyTurn(domain.PhasePlanning.String())
 		}
 		c.waitAllSubmit(ctx, time.Duration(planningTimeoutSec)*time.Second)
 		if ctx.Err() != nil {
@@ -88,6 +86,41 @@ func (c *Coordinator) Start() {
 		}
 		c.runtime.State().Turn++
 	}
+}
+
+func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
+	if c.runtime == nil {
+		return
+	}
+	if notifyHumans {
+		for _, human := range c.runtime.HumanParticipants() {
+			if err := c.runtime.SendPlanningStart(ctx, human.ID); err != nil {
+				slog.Warn("send planning start failed", "participant_id", human.ID, "err", err)
+			}
+		}
+	}
+
+	submitter := coordinatorIntentSubmitter{coordinator: c}
+	for _, currentParticipant := range c.runtime.Participants() {
+		controller, ok := c.runtime.Controller(currentParticipant.ID)
+		if !ok || controller == nil || !controller.IsAutonomous() {
+			continue
+		}
+		if err := controller.BeginPlanning(ctx, currentParticipant, c.runtime.State(), submitter); err != nil {
+			slog.Warn("controller begin planning failed", "participant_id", currentParticipant.ID, "err", err)
+		}
+	}
+}
+
+type coordinatorIntentSubmitter struct {
+	coordinator *Coordinator
+}
+
+func (s coordinatorIntentSubmitter) SubmitIntent(_ context.Context, envelope planning.IntentEnvelope) error {
+	if s.coordinator == nil || s.coordinator.planningService == nil {
+		return nil
+	}
+	return s.coordinator.planningService.HandleIntent(s.coordinator.host, envelope)
 }
 
 func (c *Coordinator) Submit(playerID string) {

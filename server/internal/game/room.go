@@ -31,7 +31,6 @@ import (
 
 type GameRoom struct {
 	ID          string
-	Players     []Player
 	runtime     *gamesession.Runtime
 	coordinator *gameturn.Coordinator
 	prepared    *domain.GameState
@@ -42,23 +41,17 @@ type Room = GameRoom
 var _ transport.GameRoom = (*GameRoom)(nil)
 var _ planning.Session = (*GameRoom)(nil)
 
-func NewRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config) *GameRoom {
-	sessionPlayers := make([]gamesession.Player, 0, len(players))
-	for _, player := range players {
-		sessionPlayers = append(sessionPlayers, player)
-	}
-
+func NewRoom(id string, participants []ParticipantSpec, t transport.GameTransport, cfg *config.Config) *GameRoom {
 	room := &GameRoom{
-		ID:      id,
-		Players: append([]Player(nil), players...),
+		ID: id,
 	}
-	room.runtime = gamesession.NewRuntime(id, sessionPlayers, t, cfg)
+	room.runtime = gamesession.NewRuntime(id, buildParticipantBindings(participants), t, cfg)
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 	return room
 }
 
-func NewPreparedRoom(id string, players []Player, t transport.GameTransport, cfg *config.Config, state *domain.GameState) *GameRoom {
-	room := NewRoom(id, players, t, cfg)
+func NewPreparedRoom(id string, participants []ParticipantSpec, t transport.GameTransport, cfg *config.Config, state *domain.GameState) *GameRoom {
+	room := NewRoom(id, participants, t, cfg)
 	room.prepared = state
 	return room
 }
@@ -67,7 +60,7 @@ func (r *GameRoom) Start() {
 	if r == nil || r.runtime == nil {
 		return
 	}
-	Registry.InvalidateRoomsForPlayersExcept(r.ID, r.PlayerIDs())
+	Registry.InvalidateRoomsForParticipantsExcept(r.ID, r.ParticipantIDs())
 	var err error
 	if r.prepared != nil {
 		err = r.runtime.InitializePrepared(r.prepared)
@@ -100,18 +93,39 @@ func (r *GameRoom) State() *domain.GameState {
 	return r.runtime.State()
 }
 
-func (r *GameRoom) PlayerIDs() []string {
+func (r *GameRoom) ParticipantIDs() []string {
 	if r == nil || r.runtime == nil {
 		return nil
 	}
-	return r.runtime.PlayerIDs()
+	return r.runtime.ParticipantIDs()
 }
 
-func (r *GameRoom) NotifyTurn(phase string) {
-	ctx := context.Background()
-	for _, player := range r.Players {
-		player.NotifyTurn(ctx, r, phase)
+func (r *GameRoom) PlayerIDs() []string {
+	return r.ParticipantIDs()
+}
+
+func (r *GameRoom) HumanParticipantIDs() []string {
+	if r == nil || r.runtime == nil {
+		return nil
 	}
+	humans := r.runtime.HumanParticipants()
+	ids := make([]string, 0, len(humans))
+	for _, currentParticipant := range humans {
+		ids = append(ids, currentParticipant.ID)
+	}
+	return ids
+}
+
+func (r *GameRoom) IsHumanParticipant(participantID string) bool {
+	if r == nil || r.runtime == nil {
+		return false
+	}
+	for _, currentParticipant := range r.runtime.HumanParticipants() {
+		if currentParticipant.ID == participantID {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *GameRoom) Submit(playerID string) {
@@ -243,22 +257,19 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 	if state.IsOver || r.shouldStopAfterResolution() {
 		nextPhase = ""
 	}
-	for _, player := range r.Players {
-		if player.IsBot() {
-			continue
-		}
+	for _, participantID := range r.HumanParticipantIDs() {
 		msg := gameprojection.ProjectTurnSettlement(
 			state,
-			player.PlayerID(),
+			participantID,
 			int32(state.Turn),
 			domain.PhaseResolving.String(),
 			nextPhase,
 			collector,
 		)
 		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
-			hooks.RecordSettlement(r.ID, player.PlayerID(), msg)
+			hooks.RecordSettlement(r.ID, participantID, msg)
 		}
-		_ = r.SendToPlayer(context.Background(), player.PlayerID(), msg)
+		_ = r.SendToPlayer(context.Background(), participantID, msg)
 	}
 }
 
@@ -355,11 +366,11 @@ func (r *GameRoom) forfeitDisconnectedPlayer(playerID string) bool {
 }
 
 func (r *GameRoom) firstPlayerExcept(playerID string) string {
-	for _, player := range r.Players {
-		if player == nil || player.PlayerID() == "" || player.PlayerID() == playerID {
+	for _, currentPlayerID := range r.ParticipantIDs() {
+		if currentPlayerID == "" || currentPlayerID == playerID {
 			continue
 		}
-		return player.PlayerID()
+		return currentPlayerID
 	}
 	return ""
 }

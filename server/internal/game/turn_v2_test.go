@@ -53,13 +53,13 @@ func (t *stubTransport) Stream(ctx context.Context, playerID string, msgs <-chan
 	return nil
 }
 
-func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
+func TestRuntimeSendPlanningStartSendsPlanningStartWithSnapshot(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
 	}))
 
 	tp := newStubTransport()
-	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room := NewRoom("game-1", []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}, tp, &config.Config{})
 	room.runtime = nil
 	room.runtime = newTestRuntime("game-1", tp)
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
@@ -67,8 +67,9 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	room.runtime.State().Phase = domain.PhasePlanning.String()
 	room.runtime.State().Players["player-1"].TokensLeft = 1
 
-	player := NewHumanPlayer("player-1", "alice", tp)
-	player.NotifyTurn(context.Background(), room, domain.PhasePlanning.String())
+	if err := room.runtime.SendPlanningStart(context.Background(), "player-1"); err != nil {
+		t.Fatalf("SendPlanningStart() error = %v", err)
+	}
 
 	msgs := tp.sent["player-1"]
 	if len(msgs) != 1 {
@@ -100,7 +101,7 @@ func TestHumanPlayerNotifyTurnSendsPlanningStartWithSnapshot(t *testing.T) {
 	}
 }
 
-func TestHumanPlayerNotifyTurnPrefersUnifiedPlanningTimeout(t *testing.T) {
+func TestRuntimeSendPlanningStartPrefersUnifiedPlanningTimeout(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TurnTimeLimitPlanning: 21,
@@ -109,14 +110,15 @@ func TestHumanPlayerNotifyTurnPrefersUnifiedPlanningTimeout(t *testing.T) {
 	}))
 
 	tp := newStubTransport()
-	room := NewRoom("game-1", nil, tp, &config.Config{})
+	room := NewRoom("game-1", []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}, tp, &config.Config{})
 	room.runtime = newTestRuntime("game-1", tp)
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 	room.runtime.State().Turn = 3
 	room.runtime.State().Phase = domain.PhasePlanning.String()
 
-	player := NewHumanPlayer("player-1", "alice", tp)
-	player.NotifyTurn(context.Background(), room, domain.PhasePlanning.String())
+	if err := room.runtime.SendPlanningStart(context.Background(), "player-1"); err != nil {
+		t.Fatalf("SendPlanningStart() error = %v", err)
+	}
 
 	msgs := tp.sent["player-1"]
 	if len(msgs) != 1 {
@@ -439,9 +441,9 @@ func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testin
 	}))
 
 	tp := newStubTransport()
-	player := NewHumanPlayer("player-1", "alice", tp)
-	room := NewRoom("game-1", []Player{player}, tp, &config.Config{})
-	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player}, tp, &config.Config{})
+	participants := []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}
+	room := NewRoom("game-1", participants, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", buildParticipantBindings(participants), tp, &config.Config{})
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 	room.runtime.SetState(domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{}))
 	room.State().Phase = domain.PhaseResolving.String()
@@ -509,10 +511,12 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	}))
 
 	tp := newStubTransport()
-	player1 := NewHumanPlayer("player-1", "alice", tp)
-	player2 := NewHumanPlayer("player-2", "bob", tp)
-	room := NewRoom("game-1", []Player{player1, player2}, tp, &config.Config{})
-	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player1, player2}, tp, &config.Config{})
+	participants := []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
+		NewHumanParticipantSpec("player-2", "bob"),
+	}
+	room := NewRoom("game-1", participants, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", buildParticipantBindings(participants), tp, &config.Config{})
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 
 	world := donburi.NewWorld()
@@ -618,9 +622,9 @@ func TestRunTurnResolutionNonFatalStillIncludesCombatUpkeepInUnitSection(t *test
 	}))
 
 	tp := newStubTransport()
-	player := NewHumanPlayer("player-1", "alice", tp)
-	room := NewRoom("game-1", []Player{player}, tp, &config.Config{})
-	room.runtime = gamesession.NewRuntime("game-1", []gamesession.Player{player}, tp, &config.Config{})
+	participants := []ParticipantSpec{NewHumanParticipantSpec("player-1", "alice")}
+	room := NewRoom("game-1", participants, tp, &config.Config{})
+	room.runtime = gamesession.NewRuntime("game-1", buildParticipantBindings(participants), tp, &config.Config{})
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 
 	world := donburi.NewWorld()
@@ -698,10 +702,10 @@ func TestInstitutionLoadoutActivatesOnNextPlanningStart(t *testing.T) {
 }
 
 func newTestRuntime(gameID string, tp *stubTransport) *gamesession.Runtime {
-	players := []gamesession.Player{
-		NewHumanPlayer("player-1", "alice", tp),
+	participants := []ParticipantSpec{
+		NewHumanParticipantSpec("player-1", "alice"),
 	}
-	runtime := gamesession.NewRuntime(gameID, players, tp, &config.Config{})
+	runtime := gamesession.NewRuntime(gameID, buildParticipantBindings(participants), tp, &config.Config{})
 	state := domain.NewGameState(gameID, []string{"player-1"}, []string{"alice"}, &domain.MapData{})
 	runtime.SetState(state)
 	return runtime
