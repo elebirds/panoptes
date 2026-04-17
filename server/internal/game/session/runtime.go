@@ -58,6 +58,7 @@ type Runtime struct {
 	// 不能因为重复 Prepare 而重复激活 technology / institution。
 	planningStartPreparedTurn int
 	planningStartResult       *PlanningStartResult
+	preparedMinisterDrafts    map[int]map[string][]domain.MinisterDraft
 }
 
 func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTransport, cfg *config.Config) *Runtime {
@@ -69,6 +70,7 @@ func NewRuntime(id string, participants []ParticipantBinding, t transport.GameTr
 		observations:           gamequery.NewObservationStore(),
 		submitCh:               make(chan string, len(participants)*4+16),
 		bootstrapReadyByPlayer: make(map[string]bool, len(participants)),
+		preparedMinisterDrafts: make(map[int]map[string][]domain.MinisterDraft),
 	}
 }
 
@@ -155,6 +157,7 @@ func (r *Runtime) SetState(state *domain.GameState) {
 	}
 	r.planningStartPreparedTurn = 0
 	r.planningStartResult = nil
+	r.preparedMinisterDrafts = make(map[int]map[string][]domain.MinisterDraft)
 	r.bootstrapMu.Lock()
 	r.bootstrapReadyByPlayer = make(map[string]bool, len(r.participants))
 	r.bootstrapPlanningStartSent = false
@@ -271,6 +274,8 @@ func (r *Runtime) PreparePlanningStartStateIfNeeded() {
 	// 这里是 planning-start 状态推进的唯一受控入口。
 	// 其它调用方只读取缓存结果，不再各自直接推进状态。
 	r.planningStartResult = PreparePlanningStartState(r.state)
+	r.PrepareMinisterDraftCacheForTurn(r.state.Turn)
+	r.ApplyPreparedMinisterDrafts(r.state.Turn)
 	r.planningStartPreparedTurn = r.state.Turn
 }
 
@@ -578,7 +583,7 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 		MapWidth:     int32(r.state.Map.Width),
 		MapHeight:    int32(r.state.Map.Height),
 		MyPlayer:     observation.MyPlayer,
-		Ministers:    nil,
+		Ministers:    gamequery.BuildMinisterRosterViews(),
 		Nodes:        observation.Nodes,
 		Units:        observation.Units,
 	}

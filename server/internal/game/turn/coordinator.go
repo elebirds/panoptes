@@ -89,6 +89,7 @@ func (c *Coordinator) Start() {
 			break
 		}
 		c.runtime.State().Turn++
+		c.runtime.PrepareMinisterDraftCacheForTurn(c.runtime.State().Turn)
 	}
 }
 

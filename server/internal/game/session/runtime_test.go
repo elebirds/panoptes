@@ -104,6 +104,16 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "default"},
 		Rules:    staticdata.Rules{TurnTimeLimitPlanning: 30, TokensPerTurn: 3},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+		Ministers: []staticdata.Minister{
+			{ID: "m002", Name: "沈衡", Role: "domestic", Ability: 7, Personality: "steady"},
+		},
 		Maps: []staticdata.MapCatalogEntry{
 			{ID: "default", Name: "Default", Width: 2, Height: 2},
 		},
@@ -123,6 +133,7 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	state.Turn = 4
 	state.Phase = domain.PhasePlanning.String()
 	state.Players["player-1"].TokensLeft = 1
+	state.Players["player-1"].Policy = domain.Policy("reorganization")
 
 	if err := runtime.InitializePrepared(state); err != nil {
 		t.Fatalf("InitializePrepared() error = %v", err)
@@ -185,8 +196,15 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 		t.Fatalf("mapconfig nodes = %+v, want A1", payload.Nodes)
 	}
 
-	if got := player.sent[3].ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
+	gameInit, ok := player.sent[3].(*pb.MsgGameInit)
+	if !ok {
+		t.Fatalf("message[3] type = %T, want MsgGameInit", player.sent[3])
+	}
+	if got := gameInit.ProtoReflect().Descriptor().Name(); got != "MsgGameInit" {
 		t.Fatalf("message[3] = %s, want MsgGameInit", got)
+	}
+	if len(gameInit.GetMinisters()) != 1 || gameInit.GetMinisters()[0].GetRole() != "domestic" {
+		t.Fatalf("game init ministers = %#v, want domestic roster", gameInit.GetMinisters())
 	}
 
 	start, ok := player.sent[4].(*pb.MsgPlanningStart)
@@ -204,6 +222,23 @@ func TestRuntimeBootstrapDuringPlanningSendsPlanningStartWithSnapshotAndCurrentT
 	}
 	if start.GetSnapshot() == nil {
 		t.Fatalf("snapshot is nil")
+	}
+	if len(start.GetMinisterDrafts()) == 0 {
+		t.Fatalf("planning start should include minister drafts")
+	}
+	if len(start.GetSnapshot().GetMinisterDrafts()) == 0 {
+		t.Fatalf("planning snapshot should include minister drafts")
+	}
+	var ministerPayload struct {
+		DraftID      string `json:"draft_id"`
+		MinisterRole string `json:"minister_role"`
+		Status       string `json:"status"`
+	}
+	if err := json.Unmarshal([]byte(start.GetMinisterDrafts()[0].GetJsonPayload()), &ministerPayload); err != nil {
+		t.Fatalf("unmarshal planning start minister draft payload: %v", err)
+	}
+	if ministerPayload.DraftID == "" || ministerPayload.MinisterRole != "domestic" || ministerPayload.Status != "pending" {
+		t.Fatalf("planning start minister payload = %+v, want domestic pending draft", ministerPayload)
 	}
 	if len(start.GetPlanningStartEvents()) != 0 {
 		t.Fatalf("planning_start_events len = %d, want 0 without pending activations", len(start.GetPlanningStartEvents()))
@@ -407,6 +442,41 @@ func TestPreparePlanningStartStateIfNeededRunsOnlyOncePerTurn(t *testing.T) {
 	}
 	if runtime.PlanningStartResult() == firstResult {
 		t.Fatalf("planning start result should refresh after turn advance")
+	}
+}
+
+func TestPreparePlanningStartStateIfNeededAppliesPreparedMinisterDrafts(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TokensPerTurn:             3,
+			BaseResearchOutputPerTurn: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 2},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+	}))
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "default"})
+	runtime.state.Phase = domain.PhasePlanning.String()
+	runtime.state.Turn = 3
+	runtime.state.Players["player-1"].Policy = domain.Policy("reorganization")
+
+	runtime.PrepareMinisterDraftCacheForTurn(3)
+	clear(runtime.state.TurnRuntime.Planning.MinisterDrafts)
+	runtime.PreparePlanningStartStateIfNeeded()
+
+	drafts := runtime.state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) == 0 {
+		t.Fatalf("planning start should apply prepared minister drafts")
+	}
+	if drafts[0].MinisterRole != "domestic" || drafts[0].Turn != 3 {
+		t.Fatalf("minister drafts = %#v, want domestic turn 3 draft", drafts)
 	}
 }
 
