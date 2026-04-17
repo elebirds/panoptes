@@ -87,6 +87,18 @@ namespace Panoptes.Core.Events
         public NodeDto TrueState;
     }
 
+    public class PlanningCommandResultEvent
+    {
+        public string CommandType;
+        public string Action;
+        public bool Success;
+        public string PrimaryId;
+        public string SecondaryId;
+        public string TertiaryId;
+        public string ErrorCode;
+        public List<string> RelatedIds;
+    }
+
     public class GameOverEvent
     {
         public string WinnerID;
