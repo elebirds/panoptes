@@ -88,11 +88,12 @@ MonoBehaviour:
   idleStateName: infantry_01_idle
   moveStateName: infantry_03_run
   stateCrossFadeSeconds: 0.08
-  applyAppearanceOnBind: 0
-  bodyVariantIndex: 0
+  applyAppearanceOnBind: 1
+  bodyVariantIndex: -1
   headVariantIndex: 0
   weaponVariantIndex: -1
-  randomizeVariantPerMember: 1
+  randomizeVariantPerMember: 0
+  forceApplyConfiguredVariantsOnBind: 1
   bodyNamePrefixes:
   - body_
   headNamePrefixes:
@@ -167,6 +168,20 @@ MonoBehaviour:
   - recurve
   - long_bow
   - short_bow
+  applyRenderBudgetOnBind: 0
+  maxVisibleRenderersPerMember: 6
+  disableCastShadows: 1
+  disableReceiveShadows: 1
+  autoApplyRenderBudgetWhenOverdrawRiskHigh: 0
+  highRendererCountThresholdPerMember: 18
+  rendererPriorityKeywords:
+  - body
+  - head
+  - weapon
+  - shield
+  - helmet
+  - cape
+  - cloak
 --- !u!1 &8500603318785294919
 GameObject:
   m_ObjectHideFlags: 0

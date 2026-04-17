@@ -20,18 +20,49 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float rebuildThrottleSeconds = 0.05f;
 
         [Header("Fog Appearance")]
-        [SerializeField] private Color unknownFogColor = new Color(0.19f, 0.25f, 0.34f, 1f);
-        [SerializeField] private Color memoryFogColor = new Color(0.40f, 0.48f, 0.58f, 1f);
-        [SerializeField] private Color visibleFogColor = new Color(0.78f, 0.84f, 0.92f, 1f);
+        [SerializeField] private bool useWarcraftLikeFogPreset = true;
+        [SerializeField] private Color unknownFogColor = new Color(0.02f, 0.02f, 0.03f, 1f);
+        [SerializeField] private Color memoryFogColor = new Color(0.11f, 0.11f, 0.13f, 1f);
+        [SerializeField] private Color visibleFogColor = new Color(0f, 0f, 0f, 1f);
         [Range(0f, 1f)] [SerializeField] private float unknownAlpha = 1f;
-        [Range(0f, 1f)] [SerializeField] private float memoryAlpha = 0.45f;
+        [Range(0f, 1f)] [SerializeField] private float memoryAlpha = 0.6f;
         [Range(0f, 1f)] [SerializeField] private float visibleAlpha = 0f;
         [SerializeField] private int pixelsPerTile = 24;
         [SerializeField] private int minTextureSize = 256;
         [SerializeField] private int maxTextureSize = 2048;
-        [Range(0f, 1f)] [SerializeField] private float noiseStrength = 0.12f;
+        [Range(0f, 1f)] [SerializeField] private float noiseStrength = 0.08f;
         [SerializeField] private float noiseScale = 0.06f;
-        [Range(0.6f, 1.8f)] [SerializeField] private float fogBrightness = 1f;
+        [Range(0.6f, 1.8f)] [SerializeField] private float fogBrightness = 0.9f;
+        [Range(0f, 1f)] [SerializeField] private float edgeSmoothness = 0.72f;
+        [SerializeField] private float cloudNoiseScaleA = 0.028f;
+        [SerializeField] private float cloudNoiseScaleB = 0.053f;
+        [SerializeField] private float cloudScrollSpeedA = 0.014f;
+        [SerializeField] private float cloudScrollSpeedB = 0.021f;
+        [Range(0f, 1f)] [SerializeField] private float memoryCloudStrength = 0.34f;
+        [Range(0f, 1f)] [SerializeField] private float unknownCloudStrength = 0.14f;
+        [Range(0f, 1f)] [SerializeField] private float cloudTintStrength = 0.32f;
+
+        [Header("Texture Driven Fog")]
+        [SerializeField] private bool useFogPatternTexture = true;
+        [SerializeField] private Texture2D fogPatternTexture;
+        [SerializeField] private string fogPatternResourcePath = "Textures/Fog/war3_fog_cloud_layers_2k";
+        [SerializeField] private string fogPatternFallbackResourcePath = "Textures/Fog/fog01";
+        [SerializeField] private float fogPatternTiling = 2.1f;
+        [SerializeField] private Vector2 fogPatternScroll = new Vector2(0.012f, -0.009f);
+        [Range(0.5f, 3f)] [SerializeField] private float fogPatternContrast = 1.35f;
+        [Range(0f, 1f)] [SerializeField] private float fogPatternContribution = 0.82f;
+
+        [Header("Atmosphere (2.5D)")]
+        [SerializeField] private bool enableAtmosphereLayers = true;
+        [Range(1, 3)] [SerializeField] private int atmosphereLayerCount = 2;
+        [SerializeField] private float atmosphereBaseHeightOffset = 0.9f;
+        [SerializeField] private float atmosphereLayerHeightStep = 0.35f;
+        [SerializeField] private float atmosphereScaleExpand = 1.07f;
+        [Range(0f, 1f)] [SerializeField] private float atmosphereBaseAlpha = 0.16f;
+        [Range(0f, 1f)] [SerializeField] private float atmosphereAlphaFalloff = 0.62f;
+        [SerializeField] private Vector2 atmosphereScrollSpeedA = new Vector2(0.008f, -0.006f);
+        [SerializeField] private Vector2 atmosphereScrollSpeedB = new Vector2(-0.005f, 0.007f);
+        [Range(0f, 1f)] [SerializeField] private float atmosphereVisibilityMaskStrength = 0.92f;
 
         private readonly Dictionary<string, NodeDto> _nodesById =
             new Dictionary<string, NodeDto>(StringComparer.Ordinal);
@@ -49,6 +80,16 @@ namespace Panoptes.Presentation.Map
         private bool _hasGridBounds;
         private bool _dirty;
         private float _nextRebuildTime;
+        private bool _warnedFogPatternUnavailable;
+        private bool _warnedFogPatternUnreadable;
+        private Texture2D _runtimeReadableFogPatternTexture;
+        private readonly List<Transform> _atmosphereLayerTransforms = new List<Transform>();
+        private readonly List<Renderer> _atmosphereLayerRenderers = new List<Renderer>();
+        private readonly List<Material> _atmosphereLayerMaterials = new List<Material>();
+        private float _overlayWidth = 1f;
+        private float _overlayHeight = 1f;
+        private float _overlayTopY;
+        private Vector3 _overlayCenter;
 
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
@@ -63,6 +104,11 @@ namespace Panoptes.Presentation.Map
 
         private void LateUpdate()
         {
+            if (enabledOnBuild && enableAtmosphereLayers)
+            {
+                UpdateAtmosphereLayerAnimation(Time.unscaledTime);
+            }
+
             if (!_dirty || !enabledOnBuild)
             {
                 return;
@@ -165,6 +211,15 @@ namespace Panoptes.Presentation.Map
             {
                 _fogRenderer.enabled = visible;
             }
+
+            for (var i = 0; i < _atmosphereLayerRenderers.Count; i++)
+            {
+                var layerRenderer = _atmosphereLayerRenderers[i];
+                if (layerRenderer != null)
+                {
+                    layerRenderer.enabled = visible && enableAtmosphereLayers;
+                }
+            }
         }
 
         private void EnsureOverlayRenderer()
@@ -172,6 +227,7 @@ namespace Panoptes.Presentation.Map
             if (_fogRenderer != null && _fogTransform != null)
             {
                 EnsureFogMaterial();
+                EnsureAtmosphereRenderers();
                 return;
             }
 
@@ -204,6 +260,8 @@ namespace Panoptes.Presentation.Map
                 _fogRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 _fogRenderer.receiveShadows = false;
             }
+
+            EnsureAtmosphereRenderers();
         }
 
         private void EnsureFogMaterial()
@@ -268,6 +326,240 @@ namespace Panoptes.Presentation.Map
             _fogMaterial.renderQueue = (int)RenderQueue.Transparent;
         }
 
+        private void EnsureAtmosphereRenderers()
+        {
+            if (!enableAtmosphereLayers || _fogTransform == null)
+            {
+                for (var i = 0; i < _atmosphereLayerRenderers.Count; i++)
+                {
+                    var renderer = _atmosphereLayerRenderers[i];
+                    if (renderer != null)
+                    {
+                        renderer.enabled = false;
+                    }
+                }
+                return;
+            }
+
+            var desiredCount = Mathf.Clamp(atmosphereLayerCount, 1, 3);
+            while (_atmosphereLayerTransforms.Count < desiredCount)
+            {
+                CreateAtmosphereLayer(_atmosphereLayerTransforms.Count);
+            }
+
+            while (_atmosphereLayerTransforms.Count > desiredCount)
+            {
+                var index = _atmosphereLayerTransforms.Count - 1;
+                RemoveAtmosphereLayerAt(index);
+            }
+
+            for (var i = 0; i < _atmosphereLayerRenderers.Count; i++)
+            {
+                var renderer = _atmosphereLayerRenderers[i];
+                if (renderer != null)
+                {
+                    renderer.enabled = true;
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                }
+            }
+
+            UpdateAtmosphereLayerTransforms();
+            SyncAtmosphereLayerTextures();
+        }
+
+        private void CreateAtmosphereLayer(int index)
+        {
+            var layerName = $"GlobalObservationFogAtmosphere_{index}";
+            var existing = transform.Find(layerName);
+            Transform layerTransform;
+            Renderer layerRenderer;
+            if (existing != null)
+            {
+                layerTransform = existing;
+                layerRenderer = existing.GetComponent<Renderer>();
+            }
+            else
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                go.name = layerName;
+                go.transform.SetParent(transform, false);
+                go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                var collider = go.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    Destroy(collider);
+                }
+
+                layerTransform = go.transform;
+                layerRenderer = go.GetComponent<Renderer>();
+            }
+
+            if (layerRenderer == null)
+            {
+                return;
+            }
+
+            var shader = _fogMaterial != null ? _fogMaterial.shader : Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Transparent");
+            }
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Texture");
+            }
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+            if (shader == null)
+            {
+                return;
+            }
+
+            var layerMaterial = new Material(shader)
+            {
+                name = $"GlobalObservationFogAtmosphereMat_{index}",
+                hideFlags = HideFlags.DontSave
+            };
+
+            if (layerMaterial.HasProperty("_Surface"))
+            {
+                layerMaterial.SetFloat("_Surface", 1f);
+            }
+            if (layerMaterial.HasProperty("_Blend"))
+            {
+                layerMaterial.SetFloat("_Blend", 0f);
+            }
+            if (layerMaterial.HasProperty("_SrcBlend"))
+            {
+                layerMaterial.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            }
+            if (layerMaterial.HasProperty("_DstBlend"))
+            {
+                layerMaterial.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            }
+            if (layerMaterial.HasProperty("_ZWrite"))
+            {
+                layerMaterial.SetFloat("_ZWrite", 0f);
+            }
+            if (layerMaterial.HasProperty("_Cull"))
+            {
+                layerMaterial.SetFloat("_Cull", 0f);
+            }
+
+            layerMaterial.renderQueue = (int)RenderQueue.Transparent;
+            layerRenderer.sharedMaterial = layerMaterial;
+
+            _atmosphereLayerTransforms.Add(layerTransform);
+            _atmosphereLayerRenderers.Add(layerRenderer);
+            _atmosphereLayerMaterials.Add(layerMaterial);
+        }
+
+        private void RemoveAtmosphereLayerAt(int index)
+        {
+            if (index < 0 || index >= _atmosphereLayerTransforms.Count)
+            {
+                return;
+            }
+
+            var material = _atmosphereLayerMaterials[index];
+            if (material != null)
+            {
+                Destroy(material);
+            }
+
+            var transformToRemove = _atmosphereLayerTransforms[index];
+            if (transformToRemove != null)
+            {
+                Destroy(transformToRemove.gameObject);
+            }
+
+            _atmosphereLayerTransforms.RemoveAt(index);
+            _atmosphereLayerRenderers.RemoveAt(index);
+            _atmosphereLayerMaterials.RemoveAt(index);
+        }
+
+        private void UpdateAtmosphereLayerTransforms()
+        {
+            if (!enableAtmosphereLayers)
+            {
+                return;
+            }
+
+            var width = Mathf.Max(0.1f, _overlayWidth * atmosphereScaleExpand);
+            var height = Mathf.Max(0.1f, _overlayHeight * atmosphereScaleExpand);
+            for (var i = 0; i < _atmosphereLayerTransforms.Count; i++)
+            {
+                var layerTransform = _atmosphereLayerTransforms[i];
+                if (layerTransform == null)
+                {
+                    continue;
+                }
+
+                var layerScaleFactor = 1f + (i * 0.025f);
+                var y = _overlayTopY + atmosphereBaseHeightOffset + (i * atmosphereLayerHeightStep);
+                layerTransform.position = new Vector3(_overlayCenter.x, y, _overlayCenter.z);
+                layerTransform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                layerTransform.localScale = new Vector3(width * layerScaleFactor, height * layerScaleFactor, 1f);
+            }
+        }
+
+        private void SyncAtmosphereLayerTextures()
+        {
+            if (!enableAtmosphereLayers || _fogTexture == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _atmosphereLayerMaterials.Count; i++)
+            {
+                var material = _atmosphereLayerMaterials[i];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                var alpha = atmosphereBaseAlpha * Mathf.Pow(Mathf.Clamp01(atmosphereAlphaFalloff), i);
+                alpha *= Mathf.Clamp01(atmosphereVisibilityMaskStrength);
+                var color = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha));
+
+                material.SetTexture(BaseMapId, _fogTexture);
+                material.SetTexture(MainTexId, _fogTexture);
+                material.SetColor(BaseColorId, color);
+                material.SetColor(ColorId, color);
+            }
+        }
+
+        private void UpdateAtmosphereLayerAnimation(float time)
+        {
+            if (!enableAtmosphereLayers || _atmosphereLayerMaterials.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _atmosphereLayerMaterials.Count; i++)
+            {
+                var material = _atmosphereLayerMaterials[i];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                var speedMix = Mathf.Lerp(0.45f, 1f, i / Mathf.Max(1f, _atmosphereLayerMaterials.Count - 1f));
+                var offset = (atmosphereScrollSpeedA * time) + (atmosphereScrollSpeedB * time * speedMix);
+                if (material.HasProperty("_BaseMap"))
+                {
+                    material.SetTextureOffset("_BaseMap", offset);
+                }
+                if (material.HasProperty("_MainTex"))
+                {
+                    material.SetTextureOffset("_MainTex", offset);
+                }
+            }
+        }
+
         private void UpdateOverlayTransform()
         {
             if (_fogTransform == null || _tileViews == null || _tileViews.Count == 0)
@@ -305,16 +597,24 @@ namespace Panoptes.Presentation.Map
 
             var width = Mathf.Max(0.1f, maxX - minX);
             var height = Mathf.Max(0.1f, maxZ - minZ);
-            _fogTransform.position = new Vector3(
+            _overlayCenter = new Vector3(
                 (minX + maxX) * 0.5f,
                 maxY + overlayHeightOffset,
                 (minZ + maxZ) * 0.5f);
+            _overlayTopY = maxY + overlayHeightOffset;
+            _overlayWidth = width;
+            _overlayHeight = height;
+
+            _fogTransform.position = _overlayCenter;
             _fogTransform.rotation = Quaternion.Euler(90f, 0f, 0f);
             _fogTransform.localScale = new Vector3(width, height, 1f);
+            UpdateAtmosphereLayerTransforms();
         }
 
         private void RebuildOverlayTexture()
         {
+            ApplyWarcraftLikeFogPresetIfNeeded();
+
             if (_fogRenderer == null || _fogMaterial == null || !_hasGridBounds)
             {
                 return;
@@ -337,6 +637,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var colors = new Color32[texWidth * texHeight];
+            var t = Time.unscaledTime;
             for (var y = 0; y < texHeight; y++)
             {
                 var gy = ((y + 0.5f) / texHeight) * heightInTiles - 0.5f;
@@ -344,13 +645,52 @@ namespace Panoptes.Presentation.Map
                 {
                     var gx = ((x + 0.5f) / texWidth) * widthInTiles - 0.5f;
                     var sample = SampleFogBilinear(gx, gy, widthInTiles, heightInTiles);
+                    sample.alpha = Mathf.Lerp(sample.alpha, Mathf.SmoothStep(0f, 1f, sample.alpha), edgeSmoothness);
 
-                    var noise = Mathf.PerlinNoise(x * noiseScale + 13.7f, y * noiseScale + 5.3f);
-                    var shade = Mathf.Lerp(1f - noiseStrength, 1f + noiseStrength, noise);
-                    var r = Mathf.Clamp01(sample.color.r * shade * fogBrightness);
-                    var g = Mathf.Clamp01(sample.color.g * shade * fogBrightness);
-                    var b = Mathf.Clamp01(sample.color.b * shade * fogBrightness);
-                    var a = Mathf.Clamp01(sample.alpha);
+                    var detailNoise = Mathf.PerlinNoise(x * noiseScale + 13.7f, y * noiseScale + 5.3f);
+                    var cloudA = Mathf.PerlinNoise(
+                        x * cloudNoiseScaleA + t * cloudScrollSpeedA,
+                        y * cloudNoiseScaleA - t * cloudScrollSpeedA * 0.7f);
+                    var cloudB = Mathf.PerlinNoise(
+                        x * cloudNoiseScaleB - t * cloudScrollSpeedB * 0.6f,
+                        y * cloudNoiseScaleB + t * cloudScrollSpeedB);
+                    var cloud = Mathf.Clamp01(cloudA * 0.62f + cloudB * 0.38f);
+                    cloud = Mathf.SmoothStep(0.2f, 0.9f, cloud);
+
+                    var patternCloud = SampleFogPattern((x + 0.5f) / texWidth, (y + 0.5f) / texHeight, t);
+                    if (patternCloud >= 0f)
+                    {
+                        cloud = Mathf.Lerp(cloud, patternCloud, fogPatternContribution);
+                    }
+
+                    var likelyUnknown = sample.alpha >= (memoryAlpha + unknownAlpha) * 0.5f;
+                    var cloudStrength = likelyUnknown ? unknownCloudStrength : memoryCloudStrength;
+                    var detailShade = Mathf.Lerp(1f - noiseStrength, 1f + noiseStrength, detailNoise);
+                    var cloudShade = Mathf.Lerp(1f - cloudStrength, 1f + cloudStrength, cloud);
+                    var baseColor = sample.color;
+
+                    if (!likelyUnknown)
+                    {
+                        var tint = new Color(0.06f, 0.09f, 0.14f, 1f);
+                        baseColor = Color.Lerp(baseColor, baseColor + tint, cloudTintStrength * cloud);
+                    }
+
+                    var alpha = sample.alpha;
+                    if (alpha > 0.001f)
+                    {
+                        alpha = Mathf.Clamp01(alpha * Mathf.Lerp(0.9f, 1.08f, cloud * cloudStrength));
+                    }
+
+                    var finalShade = detailShade * cloudShade;
+                    if (likelyUnknown)
+                    {
+                        finalShade *= 0.9f;
+                    }
+
+                    var r = Mathf.Clamp01(baseColor.r * finalShade * fogBrightness);
+                    var g = Mathf.Clamp01(baseColor.g * finalShade * fogBrightness);
+                    var b = Mathf.Clamp01(baseColor.b * finalShade * fogBrightness);
+                    var a = Mathf.Clamp01(alpha);
 
                     colors[y * texWidth + x] = new Color(r, g, b, a);
                 }
@@ -363,6 +703,156 @@ namespace Panoptes.Presentation.Map
             _fogMaterial.SetTexture(MainTexId, _fogTexture);
             _fogMaterial.SetColor(BaseColorId, Color.white);
             _fogMaterial.SetColor(ColorId, Color.white);
+            SyncAtmosphereLayerTextures();
+        }
+
+        private void ApplyWarcraftLikeFogPresetIfNeeded()
+        {
+            if (!useWarcraftLikeFogPreset)
+            {
+                return;
+            }
+
+            unknownFogColor = new Color(0.01f, 0.01f, 0.015f, 1f);
+            memoryFogColor = new Color(0.07f, 0.09f, 0.12f, 1f);
+            visibleFogColor = new Color(0f, 0f, 0f, 1f);
+            unknownAlpha = 0.96f;
+            memoryAlpha = 0.52f;
+            visibleAlpha = 0f;
+            noiseStrength = 0.06f;
+            noiseScale = 0.045f;
+            fogBrightness = 0.8f;
+            edgeSmoothness = 0.78f;
+            memoryCloudStrength = 0.36f;
+            unknownCloudStrength = 0.12f;
+            cloudTintStrength = 0.34f;
+            fogPatternTiling = 2.1f;
+            fogPatternScroll = new Vector2(0.012f, -0.009f);
+            fogPatternContrast = 1.35f;
+            fogPatternContribution = 0.82f;
+            enableAtmosphereLayers = true;
+            atmosphereLayerCount = 2;
+            atmosphereBaseHeightOffset = 0.9f;
+            atmosphereLayerHeightStep = 0.35f;
+            atmosphereScaleExpand = 1.07f;
+            atmosphereBaseAlpha = 0.16f;
+            atmosphereAlphaFalloff = 0.62f;
+            atmosphereScrollSpeedA = new Vector2(0.008f, -0.006f);
+            atmosphereScrollSpeedB = new Vector2(-0.005f, 0.007f);
+            atmosphereVisibilityMaskStrength = 0.92f;
+        }
+
+        private float SampleFogPattern(float u, float v, float t)
+        {
+            if (!useFogPatternTexture)
+            {
+                return -1f;
+            }
+
+            var texture = ResolveFogPatternTexture();
+            if (texture == null)
+            {
+                return -1f;
+            }
+
+            var uv1 = new Vector2(
+                Mathf.Repeat(u * fogPatternTiling + t * fogPatternScroll.x, 1f),
+                Mathf.Repeat(v * fogPatternTiling + t * fogPatternScroll.y, 1f));
+            var uv2 = new Vector2(
+                Mathf.Repeat(v * (fogPatternTiling * 0.83f) - t * fogPatternScroll.y * 1.27f + 0.37f, 1f),
+                Mathf.Repeat(u * (fogPatternTiling * 0.83f) + t * fogPatternScroll.x * 1.19f + 0.19f, 1f));
+
+            var c1 = texture.GetPixelBilinear(uv1.x, uv1.y);
+            var c2 = texture.GetPixelBilinear(uv2.x, uv2.y);
+            var lum = Mathf.Clamp01((((c1.r + c1.g + c1.b) / 3f) * 0.62f) + (((c2.r + c2.g + c2.b) / 3f) * 0.38f));
+            lum = Mathf.Clamp01((lum - 0.5f) * fogPatternContrast + 0.5f);
+            return lum;
+        }
+
+        private Texture2D ResolveFogPatternTexture()
+        {
+            if (fogPatternTexture == null && !string.IsNullOrWhiteSpace(fogPatternResourcePath))
+            {
+                fogPatternTexture = Resources.Load<Texture2D>(fogPatternResourcePath.Trim());
+            }
+
+            if (fogPatternTexture == null && !string.IsNullOrWhiteSpace(fogPatternFallbackResourcePath))
+            {
+                fogPatternTexture = Resources.Load<Texture2D>(fogPatternFallbackResourcePath.Trim());
+            }
+
+            if (fogPatternTexture == null)
+            {
+                if (!_warnedFogPatternUnavailable)
+                {
+                    _warnedFogPatternUnavailable = true;
+                    Debug.LogWarning($"[MapFogOverlay] Fog pattern not found at Resources/{fogPatternResourcePath} or fallback {fogPatternFallbackResourcePath}. Fallback to procedural fog.");
+                }
+                return null;
+            }
+
+            if (!fogPatternTexture.isReadable)
+            {
+                var readableCopy = EnsureReadableTextureCopy(fogPatternTexture);
+                if (readableCopy != null)
+                {
+                    return readableCopy;
+                }
+
+                if (!_warnedFogPatternUnreadable)
+                {
+                    _warnedFogPatternUnreadable = true;
+                    Debug.LogWarning($"[MapFogOverlay] Fog pattern '{fogPatternTexture.name}' is not Read/Write enabled. Fallback to procedural fog.");
+                }
+
+                return null;
+            }
+
+            return fogPatternTexture;
+        }
+
+        private Texture2D EnsureReadableTextureCopy(Texture2D source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            if (_runtimeReadableFogPatternTexture != null &&
+                _runtimeReadableFogPatternTexture.width == source.width &&
+                _runtimeReadableFogPatternTexture.height == source.height)
+            {
+                return _runtimeReadableFogPatternTexture;
+            }
+
+            if (_runtimeReadableFogPatternTexture != null)
+            {
+                Destroy(_runtimeReadableFogPatternTexture);
+                _runtimeReadableFogPatternTexture = null;
+            }
+
+            var rt = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+            var previous = RenderTexture.active;
+            try
+            {
+                Graphics.Blit(source, rt);
+                RenderTexture.active = rt;
+                var tex = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false, true);
+                tex.name = $"{source.name}_ReadableCopy";
+                tex.ReadPixels(new Rect(0f, 0f, source.width, source.height), 0, 0, false);
+                tex.Apply(false, false);
+                _runtimeReadableFogPatternTexture = tex;
+                return _runtimeReadableFogPatternTexture;
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(rt);
+            }
         }
 
         private FogSample SampleFogBilinear(float gx, float gy, int widthInTiles, int heightInTiles)
@@ -520,6 +1010,39 @@ namespace Panoptes.Presentation.Map
 
         private void OnDestroy()
         {
+            if (_runtimeReadableFogPatternTexture != null)
+            {
+                Destroy(_runtimeReadableFogPatternTexture);
+                _runtimeReadableFogPatternTexture = null;
+            }
+
+            for (var i = 0; i < _atmosphereLayerMaterials.Count; i++)
+            {
+                var material = _atmosphereLayerMaterials[i];
+                if (material != null)
+                {
+                    Destroy(material);
+                }
+            }
+            _atmosphereLayerMaterials.Clear();
+
+            for (var i = 0; i < _atmosphereLayerTransforms.Count; i++)
+            {
+                var layerTransform = _atmosphereLayerTransforms[i];
+                if (layerTransform != null)
+                {
+                    Destroy(layerTransform.gameObject);
+                }
+            }
+            _atmosphereLayerTransforms.Clear();
+            _atmosphereLayerRenderers.Clear();
+
+            if (_fogMaterial != null)
+            {
+                Destroy(_fogMaterial);
+                _fogMaterial = null;
+            }
+
             if (_fogTexture != null)
             {
                 Destroy(_fogTexture);
