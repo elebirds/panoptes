@@ -1,7 +1,9 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
@@ -619,6 +621,13 @@ namespace Panoptes.DebugTools
         private string _unitId = "unit-1";
         private string _targetNodeId = "node-b";
         private string _targetUnitId = "unit-2";
+        private readonly DebugGameHttpService _debugGameHttpService = new();
+        private bool _visionRequestInFlight;
+        private bool? _fullMapEnabled;
+        private string _visionStatus = "尚未请求";
+        private int _lastVisibleNodeCount = -1;
+        private int _lastTotalNodeCount = -1;
+        private int _lastVisibleUnitCount = -1;
 
         public string Id => "game";
         public string Title => "Game";
@@ -647,6 +656,35 @@ namespace Panoptes.DebugTools
             DebugGuiUtil.KeyValue("Turn", cache.Turn.ToString());
             DebugGuiUtil.KeyValue("Phase", cache.Phase);
             DebugGuiUtil.KeyValue("Tokens", cache.TokensLeft.ToString());
+
+            DebugGuiUtil.Section("Vision");
+            DebugGuiUtil.KeyValue("当前可见节点", $"{CountVisibleNodes(cache)}/{cache.Nodes.Count}");
+            DebugGuiUtil.KeyValue("记忆节点", CountMemoryNodes(cache).ToString());
+            DebugGuiUtil.KeyValue("覆盖状态", _fullMapEnabled.HasValue ? (_fullMapEnabled.Value ? "全图" : "正常") : "未知");
+            DebugGuiUtil.KeyValue("最近响应", _visionStatus);
+            if (_lastVisibleNodeCount >= 0 && _lastTotalNodeCount >= 0)
+            {
+                DebugGuiUtil.KeyValue("服务端视野", $"{_lastVisibleNodeCount}/{_lastTotalNodeCount} nodes, {_lastVisibleUnitCount} units");
+            }
+
+            GUILayout.BeginHorizontal();
+            GUI.enabled = !_visionRequestInFlight;
+            if (GUILayout.Button("开启全图", GUILayout.Height(28f)))
+            {
+                ToggleFullMapVisionAsync(context, true);
+            }
+
+            if (GUILayout.Button("关闭全图", GUILayout.Height(28f)))
+            {
+                ToggleFullMapVisionAsync(context, false);
+            }
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+
+            if (_visionRequestInFlight)
+            {
+                DebugGuiUtil.HelpBox("正在请求服务器切换视野...");
+            }
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("推进当前阶段", GUILayout.Height(28f)))
@@ -812,6 +850,94 @@ namespace Panoptes.DebugTools
                     yield return trimmed;
                 }
             }
+        }
+
+        private async void ToggleFullMapVisionAsync(DebugPanelContext context, bool enabled)
+        {
+            if (_visionRequestInFlight)
+            {
+                return;
+            }
+
+            _visionRequestInFlight = true;
+            _visionStatus = enabled ? "正在开启全图..." : "正在关闭全图...";
+            try
+            {
+                var result = await RequestFullMapVisionAsync(context, enabled);
+                _fullMapEnabled = result.FullMap;
+                _lastVisibleNodeCount = result.VisibleNodeCount;
+                _lastTotalNodeCount = result.TotalNodeCount;
+                _lastVisibleUnitCount = result.VisibleUnitCount;
+                _visionStatus = result.Refreshed
+                    ? (_fullMapEnabled.Value ? "全图已开启，已刷新当前 planning 视图" : "全图已关闭，已刷新当前 planning 视图")
+                    : (_fullMapEnabled.Value ? "全图已开启，等待下一次 planning 刷新" : "全图已关闭，等待下一次 planning 刷新");
+                Debug.Log($"[DebugPanel] vision full_map={result.FullMap} visible_nodes={result.VisibleNodeCount}/{result.TotalNodeCount} visible_units={result.VisibleUnitCount} refreshed={result.Refreshed}");
+            }
+            catch (Exception ex)
+            {
+                _visionStatus = $"切换失败: {ex.Message}";
+                Debug.LogWarning($"[DebugPanel] toggle vision failed: {ex.Message}");
+            }
+            finally
+            {
+                _visionRequestInFlight = false;
+            }
+        }
+
+        private Task<DebugVisionResult> RequestFullMapVisionAsync(DebugPanelContext context, bool enabled)
+        {
+            return _debugGameHttpService.SetFullMapVisibilityAsync(enabled, ResolveParticipantID(context));
+        }
+
+        private static string ResolveParticipantID(DebugPanelContext context)
+        {
+            if (context != null && context.GameState != null && !string.IsNullOrWhiteSpace(context.GameState.MyPlayerID))
+            {
+                return context.GameState.MyPlayerID;
+            }
+
+            if (context != null && context.Session != null && !string.IsNullOrWhiteSpace(context.Session.PlayerID))
+            {
+                return context.Session.PlayerID;
+            }
+
+            return string.Empty;
+        }
+
+        private static int CountVisibleNodes(GameStateCache cache)
+        {
+            if (cache == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            foreach (var node in cache.Nodes.Values)
+            {
+                if (node != null && node.IsVisible)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private static int CountMemoryNodes(GameStateCache cache)
+        {
+            if (cache == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            foreach (var node in cache.Nodes.Values)
+            {
+                if (node != null && node.IsMemory)
+                {
+                    count++;
+                }
+            }
+            return count;
         }
     }
 

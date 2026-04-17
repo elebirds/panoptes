@@ -217,5 +217,37 @@ namespace Panoptes.Tests.EditMode.Debug
             StringAssert.Contains("GameIntentsDebugTab", content,
                 "调试工作台应提供独立的 GameIntents 面板。");
         }
+
+        [Test]
+        public void GameDebugTab_ShouldExposeVisionSectionAndToggleButtons()
+        {
+            var path = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugTabRegistry.cs");
+            Assert.That(File.Exists(path), Is.True, "DebugTabRegistry.cs 不存在。");
+
+            var content = File.ReadAllText(path);
+            StringAssert.Contains("DebugGuiUtil.Section(\"Vision\")", content,
+                "Game 调试页应提供独立的 Vision 区块。");
+            StringAssert.Contains("开启全图", content,
+                "Vision 区块应提供开启全图按钮。");
+            StringAssert.Contains("关闭全图", content,
+                "Vision 区块应提供关闭全图按钮。");
+            StringAssert.Contains("ToggleFullMapVisionAsync", content,
+                "Vision 区块应通过专用异步方法触发 debug 视野切换。");
+        }
+
+        [TestCase("ws://localhost:8080/ws", "http://localhost:8080")]
+        [TestCase("wss://dev.panoptes.example/ws", "https://dev.panoptes.example")]
+        [TestCase("ws://localhost:8080/game/ws", "http://localhost:8080/game")]
+        public void DebugGameHttpService_ShouldResolveHttpBaseUrl_FromWebSocketUrl(string input, string expected)
+        {
+            var serviceType = Type.GetType("Panoptes.DebugTools.DebugGameHttpService, Panoptes.Core")
+                              ?? throw new AssertionException("DebugGameHttpService 类型不存在。");
+            var method = serviceType.GetMethod("ResolveBaseUrl",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                         ?? throw new AssertionException("DebugGameHttpService 缺少 ResolveBaseUrl 静态方法。");
+
+            var result = method.Invoke(null, new object[] { input }) as string;
+            Assert.That(result, Is.EqualTo(expected));
+        }
     }
 }

@@ -29,6 +29,9 @@ message NodeView {
   bool is_city_core = 18;
   int32 takeover_progress = 19;
   int32 takeover_required = 20;
+  bool is_currently_visible = 21;
+  bool is_memory = 22;
+  int32 last_observed_turn = 23;
 }
 
 message UnitView {

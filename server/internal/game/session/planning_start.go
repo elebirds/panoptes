@@ -10,8 +10,16 @@ import (
 )
 
 func BuildPlanningStartMessage(state *domain.GameState, playerID string, phase string, planningStartEvents []event.Event) *pb.MsgPlanningStart {
+	return BuildPlanningStartMessageFromObservation(state, gamequery.NewObservationStore().BuildObservation(state, playerID), phase, planningStartEvents)
+}
+
+func BuildPlanningStartMessageFromObservation(state *domain.GameState, observation *gamequery.ObservationSnapshot, phase string, planningStartEvents []event.Event) *pb.MsgPlanningStart {
 	if state == nil || phase != domain.PhasePlanning.String() {
 		return nil
+	}
+	playerID := ""
+	if observation != nil {
+		playerID = observation.ViewerID
 	}
 
 	rules := staticdata.Default().Rules()
@@ -28,9 +36,9 @@ func BuildPlanningStartMessage(state *domain.GameState, playerID string, phase s
 		Tokens:                 tokens,
 		Phase:                  phase,
 		ActiveNationalPolicyId: currentPolicy,
-		MyPlayer:               gamequery.BuildPlayerView(state, playerID),
-		Nodes:                  gamequery.BuildNodeViews(state, playerID),
-		Units:                  gamequery.BuildUnitViews(state),
+		MyPlayer:               resolveObservationPlayerView(state, playerID, observation),
+		Nodes:                  resolveObservationNodes(state, playerID, observation),
+		Units:                  resolveObservationUnits(state, playerID, observation),
 		// planning_start_events 是本轮改造新增的正式事件面。
 		// 它只承载“开回合才正式生效”的事件，例如 technology_activated。
 		PlanningStartEvents: gameprojection.ProjectPlanningStartEvents(planningStartEvents),
@@ -39,4 +47,25 @@ func BuildPlanningStartMessage(state *domain.GameState, playerID string, phase s
 	snapshot.Phase = phase
 	msg.Snapshot = snapshot
 	return msg
+}
+
+func resolveObservationPlayerView(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) *pb.PlayerView {
+	if observation != nil && observation.MyPlayer != nil {
+		return observation.MyPlayer
+	}
+	return gamequery.BuildPlayerView(state, playerID)
+}
+
+func resolveObservationNodes(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) []*pb.NodeView {
+	if observation != nil {
+		return observation.Nodes
+	}
+	return gamequery.BuildNodeViews(state, playerID)
+}
+
+func resolveObservationUnits(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) []*pb.UnitView {
+	if observation != nil {
+		return observation.Units
+	}
+	return gamequery.BuildUnitViews(state)
 }
