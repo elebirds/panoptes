@@ -112,6 +112,75 @@ func TestRuleBotProviderAttacksVisibleEnemyUnit(t *testing.T) {
 	}
 }
 
+func TestBuildDomesticDraftCandidates_MatchesRuleBotResearchAndPolicyChoices(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 3},
+			{ID: "bronze_working", Name: "Bronze Working", ResearchCost: 4},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
+		state.Players["bot-1"].Policy = domain.Policy("reorganization")
+	})
+
+	req := Request{
+		Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+		State:       state,
+		Observation: botObservation,
+		RNG:         rand.New(rand.NewSource(23)),
+	}
+
+	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), req)
+	if err != nil {
+		t.Fatalf("BuildPlanningIntents() error = %v", err)
+	}
+	candidates := BuildDomesticDraftCandidates(context.Background(), req)
+
+	researchIntent := findIntent[planning.SetResearchTargetIntent](intents)
+	if researchIntent == nil {
+		t.Fatalf("expected research intent, got %#v", intents)
+	}
+	policyIntent := findIntent[planning.SetPolicyIntent](intents)
+	if policyIntent == nil {
+		t.Fatalf("expected policy intent, got %#v", intents)
+	}
+	if got := len(candidates); got != 2 {
+		t.Fatalf("candidate count = %d, want 2", got)
+	}
+
+	researchCandidate := findDomesticDraftCandidate(candidates, "research")
+	if researchCandidate == nil {
+		t.Fatalf("expected research candidate, got %#v", candidates)
+	}
+	if researchCandidate.TargetID != researchIntent.TechnologyID {
+		t.Fatalf("research candidate target = %q, want %q", researchCandidate.TargetID, researchIntent.TechnologyID)
+	}
+
+	policyCandidate := findDomesticDraftCandidate(candidates, "policy")
+	if policyCandidate == nil {
+		t.Fatalf("expected policy candidate, got %#v", candidates)
+	}
+	if policyCandidate.TargetID != policyIntent.NationalPolicyID {
+		t.Fatalf("policy candidate target = %q, want %q", policyCandidate.TargetID, policyIntent.NationalPolicyID)
+	}
+}
+
 func buildRuleBotState(t *testing.T, mutate func(world donburi.World, mapData *domain.MapData, state *domain.GameState)) (*domain.GameState, *gamequery.ObservationSnapshot) {
 	t.Helper()
 
@@ -181,4 +250,13 @@ func findLastSubmitIntent(intents []planning.Intent) *planning.SubmitTurnIntent 
 		return nil
 	}
 	return &last
+}
+
+func findDomesticDraftCandidate(candidates []DomesticDraftCandidate, kind string) *DomesticDraftCandidate {
+	for _, candidate := range candidates {
+		if candidate.Kind == kind {
+			return &candidate
+		}
+	}
+	return nil
 }
