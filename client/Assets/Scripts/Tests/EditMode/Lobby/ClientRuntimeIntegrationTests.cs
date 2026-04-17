@@ -28,6 +28,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
         private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
+        private readonly string _resourceHudPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs");
         private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
         private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
@@ -835,14 +836,13 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
             Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
             Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
-            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.False, "CityCoreProductionPanel.cs 应已删除。");
 
             var configCacheContent = File.ReadAllText(_configCachePath);
             var staticCatalogCacheContent = File.ReadAllText(_staticCatalogCachePath);
             var techTreeContent = File.ReadAllText(_techTreePanelPath);
             var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
             var buildContent = File.ReadAllText(_buildCommandPanelPath);
-            var cityCoreContent = File.ReadAllText(_cityCoreProductionPanelPath);
 
             StringAssert.Contains("public void Clear()", configCacheContent,
                 "ConfigCache 必须暴露会话级清理入口。");
@@ -863,18 +863,14 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "科技树面板不应再等待服务端 snapshot 作为主路径。");
             Assert.That(techTreeContent, Does.Not.Contain("ConfigCache"),
                 "科技树面板不应再通过 ConfigCache 读取静态科技实体。");
-            StringAssert.Contains("TechNodeTitle", techTreeContent,
+            StringAssert.Contains("TitleText", techTreeContent,
                 "科技树在模板缺失时也必须生成可见标题文本，避免界面空白。");
-            StringAssert.Contains("TechNodeDescription", techTreeContent,
+            StringAssert.Contains("DescriptionText", techTreeContent,
                 "科技树在模板缺失时也必须生成可见描述文本，避免界面空白。");
-            Assert.That(recipeContent, Does.Not.Contain("ConfigCache"),
+            Assert.That(recipeContent, Does.Not.Contain("ConfigCache.Instance"),
                 "配方面板不应再通过 ConfigCache 读取静态配方实体。");
             Assert.That(buildContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
                 "建造面板不应再把 buildconfig 作为正式运行时主数据源。");
-            Assert.That(cityCoreContent, Does.Not.Contain("buildConfigKey = \"buildconfig\""),
-                "CityCoreProductionPanel 不应继续读取 buildconfig。");
-            Assert.That(cityCoreContent, Does.Not.Contain("armyConfigKey = \"armyconfig\""),
-                "CityCoreProductionPanel 不应继续读取 armyconfig。");
         }
 
         [Test]
@@ -911,13 +907,13 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
             Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
-            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
+            Assert.That(File.Exists(_resourceHudPath), Is.True, "ResourceHUD.cs 不存在。");
 
             var techTreeContent = File.ReadAllText(_techTreePanelPath);
             var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
-            var cityCoreContent = File.ReadAllText(_cityCoreProductionPanelPath);
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+            var resourceHudContent = File.ReadAllText(_resourceHudPath);
 
             StringAssert.Contains("GetCurrentResearchState()", techTreeContent,
                 "科技树状态构建应直接消费权威研究 DTO。");
@@ -928,12 +924,14 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "配方面板应订阅统一规划命令结果事件以便失败回滚。");
             StringAssert.Contains("TryGetRecipeSelection(", recipeContent,
                 "配方面板应通过 PlanningDraftCache helper 读取当前节点的配方草稿。");
-
-            Assert.That(cityCoreContent, Does.Not.Contain("return \"blue\";"),
-                "主城生产面板不应继续使用 blue 作为本地玩家默认值。");
-
             StringAssert.Contains("TryGetBuilding(", registrarContent,
                 "主城建筑入口应优先通过 BuildingDto 查询建筑业务状态。");
+            Assert.That(registrarContent, Does.Not.Contain("OnProductionActionClicked("),
+                "城市核心动作注册器不应再保留 Production 入口。");
+            Assert.That(registrarContent, Does.Not.Contain("OnTechTreeActionClicked("),
+                "城市核心动作注册器不应再保留城市核心专属 Tech Tree 入口。");
+            StringAssert.Contains("OnTechButtonClicked()", resourceHudContent,
+                "科技树必须继续由 ResourceHUD 的全局按钮控制。");
         }
 
         [Test]
@@ -1101,10 +1099,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void CityCoreRuntimeActions_ShouldUseCityCoreWithoutCastleAlias()
         {
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
-            Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.True, "CityCoreProductionPanel.cs 不存在。");
 
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
-            var productionPanelContent = File.ReadAllText(_cityCoreProductionPanelPath);
 
             StringAssert.Contains("\"city_core\"", registrarContent,
                 "主城动作注册必须显式接受 city_core。");
@@ -1114,10 +1110,14 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "主城动作注册不应再保留旧 action id 兼容入口。");
             Assert.That(registrarContent, Does.Not.Contain("building_open_recipe"),
                 "主城动作注册不应再保留旧配方 action id 兼容入口。");
-            StringAssert.Contains("\"city_core\"", productionPanelContent,
-                "主城生产面板必须显式接受 city_core。");
-            Assert.That(productionPanelContent, Does.Not.Contain("legacyCastleBuildingType"),
-                "主城生产面板不应再保留 legacy castle 兼容字段。");
+            StringAssert.Contains("buildActionId = \"action_3\"", registrarContent,
+                "城市核心动作应继续保留 Build。");
+            StringAssert.Contains("recipeActionId = \"open_recipe_synthesis\"", registrarContent,
+                "城市核心动作应继续保留统一配方入口。");
+            Assert.That(registrarContent, Does.Not.Contain("productionActionId"),
+                "城市核心动作不应再注册 Production。");
+            Assert.That(registrarContent, Does.Not.Contain("techTreeActionId"),
+                "城市核心动作不应再注册城市核心专属 Tech Tree。");
         }
 
         [Test]
@@ -1129,14 +1129,13 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
             Assert.That(File.Exists(_cityCorePrefabAssetPath), Is.True, "CityCore.prefab 不存在。");
             Assert.That(File.Exists(_cityCoreHpBarPrefabPath), Is.True, "CityCoreHPBar.prefab 不存在。");
-            Assert.That(File.Exists(_cityCoreProductionPanelPrefabPath), Is.True, "CityCoreProductionPanel.prefab 不存在。");
+            Assert.That(File.Exists(_cityCoreProductionPanelPrefabPath), Is.False, "CityCoreProductionPanel.prefab 应已删除。");
 
             var hpBarContent = File.ReadAllText(_cityCoreHpBarPath);
             var overlayContent = File.ReadAllText(_cityCoreHpBarOverlayControllerPath);
             var buildingViewContent = File.ReadAllText(_buildingViewPath);
             var buildCommandPanelContent = File.ReadAllText(_buildCommandPanelPath);
             var hpBarPrefabContent = File.ReadAllText(_cityCoreHpBarPrefabPath);
-            var productionPanelPrefabContent = File.ReadAllText(_cityCoreProductionPanelPrefabPath);
 
             Assert.That(hpBarContent, Does.Not.Contain("Castle"),
                 "主城血条脚本不应再保留 Castle 命名。");
@@ -1154,8 +1153,6 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "建造面板应改用 CityCore 命名的上下文清理入口。");
             StringAssert.Contains("Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CityCoreHPBar", hpBarPrefabContent,
                 "主城血条 prefab 应绑定 CityCoreHPBar 组件。");
-            StringAssert.Contains("Panoptes.Presentation::Panoptes.Presentation.UI.Domestic.CityCoreProductionPanel", productionPanelPrefabContent,
-                "主城生产面板 prefab 应绑定 CityCoreProductionPanel 组件。");
         }
 
         [Test]

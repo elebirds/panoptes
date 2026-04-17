@@ -9,23 +9,19 @@ namespace Panoptes.Presentation.UI.HUD
 {
     /// <summary>
     /// Registers city-core-specific actions on UnitInfoPanel:
-    /// 1) open production/refine panel
-    /// 2) open derived build panel
+    /// 1) open derived build panel
+    /// 2) open unified recipe panel
     /// </summary>
     public sealed class CityCoreBuildingActionRegistrar : UnitInfoActionProviderBase
     {
         private const string CityCoreBuildingType = "city_core";
 
         [Header("Action IDs")]
-        [SerializeField] private string productionActionId = "action_2";
         [SerializeField] private string buildActionId = "action_3";
-        [SerializeField] private string techTreeActionId = "action_4";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
 
         [Header("Labels")]
-        [SerializeField] private string productionActionLabel = "Production";
         [SerializeField] private string buildActionLabel = "Build";
-        [SerializeField] private string techTreeActionLabel = "Tech Tree";
         [SerializeField] private string recipeActionLabel = "Synthesis";
 
         [Header("References")]
@@ -33,14 +29,9 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
-        [SerializeField] private CityCoreProductionPanel cityCoreProductionPanel;
         [SerializeField] private RecipeSynthesisPanel recipeSynthesisPanel;
-        [SerializeField] private TechTreePanelController techTreePanelController;
         [SerializeField] private BuildPanelSlideToggle buildPanelSlideToggle;
         [SerializeField] private BuildCommandPanel buildCommandPanel;
-        [SerializeField] private bool autoSpawnCityCoreProductionPanelIfMissing = true;
-        [SerializeField] private string cityCoreProductionPanelResourcesPath = "Prefabs/UI/CityCoreProductionPanel";
-        [SerializeField] private bool hideTechTreePanelOnStart = true;
         [SerializeField] private bool hideRecipePanelOnStart = true;
         [SerializeField] private bool autoFindNextStageButton = true;
         [SerializeField] private bool autoFindTurnPanel = true;
@@ -57,12 +48,6 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private float buildPanelWidthShiftFactor = 1.18f;
         [SerializeField] private float buildPanelWidthShiftExtra = 0f;
 
-        [Header("Production Derived Panel")]
-        [SerializeField] private float productionPanelShiftXWhenOpen = 360f;
-        [SerializeField] private bool useProductionPanelWidthForShift = true;
-        [SerializeField] private float productionPanelWidthShiftFactor = 1.12f;
-        [SerializeField] private float productionPanelWidthShiftExtra = 0f;
-
         [Header("Recipe Derived Panel")]
         [SerializeField] private float recipePanelShiftXWhenOpen = 360f;
         [SerializeField] private bool useRecipePanelWidthForShift = true;
@@ -74,7 +59,6 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private AnimationCurve rightGroupShiftCurve = null;
 
         private bool _buildPanelOpen;
-        private CityCoreProductionPanel _subscribedProductionPanel;
         private RecipeSynthesisPanel _subscribedRecipePanel;
         private bool _nextStageBasePositionReady;
         private Vector2 _nextStageBaseAnchoredPos;
@@ -86,7 +70,6 @@ namespace Panoptes.Presentation.UI.HUD
         private MapInputHandler _subscribedMapInputHandler;
         private string _activeUnitInfoNodeId = string.Empty;
         private bool _lastBuildPanelVisible;
-        private bool _lastProductionPanelVisible;
         private bool _lastRecipePanelVisible;
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
@@ -149,7 +132,6 @@ namespace Panoptes.Presentation.UI.HUD
                 _initialPanelStateRoutine = null;
             }
 
-            UnsubscribeProductionPanelEvents();
             UnsubscribeRecipePanelEvents();
             if (_nextStageShiftRoutine != null)
             {
@@ -175,28 +157,19 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (unitInfoPanelController != null && !unitInfoPanelController.IsOpen && IsAnyDerivedPanelVisible())
             {
-                CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: false);
+                CloseAllDerivedPanels(resetUnitInfoOffset: true);
             }
 
             var currentSelection = unitInfoPanelController != null ? unitInfoPanelController.CurrentUnit : null;
             if (currentSelection == null && IsAnyDerivedPanelVisible())
             {
-                CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: false);
+                CloseAllDerivedPanels(resetUnitInfoOffset: true);
                 return;
             }
 
             if (currentSelection != null && IsBuildPanelCurrentlyVisible() && !IsOwnedCityCoreBuildingProxy(currentSelection))
             {
                 CloseBuildPanel(resetUnitInfoOffset: true);
-            }
-
-            if (currentSelection != null &&
-                cityCoreProductionPanel != null &&
-                cityCoreProductionPanel.IsVisible &&
-                !IsOwnedCityCoreBuildingProxy(currentSelection))
-            {
-                cityCoreProductionPanel.Close();
-                ReapplyRightBottomShift(false);
             }
 
             if (currentSelection != null &&
@@ -261,81 +234,6 @@ namespace Panoptes.Presentation.UI.HUD
             if (unitInfoPanelController == null)
             {
                 unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            }
-
-            if (cityCoreProductionPanel == null)
-            {
-                var productionPanels = UnityEngine.Object.FindObjectsByType<CityCoreProductionPanel>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                if (productionPanels != null && productionPanels.Length > 0)
-                {
-                    cityCoreProductionPanel = productionPanels[0];
-                }
-            }
-
-            if (cityCoreProductionPanel == null && autoSpawnCityCoreProductionPanelIfMissing)
-            {
-                var prefab = !string.IsNullOrWhiteSpace(cityCoreProductionPanelResourcesPath)
-                    ? Resources.Load<CityCoreProductionPanel>(cityCoreProductionPanelResourcesPath.Trim())
-                    : null;
-
-                var canvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
-                var parent = canvas != null ? canvas.transform : null;
-
-                if (prefab != null)
-                {
-                    cityCoreProductionPanel = UnityEngine.Object.Instantiate(prefab, parent, false);
-                }
-                else
-                {
-                    var go = new GameObject("CityCoreProductionPanel", typeof(RectTransform));
-                    if (parent != null)
-                    {
-                        go.transform.SetParent(parent, false);
-                    }
-                    cityCoreProductionPanel = go.AddComponent<CityCoreProductionPanel>();
-                }
-            }
-
-            if (techTreePanelController == null)
-            {
-                var techPanels = UnityEngine.Object.FindObjectsByType<TechTreePanelController>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                if (techPanels != null && techPanels.Length > 0)
-                {
-                    techTreePanelController = techPanels[0];
-                }
-            }
-
-            if (techTreePanelController == null)
-            {
-                var allRects = UnityEngine.Object.FindObjectsByType<RectTransform>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                for (var i = 0; i < allRects.Length; i++)
-                {
-                    var rect = allRects[i];
-                    if (rect == null || !rect.gameObject.scene.IsValid())
-                    {
-                        continue;
-                    }
-
-                    var name = rect.name ?? string.Empty;
-                    if (!string.Equals(name, "TechTreePanel", StringComparison.OrdinalIgnoreCase) &&
-                        name.IndexOf("techtree", StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        continue;
-                    }
-
-                    techTreePanelController = rect.GetComponent<TechTreePanelController>();
-                    if (techTreePanelController == null)
-                    {
-                        techTreePanelController = rect.gameObject.AddComponent<TechTreePanelController>();
-                    }
-                    break;
-                }
             }
 
             if (buildCommandPanel == null)
@@ -448,7 +346,6 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
-            SubscribeProductionPanelEvents();
             SubscribeRecipePanelEvents();
         }
 
@@ -504,11 +401,6 @@ namespace Panoptes.Presentation.UI.HUD
                 ReapplyRightBottomShift(true);
             }
 
-            if (hideTechTreePanelOnStart && techTreePanelController != null)
-            {
-                techTreePanelController.gameObject.SetActive(false);
-            }
-
             if (hideRecipePanelOnStart && recipeSynthesisPanel != null)
             {
                 recipeSynthesisPanel.Hide();
@@ -530,23 +422,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
-        private void SubscribeProductionPanelEvents()
-        {
-            if (ReferenceEquals(_subscribedProductionPanel, cityCoreProductionPanel))
-            {
-                return;
-            }
-
-            UnsubscribeProductionPanelEvents();
-            if (cityCoreProductionPanel == null)
-            {
-                return;
-            }
-
-            cityCoreProductionPanel.VisibilityChanged += OnProductionPanelVisibilityChanged;
-            _subscribedProductionPanel = cityCoreProductionPanel;
-        }
-
         private void SubscribeRecipePanelEvents()
         {
             if (ReferenceEquals(_subscribedRecipePanel, recipeSynthesisPanel))
@@ -564,17 +439,6 @@ namespace Panoptes.Presentation.UI.HUD
             _subscribedRecipePanel = recipeSynthesisPanel;
         }
 
-        private void UnsubscribeProductionPanelEvents()
-        {
-            if (_subscribedProductionPanel == null)
-            {
-                return;
-            }
-
-            _subscribedProductionPanel.VisibilityChanged -= OnProductionPanelVisibilityChanged;
-            _subscribedProductionPanel = null;
-        }
-
         private void UnsubscribeRecipePanelEvents()
         {
             if (_subscribedRecipePanel == null)
@@ -584,11 +448,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             _subscribedRecipePanel.VisibilityChanged -= OnRecipePanelVisibilityChanged;
             _subscribedRecipePanel = null;
-        }
-
-        private void OnProductionPanelVisibilityChanged(bool _)
-        {
-            ReapplyRightBottomShift(false);
         }
 
         private void OnRecipePanelVisibilityChanged(bool _)
@@ -606,21 +465,18 @@ namespace Panoptes.Presentation.UI.HUD
         private bool IsAnyDerivedPanelVisible()
         {
             return IsBuildPanelCurrentlyVisible()
-                   || (cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible)
                    || (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible);
         }
 
         private void UpdateDerivedPanelVisibilitySnapshot()
         {
             _lastBuildPanelVisible = IsBuildPanelCurrentlyVisible();
-            _lastProductionPanelVisible = cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible;
             _lastRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
         }
 
         private void SyncDerivedPanelStateFromVisibility()
         {
             var buildVisible = IsBuildPanelCurrentlyVisible();
-            var productionVisible = cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible;
             var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
 
             if (!buildVisible && _buildPanelOpen)
@@ -633,13 +489,11 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var changed = buildVisible != _lastBuildPanelVisible
-                          || productionVisible != _lastProductionPanelVisible
                           || recipeVisible != _lastRecipePanelVisible;
 
             if (changed)
             {
                 _lastBuildPanelVisible = buildVisible;
-                _lastProductionPanelVisible = productionVisible;
                 _lastRecipePanelVisible = recipeVisible;
                 ReapplyRightBottomShift(false);
             }
@@ -673,11 +527,6 @@ namespace Panoptes.Presentation.UI.HUD
             if (IsBuildPanelCurrentlyVisible())
             {
                 maxShift = Mathf.Max(maxShift, ResolveUnitInfoShiftX());
-            }
-
-            if (cityCoreProductionPanel != null && cityCoreProductionPanel.IsVisible)
-            {
-                maxShift = Mathf.Max(maxShift, ResolveProductionShiftX());
             }
 
             if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
@@ -884,14 +733,9 @@ namespace Panoptes.Presentation.UI.HUD
             _panelSwitchRoutine = null;
         }
 
-        private void CloseAllDerivedPanels(bool resetUnitInfoOffset, bool closeTechTree)
+        private void CloseAllDerivedPanels(bool resetUnitInfoOffset)
         {
             StopPanelSwitchRoutine();
-
-            if (cityCoreProductionPanel != null)
-            {
-                cityCoreProductionPanel.Close();
-            }
 
             if (recipeSynthesisPanel != null)
             {
@@ -900,47 +744,11 @@ namespace Panoptes.Presentation.UI.HUD
 
             CloseBuildPanel(resetUnitInfoOffset: false);
 
-            if (closeTechTree && techTreePanelController != null)
-            {
-                techTreePanelController.gameObject.SetActive(false);
-            }
-
             if (resetUnitInfoOffset)
             {
                 ReapplyRightBottomShift(false);
             }
 
-            UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private void OnProductionActionClicked(UnitView unit)
-        {
-            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
-            {
-                return;
-            }
-
-            _activeUnitInfoNodeId = nodeId;
-            ResolveReferences();
-            StopPanelSwitchRoutine();
-            CloseBuildPanel(true);
-            if (techTreePanelController != null)
-            {
-                techTreePanelController.gameObject.SetActive(false);
-            }
-            if (recipeSynthesisPanel != null)
-            {
-                recipeSynthesisPanel.Hide();
-            }
-
-            if (cityCoreProductionPanel == null)
-            {
-                Debug.LogWarning($"[CityCoreBuildingActionRegistrar] CityCoreProductionPanel missing. node={nodeId}");
-                return;
-            }
-
-            cityCoreProductionPanel.OpenForCityCore(nodeId);
-            ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
@@ -954,10 +762,6 @@ namespace Panoptes.Presentation.UI.HUD
             _activeUnitInfoNodeId = nodeId;
             ResolveReferences();
             StopPanelSwitchRoutine();
-            if (cityCoreProductionPanel != null)
-            {
-                cityCoreProductionPanel.Close();
-            }
 
             var isBuildPanelVisible = IsBuildPanelCurrentlyVisible();
             var isRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
@@ -968,11 +772,6 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (techTreePanelController != null)
-            {
-                techTreePanelController.gameObject.SetActive(false);
-            }
-
             if (isRecipePanelVisible)
             {
                 _panelSwitchRoutine = StartCoroutine(SwitchFromRecipeToBuild(nodeId));
@@ -980,48 +779,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             OpenBuildPanelForNode(nodeId);
-        }
-
-        private void OnTechTreeActionClicked(UnitView unit)
-        {
-            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
-            {
-                return;
-            }
-
-            _activeUnitInfoNodeId = nodeId;
-            ResolveReferences();
-            StopPanelSwitchRoutine();
-            CloseBuildPanel(true);
-
-            if (cityCoreProductionPanel != null)
-            {
-                cityCoreProductionPanel.Close();
-            }
-            if (recipeSynthesisPanel != null)
-            {
-                recipeSynthesisPanel.Hide();
-            }
-
-            if (techTreePanelController == null)
-            {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] TechTreePanelController missing.");
-                return;
-            }
-
-            var panelGo = techTreePanelController.gameObject;
-            if (panelGo.activeSelf)
-            {
-                panelGo.SetActive(false);
-                return;
-            }
-
-            panelGo.SetActive(true);
-            var panelRect = panelGo.transform as RectTransform;
-            if (panelRect != null)
-            {
-                panelRect.SetAsLastSibling();
-            }
         }
 
         private void OnRecipeActionClicked(UnitView unit)
@@ -1034,16 +791,6 @@ namespace Panoptes.Presentation.UI.HUD
             _activeUnitInfoNodeId = nodeId;
             ResolveReferences();
             StopPanelSwitchRoutine();
-
-            if (cityCoreProductionPanel != null)
-            {
-                cityCoreProductionPanel.Close();
-            }
-
-            if (techTreePanelController != null)
-            {
-                techTreePanelController.gameObject.SetActive(false);
-            }
 
             var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
             if (recipeVisible)
@@ -1066,7 +813,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnNonBuildingMapClicked()
         {
             _activeUnitInfoNodeId = string.Empty;
-            CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: false);
+            CloseAllDerivedPanels(resetUnitInfoOffset: true);
         }
 
         private void OnUnitSelectionChanged(UnitView selected)
@@ -1079,7 +826,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _activeUnitInfoNodeId = selected != null ? selected.UnitId : string.Empty;
-            CloseAllDerivedPanels(resetUnitInfoOffset: true, closeTechTree: true);
+            CloseAllDerivedPanels(resetUnitInfoOffset: true);
         }
 
         private void CloseBuildPanel(bool resetUnitInfoOffset)
@@ -1351,25 +1098,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             var shiftFactor = Mathf.Max(1.15f, buildPanelWidthShiftFactor);
             var resolved = panelWidth * shiftFactor + buildPanelWidthShiftExtra;
-            return Mathf.Max(1f, resolved);
-        }
-
-        private float ResolveProductionShiftX()
-        {
-            var fallback = Mathf.Abs(productionPanelShiftXWhenOpen);
-            if (!useProductionPanelWidthForShift || cityCoreProductionPanel == null)
-            {
-                return fallback;
-            }
-
-            var panelWidth = cityCoreProductionPanel.GetPanelWidth();
-            if (panelWidth <= 1f)
-            {
-                return fallback;
-            }
-
-            var shiftFactor = Mathf.Max(1.05f, productionPanelWidthShiftFactor);
-            var resolved = panelWidth * shiftFactor + productionPanelWidthShiftExtra;
             return Mathf.Max(1f, resolved);
         }
 
