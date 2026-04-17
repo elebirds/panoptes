@@ -2,8 +2,17 @@
   "$schema": "../../schema/content/recipes.schema.json",
   "recipes": [
     {
-      "id": "city_core_settler",
+      "id": "city_core_provisions",
       "building_id": "city_core",
+      "resource_inputs": {},
+      "point_inputs": {},
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": { "resources": { "food": 1 } }
+    },
+    {
+      "id": "city_core_settler",
+      "building_id": "frontier_office",
       "resource_inputs": { "food": 2, "wood": 1 },
       "point_inputs": { "industry_output": 1 },
       "work_amount": 2,

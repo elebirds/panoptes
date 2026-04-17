@@ -523,6 +523,102 @@ func (r *Runtime) ensureCapitalAtSpawn(playerID string, spawnEntry *donburi.Entr
 		cityState.OwnerID = playerID
 		cityState.OnlineOnTurn = 0
 	}
+
+	r.ensureStartingInfantryAtSpawn(playerID, spawnEntry)
+}
+
+func (r *Runtime) ensureStartingInfantryAtSpawn(playerID string, spawnEntry *donburi.Entry) {
+	if r == nil || r.state == nil || r.state.World == nil || spawnEntry == nil {
+		return
+	}
+	if _, ok := staticdata.Default().GetUnit(string(domain.UnitTypeInfantry)); !ok {
+		return
+	}
+
+	pos := ecs.PositionC.Get(spawnEntry)
+	spawnPos := domain.Position{X: pos.X, Y: pos.Y}
+	infantryPos := r.resolveStartingInfantryPosition(spawnPos)
+	if r.hasOwnedUnitAtPosition(playerID, domain.UnitTypeInfantry, infantryPos) {
+		return
+	}
+	ecs.CreateUnit(r.state.World, string(domain.UnitTypeInfantry), playerID, infantryPos)
+}
+
+func (r *Runtime) resolveStartingInfantryPosition(spawnPos domain.Position) domain.Position {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return spawnPos
+	}
+
+	for _, candidate := range spawnPos.Neighbors() {
+		if r.canPlaceStartingInfantryAt(candidate) {
+			return candidate
+		}
+	}
+	return spawnPos
+}
+
+func (r *Runtime) canPlaceStartingInfantryAt(pos domain.Position) bool {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return false
+	}
+
+	entry, ok := domain.GetNodeAt(r.state.World, pos)
+	if !ok || entry == nil {
+		return false
+	}
+	if entry.HasComponent(ecs.BuildingC) || r.hasAnyUnitAtPosition(pos) {
+		return false
+	}
+
+	node := ecs.NodeC.Get(entry)
+	terrain, ok := staticdata.Default().GetTerrain(string(node.Terrain))
+	if !ok {
+		return false
+	}
+	if node.HasRoad && terrain.PassableWithRoad {
+		return true
+	}
+	return terrain.Passable
+}
+
+func (r *Runtime) hasOwnedUnitAtPosition(playerID string, unitType domain.UnitType, pos domain.Position) bool {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return false
+	}
+
+	found := false
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if found || entry == nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction != playerID || stats.Type != unitType {
+			return
+		}
+		unitPos := ecs.PositionC.Get(entry)
+		if unitPos.X == pos.X && unitPos.Y == pos.Y {
+			found = true
+		}
+	})
+	return found
+}
+
+func (r *Runtime) hasAnyUnitAtPosition(pos domain.Position) bool {
+	if r == nil || r.state == nil || r.state.World == nil {
+		return false
+	}
+
+	found := false
+	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
+		if found || entry == nil {
+			return
+		}
+		unitPos := ecs.PositionC.Get(entry)
+		if unitPos.X == pos.X && unitPos.Y == pos.Y {
+			found = true
+		}
+	})
+	return found
 }
 
 func (r *Runtime) validateBootstrapState() error {

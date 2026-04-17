@@ -736,7 +736,7 @@ func TestRuntimeInitializeBootstrapsCapitalOnProceduralSpawn(t *testing.T) {
 	}
 }
 
-func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
+func TestRuntimeInitializeSpawnsInitialInfantryButNotSettler(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{
 			SchemaVersion:  "2026-04-15",
@@ -776,6 +776,16 @@ func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
 				VisionRange: 2,
 				Flags:       staticdata.UnitFlags{CanCapture: true},
 			},
+			{
+				ID:          "infantry",
+				Class:       "melee",
+				MaxHP:       30,
+				Attack:      10,
+				AttackRange: 1,
+				MoveRange:   2,
+				VisionRange: 3,
+				Flags:       staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true},
+			},
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", Passable: true, Buildable: true},
@@ -809,6 +819,144 @@ func TestRuntimeInitializeDoesNotSpawnInitialExpansionUnit(t *testing.T) {
 	}
 	if _, ok := findOwnedUnitEntryByType(state.World, "player-1", "settler"); ok {
 		t.Fatalf("player-1 should not receive an initial settler")
+	}
+	if _, ok := findOwnedUnitEntryByType(state.World, "player-1", "infantry"); !ok {
+		t.Fatalf("player-1 should receive an initial infantry")
+	}
+	if got := countOwnedUnitsByType(state.World, "player-1", "infantry"); got != 1 {
+		t.Fatalf("player-1 infantry count = %d, want 1", got)
+	}
+}
+
+func TestBootstrapStartingPlayersPlacesInitialInfantryAdjacentToCapitalWhenAvailable(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{DefaultMapID: "runtime_bootstrap"},
+		Rules: staticdata.Rules{
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "infantry",
+				Class:       "melee",
+				MaxHP:       30,
+				Attack:      10,
+				AttackRange: 1,
+				MoveRange:   2,
+				VisionRange: 3,
+				Flags:       staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true},
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	spawnPos := domain.Position{X: 1, Y: 1}
+	state := newBootstrapStateForSinglePlayer(3, 3, spawnPos)
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = state
+
+	if err := runtime.bootstrapStartingPlayers(); err != nil {
+		t.Fatalf("bootstrapStartingPlayers() error = %v", err)
+	}
+
+	if got := countOwnedUnitsByType(state.World, "player-1", "infantry"); got != 1 {
+		t.Fatalf("player-1 infantry count = %d, want 1", got)
+	}
+	unitEntry, ok := findOwnedUnitEntryByType(state.World, "player-1", "infantry")
+	if !ok {
+		t.Fatalf("player-1 infantry missing")
+	}
+	gotPos := ecs.PositionC.Get(unitEntry)
+	if gotPos.X != 1 || gotPos.Y != 0 {
+		t.Fatalf("initial infantry position = (%d,%d), want adjacent B1", gotPos.X, gotPos.Y)
+	}
+}
+
+func TestBootstrapStartingPlayersFallsBackToCapitalWhenAdjacentTilesUnavailable(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: staticdata.Manifest{DefaultMapID: "runtime_bootstrap"},
+		Rules: staticdata.Rules{
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+			{
+				ID:            "farm",
+				PlacementKind: "city_territory",
+				BuildingScope: "out_of_city",
+				MaxHP:         60,
+				TakeoverMode:  "delayed",
+			},
+		},
+		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "infantry",
+				Class:       "melee",
+				MaxHP:       30,
+				Attack:      10,
+				AttackRange: 1,
+				MoveRange:   2,
+				VisionRange: 3,
+				Flags:       staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true},
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+			{ID: "mountain", Passable: false, Buildable: false},
+		},
+	}))
+
+	spawnPos := domain.Position{X: 1, Y: 1}
+	state := newBootstrapStateForSinglePlayer(3, 3, spawnPos)
+	setNodeTerrain(t, state, domain.Position{X: 1, Y: 0}, "mountain")
+	setNodeTerrain(t, state, domain.Position{X: 2, Y: 1}, "mountain")
+	ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 0, Y: 1})
+	downEntry := mustGetNodeAt(t, state, domain.Position{X: 1, Y: 2})
+	ecs.CreateBuilding(state.World, "farm", "player-2", "", downEntry)
+
+	player := &capturePlayer{playerID: "player-1", username: "alice"}
+	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
+	runtime.state = state
+
+	if err := runtime.bootstrapStartingPlayers(); err != nil {
+		t.Fatalf("bootstrapStartingPlayers() error = %v", err)
+	}
+
+	if got := countOwnedUnitsByType(state.World, "player-1", "infantry"); got != 1 {
+		t.Fatalf("player-1 infantry count = %d, want 1", got)
+	}
+	unitEntry, ok := findOwnedUnitEntryByType(state.World, "player-1", "infantry")
+	if !ok {
+		t.Fatalf("player-1 infantry missing")
+	}
+	gotPos := ecs.PositionC.Get(unitEntry)
+	if gotPos.X != spawnPos.X || gotPos.Y != spawnPos.Y {
+		t.Fatalf("initial infantry position = (%d,%d), want capital (%d,%d)", gotPos.X, gotPos.Y, spawnPos.X, spawnPos.Y)
 	}
 }
 
@@ -1059,4 +1207,60 @@ func findOwnedUnitEntryByType(world donburi.World, owner string, unitType string
 		}
 	})
 	return found, found != nil
+}
+
+func countOwnedUnitsByType(world donburi.World, owner string, unitType string) int {
+	count := 0
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if entry == nil {
+			return
+		}
+		stats := ecs.UnitStatsC.Get(entry)
+		if stats.Faction == owner && string(stats.Type) == unitType {
+			count++
+		}
+	})
+	return count
+}
+
+func newBootstrapStateForSinglePlayer(width int, height int, spawnPos domain.Position) *domain.GameState {
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{
+		ID:           "runtime_bootstrap",
+		Width:        width,
+		Height:       height,
+		SpawnPoints:  map[int]domain.Position{0: spawnPos},
+		PlayerSpawns: map[string]domain.Position{"player-1": spawnPos},
+		NamedNodes:   map[string]string{},
+		NodeIndex:    map[string]donburi.Entity{},
+	}
+	for _, node := range runtimeBootstrapNodes(width, height) {
+		entity := ecs.CreateNode(world, ecs.MapNode{
+			ID:      node.ID,
+			X:       node.X,
+			Y:       node.Y,
+			Terrain: node.Terrain,
+		})
+		mapData.NodeIndex[node.ID] = entity
+	}
+
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+	return state
+}
+
+func mustGetNodeAt(t *testing.T, state *domain.GameState, pos domain.Position) *donburi.Entry {
+	t.Helper()
+	entry, ok := domain.GetNodeAt(state.World, pos)
+	if !ok || entry == nil {
+		t.Fatalf("node at (%d,%d) missing", pos.X, pos.Y)
+	}
+	return entry
+}
+
+func setNodeTerrain(t *testing.T, state *domain.GameState, pos domain.Position, terrain string) {
+	t.Helper()
+	entry := mustGetNodeAt(t, state, pos)
+	node := ecs.NodeC.Get(entry)
+	node.Terrain = domain.Terrain(terrain)
 }

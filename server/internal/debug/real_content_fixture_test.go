@@ -51,15 +51,16 @@ func newRealContentHappyPathDefinition(t *testing.T) *scenario.Definition {
 	player.Research.UnlockBuilding("barracks")
 	player.Research.UnlockRecipe("barracks_infantry")
 
-	capitalEntry, ok := state.GetNode("A2")
+	frontierOfficeEntry, ok := state.GetNode("B1")
 	if !ok {
-		t.Fatalf("missing node A2")
+		t.Fatalf("missing node B1")
 	}
-	if !capitalEntry.HasComponent(ecs.BuildingOperationC) {
-		t.Fatalf("capital A2 missing BuildingOperationC")
+	ecs.CreateBuilding(state.World, "frontier_office", "player-1", "A2", frontierOfficeEntry)
+	if !frontierOfficeEntry.HasComponent(ecs.BuildingOperationC) {
+		t.Fatalf("frontier office B1 missing BuildingOperationC")
 	}
-	capitalOperation := ecs.BuildingOperationC.Get(capitalEntry)
-	capitalOperation.ProgressRemainder = 500
+	frontierOperation := ecs.BuildingOperationC.Get(frontierOfficeEntry)
+	frontierOperation.ProgressRemainder = 500
 
 	clearSelectedRecipe(t, state, "G2")
 
@@ -122,6 +123,9 @@ func realContentHappyPathMap() *staticdata.MapRuntimeBundle {
 		node.ResourceType = "food"
 		node.NodeName = "农田"
 	})
+	setNodeNodeConfig(nodes, "B1", func(node *staticdata.MapRuntimeNode) {
+		node.NodeName = "拓土司位"
+	})
 	setNodeNodeConfig(nodes, "D2", func(node *staticdata.MapRuntimeNode) {
 		node.NodeName = "新城选址"
 	})
@@ -149,6 +153,7 @@ func realContentHappyPathMap() *staticdata.MapRuntimeBundle {
 		},
 		Nodes: nodes,
 		NamedNodes: map[string]string{
+			"B1": "拓土司位",
 			"B2": "农田",
 			"D2": "新城选址",
 			"E2": "兵营位",

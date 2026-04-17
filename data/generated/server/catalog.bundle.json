@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "c77e8b4aafee6a1928374c96bdf423917388ee32e971ac2f807be56311751cab",
+    "bundle_hash": "0614babf60b5cce8cb5a5c3983d9849f9954bf2c2b48d7fa423d8080ab70b910",
     "required_sections": [
       "resources",
       "points",
@@ -24,7 +24,7 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "9522d435add087a6c56039899227669fac508e47a7e6932098b8bd6745a313ad"
+        "hash": "81965db99e406cabd685c57cb727a42e77798c36fbefb5bd233afeb9844abab9"
       },
       {
         "section_name": "maps",
@@ -44,7 +44,7 @@
       },
       {
         "section_name": "recipes",
-        "hash": "020f3bad74d20a25f0b5f14393e25cd8b45a9a582a158f26cdba2d819cb02a0b"
+        "hash": "76e132bb55f30756571f5621ecd18eb23ee4b7edbcc11e5847847bbf35f90c7a"
       },
       {
         "section_name": "resources",
@@ -64,11 +64,11 @@
       },
       {
         "section_name": "ui_build_menu_layout",
-        "hash": "c7396d452098beaa7c192ba63b5bbabbe9d2c7644909df1ce42bc6a977592f76"
+        "hash": "d0c89716e6c6dd4ba20fb45c6f616b670f972101d0d81217f0b3e495487870ef"
       },
       {
         "section_name": "ui_recipe_layout",
-        "hash": "607ae22bcfd97cc7210181215a97cf160608a3e55b8e91aba64b4ba8b46aba70"
+        "hash": "6f4024dfe97a8eb241af6fb65284309e99c99a8c9f65592ffe2dcc20e82c0c99"
       },
       {
         "section_name": "ui_tech_tree_layout",
@@ -76,7 +76,7 @@
       },
       {
         "section_name": "units",
-        "hash": "f16e0bdbcf03da9b02a1a15e3cdacb155cca35686beadd0cdabc608e8506d0ba"
+        "hash": "541de8966164b7a61ae705663dd1a12bf06544ecd6632fdb318db36f3730f129"
       }
     ]
   },
@@ -153,7 +153,7 @@
       "max_hp": 12,
       "attack": 0,
       "attack_range": 0,
-      "move_range": 2,
+      "move_range": 4,
       "vision_range": 2,
       "train_cost": {
         "food": 2,
@@ -184,7 +184,7 @@
       "max_hp": 30,
       "attack": 10,
       "attack_range": 1,
-      "move_range": 2,
+      "move_range": 4,
       "vision_range": 3,
       "train_cost": {
         "food": 1,
@@ -215,7 +215,7 @@
       "max_hp": 20,
       "attack": 8,
       "attack_range": 2,
-      "move_range": 2,
+      "move_range": 4,
       "vision_range": 4,
       "train_cost": {
         "food": 1,
@@ -254,11 +254,18 @@
         "industry_output": 1
       },
       "recipe_ids": [
-        "city_core_settler"
+        "city_core_provisions"
       ],
-      "default_recipe_id": "city_core_settler",
+      "default_recipe_id": "city_core_provisions",
       "explicit_effects": [],
-      "modifier_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
       "max_hp": 100,
       "takeover_mode": "disabled",
       "sort_order": 10,
@@ -385,6 +392,35 @@
       "sort_order": 50,
       "tags": [
         "industry"
+      ]
+    },
+    {
+      "id": "frontier_office",
+      "name": "拓土司",
+      "description": "负责组织开拓者并承接前期扩张。",
+      "icon_key": "building_city_core",
+      "prefab_key": "Workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "city_core_settler"
+      ],
+      "default_recipe_id": "city_core_settler",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 55,
+      "tags": [
+        "expansion"
       ]
     },
     {
@@ -857,11 +893,32 @@
   ],
   "recipes": [
     {
+      "id": "city_core_provisions",
+      "name": "城市供给",
+      "description": "为城市提供基础粮食与运转保障。",
+      "icon_key": "recipe_farm_food",
+      "building_id": "city_core",
+      "resource_inputs": {},
+      "point_inputs": {},
+      "work_amount": 1,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 1
+        }
+      },
+      "sort_order": 5,
+      "tags": [
+        "core",
+        "food"
+      ]
+    },
+    {
       "id": "city_core_settler",
       "name": "组织开拓",
       "description": "产出开拓者",
       "icon_key": "recipe_city_core_settler",
-      "building_id": "city_core",
+      "building_id": "frontier_office",
       "resource_inputs": {
         "food": 2,
         "wood": 1
@@ -1426,6 +1483,7 @@
       "lumber",
       "mine",
       "workshop",
+      "frontier_office",
       "barracks",
       "archery",
       "wall"
@@ -1437,6 +1495,7 @@
   "ui_recipe_layout": {
     "config_version": "2026-04-17",
     "recipe_order": [
+      "city_core_provisions",
       "city_core_settler",
       "farm_food",
       "farm_harvest",
