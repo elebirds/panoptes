@@ -293,5 +293,26 @@ namespace Panoptes.Tests.EditMode.Debug
             var result = method.Invoke(null, new object[] { input }) as string;
             Assert.That(result, Is.EqualTo(expected));
         }
+
+        [Test]
+        public void ServerEndpointResolver_ShouldChooseLocalhostInEditor_AndRemoteInPlayer()
+        {
+            var resolverType = Type.GetType("Panoptes.Core.Infrastructure.Network.ServerEndpointResolver, Panoptes.Core")
+                               ?? throw new AssertionException("ServerEndpointResolver 类型不存在。");
+            var method = resolverType.GetMethod("ResolveDefaultWebSocketUrl",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                null,
+                new[] { typeof(bool) },
+                null)
+                         ?? throw new AssertionException("ServerEndpointResolver 缺少 ResolveDefaultWebSocketUrl(bool) 静态方法。");
+
+            var editorUrl = method.Invoke(null, new object[] { true }) as string;
+            var playerUrl = method.Invoke(null, new object[] { false }) as string;
+
+            Assert.That(editorUrl, Is.EqualTo("ws://localhost:8080/ws"),
+                "Unity 编辑器内默认应连接 localhost。");
+            Assert.That(playerUrl, Is.EqualTo("ws://47.116.32.157:8080/ws"),
+                "非编辑器环境默认应连接远端服务器。");
+        }
     }
 }

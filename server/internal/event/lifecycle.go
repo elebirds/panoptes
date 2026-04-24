@@ -97,9 +97,9 @@ func (e FacilityTakeoverCompletedEvent) String() string {
 }
 
 type BuildingRuinedEvent struct {
-	NodeID      string
-	NewOwnerID  string
-	Reason      string
+	NodeID     string
+	NewOwnerID string
+	Reason     string
 }
 
 func (e BuildingRuinedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -254,7 +254,7 @@ func NearestOwnedCityID(state *domain.GameState, playerID string, pos domain.Pos
 			continue
 		}
 		cityPos := ecs.PositionC.Get(entry)
-		distance := geometry.Manhattan(pos, domain.Position{X: cityPos.X, Y: cityPos.Y})
+		distance := geometry.AxialDistance(pos, domain.Position{Q: cityPos.Q, R: cityPos.R})
 		if bestDistance == -1 || distance < bestDistance {
 			bestDistance = distance
 			bestID = cityID

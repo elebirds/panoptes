@@ -80,7 +80,7 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 	}
 	node := ecs.NodeC.Get(entry)
 	pos := ecs.PositionC.Get(entry)
-	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{Q: pos.Q, R: pos.R})
 
 	myCount := len(unitsByFaction[playerID])
 	enemyCount := 0
@@ -95,7 +95,7 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 	// controller / territory / building_status / operation / takeover 都在这里汇总投影。
 	view := &pb.NodeView{
 		Id:                     node.ID,
-		Pos:                    &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Pos:                    &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 		Terrain:                string(node.Terrain),
 		ControllerPlayerId:     node.Owner,
 		TerritoryOwnerPlayerId: node.TerritoryOwner,
@@ -104,7 +104,7 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		HasRoad:                node.HasRoad,
 		IsResourcePoint:        node.IsResource,
 		ResourceType:           node.ResourceType,
-		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID),
+		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, playerID),
 	}
 	if entry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(entry)
@@ -158,7 +158,7 @@ func BuildUnitViews(state *domain.GameState) []*pb.UnitView {
 			UnitType: string(stats.Type),
 			Hp:       int32(stats.HP),
 			MaxHp:    int32(stats.MaxHP),
-			Pos:      &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+			Pos:      &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 		})
 	})
 	return units

@@ -361,7 +361,7 @@ func isStructureTargetInRange(unitEntry *donburi.Entry, nodeEntry *donburi.Entry
 	}
 	unitPos := ecs.PositionC.Get(unitEntry)
 	nodePos := ecs.PositionC.Get(nodeEntry)
-	return domain.Position{X: unitPos.X, Y: unitPos.Y}.DistanceTo(domain.Position{X: nodePos.X, Y: nodePos.Y}) <= attackRange
+	return domain.Position{Q: unitPos.Q, R: unitPos.R}.DistanceTo(domain.Position{Q: nodePos.Q, R: nodePos.R}) <= attackRange
 }
 
 func isStructureTargetInRangeFromNode(fromNodeEntry *donburi.Entry, targetNodeEntry *donburi.Entry, attackRange int) bool {
@@ -370,7 +370,7 @@ func isStructureTargetInRangeFromNode(fromNodeEntry *donburi.Entry, targetNodeEn
 	}
 	fromPos := ecs.PositionC.Get(fromNodeEntry)
 	targetPos := ecs.PositionC.Get(targetNodeEntry)
-	return domain.Position{X: fromPos.X, Y: fromPos.Y}.DistanceTo(domain.Position{X: targetPos.X, Y: targetPos.Y}) <= attackRange
+	return domain.Position{Q: fromPos.Q, R: fromPos.R}.DistanceTo(domain.Position{Q: targetPos.Q, R: targetPos.R}) <= attackRange
 }
 
 func findAnyUnit(state *domain.GameState, unitID string) (*donburi.Entry, bool) {

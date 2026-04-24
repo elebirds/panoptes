@@ -503,11 +503,12 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var buildingType = NormalizeToken(node.building_type);
+                var axial = HexGrid.OffsetToAxial(node.x, node.y);
                 nodes.Add(new NodeDto
                 {
                     Id = string.IsNullOrWhiteSpace(node.id) ? $"N_{node.x}_{node.y}" : node.id.Trim(),
-                    X = node.x,
-                    Y = node.y,
+                    Q = axial.x,
+                    R = axial.y,
                     Terrain = NormalizeToken(node.terrain),
                     HasRoad = node.has_road,
                     IsResourcePoint = node.is_resource_point,
@@ -899,8 +900,8 @@ namespace Panoptes.Presentation.Map
                 var cachedUnit = GameStateCache.Instance.GetUnit(unitId);
                 if (cachedUnit != null)
                 {
-                    cachedUnit.X = targetNode.GridPos.x;
-                    cachedUnit.Y = targetNode.GridPos.y;
+                    cachedUnit.Q = targetNode.GridPos.x;
+                    cachedUnit.R = targetNode.GridPos.y;
                 }
             }
         }
@@ -929,20 +930,34 @@ namespace Panoptes.Presentation.Map
             return true;
         }
 
-        public Vector3 GridToWorld(int x, int y)
+        public Vector3 GridToWorld(int q, int r)
         {
-            return new Vector3(x * tileSize, 0f, y * tileSize);
+            return HexGrid.AxialToWorld(q, r, tileSize);
         }
 
-        private Vector3 GridToWorldWithTerrain(int x, int y, string terrain)
+        public Vector2Int WorldToGrid(Vector3 worldPosition)
+        {
+            var localPosition = tilesRoot != null
+                ? tilesRoot.InverseTransformPoint(worldPosition)
+                : transform.InverseTransformPoint(worldPosition);
+            return HexGrid.WorldToAxial(localPosition, tileSize);
+        }
+
+        public bool TryGetNodeViewByWorld(Vector3 worldPosition, out NodeView nodeView)
+        {
+            return TryGetNodeViewByGrid(WorldToGrid(worldPosition), out nodeView);
+        }
+
+        private Vector3 GridToWorldWithTerrain(int q, int r, string terrain)
         {
             if (!applyTerrainElevation)
             {
-                return GridToWorld(x, y);
+                return GridToWorld(q, r);
             }
 
-            var elevation = GetTerrainElevation(terrain, x, y);
-            return new Vector3(x * tileSize, elevation, y * tileSize);
+            var basePosition = GridToWorld(q, r);
+            var elevation = GetTerrainElevation(terrain, q, r);
+            return new Vector3(basePosition.x, elevation, basePosition.z);
         }
 
         private float GetTerrainElevation(string terrain, int x, int y)
@@ -1007,8 +1022,8 @@ namespace Panoptes.Presentation.Map
                     var node = new NodeDto
                     {
                         Id = nodeId,
-                        X = x,
-                        Y = y,
+                        Q = x,
+                        R = y,
                         Terrain = terrain,
                         BuildingType = string.Empty,
                         BuildingHp = 0,
@@ -1060,6 +1075,11 @@ namespace Panoptes.Presentation.Map
                     for (var x = center.x - territorySizeHalf; x <= center.x + territorySizeHalf; x++)
                     {
                         if (!TryGetDebugNode(nodes, mapWidth, mapHeight, x, y, out var node) || node == null)
+                        {
+                            continue;
+                        }
+
+                        if (HexGrid.AxialDistance(center, new Vector2Int(x, y)) > territorySizeHalf)
                         {
                             continue;
                         }
@@ -1331,7 +1351,7 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var tile = Instantiate(nodeTilePrefab, EnsureTilesRoot(), false);
-                tile.transform.localPosition = GridToWorldWithTerrain(node.X, node.Y, node.Terrain);
+                tile.transform.localPosition = GridToWorldWithTerrain(node.Q, node.R, node.Terrain);
                 tile.Bind(node);
 
                 _tileViews[node.Id] = tile;
@@ -1546,8 +1566,8 @@ namespace Panoptes.Presentation.Map
                     Type = "infantry",
                     Hp = 100,
                     MaxHp = 100,
-                    X = p.x,
-                    Y = p.y,
+                    Q = p.x,
+                    R = p.y,
                 });
             }
 
@@ -1721,7 +1741,7 @@ namespace Panoptes.Presentation.Map
                 RemoveRuntimeUnit(unit.Id, updateCache);
             }
 
-            var gridPos = new Vector2Int(unit.X, unit.Y);
+            var gridPos = new Vector2Int(unit.Q, unit.R);
             if (!TryGetNodeViewByGrid(gridPos, out var nodeView) || nodeView == null)
             {
                 return false;
@@ -1999,10 +2019,10 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (node.X < minGridX) minGridX = node.X;
-                if (node.X > maxGridX) maxGridX = node.X;
-                if (node.Y < minGridY) minGridY = node.Y;
-                if (node.Y > maxGridY) maxGridY = node.Y;
+                if (node.Q < minGridX) minGridX = node.Q;
+                if (node.Q > maxGridX) maxGridX = node.Q;
+                if (node.R < minGridY) minGridY = node.R;
+                if (node.R > maxGridY) maxGridY = node.R;
             }
 
             if (minGridX > maxGridX || minGridY > maxGridY)
@@ -2010,34 +2030,28 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            ValidateAuthoritativeMapDimensions(minGridX, maxGridX, minGridY, maxGridY);
+            var halfWidth = Mathf.Sqrt(3f) * tileSize * 0.5f;
+            var halfHeight = tileSize;
+            var minX = float.PositiveInfinity;
+            var maxX = float.NegativeInfinity;
+            var minZ = float.PositiveInfinity;
+            var maxZ = float.NegativeInfinity;
+            foreach (var pair in _nodeStates)
+            {
+                var node = pair.Value;
+                if (node == null)
+                {
+                    continue;
+                }
 
-            var halfTile = tileSize * 0.5f;
-            var minX = minGridX * tileSize - halfTile;
-            var maxX = maxGridX * tileSize + halfTile;
-            var minZ = minGridY * tileSize - halfTile;
-            var maxZ = maxGridY * tileSize + halfTile;
+                var world = GridToWorld(node.Q, node.R);
+                minX = Mathf.Min(minX, world.x - halfWidth);
+                maxX = Mathf.Max(maxX, world.x + halfWidth);
+                minZ = Mathf.Min(minZ, world.z - halfHeight);
+                maxZ = Mathf.Max(maxZ, world.z + halfHeight);
+            }
             worldRect = Rect.MinMaxRect(minX, minZ, maxX, maxZ);
             return worldRect.width > 0f && worldRect.height > 0f;
-        }
-
-        private void ValidateAuthoritativeMapDimensions(int minGridX, int maxGridX, int minGridY, int maxGridY)
-        {
-            var cache = GameStateCache.Instance;
-            if (cache == null || cache.MapWidth <= 0 || cache.MapHeight <= 0)
-            {
-                return;
-            }
-
-            var actualWidth = maxGridX - minGridX + 1;
-            var actualHeight = maxGridY - minGridY + 1;
-            if (actualWidth == cache.MapWidth && actualHeight == cache.MapHeight)
-            {
-                return;
-            }
-
-            Debug.LogWarning(
-                $"[MapRenderer] Camera context grid span {actualWidth}x{actualHeight} does not match authoritative map size {cache.MapWidth}x{cache.MapHeight}.");
         }
 
         private bool TryParseNodesFromJson(string json, out List<NodeDto> nodes)
@@ -2183,11 +2197,12 @@ namespace Panoptes.Presentation.Map
                     territoryOwner = NormalizeToken(jsonNode.territory_owner);
                 }
 
+                var axial = HexGrid.OffsetToAxial(jsonNode.x, jsonNode.y);
                 var node = new NodeDto
                 {
                     Id = string.IsNullOrWhiteSpace(jsonNode.id) ? $"N_{jsonNode.x}_{jsonNode.y}" : jsonNode.id.Trim(),
-                    X = jsonNode.x,
-                    Y = jsonNode.y,
+                    Q = axial.x,
+                    R = axial.y,
                     Terrain = terrain,
                     HasRoad = hasRoad,
                     IsResourcePoint = isResourcePoint,
@@ -2220,6 +2235,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
+                var axial = HexGrid.OffsetToAxial(src.x, src.y);
                 output.Add(new UnitDto
                 {
                     Id = string.IsNullOrWhiteSpace(src.id) ? $"U_{src.x}_{src.y}_{i}" : src.id.Trim(),
@@ -2227,8 +2243,8 @@ namespace Panoptes.Presentation.Map
                     Type = string.IsNullOrWhiteSpace(src.unitType) ? "infantry" : src.unitType.Trim(),
                     Hp = Mathf.Max(0, src.hp),
                     MaxHp = Mathf.Max(1, src.maxHp),
-                    X = src.x,
-                    Y = src.y,
+                    Q = axial.x,
+                    R = axial.y,
                 });
             }
         }

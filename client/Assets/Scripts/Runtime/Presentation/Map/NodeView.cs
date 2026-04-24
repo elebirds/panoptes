@@ -188,7 +188,7 @@ namespace Panoptes.Presentation.Map
             }
 
             NodeId = node.Id ?? string.Empty;
-            GridPos = new Vector2Int(node.X, node.Y);
+            GridPos = new Vector2Int(node.Q, node.R);
             name = $"Node_{NodeId}";
             BuildingStatus = NormalizeToken(node.BuildingStatus);
             CityId = node.CityId ?? string.Empty;
@@ -630,7 +630,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var dir = new Vector3(direction.x, 0f, direction.y);
+            var dir = HexGrid.AxialToWorld(direction.x, direction.y, 1f);
             if (dir.sqrMagnitude <= 0.0001f)
             {
                 dir = Vector3.forward;

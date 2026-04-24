@@ -53,7 +53,7 @@ func (r *GameRoom) cityFoundingEvent(order domain.UnitDirective) (event.Event, b
 	}
 
 	unitPos := ecs.PositionC.Get(unitEntry)
-	centerEntry, ok := domain.GetNodeAt(state.World, domain.Position{X: unitPos.X, Y: unitPos.Y})
+	centerEntry, ok := domain.GetNodeAt(state.World, domain.Position{Q: unitPos.Q, R: unitPos.R})
 	if !ok {
 		return event.CityFoundingFailedEvent{PlayerID: order.PlayerID, UnitID: order.UnitID, Reason: "invalid_target"}, true
 	}

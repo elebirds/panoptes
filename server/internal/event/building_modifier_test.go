@@ -34,7 +34,7 @@ func TestTechnologyActivatedEventApplyRefreshesExistingBuildingMaxHP(t *testing.
 
 	nodeIndex := map[string]donburi.Entity{}
 	createNode := func(id string, x int, y int) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, Q: x, R: y, Terrain: "plain"})
 		nodeIndex[id] = entity
 		entry := world.Entry(entity)
 		node := ecs.NodeC.Get(entry)
@@ -93,8 +93,8 @@ func TestBuildingBuiltEventApplyUsesActiveBuildingMaxHPModifiers(t *testing.T) {
 		},
 	}))
 
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 1, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	nodeEntry := world.Entry(nodeEntity)
 	for _, entry := range []*donburi.Entry{cityEntry, nodeEntry} {

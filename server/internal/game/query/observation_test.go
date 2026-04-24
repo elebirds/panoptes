@@ -32,7 +32,7 @@ func TestObservationStoreTracksVisibleNodesMemoryAndHiddenUnits(t *testing.T) {
 		ID:           "fog",
 		Width:        4,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 3, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 3, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	n0 := createNodeForViewTest(world, mapData, "N0", 0, 0)
@@ -51,8 +51,8 @@ func TestObservationStoreTracksVisibleNodesMemoryAndHiddenUnits(t *testing.T) {
 	state.World = world
 	state.Turn = 1
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 1, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 1, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 	ecs.CreateBuilding(world, "farm", "player-2", "N2", n2)
@@ -82,7 +82,7 @@ func TestObservationStoreTracksVisibleNodesMemoryAndHiddenUnits(t *testing.T) {
 
 	state.Turn = 2
 	pos := ecs.PositionC.Get(allyEntry)
-	pos.X = 0
+	pos.Q = 0
 
 	second := store.BuildObservation(state, "player-1")
 	if second == nil {
@@ -118,7 +118,7 @@ func TestObservationStoreTracksVisibleNodesMemoryAndHiddenUnits(t *testing.T) {
 	if got := memoryUnit.GetLastObservedTurn(); got != 1 {
 		t.Fatalf("memory unit last_observed_turn = %d, want 1", got)
 	}
-	if got := memoryUnit.GetView().GetPos().GetX(); got != 2 {
+	if got := memoryUnit.GetView().GetPos().GetQ(); got != 2 {
 		t.Fatalf("memory unit x = %d, want 2", got)
 	}
 }
@@ -143,7 +143,7 @@ func TestObservationStoreBuildsDifferentPerPlayerViews(t *testing.T) {
 		ID:           "fog",
 		Width:        4,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 3, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 3, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	_ = createNodeForViewTest(world, mapData, "N0", 0, 0)
@@ -155,8 +155,8 @@ func TestObservationStoreBuildsDifferentPerPlayerViews(t *testing.T) {
 	state.World = world
 	state.Turn = 1
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
@@ -198,7 +198,7 @@ func TestObservationStoreOmniscientViewerSeesWholeMap(t *testing.T) {
 		ID:           "omniscient",
 		Width:        4,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 3, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 3, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	_ = createNodeForViewTest(world, mapData, "N0", 0, 0)
@@ -210,8 +210,8 @@ func TestObservationStoreOmniscientViewerSeesWholeMap(t *testing.T) {
 	state.World = world
 	state.Turn = 1
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 3, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 3, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 

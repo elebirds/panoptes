@@ -105,22 +105,15 @@ func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 	if okFrom && okTo {
 		fromPos := ecs.PositionC.Get(fromEntry)
 		toPos := ecs.PositionC.Get(toEntry)
-		x, y := fromPos.X, fromPos.Y
-		for x != toPos.X {
-			if toPos.X > x {
-				x++
-			} else {
-				x--
+		current := domain.Position{Q: fromPos.Q, R: fromPos.R}
+		target := domain.Position{Q: toPos.Q, R: toPos.R}
+		for current != target {
+			next, ok := nextRoadStep(world, current, target)
+			if !ok {
+				break
 			}
-			markRoadAt(world, domain.Position{X: x, Y: y})
-		}
-		for y != toPos.Y {
-			if toPos.Y > y {
-				y++
-			} else {
-				y--
-			}
-			markRoadAt(world, domain.Position{X: x, Y: y})
+			current = next
+			markRoadAt(world, current)
 		}
 	}
 	state.ConsumeResources(e.Owner, "", domain.ResourceBag{domain.ResourceIndustryOutput: e.Cost})
@@ -149,7 +142,7 @@ func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 	state.ConsumeResources(e.Faction, e.CityID, e.Cost)
 	pos := ecs.PositionC.Get(nodeEntry)
 	for i := 0; i < e.Count; i++ {
-		ecs.CreateUnit(world, e.UnitType, e.Faction, domain.Position{X: pos.X, Y: pos.Y})
+		ecs.CreateUnit(world, e.UnitType, e.Faction, domain.Position{Q: pos.Q, R: pos.R})
 	}
 }
 
@@ -276,7 +269,7 @@ func (e UnitStarvingEvent) Apply(world donburi.World, state *domain.GameState) {
 	stats.HP -= e.DamagePerTurn
 	if stats.HP <= 0 {
 		pos := ecs.PositionC.Get(entry)
-		UnitDiedEvent{UnitID: e.UnitID, KillerID: "starvation", Pos: domain.Position{X: pos.X, Y: pos.Y}}.Apply(world, state)
+		UnitDiedEvent{UnitID: e.UnitID, KillerID: "starvation", Pos: domain.Position{Q: pos.Q, R: pos.R}}.Apply(world, state)
 	}
 }
 
@@ -293,6 +286,20 @@ func markRoadAt(world donburi.World, pos domain.Position) {
 	}
 	n := ecs.NodeC.Get(entry)
 	n.HasRoad = true
+}
+
+func nextRoadStep(world donburi.World, current, target domain.Position) (domain.Position, bool) {
+	bestDistance := current.DistanceTo(target)
+	for _, candidate := range current.Neighbors() {
+		if _, ok := domain.GetNodeAt(world, candidate); !ok {
+			continue
+		}
+		distance := candidate.DistanceTo(target)
+		if distance < bestDistance {
+			return candidate, true
+		}
+	}
+	return domain.Position{}, false
 }
 
 func markFactionStarving(world donburi.World, faction string) {

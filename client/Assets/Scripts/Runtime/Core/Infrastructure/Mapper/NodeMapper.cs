@@ -17,8 +17,8 @@ namespace Panoptes.Core.Infrastructure.Mapper
             return new NodeDto
             {
                 Id = view.Id,
-                X = view.Pos?.X ?? 0,
-                Y = view.Pos?.Y ?? 0,
+                Q = view.Pos?.Q ?? 0,
+                R = view.Pos?.R ?? 0,
                 Type = view.Terrain,
                 Owner = view.ControllerPlayerId,
                 TerritoryOwner = string.IsNullOrWhiteSpace(view.TerritoryOwnerPlayerId) ? view.ControllerPlayerId : view.TerritoryOwnerPlayerId,

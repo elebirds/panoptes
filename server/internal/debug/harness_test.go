@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/game/scenario"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
@@ -459,6 +460,9 @@ func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *
 	if err := h.Start(); err != nil {
 		t.Fatalf("Start() error = %v", err)
 	}
+	player2 := h.room.State().Players["player-2"]
+	player2.Resources = domain.NewResourceBag()
+	player2.Resources.Set(domain.ResourceFood, 3)
 
 	for turn := 1; turn <= 3; turn++ {
 		if _, err := h.WaitPlanningStart("player-1", turn, 2*time.Second); err != nil {

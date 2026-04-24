@@ -32,7 +32,7 @@ func TestProjectTurnSettlementFromObservationUsesPerPlayerVisibility(t *testing.
 		ID:           "settlement-fog",
 		Width:        3,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 2, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 2, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	createSettlementNode(world, mapData, "N0", 0, 0)
@@ -43,8 +43,8 @@ func TestProjectTurnSettlementFromObservationUsesPerPlayerVisibility(t *testing.
 	state.World = world
 	state.Turn = 4
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
@@ -67,7 +67,7 @@ func TestProjectTurnSettlementFromObservationUsesPerPlayerVisibility(t *testing.
 }
 
 func createSettlementNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 }
 

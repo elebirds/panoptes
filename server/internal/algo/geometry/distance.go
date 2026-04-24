@@ -8,14 +8,27 @@ package geometry
 
 import "github.com/elebirds/panoptes/internal/domain"
 
-func Manhattan(a, b domain.Position) int {
-	dx := a.X - b.X
-	if dx < 0 {
-		dx = -dx
+func OffsetToAxial(col, row int) domain.Position {
+	return domain.Position{
+		Q: col - (row-(row&1))/2,
+		R: row,
 	}
-	dy := a.Y - b.Y
-	if dy < 0 {
-		dy = -dy
+}
+
+func AxialToOffset(pos domain.Position) (int, int) {
+	return pos.Q + (pos.R-(pos.R&1))/2, pos.R
+}
+
+func AxialDistance(a, b domain.Position) int {
+	dq := abs(a.Q - b.Q)
+	dr := abs(a.R - b.R)
+	ds := abs(a.Q + a.R - b.Q - b.R)
+	return (dq + ds + dr) / 2
+}
+
+func abs(value int) int {
+	if value < 0 {
+		return -value
 	}
-	return dx + dy
+	return value
 }

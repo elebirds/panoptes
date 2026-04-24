@@ -18,7 +18,7 @@ func TestBuildingStatusChangedEventApplyMarksBuildingDisabled(t *testing.T) {
 			{ID: "farm", MaxHP: 80},
 		},
 	}))
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
 
@@ -64,7 +64,7 @@ func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *test
 
 	nodeIndex := map[string]donburi.Entity{}
 	createNode := func(id string, x int, y int, owner string, resource bool) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, Q: x, R: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
 		nodeIndex[id] = entity
 		entry := world.Entry(entity)
 		node := ecs.NodeC.Get(entry)
@@ -89,7 +89,7 @@ func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *test
 
 	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 1}, "player-2": {X: 4, Y: 1}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 1}, "player-2": {Q: 4, R: 1}},
 		NodeIndex:    nodeIndex,
 	})
 	state.World = world

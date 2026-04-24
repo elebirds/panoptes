@@ -181,7 +181,7 @@ namespace Panoptes.Presentation.Map
             UnitType = unit.Type ?? string.Empty;
             HitPoints = unit.Hp;
             MaxHitPoints = unit.MaxHp;
-            GridPos = new Vector2Int(unit.X, unit.Y);
+            GridPos = new Vector2Int(unit.Q, unit.R);
             transform.position = worldPosition;
             name = string.IsNullOrEmpty(UnitId) ? "Unit" : $"Unit_{UnitId}";
 

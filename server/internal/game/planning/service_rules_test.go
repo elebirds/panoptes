@@ -29,7 +29,7 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
-	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
+	state.Map.PlayerSpawns["player-1"] = domain.Position{Q: 99, R: 99}
 
 	nodeEntry, ok := state.GetNode("A2")
 	if !ok {
@@ -107,7 +107,7 @@ func TestBuildStructurePreviewRejectedOutsideTerritoryDoesNotMutateState(t *test
 	state := def.State
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Research.UnlockBuilding("farm")
-	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
+	state.Map.PlayerSpawns["player-1"] = domain.Position{Q: 99, R: 99}
 
 	nodeEntry, ok := state.GetNode("A2")
 	if !ok {
@@ -170,8 +170,8 @@ func TestBuildStructureRejectedInsufficientPointsIncludesFeedback(t *testing.T) 
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "point-preview", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["N1"] = targetEntity
 	for _, entity := range []donburi.Entity{cityEntity, targetEntity} {
@@ -231,8 +231,8 @@ func TestSetBuildingRecipePreviewWarnsWhenBuildingBlocked(t *testing.T) {
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "recipe-preview", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	farmEntity := ecs.CreateNode(world, ecs.MapNode{ID: "F1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	farmEntity := ecs.CreateNode(world, ecs.MapNode{ID: "F1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["F1"] = farmEntity
 	for _, entity := range []donburi.Entity{cityEntity, farmEntity} {
@@ -306,7 +306,7 @@ func TestSetBuildingRecipeRejectedIncludesSpecificFeedback(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-1"
@@ -428,8 +428,8 @@ func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testi
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "default", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["N1"] = targetEntity
 	cityEntry := world.Entry(cityEntity)
@@ -499,7 +499,7 @@ func TestSetBuildingRecipeReplacesDraftOnSameNode(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-1"
@@ -1209,7 +1209,7 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{}
 	for idx, nodeID := range []string{"A1", "A2", "A3"} {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: idx, Y: 0, Terrain: "plain"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: idx, R: 0, Terrain: "plain"})
 		nodeIndex[nodeID] = entity
 	}
 	state := domain.NewGameState("planning-structure-attack", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
@@ -1232,7 +1232,7 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 	allyNodeState.Owner = "player-1"
 	allyNodeState.TerritoryOwner = "player-1"
 
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	return state
 }

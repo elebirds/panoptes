@@ -60,7 +60,9 @@ func newRealContentHappyPathDefinition(t *testing.T) *scenario.Definition {
 		t.Fatalf("frontier office B1 missing BuildingOperationC")
 	}
 	frontierOperation := ecs.BuildingOperationC.Get(frontierOfficeEntry)
-	frontierOperation.ProgressRemainder = 500
+	frontierOperation.ProgressTurns = 3
+	frontierOperation.ConsumedResources = domain.NewResourceBag()
+	frontierOperation.ConsumedResources.Set(domain.ResourceFood, 1)
 
 	clearSelectedRecipe(t, state, "G2")
 
@@ -97,7 +99,7 @@ func newRealContentFacilityTakeoverDefinition(t *testing.T) *scenario.Definition
 		t.Fatalf("missing node C2")
 	}
 	ecs.CreateBuilding(state.World, "farm", "player-1", "A2", farmEntry)
-	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 2, Y: 1}))
+	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 2, R: 1}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-infantry-1"
 
 	return &scenario.Definition{
@@ -260,7 +262,7 @@ func assertUnitAtNode(t *testing.T, state *domain.GameState, unitID string, want
 		t.Fatalf("unit %s not found", unitID)
 	}
 	pos := ecs.PositionC.Get(entry)
-	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{Q: pos.Q, R: pos.R})
 	if !ok {
 		t.Fatalf("node for unit %s not found", unitID)
 	}

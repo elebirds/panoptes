@@ -38,7 +38,7 @@ func TestRuleBotProviderBuildsFarmOnVisibleFoodNode(t *testing.T) {
 		node.TerritoryOwner = "bot-1"
 		node.Owner = "bot-1"
 
-		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
+		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
 		ecs.UnitStatsC.Get(unitEntry).ID = "ally-1"
 		state.Players["bot-1"].Research.UnlockBuilding("farm")
 		state.EnsureCityState("bot-1", "N0")
@@ -84,8 +84,8 @@ func TestRuleBotProviderAttacksVisibleEnemyUnit(t *testing.T) {
 	}))
 
 	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
-		allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
-		enemyEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-2", domain.Position{X: 1, Y: 0}))
+		allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
+		enemyEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-2", domain.Position{Q: 1, R: 0}))
 		ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 		ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 	})
@@ -131,7 +131,7 @@ func TestRuleBotProviderMovesInfantryToExploreHiddenFrontier(t *testing.T) {
 	}))
 
 	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
-		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
+		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
 		ecs.UnitStatsC.Get(unitEntry).ID = "ally-1"
 	})
 
@@ -173,7 +173,7 @@ func TestRuleBotProviderMovesInfantryUnderOmniscientVision(t *testing.T) {
 	}))
 
 	state, _ := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
-		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0}))
+		unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0}))
 		ecs.UnitStatsC.Get(unitEntry).ID = "ally-1"
 	})
 	store := gamequery.NewObservationStore()
@@ -221,7 +221,7 @@ func TestRuleBotProviderAttacksEnemyCityCore(t *testing.T) {
 	}))
 
 	state, botObservation := buildRuleBotState(t, func(world donburi.World, mapData *domain.MapData, state *domain.GameState) {
-		allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 1, Y: 0}))
+		allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 1, R: 0}))
 		ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 		ecs.CreateBuilding(world, "city_core", "player-2", "N2", world.Entry(mapData.NodeIndex["N2"]))
 	})
@@ -455,8 +455,8 @@ func TestRuleBotProviderBuildsFrontierOfficeWhenExpansionNeedsSettlerSource(t *t
 		state.Players["bot-1"].Research.UnlockBuilding("barracks")
 		state.Players["bot-1"].Research.UnlockBuilding("frontier_office")
 		ecs.CreateBuilding(world, "barracks", "bot-1", "N0", world.Entry(mapData.NodeIndex["N2"]))
-		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0})
-		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 0, Y: 0})
+		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0})
+		ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 0, R: 0})
 	})
 
 	intents, err := RuleBotProvider{}.BuildPlanningIntents(context.Background(), Request{
@@ -486,7 +486,7 @@ func buildRuleBotState(t *testing.T, mutate func(world donburi.World, mapData *d
 		ID:           "bot-test",
 		Width:        3,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"bot-1": {X: 0, Y: 0}, "player-2": {X: 2, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"bot-1": {Q: 0, R: 0}, "player-2": {Q: 2, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	createNode(world, mapData, "N0", 0, 0, false, "")
@@ -510,8 +510,8 @@ func buildRuleBotState(t *testing.T, mutate func(world donburi.World, mapData *d
 func createNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int, isResource bool, resourceType string) *donburi.Entry {
 	entity := ecs.CreateNode(world, ecs.MapNode{
 		ID:              nodeID,
-		X:               x,
-		Y:               y,
+		Q:               x,
+		R:               y,
 		Terrain:         "plain",
 		IsResourcePoint: isResource,
 		ResourceType:    resourceType,

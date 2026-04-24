@@ -400,7 +400,7 @@ func (p *ruleBotPlanner) chooseCombatIntents() []planning.Intent {
 func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visibleEnemies []*pb.UnitView, memoryEnemies []*gamequery.RememberedUnitView, enemyStructures []*pb.NodeView) combatCandidate {
 	stats := ecs.UnitStatsC.Get(entry)
 	pos := ecs.PositionC.Get(entry)
-	unitPos := domain.Position{X: pos.X, Y: pos.Y}
+	unitPos := domain.Position{Q: pos.Q, R: pos.R}
 	unitID := strings.TrimSpace(stats.ID)
 
 	bestAttack := combatCandidate{score: intMin, intent: planning.IssueUnitOrderIntent{UnitID: unitID, Action: string(gameorders.ActionHold)}}
@@ -408,7 +408,7 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 		if enemy == nil || enemy.GetPos() == nil {
 			continue
 		}
-		targetPos := domain.Position{X: int(enemy.GetPos().GetX()), Y: int(enemy.GetPos().GetY())}
+		targetPos := protoPosition(enemy.GetPos())
 		distance := unitPos.DistanceTo(targetPos)
 		if distance > stats.AttackRange {
 			continue
@@ -441,7 +441,7 @@ func (p *ruleBotPlanner) chooseCombatIntentForUnit(entry *donburi.Entry, visible
 			if node == nil || node.GetPos() == nil {
 				continue
 			}
-			targetPos := domain.Position{X: int(node.GetPos().GetX()), Y: int(node.GetPos().GetY())}
+			targetPos := protoPosition(node.GetPos())
 			if unitPos.DistanceTo(targetPos) > stats.AttackRange {
 				continue
 			}
@@ -718,7 +718,7 @@ func (p *ruleBotPlanner) computeThreatLevel() int {
 				continue
 			}
 			cityPos := ecs.PositionC.Get(cityEntry)
-			if (domain.Position{X: int(enemy.GetPos().GetX()), Y: int(enemy.GetPos().GetY())}).DistanceTo(domain.Position{X: cityPos.X, Y: cityPos.Y}) <= 3 {
+			if protoPosition(enemy.GetPos()).DistanceTo(domain.Position{Q: cityPos.Q, R: cityPos.R}) <= 3 {
 				threat++
 				break
 			}
@@ -978,7 +978,7 @@ func (p *ruleBotPlanner) closestCityID(nodeID string) string {
 			continue
 		}
 		cityPos := ecs.PositionC.Get(cityEntry)
-		distance := (domain.Position{X: targetPos.X, Y: targetPos.Y}).DistanceTo(domain.Position{X: cityPos.X, Y: cityPos.Y})
+		distance := (domain.Position{Q: targetPos.Q, R: targetPos.R}).DistanceTo(domain.Position{Q: cityPos.Q, R: cityPos.R})
 		if distance < bestDistance {
 			bestDistance = distance
 			bestCityID = city.CityID
@@ -1008,7 +1008,7 @@ func (p *ruleBotPlanner) closestCityDistance(nodeID string) int {
 			continue
 		}
 		cityPos := ecs.PositionC.Get(cityEntry)
-		distance := (domain.Position{X: targetPos.X, Y: targetPos.Y}).DistanceTo(domain.Position{X: cityPos.X, Y: cityPos.Y})
+		distance := (domain.Position{Q: targetPos.Q, R: targetPos.R}).DistanceTo(domain.Position{Q: cityPos.Q, R: cityPos.R})
 		if distance < best {
 			best = distance
 		}
@@ -1027,7 +1027,7 @@ func (p *ruleBotPlanner) closestEnemyDistance(nodeID string) int {
 		if enemy == nil || enemy.GetPos() == nil {
 			continue
 		}
-		distance := (domain.Position{X: targetPos.X, Y: targetPos.Y}).DistanceTo(domain.Position{X: int(enemy.GetPos().GetX()), Y: int(enemy.GetPos().GetY())})
+		distance := (domain.Position{Q: targetPos.Q, R: targetPos.R}).DistanceTo(protoPosition(enemy.GetPos()))
 		if distance < best {
 			best = distance
 		}
@@ -1042,10 +1042,10 @@ func (p *ruleBotPlanner) closestEnemyTargetNode(unitPos domain.Position, visible
 		if enemy == nil || enemy.GetPos() == nil {
 			continue
 		}
-		distance := unitPos.DistanceTo(domain.Position{X: int(enemy.GetPos().GetX()), Y: int(enemy.GetPos().GetY())})
+		distance := unitPos.DistanceTo(protoPosition(enemy.GetPos()))
 		if distance < bestDistance {
 			bestDistance = distance
-			if nodeID := p.nodeIDAtPosition(int(enemy.GetPos().GetX()), int(enemy.GetPos().GetY())); nodeID != "" {
+			if nodeID := p.nodeIDAtPosition(protoPosition(enemy.GetPos())); nodeID != "" {
 				bestNodeID = nodeID
 			}
 		}
@@ -1054,10 +1054,10 @@ func (p *ruleBotPlanner) closestEnemyTargetNode(unitPos domain.Position, visible
 		if enemy == nil || enemy.View == nil || enemy.View.GetPos() == nil {
 			continue
 		}
-		distance := unitPos.DistanceTo(domain.Position{X: int(enemy.View.GetPos().GetX()), Y: int(enemy.View.GetPos().GetY())})
+		distance := unitPos.DistanceTo(protoPosition(enemy.View.GetPos()))
 		if distance < bestDistance {
 			bestDistance = distance
-			if nodeID := p.nodeIDAtPosition(int(enemy.View.GetPos().GetX()), int(enemy.View.GetPos().GetY())); nodeID != "" {
+			if nodeID := p.nodeIDAtPosition(protoPosition(enemy.View.GetPos())); nodeID != "" {
 				bestNodeID = nodeID
 			}
 		}
@@ -1066,7 +1066,7 @@ func (p *ruleBotPlanner) closestEnemyTargetNode(unitPos domain.Position, visible
 		if node == nil || node.GetPos() == nil {
 			continue
 		}
-		distance := unitPos.DistanceTo(domain.Position{X: int(node.GetPos().GetX()), Y: int(node.GetPos().GetY())})
+		distance := unitPos.DistanceTo(protoPosition(node.GetPos()))
 		if distance < bestDistance {
 			bestDistance = distance
 			bestNodeID = node.GetId()
@@ -1091,7 +1091,7 @@ func (p *ruleBotPlanner) closestExplorationTargetNode(unitID string, unitPos dom
 			continue
 		}
 		targetPos := ecs.PositionC.Get(targetEntry)
-		distance := unitPos.DistanceTo(domain.Position{X: targetPos.X, Y: targetPos.Y})
+		distance := unitPos.DistanceTo(domain.Position{Q: targetPos.Q, R: targetPos.R})
 		if distance <= 0 || distance > bestDistance {
 			continue
 		}
@@ -1122,7 +1122,7 @@ func (p *ruleBotPlanner) closestPressureTargetNode(unitPos domain.Position) stri
 		if node.GetPos() == nil {
 			continue
 		}
-		distance := unitPos.DistanceTo(domain.Position{X: int(node.GetPos().GetX()), Y: int(node.GetPos().GetY())})
+		distance := unitPos.DistanceTo(protoPosition(node.GetPos()))
 		if distance <= 0 {
 			continue
 		}
@@ -1157,15 +1157,22 @@ func (p *ruleBotPlanner) pressurePriority(node *pb.NodeView) (int, bool) {
 	}
 }
 
-func (p *ruleBotPlanner) nodeIDAtPosition(x int, y int) string {
+func (p *ruleBotPlanner) nodeIDAtPosition(pos domain.Position) string {
 	if p.req.State == nil || p.req.State.World == nil {
 		return ""
 	}
-	entry, ok := domain.GetNodeAt(p.req.State.World, domain.Position{X: x, Y: y})
+	entry, ok := domain.GetNodeAt(p.req.State.World, pos)
 	if !ok || entry == nil {
 		return ""
 	}
 	return ecs.NodeC.Get(entry).ID
+}
+
+func protoPosition(pos *pb.Position) domain.Position {
+	if pos == nil {
+		return domain.Position{}
+	}
+	return domain.Position{Q: int(pos.GetQ()), R: int(pos.GetR())}
 }
 
 func prerequisitesMet(state *domain.GameState, playerID string, prerequisites []staticdata.Prerequisite) bool {

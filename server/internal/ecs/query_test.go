@@ -25,11 +25,11 @@ func TestResolveCityAndServiceBindings(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	cityEntry := world.Entry(CreateNode(world, MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"}))
-	barracksEntry := world.Entry(CreateNode(world, MapNode{ID: "C2", X: 1, Y: 0, Terrain: "plain"}))
-	farmEntry := world.Entry(CreateNode(world, MapNode{ID: "F1", X: 2, Y: 0, Terrain: "plain", IsResourcePoint: true, ResourceType: "food"}))
-	settlerEntry := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 0}))
-	infantryEntry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{X: 1, Y: 0}))
+	cityEntry := world.Entry(CreateNode(world, MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"}))
+	barracksEntry := world.Entry(CreateNode(world, MapNode{ID: "C2", Q: 1, R: 0, Terrain: "plain"}))
+	farmEntry := world.Entry(CreateNode(world, MapNode{ID: "F1", Q: 2, R: 0, Terrain: "plain", IsResourcePoint: true, ResourceType: "food"}))
+	settlerEntry := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	infantryEntry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{Q: 1, R: 0}))
 
 	CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 	CreateBuilding(world, "barracks", "player-1", "C1", barracksEntry)
@@ -96,7 +96,7 @@ func TestBuildingRuntimeStateAndPlacementHelpers(t *testing.T) {
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 3; x++ {
 			nodeID := string(rune('A'+y)) + string(rune('0'+x))
-			entity := CreateNode(world, MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			entity := CreateNode(world, MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 			mapData.NodeIndex[nodeID] = entity
 		}
 	}
@@ -166,7 +166,7 @@ func TestValidateBuildingPlacementRequiresExclusiveFrontlineControlForResourceNo
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 4; x++ {
 			nodeID := string(rune('A'+x)) + string(rune('1'+y))
-			entity := CreateNode(world, MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			entity := CreateNode(world, MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 			mapData.NodeIndex[nodeID] = entity
 		}
 	}
@@ -191,12 +191,12 @@ func TestValidateBuildingPlacementRequiresExclusiveFrontlineControlForResourceNo
 		t.Fatalf("ValidateBuildingPlacement(no control) = %q, want outside_territory", got)
 	}
 
-	CreateUnit(world, "infantry", "player-1", domain.Position{X: 3, Y: 1})
+	CreateUnit(world, "infantry", "player-1", domain.Position{Q: 3, R: 1})
 	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", farmCfg, "A2"); got != "" {
 		t.Fatalf("ValidateBuildingPlacement(exclusive control) = %q, want empty", got)
 	}
 
-	CreateUnit(world, "infantry", "player-2", domain.Position{X: 3, Y: 1})
+	CreateUnit(world, "infantry", "player-2", domain.Position{Q: 3, R: 1})
 	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", farmCfg, "A2"); got != "outside_territory" {
 		t.Fatalf("ValidateBuildingPlacement(contested) = %q, want outside_territory", got)
 	}
@@ -219,7 +219,7 @@ func TestCanFoundCityAtRejectsCentersWithinMinimumCityDistance(t *testing.T) {
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 9; x++ {
 			nodeID := string(rune('A'+x)) + string(rune('1'+y))
-			entity := CreateNode(world, MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			entity := CreateNode(world, MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 			mapData.NodeIndex[nodeID] = entity
 		}
 	}

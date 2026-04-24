@@ -537,7 +537,7 @@ func (r *Runtime) ensureStartingInfantryAtSpawn(playerID string, spawnEntry *don
 	}
 
 	pos := ecs.PositionC.Get(spawnEntry)
-	spawnPos := domain.Position{X: pos.X, Y: pos.Y}
+	spawnPos := domain.Position{Q: pos.Q, R: pos.R}
 	infantryPos := r.resolveStartingInfantryPosition(spawnPos)
 	if r.hasOwnedUnitAtPosition(playerID, domain.UnitTypeInfantry, infantryPos) {
 		return
@@ -597,7 +597,7 @@ func (r *Runtime) hasOwnedUnitAtPosition(playerID string, unitType domain.UnitTy
 			return
 		}
 		unitPos := ecs.PositionC.Get(entry)
-		if unitPos.X == pos.X && unitPos.Y == pos.Y {
+		if unitPos.Q == pos.Q && unitPos.R == pos.R {
 			found = true
 		}
 	})
@@ -615,7 +615,7 @@ func (r *Runtime) hasAnyUnitAtPosition(pos domain.Position) bool {
 			return
 		}
 		unitPos := ecs.PositionC.Get(entry)
-		if unitPos.X == pos.X && unitPos.Y == pos.Y {
+		if unitPos.Q == pos.Q && unitPos.R == pos.R {
 			found = true
 		}
 	})
@@ -703,7 +703,7 @@ func (r *Runtime) initializeCityStates() {
 		if r.state.Map != nil {
 			if spawnPos, ok := r.state.Map.PlayerSpawns[playerID]; ok {
 				pos := ecs.PositionC.Get(entry)
-				if pos.X == spawnPos.X && pos.Y == spawnPos.Y {
+				if pos.Q == spawnPos.Q && pos.R == spawnPos.R {
 					playerState.CapitalCityID = node.ID
 					playerState.CapitalCityCoreHP = building.HP
 				}

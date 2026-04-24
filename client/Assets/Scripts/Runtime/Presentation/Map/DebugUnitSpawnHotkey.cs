@@ -134,8 +134,8 @@ namespace Panoptes.Presentation.Map
                     Id = $"U_LOCAL_{_spawnSerial++}",
                     Type = string.IsNullOrWhiteSpace(unitType) ? "infantry" : unitType.Trim().ToLowerInvariant(),
                     Owner = ownerId,
-                    X = node.GridPos.x,
-                    Y = node.GridPos.y,
+                    Q = node.GridPos.x,
+                    R = node.GridPos.y,
                     Hp = Mathf.Max(1, hp),
                     MaxHp = Mathf.Max(1, maxHp)
                 };

@@ -30,10 +30,10 @@ func TestSingleStepResolver_BlockedByEnemyStartPositionEvenIfEnemyMovesAway(t *t
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, attackerID); got != (domain.Position{X: 0, Y: 0}) {
+	if got := unitPosition(t, state.World, attackerID); got != (domain.Position{Q: 0, R: 0}) {
 		t.Fatalf("attacker position = %#v, want stay at start", got)
 	}
-	if got := unitPosition(t, state.World, enemyID); got != (domain.Position{X: 3, Y: 0}) {
+	if got := unitPosition(t, state.World, enemyID); got != (domain.Position{Q: 3, R: 0}) {
 		t.Fatalf("enemy position = %#v, want move away", got)
 	}
 }
@@ -55,10 +55,10 @@ func TestSingleStepResolver_EdgeConflictStopsBothUnits(t *testing.T) {
 	if got := countConflicts(events, "edge"); got != 1 {
 		t.Fatalf("edge conflict count = %d, want 1", got)
 	}
-	if got := unitPosition(t, state.World, leftID); got != (domain.Position{X: 0, Y: 0}) {
+	if got := unitPosition(t, state.World, leftID); got != (domain.Position{Q: 0, R: 0}) {
 		t.Fatalf("left position = %#v, want unchanged", got)
 	}
-	if got := unitPosition(t, state.World, rightID); got != (domain.Position{X: 1, Y: 0}) {
+	if got := unitPosition(t, state.World, rightID); got != (domain.Position{Q: 1, R: 0}) {
 		t.Fatalf("right position = %#v, want unchanged", got)
 	}
 }
@@ -77,7 +77,7 @@ func TestSingleStepResolver_AttackMissesWhenTargetSuccessfullyMovesAway(t *testi
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, targetID); got != (domain.Position{X: 2, Y: 0}) {
+	if got := unitPosition(t, state.World, targetID); got != (domain.Position{Q: 2, R: 0}) {
 		t.Fatalf("target position = %#v, want moved away", got)
 	}
 	if got := countDamageEventsForUnit(events, targetID); got != 0 {
@@ -121,7 +121,7 @@ func TestSingleStepResolver_ChargeStopsAtFirstContact(t *testing.T) {
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, cavalryID); got != (domain.Position{X: 1, Y: 0}) {
+	if got := unitPosition(t, state.World, cavalryID); got != (domain.Position{Q: 1, R: 0}) {
 		t.Fatalf("cavalry position = %#v, want stop before first contact", got)
 	}
 	if got := countDamageEventsForUnit(events, blockerID); got == 0 {
@@ -147,7 +147,7 @@ func TestSingleStepResolver_ChargeStillTargetsUnitOnBuildingNode(t *testing.T) {
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, cavalryID); got != (domain.Position{X: 1, Y: 0}) {
+	if got := unitPosition(t, state.World, cavalryID); got != (domain.Position{Q: 1, R: 0}) {
 		t.Fatalf("cavalry position = %#v, want stop before first contact", got)
 	}
 	if got := countDamageEventsForUnit(events, blockerID); got == 0 {
@@ -174,13 +174,13 @@ func TestSingleStepResolver_NodeConflictGroupResolvesThreeHostileFactions(t *tes
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, aID); got != (domain.Position{X: 0, Y: 1}) {
+	if got := unitPosition(t, state.World, aID); got != (domain.Position{Q: 0, R: 1}) {
 		t.Fatalf("player-a position = %#v, want fallback to start", got)
 	}
-	if got := unitPosition(t, state.World, bID); got != (domain.Position{X: 2, Y: 1}) {
+	if got := unitPosition(t, state.World, bID); got != (domain.Position{Q: 2, R: 1}) {
 		t.Fatalf("player-b position = %#v, want fallback to start", got)
 	}
-	if got := unitPosition(t, state.World, cID); got != (domain.Position{X: 1, Y: 0}) {
+	if got := unitPosition(t, state.World, cID); got != (domain.Position{Q: 1, R: 0}) {
 		t.Fatalf("player-c position = %#v, want fallback to start", got)
 	}
 	if got := countConflicts(events, "node"); got != 3 {
@@ -428,12 +428,12 @@ func newCombatTestStateWithPlayers(t *testing.T, width, height int, playerIDs []
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	for idx, playerID := range playerIDs {
-		mapData.SpawnPoints[idx] = domain.Position{X: idx % width, Y: idx / width}
+		mapData.SpawnPoints[idx] = domain.Position{Q: idx % width, R: idx / width}
 		mapData.PlayerSpawns[playerID] = mapData.SpawnPoints[idx]
 	}
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID(x, y), X: x, Y: y, Terrain: "plain"})
+			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID(x, y), Q: x, R: y, Terrain: "plain"})
 			mapData.NodeIndex[nodeID(x, y)] = entity
 		}
 	}
@@ -448,12 +448,12 @@ func newCombatTestStateWithPlayers(t *testing.T, width, height int, playerIDs []
 }
 
 func spawnTestUnit(world donburi.World, unitType string, faction string, x, y int) string {
-	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
+	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{Q: x, R: y}))
 	return ecs.UnitStatsC.Get(entry).ID
 }
 
 func spawnTestUnitWithID(world donburi.World, unitType string, faction string, x, y int, unitID string) string {
-	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{X: x, Y: y}))
+	entry := world.Entry(ecs.CreateUnit(world, unitType, faction, domain.Position{Q: x, R: y}))
 	ecs.UnitStatsC.Get(entry).ID = unitID
 	return unitID
 }
@@ -482,7 +482,7 @@ func unitPosition(t *testing.T, world donburi.World, unitID string) domain.Posit
 		t.Fatalf("unit %s not found", unitID)
 	}
 	pos := ecs.PositionC.Get(entry)
-	return domain.Position{X: pos.X, Y: pos.Y}
+	return domain.Position{Q: pos.Q, R: pos.R}
 }
 
 func findUnitEntry(world donburi.World, unitID string) (*donburi.Entry, bool) {

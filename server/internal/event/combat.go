@@ -27,14 +27,14 @@ func (e UnitMovedEvent) Apply(world donburi.World, _ *domain.GameState) {
 		return
 	}
 	pos := ecs.PositionC.Get(entry)
-	pos.X = e.To.X
-	pos.Y = e.To.Y
+	pos.Q = e.To.Q
+	pos.R = e.To.R
 }
 
 func (e UnitMovedEvent) Kind() string { return "unit_moved" }
 
 func (e UnitMovedEvent) String() string {
-	return fmt.Sprintf("UnitMovedEvent unit=%s from=(%d,%d) to=(%d,%d)", e.UnitID, e.From.X, e.From.Y, e.To.X, e.To.Y)
+	return fmt.Sprintf("UnitMovedEvent unit=%s from=(%d,%d) to=(%d,%d)", e.UnitID, e.From.Q, e.From.R, e.To.Q, e.To.R)
 }
 
 type UnitDamagedEvent struct {

@@ -148,12 +148,12 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Damage = ReadInt(data, 0, "damage"),
                 HpAfter = ReadInt(data, 0, "hp_after", "building_hp"),
                 Sequence = sequence,
-                PosX = ReadInt(data, 0, "pos_x"),
-                PosY = ReadInt(data, 0, "pos_y"),
-                FromX = ReadInt(data, 0, "from_x"),
-                FromY = ReadInt(data, 0, "from_y"),
-                ToX = ReadInt(data, 0, "to_x"),
-                ToY = ReadInt(data, 0, "to_y")
+                PosQ = ReadInt(data, 0, "pos_q"),
+                PosR = ReadInt(data, 0, "pos_r"),
+                FromQ = ReadInt(data, 0, "from_q"),
+                FromR = ReadInt(data, 0, "from_r"),
+                ToQ = ReadInt(data, 0, "to_q"),
+                ToR = ReadInt(data, 0, "to_r")
             };
         }
 

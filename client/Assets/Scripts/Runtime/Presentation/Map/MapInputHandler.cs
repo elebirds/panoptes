@@ -787,12 +787,6 @@ namespace Panoptes.Presentation.Map
             switch (_combatActionMode)
             {
                 case CombatActionMode.Attack:
-                    if (!IsGridWithinSelectedAttackRange(targetUnit.GridPos))
-                    {
-                        ShowUserError("Target is out of attack range.");
-                        return false;
-                    }
-
                     TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
                     ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
                     GameIntents.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
@@ -861,12 +855,6 @@ namespace Panoptes.Presentation.Map
                 _combatActionMode != CombatActionMode.Attack ||
                 string.IsNullOrWhiteSpace(nodeId))
             {
-                return false;
-            }
-
-            if (!IsNodeWithinSelectedAttackRange(nodeId))
-            {
-                ShowUserError("Target is out of attack range.");
                 return false;
             }
 
@@ -1077,8 +1065,8 @@ namespace Panoptes.Presentation.Map
                 Id = nodeState.Id ?? string.Empty,
                 Type = infoType,
                 Owner = !string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.Owner : nodeState.TerritoryOwner,
-                X = nodeState.X,
-                Y = nodeState.Y,
+                Q = nodeState.Q,
+                R = nodeState.R,
                 Hp = hp,
                 MaxHp = Mathf.Max(1, hp)
             };
@@ -1661,7 +1649,7 @@ namespace Panoptes.Presentation.Map
                             continue;
                         }
 
-                        var grid = new Vector2Int(eventItem.ToX, eventItem.ToY);
+                        var grid = new Vector2Int(eventItem.ToQ, eventItem.ToR);
                         if (!MapRenderer.Instance.TryGetNodeIdByGrid(grid, out var targetNodeId))
                         {
                             continue;
@@ -1985,7 +1973,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (ManhattanDistance(originGrid, nodeView.GridPos) > attackRange)
+                if (HexGrid.AxialDistance(originGrid, nodeView.GridPos) > attackRange)
                 {
                     continue;
                 }
@@ -2018,7 +2006,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return ManhattanDistance(originGrid, targetGrid) <= ResolveSelectedUnitAttackRange();
+            return HexGrid.AxialDistance(originGrid, targetGrid) <= ResolveSelectedUnitAttackRange();
         }
 
         private bool TryResolveSelectedAttackOrigin(out Vector2Int originGrid, out string originNodeId)
@@ -2125,11 +2113,6 @@ namespace Panoptes.Presentation.Map
             _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
             _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedUnitId);
             RemoveMovePreview(normalizedUnitId);
-        }
-
-        private static int ManhattanDistance(Vector2Int a, Vector2Int b)
-        {
-            return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
         }
 
         private bool TryGetCurrentMovePreview(string unitId, string targetNodeId, out PathPreviewDto preview)
@@ -2423,8 +2406,8 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            nodeView = hit.collider.GetComponentInParent<NodeView>();
-            return nodeView != null;
+            var map = MapRenderer.Instance;
+            return map != null && map.TryGetNodeViewByWorld(hit.point, out nodeView) && nodeView != null;
         }
 
         private bool TryRaycastUnit(out UnitView unitView)

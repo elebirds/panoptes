@@ -432,7 +432,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -449,7 +449,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         UnitType = "settler",
                         Hp = 10,
                         MaxHp = 10,
-                        Pos = new Position { X = 0, Y = 0 }
+                        Pos = new Position { Q = 0, R = 0 }
                     }
                 }
             });
@@ -500,7 +500,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -517,7 +517,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         UnitType = "settler",
                         Hp = 10,
                         MaxHp = 10,
-                        Pos = new Position { X = 1, Y = 0 }
+                        Pos = new Position { Q = 1, R = 0 }
                     }
                 }
             };
@@ -595,7 +595,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -609,7 +609,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A2",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -1100,7 +1100,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         new NodeView
                         {
                             Id = "A1",
-                            Pos = new Position { X = 0, Y = 0 },
+                            Pos = new Position { Q = 0, R = 0 },
                             Terrain = "plain",
                             ControllerPlayerId = "player-1",
                             TerritoryOwnerPlayerId = "player-1",
@@ -1148,7 +1148,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         new NodeView
                         {
                             Id = "A1",
-                            Pos = new Position { X = 0, Y = 0 },
+                            Pos = new Position { Q = 0, R = 0 },
                             Terrain = "plain",
                             ControllerPlayerId = "player-1",
                             TerritoryOwnerPlayerId = "player-1",

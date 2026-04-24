@@ -145,7 +145,7 @@ namespace Panoptes.Presentation.Map
                     }
 
                     _nodesById[node.Id] = node;
-                    _nodesByGrid[new Vector2Int(node.X, node.Y)] = node;
+                    _nodesByGrid[new Vector2Int(node.Q, node.R)] = node;
                 }
             }
 
@@ -180,7 +180,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _nodesById[node.Id] = node;
-            _nodesByGrid[new Vector2Int(node.X, node.Y)] = node;
+            _nodesByGrid[new Vector2Int(node.Q, node.R)] = node;
             RefreshGridBounds();
             ApplyNodeDetailCulling(node.Id);
             MarkDirty();
@@ -953,16 +953,16 @@ namespace Panoptes.Presentation.Map
 
                 if (!_hasGridBounds)
                 {
-                    _minGridX = _maxGridX = node.X;
-                    _minGridY = _maxGridY = node.Y;
+                    _minGridX = _maxGridX = node.Q;
+                    _minGridY = _maxGridY = node.R;
                     _hasGridBounds = true;
                     continue;
                 }
 
-                _minGridX = Mathf.Min(_minGridX, node.X);
-                _maxGridX = Mathf.Max(_maxGridX, node.X);
-                _minGridY = Mathf.Min(_minGridY, node.Y);
-                _maxGridY = Mathf.Max(_maxGridY, node.Y);
+                _minGridX = Mathf.Min(_minGridX, node.Q);
+                _maxGridX = Mathf.Max(_maxGridX, node.Q);
+                _minGridY = Mathf.Min(_minGridY, node.R);
+                _maxGridY = Mathf.Max(_maxGridY, node.R);
             }
         }
 

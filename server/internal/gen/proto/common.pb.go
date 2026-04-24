@@ -23,8 +23,8 @@ const (
 
 type Position struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	X             int32                  `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32                  `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
+	Q             int32                  `protobuf:"varint,1,opt,name=q,proto3" json:"q,omitempty"`
+	R             int32                  `protobuf:"varint,2,opt,name=r,proto3" json:"r,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,16 +59,16 @@ func (*Position) Descriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Position) GetX() int32 {
+func (x *Position) GetQ() int32 {
 	if x != nil {
-		return x.X
+		return x.Q
 	}
 	return 0
 }
 
-func (x *Position) GetY() int32 {
+func (x *Position) GetR() int32 {
 	if x != nil {
-		return x.Y
+		return x.R
 	}
 	return 0
 }
@@ -123,8 +123,8 @@ const file_common_proto_rawDesc = "" +
 	"\n" +
 	"\fcommon.proto\x12\x11panoptes.proto.v1\"&\n" +
 	"\bPosition\x12\f\n" +
-	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x02 \x01(\x05R\x01y\"3\n" +
+	"\x01q\x18\x01 \x01(\x05R\x01q\x12\f\n" +
+	"\x01r\x18\x02 \x01(\x05R\x01r\"3\n" +
 	"\x16MsgClientRuntimeConfig\x12\x19\n" +
 	"\bdev_mode\x18\x01 \x01(\bR\adevModeBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 

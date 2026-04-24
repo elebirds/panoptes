@@ -17,8 +17,8 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Id = view.Id,
                 Type = view.UnitType,
                 Owner = view.Faction,
-                X = view.Pos?.X ?? 0,
-                Y = view.Pos?.Y ?? 0,
+                Q = view.Pos?.Q ?? 0,
+                R = view.Pos?.R ?? 0,
                 Hp = view.Hp,
                 MaxHp = view.MaxHp,
             };
