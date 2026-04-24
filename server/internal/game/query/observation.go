@@ -328,7 +328,7 @@ func computeVisibleNodeIDs(state *domain.GameState, viewerID string) map[string]
 		}
 		pos := ecs.PositionC.Get(entry)
 		sources = append(sources, visionSource{
-			pos:    domain.Position{X: pos.X, Y: pos.Y},
+			pos:    domain.Position{Q: pos.Q, R: pos.R},
 			range_: unitVisionRange(stats.Type),
 		})
 	})
@@ -346,7 +346,7 @@ func computeVisibleNodeIDs(state *domain.GameState, viewerID string) map[string]
 			return
 		}
 		pos := ecs.PositionC.Get(entry)
-		nodePos := domain.Position{X: pos.X, Y: pos.Y}
+		nodePos := domain.Position{Q: pos.Q, R: pos.R}
 		for _, source := range sources {
 			if nodePos.DistanceTo(source.pos) <= source.range_ {
 				visible[nodeID] = struct{}{}
@@ -374,7 +374,7 @@ func unitVisibleToPlayer(state *domain.GameState, entry *donburi.Entry, visibleN
 		return false
 	}
 	pos := ecs.PositionC.Get(entry)
-	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{Q: pos.Q, R: pos.R})
 	if !ok || nodeEntry == nil {
 		return false
 	}
@@ -409,12 +409,12 @@ func buildUnknownNodeView(state *domain.GameState, entry *donburi.Entry, viewerI
 	pos := ecs.PositionC.Get(entry)
 	return &pb.NodeView{
 		Id:                     node.ID,
-		Pos:                    &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Pos:                    &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 		Terrain:                string(node.Terrain),
 		HasRoad:                node.HasRoad,
 		IsResourcePoint:        node.IsResource,
 		ResourceType:           node.ResourceType,
-		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, viewerID),
+		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, viewerID),
 		BuildingStatus:         "unknown",
 		IsCurrentlyVisible:     false,
 		IsMemory:               false,
@@ -438,7 +438,7 @@ func buildUnitViewFromEntry(entry *donburi.Entry) *pb.UnitView {
 		UnitType: string(stats.Type),
 		Hp:       int32(stats.HP),
 		MaxHp:    int32(stats.MaxHP),
-		Pos:      &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Pos:      &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 	}
 }
 

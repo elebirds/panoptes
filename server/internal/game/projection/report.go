@@ -405,10 +405,10 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 	case event.UnitMovedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"unit_id": e.UnitID,
-			"from_x":  strconv.Itoa(e.From.X),
-			"from_y":  strconv.Itoa(e.From.Y),
-			"to_x":    strconv.Itoa(e.To.X),
-			"to_y":    strconv.Itoa(e.To.Y),
+			"from_q":  strconv.Itoa(e.From.Q),
+			"from_r":  strconv.Itoa(e.From.R),
+			"to_q":    strconv.Itoa(e.To.Q),
+			"to_r":    strconv.Itoa(e.To.R),
 		}}
 	case event.UnitDamagedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
@@ -421,8 +421,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"unit_id":   e.UnitID,
 			"killer_id": e.KillerID,
-			"pos_x":     strconv.Itoa(e.Pos.X),
-			"pos_y":     strconv.Itoa(e.Pos.Y),
+			"pos_q":     strconv.Itoa(e.Pos.Q),
+			"pos_r":     strconv.Itoa(e.Pos.R),
 		}}
 	case event.CityCoreDamagedEvent:
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
@@ -440,8 +440,8 @@ func TurnEventFromEvent(evt event.Event) *pb.TurnEvent {
 		return &pb.TurnEvent{Type: e.Kind(), Data: map[string]string{
 			"unit_a_id":     e.UnitAID,
 			"unit_b_id":     e.UnitBID,
-			"location_x":    strconv.Itoa(e.Location.X),
-			"location_y":    strconv.Itoa(e.Location.Y),
+			"location_q":    strconv.Itoa(e.Location.Q),
+			"location_r":    strconv.Itoa(e.Location.R),
 			"conflict_type": e.ConflictType,
 		}}
 	case event.RoadDestroyedEvent:

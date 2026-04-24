@@ -30,7 +30,7 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 	})
 	player := state.Players["player-1"]
 	player.Research.SetCurrentTarget("agrarian_foundations")
@@ -120,7 +120,7 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 
@@ -244,7 +244,7 @@ func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	nodeEntry := createNodeForViewTest(world, mapData, "F1", 0, 0)
@@ -284,7 +284,7 @@ func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) 
 }
 
 func createNodeForViewTest(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) *donburi.Entry {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 	return world.Entry(entity)
 }

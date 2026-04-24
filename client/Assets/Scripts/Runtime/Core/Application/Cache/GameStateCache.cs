@@ -641,7 +641,7 @@ namespace Panoptes.Core.Application.Cache
                     continue;
                 }
 
-                if (oldUnit.X != pair.Value.X || oldUnit.Y != pair.Value.Y || oldUnit.Hp != pair.Value.Hp)
+                if (oldUnit.Q != pair.Value.Q || oldUnit.R != pair.Value.R || oldUnit.Hp != pair.Value.Hp)
                 {
                     moved.Add(CloneUnitDto(pair.Value));
                 }
@@ -784,15 +784,15 @@ namespace Panoptes.Core.Application.Cache
                 {
                     NodeId = built.NodeId?.Trim() ?? string.Empty,
                     BuildingType = built.BuildingType.Trim(),
-                    X = 0,
-                    Y = 0,
+                    Q = 0,
+                    R = 0,
                     HasCoordinates = false
                 };
 
                 if (!string.IsNullOrWhiteSpace(record.NodeId) && _nodes.TryGetValue(record.NodeId, out var node) && node != null)
                 {
-                    record.X = node.X;
-                    record.Y = node.Y;
+                    record.Q = node.Q;
+                    record.R = node.R;
                     record.HasCoordinates = true;
                 }
 
@@ -1090,8 +1090,8 @@ namespace Panoptes.Core.Application.Cache
             return new NodeDto
             {
                 Id = source.Id,
-                X = source.X,
-                Y = source.Y,
+                Q = source.Q,
+                R = source.R,
                 Type = source.Type,
                 Owner = source.Owner,
                 TerritoryOwner = source.TerritoryOwner,
@@ -1134,8 +1134,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Equals(left.Id, right.Id, StringComparison.Ordinal) &&
-                   left.X == right.X &&
-                   left.Y == right.Y &&
+                   left.Q == right.Q &&
+                   left.R == right.R &&
                    string.Equals(left.Type, right.Type, StringComparison.Ordinal) &&
                    string.Equals(left.Owner, right.Owner, StringComparison.Ordinal) &&
                    string.Equals(left.TerritoryOwner, right.TerritoryOwner, StringComparison.Ordinal) &&
@@ -1316,8 +1316,8 @@ namespace Panoptes.Core.Application.Cache
                 Id = source.Id,
                 Type = source.Type,
                 Owner = source.Owner,
-                X = source.X,
-                Y = source.Y,
+                Q = source.Q,
+                R = source.R,
                 Hp = source.Hp,
                 MaxHp = source.MaxHp
             };

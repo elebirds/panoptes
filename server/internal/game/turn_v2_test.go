@@ -535,8 +535,8 @@ func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) 
 	room.State().Players["player-1"].Research.UnlockBuilding("farm")
 
 	world := donburi.NewWorld()
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	targetEntry := world.Entry(targetEntity)
 	for _, entry := range []*donburi.Entry{cityEntry, targetEntry} {
@@ -712,10 +712,10 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{
-		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"}),
-		"A2": ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"}),
-		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 1, Terrain: "plain"}),
-		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"}),
+		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"}),
+		"A2": ecs.CreateNode(world, ecs.MapNode{ID: "A2", Q: 1, R: 0, Terrain: "plain"}),
+		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 1, Terrain: "plain"}),
+		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", Q: 1, R: 1, Terrain: "plain"}),
 	}
 	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:        "turn-fatal",
@@ -738,9 +738,9 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	state.Players["player-1"].CapitalCityID = "A1"
 	state.Players["player-1"].CapitalCityCoreHP = 10
 
-	attackerEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 0}))
+	attackerEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 1, R: 0}))
 	ecs.UnitStatsC.Get(attackerEntry).ID = "infantry-attack"
-	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 1}))
+	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{Q: 0, R: 1}))
 	ecs.UnitStatsC.Get(settlerEntry).ID = "settler-1"
 	state.TurnRuntime.Planning.UnitOrders["infantry-attack"] = domain.UnitDirective{
 		PlayerID:     "player-2",
@@ -819,13 +819,13 @@ func TestRunTurnResolutionNonFatalStillIncludesCombatUpkeepInUnitSection(t *test
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "upkeep-test", Width: 1, Height: 1, NodeIndex: map[string]donburi.Entity{"A1": nodeEntity}})
 	state.World = world
 	state.NodeIndex = state.Map.NodeIndex
 	state.Phase = domain.PhaseResolving.String()
 	state.Players["player-1"].Resources.Set(domain.ResourceFood, 0)
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	room.runtime.SetState(state)
 

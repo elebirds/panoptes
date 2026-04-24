@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
@@ -47,7 +48,7 @@ func TestLoadMapAndInitWorldFromMap(t *testing.T) {
 	if mapData.Width != 20 || mapData.Height != 20 {
 		t.Fatalf("MapData size = %dx%d", mapData.Width, mapData.Height)
 	}
-	if mapData.SpawnPoints[0].X != 2 || mapData.SpawnPoints[1].X != 17 {
+	if mapData.SpawnPoints[0] != (domain.Position{Q: -3, R: 10}) || mapData.SpawnPoints[1] != (domain.Position{Q: 12, R: 10}) {
 		t.Fatalf("SpawnPoints = %#v", mapData.SpawnPoints)
 	}
 	if mapData.NamedNodes["K10"] != "龙脊" {
@@ -58,6 +59,10 @@ func TestLoadMapAndInitWorldFromMap(t *testing.T) {
 	}
 
 	entry := world.Entry(mapData.NodeIndex["K10"])
+	pos := ecs.PositionC.Get(entry)
+	if *pos != (ecs.PositionComp{Q: 6, R: 9}) {
+		t.Fatalf("node K10 axial position = %#v, want q=6 r=9", pos)
+	}
 	node := ecs.NodeC.Get(entry)
 	if node.NodeName != "龙脊" {
 		t.Fatalf("NodeName = %q", node.NodeName)
@@ -83,7 +88,7 @@ func TestInitWorldFromMapSetsSafeZoneReadyData(t *testing.T) {
 	}
 
 	mapData := InitWorldFromMap(world, mapFile, []string{"player-1"})
-	if mapData.SpawnPoints[0].X != 2 || mapData.SpawnPoints[0].Y != 10 {
+	if mapData.SpawnPoints[0] != (domain.Position{Q: -3, R: 10}) {
 		t.Fatalf("spawn = %#v", mapData.SpawnPoints[0])
 	}
 }

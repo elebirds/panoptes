@@ -49,7 +49,7 @@ func (r *GameRoom) refreshActiveMarchesAfterSettlement() {
 			continue
 		}
 		currentPos := ecs.PositionC.Get(entry)
-		currentNodeID := r.nodeIDAt(domain.Position{X: currentPos.X, Y: currentPos.Y})
+		currentNodeID := r.nodeIDAt(domain.Position{Q: currentPos.Q, R: currentPos.R})
 		if currentNodeID == "" {
 			delete(state.TurnRuntime.Resolving.ActiveMarches, unitID)
 			continue
@@ -60,7 +60,7 @@ func (r *GameRoom) refreshActiveMarchesAfterSettlement() {
 			continue
 		}
 		targetPos := ecs.PositionC.Get(targetEntry)
-		if currentPos.X == targetPos.X && currentPos.Y == targetPos.Y {
+		if currentPos.Q == targetPos.Q && currentPos.R == targetPos.R {
 			delete(state.TurnRuntime.Resolving.ActiveMarches, unitID)
 			continue
 		}

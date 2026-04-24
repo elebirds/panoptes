@@ -3,8 +3,8 @@ namespace Panoptes.Core.Domain
     public class NodeDto
     {
         public string Id;
-        public int X;
-        public int Y;
+        public int Q;
+        public int R;
         public string Type;
         public string Owner;
         public string TerritoryOwner;

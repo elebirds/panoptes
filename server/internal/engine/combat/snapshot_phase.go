@@ -52,7 +52,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 			UnitID:       stats.ID,
 			PlayerID:     stats.Faction,
 			Type:         stats.Type,
-			Position:     domain.Position{X: pos.X, Y: pos.Y},
+			Position:     domain.Position{Q: pos.Q, R: pos.R},
 			HP:           stats.HP,
 			MaxHP:        stats.MaxHP,
 			Attack:       attack,
@@ -98,7 +98,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 			PlayerID:      buildingComp.Owner,
 			CityID:        cityID,
 			Type:          buildingComp.Type,
-			Position:      domain.Position{X: pos.X, Y: pos.Y},
+			Position:      domain.Position{Q: pos.Q, R: pos.R},
 			HP:            buildingComp.HP,
 			MaxHP:         buildingComp.MaxHP,
 			IsCityCore:    isCityCore,
@@ -107,7 +107,7 @@ func (SnapshotPhase) Apply(ctx *ResolutionContext) {
 		ctx.CurrentStructureHP[node.ID] = buildingComp.HP
 		// 建筑阻断和单位阻断统一进入同一张表，后续规则只通过 BlockRule 读取。
 		// 这里有意不覆盖同格单位阻断，因为 charge 的第一接敌目标必须保留为单位。
-		blockPos := domain.Position{X: pos.X, Y: pos.Y}
+		blockPos := domain.Position{Q: pos.Q, R: pos.R}
 		sources := snapshot.BlockSources[blockPos]
 		source := BlockSource{
 			Kind:     "building",

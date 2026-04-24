@@ -207,7 +207,7 @@ func SettlerFoundCity() (*Definition, error) {
 	if err != nil {
 		return nil, err
 	}
-	entry := state.World.Entry(ecs.CreateUnit(state.World, string(domain.UnitTypeSettler), "player-1", domain.Position{X: 2, Y: 2}))
+	entry := state.World.Entry(ecs.CreateUnit(state.World, string(domain.UnitTypeSettler), "player-1", domain.Position{Q: 1, R: 2}))
 	stats := ecs.UnitStatsC.Get(entry)
 	stats.ID = "settler-1"
 	return &Definition{
@@ -246,7 +246,7 @@ func RecipeBlockedByInput() (*Definition, error) {
 			{
 				ID:             "barracks_infantry",
 				BuildingID:     "barracks",
-				ResourceInputs: staticdata.ResourceAmounts{"food": 999, "ore": 999},
+				ResourceInputs: staticdata.ResourceAmounts{"food": 999, "ore": 999, "crystal": 1},
 				WorkAmount:     2,
 				BaseProgress:   1,
 				Outputs:        staticdata.RecipeOutputs{Units: []string{"infantry"}},
@@ -391,7 +391,7 @@ func OuterFacilityCapture() (*Definition, error) {
 		return nil, fmt.Errorf("missing node B2")
 	}
 	ecs.CreateBuilding(state.World, "farm", "player-1", "A1", nodeEntry)
-	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 1, Y: 1}))
+	unitEntry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 1, R: 1}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
@@ -445,7 +445,7 @@ func CapitalDestroyGameOver() (*Definition, error) {
 	if err != nil {
 		return nil, err
 	}
-	entry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 1, Y: 0}))
+	entry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 1, R: 0}))
 	stats := ecs.UnitStatsC.Get(entry)
 	stats.ID = "infantry-1"
 	state.TurnRuntime.Planning.UnitOrders["infantry-1"] = domain.UnitDirective{
@@ -669,7 +669,7 @@ func initializeScenarioCities(state *domain.GameState) {
 			return
 		}
 		corePos := ecs.PositionC.Get(entry)
-		if spawnPos, ok := state.Map.PlayerSpawns[building.Owner]; ok && spawnPos.X == corePos.X && spawnPos.Y == corePos.Y {
+		if spawnPos, ok := state.Map.PlayerSpawns[building.Owner]; ok && spawnPos.Q == corePos.Q && spawnPos.R == corePos.R {
 			playerState := state.Players[building.Owner]
 			if playerState != nil {
 				playerState.CapitalCityID = node.ID

@@ -5,8 +5,8 @@ namespace Panoptes.Core.Domain
         public string Id;
         public string Type;
         public string Owner;
-        public int X;
-        public int Y;
+        public int Q;
+        public int R;
         public int Hp;
         public int MaxHp;
     }

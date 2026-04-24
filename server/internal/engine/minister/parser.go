@@ -122,7 +122,7 @@ func ExecuteActions(actions []MinisterActionItem, room ActionRoom, playerID stri
 				continue
 			}
 			p := ecs.PositionC.Get(nodeEntry)
-			pos := domain.Position{X: p.X, Y: p.Y}
+			pos := domain.Position{Q: p.Q, R: p.R}
 			state.TurnRuntime.Planning.MinisterMoves = append(state.TurnRuntime.Planning.MinisterMoves, domain.MoveOrder{PlayerID: playerID, UnitID: unitID, Target: pos})
 		case "redirect_flow":
 			// redirect_flow 暂时只记录，不直接修改持久配置。

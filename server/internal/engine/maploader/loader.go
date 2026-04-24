@@ -9,6 +9,7 @@ package maploader
 import (
 	"fmt"
 
+	"github.com/elebirds/panoptes/internal/algo/geometry"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -39,7 +40,7 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 
 	spawnOwners := make(map[domain.Position]string, len(mapFile.SpawnPoints))
 	for _, spawn := range mapFile.SpawnPoints {
-		pos := domain.Position{X: spawn.X, Y: spawn.Y}
+		pos := geometry.OffsetToAxial(spawn.X, spawn.Y)
 		mapData.SpawnPoints[spawn.Slot] = pos
 		if spawn.Slot < len(playerIDs) {
 			spawnOwners[pos] = playerIDs[spawn.Slot]
@@ -51,17 +52,17 @@ func InitWorldFromMap(world donburi.World, mapFile *staticdata.MapRuntimeBundle,
 	}
 
 	for _, node := range mapFile.Nodes {
+		pos := geometry.OffsetToAxial(node.X, node.Y)
 		entity := ecs.CreateNode(world, ecs.MapNode{
 			ID:              node.ID,
-			X:               node.X,
-			Y:               node.Y,
+			Q:               pos.Q,
+			R:               pos.R,
 			Terrain:         node.Terrain,
 			IsResourcePoint: node.IsResourcePoint,
 			ResourceType:    node.ResourceType,
 		})
 		entry := world.Entry(entity)
 		ecs.NodeC.Get(entry).NodeName = node.NodeName
-		pos := domain.Position{X: node.X, Y: node.Y}
 		owner := resolveNodeOwner(node, pos, playerIDs, spawnOwners)
 		territoryOwner := resolveTerritoryOwner(node, pos, playerIDs, spawnOwners)
 		ecs.NodeC.Get(entry).Owner = owner

@@ -43,7 +43,7 @@ namespace Panoptes.Tests.EditMode.UI
                     new NodeView
                     {
                         Id = "A2",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
                         BuildingTypeId = "farm"

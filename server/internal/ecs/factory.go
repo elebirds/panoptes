@@ -19,8 +19,8 @@ import (
 
 type MapNode struct {
 	ID              string `json:"id"`
-	X               int    `json:"x"`
-	Y               int    `json:"y"`
+	Q               int    `json:"q"`
+	R               int    `json:"r"`
 	Terrain         string `json:"terrain"`
 	IsResourcePoint bool   `json:"is_resource_point"`
 	ResourceType    string `json:"resource_type"`
@@ -29,7 +29,7 @@ type MapNode struct {
 func CreateNode(world donburi.World, mapNode MapNode) donburi.Entity {
 	entity := world.Create(PositionC, NodeC)
 	entry := world.Entry(entity)
-	PositionC.SetValue(entry, PositionComp{X: mapNode.X, Y: mapNode.Y})
+	PositionC.SetValue(entry, PositionComp{Q: mapNode.Q, R: mapNode.R})
 	NodeC.SetValue(entry, NodeComp{
 		ID:           mapNode.ID,
 		Terrain:      domain.Terrain(mapNode.Terrain),
@@ -51,7 +51,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 
 	entity := world.Create(PositionC, UnitStatsC, UnitCategoryC, UnitCapabilitiesC)
 	entry := world.Entry(entity)
-	PositionC.SetValue(entry, PositionComp{X: pos.X, Y: pos.Y})
+	PositionC.SetValue(entry, PositionComp{Q: pos.Q, R: pos.R})
 	UnitStatsC.SetValue(entry, UnitStatsComp{
 		ID:          uuid.NewString(),
 		Faction:     faction,

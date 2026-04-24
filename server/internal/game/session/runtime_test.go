@@ -935,7 +935,7 @@ func TestBootstrapStartingPlayersPlacesInitialInfantryAdjacentToCapitalWhenAvail
 		},
 	}))
 
-	spawnPos := domain.Position{X: 1, Y: 1}
+	spawnPos := domain.Position{Q: 1, R: 1}
 	state := newBootstrapStateForSinglePlayer(3, 3, spawnPos)
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
 	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
@@ -953,8 +953,8 @@ func TestBootstrapStartingPlayersPlacesInitialInfantryAdjacentToCapitalWhenAvail
 		t.Fatalf("player-1 infantry missing")
 	}
 	gotPos := ecs.PositionC.Get(unitEntry)
-	if gotPos.X != 1 || gotPos.Y != 0 {
-		t.Fatalf("initial infantry position = (%d,%d), want adjacent B1", gotPos.X, gotPos.Y)
+	if gotPos.Q != 2 || gotPos.R != 1 {
+		t.Fatalf("initial infantry position = (%d,%d), want first axial neighbor", gotPos.Q, gotPos.R)
 	}
 }
 
@@ -1002,12 +1002,14 @@ func TestBootstrapStartingPlayersFallsBackToCapitalWhenAdjacentTilesUnavailable(
 		},
 	}))
 
-	spawnPos := domain.Position{X: 1, Y: 1}
+	spawnPos := domain.Position{Q: 1, R: 1}
 	state := newBootstrapStateForSinglePlayer(3, 3, spawnPos)
-	setNodeTerrain(t, state, domain.Position{X: 1, Y: 0}, "mountain")
-	setNodeTerrain(t, state, domain.Position{X: 2, Y: 1}, "mountain")
-	ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{X: 0, Y: 1})
-	downEntry := mustGetNodeAt(t, state, domain.Position{X: 1, Y: 2})
+	setNodeTerrain(t, state, domain.Position{Q: 2, R: 1}, "mountain")
+	setNodeTerrain(t, state, domain.Position{Q: 2, R: 0}, "mountain")
+	setNodeTerrain(t, state, domain.Position{Q: 1, R: 0}, "mountain")
+	ecs.CreateUnit(state.World, "infantry", "player-2", domain.Position{Q: 0, R: 1})
+	setNodeTerrain(t, state, domain.Position{Q: 0, R: 2}, "mountain")
+	downEntry := mustGetNodeAt(t, state, domain.Position{Q: 1, R: 2})
 	ecs.CreateBuilding(state.World, "farm", "player-2", "", downEntry)
 
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
@@ -1026,8 +1028,8 @@ func TestBootstrapStartingPlayersFallsBackToCapitalWhenAdjacentTilesUnavailable(
 		t.Fatalf("player-1 infantry missing")
 	}
 	gotPos := ecs.PositionC.Get(unitEntry)
-	if gotPos.X != spawnPos.X || gotPos.Y != spawnPos.Y {
-		t.Fatalf("initial infantry position = (%d,%d), want capital (%d,%d)", gotPos.X, gotPos.Y, spawnPos.X, spawnPos.Y)
+	if gotPos.Q != spawnPos.Q || gotPos.R != spawnPos.R {
+		t.Fatalf("initial infantry position = (%d,%d), want capital (%d,%d)", gotPos.Q, gotPos.R, spawnPos.Q, spawnPos.R)
 	}
 }
 
@@ -1308,8 +1310,8 @@ func newBootstrapStateForSinglePlayer(width int, height int, spawnPos domain.Pos
 	for _, node := range runtimeBootstrapNodes(width, height) {
 		entity := ecs.CreateNode(world, ecs.MapNode{
 			ID:      node.ID,
-			X:       node.X,
-			Y:       node.Y,
+			Q:       node.X,
+			R:       node.Y,
 			Terrain: node.Terrain,
 		})
 		mapData.NodeIndex[node.ID] = entity
@@ -1324,7 +1326,7 @@ func mustGetNodeAt(t *testing.T, state *domain.GameState, pos domain.Position) *
 	t.Helper()
 	entry, ok := domain.GetNodeAt(state.World, pos)
 	if !ok || entry == nil {
-		t.Fatalf("node at (%d,%d) missing", pos.X, pos.Y)
+		t.Fatalf("node at (%d,%d) missing", pos.Q, pos.R)
 	}
 	return entry
 }

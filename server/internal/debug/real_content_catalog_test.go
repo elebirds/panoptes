@@ -122,7 +122,7 @@ func TestRealContentCityCoreProvidesStartupFoodAndGovernance(t *testing.T) {
 	staticdata.SetDefault(catalog)
 
 	world := donburi.NewWorld()
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	node := ecs.NodeC.Get(cityEntry)
 	node.Owner = "player-1"

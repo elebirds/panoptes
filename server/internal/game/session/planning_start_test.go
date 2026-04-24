@@ -34,7 +34,7 @@ func TestBuildPlanningStartMessageFromObservationUsesPerPlayerVisibility(t *test
 		ID:           "planning-fog",
 		Width:        3,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 2, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 2, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	createPlanningStartNode(world, mapData, "N0", 0, 0)
@@ -46,8 +46,8 @@ func TestBuildPlanningStartMessageFromObservationUsesPerPlayerVisibility(t *test
 	state.Turn = 2
 	state.Phase = domain.PhasePlanning.String()
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
@@ -87,17 +87,17 @@ func TestBuildPlanningStartMessageFromObservationIncludesMinisterDrafts(t *testi
 	state.Phase = domain.PhasePlanning.String()
 	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
 		{
-			DraftID:       "draft-policy-1",
-			PlayerID:      "player-1",
-			MinisterRole:  "domestic",
-			Kind:          domain.MinisterDraftKindPolicy,
-			TargetID:      "expansion",
-			TargetLabel:   "Expansion",
-			Title:         "建议转向扩张国策",
-			Status:        domain.MinisterDraftStatusPending,
-			Available:     true,
-			Turn:          2,
-			Source:        domain.MinisterDraftSourceRuleOnly,
+			DraftID:      "draft-policy-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindPolicy,
+			TargetID:     "expansion",
+			TargetLabel:  "Expansion",
+			Title:        "建议转向扩张国策",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         2,
+			Source:       domain.MinisterDraftSourceRuleOnly,
 		},
 	})
 
@@ -121,7 +121,7 @@ func TestBuildPlanningStartMessageFromObservationIncludesMinisterDrafts(t *testi
 }
 
 func createPlanningStartNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 }
 

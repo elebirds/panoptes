@@ -34,7 +34,7 @@ func TestSnapshotPhaseAppliesUnitAttackModifier(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	entity := ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0})
+	entity := ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0})
 	entry := world.Entry(entity)
 	unitID := ecs.UnitStatsC.Get(entry).ID
 
@@ -75,7 +75,7 @@ func TestSnapshotPhaseUsesUnifiedModifierOrderAcrossTypes(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	entity := ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0})
+	entity := ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0})
 	entry := world.Entry(entity)
 	unitID := ecs.UnitStatsC.Get(entry).ID
 

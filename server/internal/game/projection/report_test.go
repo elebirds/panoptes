@@ -20,8 +20,8 @@ func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
 
 	turnEvent := TurnEventFromEvent(event.UnitMovedEvent{
 		UnitID: "unit-1",
-		From:   domain.Position{X: 1, Y: 2},
-		To:     domain.Position{X: 3, Y: 4},
+		From:   domain.Position{Q: 1, R: 2},
+		To:     domain.Position{Q: 3, R: 4},
 	})
 
 	if turnEvent.GetType() != "unit_moved" {
@@ -30,8 +30,8 @@ func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
 	if got := turnEvent.GetData()["unit_id"]; got != "unit-1" {
 		t.Fatalf("unit_id = %q, want unit-1", got)
 	}
-	if got := turnEvent.GetData()["to_x"]; got != "3" {
-		t.Fatalf("to_x = %q, want 3", got)
+	if got := turnEvent.GetData()["to_q"]; got != "3" {
+		t.Fatalf("to_q = %q, want 3", got)
 	}
 }
 

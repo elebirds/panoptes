@@ -29,7 +29,7 @@ func TestCityFoundedEventApplyClaimsTerritoryAndCreatesPendingCityCore(t *testin
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 3; x++ {
 			nodeID := fmt.Sprintf("%c%d", 'A'+x, y+1)
-			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+			entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 			nodeIndex[nodeID] = entity
 		}
 	}
@@ -44,7 +44,7 @@ func TestCityFoundedEventApplyClaimsTerritoryAndCreatesPendingCityCore(t *testin
 	state.Turn = 3
 
 	centerEntry := world.Entry(nodeIndex["B1"])
-	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{X: 1, Y: 1}))
+	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{Q: 1, R: 1}))
 	ecs.UnitStatsC.Get(settlerEntry).ID = "settler-1"
 
 	evt := CityFoundedEvent{

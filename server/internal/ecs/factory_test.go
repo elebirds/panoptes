@@ -19,8 +19,8 @@ func TestCreateNodeAndFindNodeByID(t *testing.T) {
 
 	entity := CreateNode(world, MapNode{
 		ID:              "K10",
-		X:               10,
-		Y:               9,
+		Q:               10,
+		R:               9,
 		Terrain:         "mountain",
 		IsResourcePoint: true,
 		ResourceType:    "ore",
@@ -28,7 +28,7 @@ func TestCreateNodeAndFindNodeByID(t *testing.T) {
 
 	entry := world.Entry(entity)
 	pos := donburi.Get[PositionComp](entry, PositionC)
-	if pos.X != 10 || pos.Y != 9 {
+	if pos.Q != 10 || pos.R != 9 {
 		t.Fatalf("Position = %#v", pos)
 	}
 
@@ -60,7 +60,7 @@ func TestCreateUnitAttachesAbilityComponents(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	cavalry := world.Entry(CreateUnit(world, "cavalry", "player-1", domain.Position{X: 2, Y: 3}))
+	cavalry := world.Entry(CreateUnit(world, "cavalry", "player-1", domain.Position{Q: 2, R: 3}))
 	if !cavalry.HasComponent(ChargeAbilityC) {
 		t.Fatalf("cavalry missing charge ability")
 	}
@@ -68,17 +68,17 @@ func TestCreateUnitAttachesAbilityComponents(t *testing.T) {
 		t.Fatalf("cavalry should not be ranged")
 	}
 
-	archer := world.Entry(CreateUnit(world, "archer", "player-1", domain.Position{X: 1, Y: 1}))
+	archer := world.Entry(CreateUnit(world, "archer", "player-1", domain.Position{Q: 1, R: 1}))
 	if !archer.HasComponent(RangedAbilityC) {
 		t.Fatalf("archer missing ranged ability")
 	}
 
-	siege := world.Entry(CreateUnit(world, "siege", "player-1", domain.Position{X: 4, Y: 5}))
+	siege := world.Entry(CreateUnit(world, "siege", "player-1", domain.Position{Q: 4, R: 5}))
 	if !siege.HasComponent(SiegeAbilityC) {
 		t.Fatalf("siege missing siege ability")
 	}
 
-	saboteur := world.Entry(CreateUnit(world, "saboteur", "player-2", domain.Position{X: 6, Y: 7}))
+	saboteur := world.Entry(CreateUnit(world, "saboteur", "player-2", domain.Position{Q: 6, R: 7}))
 	if !saboteur.HasComponent(DestroyAbilityC) {
 		t.Fatalf("saboteur missing destroy ability")
 	}
@@ -92,7 +92,7 @@ func TestCreateBuildingSetsNodeOwner(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := CreateNode(world, MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := CreateNode(world, MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 
 	building := world.Entry(CreateBuilding(world, "wall", "player-1", "", nodeEntry))
@@ -116,8 +116,8 @@ func TestCreateUnitUsesAuthorSourcedStructureAttackCapability(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	settler := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 0}))
-	infantry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{X: 1, Y: 0}))
+	settler := world.Entry(CreateUnit(world, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	infantry := world.Entry(CreateUnit(world, "infantry", "player-1", domain.Position{Q: 1, R: 0}))
 
 	if ecsCaps := donburi.Get[UnitCapabilitiesComp](settler, UnitCapabilitiesC); ecsCaps.CanAttackStructures {
 		t.Fatalf("settler should not inherit structure attack capability")
@@ -135,7 +135,7 @@ func TestCreateBuildingStoresBinding(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := CreateNode(world, MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"})
+	nodeEntity := CreateNode(world, MapNode{ID: "B2", Q: 1, R: 1, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 
 	building := world.Entry(CreateBuilding(world, "farm", "player-1", "city-a", nodeEntry))
@@ -168,9 +168,9 @@ func TestCreateBuildingAttachesCityScopeComponents(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	cityEntry := world.Entry(CreateNode(world, MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"}))
-	barracksEntry := world.Entry(CreateNode(world, MapNode{ID: "C2", X: 1, Y: 0, Terrain: "plain"}))
-	farmEntry := world.Entry(CreateNode(world, MapNode{ID: "C3", X: 2, Y: 0, Terrain: "plain"}))
+	cityEntry := world.Entry(CreateNode(world, MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"}))
+	barracksEntry := world.Entry(CreateNode(world, MapNode{ID: "C2", Q: 1, R: 0, Terrain: "plain"}))
+	farmEntry := world.Entry(CreateNode(world, MapNode{ID: "C3", Q: 2, R: 0, Terrain: "plain"}))
 
 	CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 	CreateBuilding(world, "barracks", "player-1", "C1", barracksEntry)

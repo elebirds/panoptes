@@ -21,7 +21,8 @@ func IsContested(world donburi.World, nodeEntry *donburi.Entry) bool {
 	if nodeEntry == nil {
 		return false
 	}
-	pos := Position{X: PositionC.Get(nodeEntry).X, Y: PositionC.Get(nodeEntry).Y}
+	nodePos := PositionC.Get(nodeEntry)
+	pos := Position{Q: nodePos.Q, R: nodePos.R}
 	factions := UnitsByFactionAtNode(world, pos)
 	return len(factions) > 1
 }
@@ -51,7 +52,7 @@ func GetNodeAt(world donburi.World, pos Position) (*donburi.Entry, bool) {
 			return
 		}
 		p := PositionC.Get(entry)
-		if p.X == pos.X && p.Y == pos.Y {
+		if p.Q == pos.Q && p.R == pos.R {
 			result = entry
 		}
 	})
@@ -63,7 +64,8 @@ func GetUnitsAtNode(world donburi.World, nodeID string) []*donburi.Entry {
 	if !ok {
 		return nil
 	}
-	pos := Position{X: PositionC.Get(nodeEntry).X, Y: PositionC.Get(nodeEntry).Y}
+	nodePos := PositionC.Get(nodeEntry)
+	pos := Position{Q: nodePos.Q, R: nodePos.R}
 	return GetUnitsByNode(world, pos)
 }
 

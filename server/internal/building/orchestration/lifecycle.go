@@ -124,7 +124,7 @@ func (s *LifecycleSystem) advanceFacilityTakeover(world donburi.World, state *do
 			if player := state.Players[controller]; player != nil {
 				fallback = player.CapitalCityID
 			}
-			serviceCityID := event.NearestOwnedCityID(state, controller, domain.Position{X: pos.X, Y: pos.Y}, fallback)
+			serviceCityID := event.NearestOwnedCityID(state, controller, domain.Position{Q: pos.Q, R: pos.R}, fallback)
 			return []event.Event{event.FacilityTakeoverCompletedEvent{
 				NodeID:        ecs.NodeC.Get(entry).ID,
 				NewOwnerID:    controller,
@@ -148,7 +148,7 @@ func exclusiveEnemyController(state *domain.GameState, entry *donburi.Entry, own
 		return "", false
 	}
 	pos := ecs.PositionC.Get(entry)
-	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{Q: pos.Q, R: pos.R})
 	if len(unitsByFaction) == 0 {
 		return "", false
 	}

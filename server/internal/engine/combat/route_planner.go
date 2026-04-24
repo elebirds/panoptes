@@ -95,7 +95,7 @@ func (p WeightedRoutePlanner) BuildPreview(world donburi.World, state *domain.Ga
 	moveRange := effectiveUnitMoveRange(state, stats.Faction, stats.Type, stats.Speed)
 	profile := buildMovementProfile(stats.Type, caps, moveRange)
 	goalPos := ecs.PositionC.Get(targetEntry)
-	path, ok := p.FindPath(world, domain.Position{X: pos.X, Y: pos.Y}, domain.Position{X: goalPos.X, Y: goalPos.Y}, profile)
+	path, ok := p.FindPath(world, domain.Position{Q: pos.Q, R: pos.R}, domain.Position{Q: goalPos.Q, R: goalPos.R}, profile)
 	if !ok || len(path) == 0 {
 		return domain.RoutePreview{}, false
 	}
@@ -153,7 +153,7 @@ func resolvePreviewPathFromNodeIDs(world donburi.World, state *domain.GameState,
 			return nil, domain.MovementProfile{}, false
 		}
 		pos := ecs.PositionC.Get(nodeEntry)
-		path = append(path, domain.Position{X: pos.X, Y: pos.Y})
+		path = append(path, domain.Position{Q: pos.Q, R: pos.R})
 	}
 
 	return path, profile, len(path) > 0

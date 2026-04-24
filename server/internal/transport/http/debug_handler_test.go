@@ -405,7 +405,7 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 		ID:           "debug-fog",
 		Width:        4,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "bot-1": {X: 3, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "bot-1": {Q: 3, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	_ = createDebugHTTPNode(world, mapData, "N0", 0, 0)
@@ -418,8 +418,8 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 	state.Turn = 1
 	state.Phase = domain.PhasePlanning.String()
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 3, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 3, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
@@ -526,7 +526,7 @@ func (s *stubUserStore) GetByID(_ context.Context, id string) (*auth.User, error
 }
 
 func createDebugHTTPNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) *donburi.Entry {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 	return world.Entry(entity)
 }

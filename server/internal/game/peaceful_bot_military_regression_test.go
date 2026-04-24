@@ -236,7 +236,7 @@ func hasAnyUnitAtPositionForGameTest(world donburi.World, pos domain.Position) b
 			return
 		}
 		unitPos := ecs.PositionC.Get(entry)
-		found = unitPos.X == pos.X && unitPos.Y == pos.Y
+		found = unitPos.Q == pos.Q && unitPos.R == pos.R
 	})
 	return found
 }

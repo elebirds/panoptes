@@ -349,7 +349,7 @@ namespace Panoptes.Presentation.Map
                 return node != null;
             }
 
-            if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosX, evt.PosY), out var nodeId))
+            if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId))
             {
                 return map.TryGetNodeView(nodeId, out node) && node != null;
             }
