@@ -68,8 +68,8 @@ namespace Panoptes.Presentation.Map
 
                 var tri = i * 3;
                 triangles[tri] = 0;
-                triangles[tri + 1] = i + 1;
-                triangles[tri + 2] = i == 5 ? 1 : i + 2;
+                triangles[tri + 1] = i == 5 ? 1 : i + 2;
+                triangles[tri + 2] = i + 1;
             }
 
             var mesh = new Mesh
