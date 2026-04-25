@@ -138,6 +138,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, GameObject> _movePreviewByUnitId = new();
         private readonly HashSet<string> _pendingMoveUnitIds = new();
         private readonly Dictionary<string, string> _pendingMoveTargetNodeByUnitId = new();
+        private readonly Dictionary<string, List<string>> _pendingMovePathNodeIdsByUnitId = new(StringComparer.Ordinal);
         private readonly List<UnitView> _nodeClickUnits = new();
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
@@ -1507,6 +1508,12 @@ namespace Panoptes.Presentation.Map
                 ClearPendingDeployCityCoreGhostForUnit(normalizedUnitId);
                 _pendingMoveUnitIds.Add(normalizedUnitId);
                 _pendingMoveTargetNodeByUnitId[normalizedUnitId] = targetNodeId ?? string.Empty;
+                if (TryGetCurrentMovePreview(normalizedUnitId, targetNodeId, out var preview) &&
+                    preview != null &&
+                    preview.Valid)
+                {
+                    RememberPendingMovePath(normalizedUnitId, preview.PathNodeIds);
+                }
             }
 
             RemoveMovePreview(unitId);
@@ -1636,11 +1643,14 @@ namespace Panoptes.Presentation.Map
                             continue;
                         }
 
+                        var settledPathNodeIds = GetRememberedMovePathNodeIds(eventItem.UnitId);
+
                         if (!string.IsNullOrWhiteSpace(eventItem.UnitId))
                         {
                             var normalizedUnitId = eventItem.UnitId.Trim();
                             _pendingMoveUnitIds.Remove(normalizedUnitId);
                             _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
+                            _pendingMovePathNodeIdsByUnitId.Remove(normalizedUnitId);
                             _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedUnitId);
                         }
 
@@ -1655,10 +1665,11 @@ namespace Panoptes.Presentation.Map
                             continue;
                         }
 
-                        ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true, GetQueuedMovePathNodeIds(eventItem.UnitId));
+                        ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true, settledPathNodeIds);
                     }
                 }
             }
+            _pendingMovePathNodeIdsByUnitId.Clear();
 
             var builtBuildings = settlement?.BuiltBuildings;
             if (builtBuildings == null || builtBuildings.Count == 0)
@@ -1931,6 +1942,7 @@ namespace Panoptes.Presentation.Map
 
         private void OnOrdersChanged()
         {
+            RememberQueuedMovePaths();
             RefreshQueuedMovePathMarkers();
             if (_selectedUnit != null && _combatActionMode == CombatActionMode.Attack)
             {
@@ -2111,6 +2123,7 @@ namespace Panoptes.Presentation.Map
             var normalizedUnitId = unitId.Trim();
             _pendingMoveUnitIds.Remove(normalizedUnitId);
             _pendingMoveTargetNodeByUnitId.Remove(normalizedUnitId);
+            _pendingMovePathNodeIdsByUnitId.Remove(normalizedUnitId);
             _movePathOverlay?.ClearMovePathMarkersForUnit(normalizedUnitId);
             RemoveMovePreview(normalizedUnitId);
         }
@@ -2153,6 +2166,62 @@ namespace Panoptes.Presentation.Map
             }
 
             return order.PathNodeIds;
+        }
+
+        private void RememberQueuedMovePaths()
+        {
+            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
+            if (draftCache == null)
+            {
+                return;
+            }
+
+            foreach (var pair in draftCache.OrdersByUnitId)
+            {
+                var order = pair.Value;
+                if (order == null || !string.Equals(order.Action, "move", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                RememberPendingMovePath(order.UnitId, order.PathNodeIds);
+            }
+        }
+
+        private void RememberPendingMovePath(string unitId, IReadOnlyList<string> pathNodeIds)
+        {
+            if (string.IsNullOrWhiteSpace(unitId) || pathNodeIds == null || pathNodeIds.Count < 2)
+            {
+                return;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            var copy = new List<string>(pathNodeIds.Count);
+            for (var i = 0; i < pathNodeIds.Count; i++)
+            {
+                var nodeId = pathNodeIds[i];
+                if (!string.IsNullOrWhiteSpace(nodeId))
+                {
+                    copy.Add(nodeId.Trim());
+                }
+            }
+
+            if (copy.Count >= 2)
+            {
+                _pendingMovePathNodeIdsByUnitId[normalizedUnitId] = copy;
+            }
+        }
+
+        private IReadOnlyList<string> GetRememberedMovePathNodeIds(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return null;
+            }
+
+            return _pendingMovePathNodeIdsByUnitId.TryGetValue(unitId.Trim(), out var pathNodeIds) && pathNodeIds != null && pathNodeIds.Count >= 2
+                ? pathNodeIds
+                : null;
         }
 
         private void RemovePendingBuild(string nodeId)

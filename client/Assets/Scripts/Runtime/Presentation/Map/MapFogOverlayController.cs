@@ -14,7 +14,7 @@ namespace Panoptes.Presentation.Map
         [Header("General")]
         [SerializeField] private bool enabledOnBuild = true;
         [SerializeField] private bool hideUnknownNodeDetails = true;
-        [SerializeField] private bool hideGroundWhenUnknown = true;
+        [SerializeField] private bool hideGroundWhenUnknown = false;
         [SerializeField] private bool disablePerTileObservationFog = true;
         [SerializeField] private float overlayHeightOffset = 0.4f;
         [SerializeField] private float rebuildThrottleSeconds = 0.05f;
@@ -24,8 +24,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Color unknownFogColor = new Color(0.02f, 0.02f, 0.03f, 1f);
         [SerializeField] private Color memoryFogColor = new Color(0.11f, 0.11f, 0.13f, 1f);
         [SerializeField] private Color visibleFogColor = new Color(0f, 0f, 0f, 1f);
-        [Range(0f, 1f)] [SerializeField] private float unknownAlpha = 1f;
-        [Range(0f, 1f)] [SerializeField] private float memoryAlpha = 0.6f;
+        [Range(0f, 1f)] [SerializeField] private float unknownAlpha = 0.72f;
+        [Range(0f, 1f)] [SerializeField] private float memoryAlpha = 0.34f;
         [Range(0f, 1f)] [SerializeField] private float visibleAlpha = 0f;
         [SerializeField] private int pixelsPerTile = 24;
         [SerializeField] private int minTextureSize = 256;
@@ -73,11 +73,14 @@ namespace Panoptes.Presentation.Map
         private Renderer _fogRenderer;
         private Transform _fogTransform;
         private float _tileSize = 1f;
+        private Vector3 _gridWorldOrigin;
+        private bool _hasGridWorldOrigin;
         private int _minGridX;
         private int _maxGridX;
         private int _minGridY;
         private int _maxGridY;
         private bool _hasGridBounds;
+        private bool _hasObservationData;
         private bool _dirty;
         private float _nextRebuildTime;
         private bool _warnedFogPatternUnavailable;
@@ -150,9 +153,10 @@ namespace Panoptes.Presentation.Map
             }
 
             RefreshGridBounds();
+            _hasObservationData = HasObservationData();
             ApplyNodeDetailCullingToAllTiles();
 
-            if (!enabledOnBuild || !_hasGridBounds || _nodesById.Count == 0)
+            if (!enabledOnBuild || !_hasGridBounds || _nodesById.Count == 0 || !_hasObservationData)
             {
                 SetOverlayVisible(false);
                 return;
@@ -182,7 +186,18 @@ namespace Panoptes.Presentation.Map
             _nodesById[node.Id] = node;
             _nodesByGrid[new Vector2Int(node.Q, node.R)] = node;
             RefreshGridBounds();
+            _hasObservationData = HasObservationData();
             ApplyNodeDetailCulling(node.Id);
+
+            if (!enabledOnBuild || !_hasGridBounds || !_hasObservationData)
+            {
+                SetOverlayVisible(false);
+                return;
+            }
+
+            EnsureOverlayRenderer();
+            UpdateOverlayTransform();
+            SetOverlayVisible(true);
             MarkDirty();
         }
 
@@ -191,6 +206,8 @@ namespace Panoptes.Presentation.Map
             _nodesById.Clear();
             _nodesByGrid.Clear();
             _hasGridBounds = false;
+            _hasGridWorldOrigin = false;
+            _hasObservationData = false;
             _dirty = false;
             SetOverlayVisible(false);
         }
@@ -604,11 +621,52 @@ namespace Panoptes.Presentation.Map
             _overlayTopY = maxY + overlayHeightOffset;
             _overlayWidth = width;
             _overlayHeight = height;
+            RefreshGridWorldOrigin();
 
             _fogTransform.position = _overlayCenter;
             _fogTransform.rotation = Quaternion.Euler(90f, 0f, 0f);
             _fogTransform.localScale = new Vector3(width, height, 1f);
             UpdateAtmosphereLayerTransforms();
+        }
+
+        private void RefreshGridWorldOrigin()
+        {
+            _hasGridWorldOrigin = false;
+            _gridWorldOrigin = Vector3.zero;
+
+            if (_tileViews == null || _tileViews.Count == 0)
+            {
+                return;
+            }
+
+            var sum = Vector3.zero;
+            var count = 0;
+            foreach (var pair in _tileViews)
+            {
+                var nodeView = pair.Value;
+                if (nodeView == null || string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    continue;
+                }
+
+                if (!_nodesById.TryGetValue(pair.Key, out var node) || node == null)
+                {
+                    continue;
+                }
+
+                var expectedLocal = HexGrid.AxialToWorld(node.Q, node.R, _tileSize);
+                var tileOrigin = nodeView.transform.position - expectedLocal;
+                sum += tileOrigin;
+                count++;
+            }
+
+            if (count <= 0)
+            {
+                return;
+            }
+
+            _gridWorldOrigin = sum / count;
+            _hasGridWorldOrigin = true;
         }
 
         private void RebuildOverlayTexture()
@@ -620,9 +678,11 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var widthInTiles = _maxGridX - _minGridX + 1;
-            var heightInTiles = _maxGridY - _minGridY + 1;
-            if (widthInTiles <= 0 || heightInTiles <= 0)
+            var tileWorldWidth = Mathf.Max(0.1f, Mathf.Sqrt(3f) * _tileSize);
+            var tileWorldHeight = Mathf.Max(0.1f, 1.5f * _tileSize);
+            var widthInTiles = Mathf.Max(1, Mathf.CeilToInt(_overlayWidth / tileWorldWidth));
+            var heightInTiles = Mathf.Max(1, Mathf.CeilToInt(_overlayHeight / tileWorldHeight));
+            if (widthInTiles <= 0 || heightInTiles <= 0 || !_hasGridWorldOrigin)
             {
                 return;
             }
@@ -640,11 +700,11 @@ namespace Panoptes.Presentation.Map
             var t = Time.unscaledTime;
             for (var y = 0; y < texHeight; y++)
             {
-                var gy = ((y + 0.5f) / texHeight) * heightInTiles - 0.5f;
+                var v = (y + 0.5f) / texHeight;
                 for (var x = 0; x < texWidth; x++)
                 {
-                    var gx = ((x + 0.5f) / texWidth) * widthInTiles - 0.5f;
-                    var sample = SampleFogBilinear(gx, gy, widthInTiles, heightInTiles);
+                    var u = (x + 0.5f) / texWidth;
+                    var sample = SampleFogAtOverlayUv(u, v);
                     sample.alpha = Mathf.Lerp(sample.alpha, Mathf.SmoothStep(0f, 1f, sample.alpha), edgeSmoothness);
 
                     var detailNoise = Mathf.PerlinNoise(x * noiseScale + 13.7f, y * noiseScale + 5.3f);
@@ -657,7 +717,7 @@ namespace Panoptes.Presentation.Map
                     var cloud = Mathf.Clamp01(cloudA * 0.62f + cloudB * 0.38f);
                     cloud = Mathf.SmoothStep(0.2f, 0.9f, cloud);
 
-                    var patternCloud = SampleFogPattern((x + 0.5f) / texWidth, (y + 0.5f) / texHeight, t);
+                    var patternCloud = SampleFogPattern(u, v, t);
                     if (patternCloud >= 0f)
                     {
                         cloud = Mathf.Lerp(cloud, patternCloud, fogPatternContribution);
@@ -716,8 +776,8 @@ namespace Panoptes.Presentation.Map
             unknownFogColor = new Color(0.01f, 0.01f, 0.015f, 1f);
             memoryFogColor = new Color(0.07f, 0.09f, 0.12f, 1f);
             visibleFogColor = new Color(0f, 0f, 0f, 1f);
-            unknownAlpha = 0.96f;
-            memoryAlpha = 0.52f;
+            unknownAlpha = 0.72f;
+            memoryAlpha = 0.34f;
             visibleAlpha = 0f;
             noiseStrength = 0.06f;
             noiseScale = 0.045f;
@@ -767,6 +827,24 @@ namespace Panoptes.Presentation.Map
             var lum = Mathf.Clamp01((((c1.r + c1.g + c1.b) / 3f) * 0.62f) + (((c2.r + c2.g + c2.b) / 3f) * 0.38f));
             lum = Mathf.Clamp01((lum - 0.5f) * fogPatternContrast + 0.5f);
             return lum;
+        }
+
+        private FogSample SampleFogAtOverlayUv(float u, float v)
+        {
+            if (!_hasGridWorldOrigin)
+            {
+                return new FogSample
+                {
+                    color = unknownFogColor,
+                    alpha = unknownAlpha
+                };
+            }
+
+            var worldX = _overlayCenter.x - (_overlayWidth * 0.5f) + (Mathf.Clamp01(u) * _overlayWidth);
+            var worldZ = _overlayCenter.z - (_overlayHeight * 0.5f) + (Mathf.Clamp01(v) * _overlayHeight);
+            var local = new Vector3(worldX - _gridWorldOrigin.x, 0f, worldZ - _gridWorldOrigin.z);
+            var axial = HexGrid.WorldToAxial(local, _tileSize);
+            return GetNodeFogSample(axial);
         }
 
         private Texture2D ResolveFogPatternTexture()
@@ -855,6 +933,48 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private FogSample GetNodeFogSample(Vector2Int grid)
+        {
+            if (!_nodesByGrid.TryGetValue(grid, out var node) || node == null)
+            {
+                return new FogSample
+                {
+                    color = unknownFogColor,
+                    alpha = unknownAlpha
+                };
+            }
+
+            return GetNodeFogSample(node);
+        }
+
+        private FogSample GetNodeFogSample(NodeDto node)
+        {
+            if (node == null)
+            {
+                return new FogSample
+                {
+                    color = unknownFogColor,
+                    alpha = unknownAlpha
+                };
+            }
+
+            if (!_hasObservationData || node.IsVisible)
+            {
+                return new FogSample
+                {
+                    color = visibleFogColor,
+                    alpha = visibleAlpha
+                };
+            }
+
+            var memory = node.IsMemory;
+            return new FogSample
+            {
+                color = memory ? memoryFogColor : unknownFogColor,
+                alpha = memory ? memoryAlpha : unknownAlpha
+            };
+        }
+
         private FogSample SampleFogBilinear(float gx, float gy, int widthInTiles, int heightInTiles)
         {
             var x0 = Mathf.Clamp(Mathf.FloorToInt(gx), 0, widthInTiles - 1);
@@ -888,21 +1008,26 @@ namespace Panoptes.Presentation.Map
                 };
             }
 
-            if (node.IsVisible)
+            if (!_hasObservationData)
             {
-                return new FogSample
-                {
-                    color = visibleFogColor,
-                    alpha = visibleAlpha
-                };
+                return GetNodeFogSample(node);
             }
 
-            var memory = node.IsMemory;
-            return new FogSample
+            return GetNodeFogSample(node);
+        }
+
+        private bool HasObservationData()
+        {
+            foreach (var pair in _nodesById)
             {
-                color = memory ? memoryFogColor : unknownFogColor,
-                alpha = memory ? memoryAlpha : unknownAlpha
-            };
+                var node = pair.Value;
+                if (node != null && (node.IsVisible || node.IsMemory || node.LastObservedTurn > 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static FogSample LerpSample(FogSample a, FogSample b, float t)
@@ -985,7 +1110,9 @@ namespace Panoptes.Presentation.Map
                 {
                     tile.SetPerTileObservationFogEnabled(false);
                 }
-                tile.SetUnknownDetailCulling(hideUnknownNodeDetails, hideGroundWhenUnknown);
+                tile.SetUnknownDetailCulling(
+                    _hasObservationData && hideUnknownNodeDetails,
+                    _hasObservationData && hideGroundWhenUnknown);
             }
         }
 
@@ -1005,7 +1132,9 @@ namespace Panoptes.Presentation.Map
             {
                 tile.SetPerTileObservationFogEnabled(false);
             }
-            tile.SetUnknownDetailCulling(hideUnknownNodeDetails, hideGroundWhenUnknown);
+            tile.SetUnknownDetailCulling(
+                _hasObservationData && hideUnknownNodeDetails,
+                _hasObservationData && hideGroundWhenUnknown);
         }
 
         private void OnDestroy()

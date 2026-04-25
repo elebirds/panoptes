@@ -134,7 +134,6 @@ namespace Panoptes.Presentation.Map
         [Header("Observation Fog")]
         [SerializeField] private bool useGlobalObservationFog = true;
         [SerializeField] private bool hideUnknownNodeDetails = true;
-        [SerializeField] private bool hideUnknownGround = true;
 
         private const int DebugMapSize = 30;
         private const int DebugTerritorySize = 3;
@@ -1416,6 +1415,10 @@ namespace Panoptes.Presentation.Map
 
         private void RefreshObservationPresentation(bool fullRebuildFog, NodeDto snapshotNode)
         {
+            var hasObservationData = HasObservationData(_nodeStates.Values);
+            var hideUnknownNodeDetailsEffective = hideUnknownNodeDetails && hasObservationData;
+            var hideUnknownGroundEffective = false;
+
             if (useGlobalObservationFog)
             {
                 if (_mapFogOverlayController == null)
@@ -1428,7 +1431,9 @@ namespace Panoptes.Presentation.Map
                     _mapFogOverlayController = gameObject.AddComponent<MapFogOverlayController>();
                 }
 
-                _mapFogOverlayController.ConfigureUnknownCulling(hideUnknownNodeDetails, hideUnknownGround);
+                _mapFogOverlayController.ConfigureUnknownCulling(
+                    hideUnknownNodeDetailsEffective,
+                    hideUnknownGroundEffective);
 
                 if (fullRebuildFog)
                 {
@@ -1466,8 +1471,26 @@ namespace Panoptes.Presentation.Map
 
             if (_terrainDecorationSpawner != null)
             {
-                _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetails);
+                _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
             }
+        }
+
+        private static bool HasObservationData(IEnumerable<NodeDto> nodes)
+        {
+            if (nodes == null)
+            {
+                return false;
+            }
+
+            foreach (var node in nodes)
+            {
+                if (node != null && (node.IsVisible || node.IsMemory || node.LastObservedTurn > 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RebuildMapBackdrop()
