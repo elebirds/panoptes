@@ -263,6 +263,8 @@ namespace Panoptes.Presentation.Map
                 go.AddComponent<MapInputHandler>();
             }
 
+            SettlementPlaybackController.EnsureInstance();
+
             var cameraAnchor = GameObject.Find("CameraAnchor");
             if (cameraAnchor == null)
             {
@@ -515,7 +517,8 @@ namespace Panoptes.Presentation.Map
                     Owner = NormalizeToken(node.owner),
                     TerritoryOwner = NormalizeToken(node.territory_owner),
                     BuildingType = buildingType,
-                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp)
+                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp),
+                    BuildingMaxHp = ResolveBuildingMaxHp(buildingType, node.building_hp)
                 });
             }
 
@@ -843,13 +846,15 @@ namespace Panoptes.Presentation.Map
                 return true;
             }
 
-            nodeView.SetBuilding(buildingType, ownerId, hp, false);
+            var maxHp = ResolveBuildingMaxHp(buildingType, hp);
+            nodeView.SetBuilding(buildingType, ownerId, hp, maxHp, false);
 
             if (_nodeStates.TryGetValue(nodeId, out var state) && state != null)
             {
                 state.BuildingType = buildingType ?? string.Empty;
                 state.Owner = ownerId ?? string.Empty;
                 state.BuildingHp = hp;
+                state.BuildingMaxHp = maxHp;
             }
 
             return true;
@@ -2232,6 +2237,7 @@ namespace Panoptes.Presentation.Map
                     ResourceType = isResourcePoint ? resourceType : string.Empty,
                     BuildingType = buildingType,
                     BuildingHp = hasBuilding ? (buildingHp > 0 ? buildingHp : 100) : 0,
+                    BuildingMaxHp = hasBuilding ? ResolveBuildingMaxHp(buildingType, buildingHp) : 0,
                     Owner = (jsonNode.owner ?? string.Empty).Trim(),
                     TerritoryOwner = territoryOwner
                 };
@@ -2280,6 +2286,35 @@ namespace Panoptes.Presentation.Map
         private static string NormalizeToken(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private static int ResolveBuildingMaxHp(string buildingType, int fallbackHp)
+        {
+            var normalized = NormalizeToken(buildingType);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                return 0;
+            }
+
+            var catalog = StaticCatalogCache.EnsureInstance();
+            if (catalog != null)
+            {
+                if (string.Equals(normalized, "city_core", StringComparison.OrdinalIgnoreCase) &&
+                    catalog.Rules != null &&
+                    catalog.Rules.city_core_max_hp > 0)
+                {
+                    return catalog.Rules.city_core_max_hp;
+                }
+
+                if (catalog.TryGetBuilding(normalized, out var buildingEntry) &&
+                    buildingEntry != null &&
+                    buildingEntry.max_hp > 0)
+                {
+                    return buildingEntry.max_hp;
+                }
+            }
+
+            return Mathf.Max(0, fallbackHp);
         }
     }
 }

@@ -28,10 +28,10 @@ namespace Panoptes.Presentation.Map
         [Header("Visual")]
         [SerializeField] private Renderer[] tintRenderers;
         [SerializeField] private GameObject selectedRing;
-        [Range(0f, 1f)] [SerializeField] private float factionTintStrength = 0.35f;
+        [Range(0f, 1f)] [SerializeField] private float factionTintStrength = 0.55f;
         [SerializeField] private bool autoCollectTintRenderers = true;
         [SerializeField] private bool tintKeyRenderersOnly = true;
-        [SerializeField] private int autoTintRendererLimit = 8;
+        [SerializeField] private int autoTintRendererLimit = 24;
         [SerializeField] private string[] tintRendererNameKeywords =
         {
             "body",
@@ -60,6 +60,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string speedFloatParam = "moveSpeed";
         [SerializeField] private string attackTriggerParam = "attack";
         [SerializeField] private string idleStateName = "Idle";
+        [SerializeField] private float attackLocomotionSuppressSeconds = 0.9f;
         [SerializeField] private bool forceIdleAnimation = false;
         [SerializeField] private bool forceIdleAnimationOnBind = false;
         [SerializeField] private bool forceUnscaledAnimatorUpdate = true;
@@ -106,6 +107,7 @@ namespace Panoptes.Presentation.Map
         private bool _hasLastRequestedMovingState;
         private bool _persistentIsMoving;
         private float _persistentNormalizedSpeed;
+        private float _suppressLocomotionUntilUnscaledTime;
 
         private void Awake()
         {
@@ -185,11 +187,11 @@ namespace Panoptes.Presentation.Map
             transform.position = worldPosition;
             name = string.IsNullOrEmpty(UnitId) ? "Unit" : $"Unit_{UnitId}";
 
-            ApplyFactionTint();
             if (squadVisualController != null)
             {
                 squadVisualController.OnUnitBound(UnitId, UnitType, Faction);
             }
+            ApplyFactionTint();
 
             _warnedForceIdleBlocksMove = false;
             _warnedNoAnimationDriver = false;
@@ -431,6 +433,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var played = false;
+            _suppressLocomotionUntilUnscaledTime = Time.unscaledTime + Mathf.Max(0.05f, attackLocomotionSuppressSeconds);
             if (animator != null && animator.runtimeAnimatorController != null)
             {
                 if (_attackTriggerHash != 0 && HasAnimatorParameter(animator, _attackTriggerHash, AnimatorControllerParameterType.Trigger))
@@ -450,6 +453,11 @@ namespace Panoptes.Presentation.Map
 
         private void ApplyFactionTint()
         {
+            if (autoCollectTintRenderers)
+            {
+                tintRenderers = CollectAutoTintRenderers();
+            }
+
             if (tintRenderers == null || tintRenderers.Length == 0)
             {
                 return;
@@ -578,10 +586,34 @@ namespace Panoptes.Presentation.Map
             var visited = new HashSet<Renderer>();
             var limit = Mathf.Max(1, autoTintRendererLimit);
 
+            CollectTintRenderers(all, selected, visited, limit, activeOnly: true);
+            if (selected.Count >= limit)
+            {
+                return selected.ToArray();
+            }
+
+            CollectTintRenderers(all, selected, visited, limit, activeOnly: false);
+            if (selected.Count > 0)
+            {
+                return selected.ToArray();
+            }
+
+            // Fallback: keep at least one renderer tinted if no keyword matched.
+            selected.Add(all[0]);
+            return selected.ToArray();
+        }
+
+        private void CollectTintRenderers(Renderer[] all, List<Renderer> selected, HashSet<Renderer> visited, int limit, bool activeOnly)
+        {
             for (var i = 0; i < all.Length; i++)
             {
                 var renderer = all[i];
                 if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (activeOnly && (renderer.gameObject == null || !renderer.gameObject.activeInHierarchy || !renderer.enabled))
                 {
                     continue;
                 }
@@ -602,15 +634,6 @@ namespace Panoptes.Presentation.Map
                     break;
                 }
             }
-
-            if (selected.Count > 0)
-            {
-                return selected.ToArray();
-            }
-
-            // Fallback: keep at least one renderer tinted if no keyword matched.
-            selected.Add(all[0]);
-            return selected.ToArray();
         }
 
         private bool IsKeyTintRenderer(Renderer renderer)
@@ -713,6 +736,11 @@ namespace Panoptes.Presentation.Map
 
         private void EnforcePersistentLocomotionState()
         {
+            if (Time.unscaledTime < _suppressLocomotionUntilUnscaledTime)
+            {
+                return;
+            }
+
             if (forceIdleAnimation)
             {
                 _persistentIsMoving = false;

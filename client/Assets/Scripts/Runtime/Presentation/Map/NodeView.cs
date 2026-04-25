@@ -110,6 +110,8 @@ namespace Panoptes.Presentation.Map
         public int TakeoverRequired { get; private set; }
         public bool IsCityCoreNode { get; private set; }
         public bool IsSafeZoneNode { get; private set; }
+        public bool IsCurrentlyVisible => _isCurrentlyVisible;
+        public bool IsMemoryVisible => _isMemoryVisible;
 
         private ResourcePointView _resourceInstance;
         private string _resourceType = string.Empty;

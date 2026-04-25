@@ -289,6 +289,14 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
+                if (_combatActionMode == CombatActionMode.Move)
+                {
+                    ClearTerritoryHighlights();
+                    NonBuildingMapClicked?.Invoke();
+                    HandleMoveSelectionClick();
+                    return;
+                }
+
                 if (ShouldPrioritizeStructureAttackClick())
                 {
                     ClearTerritoryHighlights();
@@ -315,6 +323,30 @@ namespace Panoptes.Presentation.Map
             if (GetRightMouseButtonDown())
             {
                 HandleCombatCancel();
+            }
+        }
+
+        private void HandleMoveSelectionClick()
+        {
+            if (_selectedUnit == null)
+            {
+                _combatActionMode = CombatActionMode.None;
+                NotifyCombatSelectionChanged();
+                return;
+            }
+
+            if (!TryGetClickedNodeContext(out var node, out _) ||
+                node == null ||
+                string.IsNullOrWhiteSpace(node.NodeId))
+            {
+                ClearMovePreviewState();
+                return;
+            }
+
+            if (TryIssueAuthoritativeMoveOrder(node.NodeId))
+            {
+                _combatActionMode = CombatActionMode.None;
+                NotifyCombatSelectionChanged();
             }
         }
 
@@ -764,10 +796,14 @@ namespace Panoptes.Presentation.Map
             if (!TryGetCurrentMovePreview(_selectedUnit.UnitId, targetNodeId, out var preview))
             {
                 RequestMovePreview(targetNodeId);
-                return false;
+                preview = new PathPreviewDto
+                {
+                    Valid = true,
+                    PathNodeIds = new List<string>()
+                };
             }
 
-            if (!preview.Valid)
+            if (preview != null && !preview.Valid)
             {
                 ShowUserError(ResolveMovePreviewErrorMessage(preview, targetNodeId));
                 return false;
@@ -791,6 +827,7 @@ namespace Panoptes.Presentation.Map
                     TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
                     ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
                     GameIntents.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
+                    PlaySelectedAttackFeedback();
                     _combatActionMode = CombatActionMode.None;
                     NotifyCombatSelectionChanged();
                     return true;
@@ -862,9 +899,20 @@ namespace Panoptes.Presentation.Map
             TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
             ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
             GameIntents.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
+            PlaySelectedAttackFeedback();
             _combatActionMode = CombatActionMode.None;
             NotifyCombatSelectionChanged();
             return true;
+        }
+
+        private void PlaySelectedAttackFeedback()
+        {
+            if (_selectedUnit == null)
+            {
+                return;
+            }
+
+            _selectedUnit.PlayAttackAnimation();
         }
 
         private bool IsEnemyStructureNode(string nodeId)
@@ -1061,6 +1109,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : (isResourcePoint ? 1 : 100);
+            var maxHp = ResolveNodeInfoMaxHp(nodeView, nodeState, infoType, hp, isResourcePoint);
             var unit = new UnitDto
             {
                 Id = nodeState.Id ?? string.Empty,
@@ -1069,7 +1118,7 @@ namespace Panoptes.Presentation.Map
                 Q = nodeState.Q,
                 R = nodeState.R,
                 Hp = hp,
-                MaxHp = Mathf.Max(1, hp)
+                MaxHp = maxHp
             };
 
             var worldPos = nodeView.BuildingAnchor != null
@@ -1086,6 +1135,41 @@ namespace Panoptes.Presentation.Map
             }
             _buildingInfoProxy.gameObject.SetActive(false);
             return _buildingInfoProxy;
+        }
+
+        private static int ResolveNodeInfoMaxHp(NodeView nodeView, NodeDto nodeState, string infoType, int hp, bool isResourcePoint)
+        {
+            if (isResourcePoint)
+            {
+                return Mathf.Max(1, hp);
+            }
+
+            var maxHp = nodeState != null ? nodeState.BuildingMaxHp : 0;
+            if (maxHp <= 0 && nodeView != null && nodeView.BuildingInstance != null)
+            {
+                maxHp = nodeView.BuildingInstance.MaxHitPoints;
+            }
+
+            if (maxHp <= 0)
+            {
+                var catalog = StaticCatalogCache.EnsureInstance();
+                var normalizedType = NormalizeToken(infoType);
+                if (catalog != null)
+                {
+                    if (string.Equals(normalizedType, "city_core", StringComparison.OrdinalIgnoreCase) &&
+                        catalog.Rules != null &&
+                        catalog.Rules.city_core_max_hp > 0)
+                    {
+                        maxHp = catalog.Rules.city_core_max_hp;
+                    }
+                    else if (catalog.TryGetBuilding(normalizedType, out var buildingEntry) && buildingEntry != null)
+                    {
+                        maxHp = buildingEntry.max_hp;
+                    }
+                }
+            }
+
+            return Mathf.Max(1, Mathf.Max(maxHp, hp));
         }
 
         private void CloseCurrentInfoSelection()

@@ -140,6 +140,7 @@ namespace Panoptes.Core.Application.Handler
                 return;
             }
 
+            EnsureSettlementPlaybackController();
             GameStateCache.Instance?.ApplyTurnSettlement(msg);
             Debug.Log($"[Game] 回合结算 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} sections={msg.Sections.Count}");
             for (var i = 0; i < msg.Sections.Count; i++)
@@ -548,6 +549,49 @@ namespace Panoptes.Core.Application.Handler
             }
 
             GameStateCache.Instance?.PublishPlanningCommandResult(evt);
+        }
+
+        private static void EnsureSettlementPlaybackController()
+        {
+            const string controllerTypeName = "Panoptes.Presentation.Map.SettlementPlaybackController";
+            var controllerType = ResolveType(controllerTypeName);
+            if (controllerType == null || !typeof(MonoBehaviour).IsAssignableFrom(controllerType))
+            {
+                return;
+            }
+
+            var behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include);
+            for (var i = 0; i < behaviours.Length; i++)
+            {
+                var behaviour = behaviours[i];
+                if (behaviour != null && behaviour.GetType() == controllerType)
+                {
+                    return;
+                }
+            }
+
+            var go = new GameObject("SettlementPlaybackController");
+            go.AddComponent(controllerType);
+        }
+
+        private static Type ResolveType(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                return null;
+            }
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                var type = assemblies[i].GetType(fullName, throwOnError: false);
+                if (type != null)
+                {
+                    return type;
+                }
+            }
+
+            return null;
         }
 
         private static string FormatPhaseStartLog(string text)

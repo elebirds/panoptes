@@ -75,6 +75,7 @@ namespace Panoptes.Core.Application.Cache
             public string default_recipe_id;
             public string[] recipe_ids;
             public string[] tags;
+            public int max_hp;
         }
 
         [Serializable]

@@ -330,6 +330,7 @@ namespace Panoptes.Core.Application.Cache
 
             _nodes.TryGetValue(node.Id, out var previousNode);
             StabilizeNodeTerrain(node, previousNode);
+            StabilizeNodeBuildingMaxHp(node, previousNode);
             _nodes[node.Id] = node;
             RebuildAuthoritativeProjections();
             Fire(OnNodeChanged, new NodeChangedEvent
@@ -687,6 +688,7 @@ namespace Panoptes.Core.Application.Cache
                     var dto = NodeMapper.ToDto(node);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
+                    StabilizeNodeBuildingMaxHp(dto, previousNode);
                     nextNodes[node.Id] = dto;
                 }
             }
@@ -733,6 +735,7 @@ namespace Panoptes.Core.Application.Cache
                     var dto = NodeMapper.ToDto(node);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
+                    StabilizeNodeBuildingMaxHp(dto, previousNode);
                     nextNodes[node.Id] = dto;
                 }
             }
@@ -1438,6 +1441,29 @@ namespace Panoptes.Core.Application.Cache
 
             incoming.Terrain = terrain;
             incoming.Type = type;
+        }
+
+        private static void StabilizeNodeBuildingMaxHp(NodeDto incoming, NodeDto previous)
+        {
+            if (incoming == null || string.IsNullOrWhiteSpace(incoming.BuildingType))
+            {
+                return;
+            }
+
+            var sameBuilding = previous != null &&
+                               string.Equals(TrimOrEmpty(previous.BuildingType), TrimOrEmpty(incoming.BuildingType), StringComparison.OrdinalIgnoreCase);
+
+            if (incoming.BuildingMaxHp <= 0 && sameBuilding && previous.BuildingMaxHp > 0)
+            {
+                incoming.BuildingMaxHp = previous.BuildingMaxHp;
+            }
+
+            if (sameBuilding &&
+                previous.BuildingMaxHp > incoming.BuildingMaxHp &&
+                incoming.BuildingMaxHp <= Math.Max(0, incoming.BuildingHp))
+            {
+                incoming.BuildingMaxHp = previous.BuildingMaxHp;
+            }
         }
 
         private static string TrimOrEmpty(string value)
