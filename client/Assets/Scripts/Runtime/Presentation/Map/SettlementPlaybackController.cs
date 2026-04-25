@@ -28,6 +28,18 @@ namespace Panoptes.Presentation.Map
         private GameStateCache _cache;
         private Coroutine _playbackCoroutine;
 
+        public static SettlementPlaybackController EnsureInstance()
+        {
+            var existing = FindAnyObjectByType<SettlementPlaybackController>();
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var go = new GameObject("SettlementPlaybackController");
+            return go.AddComponent<SettlementPlaybackController>();
+        }
+
         private void Awake()
         {
             _cache = GameStateCache.Instance;
@@ -158,6 +170,8 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
+            TryPlayUnitAttackAnimation(evt.UnitId);
+            TryPlayUnitAttackAnimation(!string.IsNullOrWhiteSpace(evt.TargetUnitId) ? evt.TargetUnitId : evt.EnemyUnitId);
             node.SetHighlight(true, new Color(1f, 0.45f, 0.2f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
@@ -168,9 +182,12 @@ namespace Panoptes.Presentation.Map
             var map = MapRenderer.Instance;
             if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
+                TryPlayAttackerAnimation(evt);
+                TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
+            TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
         }
@@ -180,9 +197,12 @@ namespace Panoptes.Presentation.Map
             var map = MapRenderer.Instance;
             if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
+                TryPlayUnitAttackAnimation(evt.KillerId);
+                TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
+            TryPlayUnitAttackAnimation(evt.KillerId);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             map.RemoveRuntimeUnit(evt.UnitId, false);
@@ -196,6 +216,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
+            TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
@@ -203,9 +224,41 @@ namespace Panoptes.Presentation.Map
             node.SetHighlightVisible(false);
         }
 
+        private static bool TryPlayAttackerAnimation(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return false;
+            }
+
+            return TryPlayUnitAttackAnimation(evt.UnitId) ||
+                   TryPlayUnitAttackAnimation(ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id"));
+        }
+
+        private static bool TryPlayUnitAttackAnimation(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null || !map.TryGetUnitView(unitId, out var unit) || unit == null)
+            {
+                return false;
+            }
+
+            return unit.PlayAttackAnimation();
+        }
+
         private IEnumerator PlayMapPulse(TurnEventDto evt)
         {
             if (!TryResolveNodeForEvent(evt, out var node) || node == null)
+            {
+                yield break;
+            }
+
+            if (!CanShowNodeCue(node))
             {
                 yield break;
             }
@@ -224,6 +277,11 @@ namespace Panoptes.Presentation.Map
 
             if (TryResolveNodeForEvent(evt, out var node) && node != null)
             {
+                if (!CanShowNodeCue(node))
+                {
+                    yield break;
+                }
+
                 node.SetHighlight(true, new Color(1f, 0.9f, 0.35f, 1f));
                 yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, sectionPauseSeconds));
                 node.SetHighlightVisible(false);
@@ -286,6 +344,71 @@ namespace Panoptes.Presentation.Map
             damagePopupController.ShowDamage(target, damage, isBuilding);
         }
 
+        private void TryShowUnitDamagePopupFallback(TurnEventDto evt)
+        {
+            var damage = ResolveDamageValue(evt);
+            if (damage <= 0 || !TryResolveUnitPopupPosition(evt, out var position))
+            {
+                return;
+            }
+
+            EnsureDamagePopupController();
+            if (damagePopupController == null)
+            {
+                return;
+            }
+
+            damagePopupController.ShowDamage(position, damage, isBuilding: false);
+        }
+
+        private bool TryResolveUnitPopupPosition(TurnEventDto evt, out Vector3 position)
+        {
+            position = default;
+            if (evt == null)
+            {
+                return false;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && map.TryGetNodeView(evt.NodeId, out var eventNode) && eventNode != null)
+            {
+                position = eventNode.transform.position;
+                return true;
+            }
+
+            if (HasEventKey(evt, "pos_q") || HasEventKey(evt, "pos_r"))
+            {
+                if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var eventNodeId) &&
+                    map.TryGetNodeView(eventNodeId, out eventNode) &&
+                    eventNode != null)
+                {
+                    position = eventNode.transform.position;
+                    return true;
+                }
+            }
+
+            var unit = _cache != null ? _cache.GetUnit(evt.UnitId) : null;
+            if (unit != null && map.TryGetNodeIdByGrid(new Vector2Int(unit.Q, unit.R), out var nodeId) && map.TryGetNodeView(nodeId, out var node) && node != null)
+            {
+                position = node.transform.position;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasEventKey(TurnEventDto evt, string key)
+        {
+            return evt?.Data != null &&
+                   !string.IsNullOrWhiteSpace(key) &&
+                   evt.Data.ContainsKey(key);
+        }
+
         private static int ResolveDamageValue(TurnEventDto evt)
         {
             if (evt == null)
@@ -335,6 +458,30 @@ namespace Panoptes.Presentation.Map
             return 0;
         }
 
+        private static string ReadEventString(TurnEventDto evt, params string[] keys)
+        {
+            if (evt?.Data == null || keys == null)
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (evt.Data.TryGetValue(key, out var raw) && !string.IsNullOrWhiteSpace(raw))
+                {
+                    return raw;
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
         {
             node = null;
@@ -355,6 +502,11 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
+        }
+
+        private static bool CanShowNodeCue(NodeView node)
+        {
+            return node != null && node.IsCurrentlyVisible;
         }
 
         private static void EnsureAnimationQueue()

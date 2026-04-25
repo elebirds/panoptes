@@ -144,6 +144,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (cache != null)
             {
                 cache.OnUnitsChanged += OnUnitsChanged;
+                cache.OnNodeChanged += OnNodeChanged;
                 cache.OnPhaseChanged += OnPhaseChanged;
                 cache.OnGameOver += OnGameOver;
             }
@@ -167,6 +168,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (cache != null)
             {
                 cache.OnUnitsChanged -= OnUnitsChanged;
+                cache.OnNodeChanged -= OnNodeChanged;
                 cache.OnPhaseChanged -= OnPhaseChanged;
                 cache.OnGameOver -= OnGameOver;
             }
@@ -306,6 +308,21 @@ namespace Panoptes.Presentation.UI.HUD
             RefreshPlanningUi();
         }
 
+        private void OnNodeChanged(NodeChangedEvent evt)
+        {
+            if (_currentUnit == null || evt == null || string.IsNullOrWhiteSpace(evt.NodeID))
+            {
+                return;
+            }
+
+            if (!string.Equals(evt.NodeID, _currentUnit.UnitId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            RefreshUnitHpFromCache();
+        }
+
         private void OnPhaseChanged(PhaseChangedEvent _)
         {
             if (_currentUnit == null || !_isOpen)
@@ -401,6 +418,15 @@ namespace Panoptes.Presentation.UI.HUD
                     hp = cachedUnit.Hp;
                     maxHp = Mathf.Max(1, cachedUnit.MaxHp);
                 }
+                else
+                {
+                    var cachedNode = cache.GetNode(_currentUnit.UnitId);
+                    if (cachedNode != null && (!string.IsNullOrWhiteSpace(cachedNode.BuildingType) || cachedNode.IsResourcePoint))
+                    {
+                        hp = cachedNode.BuildingHp > 0 ? cachedNode.BuildingHp : Mathf.Max(1, hp);
+                        maxHp = ResolveInfoPanelBuildingMaxHp(cachedNode, _currentUnit.UnitType, hp);
+                    }
+                }
             }
 
             if (hpSlider != null)
@@ -414,6 +440,36 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 hpValueText.text = $"{Mathf.Clamp(hp, 0, maxHp)}/{maxHp}";
             }
+        }
+
+        private static int ResolveInfoPanelBuildingMaxHp(NodeDto node, string fallbackType, int hp)
+        {
+            if (node == null || node.IsResourcePoint)
+            {
+                return Mathf.Max(1, hp);
+            }
+
+            var maxHp = node.BuildingMaxHp;
+            if (maxHp <= 0)
+            {
+                var catalog = StaticCatalogCache.EnsureInstance();
+                var buildingType = NormalizeToken(!string.IsNullOrWhiteSpace(node.BuildingType) ? node.BuildingType : fallbackType);
+                if (catalog != null)
+                {
+                    if (string.Equals(buildingType, "city_core", StringComparison.OrdinalIgnoreCase) &&
+                        catalog.Rules != null &&
+                        catalog.Rules.city_core_max_hp > 0)
+                    {
+                        maxHp = catalog.Rules.city_core_max_hp;
+                    }
+                    else if (catalog.TryGetBuilding(buildingType, out var buildingEntry) && buildingEntry != null)
+                    {
+                        maxHp = buildingEntry.max_hp;
+                    }
+                }
+            }
+
+            return Mathf.Max(1, Mathf.Max(maxHp, hp));
         }
 
         public void SetDockRightOf(RectTransform target, float spacing = -1f, bool immediate = true)

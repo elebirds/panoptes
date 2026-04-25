@@ -9,6 +9,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Panoptes.Presentation.Map
 {
@@ -21,24 +22,26 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float horizontalJitter = 0.2f;
 
         [Header("Popup Text")]
-        [SerializeField] private float textWorldScale = 0.024f;
-        [SerializeField] private float textFontSize = 7.2f;
+        [SerializeField] private float textScreenScale = 1f;
+        [SerializeField] private float textFontSize = 30f;
         [SerializeField] private FontStyles textStyle = FontStyles.Bold;
         [SerializeField] private Color unitDamageColor = new Color(1f, 0.35f, 0.3f, 1f);
         [SerializeField] private Color buildingDamageColor = new Color(1f, 0.55f, 0.2f, 1f);
 
         private sealed class PopupState
         {
-            public Transform Root;
-            public TextMeshPro Text;
-            public Vector3 StartWorldPosition;
-            public Vector3 TravelOffset;
+            public RectTransform Root;
+            public TMP_Text Text;
+            public Vector2 StartScreenPosition;
+            public Vector2 TravelOffset;
             public float BaseScale;
             public float Elapsed;
             public Color BaseColor;
         }
 
         private readonly List<PopupState> _active = new List<PopupState>(16);
+        private Canvas _canvas;
+        private RectTransform _canvasRect;
 
         public void ShowDamage(Transform target, int damage, bool isBuilding)
         {
@@ -47,10 +50,37 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var popupGo = new GameObject($"DamagePopup_{damage}", typeof(TextMeshPro));
-            popupGo.transform.SetParent(transform, worldPositionStays: true);
+            ShowDamageAt(ResolvePopupStartPosition(target), damage, isBuilding);
+        }
 
-            var text = popupGo.GetComponent<TextMeshPro>();
+        public void ShowDamage(Vector3 worldPosition, int damage, bool isBuilding)
+        {
+            if (damage <= 0)
+            {
+                return;
+            }
+
+            ShowDamageAt(worldPosition + Vector3.up * Mathf.Max(0.05f, baseWorldOffsetY), damage, isBuilding);
+        }
+
+        private void ShowDamageAt(Vector3 start, int damage, bool isBuilding)
+        {
+            if (!TryResolveScreenPosition(start, out var screenPosition) || !EnsureCanvas())
+            {
+                return;
+            }
+
+            var popupGo = new GameObject($"DamagePopup_{damage}", typeof(RectTransform), typeof(TextMeshProUGUI));
+            popupGo.transform.SetParent(_canvasRect, worldPositionStays: false);
+
+            var rect = popupGo.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(140f, 56f);
+            rect.anchoredPosition = ScreenToCanvasPosition(screenPosition);
+
+            var text = popupGo.GetComponent<TextMeshProUGUI>();
             if (text == null)
             {
                 Destroy(popupGo);
@@ -64,29 +94,28 @@ namespace Panoptes.Presentation.Map
             text.raycastTarget = false;
             text.fontStyle = textStyle;
             text.color = isBuilding ? buildingDamageColor : unitDamageColor;
+            text.enableVertexGradient = true;
+            text.outlineWidth = 0.16f;
+            text.outlineColor = new Color(0f, 0f, 0f, 0.85f);
+            text.verticalAlignment = VerticalAlignmentOptions.Middle;
+            text.horizontalAlignment = HorizontalAlignmentOptions.Center;
+            rect.localScale = Vector3.one * Mathf.Max(0.1f, textScreenScale);
 
-            var start = ResolvePopupStartPosition(target);
-            popupGo.transform.position = start;
-            popupGo.transform.localScale = Vector3.one * Mathf.Max(0.001f, textWorldScale);
-
-            var jitter = new Vector3(
-                Random.Range(-horizontalJitter, horizontalJitter),
-                0f,
-                Random.Range(-horizontalJitter, horizontalJitter));
-            var travel = jitter + Vector3.up * Mathf.Max(0.2f, popupRiseDistance);
+            var jitterPixels = Mathf.Max(0f, horizontalJitter) * 90f;
+            var travel = new Vector2(
+                Random.Range(-jitterPixels, jitterPixels),
+                Mathf.Max(28f, popupRiseDistance * 72f));
 
             _active.Add(new PopupState
             {
-                Root = popupGo.transform,
+                Root = rect,
                 Text = text,
-                StartWorldPosition = start,
+                StartScreenPosition = screenPosition,
                 TravelOffset = travel,
-                BaseScale = popupGo.transform.localScale.x,
+                BaseScale = rect.localScale.x,
                 Elapsed = 0f,
                 BaseColor = text.color
             });
-
-            FaceCamera(popupGo.transform, Camera.main);
         }
 
         private void LateUpdate()
@@ -98,7 +127,6 @@ namespace Panoptes.Presentation.Map
 
             var dt = Time.unscaledDeltaTime;
             var life = Mathf.Max(0.05f, popupLifetimeSeconds);
-            var cam = Camera.main;
             for (var i = _active.Count - 1; i >= 0; i--)
             {
                 var item = _active[i];
@@ -112,14 +140,12 @@ namespace Panoptes.Presentation.Map
                 var t = Mathf.Clamp01(item.Elapsed / life);
                 var eased = 1f - (1f - t) * (1f - t);
 
-                item.Root.position = item.StartWorldPosition + item.TravelOffset * eased;
+                item.Root.anchoredPosition = ScreenToCanvasPosition(item.StartScreenPosition + item.TravelOffset * eased);
                 item.Root.localScale = Vector3.one * (item.BaseScale * ResolveScaleMultiplier(t));
 
                 var color = item.BaseColor;
                 color.a = 1f - t;
                 item.Text.color = color;
-
-                FaceCamera(item.Root, cam);
 
                 if (t >= 1f)
                 {
@@ -173,27 +199,69 @@ namespace Panoptes.Presentation.Map
             return new Vector3(bounds.center.x, bounds.max.y + yOffset, bounds.center.z);
         }
 
+        private bool EnsureCanvas()
+        {
+            if (_canvas != null && _canvasRect != null)
+            {
+                return true;
+            }
+
+            var canvasGo = new GameObject("DamageNumberPopupCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.transform.SetParent(transform, false);
+            _canvas = canvasGo.GetComponent<Canvas>();
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.sortingOrder = 32000;
+
+            var scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            _canvasRect = canvasGo.GetComponent<RectTransform>();
+            _canvasRect.anchorMin = Vector2.zero;
+            _canvasRect.anchorMax = Vector2.one;
+            _canvasRect.offsetMin = Vector2.zero;
+            _canvasRect.offsetMax = Vector2.zero;
+            return true;
+        }
+
+        private static bool TryResolveScreenPosition(Vector3 worldPosition, out Vector2 screenPosition)
+        {
+            screenPosition = default;
+            var camera = Camera.main != null ? Camera.main : FindAnyObjectByType<Camera>();
+            if (camera == null)
+            {
+                return false;
+            }
+
+            var projected = camera.WorldToScreenPoint(worldPosition);
+            if (projected.z <= 0f)
+            {
+                return false;
+            }
+
+            screenPosition = new Vector2(projected.x, projected.y);
+            return true;
+        }
+
+        private Vector2 ScreenToCanvasPosition(Vector2 screenPosition)
+        {
+            if (_canvasRect == null)
+            {
+                return screenPosition;
+            }
+
+            return new Vector2(
+                screenPosition.x - Screen.width * 0.5f,
+                screenPosition.y - Screen.height * 0.5f);
+        }
+
         private static float ResolveScaleMultiplier(float t)
         {
             var popIn = Mathf.Lerp(0.86f, 1.18f, Mathf.Clamp01(t / 0.18f));
             var settle = Mathf.Lerp(1.18f, 1f, Mathf.Clamp01((t - 0.18f) / 0.5f));
             return t < 0.18f ? popIn : settle;
-        }
-
-        private static void FaceCamera(Transform popup, Camera camera)
-        {
-            if (popup == null || camera == null)
-            {
-                return;
-            }
-
-            var toCamera = camera.transform.position - popup.position;
-            if (toCamera.sqrMagnitude <= 0.0001f)
-            {
-                return;
-            }
-
-            popup.rotation = Quaternion.LookRotation(toCamera.normalized, camera.transform.up);
         }
     }
 }

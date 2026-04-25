@@ -2255,7 +2255,6 @@ MonoBehaviour:
   autoSpawnMapBackdrop: 1
   useGlobalObservationFog: 1
   hideUnknownNodeDetails: 1
-  hideUnknownGround: 1
 --- !u!114 &990100004
 MonoBehaviour:
   m_ObjectHideFlags: 0
