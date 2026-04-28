@@ -67,6 +67,7 @@ namespace Panoptes.Presentation.UI.HUD
         private readonly List<ResourceItemBinding> _items = new();
         private readonly Dictionary<string, int> _lastAmounts = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly EventSubscriptionBag _subscriptions = new();
         private bool _hasSnapshot;
         private bool _techButtonBound;
 
@@ -86,28 +87,28 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Subscribe()
         {
-            if (GameStateCache.Instance != null)
+            _subscriptions.Clear();
+
+            var gameState = GameStateCache.Instance;
+            if (gameState != null)
             {
-                GameStateCache.Instance.OnStateChanged += Refresh;
+                _subscriptions.Add(
+                    () => gameState.OnStateChanged += Refresh,
+                    () => gameState.OnStateChanged -= Refresh);
             }
 
-            if (StaticCatalogCache.Instance != null)
+            var catalog = StaticCatalogCache.Instance;
+            if (catalog != null)
             {
-                StaticCatalogCache.Instance.CatalogChanged += Refresh;
+                _subscriptions.Add(
+                    () => catalog.CatalogChanged += Refresh,
+                    () => catalog.CatalogChanged -= Refresh);
             }
         }
 
         private void Unsubscribe()
         {
-            if (GameStateCache.Instance != null)
-            {
-                GameStateCache.Instance.OnStateChanged -= Refresh;
-            }
-
-            if (StaticCatalogCache.Instance != null)
-            {
-                StaticCatalogCache.Instance.CatalogChanged -= Refresh;
-            }
+            _subscriptions.Clear();
         }
 
         private void BindTechButton()

@@ -4,6 +4,7 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using TMPro;
 using UnityEngine;
@@ -93,6 +94,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Coroutine _slideRoutine;
         private Coroutine _externalOffsetRoutine;
         private PlanningDraftCache _planningDraftCache;
+        private readonly EventSubscriptionBag _subscriptions = new();
         private Vector2 _shownAnchoredPos;
         private Vector2 _hiddenAnchoredPos;
         private Vector2 _externalOffset;
@@ -140,11 +142,14 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnEnable()
         {
             ResolveReferences();
+            _subscriptions.Clear();
             _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
             if (_planningDraftCache != null)
             {
-                _planningDraftCache.OrdersChanged -= RefreshPlanningUi;
-                _planningDraftCache.OrdersChanged += RefreshPlanningUi;
+                var planningDraftCache = _planningDraftCache;
+                _subscriptions.Add(
+                    () => planningDraftCache.OrdersChanged += RefreshPlanningUi,
+                    () => planningDraftCache.OrdersChanged -= RefreshPlanningUi);
             }
             TrySubscribeUnitSelection();
             TrySubscribeActionRegistry();
@@ -152,13 +157,23 @@ namespace Panoptes.Presentation.UI.HUD
             var cache = GameStateCache.Instance;
             if (cache != null)
             {
-                cache.OnUnitsChanged += OnUnitsChanged;
-                cache.OnNodeChanged += OnNodeChanged;
-                cache.OnPhaseChanged += OnPhaseChanged;
-                cache.OnGameOver += OnGameOver;
+                _subscriptions.Add(
+                    () => cache.OnUnitsChanged += OnUnitsChanged,
+                    () => cache.OnUnitsChanged -= OnUnitsChanged);
+                _subscriptions.Add(
+                    () => cache.OnNodeChanged += OnNodeChanged,
+                    () => cache.OnNodeChanged -= OnNodeChanged);
+                _subscriptions.Add(
+                    () => cache.OnPhaseChanged += OnPhaseChanged,
+                    () => cache.OnPhaseChanged -= OnPhaseChanged);
+                _subscriptions.Add(
+                    () => cache.OnGameOver += OnGameOver,
+                    () => cache.OnGameOver -= OnGameOver);
             }
 
-            ActionLock.OnChanged += OnActionLockChanged;
+            _subscriptions.Add(
+                () => ActionLock.OnChanged += OnActionLockChanged,
+                () => ActionLock.OnChanged -= OnActionLockChanged);
         }
 
         private void Start()
@@ -172,21 +187,8 @@ namespace Panoptes.Presentation.UI.HUD
         {
             UnsubscribeUnitSelection();
             UnsubscribeActionRegistry();
-            if (_planningDraftCache != null)
-            {
-                _planningDraftCache.OrdersChanged -= RefreshPlanningUi;
-            }
-
-            var cache = GameStateCache.Instance;
-            if (cache != null)
-            {
-                cache.OnUnitsChanged -= OnUnitsChanged;
-                cache.OnNodeChanged -= OnNodeChanged;
-                cache.OnPhaseChanged -= OnPhaseChanged;
-                cache.OnGameOver -= OnGameOver;
-            }
-
-            ActionLock.OnChanged -= OnActionLockChanged;
+            _subscriptions.Clear();
+            _planningDraftCache = null;
             DisablePortraitCamera();
         }
 

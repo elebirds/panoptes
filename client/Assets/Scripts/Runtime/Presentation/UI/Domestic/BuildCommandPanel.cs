@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
 using TMPro;
@@ -137,6 +138,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly Dictionary<string, List<string>> _requiredTechsByBuilding = new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _activeTechnologyIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _spriteCache = new();
+        private readonly EventSubscriptionBag _subscriptions = new();
 
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
@@ -917,37 +919,33 @@ namespace Panoptes.Presentation.UI.Domestic
             _gameStateCache = GameStateCache.Instance;
             if (_gameStateCache != null)
             {
-                _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
-                _gameStateCache.OnPlanningCommandResult += OnPlanningCommandResult;
-                _gameStateCache.OnStateChanged -= OnGameStateChanged;
-                _gameStateCache.OnStateChanged += OnGameStateChanged;
+                var gameStateCache = _gameStateCache;
+                _subscriptions.Add(
+                    () => gameStateCache.OnPlanningCommandResult += OnPlanningCommandResult,
+                    () => gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult);
+                _subscriptions.Add(
+                    () => gameStateCache.OnStateChanged += OnGameStateChanged,
+                    () => gameStateCache.OnStateChanged -= OnGameStateChanged);
             }
 
             _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
             if (_planningDraftCache != null)
             {
-                _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
-                _planningDraftCache.BuildPreviewChanged += OnBuildPreviewChanged;
-                _planningDraftCache.OrdersChanged -= OnOrdersChanged;
-                _planningDraftCache.OrdersChanged += OnOrdersChanged;
+                var planningDraftCache = _planningDraftCache;
+                _subscriptions.Add(
+                    () => planningDraftCache.BuildPreviewChanged += OnBuildPreviewChanged,
+                    () => planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged);
+                _subscriptions.Add(
+                    () => planningDraftCache.OrdersChanged += OnOrdersChanged,
+                    () => planningDraftCache.OrdersChanged -= OnOrdersChanged);
             }
         }
 
         private void UnsubscribeFeedbackEvents()
         {
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
-                _gameStateCache.OnStateChanged -= OnGameStateChanged;
-                _gameStateCache = null;
-            }
-
-            if (_planningDraftCache != null)
-            {
-                _planningDraftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
-                _planningDraftCache.OrdersChanged -= OnOrdersChanged;
-                _planningDraftCache = null;
-            }
+            _subscriptions.Clear();
+            _gameStateCache = null;
+            _planningDraftCache = null;
         }
 
         private void OnOrdersChanged()
@@ -1023,18 +1021,17 @@ namespace Panoptes.Presentation.UI.Domestic
             _catalogCache = StaticCatalogCache.EnsureInstance();
             if (_catalogCache != null)
             {
-                _catalogCache.CatalogChanged -= OnCatalogUpdated;
-                _catalogCache.CatalogChanged += OnCatalogUpdated;
+                var catalogCache = _catalogCache;
+                _subscriptions.Add(
+                    () => catalogCache.CatalogChanged += OnCatalogUpdated,
+                    () => catalogCache.CatalogChanged -= OnCatalogUpdated);
             }
         }
 
         private void UnsubscribeCatalogUpdates()
         {
-            if (_catalogCache != null)
-            {
-                _catalogCache.CatalogChanged -= OnCatalogUpdated;
-                _catalogCache = null;
-            }
+            _subscriptions.Clear();
+            _catalogCache = null;
         }
 
         private void OnCatalogUpdated()
