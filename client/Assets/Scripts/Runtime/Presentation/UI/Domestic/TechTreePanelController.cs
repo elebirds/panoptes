@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.UI.HUD;
 using TMPro;
 using UnityEngine;
@@ -211,8 +212,22 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             Layout(nodes);
-            var runtimeStates = _stateBuilder.BuildFromCaches(_catalog, _gameState, _planningDraft);
+            var runtimeStates = _stateBuilder.Build(new TechTreePanelStateBuilder.BuildInput
+            {
+                Technologies = _catalog != null
+                    ? new List<StaticCatalogCache.TechnologyEntryJson>(_catalog.Technologies.Values)
+                    : Array.Empty<StaticCatalogCache.TechnologyEntryJson>(),
+                ResearchState = GetCurrentResearchState(),
+                PlannedResearchTargetTechnologyId = _planningDraft != null ? _planningDraft.PlannedResearchTargetTechnologyId : string.Empty,
+                Phase = _gameState != null ? _gameState.Phase : string.Empty,
+                IsActionLocked = ActionLock.IsLocked
+            });
             Render(nodes, runtimeStates);
+        }
+
+        private TechnologyDto GetCurrentResearchState()
+        {
+            return _gameState != null ? _gameState.GetCurrentResearchState() : new TechnologyDto();
         }
 
         private List<NodeData> LoadFromCatalog()

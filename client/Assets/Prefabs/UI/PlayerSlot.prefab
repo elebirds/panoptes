@@ -140,7 +140,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0cb412c44b3e4fe195901635e70d1ce, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.UI.Lobby.PlayerSlotView
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Lobby.PlayerSlotView
   usernameText: {fileID: 2027739416042897509}
   hostBadge: {fileID: 5540323868969911909}
   readyBadge: {fileID: 1957679795472671270}

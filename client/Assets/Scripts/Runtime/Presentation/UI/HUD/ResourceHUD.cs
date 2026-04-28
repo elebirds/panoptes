@@ -168,13 +168,24 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var found = UnityEngine.Object.FindObjectsByType<TechTreePanelController>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            if (found != null && found.Length > 0)
+            techTreePanelController = FindFirstSceneObject<TechTreePanelController>();
+        }
+
+        private static T FindFirstSceneObject<T>() where T : Component
+        {
+            var candidates = Resources.FindObjectsOfTypeAll<T>();
+            for (var i = 0; i < candidates.Length; i++)
             {
-                techTreePanelController = found[0];
+                var candidate = candidates[i];
+                if (candidate == null || !candidate.gameObject.scene.IsValid())
+                {
+                    continue;
+                }
+
+                return candidate;
             }
+
+            return null;
         }
 
         private void Refresh()

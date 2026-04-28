@@ -664,7 +664,7 @@ namespace Panoptes.Core.Application.Cache
                 ChangeType = changeType ?? string.Empty
             };
 
-            if (publishChanges)
+            if (publishChanges && (added.Count > 0 || moved.Count > 0 || removed.Count > 0))
             {
                 Fire(OnUnitsChanged, evt, nameof(OnUnitsChanged));
             }

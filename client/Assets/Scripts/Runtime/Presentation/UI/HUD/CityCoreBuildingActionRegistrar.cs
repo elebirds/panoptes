@@ -238,13 +238,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildCommandPanel == null)
             {
-                var buildPanels = UnityEngine.Object.FindObjectsByType<BuildCommandPanel>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                if (buildPanels != null && buildPanels.Length > 0)
-                {
-                    buildCommandPanel = buildPanels[0];
-                }
+                buildCommandPanel = FindFirstSceneObject<BuildCommandPanel>();
             }
 
             if (buildPanelSlideToggle == null && buildCommandPanel != null)
@@ -259,64 +253,26 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildPanelSlideToggle == null)
             {
-                var toggles = UnityEngine.Object.FindObjectsByType<BuildPanelSlideToggle>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                if (toggles != null && toggles.Length > 0)
+                buildPanelSlideToggle = FindFirstSceneObject<BuildPanelSlideToggle>(candidate =>
                 {
-                    for (var i = 0; i < toggles.Length; i++)
+                    if (buildCommandPanel == null)
                     {
-                        var candidate = toggles[i];
-                        if (candidate == null)
-                        {
-                            continue;
-                        }
-
-                        if (buildCommandPanel != null)
-                        {
-                            var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
-                            if (!ReferenceEquals(owner, buildCommandPanel))
-                            {
-                                continue;
-                            }
-                        }
-
-                        buildPanelSlideToggle = candidate;
-                        break;
+                        return true;
                     }
-                }
+
+                    var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
+                    return ReferenceEquals(owner, buildCommandPanel);
+                });
             }
 
             if (recipeSynthesisPanel == null)
             {
-                var recipePanels = UnityEngine.Object.FindObjectsByType<RecipeSynthesisPanel>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                if (recipePanels != null && recipePanels.Length > 0)
-                {
-                    recipeSynthesisPanel = recipePanels[0];
-                }
+                recipeSynthesisPanel = FindFirstSceneObject<RecipeSynthesisPanel>();
             }
 
             if (nextStageButtonRect == null && autoFindNextStageButton)
             {
-                var allRects = UnityEngine.Object.FindObjectsByType<RectTransform>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                for (var i = 0; i < allRects.Length; i++)
-                {
-                    var rect = allRects[i];
-                    if (rect == null || !rect.gameObject.scene.IsValid())
-                    {
-                        continue;
-                    }
-
-                    if (string.Equals(rect.name, "NextStageBtn", StringComparison.OrdinalIgnoreCase))
-                    {
-                        nextStageButtonRect = rect;
-                        break;
-                    }
-                }
+                nextStageButtonRect = FindSceneRectByName("NextStageBtn");
             }
 
             if (unitInfoPanelController != null && nextStageButtonRect != null)
@@ -326,27 +282,53 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (turnPanelRect == null && autoFindTurnPanel)
             {
-                var allRects = UnityEngine.Object.FindObjectsByType<RectTransform>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-                for (var i = 0; i < allRects.Length; i++)
-                {
-                    var rect = allRects[i];
-                    if (rect == null || !rect.gameObject.scene.IsValid())
-                    {
-                        continue;
-                    }
-
-                    if (string.Equals(rect.name, "TrunPanel", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(rect.name, "TurnPanel", StringComparison.OrdinalIgnoreCase))
-                    {
-                        turnPanelRect = rect;
-                        break;
-                    }
-                }
+                turnPanelRect = FindSceneRectByName("TrunPanel", "TurnPanel");
             }
 
             SubscribeRecipePanelEvents();
+        }
+
+        private static T FindFirstSceneObject<T>(Predicate<T> predicate = null) where T : Component
+        {
+            var candidates = Resources.FindObjectsOfTypeAll<T>();
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                var candidate = candidates[i];
+                if (!IsSceneObject(candidate) || predicate?.Invoke(candidate) == false)
+                {
+                    continue;
+                }
+
+                return candidate;
+            }
+
+            return null;
+        }
+
+        private static RectTransform FindSceneRectByName(params string[] names)
+        {
+            return FindFirstSceneObject<RectTransform>(rect =>
+            {
+                if (string.IsNullOrWhiteSpace(rect.name))
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < names.Length; i++)
+                {
+                    if (string.Equals(rect.name, names[i], StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+        }
+
+        private static bool IsSceneObject(Component component)
+        {
+            return component != null && component.gameObject.scene.IsValid();
         }
 
         private IEnumerator ForceInitialPanelStateAfterLayout()

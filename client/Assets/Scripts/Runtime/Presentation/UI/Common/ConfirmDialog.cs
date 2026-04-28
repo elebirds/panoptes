@@ -161,6 +161,11 @@ namespace Panoptes.Presentation.UI.Common
 
             ApplyButtonStyle(confirmButton, confirmButtonColor);
             ApplyButtonStyle(cancelButton, cancelButtonColor);
+            if (TMP_Settings.defaultFontAsset != null)
+            {
+                titleText.font = TMP_Settings.defaultFontAsset;
+                messageText.font = TMP_Settings.defaultFontAsset;
+            }
             ConfigureText(titleText, 30f, FontStyles.Bold, TextAlignmentOptions.Center, TextWrappingModes.NoWrap);
             ConfigureText(messageText, 24f, FontStyles.Normal, TextAlignmentOptions.Midline, TextWrappingModes.Normal);
         }
@@ -212,7 +217,6 @@ namespace Panoptes.Presentation.UI.Common
             TextAlignmentOptions alignment,
             TextWrappingModes wrappingMode)
         {
-            text.font = TMP_Settings.defaultFontAsset;
             text.fontSize = fontSize;
             text.fontStyle = style;
             text.alignment = alignment;

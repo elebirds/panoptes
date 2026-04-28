@@ -30,6 +30,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Image unitIcon;
         [SerializeField] private TMP_Text unitNameText;
         [SerializeField] private TMP_Text unitDescriptionText;
+        [SerializeField] private TMP_Text planningSummaryText;
         [SerializeField] private Slider hpSlider;
         [SerializeField] private TMP_Text hpValueText;
         [SerializeField] private RectTransform actionButtonsRoot;
@@ -91,6 +92,7 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitView _currentUnit;
         private Coroutine _slideRoutine;
         private Coroutine _externalOffsetRoutine;
+        private PlanningDraftCache _planningDraftCache;
         private Vector2 _shownAnchoredPos;
         private Vector2 _hiddenAnchoredPos;
         private Vector2 _externalOffset;
@@ -123,6 +125,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
             EnsureUnitDescriptionUi();
             HideLegacyPlanningTexts();
+            EnsurePlanningSummaryUi();
             EnsureRequiredActionButtonSlots();
             if (autoRepairActionButtons)
             {
@@ -137,6 +140,12 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnEnable()
         {
             ResolveReferences();
+            _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
+            if (_planningDraftCache != null)
+            {
+                _planningDraftCache.OrdersChanged -= RefreshPlanningUi;
+                _planningDraftCache.OrdersChanged += RefreshPlanningUi;
+            }
             TrySubscribeUnitSelection();
             TrySubscribeActionRegistry();
 
@@ -163,6 +172,10 @@ namespace Panoptes.Presentation.UI.HUD
         {
             UnsubscribeUnitSelection();
             UnsubscribeActionRegistry();
+            if (_planningDraftCache != null)
+            {
+                _planningDraftCache.OrdersChanged -= RefreshPlanningUi;
+            }
 
             var cache = GameStateCache.Instance;
             if (cache != null)
@@ -690,6 +703,51 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private void EnsurePlanningSummaryUi()
+        {
+            if (panelRoot == null)
+            {
+                return;
+            }
+
+            if (planningSummaryText == null)
+            {
+                var summaryRect = panelRoot.Find("PlanningSummaryText") as RectTransform;
+                if (summaryRect == null)
+                {
+                    summaryRect = EnsureChild("PlanningSummaryText");
+                    summaryRect.anchorMin = new Vector2(0f, 1f);
+                    summaryRect.anchorMax = new Vector2(1f, 1f);
+                    summaryRect.pivot = new Vector2(0f, 1f);
+                    summaryRect.anchoredPosition = new Vector2(102f, -112f);
+                    summaryRect.sizeDelta = new Vector2(-118f, 24f);
+                }
+
+                planningSummaryText = summaryRect.GetComponent<TextMeshProUGUI>();
+                if (planningSummaryText == null)
+                {
+                    planningSummaryText = summaryRect.gameObject.AddComponent<TextMeshProUGUI>();
+                }
+            }
+
+            if (planningSummaryText == null)
+            {
+                return;
+            }
+
+            if (planningSummaryText.font == null && TMP_Settings.defaultFontAsset != null)
+            {
+                planningSummaryText.font = TMP_Settings.defaultFontAsset;
+            }
+
+            planningSummaryText.fontSize = 13f;
+            planningSummaryText.color = new Color(0.78f, 0.9f, 1f, 0.95f);
+            planningSummaryText.alignment = TextAlignmentOptions.TopLeft;
+            planningSummaryText.textWrappingMode = TextWrappingModes.NoWrap;
+            planningSummaryText.overflowMode = TextOverflowModes.Ellipsis;
+            planningSummaryText.gameObject.SetActive(false);
+        }
+
         private bool EnsurePortraitCameraAndTexture()
         {
             if (!enablePortraitCamera)
@@ -1114,6 +1172,8 @@ namespace Panoptes.Presentation.UI.HUD
                 directOrderButtonsRoot.gameObject.SetActive(showDirectOrderButtons);
             }
 
+            RefreshPlanningSummaryText();
+
             if (!showDirectOrderButtons)
             {
                 SetDirectOrderButtonState(moveButton, "Move", false, false);
@@ -1127,6 +1187,54 @@ namespace Panoptes.Presentation.UI.HUD
             SetDirectOrderButtonState(attackButton, "Attack", militaryUnit, militaryUnit && CanSelectedUnitAttack(unitType));
             SetDirectOrderButtonState(holdButton, "Hold", militaryUnit, militaryUnit);
             SetDirectOrderButtonState(chargeButton, "Charge", militaryUnit, militaryUnit && CanSelectedUnitCharge(unitType));
+        }
+
+        private void RefreshPlanningSummaryText()
+        {
+            if (planningSummaryText == null)
+            {
+                return;
+            }
+
+            var draftCache = _planningDraftCache ?? PlanningDraftCache.Instance;
+            if (_currentUnit == null || draftCache == null)
+            {
+                planningSummaryText.text = string.Empty;
+                planningSummaryText.gameObject.SetActive(false);
+                return;
+            }
+
+            var currentUnitId = NormalizeToken(_currentUnit.UnitId);
+            var orders = draftCache.GetOrdersInDisplayOrder();
+            for (var i = 0; i < orders.Count; i++)
+            {
+                var order = orders[i];
+                if (order == null || !string.Equals(NormalizeToken(order.UnitId), currentUnitId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                planningSummaryText.text = BuildPlanningSummary(order);
+                planningSummaryText.gameObject.SetActive(true);
+                return;
+            }
+
+            planningSummaryText.text = string.Empty;
+            planningSummaryText.gameObject.SetActive(false);
+        }
+
+        private static string BuildPlanningSummary(QueuedUnitOrderDto order)
+        {
+            if (order == null)
+            {
+                return string.Empty;
+            }
+
+            var action = string.IsNullOrWhiteSpace(order.Action) ? "order" : order.Action.Trim();
+            var target = !string.IsNullOrWhiteSpace(order.TargetNodeId)
+                ? order.TargetNodeId.Trim()
+                : order.TargetUnitId?.Trim();
+            return string.IsNullOrWhiteSpace(target) ? $"Planned: {action}" : $"Planned: {action} -> {target}";
         }
 
         private bool IsInteractivePlanning()

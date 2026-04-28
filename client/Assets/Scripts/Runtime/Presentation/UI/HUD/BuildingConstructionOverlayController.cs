@@ -284,7 +284,7 @@ namespace Panoptes.Presentation.UI.HUD
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Truncate;
             text.color = textColor;
             text.raycastTarget = false;

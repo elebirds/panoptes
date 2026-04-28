@@ -444,7 +444,7 @@ namespace Panoptes.Presentation.UI.Domestic
             var text = textObject.GetComponent<TextMeshProUGUI>();
             text.fontSize = 13f;
             text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.color = defaultTextColor;
 
             metricTemplate.gameObject.SetActive(false);

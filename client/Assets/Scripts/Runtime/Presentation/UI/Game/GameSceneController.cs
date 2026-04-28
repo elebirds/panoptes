@@ -164,6 +164,8 @@ namespace Panoptes.Presentation.UI.Game
 
             EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
             EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
+            EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline");
+            EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel");
             EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
             EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
         }
