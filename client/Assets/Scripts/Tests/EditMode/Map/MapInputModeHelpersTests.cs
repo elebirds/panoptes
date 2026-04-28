@@ -1,6 +1,9 @@
 using NUnit.Framework;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Map;
+using Panoptes.Presentation.Planning.Feedback;
+using Panoptes.Presentation.Planning.Input;
+using Panoptes.Presentation.Planning.Input.Modes;
+using Panoptes.Presentation.Planning.Input.State;
 
 namespace Panoptes.Tests.EditMode.Map
 {
@@ -39,6 +42,15 @@ namespace Panoptes.Tests.EditMode.Map
         public void BuildPreviewPresenter_ShouldFallbackWhileWaiting()
         {
             Assert.That(BuildPreviewPresenter.ResolveMessage(null), Is.EqualTo("检查中"));
+        }
+
+        [Test]
+        public void PlanningInputTypes_ShouldLiveOutsideMapNamespace()
+        {
+            Assert.That(typeof(IPlanningInputMode).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input"));
+            Assert.That(typeof(BuildPlacementInputMode).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input.Modes"));
+            Assert.That(typeof(PendingMoveState).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input.State"));
+            Assert.That(typeof(MovePreviewPresenter).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Feedback"));
         }
     }
 }

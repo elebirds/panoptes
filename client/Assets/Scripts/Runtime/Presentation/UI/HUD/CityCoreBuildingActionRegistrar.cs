@@ -26,7 +26,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string recipeActionLabel = "Synthesis";
 
         [Header("References")]
-        [SerializeField] private MapInputHandler mapInputHandler;
+        [SerializeField] private MapPlanningInputController mapPlanningInputController;
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
@@ -68,7 +68,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Coroutine _nextStageShiftRoutine;
         private Coroutine _panelSwitchRoutine;
         private Coroutine _initialPanelStateRoutine;
-        private MapInputHandler _subscribedMapInputHandler;
+        private MapPlanningInputController _subscribedMapPlanningInputController;
         private string _activeUnitInfoNodeId = string.Empty;
         private bool _lastBuildPanelVisible;
         private bool _lastRecipePanelVisible;
@@ -148,7 +148,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void LateUpdate()
         {
-            if (_subscribedMapInputHandler == null || !ReferenceEquals(_subscribedMapInputHandler, mapInputHandler))
+            if (_subscribedMapPlanningInputController == null || !ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
             {
                 ResolveReferences();
                 SubscribeInputEvents();
@@ -185,50 +185,50 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void SubscribeInputEvents()
         {
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
                 return;
             }
 
-            if (ReferenceEquals(_subscribedMapInputHandler, mapInputHandler))
+            if (ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
             {
                 return;
             }
 
-            if (_subscribedMapInputHandler != null)
+            if (_subscribedMapPlanningInputController != null)
             {
-                _subscribedMapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-                _subscribedMapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
+                _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+                _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
             }
 
-            mapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-            mapInputHandler.NonBuildingMapClicked += OnNonBuildingMapClicked;
+            mapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+            mapPlanningInputController.NonBuildingMapClicked += OnNonBuildingMapClicked;
 
-            mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
-            mapInputHandler.UnitSelectionChanged += OnUnitSelectionChanged;
-            _subscribedMapInputHandler = mapInputHandler;
+            mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            mapPlanningInputController.UnitSelectionChanged += OnUnitSelectionChanged;
+            _subscribedMapPlanningInputController = mapPlanningInputController;
         }
 
         private void UnsubscribeInputEvents()
         {
-            if (_subscribedMapInputHandler == null)
+            if (_subscribedMapPlanningInputController == null)
             {
                 return;
             }
 
-            _subscribedMapInputHandler.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-            _subscribedMapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
-            _subscribedMapInputHandler = null;
+            _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+            _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            _subscribedMapPlanningInputController = null;
         }
 
         private void ResolveReferences()
         {
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
-                mapInputHandler = MapInputHandler.Instance;
-                if (mapInputHandler == null)
+                mapPlanningInputController = MapPlanningInputController.Instance;
+                if (mapPlanningInputController == null)
                 {
-                    mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
 

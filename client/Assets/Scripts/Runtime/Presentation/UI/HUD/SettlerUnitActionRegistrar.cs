@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace Panoptes.Presentation.UI.HUD
     /// </summary>
     public sealed class SettlerUnitActionRegistrar : UnitInfoActionProviderBase
     {
-        [SerializeField] private MapInputHandler mapInputHandler;
+        [SerializeField] private MapPlanningInputController mapPlanningInputController;
         [SerializeField] private string actionId = "settle_city";
         [SerializeField] private string actionLabel = "坐城";
         [SerializeField] private bool planningPhaseOnly = true;
@@ -23,12 +24,12 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
-                mapInputHandler = MapInputHandler.Instance;
-                if (mapInputHandler == null)
+                mapPlanningInputController = MapPlanningInputController.Instance;
+                if (mapPlanningInputController == null)
                 {
-                    mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
 
@@ -46,22 +47,22 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
-                mapInputHandler = MapInputHandler.Instance;
-                if (mapInputHandler == null)
+                mapPlanningInputController = MapPlanningInputController.Instance;
+                if (mapPlanningInputController == null)
                 {
-                    mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
 
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
-                Debug.LogWarning("[SettlerUnitActionRegistrar] MapInputHandler missing, cannot send expand request.");
+                Debug.LogWarning("[SettlerUnitActionRegistrar] MapPlanningInputController missing, cannot send expand request.");
                 return;
             }
 
-            mapInputHandler.RequestExpandTerritory(unit.UnitId);
+            mapPlanningInputController.RequestExpandTerritory(unit.UnitId);
         }
 
         private bool IsSupportedSettlerUnit(UnitView unit)

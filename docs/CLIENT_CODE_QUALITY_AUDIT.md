@@ -5,7 +5,7 @@
 
 ## Summary
 
-The client runtime currently has 122 C# files and 42,487 lines. The Core /
+The client runtime currently has 150 C# files and 43,440 lines. The Core /
 Presentation assembly boundary is mostly intact: Presentation does not reference
 `Panoptes.Protocol`, and UI scripts do not call `NetworkManager.Instance`
 directly. The highest risks are concentrated in a small set of very large
@@ -16,7 +16,7 @@ UI construction, input modes, and presentation state.
 
 | File | Lines | Primary risk |
 | --- | ---: | --- |
-| `Presentation/Map/MapInputHandler.cs` | 3565 | Input modes, raycast, previews, pending command state, combat selection, build placement, and feedback are mixed in one MonoBehaviour. |
+| `Presentation/Map/MapPlanningInputController.cs` | 3376 | Unity scene entry is now correctly named for map-scoped planning input, but it still coordinates selection, build placement, combat targeting, previews, and backend playback. |
 | `Presentation/Map/MapRenderer.cs` | 2320 | Map source selection, debug map generation, node rendering, unit rendering, and camera context publishing are mixed. |
 | `Presentation/UI/HUD/UnitInfoPanelController.cs` | 2169 | Panel orchestration, portrait rendering, runtime layout repair, action buttons, and planning summary are mixed. |
 | `Presentation/UI/Domestic/BuildCommandPanel.cs` | 1881 | Catalog reading, fallback JSON parsing, list rendering, scroll state, tooltip binding, and command dispatch are mixed. |
@@ -34,8 +34,8 @@ Presentation still contains scattered fallback scene lookup:
 - Several callers need the same rule: fallback lookup may return only valid
   scene instances, never prefab/assets. This rule should live in one helper.
 
-Priority: centralize scene-object lookup in `Panoptes.Presentation.Common` and
-replace local loops before larger refactors.
+Priority: continue replacing fallback lookup with `SceneObjectFinder` when files
+are touched, and prefer serialized scene references for stable scene wiring.
 
 ## Layer Boundary Checks
 
@@ -84,7 +84,8 @@ extracted collaborator with non-trivial behavior.
    button, and layout collaborators.
 4. Split `BuildCommandPanel` into model building, list rendering, scroll state,
    and fallback config parsing.
-5. Split `MapInputHandler` by input modes and preview/pending state.
+5. Continue slimming `MapPlanningInputController` by moving more mode behavior
+   into `Presentation/Planning/Input`.
 6. Split `MapRenderer` by source resolution, debug data generation, node
    rendering, unit rendering, and camera context publishing.
 
@@ -93,7 +94,8 @@ compatibility unless scenes/prefabs are updated and verified in the same commit.
 
 ## Restructuring Outcome
 
-Implemented through commits `f8d64cf`..`3716438` plus the final MapRenderer pass:
+Implemented through commits `f8d64cf`..`3716438`, the final MapRenderer pass,
+and the later planning-input package cleanup:
 
 - Added shared Presentation infrastructure:
   - `SceneObjectFinder` for scene-valid fallback lookup.
@@ -106,11 +108,21 @@ Implemented through commits `f8d64cf`..`3716438` plus the final MapRenderer pass
 - Split BuildCommandPanel responsibilities:
   - `BuildPanelScrollState`
   - `BuildConfigFallbackParser`
-- Split MapInputHandler helper responsibilities:
-  - `BuildPlacementInputMode`
-  - `MovePreviewPresenter`
-  - `BuildPreviewPresenter`
-  - `MapInputTokens`
+- Renamed the map-scoped player input entry from `MapInputHandler` to
+  `MapPlanningInputController`.
+- Removed the transitional `Presentation/Map/Input` package.
+- Added `Presentation/Map/InputAdapter` for map-owned pointer, UI hit-test,
+  raycast, and node/unit surface resolution.
+- Added `Presentation/Planning` for planning-owned input helpers:
+  - `Feedback/BuildPreviewPresenter`
+  - `Feedback/MovePreviewPresenter`
+  - `Feedback/MapInputTokens`
+  - `Input/IPlanningInputMode`
+  - `Input/PlanningInputCoordinator`
+  - `Input/Intents/IPlanningIntentSender`
+  - `Input/State/PendingMoveState`
+  - `Input/State/PendingBuildState`
+  - `Input/State/PendingDeployState`
 - Split MapRenderer debug generation:
   - `DebugMapFactory`
 
@@ -118,8 +130,8 @@ Post-pass line-count snapshot:
 
 | File | Before | After |
 | --- | ---: | ---: |
-| `Presentation/Map/MapInputHandler.cs` | 3565 | 3503 |
-| `Presentation/Map/MapRenderer.cs` | 2320 | 2013 |
+| `Presentation/Map/MapPlanningInputController.cs` | 3565 | 3376 |
+| `Presentation/Map/MapRenderer.cs` | 2320 | 2014 |
 | `Presentation/UI/HUD/UnitInfoPanelController.cs` | 2169 | 2009 |
 | `Presentation/UI/Domestic/BuildCommandPanel.cs` | 1881 | 1633 |
 | `Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs` | 1105 | 1063 |
@@ -131,10 +143,11 @@ Layer boundary checks remain clean:
 
 Remaining technical debt:
 
-- `MapInputHandler`, `MapRenderer`, `UnitInfoPanelController`, and
-  `BuildCommandPanel` are still large. They are now safer to continue splitting
-  because low-level lookup, subscriptions, fallback parsing, and preview message
-  formatting have been isolated.
+- `MapPlanningInputController`, `MapRenderer`, `UnitInfoPanelController`, and
+  `BuildCommandPanel` are still large. The current package structure now makes
+  the next split direction explicit: map rendering and raycast adapters stay
+  under `Presentation/Map`, while player planning input, pending state, intent
+  ports, and feedback live under `Presentation/Planning`.
 - `SquadUnitVisualController` remains a large untouched Presentation component
   and should receive a focused animation/visual-state pass later.
 - Presentation still has fallback object lookup in several scene bootstrap paths;

@@ -385,7 +385,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8fe91ebaf64baee4189e656cfa77e21f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.MapInputHandler
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.MapPlanningInputController
   inputCamera: {fileID: 0}
   raycastMask:
     serializedVersion: 2
@@ -786,7 +786,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2554934247845236650, guid: 5719eb2ff9a982f49a85e44ac6b8e8b7, type: 3}
-      propertyPath: mapInputHandler
+      propertyPath: mapPlanningInputController
       value: 
       objectReference: {fileID: 1312756963}
     - target: {fileID: 4526657185174305782, guid: 5719eb2ff9a982f49a85e44ac6b8e8b7, type: 3}

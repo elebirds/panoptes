@@ -125,6 +125,10 @@ panoptes-client/
 │   │   │   │
 │   │   │   └── Presentation/          # Panoptes.Presentation.asmdef
 │   │   │       ├── Map/
+│   │   │       │   └── InputAdapter/  # Pointer/UI hit-test/raycast 到 NodeView/UnitView
+│   │   │       ├── Planning/
+│   │   │       │   ├── Feedback/      # 服务端 preview/result 的展示文案
+│   │   │       │   └── Input/         # 玩家规划输入模式、pending state、intent port
 │   │   │       ├── Animation/
 │   │   │       └── UI/
 │   │   │           ├── Auth/
@@ -181,6 +185,14 @@ Panoptes.Presentation  仅引用 Panoptes.Core，不引用 Panoptes.Protocol
 => Presentation 层不得直接使用 Panoptes.Protocol.V1 类型
 => 协议类型通过 Core 的 DTO + Mapper 在边界内完成转换
 ```
+
+### 表现层包结构约定
+
+- `Presentation/Map`：地图渲染、节点/单位/建筑 View、地图 overlay、相机上下文、debug map 数据和地图拾取适配。
+- `Presentation/Map/InputAdapter`：只负责把 Unity pointer / physics raycast 转换为 `NodeView`、`UnitView` 或节点上下文，不发送 intent，不管理规划状态。
+- `Presentation/Planning/Input`：玩家规划输入控制、输入模式生命周期、pending build/move/deploy 表现状态、intent 发送端口。
+- `Presentation/Planning/Feedback`：把服务端 preview/result DTO 转成展示文案；不得在这里推导合法性。
+- `MapPlanningInputController` 是地图上的玩家规划输入入口。它可以协调地图 adapter、Planning state 和 overlay，但不应再被命名或理解为通用 Map input。
 
 
 ---
@@ -671,8 +683,8 @@ public class OrderReviewPanel : MonoBehaviour
     // 修改为精确微操（消耗令牌）
     private void OnMicroOrder(string unitId)
     {
-        // 进入地图微操模式，等待玩家点击目标格子
-        MapInputHandler.Instance.EnterMicroMode(unitId);
+        // 进入地图规划输入流程，实际合法性仍由服务端判定
+        MapPlanningInputController.Instance.BeginMoveSelection();
     }
 }
 ```

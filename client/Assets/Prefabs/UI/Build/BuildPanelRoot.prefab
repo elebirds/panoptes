@@ -292,8 +292,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Domestic.BuildCommandPanel
   emblemImage: {fileID: 0}
   fallbackEmblem: {fileID: 0}
-  mapInputHandler: {fileID: 0}
-  autoFindMapInputHandler: 1
+  mapPlanningInputController: {fileID: 0}
+  autoFindMapPlanningInputController: 1
   cancelButton: {fileID: 0}
   tooltipView: {fileID: 0}
   listScrollRect: {fileID: 11400001}
