@@ -6,6 +6,7 @@ using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,6 +60,7 @@ namespace Panoptes.Presentation.UI.Domestic
         private StaticCatalogCache _catalog;
         private GameStateCache _stateCache;
         private PlanningDraftCache _draftCache;
+        private readonly EventSubscriptionBag _subscriptions = new();
         private bool _lastVisible;
         private string _activeNodeId = string.Empty;
         private string _activeBuildingTypeId = string.Empty;
@@ -99,31 +101,41 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void OnEnable()
         {
+            _subscriptions.Clear();
             _catalog = StaticCatalogCache.EnsureInstance();
             if (_catalog != null)
             {
-                _catalog.CatalogChanged -= OnCatalogChanged;
-                _catalog.CatalogChanged += OnCatalogChanged;
+                var catalog = _catalog;
+                _subscriptions.Add(
+                    () => catalog.CatalogChanged += OnCatalogChanged,
+                    () => catalog.CatalogChanged -= OnCatalogChanged);
             }
 
             _stateCache = GameStateCache.Instance;
             if (_stateCache != null)
             {
-                _stateCache.OnGameError -= OnGameError;
-                _stateCache.OnGameError += OnGameError;
-                _stateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
-                _stateCache.OnPlanningCommandResult += OnPlanningCommandResult;
-                _stateCache.OnStateChanged -= OnStateChanged;
-                _stateCache.OnStateChanged += OnStateChanged;
+                var stateCache = _stateCache;
+                _subscriptions.Add(
+                    () => stateCache.OnGameError += OnGameError,
+                    () => stateCache.OnGameError -= OnGameError);
+                _subscriptions.Add(
+                    () => stateCache.OnPlanningCommandResult += OnPlanningCommandResult,
+                    () => stateCache.OnPlanningCommandResult -= OnPlanningCommandResult);
+                _subscriptions.Add(
+                    () => stateCache.OnStateChanged += OnStateChanged,
+                    () => stateCache.OnStateChanged -= OnStateChanged);
             }
 
             _draftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
             if (_draftCache != null)
             {
-                _draftCache.OrdersChanged -= OnPlanningDraftChanged;
-                _draftCache.OrdersChanged += OnPlanningDraftChanged;
-                _draftCache.RecipePreviewChanged -= OnRecipePreviewChanged;
-                _draftCache.RecipePreviewChanged += OnRecipePreviewChanged;
+                var draftCache = _draftCache;
+                _subscriptions.Add(
+                    () => draftCache.OrdersChanged += OnPlanningDraftChanged,
+                    () => draftCache.OrdersChanged -= OnPlanningDraftChanged);
+                _subscriptions.Add(
+                    () => draftCache.RecipePreviewChanged += OnRecipePreviewChanged,
+                    () => draftCache.RecipePreviewChanged -= OnRecipePreviewChanged);
             }
 
             RefreshList();
@@ -136,18 +148,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _hoveredRecipeId = string.Empty;
             _queuedPreviewRecipeId = string.Empty;
             (_draftCache ?? PlanningDraftCache.Instance)?.ClearRecipePreview();
-            if (_catalog != null) _catalog.CatalogChanged -= OnCatalogChanged;
-            if (_stateCache != null)
-            {
-                _stateCache.OnGameError -= OnGameError;
-                _stateCache.OnPlanningCommandResult -= OnPlanningCommandResult;
-                _stateCache.OnStateChanged -= OnStateChanged;
-            }
-            if (_draftCache != null)
-            {
-                _draftCache.OrdersChanged -= OnPlanningDraftChanged;
-                _draftCache.RecipePreviewChanged -= OnRecipePreviewChanged;
-            }
+            _subscriptions.Clear();
         }
 
         private void LateUpdate()

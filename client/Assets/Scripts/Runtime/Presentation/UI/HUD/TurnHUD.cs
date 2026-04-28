@@ -47,6 +47,7 @@ namespace Panoptes.Presentation.UI.HUD
         private bool _gameEnded;
         private int _lastRemainingSeconds = int.MinValue;
         private bool _nextStageBound;
+        private readonly EventSubscriptionBag _subscriptions = new();
 
         private void Awake()
         {
@@ -62,33 +63,34 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveExternalTurnPanelReferences();
             ResolveNextStageButtonReference();
+            _subscriptions.Clear();
             _cache = GameStateCache.Instance;
             if (_cache != null)
             {
-                _cache.OnPhaseChanged += OnPhaseChanged;
-                _cache.OnGameOver += OnGameOver;
-                _cache.OnStateChanged += RefreshFromCache;
+                var cache = _cache;
+                _subscriptions.Add(
+                    () => cache.OnPhaseChanged += OnPhaseChanged,
+                    () => cache.OnPhaseChanged -= OnPhaseChanged);
+                _subscriptions.Add(
+                    () => cache.OnGameOver += OnGameOver,
+                    () => cache.OnGameOver -= OnGameOver);
+                _subscriptions.Add(
+                    () => cache.OnStateChanged += RefreshFromCache,
+                    () => cache.OnStateChanged -= RefreshFromCache);
             }
 
-            ActionLock.OnChanged -= OnActionLockChanged;
-            ActionLock.OnChanged += OnActionLockChanged;
+            _subscriptions.Add(
+                () => ActionLock.OnChanged += OnActionLockChanged,
+                () => ActionLock.OnChanged -= OnActionLockChanged);
             BindNextStageButton();
             RefreshFromCache();
         }
 
         private void OnDisable()
         {
-            ActionLock.OnChanged -= OnActionLockChanged;
+            _subscriptions.Clear();
             UnbindNextStageButton();
-
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _cache.OnPhaseChanged -= OnPhaseChanged;
-            _cache.OnGameOver -= OnGameOver;
-            _cache.OnStateChanged -= RefreshFromCache;
+            _cache = null;
         }
 
         private void Update()
