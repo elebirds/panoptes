@@ -10,6 +10,7 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Presentation.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -280,7 +281,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            nextStageButton = FindFirstSceneObject<Button>(button =>
+            nextStageButton = SceneObjectFinder.FindFirstSceneObject<Button>(button =>
             {
                 return !string.IsNullOrWhiteSpace(button.name) &&
                     string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase);
@@ -321,30 +322,11 @@ namespace Panoptes.Presentation.UI.HUD
 
         private static RectTransform FindRectByName(string name)
         {
-            return FindFirstSceneObject<RectTransform>(rect =>
+            return SceneObjectFinder.FindFirstSceneObject<RectTransform>(rect =>
             {
                 return !string.IsNullOrWhiteSpace(rect.name) &&
                     string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase);
             });
-        }
-
-        private static T FindFirstSceneObject<T>(System.Predicate<T> predicate = null) where T : Component
-        {
-            var candidates = Resources.FindObjectsOfTypeAll<T>();
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (candidate == null ||
-                    !candidate.gameObject.scene.IsValid() ||
-                    predicate?.Invoke(candidate) == false)
-                {
-                    continue;
-                }
-
-                return candidate;
-            }
-
-            return null;
         }
 
         private static TextMeshProUGUI FindTextByName(RectTransform rootRect, string name)

@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Domestic;
 using TMPro;
 using UnityEngine;
@@ -168,24 +169,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            techTreePanelController = FindFirstSceneObject<TechTreePanelController>();
-        }
-
-        private static T FindFirstSceneObject<T>() where T : Component
-        {
-            var candidates = Resources.FindObjectsOfTypeAll<T>();
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (candidate == null || !candidate.gameObject.scene.IsValid())
-                {
-                    continue;
-                }
-
-                return candidate;
-            }
-
-            return null;
+            techTreePanelController = SceneObjectFinder.FindFirstSceneObject<TechTreePanelController>();
         }
 
         private void Refresh()
