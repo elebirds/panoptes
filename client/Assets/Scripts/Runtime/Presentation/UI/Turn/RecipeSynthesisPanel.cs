@@ -711,14 +711,14 @@ namespace Panoptes.Presentation.UI.Domestic
 
             RefreshActiveBuildingContextFromAuthority();
 
-            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
+            if (TryRestoreSelectionFromDraft(_activeNodeId))
             {
                 SyncSelectionCacheFromSelectedRecipe();
                 SaveCurrentSelectionToLocalCache();
                 return;
             }
 
-            if (TryRestoreSelectionFromDraft(_activeNodeId))
+            if (TryRestoreSelectionFromLocalCache(_activeNodeId))
             {
                 SyncSelectionCacheFromSelectedRecipe();
                 SaveCurrentSelectionToLocalCache();
@@ -1085,14 +1085,14 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private string ResolvePreferredRecipeForCurrentNode(string preferredRecipeId = null)
         {
-            var local = ResolvePreferredRecipeFromLocalQuantities(preferredRecipeId);
-            if (!string.IsNullOrWhiteSpace(local))
+            var serverSelected = NormalizeToken(ResolveServerSelectedRecipeForActiveNode());
+            if (!string.IsNullOrWhiteSpace(serverSelected))
             {
-                return local;
+                return serverSelected;
             }
 
-            var serverSelected = NormalizeToken(ResolveServerSelectedRecipeForActiveNode());
-            return string.IsNullOrWhiteSpace(serverSelected) ? string.Empty : serverSelected;
+            var local = ResolvePreferredRecipeFromLocalQuantities(preferredRecipeId);
+            return string.IsNullOrWhiteSpace(local) ? string.Empty : local;
         }
 
         private string ResolveServerSelectedRecipeForActiveNode()

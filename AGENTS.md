@@ -27,16 +27,21 @@ panoptes/                          # Monorepo 根目录
 ├── protocol/                      # Proto 定义（单一数据源）
 │   ├── buf.yaml
 │   ├── buf.gen.yaml
-│   ├── common.proto               # Position、MsgClientRuntimeConfig
-│   ├── data_types.proto           # ResourceBag、StaticCatalogManifest
-│   ├── data_catalog.proto         # 静态目录消息
-│   ├── map_catalog.proto          # 地图目录消息
-│   ├── auth.proto
-│   ├── lobby.proto
-│   ├── game_state.proto
-│   ├── domestic.proto
-│   ├── combat.proto
-│   └── minister.proto
+│   └── panoptes/proto/v1/         # panoptes.proto.v1 包目录
+│       ├── common.proto           # Position、MsgClientRuntimeConfig
+│       ├── data_types.proto       # ResourceBag、StaticCatalogManifest
+│       ├── data_catalog.proto     # 静态目录消息
+│       ├── map_catalog.proto      # 地图目录消息
+│       ├── auth.proto
+│       ├── lobby.proto
+│       ├── game_state.proto
+│       ├── orders.proto
+│       ├── turn.proto
+│       ├── settlement.proto
+│       ├── transport.proto
+│       ├── chat.proto
+│       ├── config.proto
+│       └── minister.proto
 │
 ├── server/                        # Go 服务端
 │   ├── cmd/server/
@@ -95,7 +100,7 @@ panoptes/                          # Monorepo 根目录
 
 | 层 | 技术 |
 |---|---|
-| 语言 | Go 1.22+ |
+| 语言 | Go 1.26+ |
 | WebSocket | github.com/gorilla/websocket |
 | ECS | github.com/yohamta/donburi |
 | Redis | github.com/redis/go-redis/v9 |
@@ -109,7 +114,7 @@ panoptes/                          # Monorepo 根目录
 
 | 层 | 技术 |
 |---|---|
-| 引擎 | Unity 2022.3 LTS，URP |
+| 引擎 | Unity 6000.4.1f1，URP |
 | WebSocket | NativeWebSocket |
 | Protobuf | Google.Protobuf.dll |
 | UI | uGUI + TextMeshPro |
@@ -136,7 +141,7 @@ panoptes/                          # Monorepo 根目录
     "planning": {
       "buildStructure": {
         "nodeId": "C3",
-        "buildingType": "farm"
+        "buildingTypeId": "farm"
       }
     }
   }
@@ -150,7 +155,7 @@ panoptes/                          # Monorepo 根目录
 ### 修改协议的唯一方式
 
 ```bash
-# 1. 修改 protocol/*.proto
+# 1. 修改 protocol/panoptes/proto/v1/*.proto
 # 2. 在根目录执行
 make gen
 # 3. 提交 `server/internal/gen/proto/` 和 `client/Assets/Scripts/Protocol/` 下的变更
@@ -185,7 +190,7 @@ func (s *SiegeSystem) Run(world donburi.World) {
 }
 ```
 
-所有状态修改只在 `Event.Apply()` 中发生，由 Pipeline 统一在所有 System 执行完后批量 Apply。
+Engine 结算阶段的正式裁决只通过 `Event.Apply()` 写回。Planning 草案、PlanningStart 激活缓存等运行时编排状态是明确例外，不能放进 engine System 里静默改世界状态。
 
 ### System 文件规范
 
@@ -199,9 +204,9 @@ func (s *SiegeSystem) Run(world donburi.World) {
 ```go
 // server/internal/transport/interface.go
 type GameTransport interface {
-    Send(playerID string, msg proto.Message) error
-    Broadcast(roomID string, msg proto.Message) error
-    Stream(playerID string, msgs <-chan proto.Message) error
+    Send(ctx context.Context, playerID string, msg proto.Message) error
+    Broadcast(ctx context.Context, roomID string, msg proto.Message) error
+    Stream(ctx context.Context, playerID string, msgs <-chan proto.Message) error
 }
 ```
 
@@ -327,7 +332,7 @@ unauthorized         → "请重新登录"
 | `docs/PANOPTES_AGENT_BACKEND.md` | 服务端完整开发指南，含所有接口定义 |
 | `docs/PANOPTES_AGENT_FRONTEND.md` | 客户端完整开发指南 |
 | `docs/HTTP_DESIGN.md` | HTTP API 设计规范 |
-| `protocol/*.proto` | 当前消息协议定义 |
+| `protocol/panoptes/proto/v1/*.proto` | 当前消息协议定义 |
 
 ---
 

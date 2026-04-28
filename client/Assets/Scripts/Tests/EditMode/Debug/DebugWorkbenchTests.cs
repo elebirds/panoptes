@@ -102,10 +102,10 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_messageLoggerPath);
             StringAssert.Contains("case Problem problem:", content,
                 "入站日志应支持统一 Problem 摘要。");
-            StringAssert.Contains("case MsgCombatOrder combatOrder:", content,
-                "出站日志应支持 CombatOrder 摘要。");
-            StringAssert.Contains("case MsgCombatPathPreviewRequest combatPreview:", content,
-                "出站日志应支持 CombatPathPreviewRequest 摘要。");
+            StringAssert.Contains("MsgIssueUnitOrder issueUnitOrder =>", content,
+                "出站日志应支持统一单位指令摘要。");
+            StringAssert.Contains("MsgPlanningPathPreviewRequest planningPreview =>", content,
+                "出站日志应支持 planning 路径预览摘要。");
         }
 
         [Test]

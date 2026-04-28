@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package panoptes.proto.v1;
 
-import "common.proto";
-import "data_types.proto";
+import "panoptes/proto/v1/common.proto";
+import "panoptes/proto/v1/data_types.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message NodeView {

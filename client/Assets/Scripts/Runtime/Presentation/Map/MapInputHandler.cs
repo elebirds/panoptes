@@ -58,6 +58,8 @@ namespace Panoptes.Presentation.Map
             Build = 1
         }
 
+        // Legacy public name kept for existing prefab/test bindings.
+        // In Turn V2 this represents planning-phase unit orders.
         public enum CombatActionMode
         {
             None = 0,
@@ -782,7 +784,7 @@ namespace Panoptes.Presentation.Map
             _movePreviewRequestSequence++;
             var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
             PlanningDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, _selectedUnit.UnitId, "move", targetNodeId);
-            Debug.Log($"[MapInputHandler] 璇锋眰璺緞棰勮 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
+            Debug.Log($"[MapInputHandler] 请求路径预览 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
             GameIntents.PreviewMove(requestId, _selectedUnit.UnitId, targetNodeId);
         }
 
@@ -1605,7 +1607,7 @@ namespace Panoptes.Presentation.Map
             {
                 _movePathOverlay?.ClearMovePathMarkersForUnit(unitId);
             }
-            Debug.Log($"[MapInputHandler] 鍙戦€佺Щ鍔ㄦ秷鎭?unit={unitId} target={targetNodeId}");
+            Debug.Log($"[MapInputHandler] 发送移动消息 unit={unitId} target={targetNodeId}");
             GameIntents.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
             ClearNodeHighlights();
@@ -2445,17 +2447,17 @@ namespace Panoptes.Presentation.Map
         {
             if (preview == null)
             {
-                return "Waiting for server path preview confirmation.";
-            }
+                return "等待服务器确认路径预览。";
+			}
 
-            return preview.ErrorCode switch
-            {
-                "invalid_target" => $"鐩爣鑺傜偣 {targetNodeId} 褰撳墠鏃犳硶鎶佃揪",
-                "unit_not_found" => "璇ュ崟浣嶅綋鍓嶄笉鍙敤",
-                "invalid_directive" => "褰撳墠鍔ㄤ綔涓嶆敮鎸佽鐩爣",
-                _ => "Waiting for server path preview confirmation."
-            };
-        }
+			return preview.ErrorCode switch
+			{
+				"invalid_target" => $"目标节点 {targetNodeId} 当前无法抵达",
+				"unit_not_found" => "该单位当前不可用",
+				"invalid_directive" => "当前动作不支持该目标",
+				_ => "等待服务器确认路径预览。"
+			};
+		}
 
         private bool IsCityCoreNode(string nodeId)
         {
@@ -2534,6 +2536,7 @@ namespace Panoptes.Presentation.Map
             return string.Equals(NormalizeToken(unit.Faction), NormalizeToken(localOwner), StringComparison.Ordinal);
         }
 
+        // Legacy helper name kept with the Combat* API above; Turn V2 gates unit orders in planning.
         private bool IsCombatPhase()
         {
             var phase = _cache != null ? _cache.Phase : string.Empty;
@@ -2920,10 +2923,10 @@ namespace Panoptes.Presentation.Map
 
             return _combatActionMode switch
             {
-                CombatActionMode.Move => "Hover a node to request path preview, then click to issue move.",
-                CombatActionMode.Attack => "Click an enemy unit or enemy structure to issue attack.",
-                CombatActionMode.Charge => "Click an enemy unit to issue charge.",
-                _ => "閫夋嫨鍔ㄤ綔鍚庡啀鎸囧畾鐩爣"
+                CombatActionMode.Move => "悬停节点预览路径，点击后下达移动指令。",
+                CombatActionMode.Attack => "点击敌方单位或敌方建筑下达攻击指令。",
+                CombatActionMode.Charge => "点击敌方单位下达冲锋指令。",
+                _ => "选择动作后再指定目标"
             };
         }
 

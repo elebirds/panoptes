@@ -114,7 +114,7 @@ func emitGeneratedFiles(repoRoot string, bundle staticdata.CatalogBundle, maps m
 	schemaDir := filepath.Join(repoRoot, "data/schema")
 	serverGoGen := filepath.Join(repoRoot, "server/internal/staticdata/generated")
 	clientCodeGen := filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Core/Foundation/Domain")
-	protocolDir := filepath.Join(repoRoot, "protocol")
+	protocolDir := filepath.Join(repoRoot, "protocol/panoptes/proto/v1")
 
 	dirs := []string{
 		serverGen,
@@ -193,6 +193,9 @@ func removeLegacyGeneratedFiles(repoRoot string, schemaDir string) error {
 		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated/ResourceKeys.g.cs.meta"),
 		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data/Generated.meta"),
 		filepath.Join(repoRoot, "client/Assets/Scripts/Runtime/Data.meta"),
+		filepath.Join(repoRoot, "protocol/data_types.proto"),
+		filepath.Join(repoRoot, "protocol/data_catalog.proto"),
+		filepath.Join(repoRoot, "protocol/map_catalog.proto"),
 	}
 	for _, path := range legacyFiles {
 		err := os.Remove(path)
@@ -737,7 +740,7 @@ func renderDataTypesProto() string {
 
 package panoptes.proto.v1;
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message ResourceValue {
@@ -798,9 +801,9 @@ func renderDataCatalogProto() string {
 
 package panoptes.proto.v1;
 
-import "data_types.proto";
+import "panoptes/proto/v1/data_types.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message UnitCatalogEntry {
@@ -914,7 +917,7 @@ func renderMapCatalogProto() string {
 
 package panoptes.proto.v1;
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message MapLegendEntry {

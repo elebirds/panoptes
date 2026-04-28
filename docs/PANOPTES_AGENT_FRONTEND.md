@@ -29,7 +29,7 @@
 
 **项目代号**：Panoptes
 **Unity仓库名**：`panoptes-client`
-**Unity版本**：2022.3 LTS（稳定版，Gamejam首选）
+**Unity版本**：6000.4.1f1
 **渲染管线**：URP（Universal Render Pipeline）
 **目标平台**：PC（Windows/Mac）
 
@@ -264,7 +264,7 @@ WebSocket在后台线程接收消息，必须通过`UnityMainThreadDispatcher`�
     "planning": {
       "buildStructure": {
         "nodeId": "C3",
-        "buildingType": "farm"
+        "buildingTypeId": "farm"
       }
     }
   }
@@ -286,22 +286,26 @@ MsgJoinRoom
 MsgLeaveRoom
 MsgReadyUp
 
-// 内政阶段
+// Planning 阶段
 MsgSetPolicy
-MsgMinisterDirective
-MsgTokenBuild
+MsgSetInstitutionLoadout
+MsgSetResearchTarget
+MsgSetBuildingRecipe
+MsgBuildStructure
+MsgBuildStructurePreviewRequest
+MsgSetBuildingRecipePreviewRequest
 MsgTokenReveal
-MsgTokenVeto
-MsgTokenAdjustFlow
-MsgBuildRoad
-MsgSubmitDomestic
-
-// 战斗阶段
 MsgSetWarZone
 MsgWarZoneDirective
-MsgTokenVetoCombat
-MsgTokenMicro
-MsgSubmitCombat
+MsgSetMinisterDirective
+MsgIssueUnitOrder
+MsgCancelUnitOrder
+MsgPlanningPathPreviewRequest
+MsgSubmitTurn
+
+// 游戏通用
+MsgStaticCatalogSyncRequest
+ChatCommand
 ```
 
 **服务端→客户端：**
@@ -321,20 +325,26 @@ MsgLobbyError
 MsgGameInit
 MsgGameOver
 
-// 内政阶段
-MsgDomesticPhaseStart
+// Planning / Resolving
+MsgPlanningStart
+MsgPlanningSnapshot
+MsgPlanningPathPreviewResponse
+MsgBuildStructurePreviewResponse
+MsgSetBuildingRecipePreviewResponse
 MsgTokenResult
 MsgRevealResult
-MsgMinisterAction
+MsgResearchResult
+MsgSetPolicyResult
+MsgSetInstitutionLoadoutResult
+MsgSetBuildingRecipeResult
+MsgBuildStructureResult
+MsgIssueUnitOrderResult
+MsgTurnReport
+MsgTurnSettlement
 MsgMinisterReportChunk
 MsgMinisterMetrics
-MsgDomesticSettlement
-
-// 战斗阶段
-MsgCombatPhaseStart
-MsgMinisterCombatChunk
-MsgMinisterCombatOrders
-MsgCombatSettlement
+MsgGameChatPosted
+MsgGameChatSync
 
 // 通用
 Problem
@@ -478,11 +488,15 @@ Handler注册示例：
 ```csharp
 void Awake()
 {
-    MessageDispatcher.Instance.Register<MsgGameInit>(
-        "MsgGameInit", OnGameInit);
-    MessageDispatcher.Instance.Register<MsgDomesticPhaseStart>(
-        "MsgDomesticPhaseStart", OnDomesticPhaseStart);
-    // ...
+	MessageDispatcher.Instance.Register<MsgGameInit>(
+	    "MsgGameInit", OnGameInit);
+	MessageDispatcher.Instance.Register<MsgPlanningStart>(
+	    "MsgPlanningStart", OnPlanningStart);
+	MessageDispatcher.Instance.Register<MsgPlanningSnapshot>(
+	    "MsgPlanningSnapshot", OnPlanningSnapshot);
+	MessageDispatcher.Instance.Register<MsgTurnSettlement>(
+	    "MsgTurnSettlement", OnTurnSettlement);
+	// ...
 }
 ```
 
@@ -499,7 +513,7 @@ public class GameStateCache : MonoBehaviour
     public string GameID { get; private set; }
     public string MyPlayerID { get; private set; }
     public int Turn { get; private set; }
-    public string Phase { get; private set; }  // "domestic|combat"
+    public string Phase { get; private set; }  // "planning|resolving"
 
     // 节点（key = node_id）
     public IReadOnlyDictionary<string, NodeView> Nodes { get; }
@@ -518,8 +532,9 @@ public class GameStateCache : MonoBehaviour
 
     // 内部更新方法（由MessageDispatcher调用）
     internal void ApplyGameInit(MsgGameInit msg);
-    internal void ApplyDomesticSettlement(MsgDomesticSettlement msg);
-    internal void ApplyCombatSettlement(MsgCombatSettlement msg);
+    internal void ApplyPlanningStart(MsgPlanningStart msg);
+    internal void ApplyPlanningSnapshot(MsgPlanningSnapshot msg);
+    internal void ApplyTurnSettlement(MsgTurnSettlement msg);
     internal void UpdateTokens(int tokensLeft);
     internal void UpdateNodeView(NodeView node);
 }
@@ -596,13 +611,13 @@ public class BuildMenu : MonoBehaviour
     // 隐藏
     public void Hide();
 
-    // 玩家选择某个建筑时的回调
-    // 直接调用MessageSender发送，不做任何校验
-    private void OnBuildingSelected(string nodeId, string buildingType)
+    // 玩家选择某个建筑时的回调；这里只打包输入，不做合法性校验
+    private void OnBuildingSelected(string nodeId, string buildingTypeId, string cityId)
     {
-        MessageSender.Send(new MsgTokenBuild {
+        MessageSender.Send(new MsgBuildStructure {
             NodeId = nodeId,
-            BuildingType = buildingType
+            BuildingTypeId = buildingTypeId,
+            CityId = cityId
         });
         Hide();
     }
@@ -763,34 +778,24 @@ internal void ApplyGameInit(MsgGameInit msg)
 }
 ```
 
-### 增量更新（MsgDomesticSettlement）
+### 结算更新（MsgTurnSettlement）
 
 ```csharp
-internal void ApplyDomesticSettlement(MsgDomesticSettlement msg)
+internal void ApplyTurnSettlement(MsgTurnSettlement msg)
 {
-    // 更新资源
-    MyPlayer.Resources = msg.MyResourcesAfter;
-
-    // 应用每个变更
-    foreach (var change in msg.Changes)
+    Turn = msg.Turn;
+    Phase = msg.Phase;
+    if (msg.MyPlayer != null)
     {
-        switch (change.Type)
-        {
-            case "building_built":
-                var nodeId = change.Data["node_id"];
-                var buildingType = change.Data["building_type"];
-                if (_nodes.TryGetValue(nodeId, out var node))
-                {
-                    node.BuildingType = buildingType;
-                    MapRenderer.Instance.RefreshNode(nodeId);
-                }
-                break;
-            case "road_built":
-                // 更新道路状态
-                break;
-            // ...
-        }
+        MyPlayer = msg.MyPlayer;
     }
+    foreach (var node in msg.Nodes)
+        _nodes[node.Id] = node;
+    foreach (var unit in msg.Units)
+        _units[unit.Id] = unit;
+
+    // 结算动画和时间线消费 msg.Sections / TurnEvent，再刷新地图表现。
+    MapRenderer.Instance.RebuildMap();
 }
 ```
 
@@ -800,18 +805,18 @@ internal void ApplyDomesticSettlement(MsgDomesticSettlement msg)
 
 ### AnimationQueue.cs
 
-战斗结算后，服务端推送`MsgCombatSettlement`包含完整的事件序列，客户端按顺序播放动画。
+统一结算后，服务端推送 `MsgTurnSettlement`。客户端按 section 中的 `TurnEvent` 顺序播放移动、伤害、建筑、科技和胜负表现。
 
 ```csharp
 public class AnimationQueue : MonoBehaviour
 {
     public static AnimationQueue Instance { get; private set; }
 
-    private Queue<CombatEvent> _queue = new();
+    private Queue<TurnEvent> _queue = new();
     private bool _isPlaying = false;
 
-    // 收到MsgCombatSettlement时调用
-    public void Enqueue(IList<CombatEvent> events)
+    // 收到 MsgTurnSettlement 时调用
+    public void Enqueue(IList<TurnEvent> events)
     {
         foreach (var e in events)
             _queue.Enqueue(e);
@@ -915,36 +920,28 @@ Step 3：地图渲染（Day 2下午）
   - UnitView Prefab（简单图标）
   - 格子点击高亮
 
-Step 4：内政阶段UI（Day 3）
+Step 4：规划 UI（Day 3）
   - HUD：资源显示，令牌显示，回合/阶段显示
-  - 处理MsgDomesticPhaseStart：显示阶段和倒计时
+  - 处理MsgPlanningStart：显示阶段、倒计时和当前 planning snapshot
   - BuildMenu：点击格子弹出，选择建筑类型发送
   - PolicyPanel：国策选择发送
-  - TokenActionBar：令牌操作按钮
+  - TechTreePanel：科研目标选择发送
+  - UnitInfoPanel：单位移动、攻击、建城等 planning 指令发送
   - 处理MsgTokenResult：成功/失败Toast
   - MsgMinisterReportChunk：流式文字显示
   - MsgMinisterMetrics：数值轨显示
-  - MsgMinisterAction：行动卡片通知
-  - MsgDomesticSettlement：更新缓存，刷新格子
+  - MsgPlanningSnapshot：更新草稿显示
+  - MsgTurnSettlement：更新缓存，刷新格子
   - SubmitButton和倒计时
 
-Step 5：战斗阶段UI（Day 4）
-  - 处理MsgCombatPhaseStart
-  - WarZonePanel：框选格子，设置战区
-  - 战区指令下达UI
-  - MsgMinisterCombatChunk：流式显示部长拆解
-  - MsgMinisterCombatOrders：指令列表显示
-  - OrderReviewPanel：否决/微操按钮
-  - MsgTokenVetoCombat/MsgTokenMicro发送
-
-Step 6：战斗动画（Day 5）
+Step 5：结算动画（Day 4～5）
   - AnimationQueue
   - UnitMoveAnim（线性插值移动）
   - CombatAnim（简单震动+闪红）
   - CastleDamageAnim（血条减少动画）
-  - MsgCombatSettlement：队列播放，完成后更新缓存
+  - MsgTurnSettlement：队列播放，完成后更新缓存
 
-Step 7：联调和打磨（Day 6～7）
+Step 6：联调和打磨（Day 6～7）
   - 和服务端全流程联调
   - 断线重连处理
   - MsgGameOver：胜负界面，LLM叙事文字显示

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: data_types.proto
+// source: panoptes/proto/v1/data_types.proto
 
 package protov1
 
@@ -31,7 +31,7 @@ type ResourceValue struct {
 
 func (x *ResourceValue) Reset() {
 	*x = ResourceValue{}
-	mi := &file_data_types_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *ResourceValue) String() string {
 func (*ResourceValue) ProtoMessage() {}
 
 func (x *ResourceValue) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *ResourceValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceValue.ProtoReflect.Descriptor instead.
 func (*ResourceValue) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ResourceValue) GetKey() string {
@@ -82,7 +82,7 @@ type ResourceBag struct {
 
 func (x *ResourceBag) Reset() {
 	*x = ResourceBag{}
-	mi := &file_data_types_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +94,7 @@ func (x *ResourceBag) String() string {
 func (*ResourceBag) ProtoMessage() {}
 
 func (x *ResourceBag) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +107,7 @@ func (x *ResourceBag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceBag.ProtoReflect.Descriptor instead.
 func (*ResourceBag) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ResourceBag) GetItems() []*ResourceValue {
@@ -127,7 +127,7 @@ type PointValue struct {
 
 func (x *PointValue) Reset() {
 	*x = PointValue{}
-	mi := &file_data_types_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -139,7 +139,7 @@ func (x *PointValue) String() string {
 func (*PointValue) ProtoMessage() {}
 
 func (x *PointValue) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -152,7 +152,7 @@ func (x *PointValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PointValue.ProtoReflect.Descriptor instead.
 func (*PointValue) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PointValue) GetKey() string {
@@ -178,7 +178,7 @@ type PointBag struct {
 
 func (x *PointBag) Reset() {
 	*x = PointBag{}
-	mi := &file_data_types_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -190,7 +190,7 @@ func (x *PointBag) String() string {
 func (*PointBag) ProtoMessage() {}
 
 func (x *PointBag) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -203,7 +203,7 @@ func (x *PointBag) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PointBag.ProtoReflect.Descriptor instead.
 func (*PointBag) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PointBag) GetItems() []*PointValue {
@@ -228,7 +228,7 @@ type ResourceDescriptor struct {
 
 func (x *ResourceDescriptor) Reset() {
 	*x = ResourceDescriptor{}
-	mi := &file_data_types_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +240,7 @@ func (x *ResourceDescriptor) String() string {
 func (*ResourceDescriptor) ProtoMessage() {}
 
 func (x *ResourceDescriptor) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +253,7 @@ func (x *ResourceDescriptor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceDescriptor.ProtoReflect.Descriptor instead.
 func (*ResourceDescriptor) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ResourceDescriptor) GetKey() string {
@@ -319,7 +319,7 @@ type PointDescriptor struct {
 
 func (x *PointDescriptor) Reset() {
 	*x = PointDescriptor{}
-	mi := &file_data_types_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +331,7 @@ func (x *PointDescriptor) String() string {
 func (*PointDescriptor) ProtoMessage() {}
 
 func (x *PointDescriptor) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +344,7 @@ func (x *PointDescriptor) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PointDescriptor.ProtoReflect.Descriptor instead.
 func (*PointDescriptor) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PointDescriptor) GetKey() string {
@@ -399,7 +399,7 @@ type CatalogSectionHash struct {
 
 func (x *CatalogSectionHash) Reset() {
 	*x = CatalogSectionHash{}
-	mi := &file_data_types_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +411,7 @@ func (x *CatalogSectionHash) String() string {
 func (*CatalogSectionHash) ProtoMessage() {}
 
 func (x *CatalogSectionHash) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +424,7 @@ func (x *CatalogSectionHash) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CatalogSectionHash.ProtoReflect.Descriptor instead.
 func (*CatalogSectionHash) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{6}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CatalogSectionHash) GetSectionName() string {
@@ -456,7 +456,7 @@ type StaticCatalogManifest struct {
 
 func (x *StaticCatalogManifest) Reset() {
 	*x = StaticCatalogManifest{}
-	mi := &file_data_types_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -468,7 +468,7 @@ func (x *StaticCatalogManifest) String() string {
 func (*StaticCatalogManifest) ProtoMessage() {}
 
 func (x *StaticCatalogManifest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_types_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_data_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -481,7 +481,7 @@ func (x *StaticCatalogManifest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StaticCatalogManifest.ProtoReflect.Descriptor instead.
 func (*StaticCatalogManifest) Descriptor() ([]byte, []int) {
-	return file_data_types_proto_rawDescGZIP(), []int{7}
+	return file_panoptes_proto_v1_data_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StaticCatalogManifest) GetSchemaVersion() string {
@@ -533,11 +533,11 @@ func (x *StaticCatalogManifest) GetSectionHashes() []*CatalogSectionHash {
 	return nil
 }
 
-var File_data_types_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_data_types_proto protoreflect.FileDescriptor
 
-const file_data_types_proto_rawDesc = "" +
+const file_panoptes_proto_v1_data_types_proto_rawDesc = "" +
 	"\n" +
-	"\x10data_types.proto\x12\x11panoptes.proto.v1\"9\n" +
+	"\"panoptes/proto/v1/data_types.proto\x12\x11panoptes.proto.v1\"9\n" +
 	"\rResourceValue\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x05R\x06amount\"E\n" +
@@ -577,22 +577,22 @@ const file_data_types_proto_rawDesc = "" +
 	"\x0edefault_locale\x18\x04 \x01(\tR\rdefaultLocale\x12$\n" +
 	"\x0edefault_map_id\x18\x05 \x01(\tR\fdefaultMapId\x12+\n" +
 	"\x11required_sections\x18\x06 \x03(\tR\x10requiredSections\x12L\n" +
-	"\x0esection_hashes\x18\a \x03(\v2%.panoptes.proto.v1.CatalogSectionHashR\rsectionHashesBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x0esection_hashes\x18\a \x03(\v2%.panoptes.proto.v1.CatalogSectionHashR\rsectionHashesBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_data_types_proto_rawDescOnce sync.Once
-	file_data_types_proto_rawDescData []byte
+	file_panoptes_proto_v1_data_types_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_data_types_proto_rawDescData []byte
 )
 
-func file_data_types_proto_rawDescGZIP() []byte {
-	file_data_types_proto_rawDescOnce.Do(func() {
-		file_data_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_data_types_proto_rawDesc), len(file_data_types_proto_rawDesc)))
+func file_panoptes_proto_v1_data_types_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_data_types_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_data_types_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_data_types_proto_rawDesc), len(file_panoptes_proto_v1_data_types_proto_rawDesc)))
 	})
-	return file_data_types_proto_rawDescData
+	return file_panoptes_proto_v1_data_types_proto_rawDescData
 }
 
-var file_data_types_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-var file_data_types_proto_goTypes = []any{
+var file_panoptes_proto_v1_data_types_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_panoptes_proto_v1_data_types_proto_goTypes = []any{
 	(*ResourceValue)(nil),         // 0: panoptes.proto.v1.ResourceValue
 	(*ResourceBag)(nil),           // 1: panoptes.proto.v1.ResourceBag
 	(*PointValue)(nil),            // 2: panoptes.proto.v1.PointValue
@@ -602,7 +602,7 @@ var file_data_types_proto_goTypes = []any{
 	(*CatalogSectionHash)(nil),    // 6: panoptes.proto.v1.CatalogSectionHash
 	(*StaticCatalogManifest)(nil), // 7: panoptes.proto.v1.StaticCatalogManifest
 }
-var file_data_types_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_data_types_proto_depIdxs = []int32{
 	0, // 0: panoptes.proto.v1.ResourceBag.items:type_name -> panoptes.proto.v1.ResourceValue
 	2, // 1: panoptes.proto.v1.PointBag.items:type_name -> panoptes.proto.v1.PointValue
 	6, // 2: panoptes.proto.v1.StaticCatalogManifest.section_hashes:type_name -> panoptes.proto.v1.CatalogSectionHash
@@ -613,26 +613,26 @@ var file_data_types_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_data_types_proto_init() }
-func file_data_types_proto_init() {
-	if File_data_types_proto != nil {
+func init() { file_panoptes_proto_v1_data_types_proto_init() }
+func file_panoptes_proto_v1_data_types_proto_init() {
+	if File_panoptes_proto_v1_data_types_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_data_types_proto_rawDesc), len(file_data_types_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_data_types_proto_rawDesc), len(file_panoptes_proto_v1_data_types_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_data_types_proto_goTypes,
-		DependencyIndexes: file_data_types_proto_depIdxs,
-		MessageInfos:      file_data_types_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_data_types_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_data_types_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_data_types_proto_msgTypes,
 	}.Build()
-	File_data_types_proto = out.File
-	file_data_types_proto_goTypes = nil
-	file_data_types_proto_depIdxs = nil
+	File_panoptes_proto_v1_data_types_proto = out.File
+	file_panoptes_proto_v1_data_types_proto_goTypes = nil
+	file_panoptes_proto_v1_data_types_proto_depIdxs = nil
 }

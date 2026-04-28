@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: chat.proto
+// source: panoptes/proto/v1/chat.proto
 
 package protov1
 
@@ -66,11 +66,11 @@ func (x ChatEmote) String() string {
 }
 
 func (ChatEmote) Descriptor() protoreflect.EnumDescriptor {
-	return file_chat_proto_enumTypes[0].Descriptor()
+	return file_panoptes_proto_v1_chat_proto_enumTypes[0].Descriptor()
 }
 
 func (ChatEmote) Type() protoreflect.EnumType {
-	return &file_chat_proto_enumTypes[0]
+	return &file_panoptes_proto_v1_chat_proto_enumTypes[0]
 }
 
 func (x ChatEmote) Number() protoreflect.EnumNumber {
@@ -79,7 +79,7 @@ func (x ChatEmote) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ChatEmote.Descriptor instead.
 func (ChatEmote) EnumDescriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{0}
 }
 
 type ChatPayload struct {
@@ -95,7 +95,7 @@ type ChatPayload struct {
 
 func (x *ChatPayload) Reset() {
 	*x = ChatPayload{}
-	mi := &file_chat_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -107,7 +107,7 @@ func (x *ChatPayload) String() string {
 func (*ChatPayload) ProtoMessage() {}
 
 func (x *ChatPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,7 +120,7 @@ func (x *ChatPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatPayload.ProtoReflect.Descriptor instead.
 func (*ChatPayload) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ChatPayload) GetBody() isChatPayload_Body {
@@ -173,7 +173,7 @@ type MsgSendGameChat struct {
 
 func (x *MsgSendGameChat) Reset() {
 	*x = MsgSendGameChat{}
-	mi := &file_chat_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -185,7 +185,7 @@ func (x *MsgSendGameChat) String() string {
 func (*MsgSendGameChat) ProtoMessage() {}
 
 func (x *MsgSendGameChat) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -198,7 +198,7 @@ func (x *MsgSendGameChat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSendGameChat.ProtoReflect.Descriptor instead.
 func (*MsgSendGameChat) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MsgSendGameChat) GetPayload() *ChatPayload {
@@ -220,7 +220,7 @@ type ChatCommand struct {
 
 func (x *ChatCommand) Reset() {
 	*x = ChatCommand{}
-	mi := &file_chat_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +232,7 @@ func (x *ChatCommand) String() string {
 func (*ChatCommand) ProtoMessage() {}
 
 func (x *ChatCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +245,7 @@ func (x *ChatCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatCommand.ProtoReflect.Descriptor instead.
 func (*ChatCommand) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ChatCommand) GetBody() isChatCommand_Body {
@@ -287,7 +287,7 @@ type ChatEntry struct {
 
 func (x *ChatEntry) Reset() {
 	*x = ChatEntry{}
-	mi := &file_chat_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -299,7 +299,7 @@ func (x *ChatEntry) String() string {
 func (*ChatEntry) ProtoMessage() {}
 
 func (x *ChatEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -312,7 +312,7 @@ func (x *ChatEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatEntry.ProtoReflect.Descriptor instead.
 func (*ChatEntry) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ChatEntry) GetSequence() int64 {
@@ -359,7 +359,7 @@ type MsgGameChatPosted struct {
 
 func (x *MsgGameChatPosted) Reset() {
 	*x = MsgGameChatPosted{}
-	mi := &file_chat_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -371,7 +371,7 @@ func (x *MsgGameChatPosted) String() string {
 func (*MsgGameChatPosted) ProtoMessage() {}
 
 func (x *MsgGameChatPosted) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -384,7 +384,7 @@ func (x *MsgGameChatPosted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgGameChatPosted.ProtoReflect.Descriptor instead.
 func (*MsgGameChatPosted) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MsgGameChatPosted) GetEntry() *ChatEntry {
@@ -403,7 +403,7 @@ type MsgGameChatSync struct {
 
 func (x *MsgGameChatSync) Reset() {
 	*x = MsgGameChatSync{}
-	mi := &file_chat_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +415,7 @@ func (x *MsgGameChatSync) String() string {
 func (*MsgGameChatSync) ProtoMessage() {}
 
 func (x *MsgGameChatSync) ProtoReflect() protoreflect.Message {
-	mi := &file_chat_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_chat_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +428,7 @@ func (x *MsgGameChatSync) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgGameChatSync.ProtoReflect.Descriptor instead.
 func (*MsgGameChatSync) Descriptor() ([]byte, []int) {
-	return file_chat_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_chat_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MsgGameChatSync) GetEntries() []*ChatEntry {
@@ -438,12 +438,11 @@ func (x *MsgGameChatSync) GetEntries() []*ChatEntry {
 	return nil
 }
 
-var File_chat_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_chat_proto protoreflect.FileDescriptor
 
-const file_chat_proto_rawDesc = "" +
+const file_panoptes_proto_v1_chat_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"chat.proto\x12\x11panoptes.proto.v1\"a\n" +
+	"\x1cpanoptes/proto/v1/chat.proto\x12\x11panoptes.proto.v1\"a\n" +
 	"\vChatPayload\x124\n" +
 	"\x05emote\x18\x01 \x01(\x0e2\x1c.panoptes.proto.v1.ChatEmoteH\x00R\x05emote\x12\x14\n" +
 	"\x04text\x18\x02 \x01(\tH\x00R\x04textB\x06\n" +
@@ -470,23 +469,23 @@ const file_chat_proto_rawDesc = "" +
 	"\x10CHAT_EMOTE_LAUGH\x10\x03\x12\x14\n" +
 	"\x10CHAT_EMOTE_ANGRY\x10\x04\x12\x16\n" +
 	"\x12CHAT_EMOTE_WARNING\x10\x05\x12\x11\n" +
-	"\rCHAT_EMOTE_GG\x10\x06BSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\rCHAT_EMOTE_GG\x10\x06BPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_chat_proto_rawDescOnce sync.Once
-	file_chat_proto_rawDescData []byte
+	file_panoptes_proto_v1_chat_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_chat_proto_rawDescData []byte
 )
 
-func file_chat_proto_rawDescGZIP() []byte {
-	file_chat_proto_rawDescOnce.Do(func() {
-		file_chat_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_chat_proto_rawDesc), len(file_chat_proto_rawDesc)))
+func file_panoptes_proto_v1_chat_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_chat_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_chat_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_chat_proto_rawDesc), len(file_panoptes_proto_v1_chat_proto_rawDesc)))
 	})
-	return file_chat_proto_rawDescData
+	return file_panoptes_proto_v1_chat_proto_rawDescData
 }
 
-var file_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_chat_proto_goTypes = []any{
+var file_panoptes_proto_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_panoptes_proto_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_panoptes_proto_v1_chat_proto_goTypes = []any{
 	(ChatEmote)(0),            // 0: panoptes.proto.v1.ChatEmote
 	(*ChatPayload)(nil),       // 1: panoptes.proto.v1.ChatPayload
 	(*MsgSendGameChat)(nil),   // 2: panoptes.proto.v1.MsgSendGameChat
@@ -495,7 +494,7 @@ var file_chat_proto_goTypes = []any{
 	(*MsgGameChatPosted)(nil), // 5: panoptes.proto.v1.MsgGameChatPosted
 	(*MsgGameChatSync)(nil),   // 6: panoptes.proto.v1.MsgGameChatSync
 }
-var file_chat_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_chat_proto_depIdxs = []int32{
 	0, // 0: panoptes.proto.v1.ChatPayload.emote:type_name -> panoptes.proto.v1.ChatEmote
 	1, // 1: panoptes.proto.v1.MsgSendGameChat.payload:type_name -> panoptes.proto.v1.ChatPayload
 	2, // 2: panoptes.proto.v1.ChatCommand.send_game_chat:type_name -> panoptes.proto.v1.MsgSendGameChat
@@ -509,34 +508,34 @@ var file_chat_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_chat_proto_init() }
-func file_chat_proto_init() {
-	if File_chat_proto != nil {
+func init() { file_panoptes_proto_v1_chat_proto_init() }
+func file_panoptes_proto_v1_chat_proto_init() {
+	if File_panoptes_proto_v1_chat_proto != nil {
 		return
 	}
-	file_chat_proto_msgTypes[0].OneofWrappers = []any{
+	file_panoptes_proto_v1_chat_proto_msgTypes[0].OneofWrappers = []any{
 		(*ChatPayload_Emote)(nil),
 		(*ChatPayload_Text)(nil),
 	}
-	file_chat_proto_msgTypes[2].OneofWrappers = []any{
+	file_panoptes_proto_v1_chat_proto_msgTypes[2].OneofWrappers = []any{
 		(*ChatCommand_SendGameChat)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chat_proto_rawDesc), len(file_chat_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_chat_proto_rawDesc), len(file_panoptes_proto_v1_chat_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_chat_proto_goTypes,
-		DependencyIndexes: file_chat_proto_depIdxs,
-		EnumInfos:         file_chat_proto_enumTypes,
-		MessageInfos:      file_chat_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_chat_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_chat_proto_depIdxs,
+		EnumInfos:         file_panoptes_proto_v1_chat_proto_enumTypes,
+		MessageInfos:      file_panoptes_proto_v1_chat_proto_msgTypes,
 	}.Build()
-	File_chat_proto = out.File
-	file_chat_proto_goTypes = nil
-	file_chat_proto_depIdxs = nil
+	File_panoptes_proto_v1_chat_proto = out.File
+	file_panoptes_proto_v1_chat_proto_goTypes = nil
+	file_panoptes_proto_v1_chat_proto_depIdxs = nil
 }
