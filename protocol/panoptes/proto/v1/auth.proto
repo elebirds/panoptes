@@ -2,10 +2,8 @@ syntax = "proto3";
 
 package panoptes.proto.v1;
 
-import "common.proto";
-
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol.V1.Auth";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 客户端→服务端
 message MsgRegister {

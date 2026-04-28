@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: transport.proto
+// source: panoptes/proto/v1/transport.proto
 
 package protov1
 
@@ -33,7 +33,7 @@ type CommandMeta struct {
 
 func (x *CommandMeta) Reset() {
 	*x = CommandMeta{}
-	mi := &file_transport_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *CommandMeta) String() string {
 func (*CommandMeta) ProtoMessage() {}
 
 func (x *CommandMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *CommandMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandMeta.ProtoReflect.Descriptor instead.
 func (*CommandMeta) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CommandMeta) GetRequestId() string {
@@ -101,7 +101,7 @@ type EventMeta struct {
 
 func (x *EventMeta) Reset() {
 	*x = EventMeta{}
-	mi := &file_transport_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +113,7 @@ func (x *EventMeta) String() string {
 func (*EventMeta) ProtoMessage() {}
 
 func (x *EventMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +126,7 @@ func (x *EventMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventMeta.ProtoReflect.Descriptor instead.
 func (*EventMeta) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EventMeta) GetRequestId() string {
@@ -167,7 +167,7 @@ type ProblemDetail struct {
 
 func (x *ProblemDetail) Reset() {
 	*x = ProblemDetail{}
-	mi := &file_transport_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -179,7 +179,7 @@ func (x *ProblemDetail) String() string {
 func (*ProblemDetail) ProtoMessage() {}
 
 func (x *ProblemDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +192,7 @@ func (x *ProblemDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemDetail.ProtoReflect.Descriptor instead.
 func (*ProblemDetail) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ProblemDetail) GetPath() string {
@@ -220,7 +220,7 @@ type Problem struct {
 
 func (x *Problem) Reset() {
 	*x = Problem{}
-	mi := &file_transport_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +232,7 @@ func (x *Problem) String() string {
 func (*Problem) ProtoMessage() {}
 
 func (x *Problem) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +245,7 @@ func (x *Problem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Problem.ProtoReflect.Descriptor instead.
 func (*Problem) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Problem) GetCode() string {
@@ -282,7 +282,7 @@ type AuthCommand struct {
 
 func (x *AuthCommand) Reset() {
 	*x = AuthCommand{}
-	mi := &file_transport_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *AuthCommand) String() string {
 func (*AuthCommand) ProtoMessage() {}
 
 func (x *AuthCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *AuthCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthCommand.ProtoReflect.Descriptor instead.
 func (*AuthCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AuthCommand) GetBody() isAuthCommand_Body {
@@ -369,7 +369,7 @@ type LobbyCommand struct {
 
 func (x *LobbyCommand) Reset() {
 	*x = LobbyCommand{}
-	mi := &file_transport_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -381,7 +381,7 @@ func (x *LobbyCommand) String() string {
 func (*LobbyCommand) ProtoMessage() {}
 
 func (x *LobbyCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -394,7 +394,7 @@ func (x *LobbyCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LobbyCommand.ProtoReflect.Descriptor instead.
 func (*LobbyCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LobbyCommand) GetBody() isLobbyCommand_Body {
@@ -539,7 +539,7 @@ type PlanningCommand struct {
 
 func (x *PlanningCommand) Reset() {
 	*x = PlanningCommand{}
-	mi := &file_transport_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +551,7 @@ func (x *PlanningCommand) String() string {
 func (*PlanningCommand) ProtoMessage() {}
 
 func (x *PlanningCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +564,7 @@ func (x *PlanningCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanningCommand.ProtoReflect.Descriptor instead.
 func (*PlanningCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{6}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PlanningCommand) GetBody() isPlanningCommand_Body {
@@ -817,7 +817,7 @@ type GameCommand struct {
 
 func (x *GameCommand) Reset() {
 	*x = GameCommand{}
-	mi := &file_transport_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -829,7 +829,7 @@ func (x *GameCommand) String() string {
 func (*GameCommand) ProtoMessage() {}
 
 func (x *GameCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -842,7 +842,7 @@ func (x *GameCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameCommand.ProtoReflect.Descriptor instead.
 func (*GameCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{7}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GameCommand) GetBody() isGameCommand_Body {
@@ -916,7 +916,7 @@ type ClientFrame struct {
 
 func (x *ClientFrame) Reset() {
 	*x = ClientFrame{}
-	mi := &file_transport_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -928,7 +928,7 @@ func (x *ClientFrame) String() string {
 func (*ClientFrame) ProtoMessage() {}
 
 func (x *ClientFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -941,7 +941,7 @@ func (x *ClientFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientFrame.ProtoReflect.Descriptor instead.
 func (*ClientFrame) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{8}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ClientFrame) GetMeta() *CommandMeta {
@@ -1021,7 +1021,7 @@ type AuthEvent struct {
 
 func (x *AuthEvent) Reset() {
 	*x = AuthEvent{}
-	mi := &file_transport_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1033,7 +1033,7 @@ func (x *AuthEvent) String() string {
 func (*AuthEvent) ProtoMessage() {}
 
 func (x *AuthEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1046,7 +1046,7 @@ func (x *AuthEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthEvent.ProtoReflect.Descriptor instead.
 func (*AuthEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{9}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AuthEvent) GetBody() isAuthEvent_Body {
@@ -1121,7 +1121,7 @@ type LobbyEvent struct {
 
 func (x *LobbyEvent) Reset() {
 	*x = LobbyEvent{}
-	mi := &file_transport_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1133,7 +1133,7 @@ func (x *LobbyEvent) String() string {
 func (*LobbyEvent) ProtoMessage() {}
 
 func (x *LobbyEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1146,7 +1146,7 @@ func (x *LobbyEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LobbyEvent.ProtoReflect.Descriptor instead.
 func (*LobbyEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{10}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *LobbyEvent) GetBody() isLobbyEvent_Body {
@@ -1272,7 +1272,7 @@ type GameEvent struct {
 
 func (x *GameEvent) Reset() {
 	*x = GameEvent{}
-	mi := &file_transport_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1284,7 @@ func (x *GameEvent) String() string {
 func (*GameEvent) ProtoMessage() {}
 
 func (x *GameEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1297,7 @@ func (x *GameEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameEvent.ProtoReflect.Descriptor instead.
 func (*GameEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{11}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GameEvent) GetBody() isGameEvent_Body {
@@ -1717,7 +1717,7 @@ type ServerFrame struct {
 
 func (x *ServerFrame) Reset() {
 	*x = ServerFrame{}
-	mi := &file_transport_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1729,7 +1729,7 @@ func (x *ServerFrame) String() string {
 func (*ServerFrame) ProtoMessage() {}
 
 func (x *ServerFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1742,7 +1742,7 @@ func (x *ServerFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerFrame.ProtoReflect.Descriptor instead.
 func (*ServerFrame) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{12}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ServerFrame) GetMeta() *EventMeta {
@@ -1823,14 +1823,11 @@ func (*ServerFrame_Game) isServerFrame_Target() {}
 
 func (*ServerFrame_Problem) isServerFrame_Target() {}
 
-var File_transport_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_transport_proto protoreflect.FileDescriptor
 
-const file_transport_proto_rawDesc = "" +
+const file_panoptes_proto_v1_transport_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftransport.proto\x12\x11panoptes.proto.v1\x1a\n" +
-	"auth.proto\x1a\n" +
-	"chat.proto\x1a\fcommon.proto\x1a\fconfig.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
-	"turn.proto\"\x92\x01\n" +
+	"!panoptes/proto/v1/transport.proto\x12\x11panoptes.proto.v1\x1a\x1cpanoptes/proto/v1/auth.proto\x1a\x1cpanoptes/proto/v1/chat.proto\x1a\x1epanoptes/proto/v1/common.proto\x1a\x1epanoptes/proto/v1/config.proto\x1a$panoptes/proto/v1/data_catalog.proto\x1a\"panoptes/proto/v1/game_state.proto\x1a\x1dpanoptes/proto/v1/lobby.proto\x1a panoptes/proto/v1/minister.proto\x1a\x1epanoptes/proto/v1/orders.proto\x1a\"panoptes/proto/v1/settlement.proto\x1a\x1cpanoptes/proto/v1/turn.proto\"\x92\x01\n" +
 	"\vCommandMeta\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
@@ -1955,22 +1952,22 @@ const file_transport_proto_rawDesc = "" +
 	"\x05lobby\x18\v \x01(\v2\x1d.panoptes.proto.v1.LobbyEventH\x00R\x05lobby\x122\n" +
 	"\x04game\x18\f \x01(\v2\x1c.panoptes.proto.v1.GameEventH\x00R\x04game\x126\n" +
 	"\aproblem\x18\r \x01(\v2\x1a.panoptes.proto.v1.ProblemH\x00R\aproblemB\b\n" +
-	"\x06targetBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x06targetBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_transport_proto_rawDescOnce sync.Once
-	file_transport_proto_rawDescData []byte
+	file_panoptes_proto_v1_transport_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_transport_proto_rawDescData []byte
 )
 
-func file_transport_proto_rawDescGZIP() []byte {
-	file_transport_proto_rawDescOnce.Do(func() {
-		file_transport_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_transport_proto_rawDesc), len(file_transport_proto_rawDesc)))
+func file_panoptes_proto_v1_transport_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_transport_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_transport_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_transport_proto_rawDesc), len(file_panoptes_proto_v1_transport_proto_rawDesc)))
 	})
-	return file_transport_proto_rawDescData
+	return file_panoptes_proto_v1_transport_proto_rawDescData
 }
 
-var file_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_transport_proto_goTypes = []any{
+var file_panoptes_proto_v1_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_panoptes_proto_v1_transport_proto_goTypes = []any{
 	(*CommandMeta)(nil),                         // 0: panoptes.proto.v1.CommandMeta
 	(*EventMeta)(nil),                           // 1: panoptes.proto.v1.EventMeta
 	(*ProblemDetail)(nil),                       // 2: panoptes.proto.v1.ProblemDetail
@@ -2045,7 +2042,7 @@ var file_transport_proto_goTypes = []any{
 	(*MsgGameChatPosted)(nil),                   // 71: panoptes.proto.v1.MsgGameChatPosted
 	(*MsgGameChatSync)(nil),                     // 72: panoptes.proto.v1.MsgGameChatSync
 }
-var file_transport_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
 	13, // 1: panoptes.proto.v1.AuthCommand.register:type_name -> panoptes.proto.v1.MsgRegister
 	14, // 2: panoptes.proto.v1.AuthCommand.login:type_name -> panoptes.proto.v1.MsgLogin
@@ -2124,27 +2121,27 @@ var file_transport_proto_depIdxs = []int32{
 	0,  // [0:71] is the sub-list for field type_name
 }
 
-func init() { file_transport_proto_init() }
-func file_transport_proto_init() {
-	if File_transport_proto != nil {
+func init() { file_panoptes_proto_v1_transport_proto_init() }
+func file_panoptes_proto_v1_transport_proto_init() {
+	if File_panoptes_proto_v1_transport_proto != nil {
 		return
 	}
-	file_auth_proto_init()
-	file_chat_proto_init()
-	file_common_proto_init()
-	file_config_proto_init()
-	file_data_catalog_proto_init()
-	file_game_state_proto_init()
-	file_lobby_proto_init()
-	file_minister_proto_init()
-	file_orders_proto_init()
-	file_settlement_proto_init()
-	file_turn_proto_init()
-	file_transport_proto_msgTypes[4].OneofWrappers = []any{
+	file_panoptes_proto_v1_auth_proto_init()
+	file_panoptes_proto_v1_chat_proto_init()
+	file_panoptes_proto_v1_common_proto_init()
+	file_panoptes_proto_v1_config_proto_init()
+	file_panoptes_proto_v1_data_catalog_proto_init()
+	file_panoptes_proto_v1_game_state_proto_init()
+	file_panoptes_proto_v1_lobby_proto_init()
+	file_panoptes_proto_v1_minister_proto_init()
+	file_panoptes_proto_v1_orders_proto_init()
+	file_panoptes_proto_v1_settlement_proto_init()
+	file_panoptes_proto_v1_turn_proto_init()
+	file_panoptes_proto_v1_transport_proto_msgTypes[4].OneofWrappers = []any{
 		(*AuthCommand_Register)(nil),
 		(*AuthCommand_Login)(nil),
 	}
-	file_transport_proto_msgTypes[5].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[5].OneofWrappers = []any{
 		(*LobbyCommand_CreateRoom)(nil),
 		(*LobbyCommand_JoinRoom)(nil),
 		(*LobbyCommand_LeaveRoom)(nil),
@@ -2153,7 +2150,7 @@ func file_transport_proto_init() {
 		(*LobbyCommand_StartGame)(nil),
 		(*LobbyCommand_KickPlayer)(nil),
 	}
-	file_transport_proto_msgTypes[6].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[6].OneofWrappers = []any{
 		(*PlanningCommand_SetPolicy)(nil),
 		(*PlanningCommand_SetResearchTarget)(nil),
 		(*PlanningCommand_SetBuildingRecipe)(nil),
@@ -2170,29 +2167,29 @@ func file_transport_proto_init() {
 		(*PlanningCommand_BuildStructurePreview)(nil),
 		(*PlanningCommand_SetBuildingRecipePreview)(nil),
 	}
-	file_transport_proto_msgTypes[7].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[7].OneofWrappers = []any{
 		(*GameCommand_Planning)(nil),
 		(*GameCommand_StaticCatalogSyncRequest)(nil),
 		(*GameCommand_Chat)(nil),
 	}
-	file_transport_proto_msgTypes[8].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[8].OneofWrappers = []any{
 		(*ClientFrame_Auth)(nil),
 		(*ClientFrame_Lobby)(nil),
 		(*ClientFrame_Game)(nil),
 	}
-	file_transport_proto_msgTypes[9].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[9].OneofWrappers = []any{
 		(*AuthEvent_LoginSuccess)(nil),
 		(*AuthEvent_AuthError)(nil),
 		(*AuthEvent_ClientRuntimeConfig)(nil),
 	}
-	file_transport_proto_msgTypes[10].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[10].OneofWrappers = []any{
 		(*LobbyEvent_RoomCreated)(nil),
 		(*LobbyEvent_RoomState)(nil),
 		(*LobbyEvent_GameStarting)(nil),
 		(*LobbyEvent_PlayerKicked)(nil),
 		(*LobbyEvent_LobbyError)(nil),
 	}
-	file_transport_proto_msgTypes[11].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[11].OneofWrappers = []any{
 		(*GameEvent_StaticCatalogManifest)(nil),
 		(*GameEvent_StaticCatalogSnapshot)(nil),
 		(*GameEvent_GameInit)(nil),
@@ -2220,7 +2217,7 @@ func file_transport_proto_init() {
 		(*GameEvent_GameChatPosted)(nil),
 		(*GameEvent_GameChatSync)(nil),
 	}
-	file_transport_proto_msgTypes[12].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),
 		(*ServerFrame_Lobby)(nil),
 		(*ServerFrame_Game)(nil),
@@ -2230,17 +2227,17 @@ func file_transport_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_transport_proto_rawDesc), len(file_transport_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_transport_proto_rawDesc), len(file_panoptes_proto_v1_transport_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_transport_proto_goTypes,
-		DependencyIndexes: file_transport_proto_depIdxs,
-		MessageInfos:      file_transport_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_transport_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_transport_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_transport_proto_msgTypes,
 	}.Build()
-	File_transport_proto = out.File
-	file_transport_proto_goTypes = nil
-	file_transport_proto_depIdxs = nil
+	File_panoptes_proto_v1_transport_proto = out.File
+	file_panoptes_proto_v1_transport_proto_goTypes = nil
+	file_panoptes_proto_v1_transport_proto_depIdxs = nil
 }

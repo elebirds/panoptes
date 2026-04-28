@@ -103,7 +103,7 @@ func TestDebugHandlerCommandQueuesPlanningCommand(t *testing.T) {
 		t.Fatalf("protojson.Unmarshal() error = %v", err)
 	}
 	if !result.GetSuccess() || result.GetTechnologyId() != "agri_unlock_farm" {
-		t.Fatalf("research result = %#v", result)
+		t.Fatalf("research result success=%v technology_id=%q error_code=%q", result.GetSuccess(), result.GetTechnologyId(), result.GetErrorCode())
 	}
 
 	if got := fixture.room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agri_unlock_farm" {
@@ -144,7 +144,7 @@ func TestDebugHandlerCommandReturnsConflictForRejectedPlanningCommand(t *testing
 		t.Fatalf("protojson.Unmarshal() error = %v", err)
 	}
 	if result.GetSuccess() {
-		t.Fatalf("research result should fail: %#v", result)
+		t.Fatalf("research result should fail: success=%v technology_id=%q error_code=%q", result.GetSuccess(), result.GetTechnologyId(), result.GetErrorCode())
 	}
 	if result.GetErrorCode() != "invalid_target" {
 		t.Fatalf("error_code = %q, want invalid_target", result.GetErrorCode())

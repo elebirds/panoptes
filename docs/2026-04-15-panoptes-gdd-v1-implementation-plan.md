@@ -6,9 +6,9 @@
 
 **Goal:** 在现有 `planning / resolving`、`orders / turn / settlement` 骨架之上，落地 [2026-04-15-panoptes-gdd-v1-structured.md](./gdd/2026-04-15-panoptes-gdd-v1-structured.md) 的当前基线（MVP），并为中期、长期系统预留稳定扩展接口。
 
-**Architecture:** 以 `data/` 为唯一玩法作者源，`protocol/*.proto` 为跨端契约，`server/internal/domain + ecs + engine + event` 为服务端权威规则实现，`client/Assets/Scripts/Runtime/*` 为纯展示与输入层。实施顺序采用“静态数据与协议先对齐，服务端规则闭环先成立，客户端垂直切片随后跟进”的路线，不在 MVP 阶段硬做完整物流、双层迷雾、大臣接管和 PVE。
+**Architecture:** 以 `data/` 为唯一玩法作者源，`protocol/panoptes/proto/v1/*.proto` 为跨端契约，`server/internal/domain + ecs + engine + event` 为服务端权威规则实现，`client/Assets/Scripts/Runtime/*` 为纯展示与输入层。实施顺序采用“静态数据与协议先对齐，服务端规则闭环先成立，客户端垂直切片随后跟进”的路线，不在 MVP 阶段硬做完整物流、双层迷雾、大臣接管和 PVE。
 
-**Tech Stack:** Go 服务端、donburi ECS、protobuf/buf、静态数据生成链、Unity 2022.3 LTS 客户端、Transport V2。
+**Tech Stack:** Go 1.26 服务端、donburi ECS、protobuf/buf、静态数据生成链、Unity 6000.4.1f1 客户端、Transport V2。
 
 ---
 
@@ -270,12 +270,12 @@ Chunk 1 在实际落地时采用了“静态数据与协议先对齐，再补最
 ### Task 3: 对齐跨端协议视图
 
 **Files:**
-- Modify: `protocol/data_types.proto`
-- Modify: `protocol/data_catalog.proto`
-- Modify: `protocol/game_state.proto`
-- Modify: `protocol/orders.proto`
-- Modify: `protocol/turn.proto`
-- Modify: `protocol/settlement.proto`
+- Modify: `protocol/panoptes/proto/v1/data_types.proto`
+- Modify: `protocol/panoptes/proto/v1/data_catalog.proto`
+- Modify: `protocol/panoptes/proto/v1/game_state.proto`
+- Modify: `protocol/panoptes/proto/v1/orders.proto`
+- Modify: `protocol/panoptes/proto/v1/turn.proto`
+- Modify: `protocol/panoptes/proto/v1/settlement.proto`
 - Modify: `Makefile`
 - Modify: `server/internal/transport/dispatch/generated_commands.go`
 - Modify: `server/internal/gen/proto/*.pb.go`
@@ -499,7 +499,7 @@ Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属�
 - Modify: `server/internal/engine/production/research.go`
 - Modify: `server/internal/event/research.go`
 - Modify: `server/internal/game/query/views.go`
-- Modify: `protocol/game_state.proto`
+- Modify: `protocol/panoptes/proto/v1/game_state.proto`
 - Modify: `server/internal/engine/production/research_system_test.go`
 
 - [x] **Step 1: 为玩家建立“当前研究目标 + 每项科技进度”的长期状态，而不是自由科技点购买模型**
@@ -529,8 +529,8 @@ Chunk 4 当前已经完成了“主城/新城统一建模 + 建筑放置/归属�
 - Modify: `server/internal/event/minister.go`
 - Modify: `server/internal/game/query/views.go`
 - Modify: `server/internal/staticdata/model.go`
-- Modify: `protocol/game_state.proto`
-- Modify: `protocol/orders.proto`
+- Modify: `protocol/panoptes/proto/v1/game_state.proto`
+- Modify: `protocol/panoptes/proto/v1/orders.proto`
 - Create: `server/internal/engine/production/policy.go`
 - Create: `server/internal/engine/production/policy_test.go`
 

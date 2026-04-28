@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: lobby.proto
+// source: panoptes/proto/v1/lobby.proto
 
 package protov1
 
@@ -35,7 +35,7 @@ type Room struct {
 
 func (x *Room) Reset() {
 	*x = Room{}
-	mi := &file_lobby_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *Room) String() string {
 func (*Room) ProtoMessage() {}
 
 func (x *Room) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *Room) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Room.ProtoReflect.Descriptor instead.
 func (*Room) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Room) GetRoomId() string {
@@ -116,7 +116,7 @@ type MsgCreateRoom struct {
 
 func (x *MsgCreateRoom) Reset() {
 	*x = MsgCreateRoom{}
-	mi := &file_lobby_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -128,7 +128,7 @@ func (x *MsgCreateRoom) String() string {
 func (*MsgCreateRoom) ProtoMessage() {}
 
 func (x *MsgCreateRoom) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -141,7 +141,7 @@ func (x *MsgCreateRoom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgCreateRoom.ProtoReflect.Descriptor instead.
 func (*MsgCreateRoom) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MsgCreateRoom) GetName() string {
@@ -167,7 +167,7 @@ type MsgJoinRoom struct {
 
 func (x *MsgJoinRoom) Reset() {
 	*x = MsgJoinRoom{}
-	mi := &file_lobby_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -179,7 +179,7 @@ func (x *MsgJoinRoom) String() string {
 func (*MsgJoinRoom) ProtoMessage() {}
 
 func (x *MsgJoinRoom) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +192,7 @@ func (x *MsgJoinRoom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgJoinRoom.ProtoReflect.Descriptor instead.
 func (*MsgJoinRoom) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MsgJoinRoom) GetRoomCode() string {
@@ -210,7 +210,7 @@ type MsgLeaveRoom struct {
 
 func (x *MsgLeaveRoom) Reset() {
 	*x = MsgLeaveRoom{}
-	mi := &file_lobby_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -222,7 +222,7 @@ func (x *MsgLeaveRoom) String() string {
 func (*MsgLeaveRoom) ProtoMessage() {}
 
 func (x *MsgLeaveRoom) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -235,7 +235,7 @@ func (x *MsgLeaveRoom) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgLeaveRoom.ProtoReflect.Descriptor instead.
 func (*MsgLeaveRoom) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{3}
 }
 
 type MsgReadyUp struct {
@@ -246,7 +246,7 @@ type MsgReadyUp struct {
 
 func (x *MsgReadyUp) Reset() {
 	*x = MsgReadyUp{}
-	mi := &file_lobby_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -258,7 +258,7 @@ func (x *MsgReadyUp) String() string {
 func (*MsgReadyUp) ProtoMessage() {}
 
 func (x *MsgReadyUp) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,7 +271,7 @@ func (x *MsgReadyUp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgReadyUp.ProtoReflect.Descriptor instead.
 func (*MsgReadyUp) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{4}
 }
 
 type MsgAddBot struct {
@@ -282,7 +282,7 @@ type MsgAddBot struct {
 
 func (x *MsgAddBot) Reset() {
 	*x = MsgAddBot{}
-	mi := &file_lobby_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *MsgAddBot) String() string {
 func (*MsgAddBot) ProtoMessage() {}
 
 func (x *MsgAddBot) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *MsgAddBot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgAddBot.ProtoReflect.Descriptor instead.
 func (*MsgAddBot) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{5}
 }
 
 type MsgStartGame struct {
@@ -318,7 +318,7 @@ type MsgStartGame struct {
 
 func (x *MsgStartGame) Reset() {
 	*x = MsgStartGame{}
-	mi := &file_lobby_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -330,7 +330,7 @@ func (x *MsgStartGame) String() string {
 func (*MsgStartGame) ProtoMessage() {}
 
 func (x *MsgStartGame) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -343,7 +343,7 @@ func (x *MsgStartGame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgStartGame.ProtoReflect.Descriptor instead.
 func (*MsgStartGame) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{6}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{6}
 }
 
 type MsgKickPlayer struct {
@@ -355,7 +355,7 @@ type MsgKickPlayer struct {
 
 func (x *MsgKickPlayer) Reset() {
 	*x = MsgKickPlayer{}
-	mi := &file_lobby_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -367,7 +367,7 @@ func (x *MsgKickPlayer) String() string {
 func (*MsgKickPlayer) ProtoMessage() {}
 
 func (x *MsgKickPlayer) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -380,7 +380,7 @@ func (x *MsgKickPlayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgKickPlayer.ProtoReflect.Descriptor instead.
 func (*MsgKickPlayer) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{7}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MsgKickPlayer) GetPlayerId() string {
@@ -401,7 +401,7 @@ type MsgRoomCreated struct {
 
 func (x *MsgRoomCreated) Reset() {
 	*x = MsgRoomCreated{}
-	mi := &file_lobby_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +413,7 @@ func (x *MsgRoomCreated) String() string {
 func (*MsgRoomCreated) ProtoMessage() {}
 
 func (x *MsgRoomCreated) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +426,7 @@ func (x *MsgRoomCreated) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRoomCreated.ProtoReflect.Descriptor instead.
 func (*MsgRoomCreated) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{8}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MsgRoomCreated) GetRoomId() string {
@@ -457,7 +457,7 @@ type MsgRoomState struct {
 
 func (x *MsgRoomState) Reset() {
 	*x = MsgRoomState{}
-	mi := &file_lobby_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -469,7 +469,7 @@ func (x *MsgRoomState) String() string {
 func (*MsgRoomState) ProtoMessage() {}
 
 func (x *MsgRoomState) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -482,7 +482,7 @@ func (x *MsgRoomState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRoomState.ProtoReflect.Descriptor instead.
 func (*MsgRoomState) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{9}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *MsgRoomState) GetRoomId() string {
@@ -540,7 +540,7 @@ type RoomPlayer struct {
 
 func (x *RoomPlayer) Reset() {
 	*x = RoomPlayer{}
-	mi := &file_lobby_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -552,7 +552,7 @@ func (x *RoomPlayer) String() string {
 func (*RoomPlayer) ProtoMessage() {}
 
 func (x *RoomPlayer) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -565,7 +565,7 @@ func (x *RoomPlayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoomPlayer.ProtoReflect.Descriptor instead.
 func (*RoomPlayer) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{10}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RoomPlayer) GetPlayerId() string {
@@ -612,7 +612,7 @@ type MsgGameStarting struct {
 
 func (x *MsgGameStarting) Reset() {
 	*x = MsgGameStarting{}
-	mi := &file_lobby_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -624,7 +624,7 @@ func (x *MsgGameStarting) String() string {
 func (*MsgGameStarting) ProtoMessage() {}
 
 func (x *MsgGameStarting) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,7 +637,7 @@ func (x *MsgGameStarting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgGameStarting.ProtoReflect.Descriptor instead.
 func (*MsgGameStarting) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{11}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MsgGameStarting) GetCountdown() int32 {
@@ -657,7 +657,7 @@ type MsgPlayerKicked struct {
 
 func (x *MsgPlayerKicked) Reset() {
 	*x = MsgPlayerKicked{}
-	mi := &file_lobby_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -669,7 +669,7 @@ func (x *MsgPlayerKicked) String() string {
 func (*MsgPlayerKicked) ProtoMessage() {}
 
 func (x *MsgPlayerKicked) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -682,7 +682,7 @@ func (x *MsgPlayerKicked) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgPlayerKicked.ProtoReflect.Descriptor instead.
 func (*MsgPlayerKicked) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{12}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MsgPlayerKicked) GetPlayerId() string {
@@ -709,7 +709,7 @@ type MsgLobbyError struct {
 
 func (x *MsgLobbyError) Reset() {
 	*x = MsgLobbyError{}
-	mi := &file_lobby_proto_msgTypes[13]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +721,7 @@ func (x *MsgLobbyError) String() string {
 func (*MsgLobbyError) ProtoMessage() {}
 
 func (x *MsgLobbyError) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[13]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,7 +734,7 @@ func (x *MsgLobbyError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgLobbyError.ProtoReflect.Descriptor instead.
 func (*MsgLobbyError) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{13}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MsgLobbyError) GetCode() string {
@@ -759,7 +759,7 @@ type ListRoomsRequest struct {
 
 func (x *ListRoomsRequest) Reset() {
 	*x = ListRoomsRequest{}
-	mi := &file_lobby_proto_msgTypes[14]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -771,7 +771,7 @@ func (x *ListRoomsRequest) String() string {
 func (*ListRoomsRequest) ProtoMessage() {}
 
 func (x *ListRoomsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[14]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -784,7 +784,7 @@ func (x *ListRoomsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoomsRequest.ProtoReflect.Descriptor instead.
 func (*ListRoomsRequest) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{14}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{14}
 }
 
 type ListRoomsResponse struct {
@@ -796,7 +796,7 @@ type ListRoomsResponse struct {
 
 func (x *ListRoomsResponse) Reset() {
 	*x = ListRoomsResponse{}
-	mi := &file_lobby_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -808,7 +808,7 @@ func (x *ListRoomsResponse) String() string {
 func (*ListRoomsResponse) ProtoMessage() {}
 
 func (x *ListRoomsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lobby_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_lobby_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -821,7 +821,7 @@ func (x *ListRoomsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoomsResponse.ProtoReflect.Descriptor instead.
 func (*ListRoomsResponse) Descriptor() ([]byte, []int) {
-	return file_lobby_proto_rawDescGZIP(), []int{15}
+	return file_panoptes_proto_v1_lobby_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListRoomsResponse) GetRooms() []*Room {
@@ -831,11 +831,11 @@ func (x *ListRoomsResponse) GetRooms() []*Room {
 	return nil
 }
 
-var File_lobby_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_lobby_proto protoreflect.FileDescriptor
 
-const file_lobby_proto_rawDesc = "" +
+const file_panoptes_proto_v1_lobby_proto_rawDesc = "" +
 	"\n" +
-	"\vlobby.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"\xc2\x01\n" +
+	"\x1dpanoptes/proto/v1/lobby.proto\x12\x11panoptes.proto.v1\"\xc2\x01\n" +
 	"\x04Room\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x1b\n" +
 	"\troom_code\x18\x02 \x01(\tR\broomCode\x12\x12\n" +
@@ -885,22 +885,22 @@ const file_lobby_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\x12\n" +
 	"\x10ListRoomsRequest\"B\n" +
 	"\x11ListRoomsResponse\x12-\n" +
-	"\x05rooms\x18\x01 \x03(\v2\x17.panoptes.proto.v1.RoomR\x05roomsBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x05rooms\x18\x01 \x03(\v2\x17.panoptes.proto.v1.RoomR\x05roomsBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_lobby_proto_rawDescOnce sync.Once
-	file_lobby_proto_rawDescData []byte
+	file_panoptes_proto_v1_lobby_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_lobby_proto_rawDescData []byte
 )
 
-func file_lobby_proto_rawDescGZIP() []byte {
-	file_lobby_proto_rawDescOnce.Do(func() {
-		file_lobby_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_lobby_proto_rawDesc), len(file_lobby_proto_rawDesc)))
+func file_panoptes_proto_v1_lobby_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_lobby_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_lobby_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_lobby_proto_rawDesc), len(file_panoptes_proto_v1_lobby_proto_rawDesc)))
 	})
-	return file_lobby_proto_rawDescData
+	return file_panoptes_proto_v1_lobby_proto_rawDescData
 }
 
-var file_lobby_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_lobby_proto_goTypes = []any{
+var file_panoptes_proto_v1_lobby_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_panoptes_proto_v1_lobby_proto_goTypes = []any{
 	(*Room)(nil),              // 0: panoptes.proto.v1.Room
 	(*MsgCreateRoom)(nil),     // 1: panoptes.proto.v1.MsgCreateRoom
 	(*MsgJoinRoom)(nil),       // 2: panoptes.proto.v1.MsgJoinRoom
@@ -918,7 +918,7 @@ var file_lobby_proto_goTypes = []any{
 	(*ListRoomsRequest)(nil),  // 14: panoptes.proto.v1.ListRoomsRequest
 	(*ListRoomsResponse)(nil), // 15: panoptes.proto.v1.ListRoomsResponse
 }
-var file_lobby_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_lobby_proto_depIdxs = []int32{
 	10, // 0: panoptes.proto.v1.Room.players:type_name -> panoptes.proto.v1.RoomPlayer
 	10, // 1: panoptes.proto.v1.MsgRoomState.players:type_name -> panoptes.proto.v1.RoomPlayer
 	0,  // 2: panoptes.proto.v1.ListRoomsResponse.rooms:type_name -> panoptes.proto.v1.Room
@@ -929,27 +929,26 @@ var file_lobby_proto_depIdxs = []int32{
 	0,  // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_lobby_proto_init() }
-func file_lobby_proto_init() {
-	if File_lobby_proto != nil {
+func init() { file_panoptes_proto_v1_lobby_proto_init() }
+func file_panoptes_proto_v1_lobby_proto_init() {
+	if File_panoptes_proto_v1_lobby_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lobby_proto_rawDesc), len(file_lobby_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_lobby_proto_rawDesc), len(file_panoptes_proto_v1_lobby_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_lobby_proto_goTypes,
-		DependencyIndexes: file_lobby_proto_depIdxs,
-		MessageInfos:      file_lobby_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_lobby_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_lobby_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_lobby_proto_msgTypes,
 	}.Build()
-	File_lobby_proto = out.File
-	file_lobby_proto_goTypes = nil
-	file_lobby_proto_depIdxs = nil
+	File_panoptes_proto_v1_lobby_proto = out.File
+	file_panoptes_proto_v1_lobby_proto_goTypes = nil
+	file_panoptes_proto_v1_lobby_proto_depIdxs = nil
 }

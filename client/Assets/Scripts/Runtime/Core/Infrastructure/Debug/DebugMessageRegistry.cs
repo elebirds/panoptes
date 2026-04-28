@@ -108,7 +108,7 @@ namespace Panoptes.DebugTools
                 "MsgSetMinisterDirective" => "{\n  \"ministerRole\": \"domestic\",\n  \"content\": \"{\\\"directive_type\\\":\\\"accept\\\",\\\"draft_id\\\":\\\"domestic:research:agrarian_foundations:3\\\"}\"\n}",
                 "MsgSetResearchTarget" => "{\n  \"technologyId\": \"tech_masonry\"\n}",
                 "MsgSetBuildingRecipe" => "{\n  \"nodeId\": \"node-a\",\n  \"recipeId\": \"recipe_swordsman\"\n}",
-                "MsgBuildStructure" => "{\n  \"nodeId\": \"res_food\",\n  \"buildingType\": \"farm\"\n}",
+                "MsgBuildStructure" => "{\n  \"nodeId\": \"res_food\",\n  \"buildingTypeId\": \"farm\"\n}",
                 "MsgRevealNode" => "{\n  \"nodeId\": \"res_food\"\n}",
                 "MsgSetWarZone" => "{\n  \"zoneId\": \"zone1\",\n  \"name\": \"北线\",\n  \"nodeIds\": [\"res_ore\"]\n}",
                 "MsgWarZoneDirective" => "{\n  \"zoneId\": \"zone1\",\n  \"directive\": \"attack\"\n}",

@@ -1,20 +1,20 @@
 .PHONY: data-gen data-validate gen proto-gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
 
 PROTO_GEN_PATHS = \
-	--path common.proto \
-	--path config.proto \
-	--path data_types.proto \
-	--path data_catalog.proto \
-	--path map_catalog.proto \
-	--path auth.proto \
-	--path chat.proto \
-	--path lobby.proto \
-	--path game_state.proto \
-	--path minister.proto \
-	--path orders.proto \
-	--path transport.proto \
-	--path turn.proto \
-	--path settlement.proto
+	--path panoptes/proto/v1/common.proto \
+	--path panoptes/proto/v1/config.proto \
+	--path panoptes/proto/v1/data_types.proto \
+	--path panoptes/proto/v1/data_catalog.proto \
+	--path panoptes/proto/v1/map_catalog.proto \
+	--path panoptes/proto/v1/auth.proto \
+	--path panoptes/proto/v1/chat.proto \
+	--path panoptes/proto/v1/lobby.proto \
+	--path panoptes/proto/v1/game_state.proto \
+	--path panoptes/proto/v1/minister.proto \
+	--path panoptes/proto/v1/orders.proto \
+	--path panoptes/proto/v1/transport.proto \
+	--path panoptes/proto/v1/turn.proto \
+	--path panoptes/proto/v1/settlement.proto
 
 data-gen:
 	cd server && go run ./cmd/datagen

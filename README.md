@@ -23,7 +23,7 @@ Gamejam 参赛作品，主题：**我的 AI 队友**。
 
 ```
 Go 1.26+
-Unity 6.4
+Unity 6000.4.1f1
 buf（Protobuf 代码生成）
 Redis
 PostgreSQL
@@ -95,18 +95,18 @@ panoptes/
 ### 服务端
 
 ```
-Go 1.22 · WebSocket · ECS（donburi）· Redis · PostgreSQL · Anthropic API · Protobuf
+Go 1.26 · WebSocket · ECS（donburi）· Redis · PostgreSQL · Qwen/DeepSeek 兼容 LLM · Protobuf
 ```
 
 - **ECS + Data-Driven**：游戏状态用 ECS 管理，所有静态数据从根 `data/` 作者源生成
 - **Event Sourcing**：Engine 层纯函数产生事件，统一 Apply 修改状态
-- **AI 部长**：服务端异步调用 LLM API，部长决策返回结构化 JSON 直接执行
+- **AI 部长**：服务端可异步调用 LLM API 生成部长汇报与草案文案；当前 MVP 不让部长 action 直接写入游戏状态
 - **Transport 抽象**：WebSocket 现在，gRPC 将来，业务代码零修改
 
 ### 客户端
 
 ```
-Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
+Unity 6000.4.1f1 · URP · NativeWebSocket · Google.Protobuf · uGUI
 ```
 
 - **纯展示层**：不包含任何游戏逻辑，所有状态以服务端为准
@@ -119,7 +119,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 ### 回合结构
 
 ```
-内政阶段（60秒）→ 内政结算 → 战斗阶段（60秒）→ 战斗结算 → 下一回合
+规划阶段 planning（35秒）→ 统一结算 resolving → 下一回合
 ```
 
 ### 兵种
@@ -128,9 +128,9 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 |---|---|---|
 | 步兵 | 主战场均衡 | 2格/回合 |
 | 弓手 | 远程压制（射程2格） | 1格/回合 |
-| 骑兵 | 快速机动 | 3格/回合 |
-| 攻城兵 | 城堡/城墙（×3） | 1格/回合 |
-| 破坏兵 | 道路/建筑（×3） | 2格/回合 |
+| 开拓者 | 建城与扩张 | 4格/回合 |
+
+> 注：骑兵、攻城兵、破坏兵属于后续内容扩展，当前 MVP 内容包尚未定版。
 
 ### 胜负条件
 
@@ -140,8 +140,8 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 | 职位 | 职责 |
 |---|---|
-| 军事部长 | 战区指令拆解、前线汇报、自主调兵 |
-| 农业部长 | 生产线管理、资源流动、自主建造 |
+| 内政部长 | 研究/国策/建设建议、局势汇报 |
+| 军事部长（后续） | 战区指令拆解、前线汇报、自主调兵 |
 | 外交部长（加分项） | 敌方情报分析、信息干扰 |
 
 ---
@@ -163,7 +163,7 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 
 ### 修改协议
 
-只改 `protocol/*.proto`，然后 `make gen`，不要手动修改生成代码。
+只改 `protocol/panoptes/proto/v1/*.proto`，然后 `make gen`，不要手动修改生成代码。
 
 ### 修改游戏数值
 
@@ -186,10 +186,10 @@ Unity 2022.3 LTS · URP · NativeWebSocket · Google.Protobuf · uGUI
 **必做**
 
 - 2人联机对战
-- 内政+战斗两阶段完整回合
-- 军事部长+农业部长（LLM驱动）
-- 管道式生产线基础版
-- 5种兵种（步兵/弓手/骑兵/攻城兵/破坏兵）
+- planning/resolving 统一回合
+- 内政部长建议与汇报（规则基线，LLM 可选润色）
+- 资源、点数、科技、建筑、配方基础闭环
+- 最小单位闭环（开拓者/步兵/弓手）
 - 攻占主城胜利判定
 
 **加分项**
@@ -214,10 +214,13 @@ REDIS_ADDR=localhost:6379
 # PostgreSQL（必选）
 POSTGRES_DSN=postgres://user:pass@localhost/panoptes
 
-# LLM
-LLM_PROVIDER=anthropic
-LLM_API_KEY=sk-...
-LLM_MODEL=claude-sonnet-4-20250514
+# LLM（可选）
+MINISTER_LLM_ENABLED=false
+MINISTER_LLM_PROVIDER=qwen
+QWEN_API_KEY=
+DEEPSEEK_API_KEY=
+MINISTER_LLM_MODEL=
+MINISTER_LLM_TIMEOUT_MS=5000
 
 # JWT
 JWT_SECRET=your-secret-key

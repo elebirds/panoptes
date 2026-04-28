@@ -155,7 +155,6 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 				})
 			}
 			return
-			return
 		}
 
 		progressStep := state.ApplyScalarModifier(buildingComp.Owner, string(staticdata.ModifierTriggerRecipeBaseProgress), recipe.ID, "", recipe.BaseProgress)

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: settlement.proto
+// source: panoptes/proto/v1/settlement.proto
 
 package protov1
 
@@ -31,7 +31,7 @@ type TurnEvent struct {
 
 func (x *TurnEvent) Reset() {
 	*x = TurnEvent{}
-	mi := &file_settlement_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *TurnEvent) String() string {
 func (*TurnEvent) ProtoMessage() {}
 
 func (x *TurnEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *TurnEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TurnEvent.ProtoReflect.Descriptor instead.
 func (*TurnEvent) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TurnEvent) GetType() string {
@@ -83,7 +83,7 @@ type SettlementSection struct {
 
 func (x *SettlementSection) Reset() {
 	*x = SettlementSection{}
-	mi := &file_settlement_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +95,7 @@ func (x *SettlementSection) String() string {
 func (*SettlementSection) ProtoMessage() {}
 
 func (x *SettlementSection) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +108,7 @@ func (x *SettlementSection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SettlementSection.ProtoReflect.Descriptor instead.
 func (*SettlementSection) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SettlementSection) GetSection() string {
@@ -140,7 +140,7 @@ type MsgTurnSettlement struct {
 
 func (x *MsgTurnSettlement) Reset() {
 	*x = MsgTurnSettlement{}
-	mi := &file_settlement_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -152,7 +152,7 @@ func (x *MsgTurnSettlement) String() string {
 func (*MsgTurnSettlement) ProtoMessage() {}
 
 func (x *MsgTurnSettlement) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -165,7 +165,7 @@ func (x *MsgTurnSettlement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTurnSettlement.ProtoReflect.Descriptor instead.
 func (*MsgTurnSettlement) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MsgTurnSettlement) GetSections() []*SettlementSection {
@@ -217,11 +217,11 @@ func (x *MsgTurnSettlement) GetMyPlayerAfter() *PlayerView {
 	return nil
 }
 
-var File_settlement_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_settlement_proto protoreflect.FileDescriptor
 
-const file_settlement_proto_rawDesc = "" +
+const file_panoptes_proto_v1_settlement_proto_rawDesc = "" +
 	"\n" +
-	"\x10settlement.proto\x12\x11panoptes.proto.v1\x1a\x10game_state.proto\"\x94\x01\n" +
+	"\"panoptes/proto/v1/settlement.proto\x12\x11panoptes.proto.v1\x1a\"panoptes/proto/v1/game_state.proto\"\x94\x01\n" +
 	"\tTurnEvent\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12:\n" +
 	"\x04data\x18\x02 \x03(\v2&.panoptes.proto.v1.TurnEvent.DataEntryR\x04data\x1a7\n" +
@@ -239,22 +239,22 @@ const file_settlement_proto_rawDesc = "" +
 	"next_phase\x18\x04 \x01(\tR\tnextPhase\x121\n" +
 	"\x05nodes\x18\x05 \x03(\v2\x1b.panoptes.proto.v1.NodeViewR\x05nodes\x121\n" +
 	"\x05units\x18\x06 \x03(\v2\x1b.panoptes.proto.v1.UnitViewR\x05units\x12E\n" +
-	"\x0fmy_player_after\x18\a \x01(\v2\x1d.panoptes.proto.v1.PlayerViewR\rmyPlayerAfterBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x0fmy_player_after\x18\a \x01(\v2\x1d.panoptes.proto.v1.PlayerViewR\rmyPlayerAfterBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_settlement_proto_rawDescOnce sync.Once
-	file_settlement_proto_rawDescData []byte
+	file_panoptes_proto_v1_settlement_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_settlement_proto_rawDescData []byte
 )
 
-func file_settlement_proto_rawDescGZIP() []byte {
-	file_settlement_proto_rawDescOnce.Do(func() {
-		file_settlement_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_settlement_proto_rawDesc), len(file_settlement_proto_rawDesc)))
+func file_panoptes_proto_v1_settlement_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_settlement_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_settlement_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_settlement_proto_rawDesc), len(file_panoptes_proto_v1_settlement_proto_rawDesc)))
 	})
-	return file_settlement_proto_rawDescData
+	return file_panoptes_proto_v1_settlement_proto_rawDescData
 }
 
-var file_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_settlement_proto_goTypes = []any{
+var file_panoptes_proto_v1_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_panoptes_proto_v1_settlement_proto_goTypes = []any{
 	(*TurnEvent)(nil),         // 0: panoptes.proto.v1.TurnEvent
 	(*SettlementSection)(nil), // 1: panoptes.proto.v1.SettlementSection
 	(*MsgTurnSettlement)(nil), // 2: panoptes.proto.v1.MsgTurnSettlement
@@ -263,7 +263,7 @@ var file_settlement_proto_goTypes = []any{
 	(*UnitView)(nil),          // 5: panoptes.proto.v1.UnitView
 	(*PlayerView)(nil),        // 6: panoptes.proto.v1.PlayerView
 }
-var file_settlement_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_settlement_proto_depIdxs = []int32{
 	3, // 0: panoptes.proto.v1.TurnEvent.data:type_name -> panoptes.proto.v1.TurnEvent.DataEntry
 	0, // 1: panoptes.proto.v1.SettlementSection.events:type_name -> panoptes.proto.v1.TurnEvent
 	1, // 2: panoptes.proto.v1.MsgTurnSettlement.sections:type_name -> panoptes.proto.v1.SettlementSection
@@ -277,27 +277,27 @@ var file_settlement_proto_depIdxs = []int32{
 	0, // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_settlement_proto_init() }
-func file_settlement_proto_init() {
-	if File_settlement_proto != nil {
+func init() { file_panoptes_proto_v1_settlement_proto_init() }
+func file_panoptes_proto_v1_settlement_proto_init() {
+	if File_panoptes_proto_v1_settlement_proto != nil {
 		return
 	}
-	file_game_state_proto_init()
+	file_panoptes_proto_v1_game_state_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_settlement_proto_rawDesc), len(file_settlement_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_settlement_proto_rawDesc), len(file_panoptes_proto_v1_settlement_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_settlement_proto_goTypes,
-		DependencyIndexes: file_settlement_proto_depIdxs,
-		MessageInfos:      file_settlement_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_settlement_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_settlement_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_settlement_proto_msgTypes,
 	}.Build()
-	File_settlement_proto = out.File
-	file_settlement_proto_goTypes = nil
-	file_settlement_proto_depIdxs = nil
+	File_panoptes_proto_v1_settlement_proto = out.File
+	file_panoptes_proto_v1_settlement_proto_goTypes = nil
+	file_panoptes_proto_v1_settlement_proto_depIdxs = nil
 }

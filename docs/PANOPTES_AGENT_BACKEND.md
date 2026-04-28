@@ -34,7 +34,7 @@
 **语言**：Go 1.26
 **架构**：单进程，多服务边界，WebSocket通信，ECS游戏状态，Protobuf协议
 
-游戏类型：回合制联机城建对战。每局2人，每回合分内政和战斗两个阶段，游戏核心是AI部长系统驱动的信息不对称决策体验。
+游戏类型：回合制联机城建对战。每局2人，当前主循环为 `planning -> resolving -> next_turn`，游戏核心是AI部长系统驱动的信息不对称决策体验。
 
 ---
 
@@ -88,13 +88,21 @@ panoptes/
 ├── protocol/                      # Proto定义（单一数据源）
 │   ├── buf.yaml
 │   ├── buf.gen.yaml
-│   ├── common.proto
-│   ├── auth.proto
-│   ├── lobby.proto
-│   ├── game_state.proto
-│   ├── domestic.proto
-│   ├── combat.proto
-│   └── minister.proto
+│   └── panoptes/proto/v1/
+│       ├── common.proto
+│       ├── data_types.proto
+│       ├── data_catalog.proto
+│       ├── map_catalog.proto
+│       ├── auth.proto
+│       ├── lobby.proto
+│       ├── game_state.proto
+│       ├── orders.proto
+│       ├── turn.proto
+│       ├── settlement.proto
+│       ├── transport.proto
+│       ├── chat.proto
+│       ├── config.proto
+│       └── minister.proto
 │
 ├── server/
 │   ├── cmd/server/
@@ -152,9 +160,8 @@ panoptes/
 │   │   │       └── distance.go    # 曼哈顿距离等工具函数
 │   │   ├── llm/
 │   │   │   ├── interface.go       # LLMClient interface
-│   │   │   ├── anthropic.go       # Anthropic实现
-│   │   │   ├── openai.go          # OpenAI兼容实现
-│   │   │   └── factory.go         # 按配置创建实例
+│   │   │   ├── chatmodule/        # Qwen/DeepSeek 兼容聊天客户端
+│   │   │   └── service/           # LLM 服务封装
 │   │   ├── domain/
 │   │   │   ├── types.go           # 基础枚举和类型
 │   │   │   ├── state.go           # GameState根结构
@@ -250,7 +257,7 @@ make data-validate
 - `data/generated/server/`：服务端运行时静态目录
 - `client/Assets/Resources/Data/`：客户端本地静态目录
 - `data/schema/`：生成的 JSON Schema
-- `protocol/data_types.proto`、`protocol/data_catalog.proto`、`protocol/map_catalog.proto`
+- `protocol/panoptes/proto/v1/data_types.proto`、`protocol/panoptes/proto/v1/data_catalog.proto`、`protocol/panoptes/proto/v1/map_catalog.proto`
 
 服务端运行时加载链路固定为：
 
@@ -346,7 +353,9 @@ version: v2
 plugins:
   - plugin: go
     out: ../server/internal/gen/proto
-    opt: paths=source_relative
+    opt:
+      - paths=import
+      - module=github.com/elebirds/panoptes/internal/gen/proto
   - plugin: csharp
     out: ../client/Assets/Scripts/Protocol
 ```
@@ -356,7 +365,7 @@ plugins:
 ```protobuf
 syntax = "proto3";
 package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message Position {
@@ -398,7 +407,7 @@ message ServerFrame {
 ```protobuf
 syntax = "proto3";
 package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 客户端→服务端
@@ -430,7 +439,7 @@ message MsgAuthError {
 ```protobuf
 syntax = "proto3";
 package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 客户端→服务端
@@ -481,10 +490,10 @@ message MsgLobbyError {
 ```protobuf
 syntax = "proto3";
 package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
-import "common.proto";
+import "panoptes/proto/v1/common.proto";
 
 message NodeView {
   string id = 1;
@@ -560,242 +569,39 @@ message MsgGameOver {
 }
 ```
 
-### domestic.proto
+### 当前回合协议：orders.proto / turn.proto / settlement.proto / transport.proto
 
-```protobuf
-syntax = "proto3";
-package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol.V1";
+当前主线已经删除旧的 `domestic.proto` / `combat.proto`。所有玩家指令通过 `orders.proto` 的 planning 命令进入，回合控制通过 `turn.proto` 下发，结算结果通过 `settlement.proto` 表达，外层统一包在 `transport.proto` 的 `ClientFrame` / `ServerFrame` 中。
 
-import "common.proto";
+核心入口：
 
-// ===== 客户端→服务端 =====
+- `MsgSetPolicy`
+- `MsgSetInstitutionLoadout`
+- `MsgSetResearchTarget`
+- `MsgSetBuildingRecipe`
+- `MsgBuildStructure`
+- `MsgRevealNode`
+- `MsgIssueUnitOrder`
+- `MsgCancelUnitOrder`
+- `MsgPlanningPathPreviewRequest`
+- `MsgSubmitTurn`
 
-message MsgSetPolicy {
-  string policy = 1;
-  // "ready_for_war|expansion|recuperation|diplomacy"
-}
+核心出站：
 
-message MsgMinisterDirective {
-  string minister_role = 1;
-  string content = 2;
-}
+- `MsgPlanningStart`
+- `MsgPlanningSnapshot`
+- `MsgTurnSettlement`
+- `MsgGameOver`
+- 各类 planning 结果消息，如 `MsgResearchResult`、`MsgBuildStructureResult`、`MsgIssueUnitOrderResult`
 
-message MsgTokenBuild {
-  string node_id = 1;
-  string building_type = 2;
-}
-
-message MsgTokenReveal {
-  string node_id = 1;
-}
-
-message MsgTokenVeto {
-  string action_id = 1;
-}
-
-message MsgTokenAdjustFlow {
-  string from_node = 1;
-  string to_node = 2;
-  string resource_type = 3;
-  int32 amount = 4;
-}
-
-message MsgBuildRoad {
-  string from_node = 1;
-  string to_node = 2;
-  // 服务端A*自动寻路
-  // 若玩家指定路径点，放入waypoints
-  repeated Position waypoints = 3;
-}
-
-message MsgSubmitDomestic {}
-
-// ===== 服务端→客户端 =====
-
-message MsgDomesticPhaseStart {
-  int32 timeout = 1;
-  int32 turn = 2;
-  int32 tokens = 3;
-  string current_policy = 4;
-}
-
-message MsgTokenResult {
-  bool success = 1;
-  string action = 2;
-  int32 tokens_left = 3;
-  string error_code = 4;   // 失败时填
-}
-
-message MsgRevealResult {
-  string node_id = 1;
-  NodeView true_state = 2;
-  int32 tokens_left = 3;
-}
-
-message MsgMinisterAction {
-  string minister = 1;
-  string action_id = 2;
-  repeated MinisterActionItem actions = 3;
-  string report = 4;      // 叙事轨（LLM生成）
-}
-
-message MinisterActionItem {
-  string type = 1;
-  // "build|repair_road|move_units|redirect_flow"
-  map<string, string> params = 2;
-}
-
-message MsgDomesticSettlement {
-  repeated DomesticChange changes = 1;
-  Resources my_resources_after = 2;
-}
-
-message DomesticChange {
-  string type = 1;
-  map<string, string> data = 2;
-}
-```
-
-### combat.proto
-
-```protobuf
-syntax = "proto3";
-package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
-option csharp_namespace = "Panoptes.Protocol.V1";
-
-import "common.proto";
-
-// ===== 客户端→服务端 =====
-
-message MsgSetWarZone {
-  string zone_id = 1;
-  string name = 2;
-  repeated string node_ids = 3;
-}
-
-message MsgWarZoneDirective {
-  string zone_id = 1;
-  string directive = 2;
-  // "attack|defend|harass|flank|retreat"
-  optional string target_node = 3;
-}
-
-message MsgTokenVetoCombat {
-  string unit_id = 1;
-}
-
-message MsgTokenMicro {
-  string unit_id = 1;
-  string target_node = 2;
-}
-
-message MsgSubmitCombat {}
-
-// ===== 服务端→客户端 =====
-
-message MsgCombatPhaseStart {
-  int32 timeout = 1;
-  int32 tokens = 2;
-}
-
-// 部长战区拆解（流式推送，多条chunk）
-message MsgMinisterCombatChunk {
-  string chunk = 1;
-  bool is_final = 2;
-}
-
-// 部长具体指令（流式结束后推送完整列表）
-message MsgMinisterCombatOrders {
-  repeated UnitOrder orders = 1;
-}
-
-message UnitOrder {
-  string unit_id = 1;
-  string action = 2;       // "move|attack|hold"
-  string target_node = 3;
-  string reason = 4;
-}
-
-// 战斗结算（完整事件序列）
-message MsgCombatSettlement {
-  repeated CombatEvent events = 1;
-}
-
-message CombatEvent {
-  string type = 1;
-  oneof data {
-    UnitMoveEvent unit_move = 2;
-    UnitDamagedEvent unit_damaged = 3;
-    UnitDiedEvent unit_died = 4;
-    CastleDamagedEvent castle_damaged = 5;
-    CastleDestroyedEvent castle_destroyed = 6;
-    ConflictEvent conflict = 7;
-    RoadDestroyedEvent road_destroyed = 8;
-    BuildingDamagedEvent building_damaged = 9;
-  }
-}
-
-message UnitMoveEvent {
-  string unit_id = 1;
-  Position from = 2;
-  Position to = 3;
-  int32 timestamp = 4;  // 动画排序用
-}
-
-message UnitDamagedEvent {
-  string unit_id = 1;
-  int32 damage = 2;
-  int32 hp_after = 3;
-  string source = 4;  // "combat|tower|upkeep"
-}
-
-message UnitDiedEvent {
-  string unit_id = 1;
-  string killer_id = 2;
-  Position pos = 3;
-}
-
-message CastleDamagedEvent {
-  string node_id = 1;
-  int32 damage = 2;
-  int32 hp_after = 3;
-  string attacker_id = 4;
-}
-
-message CastleDestroyedEvent {
-  string node_id = 1;
-  string conqueror_faction = 2;
-}
-
-message ConflictEvent {
-  string unit_a_id = 1;
-  string unit_b_id = 2;
-  Position location = 3;
-  string conflict_type = 4;  // "edge|node|chase"
-}
-
-message RoadDestroyedEvent {
-  string from_node = 1;
-  string to_node = 2;
-  string destroyer_id = 3;
-}
-
-message BuildingDamagedEvent {
-  string node_id = 1;
-  int32 damage = 2;
-  int32 hp_after = 3;
-}
-```
+旧二阶段协议示例已从本指南移除。若需要追溯迁移背景，请查阅 `docs/TURN_V2_REFACTOR_PLAN.md`，但实际开发必须以当前 `protocol/panoptes/proto/v1/*.proto` 为准。
 
 ### minister.proto
 
 ```protobuf
 syntax = "proto3";
 package panoptes.proto.v1;
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 // 部长汇报（流式，多条chunk）
@@ -1531,25 +1337,29 @@ LLM输出格式（JSONMode=true）：
 
 ```bash
 # 服务器
-SERVER_PORT=8080
-SERVER_ENV=development          # development|production
+PORT=8080
+LOG_LEVEL=info
+LOG_FORMAT=auto
+DEV_MODE=false
+MAP_ID=default
+USE_PROCEDURAL_MAP=false
 
 # Redis
 REDIS_ADDR=localhost:6379
 REDIS_PASSWORD=
 REDIS_DB=0
 
-# PostgreSQL（Gamejam阶段可不配置，使用内存实现）
-POSTGRES_DSN=postgres://user:pass@localhost/panoptes
+# PostgreSQL
+POSTGRES_DSN=postgres://panoptes:panoptes_dev@localhost:5432/panoptes?sslmode=disable
 
-# Lobby / Game
+# Lobby
 DEFAULT_MAX_PLAYERS=2
-DEV_MODE=false
-TOKENS_PER_TURN=3
-TURN_TIME_LIMIT_DOMESTIC=15
-TURN_TIME_LIMIT_COMBAT=20
 
-# LLM
+# LLM（部长汇报/草案润色，可选）
+MINISTER_LLM_ENABLED=false
+MINISTER_LLM_PROVIDER=qwen
+MINISTER_LLM_MODEL=
+MINISTER_LLM_TIMEOUT_MS=5000
 QWEN_API_KEY=
 DEEPSEEK_API_KEY=
 
@@ -1584,25 +1394,24 @@ Step 2：ECS和地图（Day 2上午）
   - 地图加载（default.json → ECS World中的Node Entity）
   - factory.go：CreateUnit、CreateBuilding工厂函数
 
-Step 3：内政阶段（Day 2下午～Day 3上午）
-  - Phase interface和状态机骨架
-  - DomesticPhase：收消息，令牌操作Handler
+Step 3：planning / resolving 主循环（Day 2下午～Day 3上午）
+  - planning.Service 收集草案输入
+  - Turn Coordinator 推进 planning/resolving
   - Economy Runner + stages
-  - 内政结算Runner
-  - 推送MsgDomesticSettlement
+  - TurnResolutionRunner 统一结算
+  - 推送 MsgPlanningStart / MsgPlanningSnapshot / MsgTurnSettlement
 
-Step 4：战斗阶段（Day 3下午～Day 4）
-  - CombatPhase：战区指令收集
+Step 4：单位与战斗结算（Day 3下午～Day 4）
+  - MsgIssueUnitOrder / MsgCancelUnitOrder 收集单位指令
   - algo/pathfinding A*实现和测试
   - SingleStepResolver phases
   - edge conflict / node group conflict
-  - 战斗结算Runner
-  - 推送MsgCombatSettlement（含动画事件序列）
+  - settlement section 输出动画事件序列
 
 Step 5：LLM部长（Day 5）
-  - llm/interface和anthropic实现
+  - llm/interface和Qwen/DeepSeek兼容实现
   - minister/prompt序列化
-  - minister/parser JSON解析和actions执行
+  - minister/parser JSON解析；当前 MVP 不让 action 直接写状态
   - minister/engine异步调度
   - 流式汇报推送（MsgMinisterReportChunk）
   - minister/memory跨回合记忆

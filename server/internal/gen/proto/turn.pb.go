@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: turn.proto
+// source: panoptes/proto/v1/turn.proto
 
 package protov1
 
@@ -40,7 +40,7 @@ type MsgPlanningStart struct {
 
 func (x *MsgPlanningStart) Reset() {
 	*x = MsgPlanningStart{}
-	mi := &file_turn_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +52,7 @@ func (x *MsgPlanningStart) String() string {
 func (*MsgPlanningStart) ProtoMessage() {}
 
 func (x *MsgPlanningStart) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +65,7 @@ func (x *MsgPlanningStart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgPlanningStart.ProtoReflect.Descriptor instead.
 func (*MsgPlanningStart) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MsgPlanningStart) GetTimeout() int32 {
@@ -156,7 +156,7 @@ type MinisterDraftView struct {
 
 func (x *MinisterDraftView) Reset() {
 	*x = MinisterDraftView{}
-	mi := &file_turn_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +168,7 @@ func (x *MinisterDraftView) String() string {
 func (*MinisterDraftView) ProtoMessage() {}
 
 func (x *MinisterDraftView) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +181,7 @@ func (x *MinisterDraftView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MinisterDraftView.ProtoReflect.Descriptor instead.
 func (*MinisterDraftView) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MinisterDraftView) GetMinisterRole() string {
@@ -215,7 +215,7 @@ type MarchTurnStop struct {
 
 func (x *MarchTurnStop) Reset() {
 	*x = MarchTurnStop{}
-	mi := &file_turn_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -227,7 +227,7 @@ func (x *MarchTurnStop) String() string {
 func (*MarchTurnStop) ProtoMessage() {}
 
 func (x *MarchTurnStop) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -240,7 +240,7 @@ func (x *MarchTurnStop) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarchTurnStop.ProtoReflect.Descriptor instead.
 func (*MarchTurnStop) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MarchTurnStop) GetTurnIndex() int32 {
@@ -275,7 +275,7 @@ type QueuedUnitOrder struct {
 
 func (x *QueuedUnitOrder) Reset() {
 	*x = QueuedUnitOrder{}
-	mi := &file_turn_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -287,7 +287,7 @@ func (x *QueuedUnitOrder) String() string {
 func (*QueuedUnitOrder) ProtoMessage() {}
 
 func (x *QueuedUnitOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,7 +300,7 @@ func (x *QueuedUnitOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueuedUnitOrder.ProtoReflect.Descriptor instead.
 func (*QueuedUnitOrder) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *QueuedUnitOrder) GetUnitId() string {
@@ -384,7 +384,7 @@ type QueuedBuildOrder struct {
 
 func (x *QueuedBuildOrder) Reset() {
 	*x = QueuedBuildOrder{}
-	mi := &file_turn_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -396,7 +396,7 @@ func (x *QueuedBuildOrder) String() string {
 func (*QueuedBuildOrder) ProtoMessage() {}
 
 func (x *QueuedBuildOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +409,7 @@ func (x *QueuedBuildOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueuedBuildOrder.ProtoReflect.Descriptor instead.
 func (*QueuedBuildOrder) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *QueuedBuildOrder) GetNodeId() string {
@@ -443,7 +443,7 @@ type QueuedRecipeSelection struct {
 
 func (x *QueuedRecipeSelection) Reset() {
 	*x = QueuedRecipeSelection{}
-	mi := &file_turn_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +455,7 @@ func (x *QueuedRecipeSelection) String() string {
 func (*QueuedRecipeSelection) ProtoMessage() {}
 
 func (x *QueuedRecipeSelection) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -468,7 +468,7 @@ func (x *QueuedRecipeSelection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueuedRecipeSelection.ProtoReflect.Descriptor instead.
 func (*QueuedRecipeSelection) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *QueuedRecipeSelection) GetNodeId() string {
@@ -496,7 +496,7 @@ type QueuedWarZoneDirective struct {
 
 func (x *QueuedWarZoneDirective) Reset() {
 	*x = QueuedWarZoneDirective{}
-	mi := &file_turn_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -508,7 +508,7 @@ func (x *QueuedWarZoneDirective) String() string {
 func (*QueuedWarZoneDirective) ProtoMessage() {}
 
 func (x *QueuedWarZoneDirective) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -521,7 +521,7 @@ func (x *QueuedWarZoneDirective) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueuedWarZoneDirective.ProtoReflect.Descriptor instead.
 func (*QueuedWarZoneDirective) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{6}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QueuedWarZoneDirective) GetZoneId() string {
@@ -564,7 +564,7 @@ type MsgPlanningSnapshot struct {
 
 func (x *MsgPlanningSnapshot) Reset() {
 	*x = MsgPlanningSnapshot{}
-	mi := &file_turn_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -576,7 +576,7 @@ func (x *MsgPlanningSnapshot) String() string {
 func (*MsgPlanningSnapshot) ProtoMessage() {}
 
 func (x *MsgPlanningSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -589,7 +589,7 @@ func (x *MsgPlanningSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgPlanningSnapshot.ProtoReflect.Descriptor instead.
 func (*MsgPlanningSnapshot) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{7}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MsgPlanningSnapshot) GetTurn() int32 {
@@ -687,7 +687,7 @@ type MsgPlanningPathPreviewResponse struct {
 
 func (x *MsgPlanningPathPreviewResponse) Reset() {
 	*x = MsgPlanningPathPreviewResponse{}
-	mi := &file_turn_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +699,7 @@ func (x *MsgPlanningPathPreviewResponse) String() string {
 func (*MsgPlanningPathPreviewResponse) ProtoMessage() {}
 
 func (x *MsgPlanningPathPreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +712,7 @@ func (x *MsgPlanningPathPreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgPlanningPathPreviewResponse.ProtoReflect.Descriptor instead.
 func (*MsgPlanningPathPreviewResponse) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{8}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MsgPlanningPathPreviewResponse) GetRequestId() string {
@@ -795,7 +795,7 @@ type FeedbackDetail struct {
 
 func (x *FeedbackDetail) Reset() {
 	*x = FeedbackDetail{}
-	mi := &file_turn_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -807,7 +807,7 @@ func (x *FeedbackDetail) String() string {
 func (*FeedbackDetail) ProtoMessage() {}
 
 func (x *FeedbackDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -820,7 +820,7 @@ func (x *FeedbackDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeedbackDetail.ProtoReflect.Descriptor instead.
 func (*FeedbackDetail) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{9}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FeedbackDetail) GetKey() string {
@@ -849,7 +849,7 @@ type MsgBuildStructurePreviewRequest struct {
 
 func (x *MsgBuildStructurePreviewRequest) Reset() {
 	*x = MsgBuildStructurePreviewRequest{}
-	mi := &file_turn_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -861,7 +861,7 @@ func (x *MsgBuildStructurePreviewRequest) String() string {
 func (*MsgBuildStructurePreviewRequest) ProtoMessage() {}
 
 func (x *MsgBuildStructurePreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +874,7 @@ func (x *MsgBuildStructurePreviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildStructurePreviewRequest.ProtoReflect.Descriptor instead.
 func (*MsgBuildStructurePreviewRequest) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{10}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MsgBuildStructurePreviewRequest) GetRequestId() string {
@@ -921,7 +921,7 @@ type MsgBuildStructurePreviewResponse struct {
 
 func (x *MsgBuildStructurePreviewResponse) Reset() {
 	*x = MsgBuildStructurePreviewResponse{}
-	mi := &file_turn_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -933,7 +933,7 @@ func (x *MsgBuildStructurePreviewResponse) String() string {
 func (*MsgBuildStructurePreviewResponse) ProtoMessage() {}
 
 func (x *MsgBuildStructurePreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -946,7 +946,7 @@ func (x *MsgBuildStructurePreviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildStructurePreviewResponse.ProtoReflect.Descriptor instead.
 func (*MsgBuildStructurePreviewResponse) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{11}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *MsgBuildStructurePreviewResponse) GetRequestId() string {
@@ -1016,7 +1016,7 @@ type MsgSetBuildingRecipePreviewRequest struct {
 
 func (x *MsgSetBuildingRecipePreviewRequest) Reset() {
 	*x = MsgSetBuildingRecipePreviewRequest{}
-	mi := &file_turn_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1028,7 +1028,7 @@ func (x *MsgSetBuildingRecipePreviewRequest) String() string {
 func (*MsgSetBuildingRecipePreviewRequest) ProtoMessage() {}
 
 func (x *MsgSetBuildingRecipePreviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1041,7 +1041,7 @@ func (x *MsgSetBuildingRecipePreviewRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use MsgSetBuildingRecipePreviewRequest.ProtoReflect.Descriptor instead.
 func (*MsgSetBuildingRecipePreviewRequest) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{12}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MsgSetBuildingRecipePreviewRequest) GetRequestId() string {
@@ -1080,7 +1080,7 @@ type MsgSetBuildingRecipePreviewResponse struct {
 
 func (x *MsgSetBuildingRecipePreviewResponse) Reset() {
 	*x = MsgSetBuildingRecipePreviewResponse{}
-	mi := &file_turn_proto_msgTypes[13]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1092,7 +1092,7 @@ func (x *MsgSetBuildingRecipePreviewResponse) String() string {
 func (*MsgSetBuildingRecipePreviewResponse) ProtoMessage() {}
 
 func (x *MsgSetBuildingRecipePreviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[13]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1105,7 +1105,7 @@ func (x *MsgSetBuildingRecipePreviewResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use MsgSetBuildingRecipePreviewResponse.ProtoReflect.Descriptor instead.
 func (*MsgSetBuildingRecipePreviewResponse) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{13}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MsgSetBuildingRecipePreviewResponse) GetRequestId() string {
@@ -1169,7 +1169,7 @@ type MsgTokenResult struct {
 
 func (x *MsgTokenResult) Reset() {
 	*x = MsgTokenResult{}
-	mi := &file_turn_proto_msgTypes[14]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1181,7 +1181,7 @@ func (x *MsgTokenResult) String() string {
 func (*MsgTokenResult) ProtoMessage() {}
 
 func (x *MsgTokenResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[14]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1194,7 +1194,7 @@ func (x *MsgTokenResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTokenResult.ProtoReflect.Descriptor instead.
 func (*MsgTokenResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{14}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MsgTokenResult) GetSuccess() bool {
@@ -1236,7 +1236,7 @@ type MsgRevealResult struct {
 
 func (x *MsgRevealResult) Reset() {
 	*x = MsgRevealResult{}
-	mi := &file_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1248,7 +1248,7 @@ func (x *MsgRevealResult) String() string {
 func (*MsgRevealResult) ProtoMessage() {}
 
 func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[15]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1261,7 +1261,7 @@ func (x *MsgRevealResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRevealResult.ProtoReflect.Descriptor instead.
 func (*MsgRevealResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{15}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MsgRevealResult) GetNodeId() string {
@@ -1296,7 +1296,7 @@ type MsgResearchResult struct {
 
 func (x *MsgResearchResult) Reset() {
 	*x = MsgResearchResult{}
-	mi := &file_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1308,7 +1308,7 @@ func (x *MsgResearchResult) String() string {
 func (*MsgResearchResult) ProtoMessage() {}
 
 func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[16]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1321,7 +1321,7 @@ func (x *MsgResearchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgResearchResult.ProtoReflect.Descriptor instead.
 func (*MsgResearchResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{16}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MsgResearchResult) GetSuccess() bool {
@@ -1356,7 +1356,7 @@ type MsgSetPolicyResult struct {
 
 func (x *MsgSetPolicyResult) Reset() {
 	*x = MsgSetPolicyResult{}
-	mi := &file_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1368,7 +1368,7 @@ func (x *MsgSetPolicyResult) String() string {
 func (*MsgSetPolicyResult) ProtoMessage() {}
 
 func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[17]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1381,7 +1381,7 @@ func (x *MsgSetPolicyResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetPolicyResult.ProtoReflect.Descriptor instead.
 func (*MsgSetPolicyResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{17}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *MsgSetPolicyResult) GetSuccess() bool {
@@ -1416,7 +1416,7 @@ type MsgSetInstitutionLoadoutResult struct {
 
 func (x *MsgSetInstitutionLoadoutResult) Reset() {
 	*x = MsgSetInstitutionLoadoutResult{}
-	mi := &file_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1428,7 +1428,7 @@ func (x *MsgSetInstitutionLoadoutResult) String() string {
 func (*MsgSetInstitutionLoadoutResult) ProtoMessage() {}
 
 func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[18]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1441,7 +1441,7 @@ func (x *MsgSetInstitutionLoadoutResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetInstitutionLoadoutResult.ProtoReflect.Descriptor instead.
 func (*MsgSetInstitutionLoadoutResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{18}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgSetInstitutionLoadoutResult) GetSuccess() bool {
@@ -1479,7 +1479,7 @@ type MsgSetBuildingRecipeResult struct {
 
 func (x *MsgSetBuildingRecipeResult) Reset() {
 	*x = MsgSetBuildingRecipeResult{}
-	mi := &file_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1491,7 +1491,7 @@ func (x *MsgSetBuildingRecipeResult) String() string {
 func (*MsgSetBuildingRecipeResult) ProtoMessage() {}
 
 func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[19]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1504,7 +1504,7 @@ func (x *MsgSetBuildingRecipeResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgSetBuildingRecipeResult.ProtoReflect.Descriptor instead.
 func (*MsgSetBuildingRecipeResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{19}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *MsgSetBuildingRecipeResult) GetSuccess() bool {
@@ -1564,7 +1564,7 @@ type MsgBuildStructureResult struct {
 
 func (x *MsgBuildStructureResult) Reset() {
 	*x = MsgBuildStructureResult{}
-	mi := &file_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1576,7 +1576,7 @@ func (x *MsgBuildStructureResult) String() string {
 func (*MsgBuildStructureResult) ProtoMessage() {}
 
 func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[20]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1589,7 +1589,7 @@ func (x *MsgBuildStructureResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgBuildStructureResult.ProtoReflect.Descriptor instead.
 func (*MsgBuildStructureResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{20}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MsgBuildStructureResult) GetSuccess() bool {
@@ -1655,7 +1655,7 @@ type MsgIssueUnitOrderResult struct {
 
 func (x *MsgIssueUnitOrderResult) Reset() {
 	*x = MsgIssueUnitOrderResult{}
-	mi := &file_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1667,7 +1667,7 @@ func (x *MsgIssueUnitOrderResult) String() string {
 func (*MsgIssueUnitOrderResult) ProtoMessage() {}
 
 func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[21]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1680,7 +1680,7 @@ func (x *MsgIssueUnitOrderResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgIssueUnitOrderResult.ProtoReflect.Descriptor instead.
 func (*MsgIssueUnitOrderResult) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{21}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *MsgIssueUnitOrderResult) GetSuccess() bool {
@@ -1735,7 +1735,7 @@ type MsgTurnReport struct {
 
 func (x *MsgTurnReport) Reset() {
 	*x = MsgTurnReport{}
-	mi := &file_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1747,7 +1747,7 @@ func (x *MsgTurnReport) String() string {
 func (*MsgTurnReport) ProtoMessage() {}
 
 func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
-	mi := &file_turn_proto_msgTypes[22]
+	mi := &file_panoptes_proto_v1_turn_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1760,7 +1760,7 @@ func (x *MsgTurnReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgTurnReport.ProtoReflect.Descriptor instead.
 func (*MsgTurnReport) Descriptor() ([]byte, []int) {
-	return file_turn_proto_rawDescGZIP(), []int{22}
+	return file_panoptes_proto_v1_turn_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *MsgTurnReport) GetTurn() int32 {
@@ -1777,12 +1777,11 @@ func (x *MsgTurnReport) GetSummary() string {
 	return ""
 }
 
-var File_turn_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_turn_proto protoreflect.FileDescriptor
 
-const file_turn_proto_rawDesc = "" +
+const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"turn.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\x1a\x10game_state.proto\x1a\x10settlement.proto\"\xb0\x04\n" +
+	"\x1cpanoptes/proto/v1/turn.proto\x12\x11panoptes.proto.v1\x1a\"panoptes/proto/v1/game_state.proto\x1a\"panoptes/proto/v1/settlement.proto\"\xb0\x04\n" +
 	"\x10MsgPlanningStart\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x12\n" +
 	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x16\n" +
@@ -1954,22 +1953,22 @@ const file_turn_proto_rawDesc = "" +
 	"error_code\x18\x06 \x01(\tR\terrorCode\"=\n" +
 	"\rMsgTurnReport\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x18\n" +
-	"\asummary\x18\x02 \x01(\tR\asummaryBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\asummary\x18\x02 \x01(\tR\asummaryBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_turn_proto_rawDescOnce sync.Once
-	file_turn_proto_rawDescData []byte
+	file_panoptes_proto_v1_turn_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_turn_proto_rawDescData []byte
 )
 
-func file_turn_proto_rawDescGZIP() []byte {
-	file_turn_proto_rawDescOnce.Do(func() {
-		file_turn_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_turn_proto_rawDesc), len(file_turn_proto_rawDesc)))
+func file_panoptes_proto_v1_turn_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_turn_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_turn_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_turn_proto_rawDesc), len(file_panoptes_proto_v1_turn_proto_rawDesc)))
 	})
-	return file_turn_proto_rawDescData
+	return file_panoptes_proto_v1_turn_proto_rawDescData
 }
 
-var file_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
-var file_turn_proto_goTypes = []any{
+var file_panoptes_proto_v1_turn_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*MsgPlanningStart)(nil),                    // 0: panoptes.proto.v1.MsgPlanningStart
 	(*MinisterDraftView)(nil),                   // 1: panoptes.proto.v1.MinisterDraftView
 	(*MarchTurnStop)(nil),                       // 2: panoptes.proto.v1.MarchTurnStop
@@ -2000,7 +1999,7 @@ var file_turn_proto_goTypes = []any{
 	(*TurnEvent)(nil),                           // 27: panoptes.proto.v1.TurnEvent
 	(*WarZone)(nil),                             // 28: panoptes.proto.v1.WarZone
 }
-var file_turn_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	7,  // 0: panoptes.proto.v1.MsgPlanningStart.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
 	1,  // 1: panoptes.proto.v1.MsgPlanningStart.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
 	24, // 2: panoptes.proto.v1.MsgPlanningStart.my_player:type_name -> panoptes.proto.v1.PlayerView
@@ -2028,29 +2027,28 @@ var file_turn_proto_depIdxs = []int32{
 	0,  // [0:20] is the sub-list for field type_name
 }
 
-func init() { file_turn_proto_init() }
-func file_turn_proto_init() {
-	if File_turn_proto != nil {
+func init() { file_panoptes_proto_v1_turn_proto_init() }
+func file_panoptes_proto_v1_turn_proto_init() {
+	if File_panoptes_proto_v1_turn_proto != nil {
 		return
 	}
-	file_common_proto_init()
-	file_game_state_proto_init()
-	file_settlement_proto_init()
+	file_panoptes_proto_v1_game_state_proto_init()
+	file_panoptes_proto_v1_settlement_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_turn_proto_rawDesc), len(file_turn_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_turn_proto_rawDesc), len(file_panoptes_proto_v1_turn_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_turn_proto_goTypes,
-		DependencyIndexes: file_turn_proto_depIdxs,
-		MessageInfos:      file_turn_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_turn_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_turn_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_turn_proto_msgTypes,
 	}.Build()
-	File_turn_proto = out.File
-	file_turn_proto_goTypes = nil
-	file_turn_proto_depIdxs = nil
+	File_panoptes_proto_v1_turn_proto = out.File
+	file_panoptes_proto_v1_turn_proto_goTypes = nil
+	file_panoptes_proto_v1_turn_proto_depIdxs = nil
 }

@@ -2,19 +2,19 @@ syntax = "proto3";
 
 package panoptes.proto.v1;
 
-import "auth.proto";
-import "chat.proto";
-import "common.proto";
-import "config.proto";
-import "data_catalog.proto";
-import "game_state.proto";
-import "lobby.proto";
-import "minister.proto";
-import "orders.proto";
-import "settlement.proto";
-import "turn.proto";
+import "panoptes/proto/v1/auth.proto";
+import "panoptes/proto/v1/chat.proto";
+import "panoptes/proto/v1/common.proto";
+import "panoptes/proto/v1/config.proto";
+import "panoptes/proto/v1/data_catalog.proto";
+import "panoptes/proto/v1/game_state.proto";
+import "panoptes/proto/v1/lobby.proto";
+import "panoptes/proto/v1/minister.proto";
+import "panoptes/proto/v1/orders.proto";
+import "panoptes/proto/v1/settlement.proto";
+import "panoptes/proto/v1/turn.proto";
 
-option go_package = "github.com/elebirds/panoptes/internal/gen/proto/v1;protov1";
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
 message CommandMeta {
