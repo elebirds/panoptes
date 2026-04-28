@@ -1261,7 +1261,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
             StringAssert.Contains("TryIssueAuthoritativeMoveOrder(node.NodeId)", content,
                 "移动点击应只通过服务端权威 preview 结果发单。");
             StringAssert.Contains("TryGetCurrentMovePreview", content,
@@ -1280,7 +1280,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
             StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
                 "建造入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
@@ -1304,7 +1304,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
             Assert.That(content, Does.Not.Contain("territoryOnlyBuildingTypes"),
                 "Chunk 8A 后不应再靠本地 territoryOnlyBuildingTypes 过滤发送建造。");
             Assert.That(content, Does.Not.Contain("globalPlacementBuildingTypes"),
@@ -1627,6 +1627,19 @@ namespace Panoptes.Tests.EditMode.Lobby
             }
 
             method.Invoke(null, new[] { message });
+        }
+
+        private static string ReadMapInputHandlerSources(string mapInputHandlerPath)
+        {
+            Assert.That(File.Exists(mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+
+            var mapDirectory = Path.GetDirectoryName(mapInputHandlerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            return string.Join("\n", Directory
+                .GetFiles(mapDirectory, "MapInputHandler*.cs", SearchOption.AllDirectories)
+                .OrderBy(file => file, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
         }
 
         private static void SetSingletonInstance(Type type, object value)
