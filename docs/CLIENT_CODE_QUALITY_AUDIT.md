@@ -90,3 +90,53 @@ extracted collaborator with non-trivial behavior.
 
 Every step must preserve public MonoBehaviour entry points and serialized field
 compatibility unless scenes/prefabs are updated and verified in the same commit.
+
+## Restructuring Outcome
+
+Implemented through commits `f8d64cf`..`3716438` plus the final MapRenderer pass:
+
+- Added shared Presentation infrastructure:
+  - `SceneObjectFinder` for scene-valid fallback lookup.
+  - `EventSubscriptionBag` for deterministic UI event unsubscribe.
+- Split UnitInfo responsibilities into dedicated helpers:
+  - `UnitInfoPlanningSummaryPresenter`
+  - `UnitInfoActionButtonBinder`
+  - `UnitInfoPanelLayoutBuilder`
+  - `UnitInfoPortraitPresenter`
+- Split BuildCommandPanel responsibilities:
+  - `BuildPanelScrollState`
+  - `BuildConfigFallbackParser`
+- Split MapInputHandler helper responsibilities:
+  - `BuildPlacementInputMode`
+  - `MovePreviewPresenter`
+  - `BuildPreviewPresenter`
+  - `MapInputTokens`
+- Split MapRenderer debug generation:
+  - `DebugMapFactory`
+
+Post-pass line-count snapshot:
+
+| File | Before | After |
+| --- | ---: | ---: |
+| `Presentation/Map/MapInputHandler.cs` | 3565 | 3503 |
+| `Presentation/Map/MapRenderer.cs` | 2320 | 2013 |
+| `Presentation/UI/HUD/UnitInfoPanelController.cs` | 2169 | 2009 |
+| `Presentation/UI/Domestic/BuildCommandPanel.cs` | 1881 | 1633 |
+| `Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs` | 1105 | 1063 |
+
+Layer boundary checks remain clean:
+
+- No direct `Panoptes.Protocol` references under Presentation.
+- No `NetworkManager.Instance` usage under Presentation UI.
+
+Remaining technical debt:
+
+- `MapInputHandler`, `MapRenderer`, `UnitInfoPanelController`, and
+  `BuildCommandPanel` are still large. They are now safer to continue splitting
+  because low-level lookup, subscriptions, fallback parsing, and preview message
+  formatting have been isolated.
+- `SquadUnitVisualController` remains a large untouched Presentation component
+  and should receive a focused animation/visual-state pass later.
+- Presentation still has fallback object lookup in several scene bootstrap paths;
+  future work should replace more of these with serialized references or
+  `SceneObjectFinder`.
