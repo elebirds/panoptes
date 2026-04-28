@@ -18,14 +18,10 @@ using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Common;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.EventSystems;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace Panoptes.Presentation.Map
 {
-    public sealed class MapInputHandler : MonoBehaviour
+    public sealed partial class MapInputHandler : MonoBehaviour
     {
         public enum BuildPlacementRule
         {
@@ -166,14 +162,9 @@ namespace Panoptes.Presentation.Map
         private int _buildPreviewRequestSequence;
         private string _hoverPreviewNodeId = string.Empty;
         private string _hoverBuildPreviewNodeId = string.Empty;
-        private readonly List<RaycastResult> _uiRaycastResults = new();
         private UnitInfoPanelController _unitInfoPanelController;
         private UnitView _buildingInfoProxy;
         private StaticCatalogCache _staticCatalogCache;
-
-        private sealed class MoveGhostTag : MonoBehaviour
-        {
-        }
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuilds;
         public UnitView SelectedUnit => _selectedUnit;
@@ -2546,43 +2537,6 @@ namespace Panoptes.Presentation.Map
             return string.Equals(normalized, NormalizeToken(GamePhases.Planning), StringComparison.Ordinal);
         }
 
-        private bool TryRaycastNode(out NodeView nodeView)
-        {
-            nodeView = null;
-            if (!TryRaycast(out var hit))
-            {
-                return false;
-            }
-
-            var map = MapRenderer.Instance;
-            return map != null && map.TryGetNodeViewByWorld(hit.point, out nodeView) && nodeView != null;
-        }
-
-        private bool TryRaycastUnit(out UnitView unitView)
-        {
-            unitView = null;
-            if (!TryRaycast(out var hit))
-            {
-                return false;
-            }
-
-            if (hit.collider.GetComponentInParent<MoveGhostTag>() != null)
-            {
-                return false;
-            }
-
-            unitView = hit.collider.GetComponentInParent<UnitView>();
-            return unitView != null;
-        }
-
-        private bool TryRaycast(out RaycastHit hit)
-        {
-            hit = default;
-
-            var ray = inputCamera.ScreenPointToRay(GetMousePosition());
-            return Physics.Raycast(ray, out hit, raycastDistance, raycastMask, QueryTriggerInteraction.Ignore);
-        }
-
         private static string ResolveNodeIdByGrid(Vector2Int gridPos)
         {
             var map = MapRenderer.Instance;
@@ -2929,76 +2883,9 @@ namespace Panoptes.Presentation.Map
             Debug.LogWarning($"[MapInputHandler] {message}");
         }
 
-        private bool IsPointerOverUI()
-        {
-            if (EventSystem.current == null)
-            {
-                return false;
-            }
-            
-            if (EventSystem.current.IsPointerOverGameObject())
-            {
-                return true;
-            }
-
-#if ENABLE_INPUT_SYSTEM
-            if (Mouse.current != null && EventSystem.current.IsPointerOverGameObject(Mouse.current.deviceId))
-            {
-                return true;
-            }
-#endif
-
-            _uiRaycastResults.Clear();
-            var eventData = new PointerEventData(EventSystem.current)
-            {
-                position = GetMousePosition()
-            };
-            EventSystem.current.RaycastAll(eventData, _uiRaycastResults);
-            return _uiRaycastResults.Count > 0;
-        }
-
         private void BlockInputAfterModeSwitch()
         {
             _ignoreInputUntilTime = Time.unscaledTime + Mathf.Max(0f, modeSwitchInputBlockSeconds);
-        }
-
-        private bool HasMouse()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current != null;
-#else
-            return true;
-#endif
-        }
-
-        private Vector3 GetMousePosition()
-        {
-#if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null ? (Vector3)mouse.position.ReadValue() : Vector3.zero;
-#else
-            return Input.mousePosition;
-#endif
-        }
-
-        private bool GetLeftMouseButtonDown()
-        {
-#if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null && mouse.leftButton.wasPressedThisFrame;
-#else
-            return Input.GetMouseButtonDown(0);
-#endif
-        }
-
-        private bool GetRightMouseButtonDown()
-        {
-#if ENABLE_INPUT_SYSTEM
-            var mouse = Mouse.current;
-            return mouse != null && mouse.rightButton.wasPressedThisFrame;
-#else
-            return Input.GetMouseButtonDown(1);
-#endif
         }
 
         private void CreateOrUpdateMovePreview(string unitId, string targetNodeId)

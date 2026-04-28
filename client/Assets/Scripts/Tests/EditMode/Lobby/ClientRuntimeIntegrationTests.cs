@@ -26,7 +26,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
         private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
-        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MovePreviewPresenter.cs");
+        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/Input/MovePreviewPresenter.cs");
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
         private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
