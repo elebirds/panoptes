@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.UI.HUD;
@@ -598,31 +597,10 @@ namespace Panoptes.Presentation.Map
 
         private bool IsManualPlacementBlocked(string buildingType)
         {
-            var normalized = NormalizeToken(buildingType);
-            if (string.IsNullOrWhiteSpace(normalized))
-            {
-                return false;
-            }
-
-            if (disallowManualCityCorePlacement && string.Equals(normalized, "city_core", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (manualPlacementBlockedBuildingTypes == null)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < manualPlacementBlockedBuildingTypes.Length; i++)
-            {
-                if (string.Equals(NormalizeToken(manualPlacementBlockedBuildingTypes[i]), normalized, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return BuildPlacementInputMode.IsManualPlacementBlocked(
+                buildingType,
+                disallowManualCityCorePlacement,
+                manualPlacementBlockedBuildingTypes);
         }
 
         private void ExitBuildMode()
@@ -835,11 +813,11 @@ namespace Panoptes.Presentation.Map
                 };
             }
 
-            if (preview != null && !preview.Valid)
-            {
-                ShowUserError(ResolveMovePreviewErrorMessage(preview, targetNodeId));
-                return false;
-            }
+                if (preview != null && !preview.Valid)
+                {
+                    ShowUserError(MovePreviewPresenter.ResolveErrorMessage(preview, targetNodeId));
+                    return false;
+                }
 
             Debug.Log($"[MapInputHandler] 涓嬭揪绉诲姩鍛戒护 unit={_selectedUnit.UnitId} target={targetNodeId} preview_valid={preview.Valid} preview_nodes={preview.PathNodeIds.Count}");
             SendMoveCommand(_selectedUnit.UnitId, targetNodeId);
@@ -1373,7 +1351,7 @@ namespace Panoptes.Presentation.Map
                     preview != null &&
                     !preview.Valid)
                 {
-                    ShowUserError(ResolveBuildPreviewMessage(preview));
+                    ShowUserError(BuildPreviewPresenter.ResolveMessage(preview));
                 }
                 if (!SendBuildCommand(backendBuildingType, node.NodeId))
                 {
@@ -2473,22 +2451,6 @@ namespace Panoptes.Presentation.Map
             ClearNodeHighlights();
         }
 
-        private static string ResolveMovePreviewErrorMessage(PathPreviewDto preview, string targetNodeId)
-        {
-            if (preview == null)
-            {
-                return "等待服务器确认路径预览。";
-			}
-
-			return preview.ErrorCode switch
-			{
-				"invalid_target" => $"目标节点 {targetNodeId} 当前无法抵达",
-				"unit_not_found" => "该单位当前不可用",
-				"invalid_directive" => "当前动作不支持该目标",
-				_ => "等待服务器确认路径预览。"
-			};
-		}
-
         private bool IsCityCoreNode(string nodeId)
         {
             if (string.IsNullOrEmpty(nodeId))
@@ -2903,26 +2865,12 @@ namespace Panoptes.Presentation.Map
 
         private static string NormalizeToken(string value)
         {
-            return (value ?? string.Empty).Trim().ToLowerInvariant();
+            return MapInputTokens.Normalize(value);
         }
 
         private static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
         {
-            if (entry == null || entry.tags == null || string.IsNullOrWhiteSpace(tag))
-            {
-                return false;
-            }
-
-            var normalized = NormalizeToken(tag);
-            for (var i = 0; i < entry.tags.Length; i++)
-            {
-                if (string.Equals(NormalizeToken(entry.tags[i]), normalized, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return MapInputTokens.HasTag(entry, tag);
         }
 
         private bool IsTerritoryExpansionUnitType(string unitType)
@@ -3532,16 +3480,6 @@ namespace Panoptes.Presentation.Map
             _hoverBuildPreviewNodeId = string.Empty;
             _nextBuildPreviewRequestAt = 0f;
             (_draftCache ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
-        }
-
-        private static string ResolveBuildPreviewMessage(BuildPreviewDto preview)
-        {
-            if (preview == null)
-            {
-                return "妫€鏌ヤ腑";
-            }
-
-            return GameplayFeedbackText.ResolveMessage(preview.Message, preview.ErrorCode);
         }
 
         private void ClearAllMovePreviews()

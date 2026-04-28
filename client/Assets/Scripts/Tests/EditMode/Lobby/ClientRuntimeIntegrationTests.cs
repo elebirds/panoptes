@@ -26,6 +26,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
         private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
+        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MovePreviewPresenter.cs");
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
         private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
@@ -1265,8 +1266,9 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "移动点击应只通过服务端权威 preview 结果发单。");
             StringAssert.Contains("TryGetCurrentMovePreview", content,
                 "MapInputHandler 应读取当前服务端 preview，而不是继续走本地规则。");
-            StringAssert.Contains("ResolveMovePreviewErrorMessage", content,
-                "无效 preview 应给出明确反馈。");
+            Assert.That(File.Exists(_movePreviewPresenterPath), Is.True, "MovePreviewPresenter.cs 不存在。");
+            StringAssert.Contains("ResolveErrorMessage", File.ReadAllText(_movePreviewPresenterPath),
+                "无效 preview 应通过 presenter 给出明确反馈。");
             Assert.That(content, Does.Not.Contain("Backward-compatible quick move"),
                 "不应继续保留基于本地高亮的快速移动兼容壳。");
             Assert.That(content, Does.Not.Contain("moveRange = 4"),
