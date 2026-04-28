@@ -1,3 +1,11 @@
+/*************************************************
+ * Project: Panoptes
+ * File: MapInputTokens.cs
+ * Author: Panoptes Team
+ * Date: 2026-04-29
+ * Description: Token normalization and tag helpers shared by map input modes.
+ *************************************************/
+
 using System;
 using Panoptes.Core.Application.Cache;
 

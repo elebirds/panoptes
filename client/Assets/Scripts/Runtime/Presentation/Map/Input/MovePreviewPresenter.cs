@@ -1,3 +1,11 @@
+/*************************************************
+ * Project: Panoptes
+ * File: MovePreviewPresenter.cs
+ * Author: Panoptes Team
+ * Date: 2026-04-29
+ * Description: Presentation text resolver for server-backed move path previews.
+ *************************************************/
+
 using Panoptes.Core.Domain;
 
 namespace Panoptes.Presentation.Map

@@ -1,3 +1,11 @@
+/*************************************************
+ * Project: Panoptes
+ * File: BuildPlacementInputMode.cs
+ * Author: Panoptes Team
+ * Date: 2026-04-29
+ * Description: Build placement input rules that are local presentation guards only.
+ *************************************************/
+
 using System;
 
 namespace Panoptes.Presentation.Map
