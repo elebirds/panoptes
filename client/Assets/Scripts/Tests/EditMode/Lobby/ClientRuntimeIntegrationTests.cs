@@ -49,6 +49,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _integrationCheckerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/IntegrationChecker.cs");
         private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
         private readonly string _unitInfoPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs");
+        private readonly string _unitInfoPlanningSummaryPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPlanningSummaryPresenter.cs");
         private readonly string _unitOrdersPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/UnitOrdersPanel.cs");
         private readonly string _runtimeScriptsRoot = Path.GetFullPath("Assets/Scripts/Runtime");
 
@@ -1497,12 +1498,14 @@ namespace Panoptes.Tests.EditMode.Lobby
         public void UnitInfoPanel_ShouldOwnPerUnitPlanningSummary_AndDirectOrderActions()
         {
             Assert.That(File.Exists(_unitInfoPanelPath), Is.True, "UnitInfoPanelController.cs 不存在。");
+            Assert.That(File.Exists(_unitInfoPlanningSummaryPresenterPath), Is.True, "UnitInfoPlanningSummaryPresenter.cs 不存在。");
 
             var content = File.ReadAllText(_unitInfoPanelPath);
+            var planningSummaryContent = File.ReadAllText(_unitInfoPlanningSummaryPresenterPath);
             StringAssert.Contains("PlanningDraftCache", content,
                 "UnitInfoPanel 应直接消费规划草稿缓存。");
-            StringAssert.Contains("GetOrdersInDisplayOrder", content,
-                "UnitInfoPanel 应展示当前规划中的单位命令摘要。");
+            StringAssert.Contains("GetOrdersInDisplayOrder", planningSummaryContent,
+                "UnitInfoPanel 的规划摘要 presenter 应展示当前规划中的单位命令摘要。");
             StringAssert.Contains("BeginMoveSelection", content,
                 "UnitInfoPanel 应直接承载移动命令入口。");
             StringAssert.Contains("BeginAttackSelection", content,
