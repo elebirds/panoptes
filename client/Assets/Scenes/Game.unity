@@ -1027,7 +1027,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f1790699446bd4debbe1646b783c2dd0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.UI.Game.GameSceneController
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Game.GameSceneController
   statusText: {fileID: 11170082}
   hideFullscreenBackgroundOnGameScene: 1
   fullscreenBackgroundObjectName: Background
@@ -2266,7 +2266,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8fe91ebaf64baee4189e656cfa77e21f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.Map.MapInputHandler
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.MapInputHandler
   inputCamera: {fileID: 0}
   raycastMask:
     serializedVersion: 2
@@ -2305,6 +2305,8 @@ MonoBehaviour:
   localOwnerIdOverride: 
   useSafeZoneFallbackForCityPlacement: 1
   disallowManualCityCorePlacement: 1
+  manualPlacementBlockedBuildingTypes:
+  - city_core
   autoCreateCornerCityZones: 1
   cornerInset: 2
   cityZones: []
@@ -2577,7 +2579,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a7ee40a205c64a3496ff3724986a025, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.UI.Game.GameMessageHandler
+  m_EditorClassIdentifier: Panoptes.Core::Panoptes.Core.Application.Handler.GameMessageHandler
 --- !u!4 &1440719630
 Transform:
   m_ObjectHideFlags: 0

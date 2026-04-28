@@ -280,24 +280,11 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var allButtons = UnityEngine.Object.FindObjectsByType<Button>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            for (var i = 0; i < allButtons.Length; i++)
+            nextStageButton = FindFirstSceneObject<Button>(button =>
             {
-                var button = allButtons[i];
-                if (button == null || string.IsNullOrWhiteSpace(button.name))
-                {
-                    continue;
-                }
-
-                if (string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    nextStageButton = button;
-                    break;
-                }
-            }
+                return !string.IsNullOrWhiteSpace(button.name) &&
+                    string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase);
+            });
         }
 
         private void BindNextStageButton()
@@ -334,21 +321,27 @@ namespace Panoptes.Presentation.UI.HUD
 
         private static RectTransform FindRectByName(string name)
         {
-            var all = UnityEngine.Object.FindObjectsByType<RectTransform>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (var i = 0; i < all.Length; i++)
+            return FindFirstSceneObject<RectTransform>(rect =>
             {
-                var rect = all[i];
-                if (rect == null || string.IsNullOrWhiteSpace(rect.name))
+                return !string.IsNullOrWhiteSpace(rect.name) &&
+                    string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase);
+            });
+        }
+
+        private static T FindFirstSceneObject<T>(System.Predicate<T> predicate = null) where T : Component
+        {
+            var candidates = Resources.FindObjectsOfTypeAll<T>();
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                var candidate = candidates[i];
+                if (candidate == null ||
+                    !candidate.gameObject.scene.IsValid() ||
+                    predicate?.Invoke(candidate) == false)
                 {
                     continue;
                 }
 
-                if (string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return rect;
-                }
+                return candidate;
             }
 
             return null;

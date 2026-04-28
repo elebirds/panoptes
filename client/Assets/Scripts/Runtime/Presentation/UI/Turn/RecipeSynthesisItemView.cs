@@ -495,7 +495,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 count.alignment = TextAlignmentOptions.Center;
                 count.fontSize = 18f;
                 count.color = Color.white;
-                count.enableWordWrapping = false;
+                count.textWrappingMode = TextWrappingModes.NoWrap;
                 count.overflowMode = TextOverflowModes.Truncate;
                 if (TMP_Settings.defaultFontAsset != null)
                 {

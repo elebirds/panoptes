@@ -41,7 +41,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private static void AttachControllers()
         {
-            var rects = Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var rects = Resources.FindObjectsOfTypeAll<RectTransform>();
             for (var i = 0; i < rects.Length; i++)
             {
                 var rect = rects[i];

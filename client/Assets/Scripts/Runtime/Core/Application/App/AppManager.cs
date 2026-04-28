@@ -184,7 +184,7 @@ namespace Panoptes.Core.Application.App
             {
                 _pendingCatalogSync = false;
                 _deferredGameInit = null;
-                RoomCache.Instance?.Clear();
+                ClearLobbyRoomCache();
                 ClientRuntimeConfigCache.Instance?.Clear();
                 ConfigCache.Instance?.Clear();
                 GameStateCache.Instance?.Clear();
@@ -314,6 +314,12 @@ namespace Panoptes.Core.Application.App
             GameStateCache.Instance?.ApplyGameInit(msg);
             RoomCache.Instance?.Clear();
             TransitionTo(AppState.Game);
+        }
+
+        private static void ClearLobbyRoomCache()
+        {
+            var roomCache = RoomCache.Instance;
+            roomCache?.Clear();
         }
 
         private void OnProblem(Problem problem)

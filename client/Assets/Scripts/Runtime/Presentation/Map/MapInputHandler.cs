@@ -115,6 +115,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string localOwnerIdOverride = string.Empty;
         [SerializeField] private bool useSafeZoneFallbackForCityPlacement = true;
         [SerializeField] private bool disallowManualCityCorePlacement = true;
+        [SerializeField] private string[] manualPlacementBlockedBuildingTypes = { "city_core" };
         [SerializeField] private bool autoCreateCornerCityZones = true;
         [SerializeField] private int cornerInset = 2;
         [SerializeField] private CityZone[] cityZones;
@@ -572,9 +573,9 @@ namespace Panoptes.Presentation.Map
         private void EnterBuildPlacement(string buildingType, string cityId, BuildPlacementRule rule)
         {
             _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
-            if (disallowManualCityCorePlacement && string.Equals(_buildType, "city_core", StringComparison.Ordinal))
+            if (IsManualPlacementBlocked(_buildType))
             {
-                Debug.Log("[MapInputHandler] City core is pre-placed by map config and cannot be manually built.");
+                Debug.Log($"[MapInputHandler] {_buildType} is pre-placed by map config and cannot be manually built.");
                 ExitBuildMode();
                 return;
             }
@@ -582,7 +583,7 @@ namespace Panoptes.Presentation.Map
             if (string.IsNullOrEmpty(_activeBuildCityId))
             {
                 Debug.LogWarning($"[MapInputHandler] Missing build city context before entering build mode. building={_buildType}");
-                ShowUserError("Missing build city context.");
+                ShowUserError("缺少建造城市上下文，无法进入建造模式");
                 ExitBuildMode();
                 return;
             }
@@ -593,6 +594,35 @@ namespace Panoptes.Presentation.Map
 
             ClearCombatSelection();
             DestroyHoverGhost();
+        }
+
+        private bool IsManualPlacementBlocked(string buildingType)
+        {
+            var normalized = NormalizeToken(buildingType);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return false;
+            }
+
+            if (disallowManualCityCorePlacement && string.Equals(normalized, "city_core", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (manualPlacementBlockedBuildingTypes == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < manualPlacementBlockedBuildingTypes.Length; i++)
+            {
+                if (string.Equals(NormalizeToken(manualPlacementBlockedBuildingTypes[i]), normalized, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ExitBuildMode()

@@ -91,6 +91,7 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private BuildTooltipView tooltipView;
         [SerializeField] private ScrollRect listScrollRect;
         [SerializeField] private RectTransform listContent;
+        [SerializeField] private RectTransform buildItemListRoot;
         [SerializeField] private BuildGroupView buildGroupPrefab;
         [SerializeField] private BuildItemView buildItemPrefab;
 
@@ -143,6 +144,9 @@ namespace Panoptes.Presentation.UI.Domestic
         private PlanningDraftCache _planningDraftCache;
         private string _activeCityCoreNodeId = string.Empty;
         private bool _loggedMissingBuildConfigThisEnable;
+        private Vector2 _buildListBaseAnchoredPos;
+        private float _buildListScrollOffset;
+        private bool _buildListScrollInitialized;
 
         private static readonly Regex NumberPairRegex = new("\"([^\"]+)\"\\s*:\\s*(-?\\d+)", RegexOptions.Compiled);
 
@@ -502,6 +506,11 @@ namespace Panoptes.Presentation.UI.Domestic
                 listContent = listScrollRect.content;
             }
 
+            if (listContent == null && buildItemListRoot != null)
+            {
+                listContent = buildItemListRoot;
+            }
+
             var viewport = transform.Find("Viewport") as RectTransform;
             if (viewport == null)
             {
@@ -527,6 +536,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             EnsureContentLayout(listContent);
+            buildItemListRoot = listContent;
             listScrollRect.viewport = viewport;
             listScrollRect.content = listContent;
         }
@@ -660,6 +670,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void ResetScrollPosition()
         {
+            ResetBuildListScroll(true);
             if (listScrollRect == null)
             {
                 return;
@@ -667,6 +678,26 @@ namespace Panoptes.Presentation.UI.Domestic
 
             Canvas.ForceUpdateCanvases();
             listScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        private void ResetBuildListScroll(bool forceReset)
+        {
+            var root = buildItemListRoot != null ? buildItemListRoot : listContent;
+            if (root == null)
+            {
+                return;
+            }
+
+            if (forceReset || !_buildListScrollInitialized)
+            {
+                _buildListBaseAnchoredPos = new Vector2(root.anchoredPosition.x, 0f);
+                _buildListScrollOffset = 0f;
+                _buildListScrollInitialized = true;
+                root.anchoredPosition = _buildListBaseAnchoredPos;
+                return;
+            }
+
+            root.anchoredPosition = _buildListBaseAnchoredPos + new Vector2(0f, _buildListScrollOffset);
         }
 
         private void ResolveMapInputHandler()
