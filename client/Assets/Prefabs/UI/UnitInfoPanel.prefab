@@ -1621,7 +1621,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.SettlerUnitActionRegistrar
   actionRegistry: {fileID: 0}
   autoFindActionRegistry: 1
-  mapInputHandler: {fileID: 0}
+  mapPlanningInputController: {fileID: 0}
   actionId: expand_territory
   actionLabel: Expand
   planningPhaseOnly: 1
@@ -1666,9 +1666,9 @@ MonoBehaviour:
   holdButton: {fileID: 0}
   chargeButton: {fileID: 0}
   actionRegistry: {fileID: 6096424715818392492}
-  mapInputHandler: {fileID: 0}
+  mapPlanningInputController: {fileID: 0}
   autoFindActionRegistry: 1
-  autoFindMapInputHandler: 1
+  autoFindMapPlanningInputController: 1
   autoBuildDefaultLayout: 1
   unitIconResourcesRoot: Icons/Units
   buildingIconResourcesRoot: Icons/Buildings

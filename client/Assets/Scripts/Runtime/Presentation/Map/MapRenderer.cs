@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
 using UnityEngine;
@@ -254,10 +255,10 @@ namespace Panoptes.Presentation.Map
 
         private static void EnsureRuntimeControllers()
         {
-            if (UnityEngine.Object.FindAnyObjectByType<MapInputHandler>() == null)
+            if (SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>() == null)
             {
-                var go = new GameObject("MapInputHandler");
-                go.AddComponent<MapInputHandler>();
+                var go = new GameObject("MapPlanningInputController");
+                go.AddComponent<MapPlanningInputController>();
             }
 
             SettlementPlaybackController.EnsureInstance();
@@ -563,10 +564,10 @@ namespace Panoptes.Presentation.Map
 
         private static void DisableGameplayInput()
         {
-            var inputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
-            if (inputHandler != null)
+            var planningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
+            if (planningInputController != null)
             {
-                inputHandler.enabled = false;
+                planningInputController.enabled = false;
             }
 
             var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();

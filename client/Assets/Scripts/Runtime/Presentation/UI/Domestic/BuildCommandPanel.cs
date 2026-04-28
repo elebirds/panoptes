@@ -85,8 +85,8 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private Sprite fallbackEmblem;
 
         [Header("Bindings")]
-        [SerializeField] private MapInputHandler mapInputHandler;
-        [SerializeField] private bool autoFindMapInputHandler = true;
+        [SerializeField] private MapPlanningInputController mapPlanningInputController;
+        [SerializeField] private bool autoFindMapPlanningInputController = true;
         [SerializeField] private Button cancelButton;
         [SerializeField] private BuildTooltipView tooltipView;
         [SerializeField] private ScrollRect listScrollRect;
@@ -152,7 +152,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _loggedMissingBuildConfigThisEnable = false;
             SubscribeCatalogUpdates();
             SubscribeFeedbackEvents();
-            ResolveMapInputHandler();
+            ResolveMapPlanningInputController();
             ResolveViewReferences();
             RefreshBuildItems();
         }
@@ -185,8 +185,8 @@ namespace Panoptes.Presentation.UI.Domestic
 
         public void CancelPlacement()
         {
-            ResolveMapInputHandler();
-            mapInputHandler?.CancelCurrentMode();
+            ResolveMapPlanningInputController();
+            mapPlanningInputController?.CancelCurrentMode();
         }
 
         public void SetCityCoreContext(string cityCoreNodeId)
@@ -683,22 +683,22 @@ namespace Panoptes.Presentation.UI.Domestic
             _buildListScrollState.Reset(root, forceReset);
         }
 
-        private void ResolveMapInputHandler()
+        private void ResolveMapPlanningInputController()
         {
-            if (mapInputHandler != null)
+            if (mapPlanningInputController != null)
             {
                 return;
             }
 
-            if (!autoFindMapInputHandler)
+            if (!autoFindMapPlanningInputController)
             {
                 return;
             }
 
-            mapInputHandler = MapInputHandler.Instance;
-            if (mapInputHandler == null)
+            mapPlanningInputController = MapPlanningInputController.Instance;
+            if (mapPlanningInputController == null)
             {
-                mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
             }
         }
 
@@ -867,10 +867,10 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void TriggerBuild(string buildingType, BuildRule rule)
         {
-            ResolveMapInputHandler();
-            if (mapInputHandler == null)
+            ResolveMapPlanningInputController();
+            if (mapPlanningInputController == null)
             {
-                Debug.LogWarning("[BuildCommandPanel] MapInputHandler is missing.");
+                Debug.LogWarning("[BuildCommandPanel] MapPlanningInputController is missing.");
                 return;
             }
 
@@ -884,13 +884,13 @@ namespace Panoptes.Presentation.UI.Domestic
             switch (rule)
             {
                 case BuildRule.ResourceOnly:
-                    mapInputHandler.EnterBuildPlacementResource(normalized, _activeCityCoreNodeId);
+                    mapPlanningInputController.EnterBuildPlacementResource(normalized, _activeCityCoreNodeId);
                     break;
                 case BuildRule.CityOnly:
-                    mapInputHandler.EnterBuildPlacementCity(normalized, _activeCityCoreNodeId);
+                    mapPlanningInputController.EnterBuildPlacementCity(normalized, _activeCityCoreNodeId);
                     break;
                 default:
-                    mapInputHandler.EnterBuildPlacementAny(normalized, _activeCityCoreNodeId);
+                    mapPlanningInputController.EnterBuildPlacementAny(normalized, _activeCityCoreNodeId);
                     break;
             }
         }

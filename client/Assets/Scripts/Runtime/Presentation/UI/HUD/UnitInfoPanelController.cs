@@ -42,11 +42,11 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Button holdButton;
         [SerializeField] private Button chargeButton;
         [SerializeField] private UnitInfoActionRegistry actionRegistry;
-        [SerializeField] private MapInputHandler mapInputHandler;
+        [SerializeField] private MapPlanningInputController mapPlanningInputController;
 
         [Header("Auto Find")]
         [SerializeField] private bool autoFindActionRegistry = true;
-        [SerializeField] private bool autoFindMapInputHandler = true;
+        [SerializeField] private bool autoFindMapPlanningInputController = true;
         [SerializeField] private bool autoBuildDefaultLayout = true;
 
         [Header("Icon")]
@@ -200,7 +200,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void LateUpdate()
         {
-            if (!_unitSelectionSubscribed || mapInputHandler == null)
+            if (!_unitSelectionSubscribed || mapPlanningInputController == null)
             {
                 TrySubscribeUnitSelection();
             }
@@ -1104,25 +1104,25 @@ namespace Panoptes.Presentation.UI.HUD
             if (moveButton != null)
             {
                 moveButton.onClick.RemoveAllListeners();
-                moveButton.onClick.AddListener(() => mapInputHandler?.BeginMoveSelection());
+                moveButton.onClick.AddListener(() => mapPlanningInputController?.BeginMoveSelection());
             }
 
             if (attackButton != null)
             {
                 attackButton.onClick.RemoveAllListeners();
-                attackButton.onClick.AddListener(() => mapInputHandler?.BeginAttackSelection());
+                attackButton.onClick.AddListener(() => mapPlanningInputController?.BeginAttackSelection());
             }
 
             if (holdButton != null)
             {
                 holdButton.onClick.RemoveAllListeners();
-                holdButton.onClick.AddListener(() => mapInputHandler?.IssueHoldOrder());
+                holdButton.onClick.AddListener(() => mapPlanningInputController?.IssueHoldOrder());
             }
 
             if (chargeButton != null)
             {
                 chargeButton.onClick.RemoveAllListeners();
-                chargeButton.onClick.AddListener(() => mapInputHandler?.BeginChargeSelection());
+                chargeButton.onClick.AddListener(() => mapPlanningInputController?.BeginChargeSelection());
             }
         }
         private void RefreshPlanningUi()
@@ -1335,12 +1335,12 @@ namespace Panoptes.Presentation.UI.HUD
                 }
             }
 
-            if (autoFindMapInputHandler && mapInputHandler == null)
+            if (autoFindMapPlanningInputController && mapPlanningInputController == null)
             {
-                mapInputHandler = MapInputHandler.Instance;
-                if (mapInputHandler == null)
+                mapPlanningInputController = MapPlanningInputController.Instance;
+                if (mapPlanningInputController == null)
                 {
-                    mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
         }
@@ -1368,38 +1368,38 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void TrySubscribeUnitSelection()
         {
-            if (_unitSelectionSubscribed && mapInputHandler != null)
+            if (_unitSelectionSubscribed && mapPlanningInputController != null)
             {
                 return;
             }
 
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
-                mapInputHandler = MapInputHandler.Instance;
-                if (mapInputHandler == null)
+                mapPlanningInputController = MapPlanningInputController.Instance;
+                if (mapPlanningInputController == null)
                 {
-                    mapInputHandler = UnityEngine.Object.FindAnyObjectByType<MapInputHandler>();
+                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
 
-            if (mapInputHandler == null)
+            if (mapPlanningInputController == null)
             {
                 return;
             }
 
-            mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
-            mapInputHandler.UnitSelectionChanged += OnUnitSelectionChanged;
-            mapInputHandler.CombatSelectionChanged -= RefreshPlanningUi;
-            mapInputHandler.CombatSelectionChanged += RefreshPlanningUi;
+            mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            mapPlanningInputController.UnitSelectionChanged += OnUnitSelectionChanged;
+            mapPlanningInputController.CombatSelectionChanged -= RefreshPlanningUi;
+            mapPlanningInputController.CombatSelectionChanged += RefreshPlanningUi;
             _unitSelectionSubscribed = true;
         }
 
         private void UnsubscribeUnitSelection()
         {
-            if (mapInputHandler != null)
+            if (mapPlanningInputController != null)
             {
-                mapInputHandler.UnitSelectionChanged -= OnUnitSelectionChanged;
-                mapInputHandler.CombatSelectionChanged -= RefreshPlanningUi;
+                mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+                mapPlanningInputController.CombatSelectionChanged -= RefreshPlanningUi;
             }
 
             _unitSelectionSubscribed = false;

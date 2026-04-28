@@ -8,6 +8,7 @@
 
 using System.Collections.Generic;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using TMPro;
 using UnityEngine;
@@ -56,7 +57,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
-        private MapInputHandler _mapInput;
+        private MapPlanningInputController _mapPlanningInputController;
 
         private void Awake()
         {
@@ -142,16 +143,16 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _pendingBuildNodeIds.Clear();
 
-            if (_mapInput == null)
+            if (_mapPlanningInputController == null)
             {
-                _mapInput = MapInputHandler.Instance;
-                if (_mapInput == null)
+                _mapPlanningInputController = MapPlanningInputController.Instance;
+                if (_mapPlanningInputController == null)
                 {
-                    _mapInput = Object.FindAnyObjectByType<MapInputHandler>();
+                    _mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
                 }
             }
 
-            var pending = _mapInput != null ? _mapInput.PendingBuilds : null;
+            var pending = _mapPlanningInputController != null ? _mapPlanningInputController.PendingBuilds : null;
             if (pending == null)
             {
                 return;
@@ -460,5 +461,4 @@ namespace Panoptes.Presentation.UI.HUD
         }
     }
 }
-
 

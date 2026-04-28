@@ -25,8 +25,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _gamePhasesPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Foundation/Domain/GamePhases.cs");
         private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
-        private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
-        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/Input/MovePreviewPresenter.cs");
+        private readonly string _mapPlanningInputControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs");
+        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Planning/Feedback/MovePreviewPresenter.cs");
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
         private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
@@ -1257,15 +1257,15 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldOnlyIssueMoveOrders_FromAuthoritativePreview()
+        public void MapPlanningInputController_ShouldOnlyIssueMoveOrders_FromAuthoritativePreview()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
             StringAssert.Contains("TryIssueAuthoritativeMoveOrder(node.NodeId)", content,
                 "移动点击应只通过服务端权威 preview 结果发单。");
             StringAssert.Contains("TryGetCurrentMovePreview", content,
-                "MapInputHandler 应读取当前服务端 preview，而不是继续走本地规则。");
+                "MapPlanningInputController 应读取当前服务端 preview，而不是继续走本地规则。");
             Assert.That(File.Exists(_movePreviewPresenterPath), Is.True, "MovePreviewPresenter.cs 不存在。");
             StringAssert.Contains("ResolveErrorMessage", File.ReadAllText(_movePreviewPresenterPath),
                 "无效 preview 应通过 presenter 给出明确反馈。");
@@ -1276,11 +1276,11 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldRequireExplicitBuildCityContext()
+        public void MapPlanningInputController_ShouldRequireExplicitBuildCityContext()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
             StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
                 "建造入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
@@ -1289,7 +1289,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "城内建筑入口应显式要求 cityId。");
             StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", content,
                 "建造模式应保存显式传入的 cityId，而不是临时猜测。");
-            StringAssert.Contains("GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
+            StringAssert.Contains("_intentSender.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
                 "建造消息必须透传显式 cityId。");
             Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
                 "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");
@@ -1300,11 +1300,11 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldNotGateCommandsByLocalPlacementOrTargetRules()
+        public void MapPlanningInputController_ShouldNotGateCommandsByLocalPlacementOrTargetRules()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = ReadMapInputHandlerSources(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
             Assert.That(content, Does.Not.Contain("territoryOnlyBuildingTypes"),
                 "Chunk 8A 后不应再靠本地 territoryOnlyBuildingTypes 过滤发送建造。");
             Assert.That(content, Does.Not.Contain("globalPlacementBuildingTypes"),
@@ -1318,11 +1318,11 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldPreferOwnedUnitSelectionBeforeBuildingInfo_OnSharedCityCoreTile()
+        public void MapPlanningInputController_ShouldPreferOwnedUnitSelectionBeforeBuildingInfo_OnSharedCityCoreTile()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = File.ReadAllText(_mapPlanningInputControllerPath);
             var unitSelectionIndex = content.IndexOf("TrySelectOwnedUnitFromNodeClick()", StringComparison.Ordinal);
             var buildingInfoIndex = content.IndexOf("TryOpenBuildingInfoFromClick()", StringComparison.Ordinal);
 
@@ -1330,6 +1330,38 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "同格节点交互应先尝试选中己方可控单位。");
             Assert.That(buildingInfoIndex, Is.GreaterThan(unitSelectionIndex),
                 "建筑信息打开逻辑必须排在同格单位优先判定之后。");
+        }
+
+        [Test]
+        public void MapPlanningInputController_ShouldBeSingleUnityEntryAndMovePlanningHelpersOutOfMapInput()
+        {
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
+
+            var mapDirectory = Path.GetDirectoryName(_mapPlanningInputControllerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            var mapPlanningInputControllerFiles = Directory
+                .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
+                .Select(Path.GetFileName)
+                .OrderBy(fileName => fileName, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(mapPlanningInputControllerFiles, Is.EqualTo(new[] { "MapPlanningInputController.cs" }),
+                "MapPlanningInputController 应保持单一 Unity 入口，不应继续通过 partial 文件膨胀。");
+            Assert.That(File.Exists(Path.Combine(mapDirectory, "MapInputHandler.cs")), Is.False,
+                "旧 MapInputHandler 命名应彻底移除。");
+
+            var oldInputDirectory = Path.Combine(mapDirectory, "Input");
+            var oldInputScripts = Directory.Exists(oldInputDirectory)
+                ? Directory.GetFiles(oldInputDirectory, "*.cs", SearchOption.AllDirectories)
+                : Array.Empty<string>();
+            Assert.That(oldInputScripts, Is.Empty,
+                "规划输入和反馈 helper 不应继续停留在 Presentation/Map/Input。");
+
+            var planningRoot = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Planning");
+            Assert.That(Directory.Exists(planningRoot), Is.True, "Planning 表现层包不存在。");
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/MovePreviewPresenter.cs")), Is.True);
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Input/State/PendingMoveState.cs")), Is.True);
         }
 
         [Test]
@@ -1629,15 +1661,15 @@ namespace Panoptes.Tests.EditMode.Lobby
             method.Invoke(null, new[] { message });
         }
 
-        private static string ReadMapInputHandlerSources(string mapInputHandlerPath)
+        private static string ReadMapPlanningInputControllerSources(string mapPlanningInputControllerPath)
         {
-            Assert.That(File.Exists(mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var mapDirectory = Path.GetDirectoryName(mapInputHandlerPath);
+            var mapDirectory = Path.GetDirectoryName(mapPlanningInputControllerPath);
             Assert.That(mapDirectory, Is.Not.Null);
 
             return string.Join("\n", Directory
-                .GetFiles(mapDirectory, "MapInputHandler*.cs", SearchOption.AllDirectories)
+                .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
                 .OrderBy(file => file, StringComparer.Ordinal)
                 .Select(File.ReadAllText));
         }

@@ -1,8 +1,19 @@
+/*************************************************
+ * Project: Panoptes
+ * File: SceneObjectFinder.cs
+ * Author: Panoptes Team
+ * Date: 2026-04-29
+ * Description: Scene-only Unity object lookup helpers for presentation fallback wiring.
+ *************************************************/
+
 using System;
 using UnityEngine;
 
 namespace Panoptes.Presentation.Common
 {
+    /// <summary>
+    /// Finds active scene objects while filtering out assets, prefabs, and editor-only resources.
+    /// </summary>
     public static class SceneObjectFinder
     {
         public static T FindFirstSceneObject<T>(Predicate<T> predicate = null) where T : Component
