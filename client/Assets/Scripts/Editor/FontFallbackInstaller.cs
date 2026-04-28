@@ -9,7 +9,6 @@ namespace Panoptes.Editor
     {
         private const string SourceFontPath = "Assets/Fonts/SourceHanSansSC-Regular.otf";
         private const string FallbackFontAssetPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/Panoptes CJK Fallback.asset";
-        private const string WarmupCharacters = "大厅当前玩家创建房间加入输入邀请码准备取消离开等待全员已游戏即将开始连接断开正在重连连接中已连接未连接请求格式错误用户名密码系统未初始化服务器错误请稍后重试登录注册";
 
         [MenuItem("Panoptes/UI/Install CJK TMP Fallback")]
         public static void InstallCjkFallback()
@@ -21,7 +20,6 @@ namespace Panoptes.Editor
             }
 
             var fontAsset = RecreateFallbackFontAsset(sourceFont);
-            fontAsset.TryAddCharacters(WarmupCharacters, out _);
 
             var settings = TMP_Settings.GetSettings() ?? Resources.Load<TMP_Settings>("TMP Settings");
             if (settings == null)
@@ -81,6 +79,7 @@ namespace Panoptes.Editor
             material.name = atlasTexture.name + " Material";
             AssetDatabase.AddObjectToAsset(material, fontAsset);
 
+            fontAsset.ClearFontAssetData(true);
             EditorUtility.SetDirty(fontAsset);
             EditorUtility.SetDirty(atlasTexture);
             EditorUtility.SetDirty(material);

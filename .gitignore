@@ -28,6 +28,12 @@ go.work.sum
 .worktrees/
 .superpowers/
 
+# Unity / IDE generated project files
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+
 # Generated protocol code
 # (已提交进仓库，clone 后直接可用；如需每次重新生成可取消注释)
 # protocol/gen/

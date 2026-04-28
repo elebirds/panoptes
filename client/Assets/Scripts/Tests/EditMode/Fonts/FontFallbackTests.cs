@@ -36,6 +36,20 @@ namespace Panoptes.Tests.EditMode.Fonts
         }
 
         [Test]
+        public void CjkFallbackAsset_ShouldKeepDynamicAtlasDataClearedForVersionControl()
+        {
+            var assetPath = Path.GetFullPath("Assets/TextMesh Pro/Resources/Fonts & Materials/Panoptes CJK Fallback.asset");
+            Assert.That(File.Exists(assetPath), Is.True, "Panoptes CJK Fallback.asset 不存在。");
+
+            var content = File.ReadAllText(assetPath);
+            StringAssert.Contains("m_AtlasPopulationMode: 1", content);
+            StringAssert.Contains("m_ClearDynamicDataOnBuild: 1", content);
+            StringAssert.Contains("m_GlyphTable: []", content);
+            StringAssert.Contains("m_CharacterTable: []", content);
+            StringAssert.Contains("m_UsedGlyphRects: []", content);
+        }
+
+        [Test]
         public void LobbyScene_ShouldUseInputSystemUiModule()
         {
             var scenePath = Path.GetFullPath("Assets/Scenes/Lobby.unity");
