@@ -105,6 +105,7 @@ namespace Panoptes.Presentation.UI.HUD
         private Camera _portraitCamera;
         private RenderTexture _portraitRenderTexture;
         private Light _portraitFillLight;
+        private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _isOpen;
 
@@ -748,6 +749,7 @@ namespace Panoptes.Presentation.UI.HUD
             planningSummaryText.textWrappingMode = TextWrappingModes.NoWrap;
             planningSummaryText.overflowMode = TextOverflowModes.Ellipsis;
             planningSummaryText.gameObject.SetActive(false);
+            _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
         }
 
         private bool EnsurePortraitCameraAndTexture()
@@ -887,7 +889,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            if (!TryComputeUnitBounds(unit, out var bounds))
+            if (!UnitInfoPortraitPresenter.TryComputeUnitBounds(unit, out var bounds))
             {
                 return false;
             }
@@ -944,43 +946,6 @@ namespace Panoptes.Presentation.UI.HUD
             _portraitFillLight.transform.SetPositionAndRotation(
                 fillPosition,
                 Quaternion.LookRotation(lightDirection.normalized, Vector3.up));
-        }
-
-        private static bool TryComputeUnitBounds(UnitView unit, out Bounds bounds)
-        {
-            bounds = default;
-            if (unit == null)
-            {
-                return false;
-            }
-
-            var renderers = unit.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length == 0)
-            {
-                return false;
-            }
-
-            var hasBounds = false;
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = renderer.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
-            }
-
-            return hasBounds;
         }
 
         private void SetPortraitVisible(bool visible)
@@ -1198,45 +1163,8 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var draftCache = _planningDraftCache ?? PlanningDraftCache.Instance;
-            if (_currentUnit == null || draftCache == null)
-            {
-                planningSummaryText.text = string.Empty;
-                planningSummaryText.gameObject.SetActive(false);
-                return;
-            }
-
-            var currentUnitId = NormalizeToken(_currentUnit.UnitId);
-            var orders = draftCache.GetOrdersInDisplayOrder();
-            for (var i = 0; i < orders.Count; i++)
-            {
-                var order = orders[i];
-                if (order == null || !string.Equals(NormalizeToken(order.UnitId), currentUnitId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                planningSummaryText.text = BuildPlanningSummary(order);
-                planningSummaryText.gameObject.SetActive(true);
-                return;
-            }
-
-            planningSummaryText.text = string.Empty;
-            planningSummaryText.gameObject.SetActive(false);
-        }
-
-        private static string BuildPlanningSummary(QueuedUnitOrderDto order)
-        {
-            if (order == null)
-            {
-                return string.Empty;
-            }
-
-            var action = string.IsNullOrWhiteSpace(order.Action) ? "order" : order.Action.Trim();
-            var target = !string.IsNullOrWhiteSpace(order.TargetNodeId)
-                ? order.TargetNodeId.Trim()
-                : order.TargetUnitId?.Trim();
-            return string.IsNullOrWhiteSpace(target) ? $"Planned: {action}" : $"Planned: {action} -> {target}";
+            _planningSummaryPresenter ??= new UnitInfoPlanningSummaryPresenter(planningSummaryText);
+            _planningSummaryPresenter.Refresh(_currentUnit, _planningDraftCache ?? PlanningDraftCache.Instance);
         }
 
         private bool IsInteractivePlanning()
@@ -1343,18 +1271,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)
         {
-            if (button == null)
-            {
-                return;
-            }
-
-            button.gameObject.SetActive(visible);
-            button.interactable = visible && interactable && !ActionLock.IsLocked;
-            var text = button.GetComponentInChildren<TextMeshProUGUI>();
-            if (text != null)
-            {
-                text.text = label;
-            }
+            UnitInfoActionButtonBinder.ApplyState(button, label, visible, interactable, ActionLock.IsLocked);
         }
 
         private static void EnsureActionProvidersRegistered()
@@ -1535,7 +1452,7 @@ namespace Panoptes.Presentation.UI.HUD
                 }
                 panelBackground.color = new Color(0.06f, 0.09f, 0.16f, 0.9f);
                 var bgRt = bg as RectTransform;
-                StretchToParent(bgRt, Vector2.zero, Vector2.zero);
+                UnitInfoPanelLayoutBuilder.StretchToParent(bgRt, Vector2.zero, Vector2.zero);
             }
 
             if (actionButtonsRoot == null)
@@ -1594,7 +1511,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (unitNameText == null)
             {
                 var nameRT = EnsureChild("UnitName");
-                unitNameText = CreateTmpText(nameRT, "Unit");
+                unitNameText = UnitInfoPanelLayoutBuilder.CreateTmpText(nameRT, "Unit");
                 nameRT.anchorMin = new Vector2(0f, 1f);
                 nameRT.anchorMax = new Vector2(0f, 1f);
                 nameRT.pivot = new Vector2(0f, 1f);
@@ -1619,13 +1536,13 @@ namespace Panoptes.Presentation.UI.HUD
                 sliderRT.pivot = new Vector2(0f, 0f);
                 sliderRT.anchoredPosition = new Vector2(102f, 40f);
                 sliderRT.sizeDelta = new Vector2(240f, 24f);
-                BuildDefaultSliderVisual(hpSlider, sliderRT);
+                UnitInfoPanelLayoutBuilder.BuildDefaultSliderVisual(hpSlider, sliderRT);
             }
 
             if (hpValueText == null)
             {
                 var hpTextRT = EnsureChild("HpText");
-                hpValueText = CreateTmpText(hpTextRT, "0/0");
+                hpValueText = UnitInfoPanelLayoutBuilder.CreateTmpText(hpTextRT, "0/0");
                 hpTextRT.anchorMin = new Vector2(0f, 0f);
                 hpTextRT.anchorMax = new Vector2(0f, 0f);
                 hpTextRT.pivot = new Vector2(0f, 0f);
@@ -1823,8 +1740,8 @@ namespace Panoptes.Presentation.UI.HUD
 
             var labelRT = new GameObject("Label", typeof(RectTransform)).GetComponent<RectTransform>();
             labelRT.SetParent(buttonRT, false);
-            StretchToParent(labelRT, new Vector2(4f, 2f), new Vector2(-4f, -2f));
-            var labelText = CreateTmpText(labelRT, defaultLabel);
+            UnitInfoPanelLayoutBuilder.StretchToParent(labelRT, new Vector2(4f, 2f), new Vector2(-4f, -2f));
+            var labelText = UnitInfoPanelLayoutBuilder.CreateTmpText(labelRT, defaultLabel);
             labelText.alignment = TextAlignmentOptions.Center;
             labelText.fontSize = 15f;
 
@@ -1871,8 +1788,8 @@ namespace Panoptes.Presentation.UI.HUD
                 labelRect.SetParent(buttonRect, false);
             }
 
-            StretchToParent(labelRect, new Vector2(4f, 2f), new Vector2(-4f, -2f));
-            var labelText = CreateTmpText(labelRect, label);
+            UnitInfoPanelLayoutBuilder.StretchToParent(labelRect, new Vector2(4f, 2f), new Vector2(-4f, -2f));
+            var labelText = UnitInfoPanelLayoutBuilder.CreateTmpText(labelRect, label);
             labelText.alignment = TextAlignmentOptions.Center;
             labelText.fontSize = 15f;
             return button;
@@ -2003,85 +1920,6 @@ namespace Panoptes.Presentation.UI.HUD
             child = go.GetComponent<RectTransform>();
             child.SetParent(panelRoot, false);
             return child;
-        }
-
-        private static void BuildDefaultSliderVisual(Slider slider, RectTransform sliderRoot)
-        {
-            if (slider == null || sliderRoot == null)
-            {
-                return;
-            }
-
-            var background = EnsureSliderGraphic(sliderRoot, "Background", new Color(0.15f, 0.15f, 0.18f, 0.95f));
-            var fillArea = EnsureRect(sliderRoot, "Fill Area");
-            StretchToParent(fillArea, new Vector2(3f, 3f), new Vector2(-3f, -3f));
-
-            var fill = EnsureSliderGraphic(fillArea, "Fill", new Color(0.28f, 0.86f, 0.3f, 1f));
-            slider.fillRect = fill.rectTransform;
-            slider.targetGraphic = fill;
-            slider.direction = Slider.Direction.LeftToRight;
-            slider.transition = Selectable.Transition.ColorTint;
-            slider.interactable = false;
-            slider.handleRect = null;
-            slider.value = 0f;
-        }
-
-        private static Image EnsureSliderGraphic(Transform parent, string name, Color color)
-        {
-            var rect = EnsureRect(parent, name);
-            var image = rect.GetComponent<Image>();
-            if (image == null)
-            {
-                image = rect.gameObject.AddComponent<Image>();
-            }
-            image.color = color;
-            StretchToParent(rect, Vector2.zero, Vector2.zero);
-            return image;
-        }
-
-        private static RectTransform EnsureRect(Transform parent, string name)
-        {
-            var existing = parent.Find(name) as RectTransform;
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var go = new GameObject(name, typeof(RectTransform));
-            var rect = go.GetComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            return rect;
-        }
-
-        private static TMP_Text CreateTmpText(RectTransform root, string initialText)
-        {
-            var text = root.GetComponent<TextMeshProUGUI>();
-            if (text == null)
-            {
-                text = root.gameObject.AddComponent<TextMeshProUGUI>();
-            }
-            text.text = initialText ?? string.Empty;
-            text.color = Color.white;
-            text.textWrappingMode = TextWrappingModes.NoWrap;
-            text.overflowMode = TextOverflowModes.Truncate;
-            if (TMP_Settings.defaultFontAsset != null)
-            {
-                text.font = TMP_Settings.defaultFontAsset;
-            }
-            return text;
-        }
-
-        private static void StretchToParent(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax)
-        {
-            if (rect == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = offsetMin;
-            rect.offsetMax = offsetMax;
         }
 
         private void ResolveUnitDisplayTexts(UnitView unit, out string displayName, out string description)
