@@ -6,6 +6,7 @@
  * Description: Auto-binds TechTreePanelController at runtime.
  *************************************************/
 
+using Panoptes.Presentation.Common;
 using UnityEngine;
 
 namespace Panoptes.Presentation.UI.Domestic
@@ -41,35 +42,19 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private static void AttachControllers()
         {
-            var rects = Resources.FindObjectsOfTypeAll<RectTransform>();
-            for (var i = 0; i < rects.Length; i++)
+            while (true)
             {
-                var rect = rects[i];
+                var rect = SceneObjectFinder.FindFirstSceneObject<RectTransform>(candidate =>
+                {
+                    var name = candidate.name ?? string.Empty;
+                    return string.Equals(name, TargetPanelName, System.StringComparison.OrdinalIgnoreCase) &&
+                        candidate.parent == null &&
+                        candidate.GetComponent<TechTreePanelController>() == null;
+                });
+
                 if (rect == null)
                 {
-                    continue;
-                }
-
-                if (!rect.gameObject.scene.IsValid())
-                {
-                    continue;
-                }
-
-                var name = rect.name ?? string.Empty;
-                if (!string.Equals(name, TargetPanelName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                // Tech tree controller must live on panel root only.
-                if (rect.parent != null)
-                {
-                    continue;
-                }
-
-                if (rect.GetComponent<TechTreePanelController>() != null)
-                {
-                    continue;
+                    return;
                 }
 
                 rect.gameObject.AddComponent<TechTreePanelController>();

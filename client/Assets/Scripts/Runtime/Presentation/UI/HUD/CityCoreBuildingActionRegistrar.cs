@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Domestic;
 using UnityEngine;
@@ -238,7 +239,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildCommandPanel == null)
             {
-                buildCommandPanel = FindFirstSceneObject<BuildCommandPanel>();
+                buildCommandPanel = SceneObjectFinder.FindFirstSceneObject<BuildCommandPanel>();
             }
 
             if (buildPanelSlideToggle == null && buildCommandPanel != null)
@@ -253,7 +254,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (buildPanelSlideToggle == null)
             {
-                buildPanelSlideToggle = FindFirstSceneObject<BuildPanelSlideToggle>(candidate =>
+                buildPanelSlideToggle = SceneObjectFinder.FindFirstSceneObject<BuildPanelSlideToggle>(candidate =>
                 {
                     if (buildCommandPanel == null)
                     {
@@ -267,12 +268,12 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (recipeSynthesisPanel == null)
             {
-                recipeSynthesisPanel = FindFirstSceneObject<RecipeSynthesisPanel>();
+                recipeSynthesisPanel = SceneObjectFinder.FindFirstSceneObject<RecipeSynthesisPanel>();
             }
 
             if (nextStageButtonRect == null && autoFindNextStageButton)
             {
-                nextStageButtonRect = FindSceneRectByName("NextStageBtn");
+                nextStageButtonRect = SceneObjectFinder.FindSceneRectByName("NextStageBtn");
             }
 
             if (unitInfoPanelController != null && nextStageButtonRect != null)
@@ -282,53 +283,10 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (turnPanelRect == null && autoFindTurnPanel)
             {
-                turnPanelRect = FindSceneRectByName("TrunPanel", "TurnPanel");
+                turnPanelRect = SceneObjectFinder.FindSceneRectByName("TrunPanel", "TurnPanel");
             }
 
             SubscribeRecipePanelEvents();
-        }
-
-        private static T FindFirstSceneObject<T>(Predicate<T> predicate = null) where T : Component
-        {
-            var candidates = Resources.FindObjectsOfTypeAll<T>();
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (!IsSceneObject(candidate) || predicate?.Invoke(candidate) == false)
-                {
-                    continue;
-                }
-
-                return candidate;
-            }
-
-            return null;
-        }
-
-        private static RectTransform FindSceneRectByName(params string[] names)
-        {
-            return FindFirstSceneObject<RectTransform>(rect =>
-            {
-                if (string.IsNullOrWhiteSpace(rect.name))
-                {
-                    return false;
-                }
-
-                for (var i = 0; i < names.Length; i++)
-                {
-                    if (string.Equals(rect.name, names[i], StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            });
-        }
-
-        private static bool IsSceneObject(Component component)
-        {
-            return component != null && component.gameObject.scene.IsValid();
         }
 
         private IEnumerator ForceInitialPanelStateAfterLayout()
