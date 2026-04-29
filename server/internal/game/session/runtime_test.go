@@ -650,7 +650,7 @@ func TestRuntimeBootstrapPlanningStartIncludesProjectedActivationEvents(t *testi
 	if len(start.GetPlanningStartEvents()) != 1 {
 		t.Fatalf("planning_start_events len = %d, want 1", len(start.GetPlanningStartEvents()))
 	}
-	if got := start.GetPlanningStartEvents()[0].GetType(); got != "technology_activated" {
+	if got := start.GetPlanningStartEvents()[0].GetKind(); got != "technology_activated" {
 		t.Fatalf("planning_start_events[0].type = %q, want technology_activated", got)
 	}
 }

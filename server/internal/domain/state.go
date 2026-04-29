@@ -14,6 +14,13 @@ import (
 )
 
 type GameState struct {
+	Meta        GameMeta
+	Clock       TurnClock
+	Outcome     GameOutcome
+	WorldState  WorldState
+	PlayerStore PlayerStore
+	Runtime     RuntimeState
+
 	GameID      string
 	Turn        int
 	Phase       string
@@ -564,6 +571,7 @@ func NewGameState(gameID string, playerIDs []string, usernames []string, mapData
 		state.TurnRuntime.Resolving.PointBudgets[playerID] = NewPointBag()
 	}
 
+	state.RefreshStructuredModel()
 	return state
 }
 

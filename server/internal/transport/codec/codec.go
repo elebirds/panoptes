@@ -123,8 +123,8 @@ func WrapServerMessage(msg proto.Message, meta *pb.EventMeta) (*pb.ServerFrame, 
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_BuildStructureResult{BuildStructureResult: typed}}}
 	case *pb.MsgTurnReport:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_TurnReport{TurnReport: typed}}}
-	case *pb.MsgTurnSettlement:
-		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_TurnSettlement{TurnSettlement: typed}}}
+	case *pb.MsgGameSync:
+		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameSync{GameSync: typed}}}
 	case *pb.MsgGameOver:
 		frame.Target = &pb.ServerFrame_Game{Game: &pb.GameEvent{Body: &pb.GameEvent_GameOver{GameOver: typed}}}
 	case *pb.MsgMinisterReportChunk:

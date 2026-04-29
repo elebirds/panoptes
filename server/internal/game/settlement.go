@@ -12,6 +12,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
+	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 )
 
 // RunTurnResolution executes the unified Turn V2 resolving pipeline.
@@ -20,8 +21,21 @@ func RunTurnResolution(room *GameRoom) {
 		return
 	}
 
-	collector := NewTurnResolutionRunner().Run(room)
-	room.broadcastTurnSettlement(collector)
+	collector := gameresolution.NewTurnResolutionRunner().Run(room.State(), gameresolution.RunnerHooks{
+		PlanningCommitEvents: func(*domain.GameState) []event.Event {
+			return room.planningCommitEvents()
+		},
+		FreezeOrders: func(*domain.GameState) {
+			room.lockUnitResolutionOrders()
+		},
+		RefreshActiveMarches: func(*domain.GameState) {
+			room.refreshActiveMarchesAfterSettlement()
+		},
+		MapActionEvents: func(*domain.GameState) []event.Event {
+			return room.plannedMapActionEvents()
+		},
+	})
+	room.broadcastGameSync(collector)
 	if room.IsDevMode() {
 		if hooks := currentDebugHooks(); hooks.DumpStateSummary != nil {
 			hooks.DumpStateSummary(room.State())

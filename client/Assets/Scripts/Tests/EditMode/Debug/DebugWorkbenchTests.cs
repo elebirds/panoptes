@@ -165,7 +165,7 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_gameMessageHandlerPath);
             StringAssert.Contains("Register<MsgPlanningStart>(\"MsgPlanningStart\", OnPlanningStart);", content);
             StringAssert.Contains("Register<MsgPlanningSnapshot>(\"MsgPlanningSnapshot\", OnPlanningSnapshot);", content);
-            StringAssert.Contains("Register<MsgTurnSettlement>(\"MsgTurnSettlement\", OnTurnSettlement);", content);
+            StringAssert.Contains("Register<MsgGameSync>(\"MsgGameSync\", OnGameSync);", content);
             StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
             StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", OnResearchResult);", content);
             StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", OnSetBuildingRecipeResult);", content);

@@ -102,6 +102,7 @@ func (r *Runtime) Initialize() error {
 	mapData := maploader.InitWorldFromMap(world, runtimeMap, playerIDs)
 	r.state = domain.NewGameState(r.ID, playerIDs, usernames, mapData)
 	r.state.World = world
+	r.state.RefreshStructuredModel()
 	if r.observations == nil {
 		r.observations = gamequery.NewObservationStore()
 	} else {
@@ -143,6 +144,7 @@ func (r *Runtime) InitializePrepared(state *domain.GameState) error {
 			r.state.NodeIndex[nodeID] = entity
 		}
 	}
+	r.state.RefreshStructuredModel()
 	r.grantDevStartingResources()
 	r.initializeCityStates()
 	return r.sendBootstrapMessages()
@@ -154,6 +156,9 @@ func (r *Runtime) State() *domain.GameState {
 
 func (r *Runtime) SetState(state *domain.GameState) {
 	r.state = state
+	if r.state != nil {
+		r.state.RefreshStructuredModel()
+	}
 	if r.observations == nil {
 		r.observations = gamequery.NewObservationStore()
 	} else {

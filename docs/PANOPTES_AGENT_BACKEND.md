@@ -1,6 +1,7 @@
 # Panoptes — 后端开发指南（Agent版）
 
-> Turn V2 覆盖说明：凡与统一 `planning/resolving` 回合模型、Turn V2 协议、Turn V2 服务端结构冲突之处，以 `docs/TURN_V2_REFACTOR_PLAN.md` 为准。
+> Turn V2 覆盖说明：凡与统一 `planning/resolving` 回合模型、Turn V2 协议、Turn V2 服务端结构冲突之处，以 `docs/TURN_V2_REFACTOR_PLAN.md` 与 `docs/SERVER_RUNTIME_ARCHITECTURE.md` 当前版本为准。
+> 2026-04-29 后端重构补充：resolving 出口已统一为 v1 `MsgGameSync`，旧 `MsgTurnSettlement / SettlementSection / TurnEvent` 协议已删除；顶层 resolving runner 位于 `server/internal/game/resolution`，`game` 包不得重新持有 stage 实现。
 > 本文档是后端开发的唯一权威参考。所有架构决策、接口定义、数据结构均已在此固定。
 > Agent开发时以本文档为准，不得自行更改已定义的结构、命名、接口。
 > 未定义的细节可自行实现，但必须符合本文档的架构原则。
@@ -178,7 +179,7 @@ panoptes/
 │   │   │   ├── minister.go        # 部长事件
 │   │   │   └── game.go            # 游戏流程事件
 │   │   ├── engine/
-│   │   │   ├── pipeline.go        # Pipeline：串联System，统一Apply
+│   │   │   ├── unit_resolution_runner.go # 单位结算入口
 │   │   │   ├── combat/
 │   │   │   │   ├── single_step_resolver.go # SingleStepResolver 主入口
 │   │   │   │   ├── snapshot_phase.go       # 战斗快照阶段
@@ -590,7 +591,7 @@ message MsgGameOver {
 
 - `MsgPlanningStart`
 - `MsgPlanningSnapshot`
-- `MsgTurnSettlement`
+- `MsgGameSync`
 - `MsgGameOver`
 - 各类 planning 结果消息，如 `MsgResearchResult`、`MsgBuildStructureResult`、`MsgIssueUnitOrderResult`
 
@@ -1399,7 +1400,7 @@ Step 3：planning / resolving 主循环（Day 2下午～Day 3上午）
   - Turn Coordinator 推进 planning/resolving
   - Economy Runner + stages
   - TurnResolutionRunner 统一结算
-  - 推送 MsgPlanningStart / MsgPlanningSnapshot / MsgTurnSettlement
+  - 推送 MsgPlanningStart / MsgPlanningSnapshot / MsgGameSync
 
 Step 4：单位与战斗结算（Day 3下午～Day 4）
   - MsgIssueUnitOrder / MsgCancelUnitOrder 收集单位指令

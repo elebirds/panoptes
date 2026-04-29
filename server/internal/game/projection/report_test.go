@@ -12,13 +12,30 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
-func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
+type projectedEventPayload struct {
+	kind string
+	data map[string]string
+}
+
+func projectEventPayload(evt event.Event) projectedEventPayload {
+	kind, data := EventPayloadFromEvent(evt)
+	return projectedEventPayload{kind: kind, data: data}
+}
+
+func (p projectedEventPayload) GetType() string {
+	return p.kind
+}
+
+func (p projectedEventPayload) GetData() map[string]string {
+	return p.data
+}
+
+func TestEventPayloadFromEventMapsKnownEvents(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.UnitMovedEvent{
+	turnEvent := projectEventPayload(event.UnitMovedEvent{
 		UnitID: "unit-1",
 		From:   domain.Position{Q: 1, R: 2},
 		To:     domain.Position{Q: 3, R: 4},
@@ -35,10 +52,10 @@ func TestTurnEventFromEventMapsKnownEvents(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
+func TestEventPayloadFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.BuildingBuiltEvent{
+	turnEvent := projectEventPayload(event.BuildingBuiltEvent{
 		NodeID:       "A2",
 		BuildingType: "farm",
 		Owner:        "player-1",
@@ -54,10 +71,10 @@ func TestTurnEventFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
+func TestEventPayloadFromEventMapsBuildingStatusChanged(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.BuildingStatusChangedEvent{
+	turnEvent := projectEventPayload(event.BuildingStatusChangedEvent{
 		NodeID:       "C2",
 		Status:       "blocked",
 		Reason:       "insufficient_resources",
@@ -84,10 +101,10 @@ func TestTurnEventFromEventMapsBuildingStatusChanged(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsResearchTargetChangedEvent(t *testing.T) {
+func TestEventPayloadFromEventMapsResearchTargetChangedEvent(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.ResearchTargetChangedEvent{
+	turnEvent := projectEventPayload(event.ResearchTargetChangedEvent{
 		PlayerID:     "player-1",
 		TechnologyID: "agrarian_foundations",
 	})
@@ -103,10 +120,10 @@ func TestTurnEventFromEventMapsResearchTargetChangedEvent(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsPointBudgetEvents(t *testing.T) {
+func TestEventPayloadFromEventMapsPointBudgetEvents(t *testing.T) {
 	t.Parallel()
 
-	refreshed := TurnEventFromEvent(event.PointBudgetRefreshedEvent{
+	refreshed := projectEventPayload(event.PointBudgetRefreshedEvent{
 		PlayerID: "player-1",
 		Key:      domain.PointIndustryOutput,
 		Amount:   2,
@@ -118,7 +135,7 @@ func TestTurnEventFromEventMapsPointBudgetEvents(t *testing.T) {
 		t.Fatalf("point_key = %q, want industry_output", got)
 	}
 
-	spent := TurnEventFromEvent(event.PointSpentEvent{
+	spent := projectEventPayload(event.PointSpentEvent{
 		PlayerID: "player-1",
 		Key:      domain.PointIndustryOutput,
 		Amount:   1,
@@ -132,10 +149,10 @@ func TestTurnEventFromEventMapsPointBudgetEvents(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsRecipeSkippedEvent(t *testing.T) {
+func TestEventPayloadFromEventMapsRecipeSkippedEvent(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.RecipeSkippedEvent{
+	turnEvent := projectEventPayload(event.RecipeSkippedEvent{
 		NodeID:   "A1",
 		RecipeID: "farm_food",
 		Reason:   "building_disabled",
@@ -158,10 +175,10 @@ func TestTurnEventFromEventMapsRecipeSkippedEvent(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsRecipeProgressedBlockedReasonMessage(t *testing.T) {
+func TestEventPayloadFromEventMapsRecipeProgressedBlockedReasonMessage(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.RecipeProgressedEvent{
+	turnEvent := projectEventPayload(event.RecipeProgressedEvent{
 		NodeID:        "A1",
 		ProgressTurns: 1,
 		RequiredTurns: 3,
@@ -176,10 +193,10 @@ func TestTurnEventFromEventMapsRecipeProgressedBlockedReasonMessage(t *testing.T
 	}
 }
 
-func TestTurnEventFromEventMapsBuildSkippedReasonMessage(t *testing.T) {
+func TestEventPayloadFromEventMapsBuildSkippedReasonMessage(t *testing.T) {
 	t.Parallel()
 
-	turnEvent := TurnEventFromEvent(event.BuildSkippedEvent{
+	turnEvent := projectEventPayload(event.BuildSkippedEvent{
 		PlayerID:     "player-1",
 		NodeID:       "A2",
 		BuildingType: "farm",
@@ -194,10 +211,10 @@ func TestTurnEventFromEventMapsBuildSkippedReasonMessage(t *testing.T) {
 	}
 }
 
-func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
+func TestEventPayloadFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 	t.Parallel()
 
-	captured := TurnEventFromEvent(event.CityCapturedEvent{
+	captured := projectEventPayload(event.CityCapturedEvent{
 		NodeID:       "C3",
 		CityID:       "C3",
 		OldOwnerID:   "player-1",
@@ -211,7 +228,7 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 		t.Fatalf("city_captured online_on_turn = %q, want 5", got)
 	}
 
-	progressed := TurnEventFromEvent(event.FacilityTakeoverProgressedEvent{
+	progressed := projectEventPayload(event.FacilityTakeoverProgressedEvent{
 		NodeID:             "B2",
 		ControllerPlayerID: "player-2",
 		Progress:           1,
@@ -229,7 +246,7 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 		t.Fatalf("facility_takeover_progressed reason_message = %q, want localized reason message", got)
 	}
 
-	completed := TurnEventFromEvent(event.FacilityTakeoverCompletedEvent{
+	completed := projectEventPayload(event.FacilityTakeoverCompletedEvent{
 		NodeID:        "B2",
 		NewOwnerID:    "player-2",
 		ServiceCityID: "E5",
@@ -242,7 +259,7 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 		t.Fatalf("facility_takeover_completed online_on_turn = %q, want 6", got)
 	}
 
-	ruined := TurnEventFromEvent(event.BuildingRuinedEvent{
+	ruined := projectEventPayload(event.BuildingRuinedEvent{
 		NodeID:     "C2",
 		NewOwnerID: "player-2",
 		Reason:     "city_captured",
@@ -255,35 +272,35 @@ func TestTurnEventFromEventMapsChunk4LifecycleEvents(t *testing.T) {
 	}
 }
 
-func TestSettlementSectionsGroupsNonEmptyDomains(t *testing.T) {
+func TestDomainEventEnvelopesPreserveChannelOrder(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
 	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitDamagedEvent{UnitID: "unit-1", Damage: 2, HPAfter: 8, Source: "combat"})
 	collector.AppendDeferred(gameresolution.ChannelMap, event.CityFoundedEvent{PlayerID: "player-1", CityID: "B2", CenterNodeID: "B2"})
 	collector.AppendDeferred(gameresolution.ChannelEconomy, event.UpkeepPaidEvent{PlayerID: "player-1", FoodConsumed: 3})
-	sections := SettlementSections(collector)
+	events := DomainEventEnvelopes(collector, 2, domain.PhaseResolving.String())
 
-	if len(sections) != 3 {
-		t.Fatalf("sections len = %d, want 3", len(sections))
+	if len(events) != 3 {
+		t.Fatalf("events len = %d, want 3", len(events))
 	}
-	if sections[0].GetSection() != "unit" {
-		t.Fatalf("sections[0] = %q, want unit", sections[0].GetSection())
+	if events[0].GetChannel() != "unit" {
+		t.Fatalf("events[0].channel = %q, want unit", events[0].GetChannel())
 	}
-	if sections[1].GetSection() != "map" {
-		t.Fatalf("sections[1] = %q, want map", sections[1].GetSection())
+	if events[1].GetChannel() != "map" {
+		t.Fatalf("events[1].channel = %q, want map", events[1].GetChannel())
 	}
-	if sections[2].GetSection() != "economy" {
-		t.Fatalf("sections[2] = %q, want economy", sections[2].GetSection())
+	if events[2].GetChannel() != "economy" {
+		t.Fatalf("events[2].channel = %q, want economy", events[2].GetChannel())
 	}
 }
 
-func TestProjectTurnSettlementHandlesNilState(t *testing.T) {
+func TestProjectGameSyncHandlesNilState(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
 	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitDiedEvent{UnitID: "unit-1"})
-	msg := ProjectTurnSettlement(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	msg := ProjectGameSync(nil, "player-1", 5, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
 
 	if msg.GetTurn() != 5 {
 		t.Fatalf("turn = %d, want 5", msg.GetTurn())
@@ -294,12 +311,12 @@ func TestProjectTurnSettlementHandlesNilState(t *testing.T) {
 	if msg.GetNextPhase() != domain.PhasePlanning.String() {
 		t.Fatalf("next_phase = %q, want %q", msg.GetNextPhase(), domain.PhasePlanning.String())
 	}
-	if len(msg.GetSections()) != 1 {
-		t.Fatalf("sections len = %d, want 1", len(msg.GetSections()))
+	if len(msg.GetEvents()) != 1 {
+		t.Fatalf("events len = %d, want 1", len(msg.GetEvents()))
 	}
 }
 
-func TestProjectTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.T) {
+func TestProjectGameSyncKeepsPlanningAndEconomyChannelsSeparate(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
@@ -320,32 +337,19 @@ func TestProjectTurnSettlementMergesPlanningEventsIntoEconomySection(t *testing.
 		CenterNodeID: "B2",
 	})
 
-	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	msg := ProjectGameSync(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
 
-	if len(msg.GetSections()) != 2 {
-		t.Fatalf("sections len = %d, want 2", len(msg.GetSections()))
+	if len(msg.GetEvents()) != 3 {
+		t.Fatalf("events len = %d, want 3", len(msg.GetEvents()))
 	}
-	if msg.GetSections()[0].GetSection() != "map" && msg.GetSections()[1].GetSection() != "map" {
-		t.Fatalf("sections = %#v, want map section present", msg.GetSections())
+	if msg.GetEvents()[0].GetChannel() != "planning" || msg.GetEvents()[0].GetKind() != "national_policy_changed" {
+		t.Fatalf("events[0] = (%q,%q), want planning/national_policy_changed", msg.GetEvents()[0].GetChannel(), msg.GetEvents()[0].GetKind())
 	}
-	var economy *pb.SettlementSection
-	for _, section := range msg.GetSections() {
-		if section.GetSection() == "economy" {
-			economy = section
-			break
-		}
+	if msg.GetEvents()[1].GetChannel() != "map" || msg.GetEvents()[1].GetKind() != "city_founded" {
+		t.Fatalf("events[1] = (%q,%q), want map/city_founded", msg.GetEvents()[1].GetChannel(), msg.GetEvents()[1].GetKind())
 	}
-	if economy == nil {
-		t.Fatalf("economy section missing")
-	}
-	if len(economy.GetEvents()) != 2 {
-		t.Fatalf("economy events len = %d, want 2", len(economy.GetEvents()))
-	}
-	if economy.GetEvents()[0].GetType() != "national_policy_changed" {
-		t.Fatalf("economy first event = %q, want national_policy_changed", economy.GetEvents()[0].GetType())
-	}
-	if economy.GetEvents()[1].GetType() != "point_spent" {
-		t.Fatalf("economy second event = %q, want point_spent", economy.GetEvents()[1].GetType())
+	if msg.GetEvents()[2].GetChannel() != "economy" || msg.GetEvents()[2].GetKind() != "point_spent" {
+		t.Fatalf("events[2] = (%q,%q), want economy/point_spent", msg.GetEvents()[2].GetChannel(), msg.GetEvents()[2].GetKind())
 	}
 }
 
@@ -360,15 +364,15 @@ func TestProjectPlanningStartEventsMapsTechnologyActivationOnly(t *testing.T) {
 	if len(events) != 2 {
 		t.Fatalf("events len = %d, want 2", len(events))
 	}
-	if events[0].GetType() != "technology_activated" {
-		t.Fatalf("events[0].type = %q, want technology_activated", events[0].GetType())
+	if events[0].GetKind() != "technology_activated" {
+		t.Fatalf("events[0].kind = %q, want technology_activated", events[0].GetKind())
 	}
-	if events[1].GetType() != "technology_grant_applied" {
-		t.Fatalf("events[1].type = %q, want technology_grant_applied", events[1].GetType())
+	if events[1].GetKind() != "technology_grant_applied" {
+		t.Fatalf("events[1].kind = %q, want technology_grant_applied", events[1].GetKind())
 	}
 }
 
-func TestProjectTurnSettlementDoesNotContainPlanningStartActivationEvents(t *testing.T) {
+func TestProjectGameSyncDoesNotContainPlanningStartActivationEvents(t *testing.T) {
 	t.Parallel()
 
 	collector := gameresolution.NewCollector()
@@ -377,15 +381,11 @@ func TestProjectTurnSettlementDoesNotContainPlanningStartActivationEvents(t *tes
 		TechnologyID: "agrarian_foundations",
 	})
 
-	msg := ProjectTurnSettlement(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
-	if len(msg.GetSections()) != 1 {
-		t.Fatalf("sections len = %d, want 1", len(msg.GetSections()))
+	msg := ProjectGameSync(nil, "player-1", 2, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	if len(msg.GetEvents()) != 1 {
+		t.Fatalf("events len = %d, want 1", len(msg.GetEvents()))
 	}
-	economy := msg.GetSections()[0]
-	if len(economy.GetEvents()) != 1 {
-		t.Fatalf("economy events len = %d, want 1", len(economy.GetEvents()))
-	}
-	if got := economy.GetEvents()[0].GetType(); got != "technology_completed" {
-		t.Fatalf("economy events[0].type = %q, want technology_completed", got)
+	if got := msg.GetEvents()[0].GetKind(); got != "technology_completed" {
+		t.Fatalf("events[0].kind = %q, want technology_completed", got)
 	}
 }

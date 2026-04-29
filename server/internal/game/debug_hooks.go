@@ -10,7 +10,7 @@ import (
 
 type DebugHooks struct {
 	DumpStateSummary      func(state *domain.GameState)
-	RecordSettlement      func(roomID string, playerID string, msg *pb.MsgTurnSettlement)
+	RecordGameSync        func(roomID string, playerID string, msg *pb.MsgGameSync)
 	RecordGameOver        func(roomID string, msg *pb.MsgGameOver)
 	RecordOutgoingMessage func(roomID string, playerID string, msg proto.Message, meta *pb.EventMeta)
 }

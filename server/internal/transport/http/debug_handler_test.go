@@ -167,12 +167,12 @@ func TestDebugHandlerSubmitAdvancesSinglePlayerRoom(t *testing.T) {
 	}
 
 	waitForDebugHTTP(t, 3*time.Second, func() bool {
-		msg := fixture.recorder.LatestSettlement(fixture.room.ID, "player-1")
+		msg := fixture.recorder.LatestGameSync(fixture.room.ID, "player-1")
 		return msg != nil && msg.GetTurn() == 1
 	})
 }
 
-func TestDebugHandlerStepTurnReturnsLatestSettlement(t *testing.T) {
+func TestDebugHandlerStepTurnReturnsLatestGameSync(t *testing.T) {
 	fixture := newDebugHTTPFixture(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/dev/game/step-turn", bytes.NewBufferString(`{}`))
@@ -185,21 +185,21 @@ func TestDebugHandlerStepTurnReturnsLatestSettlement(t *testing.T) {
 	}
 
 	var body struct {
-		TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement"`
-		State          debug.StateSummary    `json:"state"`
+		GameSync *pb.MsgGameSync    `json:"game_sync"`
+		State    debug.StateSummary `json:"state"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.TurnSettlement == nil || body.TurnSettlement.GetTurn() != 1 {
-		t.Fatalf("turn settlement = %#v", body.TurnSettlement)
+	if body.GameSync == nil || body.GameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", body.GameSync)
 	}
 	if body.State.Turn != 2 || body.State.Phase != domain.PhasePlanning.String() {
 		t.Fatalf("state summary = %#v", body.State)
 	}
 }
 
-func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
+func TestDebugHandlerGetSettlementReturnsRecorderGameSync(t *testing.T) {
 	fixture := newDebugHTTPFixture(t)
 
 	stepReq := httptest.NewRequest(http.MethodPost, "/api/dev/game/step-turn", bytes.NewBufferString(`{}`))
@@ -220,13 +220,13 @@ func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
 	}
 
 	var body struct {
-		TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement"`
+		GameSync *pb.MsgGameSync `json:"game_sync"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.TurnSettlement == nil || body.TurnSettlement.GetTurn() != 1 {
-		t.Fatalf("turn settlement = %#v", body.TurnSettlement)
+	if body.GameSync == nil || body.GameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", body.GameSync)
 	}
 }
 
@@ -334,7 +334,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	})
 	game.SetDebugHooks(game.DebugHooks{
 		DumpStateSummary:      debug.DumpGameStateSummary,
-		RecordSettlement:      recorder.RecordSettlement,
+		RecordGameSync:        recorder.RecordGameSync,
 		RecordGameOver:        recorder.RecordGameOver,
 		RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 	})
@@ -433,7 +433,7 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 	})
 	game.SetDebugHooks(game.DebugHooks{
 		DumpStateSummary:      debug.DumpGameStateSummary,
-		RecordSettlement:      recorder.RecordSettlement,
+		RecordGameSync:        recorder.RecordGameSync,
 		RecordGameOver:        recorder.RecordGameOver,
 		RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 	})

@@ -8,19 +8,19 @@ import (
 )
 
 type SettlementRecorder struct {
-	mu          sync.RWMutex
-	settlements map[string]map[string]*pb.MsgTurnSettlement
-	gameOvers   map[string]*pb.MsgGameOver
+	mu        sync.RWMutex
+	gameSyncs map[string]map[string]*pb.MsgGameSync
+	gameOvers map[string]*pb.MsgGameOver
 }
 
 func NewSettlementRecorder() *SettlementRecorder {
 	return &SettlementRecorder{
-		settlements: make(map[string]map[string]*pb.MsgTurnSettlement),
-		gameOvers:   make(map[string]*pb.MsgGameOver),
+		gameSyncs: make(map[string]map[string]*pb.MsgGameSync),
+		gameOvers: make(map[string]*pb.MsgGameOver),
 	}
 }
 
-func (r *SettlementRecorder) RecordSettlement(roomID string, playerID string, msg *pb.MsgTurnSettlement) {
+func (r *SettlementRecorder) RecordGameSync(roomID string, playerID string, msg *pb.MsgGameSync) {
 	if r == nil || roomID == "" || playerID == "" || msg == nil {
 		return
 	}
@@ -28,13 +28,13 @@ func (r *SettlementRecorder) RecordSettlement(roomID string, playerID string, ms
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.settlements[roomID] == nil {
-		r.settlements[roomID] = make(map[string]*pb.MsgTurnSettlement)
+	if r.gameSyncs[roomID] == nil {
+		r.gameSyncs[roomID] = make(map[string]*pb.MsgGameSync)
 	}
-	r.settlements[roomID][playerID] = proto.Clone(msg).(*pb.MsgTurnSettlement)
+	r.gameSyncs[roomID][playerID] = proto.Clone(msg).(*pb.MsgGameSync)
 }
 
-func (r *SettlementRecorder) LatestSettlement(roomID string, playerID string) *pb.MsgTurnSettlement {
+func (r *SettlementRecorder) LatestGameSync(roomID string, playerID string) *pb.MsgGameSync {
 	if r == nil || roomID == "" || playerID == "" {
 		return nil
 	}
@@ -42,11 +42,11 @@ func (r *SettlementRecorder) LatestSettlement(roomID string, playerID string) *p
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	msg := r.settlements[roomID][playerID]
+	msg := r.gameSyncs[roomID][playerID]
 	if msg == nil {
 		return nil
 	}
-	return proto.Clone(msg).(*pb.MsgTurnSettlement)
+	return proto.Clone(msg).(*pb.MsgGameSync)
 }
 
 func (r *SettlementRecorder) RecordGameOver(roomID string, msg *pb.MsgGameOver) {

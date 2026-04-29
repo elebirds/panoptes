@@ -1,6 +1,6 @@
 # Panoptes 服务端运行时与规则现状说明
 
-> 更新时间：2026-04-16  
+> 更新时间：2026-04-29
 > 适用范围：当前仓库服务端真实实现  
 > 本文描述“代码现在是如何工作的”，不是目标设计稿，也不是历史方案。若本文与 `server/internal/*` 当前实现不一致，应以代码为准，并尽快回写本文。
 >
@@ -28,8 +28,8 @@ Panoptes 当前服务端已经切到统一的 `planning / resolving` 回合模�
 2. 向玩家发送 `MsgPlanningStart` 与当前 planning snapshot。
 3. 在 planning 阶段收集草案输入。
 4. 所有玩家提交或超时后进入 `resolving`。
-5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、建筑生命周期、经济结算。
-6. 生成 `MsgTurnSettlement`，并把新的权威状态投影为 `PlayerView / NodeView / UnitView`。
+5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `game/resolution.TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、建筑生命周期、经济结算。
+6. 生成 `MsgGameSync`，把 resolving 事件流与新的权威状态投影为 `PlayerView / NodeView / UnitView`。
 7. 若未终局，则推进到下一回合的 planning。
 
 ```mermaid
@@ -44,7 +44,7 @@ flowchart LR
     H --> I["MapActionStage"]
     I --> J["BuildingStage"]
     J --> K["EconomyStage"]
-    K --> L["BuildTurnSettlement"]
+    K --> L["BuildGameSync"]
     L --> M["checkGameOver / turn++"]
 ```
 
@@ -201,7 +201,7 @@ flowchart LR
 
 ### 4.3 Resolving 总入口
 
-统一结算入口在 `server/internal/game/settlement.go` 的 `RunTurnResolution()`，其内部已经改为调用 `TurnResolutionRunner`。
+统一结算入口在 `server/internal/game/settlement.go` 的 `RunTurnResolution()`，其内部已经改为调用 `server/internal/game/resolution` 包内的 `TurnResolutionRunner`。`game` 包只通过 hooks 提供 planning lock-in、order freeze、active march refresh 与 map action event collection，不再持有 resolving runner 的 stage 实现。
 
 当前固定顺序是：
 
@@ -211,7 +211,7 @@ flowchart LR
 4. `MapActionStage`
 5. `BuildingStage`
 6. `EconomyStage`
-7. `broadcastTurnSettlement()`
+7. `broadcastGameSync()`
 8. `checkGameOver()`
 9. 清理本回合 planning / resolving 临时数据
 
@@ -980,17 +980,14 @@ stateDiagram-v2
 - `takeover_progress / takeover_required`
 - 当前选中 recipe 与 operation 进度
 
-### 12.3 TurnSettlement
+### 12.3 GameSync
 
-`ProjectTurnSettlement()` 会把结果按三段分组：
+`ProjectGameSync()` 会把 resolving 结果投影为统一同步消息，包含：
 
-- `unit`
-- `map`
-- `economy`
-
-并附带：
-
-- `Nodes`
+- `turn / phase / next_phase`
+- 按玩家视野过滤后的 `nodes / units / my_player`
+- `DomainEventEnvelope` 事件流：每条事件都有 `event_id / turn / phase / channel / source / kind / data`，核心事件额外进入 typed oneof
+- planning 阶段可附带 `snapshot` 与 typed minister proposals
 - `Units`
 - `MyPlayerAfter`
 

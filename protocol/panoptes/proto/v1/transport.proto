@@ -11,7 +11,6 @@ import "panoptes/proto/v1/game_state.proto";
 import "panoptes/proto/v1/lobby.proto";
 import "panoptes/proto/v1/minister.proto";
 import "panoptes/proto/v1/orders.proto";
-import "panoptes/proto/v1/settlement.proto";
 import "panoptes/proto/v1/turn.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
@@ -86,6 +85,7 @@ message GameCommand {
     PlanningCommand planning = 1;
     MsgStaticCatalogSyncRequest static_catalog_sync_request = 2;
     ChatCommand chat = 3;
+    MsgGameCommandBatch command_batch = 4;
   }
 }
 
@@ -132,7 +132,6 @@ message GameEvent {
     MsgSetBuildingRecipeResult set_building_recipe_result = 11;
     MsgBuildStructureResult build_structure_result = 12;
     MsgTurnReport turn_report = 13;
-    MsgTurnSettlement turn_settlement = 14;
     MsgGameOver game_over = 15;
     MsgMinisterReportChunk minister_report_chunk = 16;
     MsgMinisterMetrics minister_metrics = 17;
@@ -145,6 +144,8 @@ message GameEvent {
     MsgSetBuildingRecipePreviewResponse set_building_recipe_preview_response = 24;
     MsgGameChatPosted game_chat_posted = 25;
     MsgGameChatSync game_chat_sync = 26;
+    MsgCommandAck command_ack = 27;
+    MsgGameSync game_sync = 28;
   }
 }
 

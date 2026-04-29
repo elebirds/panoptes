@@ -2,27 +2,66 @@ syntax = "proto3";
 
 package panoptes.proto.v1;
 
-import "panoptes/proto/v1/game_state.proto";
-
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
 option csharp_namespace = "Panoptes.Protocol.V1";
 
-message TurnEvent {
-  string type = 1;
-  map<string, string> data = 2;
-}
-
-message SettlementSection {
-  string section = 1;
-  repeated TurnEvent events = 2;
-}
-
-message MsgTurnSettlement {
-  repeated SettlementSection sections = 1;
+message DomainEventEnvelope {
+  string event_id = 1;
   int32 turn = 2;
   string phase = 3;
-  string next_phase = 4;
-  repeated NodeView nodes = 5;
-  repeated UnitView units = 6;
-  PlayerView my_player_after = 7;
+  string channel = 4;
+  string source = 5;
+  string kind = 6;
+  map<string, string> data = 7;
+
+  oneof event {
+    DomainResearchTargetChangedEvent research_target_changed = 11;
+    DomainPolicyChangedEvent policy_changed = 12;
+    DomainTechnologyCompletedEvent technology_completed = 13;
+    DomainTechnologyActivatedEvent technology_activated = 14;
+    DomainUnitMovedEvent unit_moved = 15;
+    DomainCityFoundedEvent city_founded = 16;
+    DomainBuildingBuiltEvent building_built = 17;
+  }
+}
+
+message DomainResearchTargetChangedEvent {
+  string player_id = 1;
+  string technology_id = 2;
+}
+
+message DomainPolicyChangedEvent {
+  string player_id = 1;
+  string old_policy = 2;
+  string new_policy = 3;
+}
+
+message DomainTechnologyCompletedEvent {
+  string player_id = 1;
+  string technology_id = 2;
+}
+
+message DomainTechnologyActivatedEvent {
+  string player_id = 1;
+  string technology_id = 2;
+}
+
+message DomainUnitMovedEvent {
+  string unit_id = 1;
+  string from_node_id = 2;
+  string to_node_id = 3;
+}
+
+message DomainCityFoundedEvent {
+  string player_id = 1;
+  string unit_id = 2;
+  string city_id = 3;
+  string center_node_id = 4;
+}
+
+message DomainBuildingBuiltEvent {
+  string node_id = 1;
+  string building_type_id = 2;
+  string owner = 3;
+  string city_id = 4;
 }

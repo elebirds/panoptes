@@ -37,17 +37,17 @@ func TestHarnessIndustryBudgetExhaustion_RecordsBudgetAndSkip(t *testing.T) {
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}
 
-	record, err := h.WaitSettlement("player-1", 1, 3*time.Second)
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement() error = %v", err)
+		t.Fatalf("WaitGameSync() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "point_budget_refreshed") {
+	if !hasTurnEvent(record.GameSync, "economy", "point_budget_refreshed") {
 		t.Fatalf("missing point_budget_refreshed event")
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "point_spent") {
+	if !hasTurnEvent(record.GameSync, "economy", "point_spent") {
 		t.Fatalf("missing point_spent event")
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "building_skipped") {
+	if !hasTurnEvent(record.GameSync, "economy", "building_skipped") {
 		t.Fatalf("missing building_skipped event")
 	}
 	if _, ok := record.Summary.Buildings["A2"]; !ok {
@@ -58,7 +58,7 @@ func TestHarnessIndustryBudgetExhaustion_RecordsBudgetAndSkip(t *testing.T) {
 	}
 }
 
-func TestHarnessSettlementBuildRevalidation_ReportsSkippedBuild(t *testing.T) {
+func TestHarnessGameSyncBuildRevalidation_ReportsSkippedBuild(t *testing.T) {
 	def, err := scenario.IndustryBudgetExhaustion()
 	if err != nil {
 		t.Fatalf("scenario build error = %v", err)
@@ -93,19 +93,19 @@ func TestHarnessSettlementBuildRevalidation_ReportsSkippedBuild(t *testing.T) {
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}
 
-	record, err := h.WaitSettlement("player-1", 1, 3*time.Second)
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement() error = %v", err)
+		t.Fatalf("WaitGameSync() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "building_skipped") {
+	if !hasTurnEvent(record.GameSync, "economy", "building_skipped") {
 		t.Fatalf("missing building_skipped event")
 	}
 	if _, ok := record.Summary.Buildings["A2"]; ok {
-		t.Fatalf("build should not survive settlement revalidation")
+		t.Fatalf("build should not survive game sync revalidation")
 	}
 }
 
-func TestHarnessPointPreviewRemainsEffectiveOutputAfterSettlement(t *testing.T) {
+func TestHarnessPointPreviewRemainsEffectiveOutputAfterGameSync(t *testing.T) {
 	def, err := scenario.BuildingModifierPointPreview()
 	if err != nil {
 		t.Fatalf("scenario build error = %v", err)
@@ -125,12 +125,12 @@ func TestHarnessPointPreviewRemainsEffectiveOutputAfterSettlement(t *testing.T) 
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}
 
-	record, err := h.WaitSettlement("player-1", 1, 3*time.Second)
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement() error = %v", err)
+		t.Fatalf("WaitGameSync() error = %v", err)
 	}
-	if got := pointAmount(record.Settlement.GetMyPlayerAfter(), "industry_output"); got != 3 {
-		t.Fatalf("industry_output preview after settlement = %d, want 3", got)
+	if got := pointAmount(record.GameSync.GetMyPlayer(), "industry_output"); got != 3 {
+		t.Fatalf("industry_output preview after game sync = %d, want 3", got)
 	}
 }
 
@@ -154,11 +154,11 @@ func TestHarnessDisabledRecipeReportsRecipeSkipped(t *testing.T) {
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}
 
-	record, err := h.WaitSettlement("player-1", 1, 3*time.Second)
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement() error = %v", err)
+		t.Fatalf("WaitGameSync() error = %v", err)
 	}
-	if !hasTurnEvent(record.Settlement, "economy", "recipe_skipped") {
+	if !hasTurnEvent(record.GameSync, "economy", "recipe_skipped") {
 		t.Fatalf("missing recipe_skipped event")
 	}
 }

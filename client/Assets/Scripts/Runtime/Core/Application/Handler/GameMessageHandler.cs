@@ -37,7 +37,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
             dispatcher.Register<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
-            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
@@ -67,7 +67,7 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Unregister<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
             dispatcher.Unregister<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
-            dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Unregister<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
@@ -133,7 +133,7 @@ namespace Panoptes.Core.Application.Handler
             }
         }
 
-        private static void OnTurnSettlement(MsgTurnSettlement msg)
+        private static void OnGameSync(MsgGameSync msg)
         {
             if (msg == null)
             {
@@ -141,17 +141,17 @@ namespace Panoptes.Core.Application.Handler
             }
 
             EnsureSettlementPlaybackController();
-            GameStateCache.Instance?.ApplyTurnSettlement(msg);
-            Debug.Log($"[Game] 回合结算 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} sections={msg.Sections.Count}");
-            for (var i = 0; i < msg.Sections.Count; i++)
+            GameStateCache.Instance?.ApplyGameSync(msg);
+            Debug.Log($"[Game] 游戏同步 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} events={msg.Events.Count}");
+            for (var i = 0; i < msg.Events.Count; i++)
             {
-                var section = msg.Sections[i];
-                if (section == null)
+                var evt = msg.Events[i];
+                if (evt == null)
                 {
                     continue;
                 }
 
-                Debug.Log($"  section={section.Section} events={section.Events.Count}");
+                Debug.Log($"  event={evt.Kind} channel={evt.Channel}");
             }
 
             // Combat diagnostics: quickly surface whether structure damage actually arrived from server.
@@ -185,7 +185,7 @@ namespace Panoptes.Core.Application.Handler
                         continue;
                     }
 
-                    Debug.Log($"[Game][SettlementEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
+                    Debug.Log($"[Game][SyncEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
                 }
             }
         }

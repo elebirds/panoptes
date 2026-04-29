@@ -22,7 +22,7 @@ type Harness struct {
 type TurnRecord struct {
 	Turn          int
 	PlanningStart *pb.MsgPlanningStart
-	Settlement    *pb.MsgTurnSettlement
+	GameSync      *pb.MsgGameSync
 	GameOver      *pb.MsgGameOver
 	Summary       StateSummary
 }
@@ -129,14 +129,14 @@ func (h *Harness) WaitPlanningStart(playerID string, turn int, timeout time.Dura
 	return nil, fmt.Errorf("planning start turn=%d not received within %s", turn, timeout)
 }
 
-func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
+func (h *Harness) WaitGameSync(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		msgs := h.transport.Snapshot(playerID)
-		settlement := latestMessage[*pb.MsgTurnSettlement](msgs, func(msg *pb.MsgTurnSettlement) bool {
+		syncMsg := latestMessage[*pb.MsgGameSync](msgs, func(msg *pb.MsgGameSync) bool {
 			return int(msg.GetTurn()) == turn
 		})
-		if settlement == nil {
+		if syncMsg == nil {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
@@ -144,7 +144,7 @@ func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duratio
 		record := &TurnRecord{
 			Turn:          turn,
 			PlanningStart: latestMessage[*pb.MsgPlanningStart](msgs, func(msg *pb.MsgPlanningStart) bool { return int(msg.GetTurn()) == turn }),
-			Settlement:    settlement,
+			GameSync:      syncMsg,
 			Summary:       BuildStateSummary(h.room.State()),
 		}
 		if record.Summary.IsOver {
@@ -156,7 +156,11 @@ func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duratio
 		}
 		return record, nil
 	}
-	return nil, fmt.Errorf("settlement turn=%d not received within %s", turn, timeout)
+	return nil, fmt.Errorf("game sync turn=%d not received within %s", turn, timeout)
+}
+
+func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
+	return h.WaitGameSync(playerID, turn, timeout)
 }
 
 func (h *Harness) Messages(playerID string) []proto.Message {

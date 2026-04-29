@@ -16,6 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
@@ -324,7 +325,7 @@ func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
 	return state.GetNode(nodeID)
 }
 
-func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) {
+func (r *GameRoom) broadcastGameSync(collector *gameresolution.Collector) {
 	state := r.State()
 	if state == nil {
 		return
@@ -335,18 +336,19 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 		nextPhase = ""
 	}
 	for _, participantID := range r.HumanParticipantIDs() {
-		msg := gameprojection.ProjectTurnSettlementFromObservation(
+		observation := r.runtime.BuildObservation(participantID)
+		syncMsg := gameprojection.ProjectGameSyncFromObservation(
 			state,
-			r.runtime.BuildObservation(participantID),
+			observation,
 			int32(state.Turn),
 			domain.PhaseResolving.String(),
 			nextPhase,
 			collector,
 		)
-		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
-			hooks.RecordSettlement(r.ID, participantID, msg)
+		_ = r.SendToPlayer(context.Background(), participantID, syncMsg)
+		if hooks := currentDebugHooks(); hooks.RecordGameSync != nil {
+			hooks.RecordGameSync(r.ID, participantID, syncMsg)
 		}
-		_ = r.SendToPlayer(context.Background(), participantID, msg)
 	}
 }
 
@@ -410,9 +412,7 @@ func (r *GameRoom) handleDraw() {
 	if state == nil {
 		return
 	}
-	state.IsOver = true
-	state.WinnerID = ""
-	state.OverReason = "timeout_draw"
+	event.GameOverEvent{Reason: "timeout_draw"}.Apply(state.World, state)
 	msg := &pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"}
 	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
 		hooks.RecordGameOver(r.ID, msg)
@@ -435,9 +435,7 @@ func (r *GameRoom) forfeitDisconnectedPlayer(playerID string) bool {
 		return false
 	}
 
-	state.IsOver = true
-	state.WinnerID = winnerID
-	state.OverReason = "player_disconnected"
+	event.GameOverEvent{WinnerID: winnerID, Reason: "player_disconnected"}.Apply(state.World, state)
 	msg := &pb.MsgGameOver{WinnerId: winnerID, Reason: "player_disconnected"}
 	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
 		hooks.RecordGameOver(r.ID, msg)

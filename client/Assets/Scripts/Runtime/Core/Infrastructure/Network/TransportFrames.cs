@@ -263,7 +263,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.SetBuildingRecipeResult => evt.SetBuildingRecipeResult,
                 GameEvent.BodyOneofCase.BuildStructureResult => evt.BuildStructureResult,
                 GameEvent.BodyOneofCase.TurnReport => evt.TurnReport,
-                GameEvent.BodyOneofCase.TurnSettlement => evt.TurnSettlement,
+                GameEvent.BodyOneofCase.GameSync => evt.GameSync,
                 GameEvent.BodyOneofCase.GameOver => evt.GameOver,
                 GameEvent.BodyOneofCase.MinisterReportChunk => evt.MinisterReportChunk,
                 GameEvent.BodyOneofCase.MinisterMetrics => evt.MinisterMetrics,

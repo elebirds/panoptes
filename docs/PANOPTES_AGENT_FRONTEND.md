@@ -352,7 +352,7 @@ MsgSetBuildingRecipeResult
 MsgBuildStructureResult
 MsgIssueUnitOrderResult
 MsgTurnReport
-MsgTurnSettlement
+MsgGameSync
 MsgMinisterReportChunk
 MsgMinisterMetrics
 MsgGameChatPosted
@@ -506,8 +506,8 @@ void Awake()
 	    "MsgPlanningStart", OnPlanningStart);
 	MessageDispatcher.Instance.Register<MsgPlanningSnapshot>(
 	    "MsgPlanningSnapshot", OnPlanningSnapshot);
-	MessageDispatcher.Instance.Register<MsgTurnSettlement>(
-	    "MsgTurnSettlement", OnTurnSettlement);
+	MessageDispatcher.Instance.Register<MsgGameSync>(
+	    "MsgGameSync", OnGameSync);
 	// ...
 }
 ```
@@ -546,7 +546,7 @@ public class GameStateCache : MonoBehaviour
     internal void ApplyGameInit(MsgGameInit msg);
     internal void ApplyPlanningStart(MsgPlanningStart msg);
     internal void ApplyPlanningSnapshot(MsgPlanningSnapshot msg);
-    internal void ApplyTurnSettlement(MsgTurnSettlement msg);
+    internal void ApplyGameSync(MsgGameSync msg);
     internal void UpdateTokens(int tokensLeft);
     internal void UpdateNodeView(NodeView node);
 }
@@ -790,10 +790,10 @@ internal void ApplyGameInit(MsgGameInit msg)
 }
 ```
 
-### 结算更新（MsgTurnSettlement）
+### 同步更新（MsgGameSync）
 
 ```csharp
-internal void ApplyTurnSettlement(MsgTurnSettlement msg)
+internal void ApplyGameSync(MsgGameSync msg)
 {
     Turn = msg.Turn;
     Phase = msg.Phase;
@@ -806,7 +806,7 @@ internal void ApplyTurnSettlement(MsgTurnSettlement msg)
     foreach (var unit in msg.Units)
         _units[unit.Id] = unit;
 
-    // 结算动画和时间线消费 msg.Sections / TurnEvent，再刷新地图表现。
+    // 结算动画和时间线消费 msg.Events / DomainEventEnvelope，再刷新地图表现。
     MapRenderer.Instance.RebuildMap();
 }
 ```
@@ -817,18 +817,18 @@ internal void ApplyTurnSettlement(MsgTurnSettlement msg)
 
 ### AnimationQueue.cs
 
-统一结算后，服务端推送 `MsgTurnSettlement`。客户端按 section 中的 `TurnEvent` 顺序播放移动、伤害、建筑、科技和胜负表现。
+统一结算后，服务端推送 `MsgGameSync`。客户端按 `DomainEventEnvelope.channel/kind/data` 顺序播放移动、伤害、建筑、科技和胜负表现。
 
 ```csharp
 public class AnimationQueue : MonoBehaviour
 {
     public static AnimationQueue Instance { get; private set; }
 
-    private Queue<TurnEvent> _queue = new();
+    private Queue<DomainEventEnvelope> _queue = new();
     private bool _isPlaying = false;
 
-    // 收到 MsgTurnSettlement 时调用
-    public void Enqueue(IList<TurnEvent> events)
+    // 收到 MsgGameSync 时调用
+    public void Enqueue(IList<DomainEventEnvelope> events)
     {
         foreach (var e in events)
             _queue.Enqueue(e);
@@ -943,7 +943,7 @@ Step 4：规划 UI（Day 3）
   - MsgMinisterReportChunk：流式文字显示
   - MsgMinisterMetrics：数值轨显示
   - MsgPlanningSnapshot：更新草稿显示
-  - MsgTurnSettlement：更新缓存，刷新格子
+  - MsgGameSync：更新缓存，刷新格子
   - SubmitButton和倒计时
 
 Step 5：结算动画（Day 4～5）
@@ -951,7 +951,7 @@ Step 5：结算动画（Day 4～5）
   - UnitMoveAnim（线性插值移动）
   - CombatAnim（简单震动+闪红）
   - CastleDamageAnim（血条减少动画）
-  - MsgTurnSettlement：队列播放，完成后更新缓存
+  - MsgGameSync：队列播放，完成后更新缓存
 
 Step 6：联调和打磨（Day 6～7）
   - 和服务端全流程联调
