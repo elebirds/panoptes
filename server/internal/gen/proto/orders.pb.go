@@ -721,6 +721,400 @@ func (*MsgSubmitTurn) Descriptor() ([]byte, []int) {
 	return file_panoptes_proto_v1_orders_proto_rawDescGZIP(), []int{12}
 }
 
+type CommandEnvelope struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommandId     string                 `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+	ParticipantId string                 `protobuf:"bytes,2,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
+	Source        string                 `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	Turn          int32                  `protobuf:"varint,4,opt,name=turn,proto3" json:"turn,omitempty"`
+	// Types that are valid to be assigned to Body:
+	//
+	//	*CommandEnvelope_SetPolicy
+	//	*CommandEnvelope_SetInstitutionLoadout
+	//	*CommandEnvelope_SetResearchTarget
+	//	*CommandEnvelope_SetBuildingRecipe
+	//	*CommandEnvelope_BuildStructure
+	//	*CommandEnvelope_RevealNode
+	//	*CommandEnvelope_SetWarZone
+	//	*CommandEnvelope_WarZoneDirective
+	//	*CommandEnvelope_SetMinisterDirective
+	//	*CommandEnvelope_IssueUnitOrder
+	//	*CommandEnvelope_CancelUnitOrder
+	//	*CommandEnvelope_SubmitTurn
+	Body          isCommandEnvelope_Body `protobuf_oneof:"body"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CommandEnvelope) Reset() {
+	*x = CommandEnvelope{}
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CommandEnvelope) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommandEnvelope) ProtoMessage() {}
+
+func (x *CommandEnvelope) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommandEnvelope.ProtoReflect.Descriptor instead.
+func (*CommandEnvelope) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_orders_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CommandEnvelope) GetCommandId() string {
+	if x != nil {
+		return x.CommandId
+	}
+	return ""
+}
+
+func (x *CommandEnvelope) GetParticipantId() string {
+	if x != nil {
+		return x.ParticipantId
+	}
+	return ""
+}
+
+func (x *CommandEnvelope) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *CommandEnvelope) GetTurn() int32 {
+	if x != nil {
+		return x.Turn
+	}
+	return 0
+}
+
+func (x *CommandEnvelope) GetBody() isCommandEnvelope_Body {
+	if x != nil {
+		return x.Body
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetPolicy() *MsgSetPolicy {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetPolicy); ok {
+			return x.SetPolicy
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetInstitutionLoadout() *MsgSetInstitutionLoadout {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetInstitutionLoadout); ok {
+			return x.SetInstitutionLoadout
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetResearchTarget() *MsgSetResearchTarget {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetResearchTarget); ok {
+			return x.SetResearchTarget
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetBuildingRecipe() *MsgSetBuildingRecipe {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetBuildingRecipe); ok {
+			return x.SetBuildingRecipe
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetBuildStructure() *MsgBuildStructure {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_BuildStructure); ok {
+			return x.BuildStructure
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetRevealNode() *MsgRevealNode {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_RevealNode); ok {
+			return x.RevealNode
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetWarZone() *MsgSetWarZone {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetWarZone); ok {
+			return x.SetWarZone
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetWarZoneDirective() *MsgWarZoneDirective {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_WarZoneDirective); ok {
+			return x.WarZoneDirective
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSetMinisterDirective() *MsgSetMinisterDirective {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SetMinisterDirective); ok {
+			return x.SetMinisterDirective
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetIssueUnitOrder() *MsgIssueUnitOrder {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_IssueUnitOrder); ok {
+			return x.IssueUnitOrder
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetCancelUnitOrder() *MsgCancelUnitOrder {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_CancelUnitOrder); ok {
+			return x.CancelUnitOrder
+		}
+	}
+	return nil
+}
+
+func (x *CommandEnvelope) GetSubmitTurn() *MsgSubmitTurn {
+	if x != nil {
+		if x, ok := x.Body.(*CommandEnvelope_SubmitTurn); ok {
+			return x.SubmitTurn
+		}
+	}
+	return nil
+}
+
+type isCommandEnvelope_Body interface {
+	isCommandEnvelope_Body()
+}
+
+type CommandEnvelope_SetPolicy struct {
+	SetPolicy *MsgSetPolicy `protobuf:"bytes,10,opt,name=set_policy,json=setPolicy,proto3,oneof"`
+}
+
+type CommandEnvelope_SetInstitutionLoadout struct {
+	SetInstitutionLoadout *MsgSetInstitutionLoadout `protobuf:"bytes,11,opt,name=set_institution_loadout,json=setInstitutionLoadout,proto3,oneof"`
+}
+
+type CommandEnvelope_SetResearchTarget struct {
+	SetResearchTarget *MsgSetResearchTarget `protobuf:"bytes,12,opt,name=set_research_target,json=setResearchTarget,proto3,oneof"`
+}
+
+type CommandEnvelope_SetBuildingRecipe struct {
+	SetBuildingRecipe *MsgSetBuildingRecipe `protobuf:"bytes,13,opt,name=set_building_recipe,json=setBuildingRecipe,proto3,oneof"`
+}
+
+type CommandEnvelope_BuildStructure struct {
+	BuildStructure *MsgBuildStructure `protobuf:"bytes,14,opt,name=build_structure,json=buildStructure,proto3,oneof"`
+}
+
+type CommandEnvelope_RevealNode struct {
+	RevealNode *MsgRevealNode `protobuf:"bytes,15,opt,name=reveal_node,json=revealNode,proto3,oneof"`
+}
+
+type CommandEnvelope_SetWarZone struct {
+	SetWarZone *MsgSetWarZone `protobuf:"bytes,16,opt,name=set_war_zone,json=setWarZone,proto3,oneof"`
+}
+
+type CommandEnvelope_WarZoneDirective struct {
+	WarZoneDirective *MsgWarZoneDirective `protobuf:"bytes,17,opt,name=war_zone_directive,json=warZoneDirective,proto3,oneof"`
+}
+
+type CommandEnvelope_SetMinisterDirective struct {
+	SetMinisterDirective *MsgSetMinisterDirective `protobuf:"bytes,18,opt,name=set_minister_directive,json=setMinisterDirective,proto3,oneof"`
+}
+
+type CommandEnvelope_IssueUnitOrder struct {
+	IssueUnitOrder *MsgIssueUnitOrder `protobuf:"bytes,19,opt,name=issue_unit_order,json=issueUnitOrder,proto3,oneof"`
+}
+
+type CommandEnvelope_CancelUnitOrder struct {
+	CancelUnitOrder *MsgCancelUnitOrder `protobuf:"bytes,20,opt,name=cancel_unit_order,json=cancelUnitOrder,proto3,oneof"`
+}
+
+type CommandEnvelope_SubmitTurn struct {
+	SubmitTurn *MsgSubmitTurn `protobuf:"bytes,21,opt,name=submit_turn,json=submitTurn,proto3,oneof"`
+}
+
+func (*CommandEnvelope_SetPolicy) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SetInstitutionLoadout) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SetResearchTarget) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SetBuildingRecipe) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_BuildStructure) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_RevealNode) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SetWarZone) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_WarZoneDirective) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SetMinisterDirective) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_IssueUnitOrder) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_CancelUnitOrder) isCommandEnvelope_Body() {}
+
+func (*CommandEnvelope_SubmitTurn) isCommandEnvelope_Body() {}
+
+type MsgGameCommandBatch struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Commands      []*CommandEnvelope     `protobuf:"bytes,1,rep,name=commands,proto3" json:"commands,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgGameCommandBatch) Reset() {
+	*x = MsgGameCommandBatch{}
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgGameCommandBatch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgGameCommandBatch) ProtoMessage() {}
+
+func (x *MsgGameCommandBatch) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgGameCommandBatch.ProtoReflect.Descriptor instead.
+func (*MsgGameCommandBatch) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_orders_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *MsgGameCommandBatch) GetCommands() []*CommandEnvelope {
+	if x != nil {
+		return x.Commands
+	}
+	return nil
+}
+
+type MsgCommandAck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CommandId     string                 `protobuf:"bytes,1,opt,name=command_id,json=commandId,proto3" json:"command_id,omitempty"`
+	Accepted      bool                   `protobuf:"varint,2,opt,name=accepted,proto3" json:"accepted,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	Source        string                 `protobuf:"bytes,4,opt,name=source,proto3" json:"source,omitempty"`
+	Turn          int32                  `protobuf:"varint,5,opt,name=turn,proto3" json:"turn,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MsgCommandAck) Reset() {
+	*x = MsgCommandAck{}
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MsgCommandAck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCommandAck) ProtoMessage() {}
+
+func (x *MsgCommandAck) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_orders_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MsgCommandAck.ProtoReflect.Descriptor instead.
+func (*MsgCommandAck) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_orders_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *MsgCommandAck) GetCommandId() string {
+	if x != nil {
+		return x.CommandId
+	}
+	return ""
+}
+
+func (x *MsgCommandAck) GetAccepted() bool {
+	if x != nil {
+		return x.Accepted
+	}
+	return false
+}
+
+func (x *MsgCommandAck) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *MsgCommandAck) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *MsgCommandAck) GetTurn() int32 {
+	if x != nil {
+		return x.Turn
+	}
+	return 0
+}
+
 var File_panoptes_proto_v1_orders_proto protoreflect.FileDescriptor
 
 const file_panoptes_proto_v1_orders_proto_rawDesc = "" +
@@ -773,7 +1167,41 @@ const file_panoptes_proto_v1_orders_proto_rawDesc = "" +
 	"\x06action\x18\x03 \x01(\tR\x06action\x12$\n" +
 	"\x0etarget_node_id\x18\x04 \x01(\tR\ftargetNodeId\x12*\n" +
 	"\x11secondary_node_id\x18\x05 \x01(\tR\x0fsecondaryNodeId\"\x0f\n" +
-	"\rMsgSubmitTurnBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\rMsgSubmitTurn\"\xee\b\n" +
+	"\x0fCommandEnvelope\x12\x1d\n" +
+	"\n" +
+	"command_id\x18\x01 \x01(\tR\tcommandId\x12%\n" +
+	"\x0eparticipant_id\x18\x02 \x01(\tR\rparticipantId\x12\x16\n" +
+	"\x06source\x18\x03 \x01(\tR\x06source\x12\x12\n" +
+	"\x04turn\x18\x04 \x01(\x05R\x04turn\x12@\n" +
+	"\n" +
+	"set_policy\x18\n" +
+	" \x01(\v2\x1f.panoptes.proto.v1.MsgSetPolicyH\x00R\tsetPolicy\x12e\n" +
+	"\x17set_institution_loadout\x18\v \x01(\v2+.panoptes.proto.v1.MsgSetInstitutionLoadoutH\x00R\x15setInstitutionLoadout\x12Y\n" +
+	"\x13set_research_target\x18\f \x01(\v2'.panoptes.proto.v1.MsgSetResearchTargetH\x00R\x11setResearchTarget\x12Y\n" +
+	"\x13set_building_recipe\x18\r \x01(\v2'.panoptes.proto.v1.MsgSetBuildingRecipeH\x00R\x11setBuildingRecipe\x12O\n" +
+	"\x0fbuild_structure\x18\x0e \x01(\v2$.panoptes.proto.v1.MsgBuildStructureH\x00R\x0ebuildStructure\x12C\n" +
+	"\vreveal_node\x18\x0f \x01(\v2 .panoptes.proto.v1.MsgRevealNodeH\x00R\n" +
+	"revealNode\x12D\n" +
+	"\fset_war_zone\x18\x10 \x01(\v2 .panoptes.proto.v1.MsgSetWarZoneH\x00R\n" +
+	"setWarZone\x12V\n" +
+	"\x12war_zone_directive\x18\x11 \x01(\v2&.panoptes.proto.v1.MsgWarZoneDirectiveH\x00R\x10warZoneDirective\x12b\n" +
+	"\x16set_minister_directive\x18\x12 \x01(\v2*.panoptes.proto.v1.MsgSetMinisterDirectiveH\x00R\x14setMinisterDirective\x12P\n" +
+	"\x10issue_unit_order\x18\x13 \x01(\v2$.panoptes.proto.v1.MsgIssueUnitOrderH\x00R\x0eissueUnitOrder\x12S\n" +
+	"\x11cancel_unit_order\x18\x14 \x01(\v2%.panoptes.proto.v1.MsgCancelUnitOrderH\x00R\x0fcancelUnitOrder\x12C\n" +
+	"\vsubmit_turn\x18\x15 \x01(\v2 .panoptes.proto.v1.MsgSubmitTurnH\x00R\n" +
+	"submitTurnB\x06\n" +
+	"\x04body\"U\n" +
+	"\x13MsgGameCommandBatch\x12>\n" +
+	"\bcommands\x18\x01 \x03(\v2\".panoptes.proto.v1.CommandEnvelopeR\bcommands\"\x95\x01\n" +
+	"\rMsgCommandAck\x12\x1d\n" +
+	"\n" +
+	"command_id\x18\x01 \x01(\tR\tcommandId\x12\x1a\n" +
+	"\baccepted\x18\x02 \x01(\bR\baccepted\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x03 \x01(\tR\terrorCode\x12\x16\n" +
+	"\x06source\x18\x04 \x01(\tR\x06source\x12\x12\n" +
+	"\x04turn\x18\x05 \x01(\x05R\x04turnBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
 	file_panoptes_proto_v1_orders_proto_rawDescOnce sync.Once
@@ -787,7 +1215,7 @@ func file_panoptes_proto_v1_orders_proto_rawDescGZIP() []byte {
 	return file_panoptes_proto_v1_orders_proto_rawDescData
 }
 
-var file_panoptes_proto_v1_orders_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_panoptes_proto_v1_orders_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_panoptes_proto_v1_orders_proto_goTypes = []any{
 	(*MsgSetPolicy)(nil),                  // 0: panoptes.proto.v1.MsgSetPolicy
 	(*MsgSetInstitutionLoadout)(nil),      // 1: panoptes.proto.v1.MsgSetInstitutionLoadout
@@ -802,15 +1230,31 @@ var file_panoptes_proto_v1_orders_proto_goTypes = []any{
 	(*MsgCancelUnitOrder)(nil),            // 10: panoptes.proto.v1.MsgCancelUnitOrder
 	(*MsgPlanningPathPreviewRequest)(nil), // 11: panoptes.proto.v1.MsgPlanningPathPreviewRequest
 	(*MsgSubmitTurn)(nil),                 // 12: panoptes.proto.v1.MsgSubmitTurn
-	nil,                                   // 13: panoptes.proto.v1.MsgIssueUnitOrder.ParamsEntry
+	(*CommandEnvelope)(nil),               // 13: panoptes.proto.v1.CommandEnvelope
+	(*MsgGameCommandBatch)(nil),           // 14: panoptes.proto.v1.MsgGameCommandBatch
+	(*MsgCommandAck)(nil),                 // 15: panoptes.proto.v1.MsgCommandAck
+	nil,                                   // 16: panoptes.proto.v1.MsgIssueUnitOrder.ParamsEntry
 }
 var file_panoptes_proto_v1_orders_proto_depIdxs = []int32{
-	13, // 0: panoptes.proto.v1.MsgIssueUnitOrder.params:type_name -> panoptes.proto.v1.MsgIssueUnitOrder.ParamsEntry
-	1,  // [1:1] is the sub-list for method output_type
-	1,  // [1:1] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	16, // 0: panoptes.proto.v1.MsgIssueUnitOrder.params:type_name -> panoptes.proto.v1.MsgIssueUnitOrder.ParamsEntry
+	0,  // 1: panoptes.proto.v1.CommandEnvelope.set_policy:type_name -> panoptes.proto.v1.MsgSetPolicy
+	1,  // 2: panoptes.proto.v1.CommandEnvelope.set_institution_loadout:type_name -> panoptes.proto.v1.MsgSetInstitutionLoadout
+	2,  // 3: panoptes.proto.v1.CommandEnvelope.set_research_target:type_name -> panoptes.proto.v1.MsgSetResearchTarget
+	3,  // 4: panoptes.proto.v1.CommandEnvelope.set_building_recipe:type_name -> panoptes.proto.v1.MsgSetBuildingRecipe
+	4,  // 5: panoptes.proto.v1.CommandEnvelope.build_structure:type_name -> panoptes.proto.v1.MsgBuildStructure
+	5,  // 6: panoptes.proto.v1.CommandEnvelope.reveal_node:type_name -> panoptes.proto.v1.MsgRevealNode
+	6,  // 7: panoptes.proto.v1.CommandEnvelope.set_war_zone:type_name -> panoptes.proto.v1.MsgSetWarZone
+	7,  // 8: panoptes.proto.v1.CommandEnvelope.war_zone_directive:type_name -> panoptes.proto.v1.MsgWarZoneDirective
+	8,  // 9: panoptes.proto.v1.CommandEnvelope.set_minister_directive:type_name -> panoptes.proto.v1.MsgSetMinisterDirective
+	9,  // 10: panoptes.proto.v1.CommandEnvelope.issue_unit_order:type_name -> panoptes.proto.v1.MsgIssueUnitOrder
+	10, // 11: panoptes.proto.v1.CommandEnvelope.cancel_unit_order:type_name -> panoptes.proto.v1.MsgCancelUnitOrder
+	12, // 12: panoptes.proto.v1.CommandEnvelope.submit_turn:type_name -> panoptes.proto.v1.MsgSubmitTurn
+	13, // 13: panoptes.proto.v1.MsgGameCommandBatch.commands:type_name -> panoptes.proto.v1.CommandEnvelope
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_panoptes_proto_v1_orders_proto_init() }
@@ -818,13 +1262,27 @@ func file_panoptes_proto_v1_orders_proto_init() {
 	if File_panoptes_proto_v1_orders_proto != nil {
 		return
 	}
+	file_panoptes_proto_v1_orders_proto_msgTypes[13].OneofWrappers = []any{
+		(*CommandEnvelope_SetPolicy)(nil),
+		(*CommandEnvelope_SetInstitutionLoadout)(nil),
+		(*CommandEnvelope_SetResearchTarget)(nil),
+		(*CommandEnvelope_SetBuildingRecipe)(nil),
+		(*CommandEnvelope_BuildStructure)(nil),
+		(*CommandEnvelope_RevealNode)(nil),
+		(*CommandEnvelope_SetWarZone)(nil),
+		(*CommandEnvelope_WarZoneDirective)(nil),
+		(*CommandEnvelope_SetMinisterDirective)(nil),
+		(*CommandEnvelope_IssueUnitOrder)(nil),
+		(*CommandEnvelope_CancelUnitOrder)(nil),
+		(*CommandEnvelope_SubmitTurn)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_orders_proto_rawDesc), len(file_panoptes_proto_v1_orders_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

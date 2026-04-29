@@ -215,7 +215,7 @@ namespace Panoptes.Core.Application.Cache
             OnStateChanged?.Invoke();
         }
 
-        public void ApplyTurnSettlement(MsgTurnSettlement msg)
+        public void ApplyGameSync(MsgGameSync msg)
         {
             if (msg == null)
             {
@@ -230,12 +230,12 @@ namespace Panoptes.Core.Application.Cache
             Turn = msg.Turn > 0 ? msg.Turn : Turn;
             Phase = NormalizePhase(msg.Phase, GamePhases.Resolving);
 
-            ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "settlement");
-            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "settlement");
+            ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "game_sync");
+            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "game_sync");
 
-            if (msg.MyPlayerAfter != null)
+            if (msg.MyPlayer != null)
             {
-                MyPlayer = msg.MyPlayerAfter.Clone();
+                MyPlayer = msg.MyPlayer.Clone();
             }
 
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;

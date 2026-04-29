@@ -271,11 +271,11 @@ func assertUnitAtNode(t *testing.T, state *domain.GameState, unitID string, want
 	}
 }
 
-func settlementNodeView(t *testing.T, msg *pb.MsgTurnSettlement, nodeID string) *pb.NodeView {
+func settlementNodeView(t *testing.T, msg *pb.MsgGameSync, nodeID string) *pb.NodeView {
 	t.Helper()
 
 	if msg == nil {
-		t.Fatalf("turn settlement is nil")
+		t.Fatalf("game sync is nil")
 	}
 	for _, node := range msg.GetNodes() {
 		if node.GetId() == nodeID {

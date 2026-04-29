@@ -48,14 +48,14 @@ type debugSubmitResponse struct {
 }
 
 type debugSettlementResponse struct {
-	TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement,omitempty"`
-	GameOver       *pb.MsgGameOver       `json:"game_over,omitempty"`
+	GameSync *pb.MsgGameSync `json:"game_sync,omitempty"`
+	GameOver *pb.MsgGameOver `json:"game_over,omitempty"`
 }
 
 type debugStepTurnResponse struct {
-	TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement,omitempty"`
-	GameOver       *pb.MsgGameOver       `json:"game_over,omitempty"`
-	State          debug.StateSummary    `json:"state"`
+	GameSync *pb.MsgGameSync    `json:"game_sync,omitempty"`
+	GameOver *pb.MsgGameOver    `json:"game_over,omitempty"`
+	State    debug.StateSummary `json:"state"`
 }
 
 type debugVisionResponse struct {
@@ -92,8 +92,8 @@ func (h *DebugHandler) GetSettlement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, debugSettlementResponse{
-		TurnSettlement: h.latestSettlement(room.ID, playerID),
-		GameOver:       h.latestGameOver(room.ID),
+		GameSync: h.latestGameSync(room.ID, playerID),
+		GameOver: h.latestGameOver(room.ID),
 	})
 }
 
@@ -249,15 +249,15 @@ func (h *DebugHandler) Vision(w http.ResponseWriter, r *http.Request) {
 func (h *DebugHandler) waitForTurn(room *game.GameRoom, playerID string, turn int, timeout time.Duration) (*debugStepTurnResponse, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		settlement := h.latestSettlement(room.ID, playerID)
-		if settlement == nil || int(settlement.GetTurn()) != turn {
+		syncMsg := h.latestGameSync(room.ID, playerID)
+		if syncMsg == nil || int(syncMsg.GetTurn()) != turn {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
 
 		resp := &debugStepTurnResponse{
-			TurnSettlement: settlement,
-			State:          debug.BuildStateSummary(room.State()),
+			GameSync: syncMsg,
+			State:    debug.BuildStateSummary(room.State()),
 		}
 		if resp.State.IsOver {
 			resp.GameOver = h.latestGameOver(room.ID)
@@ -268,7 +268,7 @@ func (h *DebugHandler) waitForTurn(room *game.GameRoom, playerID string, turn in
 		}
 		return resp, nil
 	}
-	return nil, errors.New("turn settlement timeout")
+	return nil, errors.New("game sync timeout")
 }
 
 func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool) {
@@ -291,11 +291,11 @@ func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool
 	return playerID, gameRoom, true
 }
 
-func (h *DebugHandler) latestSettlement(roomID string, playerID string) *pb.MsgTurnSettlement {
+func (h *DebugHandler) latestGameSync(roomID string, playerID string) *pb.MsgGameSync {
 	if h == nil || h.recorder == nil {
 		return nil
 	}
-	return h.recorder.LatestSettlement(roomID, playerID)
+	return h.recorder.LatestGameSync(roomID, playerID)
 }
 
 func (h *DebugHandler) latestGameOver(roomID string) *pb.MsgGameOver {

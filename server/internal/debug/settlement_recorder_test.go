@@ -9,7 +9,7 @@ import (
 func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 	recorder := NewSettlementRecorder()
 
-	settlement := &pb.MsgTurnSettlement{
+	syncMsg := &pb.MsgGameSync{
 		Turn:  2,
 		Phase: "resolving",
 	}
@@ -18,18 +18,18 @@ func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 		Reason:   "city_core_destroyed",
 	}
 
-	recorder.RecordSettlement("room-1", "player-1", settlement)
+	recorder.RecordGameSync("room-1", "player-1", syncMsg)
 	recorder.RecordGameOver("room-1", gameOver)
 
-	settlement.Turn = 9
+	syncMsg.Turn = 9
 	gameOver.Reason = "mutated"
 
-	gotSettlement := recorder.LatestSettlement("room-1", "player-1")
-	if gotSettlement == nil {
-		t.Fatalf("LatestSettlement() = nil")
+	gotSync := recorder.LatestGameSync("room-1", "player-1")
+	if gotSync == nil {
+		t.Fatalf("LatestGameSync() = nil")
 	}
-	if gotSettlement.GetTurn() != 2 {
-		t.Fatalf("settlement turn = %d, want 2", gotSettlement.GetTurn())
+	if gotSync.GetTurn() != 2 {
+		t.Fatalf("game sync turn = %d, want 2", gotSync.GetTurn())
 	}
 
 	gotGameOver := recorder.LatestGameOver("room-1")
@@ -40,11 +40,11 @@ func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
 		t.Fatalf("game over reason = %q, want city_core_destroyed", gotGameOver.GetReason())
 	}
 
-	gotSettlement.Turn = 11
+	gotSync.Turn = 11
 	gotGameOver.Reason = "changed_again"
 
-	if recorder.LatestSettlement("room-1", "player-1").GetTurn() != 2 {
-		t.Fatalf("LatestSettlement() should return cloned message")
+	if recorder.LatestGameSync("room-1", "player-1").GetTurn() != 2 {
+		t.Fatalf("LatestGameSync() should return cloned message")
 	}
 	if recorder.LatestGameOver("room-1").GetReason() != "city_core_destroyed" {
 		t.Fatalf("LatestGameOver() should return cloned message")

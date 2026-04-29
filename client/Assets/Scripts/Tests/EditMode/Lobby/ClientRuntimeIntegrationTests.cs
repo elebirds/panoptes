@@ -283,11 +283,11 @@ namespace Panoptes.Tests.EditMode.Lobby
             var dispatcher = dispatcherObject.AddComponent<MessageDispatcher>();
             SetSingletonInstance(typeof(MessageDispatcher), dispatcher);
 
-            var settlementDispatches = 0;
-            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", _ => settlementDispatches++);
+            var syncDispatches = 0;
+            dispatcher.Register<MsgGameSync>("MsgGameSync", _ => syncDispatches++);
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 1, Phase = "resolving" }, "session-stale"));
-            Assert.That(settlementDispatches, Is.EqualTo(0),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 1, Phase = "resolving" }, "session-stale"));
+            Assert.That(syncDispatches, Is.EqualTo(0),
                 "未建立激活会话前，不应处理非 MsgGameInit 的游戏消息。");
 
             dispatcher.Dispatch(BuildGameFrame(new MsgGameInit
@@ -307,12 +307,12 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(activeSession, Is.EqualTo("session-a"),
                 "MsgGameInit 建立当前会话后，应记录激活中的 game session id。");
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-b"));
-            Assert.That(settlementDispatches, Is.EqualTo(0),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 2, Phase = "resolving" }, "session-b"));
+            Assert.That(syncDispatches, Is.EqualTo(0),
                 "不同 session 的游戏消息必须在分发前被丢弃。");
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-a"));
-            Assert.That(settlementDispatches, Is.EqualTo(1),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 2, Phase = "resolving" }, "session-a"));
+            Assert.That(syncDispatches, Is.EqualTo(1),
                 "同一 session 的游戏消息应继续正常分发。");
         }
 
@@ -469,9 +469,10 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Tokens = 3,
                 PlanningStartEvents =
                 {
-                    new TurnEvent
+                    new DomainEventEnvelope
                     {
-                        Type = "technology_activated",
+                        Kind = "technology_activated",
+                        Channel = "planning",
                         Data = { { "technology_id", "agrarian_foundations" }, { "player_id", "player-1" } }
                     }
                 },
@@ -1133,12 +1134,12 @@ namespace Panoptes.Tests.EditMode.Lobby
                 InvokeLifecycle(controller, "Awake");
                 InvokeLifecycle(controller, "OnEnable");
 
-                cache.ApplyTurnSettlement(new MsgTurnSettlement
+                cache.ApplyGameSync(new MsgGameSync
                 {
                     Turn = 1,
                     Phase = "resolving",
                     NextPhase = "planning",
-                    MyPlayerAfter = new PlayerView
+                    MyPlayer = new PlayerView
                     {
                         Id = "player-1",
                         TokensLeft = 3,
@@ -1158,31 +1159,26 @@ namespace Panoptes.Tests.EditMode.Lobby
                             BuildingHp = 100
                         }
                     },
-                    Sections =
+                    Events =
                     {
-                        new SettlementSection
+                        new DomainEventEnvelope
                         {
-                            Section = "economy",
-                            Events =
+                            Channel = "economy",
+                            Kind = "technology_completed",
+                            Data =
                             {
-                                new TurnEvent
-                                {
-                                    Type = "technology_completed",
-                                    Data =
-                                    {
-                                        { "technology_id", "agrarian_foundations" },
-                                        { "player_id", "player-1" }
-                                    }
-                                },
-                                new TurnEvent
-                                {
-                                    Type = "technology_completed",
-                                    Data =
-                                    {
-                                        { "technology_id", "organized_labor" },
-                                        { "player_id", "player-2" }
-                                    }
-                                }
+                                { "technology_id", "agrarian_foundations" },
+                                { "player_id", "player-1" }
+                            }
+                        },
+                        new DomainEventEnvelope
+                        {
+                            Channel = "economy",
+                            Kind = "technology_completed",
+                            Data =
+                            {
+                                { "technology_id", "organized_labor" },
+                                { "player_id", "player-2" }
                             }
                         }
                     }
@@ -1209,7 +1205,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void GameSceneController_ShouldSubscribeTurnSettlement_ForTechnologyCompletionToast()
+        public void GameSceneController_ShouldSubscribeGameSyncSettlement_ForTechnologyCompletionToast()
         {
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
@@ -1626,8 +1622,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                 case MsgGameInit gameInit:
                     gameEvent.GameInit = gameInit;
                     break;
-                case MsgTurnSettlement settlement:
-                    gameEvent.TurnSettlement = settlement;
+                case MsgGameSync gameSync:
+                    gameEvent.GameSync = gameSync;
                     break;
                 default:
                     throw new AssertionException($"不支持的测试消息类型: {message?.GetType().Name ?? "null"}");

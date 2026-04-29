@@ -49,10 +49,10 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement(turn=1) error = %v", err)
 	}
-	if record.Settlement == nil {
-		t.Fatalf("turn settlement is nil")
+	if record.GameSync == nil {
+		t.Fatalf("game sync is nil")
 	}
-	t.Log("✓ TurnSettlement 已记录，科技完成可观测")
+	t.Log("✓ GameSync 已记录，科技完成可观测")
 
 	if _, err := h.WaitPlanningStart("player-1", 2, 2*time.Second); err != nil {
 		t.Fatalf("WaitPlanningStart(turn=2) error = %v", err)
@@ -73,8 +73,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WaitSettlement(turn=2) error = %v", err)
 	}
-	if turn2.Settlement == nil {
-		t.Fatalf("turn 2 settlement is nil")
+	if turn2.GameSync == nil {
+		t.Fatalf("turn 2 game sync is nil")
 	}
 	t.Log("✓ 已记录农场建造与开拓者产出")
 

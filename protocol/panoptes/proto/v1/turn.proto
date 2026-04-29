@@ -3,6 +3,7 @@ syntax = "proto3";
 package panoptes.proto.v1;
 
 import "panoptes/proto/v1/game_state.proto";
+import "panoptes/proto/v1/orders.proto";
 import "panoptes/proto/v1/settlement.proto";
 
 option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
@@ -19,7 +20,7 @@ message MsgPlanningStart {
   PlayerView my_player = 8;
   repeated NodeView nodes = 9;
   repeated UnitView units = 10;
-  repeated TurnEvent planning_start_events = 11;
+  repeated DomainEventEnvelope planning_start_events = 11;
 }
 
 message MinisterDraftView {
@@ -191,4 +192,29 @@ message MsgIssueUnitOrderResult {
 message MsgTurnReport {
   int32 turn = 1;
   string summary = 2;
+}
+
+message MinisterProposalView {
+  string proposal_id = 1;
+  string minister_role = 2;
+  string kind = 3;
+  string title = 4;
+  string summary = 5;
+  string rationale = 6;
+  string risk_note = 7;
+  CommandEnvelope proposed_command = 8;
+  string raw_json = 9;
+}
+
+message MsgGameSync {
+  int32 turn = 1;
+  string phase = 2;
+  string next_phase = 3;
+  MsgPlanningSnapshot snapshot = 4;
+  PlayerView my_player = 5;
+  repeated NodeView nodes = 6;
+  repeated UnitView units = 7;
+  repeated DomainEventEnvelope events = 8;
+  repeated MsgCommandAck command_acks = 9;
+  repeated MinisterProposalView minister_proposals = 10;
 }

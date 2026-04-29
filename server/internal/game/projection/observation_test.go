@@ -12,7 +12,7 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-func TestProjectTurnSettlementFromObservationUsesPerPlayerVisibility(t *testing.T) {
+func TestProjectGameSyncFromObservationUsesPerPlayerVisibility(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			SafeZoneRadius:             2,
@@ -49,20 +49,20 @@ func TestProjectTurnSettlementFromObservationUsesPerPlayerVisibility(t *testing.
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
 	store := gamequery.NewObservationStore()
-	left := ProjectTurnSettlementFromObservation(state, store.BuildObservation(state, "player-1"), int32(state.Turn), domain.PhaseResolving.String(), domain.PhasePlanning.String(), gameresolution.NewCollector())
-	right := ProjectTurnSettlementFromObservation(state, store.BuildObservation(state, "player-2"), int32(state.Turn), domain.PhaseResolving.String(), domain.PhasePlanning.String(), gameresolution.NewCollector())
+	left := ProjectGameSyncFromObservation(state, store.BuildObservation(state, "player-1"), int32(state.Turn), domain.PhaseResolving.String(), domain.PhasePlanning.String(), gameresolution.NewCollector())
+	right := ProjectGameSyncFromObservation(state, store.BuildObservation(state, "player-2"), int32(state.Turn), domain.PhaseResolving.String(), domain.PhasePlanning.String(), gameresolution.NewCollector())
 
 	if settlementHasUnit(left, "enemy-1") {
-		t.Fatalf("player-1 settlement should hide enemy-1")
+		t.Fatalf("player-1 game sync should hide enemy-1")
 	}
 	if !settlementHasUnit(left, "ally-1") {
-		t.Fatalf("player-1 settlement should include ally-1")
+		t.Fatalf("player-1 game sync should include ally-1")
 	}
 	if settlementHasUnit(right, "ally-1") {
-		t.Fatalf("player-2 settlement should hide ally-1")
+		t.Fatalf("player-2 game sync should hide ally-1")
 	}
 	if !settlementHasUnit(right, "enemy-1") {
-		t.Fatalf("player-2 settlement should include enemy-1")
+		t.Fatalf("player-2 game sync should include enemy-1")
 	}
 }
 

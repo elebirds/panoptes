@@ -106,7 +106,7 @@ func (l *MessageLogger) resolveOutgoingSnapshot(playerID string, msg proto.Messa
 	case *pb.MsgPlanningStart:
 		turn = typed.GetTurn()
 		phase = typed.GetPhase()
-	case *pb.MsgTurnSettlement:
+	case *pb.MsgGameSync:
 		turn = typed.GetTurn()
 		phase = typed.GetPhase()
 	}
@@ -190,8 +190,8 @@ func outgoingMessage(frame *pb.ServerFrame) (string, proto.Message, bool) {
 			return "MsgBuildStructureResult", body.BuildStructureResult, true
 		case *pb.GameEvent_TurnReport:
 			return "MsgTurnReport", body.TurnReport, true
-		case *pb.GameEvent_TurnSettlement:
-			return "MsgTurnSettlement", body.TurnSettlement, true
+		case *pb.GameEvent_GameSync:
+			return "MsgGameSync", body.GameSync, true
 		case *pb.GameEvent_GameOver:
 			return "MsgGameOver", body.GameOver, true
 		case *pb.GameEvent_MinisterReportChunk:

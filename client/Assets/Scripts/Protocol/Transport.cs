@@ -31,154 +31,156 @@ namespace Panoptes.Protocol.V1 {
             "cGFub3B0ZXMvcHJvdG8vdjEvZGF0YV9jYXRhbG9nLnByb3RvGiJwYW5vcHRl",
             "cy9wcm90by92MS9nYW1lX3N0YXRlLnByb3RvGh1wYW5vcHRlcy9wcm90by92",
             "MS9sb2JieS5wcm90bxogcGFub3B0ZXMvcHJvdG8vdjEvbWluaXN0ZXIucHJv",
-            "dG8aHnBhbm9wdGVzL3Byb3RvL3YxL29yZGVycy5wcm90bxoicGFub3B0ZXMv",
-            "cHJvdG8vdjEvc2V0dGxlbWVudC5wcm90bxoccGFub3B0ZXMvcHJvdG8vdjEv",
-            "dHVybi5wcm90byKSAQoLQ29tbWFuZE1ldGESHQoKcmVxdWVzdF9pZBgBIAEo",
-            "CVIJcmVxdWVzdElkEhkKCHRyYWNlX2lkGAIgASgJUgd0cmFjZUlkEiUKDmNs",
-            "aWVudF92ZXJzaW9uGAMgASgJUg1jbGllbnRWZXJzaW9uEiIKDGNhcGFiaWxp",
-            "dGllcxgEIAMoCVIMY2FwYWJpbGl0aWVzIpsBCglFdmVudE1ldGESHQoKcmVx",
-            "dWVzdF9pZBgBIAEoCVIJcmVxdWVzdElkEhkKCHRyYWNlX2lkGAIgASgJUgd0",
-            "cmFjZUlkEiwKEnNlcnZlcl91bml4X21pbGxpcxgDIAEoA1IQc2VydmVyVW5p",
-            "eE1pbGxpcxImCg9nYW1lX3Nlc3Npb25faWQYBCABKAlSDWdhbWVTZXNzaW9u",
-            "SWQiOwoNUHJvYmxlbURldGFpbBISCgRwYXRoGAEgASgJUgRwYXRoEhYKBmRl",
-            "dGFpbBgCIAEoCVIGZGV0YWlsInMKB1Byb2JsZW0SEgoEY29kZRgBIAEoCVIE",
-            "Y29kZRIYCgdtZXNzYWdlGAIgASgJUgdtZXNzYWdlEjoKB2RldGFpbHMYAyAD",
-            "KAsyIC5wYW5vcHRlcy5wcm90by52MS5Qcm9ibGVtRGV0YWlsUgdkZXRhaWxz",
-            "IogBCgtBdXRoQ29tbWFuZBI8CghyZWdpc3RlchgBIAEoCzIeLnBhbm9wdGVz",
-            "LnByb3RvLnYxLk1zZ1JlZ2lzdGVySABSCHJlZ2lzdGVyEjMKBWxvZ2luGAIg",
-            "ASgLMhsucGFub3B0ZXMucHJvdG8udjEuTXNnTG9naW5IAFIFbG9naW5CBgoE",
-            "Ym9keSLYAwoMTG9iYnlDb21tYW5kEkMKC2NyZWF0ZV9yb29tGAEgASgLMiAu",
-            "cGFub3B0ZXMucHJvdG8udjEuTXNnQ3JlYXRlUm9vbUgAUgpjcmVhdGVSb29t",
-            "Ej0KCWpvaW5fcm9vbRgCIAEoCzIeLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0pv",
-            "aW5Sb29tSABSCGpvaW5Sb29tEkAKCmxlYXZlX3Jvb20YAyABKAsyHy5wYW5v",
-            "cHRlcy5wcm90by52MS5Nc2dMZWF2ZVJvb21IAFIJbGVhdmVSb29tEjoKCHJl",
-            "YWR5X3VwGAQgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuTXNnUmVhZHlVcEgA",
-            "UgdyZWFkeVVwEjcKB2FkZF9ib3QYBSABKAsyHC5wYW5vcHRlcy5wcm90by52",
-            "MS5Nc2dBZGRCb3RIAFIGYWRkQm90EkAKCnN0YXJ0X2dhbWUYBiABKAsyHy5w",
-            "YW5vcHRlcy5wcm90by52MS5Nc2dTdGFydEdhbWVIAFIJc3RhcnRHYW1lEkMK",
-            "C2tpY2tfcGxheWVyGAcgASgLMiAucGFub3B0ZXMucHJvdG8udjEuTXNnS2lj",
-            "a1BsYXllckgAUgpraWNrUGxheWVyQgYKBGJvZHki2QoKD1BsYW5uaW5nQ29t",
-            "bWFuZBJACgpzZXRfcG9saWN5GAEgASgLMh8ucGFub3B0ZXMucHJvdG8udjEu",
-            "TXNnU2V0UG9saWN5SABSCXNldFBvbGljeRJZChNzZXRfcmVzZWFyY2hfdGFy",
-            "Z2V0GAIgASgLMicucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0UmVzZWFyY2hU",
-            "YXJnZXRIAFIRc2V0UmVzZWFyY2hUYXJnZXQSWQoTc2V0X2J1aWxkaW5nX3Jl",
-            "Y2lwZRgDIAEoCzInLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1NldEJ1aWxkaW5n",
-            "UmVjaXBlSABSEXNldEJ1aWxkaW5nUmVjaXBlEk8KD2J1aWxkX3N0cnVjdHVy",
-            "ZRgEIAEoCzIkLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0J1aWxkU3RydWN0dXJl",
-            "SABSDmJ1aWxkU3RydWN0dXJlEkMKC3JldmVhbF9ub2RlGAUgASgLMiAucGFu",
-            "b3B0ZXMucHJvdG8udjEuTXNnUmV2ZWFsTm9kZUgAUgpyZXZlYWxOb2RlEkQK",
-            "DHNldF93YXJfem9uZRgGIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1Nl",
-            "dFdhclpvbmVIAFIKc2V0V2FyWm9uZRJWChJ3YXJfem9uZV9kaXJlY3RpdmUY",
-            "ByABKAsyJi5wYW5vcHRlcy5wcm90by52MS5Nc2dXYXJab25lRGlyZWN0aXZl",
-            "SABSEHdhclpvbmVEaXJlY3RpdmUSYgoWc2V0X21pbmlzdGVyX2RpcmVjdGl2",
-            "ZRgIIAEoCzIqLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1NldE1pbmlzdGVyRGly",
-            "ZWN0aXZlSABSFHNldE1pbmlzdGVyRGlyZWN0aXZlElAKEGlzc3VlX3VuaXRf",
-            "b3JkZXIYCSABKAsyJC5wYW5vcHRlcy5wcm90by52MS5Nc2dJc3N1ZVVuaXRP",
-            "cmRlckgAUg5pc3N1ZVVuaXRPcmRlchJTChFjYW5jZWxfdW5pdF9vcmRlchgK",
-            "IAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0NhbmNlbFVuaXRPcmRlckgA",
-            "Ug9jYW5jZWxVbml0T3JkZXISdQodcGxhbm5pbmdfcGF0aF9wcmV2aWV3X3Jl",
-            "cXVlc3QYCyABKAsyMC5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGFubmluZ1Bh",
-            "dGhQcmV2aWV3UmVxdWVzdEgAUhpwbGFubmluZ1BhdGhQcmV2aWV3UmVxdWVz",
-            "dBJDCgtzdWJtaXRfdHVybhgMIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1z",
-            "Z1N1Ym1pdFR1cm5IAFIKc3VibWl0VHVybhJlChdzZXRfaW5zdGl0dXRpb25f",
-            "bG9hZG91dBgNIAEoCzIrLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1NldEluc3Rp",
-            "dHV0aW9uTG9hZG91dEgAUhVzZXRJbnN0aXR1dGlvbkxvYWRvdXQSbAoXYnVp",
-            "bGRfc3RydWN0dXJlX3ByZXZpZXcYDiABKAsyMi5wYW5vcHRlcy5wcm90by52",
-            "MS5Nc2dCdWlsZFN0cnVjdHVyZVByZXZpZXdSZXF1ZXN0SABSFWJ1aWxkU3Ry",
-            "dWN0dXJlUHJldmlldxJ2ChtzZXRfYnVpbGRpbmdfcmVjaXBlX3ByZXZpZXcY",
-            "DyABKAsyNS5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRCdWlsZGluZ1JlY2lw",
-            "ZVByZXZpZXdSZXF1ZXN0SABSGHNldEJ1aWxkaW5nUmVjaXBlUHJldmlld0IG",
-            "CgRib2R5Iv4BCgtHYW1lQ29tbWFuZBJACghwbGFubmluZxgBIAEoCzIiLnBh",
-            "bm9wdGVzLnByb3RvLnYxLlBsYW5uaW5nQ29tbWFuZEgAUghwbGFubmluZxJv",
-            "ChtzdGF0aWNfY2F0YWxvZ19zeW5jX3JlcXVlc3QYAiABKAsyLi5wYW5vcHRl",
-            "cy5wcm90by52MS5Nc2dTdGF0aWNDYXRhbG9nU3luY1JlcXVlc3RIAFIYc3Rh",
-            "dGljQ2F0YWxvZ1N5bmNSZXF1ZXN0EjQKBGNoYXQYAyABKAsyHi5wYW5vcHRl",
-            "cy5wcm90by52MS5DaGF0Q29tbWFuZEgAUgRjaGF0QgYKBGJvZHki8AEKC0Ns",
-            "aWVudEZyYW1lEjIKBG1ldGEYASABKAsyHi5wYW5vcHRlcy5wcm90by52MS5D",
-            "b21tYW5kTWV0YVIEbWV0YRI0CgRhdXRoGAogASgLMh4ucGFub3B0ZXMucHJv",
-            "dG8udjEuQXV0aENvbW1hbmRIAFIEYXV0aBI3CgVsb2JieRgLIAEoCzIfLnBh",
-            "bm9wdGVzLnByb3RvLnYxLkxvYmJ5Q29tbWFuZEgAUgVsb2JieRI0CgRnYW1l",
-            "GAwgASgLMh4ucGFub3B0ZXMucHJvdG8udjEuR2FtZUNvbW1hbmRIAFIEZ2Ft",
-            "ZUIICgZ0YXJnZXQigQIKCUF1dGhFdmVudBJJCg1sb2dpbl9zdWNjZXNzGAEg",
-            "ASgLMiIucGFub3B0ZXMucHJvdG8udjEuTXNnTG9naW5TdWNjZXNzSABSDGxv",
-            "Z2luU3VjY2VzcxJACgphdXRoX2Vycm9yGAIgASgLMh8ucGFub3B0ZXMucHJv",
-            "dG8udjEuTXNnQXV0aEVycm9ySABSCWF1dGhFcnJvchJfChVjbGllbnRfcnVu",
-            "dGltZV9jb25maWcYAyABKAsyKS5wYW5vcHRlcy5wcm90by52MS5Nc2dDbGll",
-            "bnRSdW50aW1lQ29uZmlnSABSE2NsaWVudFJ1bnRpbWVDb25maWdCBgoEYm9k",
-            "eSL5AgoKTG9iYnlFdmVudBJGCgxyb29tX2NyZWF0ZWQYASABKAsyIS5wYW5v",
-            "cHRlcy5wcm90by52MS5Nc2dSb29tQ3JlYXRlZEgAUgtyb29tQ3JlYXRlZBJA",
-            "Cgpyb29tX3N0YXRlGAIgASgLMh8ucGFub3B0ZXMucHJvdG8udjEuTXNnUm9v",
-            "bVN0YXRlSABSCXJvb21TdGF0ZRJJCg1nYW1lX3N0YXJ0aW5nGAMgASgLMiIu",
-            "cGFub3B0ZXMucHJvdG8udjEuTXNnR2FtZVN0YXJ0aW5nSABSDGdhbWVTdGFy",
-            "dGluZxJJCg1wbGF5ZXJfa2lja2VkGAQgASgLMiIucGFub3B0ZXMucHJvdG8u",
-            "djEuTXNnUGxheWVyS2lja2VkSABSDHBsYXllcktpY2tlZBJDCgtsb2JieV9l",
-            "cnJvchgFIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0xvYmJ5RXJyb3JI",
-            "AFIKbG9iYnlFcnJvckIGCgRib2R5IpkTCglHYW1lRXZlbnQSZQoXc3RhdGlj",
-            "X2NhdGFsb2dfbWFuaWZlc3QYASABKAsyKy5wYW5vcHRlcy5wcm90by52MS5N",
-            "c2dTdGF0aWNDYXRhbG9nTWFuaWZlc3RIAFIVc3RhdGljQ2F0YWxvZ01hbmlm",
-            "ZXN0EmUKF3N0YXRpY19jYXRhbG9nX3NuYXBzaG90GAIgASgLMisucGFub3B0",
-            "ZXMucHJvdG8udjEuTXNnU3RhdGljQ2F0YWxvZ1NuYXBzaG90SABSFXN0YXRp",
-            "Y0NhdGFsb2dTbmFwc2hvdBI9CglnYW1lX2luaXQYAyABKAsyHi5wYW5vcHRl",
-            "cy5wcm90by52MS5Nc2dHYW1lSW5pdEgAUghnYW1lSW5pdBJMCg5wbGFubmlu",
-            "Z19zdGFydBgEIAEoCzIjLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5n",
-            "U3RhcnRIAFINcGxhbm5pbmdTdGFydBJVChFwbGFubmluZ19zbmFwc2hvdBgF",
-            "IAEoCzImLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1BsYW5uaW5nU25hcHNob3RI",
-            "AFIQcGxhbm5pbmdTbmFwc2hvdBJ4Ch5wbGFubmluZ19wYXRoX3ByZXZpZXdf",
-            "cmVzcG9uc2UYBiABKAsyMS5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGFubmlu",
-            "Z1BhdGhQcmV2aWV3UmVzcG9uc2VIAFIbcGxhbm5pbmdQYXRoUHJldmlld1Jl",
-            "c3BvbnNlEkYKDHRva2VuX3Jlc3VsdBgHIAEoCzIhLnBhbm9wdGVzLnByb3Rv",
-            "LnYxLk1zZ1Rva2VuUmVzdWx0SABSC3Rva2VuUmVzdWx0EkkKDXJldmVhbF9y",
-            "ZXN1bHQYCCABKAsyIi5wYW5vcHRlcy5wcm90by52MS5Nc2dSZXZlYWxSZXN1",
-            "bHRIAFIMcmV2ZWFsUmVzdWx0Ek8KD3Jlc2VhcmNoX3Jlc3VsdBgJIAEoCzIk",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ1Jlc2VhcmNoUmVzdWx0SABSDnJlc2Vh",
-            "cmNoUmVzdWx0ElMKEXNldF9wb2xpY3lfcmVzdWx0GAogASgLMiUucGFub3B0",
-            "ZXMucHJvdG8udjEuTXNnU2V0UG9saWN5UmVzdWx0SABSD3NldFBvbGljeVJl",
-            "c3VsdBJsChpzZXRfYnVpbGRpbmdfcmVjaXBlX3Jlc3VsdBgLIAEoCzItLnBh",
-            "bm9wdGVzLnByb3RvLnYxLk1zZ1NldEJ1aWxkaW5nUmVjaXBlUmVzdWx0SABS",
-            "F3NldEJ1aWxkaW5nUmVjaXBlUmVzdWx0EmIKFmJ1aWxkX3N0cnVjdHVyZV9y",
-            "ZXN1bHQYDCABKAsyKi5wYW5vcHRlcy5wcm90by52MS5Nc2dCdWlsZFN0cnVj",
-            "dHVyZVJlc3VsdEgAUhRidWlsZFN0cnVjdHVyZVJlc3VsdBJDCgt0dXJuX3Jl",
-            "cG9ydBgNIAEoCzIgLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1R1cm5SZXBvcnRI",
-            "AFIKdHVyblJlcG9ydBJPCg90dXJuX3NldHRsZW1lbnQYDiABKAsyJC5wYW5v",
-            "cHRlcy5wcm90by52MS5Nc2dUdXJuU2V0dGxlbWVudEgAUg50dXJuU2V0dGxl",
-            "bWVudBI9CglnYW1lX292ZXIYDyABKAsyHi5wYW5vcHRlcy5wcm90by52MS5N",
-            "c2dHYW1lT3ZlckgAUghnYW1lT3ZlchJfChVtaW5pc3Rlcl9yZXBvcnRfY2h1",
-            "bmsYECABKAsyKS5wYW5vcHRlcy5wcm90by52MS5Nc2dNaW5pc3RlclJlcG9y",
-            "dENodW5rSABSE21pbmlzdGVyUmVwb3J0Q2h1bmsSUgoQbWluaXN0ZXJfbWV0",
-            "cmljcxgRIAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLk1zZ01pbmlzdGVyTWV0",
-            "cmljc0gAUg9taW5pc3Rlck1ldHJpY3MSeAoec2V0X2luc3RpdHV0aW9uX2xv",
-            "YWRvdXRfcmVzdWx0GBIgASgLMjEucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0",
-            "SW5zdGl0dXRpb25Mb2Fkb3V0UmVzdWx0SABSG3NldEluc3RpdHV0aW9uTG9h",
-            "ZG91dFJlc3VsdBJjChdpc3N1ZV91bml0X29yZGVyX3Jlc3VsdBgTIAEoCzIq",
-            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ0lzc3VlVW5pdE9yZGVyUmVzdWx0SABS",
-            "FGlzc3VlVW5pdE9yZGVyUmVzdWx0ElMKEWNvbmZpZ19iYXRjaF9qc29uGBQg",
-            "ASgLMiUucGFub3B0ZXMucHJvdG8udjEuTXNnQ29uZmlnQmF0Y2hKc29uSABS",
-            "D2NvbmZpZ0JhdGNoSnNvbhJyChxzdGF0aWNfY2F0YWxvZ19zZWN0aW9uX2No",
-            "dW5rGBUgASgLMi8ucGFub3B0ZXMucHJvdG8udjEuTXNnU3RhdGljQ2F0YWxv",
-            "Z1NlY3Rpb25DaHVua0gAUhlzdGF0aWNDYXRhbG9nU2VjdGlvbkNodW5rEnIK",
-            "HHN0YXRpY19jYXRhbG9nX3N5bmNfY29tcGxldGUYFiABKAsyLy5wYW5vcHRl",
-            "cy5wcm90by52MS5Nc2dTdGF0aWNDYXRhbG9nU3luY0NvbXBsZXRlSABSGXN0",
-            "YXRpY0NhdGFsb2dTeW5jQ29tcGxldGUSfgogYnVpbGRfc3RydWN0dXJlX3By",
-            "ZXZpZXdfcmVzcG9uc2UYFyABKAsyMy5wYW5vcHRlcy5wcm90by52MS5Nc2dC",
-            "dWlsZFN0cnVjdHVyZVByZXZpZXdSZXNwb25zZUgAUh1idWlsZFN0cnVjdHVy",
-            "ZVByZXZpZXdSZXNwb25zZRKIAQokc2V0X2J1aWxkaW5nX3JlY2lwZV9wcmV2",
-            "aWV3X3Jlc3BvbnNlGBggASgLMjYucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0",
-            "QnVpbGRpbmdSZWNpcGVQcmV2aWV3UmVzcG9uc2VIAFIgc2V0QnVpbGRpbmdS",
-            "ZWNpcGVQcmV2aWV3UmVzcG9uc2USUAoQZ2FtZV9jaGF0X3Bvc3RlZBgZIAEo",
-            "CzIkLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0dhbWVDaGF0UG9zdGVkSABSDmdh",
-            "bWVDaGF0UG9zdGVkEkoKDmdhbWVfY2hhdF9zeW5jGBogASgLMiIucGFub3B0",
-            "ZXMucHJvdG8udjEuTXNnR2FtZUNoYXRTeW5jSABSDGdhbWVDaGF0U3luY0IG",
-            "CgRib2R5IqACCgtTZXJ2ZXJGcmFtZRIwCgRtZXRhGAEgASgLMhwucGFub3B0",
-            "ZXMucHJvdG8udjEuRXZlbnRNZXRhUgRtZXRhEjIKBGF1dGgYCiABKAsyHC5w",
-            "YW5vcHRlcy5wcm90by52MS5BdXRoRXZlbnRIAFIEYXV0aBI1CgVsb2JieRgL",
-            "IAEoCzIdLnBhbm9wdGVzLnByb3RvLnYxLkxvYmJ5RXZlbnRIAFIFbG9iYnkS",
-            "MgoEZ2FtZRgMIAEoCzIcLnBhbm9wdGVzLnByb3RvLnYxLkdhbWVFdmVudEgA",
-            "UgRnYW1lEjYKB3Byb2JsZW0YDSABKAsyGi5wYW5vcHRlcy5wcm90by52MS5Q",
-            "cm9ibGVtSABSB3Byb2JsZW1CCAoGdGFyZ2V0QlBaN2dpdGh1Yi5jb20vZWxl",
-            "YmlyZHMvcGFub3B0ZXMvaW50ZXJuYWwvZ2VuL3Byb3RvO3Byb3RvdjGqAhRQ",
-            "YW5vcHRlcy5Qcm90b2NvbC5WMWIGcHJvdG8z"));
+            "dG8aHnBhbm9wdGVzL3Byb3RvL3YxL29yZGVycy5wcm90bxoccGFub3B0ZXMv",
+            "cHJvdG8vdjEvdHVybi5wcm90byKSAQoLQ29tbWFuZE1ldGESHQoKcmVxdWVz",
+            "dF9pZBgBIAEoCVIJcmVxdWVzdElkEhkKCHRyYWNlX2lkGAIgASgJUgd0cmFj",
+            "ZUlkEiUKDmNsaWVudF92ZXJzaW9uGAMgASgJUg1jbGllbnRWZXJzaW9uEiIK",
+            "DGNhcGFiaWxpdGllcxgEIAMoCVIMY2FwYWJpbGl0aWVzIpsBCglFdmVudE1l",
+            "dGESHQoKcmVxdWVzdF9pZBgBIAEoCVIJcmVxdWVzdElkEhkKCHRyYWNlX2lk",
+            "GAIgASgJUgd0cmFjZUlkEiwKEnNlcnZlcl91bml4X21pbGxpcxgDIAEoA1IQ",
+            "c2VydmVyVW5peE1pbGxpcxImCg9nYW1lX3Nlc3Npb25faWQYBCABKAlSDWdh",
+            "bWVTZXNzaW9uSWQiOwoNUHJvYmxlbURldGFpbBISCgRwYXRoGAEgASgJUgRw",
+            "YXRoEhYKBmRldGFpbBgCIAEoCVIGZGV0YWlsInMKB1Byb2JsZW0SEgoEY29k",
+            "ZRgBIAEoCVIEY29kZRIYCgdtZXNzYWdlGAIgASgJUgdtZXNzYWdlEjoKB2Rl",
+            "dGFpbHMYAyADKAsyIC5wYW5vcHRlcy5wcm90by52MS5Qcm9ibGVtRGV0YWls",
+            "UgdkZXRhaWxzIogBCgtBdXRoQ29tbWFuZBI8CghyZWdpc3RlchgBIAEoCzIe",
+            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ1JlZ2lzdGVySABSCHJlZ2lzdGVyEjMK",
+            "BWxvZ2luGAIgASgLMhsucGFub3B0ZXMucHJvdG8udjEuTXNnTG9naW5IAFIF",
+            "bG9naW5CBgoEYm9keSLYAwoMTG9iYnlDb21tYW5kEkMKC2NyZWF0ZV9yb29t",
+            "GAEgASgLMiAucGFub3B0ZXMucHJvdG8udjEuTXNnQ3JlYXRlUm9vbUgAUgpj",
+            "cmVhdGVSb29tEj0KCWpvaW5fcm9vbRgCIAEoCzIeLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLk1zZ0pvaW5Sb29tSABSCGpvaW5Sb29tEkAKCmxlYXZlX3Jvb20YAyAB",
+            "KAsyHy5wYW5vcHRlcy5wcm90by52MS5Nc2dMZWF2ZVJvb21IAFIJbGVhdmVS",
+            "b29tEjoKCHJlYWR5X3VwGAQgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuTXNn",
+            "UmVhZHlVcEgAUgdyZWFkeVVwEjcKB2FkZF9ib3QYBSABKAsyHC5wYW5vcHRl",
+            "cy5wcm90by52MS5Nc2dBZGRCb3RIAFIGYWRkQm90EkAKCnN0YXJ0X2dhbWUY",
+            "BiABKAsyHy5wYW5vcHRlcy5wcm90by52MS5Nc2dTdGFydEdhbWVIAFIJc3Rh",
+            "cnRHYW1lEkMKC2tpY2tfcGxheWVyGAcgASgLMiAucGFub3B0ZXMucHJvdG8u",
+            "djEuTXNnS2lja1BsYXllckgAUgpraWNrUGxheWVyQgYKBGJvZHki2QoKD1Bs",
+            "YW5uaW5nQ29tbWFuZBJACgpzZXRfcG9saWN5GAEgASgLMh8ucGFub3B0ZXMu",
+            "cHJvdG8udjEuTXNnU2V0UG9saWN5SABSCXNldFBvbGljeRJZChNzZXRfcmVz",
+            "ZWFyY2hfdGFyZ2V0GAIgASgLMicucGFub3B0ZXMucHJvdG8udjEuTXNnU2V0",
+            "UmVzZWFyY2hUYXJnZXRIAFIRc2V0UmVzZWFyY2hUYXJnZXQSWQoTc2V0X2J1",
+            "aWxkaW5nX3JlY2lwZRgDIAEoCzInLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1Nl",
+            "dEJ1aWxkaW5nUmVjaXBlSABSEXNldEJ1aWxkaW5nUmVjaXBlEk8KD2J1aWxk",
+            "X3N0cnVjdHVyZRgEIAEoCzIkLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0J1aWxk",
+            "U3RydWN0dXJlSABSDmJ1aWxkU3RydWN0dXJlEkMKC3JldmVhbF9ub2RlGAUg",
+            "ASgLMiAucGFub3B0ZXMucHJvdG8udjEuTXNnUmV2ZWFsTm9kZUgAUgpyZXZl",
+            "YWxOb2RlEkQKDHNldF93YXJfem9uZRgGIAEoCzIgLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLk1zZ1NldFdhclpvbmVIAFIKc2V0V2FyWm9uZRJWChJ3YXJfem9uZV9k",
+            "aXJlY3RpdmUYByABKAsyJi5wYW5vcHRlcy5wcm90by52MS5Nc2dXYXJab25l",
+            "RGlyZWN0aXZlSABSEHdhclpvbmVEaXJlY3RpdmUSYgoWc2V0X21pbmlzdGVy",
+            "X2RpcmVjdGl2ZRgIIAEoCzIqLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1NldE1p",
+            "bmlzdGVyRGlyZWN0aXZlSABSFHNldE1pbmlzdGVyRGlyZWN0aXZlElAKEGlz",
+            "c3VlX3VuaXRfb3JkZXIYCSABKAsyJC5wYW5vcHRlcy5wcm90by52MS5Nc2dJ",
+            "c3N1ZVVuaXRPcmRlckgAUg5pc3N1ZVVuaXRPcmRlchJTChFjYW5jZWxfdW5p",
+            "dF9vcmRlchgKIAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0NhbmNlbFVu",
+            "aXRPcmRlckgAUg9jYW5jZWxVbml0T3JkZXISdQodcGxhbm5pbmdfcGF0aF9w",
+            "cmV2aWV3X3JlcXVlc3QYCyABKAsyMC5wYW5vcHRlcy5wcm90by52MS5Nc2dQ",
+            "bGFubmluZ1BhdGhQcmV2aWV3UmVxdWVzdEgAUhpwbGFubmluZ1BhdGhQcmV2",
+            "aWV3UmVxdWVzdBJDCgtzdWJtaXRfdHVybhgMIAEoCzIgLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLk1zZ1N1Ym1pdFR1cm5IAFIKc3VibWl0VHVybhJlChdzZXRfaW5z",
+            "dGl0dXRpb25fbG9hZG91dBgNIAEoCzIrLnBhbm9wdGVzLnByb3RvLnYxLk1z",
+            "Z1NldEluc3RpdHV0aW9uTG9hZG91dEgAUhVzZXRJbnN0aXR1dGlvbkxvYWRv",
+            "dXQSbAoXYnVpbGRfc3RydWN0dXJlX3ByZXZpZXcYDiABKAsyMi5wYW5vcHRl",
+            "cy5wcm90by52MS5Nc2dCdWlsZFN0cnVjdHVyZVByZXZpZXdSZXF1ZXN0SABS",
+            "FWJ1aWxkU3RydWN0dXJlUHJldmlldxJ2ChtzZXRfYnVpbGRpbmdfcmVjaXBl",
+            "X3ByZXZpZXcYDyABKAsyNS5wYW5vcHRlcy5wcm90by52MS5Nc2dTZXRCdWls",
+            "ZGluZ1JlY2lwZVByZXZpZXdSZXF1ZXN0SABSGHNldEJ1aWxkaW5nUmVjaXBl",
+            "UHJldmlld0IGCgRib2R5Is0CCgtHYW1lQ29tbWFuZBJACghwbGFubmluZxgB",
+            "IAEoCzIiLnBhbm9wdGVzLnByb3RvLnYxLlBsYW5uaW5nQ29tbWFuZEgAUghw",
+            "bGFubmluZxJvChtzdGF0aWNfY2F0YWxvZ19zeW5jX3JlcXVlc3QYAiABKAsy",
+            "Li5wYW5vcHRlcy5wcm90by52MS5Nc2dTdGF0aWNDYXRhbG9nU3luY1JlcXVl",
+            "c3RIAFIYc3RhdGljQ2F0YWxvZ1N5bmNSZXF1ZXN0EjQKBGNoYXQYAyABKAsy",
+            "Hi5wYW5vcHRlcy5wcm90by52MS5DaGF0Q29tbWFuZEgAUgRjaGF0Ek0KDWNv",
+            "bW1hbmRfYmF0Y2gYBCABKAsyJi5wYW5vcHRlcy5wcm90by52MS5Nc2dHYW1l",
+            "Q29tbWFuZEJhdGNoSABSDGNvbW1hbmRCYXRjaEIGCgRib2R5IvABCgtDbGll",
+            "bnRGcmFtZRIyCgRtZXRhGAEgASgLMh4ucGFub3B0ZXMucHJvdG8udjEuQ29t",
+            "bWFuZE1ldGFSBG1ldGESNAoEYXV0aBgKIAEoCzIeLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLkF1dGhDb21tYW5kSABSBGF1dGgSNwoFbG9iYnkYCyABKAsyHy5wYW5v",
+            "cHRlcy5wcm90by52MS5Mb2JieUNvbW1hbmRIAFIFbG9iYnkSNAoEZ2FtZRgM",
+            "IAEoCzIeLnBhbm9wdGVzLnByb3RvLnYxLkdhbWVDb21tYW5kSABSBGdhbWVC",
+            "CAoGdGFyZ2V0IoECCglBdXRoRXZlbnQSSQoNbG9naW5fc3VjY2VzcxgBIAEo",
+            "CzIiLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0xvZ2luU3VjY2Vzc0gAUgxsb2dp",
+            "blN1Y2Nlc3MSQAoKYXV0aF9lcnJvchgCIAEoCzIfLnBhbm9wdGVzLnByb3Rv",
+            "LnYxLk1zZ0F1dGhFcnJvckgAUglhdXRoRXJyb3ISXwoVY2xpZW50X3J1bnRp",
+            "bWVfY29uZmlnGAMgASgLMikucGFub3B0ZXMucHJvdG8udjEuTXNnQ2xpZW50",
+            "UnVudGltZUNvbmZpZ0gAUhNjbGllbnRSdW50aW1lQ29uZmlnQgYKBGJvZHki",
+            "+QIKCkxvYmJ5RXZlbnQSRgoMcm9vbV9jcmVhdGVkGAEgASgLMiEucGFub3B0",
+            "ZXMucHJvdG8udjEuTXNnUm9vbUNyZWF0ZWRIAFILcm9vbUNyZWF0ZWQSQAoK",
+            "cm9vbV9zdGF0ZRgCIAEoCzIfLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1Jvb21T",
+            "dGF0ZUgAUglyb29tU3RhdGUSSQoNZ2FtZV9zdGFydGluZxgDIAEoCzIiLnBh",
+            "bm9wdGVzLnByb3RvLnYxLk1zZ0dhbWVTdGFydGluZ0gAUgxnYW1lU3RhcnRp",
+            "bmcSSQoNcGxheWVyX2tpY2tlZBgEIAEoCzIiLnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk1zZ1BsYXllcktpY2tlZEgAUgxwbGF5ZXJLaWNrZWQSQwoLbG9iYnlfZXJy",
+            "b3IYBSABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dMb2JieUVycm9ySABS",
+            "CmxvYmJ5RXJyb3JCBgoEYm9keSLMEwoJR2FtZUV2ZW50EmUKF3N0YXRpY19j",
+            "YXRhbG9nX21hbmlmZXN0GAEgASgLMisucGFub3B0ZXMucHJvdG8udjEuTXNn",
+            "U3RhdGljQ2F0YWxvZ01hbmlmZXN0SABSFXN0YXRpY0NhdGFsb2dNYW5pZmVz",
+            "dBJlChdzdGF0aWNfY2F0YWxvZ19zbmFwc2hvdBgCIAEoCzIrLnBhbm9wdGVz",
+            "LnByb3RvLnYxLk1zZ1N0YXRpY0NhdGFsb2dTbmFwc2hvdEgAUhVzdGF0aWND",
+            "YXRhbG9nU25hcHNob3QSPQoJZ2FtZV9pbml0GAMgASgLMh4ucGFub3B0ZXMu",
+            "cHJvdG8udjEuTXNnR2FtZUluaXRIAFIIZ2FtZUluaXQSTAoOcGxhbm5pbmdf",
+            "c3RhcnQYBCABKAsyIy5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGFubmluZ1N0",
+            "YXJ0SABSDXBsYW5uaW5nU3RhcnQSVQoRcGxhbm5pbmdfc25hcHNob3QYBSAB",
+            "KAsyJi5wYW5vcHRlcy5wcm90by52MS5Nc2dQbGFubmluZ1NuYXBzaG90SABS",
+            "EHBsYW5uaW5nU25hcHNob3QSeAoecGxhbm5pbmdfcGF0aF9wcmV2aWV3X3Jl",
+            "c3BvbnNlGAYgASgLMjEucGFub3B0ZXMucHJvdG8udjEuTXNnUGxhbm5pbmdQ",
+            "YXRoUHJldmlld1Jlc3BvbnNlSABSG3BsYW5uaW5nUGF0aFByZXZpZXdSZXNw",
+            "b25zZRJGCgx0b2tlbl9yZXN1bHQYByABKAsyIS5wYW5vcHRlcy5wcm90by52",
+            "MS5Nc2dUb2tlblJlc3VsdEgAUgt0b2tlblJlc3VsdBJJCg1yZXZlYWxfcmVz",
+            "dWx0GAggASgLMiIucGFub3B0ZXMucHJvdG8udjEuTXNnUmV2ZWFsUmVzdWx0",
+            "SABSDHJldmVhbFJlc3VsdBJPCg9yZXNlYXJjaF9yZXN1bHQYCSABKAsyJC5w",
+            "YW5vcHRlcy5wcm90by52MS5Nc2dSZXNlYXJjaFJlc3VsdEgAUg5yZXNlYXJj",
+            "aFJlc3VsdBJTChFzZXRfcG9saWN5X3Jlc3VsdBgKIAEoCzIlLnBhbm9wdGVz",
+            "LnByb3RvLnYxLk1zZ1NldFBvbGljeVJlc3VsdEgAUg9zZXRQb2xpY3lSZXN1",
+            "bHQSbAoac2V0X2J1aWxkaW5nX3JlY2lwZV9yZXN1bHQYCyABKAsyLS5wYW5v",
+            "cHRlcy5wcm90by52MS5Nc2dTZXRCdWlsZGluZ1JlY2lwZVJlc3VsdEgAUhdz",
+            "ZXRCdWlsZGluZ1JlY2lwZVJlc3VsdBJiChZidWlsZF9zdHJ1Y3R1cmVfcmVz",
+            "dWx0GAwgASgLMioucGFub3B0ZXMucHJvdG8udjEuTXNnQnVpbGRTdHJ1Y3R1",
+            "cmVSZXN1bHRIAFIUYnVpbGRTdHJ1Y3R1cmVSZXN1bHQSQwoLdHVybl9yZXBv",
+            "cnQYDSABKAsyIC5wYW5vcHRlcy5wcm90by52MS5Nc2dUdXJuUmVwb3J0SABS",
+            "CnR1cm5SZXBvcnQSPQoJZ2FtZV9vdmVyGA8gASgLMh4ucGFub3B0ZXMucHJv",
+            "dG8udjEuTXNnR2FtZU92ZXJIAFIIZ2FtZU92ZXISXwoVbWluaXN0ZXJfcmVw",
+            "b3J0X2NodW5rGBAgASgLMikucGFub3B0ZXMucHJvdG8udjEuTXNnTWluaXN0",
+            "ZXJSZXBvcnRDaHVua0gAUhNtaW5pc3RlclJlcG9ydENodW5rElIKEG1pbmlz",
+            "dGVyX21ldHJpY3MYESABKAsyJS5wYW5vcHRlcy5wcm90by52MS5Nc2dNaW5p",
+            "c3Rlck1ldHJpY3NIAFIPbWluaXN0ZXJNZXRyaWNzEngKHnNldF9pbnN0aXR1",
+            "dGlvbl9sb2Fkb3V0X3Jlc3VsdBgSIAEoCzIxLnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk1zZ1NldEluc3RpdHV0aW9uTG9hZG91dFJlc3VsdEgAUhtzZXRJbnN0aXR1",
+            "dGlvbkxvYWRvdXRSZXN1bHQSYwoXaXNzdWVfdW5pdF9vcmRlcl9yZXN1bHQY",
+            "EyABKAsyKi5wYW5vcHRlcy5wcm90by52MS5Nc2dJc3N1ZVVuaXRPcmRlclJl",
+            "c3VsdEgAUhRpc3N1ZVVuaXRPcmRlclJlc3VsdBJTChFjb25maWdfYmF0Y2hf",
+            "anNvbhgUIAEoCzIlLnBhbm9wdGVzLnByb3RvLnYxLk1zZ0NvbmZpZ0JhdGNo",
+            "SnNvbkgAUg9jb25maWdCYXRjaEpzb24Scgocc3RhdGljX2NhdGFsb2dfc2Vj",
+            "dGlvbl9jaHVuaxgVIAEoCzIvLnBhbm9wdGVzLnByb3RvLnYxLk1zZ1N0YXRp",
+            "Y0NhdGFsb2dTZWN0aW9uQ2h1bmtIAFIZc3RhdGljQ2F0YWxvZ1NlY3Rpb25D",
+            "aHVuaxJyChxzdGF0aWNfY2F0YWxvZ19zeW5jX2NvbXBsZXRlGBYgASgLMi8u",
+            "cGFub3B0ZXMucHJvdG8udjEuTXNnU3RhdGljQ2F0YWxvZ1N5bmNDb21wbGV0",
+            "ZUgAUhlzdGF0aWNDYXRhbG9nU3luY0NvbXBsZXRlEn4KIGJ1aWxkX3N0cnVj",
+            "dHVyZV9wcmV2aWV3X3Jlc3BvbnNlGBcgASgLMjMucGFub3B0ZXMucHJvdG8u",
+            "djEuTXNnQnVpbGRTdHJ1Y3R1cmVQcmV2aWV3UmVzcG9uc2VIAFIdYnVpbGRT",
+            "dHJ1Y3R1cmVQcmV2aWV3UmVzcG9uc2USiAEKJHNldF9idWlsZGluZ19yZWNp",
+            "cGVfcHJldmlld19yZXNwb25zZRgYIAEoCzI2LnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk1zZ1NldEJ1aWxkaW5nUmVjaXBlUHJldmlld1Jlc3BvbnNlSABSIHNldEJ1",
+            "aWxkaW5nUmVjaXBlUHJldmlld1Jlc3BvbnNlElAKEGdhbWVfY2hhdF9wb3N0",
+            "ZWQYGSABKAsyJC5wYW5vcHRlcy5wcm90by52MS5Nc2dHYW1lQ2hhdFBvc3Rl",
+            "ZEgAUg5nYW1lQ2hhdFBvc3RlZBJKCg5nYW1lX2NoYXRfc3luYxgaIAEoCzIi",
+            "LnBhbm9wdGVzLnByb3RvLnYxLk1zZ0dhbWVDaGF0U3luY0gAUgxnYW1lQ2hh",
+            "dFN5bmMSQwoLY29tbWFuZF9hY2sYGyABKAsyIC5wYW5vcHRlcy5wcm90by52",
+            "MS5Nc2dDb21tYW5kQWNrSABSCmNvbW1hbmRBY2sSPQoJZ2FtZV9zeW5jGBwg",
+            "ASgLMh4ucGFub3B0ZXMucHJvdG8udjEuTXNnR2FtZVN5bmNIAFIIZ2FtZVN5",
+            "bmNCBgoEYm9keSKgAgoLU2VydmVyRnJhbWUSMAoEbWV0YRgBIAEoCzIcLnBh",
+            "bm9wdGVzLnByb3RvLnYxLkV2ZW50TWV0YVIEbWV0YRIyCgRhdXRoGAogASgL",
+            "MhwucGFub3B0ZXMucHJvdG8udjEuQXV0aEV2ZW50SABSBGF1dGgSNQoFbG9i",
+            "YnkYCyABKAsyHS5wYW5vcHRlcy5wcm90by52MS5Mb2JieUV2ZW50SABSBWxv",
+            "YmJ5EjIKBGdhbWUYDCABKAsyHC5wYW5vcHRlcy5wcm90by52MS5HYW1lRXZl",
+            "bnRIAFIEZ2FtZRI2Cgdwcm9ibGVtGA0gASgLMhoucGFub3B0ZXMucHJvdG8u",
+            "djEuUHJvYmxlbUgAUgdwcm9ibGVtQggKBnRhcmdldEJQWjdnaXRodWIuY29t",
+            "L2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dlbi9wcm90bztwcm90b3Yx",
+            "qgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.ChatReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.ConfigReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.SettlementReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.AuthReflection.Descriptor, global::Panoptes.Protocol.V1.ChatReflection.Descriptor, global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.ConfigReflection.Descriptor, global::Panoptes.Protocol.V1.DataCatalogReflection.Descriptor, global::Panoptes.Protocol.V1.GameStateReflection.Descriptor, global::Panoptes.Protocol.V1.LobbyReflection.Descriptor, global::Panoptes.Protocol.V1.MinisterReflection.Descriptor, global::Panoptes.Protocol.V1.OrdersReflection.Descriptor, global::Panoptes.Protocol.V1.TurnReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.CommandMeta), global::Panoptes.Protocol.V1.CommandMeta.Parser, new[]{ "RequestId", "TraceId", "ClientVersion", "Capabilities" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.EventMeta), global::Panoptes.Protocol.V1.EventMeta.Parser, new[]{ "RequestId", "TraceId", "ServerUnixMillis", "GameSessionId" }, null, null, null, null),
@@ -187,11 +189,11 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthCommand), global::Panoptes.Protocol.V1.AuthCommand.Parser, new[]{ "Register", "Login" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.LobbyCommand), global::Panoptes.Protocol.V1.LobbyCommand.Parser, new[]{ "CreateRoom", "JoinRoom", "LeaveRoom", "ReadyUp", "AddBot", "StartGame", "KickPlayer" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlanningCommand), global::Panoptes.Protocol.V1.PlanningCommand.Parser, new[]{ "SetPolicy", "SetResearchTarget", "SetBuildingRecipe", "BuildStructure", "RevealNode", "SetWarZone", "WarZoneDirective", "SetMinisterDirective", "IssueUnitOrder", "CancelUnitOrder", "PlanningPathPreviewRequest", "SubmitTurn", "SetInstitutionLoadout", "BuildStructurePreview", "SetBuildingRecipePreview" }, new[]{ "Body" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameCommand), global::Panoptes.Protocol.V1.GameCommand.Parser, new[]{ "Planning", "StaticCatalogSyncRequest", "Chat" }, new[]{ "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameCommand), global::Panoptes.Protocol.V1.GameCommand.Parser, new[]{ "Planning", "StaticCatalogSyncRequest", "Chat", "CommandBatch" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ClientFrame), global::Panoptes.Protocol.V1.ClientFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game" }, new[]{ "Target" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.AuthEvent), global::Panoptes.Protocol.V1.AuthEvent.Parser, new[]{ "LoginSuccess", "AuthError", "ClientRuntimeConfig" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.LobbyEvent), global::Panoptes.Protocol.V1.LobbyEvent.Parser, new[]{ "RoomCreated", "RoomState", "GameStarting", "PlayerKicked", "LobbyError" }, new[]{ "Body" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "TurnSettlement", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult", "IssueUnitOrderResult", "ConfigBatchJson", "StaticCatalogSectionChunk", "StaticCatalogSyncComplete", "BuildStructurePreviewResponse", "SetBuildingRecipePreviewResponse", "GameChatPosted", "GameChatSync" }, new[]{ "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.GameEvent), global::Panoptes.Protocol.V1.GameEvent.Parser, new[]{ "StaticCatalogManifest", "StaticCatalogSnapshot", "GameInit", "PlanningStart", "PlanningSnapshot", "PlanningPathPreviewResponse", "TokenResult", "RevealResult", "ResearchResult", "SetPolicyResult", "SetBuildingRecipeResult", "BuildStructureResult", "TurnReport", "GameOver", "MinisterReportChunk", "MinisterMetrics", "SetInstitutionLoadoutResult", "IssueUnitOrderResult", "ConfigBatchJson", "StaticCatalogSectionChunk", "StaticCatalogSyncComplete", "BuildStructurePreviewResponse", "SetBuildingRecipePreviewResponse", "GameChatPosted", "GameChatSync", "CommandAck", "GameSync" }, new[]{ "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ServerFrame), global::Panoptes.Protocol.V1.ServerFrame.Parser, new[]{ "Meta", "Auth", "Lobby", "Game", "Problem" }, new[]{ "Target" }, null, null, null)
           }));
     }
@@ -3183,6 +3185,9 @@ namespace Panoptes.Protocol.V1 {
         case BodyOneofCase.Chat:
           Chat = other.Chat.Clone();
           break;
+        case BodyOneofCase.CommandBatch:
+          CommandBatch = other.CommandBatch.Clone();
+          break;
       }
 
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -3230,6 +3235,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "command_batch" field.</summary>
+    public const int CommandBatchFieldNumber = 4;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgGameCommandBatch CommandBatch {
+      get { return bodyCase_ == BodyOneofCase.CommandBatch ? (global::Panoptes.Protocol.V1.MsgGameCommandBatch) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.CommandBatch;
+      }
+    }
+
     private object body_;
     /// <summary>Enum of possible cases for the "body" oneof.</summary>
     public enum BodyOneofCase {
@@ -3237,6 +3254,7 @@ namespace Panoptes.Protocol.V1 {
       Planning = 1,
       StaticCatalogSyncRequest = 2,
       Chat = 3,
+      CommandBatch = 4,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3270,6 +3288,7 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(Planning, other.Planning)) return false;
       if (!object.Equals(StaticCatalogSyncRequest, other.StaticCatalogSyncRequest)) return false;
       if (!object.Equals(Chat, other.Chat)) return false;
+      if (!object.Equals(CommandBatch, other.CommandBatch)) return false;
       if (BodyCase != other.BodyCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -3281,6 +3300,7 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.Planning) hash ^= Planning.GetHashCode();
       if (bodyCase_ == BodyOneofCase.StaticCatalogSyncRequest) hash ^= StaticCatalogSyncRequest.GetHashCode();
       if (bodyCase_ == BodyOneofCase.Chat) hash ^= Chat.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.CommandBatch) hash ^= CommandBatch.GetHashCode();
       hash ^= (int) bodyCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -3312,6 +3332,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteMessage(Chat);
       }
+      if (bodyCase_ == BodyOneofCase.CommandBatch) {
+        output.WriteRawTag(34);
+        output.WriteMessage(CommandBatch);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3334,6 +3358,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(26);
         output.WriteMessage(Chat);
       }
+      if (bodyCase_ == BodyOneofCase.CommandBatch) {
+        output.WriteRawTag(34);
+        output.WriteMessage(CommandBatch);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3352,6 +3380,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (bodyCase_ == BodyOneofCase.Chat) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Chat);
+      }
+      if (bodyCase_ == BodyOneofCase.CommandBatch) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(CommandBatch);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -3383,6 +3414,12 @@ namespace Panoptes.Protocol.V1 {
             Chat = new global::Panoptes.Protocol.V1.ChatCommand();
           }
           Chat.MergeFrom(other.Chat);
+          break;
+        case BodyOneofCase.CommandBatch:
+          if (CommandBatch == null) {
+            CommandBatch = new global::Panoptes.Protocol.V1.MsgGameCommandBatch();
+          }
+          CommandBatch.MergeFrom(other.CommandBatch);
           break;
       }
 
@@ -3432,6 +3469,15 @@ namespace Panoptes.Protocol.V1 {
             Chat = subBuilder;
             break;
           }
+          case 34: {
+            global::Panoptes.Protocol.V1.MsgGameCommandBatch subBuilder = new global::Panoptes.Protocol.V1.MsgGameCommandBatch();
+            if (bodyCase_ == BodyOneofCase.CommandBatch) {
+              subBuilder.MergeFrom(CommandBatch);
+            }
+            input.ReadMessage(subBuilder);
+            CommandBatch = subBuilder;
+            break;
+          }
         }
       }
     #endif
@@ -3476,6 +3522,15 @@ namespace Panoptes.Protocol.V1 {
             }
             input.ReadMessage(subBuilder);
             Chat = subBuilder;
+            break;
+          }
+          case 34: {
+            global::Panoptes.Protocol.V1.MsgGameCommandBatch subBuilder = new global::Panoptes.Protocol.V1.MsgGameCommandBatch();
+            if (bodyCase_ == BodyOneofCase.CommandBatch) {
+              subBuilder.MergeFrom(CommandBatch);
+            }
+            input.ReadMessage(subBuilder);
+            CommandBatch = subBuilder;
             break;
           }
         }
@@ -4753,9 +4808,6 @@ namespace Panoptes.Protocol.V1 {
         case BodyOneofCase.TurnReport:
           TurnReport = other.TurnReport.Clone();
           break;
-        case BodyOneofCase.TurnSettlement:
-          TurnSettlement = other.TurnSettlement.Clone();
-          break;
         case BodyOneofCase.GameOver:
           GameOver = other.GameOver.Clone();
           break;
@@ -4791,6 +4843,12 @@ namespace Panoptes.Protocol.V1 {
           break;
         case BodyOneofCase.GameChatSync:
           GameChatSync = other.GameChatSync.Clone();
+          break;
+        case BodyOneofCase.CommandAck:
+          CommandAck = other.CommandAck.Clone();
+          break;
+        case BodyOneofCase.GameSync:
+          GameSync = other.GameSync.Clone();
           break;
       }
 
@@ -4959,18 +5017,6 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "turn_settlement" field.</summary>
-    public const int TurnSettlementFieldNumber = 14;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Panoptes.Protocol.V1.MsgTurnSettlement TurnSettlement {
-      get { return bodyCase_ == BodyOneofCase.TurnSettlement ? (global::Panoptes.Protocol.V1.MsgTurnSettlement) body_ : null; }
-      set {
-        body_ = value;
-        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.TurnSettlement;
-      }
-    }
-
     /// <summary>Field number for the "game_over" field.</summary>
     public const int GameOverFieldNumber = 15;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5115,6 +5161,30 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "command_ack" field.</summary>
+    public const int CommandAckFieldNumber = 27;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgCommandAck CommandAck {
+      get { return bodyCase_ == BodyOneofCase.CommandAck ? (global::Panoptes.Protocol.V1.MsgCommandAck) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.CommandAck;
+      }
+    }
+
+    /// <summary>Field number for the "game_sync" field.</summary>
+    public const int GameSyncFieldNumber = 28;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.MsgGameSync GameSync {
+      get { return bodyCase_ == BodyOneofCase.GameSync ? (global::Panoptes.Protocol.V1.MsgGameSync) body_ : null; }
+      set {
+        body_ = value;
+        bodyCase_ = value == null ? BodyOneofCase.None : BodyOneofCase.GameSync;
+      }
+    }
+
     private object body_;
     /// <summary>Enum of possible cases for the "body" oneof.</summary>
     public enum BodyOneofCase {
@@ -5132,7 +5202,6 @@ namespace Panoptes.Protocol.V1 {
       SetBuildingRecipeResult = 11,
       BuildStructureResult = 12,
       TurnReport = 13,
-      TurnSettlement = 14,
       GameOver = 15,
       MinisterReportChunk = 16,
       MinisterMetrics = 17,
@@ -5145,6 +5214,8 @@ namespace Panoptes.Protocol.V1 {
       SetBuildingRecipePreviewResponse = 24,
       GameChatPosted = 25,
       GameChatSync = 26,
+      CommandAck = 27,
+      GameSync = 28,
     }
     private BodyOneofCase bodyCase_ = BodyOneofCase.None;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5188,7 +5259,6 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(SetBuildingRecipeResult, other.SetBuildingRecipeResult)) return false;
       if (!object.Equals(BuildStructureResult, other.BuildStructureResult)) return false;
       if (!object.Equals(TurnReport, other.TurnReport)) return false;
-      if (!object.Equals(TurnSettlement, other.TurnSettlement)) return false;
       if (!object.Equals(GameOver, other.GameOver)) return false;
       if (!object.Equals(MinisterReportChunk, other.MinisterReportChunk)) return false;
       if (!object.Equals(MinisterMetrics, other.MinisterMetrics)) return false;
@@ -5201,6 +5271,8 @@ namespace Panoptes.Protocol.V1 {
       if (!object.Equals(SetBuildingRecipePreviewResponse, other.SetBuildingRecipePreviewResponse)) return false;
       if (!object.Equals(GameChatPosted, other.GameChatPosted)) return false;
       if (!object.Equals(GameChatSync, other.GameChatSync)) return false;
+      if (!object.Equals(CommandAck, other.CommandAck)) return false;
+      if (!object.Equals(GameSync, other.GameSync)) return false;
       if (BodyCase != other.BodyCase) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
@@ -5222,7 +5294,6 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.SetBuildingRecipeResult) hash ^= SetBuildingRecipeResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.BuildStructureResult) hash ^= BuildStructureResult.GetHashCode();
       if (bodyCase_ == BodyOneofCase.TurnReport) hash ^= TurnReport.GetHashCode();
-      if (bodyCase_ == BodyOneofCase.TurnSettlement) hash ^= TurnSettlement.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GameOver) hash ^= GameOver.GetHashCode();
       if (bodyCase_ == BodyOneofCase.MinisterReportChunk) hash ^= MinisterReportChunk.GetHashCode();
       if (bodyCase_ == BodyOneofCase.MinisterMetrics) hash ^= MinisterMetrics.GetHashCode();
@@ -5235,6 +5306,8 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.SetBuildingRecipePreviewResponse) hash ^= SetBuildingRecipePreviewResponse.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GameChatPosted) hash ^= GameChatPosted.GetHashCode();
       if (bodyCase_ == BodyOneofCase.GameChatSync) hash ^= GameChatSync.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.CommandAck) hash ^= CommandAck.GetHashCode();
+      if (bodyCase_ == BodyOneofCase.GameSync) hash ^= GameSync.GetHashCode();
       hash ^= (int) bodyCase_;
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
@@ -5306,10 +5379,6 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(106);
         output.WriteMessage(TurnReport);
       }
-      if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-        output.WriteRawTag(114);
-        output.WriteMessage(TurnSettlement);
-      }
       if (bodyCase_ == BodyOneofCase.GameOver) {
         output.WriteRawTag(122);
         output.WriteMessage(GameOver);
@@ -5357,6 +5426,14 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.GameChatSync) {
         output.WriteRawTag(210, 1);
         output.WriteMessage(GameChatSync);
+      }
+      if (bodyCase_ == BodyOneofCase.CommandAck) {
+        output.WriteRawTag(218, 1);
+        output.WriteMessage(CommandAck);
+      }
+      if (bodyCase_ == BodyOneofCase.GameSync) {
+        output.WriteRawTag(226, 1);
+        output.WriteMessage(GameSync);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -5420,10 +5497,6 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(106);
         output.WriteMessage(TurnReport);
       }
-      if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-        output.WriteRawTag(114);
-        output.WriteMessage(TurnSettlement);
-      }
       if (bodyCase_ == BodyOneofCase.GameOver) {
         output.WriteRawTag(122);
         output.WriteMessage(GameOver);
@@ -5471,6 +5544,14 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.GameChatSync) {
         output.WriteRawTag(210, 1);
         output.WriteMessage(GameChatSync);
+      }
+      if (bodyCase_ == BodyOneofCase.CommandAck) {
+        output.WriteRawTag(218, 1);
+        output.WriteMessage(CommandAck);
+      }
+      if (bodyCase_ == BodyOneofCase.GameSync) {
+        output.WriteRawTag(226, 1);
+        output.WriteMessage(GameSync);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -5521,9 +5602,6 @@ namespace Panoptes.Protocol.V1 {
       if (bodyCase_ == BodyOneofCase.TurnReport) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(TurnReport);
       }
-      if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(TurnSettlement);
-      }
       if (bodyCase_ == BodyOneofCase.GameOver) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(GameOver);
       }
@@ -5559,6 +5637,12 @@ namespace Panoptes.Protocol.V1 {
       }
       if (bodyCase_ == BodyOneofCase.GameChatSync) {
         size += 2 + pb::CodedOutputStream.ComputeMessageSize(GameChatSync);
+      }
+      if (bodyCase_ == BodyOneofCase.CommandAck) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(CommandAck);
+      }
+      if (bodyCase_ == BodyOneofCase.GameSync) {
+        size += 2 + pb::CodedOutputStream.ComputeMessageSize(GameSync);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -5651,12 +5735,6 @@ namespace Panoptes.Protocol.V1 {
           }
           TurnReport.MergeFrom(other.TurnReport);
           break;
-        case BodyOneofCase.TurnSettlement:
-          if (TurnSettlement == null) {
-            TurnSettlement = new global::Panoptes.Protocol.V1.MsgTurnSettlement();
-          }
-          TurnSettlement.MergeFrom(other.TurnSettlement);
-          break;
         case BodyOneofCase.GameOver:
           if (GameOver == null) {
             GameOver = new global::Panoptes.Protocol.V1.MsgGameOver();
@@ -5728,6 +5806,18 @@ namespace Panoptes.Protocol.V1 {
             GameChatSync = new global::Panoptes.Protocol.V1.MsgGameChatSync();
           }
           GameChatSync.MergeFrom(other.GameChatSync);
+          break;
+        case BodyOneofCase.CommandAck:
+          if (CommandAck == null) {
+            CommandAck = new global::Panoptes.Protocol.V1.MsgCommandAck();
+          }
+          CommandAck.MergeFrom(other.CommandAck);
+          break;
+        case BodyOneofCase.GameSync:
+          if (GameSync == null) {
+            GameSync = new global::Panoptes.Protocol.V1.MsgGameSync();
+          }
+          GameSync.MergeFrom(other.GameSync);
           break;
       }
 
@@ -5867,15 +5957,6 @@ namespace Panoptes.Protocol.V1 {
             TurnReport = subBuilder;
             break;
           }
-          case 114: {
-            global::Panoptes.Protocol.V1.MsgTurnSettlement subBuilder = new global::Panoptes.Protocol.V1.MsgTurnSettlement();
-            if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-              subBuilder.MergeFrom(TurnSettlement);
-            }
-            input.ReadMessage(subBuilder);
-            TurnSettlement = subBuilder;
-            break;
-          }
           case 122: {
             global::Panoptes.Protocol.V1.MsgGameOver subBuilder = new global::Panoptes.Protocol.V1.MsgGameOver();
             if (bodyCase_ == BodyOneofCase.GameOver) {
@@ -5982,6 +6063,24 @@ namespace Panoptes.Protocol.V1 {
             }
             input.ReadMessage(subBuilder);
             GameChatSync = subBuilder;
+            break;
+          }
+          case 218: {
+            global::Panoptes.Protocol.V1.MsgCommandAck subBuilder = new global::Panoptes.Protocol.V1.MsgCommandAck();
+            if (bodyCase_ == BodyOneofCase.CommandAck) {
+              subBuilder.MergeFrom(CommandAck);
+            }
+            input.ReadMessage(subBuilder);
+            CommandAck = subBuilder;
+            break;
+          }
+          case 226: {
+            global::Panoptes.Protocol.V1.MsgGameSync subBuilder = new global::Panoptes.Protocol.V1.MsgGameSync();
+            if (bodyCase_ == BodyOneofCase.GameSync) {
+              subBuilder.MergeFrom(GameSync);
+            }
+            input.ReadMessage(subBuilder);
+            GameSync = subBuilder;
             break;
           }
         }
@@ -6120,15 +6219,6 @@ namespace Panoptes.Protocol.V1 {
             TurnReport = subBuilder;
             break;
           }
-          case 114: {
-            global::Panoptes.Protocol.V1.MsgTurnSettlement subBuilder = new global::Panoptes.Protocol.V1.MsgTurnSettlement();
-            if (bodyCase_ == BodyOneofCase.TurnSettlement) {
-              subBuilder.MergeFrom(TurnSettlement);
-            }
-            input.ReadMessage(subBuilder);
-            TurnSettlement = subBuilder;
-            break;
-          }
           case 122: {
             global::Panoptes.Protocol.V1.MsgGameOver subBuilder = new global::Panoptes.Protocol.V1.MsgGameOver();
             if (bodyCase_ == BodyOneofCase.GameOver) {
@@ -6235,6 +6325,24 @@ namespace Panoptes.Protocol.V1 {
             }
             input.ReadMessage(subBuilder);
             GameChatSync = subBuilder;
+            break;
+          }
+          case 218: {
+            global::Panoptes.Protocol.V1.MsgCommandAck subBuilder = new global::Panoptes.Protocol.V1.MsgCommandAck();
+            if (bodyCase_ == BodyOneofCase.CommandAck) {
+              subBuilder.MergeFrom(CommandAck);
+            }
+            input.ReadMessage(subBuilder);
+            CommandAck = subBuilder;
+            break;
+          }
+          case 226: {
+            global::Panoptes.Protocol.V1.MsgGameSync subBuilder = new global::Panoptes.Protocol.V1.MsgGameSync();
+            if (bodyCase_ == BodyOneofCase.GameSync) {
+              subBuilder.MergeFrom(GameSync);
+            }
+            input.ReadMessage(subBuilder);
+            GameSync = subBuilder;
             break;
           }
         }

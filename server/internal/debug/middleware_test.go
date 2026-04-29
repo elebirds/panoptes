@@ -23,11 +23,11 @@ func TestMessageLoggerResolveOutgoingSnapshotTracksPlanningStart(t *testing.T) {
 	}
 }
 
-func TestMessageLoggerResolveOutgoingSnapshotTracksTurnSettlement(t *testing.T) {
+func TestMessageLoggerResolveOutgoingSnapshotTracksGameSync(t *testing.T) {
 	logger := NewMessageLogger(true)
 	logger.storeSnapshot("player-1", playerSnapshot{turn: 2, phase: "planning"})
 
-	turn, phase := logger.resolveOutgoingSnapshot("player-1", &pb.MsgTurnSettlement{
+	turn, phase := logger.resolveOutgoingSnapshot("player-1", &pb.MsgGameSync{
 		Turn:  2,
 		Phase: "resolving",
 	})

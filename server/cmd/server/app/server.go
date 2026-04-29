@@ -60,7 +60,7 @@ func (a *App) buildServer() *http.Server {
 		commandRecorder = debug.NewCommandResultRecorder()
 		game.SetDebugHooks(game.DebugHooks{
 			DumpStateSummary:      debug.DumpGameStateSummary,
-			RecordSettlement:      settlementRecorder.RecordSettlement,
+			RecordGameSync:        settlementRecorder.RecordGameSync,
 			RecordGameOver:        settlementRecorder.RecordGameOver,
 			RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 		})
