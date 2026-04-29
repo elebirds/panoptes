@@ -296,7 +296,7 @@ func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
 	if !hasTurnEvent(turn2.GameSync, "economy", "building_built") {
 		t.Fatalf("turn 2 missing building_built event")
 	}
-	if farmNode := settlementNodeView(t, turn2.GameSync, "B2"); farmNode.GetBuildingTypeId() != "farm" {
+	if farmNode := gameSyncNodeView(t, turn2.GameSync, "B2"); farmNode.GetBuildingTypeId() != "farm" {
 		t.Fatalf("turn 2 farm node = %#v, want farm at B2", farmNode)
 	}
 	settlerID := findOwnedUnitIDByType(t, h.room.State(), "player-1", "settler")
@@ -327,7 +327,7 @@ func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
 	if !hasTurnEvent(turn3.GameSync, "map", "city_founded") {
 		t.Fatalf("turn 3 missing city_founded event")
 	}
-	if founded := settlementNodeView(t, turn3.GameSync, "D2"); founded.GetBuildingTypeId() != "city_core" || founded.GetBuildingStatus() != "disabled" || founded.GetCityId() != "D2" {
+	if founded := gameSyncNodeView(t, turn3.GameSync, "D2"); founded.GetBuildingTypeId() != "city_core" || founded.GetBuildingStatus() != "disabled" || founded.GetCityId() != "D2" {
 		t.Fatalf("turn 3 city core node = %#v, want disabled city_core at D2", founded)
 	}
 
@@ -352,7 +352,7 @@ func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
 	if !hasTurnEvent(turn4.GameSync, "economy", "building_built") {
 		t.Fatalf("turn 4 missing building_built event")
 	}
-	if barracks := settlementNodeView(t, turn4.GameSync, "E2"); barracks.GetBuildingTypeId() != "barracks" || barracks.GetBuildingStatus() != "disabled" || barracks.GetCityId() != "D2" {
+	if barracks := gameSyncNodeView(t, turn4.GameSync, "E2"); barracks.GetBuildingTypeId() != "barracks" || barracks.GetBuildingStatus() != "disabled" || barracks.GetCityId() != "D2" {
 		t.Fatalf("turn 4 barracks node = %#v, want disabled barracks at E2 bound to D2", barracks)
 	}
 
@@ -486,7 +486,7 @@ func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *
 			if building.Owner != "player-1" || !building.Disabled {
 				t.Fatalf("turn 1 building summary = %#v, want player-1 disabled", building)
 			}
-			node := settlementNodeView(t, record.GameSync, "C2")
+			node := gameSyncNodeView(t, record.GameSync, "C2")
 			if node.GetControllerPlayerId() != "player-2" || node.GetBuildingStatus() != "takeover" {
 				t.Fatalf("turn 1 node view = %#v, want player-2 takeover", node)
 			}
@@ -494,7 +494,7 @@ func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *
 			if !hasTurnEvent(record.GameSync, "economy", "facility_takeover_completed") {
 				t.Fatalf("turn 2 missing facility_takeover_completed event")
 			}
-			nodeView := settlementNodeView(t, record.GameSync, "C2")
+			nodeView := gameSyncNodeView(t, record.GameSync, "C2")
 			if nodeView.GetControllerPlayerId() != "player-2" || !nodeView.GetIsMemory() || nodeView.GetIsCurrentlyVisible() {
 				t.Fatalf("turn 2 node view = %#v, want remembered player-2 takeover state", nodeView)
 			}

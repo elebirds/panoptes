@@ -130,6 +130,7 @@ func (e CityCoreDestroyedEvent) Apply(world donburi.World, state *domain.GameSta
 	state.IsOver = true
 	state.WinnerID = e.ConquerorFaction
 	state.OverReason = "city_core_destroyed"
+	state.RefreshStructuredModel()
 }
 
 func (e CityCoreDestroyedEvent) Kind() string { return "city_core_destroyed" }

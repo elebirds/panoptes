@@ -159,10 +159,6 @@ func (h *Harness) WaitGameSync(playerID string, turn int, timeout time.Duration)
 	return nil, fmt.Errorf("game sync turn=%d not received within %s", turn, timeout)
 }
 
-func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
-	return h.WaitGameSync(playerID, turn, timeout)
-}
-
 func (h *Harness) Messages(playerID string) []proto.Message {
 	if h == nil || h.transport == nil {
 		return nil

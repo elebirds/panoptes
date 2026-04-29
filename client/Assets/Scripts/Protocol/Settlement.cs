@@ -55,18 +55,18 @@ namespace Panoptes.Protocol.V1 {
             "YXllcl9pZBgBIAEoCVIIcGxheWVySWQSIwoNdGVjaG5vbG9neV9pZBgCIAEo",
             "CVIMdGVjaG5vbG9neUlkImIKHkRvbWFpblRlY2hub2xvZ3lBY3RpdmF0ZWRF",
             "dmVudBIbCglwbGF5ZXJfaWQYASABKAlSCHBsYXllcklkEiMKDXRlY2hub2xv",
-            "Z3lfaWQYAiABKAlSDHRlY2hub2xvZ3lJZCJvChREb21haW5Vbml0TW92ZWRF",
-            "dmVudBIXCgd1bml0X2lkGAEgASgJUgZ1bml0SWQSIAoMZnJvbV9ub2RlX2lk",
-            "GAIgASgJUgpmcm9tTm9kZUlkEhwKCnRvX25vZGVfaWQYAyABKAlSCHRvTm9k",
-            "ZUlkIo0BChZEb21haW5DaXR5Rm91bmRlZEV2ZW50EhsKCXBsYXllcl9pZBgB",
-            "IAEoCVIIcGxheWVySWQSFwoHdW5pdF9pZBgCIAEoCVIGdW5pdElkEhcKB2Np",
-            "dHlfaWQYAyABKAlSBmNpdHlJZBIkCg5jZW50ZXJfbm9kZV9pZBgEIAEoCVIM",
-            "Y2VudGVyTm9kZUlkIowBChhEb21haW5CdWlsZGluZ0J1aWx0RXZlbnQSFwoH",
-            "bm9kZV9pZBgBIAEoCVIGbm9kZUlkEigKEGJ1aWxkaW5nX3R5cGVfaWQYAiAB",
-            "KAlSDmJ1aWxkaW5nVHlwZUlkEhQKBW93bmVyGAMgASgJUgVvd25lchIXCgdj",
-            "aXR5X2lkGAQgASgJUgZjaXR5SWRCUFo3Z2l0aHViLmNvbS9lbGViaXJkcy9w",
-            "YW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG87cHJvdG92MaoCFFBhbm9wdGVz",
-            "LlByb3RvY29sLlYxYgZwcm90bzM="));
+            "Z3lfaWQYAiABKAlSDHRlY2hub2xvZ3lJZCKDAQoURG9tYWluVW5pdE1vdmVk",
+            "RXZlbnQSFwoHdW5pdF9pZBgBIAEoCVIGdW5pdElkEhUKBmZyb21fcRgCIAEo",
+            "BVIFZnJvbVESFQoGZnJvbV9yGAMgASgFUgVmcm9tUhIRCgR0b19xGAQgASgF",
+            "UgN0b1ESEQoEdG9fchgFIAEoBVIDdG9SIo0BChZEb21haW5DaXR5Rm91bmRl",
+            "ZEV2ZW50EhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySWQSFwoHdW5pdF9p",
+            "ZBgCIAEoCVIGdW5pdElkEhcKB2NpdHlfaWQYAyABKAlSBmNpdHlJZBIkCg5j",
+            "ZW50ZXJfbm9kZV9pZBgEIAEoCVIMY2VudGVyTm9kZUlkIowBChhEb21haW5C",
+            "dWlsZGluZ0J1aWx0RXZlbnQSFwoHbm9kZV9pZBgBIAEoCVIGbm9kZUlkEigK",
+            "EGJ1aWxkaW5nX3R5cGVfaWQYAiABKAlSDmJ1aWxkaW5nVHlwZUlkEhQKBW93",
+            "bmVyGAMgASgJUgVvd25lchIXCgdjaXR5X2lkGAQgASgJUgZjaXR5SWRCUFo3",
+            "Z2l0aHViLmNvbS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJv",
+            "dG87cHJvdG92MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -75,7 +75,7 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainPolicyChangedEvent), global::Panoptes.Protocol.V1.DomainPolicyChangedEvent.Parser, new[]{ "PlayerId", "OldPolicy", "NewPolicy" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainTechnologyCompletedEvent), global::Panoptes.Protocol.V1.DomainTechnologyCompletedEvent.Parser, new[]{ "PlayerId", "TechnologyId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainTechnologyActivatedEvent), global::Panoptes.Protocol.V1.DomainTechnologyActivatedEvent.Parser, new[]{ "PlayerId", "TechnologyId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainUnitMovedEvent), global::Panoptes.Protocol.V1.DomainUnitMovedEvent.Parser, new[]{ "UnitId", "FromNodeId", "ToNodeId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainUnitMovedEvent), global::Panoptes.Protocol.V1.DomainUnitMovedEvent.Parser, new[]{ "UnitId", "FromQ", "FromR", "ToQ", "ToR" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainCityFoundedEvent), global::Panoptes.Protocol.V1.DomainCityFoundedEvent.Parser, new[]{ "PlayerId", "UnitId", "CityId", "CenterNodeId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.DomainBuildingBuiltEvent), global::Panoptes.Protocol.V1.DomainBuildingBuiltEvent.Parser, new[]{ "NodeId", "BuildingTypeId", "Owner", "CityId" }, null, null, null, null)
           }));
@@ -1904,8 +1904,10 @@ namespace Panoptes.Protocol.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public DomainUnitMovedEvent(DomainUnitMovedEvent other) : this() {
       unitId_ = other.unitId_;
-      fromNodeId_ = other.fromNodeId_;
-      toNodeId_ = other.toNodeId_;
+      fromQ_ = other.fromQ_;
+      fromR_ = other.fromR_;
+      toQ_ = other.toQ_;
+      toR_ = other.toR_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1927,27 +1929,51 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
-    /// <summary>Field number for the "from_node_id" field.</summary>
-    public const int FromNodeIdFieldNumber = 2;
-    private string fromNodeId_ = "";
+    /// <summary>Field number for the "from_q" field.</summary>
+    public const int FromQFieldNumber = 2;
+    private int fromQ_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string FromNodeId {
-      get { return fromNodeId_; }
+    public int FromQ {
+      get { return fromQ_; }
       set {
-        fromNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        fromQ_ = value;
       }
     }
 
-    /// <summary>Field number for the "to_node_id" field.</summary>
-    public const int ToNodeIdFieldNumber = 3;
-    private string toNodeId_ = "";
+    /// <summary>Field number for the "from_r" field.</summary>
+    public const int FromRFieldNumber = 3;
+    private int fromR_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string ToNodeId {
-      get { return toNodeId_; }
+    public int FromR {
+      get { return fromR_; }
       set {
-        toNodeId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        fromR_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "to_q" field.</summary>
+    public const int ToQFieldNumber = 4;
+    private int toQ_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int ToQ {
+      get { return toQ_; }
+      set {
+        toQ_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "to_r" field.</summary>
+    public const int ToRFieldNumber = 5;
+    private int toR_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int ToR {
+      get { return toR_; }
+      set {
+        toR_ = value;
       }
     }
 
@@ -1967,8 +1993,10 @@ namespace Panoptes.Protocol.V1 {
         return true;
       }
       if (UnitId != other.UnitId) return false;
-      if (FromNodeId != other.FromNodeId) return false;
-      if (ToNodeId != other.ToNodeId) return false;
+      if (FromQ != other.FromQ) return false;
+      if (FromR != other.FromR) return false;
+      if (ToQ != other.ToQ) return false;
+      if (ToR != other.ToR) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1977,8 +2005,10 @@ namespace Panoptes.Protocol.V1 {
     public override int GetHashCode() {
       int hash = 1;
       if (UnitId.Length != 0) hash ^= UnitId.GetHashCode();
-      if (FromNodeId.Length != 0) hash ^= FromNodeId.GetHashCode();
-      if (ToNodeId.Length != 0) hash ^= ToNodeId.GetHashCode();
+      if (FromQ != 0) hash ^= FromQ.GetHashCode();
+      if (FromR != 0) hash ^= FromR.GetHashCode();
+      if (ToQ != 0) hash ^= ToQ.GetHashCode();
+      if (ToR != 0) hash ^= ToR.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -2001,13 +2031,21 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(UnitId);
       }
-      if (FromNodeId.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(FromNodeId);
+      if (FromQ != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(FromQ);
       }
-      if (ToNodeId.Length != 0) {
-        output.WriteRawTag(26);
-        output.WriteString(ToNodeId);
+      if (FromR != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(FromR);
+      }
+      if (ToQ != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(ToQ);
+      }
+      if (ToR != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(ToR);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -2023,13 +2061,21 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(10);
         output.WriteString(UnitId);
       }
-      if (FromNodeId.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(FromNodeId);
+      if (FromQ != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(FromQ);
       }
-      if (ToNodeId.Length != 0) {
-        output.WriteRawTag(26);
-        output.WriteString(ToNodeId);
+      if (FromR != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(FromR);
+      }
+      if (ToQ != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(ToQ);
+      }
+      if (ToR != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(ToR);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -2044,11 +2090,17 @@ namespace Panoptes.Protocol.V1 {
       if (UnitId.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(UnitId);
       }
-      if (FromNodeId.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(FromNodeId);
+      if (FromQ != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(FromQ);
       }
-      if (ToNodeId.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(ToNodeId);
+      if (FromR != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(FromR);
+      }
+      if (ToQ != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ToQ);
+      }
+      if (ToR != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ToR);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -2065,11 +2117,17 @@ namespace Panoptes.Protocol.V1 {
       if (other.UnitId.Length != 0) {
         UnitId = other.UnitId;
       }
-      if (other.FromNodeId.Length != 0) {
-        FromNodeId = other.FromNodeId;
+      if (other.FromQ != 0) {
+        FromQ = other.FromQ;
       }
-      if (other.ToNodeId.Length != 0) {
-        ToNodeId = other.ToNodeId;
+      if (other.FromR != 0) {
+        FromR = other.FromR;
+      }
+      if (other.ToQ != 0) {
+        ToQ = other.ToQ;
+      }
+      if (other.ToR != 0) {
+        ToR = other.ToR;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -2094,12 +2152,20 @@ namespace Panoptes.Protocol.V1 {
             UnitId = input.ReadString();
             break;
           }
-          case 18: {
-            FromNodeId = input.ReadString();
+          case 16: {
+            FromQ = input.ReadInt32();
             break;
           }
-          case 26: {
-            ToNodeId = input.ReadString();
+          case 24: {
+            FromR = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            ToQ = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            ToR = input.ReadInt32();
             break;
           }
         }
@@ -2125,12 +2191,20 @@ namespace Panoptes.Protocol.V1 {
             UnitId = input.ReadString();
             break;
           }
-          case 18: {
-            FromNodeId = input.ReadString();
+          case 16: {
+            FromQ = input.ReadInt32();
             break;
           }
-          case 26: {
-            ToNodeId = input.ReadString();
+          case 24: {
+            FromR = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            ToQ = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            ToR = input.ReadInt32();
             break;
           }
         }

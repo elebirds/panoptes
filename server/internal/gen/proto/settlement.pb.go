@@ -458,8 +458,10 @@ func (x *DomainTechnologyActivatedEvent) GetTechnologyId() string {
 type DomainUnitMovedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UnitId        string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
-	FromNodeId    string                 `protobuf:"bytes,2,opt,name=from_node_id,json=fromNodeId,proto3" json:"from_node_id,omitempty"`
-	ToNodeId      string                 `protobuf:"bytes,3,opt,name=to_node_id,json=toNodeId,proto3" json:"to_node_id,omitempty"`
+	FromQ         int32                  `protobuf:"varint,2,opt,name=from_q,json=fromQ,proto3" json:"from_q,omitempty"`
+	FromR         int32                  `protobuf:"varint,3,opt,name=from_r,json=fromR,proto3" json:"from_r,omitempty"`
+	ToQ           int32                  `protobuf:"varint,4,opt,name=to_q,json=toQ,proto3" json:"to_q,omitempty"`
+	ToR           int32                  `protobuf:"varint,5,opt,name=to_r,json=toR,proto3" json:"to_r,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,18 +503,32 @@ func (x *DomainUnitMovedEvent) GetUnitId() string {
 	return ""
 }
 
-func (x *DomainUnitMovedEvent) GetFromNodeId() string {
+func (x *DomainUnitMovedEvent) GetFromQ() int32 {
 	if x != nil {
-		return x.FromNodeId
+		return x.FromQ
 	}
-	return ""
+	return 0
 }
 
-func (x *DomainUnitMovedEvent) GetToNodeId() string {
+func (x *DomainUnitMovedEvent) GetFromR() int32 {
 	if x != nil {
-		return x.ToNodeId
+		return x.FromR
 	}
-	return ""
+	return 0
+}
+
+func (x *DomainUnitMovedEvent) GetToQ() int32 {
+	if x != nil {
+		return x.ToQ
+	}
+	return 0
+}
+
+func (x *DomainUnitMovedEvent) GetToR() int32 {
+	if x != nil {
+		return x.ToR
+	}
+	return 0
 }
 
 type DomainCityFoundedEvent struct {
@@ -690,13 +706,13 @@ const file_panoptes_proto_v1_settlement_proto_rawDesc = "" +
 	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"b\n" +
 	"\x1eDomainTechnologyActivatedEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12#\n" +
-	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"o\n" +
+	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"\x83\x01\n" +
 	"\x14DomainUnitMovedEvent\x12\x17\n" +
-	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12 \n" +
-	"\ffrom_node_id\x18\x02 \x01(\tR\n" +
-	"fromNodeId\x12\x1c\n" +
-	"\n" +
-	"to_node_id\x18\x03 \x01(\tR\btoNodeId\"\x8d\x01\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12\x15\n" +
+	"\x06from_q\x18\x02 \x01(\x05R\x05fromQ\x12\x15\n" +
+	"\x06from_r\x18\x03 \x01(\x05R\x05fromR\x12\x11\n" +
+	"\x04to_q\x18\x04 \x01(\x05R\x03toQ\x12\x11\n" +
+	"\x04to_r\x18\x05 \x01(\x05R\x03toR\"\x8d\x01\n" +
 	"\x16DomainCityFoundedEvent\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
 	"\aunit_id\x18\x02 \x01(\tR\x06unitId\x12\x17\n" +

@@ -31,7 +31,7 @@ func TestNewServerDoesNotRegisterDevGameRoutesWhenDevModeFalse(t *testing.T) {
 		nil,
 		nil,
 		false,
-		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewSettlementRecorder(), debug.NewCommandResultRecorder()),
+		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewGameSyncRecorder(), debug.NewCommandResultRecorder()),
 	)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/state", nil)
@@ -199,7 +199,7 @@ func TestDebugHandlerStepTurnReturnsLatestGameSync(t *testing.T) {
 	}
 }
 
-func TestDebugHandlerGetSettlementReturnsRecorderGameSync(t *testing.T) {
+func TestDebugHandlerGetGameSyncReturnsRecorderGameSync(t *testing.T) {
 	fixture := newDebugHTTPFixture(t)
 
 	stepReq := httptest.NewRequest(http.MethodPost, "/api/dev/game/step-turn", bytes.NewBufferString(`{}`))
@@ -210,7 +210,7 @@ func TestDebugHandlerGetSettlementReturnsRecorderGameSync(t *testing.T) {
 		t.Fatalf("step status = %d, want 200 body=%s", stepResp.Code, stepResp.Body.String())
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/settlement", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/sync", nil)
 	req.Header.Set("Authorization", "Bearer "+fixture.token)
 	resp := httptest.NewRecorder()
 	fixture.server.Handler().ServeHTTP(resp, req)
@@ -309,7 +309,7 @@ func TestDebugHandlerVisionTogglesFullMapAndPushesPlanningRefresh(t *testing.T) 
 type debugHTTPFixture struct {
 	server          *Server
 	room            *game.GameRoom
-	recorder        *debug.SettlementRecorder
+	recorder        *debug.GameSyncRecorder
 	commandRecorder *debug.CommandResultRecorder
 	transport       *debug.CaptureTransport
 	token           string
@@ -324,7 +324,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	}
 	staticdata.SetDefault(def.Catalog)
 
-	recorder := debug.NewSettlementRecorder()
+	recorder := debug.NewGameSyncRecorder()
 	commandRecorder := debug.NewCommandResultRecorder()
 	previousRegistry := game.Registry
 	game.Registry = game.NewGameRoomRegistry()
@@ -423,7 +423,7 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
-	recorder := debug.NewSettlementRecorder()
+	recorder := debug.NewGameSyncRecorder()
 	commandRecorder := debug.NewCommandResultRecorder()
 	previousRegistry := game.Registry
 	game.Registry = game.NewGameRoomRegistry()

@@ -62,7 +62,7 @@ func (s *Server) registerRoutes() {
 
 	if s.devMode && s.debugHandler != nil {
 		s.mux.HandleFunc("GET /api/dev/game/state", AuthMiddleware(s.jwtSecret, s.debugHandler.GetState))
-		s.mux.HandleFunc("GET /api/dev/game/settlement", AuthMiddleware(s.jwtSecret, s.debugHandler.GetSettlement))
+		s.mux.HandleFunc("GET /api/dev/game/sync", AuthMiddleware(s.jwtSecret, s.debugHandler.GetGameSync))
 		s.mux.HandleFunc("POST /api/dev/game/command", AuthMiddleware(s.jwtSecret, s.debugHandler.Command))
 		s.mux.HandleFunc("POST /api/dev/game/vision", AuthMiddleware(s.jwtSecret, s.debugHandler.Vision))
 		s.mux.HandleFunc("POST /api/dev/game/submit", AuthMiddleware(s.jwtSecret, s.debugHandler.Submit))

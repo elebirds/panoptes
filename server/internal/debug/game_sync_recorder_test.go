@@ -6,8 +6,8 @@ import (
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
 
-func TestSettlementRecorderClonesRecordedMessages(t *testing.T) {
-	recorder := NewSettlementRecorder()
+func TestGameSyncRecorderClonesRecordedMessages(t *testing.T) {
+	recorder := NewGameSyncRecorder()
 
 	syncMsg := &pb.MsgGameSync{
 		Turn:  2,

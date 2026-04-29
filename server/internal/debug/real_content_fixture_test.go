@@ -271,7 +271,7 @@ func assertUnitAtNode(t *testing.T, state *domain.GameState, unitID string, want
 	}
 }
 
-func settlementNodeView(t *testing.T, msg *pb.MsgGameSync, nodeID string) *pb.NodeView {
+func gameSyncNodeView(t *testing.T, msg *pb.MsgGameSync, nodeID string) *pb.NodeView {
 	t.Helper()
 
 	if msg == nil {
@@ -282,7 +282,7 @@ func settlementNodeView(t *testing.T, msg *pb.MsgGameSync, nodeID string) *pb.No
 			return node
 		}
 	}
-	t.Fatalf("node %s not found in settlement", nodeID)
+	t.Fatalf("node %s not found in game sync", nodeID)
 	return nil
 }
 

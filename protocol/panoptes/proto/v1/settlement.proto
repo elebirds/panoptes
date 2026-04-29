@@ -48,8 +48,10 @@ message DomainTechnologyActivatedEvent {
 
 message DomainUnitMovedEvent {
   string unit_id = 1;
-  string from_node_id = 2;
-  string to_node_id = 3;
+  int32 from_q = 2;
+  int32 from_r = 3;
+  int32 to_q = 4;
+  int32 to_r = 5;
 }
 
 message DomainCityFoundedEvent {

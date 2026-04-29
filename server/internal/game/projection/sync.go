@@ -129,6 +129,10 @@ func domainEventEnvelope(evt event.Event, channel gameresolution.Channel, turn i
 		envelope.Event = &pb.DomainEventEnvelope_UnitMoved{
 			UnitMoved: &pb.DomainUnitMovedEvent{
 				UnitId: e.UnitID,
+				FromQ:  int32(e.From.Q),
+				FromR:  int32(e.From.R),
+				ToQ:    int32(e.To.Q),
+				ToR:    int32(e.To.R),
 			},
 		}
 	case event.CityFoundedEvent:
