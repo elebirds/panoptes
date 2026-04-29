@@ -19,13 +19,13 @@ import (
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
-func ProjectPlanningStartEvents(events []event.Event) []*pb.DomainEventEnvelope {
+func ProjectPlanningStartEvents(turn int32, events []event.Event) []*pb.DomainEventEnvelope {
 	out := make([]*pb.DomainEventEnvelope, 0, len(events))
 	for _, evt := range events {
 		if shouldSkipProjectedEvent(evt) {
 			continue
 		}
-		out = append(out, domainEventEnvelope(evt, gameresolution.ChannelPlanning, 0, domain.PhasePlanning.String(), len(out)))
+		out = append(out, domainEventEnvelope(evt, gameresolution.ChannelPlanning, turn, domain.PhasePlanning.String(), len(out)))
 	}
 	return out
 }

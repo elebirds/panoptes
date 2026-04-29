@@ -356,7 +356,7 @@ func TestProjectGameSyncKeepsPlanningAndEconomyChannelsSeparate(t *testing.T) {
 func TestProjectPlanningStartEventsMapsTechnologyActivationOnly(t *testing.T) {
 	t.Parallel()
 
-	events := ProjectPlanningStartEvents([]event.Event{
+	events := ProjectPlanningStartEvents(2, []event.Event{
 		event.TechnologyActivatedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
 		event.TechnologyGrantAppliedEvent{PlayerID: "player-1", SourceTech: "agrarian_foundations"},
 	})
@@ -369,6 +369,15 @@ func TestProjectPlanningStartEventsMapsTechnologyActivationOnly(t *testing.T) {
 	}
 	if events[1].GetKind() != "technology_grant_applied" {
 		t.Fatalf("events[1].kind = %q, want technology_grant_applied", events[1].GetKind())
+	}
+	if events[0].GetTurn() != 2 {
+		t.Fatalf("events[0].turn = %d, want 2", events[0].GetTurn())
+	}
+	nextTurnEvents := ProjectPlanningStartEvents(3, []event.Event{
+		event.TechnologyActivatedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"},
+	})
+	if events[0].GetEventId() == nextTurnEvents[0].GetEventId() {
+		t.Fatalf("planning start event ids should differ across turns: %q", events[0].GetEventId())
 	}
 }
 

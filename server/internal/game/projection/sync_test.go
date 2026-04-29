@@ -38,6 +38,24 @@ func TestProjectGameSyncIncludesTypedDomainEventEnvelope(t *testing.T) {
 	}
 }
 
+func TestProjectGameSyncIncludesTypedUnitMovedCoordinates(t *testing.T) {
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelUnit, event.UnitMovedEvent{
+		UnitID: "unit-1",
+		From:   domain.Position{Q: 1, R: 2},
+		To:     domain.Position{Q: 3, R: 4},
+	})
+
+	msg := ProjectGameSync(nil, "player-1", 3, domain.PhaseResolving.String(), domain.PhasePlanning.String(), collector)
+	moved := msg.GetEvents()[0].GetUnitMoved()
+	if moved == nil {
+		t.Fatalf("typed unit_moved event is nil")
+	}
+	if moved.GetUnitId() != "unit-1" || moved.GetFromQ() != 1 || moved.GetFromR() != 2 || moved.GetToQ() != 3 || moved.GetToR() != 4 {
+		t.Fatalf("typed unit_moved = %#v", moved)
+	}
+}
+
 func TestV2CommandBatchProtoShape(t *testing.T) {
 	batch := &pb.MsgGameCommandBatch{
 		Commands: []*pb.CommandEnvelope{{

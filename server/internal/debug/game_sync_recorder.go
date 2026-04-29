@@ -7,20 +7,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type SettlementRecorder struct {
+type GameSyncRecorder struct {
 	mu        sync.RWMutex
 	gameSyncs map[string]map[string]*pb.MsgGameSync
 	gameOvers map[string]*pb.MsgGameOver
 }
 
-func NewSettlementRecorder() *SettlementRecorder {
-	return &SettlementRecorder{
+func NewGameSyncRecorder() *GameSyncRecorder {
+	return &GameSyncRecorder{
 		gameSyncs: make(map[string]map[string]*pb.MsgGameSync),
 		gameOvers: make(map[string]*pb.MsgGameOver),
 	}
 }
 
-func (r *SettlementRecorder) RecordGameSync(roomID string, playerID string, msg *pb.MsgGameSync) {
+func (r *GameSyncRecorder) RecordGameSync(roomID string, playerID string, msg *pb.MsgGameSync) {
 	if r == nil || roomID == "" || playerID == "" || msg == nil {
 		return
 	}
@@ -34,7 +34,7 @@ func (r *SettlementRecorder) RecordGameSync(roomID string, playerID string, msg 
 	r.gameSyncs[roomID][playerID] = proto.Clone(msg).(*pb.MsgGameSync)
 }
 
-func (r *SettlementRecorder) LatestGameSync(roomID string, playerID string) *pb.MsgGameSync {
+func (r *GameSyncRecorder) LatestGameSync(roomID string, playerID string) *pb.MsgGameSync {
 	if r == nil || roomID == "" || playerID == "" {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (r *SettlementRecorder) LatestGameSync(roomID string, playerID string) *pb.
 	return proto.Clone(msg).(*pb.MsgGameSync)
 }
 
-func (r *SettlementRecorder) RecordGameOver(roomID string, msg *pb.MsgGameOver) {
+func (r *GameSyncRecorder) RecordGameOver(roomID string, msg *pb.MsgGameOver) {
 	if r == nil || roomID == "" || msg == nil {
 		return
 	}
@@ -59,7 +59,7 @@ func (r *SettlementRecorder) RecordGameOver(roomID string, msg *pb.MsgGameOver) 
 	r.gameOvers[roomID] = proto.Clone(msg).(*pb.MsgGameOver)
 }
 
-func (r *SettlementRecorder) LatestGameOver(roomID string) *pb.MsgGameOver {
+func (r *GameSyncRecorder) LatestGameOver(roomID string) *pb.MsgGameOver {
 	if r == nil || roomID == "" {
 		return nil
 	}

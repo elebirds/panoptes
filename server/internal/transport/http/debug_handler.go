@@ -19,7 +19,7 @@ import (
 
 type DebugHandler struct {
 	rooms          coretransport.GameRoomRegistry
-	recorder       *debug.SettlementRecorder
+	recorder       *debug.GameSyncRecorder
 	commandResults *debug.CommandResultRecorder
 	unmarshalOpts  protojson.UnmarshalOptions
 }
@@ -47,7 +47,7 @@ type debugSubmitResponse struct {
 	State debug.StateSummary `json:"state"`
 }
 
-type debugSettlementResponse struct {
+type debugGameSyncResponse struct {
 	GameSync *pb.MsgGameSync `json:"game_sync,omitempty"`
 	GameOver *pb.MsgGameOver `json:"game_over,omitempty"`
 }
@@ -67,7 +67,7 @@ type debugVisionResponse struct {
 	Refreshed        bool   `json:"refreshed"`
 }
 
-func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.SettlementRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
+func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.GameSyncRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
 	return &DebugHandler{
 		rooms:          rooms,
 		recorder:       recorder,
@@ -85,13 +85,13 @@ func (h *DebugHandler) GetState(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, debug.BuildStateSummary(room.State()))
 }
 
-func (h *DebugHandler) GetSettlement(w http.ResponseWriter, r *http.Request) {
+func (h *DebugHandler) GetGameSync(w http.ResponseWriter, r *http.Request) {
 	playerID, room, ok := h.lookupRoom(r)
 	if !ok {
 		writeError(w, http.StatusNotFound, "game_not_found")
 		return
 	}
-	writeJSON(w, http.StatusOK, debugSettlementResponse{
+	writeJSON(w, http.StatusOK, debugGameSyncResponse{
 		GameSync: h.latestGameSync(room.ID, playerID),
 		GameOver: h.latestGameOver(room.ID),
 	})

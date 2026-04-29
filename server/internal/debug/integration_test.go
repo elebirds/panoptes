@@ -45,9 +45,9 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn() error = %v", err)
 	}
-	record, err := h.WaitSettlement("player-1", 1, 3*time.Second)
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement(turn=1) error = %v", err)
+		t.Fatalf("WaitGameSync(turn=1) error = %v", err)
 	}
 	if record.GameSync == nil {
 		t.Fatalf("game sync is nil")
@@ -69,9 +69,9 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=2) error = %v", err)
 	}
-	turn2, err := h.WaitSettlement("player-1", 2, 3*time.Second)
+	turn2, err := h.WaitGameSync("player-1", 2, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement(turn=2) error = %v", err)
+		t.Fatalf("WaitGameSync(turn=2) error = %v", err)
 	}
 	if turn2.GameSync == nil {
 		t.Fatalf("turn 2 game sync is nil")
@@ -98,8 +98,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=3) error = %v", err)
 	}
-	if _, err := h.WaitSettlement("player-1", 3, 3*time.Second); err != nil {
-		t.Fatalf("WaitSettlement(turn=3) error = %v", err)
+	if _, err := h.WaitGameSync("player-1", 3, 3*time.Second); err != nil {
+		t.Fatalf("WaitGameSync(turn=3) error = %v", err)
 	}
 	t.Log("✓ 新城建立成功，进入后续生产链路")
 
@@ -116,8 +116,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=4) error = %v", err)
 	}
-	if _, err := h.WaitSettlement("player-1", 4, 3*time.Second); err != nil {
-		t.Fatalf("WaitSettlement(turn=4) error = %v", err)
+	if _, err := h.WaitGameSync("player-1", 4, 3*time.Second); err != nil {
+		t.Fatalf("WaitGameSync(turn=4) error = %v", err)
 	}
 	t.Log("✓ 兵营建造完成，等待训练步兵")
 
@@ -127,8 +127,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=5) error = %v", err)
 	}
-	if _, err := h.WaitSettlement("player-1", 5, 3*time.Second); err != nil {
-		t.Fatalf("WaitSettlement(turn=5) error = %v", err)
+	if _, err := h.WaitGameSync("player-1", 5, 3*time.Second); err != nil {
+		t.Fatalf("WaitGameSync(turn=5) error = %v", err)
 	}
 	t.Log("✓ 步兵训练已推进一回合")
 
@@ -138,8 +138,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=6) error = %v", err)
 	}
-	if _, err := h.WaitSettlement("player-1", 6, 3*time.Second); err != nil {
-		t.Fatalf("WaitSettlement(turn=6) error = %v", err)
+	if _, err := h.WaitGameSync("player-1", 6, 3*time.Second); err != nil {
+		t.Fatalf("WaitGameSync(turn=6) error = %v", err)
 	}
 	infantryID := findOwnedUnitIDByType(t, h.room.State(), "player-1", "infantry")
 	t.Log("✓ 步兵已产出，准备进入前线")
@@ -161,8 +161,8 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=7) error = %v", err)
 	}
-	if _, err := h.WaitSettlement("player-1", 7, 3*time.Second); err != nil {
-		t.Fatalf("WaitSettlement(turn=7) error = %v", err)
+	if _, err := h.WaitGameSync("player-1", 7, 3*time.Second); err != nil {
+		t.Fatalf("WaitGameSync(turn=7) error = %v", err)
 	}
 	t.Log("✓ 步兵已推进到前线节点")
 
@@ -183,9 +183,9 @@ func TestHarnessRoundTripSmoke(t *testing.T) {
 	if err := h.SubmitTurn("player-1"); err != nil {
 		t.Fatalf("SubmitTurn(turn=8) error = %v", err)
 	}
-	finalRecord, err := h.WaitSettlement("player-1", 8, 3*time.Second)
+	finalRecord, err := h.WaitGameSync("player-1", 8, 3*time.Second)
 	if err != nil {
-		t.Fatalf("WaitSettlement(turn=8) error = %v", err)
+		t.Fatalf("WaitGameSync(turn=8) error = %v", err)
 	}
 	if finalRecord.GameOver == nil {
 		t.Fatalf("turn 8 game over is nil")
