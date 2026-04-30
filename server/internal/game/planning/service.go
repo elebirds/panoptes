@@ -108,7 +108,7 @@ func (s *Service) HandleIntent(room Session, envelope IntentEnvelope) error {
 	case SetBuildingRecipeIntent:
 		result, err = s.handleSetBuildingRecipe(delivery, room, playerID, strings.TrimSpace(intent.NodeID), strings.TrimSpace(intent.RecipeID))
 	case SetMinisterDirectiveIntent:
-		result, err = rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister directive is not part of current MVP")
+		result, err = s.handleMinisterDirective(delivery, room, playerID, intent)
 	case IssueUnitOrderIntent:
 		result, err = s.handleIssueUnitOrder(delivery, room, playerID, &pb.MsgIssueUnitOrder{
 			UnitId:          intent.UnitID,

@@ -48,13 +48,13 @@ type debugSubmitResponse struct {
 }
 
 type debugGameSyncResponse struct {
-	GameSync *pb.MsgGameSync `json:"game_sync,omitempty"`
-	GameOver *pb.MsgGameOver `json:"game_over,omitempty"`
+	GameSync json.RawMessage `json:"game_sync,omitempty"`
+	GameOver json.RawMessage `json:"game_over,omitempty"`
 }
 
 type debugStepTurnResponse struct {
-	GameSync *pb.MsgGameSync    `json:"game_sync,omitempty"`
-	GameOver *pb.MsgGameOver    `json:"game_over,omitempty"`
+	GameSync json.RawMessage    `json:"game_sync,omitempty"`
+	GameOver json.RawMessage    `json:"game_over,omitempty"`
 	State    debug.StateSummary `json:"state"`
 }
 
@@ -92,8 +92,8 @@ func (h *DebugHandler) GetGameSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, debugGameSyncResponse{
-		GameSync: h.latestGameSync(room.ID, playerID),
-		GameOver: h.latestGameOver(room.ID),
+		GameSync: debugProtoJSON(h.latestGameSync(room.ID, playerID)),
+		GameOver: debugProtoJSON(h.latestGameOver(room.ID)),
 	})
 }
 
@@ -256,19 +256,31 @@ func (h *DebugHandler) waitForTurn(room *game.GameRoom, playerID string, turn in
 		}
 
 		resp := &debugStepTurnResponse{
-			GameSync: syncMsg,
+			GameSync: debugProtoJSON(syncMsg),
 			State:    debug.BuildStateSummary(room.State()),
 		}
 		if resp.State.IsOver {
-			resp.GameOver = h.latestGameOver(room.ID)
-			if resp.GameOver == nil {
+			gameOver := h.latestGameOver(room.ID)
+			if gameOver == nil {
 				time.Sleep(20 * time.Millisecond)
 				continue
 			}
+			resp.GameOver = debugProtoJSON(gameOver)
 		}
 		return resp, nil
 	}
 	return nil, errors.New("game sync timeout")
+}
+
+func debugProtoJSON(msg proto.Message) json.RawMessage {
+	if msg == nil {
+		return nil
+	}
+	encoded, err := protojson.Marshal(msg)
+	if err != nil {
+		return nil
+	}
+	return json.RawMessage(encoded)
 }
 
 func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool) {

@@ -185,14 +185,18 @@ func TestDebugHandlerStepTurnReturnsLatestGameSync(t *testing.T) {
 	}
 
 	var body struct {
-		GameSync *pb.MsgGameSync    `json:"game_sync"`
+		GameSync json.RawMessage    `json:"game_sync"`
 		State    debug.StateSummary `json:"state"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.GameSync == nil || body.GameSync.GetTurn() != 1 {
-		t.Fatalf("game sync = %#v", body.GameSync)
+	var gameSync pb.MsgGameSync
+	if err := protojson.Unmarshal(body.GameSync, &gameSync); err != nil {
+		t.Fatalf("protojson.Unmarshal(game_sync) error = %v", err)
+	}
+	if gameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", &gameSync)
 	}
 	if body.State.Turn != 2 || body.State.Phase != domain.PhasePlanning.String() {
 		t.Fatalf("state summary = %#v", body.State)
@@ -220,13 +224,17 @@ func TestDebugHandlerGetGameSyncReturnsRecorderGameSync(t *testing.T) {
 	}
 
 	var body struct {
-		GameSync *pb.MsgGameSync `json:"game_sync"`
+		GameSync json.RawMessage `json:"game_sync"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.GameSync == nil || body.GameSync.GetTurn() != 1 {
-		t.Fatalf("game sync = %#v", body.GameSync)
+	var gameSync pb.MsgGameSync
+	if err := protojson.Unmarshal(body.GameSync, &gameSync); err != nil {
+		t.Fatalf("protojson.Unmarshal(game_sync) error = %v", err)
+	}
+	if gameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", &gameSync)
 	}
 }
 
