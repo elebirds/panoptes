@@ -178,6 +178,8 @@ for each player:
 
 ## 8. M6：网络化战争
 
+状态：已完成，见 `docs/2026-05-01-backend-m6-regression-gate.md`。
+
 目标：让战争从“摧毁单位和主城”扩展为破坏国家机器。
 
 重点：

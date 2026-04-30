@@ -85,7 +85,9 @@
                   "enum": [
                     "archer",
                     "infantry",
-                    "settler"
+                    "raider",
+                    "settler",
+                    "siege_engine"
                   ],
                   "type": "string"
                 },

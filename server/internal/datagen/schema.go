@@ -446,6 +446,7 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 					"minimum_city_distance":         intSchema(map[string]any{"minimum": 0}),
 					"initial_city_territory_radius": intSchema(map[string]any{"minimum": 0}),
 					"road_base_capacity":            intSchema(map[string]any{"minimum": 0}),
+					"storage_raid_amount":           intSchema(map[string]any{"minimum": 0}),
 				},
 				[]string{
 					"turn_time_limit_planning", "tokens_per_turn", "bonus_tokens_per_turn",

@@ -46,6 +46,10 @@
       "minimum": 0,
       "type": "integer"
     },
+    "storage_raid_amount": {
+      "minimum": 0,
+      "type": "integer"
+    },
     "tokens_per_turn": {
       "minimum": 0,
       "type": "integer"

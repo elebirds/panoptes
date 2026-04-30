@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Verify map actions remain state-only and writes happen through events."}
+{"file":"docs/2026-04-30-backend-final-roadmap.md","reason":"Verify M6 acceptance: road disruption, storage raid, supply impact, conquest remains."}

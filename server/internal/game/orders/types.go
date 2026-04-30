@@ -18,8 +18,10 @@ const (
 	ActionSettleCity        UnitAction = "settle_city"
 	ActionBuildRoad         UnitAction = "build_road"
 	ActionRepairRoad        UnitAction = "repair_road"
+	ActionDestroyRoad       UnitAction = "destroy_road"
 	ActionBuildImprovement  UnitAction = "build_improvement"
 	ActionRepairImprovement UnitAction = "repair_improvement"
+	ActionRaidStorage       UnitAction = "raid_storage"
 )
 
 type UnitOrder struct {
@@ -35,7 +37,7 @@ type UnitOrder struct {
 
 func (o UnitOrder) IsMapAction() bool {
 	switch o.Action {
-	case ActionSettleCity, ActionBuildRoad, ActionRepairRoad, ActionBuildImprovement, ActionRepairImprovement:
+	case ActionSettleCity, ActionBuildRoad, ActionRepairRoad, ActionDestroyRoad, ActionBuildImprovement, ActionRepairImprovement, ActionRaidStorage:
 		return true
 	default:
 		return false

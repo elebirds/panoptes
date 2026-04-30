@@ -57,4 +57,5 @@ type Rules struct {
 	MinimumCityDistance        int `json:"minimum_city_distance"`
 	InitialCityTerritoryRadius int `json:"initial_city_territory_radius"`
 	RoadBaseCapacity           int `json:"road_base_capacity"`
+	StorageRaidAmount          int `json:"storage_raid_amount"`
 }
