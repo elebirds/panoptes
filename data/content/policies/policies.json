@@ -107,6 +107,25 @@
       "logistics_priority": [
         { "tag": "research", "priority": 70 }
       ]
+    },
+    {
+      "id": "logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        { "tag": "industry", "priority": 90 },
+        { "tag": "military", "priority": 60 },
+        { "tag": "expansion", "priority": 60 }
+      ]
     }
   ]
 }

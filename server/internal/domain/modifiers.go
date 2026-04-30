@@ -158,6 +158,16 @@ func (s *GameState) EffectiveIndustryOutput(playerID string) int {
 	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerPointOutput), "", "industry_output", staticdata.Default().Rules().BaseIndustryOutputPerTurn)
 }
 
+func (s *GameState) EffectiveRoadBaseCapacity(playerID string) int {
+	if s == nil {
+		return 0
+	}
+	if _, ok := s.Players[playerID]; !ok {
+		return 0
+	}
+	return s.ApplyScalarModifier(playerID, string(staticdata.ModifierTriggerLogisticsRoadCapacity), "", "", staticdata.Default().Rules().RoadBaseCapacity)
+}
+
 func (s *GameState) EffectiveResearchCap(playerID string) int {
 	if s == nil {
 		return 0

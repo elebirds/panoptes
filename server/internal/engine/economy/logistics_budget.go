@@ -8,7 +8,6 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
-	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
 func (b recipeProgressBudget) availableResources(state *domain.GameState, owner string, cityID string, need domain.ResourceBag) domain.ResourceBag {
@@ -16,11 +15,11 @@ func (b recipeProgressBudget) availableResources(state *domain.GameState, owner 
 		return cloneResourceBag(b.resources[owner])
 	}
 	available := cloneResourceBag(b.cityResources[owner][cityID])
-	if staticdata.Default().Rules().RoadBaseCapacity <= 0 || state == nil {
+	if state == nil || state.EffectiveRoadBaseCapacity(owner) <= 0 {
 		return available
 	}
 	for _, donorCityID := range b.reachableDonorCityIDs(state, owner, cityID) {
-		remaining := b.routeCapacityRemaining(owner, donorCityID, cityID)
+		remaining := b.routeCapacityRemaining(state, owner, donorCityID, cityID)
 		donorStorage := b.cityResources[owner][donorCityID]
 		for _, key := range need.Keys() {
 			if remaining <= 0 {
@@ -71,7 +70,7 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 	}
 
 	flows := make([]event.Event, 0)
-	if staticdata.Default().Rules().RoadBaseCapacity <= 0 || state == nil {
+	if state == nil || state.EffectiveRoadBaseCapacity(owner) <= 0 {
 		return nil, false
 	}
 	for _, donorCityID := range b.reachableDonorCityIDs(state, owner, cityID) {
@@ -80,7 +79,7 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 			continue
 		}
 		moved := domain.NewResourceBag()
-		remainingCapacity := b.routeCapacityRemaining(owner, donorCityID, cityID)
+		remainingCapacity := b.routeCapacityRemaining(state, owner, donorCityID, cityID)
 		for _, key := range remaining.Keys() {
 			if remainingCapacity <= 0 {
 				break
@@ -113,8 +112,11 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 	return nil, false
 }
 
-func (b recipeProgressBudget) routeCapacityRemaining(owner string, fromCityID string, toCityID string) int {
-	capacity := staticdata.Default().Rules().RoadBaseCapacity
+func (b recipeProgressBudget) routeCapacityRemaining(state *domain.GameState, owner string, fromCityID string, toCityID string) int {
+	capacity := 0
+	if state != nil {
+		capacity = state.EffectiveRoadBaseCapacity(owner)
+	}
 	if capacity <= 0 {
 		return 0
 	}

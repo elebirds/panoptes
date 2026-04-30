@@ -47,6 +47,7 @@
       "prerequisites": [],
       "explicit_effects": [
         { "type": "unlock_policy", "target_id": "academy_charter" },
+        { "type": "unlock_policy", "target_id": "logistics_corps" },
         { "type": "add_institution_slots", "institution_slots": 1 }
       ],
       "modifier_effects": []

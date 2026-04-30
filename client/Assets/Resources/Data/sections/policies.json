@@ -165,6 +165,42 @@
       "tags": [
         "institutional"
       ]
+    },
+    {
+      "id": "logistics_corps",
+      "name": "转运署",
+      "description": "制度层面的转运组织，提高道路基础运量。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 90
+        },
+        {
+          "tag": "military",
+          "priority": 60
+        },
+        {
+          "tag": "expansion",
+          "priority": 60
+        }
+      ],
+      "sort_order": 60,
+      "tags": [
+        "institutional",
+        "logistics"
+      ]
     }
   ]
 }

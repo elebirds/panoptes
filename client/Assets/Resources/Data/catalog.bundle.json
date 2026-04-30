@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "43d8416d845f464f937e0e9eb7cdb5d27dd321e150585c214a9fab250957c45d",
+    "bundle_hash": "5abbf8c23ec802b1ef98fecabed3b37d6c1d8d07c25d70cdea619e902855349f",
     "required_sections": [
       "resources",
       "points",
@@ -40,7 +40,7 @@
       },
       {
         "section_name": "policies",
-        "hash": "f8ab9b05ed49ac04a93af5ac668fa58b50f2800b861a81616e05fa34226ea1f2"
+        "hash": "1775a7c078c23b4f62e1da4744f11c0925fac3ca344163e97974a7a2cc74aa3d"
       },
       {
         "section_name": "recipes",
@@ -56,7 +56,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "80a43b0ef1c0e6018e0f0b800f5895175fcd1bc88ac6973d50cd77df49c09f05"
+        "hash": "9cf02967cc29b6eb2f7041941083033883225ffe638514eb013c5a9011e34f47"
       },
       {
         "section_name": "terrains",
@@ -590,6 +590,10 @@
           "target_id": "academy_charter"
         },
         {
+          "type": "unlock_policy",
+          "target_id": "logistics_corps"
+        },
+        {
           "type": "add_institution_slots",
           "institution_slots": 1
         }
@@ -930,6 +934,42 @@
       "sort_order": 50,
       "tags": [
         "institutional"
+      ]
+    },
+    {
+      "id": "logistics_corps",
+      "name": "转运署",
+      "description": "制度层面的转运组织，提高道路基础运量。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 90
+        },
+        {
+          "tag": "military",
+          "priority": 60
+        },
+        {
+          "tag": "expansion",
+          "priority": 60
+        }
+      ],
+      "sort_order": 60,
+      "tags": [
+        "institutional",
+        "logistics"
       ]
     }
   ],
