@@ -88,11 +88,67 @@ func ValidatePlanningUnitOrder(state *domain.GameState, playerID string, order U
 		return ""
 	case ActionBuildRoad, ActionRepairRoad:
 		return validateRoadAction(state, order, unitEntry)
+	case ActionDestroyRoad:
+		return validateRoadDestroyAction(state, order, unitEntry)
 	case ActionBuildImprovement, ActionRepairImprovement:
 		return validateImprovementAction(state, playerID, order, unitEntry)
+	case ActionRaidStorage:
+		return validateStorageRaidAction(state, playerID, order, unitEntry)
 	default:
 		return "invalid_directive"
 	}
+}
+
+func validateRoadDestroyAction(state *domain.GameState, order UnitOrder, unitEntry *donburi.Entry) string {
+	if !unitCanDestroyRoad(unitEntry) {
+		return "invalid_directive"
+	}
+	fromNodeID, toNodeID, ok := roadActionEndpoints(state, order, unitEntry)
+	if !ok {
+		return "invalid_request"
+	}
+	fromEntry, ok := state.GetNode(fromNodeID)
+	if !ok {
+		return "invalid_target"
+	}
+	toEntry, ok := state.GetNode(toNodeID)
+	if !ok {
+		return "invalid_target"
+	}
+	if !roadActionEndpointsAdjacent(fromEntry, toEntry) || !unitCanWorkRoadEndpoint(unitEntry, fromEntry, toEntry) {
+		return "invalid_target"
+	}
+	if !ecs.NodeC.Get(fromEntry).HasRoad && !ecs.NodeC.Get(toEntry).HasRoad {
+		return "invalid_target"
+	}
+	return ""
+}
+
+func validateStorageRaidAction(state *domain.GameState, playerID string, order UnitOrder, unitEntry *donburi.Entry) string {
+	if !unitCanDestroyRoad(unitEntry) {
+		return "invalid_directive"
+	}
+	cityID := strings.TrimSpace(order.TargetNodeID)
+	if cityID == "" {
+		return "invalid_request"
+	}
+	targetEntry, ok := state.GetNode(cityID)
+	if !ok || targetEntry == nil {
+		return "invalid_target"
+	}
+	targetPlayerID := storageRaidTargetPlayer(state, cityID)
+	if targetPlayerID == "" || targetPlayerID == playerID {
+		return "invalid_target"
+	}
+	unitPos := ecs.PositionC.Get(unitEntry)
+	targetPos := ecs.PositionC.Get(targetEntry)
+	if (domain.Position{Q: unitPos.Q, R: unitPos.R}).DistanceTo(domain.Position{Q: targetPos.Q, R: targetPos.R}) > 1 {
+		return "invalid_target"
+	}
+	if state.CityStorage(targetPlayerID, cityID).IsZero() {
+		return "invalid_target"
+	}
+	return ""
 }
 
 func validateImprovementAction(state *domain.GameState, playerID string, order UnitOrder, unitEntry *donburi.Entry) string {
@@ -225,6 +281,18 @@ func unitCanBuildRoad(entry *donburi.Entry) bool {
 		return cfg.Class == "civilian" || strings.Contains(normalizeMapActionToken(cfg.ID), "engineer")
 	}
 	return false
+}
+
+func unitCanDestroyRoad(entry *donburi.Entry) bool {
+	if entry == nil {
+		return false
+	}
+	if entry.HasComponent(ecs.UnitCapabilitiesC) && ecs.UnitCapabilitiesC.Get(entry).DestroyRoad {
+		return true
+	}
+	stats := ecs.UnitStatsC.Get(entry)
+	cfg, ok := staticdata.Default().GetUnit(string(stats.Type))
+	return ok && cfg.Flags.CanDestroyRoad
 }
 
 func roadActionEndpoints(state *domain.GameState, order UnitOrder, unitEntry *donburi.Entry) (string, string, bool) {

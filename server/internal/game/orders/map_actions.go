@@ -37,12 +37,20 @@ func BuildMapActionEvents(state *domain.GameState) []event.Event {
 			if evt, ok := roadRepairedEvent(state, directive); ok {
 				events = append(events, evt)
 			}
+		case ActionDestroyRoad:
+			if evt, ok := roadDestroyedEvent(state, directive); ok {
+				events = append(events, evt)
+			}
 		case ActionBuildImprovement:
 			if evt, ok := improvementBuiltEvent(state, directive); ok {
 				events = append(events, evt)
 			}
 		case ActionRepairImprovement:
 			if evt, ok := improvementRepairedEvent(state, directive); ok {
+				events = append(events, evt)
+			}
+		case ActionRaidStorage:
+			if evt, ok := storageRaidedEvent(state, directive); ok {
 				events = append(events, evt)
 			}
 		}
@@ -121,6 +129,18 @@ func roadRepairedEvent(state *domain.GameState, order domain.UnitDirective) (eve
 	}, true
 }
 
+func roadDestroyedEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	fromNodeID, toNodeID, ok := roadEventEndpoints(state, order)
+	if !ok {
+		return nil, false
+	}
+	return event.RoadDestroyedEvent{
+		FromNode:    fromNodeID,
+		ToNode:      toNodeID,
+		DestroyerID: order.UnitID,
+	}, true
+}
+
 func improvementBuiltEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
 	targetEntry, ok := state.GetNode(strings.TrimSpace(order.TargetNodeID))
 	if !ok {
@@ -157,6 +177,55 @@ func improvementRepairedEvent(state *domain.GameState, order domain.UnitDirectiv
 		NodeID: order.TargetNodeID,
 		Owner:  order.PlayerID,
 	}, true
+}
+
+func storageRaidedEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	cityID := strings.TrimSpace(order.TargetNodeID)
+	targetPlayerID := storageRaidTargetPlayer(state, cityID)
+	if targetPlayerID == "" {
+		return nil, false
+	}
+	resources := storageRaidResources(state.CityStorage(targetPlayerID, cityID), staticdata.Default().Rules().StorageRaidAmount)
+	if resources.IsZero() {
+		return nil, false
+	}
+	return event.StorageRaidedEvent{
+		TargetPlayerID: targetPlayerID,
+		CityID:         cityID,
+		RaiderID:       order.UnitID,
+		Resources:      resources,
+	}, true
+}
+
+func storageRaidTargetPlayer(state *domain.GameState, cityID string) string {
+	if state == nil || cityID == "" {
+		return ""
+	}
+	for playerID, playerState := range state.Players {
+		if playerState == nil {
+			continue
+		}
+		if city := playerState.Cities[cityID]; city != nil {
+			return playerID
+		}
+	}
+	return ""
+}
+
+func storageRaidResources(storage domain.ResourceBag, raidAmount int) domain.ResourceBag {
+	out := domain.NewResourceBag()
+	if storage == nil || raidAmount <= 0 {
+		return out
+	}
+	for _, key := range storage.Keys() {
+		amount := storage.Get(key)
+		if amount > raidAmount {
+			amount = raidAmount
+		}
+		out.Set(key, amount)
+		break
+	}
+	return out
 }
 
 func roadEventEndpoints(state *domain.GameState, order domain.UnitDirective) (string, string, bool) {

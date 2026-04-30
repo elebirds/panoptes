@@ -75,6 +75,16 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			data[key] = amount
 		}
 		return e.Kind(), data
+	case event.StorageRaidedEvent:
+		data := map[string]string{
+			"target_player_id": strings.TrimSpace(e.TargetPlayerID),
+			"city_id":          strings.TrimSpace(e.CityID),
+			"raider_id":        strings.TrimSpace(e.RaiderID),
+		}
+		for key, amount := range resourceBagData(e.Resources) {
+			data[key] = amount
+		}
+		return e.Kind(), data
 	case event.RoadBuiltEvent:
 		return e.Kind(), map[string]string{
 			"from_node": strings.TrimSpace(e.FromNode),

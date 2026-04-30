@@ -186,6 +186,77 @@ func TestBuildMapActionEventsBuildsRoadEvents(t *testing.T) {
 	}
 }
 
+func TestBuildMapActionEventsBuildsRoadDestructionEvent(t *testing.T) {
+	useMapActionTestCatalog(t)
+	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
+	raider := worldEntry(state.World, ecs.CreateUnit(state.World, "raider", "player-2", domain.Position{Q: 1, R: 0}))
+	ecs.UnitStatsC.Get(raider).ID = "raider-1"
+	event.RoadBuiltEvent{FromNode: "C", ToNode: "A", Owner: "player-1"}.Apply(state.World, state)
+	state.TurnRuntime.Planning.UnitOrders["raider-1"] = domain.UnitDirective{
+		PlayerID:        "player-2",
+		UnitID:          "raider-1",
+		Action:          string(ActionDestroyRoad),
+		TargetNodeID:    "C",
+		SecondaryNodeID: "A",
+	}
+
+	events := BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("event count = %d, want 1: %#v", len(events), events)
+	}
+	destroyed, ok := events[0].(event.RoadDestroyedEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want RoadDestroyedEvent", events[0])
+	}
+	if destroyed.FromNode != "C" || destroyed.ToNode != "A" || destroyed.DestroyerID != "raider-1" {
+		t.Fatalf("road destroyed event = %#v", destroyed)
+	}
+
+	events[0].Apply(state.World, state)
+	if ecs.NodeC.Get(worldEntry(state.World, state.NodeIndex["C"])).HasRoad || ecs.NodeC.Get(worldEntry(state.World, state.NodeIndex["A"])).HasRoad {
+		t.Fatalf("road endpoints still intact after destroy event")
+	}
+}
+
+func TestBuildMapActionEventsBuildsStorageRaidEvent(t *testing.T) {
+	useMapActionTestCatalog(t)
+	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
+	state.Players["player-2"] = &domain.PlayerState{
+		PlayerID:  "player-2",
+		Username:  "bob",
+		Resources: domain.NewResourceBag(),
+		Cities:    map[string]*domain.CityState{},
+		WarZones:  []*domain.WarZone{},
+	}
+	raider := worldEntry(state.World, ecs.CreateUnit(state.World, "raider", "player-2", domain.Position{Q: 1, R: 0}))
+	ecs.UnitStatsC.Get(raider).ID = "raider-1"
+	state.EnsureCityState("player-1", "C")
+	state.AddResourceToCity("player-1", "C", domain.ResourceFood, 5)
+	state.TurnRuntime.Planning.UnitOrders["raider-1"] = domain.UnitDirective{
+		PlayerID:     "player-2",
+		UnitID:       "raider-1",
+		Action:       string(ActionRaidStorage),
+		TargetNodeID: "C",
+	}
+
+	events := BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("event count = %d, want 1: %#v", len(events), events)
+	}
+	raided, ok := events[0].(event.StorageRaidedEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want StorageRaidedEvent", events[0])
+	}
+	if raided.TargetPlayerID != "player-1" || raided.CityID != "C" || raided.RaiderID != "raider-1" || raided.Resources.Get(domain.ResourceFood) != 2 {
+		t.Fatalf("storage raided event = %#v", raided)
+	}
+
+	events[0].Apply(state.World, state)
+	if got := state.CityStorage("player-1", "C").Get(domain.ResourceFood); got != 3 {
+		t.Fatalf("food after raid = %d, want 3", got)
+	}
+}
+
 func TestBuildMapActionEventsBuildsImprovementEvents(t *testing.T) {
 	useMapActionTestCatalog(t)
 	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
@@ -253,10 +324,12 @@ func useMapActionTestCatalog(t *testing.T) {
 			CityCoreMaxHP:             100,
 			BaseResearchOutputPerTurn: 1,
 			MinimumCityDistance:       0,
+			StorageRaidAmount:         2,
 		},
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, MoveRange: 2, VisionRange: 2, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}},
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}},
+			{ID: "raider", Class: "melee", MaxHP: 22, Attack: 7, AttackRange: 1, MoveRange: 5, VisionRange: 4, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanDestroyRoad: true, CanAttackStructures: true, DestroyMultiplier: 2}},
 		},
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
