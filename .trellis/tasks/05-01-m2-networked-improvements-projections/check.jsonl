@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry point for M2.2 review."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Review backend boundaries, event-only writes, and projection ownership."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Review error code compliance."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review test and quality coverage."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review proto/query/event/order consistency."}

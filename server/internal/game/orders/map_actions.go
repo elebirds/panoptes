@@ -12,6 +12,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/event"
+	"github.com/elebirds/panoptes/internal/staticdata"
 	"github.com/yohamta/donburi"
 )
 
@@ -34,6 +35,14 @@ func BuildMapActionEvents(state *domain.GameState) []event.Event {
 			}
 		case ActionRepairRoad:
 			if evt, ok := roadRepairedEvent(state, directive); ok {
+				events = append(events, evt)
+			}
+		case ActionBuildImprovement:
+			if evt, ok := improvementBuiltEvent(state, directive); ok {
+				events = append(events, evt)
+			}
+		case ActionRepairImprovement:
+			if evt, ok := improvementRepairedEvent(state, directive); ok {
 				events = append(events, evt)
 			}
 		}
@@ -109,6 +118,44 @@ func roadRepairedEvent(state *domain.GameState, order domain.UnitDirective) (eve
 		FromNode: fromNodeID,
 		ToNode:   toNodeID,
 		Owner:    order.PlayerID,
+	}, true
+}
+
+func improvementBuiltEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	targetEntry, ok := state.GetNode(strings.TrimSpace(order.TargetNodeID))
+	if !ok {
+		return nil, false
+	}
+	buildingTypeID, ok := improvementBuildingType(FromDirective(order), targetEntry)
+	if !ok {
+		return nil, false
+	}
+	cfg, ok := staticdata.Default().GetBuilding(buildingTypeID)
+	if !ok {
+		return nil, false
+	}
+	cost, _ := domain.ResourceBagFromAmounts(cfg.ResourceCosts)
+	return event.BuildingBuiltEvent{
+		NodeID:       order.TargetNodeID,
+		BuildingType: buildingTypeID,
+		Owner:        order.PlayerID,
+		CityID:       improvementCityID(state, order.PlayerID, FromDirective(order)),
+		Cost:         cost,
+		OnlineOnTurn: state.Turn + 1,
+	}, true
+}
+
+func improvementRepairedEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	targetEntry, ok := state.GetNode(strings.TrimSpace(order.TargetNodeID))
+	if !ok || !targetEntry.HasComponent(ecs.BuildingC) {
+		return nil, false
+	}
+	if owner := strings.TrimSpace(ecs.BuildingC.Get(targetEntry).Owner); owner != "" && owner != strings.TrimSpace(order.PlayerID) {
+		return nil, false
+	}
+	return event.BuildingRepairedEvent{
+		NodeID: order.TargetNodeID,
+		Owner:  order.PlayerID,
 	}, true
 }
 

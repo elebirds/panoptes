@@ -71,6 +71,25 @@ func TestEventPayloadFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
 	}
 }
 
+func TestEventPayloadFromEventMapsBuildingRepaired(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := projectEventPayload(event.BuildingRepairedEvent{
+		NodeID: "A2",
+		Owner:  "player-1",
+	})
+
+	if turnEvent.GetType() != "building_repaired" {
+		t.Fatalf("type = %q, want building_repaired", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["node_id"]; got != "A2" {
+		t.Fatalf("node_id = %q, want A2", got)
+	}
+	if got := turnEvent.GetData()["owner"]; got != "player-1" {
+		t.Fatalf("owner = %q, want player-1", got)
+	}
+}
+
 func TestEventPayloadFromEventMapsBuildingStatusChanged(t *testing.T) {
 	t.Parallel()
 

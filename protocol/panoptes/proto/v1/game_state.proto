@@ -32,6 +32,10 @@ message NodeView {
   bool is_currently_visible = 21;
   bool is_memory = 22;
   int32 last_observed_turn = 23;
+  string road_status = 24;
+  string network_status = 25;
+  string network_city_id = 26;
+  bool is_network_connected = 27;
 }
 
 message UnitView {

@@ -186,20 +186,58 @@ func TestBuildMapActionEventsBuildsRoadEvents(t *testing.T) {
 	}
 }
 
-func TestBuildMapActionEventsIgnoresUnsupportedMapActions(t *testing.T) {
+func TestBuildMapActionEventsBuildsImprovementEvents(t *testing.T) {
 	useMapActionTestCatalog(t)
 	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
 	settler := worldEntry(state.World, ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(settler).ID = "settler-1"
+	state.Turn = 6
+	core, _ := state.GetNode("C")
+	ecs.CreateBuilding(state.World, "city_core", "player-1", "C", core)
+	state.EnsureCityState("player-1", "C")
+	state.Players["player-1"].CapitalCityID = "C"
+	resource, _ := state.GetNode("A")
+	node := ecs.NodeC.Get(resource)
+	node.IsResource = true
+	node.ResourceType = "food"
 	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
 		PlayerID:     "player-1",
 		UnitID:       "settler-1",
 		Action:       string(ActionBuildImprovement),
-		TargetNodeID: "C",
+		TargetNodeID: "A",
+		Params:       map[string]string{"city_id": "C"},
 	}
 
-	if events := BuildMapActionEvents(state); len(events) != 0 {
-		t.Fatalf("events = %#v, want unsupported map action ignored", events)
+	events := BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("event count = %d, want 1: %#v", len(events), events)
+	}
+	built, ok := events[0].(event.BuildingBuiltEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want BuildingBuiltEvent", events[0])
+	}
+	if built.NodeID != "A" || built.BuildingType != "farm" || built.Owner != "player-1" || built.CityID != "C" || built.OnlineOnTurn != 7 {
+		t.Fatalf("building built event = %#v", built)
+	}
+
+	ecs.CreateBuilding(state.World, "farm", "player-1", "C", resource)
+	ecs.BuildingC.Get(resource).HP = 1
+	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
+		PlayerID:     "player-1",
+		UnitID:       "settler-1",
+		Action:       string(ActionRepairImprovement),
+		TargetNodeID: "A",
+	}
+	events = BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("repair event count = %d, want 1: %#v", len(events), events)
+	}
+	repaired, ok := events[0].(event.BuildingRepairedEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want BuildingRepairedEvent", events[0])
+	}
+	if repaired.NodeID != "A" || repaired.Owner != "player-1" {
+		t.Fatalf("building repaired event = %#v", repaired)
 	}
 }
 
@@ -219,6 +257,12 @@ func useMapActionTestCatalog(t *testing.T) {
 		Units: []staticdata.UnitDefinition{
 			{ID: "settler", Class: "civilian", MaxHP: 12, MoveRange: 2, VisionRange: 2, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}},
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true, CanAttackStructures: true}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 80, TakeoverMode: "delayed"},
+			{ID: "mine", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "ore", MaxHP: 80, TakeoverMode: "delayed"},
+			{ID: "lumber", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "wood", MaxHP: 80, TakeoverMode: "delayed"},
 		},
 		Terrains: []staticdata.TerrainDefinition{
 			{ID: "plain", Passable: true, Buildable: true},

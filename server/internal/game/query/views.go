@@ -102,10 +102,15 @@ func BuildNodeView(state *domain.GameState, entry *donburi.Entry, playerID strin
 		MyUnitCount:            int32(myCount),
 		EnemyUnitCount:         int32(enemyCount),
 		HasRoad:                node.HasRoad,
+		RoadStatus:             string(domain.RoadStatusForNode(state, node.ID)),
 		IsResourcePoint:        node.IsResource,
 		ResourceType:           node.ResourceType,
 		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, playerID),
 	}
+	network := domain.NodeNetworkStatusForPlayer(state, playerID, node.ID)
+	view.NetworkStatus = network.Status
+	view.NetworkCityId = network.CityID
+	view.IsNetworkConnected = network.Connected
 	if entry.HasComponent(ecs.BuildingOperationC) {
 		operation := ecs.BuildingOperationC.Get(entry)
 		baseProgress := 0

@@ -50,6 +50,7 @@ func TestEconomyEventKinds(t *testing.T) {
 		ev   Event
 	}{
 		{name: "building built", kind: "building_built", ev: BuildingBuiltEvent{}},
+		{name: "building repaired", kind: "building_repaired", ev: BuildingRepairedEvent{}},
 		{name: "resource produced", kind: "resource_produced", ev: ResourceProducedEvent{}},
 		{name: "resource flowed", kind: "resource_flowed", ev: ResourceFlowedEvent{}},
 		{name: "road built", kind: "road_built", ev: RoadBuiltEvent{}},

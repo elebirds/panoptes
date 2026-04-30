@@ -412,6 +412,8 @@ func buildUnknownNodeView(state *domain.GameState, entry *donburi.Entry, viewerI
 		Pos:                    &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 		Terrain:                string(node.Terrain),
 		HasRoad:                node.HasRoad,
+		RoadStatus:             string(domain.RoadStatusForNode(state, node.ID)),
+		NetworkStatus:          domain.NetworkStatusUnknown,
 		IsResourcePoint:        node.IsResource,
 		ResourceType:           node.ResourceType,
 		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, viewerID),
