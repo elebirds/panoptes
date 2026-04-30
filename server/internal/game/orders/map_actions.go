@@ -28,6 +28,14 @@ func BuildMapActionEvents(state *domain.GameState) []event.Event {
 			if evt, ok := cityFoundingEvent(state, directive); ok {
 				events = append(events, evt)
 			}
+		case ActionBuildRoad:
+			if evt, ok := roadBuiltEvent(state, directive); ok {
+				events = append(events, evt)
+			}
+		case ActionRepairRoad:
+			if evt, ok := roadRepairedEvent(state, directive); ok {
+				events = append(events, evt)
+			}
 		}
 	}
 	return events
@@ -78,6 +86,51 @@ func cityFoundingEvent(state *domain.GameState, order domain.UnitDirective) (eve
 		TerritoryIDs: append([]string(nil), footprintIDs...),
 		OnlineOnTurn: state.Turn + 1,
 	}, true
+}
+
+func roadBuiltEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	fromNodeID, toNodeID, ok := roadEventEndpoints(state, order)
+	if !ok {
+		return nil, false
+	}
+	return event.RoadBuiltEvent{
+		FromNode: fromNodeID,
+		ToNode:   toNodeID,
+		Owner:    order.PlayerID,
+	}, true
+}
+
+func roadRepairedEvent(state *domain.GameState, order domain.UnitDirective) (event.Event, bool) {
+	fromNodeID, toNodeID, ok := roadEventEndpoints(state, order)
+	if !ok {
+		return nil, false
+	}
+	return event.RoadRepairedEvent{
+		FromNode: fromNodeID,
+		ToNode:   toNodeID,
+		Owner:    order.PlayerID,
+	}, true
+}
+
+func roadEventEndpoints(state *domain.GameState, order domain.UnitDirective) (string, string, bool) {
+	if state == nil {
+		return "", "", false
+	}
+	unitEntry, ok := findUnitEntryByID(state.World, order.UnitID)
+	if !ok {
+		return "", "", false
+	}
+	fromNodeID, toNodeID, ok := roadActionEndpoints(state, FromDirective(order), unitEntry)
+	if !ok {
+		return "", "", false
+	}
+	if _, ok := state.GetNode(fromNodeID); !ok {
+		return "", "", false
+	}
+	if _, ok := state.GetNode(toNodeID); !ok {
+		return "", "", false
+	}
+	return fromNodeID, toNodeID, true
 }
 
 func findUnitEntryByID(world donburi.World, unitID string) (*donburi.Entry, bool) {

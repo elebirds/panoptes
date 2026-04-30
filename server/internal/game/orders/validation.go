@@ -7,6 +7,8 @@
 package orders
 
 import (
+	"strings"
+
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -83,9 +85,107 @@ func ValidatePlanningUnitOrder(state *domain.GameState, playerID string, order U
 		return ""
 	case ActionSettleCity:
 		return ""
+	case ActionBuildRoad, ActionRepairRoad:
+		return validateRoadAction(state, order, unitEntry)
 	default:
 		return "invalid_directive"
 	}
+}
+
+func validateRoadAction(state *domain.GameState, order UnitOrder, unitEntry *donburi.Entry) string {
+	if !unitCanBuildRoad(unitEntry) {
+		return "invalid_directive"
+	}
+	fromNodeID, toNodeID, ok := roadActionEndpoints(state, order, unitEntry)
+	if !ok {
+		return "invalid_request"
+	}
+	fromEntry, ok := state.GetNode(fromNodeID)
+	if !ok || !roadActionTerrainAllowsRoad(fromEntry) {
+		return "invalid_target"
+	}
+	toEntry, ok := state.GetNode(toNodeID)
+	if !ok || !roadActionTerrainAllowsRoad(toEntry) {
+		return "invalid_target"
+	}
+	if !roadActionEndpointsAdjacent(fromEntry, toEntry) {
+		return "invalid_target"
+	}
+	if !unitCanWorkRoadEndpoint(unitEntry, fromEntry, toEntry) {
+		return "invalid_target"
+	}
+	if ecs.NodeC.Get(fromEntry).HasRoad && ecs.NodeC.Get(toEntry).HasRoad {
+		return "invalid_target"
+	}
+	return ""
+}
+
+func unitCanBuildRoad(entry *donburi.Entry) bool {
+	if entry == nil {
+		return false
+	}
+	if entry.HasComponent(ecs.UnitCapabilitiesC) && ecs.UnitCapabilitiesC.Get(entry).Civilian {
+		return true
+	}
+	stats := ecs.UnitStatsC.Get(entry)
+	if strings.Contains(normalizeMapActionToken(string(stats.Type)), "engineer") {
+		return true
+	}
+	if cfg, ok := staticdata.Default().GetUnit(string(stats.Type)); ok {
+		return cfg.Class == "civilian" || strings.Contains(normalizeMapActionToken(cfg.ID), "engineer")
+	}
+	return false
+}
+
+func roadActionEndpoints(state *domain.GameState, order UnitOrder, unitEntry *donburi.Entry) (string, string, bool) {
+	targetNodeID := strings.TrimSpace(order.TargetNodeID)
+	secondaryNodeID := strings.TrimSpace(order.SecondaryNodeID)
+	if targetNodeID == "" {
+		return "", "", false
+	}
+	if secondaryNodeID != "" {
+		return targetNodeID, secondaryNodeID, true
+	}
+	unitNodeID := nodeIDForEntry(state, unitEntry)
+	if unitNodeID == "" {
+		return "", "", false
+	}
+	return unitNodeID, targetNodeID, true
+}
+
+func roadActionTerrainAllowsRoad(entry *donburi.Entry) bool {
+	if entry == nil {
+		return false
+	}
+	node := ecs.NodeC.Get(entry)
+	terrain, ok := staticdata.Default().GetTerrain(string(node.Terrain))
+	if !ok {
+		return true
+	}
+	return terrain.Passable || terrain.PassableWithRoad || terrain.Buildable
+}
+
+func roadActionEndpointsAdjacent(fromEntry *donburi.Entry, toEntry *donburi.Entry) bool {
+	fromPos := ecs.PositionC.Get(fromEntry)
+	toPos := ecs.PositionC.Get(toEntry)
+	return (domain.Position{Q: fromPos.Q, R: fromPos.R}).DistanceTo(domain.Position{Q: toPos.Q, R: toPos.R}) == 1
+}
+
+func unitCanWorkRoadEndpoint(unitEntry *donburi.Entry, fromEntry *donburi.Entry, toEntry *donburi.Entry) bool {
+	unitPos := ecs.PositionC.Get(unitEntry)
+	fromPos := ecs.PositionC.Get(fromEntry)
+	toPos := ecs.PositionC.Get(toEntry)
+	unit := domain.Position{Q: unitPos.Q, R: unitPos.R}
+	return unit.DistanceTo(domain.Position{Q: fromPos.Q, R: fromPos.R}) <= 1 ||
+		unit.DistanceTo(domain.Position{Q: toPos.Q, R: toPos.R}) <= 1
+}
+
+func nodeIDForEntry(state *domain.GameState, entry *donburi.Entry) string {
+	if state == nil || entry == nil {
+		return ""
+	}
+	pos := ecs.PositionC.Get(entry)
+	return nodeIDAt(state, domain.Position{Q: pos.Q, R: pos.R})
 }
 
 func activeMarchTargetInRange(state *domain.GameState, unitID string, nodeEntry *donburi.Entry, attackRange int) bool {

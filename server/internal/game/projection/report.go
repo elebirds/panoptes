@@ -74,6 +74,12 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			"owner":     strings.TrimSpace(e.Owner),
 			"cost":      strconv.Itoa(e.Cost),
 		}
+	case event.RoadRepairedEvent:
+		return e.Kind(), map[string]string{
+			"from_node": strings.TrimSpace(e.FromNode),
+			"to_node":   strings.TrimSpace(e.ToNode),
+			"owner":     strings.TrimSpace(e.Owner),
+		}
 	case event.UnitProducedEvent:
 		return e.Kind(), map[string]string{
 			"node_id":   strings.TrimSpace(e.NodeID),

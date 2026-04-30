@@ -86,26 +86,132 @@ func TestApplyPlanningUnitOrderSyncsMoveAndPreservesAttackPath(t *testing.T) {
 	}
 }
 
-func TestApplyPlanningUnitOrderIgnoresReservedMapActions(t *testing.T) {
+func TestValidatePlanningUnitOrderAllowsRoadActionsForCivilian(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "settler-1"
+
+	errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:        "player-1",
+		UnitID:          "settler-1",
+		Action:          ActionBuildRoad,
+		TargetNodeID:    "A1",
+		SecondaryNodeID: "A2",
+	})
+	if errCode != "" {
+		t.Fatalf("build_road validation error = %q, want accepted", errCode)
+	}
+
+	fromEntry, _ := state.GetNode("A1")
+	toEntry, _ := state.GetNode("A2")
+	ecs.NodeC.Get(fromEntry).HasRoad = true
+	ecs.NodeC.Get(toEntry).HasRoad = true
+	if errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:        "player-1",
+		UnitID:          "settler-1",
+		Action:          ActionRepairRoad,
+		TargetNodeID:    "A1",
+		SecondaryNodeID: "A2",
+	}); errCode != "invalid_target" {
+		t.Fatalf("repair_road validation error = %q, want invalid_target for intact road", errCode)
+	}
+	ecs.NodeC.Get(toEntry).HasRoad = false
+	if errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:        "player-1",
+		UnitID:          "settler-1",
+		Action:          ActionRepairRoad,
+		TargetNodeID:    "A1",
+		SecondaryNodeID: "A2",
+	}); errCode != "" {
+		t.Fatalf("repair_road validation error = %q, want accepted for missing road endpoint", errCode)
+	}
+}
+
+func TestValidatePlanningUnitOrderRejectsRoadActionsForNonEngineeringUnit(t *testing.T) {
 	useUnitOrderTestCatalog(t)
 	state := newUnitOrderTestState(t)
 	unit := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unit).ID = "infantry-1"
 
-	for _, action := range []UnitAction{ActionBuildRoad, ActionRepairRoad, ActionBuildImprovement, ActionRepairImprovement} {
+	errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:        "player-1",
+		UnitID:          "infantry-1",
+		Action:          ActionBuildRoad,
+		TargetNodeID:    "A1",
+		SecondaryNodeID: "A2",
+	})
+	if errCode != "invalid_directive" {
+		t.Fatalf("validation error = %q, want invalid_directive", errCode)
+	}
+}
+
+func TestValidatePlanningUnitOrderRejectsInvalidRoadEndpoints(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "settler-1"
+
+	for _, tc := range []struct {
+		name            string
+		targetNodeID    string
+		secondaryNodeID string
+	}{
+		{name: "missing endpoint", targetNodeID: "A1", secondaryNodeID: "missing"},
+		{name: "non-adjacent endpoints", targetNodeID: "A1", secondaryNodeID: "A3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+				PlayerID:        "player-1",
+				UnitID:          "settler-1",
+				Action:          ActionBuildRoad,
+				TargetNodeID:    tc.targetNodeID,
+				SecondaryNodeID: tc.secondaryNodeID,
+			})
+			if errCode != "invalid_target" {
+				t.Fatalf("validation error = %q, want invalid_target", errCode)
+			}
+		})
+	}
+}
+
+func TestApplyPlanningUnitOrderAllowsRoadMapActionsAndIgnoresImprovementActions(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "settler-1"
+
+	for _, action := range []UnitAction{ActionBuildRoad, ActionRepairRoad} {
 		t.Run(string(action), func(t *testing.T) {
 			ApplyPlanningUnitOrder(state, UnitOrder{
 				PlayerID:     "player-1",
-				UnitID:       "infantry-1",
+				UnitID:       "settler-1",
 				Action:       action,
 				TargetNodeID: "A2",
 			}, RoutePreviewCallbacks{})
 
-			if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
-				t.Fatalf("planning unit order recorded for reserved action %q", action)
+			directive, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]
+			if !ok || directive.Action != string(action) {
+				t.Fatalf("planning unit order = %#v, ok=%v, want road action recorded", directive, ok)
 			}
 			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
 				t.Fatalf("active marches = %d, want 0", got)
+			}
+			delete(state.TurnRuntime.Planning.UnitOrders, "settler-1")
+		})
+	}
+
+	for _, action := range []UnitAction{ActionBuildImprovement, ActionRepairImprovement} {
+		t.Run(string(action), func(t *testing.T) {
+			ApplyPlanningUnitOrder(state, UnitOrder{
+				PlayerID:     "player-1",
+				UnitID:       "settler-1",
+				Action:       action,
+				TargetNodeID: "A2",
+			}, RoutePreviewCallbacks{})
+
+			if _, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]; ok {
+				t.Fatalf("planning unit order recorded for reserved action %q", action)
 			}
 		})
 	}
@@ -221,6 +327,7 @@ func useUnitOrderTestCatalog(t *testing.T) {
 		Rules: staticdata.Rules{CityCoreMaxHP: 100},
 		Units: []staticdata.UnitDefinition{
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+			{ID: "settler", Class: "civilian", MaxHP: 12, MoveRange: 2, VisionRange: 2, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanCapture: true}},
 		},
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 15, TakeoverMode: "city_capture"},

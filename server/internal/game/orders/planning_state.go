@@ -26,7 +26,7 @@ func ApplyPlanningUnitOrder(state *domain.GameState, order UnitOrder, routes Rou
 	if state == nil || order.UnitID == "" {
 		return
 	}
-	if !order.IsUnitResolutionAction() && order.Action != ActionSettleCity {
+	if !order.IsUnitResolutionAction() && !isSupportedPlanningMapAction(order.Action) {
 		return
 	}
 	if state.TurnRuntime.Planning.UnitOrders == nil {
@@ -47,6 +47,15 @@ func ApplyPlanningUnitOrder(state *domain.GameState, order UnitOrder, routes Rou
 		return
 	}
 	delete(state.TurnRuntime.Resolving.ActiveMarches, order.UnitID)
+}
+
+func isSupportedPlanningMapAction(action UnitAction) bool {
+	switch action {
+	case ActionSettleCity, ActionBuildRoad, ActionRepairRoad:
+		return true
+	default:
+		return false
+	}
 }
 
 func CancelPlanningUnitOrder(state *domain.GameState, playerID string, unitID string) {
