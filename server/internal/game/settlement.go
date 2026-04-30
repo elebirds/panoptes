@@ -22,9 +22,7 @@ func RunTurnResolution(room *GameRoom) {
 	}
 
 	collector := gameresolution.NewTurnResolutionRunner().Run(room.State(), gameresolution.RunnerHooks{
-		PlanningCommitEvents: func(*domain.GameState) []event.Event {
-			return room.planningCommitEvents()
-		},
+		PlanningCommitEvents: gameresolution.BuildPlanningCommitEvents,
 		FreezeOrders: func(*domain.GameState) {
 			room.lockUnitResolutionOrders()
 		},
@@ -43,79 +41,7 @@ func RunTurnResolution(room *GameRoom) {
 	}
 	room.checkGameOver()
 
-	state := room.State()
-	clear(state.TurnRuntime.Resolving.UnitOrders)
-	state.TurnRuntime.Planning.BuildOrders = state.TurnRuntime.Planning.BuildOrders[:0]
-	state.TurnRuntime.Planning.RecipeSelections = state.TurnRuntime.Planning.RecipeSelections[:0]
-	state.TurnRuntime.Planning.MinisterBuilds = state.TurnRuntime.Planning.MinisterBuilds[:0]
-	state.TurnRuntime.Planning.MinisterMoves = state.TurnRuntime.Planning.MinisterMoves[:0]
-	clear(state.TurnRuntime.Planning.MinisterDrafts)
-	clear(state.TurnRuntime.Planning.UnitOrders)
-	clear(state.TurnRuntime.Planning.MinisterDirectives)
-	clear(state.TurnRuntime.Planning.PendingPolicies)
-	clear(state.TurnRuntime.Planning.PendingResearch)
-	clear(state.TurnRuntime.Planning.PendingInstitutions)
-	clear(state.TurnRuntime.Planning.WarDirectives)
-}
-
-func (r *GameRoom) planningCommitEvents() []event.Event {
-	state := r.State()
-	if state == nil {
-		return nil
-	}
-	events := make([]event.Event, 0, len(state.TurnRuntime.Planning.PendingPolicies)+len(state.TurnRuntime.Planning.PendingResearch)+len(state.TurnRuntime.Planning.PendingInstitutions))
-	for playerID, policyID := range state.TurnRuntime.Planning.PendingPolicies {
-		playerState, ok := state.Players[playerID]
-		if !ok || playerState == nil || playerState.Policy == policyID {
-			continue
-		}
-		evt := event.PolicyChangedEvent{
-			PlayerID:  playerID,
-			OldPolicy: string(playerState.Policy),
-			NewPolicy: string(policyID),
-		}
-		events = append(events, evt)
-	}
-	for playerID, technologyID := range state.TurnRuntime.Planning.PendingResearch {
-		playerState, ok := state.Players[playerID]
-		if !ok || playerState == nil || playerState.Research.CurrentTargetTechnologyID == technologyID {
-			continue
-		}
-		evt := event.ResearchTargetChangedEvent{
-			PlayerID:     playerID,
-			TechnologyID: technologyID,
-		}
-		events = append(events, evt)
-	}
-	for playerID := range state.Players {
-		playerState := state.Players[playerID]
-		if playerState == nil || !state.TurnRuntime.Planning.HasPendingInstitutionLoadout(playerID) {
-			continue
-		}
-		policyIDs := state.TurnRuntime.Planning.PendingInstitutionLoadout(playerID)
-		if policySlicesEqual(playerState.Institutions.PendingPolicyIDs, policyIDs) && playerState.Institutions.PendingActivationTurn == state.Turn+1 {
-			continue
-		}
-		evt := event.InstitutionLoadoutChangedEvent{
-			PlayerID:       playerID,
-			PolicyIDs:      policyIDs,
-			ActivationTurn: state.Turn + 1,
-		}
-		events = append(events, evt)
-	}
-	return events
-}
-
-func policySlicesEqual(a []string, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for idx := range a {
-		if a[idx] != b[idx] {
-			return false
-		}
-	}
-	return true
+	room.State().TurnRuntime.ClearPostResolutionScratch()
 }
 
 func (r *GameRoom) lockUnitResolutionOrders() {
