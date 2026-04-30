@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载 ECS 查询、工厂或对应测试逻辑。
+
 package ecs
 
 import (
@@ -136,14 +142,57 @@ func TestBuildingRuntimeStateAndPlacementHelpers(t *testing.T) {
 	}
 
 	cfg, _ := staticdata.Default().GetBuilding("farm")
-	if got := CanPlaceBuildingAt(farmEntry, "player-1", cfg); got != "" {
-		t.Fatalf("CanPlaceBuildingAt(food farm) = %q, want empty", got)
+	if got := ValidateBuildingNodePlacement(state, farmEntry, "player-1", cfg); got != "" {
+		t.Fatalf("ValidateBuildingNodePlacement(food farm) = %q, want empty", got)
 	}
-	if got := CanPlaceBuildingAt(cityEntry, "player-1", cfg); got != "resource_only_required" {
-		t.Fatalf("CanPlaceBuildingAt(non-resource farm) = %q, want resource_only_required", got)
+	if got := ValidateBuildingNodePlacement(state, cityEntry, "player-1", cfg); got != "resource_only_required" {
+		t.Fatalf("ValidateBuildingNodePlacement(non-resource farm) = %q, want resource_only_required", got)
 	}
 	if canFound, reason := CanFoundCityAt(state, cityEntry); canFound || reason != "territory_blocked" {
 		t.Fatalf("CanFoundCityAt(occupied city) = (%v,%q), want (false,territory_blocked)", canFound, reason)
+	}
+}
+
+func TestValidateBuildingPlacementRemainsCanonicalOverNodePreflight(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			InitialCityTerritoryRadius: 1,
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", BuildingScope: "city_core", PlacementKind: "city_foundation_center", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "barracks", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 80, TakeoverMode: "city_capture"},
+		},
+	}))
+
+	world := donburi.NewWorld()
+	mapData := &domain.MapData{ID: "default", Width: 4, Height: 1, NodeIndex: map[string]donburi.Entity{}}
+	for x := 0; x < 4; x++ {
+		nodeID := string(rune('A' + x))
+		entity := CreateNode(world, MapNode{ID: nodeID, Q: x, R: 0, Terrain: "plain"})
+		mapData.NodeIndex[nodeID] = entity
+	}
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
+	state.World = world
+
+	cityEntry := world.Entry(mapData.NodeIndex["A"])
+	cityNode := NodeC.Get(cityEntry)
+	cityNode.Owner = "player-1"
+	cityNode.TerritoryOwner = "player-1"
+	CreateBuilding(world, "city_core", "player-1", "A", cityEntry)
+	state.EnsureCityState("player-1", "A")
+	state.Players["player-1"].CapitalCityID = "A"
+
+	targetEntry := world.Entry(mapData.NodeIndex["D"])
+	targetNode := NodeC.Get(targetEntry)
+	targetNode.Owner = "player-1"
+	targetNode.TerritoryOwner = "player-1"
+
+	cfg, _ := staticdata.Default().GetBuilding("barracks")
+	if got := ValidateBuildingNodePlacement(state, targetEntry, "player-1", cfg); got != "" {
+		t.Fatalf("ValidateBuildingNodePlacement(owned distant node) = %q, want empty", got)
+	}
+	if got := ValidateBuildingPlacement(state, targetEntry, "player-1", cfg, "A"); got != "outside_territory" {
+		t.Fatalf("ValidateBuildingPlacement(owned distant node) = %q, want outside_territory", got)
 	}
 }
 

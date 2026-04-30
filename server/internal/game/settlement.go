@@ -7,10 +7,7 @@
 package game
 
 import (
-	"strings"
-
 	"github.com/elebirds/panoptes/internal/domain"
-	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 )
@@ -23,15 +20,13 @@ func RunTurnResolution(room *GameRoom) {
 
 	collector := gameresolution.NewTurnResolutionRunner().Run(room.State(), gameresolution.RunnerHooks{
 		PlanningCommitEvents: gameresolution.BuildPlanningCommitEvents,
-		FreezeOrders: func(*domain.GameState) {
-			room.lockUnitResolutionOrders()
+		FreezeOrders: func(state *domain.GameState) {
+			gameorders.BuildResolvingUnitOrders(state, room.routePreviewCallbacks())
 		},
-		RefreshActiveMarches: func(*domain.GameState) {
-			room.refreshActiveMarchesAfterSettlement()
+		RefreshActiveMarches: func(state *domain.GameState) {
+			gameorders.RefreshActiveMarchesAfterSettlement(state, room.routePreviewCallbacks())
 		},
-		MapActionEvents: func(*domain.GameState) []event.Event {
-			return room.plannedMapActionEvents()
-		},
+		MapActionEvents: gameorders.BuildMapActionEvents,
 	})
 	room.broadcastGameSync(collector)
 	if room.IsDevMode() {
@@ -42,50 +37,4 @@ func RunTurnResolution(room *GameRoom) {
 	room.checkGameOver()
 
 	room.State().TurnRuntime.ClearPostResolutionScratch()
-}
-
-func (r *GameRoom) lockUnitResolutionOrders() {
-	state := r.State()
-	if state == nil {
-		return
-	}
-	if state.TurnRuntime.Resolving.UnitOrders == nil {
-		state.TurnRuntime.Resolving.UnitOrders = make(map[string]domain.UnitResolutionOrder)
-	}
-	clear(state.TurnRuntime.Resolving.UnitOrders)
-
-	for unitID, march := range state.TurnRuntime.Resolving.ActiveMarches {
-		state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
-			PlayerID:     march.PlayerID,
-			UnitID:       unitID,
-			Action:       domain.UnitResolutionActionMove,
-			TargetNodeID: march.DestinationNodeID,
-			PathNodeIDs:  append([]string(nil), march.LastPreview.PathNodeIDs...),
-		}
-	}
-
-	for unitID, directive := range state.TurnRuntime.Planning.UnitOrders {
-		order := gameorders.FromDirective(directive)
-		if resolutionOrder, ok := order.ToResolutionOrder(); ok {
-			if resolutionOrder.Action == domain.UnitResolutionActionMove {
-				if march, ok := state.TurnRuntime.Resolving.ActiveMarches[unitID]; ok && len(march.LastPreview.PathNodeIDs) > 0 {
-					resolutionOrder.TargetNodeID = march.DestinationNodeID
-					resolutionOrder.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
-				} else if preview, ok := r.buildRoutePreview(unitID, resolutionOrder.TargetNodeID); ok {
-					resolutionOrder.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
-				}
-			}
-			state.TurnRuntime.Resolving.UnitOrders[unitID] = resolutionOrder.Normalized()
-			continue
-		}
-
-		if gameorders.UnitAction(order.Action) == gameorders.ActionSettleCity && strings.TrimSpace(order.TargetNodeID) != "" {
-			state.TurnRuntime.Resolving.UnitOrders[unitID] = domain.UnitResolutionOrder{
-				PlayerID:     order.PlayerID,
-				UnitID:       order.UnitID,
-				Action:       domain.UnitResolutionActionMove,
-				TargetNodeID: order.TargetNodeID,
-			}
-		}
-	}
 }

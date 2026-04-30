@@ -73,6 +73,59 @@ flowchart LR
 - “结算阶段的正式裁决写回，主要通过 `event.Apply()` 完成。”
 - “planning 草案与 planning-start promotion 属于运行时编排层的直接状态写入例外。”
 
+### 2.3 MVP 收口后的后端结构边界
+
+2026-04-30 后端结构优化后，当前代码采用“按运行时职责分包、按规则主题拆文件”的约定。该约定不是为了追求小文件本身，而是为了让后续 MVP 功能开发能快速判断“这段逻辑应该放在哪里”。
+
+核心边界如下：
+
+- `game/turn`
+  - `coordinator.go` 只描述回合推进主循环：进入 planning、等待提交/超时、进入 resolving、终局/平局处理、推进回合。
+  - `command_handler.go` 承担 game command 分发，不把 oneof 分发逻辑塞回主循环。
+- `game/planning`
+  - 拥有 planning 命令适配、命令端口、响应投递顺序、preview 命令和各类 planning handler。
+  - `Service.HandleCommand` 仍是外部入口，但内部按 policy/research/institution/build/recipe/unit/minister/reveal/submit 拆分。
+  - preview 是只读路径，不写草案、不自动推送 planning snapshot。
+- `game/orders`
+  - 拥有单位订单从 planning 到 resolving 的状态生命周期。
+  - 包括单位指令校验、planning 草案写入/取消、ActiveMarch 同步、resolving order freeze、结算后 ActiveMarch 刷新，以及 `settle_city` 地图动作事件构造。
+  - root `game` 只通过 route preview callback 提供路径预览能力。
+- `game/resolution`
+  - 拥有 resolving runner、stage 顺序、事件 collector 和 planning commit event 构造。
+  - 不 import root `game`，避免结算内核反向依赖房间生命周期。
+- `game/projection` 与 `game/query`
+  - `query` 负责权威状态到观察/视图的只读查询。
+  - `projection` 负责把观察和事件投影成客户端消息；planning start 与 game sync 共用 `ObservedState` 组合逻辑，避免玩家视角字段漂移。
+- `game/session`
+  - `runtime.go` 保留会话状态与生命周期 facade。
+  - 初始化、bootstrap/catalog sync、catalog payload、参与者、玩家出生、城邦初始化、开发资源发放分别拆到独立文件。
+- `domain`
+  - 保留权威状态模型与状态本地 helper。
+  - modifier、unlock、building HP、turn runtime cleanup 等按主题拆文件。
+- `event`
+  - 保持正式状态写入口职责。
+  - 新代码不得在一个事件的 `Apply()` 内直接调用另一个事件的 `Apply()`；应抽私有 mutation helper，或由 producer 显式发出多个可报告事件。
+- `building` 与 `ecs`
+  - `ecs` 负责实体创建与通用查询。
+  - 建筑 binding、operation、takeover 等建筑专属组件装配归 `building`；`building.ValidatePlacement` 是完整放置规则。
+  - Donburi `Query` 对象按调用创建，不做包级共享；这是为了避免多房间或并发测试读不同 world 时写同一份 query 内部缓存。
+- `staticdata` 与 `datagen`
+  - `staticdata` 按模型主题、默认目录、加载、索引、查询、hash 拆分。
+  - `datagen` 按 emit/json/map/ui/render/schema/validate 拆分，但不改变生成路径或输出结构。
+- `transport`
+  - 入站 frame 分发复用 `transport/dispatch` 的 oneof dispatcher。
+  - `transport/inbound` 只是兼容 auth/lobby/game 粗粒度 handler 的 adapter。
+  - websocket 入站日志名通过 proto oneof 反射获取，不再维护另一套手写 command name switch。
+
+后续新增后端逻辑时，优先按以下顺序判断归属：
+
+1. 只需要 `*domain.GameState` 的状态逻辑，不放 root `game`。
+2. 产生 resolving 事件的规则逻辑，优先放 `engine/<area>`、`building/orchestration` 或 `game/resolution` 的对应 stage/helper。
+3. planning 阶段的命令适配、校验、投递，放 `game/planning`。
+4. 单位订单、地图动作、ActiveMarch 生命周期，放 `game/orders`。
+5. 客户端可见消息组装，放 `game/query` / `game/projection`，不要在 room/session 里重复拼字段。
+6. 只有确实需要 transport、debug hook、participant/session 生命周期时，才留在 root `game` 或 `game/session`。
+
 ## 3. 权威状态模型
 
 核心状态根是 `server/internal/domain/state.go` 中的 `GameState`。

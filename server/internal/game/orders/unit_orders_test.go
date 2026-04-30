@@ -1,0 +1,194 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载规划单位指令、地图动作与 resolving 单位订单的状态转换逻辑。
+
+package orders
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/staticdata"
+	"github.com/yohamta/donburi"
+)
+
+func TestValidatePlanningUnitOrderAllowsAttackAfterActiveMarch(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	infantry := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(infantry).ID = "infantry-1"
+	enemyNode, _ := state.GetNode("A3")
+	ecs.CreateBuilding(state.World, "farm", "player-2", "A3", enemyNode)
+	state.TurnRuntime.Resolving.ActiveMarches["infantry-1"] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            "infantry-1",
+		Action:            domain.UnitResolutionActionMove,
+		DestinationNodeID: "A2",
+	}
+
+	errCode := ValidatePlanningUnitOrder(state, "player-1", UnitOrder{
+		PlayerID:     "player-1",
+		UnitID:       "infantry-1",
+		Action:       ActionAttack,
+		TargetNodeID: "A3",
+	})
+
+	if errCode != "" {
+		t.Fatalf("validation error = %q, want accepted", errCode)
+	}
+}
+
+func TestApplyPlanningUnitOrderSyncsMoveAndPreservesAttackPath(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "infantry-1"
+	routes := RoutePreviewCallbacks{
+		ByDestination: func(unitID string, destinationNodeID string) (domain.RoutePreview, bool) {
+			if unitID != "infantry-1" || destinationNodeID != "A3" {
+				t.Fatalf("route preview request = %s/%s, want infantry-1/A3", unitID, destinationNodeID)
+			}
+			return domain.RoutePreview{PathNodeIDs: []string{"A1", "A2", "A3"}}, true
+		},
+	}
+
+	ApplyPlanningUnitOrder(state, UnitOrder{
+		UnitID:       "infantry-1",
+		Action:       ActionMove,
+		TargetNodeID: "A3",
+	}, routes)
+
+	march, ok := state.TurnRuntime.Resolving.ActiveMarches["infantry-1"]
+	if !ok {
+		t.Fatalf("active march missing after move order")
+	}
+	if march.PlayerID != "player-1" || march.DestinationNodeID != "A3" || !reflect.DeepEqual(march.LastPreview.PathNodeIDs, []string{"A1", "A2", "A3"}) {
+		t.Fatalf("active march = %#v", march)
+	}
+
+	ApplyPlanningUnitOrder(state, UnitOrder{
+		PlayerID:     "player-1",
+		UnitID:       "infantry-1",
+		Action:       ActionAttack,
+		TargetNodeID: "A3",
+	}, RoutePreviewCallbacks{})
+
+	directive := state.TurnRuntime.Planning.UnitOrders["infantry-1"]
+	if directive.Action != string(ActionAttack) || !reflect.DeepEqual(directive.PathNodeIDs, []string{"A1", "A2", "A3"}) {
+		t.Fatalf("attack directive = %#v, want preserved march path", directive)
+	}
+	if _, ok := state.TurnRuntime.Resolving.ActiveMarches["infantry-1"]; ok {
+		t.Fatalf("active march should be cleared after attack order")
+	}
+}
+
+func TestBuildResolvingUnitOrdersFreezesActiveMarchesAndSettleMove(t *testing.T) {
+	state := newUnitOrderTestState(t)
+	state.TurnRuntime.Resolving.ActiveMarches["infantry-1"] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            "infantry-1",
+		Action:            domain.UnitResolutionActionMove,
+		DestinationNodeID: "A3",
+		LastPreview:       domain.RoutePreview{PathNodeIDs: []string{"A1", "A2", "A3"}},
+	}
+	state.TurnRuntime.Planning.UnitOrders["infantry-1"] = domain.UnitDirective{
+		PlayerID:     "player-1",
+		UnitID:       "infantry-1",
+		Action:       string(ActionMove),
+		TargetNodeID: "A2",
+	}
+	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
+		PlayerID:     "player-1",
+		UnitID:       "settler-1",
+		Action:       string(ActionSettleCity),
+		TargetNodeID: "A2",
+	}
+
+	BuildResolvingUnitOrders(state, RoutePreviewCallbacks{})
+
+	move := state.TurnRuntime.Resolving.UnitOrders["infantry-1"]
+	if move.Action != domain.UnitResolutionActionMove || move.TargetNodeID != "A3" || !reflect.DeepEqual(move.PathNodeIDs, []string{"A1", "A2", "A3"}) {
+		t.Fatalf("frozen move order = %#v", move)
+	}
+	settle := state.TurnRuntime.Resolving.UnitOrders["settler-1"]
+	if settle.Action != domain.UnitResolutionActionMove || settle.TargetNodeID != "A2" {
+		t.Fatalf("settle movement order = %#v", settle)
+	}
+}
+
+func TestRefreshActiveMarchesAfterSettlementTrimsOrClearsMarches(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-1", domain.Position{Q: 1, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "infantry-1"
+	state.TurnRuntime.Resolving.ActiveMarches["infantry-1"] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            "infantry-1",
+		Action:            domain.UnitResolutionActionMove,
+		DestinationNodeID: "A3",
+		LastPreview:       domain.RoutePreview{PathNodeIDs: []string{"A1", "A2", "A3"}},
+	}
+	routes := RoutePreviewCallbacks{
+		ByPath: func(unitID string, pathNodeIDs []string) (domain.RoutePreview, bool) {
+			if unitID != "infantry-1" || !reflect.DeepEqual(pathNodeIDs, []string{"A2", "A3"}) {
+				t.Fatalf("path preview request = %s/%#v, want infantry-1/[A2 A3]", unitID, pathNodeIDs)
+			}
+			return domain.RoutePreview{PathNodeIDs: append([]string(nil), pathNodeIDs...)}, true
+		},
+	}
+
+	RefreshActiveMarchesAfterSettlement(state, routes)
+
+	march, ok := state.TurnRuntime.Resolving.ActiveMarches["infantry-1"]
+	if !ok || !reflect.DeepEqual(march.LastPreview.PathNodeIDs, []string{"A2", "A3"}) {
+		t.Fatalf("refreshed march = %#v, ok=%v", march, ok)
+	}
+
+	ecs.PositionC.SetValue(unit, ecs.PositionComp{Q: 2, R: 0})
+	RefreshActiveMarchesAfterSettlement(state, routes)
+	if _, ok := state.TurnRuntime.Resolving.ActiveMarches["infantry-1"]; ok {
+		t.Fatalf("active march should be cleared after unit reaches destination")
+	}
+}
+
+func useUnitOrderTestCatalog(t *testing.T) {
+	t.Helper()
+	previous := staticdata.Default()
+	t.Cleanup(func() {
+		staticdata.SetDefault(previous)
+	})
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{CityCoreMaxHP: 100},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, Multipliers: map[string]float64{}, Flags: staticdata.UnitFlags{CanAttackStructures: true}},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", PlacementKind: "city_territory", BuildingScope: "in_city", MaxHP: 15, TakeoverMode: "city_capture"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+}
+
+func newUnitOrderTestState(t *testing.T) *domain.GameState {
+	t.Helper()
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{}
+	for idx, nodeID := range []string{"A1", "A2", "A3"} {
+		nodeIndex[nodeID] = ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: idx, R: 0, Terrain: "plain"})
+	}
+	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
+		ID:        "unit-order-test",
+		Width:     3,
+		Height:    1,
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	return state
+}

@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载建筑规则、组件装配或建筑相关测试逻辑。
+
 package building
 
 import (
@@ -9,8 +15,6 @@ import (
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 )
-
-var nodesWithBuildingQuery = donburi.NewQuery(filter.Contains(domain.PositionC, domain.NodeC, domain.BuildingC))
 
 func ResolveCityContext(state *domain.GameState, playerID string, cityID string) (*donburi.Entry, *domain.CityState, string) {
 	if state == nil {
@@ -67,7 +71,7 @@ func ValidatePlacement(state *domain.GameState, nodeEntry *donburi.Entry, player
 	if !domain.IsCityOnline(state, cityState) {
 		return "invalid_directive"
 	}
-	if errCode := canPlaceAtStatic(state, nodeEntry, playerID, cfg); errCode != "" {
+	if errCode := ValidateNodePlacement(state, nodeEntry, playerID, cfg); errCode != "" {
 		return errCode
 	}
 	if scope != domain.BuildingScopeInCity {
@@ -87,9 +91,11 @@ func ValidatePlacement(state *domain.GameState, nodeEntry *donburi.Entry, player
 	return "outside_territory"
 }
 
-// canPlaceAtStatic 只判断“节点本身是否满足放置条件”。
-// 城市上下文、城市是否在线、城内建筑半径这些更高层约束由 ValidatePlacement 统一包裹。
-func canPlaceAtStatic(state *domain.GameState, entry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition) string {
+// ValidateNodePlacement only checks whether the target node itself satisfies a
+// building's placement kind. City context, online city state, and in-city radius
+// remain the responsibility of ValidatePlacement, which is the canonical
+// placement rule for player build commands.
+func ValidateNodePlacement(state *domain.GameState, entry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition) string {
 	if entry == nil {
 		return "invalid_target"
 	}
@@ -179,7 +185,8 @@ func CanFoundCityAt(state *domain.GameState, centerEntry *donburi.Entry) (bool, 
 	centerPos := domain.PositionC.Get(centerEntry)
 	minimumDistance := staticdata.Default().Rules().MinimumCityDistance
 	if minimumDistance > 0 {
-		nodesWithBuildingQuery.Each(state.World, func(entry *donburi.Entry) {
+		// Donburi Query 内部带缓存；建筑规则可能被多个房间并发读写，查询对象不能包级共享。
+		donburi.NewQuery(filter.Contains(domain.PositionC, domain.NodeC, domain.BuildingC)).Each(state.World, func(entry *donburi.Entry) {
 			if entry == nil || !entry.HasComponent(domain.BuildingC) {
 				return
 			}

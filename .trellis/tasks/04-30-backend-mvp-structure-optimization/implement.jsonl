@@ -3,3 +3,6 @@
 {"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality expectations for refactor and tests, even though currently sparse."}
 {"file": ".trellis/spec/backend/error-handling.md", "reason": "Backend error handling expectations; included to avoid introducing inconsistent errors."}
 {"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/backend-current-state.md", "reason": "Current backend analysis and chosen MVP optimization scope."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/runtime-orchestration.md", "reason": "Comprehensive runtime and GameRoom/session/turn orchestration findings."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/command-projection-boundaries.md", "reason": "Command adaptation, planning, projection, and transport boundary refactor plan."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/domain-engine-boundaries.md", "reason": "Domain/event/engine/staticdata structure findings and later-phase candidates."}

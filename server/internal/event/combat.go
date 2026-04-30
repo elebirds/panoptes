@@ -66,11 +66,7 @@ type UnitDiedEvent struct {
 }
 
 func (e UnitDiedEvent) Apply(world donburi.World, _ *domain.GameState) {
-	entry, ok := findUnitByID(world, e.UnitID)
-	if !ok {
-		return
-	}
-	world.Remove(entry.Entity())
+	removeUnitByID(world, e.UnitID)
 }
 
 func (e UnitDiedEvent) Kind() string { return "unit_died" }
@@ -112,25 +108,7 @@ type CityCoreDestroyedEvent struct {
 }
 
 func (e CityCoreDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
-	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
-	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
-		return
-	}
-	building := ecs.BuildingC.Get(nodeEntry)
-	ownerState, ok := state.Players[building.Owner]
-	if !ok || ownerState == nil {
-		return
-	}
-	if cityID := ecs.ResolveCityID(nodeEntry); cityID == "" || cityID != ownerState.CapitalCityID {
-		return
-	}
-	node := ecs.NodeC.Get(nodeEntry)
-	node.Owner = e.ConquerorFaction
-	building.Owner = e.ConquerorFaction
-	state.IsOver = true
-	state.WinnerID = e.ConquerorFaction
-	state.OverReason = "city_core_destroyed"
-	state.RefreshStructuredModel()
+	destroyCapitalCityCore(world, state, e.NodeID, e.ConquerorFaction)
 }
 
 func (e CityCoreDestroyedEvent) Kind() string { return "city_core_destroyed" }

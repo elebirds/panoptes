@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载对局运行时会话生命周期拆分后的子职责逻辑。
+
 package session
 
 import (
@@ -17,7 +23,11 @@ func BuildPlanningStartMessageFromObservation(state *domain.GameState, observati
 	if state == nil || phase != domain.PhasePlanning.String() {
 		return nil
 	}
-	playerID := resolvePlanningStartPlayerID(state, observation)
+	observed := gameprojection.ProjectObservedState(state, observation, gameprojection.ObservedStateOptions{
+		UseSinglePlayerFallback:        true,
+		ObservationCollectionsAreFinal: true,
+	})
+	playerID := observed.PlayerID
 
 	rules := staticdata.Default().Rules()
 	currentPolicy := ""
@@ -34,49 +44,13 @@ func BuildPlanningStartMessageFromObservation(state *domain.GameState, observati
 		Phase:                  phase,
 		ActiveNationalPolicyId: currentPolicy,
 		MinisterDrafts:         gamequery.BuildMinisterDraftViews(state, playerID),
-		MyPlayer:               resolveObservationPlayerView(state, playerID, observation),
-		Nodes:                  resolveObservationNodes(state, playerID, observation),
-		Units:                  resolveObservationUnits(state, playerID, observation),
+		MyPlayer:               observed.MyPlayer,
+		Nodes:                  observed.Nodes,
+		Units:                  observed.Units,
 		// planning_start_events 是本轮改造新增的正式事件面。
 		// 它只承载“开回合才正式生效”的事件，例如 technology_activated。
 		PlanningStartEvents: gameprojection.ProjectPlanningStartEvents(int32(state.Turn), planningStartEvents),
 	}
-	snapshot := gamequery.BuildPlanningSnapshot(state, playerID)
-	snapshot.Phase = phase
-	msg.Snapshot = snapshot
+	msg.Snapshot = observed.PlanningSnapshot(phase)
 	return msg
-}
-
-func resolveObservationPlayerView(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) *pb.PlayerView {
-	if observation != nil && observation.MyPlayer != nil {
-		return observation.MyPlayer
-	}
-	return gamequery.BuildPlayerView(state, playerID)
-}
-
-func resolveObservationNodes(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) []*pb.NodeView {
-	if observation != nil {
-		return observation.Nodes
-	}
-	return gamequery.BuildNodeViews(state, playerID)
-}
-
-func resolveObservationUnits(state *domain.GameState, playerID string, observation *gamequery.ObservationSnapshot) []*pb.UnitView {
-	if observation != nil {
-		return observation.Units
-	}
-	return gamequery.BuildUnitViews(state)
-}
-
-func resolvePlanningStartPlayerID(state *domain.GameState, observation *gamequery.ObservationSnapshot) string {
-	if observation != nil && observation.ViewerID != "" {
-		return observation.ViewerID
-	}
-	if state == nil || len(state.Players) != 1 {
-		return ""
-	}
-	for playerID := range state.Players {
-		return playerID
-	}
-	return ""
 }
