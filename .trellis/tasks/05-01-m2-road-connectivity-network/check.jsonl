@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry point for M2 review."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Review package boundaries, event-only state writes, and resolving-stage constraints."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Review command validation and error-code compliance."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review code/test quality and forbidden patterns."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review cross-layer consistency for road/network state."}

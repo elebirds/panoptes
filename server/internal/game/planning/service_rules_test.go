@@ -834,8 +834,8 @@ func decodeMinisterDraftStatus(t *testing.T, drafts []*pb.MinisterDraftView, dra
 	return ""
 }
 
-func TestIssueUnitOrderRejectsReservedMapActionsWithoutStateWrites(t *testing.T) {
-	for _, action := range []string{"build_road", "repair_road", "build_improvement", "repair_improvement"} {
+func TestIssueUnitOrderRejectsReservedImprovementActionsWithoutStateWrites(t *testing.T) {
+	for _, action := range []string{"build_improvement", "repair_improvement"} {
 		t.Run(action, func(t *testing.T) {
 			state := newStructureAttackPlanningState(t)
 			session := newPlanningSessionStub(state)
@@ -872,6 +872,133 @@ func TestIssueUnitOrderRejectsReservedMapActionsWithoutStateWrites(t *testing.T)
 				t.Fatalf("active marches = %d, want 0", got)
 			}
 		})
+	}
+}
+
+func TestIssueUnitOrderAcceptsRoadActionsForCivilian(t *testing.T) {
+	for _, action := range []string{"build_road", "repair_road"} {
+		t.Run(action, func(t *testing.T) {
+			state := newStructureAttackPlanningState(t)
+			settler := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+			ecs.UnitStatsC.Get(settler).ID = "settler-1"
+			if action == "repair_road" {
+				a1, _ := state.GetNode("A1")
+				ecs.NodeC.Get(a1).HasRoad = true
+			}
+			session := newPlanningSessionStub(state)
+			service := &Service{}
+
+			err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_IssueUnitOrder{
+					IssueUnitOrder: &pb.MsgIssueUnitOrder{
+						UnitId:          "settler-1",
+						Action:          action,
+						TargetNodeId:    "A1",
+						SecondaryNodeId: "A2",
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("HandleCommand() error = %v", err)
+			}
+
+			result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+			if result == nil || !result.GetSuccess() || result.GetErrorCode() != "" {
+				t.Fatalf("unit order result = %#v, want success", result)
+			}
+			if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot == nil {
+				t.Fatalf("planning snapshot missing on accepted road action")
+			}
+			directive, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]
+			if !ok || directive.Action != action {
+				t.Fatalf("planning unit order = %#v, ok=%v, want %s", directive, ok, action)
+			}
+			if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+				t.Fatalf("resolving unit orders = %d, want 0", got)
+			}
+			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+				t.Fatalf("active marches = %d, want 0", got)
+			}
+		})
+	}
+}
+
+func TestIssueUnitOrderRejectsRoadActionsForInfantryWithoutStateWrites(t *testing.T) {
+	state := newStructureAttackPlanningState(t)
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          "infantry-1",
+				Action:          "build_road",
+				TargetNodeId:    "A1",
+				SecondaryNodeId: "A2",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+		t.Fatalf("unit order result = %#v, want invalid_directive", result)
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+	}
+	if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
+		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
+	}
+}
+
+func TestIssueUnitOrderRejectsInvalidRoadEndpointsWithoutStateWrites(t *testing.T) {
+	state := newStructureAttackPlanningState(t)
+	settler := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(settler).ID = "settler-1"
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          "settler-1",
+				Action:          "build_road",
+				TargetNodeId:    "A1",
+				SecondaryNodeId: "A3",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_target" {
+		t.Fatalf("unit order result = %#v, want invalid_target", result)
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+	}
+	if _, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]; ok {
+		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
+	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
+	for _, nodeID := range []string{"A1", "A3"} {
+		nodeEntry, ok := state.GetNode(nodeID)
+		if !ok {
+			t.Fatalf("node %s missing", nodeID)
+		}
+		if ecs.NodeC.Get(nodeEntry).HasRoad {
+			t.Fatalf("node %s HasRoad = true, want false after rejected command", nodeID)
+		}
 	}
 }
 
@@ -1124,6 +1251,19 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 			BaseIndustryOutputPerTurn: 2,
 		},
 		Units: []staticdata.UnitDefinition{
+			{
+				ID:          "settler",
+				Class:       "civilian",
+				MaxHP:       12,
+				MoveRange:   2,
+				VisionRange: 2,
+				TrainCost:   staticdata.ResourceAmounts{},
+				Upkeep:      staticdata.ResourceAmounts{"food": 1},
+				Multipliers: map[string]float64{},
+				Flags: staticdata.UnitFlags{
+					CanCapture: true,
+				},
+			},
 			{
 				ID:          "infantry",
 				Class:       "melee",

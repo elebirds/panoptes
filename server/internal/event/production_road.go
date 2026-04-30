@@ -22,8 +22,35 @@ type RoadBuiltEvent struct {
 }
 
 func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
-	fromEntry, okFrom := findNodeByID(world, state, e.FromNode)
-	toEntry, okTo := findNodeByID(world, state, e.ToNode)
+	markRoadBetween(world, state, e.FromNode, e.ToNode)
+	state.ConsumeResources(e.Owner, "", domain.ResourceBag{domain.ResourceIndustryOutput: e.Cost})
+}
+
+func (e RoadBuiltEvent) Kind() string { return "road_built" }
+
+func (e RoadBuiltEvent) String() string {
+	return fmt.Sprintf("RoadBuiltEvent %s->%s owner=%s cost=%d", e.FromNode, e.ToNode, e.Owner, e.Cost)
+}
+
+type RoadRepairedEvent struct {
+	FromNode string
+	ToNode   string
+	Owner    string
+}
+
+func (e RoadRepairedEvent) Apply(world donburi.World, state *domain.GameState) {
+	markRoadBetween(world, state, e.FromNode, e.ToNode)
+}
+
+func (e RoadRepairedEvent) Kind() string { return "road_repaired" }
+
+func (e RoadRepairedEvent) String() string {
+	return fmt.Sprintf("RoadRepairedEvent %s->%s owner=%s", e.FromNode, e.ToNode, e.Owner)
+}
+
+func markRoadBetween(world donburi.World, state *domain.GameState, fromNode string, toNode string) {
+	fromEntry, okFrom := findNodeByID(world, state, fromNode)
+	toEntry, okTo := findNodeByID(world, state, toNode)
 	if okFrom {
 		n := ecs.NodeC.Get(fromEntry)
 		n.HasRoad = true
@@ -46,13 +73,6 @@ func (e RoadBuiltEvent) Apply(world donburi.World, state *domain.GameState) {
 			markRoadAt(world, current)
 		}
 	}
-	state.ConsumeResources(e.Owner, "", domain.ResourceBag{domain.ResourceIndustryOutput: e.Cost})
-}
-
-func (e RoadBuiltEvent) Kind() string { return "road_built" }
-
-func (e RoadBuiltEvent) String() string {
-	return fmt.Sprintf("RoadBuiltEvent %s->%s owner=%s cost=%d", e.FromNode, e.ToNode, e.Owner, e.Cost)
 }
 
 func markRoadAt(world donburi.World, pos domain.Position) {

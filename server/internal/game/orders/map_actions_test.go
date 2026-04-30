@@ -141,6 +141,51 @@ func TestBuildMapActionEventsBuildsFailureForInvalidSettleCity(t *testing.T) {
 	}
 }
 
+func TestBuildMapActionEventsBuildsRoadEvents(t *testing.T) {
+	useMapActionTestCatalog(t)
+	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
+	settler := worldEntry(state.World, ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(settler).ID = "settler-1"
+	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
+		PlayerID:        "player-1",
+		UnitID:          "settler-1",
+		Action:          string(ActionBuildRoad),
+		TargetNodeID:    "C",
+		SecondaryNodeID: "A",
+	}
+
+	events := BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("event count = %d, want 1: %#v", len(events), events)
+	}
+	built, ok := events[0].(event.RoadBuiltEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want RoadBuiltEvent", events[0])
+	}
+	if built.FromNode != "C" || built.ToNode != "A" || built.Owner != "player-1" {
+		t.Fatalf("road built event = %#v", built)
+	}
+
+	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
+		PlayerID:        "player-1",
+		UnitID:          "settler-1",
+		Action:          string(ActionRepairRoad),
+		TargetNodeID:    "C",
+		SecondaryNodeID: "A",
+	}
+	events = BuildMapActionEvents(state)
+	if len(events) != 1 {
+		t.Fatalf("repair event count = %d, want 1: %#v", len(events), events)
+	}
+	repaired, ok := events[0].(event.RoadRepairedEvent)
+	if !ok {
+		t.Fatalf("event type = %T, want RoadRepairedEvent", events[0])
+	}
+	if repaired.FromNode != "C" || repaired.ToNode != "A" || repaired.Owner != "player-1" {
+		t.Fatalf("road repaired event = %#v", repaired)
+	}
+}
+
 func TestBuildMapActionEventsIgnoresUnsupportedMapActions(t *testing.T) {
 	useMapActionTestCatalog(t)
 	state := newMapActionTestState(t, domain.Position{Q: 0, R: 0})
@@ -149,7 +194,7 @@ func TestBuildMapActionEventsIgnoresUnsupportedMapActions(t *testing.T) {
 	state.TurnRuntime.Planning.UnitOrders["settler-1"] = domain.UnitDirective{
 		PlayerID:     "player-1",
 		UnitID:       "settler-1",
-		Action:       string(ActionBuildRoad),
+		Action:       string(ActionBuildImprovement),
 		TargetNodeID: "C",
 	}
 

@@ -149,6 +149,26 @@ func TestEventPayloadFromEventMapsPointBudgetEvents(t *testing.T) {
 	}
 }
 
+func TestEventPayloadFromEventMapsRoadRepairedEvent(t *testing.T) {
+	t.Parallel()
+
+	turnEvent := projectEventPayload(event.RoadRepairedEvent{
+		FromNode: "A1",
+		ToNode:   "A2",
+		Owner:    "player-1",
+	})
+
+	if turnEvent.GetType() != "road_repaired" {
+		t.Fatalf("type = %q, want road_repaired", turnEvent.GetType())
+	}
+	if got := turnEvent.GetData()["from_node"]; got != "A1" {
+		t.Fatalf("from_node = %q, want A1", got)
+	}
+	if got := turnEvent.GetData()["owner"]; got != "player-1" {
+		t.Fatalf("owner = %q, want player-1", got)
+	}
+}
+
 func TestEventPayloadFromEventMapsRecipeSkippedEvent(t *testing.T) {
 	t.Parallel()
 

@@ -144,6 +144,97 @@ post-settlement active-march refresh belong in `game/orders`. Root `game` may
 provide route-preview callbacks because route preview still depends on room
 state and combat planner wiring.
 
+## Scenario: Road Map Actions And Connectivity
+
+### 1. Scope / Trigger
+
+`MsgIssueUnitOrder` actions `build_road` and `repair_road` are backend-owned
+map actions. They are accepted during planning only after server validation,
+stored as planning directives, and converted to authoritative events in the
+existing `MapActionStage`. `build_improvement` and `repair_improvement` remain
+reserved until their own M2 slice.
+
+### 2. Signatures
+
+Planning command:
+
+```go
+orders.UnitOrder{
+	PlayerID:        playerID,
+	UnitID:          unitID,
+	Action:          orders.ActionBuildRoad, // or ActionRepairRoad
+	TargetNodeID:    fromOrTargetNodeID,
+	SecondaryNodeID: optionalToNodeID,
+}
+```
+
+Read-only connectivity:
+
+```go
+domain.RoadConnected(state, fromNodeID, toNodeID) bool
+domain.PlayerRoadNetworkStatus(state, playerID) domain.RoadNetworkStatus
+```
+
+### 3. Contracts
+
+* With `secondary_node_id`, road actions target the edge
+  `target_node_id -> secondary_node_id`.
+* Without `secondary_node_id`, road actions target the edge from the acting
+  unit's current node to `target_node_id`.
+* State writes for construction and repair must happen through
+  `event.RoadBuiltEvent` or `event.RoadRepairedEvent`; validation and query
+  helpers must not mutate node road state.
+* Connectivity is a deterministic backend query over roaded map nodes. It is
+  not logistics capacity, local storage, priority routing, or client authority.
+
+### 4. Validation & Error Matrix
+
+| Condition | Error |
+|---|---|
+| Missing state, unit id, action, or road target | `invalid_request` |
+| Unit is not owned by the player | `unit_not_found` |
+| Unit is not a civilian/engineering-capable actor | `invalid_directive` |
+| Endpoint node is missing or cannot host a road | `invalid_target` |
+| Road endpoints are not adjacent | `invalid_target` |
+| Acting unit is not adjacent to either road endpoint | `invalid_target` |
+| Both endpoint nodes already have roads | `invalid_target` |
+| `build_improvement` / `repair_improvement` | `invalid_directive` |
+
+### 5. Good/Base/Bad Cases
+
+* Good: a valid civilian `build_road` creates a planning directive, emits
+  `RoadBuiltEvent` during map action resolution, and changes road connectivity.
+* Base: `repair_road` restores a missing road endpoint by emitting
+  `RoadRepairedEvent`.
+* Bad: invalid road commands return a typed failure result and must not write
+  planning drafts, resolving orders, active marches, or node road state.
+
+### 6. Tests Required
+
+* Planning validation accepts valid `build_road` / `repair_road` and rejects
+  unsupported units or invalid endpoints.
+* Map action tests assert road actions produce road events.
+* Event/query tests assert construction, destruction, and repair change
+  `domain.RoadConnected` and player road-network status.
+* Reserved improvement tests must remain in place until the improvement slice
+  explicitly changes that contract.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```go
+// Do not mutate road state in validation, planning, or client code.
+ecs.NodeC.Get(nodeEntry).HasRoad = true
+```
+
+#### Correct
+
+```go
+events := orders.BuildMapActionEvents(state)
+collector.ApplyNow(resolution.ChannelMap, state.World, state, events...)
+```
+
 ### Convention: Turn Resolution Stage Order Is a Contract
 
 **What**: `game/resolution.NewTurnResolutionRunner()` owns the fixed resolving
