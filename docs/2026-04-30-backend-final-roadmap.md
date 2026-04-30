@@ -199,6 +199,8 @@ for each player:
 
 ## 9. M7：大臣默认执行层
 
+状态：已完成，见 `docs/2026-05-01-backend-m7-regression-gate.md`。
+
 目标：让大臣成为国家机器的默认执行者。
 
 前置条件：

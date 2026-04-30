@@ -51,7 +51,7 @@ func ApplyPlanningUnitOrder(state *domain.GameState, order UnitOrder, routes Rou
 
 func isSupportedPlanningMapAction(action UnitAction) bool {
 	switch action {
-	case ActionSettleCity, ActionBuildRoad, ActionRepairRoad, ActionBuildImprovement, ActionRepairImprovement:
+	case ActionSettleCity, ActionBuildRoad, ActionRepairRoad, ActionDestroyRoad, ActionBuildImprovement, ActionRepairImprovement, ActionRaidStorage:
 		return true
 	default:
 		return false

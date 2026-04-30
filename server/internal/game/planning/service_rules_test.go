@@ -573,7 +573,7 @@ func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	}
 }
 
-func TestSetMinisterDirectiveRejectedAsReservedBoundary(t *testing.T) {
+func TestSetMinisterDirectiveAcceptsResearchDraft(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -601,32 +601,28 @@ func TestSetMinisterDirectiveRejectedAsReservedBoundary(t *testing.T) {
 			},
 		},
 	})
-	if err == nil {
-		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
 	}
-	problem, ok := cmddispatch.AsProblem(err)
-	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
-		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
 	}
-	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
-		t.Fatalf("pending research target = %q, want empty", got)
+	if result := lastMessage[*pb.MsgResearchResult](session.sent["player-1"]); result == nil || !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
+		t.Fatalf("research result = %#v, want accepted agrarian_foundations", result)
 	}
-	if got := len(session.sent["player-1"]); got != 0 {
-		t.Fatalf("sent messages = %d, want 0", got)
-	}
-	if got := len(session.memoryEntries); got != 0 {
-		t.Fatalf("memory entries = %d, want 0", got)
+	if got := len(session.memoryEntries); got == 0 {
+		t.Fatalf("memory entries = 0, want accepted transition recorded")
 	}
 	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
 	if len(drafts) != 1 {
-		t.Fatalf("minister drafts = %#v, want one unchanged draft", drafts)
+		t.Fatalf("minister drafts = %#v, want one draft", drafts)
 	}
-	if drafts[0].Status != domain.MinisterDraftStatusPending || !drafts[0].Available {
-		t.Fatalf("minister draft = %#v, want pending and available", drafts[0])
+	if drafts[0].Status != domain.MinisterDraftStatusAccepted || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want accepted and available", drafts[0])
 	}
 }
 
-func TestSetMinisterDirectiveIntentRejectedAsReservedBoundary(t *testing.T) {
+func TestSetMinisterDirectiveIntentAcceptsPolicyDraft(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -654,28 +650,24 @@ func TestSetMinisterDirectiveIntentRejectedAsReservedBoundary(t *testing.T) {
 			DraftID:       "draft-policy-1",
 		},
 	})
-	if err == nil {
-		t.Fatalf("HandleIntent() error = nil, want invalid_directive problem")
+	if err != nil {
+		t.Fatalf("HandleIntent() error = %v", err)
 	}
-	problem, ok := cmddispatch.AsProblem(err)
-	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
-		t.Fatalf("problem = %#v, want invalid_directive", problem)
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
+		t.Fatalf("pending policy = %q, want expansion", got)
 	}
-	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
-		t.Fatalf("pending policy = %q, want empty", got)
+	if result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"]); result == nil || !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
+		t.Fatalf("policy result = %#v, want accepted expansion", result)
 	}
-	if got := len(session.sent["player-1"]); got != 0 {
-		t.Fatalf("sent messages = %d, want 0", got)
-	}
-	if got := len(session.memoryEntries); got != 0 {
-		t.Fatalf("memory entries = %d, want 0", got)
+	if got := len(session.memoryEntries); got == 0 {
+		t.Fatalf("memory entries = 0, want accepted transition recorded")
 	}
 	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
 	if len(drafts) != 1 {
-		t.Fatalf("minister drafts = %#v, want one unchanged draft", drafts)
+		t.Fatalf("minister drafts = %#v, want one draft", drafts)
 	}
-	if drafts[0].Status != domain.MinisterDraftStatusPending || !drafts[0].Available {
-		t.Fatalf("minister draft = %#v, want pending and available", drafts[0])
+	if drafts[0].Status != domain.MinisterDraftStatusAccepted || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want accepted and available", drafts[0])
 	}
 }
 

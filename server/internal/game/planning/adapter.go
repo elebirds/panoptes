@@ -119,7 +119,11 @@ func EnvelopeFromPlanningCommand(inbound cmddispatch.InboundContext, cmd *pb.Pla
 			RecipeID: strings.TrimSpace(body.SetBuildingRecipe.GetRecipeId()),
 		}
 	case *pb.PlanningCommand_SetMinisterDirective:
-		return IntentEnvelope{}, false, transportproblem.New("invalid_directive", "minister directive is not part of current MVP")
+		intent, err := ministerDirectiveIntent(body.SetMinisterDirective)
+		if err != nil {
+			return IntentEnvelope{}, false, err
+		}
+		envelope.Intent = intent
 	case *pb.PlanningCommand_SetWarZone:
 		return IntentEnvelope{}, false, transportproblem.New("invalid_directive", "war zone is not part of current MVP")
 	case *pb.PlanningCommand_WarZoneDirective:

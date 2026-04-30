@@ -95,6 +95,7 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 	if c.runtime == nil {
 		return
 	}
+	c.applyMinisterDefaultPlans(ctx)
 	if notifyHumans {
 		for _, human := range c.runtime.HumanParticipants() {
 			if err := c.runtime.SendPlanningStart(ctx, human.ID); err != nil {
