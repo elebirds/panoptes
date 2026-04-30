@@ -39,7 +39,7 @@ func (e BuildingBuiltEvent) Apply(world donburi.World, state *domain.GameState) 
 			onlineOnTurn = state.Turn + 1
 		}
 		domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusDisabled, "pending_activation", onlineOnTurn)
-		state.ConsumeResources(e.Owner, e.CityID, e.Cost)
+		state.ConsumeResources(e.Owner, "", e.Cost)
 	}
 }
 

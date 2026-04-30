@@ -138,7 +138,7 @@ func (e RecipeProgressedEvent) Apply(world donburi.World, state *domain.GameStat
 	ecs.BuildingOperationC.SetValue(entry, *operation)
 	if state != nil && e.ResourceDelta != nil && !e.ResourceDelta.IsZero() {
 		// 资源只扣本回合新增 delta，不会重复扣 operation 里已经累计过的历史消耗。
-		state.ConsumeResources(ecs.BuildingC.Get(entry).Owner, ecs.ResolveCityID(entry), e.ResourceDelta)
+		state.ConsumeResources(ecs.BuildingC.Get(entry).Owner, ecs.ResolveServiceCityID(entry), e.ResourceDelta)
 	}
 }
 
@@ -172,7 +172,7 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 		operation.ConsumedPoints = domain.NewPointBag()
 		ecs.BuildingOperationC.SetValue(entry, *operation)
 	}
-	state.AddResources(e.Owner, e.Resources)
+	state.AddResourcesToCity(e.Owner, e.CityID, e.Resources)
 	if len(e.Units) == 0 || !ok {
 		return
 	}

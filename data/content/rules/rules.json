@@ -10,5 +10,6 @@
   "base_research_output_per_turn": 1,
   "base_industry_output_per_turn": 2,
   "minimum_city_distance": 3,
-  "initial_city_territory_radius": 1
+  "initial_city_territory_radius": 1,
+  "road_base_capacity": 2
 }

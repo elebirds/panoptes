@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "6a7af893209df62f76a5871a7968bd3ebfce4a8ea806008c14fdf194763f0206",
+    "bundle_hash": "2203cefcd325bcf040b51eec002d1c755d18e2bcf7f6ce7a60ab2515a917b858",
     "required_sections": [
       "resources",
       "points",
@@ -52,7 +52,7 @@
       },
       {
         "section_name": "rules",
-        "hash": "f2eee51d50fc0aa8bbdb936a69fa216a66d236bc3395cb3cac45c6557a86a810"
+        "hash": "df594100c412e061f2f88dccbf88a217a3f370b967eb90aa85703897ec46ab6a"
       },
       {
         "section_name": "technologies",
@@ -1189,7 +1189,8 @@
     "base_research_output_per_turn": 1,
     "base_industry_output_per_turn": 2,
     "minimum_city_distance": 3,
-    "initial_city_territory_radius": 1
+    "initial_city_territory_radius": 1,
+    "road_base_capacity": 2
   },
   "ministers": [
     {

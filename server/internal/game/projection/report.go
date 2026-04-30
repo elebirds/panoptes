@@ -67,6 +67,9 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 		data := map[string]string{
 			"from_node_id": strings.TrimSpace(e.FromNodeID),
 			"to_node_id":   strings.TrimSpace(e.ToNodeID),
+			"owner":        strings.TrimSpace(e.Owner),
+			"from_city_id": strings.TrimSpace(e.FromCityID),
+			"to_city_id":   strings.TrimSpace(e.ToCityID),
 		}
 		for key, amount := range resourceBagData(e.Resources) {
 			data[key] = amount

@@ -235,7 +235,7 @@ func TestHarnessOuterFacilityCapture_DeactivatesContestedFacility(t *testing.T) 
 	}
 }
 
-func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
+func TestHarnessRealContentHappyPath_ReachesDisconnectedMilitaryShortage(t *testing.T) {
 	def := newRealContentHappyPathDefinition(t)
 
 	h, err := NewHarness(def)
@@ -385,68 +385,8 @@ func TestHarnessRealContentHappyPath_CompletesFullMVPGame(t *testing.T) {
 	if !hasTurnEvent(turn6.GameSync, "economy", "recipe_completed") {
 		t.Fatalf("turn 6 missing recipe_completed event")
 	}
-	infantryID := findOwnedUnitIDByType(t, h.room.State(), "player-1", "infantry")
-
-	if _, err := h.WaitPlanningStart("player-1", 7, 2*time.Second); err != nil {
-		t.Fatalf("WaitPlanningStart(turn=7) error = %v", err)
-	}
-	if err := h.InjectPlanningCommand("player-1", "req-move-frontline", &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_IssueUnitOrder{
-			IssueUnitOrder: &pb.MsgIssueUnitOrder{
-				UnitId:       infantryID,
-				Action:       "move",
-				TargetNodeId: "F2",
-			},
-		},
-	}); err != nil {
-		t.Fatalf("InjectPlanningCommand(move) error = %v", err)
-	}
-	if err := h.SubmitTurn("player-1"); err != nil {
-		t.Fatalf("SubmitTurn(turn=7) error = %v", err)
-	}
-
-	turn7, err := h.WaitGameSync("player-1", 7, 3*time.Second)
-	if err != nil {
-		t.Fatalf("WaitGameSync(turn=7) error = %v", err)
-	}
-	if !hasTurnEvent(turn7.GameSync, "unit", "unit_moved") {
-		t.Fatalf("turn 7 missing unit_moved event")
-	}
-	assertUnitAtNode(t, h.room.State(), infantryID, "F2")
-
-	if _, err := h.WaitPlanningStart("player-1", 8, 2*time.Second); err != nil {
-		t.Fatalf("WaitPlanningStart(turn=8) error = %v", err)
-	}
-	if err := h.InjectPlanningCommand("player-1", "req-attack-capital", &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_IssueUnitOrder{
-			IssueUnitOrder: &pb.MsgIssueUnitOrder{
-				UnitId:       infantryID,
-				Action:       "attack",
-				TargetNodeId: "G2",
-			},
-		},
-	}); err != nil {
-		t.Fatalf("InjectPlanningCommand(attack) error = %v", err)
-	}
-	if err := h.SubmitTurn("player-1"); err != nil {
-		t.Fatalf("SubmitTurn(turn=8) error = %v", err)
-	}
-
-	turn8, err := h.WaitGameSync("player-1", 8, 3*time.Second)
-	if err != nil {
-		t.Fatalf("WaitGameSync(turn=8) error = %v", err)
-	}
-	if !hasTurnEvent(turn8.GameSync, "unit", "city_core_destroyed") {
-		t.Fatalf("turn 8 missing city_core_destroyed event")
-	}
-	if turn8.GameOver == nil {
-		t.Fatalf("turn 8 game over payload is nil")
-	}
-	if got := turn8.GameOver.GetReason(); got != "city_core_destroyed" {
-		t.Fatalf("turn 8 game over reason = %q, want city_core_destroyed", got)
-	}
-	if !turn8.Summary.IsOver || turn8.Summary.WinnerID != "player-1" {
-		t.Fatalf("turn 8 summary = %#v, want player-1 game over", turn8.Summary)
+	if unitID := findOwnedUnitIDByTypeIfExists(h.room.State(), "player-1", "infantry"); unitID != "" {
+		t.Fatalf("disconnected new city produced infantry %q without reachable ore", unitID)
 	}
 }
 

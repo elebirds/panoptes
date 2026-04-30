@@ -38,6 +38,10 @@
       "minimum": 0,
       "type": "integer"
     },
+    "road_base_capacity": {
+      "minimum": 0,
+      "type": "integer"
+    },
     "safe_zone_radius": {
       "minimum": 0,
       "type": "integer"

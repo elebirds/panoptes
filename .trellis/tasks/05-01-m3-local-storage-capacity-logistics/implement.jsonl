@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend package ownership, event Apply write path, and M2 connectivity contracts."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"M3 changes data flow from engine events to domain storage and query projections."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"M3 adds helpers and static rules; existing economy helpers must be reused instead of duplicated."}
+{"file":"AGENTS.md","reason":"Global project constraints: generated files, static data, dependency boundaries, and engine/event mutation rules."}
+{"file":"docs/2026-04-30-backend-final-roadmap.md","reason":"M3 final-backend scope and acceptance criteria."}
