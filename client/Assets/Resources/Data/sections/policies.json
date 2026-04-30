@@ -17,6 +17,16 @@
           "value": -1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "expansion",
+          "priority": 100
+        },
+        {
+          "target_id": "city_core_settler",
+          "priority": 120
+        }
+      ],
       "sort_order": 10,
       "tags": [
         "national"
@@ -43,6 +53,20 @@
           "target_id": "archery_archer",
           "modifier_type": "flat",
           "value": -1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 100
+        },
+        {
+          "target_id": "barracks_infantry",
+          "priority": 120
+        },
+        {
+          "target_id": "archery_archer",
+          "priority": 120
         }
       ],
       "sort_order": 20,
@@ -75,6 +99,12 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 80
+        }
+      ],
       "sort_order": 30,
       "tags": [
         "national"
@@ -97,6 +127,12 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 70
+        }
+      ],
       "sort_order": 40,
       "tags": [
         "national"
@@ -117,6 +153,12 @@
           "point_key": "research_output",
           "modifier_type": "flat",
           "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 70
         }
       ],
       "sort_order": 50,

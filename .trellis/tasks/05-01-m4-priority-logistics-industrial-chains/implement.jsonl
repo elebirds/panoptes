@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend package ownership, event Apply write path, and M2/M3 connectivity contracts."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"M4 touches static data, domain policy state, engine allocation, events, and tests."}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"M4 extends M3 budget helpers and modifier patterns rather than duplicating logic."}
+{"file":"docs/2026-04-30-backend-final-roadmap.md","reason":"M4 final-goal scope and acceptance criteria."}

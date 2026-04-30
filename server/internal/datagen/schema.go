@@ -337,12 +337,13 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 					"policies": arraySchema(
 						objectSchema(
 							map[string]any{
-								"id":                stringSchema(nil),
-								"layer":             enumSchema([]string{"national", "institutional"}),
-								"activation_timing": enumSchema([]string{"same_turn", "next_turn"}),
-								"prerequisites":     arraySchema(refSchema("#/$defs/prerequisite"), nil),
-								"explicit_effects":  arraySchema(refSchema("#/$defs/technology_effect"), nil),
-								"modifier_effects":  arraySchema(refSchema("#/$defs/modifier_effect"), nil),
+								"id":                 stringSchema(nil),
+								"layer":              enumSchema([]string{"national", "institutional"}),
+								"activation_timing":  enumSchema([]string{"same_turn", "next_turn"}),
+								"prerequisites":      arraySchema(refSchema("#/$defs/prerequisite"), nil),
+								"explicit_effects":   arraySchema(refSchema("#/$defs/technology_effect"), nil),
+								"modifier_effects":   arraySchema(refSchema("#/$defs/modifier_effect"), nil),
+								"logistics_priority": arraySchema(refSchema("#/$defs/logistics_priority"), nil),
 							},
 							[]string{"id", "layer", "activation_timing", "prerequisites", "explicit_effects", "modifier_effects"},
 						),
@@ -356,6 +357,14 @@ func buildAuthoringSchemas(ctx authoringSchemaContext) schemaSet {
 				"prerequisite":      defs["prerequisite"],
 				"technology_effect": defs["technology_effect"],
 				"modifier_effect":   defs["modifier_effect"],
+				"logistics_priority": objectSchema(
+					map[string]any{
+						"target_id": stringSchema(nil),
+						"tag":       stringSchema(nil),
+						"priority":  intSchema(nil),
+					},
+					[]string{"priority"},
+				),
 			},
 		),
 		filepath.Join("content", "recipes.schema.json"): schemaDocument(

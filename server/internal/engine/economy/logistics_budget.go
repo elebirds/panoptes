@@ -16,12 +16,11 @@ func (b recipeProgressBudget) availableResources(state *domain.GameState, owner 
 		return cloneResourceBag(b.resources[owner])
 	}
 	available := cloneResourceBag(b.cityResources[owner][cityID])
-	capacity := staticdata.Default().Rules().RoadBaseCapacity
-	if capacity <= 0 || state == nil {
+	if staticdata.Default().Rules().RoadBaseCapacity <= 0 || state == nil {
 		return available
 	}
 	for _, donorCityID := range b.reachableDonorCityIDs(state, owner, cityID) {
-		remaining := capacity
+		remaining := b.routeCapacityRemaining(owner, donorCityID, cityID)
 		donorStorage := b.cityResources[owner][donorCityID]
 		for _, key := range need.Keys() {
 			if remaining <= 0 {
@@ -72,8 +71,7 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 	}
 
 	flows := make([]event.Event, 0)
-	capacity := staticdata.Default().Rules().RoadBaseCapacity
-	if capacity <= 0 || state == nil {
+	if staticdata.Default().Rules().RoadBaseCapacity <= 0 || state == nil {
 		return nil, false
 	}
 	for _, donorCityID := range b.reachableDonorCityIDs(state, owner, cityID) {
@@ -82,7 +80,7 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 			continue
 		}
 		moved := domain.NewResourceBag()
-		remainingCapacity := capacity
+		remainingCapacity := b.routeCapacityRemaining(owner, donorCityID, cityID)
 		for _, key := range remaining.Keys() {
 			if remainingCapacity <= 0 {
 				break
@@ -96,6 +94,7 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 			remaining.AddAmount(key, -amount)
 			moved.AddAmount(key, amount)
 			remainingCapacity -= amount
+			b.consumeRouteCapacity(owner, donorCityID, cityID, amount)
 		}
 		if !moved.IsZero() {
 			flows = append(flows, event.ResourceFlowedEvent{
@@ -112,6 +111,35 @@ func (b recipeProgressBudget) consumeResources(state *domain.GameState, owner st
 		}
 	}
 	return nil, false
+}
+
+func (b recipeProgressBudget) routeCapacityRemaining(owner string, fromCityID string, toCityID string) int {
+	capacity := staticdata.Default().Rules().RoadBaseCapacity
+	if capacity <= 0 {
+		return 0
+	}
+	used := 0
+	if b.capacityConsumed[owner] != nil {
+		used = b.capacityConsumed[owner][routeCapacityKey(fromCityID, toCityID)]
+	}
+	if used >= capacity {
+		return 0
+	}
+	return capacity - used
+}
+
+func (b recipeProgressBudget) consumeRouteCapacity(owner string, fromCityID string, toCityID string, amount int) {
+	if amount <= 0 {
+		return
+	}
+	if b.capacityConsumed[owner] == nil {
+		b.capacityConsumed[owner] = make(map[string]int)
+	}
+	b.capacityConsumed[owner][routeCapacityKey(fromCityID, toCityID)] += amount
+}
+
+func routeCapacityKey(fromCityID string, toCityID string) string {
+	return fromCityID + "->" + toCityID
 }
 
 func (b recipeProgressBudget) reachableDonorCityIDs(state *domain.GameState, owner string, cityID string) []string {
