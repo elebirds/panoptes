@@ -30,6 +30,7 @@ func appendRecipeProgressForEntry(events *[]event.Event, entry *donburi.Entry, s
 		appendRecipeDisabled(events, nodeID, selectedRecipeID, operation, requiredTurns, "building_disabled")
 		return
 	}
+	serviceCityID := ecs.ResolveServiceCityID(entry)
 	if !state.IsRecipeUnlocked(buildingComp.Owner, selectedRecipeID) {
 		appendRecipeBlocked(events, nodeID, selectedRecipeID, operation, requiredTurns, "invalid_recipe_selection")
 		return
@@ -48,7 +49,8 @@ func appendRecipeProgressForEntry(events *[]event.Event, entry *donburi.Entry, s
 		requiredProgress = 1
 	}
 	wasBlocked := operation.BlockedReason != ""
-	resourceRatio := affordabilityRatioResources(budget.resources[buildingComp.Owner], resourceCost)
+	availableResources := budget.availableResources(state, buildingComp.Owner, serviceCityID, resourceCost)
+	resourceRatio := affordabilityRatioResources(availableResources, resourceCost)
 	pointRatio := affordabilityRatioPoints(budget.points[buildingComp.Owner], pointCost)
 	// efficiency 是这套 recipe 模型的核心：它不是“要么全速运行，要么停工”，
 	// 而是允许资源或点数不足时按比例低效推进。
@@ -92,7 +94,16 @@ func appendRecipeProgressForEntry(events *[]event.Event, entry *donburi.Entry, s
 	// 这样可以保证低效推进时，本回合只补扣新增那一部分消耗。
 	resourceDelta := subtractResourceBags(targetConsumedResources, operation.ConsumedResources)
 	pointDelta := subtractPointBags(targetConsumedPoints, operation.ConsumedPoints)
-	if !budget.resources[buildingComp.Owner].CanAfford(resourceDelta) || !budget.points[buildingComp.Owner].CanAfford(pointDelta) {
+	if !budget.points[buildingComp.Owner].CanAfford(pointDelta) {
+		blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
+		if blockedReason == "" {
+			blockedReason = "insufficient_points"
+		}
+		appendRecipeBlocked(events, nodeID, selectedRecipeID, operation, requiredProgress, blockedReason)
+		return
+	}
+	resourceFlows, resourcesOK := budget.consumeResources(state, buildingComp.Owner, serviceCityID, nodeID, resourceDelta)
+	if !resourcesOK {
 		blockedReason := blockedReasonForRatios(resourceRatio, pointRatio, resourceCost, pointCost)
 		if blockedReason == "" {
 			blockedReason = "insufficient_resources"
@@ -100,7 +111,7 @@ func appendRecipeProgressForEntry(events *[]event.Event, entry *donburi.Entry, s
 		appendRecipeBlocked(events, nodeID, selectedRecipeID, operation, requiredProgress, blockedReason)
 		return
 	}
-	budget.resources[buildingComp.Owner] = budget.resources[buildingComp.Owner].Sub(resourceDelta)
+	*events = append(*events, resourceFlows...)
 	for _, key := range pointDelta.Keys() {
 		budget.points[buildingComp.Owner].AddAmount(key, -pointDelta.Get(key))
 		*events = append(*events, event.PointSpentEvent{

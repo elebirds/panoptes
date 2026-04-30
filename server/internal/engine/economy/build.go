@@ -30,7 +30,7 @@ func (s *BuildSystem) Run(world donburi.World, state *domain.GameState) []event.
 		if playerState == nil {
 			continue
 		}
-		simulatedResources[playerID] = playerState.Resources.Clone()
+		simulatedResources[playerID] = state.PlayerResourceView(playerID)
 		simulatedPoints[playerID] = state.EnsurePointBudget(playerID).Clone()
 	}
 

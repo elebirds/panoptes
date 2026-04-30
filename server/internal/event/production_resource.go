@@ -23,6 +23,13 @@ type ResourceProducedEvent struct {
 }
 
 func (e ResourceProducedEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if state == nil {
+		return
+	}
+	if e.CityID != "" {
+		state.AddResourceToCity(e.Owner, e.CityID, domain.ResourceKey(e.ResourceType), e.Amount)
+		return
+	}
 	state.AddResource(e.Owner, domain.ResourceKey(e.ResourceType), e.Amount)
 }
 
@@ -35,10 +42,18 @@ func (e ResourceProducedEvent) String() string {
 type ResourceFlowedEvent struct {
 	FromNodeID string
 	ToNodeID   string
+	Owner      string
+	FromCityID string
+	ToCityID   string
 	Resources  domain.ResourceBag
 }
 
-func (e ResourceFlowedEvent) Apply(donburi.World, *domain.GameState) {}
+func (e ResourceFlowedEvent) Apply(_ donburi.World, state *domain.GameState) {
+	if state == nil || e.Owner == "" || e.FromCityID == "" || e.ToCityID == "" {
+		return
+	}
+	state.TransferResourcesBetweenCities(e.Owner, e.FromCityID, e.ToCityID, e.Resources)
+}
 
 func (e ResourceFlowedEvent) Kind() string { return "resource_flowed" }
 

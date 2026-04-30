@@ -42,7 +42,7 @@ func appendRecipeCompleted(events *[]event.Event, input recipeCompletionEventInp
 	*events = append(*events, event.RecipeCompletedEvent{
 		NodeID:        input.nodeID,
 		Owner:         input.owner,
-		CityID:        building.ResolveCityID(input.entry),
+		CityID:        building.ResolveServiceCityID(input.entry),
 		RequiredTurns: input.requiredProgress,
 		Cost:          input.resourceCost,
 		Resources:     input.state.ApplyResourceModifiers(input.owner, string(staticdata.ModifierTriggerRecipeResourceOutput), input.recipe.ID, toResourceBag(input.recipe.Outputs.Resources)),

@@ -67,7 +67,7 @@ func currentEventAuditContract() []eventAuditCase {
 		{name: "building repaired", kind: "building_repaired", category: auditAuthoritativeState, ev: BuildingRepairedEvent{}},
 		{name: "building skipped", kind: "building_skipped", category: auditReportOnly, ev: BuildSkippedEvent{}},
 		{name: "resource produced", kind: "resource_produced", category: auditAuthoritativeState, ev: ResourceProducedEvent{}},
-		{name: "resource flowed", kind: "resource_flowed", category: auditReportOnly, ev: ResourceFlowedEvent{}},
+		{name: "resource flowed", kind: "resource_flowed", category: auditAuthoritativeState, ev: ResourceFlowedEvent{}},
 		{name: "road built", kind: "road_built", category: auditAuthoritativeState, ev: RoadBuiltEvent{}},
 		{name: "road repaired", kind: "road_repaired", category: auditAuthoritativeState, ev: RoadRepairedEvent{}},
 		{name: "unit produced", kind: "unit_produced", category: auditAuthoritativeState, ev: UnitProducedEvent{}},

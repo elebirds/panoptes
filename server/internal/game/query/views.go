@@ -44,7 +44,7 @@ func BuildPlayerView(state *domain.GameState, playerID string) *pb.PlayerView {
 		Id:       playerState.PlayerID,
 		Username: playerState.Username,
 		Resources: func() *pb.ResourceBag {
-			return ToProtoResourceBag(playerState.Resources)
+			return ToProtoResourceBag(state.PlayerResourceView(playerState.PlayerID))
 		}(),
 		Points: func() *pb.PointBag {
 			return ToProtoPointBag(state, playerState.PlayerID)

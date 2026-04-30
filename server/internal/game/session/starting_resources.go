@@ -13,12 +13,12 @@ func (r *Runtime) grantDevStartingResources() {
 		return
 	}
 
-	for _, player := range r.state.Players {
+	for playerID, player := range r.state.Players {
 		if player == nil {
 			continue
 		}
-		player.Resources.Set(domain.ResourceOre, 200)
-		player.Resources.Set(domain.ResourceWood, 200)
-		player.Resources.Set(domain.ResourceFood, 200)
+		r.state.AddResource(playerID, domain.ResourceOre, 200)
+		r.state.AddResource(playerID, domain.ResourceWood, 200)
+		r.state.AddResource(playerID, domain.ResourceFood, 200)
 	}
 }

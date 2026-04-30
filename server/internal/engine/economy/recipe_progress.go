@@ -14,8 +14,10 @@ import (
 )
 
 type recipeProgressBudget struct {
-	resources map[string]domain.ResourceBag
-	points    map[string]domain.PointBag
+	resources      map[string]domain.ResourceBag
+	cityResources  map[string]map[string]domain.ResourceBag
+	hasCityStorage map[string]bool
+	points         map[string]domain.PointBag
 }
 
 func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Event {
@@ -39,14 +41,26 @@ func runRecipeProgress(world donburi.World, state *domain.GameState) []event.Eve
 
 func newRecipeProgressBudget(state *domain.GameState) recipeProgressBudget {
 	budget := recipeProgressBudget{
-		resources: make(map[string]domain.ResourceBag, len(state.Players)),
-		points:    make(map[string]domain.PointBag, len(state.Players)),
+		resources:      make(map[string]domain.ResourceBag, len(state.Players)),
+		cityResources:  make(map[string]map[string]domain.ResourceBag, len(state.Players)),
+		hasCityStorage: make(map[string]bool, len(state.Players)),
+		points:         make(map[string]domain.PointBag, len(state.Players)),
 	}
 	for playerID, playerState := range state.Players {
 		if playerState == nil {
 			continue
 		}
 		budget.resources[playerID] = playerState.Resources.Clone()
+		budget.cityResources[playerID] = make(map[string]domain.ResourceBag, len(playerState.Cities))
+		for cityID, city := range playerState.Cities {
+			if city == nil {
+				continue
+			}
+			budget.cityResources[playerID][cityID] = cloneResourceBag(city.Storage)
+			if city.Storage != nil && !city.Storage.IsZero() {
+				budget.hasCityStorage[playerID] = true
+			}
+		}
 		budget.points[playerID] = state.EnsurePointBudget(playerID).Clone()
 	}
 	return budget
