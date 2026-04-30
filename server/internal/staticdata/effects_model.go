@@ -64,6 +64,12 @@ type ModifierEffect struct {
 	Value        float64 `json:"value"`
 }
 
+type LogisticsPriorityDefinition struct {
+	TargetID string `json:"target_id,omitempty"`
+	Tag      string `json:"tag,omitempty"`
+	Priority int    `json:"priority"`
+}
+
 type TechnologyDefinition struct {
 	ID              string           `json:"id"`
 	Name            string           `json:"name"`
@@ -80,15 +86,16 @@ type TechnologyDefinition struct {
 }
 
 type PolicyDefinition struct {
-	ID               string           `json:"id"`
-	Name             string           `json:"name"`
-	Description      string           `json:"description"`
-	IconKey          string           `json:"icon_key"`
-	Layer            string           `json:"layer"`
-	ActivationTiming string           `json:"activation_timing"`
-	Prerequisites    []Prerequisite   `json:"prerequisites"`
-	ExplicitEffects  []ExplicitEffect `json:"explicit_effects"`
-	ModifierEffects  []ModifierEffect `json:"modifier_effects"`
-	SortOrder        int              `json:"sort_order"`
-	Tags             []string         `json:"tags,omitempty"`
+	ID                string                        `json:"id"`
+	Name              string                        `json:"name"`
+	Description       string                        `json:"description"`
+	IconKey           string                        `json:"icon_key"`
+	Layer             string                        `json:"layer"`
+	ActivationTiming  string                        `json:"activation_timing"`
+	Prerequisites     []Prerequisite                `json:"prerequisites"`
+	ExplicitEffects   []ExplicitEffect              `json:"explicit_effects"`
+	ModifierEffects   []ModifierEffect              `json:"modifier_effects"`
+	LogisticsPriority []LogisticsPriorityDefinition `json:"logistics_priority,omitempty"`
+	SortOrder         int                           `json:"sort_order"`
+	Tags              []string                      `json:"tags,omitempty"`
 }

@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "2203cefcd325bcf040b51eec002d1c755d18e2bcf7f6ce7a60ab2515a917b858",
+    "bundle_hash": "43d8416d845f464f937e0e9eb7cdb5d27dd321e150585c214a9fab250957c45d",
     "required_sections": [
       "resources",
       "points",
@@ -40,7 +40,7 @@
       },
       {
         "section_name": "policies",
-        "hash": "8a6842fced6058b196e2593efca7963cb790f92b78b6d86f90335ad0d193726f"
+        "hash": "f8ab9b05ed49ac04a93af5ac668fa58b50f2800b861a81616e05fa34226ea1f2"
       },
       {
         "section_name": "recipes",
@@ -783,6 +783,16 @@
           "value": -1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "expansion",
+          "priority": 100
+        },
+        {
+          "target_id": "city_core_settler",
+          "priority": 120
+        }
+      ],
       "sort_order": 10,
       "tags": [
         "national"
@@ -809,6 +819,20 @@
           "target_id": "archery_archer",
           "modifier_type": "flat",
           "value": -1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 100
+        },
+        {
+          "target_id": "barracks_infantry",
+          "priority": 120
+        },
+        {
+          "target_id": "archery_archer",
+          "priority": 120
         }
       ],
       "sort_order": 20,
@@ -841,6 +865,12 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 80
+        }
+      ],
       "sort_order": 30,
       "tags": [
         "national"
@@ -863,6 +893,12 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 70
+        }
+      ],
       "sort_order": 40,
       "tags": [
         "national"
@@ -883,6 +919,12 @@
           "point_key": "research_output",
           "modifier_type": "flat",
           "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 70
         }
       ],
       "sort_order": 50,

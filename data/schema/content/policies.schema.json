@@ -1,5 +1,23 @@
 {
   "$defs": {
+    "logistics_priority": {
+      "additionalProperties": false,
+      "properties": {
+        "priority": {
+          "type": "integer"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "priority"
+      ],
+      "type": "object"
+    },
     "modifier_effect": {
       "additionalProperties": false,
       "properties": {
@@ -235,6 +253,12 @@
               "institutional"
             ],
             "type": "string"
+          },
+          "logistics_priority": {
+            "items": {
+              "$ref": "#/$defs/logistics_priority"
+            },
+            "type": "array"
           },
           "modifier_effects": {
             "items": {
