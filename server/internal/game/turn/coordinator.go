@@ -16,9 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/game/chat"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/game/session"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
-	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 )
 
 var ErrPhaseMismatch = errors.New("phase_mismatch")
@@ -142,103 +140,6 @@ func (c *Coordinator) SubmitChecked(playerID string) error {
 	}
 	c.Submit(playerID)
 	return nil
-}
-
-func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.GameCommand) error {
-	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
-		return ErrPhaseMismatch
-	}
-	switch cmd.Body.(type) {
-	case *pb.GameCommand_StaticCatalogSyncRequest, *pb.GameCommand_Chat:
-		return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
-	}
-	if c.runtime.State().Phase != domain.PhasePlanning.String() {
-		return ErrPhaseMismatch
-	}
-
-	return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
-}
-
-type gameCommandHandler struct {
-	coordinator *Coordinator
-}
-
-func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
-	if h.coordinator == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
-}
-
-func (h gameCommandHandler) Chat(ctx cmddispatch.InboundContext, cmd *pb.ChatCommand) error {
-	if h.coordinator == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.chatService.HandleCommand(h.coordinator.host, ctx, cmd)
-}
-
-func (h gameCommandHandler) StaticCatalogSyncRequest(ctx cmddispatch.InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {
-	if h.coordinator == nil || h.coordinator.runtime == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.runtime.HandleStaticCatalogSyncRequest(context.Background(), ctx.PlayerID, cmd)
-}
-
-func (h gameCommandHandler) CommandBatch(ctx cmddispatch.InboundContext, cmd *pb.MsgGameCommandBatch) error {
-	if h.coordinator == nil || cmd == nil {
-		return ErrPhaseMismatch
-	}
-	for _, envelope := range cmd.GetCommands() {
-		planningCommand := planningCommandFromEnvelope(envelope)
-		if planningCommand == nil {
-			return ErrPhaseMismatch
-		}
-		nextCtx := ctx
-		if envelope.GetParticipantId() != "" {
-			nextCtx.PlayerID = envelope.GetParticipantId()
-		}
-		if envelope.GetCommandId() != "" {
-			nextCtx.RequestID = envelope.GetCommandId()
-		}
-		if err := h.Planning(nextCtx, planningCommand); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func planningCommandFromEnvelope(envelope *pb.CommandEnvelope) *pb.PlanningCommand {
-	if envelope == nil || envelope.GetBody() == nil {
-		return nil
-	}
-	switch body := envelope.GetBody().(type) {
-	case *pb.CommandEnvelope_SetPolicy:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetPolicy{SetPolicy: body.SetPolicy}}
-	case *pb.CommandEnvelope_SetInstitutionLoadout:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetInstitutionLoadout{SetInstitutionLoadout: body.SetInstitutionLoadout}}
-	case *pb.CommandEnvelope_SetResearchTarget:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetResearchTarget{SetResearchTarget: body.SetResearchTarget}}
-	case *pb.CommandEnvelope_SetBuildingRecipe:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetBuildingRecipe{SetBuildingRecipe: body.SetBuildingRecipe}}
-	case *pb.CommandEnvelope_BuildStructure:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_BuildStructure{BuildStructure: body.BuildStructure}}
-	case *pb.CommandEnvelope_RevealNode:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_RevealNode{RevealNode: body.RevealNode}}
-	case *pb.CommandEnvelope_SetWarZone:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetWarZone{SetWarZone: body.SetWarZone}}
-	case *pb.CommandEnvelope_WarZoneDirective:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_WarZoneDirective{WarZoneDirective: body.WarZoneDirective}}
-	case *pb.CommandEnvelope_SetMinisterDirective:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SetMinisterDirective{SetMinisterDirective: body.SetMinisterDirective}}
-	case *pb.CommandEnvelope_IssueUnitOrder:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_IssueUnitOrder{IssueUnitOrder: body.IssueUnitOrder}}
-	case *pb.CommandEnvelope_CancelUnitOrder:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_CancelUnitOrder{CancelUnitOrder: body.CancelUnitOrder}}
-	case *pb.CommandEnvelope_SubmitTurn:
-		return &pb.PlanningCommand{Body: &pb.PlanningCommand_SubmitTurn{SubmitTurn: body.SubmitTurn}}
-	default:
-		return nil
-	}
 }
 
 func (c *Coordinator) waitAllSubmit(ctx context.Context, timeout time.Duration) {

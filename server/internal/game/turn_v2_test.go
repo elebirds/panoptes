@@ -775,7 +775,7 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	if targetNode.HasComponent(ecs.BuildingC) {
 		t.Fatalf("fatal turn should skip settle_city build on B2")
 	}
-	if _, ok := findUnitEntryByID(room.State().World, "settler-1"); !ok {
+	if _, ok := findUnitEntryByIDForGameTest(room.State().World, "settler-1"); !ok {
 		t.Fatalf("settler-1 should remain when map actions are skipped")
 	}
 }
@@ -920,4 +920,17 @@ func firstMessage[T proto.Message](msgs []proto.Message) T {
 		}
 	}
 	return zero
+}
+
+func findUnitEntryByIDForGameTest(world donburi.World, unitID string) (*donburi.Entry, bool) {
+	var found *donburi.Entry
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found != nil || entry == nil {
+			return
+		}
+		if ecs.UnitStatsC.Get(entry).ID == unitID {
+			found = entry
+		}
+	})
+	return found, found != nil
 }

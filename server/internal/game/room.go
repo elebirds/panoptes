@@ -200,56 +200,11 @@ func (r *GameRoom) SetWarDirectives(playerID string, directives []domain.WarZone
 }
 
 func (r *GameRoom) SetUnitOrder(order gameorders.UnitOrder) {
-	state := r.State()
-	if state == nil || order.UnitID == "" {
-		return
-	}
-	if state.TurnRuntime.Planning.UnitOrders == nil {
-		state.TurnRuntime.Planning.UnitOrders = make(map[string]domain.UnitDirective)
-	}
-	if order.PlayerID == "" {
-		order.PlayerID = r.playerIDForUnit(order.UnitID)
-	}
-
-	// Preserve the latest planned march path when replacing move->attack in the same planning window.
-	// This allows settlement to resolve "move then attack" from the moved position.
-	if order.Action == gameorders.ActionAttack && len(order.PathNodeIDs) == 0 {
-		if march, ok := state.TurnRuntime.Resolving.ActiveMarches[order.UnitID]; ok {
-			if len(march.LastPreview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
-			} else if preview, ok := r.buildRoutePreview(order.UnitID, march.DestinationNodeID); ok && len(preview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
-			}
-		}
-		if len(order.PathNodeIDs) == 0 && order.SecondaryNodeID != "" {
-			if preview, ok := r.buildRoutePreview(order.UnitID, order.SecondaryNodeID); ok && len(preview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
-			}
-		}
-	}
-
-	state.TurnRuntime.Planning.UnitOrders[order.UnitID] = order.ToDirective()
-	if resolutionOrder, ok := order.ToResolutionOrder(); ok && resolutionOrder.Action == domain.UnitResolutionActionMove {
-		r.syncActiveMarchWithOrder(resolutionOrder)
-		return
-	}
-	delete(state.TurnRuntime.Resolving.ActiveMarches, order.UnitID)
+	gameorders.ApplyPlanningUnitOrder(r.State(), order, r.routePreviewCallbacks())
 }
 
 func (r *GameRoom) CancelUnitOrder(playerID string, unitID string) {
-	state := r.State()
-	if state == nil {
-		return
-	}
-	directive, ok := state.TurnRuntime.Planning.UnitOrders[unitID]
-	if !ok {
-		return
-	}
-	if playerID != "" && directive.PlayerID != "" && directive.PlayerID != playerID {
-		return
-	}
-	delete(state.TurnRuntime.Planning.UnitOrders, unitID)
-	delete(state.TurnRuntime.Resolving.ActiveMarches, unitID)
+	gameorders.CancelPlanningUnitOrder(r.State(), playerID, unitID)
 }
 
 func (r *GameRoom) SendPlanningSnapshot(ctx context.Context, playerID string) error {
@@ -466,22 +421,4 @@ func (r *GameRoom) nodeIDAt(pos domain.Position) string {
 		return ecs.NodeC.Get(entry).ID
 	}
 	return ""
-}
-
-func (r *GameRoom) playerIDForUnit(unitID string) string {
-	state := r.State()
-	if state == nil || state.World == nil {
-		return ""
-	}
-	var playerID string
-	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
-		if playerID != "" {
-			return
-		}
-		stats := ecs.UnitStatsC.Get(entry)
-		if stats.ID == unitID {
-			playerID = stats.Faction
-		}
-	})
-	return playerID
 }

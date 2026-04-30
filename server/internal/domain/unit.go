@@ -41,7 +41,7 @@ func GetPosition(unitEntry *donburi.Entry) Position {
 
 func GetUnitsByFaction(world donburi.World, faction string) []*donburi.Entry {
 	units := make([]*donburi.Entry, 0)
-	unitQuery.Each(world, func(entry *donburi.Entry) {
+	newUnitQuery().Each(world, func(entry *donburi.Entry) {
 		if UnitStatsC.Get(entry).Faction == faction {
 			units = append(units, entry)
 		}
@@ -51,7 +51,7 @@ func GetUnitsByFaction(world donburi.World, faction string) []*donburi.Entry {
 
 func GetUnitsByNode(world donburi.World, pos Position) []*donburi.Entry {
 	units := make([]*donburi.Entry, 0)
-	unitQuery.Each(world, func(entry *donburi.Entry) {
+	newUnitQuery().Each(world, func(entry *donburi.Entry) {
 		p := PositionC.Get(entry)
 		if p.Q == pos.Q && p.R == pos.R {
 			units = append(units, entry)

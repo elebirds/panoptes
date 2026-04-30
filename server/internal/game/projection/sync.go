@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载服务端权威状态到客户端观察视图的投影组合逻辑。
+
 package projection
 
 import (
@@ -39,25 +45,13 @@ func ProjectGameSyncFromObservation(
 		return msg
 	}
 
-	playerID := ""
-	if observation != nil {
-		playerID = observation.ViewerID
-		msg.Nodes = observation.Nodes
-		msg.Units = observation.Units
-		msg.MyPlayer = observation.MyPlayer
-	}
-	if msg.MyPlayer == nil {
-		msg.MyPlayer = gamequery.BuildPlayerView(state, playerID)
-	}
-	if msg.Nodes == nil {
-		msg.Nodes = gamequery.BuildNodeViews(state, playerID)
-	}
-	if msg.Units == nil {
-		msg.Units = gamequery.BuildUnitViews(state)
-	}
+	observed := ProjectObservedState(state, observation, ObservedStateOptions{})
+	msg.MyPlayer = observed.MyPlayer
+	msg.Nodes = observed.Nodes
+	msg.Units = observed.Units
 	if phase == domain.PhasePlanning.String() {
-		msg.Snapshot = gamequery.BuildPlanningSnapshot(state, playerID)
-		msg.MinisterProposals = gamequery.BuildMinisterProposalViews(state, playerID)
+		msg.Snapshot = observed.PlanningSnapshot("")
+		msg.MinisterProposals = gamequery.BuildMinisterProposalViews(state, observed.PlayerID)
 	}
 	return msg
 }

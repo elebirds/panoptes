@@ -12,11 +12,6 @@ import (
 	"github.com/yohamta/donburi/filter"
 )
 
-var (
-	nodeQuery = donburi.NewQuery(filter.Contains(PositionC, NodeC))
-	unitQuery = donburi.NewQuery(filter.Contains(PositionC, UnitStatsC))
-)
-
 func IsContested(world donburi.World, nodeEntry *donburi.Entry) bool {
 	if nodeEntry == nil {
 		return false
@@ -47,7 +42,7 @@ func HasRoad(nodeEntry *donburi.Entry) bool {
 
 func GetNodeAt(world donburi.World, pos Position) (*donburi.Entry, bool) {
 	var result *donburi.Entry
-	nodeQuery.Each(world, func(entry *donburi.Entry) {
+	newNodeQuery().Each(world, func(entry *donburi.Entry) {
 		if result != nil {
 			return
 		}
@@ -71,7 +66,7 @@ func GetUnitsAtNode(world donburi.World, nodeID string) []*donburi.Entry {
 
 func GetNodesByOwner(world donburi.World, ownerID string) []*donburi.Entry {
 	nodes := make([]*donburi.Entry, 0)
-	nodeQuery.Each(world, func(entry *donburi.Entry) {
+	newNodeQuery().Each(world, func(entry *donburi.Entry) {
 		if NodeC.Get(entry).Owner == ownerID {
 			nodes = append(nodes, entry)
 		}
@@ -92,7 +87,7 @@ func IsInSafeZone(state *GameState, pos Position, ownerID string) bool {
 
 func findNodeByID(world donburi.World, nodeID string) (*donburi.Entry, bool) {
 	var result *donburi.Entry
-	nodeQuery.Each(world, func(entry *donburi.Entry) {
+	newNodeQuery().Each(world, func(entry *donburi.Entry) {
 		if result != nil {
 			return
 		}
@@ -101,4 +96,14 @@ func findNodeByID(world donburi.World, nodeID string) (*donburi.Entry, bool) {
 		}
 	})
 	return result, result != nil
+}
+
+// Donburi Query 内部会维护查询缓存；domain helper 可能被多个房间并发调用，
+// 因此每次创建短生命周期查询对象，避免共享 Query 造成缓存写竞争。
+func newNodeQuery() *donburi.Query {
+	return donburi.NewQuery(filter.Contains(PositionC, NodeC))
+}
+
+func newUnitQuery() *donburi.Query {
+	return donburi.NewQuery(filter.Contains(PositionC, UnitStatsC))
 }

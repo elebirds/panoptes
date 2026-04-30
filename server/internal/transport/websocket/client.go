@@ -19,6 +19,7 @@ import (
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Client represents a single websocket connection.
@@ -141,95 +142,36 @@ func inboundMessageName(frame *pb.ClientFrame) string {
 	if frame == nil {
 		return "unknown"
 	}
-	switch target := frame.Target.(type) {
-	case *pb.ClientFrame_Auth:
-		if target.Auth == nil || target.Auth.Body == nil {
-			return "AuthCommand"
-		}
-		switch body := target.Auth.Body.(type) {
-		case *pb.AuthCommand_Register:
-			return commandBodyName(body.Register)
-		case *pb.AuthCommand_Login:
-			return commandBodyName(body.Login)
-		default:
-			return "AuthCommand"
-		}
-	case *pb.ClientFrame_Lobby:
-		if target.Lobby == nil || target.Lobby.Body == nil {
-			return "LobbyCommand"
-		}
-		switch body := target.Lobby.Body.(type) {
-		case *pb.LobbyCommand_CreateRoom:
-			return commandBodyName(body.CreateRoom)
-		case *pb.LobbyCommand_JoinRoom:
-			return commandBodyName(body.JoinRoom)
-		case *pb.LobbyCommand_LeaveRoom:
-			return commandBodyName(body.LeaveRoom)
-		case *pb.LobbyCommand_ReadyUp:
-			return commandBodyName(body.ReadyUp)
-		case *pb.LobbyCommand_AddBot:
-			return commandBodyName(body.AddBot)
-		case *pb.LobbyCommand_StartGame:
-			return commandBodyName(body.StartGame)
-		case *pb.LobbyCommand_KickPlayer:
-			return commandBodyName(body.KickPlayer)
-		default:
-			return "LobbyCommand"
-		}
-	case *pb.ClientFrame_Game:
-		return gameCommandName(target.Game)
-	default:
-		return "unknown"
-	}
+	return commandBodyName(frame)
 }
 
 func commandBodyName(body proto.Message) string {
 	if body == nil {
 		return "unknown"
 	}
-	return string(body.ProtoReflect().Descriptor().Name())
+	return deepestMessageName(body.ProtoReflect())
 }
 
-func gameCommandName(cmd *pb.GameCommand) string {
-	if cmd == nil || cmd.Body == nil {
+func deepestMessageName(msg protoreflect.Message) string {
+	if !msg.IsValid() {
 		return "unknown"
 	}
-	switch body := cmd.Body.(type) {
-	case *pb.GameCommand_Planning:
-		if body.Planning == nil || body.Planning.Body == nil {
-			return "PlanningCommand"
+
+	descriptor := msg.Descriptor()
+	for i := 0; i < descriptor.Oneofs().Len(); i++ {
+		oneof := descriptor.Oneofs().Get(i)
+		if oneof.IsSynthetic() {
+			continue
 		}
-		switch planning := body.Planning.Body.(type) {
-		case *pb.PlanningCommand_SetPolicy:
-			return commandBodyName(planning.SetPolicy)
-		case *pb.PlanningCommand_SetResearchTarget:
-			return commandBodyName(planning.SetResearchTarget)
-		case *pb.PlanningCommand_SetBuildingRecipe:
-			return commandBodyName(planning.SetBuildingRecipe)
-		case *pb.PlanningCommand_BuildStructure:
-			return commandBodyName(planning.BuildStructure)
-		case *pb.PlanningCommand_RevealNode:
-			return commandBodyName(planning.RevealNode)
-		case *pb.PlanningCommand_SetWarZone:
-			return commandBodyName(planning.SetWarZone)
-		case *pb.PlanningCommand_WarZoneDirective:
-			return commandBodyName(planning.WarZoneDirective)
-		case *pb.PlanningCommand_SetMinisterDirective:
-			return commandBodyName(planning.SetMinisterDirective)
-		case *pb.PlanningCommand_IssueUnitOrder:
-			return commandBodyName(planning.IssueUnitOrder)
-		case *pb.PlanningCommand_CancelUnitOrder:
-			return commandBodyName(planning.CancelUnitOrder)
-		case *pb.PlanningCommand_PlanningPathPreviewRequest:
-			return commandBodyName(planning.PlanningPathPreviewRequest)
-		case *pb.PlanningCommand_SubmitTurn:
-			return commandBodyName(planning.SubmitTurn)
-		default:
-			return "PlanningCommand"
+		field := msg.WhichOneof(oneof)
+		if field == nil || field.Kind() != protoreflect.MessageKind {
+			continue
 		}
-	case *pb.GameCommand_StaticCatalogSyncRequest:
-		return commandBodyName(body.StaticCatalogSyncRequest)
-	default:
-		return "GameCommand"
+		nested := msg.Get(field).Message()
+		if nested.IsValid() {
+			return deepestMessageName(nested)
+		}
 	}
+
+	return string(descriptor.Name())
 }
