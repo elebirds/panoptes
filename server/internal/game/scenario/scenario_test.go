@@ -1,10 +1,14 @@
 package scenario
 
-import "testing"
+import (
+	"regexp"
+	"testing"
+)
 
 func TestScenarioBuildersProduceDeterministicStates(t *testing.T) {
 	t.Parallel()
 
+	slugPattern := regexp.MustCompile(`^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$`)
 	tests := []struct {
 		name  string
 		build func() (*Definition, error)
@@ -32,11 +36,23 @@ func TestScenarioBuildersProduceDeterministicStates(t *testing.T) {
 			if def.Name != tc.name {
 				t.Fatalf("definition name = %q, want %q", def.Name, tc.name)
 			}
+			if !slugPattern.MatchString(def.Name) {
+				t.Fatalf("definition name = %q, want lowercase snake_case slug", def.Name)
+			}
 			if def.Catalog == nil {
 				t.Fatalf("catalog is nil")
 			}
+			if got := def.Catalog.DefaultMapID(); got != def.Name {
+				t.Fatalf("catalog default map id = %q, want scenario name %q", got, def.Name)
+			}
+			if got := def.Catalog.BundleHash(); got != def.Name {
+				t.Fatalf("catalog bundle hash = %q, want scenario name %q", got, def.Name)
+			}
 			if def.State == nil {
 				t.Fatalf("state is nil")
+			}
+			if def.State.GameID != def.Name {
+				t.Fatalf("state game id = %q, want scenario name %q", def.State.GameID, def.Name)
 			}
 			if def.State.World == nil {
 				t.Fatalf("state world is nil")
@@ -44,8 +60,24 @@ func TestScenarioBuildersProduceDeterministicStates(t *testing.T) {
 			if def.State.Map == nil {
 				t.Fatalf("state map is nil")
 			}
+			if def.State.Map.ID != def.Name {
+				t.Fatalf("state map id = %q, want scenario name %q", def.State.Map.ID, def.Name)
+			}
 			if len(def.PlayerIDs) == 0 {
 				t.Fatalf("player ids are empty")
+			}
+			seenPlayers := map[string]struct{}{}
+			for _, playerID := range def.PlayerIDs {
+				if playerID == "" {
+					t.Fatalf("player ids contain empty id")
+				}
+				if _, ok := seenPlayers[playerID]; ok {
+					t.Fatalf("player id %q appears more than once", playerID)
+				}
+				seenPlayers[playerID] = struct{}{}
+				if def.State.Players[playerID] == nil {
+					t.Fatalf("state missing player %q from scenario player ids", playerID)
+				}
 			}
 		})
 	}

@@ -56,6 +56,60 @@ func TestProjectGameSyncIncludesTypedUnitMovedCoordinates(t *testing.T) {
 	}
 }
 
+func TestDomainEventEnvelopeTypedProjectionContract(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name      string
+		channel   gameresolution.Channel
+		ev        event.Event
+		typedName string
+	}{
+		{name: "research target", channel: gameresolution.ChannelPlanning, ev: event.ResearchTargetChangedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"}, typedName: "research_target_changed"},
+		{name: "policy", channel: gameresolution.ChannelPlanning, ev: event.PolicyChangedEvent{PlayerID: "player-1", OldPolicy: "balanced", NewPolicy: "expansion"}, typedName: "policy_changed"},
+		{name: "technology completed", channel: gameresolution.ChannelEconomy, ev: event.TechnologyCompletedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"}, typedName: "technology_completed"},
+		{name: "technology activated", channel: gameresolution.ChannelPlanning, ev: event.TechnologyActivatedEvent{PlayerID: "player-1", TechnologyID: "agrarian_foundations"}, typedName: "technology_activated"},
+		{name: "unit moved", channel: gameresolution.ChannelUnit, ev: event.UnitMovedEvent{UnitID: "unit-1", From: domain.Position{Q: 1, R: 2}, To: domain.Position{Q: 3, R: 4}}, typedName: "unit_moved"},
+		{name: "city founded", channel: gameresolution.ChannelMap, ev: event.CityFoundedEvent{PlayerID: "player-1", UnitID: "settler-1", CityID: "city-1", CenterNodeID: "C3"}, typedName: "city_founded"},
+		{name: "building built", channel: gameresolution.ChannelEconomy, ev: event.BuildingBuiltEvent{NodeID: "C4", BuildingType: "farm", Owner: "player-1", CityID: "city-1"}, typedName: "building_built"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			envelope := domainEventEnvelope(tc.ev, tc.channel, 3, domain.PhaseResolving.String(), 0)
+			if envelope.GetKind() != tc.ev.Kind() {
+				t.Fatalf("kind = %q, want %q", envelope.GetKind(), tc.ev.Kind())
+			}
+			if got := typedProjectionName(envelope); got != tc.typedName {
+				t.Fatalf("typed projection = %q, want %q", got, tc.typedName)
+			}
+		})
+	}
+}
+
+func typedProjectionName(envelope *pb.DomainEventEnvelope) string {
+	switch envelope.GetEvent().(type) {
+	case *pb.DomainEventEnvelope_ResearchTargetChanged:
+		return "research_target_changed"
+	case *pb.DomainEventEnvelope_PolicyChanged:
+		return "policy_changed"
+	case *pb.DomainEventEnvelope_TechnologyCompleted:
+		return "technology_completed"
+	case *pb.DomainEventEnvelope_TechnologyActivated:
+		return "technology_activated"
+	case *pb.DomainEventEnvelope_UnitMoved:
+		return "unit_moved"
+	case *pb.DomainEventEnvelope_CityFounded:
+		return "city_founded"
+	case *pb.DomainEventEnvelope_BuildingBuilt:
+		return "building_built"
+	default:
+		return ""
+	}
+}
+
 func TestV2CommandBatchProtoShape(t *testing.T) {
 	batch := &pb.MsgGameCommandBatch{
 		Commands: []*pb.CommandEnvelope{{

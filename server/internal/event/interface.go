@@ -11,7 +11,9 @@ import (
 	"github.com/yohamta/donburi"
 )
 
-// Event is the single write entry for all game state mutations.
+// Event is the single write entry for authoritative game state mutations.
+// Events whose Apply method is intentionally empty are report-only audit facts;
+// they still need stable Kind and String output for projection/debug tooling.
 type Event interface {
 	Apply(world donburi.World, state *domain.GameState)
 	Kind() string

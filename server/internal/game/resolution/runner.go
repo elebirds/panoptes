@@ -25,6 +25,11 @@ type StageOutcome struct {
 	Stop bool
 }
 
+// ResolutionStage is one step in the authoritative resolving pipeline.
+// Stages run in TurnResolutionRunner order and may stop the rest of the turn
+// by returning Stop=true. Fatal turns use that contract after combat or any
+// later stage sets state.IsOver, preserving already-applied events while
+// skipping unresolved map, building, and economy work that follows.
 type ResolutionStage interface {
 	Run(*RunnerContext) StageOutcome
 }
@@ -45,6 +50,16 @@ type BuildingStage struct{}
 
 type EconomyStage struct{}
 
+// NewTurnResolutionRunner returns the fixed M1 resolving contract:
+//  1. PlanningCommitStage applies planning lock-in events.
+//  2. OrderFreezeStage freezes planning unit directives into resolving orders.
+//  3. UnitResolutionStage applies combat first, then upkeep only if non-fatal.
+//  4. MapActionStage refreshes active marches and applies map action events.
+//  5. BuildingStage applies building lifecycle events.
+//  6. EconomyStage applies economy runner events.
+//
+// Do not insert M2+ systems here without first updating this contract and its
+// tests. In particular, fatal combat must continue to skip later stages.
 func NewTurnResolutionRunner() *TurnResolutionRunner {
 	return &TurnResolutionRunner{
 		stages: []ResolutionStage{

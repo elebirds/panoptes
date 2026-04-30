@@ -86,6 +86,62 @@ func TestApplyPlanningUnitOrderSyncsMoveAndPreservesAttackPath(t *testing.T) {
 	}
 }
 
+func TestApplyPlanningUnitOrderIgnoresReservedMapActions(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "infantry-1"
+
+	for _, action := range []UnitAction{ActionBuildRoad, ActionRepairRoad, ActionBuildImprovement, ActionRepairImprovement} {
+		t.Run(string(action), func(t *testing.T) {
+			ApplyPlanningUnitOrder(state, UnitOrder{
+				PlayerID:     "player-1",
+				UnitID:       "infantry-1",
+				Action:       action,
+				TargetNodeID: "A2",
+			}, RoutePreviewCallbacks{})
+
+			if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
+				t.Fatalf("planning unit order recorded for reserved action %q", action)
+			}
+			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+				t.Fatalf("active marches = %d, want 0", got)
+			}
+		})
+	}
+}
+
+func TestApplyPlanningUnitOrderAllowsSettleCityMapAction(t *testing.T) {
+	useUnitOrderTestCatalog(t)
+	state := newUnitOrderTestState(t)
+	unit := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unit).ID = "settler-1"
+	state.TurnRuntime.Resolving.ActiveMarches["settler-1"] = domain.ActiveMarch{
+		PlayerID:          "player-1",
+		UnitID:            "settler-1",
+		Action:            domain.UnitResolutionActionMove,
+		DestinationNodeID: "A3",
+	}
+
+	ApplyPlanningUnitOrder(state, UnitOrder{
+		PlayerID:     "player-1",
+		UnitID:       "settler-1",
+		Action:       ActionSettleCity,
+		TargetNodeID: "A2",
+	}, RoutePreviewCallbacks{})
+
+	directive, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]
+	if !ok {
+		t.Fatalf("settle_city directive missing")
+	}
+	if directive.Action != string(ActionSettleCity) || directive.TargetNodeID != "A2" {
+		t.Fatalf("settle_city directive = %#v", directive)
+	}
+	if _, ok := state.TurnRuntime.Resolving.ActiveMarches["settler-1"]; ok {
+		t.Fatalf("active march should be cleared after settle_city order")
+	}
+}
+
 func TestBuildResolvingUnitOrdersFreezesActiveMarchesAndSettleMove(t *testing.T) {
 	state := newUnitOrderTestState(t)
 	state.TurnRuntime.Resolving.ActiveMarches["infantry-1"] = domain.ActiveMarch{
