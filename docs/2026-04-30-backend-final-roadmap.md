@@ -225,6 +225,8 @@ for each player:
 
 ## 10. M8：信息不对称与失真汇报
 
+状态：已完成，见 `docs/2026-05-01-backend-m8-regression-gate.md`。
+
 目标：把 `truth`、`observed`、`reported` 正式分层。
 
 重点：

@@ -95,21 +95,33 @@ namespace Panoptes.Protocol.V1 {
             "ZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUYBSABKAlS",
             "CnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUYASABKAlSBHJv",
             "bGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMgASgFUgdhYmls",
-            "aXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSKTAwoLTXNn",
-            "R2FtZUluaXQSFwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQKDnlvdXJfcGxh",
-            "eWVyX2lkGAIgASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgDIAEoBVIEdHVy",
-            "bhIUCgVwaGFzZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSADKAsyGy5wYW5v",
-            "cHRlcy5wcm90by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5pdHMYBiADKAsy",
-            "Gy5wYW5vcHRlcy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMSOgoJbXlfcGxh",
-            "eWVyGAcgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVyVmlld1IIbXlQ",
-            "bGF5ZXISPQoJbWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMucHJvdG8udjEu",
-            "TWluaXN0ZXJWaWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRoGAkgASgFUght",
-            "YXBXaWR0aBIdCgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWlnaHQiYAoLTXNn",
-            "R2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJUgh3aW5uZXJJZBIWCgZyZWFz",
-            "b24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRpdmUYAyABKAlSCW5hcnJhdGl2",
-            "ZUJQWjdnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dl",
-            "bi9wcm90bztwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3Rv",
-            "Mw=="));
+            "aXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSLfAwoVSW5m",
+            "b3JtYXRpb25SZXBvcnRWaWV3EhIKBG1vZGUYASABKAlSBG1vZGUSHgoKY29u",
+            "ZmlkZW5jZRgCIAEoCVIKY29uZmlkZW5jZRIsChJ2aXNpYmxlX25vZGVfY291",
+            "bnQYAyABKAVSEHZpc2libGVOb2RlQ291bnQSKgoRbWVtb3J5X25vZGVfY291",
+            "bnQYBCABKAVSD21lbW9yeU5vZGVDb3VudBIsChJ1bmtub3duX25vZGVfY291",
+            "bnQYBSABKAVSEHVua25vd25Ob2RlQ291bnQSLAoSdmlzaWJsZV91bml0X2Nv",
+            "dW50GAYgASgFUhB2aXNpYmxlVW5pdENvdW50EioKEW1lbW9yeV91bml0X2Nv",
+            "dW50GAcgASgFUg9tZW1vcnlVbml0Q291bnQSIwoNb21pdHRlZF9jb3VudBgI",
+            "IAEoBVIMb21pdHRlZENvdW50EiMKDWRlbGF5ZWRfY291bnQYCSABKAVSDGRl",
+            "bGF5ZWRDb3VudBIjCg1taXNyZWFkX2NvdW50GAogASgFUgxtaXNyZWFkQ291",
+            "bnQSKwoRZGlyZWN0X2luc3BlY3Rpb24YCyABKAhSEGRpcmVjdEluc3BlY3Rp",
+            "b24SFAoFbm90ZXMYDCADKAlSBW5vdGVzIuwDCgtNc2dHYW1lSW5pdBIXCgdn",
+            "YW1lX2lkGAEgASgJUgZnYW1lSWQSJAoOeW91cl9wbGF5ZXJfaWQYAiABKAlS",
+            "DHlvdXJQbGF5ZXJJZBISCgR0dXJuGAMgASgFUgR0dXJuEhQKBXBoYXNlGAQg",
+            "ASgJUgVwaGFzZRIxCgVub2RlcxgFIAMoCzIbLnBhbm9wdGVzLnByb3RvLnYx",
+            "Lk5vZGVWaWV3UgVub2RlcxIxCgV1bml0cxgGIAMoCzIbLnBhbm9wdGVzLnBy",
+            "b3RvLnYxLlVuaXRWaWV3UgV1bml0cxI6CglteV9wbGF5ZXIYByABKAsyHS5w",
+            "YW5vcHRlcy5wcm90by52MS5QbGF5ZXJWaWV3UghteVBsYXllchI9CgltaW5p",
+            "c3RlcnMYCCADKAsyHy5wYW5vcHRlcy5wcm90by52MS5NaW5pc3RlclZpZXdS",
+            "CW1pbmlzdGVycxIbCgltYXBfd2lkdGgYCSABKAVSCG1hcFdpZHRoEh0KCm1h",
+            "cF9oZWlnaHQYCiABKAVSCW1hcEhlaWdodBJXChJpbmZvcm1hdGlvbl9yZXBv",
+            "cnQYCyABKAsyKC5wYW5vcHRlcy5wcm90by52MS5JbmZvcm1hdGlvblJlcG9y",
+            "dFZpZXdSEWluZm9ybWF0aW9uUmVwb3J0ImAKC01zZ0dhbWVPdmVyEhsKCXdp",
+            "bm5lcl9pZBgBIAEoCVIId2lubmVySWQSFgoGcmVhc29uGAIgASgJUgZyZWFz",
+            "b24SHAoJbmFycmF0aXZlGAMgASgJUgluYXJyYXRpdmVCUFo3Z2l0aHViLmNv",
+            "bS9lbGViaXJkcy9wYW5vcHRlcy9pbnRlcm5hbC9nZW4vcHJvdG87cHJvdG92",
+            "MaoCFFBhbm9wdGVzLlByb3RvY29sLlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -122,7 +134,8 @@ namespace Panoptes.Protocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.BuildingOperationView), global::Panoptes.Protocol.V1.BuildingOperationView.Parser, new[]{ "SelectedRecipeId", "CurrentProgress", "RequiredProgress", "BaseProgress", "BlockedReason", "BlockedMessage" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.WarZone), global::Panoptes.Protocol.V1.WarZone.Parser, new[]{ "Id", "Name", "NodeIds", "Directive", "TargetNode" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MinisterView), global::Panoptes.Protocol.V1.MinisterView.Parser, new[]{ "Role", "Name", "Ability", "Personality" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.InformationReportView), global::Panoptes.Protocol.V1.InformationReportView.Parser, new[]{ "Mode", "Confidence", "VisibleNodeCount", "MemoryNodeCount", "UnknownNodeCount", "VisibleUnitCount", "MemoryUnitCount", "OmittedCount", "DelayedCount", "MisreadCount", "DirectInspection", "Notes" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameInit), global::Panoptes.Protocol.V1.MsgGameInit.Parser, new[]{ "GameId", "YourPlayerId", "Turn", "Phase", "Nodes", "Units", "MyPlayer", "Ministers", "MapWidth", "MapHeight", "InformationReport" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.MsgGameOver), global::Panoptes.Protocol.V1.MsgGameOver.Parser, new[]{ "WinnerId", "Reason", "Narrative" }, null, null, null, null)
           }));
     }
@@ -4147,6 +4160,592 @@ namespace Panoptes.Protocol.V1 {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class InformationReportView : pb::IMessage<InformationReportView>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<InformationReportView> _parser = new pb::MessageParser<InformationReportView>(() => new InformationReportView());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<InformationReportView> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InformationReportView() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InformationReportView(InformationReportView other) : this() {
+      mode_ = other.mode_;
+      confidence_ = other.confidence_;
+      visibleNodeCount_ = other.visibleNodeCount_;
+      memoryNodeCount_ = other.memoryNodeCount_;
+      unknownNodeCount_ = other.unknownNodeCount_;
+      visibleUnitCount_ = other.visibleUnitCount_;
+      memoryUnitCount_ = other.memoryUnitCount_;
+      omittedCount_ = other.omittedCount_;
+      delayedCount_ = other.delayedCount_;
+      misreadCount_ = other.misreadCount_;
+      directInspection_ = other.directInspection_;
+      notes_ = other.notes_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public InformationReportView Clone() {
+      return new InformationReportView(this);
+    }
+
+    /// <summary>Field number for the "mode" field.</summary>
+    public const int ModeFieldNumber = 1;
+    private string mode_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Mode {
+      get { return mode_; }
+      set {
+        mode_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "confidence" field.</summary>
+    public const int ConfidenceFieldNumber = 2;
+    private string confidence_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Confidence {
+      get { return confidence_; }
+      set {
+        confidence_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "visible_node_count" field.</summary>
+    public const int VisibleNodeCountFieldNumber = 3;
+    private int visibleNodeCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int VisibleNodeCount {
+      get { return visibleNodeCount_; }
+      set {
+        visibleNodeCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "memory_node_count" field.</summary>
+    public const int MemoryNodeCountFieldNumber = 4;
+    private int memoryNodeCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MemoryNodeCount {
+      get { return memoryNodeCount_; }
+      set {
+        memoryNodeCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "unknown_node_count" field.</summary>
+    public const int UnknownNodeCountFieldNumber = 5;
+    private int unknownNodeCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int UnknownNodeCount {
+      get { return unknownNodeCount_; }
+      set {
+        unknownNodeCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "visible_unit_count" field.</summary>
+    public const int VisibleUnitCountFieldNumber = 6;
+    private int visibleUnitCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int VisibleUnitCount {
+      get { return visibleUnitCount_; }
+      set {
+        visibleUnitCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "memory_unit_count" field.</summary>
+    public const int MemoryUnitCountFieldNumber = 7;
+    private int memoryUnitCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MemoryUnitCount {
+      get { return memoryUnitCount_; }
+      set {
+        memoryUnitCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "omitted_count" field.</summary>
+    public const int OmittedCountFieldNumber = 8;
+    private int omittedCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int OmittedCount {
+      get { return omittedCount_; }
+      set {
+        omittedCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "delayed_count" field.</summary>
+    public const int DelayedCountFieldNumber = 9;
+    private int delayedCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int DelayedCount {
+      get { return delayedCount_; }
+      set {
+        delayedCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "misread_count" field.</summary>
+    public const int MisreadCountFieldNumber = 10;
+    private int misreadCount_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MisreadCount {
+      get { return misreadCount_; }
+      set {
+        misreadCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "direct_inspection" field.</summary>
+    public const int DirectInspectionFieldNumber = 11;
+    private bool directInspection_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool DirectInspection {
+      get { return directInspection_; }
+      set {
+        directInspection_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "notes" field.</summary>
+    public const int NotesFieldNumber = 12;
+    private static readonly pb::FieldCodec<string> _repeated_notes_codec
+        = pb::FieldCodec.ForString(98);
+    private readonly pbc::RepeatedField<string> notes_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<string> Notes {
+      get { return notes_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as InformationReportView);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(InformationReportView other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Mode != other.Mode) return false;
+      if (Confidence != other.Confidence) return false;
+      if (VisibleNodeCount != other.VisibleNodeCount) return false;
+      if (MemoryNodeCount != other.MemoryNodeCount) return false;
+      if (UnknownNodeCount != other.UnknownNodeCount) return false;
+      if (VisibleUnitCount != other.VisibleUnitCount) return false;
+      if (MemoryUnitCount != other.MemoryUnitCount) return false;
+      if (OmittedCount != other.OmittedCount) return false;
+      if (DelayedCount != other.DelayedCount) return false;
+      if (MisreadCount != other.MisreadCount) return false;
+      if (DirectInspection != other.DirectInspection) return false;
+      if(!notes_.Equals(other.notes_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Mode.Length != 0) hash ^= Mode.GetHashCode();
+      if (Confidence.Length != 0) hash ^= Confidence.GetHashCode();
+      if (VisibleNodeCount != 0) hash ^= VisibleNodeCount.GetHashCode();
+      if (MemoryNodeCount != 0) hash ^= MemoryNodeCount.GetHashCode();
+      if (UnknownNodeCount != 0) hash ^= UnknownNodeCount.GetHashCode();
+      if (VisibleUnitCount != 0) hash ^= VisibleUnitCount.GetHashCode();
+      if (MemoryUnitCount != 0) hash ^= MemoryUnitCount.GetHashCode();
+      if (OmittedCount != 0) hash ^= OmittedCount.GetHashCode();
+      if (DelayedCount != 0) hash ^= DelayedCount.GetHashCode();
+      if (MisreadCount != 0) hash ^= MisreadCount.GetHashCode();
+      if (DirectInspection != false) hash ^= DirectInspection.GetHashCode();
+      hash ^= notes_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Mode.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Mode);
+      }
+      if (Confidence.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Confidence);
+      }
+      if (VisibleNodeCount != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(VisibleNodeCount);
+      }
+      if (MemoryNodeCount != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(MemoryNodeCount);
+      }
+      if (UnknownNodeCount != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(UnknownNodeCount);
+      }
+      if (VisibleUnitCount != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(VisibleUnitCount);
+      }
+      if (MemoryUnitCount != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(MemoryUnitCount);
+      }
+      if (OmittedCount != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(OmittedCount);
+      }
+      if (DelayedCount != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(DelayedCount);
+      }
+      if (MisreadCount != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(MisreadCount);
+      }
+      if (DirectInspection != false) {
+        output.WriteRawTag(88);
+        output.WriteBool(DirectInspection);
+      }
+      notes_.WriteTo(output, _repeated_notes_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Mode.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Mode);
+      }
+      if (Confidence.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Confidence);
+      }
+      if (VisibleNodeCount != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(VisibleNodeCount);
+      }
+      if (MemoryNodeCount != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(MemoryNodeCount);
+      }
+      if (UnknownNodeCount != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(UnknownNodeCount);
+      }
+      if (VisibleUnitCount != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(VisibleUnitCount);
+      }
+      if (MemoryUnitCount != 0) {
+        output.WriteRawTag(56);
+        output.WriteInt32(MemoryUnitCount);
+      }
+      if (OmittedCount != 0) {
+        output.WriteRawTag(64);
+        output.WriteInt32(OmittedCount);
+      }
+      if (DelayedCount != 0) {
+        output.WriteRawTag(72);
+        output.WriteInt32(DelayedCount);
+      }
+      if (MisreadCount != 0) {
+        output.WriteRawTag(80);
+        output.WriteInt32(MisreadCount);
+      }
+      if (DirectInspection != false) {
+        output.WriteRawTag(88);
+        output.WriteBool(DirectInspection);
+      }
+      notes_.WriteTo(ref output, _repeated_notes_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Mode.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Mode);
+      }
+      if (Confidence.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Confidence);
+      }
+      if (VisibleNodeCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(VisibleNodeCount);
+      }
+      if (MemoryNodeCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MemoryNodeCount);
+      }
+      if (UnknownNodeCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(UnknownNodeCount);
+      }
+      if (VisibleUnitCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(VisibleUnitCount);
+      }
+      if (MemoryUnitCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MemoryUnitCount);
+      }
+      if (OmittedCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(OmittedCount);
+      }
+      if (DelayedCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(DelayedCount);
+      }
+      if (MisreadCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MisreadCount);
+      }
+      if (DirectInspection != false) {
+        size += 1 + 1;
+      }
+      size += notes_.CalculateSize(_repeated_notes_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(InformationReportView other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Mode.Length != 0) {
+        Mode = other.Mode;
+      }
+      if (other.Confidence.Length != 0) {
+        Confidence = other.Confidence;
+      }
+      if (other.VisibleNodeCount != 0) {
+        VisibleNodeCount = other.VisibleNodeCount;
+      }
+      if (other.MemoryNodeCount != 0) {
+        MemoryNodeCount = other.MemoryNodeCount;
+      }
+      if (other.UnknownNodeCount != 0) {
+        UnknownNodeCount = other.UnknownNodeCount;
+      }
+      if (other.VisibleUnitCount != 0) {
+        VisibleUnitCount = other.VisibleUnitCount;
+      }
+      if (other.MemoryUnitCount != 0) {
+        MemoryUnitCount = other.MemoryUnitCount;
+      }
+      if (other.OmittedCount != 0) {
+        OmittedCount = other.OmittedCount;
+      }
+      if (other.DelayedCount != 0) {
+        DelayedCount = other.DelayedCount;
+      }
+      if (other.MisreadCount != 0) {
+        MisreadCount = other.MisreadCount;
+      }
+      if (other.DirectInspection != false) {
+        DirectInspection = other.DirectInspection;
+      }
+      notes_.Add(other.notes_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Mode = input.ReadString();
+            break;
+          }
+          case 18: {
+            Confidence = input.ReadString();
+            break;
+          }
+          case 24: {
+            VisibleNodeCount = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            MemoryNodeCount = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            UnknownNodeCount = input.ReadInt32();
+            break;
+          }
+          case 48: {
+            VisibleUnitCount = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            MemoryUnitCount = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            OmittedCount = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            DelayedCount = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            MisreadCount = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            DirectInspection = input.ReadBool();
+            break;
+          }
+          case 98: {
+            notes_.AddEntriesFrom(input, _repeated_notes_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Mode = input.ReadString();
+            break;
+          }
+          case 18: {
+            Confidence = input.ReadString();
+            break;
+          }
+          case 24: {
+            VisibleNodeCount = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            MemoryNodeCount = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            UnknownNodeCount = input.ReadInt32();
+            break;
+          }
+          case 48: {
+            VisibleUnitCount = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            MemoryUnitCount = input.ReadInt32();
+            break;
+          }
+          case 64: {
+            OmittedCount = input.ReadInt32();
+            break;
+          }
+          case 72: {
+            DelayedCount = input.ReadInt32();
+            break;
+          }
+          case 80: {
+            MisreadCount = input.ReadInt32();
+            break;
+          }
+          case 88: {
+            DirectInspection = input.ReadBool();
+            break;
+          }
+          case 98: {
+            notes_.AddEntriesFrom(ref input, _repeated_notes_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MsgGameInit : pb::IMessage<MsgGameInit>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4161,7 +4760,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4191,6 +4790,7 @@ namespace Panoptes.Protocol.V1 {
       ministers_ = other.ministers_.Clone();
       mapWidth_ = other.mapWidth_;
       mapHeight_ = other.mapHeight_;
+      informationReport_ = other.informationReport_ != null ? other.informationReport_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -4317,6 +4917,18 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "information_report" field.</summary>
+    public const int InformationReportFieldNumber = 11;
+    private global::Panoptes.Protocol.V1.InformationReportView informationReport_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Panoptes.Protocol.V1.InformationReportView InformationReport {
+      get { return informationReport_; }
+      set {
+        informationReport_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -4342,6 +4954,7 @@ namespace Panoptes.Protocol.V1 {
       if(!ministers_.Equals(other.ministers_)) return false;
       if (MapWidth != other.MapWidth) return false;
       if (MapHeight != other.MapHeight) return false;
+      if (!object.Equals(InformationReport, other.InformationReport)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -4359,6 +4972,7 @@ namespace Panoptes.Protocol.V1 {
       hash ^= ministers_.GetHashCode();
       if (MapWidth != 0) hash ^= MapWidth.GetHashCode();
       if (MapHeight != 0) hash ^= MapHeight.GetHashCode();
+      if (informationReport_ != null) hash ^= InformationReport.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -4408,6 +5022,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(80);
         output.WriteInt32(MapHeight);
       }
+      if (informationReport_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(InformationReport);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4449,6 +5067,10 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(80);
         output.WriteInt32(MapHeight);
       }
+      if (informationReport_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(InformationReport);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4482,6 +5104,9 @@ namespace Panoptes.Protocol.V1 {
       }
       if (MapHeight != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(MapHeight);
+      }
+      if (informationReport_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(InformationReport);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -4521,6 +5146,12 @@ namespace Panoptes.Protocol.V1 {
       }
       if (other.MapHeight != 0) {
         MapHeight = other.MapHeight;
+      }
+      if (other.informationReport_ != null) {
+        if (informationReport_ == null) {
+          InformationReport = new global::Panoptes.Protocol.V1.InformationReportView();
+        }
+        InformationReport.MergeFrom(other.InformationReport);
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -4578,6 +5209,13 @@ namespace Panoptes.Protocol.V1 {
           }
           case 80: {
             MapHeight = input.ReadInt32();
+            break;
+          }
+          case 90: {
+            if (informationReport_ == null) {
+              InformationReport = new global::Panoptes.Protocol.V1.InformationReportView();
+            }
+            input.ReadMessage(InformationReport);
             break;
           }
         }
@@ -4638,6 +5276,13 @@ namespace Panoptes.Protocol.V1 {
             MapHeight = input.ReadInt32();
             break;
           }
+          case 90: {
+            if (informationReport_ == null) {
+              InformationReport = new global::Panoptes.Protocol.V1.InformationReportView();
+            }
+            input.ReadMessage(InformationReport);
+            break;
+          }
         }
       }
     }
@@ -4660,7 +5305,7 @@ namespace Panoptes.Protocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Panoptes.Protocol.V1.GameStateReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

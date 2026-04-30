@@ -67,6 +67,16 @@ func TestBuildPlanningStartMessageFromObservationUsesPerPlayerVisibility(t *test
 	if !hasPlanningStartUnit(right, "enemy-1") {
 		t.Fatalf("player-2 planning_start should include enemy-1")
 	}
+	report := left.GetInformationReport()
+	if report == nil {
+		t.Fatalf("player-1 planning_start information_report = nil")
+	}
+	if report.GetMode() != gamequery.ReportingModeStandard {
+		t.Fatalf("player-1 planning_start information_report.mode = %q, want %q", report.GetMode(), gamequery.ReportingModeStandard)
+	}
+	if report.GetUnknownNodeCount() == 0 {
+		t.Fatalf("player-1 planning_start information_report should track at least one unknown node")
+	}
 }
 
 func TestBuildPlanningStartMessageFromObservationIncludesMinisterDrafts(t *testing.T) {

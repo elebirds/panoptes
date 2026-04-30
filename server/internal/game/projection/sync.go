@@ -49,6 +49,7 @@ func ProjectGameSyncFromObservation(
 	msg.MyPlayer = observed.MyPlayer
 	msg.Nodes = observed.Nodes
 	msg.Units = observed.Units
+	msg.InformationReport = gamequery.BuildInformationReport(observation)
 	if phase == domain.PhasePlanning.String() {
 		msg.Snapshot = observed.PlanningSnapshot("")
 		msg.MinisterProposals = gamequery.BuildMinisterProposalViews(state, observed.PlayerID)

@@ -47,6 +47,7 @@ func BuildPlanningStartMessageFromObservation(state *domain.GameState, observati
 		MyPlayer:               observed.MyPlayer,
 		Nodes:                  observed.Nodes,
 		Units:                  observed.Units,
+		InformationReport:      gamequery.BuildInformationReport(observation),
 		// planning_start_events 是本轮改造新增的正式事件面。
 		// 它只承载“开回合才正式生效”的事件，例如 technology_activated。
 		PlanningStartEvents: gameprojection.ProjectPlanningStartEvents(int32(state.Turn), planningStartEvents),

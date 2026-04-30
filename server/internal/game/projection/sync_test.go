@@ -5,6 +5,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/event"
+	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	gameresolution "github.com/elebirds/panoptes/internal/game/resolution"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
@@ -53,6 +54,32 @@ func TestProjectGameSyncIncludesTypedUnitMovedCoordinates(t *testing.T) {
 	}
 	if moved.GetUnitId() != "unit-1" || moved.GetFromQ() != 1 || moved.GetFromR() != 2 || moved.GetToQ() != 3 || moved.GetToR() != 4 {
 		t.Fatalf("typed unit_moved = %#v", moved)
+	}
+}
+
+func TestProjectGameSyncFromObservationIncludesInformationReport(t *testing.T) {
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "reporting-sync"})
+	observation := &gamequery.ObservationSnapshot{
+		ViewerID:      "player-1",
+		ReportingMode: gamequery.ReportingModeHighDistortion,
+		Nodes: []*pb.NodeView{
+			{Id: "N0", IsCurrentlyVisible: true},
+			{Id: "N1"},
+		},
+		VisibleNodes: []*pb.NodeView{{Id: "N0", IsCurrentlyVisible: true}},
+		Units:        []*pb.UnitView{{Id: "unit-1"}},
+	}
+
+	msg := ProjectGameSyncFromObservation(state, observation, 3, domain.PhaseResolving.String(), domain.PhasePlanning.String(), nil)
+	report := msg.GetInformationReport()
+	if report == nil {
+		t.Fatalf("information_report = nil")
+	}
+	if report.GetMode() != gamequery.ReportingModeHighDistortion {
+		t.Fatalf("information_report.mode = %q, want %q", report.GetMode(), gamequery.ReportingModeHighDistortion)
+	}
+	if report.GetUnknownNodeCount() != 1 {
+		t.Fatalf("information_report.unknown_node_count = %d, want 1", report.GetUnknownNodeCount())
 	}
 }
 
