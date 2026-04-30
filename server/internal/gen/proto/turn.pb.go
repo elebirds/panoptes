@@ -34,6 +34,7 @@ type MsgPlanningStart struct {
 	Nodes                  []*NodeView            `protobuf:"bytes,9,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	Units                  []*UnitView            `protobuf:"bytes,10,rep,name=units,proto3" json:"units,omitempty"`
 	PlanningStartEvents    []*DomainEventEnvelope `protobuf:"bytes,11,rep,name=planning_start_events,json=planningStartEvents,proto3" json:"planning_start_events,omitempty"`
+	InformationReport      *InformationReportView `protobuf:"bytes,12,opt,name=information_report,json=informationReport,proto3" json:"information_report,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -141,6 +142,13 @@ func (x *MsgPlanningStart) GetUnits() []*UnitView {
 func (x *MsgPlanningStart) GetPlanningStartEvents() []*DomainEventEnvelope {
 	if x != nil {
 		return x.PlanningStartEvents
+	}
+	return nil
+}
+
+func (x *MsgPlanningStart) GetInformationReport() *InformationReportView {
+	if x != nil {
+		return x.InformationReport
 	}
 	return nil
 }
@@ -1897,6 +1905,7 @@ type MsgGameSync struct {
 	Events            []*DomainEventEnvelope  `protobuf:"bytes,8,rep,name=events,proto3" json:"events,omitempty"`
 	CommandAcks       []*MsgCommandAck        `protobuf:"bytes,9,rep,name=command_acks,json=commandAcks,proto3" json:"command_acks,omitempty"`
 	MinisterProposals []*MinisterProposalView `protobuf:"bytes,10,rep,name=minister_proposals,json=ministerProposals,proto3" json:"minister_proposals,omitempty"`
+	InformationReport *InformationReportView  `protobuf:"bytes,11,opt,name=information_report,json=informationReport,proto3" json:"information_report,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2001,11 +2010,18 @@ func (x *MsgGameSync) GetMinisterProposals() []*MinisterProposalView {
 	return nil
 }
 
+func (x *MsgGameSync) GetInformationReport() *InformationReportView {
+	if x != nil {
+		return x.InformationReport
+	}
+	return nil
+}
+
 var File_panoptes_proto_v1_turn_proto protoreflect.FileDescriptor
 
 const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\n" +
-	"\x1cpanoptes/proto/v1/turn.proto\x12\x11panoptes.proto.v1\x1a\"panoptes/proto/v1/game_state.proto\x1a\x1epanoptes/proto/v1/orders.proto\x1a\"panoptes/proto/v1/settlement.proto\"\xba\x04\n" +
+	"\x1cpanoptes/proto/v1/turn.proto\x12\x11panoptes.proto.v1\x1a\"panoptes/proto/v1/game_state.proto\x1a\x1epanoptes/proto/v1/orders.proto\x1a\"panoptes/proto/v1/settlement.proto\"\x93\x05\n" +
 	"\x10MsgPlanningStart\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x12\n" +
 	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x16\n" +
@@ -2018,7 +2034,8 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\x05nodes\x18\t \x03(\v2\x1b.panoptes.proto.v1.NodeViewR\x05nodes\x121\n" +
 	"\x05units\x18\n" +
 	" \x03(\v2\x1b.panoptes.proto.v1.UnitViewR\x05units\x12Z\n" +
-	"\x15planning_start_events\x18\v \x03(\v2&.panoptes.proto.v1.DomainEventEnvelopeR\x13planningStartEvents\"y\n" +
+	"\x15planning_start_events\x18\v \x03(\v2&.panoptes.proto.v1.DomainEventEnvelopeR\x13planningStartEvents\x12W\n" +
+	"\x12information_report\x18\f \x01(\v2(.panoptes.proto.v1.InformationReportViewR\x11informationReport\"y\n" +
 	"\x11MinisterDraftView\x12#\n" +
 	"\rminister_role\x18\x01 \x01(\tR\fministerRole\x12!\n" +
 	"\fjson_payload\x18\x02 \x01(\tR\vjsonPayload\x12\x1c\n" +
@@ -2188,7 +2205,7 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\trationale\x18\x06 \x01(\tR\trationale\x12\x1b\n" +
 	"\trisk_note\x18\a \x01(\tR\briskNote\x12M\n" +
 	"\x10proposed_command\x18\b \x01(\v2\".panoptes.proto.v1.CommandEnvelopeR\x0fproposedCommand\x12\x19\n" +
-	"\braw_json\x18\t \x01(\tR\arawJson\"\x99\x04\n" +
+	"\braw_json\x18\t \x01(\tR\arawJson\"\xf2\x04\n" +
 	"\vMsgGameSync\x12\x12\n" +
 	"\x04turn\x18\x01 \x01(\x05R\x04turn\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1d\n" +
@@ -2201,7 +2218,8 @@ const file_panoptes_proto_v1_turn_proto_rawDesc = "" +
 	"\x06events\x18\b \x03(\v2&.panoptes.proto.v1.DomainEventEnvelopeR\x06events\x12C\n" +
 	"\fcommand_acks\x18\t \x03(\v2 .panoptes.proto.v1.MsgCommandAckR\vcommandAcks\x12V\n" +
 	"\x12minister_proposals\x18\n" +
-	" \x03(\v2'.panoptes.proto.v1.MinisterProposalViewR\x11ministerProposalsBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	" \x03(\v2'.panoptes.proto.v1.MinisterProposalViewR\x11ministerProposals\x12W\n" +
+	"\x12information_report\x18\v \x01(\v2(.panoptes.proto.v1.InformationReportViewR\x11informationReportBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
 	file_panoptes_proto_v1_turn_proto_rawDescOnce sync.Once
@@ -2247,9 +2265,10 @@ var file_panoptes_proto_v1_turn_proto_goTypes = []any{
 	(*NodeView)(nil),                            // 27: panoptes.proto.v1.NodeView
 	(*UnitView)(nil),                            // 28: panoptes.proto.v1.UnitView
 	(*DomainEventEnvelope)(nil),                 // 29: panoptes.proto.v1.DomainEventEnvelope
-	(*WarZone)(nil),                             // 30: panoptes.proto.v1.WarZone
-	(*CommandEnvelope)(nil),                     // 31: panoptes.proto.v1.CommandEnvelope
-	(*MsgCommandAck)(nil),                       // 32: panoptes.proto.v1.MsgCommandAck
+	(*InformationReportView)(nil),               // 30: panoptes.proto.v1.InformationReportView
+	(*WarZone)(nil),                             // 31: panoptes.proto.v1.WarZone
+	(*CommandEnvelope)(nil),                     // 32: panoptes.proto.v1.CommandEnvelope
+	(*MsgCommandAck)(nil),                       // 33: panoptes.proto.v1.MsgCommandAck
 }
 var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	7,  // 0: panoptes.proto.v1.MsgPlanningStart.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
@@ -2258,33 +2277,35 @@ var file_panoptes_proto_v1_turn_proto_depIdxs = []int32{
 	27, // 3: panoptes.proto.v1.MsgPlanningStart.nodes:type_name -> panoptes.proto.v1.NodeView
 	28, // 4: panoptes.proto.v1.MsgPlanningStart.units:type_name -> panoptes.proto.v1.UnitView
 	29, // 5: panoptes.proto.v1.MsgPlanningStart.planning_start_events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	25, // 6: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
-	2,  // 7: panoptes.proto.v1.QueuedUnitOrder.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
-	3,  // 8: panoptes.proto.v1.MsgPlanningSnapshot.unit_orders:type_name -> panoptes.proto.v1.QueuedUnitOrder
-	30, // 9: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
-	1,  // 10: panoptes.proto.v1.MsgPlanningSnapshot.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
-	4,  // 11: panoptes.proto.v1.MsgPlanningSnapshot.build_orders:type_name -> panoptes.proto.v1.QueuedBuildOrder
-	5,  // 12: panoptes.proto.v1.MsgPlanningSnapshot.recipe_selections:type_name -> panoptes.proto.v1.QueuedRecipeSelection
-	6,  // 13: panoptes.proto.v1.MsgPlanningSnapshot.war_zone_directives:type_name -> panoptes.proto.v1.QueuedWarZoneDirective
-	2,  // 14: panoptes.proto.v1.MsgPlanningPathPreviewResponse.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
-	9,  // 15: panoptes.proto.v1.MsgBuildStructurePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	9,  // 16: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	27, // 17: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
-	9,  // 18: panoptes.proto.v1.MsgSetBuildingRecipeResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	9,  // 19: panoptes.proto.v1.MsgBuildStructureResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
-	31, // 20: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
-	7,  // 21: panoptes.proto.v1.MsgGameSync.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
-	26, // 22: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
-	27, // 23: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
-	28, // 24: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
-	29, // 25: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
-	32, // 26: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
-	23, // 27: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	30, // 6: panoptes.proto.v1.MsgPlanningStart.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	25, // 7: panoptes.proto.v1.QueuedUnitOrder.params:type_name -> panoptes.proto.v1.QueuedUnitOrder.ParamsEntry
+	2,  // 8: panoptes.proto.v1.QueuedUnitOrder.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
+	3,  // 9: panoptes.proto.v1.MsgPlanningSnapshot.unit_orders:type_name -> panoptes.proto.v1.QueuedUnitOrder
+	31, // 10: panoptes.proto.v1.MsgPlanningSnapshot.war_zones:type_name -> panoptes.proto.v1.WarZone
+	1,  // 11: panoptes.proto.v1.MsgPlanningSnapshot.minister_drafts:type_name -> panoptes.proto.v1.MinisterDraftView
+	4,  // 12: panoptes.proto.v1.MsgPlanningSnapshot.build_orders:type_name -> panoptes.proto.v1.QueuedBuildOrder
+	5,  // 13: panoptes.proto.v1.MsgPlanningSnapshot.recipe_selections:type_name -> panoptes.proto.v1.QueuedRecipeSelection
+	6,  // 14: panoptes.proto.v1.MsgPlanningSnapshot.war_zone_directives:type_name -> panoptes.proto.v1.QueuedWarZoneDirective
+	2,  // 15: panoptes.proto.v1.MsgPlanningPathPreviewResponse.turn_stops:type_name -> panoptes.proto.v1.MarchTurnStop
+	9,  // 16: panoptes.proto.v1.MsgBuildStructurePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
+	9,  // 17: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
+	27, // 18: panoptes.proto.v1.MsgRevealResult.true_state:type_name -> panoptes.proto.v1.NodeView
+	9,  // 19: panoptes.proto.v1.MsgSetBuildingRecipeResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
+	9,  // 20: panoptes.proto.v1.MsgBuildStructureResult.feedback_details:type_name -> panoptes.proto.v1.FeedbackDetail
+	32, // 21: panoptes.proto.v1.MinisterProposalView.proposed_command:type_name -> panoptes.proto.v1.CommandEnvelope
+	7,  // 22: panoptes.proto.v1.MsgGameSync.snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
+	26, // 23: panoptes.proto.v1.MsgGameSync.my_player:type_name -> panoptes.proto.v1.PlayerView
+	27, // 24: panoptes.proto.v1.MsgGameSync.nodes:type_name -> panoptes.proto.v1.NodeView
+	28, // 25: panoptes.proto.v1.MsgGameSync.units:type_name -> panoptes.proto.v1.UnitView
+	29, // 26: panoptes.proto.v1.MsgGameSync.events:type_name -> panoptes.proto.v1.DomainEventEnvelope
+	33, // 27: panoptes.proto.v1.MsgGameSync.command_acks:type_name -> panoptes.proto.v1.MsgCommandAck
+	23, // 28: panoptes.proto.v1.MsgGameSync.minister_proposals:type_name -> panoptes.proto.v1.MinisterProposalView
+	30, // 29: panoptes.proto.v1.MsgGameSync.information_report:type_name -> panoptes.proto.v1.InformationReportView
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_panoptes_proto_v1_turn_proto_init() }

@@ -21,6 +21,7 @@ message MsgPlanningStart {
   repeated NodeView nodes = 9;
   repeated UnitView units = 10;
   repeated DomainEventEnvelope planning_start_events = 11;
+  InformationReportView information_report = 12;
 }
 
 message MinisterDraftView {
@@ -217,4 +218,5 @@ message MsgGameSync {
   repeated DomainEventEnvelope events = 8;
   repeated MsgCommandAck command_acks = 9;
   repeated MinisterProposalView minister_proposals = 10;
+  InformationReportView information_report = 11;
 }

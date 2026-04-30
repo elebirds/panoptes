@@ -35,21 +35,24 @@ func (r *RememberedUnitView) GetLastObservedTurn() int32 {
 }
 
 type ObservationSnapshot struct {
-	ViewerID       string
-	MyPlayer       *pb.PlayerView
-	Nodes          []*pb.NodeView
-	VisibleNodes   []*pb.NodeView
-	MemoryNodes    []*pb.NodeView
-	Units          []*pb.UnitView
-	MemoryUnits    []*RememberedUnitView
-	VisibleNodeIDs map[string]struct{}
+	ViewerID         string
+	ReportingMode    string
+	DirectInspection bool
+	MyPlayer         *pb.PlayerView
+	Nodes            []*pb.NodeView
+	VisibleNodes     []*pb.NodeView
+	MemoryNodes      []*pb.NodeView
+	Units            []*pb.UnitView
+	MemoryUnits      []*RememberedUnitView
+	VisibleNodeIDs   map[string]struct{}
 }
 
 type ObservationStore struct {
-	mu         sync.Mutex
-	nodeMemory map[string]map[string]storedNodeObservation
-	unitMemory map[string]map[string]storedUnitObservation
-	omniscient map[string]bool
+	mu             sync.Mutex
+	nodeMemory     map[string]map[string]storedNodeObservation
+	unitMemory     map[string]map[string]storedUnitObservation
+	omniscient     map[string]bool
+	reportingModes map[string]string
 }
 
 type storedNodeObservation struct {
@@ -64,9 +67,10 @@ type storedUnitObservation struct {
 
 func NewObservationStore() *ObservationStore {
 	return &ObservationStore{
-		nodeMemory: make(map[string]map[string]storedNodeObservation),
-		unitMemory: make(map[string]map[string]storedUnitObservation),
-		omniscient: make(map[string]bool),
+		nodeMemory:     make(map[string]map[string]storedNodeObservation),
+		unitMemory:     make(map[string]map[string]storedUnitObservation),
+		omniscient:     make(map[string]bool),
+		reportingModes: make(map[string]string),
 	}
 }
 
@@ -79,6 +83,7 @@ func (s *ObservationStore) Reset() {
 	s.nodeMemory = make(map[string]map[string]storedNodeObservation)
 	s.unitMemory = make(map[string]map[string]storedUnitObservation)
 	s.omniscient = make(map[string]bool)
+	s.reportingModes = make(map[string]string)
 }
 
 func (s *ObservationStore) SetOmniscient(viewerID string, enabled bool) {
@@ -115,17 +120,24 @@ func (s *ObservationStore) IsOmniscient(viewerID string) bool {
 }
 
 func (s *ObservationStore) BuildObservation(state *domain.GameState, viewerID string) *ObservationSnapshot {
+	reportingMode := s.ReportingMode(viewerID)
+	directInspection := s.IsOmniscient(viewerID)
+	if directInspection {
+		reportingMode = ReportingModeClear
+	}
 	snapshot := &ObservationSnapshot{
-		ViewerID:       strings.TrimSpace(viewerID),
-		MyPlayer:       BuildPlayerView(state, viewerID),
-		VisibleNodeIDs: make(map[string]struct{}),
+		ViewerID:         strings.TrimSpace(viewerID),
+		ReportingMode:    reportingMode,
+		DirectInspection: directInspection,
+		MyPlayer:         BuildPlayerView(state, viewerID),
+		VisibleNodeIDs:   make(map[string]struct{}),
 	}
 	if state == nil || state.World == nil {
 		return snapshot
 	}
 
 	visibleNodeIDs := computeVisibleNodeIDs(state, viewerID)
-	if s != nil && s.IsOmniscient(viewerID) {
+	if directInspection {
 		visibleNodeIDs = allNodeIDs(state)
 	}
 	for nodeID := range visibleNodeIDs {

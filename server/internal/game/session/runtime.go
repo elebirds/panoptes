@@ -322,16 +322,17 @@ func (r *Runtime) sendGameInit(p participant.Participant) {
 	}
 	observation := r.BuildObservation(p.ID)
 	msg := &pb.MsgGameInit{
-		GameId:       r.state.GameID,
-		YourPlayerId: p.ID,
-		Turn:         int32(r.state.Turn),
-		Phase:        r.state.Phase,
-		MapWidth:     int32(r.state.Map.Width),
-		MapHeight:    int32(r.state.Map.Height),
-		MyPlayer:     observation.MyPlayer,
-		Ministers:    gamequery.BuildMinisterRosterViews(),
-		Nodes:        observation.Nodes,
-		Units:        observation.Units,
+		GameId:            r.state.GameID,
+		YourPlayerId:      p.ID,
+		Turn:              int32(r.state.Turn),
+		Phase:             r.state.Phase,
+		MapWidth:          int32(r.state.Map.Width),
+		MapHeight:         int32(r.state.Map.Height),
+		MyPlayer:          observation.MyPlayer,
+		Ministers:         gamequery.BuildMinisterRosterViews(),
+		Nodes:             observation.Nodes,
+		Units:             observation.Units,
+		InformationReport: gamequery.BuildInformationReport(observation),
 	}
 	_ = r.SendToParticipant(context.Background(), p.ID, msg)
 }
@@ -361,6 +362,23 @@ func (r *Runtime) DebugFullMapVisibility(participantID string) bool {
 		return false
 	}
 	return r.observations.IsOmniscient(participantID)
+}
+
+func (r *Runtime) SetReportingMode(participantID string, mode string) {
+	if r == nil {
+		return
+	}
+	if r.observations == nil {
+		r.observations = gamequery.NewObservationStore()
+	}
+	r.observations.SetReportingMode(participantID, mode)
+}
+
+func (r *Runtime) ReportingMode(participantID string) string {
+	if r == nil || r.observations == nil {
+		return gamequery.ReportingModeStandard
+	}
+	return r.observations.ReportingMode(participantID)
 }
 
 func (r *Runtime) RefreshDebugView(ctx context.Context, participantID string) (bool, error) {

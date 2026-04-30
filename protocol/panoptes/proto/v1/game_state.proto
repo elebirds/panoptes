@@ -107,6 +107,21 @@ message MinisterView {
   string personality = 4;
 }
 
+message InformationReportView {
+  string mode = 1;
+  string confidence = 2;
+  int32 visible_node_count = 3;
+  int32 memory_node_count = 4;
+  int32 unknown_node_count = 5;
+  int32 visible_unit_count = 6;
+  int32 memory_unit_count = 7;
+  int32 omitted_count = 8;
+  int32 delayed_count = 9;
+  int32 misread_count = 10;
+  bool direct_inspection = 11;
+  repeated string notes = 12;
+}
+
 message MsgGameInit {
   string game_id = 1;
   string your_player_id = 2;
@@ -118,6 +133,7 @@ message MsgGameInit {
   repeated MinisterView ministers = 8;
   int32 map_width = 9;
   int32 map_height = 10;
+  InformationReportView information_report = 11;
 }
 
 message MsgGameOver {
