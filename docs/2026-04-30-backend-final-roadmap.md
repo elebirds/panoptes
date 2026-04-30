@@ -156,6 +156,8 @@ for each player:
 
 ## 7. M5：科技、制度与国家修正深化
 
+状态：已完成，见 `docs/2026-05-01-backend-m5-regression-gate.md`。
+
 目标：让科技决定国家知道什么，制度决定国家正在实行什么。
 
 重点：

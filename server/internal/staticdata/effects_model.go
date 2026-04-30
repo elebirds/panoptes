@@ -9,18 +9,19 @@ package staticdata
 type ModifierTrigger string
 
 const (
-	ModifierTriggerBuildingResourceCost ModifierTrigger = "building.resource_cost"
-	ModifierTriggerBuildingPointCost    ModifierTrigger = "building.point_cost"
-	ModifierTriggerBuildingMaxHP        ModifierTrigger = "building.max_hp"
-	ModifierTriggerRecipeResourceInput  ModifierTrigger = "recipe.resource_input"
-	ModifierTriggerRecipePointInput     ModifierTrigger = "recipe.point_input"
-	ModifierTriggerRecipeResourceOutput ModifierTrigger = "recipe.resource_output"
-	ModifierTriggerRecipeWorkAmount     ModifierTrigger = "recipe.work_amount"
-	ModifierTriggerRecipeBaseProgress   ModifierTrigger = "recipe.base_progress"
-	ModifierTriggerUnitAttack           ModifierTrigger = "unit.attack"
-	ModifierTriggerUnitMoveRange        ModifierTrigger = "unit.move_range"
-	ModifierTriggerUnitSiegeMultiplier  ModifierTrigger = "unit.siege_multiplier"
-	ModifierTriggerPointOutput          ModifierTrigger = "point.output"
+	ModifierTriggerBuildingResourceCost  ModifierTrigger = "building.resource_cost"
+	ModifierTriggerBuildingPointCost     ModifierTrigger = "building.point_cost"
+	ModifierTriggerBuildingMaxHP         ModifierTrigger = "building.max_hp"
+	ModifierTriggerRecipeResourceInput   ModifierTrigger = "recipe.resource_input"
+	ModifierTriggerRecipePointInput      ModifierTrigger = "recipe.point_input"
+	ModifierTriggerRecipeResourceOutput  ModifierTrigger = "recipe.resource_output"
+	ModifierTriggerRecipeWorkAmount      ModifierTrigger = "recipe.work_amount"
+	ModifierTriggerRecipeBaseProgress    ModifierTrigger = "recipe.base_progress"
+	ModifierTriggerUnitAttack            ModifierTrigger = "unit.attack"
+	ModifierTriggerUnitMoveRange         ModifierTrigger = "unit.move_range"
+	ModifierTriggerUnitSiegeMultiplier   ModifierTrigger = "unit.siege_multiplier"
+	ModifierTriggerLogisticsRoadCapacity ModifierTrigger = "logistics.road_capacity"
+	ModifierTriggerPointOutput           ModifierTrigger = "point.output"
 )
 
 func AllowedModifierTriggers() []string {
@@ -36,6 +37,7 @@ func AllowedModifierTriggers() []string {
 		string(ModifierTriggerUnitAttack),
 		string(ModifierTriggerUnitMoveRange),
 		string(ModifierTriggerUnitSiegeMultiplier),
+		string(ModifierTriggerLogisticsRoadCapacity),
 		string(ModifierTriggerPointOutput),
 	}
 }

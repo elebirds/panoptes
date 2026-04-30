@@ -29,6 +29,23 @@ func TestPolicyPriorityChangesSharedLogisticsShortageOutcome(t *testing.T) {
 	}
 }
 
+func TestInstitutionModifierIncreasesSharedRoadCapacity(t *testing.T) {
+	_, baseState := newPriorityLogisticsScenario()
+	baseState.AddResourceToCity("player-1", "C1", domain.ResourceOre, 1)
+	baseEvents := economy.NewRunner().Run(baseState.World, baseState)
+	if countCompletedNodes(baseEvents) != 1 {
+		t.Fatalf("base capacity should complete exactly one recipe: %#v", baseEvents)
+	}
+
+	_, institutionState := newPriorityLogisticsScenario()
+	institutionState.AddResourceToCity("player-1", "C1", domain.ResourceOre, 1)
+	institutionState.Players["player-1"].Institutions.ActivePolicyIDs = []string{"logistics_corps"}
+	institutionEvents := economy.NewRunner().Run(institutionState.World, institutionState)
+	if countCompletedNodes(institutionEvents) != 2 {
+		t.Fatalf("logistics institution should complete two recipes with expanded capacity: %#v", institutionEvents)
+	}
+}
+
 func TestIndustrialChainShortagePropagatesDownstreamUntilInputExists(t *testing.T) {
 	world, state := newIndustrialChainScenario()
 
@@ -78,6 +95,7 @@ func newPriorityLogisticsScenario() (donburi.World, *domain.GameState) {
 		Policies: []staticdata.PolicyDefinition{
 			{ID: "war_preparedness", LogisticsPriority: []staticdata.LogisticsPriorityDefinition{{Tag: "military", Priority: 100}}},
 			{ID: "expansion", LogisticsPriority: []staticdata.LogisticsPriorityDefinition{{Tag: "expansion", Priority: 100}}},
+			{ID: "logistics_corps", Layer: "institutional", ModifierEffects: []staticdata.ModifierEffect{{Trigger: "logistics.road_capacity", ModifierType: "flat", Value: 1}}},
 		},
 	}))
 	world, state := newTwoCityLogisticsWorld()
@@ -161,6 +179,16 @@ func eventCompletedNode(events []event.Event, nodeID string) bool {
 		}
 	}
 	return false
+}
+
+func countCompletedNodes(events []event.Event) int {
+	count := 0
+	for _, evt := range events {
+		if _, ok := evt.(event.RecipeCompletedEvent); ok {
+			count++
+		}
+	}
+	return count
 }
 
 func mustNodeEntry(t *testing.T, state *domain.GameState, nodeID string) *donburi.Entry {

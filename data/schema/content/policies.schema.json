@@ -62,6 +62,7 @@
             "unit.attack",
             "unit.move_range",
             "unit.siege_multiplier",
+            "logistics.road_capacity",
             "point.output"
           ],
           "type": "string"
