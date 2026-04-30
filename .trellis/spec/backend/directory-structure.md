@@ -144,6 +144,89 @@ post-settlement active-march refresh belong in `game/orders`. Root `game` may
 provide route-preview callbacks because route preview still depends on room
 state and combat planner wiring.
 
+### Convention: Turn Resolution Stage Order Is a Contract
+
+**What**: `game/resolution.NewTurnResolutionRunner()` owns the fixed resolving
+stage order:
+
+1. `PlanningCommitStage`
+2. `OrderFreezeStage`
+3. `UnitResolutionStage`
+4. `MapActionStage`
+5. `BuildingStage`
+6. `EconomyStage`
+
+Fatal turns stop later stages through `StageOutcome{Stop: true}`. Already
+applied planning/unit events remain in the collector, but unresolved map,
+building, and economy work must be skipped.
+
+**Why**: Future road, logistics, supply, and network-war systems need a stable
+attachment point. Silent stage insertion changes same-turn timing and can make
+fatal turns apply post-combat state that should never happen.
+
+**Correct**:
+
+```go
+// Add M2+ behavior inside the owning stage, or update the runner contract and
+// stage-order tests in the same change.
+func (MapActionStage) Run(ctx *RunnerContext) StageOutcome {
+	// road/map action rules belong here once their milestone starts
+	return StageOutcome{}
+}
+```
+
+**Wrong**:
+
+```go
+// Do not insert a new stage without updating the documented contract and tests.
+stages: []ResolutionStage{
+	PlanningCommitStage{},
+	OrderFreezeStage{},
+	UnitResolutionStage{},
+	LogisticsStage{},
+	MapActionStage{},
+}
+```
+
+### Convention: State Responsibility Is Explicit
+
+**What**: Durable game truth lives in `domain.GameState`, ECS components, and
+player/world structs. Planning drafts live in `TurnRuntime.Planning`. Resolving
+scratch and runtime caches live in `TurnRuntime.Resolving`.
+
+**Why**: Future local storage, logistics, priority, and information systems
+need clear ownership. If durable truth, planning input, and resolving scratch
+share a bucket, later M2/M3 systems can accidentally make temporary solver data
+authoritative or expose raw truth to clients.
+
+**Correct**:
+
+```go
+// Durable facility storage should be a domain/ECS fact and event-applied.
+state.Players[playerID].Cities[cityID].Storage = storage
+
+// A one-turn flow allocation table belongs inside the logistics runner or
+// TurnRuntime.Resolving logistics scratch once that subsystem exists.
+```
+
+**Wrong**:
+
+```go
+// Do not store persistent local inventory in a resolving cache.
+state.TurnRuntime.Resolving.LogisticsCache[nodeID] = inventory
+```
+
+Future placement defaults:
+
+* Local storage and persistent shipments belong to durable truth under
+  `domain`/ECS, with event or explicit helper writes.
+* Logistics graph objects and flow allocation tables are derived resolving
+  scratch unless a specific shipment/entity persists across turns.
+* Priority profiles belong to player/policy/institution truth after commit;
+  pending edits belong to `TurnRuntime.Planning`.
+* `truth` stays in `domain`; `observed` and `reported` belong behind
+  `game/query`, `game/projection`, and future minister/report layers.
+
 ### Convention: Keep Turn Loop and Command Dispatch Separate
 
 **What**: `game/turn/coordinator.go` owns turn progression: entering planning,

@@ -371,7 +371,7 @@ func shouldSkipProjectedEvent(evt event.Event) bool {
 		return true
 	}
 	switch evt.(type) {
-	case event.RecipeSelectionChangedEvent:
+	case event.RecipeSelectionChangedEvent, *event.RecipeSelectionChangedEvent:
 		return true
 	default:
 		return false

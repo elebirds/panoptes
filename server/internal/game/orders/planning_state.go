@@ -26,6 +26,9 @@ func ApplyPlanningUnitOrder(state *domain.GameState, order UnitOrder, routes Rou
 	if state == nil || order.UnitID == "" {
 		return
 	}
+	if !order.IsUnitResolutionAction() && order.Action != ActionSettleCity {
+		return
+	}
 	if state.TurnRuntime.Planning.UnitOrders == nil {
 		state.TurnRuntime.Planning.UnitOrders = make(map[string]domain.UnitDirective)
 	}

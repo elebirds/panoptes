@@ -69,7 +69,7 @@ func DomainEventEnvelopes(collector *gameresolution.Collector, turn int32, phase
 	out := make([]*pb.DomainEventEnvelope, 0)
 	for _, channel := range channels {
 		for idx, evt := range collector.Events(channel) {
-			if evt == nil {
+			if shouldSkipProjectedEvent(evt) {
 				continue
 			}
 			out = append(out, domainEventEnvelope(evt, channel, turn, phase, idx))

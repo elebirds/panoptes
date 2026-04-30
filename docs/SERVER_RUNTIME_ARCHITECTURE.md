@@ -129,6 +129,8 @@ flowchart LR
 ## 3. 权威状态模型
 
 核心状态根是 `server/internal/domain/state.go` 中的 `GameState`。
+M1.5 的 durable/runtime/truth 边界详表见
+`docs/2026-04-30-backend-state-responsibility.md`；本节只保留当前代码现状摘要。
 
 ### 3.1 `GameState`
 
@@ -158,7 +160,24 @@ flowchart LR
   - `ActiveMarches`
   - `PointBudgets`
 
-### 3.2 ECS 组件
+### 3.2 状态责任边界
+
+当前后端状态责任按三类归位：
+
+| 类别 | 当前落点 | 生命周期 | 责任边界 |
+|---|---|---:|---|
+| durable truth | `GameState` 的对局、世界、玩家、ECS、地图索引字段 | 整局 | 只能由后端规则、状态 helper 或事件写入；客户端只接收投影。 |
+| planning runtime | `TurnRuntime.Planning` | 当前 planning turn | planning 命令草案和待 lock-in 输入。它不代表已经生效的世界状态。 |
+| resolving runtime | `TurnRuntime.Resolving` | 当前 resolving pass 或跨回合 runtime cache | frozen order、point budget 等结算输入/预算；`ActiveMarches` 是跨回合指令缓存，但物理单位位置仍以 ECS truth 为准。 |
+
+未来 M2/M3 状态新增的默认落点：
+
+- 本地仓储、道路/设施事实、持久运输实体：放在 `domain`/ECS 的 durable truth，并通过事件或明确 state helper 写入。
+- 物流图、flow allocation、当回合求解缓存：放在 future logistics resolving stage 的局部 scratch 或 `TurnRuntime.Resolving` 子结构，不作为源状态保存。
+- priority profile：commit 后属于玩家/国家 durable truth，pending 编辑属于 `TurnRuntime.Planning`；政策/制度推导出的 priority 不要复制进物流 scratch 当源状态。
+- `truth / observed / reported` 暂不实现信息不对称；现有 `game/query` 与 `game/projection` 仍应作为客户端视图边界，避免 transport/client 直接依赖 raw truth。
+
+### 3.3 ECS 组件
 
 当前运行时的核心 ECS 组件定义在 `server/internal/domain/components.go`，`server/internal/ecs/components.go` 只是别名转发。
 
@@ -183,7 +202,7 @@ flowchart LR
   - `ChargeAbilityComp`
   - `StarvingComp`
 
-### 3.3 建筑作用域与绑定关系
+### 3.4 建筑作用域与绑定关系
 
 建筑创建时由 `ecs.CreateBuilding()` 按静态数据写入统一 binding：
 
@@ -258,19 +277,23 @@ flowchart LR
 
 当前固定顺序是：
 
-1. `PlanningCommitStage`
-2. `OrderFreezeStage`
-3. `UnitResolutionStage`
-4. `MapActionStage`
-5. `BuildingStage`
-6. `EconomyStage`
-7. `broadcastGameSync()`
-8. `checkGameOver()`
-9. 清理本回合 planning / resolving 临时数据
+| 顺序 | Stage | 职责 |
+|---:|---|---|
+| 1 | `PlanningCommitStage` | 把 planning 草案锁定为正式事件并立即 apply，包括国策、科研目标等回合承诺。 |
+| 2 | `OrderFreezeStage` | 把 planning 单位指令冻结为 `TurnRuntime.Resolving.UnitOrders`，并合并持续行军输入。 |
+| 3 | `UnitResolutionStage` | 先执行 combat，再在非 fatal 情况下执行 combat upkeep；若 combat 或 upkeep 令 `state.IsOver` 为 true，立即停止后续 stage。 |
+| 4 | `MapActionStage` | 在非 fatal 情况下刷新 active marches，并 apply `settle_city` 等地图动作事件。 |
+| 5 | `BuildingStage` | 在非 fatal 情况下执行建筑生命周期事件。 |
+| 6 | `EconomyStage` | 在非 fatal 情况下执行经济 runner，并把各经济子阶段事件写入 economy channel。 |
+| 7 | `broadcastGameSync()` | 推送 resolving collector 中已发生的事件和新的权威状态投影。 |
+| 8 | `checkGameOver()` | 若 resolving stage 已令 `state.IsOver` 为 true，广播 `MsgGameOver` 并关闭房间运行时。 |
+| 9 | `ClearPostResolutionScratch()` | 清理本回合 planning / resolving 临时数据。 |
+
+这个顺序是 M1 后端规则地基的一部分。新增 M2+ 规则时必须先决定它属于现有 stage 的内部规则，还是需要更新 `TurnResolutionRunner` 合同与对应测试。
 
 需要注意两点：
 
-- fatal turn 会在 combat 后直接终止后续 map/economy 链。
+- fatal turn 通过 `StageOutcome.Stop` 短路：已经 apply 的 planning/unit 事件保留，后续 map action、building、economy stage 不再执行。
 - planning lock-in 事件不再散落在 `RunTurnResolution()` 顶层手写 apply，而是统一由 `PlanningCommitStage + ResolutionCollector.ApplyNow()` 完成。
 
 ## 5. Planning 子系统
@@ -1050,6 +1073,7 @@ stateDiagram-v2
 
 - `technology_completed` 只出现在 settlement
 - `technology_activated` 不再出现在 settlement，而只出现在下一回合的 planning start
+- `recipe_selected` 属于服务端内部 operation reset 审计事件，不进入 `DomainEventEnvelope`；客户端通过结算后的节点 operation 快照看到当前配方
 
 ## 13. Minister 与 War Zone 的当前接线状态
 
@@ -1084,7 +1108,7 @@ stateDiagram-v2
 | Planning 草案 | `game/planning/service.go` | `TurnRuntime.Planning.*` | 即时返回 result 消息，不直接写世界 | 是 |
 | 行军与路径预览 | `game/room_march.go`、`combat/route_planner.go` | `Resolving.ActiveMarches` | 无专门 event，结果进入 snapshot / queued orders | 是 |
 | 单位结算 | `engine/unit_resolution_runner.go`、`combat/*` | `Resolving.UnitOrders`、combat snapshot | `UnitMovedEvent`、`UnitDamagedEvent`、`UnitDiedEvent`、`CityCoreDestroyedEvent` | 是 |
-| 地图动作 | `game/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
+| 地图动作 | `game/orders/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
 | 经济点数 | `engine/economy/orchestrator.go`、`domain/economy.go` | `PointBudgets`、玩家资源 | `PointBudgetRefreshedEvent`、`PointSpentEvent` | 是 |
 | 科研推进与激活 | `engine/economy/research.go`、`session/planning_start_runner.go` | `ResearchState` | `ResearchProgressAppliedEvent`、`TechnologyCompletedEvent`、`TechnologyActivatedEvent`、`TechnologyGrantAppliedEvent` | 是 |
 | 建筑建造 | `engine/economy/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |

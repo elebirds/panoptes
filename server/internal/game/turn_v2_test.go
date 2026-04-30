@@ -615,7 +615,7 @@ func TestRunTurnResolutionLocksPendingPolicyAndResearchIntoActiveState(t *testin
 	}
 }
 
-func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testing.T) {
+func TestRunTurnResolutionIncludesPlanningLockInEventsInPlanningSection(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,

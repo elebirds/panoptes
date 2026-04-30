@@ -562,12 +562,18 @@ func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
 		t.Fatalf("planning war directives = %#v, want empty", got)
 	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
 	if len(session.sent["player-1"]) != 0 {
 		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
 	}
 }
 
-func TestSetMinisterDirectiveAcceptsResearchDraftAndRefreshesSnapshot(t *testing.T) {
+func TestSetMinisterDirectiveRejectedAsReservedBoundary(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -595,27 +601,32 @@ func TestSetMinisterDirectiveAcceptsResearchDraftAndRefreshesSnapshot(t *testing
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
+	if err == nil {
+		t.Fatalf("HandleCommand() error = nil, want invalid_directive problem")
 	}
-	result := lastMessage[*pb.MsgResearchResult](session.sent["player-1"])
-	if result == nil || !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
-		t.Fatalf("research result = %#v, want accepted agrarian_foundations", result)
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
+		t.Fatalf("problem = %#v, want invalid_directive", problem)
 	}
-	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
-		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
+	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
+		t.Fatalf("pending research target = %q, want empty", got)
 	}
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || snapshot.GetPlannedResearchTargetTechnologyId() != "agrarian_foundations" {
-		t.Fatalf("planning snapshot = %#v, want agrarian_foundations", snapshot)
+	if got := len(session.sent["player-1"]); got != 0 {
+		t.Fatalf("sent messages = %d, want 0", got)
 	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-research-1")
-	if status != "accepted" {
-		t.Fatalf("draft status = %q, want accepted", status)
+	if got := len(session.memoryEntries); got != 0 {
+		t.Fatalf("memory entries = %d, want 0", got)
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want one unchanged draft", drafts)
+	}
+	if drafts[0].Status != domain.MinisterDraftStatusPending || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want pending and available", drafts[0])
 	}
 }
 
-func TestSetMinisterDirectiveRejectsDraftAndMarksItUnavailable(t *testing.T) {
+func TestSetMinisterDirectiveIntentRejectedAsReservedBoundary(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -635,30 +646,36 @@ func TestSetMinisterDirectiveRejectsDraftAndMarksItUnavailable(t *testing.T) {
 		},
 	})
 
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"reject","draft_id":"draft-policy-1"}`,
-			},
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		Intent: SetMinisterDirectiveIntent{
+			MinisterRole:  "domestic",
+			DirectiveType: "accept",
+			DraftID:       "draft-policy-1",
 		},
 	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
+	if err == nil {
+		t.Fatalf("HandleIntent() error = nil, want invalid_directive problem")
 	}
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil {
-		t.Fatalf("planning snapshot is nil")
+	problem, ok := cmddispatch.AsProblem(err)
+	if !ok || problem == nil || problem.GetCode() != "invalid_directive" {
+		t.Fatalf("problem = %#v, want invalid_directive", problem)
 	}
-	if got := len(snapshot.GetMinisterDrafts()); got != 1 {
-		t.Fatalf("minister draft count = %d, want 1", got)
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != "" {
+		t.Fatalf("pending policy = %q, want empty", got)
 	}
-	if snapshot.GetMinisterDrafts()[0].GetAvailable() {
-		t.Fatalf("rejected draft should be unavailable")
+	if got := len(session.sent["player-1"]); got != 0 {
+		t.Fatalf("sent messages = %d, want 0", got)
 	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
-	if status != "rejected" {
-		t.Fatalf("draft status = %q, want rejected", status)
+	if got := len(session.memoryEntries); got != 0 {
+		t.Fatalf("memory entries = %d, want 0", got)
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want one unchanged draft", drafts)
+	}
+	if drafts[0].Status != domain.MinisterDraftStatusPending || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want pending and available", drafts[0])
 	}
 }
 
@@ -698,95 +715,6 @@ func TestManualPolicyChangeMarksAcceptedDraftStale(t *testing.T) {
 	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
 	if status != "stale" {
 		t.Fatalf("draft status = %q, want stale", status)
-	}
-}
-
-func TestStaleMinisterDraftCanBeAcceptedAgain(t *testing.T) {
-	state := newMinisterDraftPlanningState(t)
-	session := newPlanningSessionStub(state)
-	service := &Service{}
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
-		{
-			DraftID:      "draft-policy-1",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindPolicy,
-			TargetID:     "expansion",
-			TargetLabel:  "Expansion",
-			Title:        "建议转向扩张",
-			Status:       domain.MinisterDraftStatusStale,
-			Available:    true,
-			Turn:         1,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-	})
-	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("reorganization"))
-
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
-	}
-
-	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
-	if result == nil || !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
-		t.Fatalf("policy result = %#v, want accepted expansion", result)
-	}
-
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || snapshot.GetPlannedNationalPolicyId() != "expansion" {
-		t.Fatalf("planning snapshot = %#v, want expansion", snapshot)
-	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
-	if status != "accepted" {
-		t.Fatalf("draft status = %q, want accepted", status)
-	}
-}
-
-func TestMinisterDirectiveTransitionsRecordDomesticMemory(t *testing.T) {
-	state := newMinisterDraftPlanningState(t)
-	session := newPlanningSessionStub(state)
-	service := &Service{}
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
-		{
-			DraftID:      "draft-policy-1",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindPolicy,
-			TargetID:     "expansion",
-			TargetLabel:  "Expansion",
-			Title:        "建议转向扩张",
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         1,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-	})
-
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
-	}
-
-	if len(session.memoryEntries) == 0 {
-		t.Fatalf("memoryEntries = 0, want accepted domestic draft recorded")
-	}
-	last := session.memoryEntries[len(session.memoryEntries)-1]
-	if last.Role != "domestic" || last.Entry.Outcome != "accepted" {
-		t.Fatalf("last memory entry = %#v, want domestic accepted", last)
 	}
 }
 
@@ -849,6 +777,12 @@ func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
 	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
 		t.Fatalf("planning war directives = %#v, want empty", got)
 	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
 	if len(session.sent["player-1"]) != 0 {
 		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
 	}
@@ -900,34 +834,44 @@ func decodeMinisterDraftStatus(t *testing.T, drafts []*pb.MinisterDraftView, dra
 	return ""
 }
 
-func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
-	state := newStructureAttackPlanningState(t)
-	session := newPlanningSessionStub(state)
-	service := &Service{}
+func TestIssueUnitOrderRejectsReservedMapActionsWithoutStateWrites(t *testing.T) {
+	for _, action := range []string{"build_road", "repair_road", "build_improvement", "repair_improvement"} {
+		t.Run(action, func(t *testing.T) {
+			state := newStructureAttackPlanningState(t)
+			session := newPlanningSessionStub(state)
+			service := &Service{}
 
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_IssueUnitOrder{
-			IssueUnitOrder: &pb.MsgIssueUnitOrder{
-				UnitId:          "infantry-1",
-				Action:          "build_road",
-				TargetNodeId:    "A2",
-				SecondaryNodeId: "A3",
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
-	}
+			err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_IssueUnitOrder{
+					IssueUnitOrder: &pb.MsgIssueUnitOrder{
+						UnitId:          "infantry-1",
+						Action:          action,
+						TargetNodeId:    "A2",
+						SecondaryNodeId: "A3",
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("HandleCommand() error = %v", err)
+			}
 
-	result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
-	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
-		t.Fatalf("unit order result = %#v, want invalid_directive", result)
-	}
-	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
-		t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
-	}
-	if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
-		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
+			result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+			if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+				t.Fatalf("unit order result = %#v, want invalid_directive", result)
+			}
+			if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+				t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+			}
+			if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
+				t.Fatalf("planning unit orders = %#v, want no reserved draft recorded", state.TurnRuntime.Planning.UnitOrders)
+			}
+			if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+				t.Fatalf("resolving unit orders = %d, want 0", got)
+			}
+			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+				t.Fatalf("active marches = %d, want 0", got)
+			}
+		})
 	}
 }
 

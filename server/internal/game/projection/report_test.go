@@ -295,6 +295,35 @@ func TestDomainEventEnvelopesPreserveChannelOrder(t *testing.T) {
 	}
 }
 
+func TestDomainEventEnvelopesSkipsInternalStateOnlyEvents(t *testing.T) {
+	t.Parallel()
+
+	collector := gameresolution.NewCollector()
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.RecipeSelectionChangedEvent{
+		NodeID:        "A1",
+		RecipeID:      "farm_food",
+		RequiredTurns: 2,
+	})
+	collector.AppendDeferred(gameresolution.ChannelEconomy, &event.RecipeSelectionChangedEvent{
+		NodeID:        "A2",
+		RecipeID:      "farm_food",
+		RequiredTurns: 2,
+	})
+	collector.AppendDeferred(gameresolution.ChannelEconomy, event.RecipeProgressedEvent{
+		NodeID:        "A1",
+		ProgressTurns: 1,
+		RequiredTurns: 2,
+	})
+
+	events := DomainEventEnvelopes(collector, 2, domain.PhaseResolving.String())
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(events))
+	}
+	if got := events[0].GetKind(); got != "recipe_progressed" {
+		t.Fatalf("events[0].kind = %q, want recipe_progressed", got)
+	}
+}
+
 func TestProjectGameSyncHandlesNilState(t *testing.T) {
 	t.Parallel()
 

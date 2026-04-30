@@ -35,11 +35,15 @@ type GameState struct {
 	TurnRuntime TurnRuntime
 }
 
+// TurnRuntime holds server-authoritative runtime inputs and caches that should
+// not be confused with durable world/player truth on GameState.
 type TurnRuntime struct {
 	Planning  PlanningInputs
 	Resolving ResolvingState
 }
 
+// PlanningInputs stores current-turn drafts accepted during planning. These
+// inputs become durable state only after a resolving lock-in event or stage.
 type PlanningInputs struct {
 	BuildOrders         []BuildOrder
 	RecipeSelections    []RecipeSelectionOrder
@@ -54,6 +58,8 @@ type PlanningInputs struct {
 	UnitOrders          map[string]UnitDirective
 }
 
+// ResolvingState stores frozen inputs and per-resolving caches. ActiveMarches
+// intentionally spans turns as a command cache; unit position remains ECS truth.
 type ResolvingState struct {
 	UnitOrders    map[string]UnitResolutionOrder
 	ActiveMarches map[string]ActiveMarch
