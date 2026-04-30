@@ -46,6 +46,10 @@ type NodeView struct {
 	IsCurrentlyVisible     bool                   `protobuf:"varint,21,opt,name=is_currently_visible,json=isCurrentlyVisible,proto3" json:"is_currently_visible,omitempty"`
 	IsMemory               bool                   `protobuf:"varint,22,opt,name=is_memory,json=isMemory,proto3" json:"is_memory,omitempty"`
 	LastObservedTurn       int32                  `protobuf:"varint,23,opt,name=last_observed_turn,json=lastObservedTurn,proto3" json:"last_observed_turn,omitempty"`
+	RoadStatus             string                 `protobuf:"bytes,24,opt,name=road_status,json=roadStatus,proto3" json:"road_status,omitempty"`
+	NetworkStatus          string                 `protobuf:"bytes,25,opt,name=network_status,json=networkStatus,proto3" json:"network_status,omitempty"`
+	NetworkCityId          string                 `protobuf:"bytes,26,opt,name=network_city_id,json=networkCityId,proto3" json:"network_city_id,omitempty"`
+	IsNetworkConnected     bool                   `protobuf:"varint,27,opt,name=is_network_connected,json=isNetworkConnected,proto3" json:"is_network_connected,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -239,6 +243,34 @@ func (x *NodeView) GetLastObservedTurn() int32 {
 		return x.LastObservedTurn
 	}
 	return 0
+}
+
+func (x *NodeView) GetRoadStatus() string {
+	if x != nil {
+		return x.RoadStatus
+	}
+	return ""
+}
+
+func (x *NodeView) GetNetworkStatus() string {
+	if x != nil {
+		return x.NetworkStatus
+	}
+	return ""
+}
+
+func (x *NodeView) GetNetworkCityId() string {
+	if x != nil {
+		return x.NetworkCityId
+	}
+	return ""
+}
+
+func (x *NodeView) GetIsNetworkConnected() bool {
+	if x != nil {
+		return x.IsNetworkConnected
+	}
+	return false
 }
 
 type UnitView struct {
@@ -1069,7 +1101,7 @@ var File_panoptes_proto_v1_game_state_proto protoreflect.FileDescriptor
 
 const file_panoptes_proto_v1_game_state_proto_rawDesc = "" +
 	"\n" +
-	"\"panoptes/proto/v1/game_state.proto\x12\x11panoptes.proto.v1\x1a\x1epanoptes/proto/v1/common.proto\x1a\"panoptes/proto/v1/data_types.proto\"\xa2\a\n" +
+	"\"panoptes/proto/v1/game_state.proto\x12\x11panoptes.proto.v1\x1a\x1epanoptes/proto/v1/common.proto\x1a\"panoptes/proto/v1/data_types.proto\"\xc4\b\n" +
 	"\bNodeView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12-\n" +
 	"\x03pos\x18\x02 \x01(\v2\x1b.panoptes.proto.v1.PositionR\x03pos\x12\x18\n" +
@@ -1097,7 +1129,12 @@ const file_panoptes_proto_v1_game_state_proto_rawDesc = "" +
 	"\x11takeover_required\x18\x14 \x01(\x05R\x10takeoverRequired\x120\n" +
 	"\x14is_currently_visible\x18\x15 \x01(\bR\x12isCurrentlyVisible\x12\x1b\n" +
 	"\tis_memory\x18\x16 \x01(\bR\bisMemory\x12,\n" +
-	"\x12last_observed_turn\x18\x17 \x01(\x05R\x10lastObservedTurn\"\xa7\x01\n" +
+	"\x12last_observed_turn\x18\x17 \x01(\x05R\x10lastObservedTurn\x12\x1f\n" +
+	"\vroad_status\x18\x18 \x01(\tR\n" +
+	"roadStatus\x12%\n" +
+	"\x0enetwork_status\x18\x19 \x01(\tR\rnetworkStatus\x12&\n" +
+	"\x0fnetwork_city_id\x18\x1a \x01(\tR\rnetworkCityId\x120\n" +
+	"\x14is_network_connected\x18\x1b \x01(\bR\x12isNetworkConnected\"\xa7\x01\n" +
 	"\bUnitView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\afaction\x18\x02 \x01(\tR\afaction\x12\x1b\n" +

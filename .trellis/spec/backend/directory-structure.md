@@ -148,11 +148,11 @@ state and combat planner wiring.
 
 ### 1. Scope / Trigger
 
-`MsgIssueUnitOrder` actions `build_road` and `repair_road` are backend-owned
-map actions. They are accepted during planning only after server validation,
-stored as planning directives, and converted to authoritative events in the
-existing `MapActionStage`. `build_improvement` and `repair_improvement` remain
-reserved until their own M2 slice.
+`MsgIssueUnitOrder` actions `build_road`, `repair_road`,
+`build_improvement`, and `repair_improvement` are backend-owned map actions.
+They are accepted during planning only after server validation, stored as
+planning directives, and converted to authoritative events in the existing
+`MapActionStage`.
 
 ### 2. Signatures
 
@@ -162,9 +162,10 @@ Planning command:
 orders.UnitOrder{
 	PlayerID:        playerID,
 	UnitID:          unitID,
-	Action:          orders.ActionBuildRoad, // or ActionRepairRoad
+	Action:          orders.ActionBuildRoad, // road/improvement map action
 	TargetNodeID:    fromOrTargetNodeID,
 	SecondaryNodeID: optionalToNodeID,
+	Params:          map[string]string{"building_type_id": "farm", "city_id": "C1"},
 }
 ```
 
@@ -173,6 +174,7 @@ Read-only connectivity:
 ```go
 domain.RoadConnected(state, fromNodeID, toNodeID) bool
 domain.PlayerRoadNetworkStatus(state, playerID) domain.RoadNetworkStatus
+domain.NodeNetworkStatusForPlayer(state, playerID, nodeID) domain.NodeNetworkStatus
 ```
 
 ### 3. Contracts
@@ -184,6 +186,12 @@ domain.PlayerRoadNetworkStatus(state, playerID) domain.RoadNetworkStatus
 * State writes for construction and repair must happen through
   `event.RoadBuiltEvent` or `event.RoadRepairedEvent`; validation and query
   helpers must not mutate node road state.
+* `build_improvement` uses `params["building_type_id"]` when present; resource
+  nodes may infer `farm`, `mine`, or `lumber` from their resource type.
+* `repair_improvement` restores an existing owned building through
+  `event.BuildingRepairedEvent`.
+* Node projection exposes `road_status`, `network_status`, `network_city_id`,
+  and `is_network_connected` from backend-owned queries.
 * Connectivity is a deterministic backend query over roaded map nodes. It is
   not logistics capacity, local storage, priority routing, or client authority.
 
@@ -198,7 +206,10 @@ domain.PlayerRoadNetworkStatus(state, playerID) domain.RoadNetworkStatus
 | Road endpoints are not adjacent | `invalid_target` |
 | Acting unit is not adjacent to either road endpoint | `invalid_target` |
 | Both endpoint nodes already have roads | `invalid_target` |
-| `build_improvement` / `repair_improvement` | `invalid_directive` |
+| Improvement target node is missing or cannot host the requested building | `invalid_target` |
+| Improvement target already has a building | `building_exists` |
+| Improvement has no city context | `invalid_request` |
+| Repair target has no owned building or is already fully repaired | `invalid_target` |
 
 ### 5. Good/Base/Bad Cases
 
@@ -206,25 +217,27 @@ domain.PlayerRoadNetworkStatus(state, playerID) domain.RoadNetworkStatus
   `RoadBuiltEvent` during map action resolution, and changes road connectivity.
 * Base: `repair_road` restores a missing road endpoint by emitting
   `RoadRepairedEvent`.
+* Base: `build_improvement` emits `BuildingBuiltEvent`; `repair_improvement`
+  emits `BuildingRepairedEvent`.
 * Bad: invalid road commands return a typed failure result and must not write
   planning drafts, resolving orders, active marches, or node road state.
 
 ### 6. Tests Required
 
-* Planning validation accepts valid `build_road` / `repair_road` and rejects
-  unsupported units or invalid endpoints.
-* Map action tests assert road actions produce road events.
+* Planning validation accepts valid road/improvement actions and rejects
+  unsupported units or invalid targets.
+* Map action tests assert road actions produce road events and improvement
+  actions produce building events.
 * Event/query tests assert construction, destruction, and repair change
-  `domain.RoadConnected` and player road-network status.
-* Reserved improvement tests must remain in place until the improvement slice
-  explicitly changes that contract.
+  `domain.RoadConnected`, node network status, and player road-network status.
+* Projection tests assert `NodeView` carries road/network explanation fields.
 
 ### 7. Wrong vs Correct
 
 #### Wrong
 
 ```go
-// Do not mutate road state in validation, planning, or client code.
+// Do not mutate road/building state in validation, planning, or client code.
 ecs.NodeC.Get(nodeEntry).HasRoad = true
 ```
 

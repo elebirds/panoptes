@@ -56,6 +56,32 @@ type BuildSkippedEvent struct {
 	Reason       string
 }
 
+type BuildingRepairedEvent struct {
+	NodeID string
+	Owner  string
+}
+
+func (e BuildingRepairedEvent) Apply(world donburi.World, state *domain.GameState) {
+	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
+	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
+		return
+	}
+	building := ecs.BuildingC.Get(nodeEntry)
+	if building.MaxHP <= 0 && state != nil {
+		state.RefreshBuildingMaxHPAtEntry(nodeEntry)
+	}
+	if building.MaxHP > 0 {
+		building.HP = building.MaxHP
+	}
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusIdle, "", 0)
+}
+
+func (e BuildingRepairedEvent) Kind() string { return "building_repaired" }
+
+func (e BuildingRepairedEvent) String() string {
+	return fmt.Sprintf("BuildingRepairedEvent node=%s owner=%s", e.NodeID, e.Owner)
+}
+
 func (e BuildSkippedEvent) Apply(donburi.World, *domain.GameState) {}
 
 func (e BuildSkippedEvent) Kind() string { return "building_skipped" }

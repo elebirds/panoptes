@@ -50,6 +50,11 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			data["online_on_turn"] = strconv.Itoa(e.OnlineOnTurn)
 		}
 		return e.Kind(), data
+	case event.BuildingRepairedEvent:
+		return e.Kind(), map[string]string{
+			"node_id": strings.TrimSpace(e.NodeID),
+			"owner":   strings.TrimSpace(e.Owner),
+		}
 	case event.ResourceProducedEvent:
 		return e.Kind(), map[string]string{
 			"node_id":       strings.TrimSpace(e.NodeID),

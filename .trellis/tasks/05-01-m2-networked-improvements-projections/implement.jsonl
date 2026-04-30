@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry point for M2.2 implementation."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend boundaries, event-only state writes, road command contract, projection ownership."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Command validation must use existing stable error codes."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality and test expectations."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Task touches proto, query projection, domain, events, orders, and generated code."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing building validation, event, and road-network helpers."}

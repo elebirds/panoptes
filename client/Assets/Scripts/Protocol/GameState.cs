@@ -26,7 +26,7 @@ namespace Panoptes.Protocol.V1 {
           string.Concat(
             "CiJwYW5vcHRlcy9wcm90by92MS9nYW1lX3N0YXRlLnByb3RvEhFwYW5vcHRl",
             "cy5wcm90by52MRoecGFub3B0ZXMvcHJvdG8vdjEvY29tbW9uLnByb3RvGiJw",
-            "YW5vcHRlcy9wcm90by92MS9kYXRhX3R5cGVzLnByb3RvIqIHCghOb2RlVmll",
+            "YW5vcHRlcy9wcm90by92MS9kYXRhX3R5cGVzLnByb3RvIsQICghOb2RlVmll",
             "dxIOCgJpZBgBIAEoCVICaWQSLQoDcG9zGAIgASgLMhsucGFub3B0ZXMucHJv",
             "dG8udjEuUG9zaXRpb25SA3BvcxIYCgd0ZXJyYWluGAMgASgJUgd0ZXJyYWlu",
             "EjAKFGNvbnRyb2xsZXJfcGxheWVyX2lkGAQgASgJUhJjb250cm9sbGVyUGxh",
@@ -47,69 +47,73 @@ namespace Panoptes.Protocol.V1 {
             "ZXF1aXJlZBgUIAEoBVIQdGFrZW92ZXJSZXF1aXJlZBIwChRpc19jdXJyZW50",
             "bHlfdmlzaWJsZRgVIAEoCFISaXNDdXJyZW50bHlWaXNpYmxlEhsKCWlzX21l",
             "bW9yeRgWIAEoCFIIaXNNZW1vcnkSLAoSbGFzdF9vYnNlcnZlZF90dXJuGBcg",
-            "ASgFUhBsYXN0T2JzZXJ2ZWRUdXJuIqcBCghVbml0VmlldxIOCgJpZBgBIAEo",
-            "CVICaWQSGAoHZmFjdGlvbhgCIAEoCVIHZmFjdGlvbhIbCgl1bml0X3R5cGUY",
-            "AyABKAlSCHVuaXRUeXBlEg4KAmhwGAQgASgFUgJocBIVCgZtYXhfaHAYBSAB",
-            "KAVSBW1heEhwEi0KA3BvcxgGIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBv",
-            "c2l0aW9uUgNwb3MiuAQKClBsYXllclZpZXcSDgoCaWQYASABKAlSAmlkEhoK",
-            "CHVzZXJuYW1lGAIgASgJUgh1c2VybmFtZRI8CglyZXNvdXJjZXMYAyABKAsy",
-            "Hi5wYW5vcHRlcy5wcm90by52MS5SZXNvdXJjZUJhZ1IJcmVzb3VyY2VzEjMK",
-            "BnBvaW50cxgEIAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvaW50QmFnUgZw",
-            "b2ludHMSHwoLdG9rZW5zX2xlZnQYBSABKAVSCnRva2Vuc0xlZnQSOQoZYWN0",
-            "aXZlX25hdGlvbmFsX3BvbGljeV9pZBgGIAEoCVIWYWN0aXZlTmF0aW9uYWxQ",
-            "b2xpY3lJZBIvChRjYXBpdGFsX2NpdHlfY29yZV9ocBgHIAEoBVIRY2FwaXRh",
-            "bENpdHlDb3JlSHASNgoYY2FwaXRhbF9jaXR5X2NvcmVfbWF4X2hwGAggASgF",
-            "UhRjYXBpdGFsQ2l0eUNvcmVNYXhIcBI3Cgl3YXJfem9uZXMYCSADKAsyGi5w",
-            "YW5vcHRlcy5wcm90by52MS5XYXJab25lUgh3YXJab25lcxJACghyZXNlYXJj",
-            "aBgKIAEoCzIkLnBhbm9wdGVzLnByb3RvLnYxLlJlc2VhcmNoU3RhdGVWaWV3",
-            "UghyZXNlYXJjaBJLCgxpbnN0aXR1dGlvbnMYCyABKAsyJy5wYW5vcHRlcy5w",
-            "cm90by52MS5JbnN0aXR1dGlvblN0YXRlVmlld1IMaW5zdGl0dXRpb25zIrYD",
-            "ChFSZXNlYXJjaFN0YXRlVmlldxI/ChxjdXJyZW50X3RhcmdldF90ZWNobm9s",
-            "b2d5X2lkGAEgASgJUhljdXJyZW50VGFyZ2V0VGVjaG5vbG9neUlkEikKEGN1",
-            "cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1",
-            "aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcxI4Chhjb21w",
-            "bGV0ZWRfdGVjaG5vbG9neV9pZHMYBCADKAlSFmNvbXBsZXRlZFRlY2hub2xv",
-            "Z3lJZHMSMgoVYWN0aXZlX3RlY2hub2xvZ3lfaWRzGAUgAygJUhNhY3RpdmVU",
-            "ZWNobm9sb2d5SWRzEkkKIXBlbmRpbmdfYWN0aXZhdGlvbl90ZWNobm9sb2d5",
-            "X2lkcxgGIAMoCVIecGVuZGluZ0FjdGl2YXRpb25UZWNobm9sb2d5SWRzEk8K",
-            "DnNhdmVkX3Byb2dyZXNzGAcgAygLMigucGFub3B0ZXMucHJvdG8udjEuUmVz",
-            "ZWFyY2hQcm9ncmVzc0VudHJ5Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJj",
-            "aFByb2dyZXNzRW50cnkSIwoNdGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5v",
-            "bG9neUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9n",
-            "cmVzcxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9n",
-            "cmVzcyKTAQoUSW5zdGl0dXRpb25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgB",
-            "IAEoBVIJc2xvdENvdW50EjAKFGNhbmRpZGF0ZV9wb2xpY3lfaWRzGAIgAygJ",
-            "UhJjYW5kaWRhdGVQb2xpY3lJZHMSKgoRYWN0aXZlX3BvbGljeV9pZHMYAyAD",
-            "KAlSD2FjdGl2ZVBvbGljeUlkcyKSAgoVQnVpbGRpbmdPcGVyYXRpb25WaWV3",
-            "EiwKEnNlbGVjdGVkX3JlY2lwZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJ",
-            "ZBIpChBjdXJyZW50X3Byb2dyZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MS",
-            "KwoRcmVxdWlyZWRfcHJvZ3Jlc3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MS",
-            "IwoNYmFzZV9wcm9ncmVzcxgEIAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2Nr",
-            "ZWRfcmVhc29uGAUgASgJUg1ibG9ja2VkUmVhc29uEicKD2Jsb2NrZWRfbWVz",
-            "c2FnZRgGIAEoCVIOYmxvY2tlZE1lc3NhZ2UihwEKB1dhclpvbmUSDgoCaWQY",
-            "ASABKAlSAmlkEhIKBG5hbWUYAiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyAD",
-            "KAlSB25vZGVJZHMSHAoJZGlyZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoL",
-            "dGFyZ2V0X25vZGUYBSABKAlSCnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3",
-            "EhIKBHJvbGUYASABKAlSBHJvbGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdh",
-            "YmlsaXR5GAMgASgFUgdhYmlsaXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtw",
-            "ZXJzb25hbGl0eSKTAwoLTXNnR2FtZUluaXQSFwoHZ2FtZV9pZBgBIAEoCVIG",
-            "Z2FtZUlkEiQKDnlvdXJfcGxheWVyX2lkGAIgASgJUgx5b3VyUGxheWVySWQS",
-            "EgoEdHVybhgDIAEoBVIEdHVybhIUCgVwaGFzZRgEIAEoCVIFcGhhc2USMQoF",
-            "bm9kZXMYBSADKAsyGy5wYW5vcHRlcy5wcm90by52MS5Ob2RlVmlld1IFbm9k",
-            "ZXMSMQoFdW5pdHMYBiADKAsyGy5wYW5vcHRlcy5wcm90by52MS5Vbml0Vmll",
-            "d1IFdW5pdHMSOgoJbXlfcGxheWVyGAcgASgLMh0ucGFub3B0ZXMucHJvdG8u",
-            "djEuUGxheWVyVmlld1IIbXlQbGF5ZXISPQoJbWluaXN0ZXJzGAggAygLMh8u",
-            "cGFub3B0ZXMucHJvdG8udjEuTWluaXN0ZXJWaWV3UgltaW5pc3RlcnMSGwoJ",
-            "bWFwX3dpZHRoGAkgASgFUghtYXBXaWR0aBIdCgptYXBfaGVpZ2h0GAogASgF",
-            "UgltYXBIZWlnaHQiYAoLTXNnR2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJ",
-            "Ugh3aW5uZXJJZBIWCgZyZWFzb24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRp",
-            "dmUYAyABKAlSCW5hcnJhdGl2ZUJQWjdnaXRodWIuY29tL2VsZWJpcmRzL3Bh",
-            "bm9wdGVzL2ludGVybmFsL2dlbi9wcm90bztwcm90b3YxqgIUUGFub3B0ZXMu",
-            "UHJvdG9jb2wuVjFiBnByb3RvMw=="));
+            "ASgFUhBsYXN0T2JzZXJ2ZWRUdXJuEh8KC3JvYWRfc3RhdHVzGBggASgJUgpy",
+            "b2FkU3RhdHVzEiUKDm5ldHdvcmtfc3RhdHVzGBkgASgJUg1uZXR3b3JrU3Rh",
+            "dHVzEiYKD25ldHdvcmtfY2l0eV9pZBgaIAEoCVINbmV0d29ya0NpdHlJZBIw",
+            "ChRpc19uZXR3b3JrX2Nvbm5lY3RlZBgbIAEoCFISaXNOZXR3b3JrQ29ubmVj",
+            "dGVkIqcBCghVbml0VmlldxIOCgJpZBgBIAEoCVICaWQSGAoHZmFjdGlvbhgC",
+            "IAEoCVIHZmFjdGlvbhIbCgl1bml0X3R5cGUYAyABKAlSCHVuaXRUeXBlEg4K",
+            "AmhwGAQgASgFUgJocBIVCgZtYXhfaHAYBSABKAVSBW1heEhwEi0KA3BvcxgG",
+            "IAEoCzIbLnBhbm9wdGVzLnByb3RvLnYxLlBvc2l0aW9uUgNwb3MiuAQKClBs",
+            "YXllclZpZXcSDgoCaWQYASABKAlSAmlkEhoKCHVzZXJuYW1lGAIgASgJUgh1",
+            "c2VybmFtZRI8CglyZXNvdXJjZXMYAyABKAsyHi5wYW5vcHRlcy5wcm90by52",
+            "MS5SZXNvdXJjZUJhZ1IJcmVzb3VyY2VzEjMKBnBvaW50cxgEIAEoCzIbLnBh",
+            "bm9wdGVzLnByb3RvLnYxLlBvaW50QmFnUgZwb2ludHMSHwoLdG9rZW5zX2xl",
+            "ZnQYBSABKAVSCnRva2Vuc0xlZnQSOQoZYWN0aXZlX25hdGlvbmFsX3BvbGlj",
+            "eV9pZBgGIAEoCVIWYWN0aXZlTmF0aW9uYWxQb2xpY3lJZBIvChRjYXBpdGFs",
+            "X2NpdHlfY29yZV9ocBgHIAEoBVIRY2FwaXRhbENpdHlDb3JlSHASNgoYY2Fw",
+            "aXRhbF9jaXR5X2NvcmVfbWF4X2hwGAggASgFUhRjYXBpdGFsQ2l0eUNvcmVN",
+            "YXhIcBI3Cgl3YXJfem9uZXMYCSADKAsyGi5wYW5vcHRlcy5wcm90by52MS5X",
+            "YXJab25lUgh3YXJab25lcxJACghyZXNlYXJjaBgKIAEoCzIkLnBhbm9wdGVz",
+            "LnByb3RvLnYxLlJlc2VhcmNoU3RhdGVWaWV3UghyZXNlYXJjaBJLCgxpbnN0",
+            "aXR1dGlvbnMYCyABKAsyJy5wYW5vcHRlcy5wcm90by52MS5JbnN0aXR1dGlv",
+            "blN0YXRlVmlld1IMaW5zdGl0dXRpb25zIrYDChFSZXNlYXJjaFN0YXRlVmll",
+            "dxI/ChxjdXJyZW50X3RhcmdldF90ZWNobm9sb2d5X2lkGAEgASgJUhljdXJy",
+            "ZW50VGFyZ2V0VGVjaG5vbG9neUlkEikKEGN1cnJlbnRfcHJvZ3Jlc3MYAiAB",
+            "KAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9wcm9ncmVzcxgDIAEo",
+            "BVIQcmVxdWlyZWRQcm9ncmVzcxI4Chhjb21wbGV0ZWRfdGVjaG5vbG9neV9p",
+            "ZHMYBCADKAlSFmNvbXBsZXRlZFRlY2hub2xvZ3lJZHMSMgoVYWN0aXZlX3Rl",
+            "Y2hub2xvZ3lfaWRzGAUgAygJUhNhY3RpdmVUZWNobm9sb2d5SWRzEkkKIXBl",
+            "bmRpbmdfYWN0aXZhdGlvbl90ZWNobm9sb2d5X2lkcxgGIAMoCVIecGVuZGlu",
+            "Z0FjdGl2YXRpb25UZWNobm9sb2d5SWRzEk8KDnNhdmVkX3Byb2dyZXNzGAcg",
+            "AygLMigucGFub3B0ZXMucHJvdG8udjEuUmVzZWFyY2hQcm9ncmVzc0VudHJ5",
+            "Ug1zYXZlZFByb2dyZXNzIpQBChVSZXNlYXJjaFByb2dyZXNzRW50cnkSIwoN",
+            "dGVjaG5vbG9neV9pZBgBIAEoCVIMdGVjaG5vbG9neUlkEikKEGN1cnJlbnRf",
+            "cHJvZ3Jlc3MYAiABKAVSD2N1cnJlbnRQcm9ncmVzcxIrChFyZXF1aXJlZF9w",
+            "cm9ncmVzcxgDIAEoBVIQcmVxdWlyZWRQcm9ncmVzcyKTAQoUSW5zdGl0dXRp",
+            "b25TdGF0ZVZpZXcSHQoKc2xvdF9jb3VudBgBIAEoBVIJc2xvdENvdW50EjAK",
+            "FGNhbmRpZGF0ZV9wb2xpY3lfaWRzGAIgAygJUhJjYW5kaWRhdGVQb2xpY3lJ",
+            "ZHMSKgoRYWN0aXZlX3BvbGljeV9pZHMYAyADKAlSD2FjdGl2ZVBvbGljeUlk",
+            "cyKSAgoVQnVpbGRpbmdPcGVyYXRpb25WaWV3EiwKEnNlbGVjdGVkX3JlY2lw",
+            "ZV9pZBgBIAEoCVIQc2VsZWN0ZWRSZWNpcGVJZBIpChBjdXJyZW50X3Byb2dy",
+            "ZXNzGAIgASgFUg9jdXJyZW50UHJvZ3Jlc3MSKwoRcmVxdWlyZWRfcHJvZ3Jl",
+            "c3MYAyABKAVSEHJlcXVpcmVkUHJvZ3Jlc3MSIwoNYmFzZV9wcm9ncmVzcxgE",
+            "IAEoBVIMYmFzZVByb2dyZXNzEiUKDmJsb2NrZWRfcmVhc29uGAUgASgJUg1i",
+            "bG9ja2VkUmVhc29uEicKD2Jsb2NrZWRfbWVzc2FnZRgGIAEoCVIOYmxvY2tl",
+            "ZE1lc3NhZ2UihwEKB1dhclpvbmUSDgoCaWQYASABKAlSAmlkEhIKBG5hbWUY",
+            "AiABKAlSBG5hbWUSGQoIbm9kZV9pZHMYAyADKAlSB25vZGVJZHMSHAoJZGly",
+            "ZWN0aXZlGAQgASgJUglkaXJlY3RpdmUSHwoLdGFyZ2V0X25vZGUYBSABKAlS",
+            "CnRhcmdldE5vZGUicgoMTWluaXN0ZXJWaWV3EhIKBHJvbGUYASABKAlSBHJv",
+            "bGUSEgoEbmFtZRgCIAEoCVIEbmFtZRIYCgdhYmlsaXR5GAMgASgFUgdhYmls",
+            "aXR5EiAKC3BlcnNvbmFsaXR5GAQgASgJUgtwZXJzb25hbGl0eSKTAwoLTXNn",
+            "R2FtZUluaXQSFwoHZ2FtZV9pZBgBIAEoCVIGZ2FtZUlkEiQKDnlvdXJfcGxh",
+            "eWVyX2lkGAIgASgJUgx5b3VyUGxheWVySWQSEgoEdHVybhgDIAEoBVIEdHVy",
+            "bhIUCgVwaGFzZRgEIAEoCVIFcGhhc2USMQoFbm9kZXMYBSADKAsyGy5wYW5v",
+            "cHRlcy5wcm90by52MS5Ob2RlVmlld1IFbm9kZXMSMQoFdW5pdHMYBiADKAsy",
+            "Gy5wYW5vcHRlcy5wcm90by52MS5Vbml0Vmlld1IFdW5pdHMSOgoJbXlfcGxh",
+            "eWVyGAcgASgLMh0ucGFub3B0ZXMucHJvdG8udjEuUGxheWVyVmlld1IIbXlQ",
+            "bGF5ZXISPQoJbWluaXN0ZXJzGAggAygLMh8ucGFub3B0ZXMucHJvdG8udjEu",
+            "TWluaXN0ZXJWaWV3UgltaW5pc3RlcnMSGwoJbWFwX3dpZHRoGAkgASgFUght",
+            "YXBXaWR0aBIdCgptYXBfaGVpZ2h0GAogASgFUgltYXBIZWlnaHQiYAoLTXNn",
+            "R2FtZU92ZXISGwoJd2lubmVyX2lkGAEgASgJUgh3aW5uZXJJZBIWCgZyZWFz",
+            "b24YAiABKAlSBnJlYXNvbhIcCgluYXJyYXRpdmUYAyABKAlSCW5hcnJhdGl2",
+            "ZUJQWjdnaXRodWIuY29tL2VsZWJpcmRzL3Bhbm9wdGVzL2ludGVybmFsL2dl",
+            "bi9wcm90bztwcm90b3YxqgIUUGFub3B0ZXMuUHJvdG9jb2wuVjFiBnByb3Rv",
+            "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Panoptes.Protocol.V1.CommonReflection.Descriptor, global::Panoptes.Protocol.V1.DataTypesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired", "IsCurrentlyVisible", "IsMemory", "LastObservedTurn" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.NodeView), global::Panoptes.Protocol.V1.NodeView.Parser, new[]{ "Id", "Pos", "Terrain", "ControllerPlayerId", "BuildingTypeId", "BuildingHp", "MyUnitCount", "EnemyUnitCount", "HasRoad", "IsResourcePoint", "ResourceType", "IsSafeZone", "TerritoryOwnerPlayerId", "Operation", "BuildingStatus", "CityId", "ServiceCityId", "IsCityCore", "TakeoverProgress", "TakeoverRequired", "IsCurrentlyVisible", "IsMemory", "LastObservedTurn", "RoadStatus", "NetworkStatus", "NetworkCityId", "IsNetworkConnected" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.UnitView), global::Panoptes.Protocol.V1.UnitView.Parser, new[]{ "Id", "Faction", "UnitType", "Hp", "MaxHp", "Pos" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.PlayerView), global::Panoptes.Protocol.V1.PlayerView.Parser, new[]{ "Id", "Username", "Resources", "Points", "TokensLeft", "ActiveNationalPolicyId", "CapitalCityCoreHp", "CapitalCityCoreMaxHp", "WarZones", "Research", "Institutions" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Panoptes.Protocol.V1.ResearchStateView), global::Panoptes.Protocol.V1.ResearchStateView.Parser, new[]{ "CurrentTargetTechnologyId", "CurrentProgress", "RequiredProgress", "CompletedTechnologyIds", "ActiveTechnologyIds", "PendingActivationTechnologyIds", "SavedProgress" }, null, null, null, null),
@@ -184,6 +188,10 @@ namespace Panoptes.Protocol.V1 {
       isCurrentlyVisible_ = other.isCurrentlyVisible_;
       isMemory_ = other.isMemory_;
       lastObservedTurn_ = other.lastObservedTurn_;
+      roadStatus_ = other.roadStatus_;
+      networkStatus_ = other.networkStatus_;
+      networkCityId_ = other.networkCityId_;
+      isNetworkConnected_ = other.isNetworkConnected_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -469,6 +477,54 @@ namespace Panoptes.Protocol.V1 {
       }
     }
 
+    /// <summary>Field number for the "road_status" field.</summary>
+    public const int RoadStatusFieldNumber = 24;
+    private string roadStatus_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string RoadStatus {
+      get { return roadStatus_; }
+      set {
+        roadStatus_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "network_status" field.</summary>
+    public const int NetworkStatusFieldNumber = 25;
+    private string networkStatus_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string NetworkStatus {
+      get { return networkStatus_; }
+      set {
+        networkStatus_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "network_city_id" field.</summary>
+    public const int NetworkCityIdFieldNumber = 26;
+    private string networkCityId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string NetworkCityId {
+      get { return networkCityId_; }
+      set {
+        networkCityId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "is_network_connected" field.</summary>
+    public const int IsNetworkConnectedFieldNumber = 27;
+    private bool isNetworkConnected_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool IsNetworkConnected {
+      get { return isNetworkConnected_; }
+      set {
+        isNetworkConnected_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -507,6 +563,10 @@ namespace Panoptes.Protocol.V1 {
       if (IsCurrentlyVisible != other.IsCurrentlyVisible) return false;
       if (IsMemory != other.IsMemory) return false;
       if (LastObservedTurn != other.LastObservedTurn) return false;
+      if (RoadStatus != other.RoadStatus) return false;
+      if (NetworkStatus != other.NetworkStatus) return false;
+      if (NetworkCityId != other.NetworkCityId) return false;
+      if (IsNetworkConnected != other.IsNetworkConnected) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -537,6 +597,10 @@ namespace Panoptes.Protocol.V1 {
       if (IsCurrentlyVisible != false) hash ^= IsCurrentlyVisible.GetHashCode();
       if (IsMemory != false) hash ^= IsMemory.GetHashCode();
       if (LastObservedTurn != 0) hash ^= LastObservedTurn.GetHashCode();
+      if (RoadStatus.Length != 0) hash ^= RoadStatus.GetHashCode();
+      if (NetworkStatus.Length != 0) hash ^= NetworkStatus.GetHashCode();
+      if (NetworkCityId.Length != 0) hash ^= NetworkCityId.GetHashCode();
+      if (IsNetworkConnected != false) hash ^= IsNetworkConnected.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -647,6 +711,22 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(184, 1);
         output.WriteInt32(LastObservedTurn);
       }
+      if (RoadStatus.Length != 0) {
+        output.WriteRawTag(194, 1);
+        output.WriteString(RoadStatus);
+      }
+      if (NetworkStatus.Length != 0) {
+        output.WriteRawTag(202, 1);
+        output.WriteString(NetworkStatus);
+      }
+      if (NetworkCityId.Length != 0) {
+        output.WriteRawTag(210, 1);
+        output.WriteString(NetworkCityId);
+      }
+      if (IsNetworkConnected != false) {
+        output.WriteRawTag(216, 1);
+        output.WriteBool(IsNetworkConnected);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -749,6 +829,22 @@ namespace Panoptes.Protocol.V1 {
         output.WriteRawTag(184, 1);
         output.WriteInt32(LastObservedTurn);
       }
+      if (RoadStatus.Length != 0) {
+        output.WriteRawTag(194, 1);
+        output.WriteString(RoadStatus);
+      }
+      if (NetworkStatus.Length != 0) {
+        output.WriteRawTag(202, 1);
+        output.WriteString(NetworkStatus);
+      }
+      if (NetworkCityId.Length != 0) {
+        output.WriteRawTag(210, 1);
+        output.WriteString(NetworkCityId);
+      }
+      if (IsNetworkConnected != false) {
+        output.WriteRawTag(216, 1);
+        output.WriteBool(IsNetworkConnected);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -827,6 +923,18 @@ namespace Panoptes.Protocol.V1 {
       }
       if (LastObservedTurn != 0) {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(LastObservedTurn);
+      }
+      if (RoadStatus.Length != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeStringSize(RoadStatus);
+      }
+      if (NetworkStatus.Length != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeStringSize(NetworkStatus);
+      }
+      if (NetworkCityId.Length != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeStringSize(NetworkCityId);
+      }
+      if (IsNetworkConnected != false) {
+        size += 2 + 1;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -915,6 +1023,18 @@ namespace Panoptes.Protocol.V1 {
       if (other.LastObservedTurn != 0) {
         LastObservedTurn = other.LastObservedTurn;
       }
+      if (other.RoadStatus.Length != 0) {
+        RoadStatus = other.RoadStatus;
+      }
+      if (other.NetworkStatus.Length != 0) {
+        NetworkStatus = other.NetworkStatus;
+      }
+      if (other.NetworkCityId.Length != 0) {
+        NetworkCityId = other.NetworkCityId;
+      }
+      if (other.IsNetworkConnected != false) {
+        IsNetworkConnected = other.IsNetworkConnected;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -926,11 +1046,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1032,6 +1148,22 @@ namespace Panoptes.Protocol.V1 {
             LastObservedTurn = input.ReadInt32();
             break;
           }
+          case 194: {
+            RoadStatus = input.ReadString();
+            break;
+          }
+          case 202: {
+            NetworkStatus = input.ReadString();
+            break;
+          }
+          case 210: {
+            NetworkCityId = input.ReadString();
+            break;
+          }
+          case 216: {
+            IsNetworkConnected = input.ReadBool();
+            break;
+          }
         }
       }
     #endif
@@ -1043,11 +1175,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1147,6 +1275,22 @@ namespace Panoptes.Protocol.V1 {
           }
           case 184: {
             LastObservedTurn = input.ReadInt32();
+            break;
+          }
+          case 194: {
+            RoadStatus = input.ReadString();
+            break;
+          }
+          case 202: {
+            NetworkStatus = input.ReadString();
+            break;
+          }
+          case 210: {
+            NetworkCityId = input.ReadString();
+            break;
+          }
+          case 216: {
+            IsNetworkConnected = input.ReadBool();
             break;
           }
         }
@@ -1460,11 +1604,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -1506,11 +1646,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -1995,11 +2131,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2070,11 +2202,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2427,11 +2555,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2474,11 +2598,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2731,11 +2851,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -2762,11 +2878,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -2981,11 +3093,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3012,11 +3120,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3340,11 +3444,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3383,11 +3483,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -3683,11 +3779,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -3722,11 +3814,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4000,11 +4088,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4035,11 +4119,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4453,11 +4533,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4515,11 +4591,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
@@ -4790,11 +4862,7 @@ namespace Panoptes.Protocol.V1 {
     #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
@@ -4821,11 +4889,7 @@ namespace Panoptes.Protocol.V1 {
     void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
-      if ((tag & 7) == 4) {
-        // Abort on any end group tag.
-        return;
-      }
-      switch(tag) {
+        switch(tag) {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;

@@ -9,6 +9,7 @@ package orders
 import (
 	"strings"
 
+	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -87,6 +88,58 @@ func ValidatePlanningUnitOrder(state *domain.GameState, playerID string, order U
 		return ""
 	case ActionBuildRoad, ActionRepairRoad:
 		return validateRoadAction(state, order, unitEntry)
+	case ActionBuildImprovement, ActionRepairImprovement:
+		return validateImprovementAction(state, playerID, order, unitEntry)
+	default:
+		return "invalid_directive"
+	}
+}
+
+func validateImprovementAction(state *domain.GameState, playerID string, order UnitOrder, unitEntry *donburi.Entry) string {
+	if !unitCanBuildRoad(unitEntry) {
+		return "invalid_directive"
+	}
+	targetNodeID := strings.TrimSpace(order.TargetNodeID)
+	if targetNodeID == "" {
+		return "invalid_request"
+	}
+	targetEntry, ok := state.GetNode(targetNodeID)
+	if !ok || targetEntry == nil {
+		return "invalid_target"
+	}
+	switch order.Action {
+	case ActionBuildImprovement:
+		if targetEntry.HasComponent(ecs.BuildingC) {
+			return "building_exists"
+		}
+		buildingTypeID, ok := improvementBuildingType(order, targetEntry)
+		if !ok {
+			return "invalid_target"
+		}
+		cfg, ok := staticdata.Default().GetBuilding(buildingTypeID)
+		if !ok || domain.NormalizeBuildingScope(cfg.BuildingScope) == domain.BuildingScopeCityCore {
+			return "invalid_target"
+		}
+		cityID := improvementCityID(state, playerID, order)
+		if cityID == "" {
+			return "invalid_request"
+		}
+		return building.ValidatePlacement(state, targetEntry, playerID, cfg, cityID)
+	case ActionRepairImprovement:
+		if !targetEntry.HasComponent(ecs.BuildingC) {
+			return "invalid_target"
+		}
+		buildingComp := ecs.BuildingC.Get(targetEntry)
+		if strings.TrimSpace(buildingComp.Owner) != strings.TrimSpace(playerID) {
+			return "invalid_target"
+		}
+		if buildingComp.MaxHP > 0 && buildingComp.HP >= buildingComp.MaxHP {
+			status, _ := domain.BuildingLifecycleStateAtTurn(targetEntry, state.Turn)
+			if status != domain.BuildingStatusRuined && status != domain.BuildingStatusDisabled {
+				return "invalid_target"
+			}
+		}
+		return ""
 	default:
 		return "invalid_directive"
 	}
@@ -116,6 +169,43 @@ func validateRoadAction(state *domain.GameState, order UnitOrder, unitEntry *don
 	}
 	if ecs.NodeC.Get(fromEntry).HasRoad && ecs.NodeC.Get(toEntry).HasRoad {
 		return "invalid_target"
+	}
+	return ""
+}
+
+func improvementBuildingType(order UnitOrder, targetEntry *donburi.Entry) (string, bool) {
+	for _, key := range []string{"building_type_id", "building_type", "improvement_type"} {
+		if value := strings.TrimSpace(order.Params[key]); value != "" {
+			return value, true
+		}
+	}
+	if targetEntry == nil {
+		return "", false
+	}
+	node := ecs.NodeC.Get(targetEntry)
+	switch strings.TrimSpace(node.ResourceType) {
+	case "food":
+		return "farm", true
+	case "ore":
+		return "mine", true
+	case "wood":
+		return "lumber", true
+	default:
+		return "", false
+	}
+}
+
+func improvementCityID(state *domain.GameState, playerID string, order UnitOrder) string {
+	for _, key := range []string{"city_id", "service_city_id"} {
+		if value := strings.TrimSpace(order.Params[key]); value != "" {
+			return value
+		}
+	}
+	if value := strings.TrimSpace(order.SecondaryNodeID); value != "" {
+		return value
+	}
+	if city := state.PrimaryCityState(playerID); city != nil {
+		return strings.TrimSpace(city.CityID)
 	}
 	return ""
 }

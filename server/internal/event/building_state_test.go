@@ -46,6 +46,34 @@ func TestBuildingStatusChangedEventApplyMarksBuildingDisabled(t *testing.T) {
 	}
 }
 
+func TestBuildingRepairedEventApplyRestoresHPAndIdleState(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", MaxHP: 80, TakeoverMode: "delayed"},
+		},
+	}))
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{NodeIndex: map[string]donburi.Entity{"A1": nodeEntity}})
+	state.World = world
+	state.RefreshBuildingMaxHPAtEntry(nodeEntry)
+	ecs.BuildingC.Get(nodeEntry).HP = 7
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusRuined, "damaged", 0)
+
+	BuildingRepairedEvent{NodeID: "A1", Owner: "player-1"}.Apply(world, state)
+
+	building := ecs.BuildingC.Get(nodeEntry)
+	if building.HP != building.MaxHP || building.HP != 80 {
+		t.Fatalf("building hp = %d/%d, want 80/80", building.HP, building.MaxHP)
+	}
+	status, reason := domain.BuildingLifecycleStateAtTurn(nodeEntry, state.Turn)
+	if status != domain.BuildingStatusIdle || reason != "" {
+		t.Fatalf("building status = %q reason=%q, want idle empty", status, reason)
+	}
+}
+
 func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *testing.T) {
 	world := donburi.NewWorld()
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{

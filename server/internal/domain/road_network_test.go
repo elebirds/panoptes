@@ -68,6 +68,25 @@ func TestPlayerRoadNetworkStatusReportsConnectedCities(t *testing.T) {
 	}
 }
 
+func TestNodeNetworkStatusExplainsConnectedCity(t *testing.T) {
+	useRoadNetworkTestCatalog(t)
+	state := newRoadNetworkTestState(t)
+	event.RoadBuiltEvent{FromNode: "C1", ToNode: "M1", Owner: "player-1"}.Apply(state.World, state)
+
+	status := domain.NodeNetworkStatusForPlayer(state, "player-1", "M1")
+	if !status.Connected || status.Status != domain.NetworkStatusConnected || status.CityID != "C1" {
+		t.Fatalf("M1 network status = %#v, want connected to C1", status)
+	}
+	if status.RoadStatus != string(domain.RoadStatusIntact) {
+		t.Fatalf("M1 road status = %q, want intact", status.RoadStatus)
+	}
+
+	status = domain.NodeNetworkStatusForPlayer(state, "player-1", "C2")
+	if status.Connected || status.Status != domain.NetworkStatusDisconnected || status.CityID != "C2" {
+		t.Fatalf("C2 network status = %#v, want disconnected city C2", status)
+	}
+}
+
 func useRoadNetworkTestCatalog(t *testing.T) {
 	t.Helper()
 	previous := staticdata.Default()
