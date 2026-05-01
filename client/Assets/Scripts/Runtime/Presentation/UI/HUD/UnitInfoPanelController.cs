@@ -1130,9 +1130,10 @@ namespace Panoptes.Presentation.UI.HUD
             var interactive = IsInteractivePlanning();
             var controllable = IsCurrentUnitControllable();
             var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
-            var canMove = CanSelectedUnitMove(unitType);
-            var militaryUnit = IsCurrentSelectionMilitaryUnit();
-            var showDirectOrderButtons = interactive && controllable && (canMove || militaryUnit);
+            var directOrderState = UnitInfoDirectOrderStateResolver.Resolve(unitType);
+            var showDirectOrderButtons = interactive &&
+                                         controllable &&
+                                         (directOrderState.CanMove || directOrderState.IsMilitaryUnit);
 
             if (directOrderButtonsRoot != null)
             {
@@ -1150,10 +1151,22 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            SetDirectOrderButtonState(moveButton, "Move", true, canMove);
-            SetDirectOrderButtonState(attackButton, "Attack", militaryUnit, militaryUnit && CanSelectedUnitAttack(unitType));
-            SetDirectOrderButtonState(holdButton, "Hold", militaryUnit, militaryUnit);
-            SetDirectOrderButtonState(chargeButton, "Charge", militaryUnit, militaryUnit && CanSelectedUnitCharge(unitType));
+            SetDirectOrderButtonState(moveButton, "Move", true, directOrderState.CanMove);
+            SetDirectOrderButtonState(
+                attackButton,
+                "Attack",
+                directOrderState.IsMilitaryUnit,
+                directOrderState.CanAttack);
+            SetDirectOrderButtonState(
+                holdButton,
+                "Hold",
+                directOrderState.IsMilitaryUnit,
+                directOrderState.IsMilitaryUnit);
+            SetDirectOrderButtonState(
+                chargeButton,
+                "Charge",
+                directOrderState.IsMilitaryUnit,
+                directOrderState.CanCharge);
         }
 
         private void RefreshPlanningSummaryText()
@@ -1180,93 +1193,6 @@ namespace Panoptes.Presentation.UI.HUD
                    cache != null &&
                    !string.IsNullOrWhiteSpace(cache.MyPlayerID) &&
                    string.Equals(cache.MyPlayerID, _currentUnit.Faction, StringComparison.Ordinal);
-        }
-
-        private bool CanSelectedUnitAttack(string unitType)
-        {
-            return TryGetUnitCatalog(unitType, out var entry) && !HasTag(entry, "civilian");
-        }
-
-        private bool CanSelectedUnitCharge(string unitType)
-        {
-            return TryGetUnitCatalog(unitType, out var entry) && HasTag(entry, "charge");
-        }
-
-        private bool CanSelectedUnitMove(string unitType)
-        {
-            var normalizedType = NormalizeToken(unitType);
-            if (string.IsNullOrWhiteSpace(normalizedType))
-            {
-                return false;
-            }
-
-            if (string.Equals(normalizedType, "resource_point", StringComparison.Ordinal) ||
-                normalizedType.StartsWith("resource_", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null && catalog.TryGetBuilding(normalizedType, out _))
-            {
-                return false;
-            }
-
-            return TryGetUnitCatalog(normalizedType, out _);
-        }
-
-        private bool IsCurrentSelectionMilitaryUnit()
-        {
-            if (_currentUnit == null)
-            {
-                return false;
-            }
-
-            var normalizedType = NormalizeToken(_currentUnit.UnitType);
-            if (string.IsNullOrWhiteSpace(normalizedType))
-            {
-                return false;
-            }
-
-            if (string.Equals(normalizedType, "resource_point", StringComparison.Ordinal) ||
-                normalizedType.StartsWith("resource_", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null && catalog.TryGetBuilding(normalizedType, out _))
-            {
-                return false;
-            }
-
-            return TryGetUnitCatalog(normalizedType, out var entry) && !HasTag(entry, "civilian");
-        }
-
-        private bool TryGetUnitCatalog(string unitType, out StaticCatalogCache.UnitEntryJson entry)
-        {
-            entry = null;
-            return !string.IsNullOrWhiteSpace(unitType) &&
-                   StaticCatalogCache.EnsureInstance() != null &&
-                   StaticCatalogCache.Instance.TryGetUnit(unitType, out entry);
-        }
-
-        private static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
-        {
-            if (entry?.tags == null || string.IsNullOrWhiteSpace(tag))
-            {
-                return false;
-            }
-
-            for (var i = 0; i < entry.tags.Length; i++)
-            {
-                if (string.Equals(entry.tags[i], tag, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)

@@ -249,3 +249,18 @@ Implemented on 2026-05-01 as the second post-plan cleanup slice:
 
 `BuildCommandPanel` is still a UI Toolkit/ViewModel pilot candidate, but its
 Unity view plumbing is now isolated from build item state construction.
+
+## Script Architecture Refactor Phase 3
+
+Implemented on 2026-05-01 as the third post-plan cleanup slice:
+
+- Extracted `UnitInfoDirectOrderStateResolver` from `UnitInfoPanelController`.
+- Moved direct order state derivation for move/attack/hold/charge out of the
+  HUD facade.
+- Added EditMode coverage for civilian, charge-capable military, and
+  building/resource direct order states.
+- Reduced `UnitInfoPanelController.cs` from 2009 lines after C0p to 1935 lines.
+
+`UnitInfoPanelController` still needs further passes for stats binding, action
+list rendering, portrait camera ownership, and slide/docking layout, but direct
+order availability is now isolated and testable.
