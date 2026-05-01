@@ -41,6 +41,31 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("PlanningDraftStore"));
             Assert.That(installer, Does.Contain("SelectionStore"));
             Assert.That(installer, Does.Contain("TurnStore"));
+            Assert.That(installer, Does.Contain("SelectionService"));
+            Assert.That(installer, Does.Contain("UnitInfoViewModel"));
+        }
+
+        [Test]
+        public void UnitInfoMigratedSlice_ShouldNotDependOnProtocolOrLegacyCaches()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/UnitInfoViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/UnitInfoUguiBinder.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoReactiveBridge.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "Migrated UnitInfo ViewModel/Binder must consume final stores and services only.");
         }
 
         [Test]
