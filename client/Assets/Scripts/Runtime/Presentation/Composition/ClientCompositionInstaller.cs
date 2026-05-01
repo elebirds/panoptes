@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using VContainer;
@@ -35,11 +36,15 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponent(sessionManager).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
             builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
+            builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
         }
 
         public static void RegisterGame(IContainerBuilder builder)
         {
-            // Phase 3 introduces final Stores. Do not register legacy cache singletons here.
+            builder.Register<GameStateStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlanningDraftStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<SelectionStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<TurnStore>(Lifetime.Singleton).AsSelf();
         }
     }
 }

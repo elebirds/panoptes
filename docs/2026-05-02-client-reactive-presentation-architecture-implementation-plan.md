@@ -242,6 +242,12 @@ Acceptance:
 - Stores have EditMode tests for snapshot immutability and update flow.
 - Store write APIs are internal/application-facing, not UI-facing.
 
+Status 2026-05-02: complete. The initial Core Store layer now includes
+`StaticCatalogStore`, `GameStateStore`, `PlanningDraftStore`, `SelectionStore`,
+and `TurnStore`. Store state uses independent Core read-model DTOs, exposes
+R3-backed read-only state, keeps write APIs internal, and is registered in the
+final VContainer scopes without wrapping legacy cache singletons.
+
 ## Phase 4: First Complete uGUI Migration
 
 Recommended first target: `UnitInfoPanel`.

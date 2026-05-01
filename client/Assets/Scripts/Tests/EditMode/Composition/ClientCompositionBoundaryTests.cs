@@ -23,7 +23,7 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
-        public void GameScope_ShouldNotRegisterLegacyCachesBeforeStoreMigration()
+        public void CompositionScopes_ShouldRegisterFinalStoresWithoutLegacyCacheFacades()
         {
             var root = ResolveAssetPath("Scripts/Runtime/Presentation/Composition");
             var offenders = FindTokenOffenders(
@@ -34,6 +34,13 @@ namespace Panoptes.Tests.EditMode.Composition
                 "StaticCatalogCache");
 
             Assert.That(offenders, Is.Empty, "GameLifetimeScope must wait for final Stores instead of registering legacy cache facades.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            Assert.That(installer, Does.Contain("StaticCatalogStore"));
+            Assert.That(installer, Does.Contain("GameStateStore"));
+            Assert.That(installer, Does.Contain("PlanningDraftStore"));
+            Assert.That(installer, Does.Contain("SelectionStore"));
+            Assert.That(installer, Does.Contain("TurnStore"));
         }
 
         [Test]
