@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Domain;
+using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Protocol.V1;
 using UnityEngine;
 
@@ -298,7 +299,7 @@ namespace Panoptes.Core.Application.Cache
             {
                 for (var i = 0; i < msg.MinisterDrafts.Count; i++)
                 {
-                    var draft = MinisterDraftDto.FromView(msg.MinisterDrafts[i]);
+                    var draft = MinisterMapper.ToDto(msg.MinisterDrafts[i]);
                     if (draft != null)
                     {
                         _ministerDrafts.Add(draft);
