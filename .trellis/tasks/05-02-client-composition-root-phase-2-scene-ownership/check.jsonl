@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "verify scene and directory changes"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "verify no compatibility cache registration"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "verify static boundary requirements"}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "verify Phase 2 completion"}

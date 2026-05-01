@@ -212,6 +212,11 @@ Acceptance:
 - New architecture code paths do not call `GameStateCache.Instance`,
   `PlanningDraftCache.Instance`, or `StaticCatalogCache.Instance`.
 
+Status 2026-05-02: complete. `Assets/Scenes/Game.unity` owns the scene-level
+`GameLifetimeScope` through a `Game Composition` root, while
+`ProjectLifetimeScope` remains startup-owned by the existing persistent
+`Managers` bootstrap to avoid duplicate project scopes.
+
 ## Phase 3: Store / Read Model Layer
 
 Goal: replace cache-as-UI-source with explicit stores for migrated modules.

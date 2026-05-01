@@ -45,6 +45,19 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(content, Does.Contain("\"VContainer\""));
         }
 
+        [Test]
+        public void GameScene_ShouldOwnGameLifetimeScope()
+        {
+            var scenePath = ResolveAssetPath("Scenes/Game.unity");
+            var scriptMetaPath = ResolveAssetPath("Scripts/Runtime/Presentation/Composition/GameLifetimeScope.cs.meta");
+            var sceneContent = File.ReadAllText(scenePath);
+            var scriptGuid = ReadGuid(scriptMetaPath);
+
+            Assert.That(sceneContent, Does.Contain("m_Name: Game Composition"));
+            Assert.That(sceneContent, Does.Contain($"guid: {scriptGuid}"));
+            Assert.That(sceneContent, Does.Contain("Panoptes.Presentation.Composition.GameLifetimeScope"));
+        }
+
         private static List<string> FindTokenOffenders(IEnumerable<string> roots, string searchPattern, params string[] forbiddenTokens)
         {
             var offenders = new List<string>();
@@ -97,6 +110,14 @@ namespace Panoptes.Tests.EditMode.Composition
             var fullPath = Path.GetFullPath(path).Replace('\\', '/');
             var assetsIndex = fullPath.LastIndexOf("/Assets/", StringComparison.Ordinal);
             return assetsIndex >= 0 ? fullPath.Substring(assetsIndex + 1) : fullPath;
+        }
+
+        private static string ReadGuid(string metaPath)
+        {
+            var guidLine = File.ReadLines(metaPath)
+                .FirstOrDefault(line => line.StartsWith("guid:", StringComparison.Ordinal));
+            Assert.That(guidLine, Is.Not.Null, $"{metaPath} does not contain a Unity guid.");
+            return guidLine.Substring("guid:".Length).Trim();
         }
     }
 }
