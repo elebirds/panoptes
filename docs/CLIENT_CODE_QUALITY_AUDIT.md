@@ -319,3 +319,23 @@ Implemented on 2026-05-01 as the next UnitInfo facade pass:
 Remaining UnitInfo work should focus on a ViewModel/selection binder and
 possibly description/catalog text projection. Generic action-list mechanics
 should stay in `UnitInfoActionListBinder`.
+
+## UnitInfo Direct Order Panel Refactor
+
+Implemented on 2026-05-01 as the direct-order panel cleanup pass:
+
+- Extracted `UnitInfoDirectOrderPanelBinder` from
+  `UnitInfoPanelController`.
+- Moved direct-order button creation, default visuals, listener binding, and
+  move/attack/hold/charge render-state application out of the HUD facade.
+- Preserved existing serialized direct-order button fields on
+  `UnitInfoPanelController` for prefab compatibility.
+- Added EditMode coverage for default button creation, listener replacement,
+  hidden-state rendering, civilian move-only rendering with `ActionLock`, and
+  military action visibility/interactability.
+- Reduced `UnitInfoPanelController.cs` from 1287 lines after the action-list
+  pass to 1206 lines.
+
+Remaining UnitInfo work should focus on selection/ViewModel boundaries and
+catalog-backed description projection. Direct-order UI mechanics should stay in
+`UnitInfoDirectOrderPanelBinder`.
