@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend quality conventions for hardening work."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Layer ownership and PVE planning contract."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Soak spans scenario, runtime, debug harness, projection, and game state."}
