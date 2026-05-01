@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions and pre-development checklist for M9 server changes."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "PVE planning controller contract and layer ownership rules."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "M9 touches scenario authoring, runtime participants, debug harness, and projections."}

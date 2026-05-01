@@ -169,9 +169,9 @@ Submit through planning:
 
 ```go
 planning.IntentEnvelope{
-	PlayerID: "bot-1",
-	Source:   "ai",
-	Intent:   planning.IssueUnitOrderIntent{UnitID: "u1", Action: "move"},
+	ParticipantID: "bot-1",
+	Source:        "ai",
+	Intent:        planning.IssueUnitOrderIntent{UnitID: "u1", Action: "move"},
 }
 ```
 
@@ -231,8 +231,8 @@ state.AddResourceToCity("bot-1", "C1", domain.ResourceFood, 10)
 
 ```go
 err := submitter.SubmitIntent(ctx, planning.IntentEnvelope{
-	PlayerID: "bot-1",
-	Source:   "ai",
+	ParticipantID: "bot-1",
+	Source:        "ai",
 	Intent: planning.IssueUnitOrderIntent{
 		UnitID:       "u1",
 		Action:       "move",
