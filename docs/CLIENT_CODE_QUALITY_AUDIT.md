@@ -236,3 +236,16 @@ Implemented on 2026-05-01 as the first post-plan cleanup slice:
 
 Next script refactor candidates remain `MapPlanningInputController`,
 `UnitInfoPanelController`, `MapRenderer`, and `BuildCommandPanel`.
+
+## Script Architecture Refactor Phase 2
+
+Implemented on 2026-05-01 as the second post-plan cleanup slice:
+
+- Extracted `BuildCommandPanelViewResolver` from `BuildCommandPanel`.
+- Moved tooltip, ScrollRect, viewport, content, group template, and item
+  template resolution out of the panel facade.
+- Added EditMode coverage for generating missing viewport/content references.
+- Reduced `BuildCommandPanel.cs` from 1497 lines after C0p to 1307 lines.
+
+`BuildCommandPanel` is still a UI Toolkit/ViewModel pilot candidate, but its
+Unity view plumbing is now isolated from build item state construction.
