@@ -1,8 +1,14 @@
 # Panoptes Client Reactive UI Architecture Plan
 
 > Date: 2026-05-01
-> Status: Target architecture plan, not yet implemented
+> Status: Superseded by the direct implementation plan
 > Scope: C0a and later client UI/script architecture
+
+This target plan has been superseded for implementation by
+`docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md`.
+The main correction is that migrated modules should not use a compatibility
+Composition Root. They should move directly to the final VContainer-owned
+Store/ViewModel/Binder architecture.
 
 ## 1. Decision
 
@@ -38,9 +44,8 @@ state, but it must not become a second rules engine.
 | Map / world UI | uGUI | Keep scene-bound HUD, overlays, unit bars, and map feedback on uGUI where it fits Unity objects |
 | Animation | DOTween candidate | Optional later; only for presentation animation, never rules or timing authority |
 
-Current repository policy still forbids these third-party additions. Before any
-package is installed, `AGENTS.md`, `docs/PANOPTES_AGENT_FRONTEND.md`, and package
-lock files must be updated in the same reviewed change.
+Repository policy now approves VContainer/R3/UniTask for the final client
+architecture with locked versions. DOTween remains out of scope.
 
 ## 3. Layer Responsibilities
 
@@ -147,21 +152,22 @@ GameLifetimeScope
   Game screen ViewModels
 ```
 
-Binders should receive ViewModels or services through injection. Existing
-singletons can remain during migration, but new C0a work should not add more
-direct singleton calls from Presentation.
+Binders should receive ViewModels or services through injection. Migrated
+modules must not use a compatibility Composition Root or active singleton
+lookup. Existing singletons may remain only as isolated legacy dependencies for
+modules that have not migrated yet.
 
 ## 7. Rollout Plan
 
 | Phase | Goal | Output |
 |---|---|---|
-| C0a-P0 | UI Toolkit pilot only | One low-risk read-only panel, no new DI/reactive package yet |
-| C0a-P1 | Dependency policy amendment | Update AGENTS/docs/package manifest for approved packages and locked versions |
-| C0a-P2 | VContainer scope pilot | Register existing stores/services through project/game scopes |
-| C0a-P3 | R3 ViewModel pilot | Convert one panel from manual refresh to reactive ViewModel state |
-| C0a-P4 | UniTask async cleanup | Convert login/connect/catalog flows away from mixed async/coroutine patterns |
-| C0a-P5 | Management UI migration | Move minister/tech/policy/ledger panels toward UI Toolkit |
-| C0a-P6 | Large facade shrink pass | Convert remaining giant MonoBehaviours into binders/coordinators |
+| C0a-P0 | Policy and dependency foundation | Update AGENTS/docs/specs and lock approved packages |
+| C0a-P1 | Final contracts and directories | Add Store/Service/ViewModel/Binder/Composition structure |
+| C0a-P2 | Final Composition Root | Add Project/Game LifetimeScopes without compatibility singleton bridge |
+| C0a-P3 | Store/read-model layer | Add reactive Store APIs and immutable snapshots |
+| C0a-P4 | uGUI migration | Move one existing panel through Store -> ViewModel -> Binder |
+| C0a-P5 | UI Toolkit migration | Add one read-only UIDocument panel through the same state chain |
+| C0a-P6 | Command services and map input | Move commands and map planning state into services/stores/viewmodels |
 
 Each phase must keep these gates green:
 

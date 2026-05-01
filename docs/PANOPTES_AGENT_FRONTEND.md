@@ -54,6 +54,32 @@
 com.unity.textmeshpro          TextMeshPro（UI文字）
 com.unity.ugui                 uGUI（UI系统）
 com.unity.inputsystem          新版输入系统
+com.unity.modules.uielements   UI Toolkit runtime（信息密集型面板）
+```
+
+### 批准的第三方依赖（Unity Package Manager）
+
+```
+VContainer                    生命周期与依赖注入
+  包名：jp.hadashikick.vcontainer
+  版本：1.17.0
+  来源：https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.17.0
+  用途：ProjectLifetimeScope / GameLifetimeScope、Store/Service/ViewModel 注入
+
+R3                            响应式状态传播
+  包名：com.cysharp.r3
+  版本：1.3.0
+  来源：https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity#1.3.0
+  核心程序集：R3 NuGet 1.3.0 的 netstandard2.1 `R3.dll`
+  运行依赖：Microsoft.Bcl.TimeProvider 8.0.0、Microsoft.Bcl.AsyncInterfaces 8.0.0、System.Threading.Channels 8.0.0、System.Runtime.CompilerServices.Unsafe 6.0.0、System.ComponentModel.Annotations 5.0.0
+  导入位置：client/Assets/Plugins/
+  用途：Store / ViewModel 的只读 reactive state
+
+UniTask                       Unity 异步流程
+  包名：com.cysharp.unitask
+  版本：2.5.10
+  来源：https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#2.5.10
+  用途：登录、连接、catalog 加载、请求响应、场景初始化
 ```
 
 ### 第三方插件（手动导入Assets/Plugins）
@@ -72,10 +98,10 @@ Google.Protobuf                Protobuf C#运行时
 ### 不引入的插件（明确禁止）
 
 ```
-❌ Zenject/VContainer（依赖注入）
-❌ UniRx/R3（响应式）
+❌ Zenject（依赖注入；统一使用 VContainer）
+❌ UniRx（响应式；统一使用 R3）
 ❌ Photon/Mirror（网络框架，用NativeWebSocket代替）
-❌ DOTween（动画，用Unity Coroutine代替）
+❌ DOTween（动画依赖暂不批准；继续使用现有 Unity 动画/Coroutine/UniTask 流程）
 ❌ 任何付费插件
 ```
 
@@ -246,9 +272,32 @@ GameStateCache 中已有服务端节点
 - 自己拼装地图默认节点
 - 根据静态目录推导建造合法性、资源是否足够等业务规则
 
-### 原则三：单例管理
+### 原则三：最终生命周期与依赖注入
 
-全局单例通过`Boot.unity`场景初始化，`DontDestroyOnLoad`。场景间通信通过单例，不使用静态变量。
+新架构模块通过 VContainer 的 `LifetimeScope` 管理生命周期和依赖注入。迁移后的 Store、Service、ViewModel、Binder 不得主动查找 `*.Instance`。
+
+目标结构：
+
+```
+ProjectLifetimeScope
+  AuthStore
+  ConfigStore
+  StaticCatalogStore
+  Network services
+  App navigation services
+
+GameLifetimeScope
+  GameStateStore
+  PlanningDraftStore
+  SelectionStore
+  TurnStore
+  Game intent services
+  Panel ViewModels
+```
+
+旧单例可以在未迁移模块中暂时保留，但不得作为新架构模块的兼容入口。迁移一个模块时，该模块的依赖所有权必须同时切到最终 `LifetimeScope`。
+
+旧系统仍可能存在的 legacy 单例：
 
 ```
 NetworkManager     单例，管理WebSocket连接
@@ -256,6 +305,8 @@ GameStateCache     单例，管理游戏状态镜像
 AppManager         单例，管理全局状态机
 AnimationQueue     单例，管理动画队列
 ```
+
+这些 legacy 单例只服务未迁移旧模块。新 C0a 功能和已迁移模块必须使用 Store -> ViewModel -> Binder / Service 链路。
 
 ### 原则四：消息处理在主线程
 

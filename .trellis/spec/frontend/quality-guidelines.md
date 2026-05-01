@@ -21,9 +21,14 @@ presentation boundary. Most changes should be small extractions from large
 MonoBehaviours into helper classes with EditMode/static coverage.
 
 The C0a+ target architecture is documented in
-`docs/2026-05-01-client-reactive-ui-architecture-plan.md`. Until dependencies
-are explicitly approved, treat VContainer/R3/UniTask/UI Toolkit expansion as a
-planned migration, not as permission to install packages.
+`docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md`.
+VContainer, R3, UniTask, and UI Toolkit are approved for migrated modules with
+locked versions. Do not introduce compatibility Composition Roots that make new
+modules depend on legacy singleton lookup.
+
+R3.Unity is installed through UPM, while the R3 core and its required BCL
+runtime DLLs are vendored under `client/Assets/Plugins/`. Do not remove those
+DLLs unless the R3 installation strategy is deliberately replaced.
 
 ---
 
@@ -41,6 +46,8 @@ planned migration, not as permission to install packages.
 - UI Toolkit binders or uGUI panels directly mutating authoritative game state.
 - New C0a backend binding logic added directly to high-risk facade scripts when
   a ViewModel/helper/binder extraction is feasible.
+- New migrated Store/ViewModel/Binder code actively calling legacy singleton
+  `*.Instance` APIs instead of receiving dependencies from VContainer.
 
 ---
 
@@ -56,7 +63,7 @@ planned migration, not as permission to install packages.
   references are unavailable.
 - Keep extracted helpers beside their facade unless they are clearly shared.
 - New management panels should prefer `Core store/DTO -> ViewModel -> Binder ->
-  UI` flow even before R3/VContainer are installed.
+  UI` flow through VContainer and R3.
 - If UI Toolkit is used, start with explicit Binder rendering and add data
   binding only for stable fields/forms after the pilot succeeds.
 - Helpers that own runtime Unity objects (`GameObject`, `RenderTexture`,
