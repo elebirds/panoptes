@@ -418,74 +418,8 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RefreshUnitHpFromCache()
         {
-            if (_currentUnit == null)
-            {
-                return;
-            }
-
-            var hp = _currentUnit.HitPoints;
-            var maxHp = Mathf.Max(1, _currentUnit.MaxHitPoints);
-            var cache = GameStateCache.Instance;
-            if (cache != null)
-            {
-                var cachedUnit = cache.GetUnit(_currentUnit.UnitId);
-                if (cachedUnit != null)
-                {
-                    hp = cachedUnit.Hp;
-                    maxHp = Mathf.Max(1, cachedUnit.MaxHp);
-                }
-                else
-                {
-                    var cachedNode = cache.GetNode(_currentUnit.UnitId);
-                    if (cachedNode != null && (!string.IsNullOrWhiteSpace(cachedNode.BuildingType) || cachedNode.IsResourcePoint))
-                    {
-                        hp = cachedNode.BuildingHp > 0 ? cachedNode.BuildingHp : Mathf.Max(1, hp);
-                        maxHp = ResolveInfoPanelBuildingMaxHp(cachedNode, _currentUnit.UnitType, hp);
-                    }
-                }
-            }
-
-            if (hpSlider != null)
-            {
-                hpSlider.minValue = 0f;
-                hpSlider.maxValue = maxHp;
-                hpSlider.value = Mathf.Clamp(hp, 0, maxHp);
-            }
-
-            if (hpValueText != null)
-            {
-                hpValueText.text = $"{Mathf.Clamp(hp, 0, maxHp)}/{maxHp}";
-            }
-        }
-
-        private static int ResolveInfoPanelBuildingMaxHp(NodeDto node, string fallbackType, int hp)
-        {
-            if (node == null || node.IsResourcePoint)
-            {
-                return Mathf.Max(1, hp);
-            }
-
-            var maxHp = node.BuildingMaxHp;
-            if (maxHp <= 0)
-            {
-                var catalog = StaticCatalogCache.EnsureInstance();
-                var buildingType = NormalizeToken(!string.IsNullOrWhiteSpace(node.BuildingType) ? node.BuildingType : fallbackType);
-                if (catalog != null)
-                {
-                    if (string.Equals(buildingType, "city_core", StringComparison.OrdinalIgnoreCase) &&
-                        catalog.Rules != null &&
-                        catalog.Rules.city_core_max_hp > 0)
-                    {
-                        maxHp = catalog.Rules.city_core_max_hp;
-                    }
-                    else if (catalog.TryGetBuilding(buildingType, out var buildingEntry) && buildingEntry != null)
-                    {
-                        maxHp = buildingEntry.max_hp;
-                    }
-                }
-            }
-
-            return Mathf.Max(1, Mathf.Max(maxHp, hp));
+            var state = UnitInfoHpStateResolver.Resolve(_currentUnit, GameStateCache.Instance);
+            UnitInfoHpBinder.Apply(hpSlider, hpValueText, state);
         }
 
         public void SetDockRightOf(RectTransform target, float spacing = -1f, bool immediate = true)
