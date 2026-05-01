@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify serialized field and facade compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client gameplay validation is added."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Run static boundary and compile checks."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Confirm the slice follows the preview presenter direction."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Update the refactor log after implementation."}

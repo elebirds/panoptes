@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Defines where extracted Presentation feedback helpers should live."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Requires prefab-facing MonoBehaviours to preserve serialized compatibility while delegating helper logic."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Confirms build feedback must remain presentation-only and server-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lists cleanup requirements for Unity runtime objects and static boundary checks."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Records MapPlanningInputController as a planning input split target."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Tracks line-count movement and remaining facade debt."}
