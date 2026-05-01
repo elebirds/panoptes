@@ -20,6 +20,11 @@ The client quality bar protects Unity prefab compatibility and the pure
 presentation boundary. Most changes should be small extractions from large
 MonoBehaviours into helper classes with EditMode/static coverage.
 
+The C0a+ target architecture is documented in
+`docs/2026-05-01-client-reactive-ui-architecture-plan.md`. Until dependencies
+are explicitly approved, treat VContainer/R3/UniTask/UI Toolkit expansion as a
+planned migration, not as permission to install packages.
+
 ---
 
 ## Forbidden Patterns
@@ -33,6 +38,9 @@ MonoBehaviours into helper classes with EditMode/static coverage.
   checks.
 - Broad scene/prefab-facing MonoBehaviour renames without updating and
   verifying affected assets.
+- UI Toolkit binders or uGUI panels directly mutating authoritative game state.
+- New C0a backend binding logic added directly to high-risk facade scripts when
+  a ViewModel/helper/binder extraction is feasible.
 
 ---
 
@@ -47,6 +55,10 @@ MonoBehaviours into helper classes with EditMode/static coverage.
 - Prefer `SceneObjectFinder` for fallback scene lookup when serialized
   references are unavailable.
 - Keep extracted helpers beside their facade unless they are clearly shared.
+- New management panels should prefer `Core store/DTO -> ViewModel -> Binder ->
+  UI` flow even before R3/VContainer are installed.
+- If UI Toolkit is used, start with explicit Binder rendering and add data
+  binding only for stable fields/forms after the pilot succeeds.
 
 ---
 

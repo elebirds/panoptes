@@ -189,3 +189,35 @@ Post-C0p line-count snapshot:
 Remaining large files are now treated as prefab-facing facades. Future C0a work
 should add new backend bindings through Core DTO/cache APIs and the extracted
 helpers instead of re-expanding these MonoBehaviours.
+
+## Reactive UI Target Plan
+
+Recorded on 2026-05-01 in
+`docs/2026-05-01-client-reactive-ui-architecture-plan.md`.
+
+Long-term target:
+
+- VContainer owns project/game scene lifetimes.
+- R3 owns state propagation from stores to ViewModels.
+- UniTask owns async login/connect/catalog/request flows.
+- UI Toolkit is introduced for information-heavy management panels.
+- uGUI remains for map HUD, overlays, and world-space UI.
+- ViewModels own projection and commands; explicit Binders connect UXML/USS or
+  prefab references to those ViewModels.
+
+This is a target plan, not the current implemented stack. Current dependency
+policy still needs an explicit AGENTS/frontend-doc amendment before new packages
+are installed.
+
+Current script refactor priority before and during C0a:
+
+| Priority | Script / Area | Direction |
+| --- | --- | --- |
+| High | `MapPlanningInputController` | Split into planning tool coordinator, input modes, and preview presenter |
+| High | `UnitInfoPanelController` | Split into ViewModel, stats binder, action list renderer, and selection binder |
+| High | `MapRenderer` | Split into map render coordinator plus node/unit/building/fog/overlay renderers |
+| High | `BuildCommandPanel` | Use as UI Toolkit/ViewModel pilot candidate or shrink behind a list binder |
+| High | `MinisterDto` | Move protocol conversion out of Foundation before minister UI work |
+| Medium | `SquadUnitVisualController` | Split health/flag/model/path/animation binders |
+| Medium | `RecipeSynthesisPanel` | Move to ViewModel + item lifecycle binder, then consider UI Toolkit |
+| Medium | `GameStateCache` / `StaticCatalogCache` | Split into domain stores/read models after R3 is introduced |

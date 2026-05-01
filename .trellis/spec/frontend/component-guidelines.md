@@ -21,6 +21,10 @@ testable helpers. A facade MonoBehaviour owns serialized fields and Unity
 lifecycle methods; helpers own rendering, lookup, event bookkeeping, or
 read-only view-model construction.
 
+Long-term target: information-heavy panels may use UI Toolkit with explicit
+Binders, while map/HUD/world-space UI remains on uGUI. Both styles must consume
+the same Core DTO/store/ViewModel layer.
+
 ---
 
 ## Component Structure
@@ -56,6 +60,10 @@ public sealed class SomePanel : MonoBehaviour
 Keep serialized field names stable unless the related prefab/scene assets are
 updated and verified in the same commit.
 
+For UI Toolkit binders, prefer explicit `root.Q<T>("name")` lookup and a single
+`Render(state)` method during the pilot phase. Do not start with reflection,
+string-path binding engines, or hidden view locators.
+
 ---
 
 ## Props Conventions
@@ -75,6 +83,10 @@ new required scene singletons.
 Use existing uGUI/TextMeshPro styling and prefab styling. Do not generate final
 production UI prefabs from code for C0/C0p; code may provide binders and
 presenters for manually-authored prefabs.
+
+For C0a+, UI Toolkit UXML/USS is allowed as a target plan for dense management
+panels once dependency policy is amended. Keep uGUI for scene-bound map
+presentation.
 
 ---
 
@@ -97,3 +109,5 @@ static catalog metadata, not client-authored gameplay rules.
 - Binding button listeners in `Awake` without symmetric unsubscribe.
 - Using fallback scene lookup when a serialized reference or
   `SceneObjectFinder` is available.
+- Letting UI Toolkit and uGUI panels duplicate business state instead of sharing
+  Core stores/ViewModels.

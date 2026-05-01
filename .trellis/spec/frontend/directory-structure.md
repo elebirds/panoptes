@@ -26,6 +26,12 @@ code is split by dependency direction:
   and animation. Presentation references Core and must not reference Protocol.
 - `Tests/EditMode/`: static boundary tests and helper/presenter tests.
 
+The long-term target is documented in
+`docs/2026-05-01-client-reactive-ui-architecture-plan.md`: Core stores feed
+ViewModels, and explicit Binders render either uGUI prefabs or UI Toolkit
+UXML/USS. This is a migration target; do not install new packages or move
+existing prefabs until the dependency policy is updated.
+
 ---
 
 ## Directory Layout
@@ -50,6 +56,25 @@ client/Assets/Scripts/
     └── EditMode/
 ```
 
+Target additions for C0a+:
+
+```
+client/Assets/Scripts/Runtime/Presentation/
+├── Composition/
+├── ViewModels/
+├── Binders/
+│   ├── Ugui/
+│   └── UiToolkit/
+└── UI/
+
+client/Assets/UI/
+└── Toolkit/
+    ├── Minister/
+    ├── Tech/
+    ├── Policy/
+    └── Shared/
+```
+
 ---
 
 ## Module Organization
@@ -67,6 +92,10 @@ example:
 
 Do not move a MonoBehaviour that scenes or prefabs may reference unless the
 scene/prefab assets are updated and verified in the same change.
+
+For new UI Toolkit work, keep UXML/USS assets outside generated code paths and
+route state through Core stores and ViewModels. UI Toolkit and uGUI may coexist,
+but they must share the same application state model.
 
 ---
 
