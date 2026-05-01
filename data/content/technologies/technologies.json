@@ -216,6 +216,102 @@
           "value": 0.5
         }
       ]
+    },
+    {
+      "id": "centralized_storage",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "supply_depots" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "warehouse" },
+        { "type": "unlock_recipe", "target_id": "warehouse_reserve_rations" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "trade_levies",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "supply_depots" },
+        { "type": "technology_unlocked", "target_id": "civic_institutions" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "market" },
+        { "type": "unlock_recipe", "target_id": "market_grain_contracts" },
+        { "type": "unlock_recipe", "target_id": "market_lumber_contracts" },
+        { "type": "unlock_recipe", "target_id": "market_ore_contracts" },
+        { "type": "unlock_policy", "target_id": "mercantile_charter" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "scholastic_bureaucracy",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "civic_institutions" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "academy" },
+        { "type": "unlock_policy", "target_id": "research_mandate" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "sentry_networks",
+      "branch": "defense",
+      "tier": 5,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "fortifications" },
+        { "type": "technology_unlocked", "target_id": "ranged_drill" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "watchtower" },
+        { "type": "unlock_recipe", "target_id": "watchtower_scout" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "professional_drill",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "militia_mobilization" },
+        { "type": "technology_unlocked", "target_id": "centralized_storage" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "training_ground" },
+        { "type": "unlock_recipe", "target_id": "training_ground_spearman" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ]
     }
   ]
 }

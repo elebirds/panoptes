@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "30bccb81a8c5713351c5463f87b341ddf9ea1e29ffed5a75f7383af6347c148c",
+    "bundle_hash": "4b88d781dc49d3bea52ccee90047cc8698bf31f8c41e1618b4c9b5df00ddd9a8",
     "required_sections": [
       "resources",
       "points",
@@ -24,7 +24,7 @@
     "section_hashes": [
       {
         "section_name": "buildings",
-        "hash": "475db7dba8c6d73a25335e0099635d88d6c8c877f619c09a2148cd784feab83b"
+        "hash": "e13f38a5130d054008529ba2c898d19b2e0e6d6afba46e6fed2c8eb143b2e031"
       },
       {
         "section_name": "maps",
@@ -40,11 +40,11 @@
       },
       {
         "section_name": "policies",
-        "hash": "6e8f632d955fe1fd249e0475bfae2d45f4eeccddb9d0c7de27f85b41bdf3302f"
+        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
       },
       {
         "section_name": "recipes",
-        "hash": "43af9f6d62fa47d5a7a47499eee1879b0cbf1c1909e93297f1e311441234847a"
+        "hash": "1306cd567efdbb183e2a62d533758f24025f20db6aea13ca6a8835c6b951afaf"
       },
       {
         "section_name": "resources",
@@ -56,7 +56,7 @@
       },
       {
         "section_name": "technologies",
-        "hash": "fa5e5ab1a88ce3d939e475aef222cd1899a0d895a89ae2fd5ca1d2fc5bcb4786"
+        "hash": "ae6d0a0a0b24ecd74f995268592d96486a17a76887610b3bf27d9e84f5637e16"
       },
       {
         "section_name": "terrains",
@@ -64,19 +64,19 @@
       },
       {
         "section_name": "ui_build_menu_layout",
-        "hash": "6900768848369eaf08d4ae33ae1429fcd042ec16f85b01a4b719b895de48577e"
+        "hash": "97da87b42564fd5a2cb08643de839319388de2e97cb8dae009fc767800c98559"
       },
       {
         "section_name": "ui_recipe_layout",
-        "hash": "9c146662e076487e69e3e34c02a0c54dd7244948538d9a47a5f5bfc1f63c8137"
+        "hash": "5aac56fdcb2433c2191822705d53af8aca324b0eb6cb528f88fb3967fde28455"
       },
       {
         "section_name": "ui_tech_tree_layout",
-        "hash": "0a227d82df306f3de0fe6f8ed22c5bb88d48327147df9d123b41e4b4d4446784"
+        "hash": "0b17c21d79b3a8e595789a9e6499d6ce5f61711b45c2d08d80c2ff39f410333b"
       },
       {
         "section_name": "units",
-        "hash": "e1b3ed55162591c6d54d2047e073ba5e34eb7bfc4645e901091ea5b58753fde3"
+        "hash": "5fba7994d1e10db6d54fe634f42a583a75a0083c550c3894ca0ca5de086c3c20"
       }
     ]
   },
@@ -333,6 +333,69 @@
       "tags": [
         "mobile",
         "charge"
+      ]
+    },
+    {
+      "id": "scout",
+      "name": "斥候",
+      "description": "高速侦察单位，不适合直接战斗。",
+      "icon_key": "unit_settler",
+      "prefab_key": "Settler",
+      "class": "civilian",
+      "max_hp": 14,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 6,
+      "vision_range": 6,
+      "train_cost": {
+        "food": 1,
+        "wood": 1
+      },
+      "upkeep": {},
+      "multipliers": {},
+      "road_speed_bonus": 1,
+      "flags": {
+        "can_siege": false,
+        "can_attack_structures": false,
+        "can_destroy_road": false,
+        "can_capture": false
+      },
+      "sort_order": 70,
+      "tags": [
+        "civilian",
+        "visibility"
+      ]
+    },
+    {
+      "id": "spearman",
+      "name": "长矛兵",
+      "description": "廉价可靠的职业近战部队。",
+      "icon_key": "unit_infantry",
+      "prefab_key": "Infantry",
+      "class": "melee",
+      "max_hp": 28,
+      "attack": 9,
+      "attack_range": 1,
+      "move_range": 4,
+      "vision_range": 3,
+      "train_cost": {
+        "food": 1,
+        "wood": 1
+      },
+      "upkeep": {
+        "food": 1
+      },
+      "multipliers": {},
+      "flags": {
+        "can_siege": false,
+        "can_attack_structures": true,
+        "can_destroy_road": false,
+        "can_capture": true
+      },
+      "sort_order": 80,
+      "tags": [
+        "frontline",
+        "melee"
       ]
     }
   ],
@@ -730,6 +793,174 @@
       "tags": [
         "military",
         "siege"
+      ]
+    },
+    {
+      "id": "warehouse",
+      "name": "转运仓",
+      "description": "提高城市网络运量，并整理后方口粮。",
+      "icon_key": "building_granary",
+      "prefab_key": "Granary",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "warehouse_reserve_rations"
+      ],
+      "default_recipe_id": "warehouse_reserve_rations",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 110,
+      "takeover_mode": "city_capture",
+      "sort_order": 130,
+      "tags": [
+        "storage",
+        "logistics"
+      ]
+    },
+    {
+      "id": "academy",
+      "name": "学宫",
+      "description": "提升科研产出，是制度深化后的知识中心。",
+      "icon_key": "building_city_core",
+      "prefab_key": "Workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "ore": 1,
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "sort_order": 140,
+      "tags": [
+        "research",
+        "governance"
+      ]
+    },
+    {
+      "id": "market",
+      "name": "市集",
+      "description": "通过契约调拨资源，缓解局部短缺。",
+      "icon_key": "building_lumber",
+      "prefab_key": "Workshop",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "food": 1,
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "market_grain_contracts",
+        "market_lumber_contracts",
+        "market_ore_contracts"
+      ],
+      "default_recipe_id": "market_grain_contracts",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 85,
+      "takeover_mode": "city_capture",
+      "sort_order": 150,
+      "tags": [
+        "trade",
+        "logistics"
+      ]
+    },
+    {
+      "id": "watchtower",
+      "name": "哨塔",
+      "description": "训练斥候，并增强远程守备。",
+      "icon_key": "building_wall",
+      "prefab_key": "Wall",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "wood": 2
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "watchtower_scout"
+      ],
+      "default_recipe_id": "watchtower_scout",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 80,
+      "takeover_mode": "city_capture",
+      "sort_order": 160,
+      "tags": [
+        "defense",
+        "visibility"
+      ]
+    },
+    {
+      "id": "training_ground",
+      "name": "校场",
+      "description": "训练职业近战部队。",
+      "icon_key": "building_barracks",
+      "prefab_key": "Barracks",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_costs": {
+        "industry_output": 1
+      },
+      "recipe_ids": [
+        "training_ground_spearman"
+      ],
+      "default_recipe_id": "training_ground_spearman",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 85,
+      "takeover_mode": "city_capture",
+      "sort_order": 170,
+      "tags": [
+        "military"
       ]
     }
   ],
@@ -1159,6 +1390,205 @@
         "military",
         "siege"
       ]
+    },
+    {
+      "id": "centralized_storage",
+      "name": "统仓制",
+      "description": "解锁转运仓并提高道路运量",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "warehouse"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "warehouse_reserve_rations"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 140,
+      "tags": [
+        "governance",
+        "logistics"
+      ]
+    },
+    {
+      "id": "trade_levies",
+      "name": "商税法",
+      "description": "解锁市集、资源契约与商贸特许",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "market"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_grain_contracts"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_lumber_contracts"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_ore_contracts"
+        },
+        {
+          "type": "unlock_policy",
+          "target_id": "mercantile_charter"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 150,
+      "tags": [
+        "governance",
+        "trade"
+      ]
+    },
+    {
+      "id": "scholastic_bureaucracy",
+      "name": "学官制",
+      "description": "解锁学宫与研学敕令",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "academy"
+        },
+        {
+          "type": "unlock_policy",
+          "target_id": "research_mandate"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 160,
+      "tags": [
+        "governance",
+        "research"
+      ]
+    },
+    {
+      "id": "sentry_networks",
+      "name": "哨戒网",
+      "description": "解锁哨塔和斥候训练",
+      "icon_key": "tech_fortifications",
+      "branch": "defense",
+      "tier": 5,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "fortifications"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "ranged_drill"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "watchtower"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "watchtower_scout"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 170,
+      "tags": [
+        "defense",
+        "visibility"
+      ]
+    },
+    {
+      "id": "professional_drill",
+      "name": "职业操训",
+      "description": "解锁校场和长矛兵训练",
+      "icon_key": "tech_militia_mobilization",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "centralized_storage"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "training_ground"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "training_ground_spearman"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "sort_order": 180,
+      "tags": [
+        "military",
+        "melee"
+      ]
     }
   ],
   "policies": [
@@ -1400,6 +1830,90 @@
       "tags": [
         "institutional",
         "industry"
+      ]
+    },
+    {
+      "id": "mercantile_charter",
+      "name": "商贸特许",
+      "description": "制度层面的市集授权，提高契约调拨效率。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_lumber_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "trade",
+          "priority": 120
+        },
+        {
+          "tag": "industry",
+          "priority": 80
+        }
+      ],
+      "sort_order": 80,
+      "tags": [
+        "institutional",
+        "trade"
+      ]
+    },
+    {
+      "id": "research_mandate",
+      "name": "研学敕令",
+      "description": "制度层面的学术优先令，显著提高科研产出。",
+      "icon_key": "policy_academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 120
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "institutional",
+        "research"
       ]
     }
   ],
@@ -1761,6 +2275,160 @@
         "military",
         "siege"
       ]
+    },
+    {
+      "id": "warehouse_reserve_rations",
+      "name": "后备口粮",
+      "description": "整理粮食储备，提高短缺时的口粮可用量。",
+      "icon_key": "recipe_farm_food",
+      "building_id": "warehouse",
+      "resource_inputs": {
+        "food": 2
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 3
+        }
+      },
+      "sort_order": 150,
+      "tags": [
+        "food",
+        "storage"
+      ]
+    },
+    {
+      "id": "market_grain_contracts",
+      "name": "粮食契约",
+      "description": "用木材与矿石换取粮食。",
+      "icon_key": "recipe_farm_food",
+      "building_id": "market",
+      "resource_inputs": {
+        "ore": 1,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "food": 3
+        }
+      },
+      "sort_order": 160,
+      "tags": [
+        "trade",
+        "food"
+      ]
+    },
+    {
+      "id": "market_lumber_contracts",
+      "name": "木材契约",
+      "description": "用粮食与矿石换取木材。",
+      "icon_key": "recipe_lumber_wood",
+      "building_id": "market",
+      "resource_inputs": {
+        "food": 1,
+        "ore": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "wood": 3
+        }
+      },
+      "sort_order": 170,
+      "tags": [
+        "trade",
+        "wood"
+      ]
+    },
+    {
+      "id": "market_ore_contracts",
+      "name": "矿石契约",
+      "description": "用粮食与木材换取矿石。",
+      "icon_key": "recipe_mine_ore",
+      "building_id": "market",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "resources": {
+          "ore": 2
+        }
+      },
+      "sort_order": 180,
+      "tags": [
+        "trade",
+        "ore"
+      ]
+    },
+    {
+      "id": "watchtower_scout",
+      "name": "训练斥候",
+      "description": "产出高速侦察单位。",
+      "icon_key": "recipe_city_core_settler",
+      "building_id": "watchtower",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "scout"
+        ]
+      },
+      "sort_order": 190,
+      "tags": [
+        "visibility"
+      ]
+    },
+    {
+      "id": "training_ground_spearman",
+      "name": "训练长矛兵",
+      "description": "产出职业近战部队。",
+      "icon_key": "recipe_barracks_infantry",
+      "building_id": "training_ground",
+      "resource_inputs": {
+        "food": 1,
+        "wood": 1
+      },
+      "point_inputs": {
+        "industry_output": 1
+      },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": {
+        "units": [
+          "spearman"
+        ]
+      },
+      "sort_order": 200,
+      "tags": [
+        "military",
+        "melee"
+      ]
     }
   ],
   "terrains": [
@@ -2042,6 +2710,61 @@
         "description": "解锁工程营与攻城生产",
         "x": 1840,
         "y": 180,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_centralized_storage",
+        "technology_id": "centralized_storage",
+        "title": "统仓制",
+        "description": "解锁转运仓",
+        "x": 920,
+        "y": 460,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_trade_levies",
+        "technology_id": "trade_levies",
+        "title": "商税法",
+        "description": "解锁市集和商贸特许",
+        "x": 920,
+        "y": 640,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_scholastic_bureaucracy",
+        "technology_id": "scholastic_bureaucracy",
+        "title": "学官制",
+        "description": "解锁学宫和研学敕令",
+        "x": 460,
+        "y": 540,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_sentry_networks",
+        "technology_id": "sentry_networks",
+        "title": "哨戒网",
+        "description": "解锁哨塔和斥候训练",
+        "x": 1840,
+        "y": 420,
+        "width": 360,
+        "height": 104,
+        "visible": true
+      },
+      {
+        "id": "node_professional_drill",
+        "technology_id": "professional_drill",
+        "title": "职业操训",
+        "description": "解锁校场和长矛兵训练",
+        "x": 1380,
+        "y": 460,
         "width": 360,
         "height": 104,
         "visible": true
@@ -2365,6 +3088,198 @@
             "y": 180
           }
         ]
+      },
+      {
+        "id": "edge_supply_depots_to_centralized_storage",
+        "from": "node_supply_depots",
+        "to": "node_centralized_storage",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 640,
+            "y": 360
+          },
+          {
+            "x": 760,
+            "y": 360
+          },
+          {
+            "x": 760,
+            "y": 460
+          },
+          {
+            "x": 920,
+            "y": 460
+          }
+        ]
+      },
+      {
+        "id": "edge_supply_depots_to_trade_levies",
+        "from": "node_supply_depots",
+        "to": "node_trade_levies",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 640,
+            "y": 360
+          },
+          {
+            "x": 780,
+            "y": 360
+          },
+          {
+            "x": 780,
+            "y": 640
+          },
+          {
+            "x": 920,
+            "y": 640
+          }
+        ]
+      },
+      {
+        "id": "edge_civic_institutions_to_trade_levies",
+        "from": "node_civic_institutions",
+        "to": "node_trade_levies",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 360
+          },
+          {
+            "x": 760,
+            "y": 360
+          },
+          {
+            "x": 760,
+            "y": 640
+          },
+          {
+            "x": 920,
+            "y": 640
+          }
+        ]
+      },
+      {
+        "id": "edge_civic_institutions_to_scholastic_bureaucracy",
+        "from": "node_civic_institutions",
+        "to": "node_scholastic_bureaucracy",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 180,
+            "y": 360
+          },
+          {
+            "x": 320,
+            "y": 360
+          },
+          {
+            "x": 320,
+            "y": 540
+          },
+          {
+            "x": 460,
+            "y": 540
+          }
+        ]
+      },
+      {
+        "id": "edge_fortifications_to_sentry_networks",
+        "from": "node_fortifications",
+        "to": "node_sentry_networks",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1560,
+            "y": 280
+          },
+          {
+            "x": 1700,
+            "y": 280
+          },
+          {
+            "x": 1700,
+            "y": 420
+          },
+          {
+            "x": 1840,
+            "y": 420
+          }
+        ]
+      },
+      {
+        "id": "edge_ranged_drill_to_sentry_networks",
+        "from": "node_ranged_drill",
+        "to": "node_sentry_networks",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1560,
+            "y": 80
+          },
+          {
+            "x": 1700,
+            "y": 80
+          },
+          {
+            "x": 1700,
+            "y": 420
+          },
+          {
+            "x": 1840,
+            "y": 420
+          }
+        ]
+      },
+      {
+        "id": "edge_militia_mobilization_to_professional_drill",
+        "from": "node_militia_mobilization",
+        "to": "node_professional_drill",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1100,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 180
+          },
+          {
+            "x": 1220,
+            "y": 460
+          },
+          {
+            "x": 1380,
+            "y": 460
+          }
+        ]
+      },
+      {
+        "id": "edge_centralized_storage_to_professional_drill",
+        "from": "node_centralized_storage",
+        "to": "node_professional_drill",
+        "show_arrow": true,
+        "thickness": 3,
+        "points": [
+          {
+            "x": 1100,
+            "y": 460
+          },
+          {
+            "x": 1380,
+            "y": 460
+          }
+        ]
       }
     ]
   },
@@ -2383,7 +3298,12 @@
       "granary",
       "smelter",
       "stable",
-      "engineer_camp"
+      "engineer_camp",
+      "warehouse",
+      "academy",
+      "market",
+      "watchtower",
+      "training_ground"
     ],
     "hidden_building_ids": [
       "city_core"
@@ -2406,7 +3326,13 @@
       "smelter_refined_ore",
       "stable_cavalry",
       "engineer_camp_raider",
-      "engineer_camp_siege_engine"
+      "engineer_camp_siege_engine",
+      "warehouse_reserve_rations",
+      "market_grain_contracts",
+      "market_lumber_contracts",
+      "market_ore_contracts",
+      "watchtower_scout",
+      "training_ground_spearman"
     ]
   }
 }

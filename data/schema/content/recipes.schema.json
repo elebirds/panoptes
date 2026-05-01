@@ -50,6 +50,7 @@
           },
           "building_id": {
             "enum": [
+              "academy",
               "archery",
               "barracks",
               "city_core",
@@ -58,10 +59,14 @@
               "frontier_office",
               "granary",
               "lumber",
+              "market",
               "mine",
               "smelter",
               "stable",
+              "training_ground",
               "wall",
+              "warehouse",
+              "watchtower",
               "workshop"
             ],
             "type": "string"
@@ -91,8 +96,10 @@
                     "cavalry",
                     "infantry",
                     "raider",
+                    "scout",
                     "settler",
-                    "siege_engine"
+                    "siege_engine",
+                    "spearman"
                   ],
                   "type": "string"
                 },

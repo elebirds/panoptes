@@ -73,6 +73,7 @@ M0-M9 已完成一轮后端基础实现。当前后端已经具备：
    - 扩充 data/ 下科技、制度、建筑、兵种、配方、地图。
    - 给 M2-M9 系统提供足够真实的长局素材。
    - 首轮门禁：`docs/2026-05-01-backend-d0-content-expansion-gate.md`。
+   - 追加作者源扩展：`docs/2026-05-01-backend-d1-authored-content-expansion-gate.md`。
 
 4. **A0 大臣与信息深化**
    - 大臣锁定、人格、能力、忠诚。

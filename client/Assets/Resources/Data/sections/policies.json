@@ -239,6 +239,90 @@
         "institutional",
         "industry"
       ]
+    },
+    {
+      "id": "mercantile_charter",
+      "name": "商贸特许",
+      "description": "制度层面的市集授权，提高契约调拨效率。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_lumber_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "trade",
+          "priority": 120
+        },
+        {
+          "tag": "industry",
+          "priority": 80
+        }
+      ],
+      "sort_order": 80,
+      "tags": [
+        "institutional",
+        "trade"
+      ]
+    },
+    {
+      "id": "research_mandate",
+      "name": "研学敕令",
+      "description": "制度层面的学术优先令，显著提高科研产出。",
+      "icon_key": "policy_academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 120
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "institutional",
+        "research"
+      ]
     }
   ]
 }

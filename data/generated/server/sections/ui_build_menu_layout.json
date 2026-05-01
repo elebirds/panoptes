@@ -13,7 +13,12 @@
     "granary",
     "smelter",
     "stable",
-    "engineer_camp"
+    "engineer_camp",
+    "warehouse",
+    "academy",
+    "market",
+    "watchtower",
+    "training_ground"
   ],
   "hidden_building_ids": [
     "city_core"

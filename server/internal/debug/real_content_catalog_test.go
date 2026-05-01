@@ -187,6 +187,73 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if foundryDirectives.Layer != "institutional" || len(foundryDirectives.LogisticsPriority) == 0 {
 		t.Fatalf("foundry_directives = %#v, want institutional logistics policy", foundryDirectives)
 	}
+
+	for _, tc := range []struct {
+		buildingID string
+		recipeID   string
+	}{
+		{buildingID: "warehouse", recipeID: "warehouse_reserve_rations"},
+		{buildingID: "market", recipeID: "market_grain_contracts"},
+		{buildingID: "watchtower", recipeID: "watchtower_scout"},
+		{buildingID: "training_ground", recipeID: "training_ground_spearman"},
+	} {
+		building, ok := catalog.GetBuilding(tc.buildingID)
+		if !ok {
+			t.Fatalf("%s missing", tc.buildingID)
+		}
+		if building.DefaultRecipeID != tc.recipeID {
+			t.Fatalf("%s default recipe = %q, want %q", tc.buildingID, building.DefaultRecipeID, tc.recipeID)
+		}
+		if _, ok := catalog.GetRecipe(tc.recipeID); !ok {
+			t.Fatalf("%s missing", tc.recipeID)
+		}
+	}
+	academy, ok := catalog.GetBuilding("academy")
+	if !ok {
+		t.Fatalf("academy missing")
+	}
+	if academy.DefaultRecipeID != "" || len(academy.ModifierEffects) != 1 || academy.ModifierEffects[0].PointKey != "research_output" || academy.ModifierEffects[0].Value != 2 {
+		t.Fatalf("academy = %#v, want research output modifier and no default recipe", academy)
+	}
+
+	scout, ok := catalog.GetUnit("scout")
+	if !ok {
+		t.Fatalf("scout missing")
+	}
+	if scout.Class != "civilian" || scout.VisionRange < 6 || scout.MoveRange < 6 {
+		t.Fatalf("scout = %#v, want fast high-vision civilian", scout)
+	}
+	scoutEntry := cavalryWorld.Entry(ecs.CreateUnit(cavalryWorld, "scout", "player-1", domain.Position{}))
+	scoutCaps := ecs.UnitCapabilitiesC.Get(scoutEntry)
+	if !scoutCaps.Civilian || scoutCaps.Melee || scoutCaps.Ranged {
+		t.Fatalf("scout capabilities = %#v, want pure civilian", scoutCaps)
+	}
+	spearman, ok := catalog.GetUnit("spearman")
+	if !ok {
+		t.Fatalf("spearman missing")
+	}
+	if spearman.Class != "melee" || !spearman.Flags.CanAttackStructures || !spearman.Flags.CanCapture {
+		t.Fatalf("spearman = %#v, want capturable melee structure attacker", spearman)
+	}
+
+	for _, techID := range []string{"centralized_storage", "trade_levies", "scholastic_bureaucracy", "sentry_networks", "professional_drill"} {
+		if _, ok := catalog.GetTechnology(techID); !ok {
+			t.Fatalf("%s technology missing", techID)
+		}
+	}
+	tradeLevies, _ := catalog.GetTechnology("trade_levies")
+	if len(tradeLevies.ExplicitEffects) != 5 || tradeLevies.ExplicitEffects[0].TargetID != "market" || tradeLevies.ExplicitEffects[4].TargetID != "mercantile_charter" {
+		t.Fatalf("trade_levies explicit effects = %#v, want market recipes and mercantile charter", tradeLevies.ExplicitEffects)
+	}
+	for _, policyID := range []string{"mercantile_charter", "research_mandate"} {
+		policy, ok := catalog.GetPolicy(policyID)
+		if !ok {
+			t.Fatalf("%s missing", policyID)
+		}
+		if policy.Layer != "institutional" || len(policy.ModifierEffects) == 0 {
+			t.Fatalf("%s = %#v, want institutional modifier policy", policyID, policy)
+		}
+	}
 }
 
 func TestRealContentCityCoreProvidesStartupFoodAndGovernance(t *testing.T) {
