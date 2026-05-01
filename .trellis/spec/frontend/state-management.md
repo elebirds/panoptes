@@ -19,6 +19,11 @@ Questions to answer:
 Client state mirrors server state and static catalog data for presentation only.
 The client never becomes a second rules engine.
 
+Target direction for C0a+ is reactive read models: Core stores expose read-only
+state, ViewModels compose that state into panel/screen models, and Binders render
+those models to uGUI or UI Toolkit. R3 is the proposed state propagation library,
+but it is not installed yet.
+
 ---
 
 ## State Categories
@@ -30,6 +35,13 @@ The client never becomes a second rules engine.
 - Planning draft/preview state: `PlanningDraftCache`.
 - Local presentation state: MonoBehaviour-private fields for selection,
   expanded panels, hover state, and animation bookkeeping.
+
+Target additions after dependency policy changes:
+
+- Store state streams: server/cache snapshots exposed as read-only observables.
+- ViewModel state: panel-ready state records derived from one or more stores.
+- Form state: local, non-authoritative input such as search, filters, settings,
+  and login fields.
 
 ---
 
@@ -54,6 +66,17 @@ but keep gameplay validation out of these helpers.
 Presentation reads Core DTO/cache APIs and should not inspect generated
 protocol messages directly.
 
+Default data flow:
+
+```text
+Server -> Core cache/store -> ViewModel -> Binder -> UI
+Player input -> ViewModel command -> Service/Intent -> MessageSender -> Server
+```
+
+UI Toolkit runtime data binding may be evaluated later for stable detail panels
+and forms, but the first implementation path is explicit Binder rendering. Do
+not bind UI Toolkit directly to mutable gameplay cache objects.
+
 ---
 
 ## Common Mistakes
@@ -64,3 +87,6 @@ protocol messages directly.
   snapshots instead.
 - Recomputing server legality rules in UI state builders.
 - Letting Presentation reach into generated protocol types instead of Core DTOs.
+- Using two-way binding to mutate authoritative game state.
+- Maintaining separate uGUI and UI Toolkit state models for the same gameplay
+  concept.
