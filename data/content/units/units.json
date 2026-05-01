@@ -65,6 +65,21 @@
       "upkeep": { "food": 1 },
       "multipliers": {},
       "flags": { "can_siege": true, "siege_multiplier": 2, "can_attack_structures": true, "can_destroy_road": false, "can_capture": false }
+    },
+    {
+      "id": "cavalry",
+      "class": "mobile",
+      "max_hp": 26,
+      "attack": 12,
+      "attack_range": 1,
+      "move_range": 5,
+      "vision_range": 4,
+      "train_cost": { "food": 2, "ore": 1 },
+      "upkeep": { "food": 2 },
+      "multipliers": {},
+      "road_speed_bonus": 1,
+      "charge_bonus": 1.5,
+      "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": true }
     }
   ]
 }

@@ -99,6 +99,50 @@
       "width": 360,
       "height": 104,
       "visible": true
+    },
+    {
+      "id": "node_supply_depots",
+      "technology_id": "supply_depots",
+      "title": "转运仓制",
+      "description": "解锁粮仓并提高道路运量",
+      "x": 460,
+      "y": 360,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_metallurgy",
+      "technology_id": "metallurgy",
+      "title": "冶金术",
+      "description": "解锁冶炼坊与冶造敕令",
+      "x": 920,
+      "y": 0,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_mounted_logistics",
+      "technology_id": "mounted_logistics",
+      "title": "骑乘辎重",
+      "description": "解锁马厩与骑兵训练",
+      "x": 1380,
+      "y": -120,
+      "width": 360,
+      "height": 104,
+      "visible": true
+    },
+    {
+      "id": "node_siegecraft",
+      "technology_id": "siegecraft",
+      "title": "攻城术",
+      "description": "解锁工程营与攻城生产",
+      "x": 1840,
+      "y": 180,
+      "width": 360,
+      "height": 104,
+      "visible": true
     }
   ],
   "edges": [
@@ -225,6 +269,198 @@
         {
           "x": 1380,
           "y": 280
+        }
+      ]
+    },
+    {
+      "id": "edge_agrarian_foundations_to_supply_depots",
+      "from": "node_agrarian_foundations",
+      "to": "node_supply_depots",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 180,
+          "y": -180
+        },
+        {
+          "x": 300,
+          "y": -180
+        },
+        {
+          "x": 300,
+          "y": 360
+        },
+        {
+          "x": 460,
+          "y": 360
+        }
+      ]
+    },
+    {
+      "id": "edge_organized_labor_to_supply_depots",
+      "from": "node_organized_labor",
+      "to": "node_supply_depots",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 180,
+          "y": 180
+        },
+        {
+          "x": 320,
+          "y": 180
+        },
+        {
+          "x": 320,
+          "y": 360
+        },
+        {
+          "x": 460,
+          "y": 360
+        }
+      ]
+    },
+    {
+      "id": "edge_mining_survey_to_metallurgy",
+      "from": "node_mining_survey",
+      "to": "node_metallurgy",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 640,
+          "y": 180
+        },
+        {
+          "x": 760,
+          "y": 180
+        },
+        {
+          "x": 760,
+          "y": 0
+        },
+        {
+          "x": 920,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "edge_workshop_methods_to_metallurgy",
+      "from": "node_workshop_methods",
+      "to": "node_metallurgy",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 640,
+          "y": 0
+        },
+        {
+          "x": 920,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "edge_militia_mobilization_to_mounted_logistics",
+      "from": "node_militia_mobilization",
+      "to": "node_mounted_logistics",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 1100,
+          "y": 180
+        },
+        {
+          "x": 1220,
+          "y": 180
+        },
+        {
+          "x": 1220,
+          "y": -120
+        },
+        {
+          "x": 1380,
+          "y": -120
+        }
+      ]
+    },
+    {
+      "id": "edge_supply_depots_to_mounted_logistics",
+      "from": "node_supply_depots",
+      "to": "node_mounted_logistics",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 640,
+          "y": 360
+        },
+        {
+          "x": 1220,
+          "y": 360
+        },
+        {
+          "x": 1220,
+          "y": -120
+        },
+        {
+          "x": 1380,
+          "y": -120
+        }
+      ]
+    },
+    {
+      "id": "edge_metallurgy_to_siegecraft",
+      "from": "node_metallurgy",
+      "to": "node_siegecraft",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 1100,
+          "y": 0
+        },
+        {
+          "x": 1600,
+          "y": 0
+        },
+        {
+          "x": 1600,
+          "y": 180
+        },
+        {
+          "x": 1840,
+          "y": 180
+        }
+      ]
+    },
+    {
+      "id": "edge_fortifications_to_siegecraft",
+      "from": "node_fortifications",
+      "to": "node_siegecraft",
+      "show_arrow": true,
+      "thickness": 3,
+      "points": [
+        {
+          "x": 1560,
+          "y": 280
+        },
+        {
+          "x": 1700,
+          "y": 280
+        },
+        {
+          "x": 1700,
+          "y": 180
+        },
+        {
+          "x": 1840,
+          "y": 180
         }
       ]
     }

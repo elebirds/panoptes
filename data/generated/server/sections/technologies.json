@@ -258,6 +258,173 @@
       "tags": [
         "defense"
       ]
+    },
+    {
+      "id": "supply_depots",
+      "name": "转运仓制",
+      "description": "解锁粮仓并提高道路基础运量",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "agrarian_foundations"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "organized_labor"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "granary"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "granary_rations"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 100,
+      "tags": [
+        "governance",
+        "logistics"
+      ]
+    },
+    {
+      "id": "metallurgy",
+      "name": "冶金术",
+      "description": "解锁冶炼坊与冶造敕令",
+      "icon_key": "tech_workshop_methods",
+      "branch": "industry",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "mining_survey"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "workshop_methods"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "smelter"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "smelter_refined_ore"
+        },
+        {
+          "type": "unlock_policy",
+          "target_id": "foundry_directives"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 110,
+      "tags": [
+        "industry"
+      ]
+    },
+    {
+      "id": "mounted_logistics",
+      "name": "骑乘辎重",
+      "description": "解锁马厩与骑兵训练",
+      "icon_key": "tech_militia_mobilization",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "stable"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "stable_cavalry"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.move_range",
+          "target_id": "cavalry",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 120,
+      "tags": [
+        "military",
+        "mobile"
+      ]
+    },
+    {
+      "id": "siegecraft",
+      "name": "攻城术",
+      "description": "解锁工程营、掠袭兵和攻城器械生产",
+      "icon_key": "tech_fortifications",
+      "branch": "military",
+      "tier": 5,
+      "research_cost": 4,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "metallurgy"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "fortifications"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "engineer_camp"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "engineer_camp_raider"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "engineer_camp_siege_engine"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.siege_multiplier",
+          "target_id": "siege_engine",
+          "modifier_type": "flat",
+          "value": 0.5
+        }
+      ],
+      "sort_order": 130,
+      "tags": [
+        "military",
+        "siege"
+      ]
     }
   ]
 }

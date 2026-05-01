@@ -201,6 +201,44 @@
         "institutional",
         "logistics"
       ]
+    },
+    {
+      "id": "foundry_directives",
+      "name": "冶造敕令",
+      "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
+      "icon_key": "policy_reorganization",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "metallurgy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "smelter_refined_ore",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 110
+        },
+        {
+          "target_id": "smelter_refined_ore",
+          "priority": 130
+        }
+      ],
+      "sort_order": 70,
+      "tags": [
+        "institutional",
+        "industry"
+      ]
     }
   ]
 }

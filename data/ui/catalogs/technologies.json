@@ -9,6 +9,10 @@
     { "id": "workshop_methods", "name": "工坊法", "description": "解锁工坊与深层采矿配方", "icon_key": "tech_workshop_methods", "sort_order": 60, "tags": ["industry"] },
     { "id": "militia_mobilization", "name": "民兵动员", "description": "解锁兵营与步兵训练", "icon_key": "tech_militia_mobilization", "sort_order": 70, "tags": ["military"] },
     { "id": "ranged_drill", "name": "远射操典", "description": "解锁靶场与弓手训练", "icon_key": "tech_militia_mobilization", "sort_order": 80, "tags": ["military"] },
-    { "id": "fortifications", "name": "筑垒术", "description": "解锁城墙并提升主城与城墙耐久", "icon_key": "tech_fortifications", "sort_order": 90, "tags": ["defense"] }
+    { "id": "fortifications", "name": "筑垒术", "description": "解锁城墙并提升主城与城墙耐久", "icon_key": "tech_fortifications", "sort_order": 90, "tags": ["defense"] },
+    { "id": "supply_depots", "name": "转运仓制", "description": "解锁粮仓并提高道路基础运量", "icon_key": "tech_civic_institutions", "sort_order": 100, "tags": ["governance", "logistics"] },
+    { "id": "metallurgy", "name": "冶金术", "description": "解锁冶炼坊与冶造敕令", "icon_key": "tech_workshop_methods", "sort_order": 110, "tags": ["industry"] },
+    { "id": "mounted_logistics", "name": "骑乘辎重", "description": "解锁马厩与骑兵训练", "icon_key": "tech_militia_mobilization", "sort_order": 120, "tags": ["military", "mobile"] },
+    { "id": "siegecraft", "name": "攻城术", "description": "解锁工程营、掠袭兵和攻城器械生产", "icon_key": "tech_fortifications", "sort_order": 130, "tags": ["military", "siege"] }
   ]
 }
