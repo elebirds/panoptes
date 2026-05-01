@@ -43,6 +43,8 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("TurnStore"));
             Assert.That(installer, Does.Contain("SelectionService"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
+            Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
+            Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
         }
 
         [Test]
@@ -66,6 +68,34 @@ namespace Panoptes.Tests.EditMode.Composition
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "Migrated UnitInfo ViewModel/Binder must consume final stores and services only.");
+        }
+
+        [Test]
+        public void TurnSummaryUiToolkitSlice_ShouldUseStableNamesAndFinalStores()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TurnSummaryViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/TurnSummaryUiToolkitBinder.cs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "Migrated TurnSummary ViewModel/Binder must consume final stores only.");
+
+            var uxml = File.ReadAllText(ResolveAssetPath("UI/Toolkit/Turn/TurnSummary.uxml"));
+            Assert.That(uxml, Does.Contain("turn-summary-root"));
+            Assert.That(uxml, Does.Contain("turn-summary-title"));
+            Assert.That(uxml, Does.Contain("turn-summary-turn-value"));
+            Assert.That(uxml, Does.Contain("turn-summary-phase-value"));
+            Assert.That(uxml, Does.Contain("turn-summary-events"));
         }
 
         [Test]

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "UI Toolkit asset placement and final architecture directory rules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Explicit UI Toolkit binder rendering and prefab/scene compatibility rules."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel state ownership and migrated module singleton restrictions."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, generated-file restrictions, and test expectations."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Phase5 spans Store, ViewModel, UIDocument Binder, UXML, and composition."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse Phase4 ViewModel/Binder patterns rather than inventing a parallel UI Toolkit stack."}

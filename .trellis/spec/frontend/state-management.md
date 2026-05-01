@@ -72,6 +72,18 @@ Phase 4 establishes the first migrated uGUI slice:
 - The migrated ViewModel/Binder files must not reference generated Protocol,
   legacy cache singletons, or `NetworkManager.Instance`.
 
+Phase 5 establishes the first migrated UI Toolkit read-only slice:
+
+- `TurnSummaryViewModel` composes `TurnStore` and `GameStateStore` into
+  `TurnSummaryState`.
+- `TurnSummaryUiToolkitBinder` renders a `UIDocument` through explicit
+  `Q<T>("name")` lookups and `Render(state)`.
+- Stable UXML names live in `client/Assets/UI/Toolkit/Turn/TurnSummary.uxml`;
+  binder constants and tests should reference the same names.
+- Do not use Unity automatic data binding for gameplay state in this pilot.
+- UI Toolkit binders must not reference generated Protocol, legacy cache
+  singletons, or `NetworkManager.Instance`.
+
 ---
 
 ## When to Use Global State

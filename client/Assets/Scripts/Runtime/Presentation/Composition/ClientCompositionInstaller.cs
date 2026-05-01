@@ -3,6 +3,7 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
 using VContainer;
@@ -50,6 +51,11 @@ namespace Panoptes.Presentation.Composition
             builder.Register<SelectionService>(Lifetime.Singleton).AsSelf();
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
+            builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
+            builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Turn Summary UI Toolkit");
+            builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
         }
     }
 }
