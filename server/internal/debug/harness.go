@@ -37,18 +37,15 @@ func NewHarness(def *scenario.Definition) (*Harness, error) {
 	if def.State == nil {
 		return nil, fmt.Errorf("scenario state is nil")
 	}
-	if len(def.PlayerIDs) == 0 {
-		return nil, fmt.Errorf("scenario players are empty")
+	participantSpecs := def.ParticipantSpecs()
+	if len(participantSpecs) == 0 {
+		return nil, fmt.Errorf("scenario participants are empty")
 	}
 
 	transport := NewCaptureTransport()
-	participants := make([]game.ParticipantSpec, 0, len(def.PlayerIDs))
-	for idx, playerID := range def.PlayerIDs {
-		username := playerID
-		if idx < len(def.Usernames) && def.Usernames[idx] != "" {
-			username = def.Usernames[idx]
-		}
-		participants = append(participants, game.NewHumanParticipantSpec(playerID, username))
+	participants := make([]game.ParticipantSpec, 0, len(participantSpecs))
+	for _, spec := range participantSpecs {
+		participants = append(participants, game.ParticipantSpec(spec))
 	}
 
 	room := game.NewPreparedRoom(
@@ -74,7 +71,7 @@ func (h *Harness) Start() error {
 		staticdata.SetDefault(h.definition.Catalog)
 	}
 	h.room.Start()
-	for _, playerID := range h.definition.PlayerIDs {
+	for _, playerID := range h.definition.HumanPlayerIDs() {
 		if err := h.room.HandleGameCommand(cmddispatch.InboundContext{
 			PlayerID:  playerID,
 			RequestID: "bootstrap-sync-" + playerID,

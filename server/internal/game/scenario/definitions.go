@@ -9,6 +9,7 @@ package scenario
 import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
@@ -442,5 +443,49 @@ func CapitalDestroyGameOver() (*Definition, error) {
 		State:     state,
 		PlayerIDs: []string{"player-1"},
 		Usernames: []string{"alice"},
+	}, nil
+}
+
+func PVESkirmish() (*Definition, error) {
+	rules := baseRules()
+	rules.MaxTurns = 6
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: manifest("pve_skirmish"),
+		Rules:    rules,
+		Units: []staticdata.UnitDefinition{
+			infantryDefinition(),
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         30,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, pveSkirmishMap("pve_skirmish"))
+
+	playerIDs := []string{"player-1", "bot-1"}
+	usernames := []string{"alice", "pve"}
+	state, err := newState("pve_skirmish", catalog, playerIDs, usernames, pveSkirmishMap("pve_skirmish"))
+	if err != nil {
+		return nil, err
+	}
+	placeUnitWithID(state, "infantry", "bot-1", domain.Position{Q: 1, R: 0}, "bot-infantry-1")
+
+	return &Definition{
+		Name:      "pve_skirmish",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: playerIDs,
+		Usernames: usernames,
+		Participants: []participant.Spec{
+			{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			{ID: "bot-1", Username: "pve", Kind: participant.KindBot},
+		},
 	}, nil
 }

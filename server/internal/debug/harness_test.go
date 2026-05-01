@@ -200,6 +200,51 @@ func TestHarnessCapitalDestroyGameOver_StopsAtGameOver(t *testing.T) {
 	}
 }
 
+func TestHarnessPVESkirmish_AutonomousBotUsesPlanningIntent(t *testing.T) {
+	def, err := scenario.PVESkirmish()
+	if err != nil {
+		t.Fatalf("scenario build error = %v", err)
+	}
+
+	h, err := NewHarness(def)
+	if err != nil {
+		t.Fatalf("NewHarness() error = %v", err)
+	}
+	if err := h.Start(); err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+	if !h.room.HasParticipant("bot-1") {
+		t.Fatalf("room should include bot-1 participant")
+	}
+	if h.room.IsHumanParticipant("bot-1") {
+		t.Fatalf("bot-1 should be autonomous, not human")
+	}
+
+	start, err := h.WaitPlanningStart("player-1", 1, 2*time.Second)
+	if err != nil {
+		t.Fatalf("WaitPlanningStart(turn=1) error = %v", err)
+	}
+	if start.GetInformationReport() == nil {
+		t.Fatalf("planning start missing information report")
+	}
+	before := cityCoreHPForHarnessTest(t, h, "A1")
+	if err := h.SubmitTurn("player-1"); err != nil {
+		t.Fatalf("SubmitTurn(turn=1) error = %v", err)
+	}
+
+	record, err := h.WaitGameSync("player-1", 1, 3*time.Second)
+	if err != nil {
+		t.Fatalf("WaitGameSync(turn=1) error = %v", err)
+	}
+	if !hasTurnEvent(record.GameSync, "unit", "city_core_damaged") {
+		t.Fatalf("turn 1 missing city_core_damaged event")
+	}
+	after := cityCoreHPForHarnessTest(t, h, "A1")
+	if after >= before {
+		t.Fatalf("player city core hp = %d, want below initial %d after bot attack", after, before)
+	}
+}
+
 func TestHarnessOuterFacilityCapture_DeactivatesContestedFacility(t *testing.T) {
 	def, err := scenario.OuterFacilityCapture()
 	if err != nil {
@@ -544,4 +589,13 @@ func assertM9PreflightPlanningStart(t *testing.T, start *pb.MsgPlanningStart) {
 	if snapshot == nil {
 		t.Fatalf("planning start snapshot = nil")
 	}
+}
+
+func cityCoreHPForHarnessTest(t *testing.T, h *Harness, nodeID string) int {
+	t.Helper()
+	entry, ok := h.room.State().GetNode(nodeID)
+	if !ok || entry == nil || !entry.HasComponent(ecs.BuildingC) {
+		t.Fatalf("missing city core at %s", nodeID)
+	}
+	return ecs.BuildingC.Get(entry).HP
 }
