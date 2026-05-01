@@ -59,6 +59,10 @@ planned migration, not as permission to install packages.
   UI` flow even before R3/VContainer are installed.
 - If UI Toolkit is used, start with explicit Binder rendering and add data
   binding only for stable fields/forms after the pilot succeeds.
+- Helpers that own runtime Unity objects (`GameObject`, `RenderTexture`,
+  cameras, lights) must expose deterministic cleanup. If cleanup can run in
+  EditMode tests, use `DestroyImmediate` outside play mode and `Destroy` during
+  play mode.
 
 ---
 
@@ -86,5 +90,7 @@ planned migration, not as permission to install packages.
   compatibility?
 - Did large MonoBehaviours shrink or stay stable?
 - Did helpers avoid becoming hidden gameplay rules?
+- Do helpers that create runtime Unity objects release them with EditMode-safe
+  cleanup?
 - Are event listeners unsubscribed symmetrically?
 - Are generated protocol files untouched?
