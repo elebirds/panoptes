@@ -380,3 +380,21 @@ Implemented on 2026-05-01 as the first MapPlanning final-structure slice:
 facade. The next MapPlanning pass should focus on either build placement mode
 ownership or combat/move click routing, rather than re-expanding preview object
 lifecycle inside the controller.
+
+## MapPlanning Build Placement Ghost Refactor
+
+Implemented on 2026-05-02 as the second MapPlanning final-structure slice:
+
+- Extracted `BuildPlacementGhostPresenter` from `MapPlanningInputController`.
+- Moved build hover ghost creation, owner/type assignment, placement-ghost
+  recoloring, and deterministic cleanup out of the map input facade.
+- Kept the existing build serialized fields and build-mode command flow on the
+  controller for scene/prefab compatibility.
+- Added EditMode coverage for the presenter namespace and cleanup API.
+- Reduced `MapPlanningInputController.cs` from 2931 lines after the move ghost
+  pass to 2912 lines.
+
+`MapPlanningInputController` still owns build-mode input routing and preview
+request state. The next higher-leverage split is combat/move click routing or a
+build placement mode runner, where more of the input orchestration can move into
+`Presentation/Planning/Input`.

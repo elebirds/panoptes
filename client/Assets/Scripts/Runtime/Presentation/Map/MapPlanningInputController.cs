@@ -135,6 +135,7 @@ namespace Panoptes.Presentation.Map
         private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly PendingBuildState<PendingBuildRecord> _pendingBuildState = new(record => record.nodeId);
         private readonly PendingDeployState _pendingDeployState = new();
+        private readonly BuildPlacementGhostPresenter _buildPlacementGhostPresenter = new();
         private readonly MovePreviewGhostPresenter _movePreviewGhostPresenter = new();
         private readonly PendingMoveState _pendingMoveState = new();
         private readonly List<UnitView> _nodeClickUnits = new();
@@ -151,7 +152,6 @@ namespace Panoptes.Presentation.Map
         private string _buildType = string.Empty;
         private string _activeBuildCityId = string.Empty;
         private NodeView _hoverNode;
-        private BuildingView _hoverGhost;
         private GameStateCache _cache;
         private PlanningDraftCache _draftCache;
         private MovePathOverlayController _movePathOverlay;
@@ -634,10 +634,7 @@ namespace Panoptes.Presentation.Map
                 _hoverNode.SetHighlight(true, highlightColor);
             }
 
-            if (_hoverGhost != null)
-            {
-                _hoverGhost.SetPlacementGhost(true, highlightColor);
-            }
+            _buildPlacementGhostPresenter.Render(highlightColor);
 
             if (GetLeftMouseButtonDown())
             {
@@ -717,25 +714,12 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var prefab = node.ResolveBuildingPrefab(_buildType);
-            if (prefab == null || node.BuildingAnchor == null)
-            {
-                return;
-            }
-
-            _hoverGhost = Instantiate(prefab, node.BuildingAnchor, false);
-            _hoverGhost.SetBuildingType(_buildType);
-            _hoverGhost.SetOwner(GetLocalOwnerId());
-            _hoverGhost.SetPlacementGhost(true, buildValidColor);
+            _buildPlacementGhostPresenter.Recreate(node, _buildType, GetLocalOwnerId(), buildValidColor);
         }
 
         private void DestroyHoverGhost()
         {
-            if (_hoverGhost != null)
-            {
-                Destroy(_hoverGhost.gameObject);
-                _hoverGhost = null;
-            }
+            _buildPlacementGhostPresenter.Clear();
         }
 
         private bool SendBuildCommand(string buildingType, string nodeId)
@@ -806,10 +790,7 @@ namespace Panoptes.Presentation.Map
 
             var color = ResolveBuildPreviewColor(_hoverNode.NodeId);
             _hoverNode.SetHighlight(true, color);
-            if (_hoverGhost != null)
-            {
-                _hoverGhost.SetPlacementGhost(true, color);
-            }
+            _buildPlacementGhostPresenter.Render(color);
         }
 
         private void RequestBuildPreview(string nodeId)

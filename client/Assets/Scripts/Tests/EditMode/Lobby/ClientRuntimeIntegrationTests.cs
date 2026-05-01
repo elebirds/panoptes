@@ -1357,6 +1357,7 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var planningRoot = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Planning");
             Assert.That(Directory.Exists(planningRoot), Is.True, "Planning 表现层包不存在。");
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/BuildPlacementGhostPresenter.cs")), Is.True);
             Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/MovePreviewPresenter.cs")), Is.True);
             Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/MovePreviewGhostPresenter.cs")), Is.True);
             Assert.That(File.Exists(Path.Combine(planningRoot, "Input/State/PendingMoveState.cs")), Is.True);
