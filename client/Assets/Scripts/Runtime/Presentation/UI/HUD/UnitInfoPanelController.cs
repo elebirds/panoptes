@@ -89,6 +89,7 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitView _currentUnit;
         private PlanningDraftCache _planningDraftCache;
         private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly UnitInfoDefaultLayoutBuilder _defaultLayoutBuilder = new();
         private readonly UnitInfoActionListBinder _actionListBinder = new();
         private readonly UnitInfoDirectOrderPanelBinder _directOrderPanelBinder = new();
         private bool _unitSelectionSubscribed;
@@ -460,166 +461,31 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsurePortraitUi()
         {
-            if (panelRoot == null)
-            {
-                return;
-            }
-
-            RectTransform portraitRect;
-            if (unitPortraitRawImage == null)
-            {
-                portraitRect = panelRoot.Find("UnitPortrait") as RectTransform;
-                if (portraitRect == null)
-                {
-                    portraitRect = EnsureChild("UnitPortrait");
-                }
-
-                unitPortraitRawImage = portraitRect.GetComponent<RawImage>();
-                if (unitPortraitRawImage == null)
-                {
-                    unitPortraitRawImage = portraitRect.gameObject.AddComponent<RawImage>();
-                }
-            }
-
-            if (unitPortraitRawImage == null)
-            {
-                return;
-            }
-
-            portraitRect = unitPortraitRawImage.rectTransform;
-            if (unitIcon != null)
-            {
-                var iconRect = unitIcon.rectTransform;
-                portraitRect.anchorMin = iconRect.anchorMin;
-                portraitRect.anchorMax = iconRect.anchorMax;
-                portraitRect.pivot = iconRect.pivot;
-                portraitRect.anchoredPosition = iconRect.anchoredPosition;
-                portraitRect.sizeDelta = iconRect.sizeDelta;
-
-                if (panelRoot != null)
-                {
-                    var maxSibling = Mathf.Max(0, panelRoot.childCount - 1);
-                    var targetSibling = Mathf.Clamp(iconRect.GetSiblingIndex() + 1, 0, maxSibling);
-                    portraitRect.SetSiblingIndex(targetSibling);
-                }
-            }
-            else
-            {
-                portraitRect.anchorMin = new Vector2(0f, 0f);
-                portraitRect.anchorMax = new Vector2(0f, 0f);
-                portraitRect.pivot = new Vector2(0f, 0f);
-                portraitRect.anchoredPosition = new Vector2(14f, 14f);
-                portraitRect.sizeDelta = new Vector2(78f, 78f);
-            }
-
-            unitPortraitRawImage.raycastTarget = false;
-            unitPortraitRawImage.color = Color.white;
+            unitPortraitRawImage = UnitInfoDefaultLayoutBuilder.EnsurePortraitRawImage(
+                panelRoot,
+                unitIcon,
+                unitPortraitRawImage);
             EnsureRuntimeHelpers();
             _portraitCameraLifecycle.BindRawImageTexture(unitPortraitRawImage);
         }
 
         private void EnsureUnitDescriptionUi()
         {
-            if (panelRoot == null)
-            {
-                return;
-            }
-
-            RectTransform descriptionRect = null;
-            var createdNow = false;
-            if (unitDescriptionText == null)
-            {
-                descriptionRect = panelRoot.Find("UnitDescription") as RectTransform;
-                if (descriptionRect == null)
-                {
-                    descriptionRect = EnsureChild("UnitDescription");
-                    createdNow = true;
-                }
-
-                unitDescriptionText = descriptionRect != null
-                    ? descriptionRect.GetComponent<TextMeshProUGUI>()
-                    : null;
-                if (unitDescriptionText == null && descriptionRect != null)
-                {
-                    unitDescriptionText = descriptionRect.gameObject.AddComponent<TextMeshProUGUI>();
-                    createdNow = true;
-                }
-            }
-
-            if (unitDescriptionText == null)
-            {
-                return;
-            }
-
-            if (unitDescriptionText.font == null && TMP_Settings.defaultFontAsset != null)
-            {
-                unitDescriptionText.font = TMP_Settings.defaultFontAsset;
-            }
-
-            descriptionRect = unitDescriptionText.rectTransform;
-            if (createdNow && descriptionRect != null)
-            {
-                descriptionRect.anchorMin = new Vector2(0f, 1f);
-                descriptionRect.anchorMax = new Vector2(0f, 1f);
-                descriptionRect.pivot = new Vector2(0f, 1f);
-                descriptionRect.anchoredPosition = new Vector2(102f, -78f);
-                descriptionRect.sizeDelta = new Vector2(300f, 30f);
-                unitDescriptionText.fontSize = 14f;
-                unitDescriptionText.color = new Color(0.86f, 0.9f, 0.95f, 0.95f);
-            }
-
-            unitDescriptionText.alignment = TextAlignmentOptions.TopLeft;
-            unitDescriptionText.textWrappingMode = TextWrappingModes.Normal;
-            unitDescriptionText.overflowMode = TextOverflowModes.Ellipsis;
-            if (unitDescriptionText.text == null)
-            {
-                unitDescriptionText.text = string.Empty;
-            }
+            unitDescriptionText = UnitInfoDefaultLayoutBuilder.EnsureUnitDescriptionText(
+                panelRoot,
+                unitDescriptionText);
         }
 
         private void EnsurePlanningSummaryUi()
         {
-            if (panelRoot == null)
-            {
-                return;
-            }
-
-            if (planningSummaryText == null)
-            {
-                var summaryRect = panelRoot.Find("PlanningSummaryText") as RectTransform;
-                if (summaryRect == null)
-                {
-                    summaryRect = EnsureChild("PlanningSummaryText");
-                    summaryRect.anchorMin = new Vector2(0f, 1f);
-                    summaryRect.anchorMax = new Vector2(1f, 1f);
-                    summaryRect.pivot = new Vector2(0f, 1f);
-                    summaryRect.anchoredPosition = new Vector2(102f, -112f);
-                    summaryRect.sizeDelta = new Vector2(-118f, 24f);
-                }
-
-                planningSummaryText = summaryRect.GetComponent<TextMeshProUGUI>();
-                if (planningSummaryText == null)
-                {
-                    planningSummaryText = summaryRect.gameObject.AddComponent<TextMeshProUGUI>();
-                }
-            }
-
+            planningSummaryText = UnitInfoDefaultLayoutBuilder.EnsurePlanningSummaryText(
+                panelRoot,
+                planningSummaryText);
             if (planningSummaryText == null)
             {
                 return;
             }
 
-            if (planningSummaryText.font == null && TMP_Settings.defaultFontAsset != null)
-            {
-                planningSummaryText.font = TMP_Settings.defaultFontAsset;
-            }
-
-            planningSummaryText.fontSize = 13f;
-            planningSummaryText.color = new Color(0.78f, 0.9f, 1f, 0.95f);
-            planningSummaryText.alignment = TextAlignmentOptions.TopLeft;
-            planningSummaryText.textWrappingMode = TextWrappingModes.NoWrap;
-            planningSummaryText.overflowMode = TextOverflowModes.Ellipsis;
-            planningSummaryText.gameObject.SetActive(false);
             _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
         }
 
@@ -842,174 +708,57 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureDefaultLayout()
         {
-            if (panelBackground != null &&
-                unitIcon != null &&
-                unitPortraitRawImage != null &&
-                unitNameText != null &&
-                hpSlider != null &&
-                hpValueText != null &&
-                actionButtonsRoot != null &&
-                directOrderButtonsRoot != null &&
-                moveButton != null &&
-                attackButton != null &&
-                holdButton != null &&
-                chargeButton != null &&
-                actionButtons != null &&
-                actionButtons.Length > 0)
-            {
-                return;
-            }
-
-            var canvas = GetComponentInParent<Canvas>();
-            if (canvas == null)
-            {
-                var canvasGO = new GameObject("HUDCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-                canvas = canvasGO.GetComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                var scaler = canvasGO.GetComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920f, 1080f);
-                panelRoot.SetParent(canvas.transform, false);
-            }
-
-            panelRoot.anchorMin = new Vector2(1f, 0f);
-            panelRoot.anchorMax = new Vector2(1f, 0f);
-            panelRoot.pivot = new Vector2(1f, 0f);
-            panelRoot.sizeDelta = new Vector2(420f, 280f);
-
-            if (panelBackground == null)
-            {
-                var bg = EnsureChild("Background");
-                panelBackground = bg.GetComponent<Image>();
-                if (panelBackground == null)
+            var references = _defaultLayoutBuilder.EnsureLayout(
+                new UnitInfoDefaultLayoutBuilder.References<ActionButtonSlot>
                 {
-                    panelBackground = bg.gameObject.AddComponent<Image>();
-                }
-                panelBackground.color = new Color(0.06f, 0.09f, 0.16f, 0.9f);
-                var bgRt = bg as RectTransform;
-                UnitInfoPanelLayoutBuilder.StretchToParent(bgRt, Vector2.zero, Vector2.zero);
-            }
+                    PanelRoot = panelRoot,
+                    PanelBackground = panelBackground,
+                    UnitIcon = unitIcon,
+                    UnitPortraitRawImage = unitPortraitRawImage,
+                    UnitNameText = unitNameText,
+                    UnitDescriptionText = unitDescriptionText,
+                    PlanningSummaryText = planningSummaryText,
+                    HpSlider = hpSlider,
+                    HpValueText = hpValueText,
+                    ActionButtonsRoot = actionButtonsRoot,
+                    DirectOrderButtonsRoot = directOrderButtonsRoot,
+                    ActionButtons = actionButtons,
+                    MoveButton = moveButton,
+                    AttackButton = attackButton,
+                    HoldButton = holdButton,
+                    ChargeButton = chargeButton
+                },
+                defaultActionButtonSize,
+                defaultActionButtonColor,
+                _actionListBinder,
+                _directOrderPanelBinder,
+                CreateSerializedActionButtonSlot);
 
-            if (actionButtonsRoot == null)
+            panelBackground = references.PanelBackground;
+            unitIcon = references.UnitIcon;
+            unitPortraitRawImage = references.UnitPortraitRawImage;
+            unitNameText = references.UnitNameText;
+            unitDescriptionText = references.UnitDescriptionText;
+            planningSummaryText = references.PlanningSummaryText;
+            hpSlider = references.HpSlider;
+            hpValueText = references.HpValueText;
+            actionButtonsRoot = references.ActionButtonsRoot;
+            directOrderButtonsRoot = references.DirectOrderButtonsRoot;
+            actionButtons = references.ActionButtons;
+            moveButton = references.MoveButton;
+            attackButton = references.AttackButton;
+            holdButton = references.HoldButton;
+            chargeButton = references.ChargeButton;
+
+            EnsureRuntimeHelpers();
+            _portraitCameraLifecycle.BindRawImageTexture(unitPortraitRawImage);
+            if (planningSummaryText != null)
             {
-                var actionRoot = EnsureChild("ActionButtons");
-                actionButtonsRoot = actionRoot;
-                actionButtonsRoot.anchorMin = new Vector2(0f, 1f);
-                actionButtonsRoot.anchorMax = new Vector2(0f, 1f);
-                actionButtonsRoot.pivot = new Vector2(0f, 1f);
-                actionButtonsRoot.anchoredPosition = new Vector2(14f, -10f);
-                actionButtonsRoot.sizeDelta = new Vector2(190f, 30f);
-                var layout = actionButtonsRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
-                layout.spacing = 6f;
-                layout.childControlWidth = true;
-                layout.childControlHeight = true;
-                layout.childForceExpandWidth = false;
-                layout.childForceExpandHeight = false;
-                var fitter = actionButtonsRoot.gameObject.AddComponent<ContentSizeFitter>();
-                fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
             }
 
-            if (directOrderButtonsRoot == null)
-            {
-                var directRoot = EnsureChild("DirectOrderButtons");
-                directOrderButtonsRoot = directRoot;
-                directOrderButtonsRoot.anchorMin = new Vector2(0f, 1f);
-                directOrderButtonsRoot.anchorMax = new Vector2(0f, 1f);
-                directOrderButtonsRoot.pivot = new Vector2(0f, 1f);
-                directOrderButtonsRoot.anchoredPosition = new Vector2(14f, -52f);
-                directOrderButtonsRoot.sizeDelta = new Vector2(190f, 72f);
-            }
-
-            if (unitIcon == null)
-            {
-                var iconRT = EnsureChild("UnitIcon");
-                unitIcon = iconRT.gameObject.GetComponent<Image>();
-                if (unitIcon == null)
-                {
-                    unitIcon = iconRT.gameObject.AddComponent<Image>();
-                }
-                iconRT.anchorMin = new Vector2(0f, 0f);
-                iconRT.anchorMax = new Vector2(0f, 0f);
-                iconRT.pivot = new Vector2(0f, 0f);
-                iconRT.anchoredPosition = new Vector2(14f, 14f);
-                iconRT.sizeDelta = new Vector2(78f, 78f);
-                unitIcon.color = new Color(0.3f, 0.3f, 0.3f, 1f);
-            }
-
-            EnsurePortraitUi();
-            if (unitPortraitRawImage != null)
-            {
-                unitPortraitRawImage.enabled = false;
-            }
-
-            if (unitNameText == null)
-            {
-                var nameRT = EnsureChild("UnitName");
-                unitNameText = UnitInfoPanelLayoutBuilder.CreateTmpText(nameRT, "Unit");
-                nameRT.anchorMin = new Vector2(0f, 1f);
-                nameRT.anchorMax = new Vector2(0f, 1f);
-                nameRT.pivot = new Vector2(0f, 1f);
-                nameRT.anchoredPosition = new Vector2(102f, -46f);
-                nameRT.sizeDelta = new Vector2(280f, 32f);
-                unitNameText.fontSize = 24f;
-                unitNameText.alignment = TextAlignmentOptions.Left;
-            }
-
-            EnsureUnitDescriptionUi();
-
-            if (hpSlider == null)
-            {
-                var sliderRT = EnsureChild("HpBar");
-                hpSlider = sliderRT.gameObject.GetComponent<Slider>();
-                if (hpSlider == null)
-                {
-                    hpSlider = sliderRT.gameObject.AddComponent<Slider>();
-                }
-                sliderRT.anchorMin = new Vector2(0f, 0f);
-                sliderRT.anchorMax = new Vector2(0f, 0f);
-                sliderRT.pivot = new Vector2(0f, 0f);
-                sliderRT.anchoredPosition = new Vector2(102f, 40f);
-                sliderRT.sizeDelta = new Vector2(240f, 24f);
-                UnitInfoPanelLayoutBuilder.BuildDefaultSliderVisual(hpSlider, sliderRT);
-            }
-
-            if (hpValueText == null)
-            {
-                var hpTextRT = EnsureChild("HpText");
-                hpValueText = UnitInfoPanelLayoutBuilder.CreateTmpText(hpTextRT, "0/0");
-                hpTextRT.anchorMin = new Vector2(0f, 0f);
-                hpTextRT.anchorMax = new Vector2(0f, 0f);
-                hpTextRT.pivot = new Vector2(0f, 0f);
-                hpTextRT.anchoredPosition = new Vector2(102f, 14f);
-                hpTextRT.sizeDelta = new Vector2(120f, 20f);
-                hpValueText.fontSize = 16f;
-                hpValueText.alignment = TextAlignmentOptions.Left;
-            }
-
-            if (actionButtons == null || actionButtons.Length == 0)
-            {
-                actionButtons = _actionListBinder.EnsureDefaultSlots(
-                    actionButtons,
-                    actionButtonsRoot,
-                    defaultActionButtonSize,
-                    defaultActionButtonColor,
-                    CreateSerializedActionButtonSlot);
-            }
-
-            var directOrderButtons = _directOrderPanelBinder.EnsureButtons(
-                directOrderButtonsRoot,
-                moveButton,
-                attackButton,
-                holdButton,
-                chargeButton,
-                defaultActionButtonColor);
-            moveButton = directOrderButtons.Move;
-            attackButton = directOrderButtons.Attack;
-            holdButton = directOrderButtons.Hold;
-            chargeButton = directOrderButtons.Charge;
             _directOrderPanelBinder.BindListeners(
-                directOrderButtons,
+                GetDirectOrderButtons(),
                 UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
         }
 
@@ -1103,20 +852,6 @@ namespace Panoptes.Presentation.UI.HUD
                 actionButtonsRoot,
                 defaultActionButtonSize,
                 defaultActionButtonColor);
-        }
-
-        private RectTransform EnsureChild(string childName)
-        {
-            var child = panelRoot.Find(childName) as RectTransform;
-            if (child != null)
-            {
-                return child;
-            }
-
-            var go = new GameObject(childName, typeof(RectTransform));
-            child = go.GetComponent<RectTransform>();
-            child.SetParent(panelRoot, false);
-            return child;
         }
 
         private void ResolveUnitDisplayTexts(UnitView unit, out string displayName, out string description)

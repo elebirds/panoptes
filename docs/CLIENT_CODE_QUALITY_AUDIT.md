@@ -339,3 +339,24 @@ Implemented on 2026-05-01 as the direct-order panel cleanup pass:
 Remaining UnitInfo work should focus on selection/ViewModel boundaries and
 catalog-backed description projection. Direct-order UI mechanics should stay in
 `UnitInfoDirectOrderPanelBinder`.
+
+## UnitInfo Default Layout Builder Refactor
+
+Implemented on 2026-05-01 as the default-layout cleanup pass:
+
+- Extracted `UnitInfoDefaultLayoutBuilder` from `UnitInfoPanelController`.
+- Moved runtime default uGUI layout construction for canvas, background,
+  roots, icon, portrait placeholder, text controls, HP controls, default action
+  slots, and direct-order buttons out of the HUD facade.
+- Kept `UnitInfoPanelController` responsible for assigning returned serialized
+  references, binding portrait textures, planning summary presenter, and
+  direct-order listeners.
+- Added EditMode coverage for default canvas/control creation, action/direct
+  order defaults, portrait layout mirroring, and prefab-reference early-return
+  behavior.
+- Reduced `UnitInfoPanelController.cs` from 1206 lines after the direct-order
+  pass to 941 lines.
+
+`UnitInfoPanelController` is now mostly orchestration. Remaining work should
+focus on selection/ViewModel boundaries and catalog-backed display text
+projection.
