@@ -68,11 +68,17 @@ namespace Panoptes.Presentation.UI.HUD
         private readonly Dictionary<string, int> _lastAmounts = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _iconCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly EventSubscriptionBag _buttonSubscriptions = new();
         private bool _hasSnapshot;
-        private bool _techButtonBound;
+
+        private void Awake()
+        {
+            ResolvePrefabReferences();
+        }
 
         private void OnEnable()
         {
+            ResolvePrefabReferences();
             Subscribe();
             BindTechButton();
             Refresh();
@@ -83,6 +89,37 @@ namespace Panoptes.Presentation.UI.HUD
             Unsubscribe();
             UnbindTechButton();
             StopAllHideCoroutines();
+        }
+
+        private void ResolvePrefabReferences()
+        {
+            ResolveResourceListRoot();
+            ResolveTechButtonReference();
+        }
+
+        private void ResolveResourceListRoot()
+        {
+            if (resourceListRoot != null)
+            {
+                return;
+            }
+
+            var list = transform.Find("ResourceList");
+            resourceListRoot = list as RectTransform;
+        }
+
+        private void ResolveTechButtonReference()
+        {
+            if (techButton != null)
+            {
+                return;
+            }
+
+            var techBtnTransform = transform.Find("TechBtn");
+            if (techBtnTransform != null)
+            {
+                techButton = techBtnTransform.GetComponent<Button>();
+            }
         }
 
         private void Subscribe()
@@ -113,33 +150,29 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void BindTechButton()
         {
-            if (techButton == null)
-            {
-                var techBtnTransform = transform.Find("TechBtn");
-                if (techBtnTransform != null)
-                {
-                    techButton = techBtnTransform.GetComponent<Button>();
-                }
-            }
+            _buttonSubscriptions.Clear();
+            ResolveTechButtonReference();
 
-            if (techButton == null || _techButtonBound)
+            var button = techButton;
+            if (button == null)
             {
                 return;
             }
 
-            techButton.onClick.AddListener(OnTechButtonClicked);
-            _techButtonBound = true;
+            _buttonSubscriptions.Add(
+                () => button.onClick.AddListener(OnTechButtonClicked),
+                () =>
+                {
+                    if (button != null)
+                    {
+                        button.onClick.RemoveListener(OnTechButtonClicked);
+                    }
+                });
         }
 
         private void UnbindTechButton()
         {
-            if (!_techButtonBound || techButton == null)
-            {
-                return;
-            }
-
-            techButton.onClick.RemoveListener(OnTechButtonClicked);
-            _techButtonBound = false;
+            _buttonSubscriptions.Clear();
         }
 
         private void OnTechButtonClicked()
@@ -230,11 +263,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureItemBindings()
         {
-            if (resourceListRoot == null)
-            {
-                var list = transform.Find("ResourceList");
-                resourceListRoot = list as RectTransform;
-            }
+            ResolveResourceListRoot();
 
             if (resourceListRoot == null)
             {

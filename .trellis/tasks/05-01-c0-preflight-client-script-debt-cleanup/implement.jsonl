@@ -1,0 +1,4 @@
+{"file": "docs/PANOPTES_AGENT_FRONTEND.md", "reason": "Client architecture, directory boundaries, UI/network constraints, and static data rules."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Existing client debt inventory and recommended cleanup order."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend package-specific quality and implementation guidance."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "C0 preflight must preserve backend/protocol/client boundaries."}

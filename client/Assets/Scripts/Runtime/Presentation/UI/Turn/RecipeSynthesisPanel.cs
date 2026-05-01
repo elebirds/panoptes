@@ -47,8 +47,7 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private Sprite lockedStateIcon;
         [SerializeField] private string lockedStateText = "Locked";
 
-        private readonly List<RecipeSynthesisItemView> _itemViews = new();
-        private readonly Dictionary<string, RecipeSynthesisItemView> _itemByRecipeId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly RecipeSynthesisRenderedItemRegistry _renderedItems = new();
         private readonly Dictionary<string, int> _quantityByRecipeId = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Dictionary<string, int>> _quantityByNodeId = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _selectedRecipeByNodeId = new(StringComparer.OrdinalIgnoreCase);
@@ -432,7 +431,7 @@ namespace Panoptes.Presentation.UI.Domestic
             _knownLockedRecipeIds.Add(recipeId);
             _knownUnlockedRecipeIds.Remove(recipeId);
 
-            if (_itemByRecipeId.TryGetValue(recipeId, out var view) && view != null)
+            if (_renderedItems.TryGetRecipe(recipeId, out var view) && view != null)
             {
                 view.SetLockedVisual(lockedStateIcon, lockedStateText);
                 view.SetLocked(true);
@@ -488,14 +487,12 @@ namespace Panoptes.Presentation.UI.Domestic
                 item.SetLockedVisual(lockedStateIcon, lockedStateText);
                 item.SetLocked(recipe.IsLocked);
                 item.SetActiveState(string.Equals(NormalizeToken(recipe.Id), NormalizeToken(_selectedRecipeId), StringComparison.Ordinal), notify: false);
-                item.ActivationChanged -= OnItemActivationChanged;
-                item.ActivationChanged += OnItemActivationChanged;
-                item.HoverEntered -= OnItemHoverEntered;
-                item.HoverEntered += OnItemHoverEntered;
-                item.HoverExited -= OnItemHoverExited;
-                item.HoverExited += OnItemHoverExited;
-
-                _itemByRecipeId[NormalizeToken(recipe.Id)] = item;
+                _renderedItems.Register(
+                    recipe.Id,
+                    item,
+                    OnItemActivationChanged,
+                    OnItemHoverEntered,
+                    OnItemHoverExited);
             }
         }
 
@@ -944,20 +941,7 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void RefreshItemActivationStates()
         {
-            foreach (var pair in _itemByRecipeId)
-            {
-                var recipeId = pair.Key;
-                var item = pair.Value;
-                if (item == null)
-                {
-                    continue;
-                }
-
-                item.SetActiveState(
-                    !string.IsNullOrWhiteSpace(_selectedRecipeId) &&
-                    string.Equals(recipeId, NormalizeToken(_selectedRecipeId), StringComparison.Ordinal),
-                    notify: false);
-            }
+            _renderedItems.SetActiveRecipe(_selectedRecipeId);
         }
 
         private void ClearLocalSelectionCache(string nodeId)
@@ -1312,23 +1296,24 @@ namespace Panoptes.Presentation.UI.Domestic
                 rect.SetParent(listContent, false);
                 view = go.AddComponent<RecipeSynthesisItemView>();
             }
-            _itemViews.Add(view);
             return view;
         }
 
         private void ClearItems()
         {
-            for (var i = 0; i < _itemViews.Count; i++)
+            _renderedItems.Clear(
+                DestroyRenderedItem,
+                OnItemActivationChanged,
+                OnItemHoverEntered,
+                OnItemHoverExited);
+        }
+
+        private static void DestroyRenderedItem(RecipeSynthesisItemView item)
+        {
+            if (item != null)
             {
-                var item = _itemViews[i];
-                if (item != null)
-                {
-                    item.ActivationChanged -= OnItemActivationChanged;
-                    Destroy(item.gameObject);
-                }
+                Destroy(item.gameObject);
             }
-            _itemViews.Clear();
-            _itemByRecipeId.Clear();
         }
 
         private bool ComputeVisible()
@@ -1373,7 +1358,7 @@ namespace Panoptes.Presentation.UI.Domestic
             var normalizedRecipeId = NormalizeToken(recipeId);
             if (_catalog == null || _catalog.Recipes == null || !_catalog.TryGetRecipe(normalizedRecipeId, out var recipe) || recipe == null)
             {
-                return _itemByRecipeId.ContainsKey(normalizedRecipeId);
+                return _renderedItems.ContainsRecipe(normalizedRecipeId);
             }
 
             if (string.IsNullOrWhiteSpace(_activeBuildingTypeId))

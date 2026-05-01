@@ -20,57 +20,6 @@ namespace Panoptes.Presentation.Map
 {
     public sealed class MapRenderer : MonoBehaviour
     {
-        [System.Serializable]
-        private sealed class MapJsonEnvelope
-        {
-            public MapJsonConfig map;
-        }
-
-        [System.Serializable]
-        private sealed class MapJsonConfig
-        {
-            public string mapId;
-            public int width;
-            public int height;
-            public string defaultTerrain = "plain";
-            public MapJsonNode[] nodes;
-            public MapJsonUnit[] units;
-        }
-
-        [System.Serializable]
-        private sealed class MapJsonNode
-        {
-            public string id;
-            public int x;
-            public int y;
-            public string terrain;
-            public bool hasRoad;
-            public bool has_road;
-            public bool isResourcePoint;
-            public bool is_resource_point;
-            public string resourceType;
-            public string resource_type;
-            public string buildingType;
-            public string building_type;
-            public int buildingHp;
-            public int building_hp;
-            public string owner;
-            public string territoryOwner;
-            public string territory_owner;
-        }
-
-        [System.Serializable]
-        private sealed class MapJsonUnit
-        {
-            public string id;
-            public string faction;
-            public string unitType;
-            public int hp = 100;
-            public int maxHp = 100;
-            public int x;
-            public int y;
-        }
-
         public static MapRenderer Instance { get; private set; }
 
         [Header("Map Source")]
@@ -151,6 +100,7 @@ namespace Panoptes.Presentation.Map
         private bool _hasCameraContext;
 
         private readonly List<UnitDto> _jsonUnits = new();
+        private readonly MapCameraContextBuilder _cameraContextBuilder = new();
         private StaticCatalogCache _catalogCache;
         private ConfigCache _configCache;
 
@@ -330,11 +280,11 @@ namespace Panoptes.Presentation.Map
             if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
             {
                 var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
-                if (!preferLocalMapWhenBackendHasNoTerritory || HasToolSceneTerritorySnapshot(backendNodes))
+                if (!preferLocalMapWhenBackendHasNoTerritory || MapSourceResolver.HasTerritorySnapshot(backendNodes))
                 {
                     Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
                     PrepareRuntimeRoots();
-                    BuildFromNodes(backendNodes);
+                    BuildFromBackendNodes(backendNodes);
                     return;
                 }
             }
@@ -349,7 +299,7 @@ namespace Panoptes.Presentation.Map
                 var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
                 Debug.LogWarning($"[MapRenderer] Using backend nodes despite incomplete territory snapshot: {backendNodes.Count}");
                 PrepareRuntimeRoots();
-                BuildFromNodes(backendNodes);
+                BuildFromBackendNodes(backendNodes);
                 return;
             }
 
@@ -373,7 +323,7 @@ namespace Panoptes.Presentation.Map
 
             var backendNodes = new List<NodeDto>(cache.Nodes.Values);
             Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
-            BuildFromNodes(backendNodes);
+            BuildFromBackendNodes(backendNodes);
             return true;
         }
 
@@ -435,7 +385,7 @@ namespace Panoptes.Presentation.Map
             }
 
             if (!listenServerMapConfigUpdates ||
-                !string.Equals(NormalizeToken(key), NormalizeToken(serverMapConfigKey), System.StringComparison.Ordinal))
+                !string.Equals(MapRenderTokens.Normalize(key), MapRenderTokens.Normalize(serverMapConfigKey), System.StringComparison.Ordinal))
             {
                 return;
             }
@@ -466,83 +416,21 @@ namespace Panoptes.Presentation.Map
         private bool TryLoadToolSceneMapFromServerConfig()
         {
             var cache = _configCache != null ? _configCache : ConfigCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(serverMapConfigKey))
-            {
-                return false;
-            }
-
-            if (!cache.TryGetJson(serverMapConfigKey.Trim(), out var json) || string.IsNullOrWhiteSpace(json))
-            {
-                return false;
-            }
-
-            return LoadMapFromJsonString(json);
+            return CreateSourceResolver().TryResolveServerConfig(cache, out var snapshot) &&
+                   BuildFromSourceSnapshot(snapshot);
         }
 
         private bool TryLoadToolSceneMapFromStaticCatalog()
         {
             var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
-            if (cache == null)
-            {
-                return false;
-            }
-
-            if (!cache.TryGetDefaultMap(out var mapBundle) || mapBundle?.nodes == null || mapBundle.nodes.Length == 0)
-            {
-                return false;
-            }
-
-            var nodes = new List<NodeDto>(mapBundle.nodes.Length);
-            for (var i = 0; i < mapBundle.nodes.Length; i++)
-            {
-                var node = mapBundle.nodes[i];
-                if (node == null)
-                {
-                    continue;
-                }
-
-                var buildingType = NormalizeToken(node.building_type);
-                var axial = HexGrid.OffsetToAxial(node.x, node.y);
-                nodes.Add(new NodeDto
-                {
-                    Id = string.IsNullOrWhiteSpace(node.id) ? $"N_{node.x}_{node.y}" : node.id.Trim(),
-                    Q = axial.x,
-                    R = axial.y,
-                    Terrain = NormalizeToken(node.terrain),
-                    HasRoad = node.has_road,
-                    IsResourcePoint = node.is_resource_point,
-                    ResourceType = NormalizeToken(node.resource_type),
-                    Owner = NormalizeToken(node.owner),
-                    TerritoryOwner = NormalizeToken(node.territory_owner),
-                    BuildingType = buildingType,
-                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp),
-                    BuildingMaxHp = ResolveBuildingMaxHp(buildingType, node.building_hp)
-                });
-            }
-
-            if (nodes.Count == 0)
-            {
-                return false;
-            }
-
-            BuildFromNodes(nodes);
-            return true;
+            return CreateSourceResolver().TryResolveStaticCatalog(cache, out var snapshot) &&
+                   BuildFromSourceSnapshot(snapshot);
         }
 
         private bool TryLoadToolSceneMapFromLocalFallback()
         {
-            if (string.IsNullOrWhiteSpace(localFallbackMapResourcePath))
-            {
-                return false;
-            }
-
-            var asset = Resources.Load<TextAsset>(localFallbackMapResourcePath.Trim());
-            if (asset == null)
-            {
-                return false;
-            }
-
-            return LoadMapFromJsonAsset(asset);
+            return CreateSourceResolver().TryResolveLocalFallback(out var snapshot) &&
+                   BuildFromSourceSnapshot(snapshot);
         }
 
         private void ReportBackendGameMapFailure(string message)
@@ -582,57 +470,49 @@ namespace Panoptes.Presentation.Map
             return AppManager.Instance != null && AppManager.Instance.State == AppState.Game;
         }
 
-        private static bool HasToolSceneTerritorySnapshot(List<NodeDto> nodes)
-        {
-            if (nodes == null || nodes.Count == 0)
-            {
-                return false;
-            }
-
-            var hasTerritory = false;
-            var cityCoreCount = 0;
-            for (var i = 0; i < nodes.Count; i++)
-            {
-                var node = nodes[i];
-                if (node == null)
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(node.TerritoryOwner))
-                {
-                    hasTerritory = true;
-                }
-
-                if (string.Equals(NormalizeToken(node.BuildingType), "city_core", System.StringComparison.Ordinal))
-                {
-                    cityCoreCount++;
-                }
-            }
-
-            return hasTerritory && cityCoreCount >= 4;
-        }
-
         public bool LoadMapFromJsonString(string json)
         {
-            if (!TryParseNodesFromJson(json, out var nodes))
-            {
-                return false;
-            }
-
-            BuildFromNodes(nodes);
-            return true;
+            return CreateSourceResolver().TryParseJsonString(json, out var snapshot) &&
+                   BuildFromSourceSnapshot(snapshot);
         }
 
         public bool LoadMapFromJsonAsset(TextAsset jsonAsset)
         {
-            if (jsonAsset == null)
+            return CreateSourceResolver().TryParseJsonAsset(jsonAsset, out var snapshot) &&
+                   BuildFromSourceSnapshot(snapshot);
+        }
+
+        private MapSourceResolver CreateSourceResolver()
+        {
+            return new MapSourceResolver(new MapSourceResolver.Options
             {
-                Debug.LogWarning("[MapRenderer] LoadMapFromJsonAsset failed: asset is null.");
+                AutoFillMissingJsonTiles = autoFillMissingJsonTiles,
+                LocalFallbackMapResourcePath = localFallbackMapResourcePath,
+                ServerMapConfigKey = serverMapConfigKey
+            });
+        }
+
+        private bool BuildFromSourceSnapshot(MapSourceSnapshot snapshot)
+        {
+            if (!snapshot.HasNodes)
+            {
                 return false;
             }
 
-            return LoadMapFromJsonString(jsonAsset.text);
+            _jsonUnits.Clear();
+            if (snapshot.Units != null && snapshot.Units.Count > 0)
+            {
+                _jsonUnits.AddRange(snapshot.Units);
+            }
+
+            BuildFromNodes(snapshot.Nodes);
+            return true;
+        }
+
+        private void BuildFromBackendNodes(List<NodeDto> nodes)
+        {
+            _jsonUnits.Clear();
+            BuildFromNodes(nodes);
         }
 
         public void RefreshNode(string nodeId)
@@ -695,11 +575,11 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            territoryOwner = NormalizeToken(nodeState.TerritoryOwner);
+            territoryOwner = MapRenderTokens.Normalize(nodeState.TerritoryOwner);
             if (string.IsNullOrEmpty(territoryOwner))
             {
                 // Backward compatibility: old protocol may not send territory_owner.
-                territoryOwner = NormalizeToken(nodeState.Owner);
+                territoryOwner = MapRenderTokens.Normalize(nodeState.Owner);
             }
             return !string.IsNullOrEmpty(territoryOwner);
         }
@@ -711,7 +591,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return string.Equals(territoryOwner, NormalizeToken(ownerId), System.StringComparison.OrdinalIgnoreCase);
+            return string.Equals(territoryOwner, MapRenderTokens.Normalize(ownerId), System.StringComparison.OrdinalIgnoreCase);
         }
 
         public bool IsNodeInSafeZone(string nodeId)
@@ -817,7 +697,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var terrain = NormalizeToken(state.Terrain);
+            var terrain = MapRenderTokens.Normalize(state.Terrain);
             return terrain != "river" && terrain != "mountain";
         }
 
@@ -828,7 +708,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return string.IsNullOrEmpty(NormalizeToken(state.BuildingType));
+            return string.IsNullOrEmpty(MapRenderTokens.Normalize(state.BuildingType));
         }
 
         public bool ApplyBuildingPlacement(string nodeId, string buildingType, string ownerId, bool isGhost, int hp = 100, Color? ghostColor = null)
@@ -844,7 +724,7 @@ namespace Panoptes.Presentation.Map
                 return true;
             }
 
-            var maxHp = ResolveBuildingMaxHp(buildingType, hp);
+            var maxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, hp);
             nodeView.SetBuilding(buildingType, ownerId, hp, maxHp, false);
 
             if (_nodeStates.TryGetValue(nodeId, out var state) && state != null)
@@ -965,7 +845,7 @@ namespace Panoptes.Presentation.Map
         private float GetTerrainElevation(string terrain, int x, int y)
         {
             float value;
-            switch (NormalizeToken(terrain))
+            switch (MapRenderTokens.Normalize(terrain))
             {
                 case "forest":
                     value = forestElevation;
@@ -1081,15 +961,14 @@ namespace Panoptes.Presentation.Map
 
         private bool TryBuildCameraContext(out MapCameraContext context)
         {
-            context = default;
-            if (!TryBuildWorldRectFromNodeStates(out var worldRect))
-            {
-                return false;
-            }
-
-            var focusPoint = ResolvePreferredCameraFocusPoint(worldRect);
-            context = new MapCameraContext(worldRect, plainElevation, focusPoint);
-            return context.IsValid;
+            return _cameraContextBuilder.TryBuild(
+                _nodeStates,
+                _tileViews,
+                _unitViews,
+                tileSize,
+                plainElevation,
+                IsBaseVehicleUnitType,
+                out context);
         }
 
         private void RebuildTerrainDecorations(List<NodeDto> nodeList)
@@ -1413,7 +1292,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var terrain = NormalizeToken(node.Terrain);
+            var terrain = MapRenderTokens.Normalize(node.Terrain);
             return terrain != "river"
                    && terrain != "water"
                    && terrain != "forbidden"
@@ -1534,7 +1413,7 @@ namespace Panoptes.Presentation.Map
                 return null;
             }
 
-            var unitType = NormalizeToken(unit.Type);
+            var unitType = MapRenderTokens.Normalize(unit.Type);
             if (!IsBaseVehicleUnitType(unitType))
             {
                 return null;
@@ -1555,10 +1434,10 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var normalized = NormalizeToken(unitType);
+            var normalized = MapRenderTokens.Normalize(unitType);
             for (var i = 0; i < baseVehicleUnitTypes.Length; i++)
             {
-                if (string.Equals(normalized, NormalizeToken(baseVehicleUnitTypes[i]), System.StringComparison.Ordinal))
+                if (string.Equals(normalized, MapRenderTokens.Normalize(baseVehicleUnitTypes[i]), System.StringComparison.Ordinal))
                 {
                     return true;
                 }
@@ -1630,385 +1509,6 @@ namespace Panoptes.Presentation.Map
             _unitViews.Clear();
             _unitNodeById.Clear();
             _unitsByNodeId.Clear();
-        }
-
-        private Vector3 ResolvePreferredCameraFocusPoint(Rect worldRect)
-        {
-            if (TryGetOwnedCityCoreFocusPoint(out var cityCoreFocus))
-            {
-                return cityCoreFocus;
-            }
-
-            if (TryGetOwnedBaseVehicleFocusPoint(out var baseVehicleFocus))
-            {
-                return baseVehicleFocus;
-            }
-
-            return new Vector3(worldRect.center.x, plainElevation, worldRect.center.y);
-        }
-
-        private bool TryGetOwnedBaseVehicleFocusPoint(out Vector3 focusPoint)
-        {
-            focusPoint = default;
-            var cache = GameStateCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID))
-            {
-                return false;
-            }
-
-            var myPlayerId = NormalizeToken(cache.MyPlayerID);
-            foreach (var pair in _unitViews)
-            {
-                var unitView = pair.Value;
-                if (unitView == null)
-                {
-                    continue;
-                }
-
-                if (!string.Equals(NormalizeToken(unitView.Faction), myPlayerId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!IsBaseVehicleUnitType(unitView.UnitType))
-                {
-                    continue;
-                }
-
-                focusPoint = unitView.transform.position;
-                focusPoint.y = plainElevation;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool TryGetOwnedCityCoreFocusPoint(out Vector3 focusPoint)
-        {
-            focusPoint = default;
-            var cache = GameStateCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID))
-            {
-                return false;
-            }
-
-            var myPlayerId = NormalizeToken(cache.MyPlayerID);
-            foreach (var pair in _nodeStates)
-            {
-                var node = pair.Value;
-                if (node == null || !string.Equals(NormalizeToken(node.BuildingType), "city_core", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                var ownerId = NormalizeToken(string.IsNullOrWhiteSpace(node.TerritoryOwner) ? node.Owner : node.TerritoryOwner);
-                if (!string.Equals(ownerId, myPlayerId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (_tileViews.TryGetValue(node.Id, out var nodeView) && nodeView != null)
-                {
-                    focusPoint = nodeView.BuildingInstance != null
-                        ? nodeView.BuildingInstance.transform.position
-                        : nodeView.transform.position;
-                    focusPoint.y = plainElevation;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool TryBuildWorldRectFromNodeStates(out Rect worldRect)
-        {
-            worldRect = default;
-            if (_nodeStates.Count == 0)
-            {
-                return false;
-            }
-
-            var minGridX = int.MaxValue;
-            var maxGridX = int.MinValue;
-            var minGridY = int.MaxValue;
-            var maxGridY = int.MinValue;
-
-            foreach (var pair in _nodeStates)
-            {
-                var node = pair.Value;
-                if (node == null)
-                {
-                    continue;
-                }
-
-                if (node.Q < minGridX) minGridX = node.Q;
-                if (node.Q > maxGridX) maxGridX = node.Q;
-                if (node.R < minGridY) minGridY = node.R;
-                if (node.R > maxGridY) maxGridY = node.R;
-            }
-
-            if (minGridX > maxGridX || minGridY > maxGridY)
-            {
-                return false;
-            }
-
-            var halfWidth = Mathf.Sqrt(3f) * tileSize * 0.5f;
-            var halfHeight = tileSize;
-            var minX = float.PositiveInfinity;
-            var maxX = float.NegativeInfinity;
-            var minZ = float.PositiveInfinity;
-            var maxZ = float.NegativeInfinity;
-            foreach (var pair in _nodeStates)
-            {
-                var node = pair.Value;
-                if (node == null)
-                {
-                    continue;
-                }
-
-                var world = GridToWorld(node.Q, node.R);
-                minX = Mathf.Min(minX, world.x - halfWidth);
-                maxX = Mathf.Max(maxX, world.x + halfWidth);
-                minZ = Mathf.Min(minZ, world.z - halfHeight);
-                maxZ = Mathf.Max(maxZ, world.z + halfHeight);
-            }
-            worldRect = Rect.MinMaxRect(minX, minZ, maxX, maxZ);
-            return worldRect.width > 0f && worldRect.height > 0f;
-        }
-
-        private bool TryParseNodesFromJson(string json, out List<NodeDto> nodes)
-        {
-            nodes = null;
-            _jsonUnits.Clear();
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                Debug.LogWarning("[MapRenderer] Map JSON is empty.");
-                return false;
-            }
-
-            MapJsonConfig config = null;
-
-            try
-            {
-                config = JsonUtility.FromJson<MapJsonConfig>(json);
-            }
-            catch
-            {
-                // Fall through to envelope parse.
-            }
-
-            if (config == null || config.nodes == null || config.nodes.Length == 0)
-            {
-                try
-                {
-                    var envelope = JsonUtility.FromJson<MapJsonEnvelope>(json);
-                    config = envelope?.map;
-                }
-                catch
-                {
-                    // Keep null config; handled below.
-                }
-            }
-
-            if (config == null || config.nodes == null || config.nodes.Length == 0)
-            {
-                Debug.LogWarning("[MapRenderer] Failed to parse map JSON or JSON has no nodes.");
-                return false;
-            }
-
-            nodes = BuildNodesFromJsonConfig(config);
-            if (nodes.Count == 0)
-            {
-                Debug.LogWarning("[MapRenderer] Parsed map JSON but got 0 valid nodes.");
-                return false;
-            }
-
-            BuildUnitsFromJsonConfig(config, _jsonUnits);
-            Debug.Log($"[MapRenderer] Loaded map JSON: mapId='{config.mapId}', nodes={nodes.Count}, units={_jsonUnits.Count}.");
-            return true;
-        }
-
-        private List<NodeDto> BuildNodesFromJsonConfig(MapJsonConfig config)
-        {
-            var result = new List<NodeDto>();
-            if (config == null || config.nodes == null)
-            {
-                return result;
-            }
-
-            var width = Mathf.Max(0, config.width);
-            var height = Mathf.Max(0, config.height);
-            var defaultTerrain = NormalizeToken(config.defaultTerrain);
-            if (string.IsNullOrEmpty(defaultTerrain))
-            {
-                defaultTerrain = "plain";
-            }
-
-            var nodeByKey = new Dictionary<string, MapJsonNode>();
-            for (var i = 0; i < config.nodes.Length; i++)
-            {
-                var jsonNode = config.nodes[i];
-                if (jsonNode == null)
-                {
-                    continue;
-                }
-
-                if (width > 0 && (jsonNode.x < 0 || jsonNode.x >= width))
-                {
-                    continue;
-                }
-
-                if (height > 0 && (jsonNode.y < 0 || jsonNode.y >= height))
-                {
-                    continue;
-                }
-
-                var key = MakeCoordKey(jsonNode.x, jsonNode.y);
-                nodeByKey[key] = jsonNode;
-            }
-
-            if (autoFillMissingJsonTiles && width > 0 && height > 0)
-            {
-                for (var y = 0; y < height; y++)
-                {
-                    for (var x = 0; x < width; x++)
-                    {
-                        var key = MakeCoordKey(x, y);
-                        if (!nodeByKey.ContainsKey(key))
-                        {
-                            nodeByKey[key] = new MapJsonNode
-                            {
-                                x = x,
-                                y = y,
-                                terrain = defaultTerrain
-                            };
-                        }
-                    }
-                }
-            }
-
-            foreach (var pair in nodeByKey)
-            {
-                var jsonNode = pair.Value;
-                var terrain = NormalizeToken(jsonNode.terrain);
-                if (string.IsNullOrEmpty(terrain))
-                {
-                    terrain = defaultTerrain;
-                }
-
-                var buildingType = NormalizeToken(jsonNode.buildingType);
-                if (string.IsNullOrEmpty(buildingType))
-                {
-                    buildingType = NormalizeToken(jsonNode.building_type);
-                }
-
-                var resourceType = NormalizeToken(jsonNode.resourceType);
-                if (string.IsNullOrEmpty(resourceType))
-                {
-                    resourceType = NormalizeToken(jsonNode.resource_type);
-                }
-
-                var hasRoad = jsonNode.hasRoad || jsonNode.has_road;
-                var isResourcePoint = jsonNode.isResourcePoint || jsonNode.is_resource_point || !string.IsNullOrEmpty(resourceType);
-                var hasBuilding = !string.IsNullOrEmpty(buildingType);
-                var buildingHp = jsonNode.buildingHp > 0 ? jsonNode.buildingHp : jsonNode.building_hp;
-                var territoryOwner = NormalizeToken(jsonNode.territoryOwner);
-                if (string.IsNullOrEmpty(territoryOwner))
-                {
-                    territoryOwner = NormalizeToken(jsonNode.territory_owner);
-                }
-
-                var axial = HexGrid.OffsetToAxial(jsonNode.x, jsonNode.y);
-                var node = new NodeDto
-                {
-                    Id = string.IsNullOrWhiteSpace(jsonNode.id) ? $"N_{jsonNode.x}_{jsonNode.y}" : jsonNode.id.Trim(),
-                    Q = axial.x,
-                    R = axial.y,
-                    Terrain = terrain,
-                    HasRoad = hasRoad,
-                    IsResourcePoint = isResourcePoint,
-                    ResourceType = isResourcePoint ? resourceType : string.Empty,
-                    BuildingType = buildingType,
-                    BuildingHp = hasBuilding ? (buildingHp > 0 ? buildingHp : 100) : 0,
-                    BuildingMaxHp = hasBuilding ? ResolveBuildingMaxHp(buildingType, buildingHp) : 0,
-                    Owner = (jsonNode.owner ?? string.Empty).Trim(),
-                    TerritoryOwner = territoryOwner
-                };
-
-                result.Add(node);
-            }
-
-            return result;
-        }
-
-        private static void BuildUnitsFromJsonConfig(MapJsonConfig config, List<UnitDto> output)
-        {
-            output.Clear();
-            if (config?.units == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < config.units.Length; i++)
-            {
-                var src = config.units[i];
-                if (src == null)
-                {
-                    continue;
-                }
-
-                var axial = HexGrid.OffsetToAxial(src.x, src.y);
-                output.Add(new UnitDto
-                {
-                    Id = string.IsNullOrWhiteSpace(src.id) ? $"U_{src.x}_{src.y}_{i}" : src.id.Trim(),
-                    Owner = (src.faction ?? string.Empty).Trim(),
-                    Type = string.IsNullOrWhiteSpace(src.unitType) ? "infantry" : src.unitType.Trim(),
-                    Hp = Mathf.Max(0, src.hp),
-                    MaxHp = Mathf.Max(1, src.maxHp),
-                    Q = axial.x,
-                    R = axial.y,
-                });
-            }
-        }
-
-        private static string MakeCoordKey(int x, int y)
-        {
-            return $"{x}_{y}";
-        }
-
-        private static string NormalizeToken(string value)
-        {
-            return (value ?? string.Empty).Trim().ToLowerInvariant();
-        }
-
-        private static int ResolveBuildingMaxHp(string buildingType, int fallbackHp)
-        {
-            var normalized = NormalizeToken(buildingType);
-            if (string.IsNullOrEmpty(normalized))
-            {
-                return 0;
-            }
-
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null)
-            {
-                if (string.Equals(normalized, "city_core", StringComparison.OrdinalIgnoreCase) &&
-                    catalog.Rules != null &&
-                    catalog.Rules.city_core_max_hp > 0)
-                {
-                    return catalog.Rules.city_core_max_hp;
-                }
-
-                if (catalog.TryGetBuilding(normalized, out var buildingEntry) &&
-                    buildingEntry != null &&
-                    buildingEntry.max_hp > 0)
-                {
-                    return buildingEntry.max_hp;
-                }
-            }
-
-            return Mathf.Max(0, fallbackHp);
         }
     }
 }

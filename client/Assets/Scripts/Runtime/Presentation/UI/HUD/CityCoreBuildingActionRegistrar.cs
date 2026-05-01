@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Domestic;
@@ -15,8 +14,6 @@ namespace Panoptes.Presentation.UI.HUD
     /// </summary>
     public sealed class CityCoreBuildingActionRegistrar : UnitInfoActionProviderBase
     {
-        private const string CityCoreBuildingType = "city_core";
-
         [Header("Action IDs")]
         [SerializeField] private string buildActionId = "action_3";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
@@ -87,13 +84,13 @@ namespace Panoptes.Presentation.UI.HUD
                 buildActionId,
                 OnBuildActionClicked,
                 string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
-                IsOwnedCityCoreBuildingProxy);
+                CityCoreBuildingActionResolver.IsOwnedCityCoreBuildingProxy);
 
             registry.RegisterAction(
                 recipeActionId,
                 OnRecipeActionClicked,
                 string.IsNullOrWhiteSpace(recipeActionLabel) ? "Synthesis" : recipeActionLabel,
-                IsOwnedRecipeBuildingProxy);
+                CityCoreBuildingActionResolver.IsOwnedRecipeBuildingProxy);
         }
 
         protected override void OnEnable()
@@ -168,7 +165,9 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (currentSelection != null && IsBuildPanelCurrentlyVisible() && !IsOwnedCityCoreBuildingProxy(currentSelection))
+            if (currentSelection != null &&
+                IsBuildPanelCurrentlyVisible() &&
+                !CityCoreBuildingActionResolver.IsOwnedCityCoreBuildingProxy(currentSelection))
             {
                 CloseBuildPanel(resetUnitInfoOffset: true);
             }
@@ -176,7 +175,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (currentSelection != null &&
                 recipeSynthesisPanel != null &&
                 recipeSynthesisPanel.IsVisible &&
-                !IsOwnedRecipeBuildingProxy(currentSelection))
+                !CityCoreBuildingActionResolver.IsOwnedRecipeBuildingProxy(currentSelection))
             {
                 recipeSynthesisPanel.Hide();
                 ReapplyRightBottomShift(false);
@@ -694,7 +693,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnBuildActionClicked(UnitView unit)
         {
-            if (!TryResolveCityCoreNodeId(unit, out var nodeId))
+            if (!CityCoreBuildingActionResolver.TryResolveCityCoreNodeId(unit, out var nodeId))
             {
                 return;
             }
@@ -723,12 +722,12 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnRecipeActionClicked(UnitView unit)
         {
-            if (!TryResolveRecipeBuilding(unit, out var nodeId, out var buildingType, out var ownerId))
+            if (!CityCoreBuildingActionResolver.TryResolveRecipeBuilding(unit, out var context))
             {
                 return;
             }
 
-            _activeUnitInfoNodeId = nodeId;
+            _activeUnitInfoNodeId = context.NodeId;
             ResolveReferences();
             StopPanelSwitchRoutine();
 
@@ -743,11 +742,14 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (IsBuildPanelCurrentlyVisible())
             {
-                _panelSwitchRoutine = StartCoroutine(SwitchFromBuildToRecipe(nodeId, buildingType, ownerId));
+                _panelSwitchRoutine = StartCoroutine(SwitchFromBuildToRecipe(
+                    context.NodeId,
+                    context.BuildingTypeId,
+                    context.OwnerId));
                 return;
             }
 
-            OpenRecipePanelForBuilding(nodeId, buildingType, ownerId);
+            OpenRecipePanelForBuilding(context.NodeId, context.BuildingTypeId, context.OwnerId);
         }
 
         private void OnNonBuildingMapClicked()
@@ -837,175 +839,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return null;
-        }
-
-        private bool TryResolveCityCoreNodeId(UnitView unit, out string nodeId)
-        {
-            nodeId = string.Empty;
-            if (!IsOwnedCityCoreBuildingProxy(unit))
-            {
-                return false;
-            }
-
-            nodeId = unit.UnitId;
-            return !string.IsNullOrWhiteSpace(nodeId);
-        }
-
-        private bool TryResolveRecipeBuilding(UnitView unit, out string nodeId, out string buildingType, out string ownerId)
-        {
-            nodeId = string.Empty;
-            buildingType = string.Empty;
-            ownerId = string.Empty;
-            if (!IsOwnedRecipeBuildingProxy(unit))
-            {
-                return false;
-            }
-
-            var cache = GameStateCache.Instance;
-            if (cache == null)
-            {
-                return false;
-            }
-
-            nodeId = unit.UnitId;
-            if (!cache.TryGetBuilding(nodeId, out var building) || building == null)
-            {
-                return false;
-            }
-
-            buildingType = NormalizeToken(building.BuildingTypeId);
-            ownerId = ResolveAuthoritativeBuildingOwner(cache, building);
-            return !string.IsNullOrWhiteSpace(nodeId) && !string.IsNullOrWhiteSpace(buildingType);
-        }
-
-        private bool IsOwnedCityCoreBuildingProxy(UnitView unit)
-        {
-            if (unit == null)
-            {
-                return false;
-            }
-
-            var cache = GameStateCache.Instance;
-            if (cache == null)
-            {
-                return false;
-            }
-
-            var localOwner = NormalizeToken(cache.MyPlayerID);
-            if (string.IsNullOrWhiteSpace(localOwner))
-            {
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(unit.UnitId))
-            {
-                return false;
-            }
-
-            if (!cache.TryGetBuilding(unit.UnitId, out var building) || building == null)
-            {
-                return false;
-            }
-
-            var buildingType = NormalizeToken(building.BuildingTypeId);
-            if (!building.IsCityCore && !IsCityCoreBuildingType(buildingType))
-            {
-                return false;
-            }
-
-            var owner = NormalizeToken(ResolveAuthoritativeBuildingOwner(cache, building));
-            return string.Equals(owner, localOwner, StringComparison.Ordinal);
-        }
-
-        private bool IsOwnedRecipeBuildingProxy(UnitView unit)
-        {
-            if (unit == null || string.IsNullOrWhiteSpace(unit.UnitId))
-            {
-                return false;
-            }
-
-            var cache = GameStateCache.Instance;
-            if (cache == null)
-            {
-                return false;
-            }
-
-            if (!cache.TryGetBuilding(unit.UnitId, out var building) || building == null)
-            {
-                return false;
-            }
-
-            var localOwner = NormalizeToken(cache.MyPlayerID);
-            if (string.IsNullOrWhiteSpace(localOwner))
-            {
-                return false;
-            }
-
-            var owner = NormalizeToken(ResolveAuthoritativeBuildingOwner(cache, building));
-            if (!string.Equals(owner, localOwner, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            var buildingType = NormalizeToken(building.BuildingTypeId);
-            if (string.IsNullOrWhiteSpace(buildingType))
-            {
-                return false;
-            }
-
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog == null)
-            {
-                return false;
-            }
-
-            if (!catalog.TryGetBuilding(buildingType, out var catalogBuilding) || catalogBuilding == null)
-            {
-                return false;
-            }
-
-            var recipeIds = catalogBuilding.recipe_ids;
-            var hasRecipeIds = recipeIds != null && recipeIds.Length > 0;
-            var hasDefaultRecipe = !string.IsNullOrWhiteSpace(catalogBuilding.default_recipe_id);
-            return hasRecipeIds || hasDefaultRecipe;
-        }
-
-        private static string ResolveAuthoritativeBuildingOwner(GameStateCache cache, Panoptes.Core.Domain.BuildingDto building)
-        {
-            if (building == null)
-            {
-                return string.Empty;
-            }
-
-            if (!string.IsNullOrWhiteSpace(building.OwnerId))
-            {
-                return building.OwnerId.Trim();
-            }
-
-            var cityId = !string.IsNullOrWhiteSpace(building.CityId)
-                ? building.CityId
-                : building.ServiceCityId;
-            if (cache != null &&
-                !string.IsNullOrWhiteSpace(cityId) &&
-                cache.TryGetCity(cityId, out var city) &&
-                city != null &&
-                !string.IsNullOrWhiteSpace(city.OwnerId))
-            {
-                return city.OwnerId.Trim();
-            }
-
-            return string.Empty;
-        }
-
-        private static string NormalizeToken(string value)
-        {
-            return (value ?? string.Empty).Trim().ToLowerInvariant();
-        }
-
-        private static bool IsCityCoreBuildingType(string value)
-        {
-            var normalized = NormalizeToken(value);
-            return string.Equals(normalized, CityCoreBuildingType, StringComparison.Ordinal);
         }
 
         private float ResolveUnitInfoShiftX()

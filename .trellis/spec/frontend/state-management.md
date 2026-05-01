@@ -16,7 +16,8 @@ Questions to answer:
 - What are the patterns for derived state?
 -->
 
-(To be filled by the team)
+Client state mirrors server state and static catalog data for presentation only.
+The client never becomes a second rules engine.
 
 ---
 
@@ -24,7 +25,11 @@ Questions to answer:
 
 <!-- Local state, global state, server state, URL state -->
 
-(To be filled by the team)
+- Server runtime state: `GameStateCache`.
+- Static content and UI metadata: `StaticCatalogCache`.
+- Planning draft/preview state: `PlanningDraftCache`.
+- Local presentation state: MonoBehaviour-private fields for selection,
+  expanded panels, hover state, and animation bookkeeping.
 
 ---
 
@@ -32,7 +37,9 @@ Questions to answer:
 
 <!-- Criteria for promoting state to global -->
 
-(To be filled by the team)
+Use global/cache state only for data pushed by the server or loaded from the
+generated catalog. Keep transient UI state local to the panel/controller unless
+multiple views need to observe it.
 
 ---
 
@@ -40,7 +47,12 @@ Questions to answer:
 
 <!-- How server data is cached and synchronized -->
 
-(To be filled by the team)
+`GameStateCache` is the public client mirror facade. Extract read-only query
+helpers, such as `GameStateCacheReadQueries`, when repeated snapshot logic grows,
+but keep gameplay validation out of these helpers.
+
+Presentation reads Core DTO/cache APIs and should not inspect generated
+protocol messages directly.
 
 ---
 
@@ -48,4 +60,7 @@ Questions to answer:
 
 <!-- State management mistakes your team has made -->
 
-(To be filled by the team)
+- Returning mutable internal collections from cache queries. Return cloned
+  snapshots instead.
+- Recomputing server legality rules in UI state builders.
+- Letting Presentation reach into generated protocol types instead of Core DTOs.

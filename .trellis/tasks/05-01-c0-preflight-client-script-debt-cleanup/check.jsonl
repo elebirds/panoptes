@@ -1,0 +1,4 @@
+{"file": "docs/PANOPTES_AGENT_FRONTEND.md", "reason": "Verify client architecture and prohibited dependencies."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Verify chosen cleanup addresses known debt and preserves compatibility."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend quality gate and test expectations."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check cross-layer drift is not introduced."}
