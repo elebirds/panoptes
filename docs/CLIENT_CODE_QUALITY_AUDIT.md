@@ -264,3 +264,17 @@ Implemented on 2026-05-01 as the third post-plan cleanup slice:
 `UnitInfoPanelController` still needs further passes for stats binding, action
 list rendering, portrait camera ownership, and slide/docking layout, but direct
 order availability is now isolated and testable.
+
+## Script Architecture Refactor Phase 4
+
+Implemented on 2026-05-01 as the fourth post-plan cleanup slice:
+
+- Extracted `UnitInfoHpStateResolver` from `UnitInfoPanelController`.
+- Extracted `UnitInfoHpBinder` for Slider/TMP HP rendering.
+- Added EditMode coverage for fallback HP clamping, building max HP, resource
+  point max HP, and max HP not dropping below current HP.
+- Reduced `UnitInfoPanelController.cs` from 1935 lines after Phase 3 to 1869
+  lines.
+
+`UnitInfoPanelController` still needs future passes for action list rendering,
+portrait camera ownership, and slide/docking layout.
