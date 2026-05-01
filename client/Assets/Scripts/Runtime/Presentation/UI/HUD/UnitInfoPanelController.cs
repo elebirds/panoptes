@@ -17,11 +17,8 @@ namespace Panoptes.Presentation.UI.HUD
     public sealed class UnitInfoPanelController : MonoBehaviour
     {
         [Serializable]
-        private sealed class ActionButtonSlot
+        private sealed class ActionButtonSlot : UnitInfoActionButtonSlot
         {
-            public string actionId;
-            public Button button;
-            public TMP_Text label;
         }
 
         [Header("References")]
@@ -92,9 +89,8 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitView _currentUnit;
         private PlanningDraftCache _planningDraftCache;
         private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly UnitInfoActionListBinder _actionListBinder = new();
         private bool _unitSelectionSubscribed;
-        private static Sprite _fallbackButtonSprite;
-        private static Texture2D _fallbackButtonTexture;
         private UnitInfoPanelSlideAnimator _slideAnimator;
         private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
         private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
@@ -662,48 +658,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RefreshActionButtons()
         {
-            EnsureActionProvidersRegistered();
-
-            if (actionButtons == null || actionButtons.Length == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < actionButtons.Length; i++)
-            {
-                var slot = actionButtons[i];
-                if (slot == null || slot.button == null)
-                {
-                    continue;
-                }
-
-                slot.button.onClick.RemoveAllListeners();
-
-                if (actionRegistry == null || _currentUnit == null || string.IsNullOrWhiteSpace(slot.actionId))
-                {
-                    slot.button.gameObject.SetActive(false);
-                    continue;
-                }
-
-                if (!actionRegistry.TryResolve(slot.actionId, _currentUnit, out var handler, out var label, out var visible)
-                    || handler == null
-                    || !visible)
-                {
-                    slot.button.gameObject.SetActive(false);
-                    continue;
-                }
-
-                var buttonHandler = handler;
-                var boundUnit = _currentUnit;
-                slot.button.onClick.AddListener(() => buttonHandler(boundUnit));
-
-                if (slot.label != null)
-                {
-                    slot.label.text = string.IsNullOrWhiteSpace(label) ? slot.actionId : label;
-                }
-
-                slot.button.gameObject.SetActive(true);
-            }
+            _actionListBinder.Refresh(actionButtons, actionRegistry, _currentUnit);
         }
 
         private void HideLegacyPlanningTexts()
@@ -825,26 +780,6 @@ namespace Panoptes.Presentation.UI.HUD
         private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)
         {
             UnitInfoActionButtonBinder.ApplyState(button, label, visible, interactable, ActionLock.IsLocked);
-        }
-
-        private static void EnsureActionProvidersRegistered()
-        {
-            var providers = UnityEngine.Object.FindObjectsByType<UnitInfoActionProviderBase>(FindObjectsInactive.Include);
-            if (providers == null || providers.Length == 0)
-            {
-                return;
-            }
-
-            for (var i = 0; i < providers.Length; i++)
-            {
-                var provider = providers[i];
-                if (provider == null)
-                {
-                    continue;
-                }
-
-                provider.EnsureRegistered();
-            }
         }
 
         private void EnsureDefaultActionProviders()
@@ -1107,13 +1042,12 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (actionButtons == null || actionButtons.Length == 0)
             {
-                actionButtons = new[]
-                {
-                    BuildDefaultButtonSlot("settle_city", "坐城"),
-                    BuildDefaultButtonSlot("action_2", "Action2"),
-                    BuildDefaultButtonSlot("action_3", "Action3"),
-                    BuildDefaultButtonSlot("action_4", "Action4")
-                };
+                actionButtons = _actionListBinder.EnsureDefaultSlots(
+                    actionButtons,
+                    actionButtonsRoot,
+                    defaultActionButtonSize,
+                    defaultActionButtonColor,
+                    CreateSerializedActionButtonSlot);
             }
 
             moveButton ??= CreateDirectOrderButton("MoveButton", "移动", new Vector2(0f, 0f), new Vector2(88f, 30f));
@@ -1125,48 +1059,17 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureRequiredActionButtonSlots()
         {
-            EnsureActionButtonSlot("expand_territory", "Expand");
-            EnsureActionButtonSlot("action_2", "Action2");
-            EnsureActionButtonSlot("action_3", "Action3");
-            EnsureActionButtonSlot("action_4", "Action4");
-            EnsureActionButtonSlot("open_recipe_synthesis", "Synthesis");
+            actionButtons = _actionListBinder.EnsureRequiredSlots(
+                actionButtons,
+                actionButtonsRoot,
+                defaultActionButtonSize,
+                defaultActionButtonColor,
+                CreateSerializedActionButtonSlot);
         }
 
-        private void EnsureActionButtonSlot(string actionId, string defaultLabel)
+        private static ActionButtonSlot CreateSerializedActionButtonSlot()
         {
-            if (actionButtonsRoot == null || string.IsNullOrWhiteSpace(actionId))
-            {
-                return;
-            }
-
-            if (actionButtons != null)
-            {
-                for (var i = 0; i < actionButtons.Length; i++)
-                {
-                    var slot = actionButtons[i];
-                    if (slot == null)
-                    {
-                        continue;
-                    }
-
-                    if (string.Equals(NormalizeToken(slot.actionId), NormalizeToken(actionId), StringComparison.Ordinal))
-                    {
-                        return;
-                    }
-                }
-            }
-
-            var newSlot = BuildDefaultButtonSlot(actionId, defaultLabel);
-            if (actionButtons == null || actionButtons.Length == 0)
-            {
-                actionButtons = new[] { newSlot };
-                return;
-            }
-
-            var expanded = new ActionButtonSlot[actionButtons.Length + 1];
-            Array.Copy(actionButtons, expanded, actionButtons.Length);
-            expanded[actionButtons.Length] = newSlot;
-            actionButtons = expanded;
+            return new ActionButtonSlot();
         }
 
         private void ResolveAnchoredPositions()
@@ -1232,35 +1135,6 @@ namespace Panoptes.Presentation.UI.HUD
                 portraitFillLightForwardOffset);
         }
 
-        private ActionButtonSlot BuildDefaultButtonSlot(string actionId, string defaultLabel)
-        {
-            var buttonGO = new GameObject($"Btn_{actionId}", typeof(RectTransform), typeof(Image), typeof(Button));
-            var buttonRT = buttonGO.GetComponent<RectTransform>();
-            buttonRT.SetParent(actionButtonsRoot, false);
-            buttonRT.sizeDelta = defaultActionButtonSize;
-            var image = buttonGO.GetComponent<Image>();
-            image.color = defaultActionButtonColor;
-            if (image.sprite == null)
-            {
-                image.sprite = GetFallbackButtonSprite();
-            }
-            var button = buttonGO.GetComponent<Button>();
-
-            var labelRT = new GameObject("Label", typeof(RectTransform)).GetComponent<RectTransform>();
-            labelRT.SetParent(buttonRT, false);
-            UnitInfoPanelLayoutBuilder.StretchToParent(labelRT, new Vector2(4f, 2f), new Vector2(-4f, -2f));
-            var labelText = UnitInfoPanelLayoutBuilder.CreateTmpText(labelRT, defaultLabel);
-            labelText.alignment = TextAlignmentOptions.Center;
-            labelText.fontSize = 15f;
-
-            return new ActionButtonSlot
-            {
-                actionId = actionId,
-                button = button,
-                label = labelText
-            };
-        }
-
         private Button CreateDirectOrderButton(string objectName, string label, Vector2 anchoredPosition, Vector2 size)
         {
             var buttonRect = EnsureChild(objectName);
@@ -1280,7 +1154,7 @@ namespace Panoptes.Presentation.UI.HUD
             image.color = defaultActionButtonColor;
             if (image.sprite == null)
             {
-                image.sprite = GetFallbackButtonSprite();
+                image.sprite = UnitInfoActionListBinder.GetFallbackButtonSprite();
             }
 
             var button = buttonRect.GetComponent<Button>();
@@ -1305,115 +1179,11 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RepairActionButtonLayoutAndVisuals()
         {
-            if (actionButtons == null || actionButtons.Length == 0)
-            {
-                return;
-            }
-
-            if (actionButtonsRoot != null)
-            {
-                var rootLayout = actionButtonsRoot.GetComponent<HorizontalLayoutGroup>();
-                if (rootLayout == null)
-                {
-                    rootLayout = actionButtonsRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
-                }
-                rootLayout.spacing = 6f;
-                rootLayout.childControlWidth = true;
-                rootLayout.childControlHeight = true;
-                rootLayout.childForceExpandWidth = false;
-                rootLayout.childForceExpandHeight = false;
-
-                var rootFitter = actionButtonsRoot.GetComponent<ContentSizeFitter>();
-                if (rootFitter == null)
-                {
-                    rootFitter = actionButtonsRoot.gameObject.AddComponent<ContentSizeFitter>();
-                }
-                rootFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                rootFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-                if (actionButtonsRoot.sizeDelta.x < 8f || actionButtonsRoot.sizeDelta.y < 8f)
-                {
-                    actionButtonsRoot.sizeDelta = new Vector2(190f, 30f);
-                }
-            }
-
-            var fallbackSprite = GetFallbackButtonSprite();
-            for (var i = 0; i < actionButtons.Length; i++)
-            {
-                var slot = actionButtons[i];
-                if (slot == null || slot.button == null)
-                {
-                    continue;
-                }
-
-                var rect = slot.button.transform as RectTransform;
-                if (rect != null && (rect.sizeDelta.x < 8f || rect.sizeDelta.y < 8f))
-                {
-                    rect.sizeDelta = defaultActionButtonSize;
-                }
-
-                var layoutElement = slot.button.GetComponent<LayoutElement>();
-                if (layoutElement == null)
-                {
-                    layoutElement = slot.button.gameObject.AddComponent<LayoutElement>();
-                }
-                layoutElement.preferredWidth = defaultActionButtonSize.x;
-                layoutElement.preferredHeight = defaultActionButtonSize.y;
-                layoutElement.minWidth = defaultActionButtonSize.x;
-                layoutElement.minHeight = defaultActionButtonSize.y;
-                layoutElement.flexibleWidth = 0f;
-
-                var image = slot.button.GetComponent<Image>();
-                if (image != null)
-                {
-                    if (image.sprite == null)
-                    {
-                        image.sprite = fallbackSprite;
-                    }
-                    image.type = Image.Type.Sliced;
-                    if (image.color.a <= 0.01f)
-                    {
-                        image.color = defaultActionButtonColor;
-                    }
-                }
-
-                if (slot.label != null && slot.label.font == null && TMP_Settings.defaultFontAsset != null)
-                {
-                    slot.label.font = TMP_Settings.defaultFontAsset;
-                }
-            }
-        }
-
-        private static Sprite GetFallbackButtonSprite()
-        {
-            if (_fallbackButtonSprite != null)
-            {
-                return _fallbackButtonSprite;
-            }
-
-            if (_fallbackButtonTexture == null)
-            {
-                _fallbackButtonTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
-                {
-                    name = "UnitInfoButtonFallbackTex",
-                    hideFlags = HideFlags.DontSave
-                };
-                var pixels = new[]
-                {
-                    Color.white, Color.white,
-                    Color.white, Color.white
-                };
-                _fallbackButtonTexture.SetPixels(pixels);
-                _fallbackButtonTexture.Apply(false, true);
-            }
-
-            _fallbackButtonSprite = Sprite.Create(
-                _fallbackButtonTexture,
-                new Rect(0f, 0f, _fallbackButtonTexture.width, _fallbackButtonTexture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            _fallbackButtonSprite.name = "UnitInfoButtonFallbackSprite";
-            return _fallbackButtonSprite;
+            _actionListBinder.RepairLayoutAndVisuals(
+                actionButtons,
+                actionButtonsRoot,
+                defaultActionButtonSize,
+                defaultActionButtonColor);
         }
 
         private RectTransform EnsureChild(string childName)

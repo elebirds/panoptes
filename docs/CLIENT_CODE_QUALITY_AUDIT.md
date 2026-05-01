@@ -298,3 +298,24 @@ Implemented on 2026-05-01 as the less-conservative UnitInfo facade pass:
 facade. Remaining UnitInfo work should focus on action list rendering and a
 future ViewModel/selection binder, rather than re-expanding portrait, HP,
 planning summary, or slide state inside the controller.
+
+## UnitInfo Action List Refactor
+
+Implemented on 2026-05-01 as the next UnitInfo facade pass:
+
+- Extracted `UnitInfoActionListBinder` from `UnitInfoPanelController`.
+- Moved generic action slot creation, required-slot repair, button visual
+  repair, provider registration, click binding, and action visibility refresh
+  out of the HUD facade.
+- Preserved the old nested `ActionButtonSlot` serialized element type as a
+  compatibility wrapper, because authored prefabs already contain
+  `actionButtons` data.
+- Added EditMode coverage for required-slot creation, duplicate prevention,
+  serialized-compatible slot preservation, listener replacement, inactive
+  provider registration, and button visual repair.
+- Reduced `UnitInfoPanelController.cs` from 1516 lines after the runtime helper
+  pass to 1287 lines.
+
+Remaining UnitInfo work should focus on a ViewModel/selection binder and
+possibly description/catalog text projection. Generic action-list mechanics
+should stay in `UnitInfoActionListBinder`.

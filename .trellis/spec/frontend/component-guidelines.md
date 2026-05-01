@@ -60,6 +60,12 @@ public sealed class SomePanel : MonoBehaviour
 Keep serialized field names stable unless the related prefab/scene assets are
 updated and verified in the same commit.
 
+When extracting a `[Serializable]` custom class used inside a serialized
+MonoBehaviour field, preserve the old serialized field element type if an
+authored prefab/scene already contains data for that field. Prefer a thin
+nested compatibility wrapper that inherits from a top-level helper slot over
+changing the field from the old nested type to the new helper type.
+
 For UI Toolkit binders, prefer explicit `root.Q<T>("name")` lookup and a single
 `Render(state)` method during the pilot phase. Do not start with reflection,
 string-path binding engines, or hidden view locators.
