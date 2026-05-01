@@ -6,7 +6,8 @@
 
     "Unity.Cinemachine",
     "Unity.InputSystem",
-    "Unity.TextMeshPro"
+    "Unity.TextMeshPro",
+    "VContainer"
   ],
   "autoReferenced": false
 }
