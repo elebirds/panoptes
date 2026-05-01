@@ -149,6 +149,73 @@
       "max_hp": 120,
       "takeover_mode": "city_capture",
       "tags": ["defense"]
+    },
+    {
+      "id": "granary",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["granary_rations"],
+      "default_recipe_id": "granary_rations",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 95,
+      "takeover_mode": "city_capture",
+      "tags": ["food", "storage", "recovery"]
+    },
+    {
+      "id": "smelter",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "ore": 2 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["smelter_refined_ore"],
+      "default_recipe_id": "smelter_refined_ore",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "industry_output",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 100,
+      "takeover_mode": "city_capture",
+      "tags": ["industry", "processing"]
+    },
+    {
+      "id": "stable",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "food": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["stable_cavalry"],
+      "default_recipe_id": "stable_cavalry",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "military", "mobile"]
+    },
+    {
+      "id": "engineer_camp",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "ore": 2 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["engineer_camp_raider", "engineer_camp_siege_engine"],
+      "default_recipe_id": "engineer_camp_raider",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 95,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "military", "siege", "sabotage"]
     }
   ]
 }

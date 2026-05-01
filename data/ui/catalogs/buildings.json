@@ -9,6 +9,10 @@
     { "id": "frontier_office", "name": "拓土司", "description": "负责组织开拓者并承接前期扩张。", "icon_key": "building_city_core", "prefab_key": "Workshop", "sort_order": 55, "tags": ["expansion"] },
     { "id": "barracks", "name": "兵营", "description": "基础步兵训练建筑", "icon_key": "building_barracks", "prefab_key": "Barracks", "sort_order": 60, "tags": ["military"] },
     { "id": "archery", "name": "靶场", "description": "训练远程弓手的城市建筑。", "icon_key": "building_barracks", "prefab_key": "Archery", "sort_order": 70, "tags": ["military"] },
-    { "id": "wall", "name": "城墙", "description": "提升城市正面防守能力。", "icon_key": "building_wall", "prefab_key": "Wall", "sort_order": 80, "tags": ["defense"] }
+    { "id": "wall", "name": "城墙", "description": "提升城市正面防守能力。", "icon_key": "building_wall", "prefab_key": "Wall", "sort_order": 80, "tags": ["defense"] },
+    { "id": "granary", "name": "粮仓", "description": "将粮食整理为更稳定的军民口粮。", "icon_key": "building_granary", "prefab_key": "Granary", "sort_order": 90, "tags": ["food", "storage"] },
+    { "id": "smelter", "name": "冶炼坊", "description": "消耗矿石和木材，提升金属加工效率。", "icon_key": "building_smelter", "prefab_key": "Workshop", "sort_order": 100, "tags": ["industry"] },
+    { "id": "stable", "name": "马厩", "description": "训练高速机动的骑兵。", "icon_key": "building_stable", "prefab_key": "Stable", "sort_order": 110, "tags": ["military", "mobile"] },
+    { "id": "engineer_camp", "name": "工程营", "description": "训练破坏与攻城部队。", "icon_key": "building_engineer_camp", "prefab_key": "Barracks", "sort_order": 120, "tags": ["military", "siege"] }
   ]
 }

@@ -1,0 +1,78 @@
+{
+  "$schema": "../../../schema/content/maps/definition.schema.json",
+  "meta": {
+    "id": "frontier_basin",
+    "name": "边地盆谷",
+    "width": 30,
+    "height": 30,
+    "default_terrain": "plain",
+    "tags": ["pve", "1v1", "frontier", "medium"]
+  },
+  "terrain_patches": [
+    { "kind": "rect", "terrain": "forest", "x": 2, "y": 19, "width": 6, "height": 5 },
+    { "kind": "rect", "terrain": "forest", "x": 19, "y": 2, "width": 5, "height": 6 },
+    { "kind": "rect", "terrain": "forest", "x": 8, "y": 21, "width": 5, "height": 4 },
+    { "kind": "rect", "terrain": "forest", "x": 21, "y": 8, "width": 4, "height": 5 },
+    {
+      "kind": "point",
+      "terrain": "river",
+      "points": [
+        { "x": 10, "y": 18 },
+        { "x": 11, "y": 17 },
+        { "x": 12, "y": 16 },
+        { "x": 13, "y": 15 },
+        { "x": 14, "y": 14 },
+        { "x": 15, "y": 13 },
+        { "x": 16, "y": 12 },
+        { "x": 17, "y": 11 },
+        { "x": 18, "y": 10 },
+        { "x": 11, "y": 18 },
+        { "x": 12, "y": 17 },
+        { "x": 13, "y": 16 },
+        { "x": 14, "y": 15 },
+        { "x": 15, "y": 14 },
+        { "x": 16, "y": 13 },
+        { "x": 17, "y": 12 },
+        { "x": 18, "y": 11 }
+      ]
+    }
+  ],
+  "node_overrides": [],
+  "features": {
+    "resource_points": [
+      { "x": 5, "y": 23, "resource_type": "food" },
+      { "x": 7, "y": 21, "resource_type": "wood" },
+      { "x": 9, "y": 24, "resource_type": "ore" },
+      { "x": 23, "y": 5, "resource_type": "food" },
+      { "x": 21, "y": 7, "resource_type": "wood" },
+      { "x": 24, "y": 9, "resource_type": "ore" },
+      { "x": 12, "y": 20, "resource_type": "food" },
+      { "x": 20, "y": 12, "resource_type": "food" },
+      { "x": 14, "y": 18, "resource_type": "ore" },
+      { "x": 18, "y": 14, "resource_type": "ore" },
+      { "x": 13, "y": 22, "resource_type": "wood" },
+      { "x": 22, "y": 13, "resource_type": "wood" }
+    ],
+    "roads": [
+      { "points": [{ "x": 6, "y": 24 }, { "x": 7, "y": 23 }, { "x": 8, "y": 22 }] },
+      { "points": [{ "x": 24, "y": 6 }, { "x": 23, "y": 7 }, { "x": 22, "y": 8 }] }
+    ],
+    "named_nodes": [
+      { "x": 6, "y": 24, "name": "南境谷城" },
+      { "x": 24, "y": 6, "name": "北境谷城" },
+      { "x": 14, "y": 18, "name": "南岸铁场" },
+      { "x": 18, "y": 14, "name": "北岸铁场" },
+      { "x": 15, "y": 15, "name": "盆谷渡口" }
+    ],
+    "central_points": [
+      { "x": 14, "y": 15 },
+      { "x": 15, "y": 15 },
+      { "x": 15, "y": 14 },
+      { "x": 16, "y": 14 }
+    ]
+  },
+  "spawn_points": [
+    { "slot": 0, "x": 6, "y": 24 },
+    { "slot": 1, "x": 24, "y": 6 }
+  ]
+}

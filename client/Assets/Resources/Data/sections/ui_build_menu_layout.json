@@ -9,7 +9,11 @@
     "frontier_office",
     "barracks",
     "archery",
-    "wall"
+    "wall",
+    "granary",
+    "smelter",
+    "stable",
+    "engineer_camp"
   ],
   "hidden_building_ids": [
     "city_core"

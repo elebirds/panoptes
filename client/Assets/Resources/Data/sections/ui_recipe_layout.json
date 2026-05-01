@@ -10,6 +10,11 @@
     "mine_ore",
     "mine_deep_ore",
     "barracks_infantry",
-    "archery_archer"
+    "archery_archer",
+    "granary_rations",
+    "smelter_refined_ore",
+    "stable_cavalry",
+    "engineer_camp_raider",
+    "engineer_camp_siege_engine"
   ]
 }

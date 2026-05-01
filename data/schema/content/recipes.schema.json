@@ -53,10 +53,14 @@
               "archery",
               "barracks",
               "city_core",
+              "engineer_camp",
               "farm",
               "frontier_office",
+              "granary",
               "lumber",
               "mine",
+              "smelter",
+              "stable",
               "wall",
               "workshop"
             ],
@@ -84,6 +88,7 @@
                 "items": {
                   "enum": [
                     "archer",
+                    "cavalry",
                     "infantry",
                     "raider",
                     "settler",
