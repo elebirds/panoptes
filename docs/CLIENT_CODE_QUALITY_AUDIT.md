@@ -278,3 +278,23 @@ Implemented on 2026-05-01 as the fourth post-plan cleanup slice:
 
 `UnitInfoPanelController` still needs future passes for action list rendering,
 portrait camera ownership, and slide/docking layout.
+
+## UnitInfo Final Structure Refactor
+
+Implemented on 2026-05-01 as the less-conservative UnitInfo facade pass:
+
+- Extracted `UnitInfoPanelSlideAnimator` from `UnitInfoPanelController`.
+- Moved slide/open/close, docking, hidden position, and external offset
+  animation state out of the HUD facade.
+- Extracted `UnitInfoPortraitCameraLifecycle` from `UnitInfoPanelController`.
+- Moved portrait camera, render texture, fill light, camera pose, rendering,
+  disable, and release lifecycle out of the HUD facade.
+- Added EditMode coverage for slide positioning/offset behavior and portrait
+  visibility/render texture release behavior.
+- Reduced `UnitInfoPanelController.cs` from 1869 lines after Phase 4 to 1516
+  lines.
+
+`UnitInfoPanelController` now reads more like a prefab-facing orchestration
+facade. Remaining UnitInfo work should focus on action list rendering and a
+future ViewModel/selection binder, rather than re-expanding portrait, HP,
+planning summary, or slide state inside the controller.

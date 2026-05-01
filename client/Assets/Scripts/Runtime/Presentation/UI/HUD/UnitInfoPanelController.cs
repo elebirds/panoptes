@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
@@ -91,23 +90,16 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Color defaultActionButtonColor = new Color(0.2f, 0.45f, 0.8f, 0.92f);
 
         private UnitView _currentUnit;
-        private Coroutine _slideRoutine;
-        private Coroutine _externalOffsetRoutine;
         private PlanningDraftCache _planningDraftCache;
         private readonly EventSubscriptionBag _subscriptions = new();
-        private Vector2 _shownAnchoredPos;
-        private Vector2 _hiddenAnchoredPos;
-        private Vector2 _externalOffset;
-        private bool _isOpen;
         private bool _unitSelectionSubscribed;
         private static Sprite _fallbackButtonSprite;
         private static Texture2D _fallbackButtonTexture;
-        private Camera _portraitCamera;
-        private RenderTexture _portraitRenderTexture;
-        private Light _portraitFillLight;
+        private UnitInfoPanelSlideAnimator _slideAnimator;
+        private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
         private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
         public UnitView CurrentUnit => _currentUnit;
-        public bool IsOpen => _isOpen;
+        public bool IsOpen => _slideAnimator != null && _slideAnimator.IsOpen;
 
         private void Awake()
         {
@@ -121,6 +113,8 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 externalOffsetCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
+            EnsureRuntimeHelpers();
+            ConfigureSlideAnimator();
             EnsurePortraitUi();
             if (autoBuildDefaultLayout)
             {
@@ -190,6 +184,7 @@ namespace Panoptes.Presentation.UI.HUD
             UnsubscribeActionRegistry();
             _subscriptions.Clear();
             _planningDraftCache = null;
+            _slideAnimator?.StopAnimations();
             DisablePortraitCamera();
         }
 
@@ -211,7 +206,7 @@ namespace Panoptes.Presentation.UI.HUD
                 TrySubscribeActionRegistry();
             }
 
-            if (_isOpen && _currentUnit != null && enablePortraitCamera && portraitRealtime)
+            if (IsOpen && _currentUnit != null && enablePortraitCamera && portraitRealtime)
             {
                 if (!TryRefreshUnitPortrait(forceRender: false))
                 {
@@ -246,20 +241,9 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _currentUnit = null;
 
-            if (_slideRoutine != null)
-            {
-                StopCoroutine(_slideRoutine);
-                _slideRoutine = null;
-            }
-
-            if (_externalOffsetRoutine != null)
-            {
-                StopCoroutine(_externalOffsetRoutine);
-                _externalOffsetRoutine = null;
-            }
-
             ResolveReferences();
             ResolveAnchoredPositions();
+            _slideAnimator?.StopAnimations();
             SetPanelVisibleImmediate(false);
             DisablePortraitCamera();
             SetPortraitVisible(false);
@@ -269,25 +253,8 @@ namespace Panoptes.Presentation.UI.HUD
 
         public void SetExternalOffset(Vector2 offset, bool immediate = false)
         {
-            _externalOffset = offset;
-            if (panelRoot == null)
-            {
-                return;
-            }
-
-            if (_externalOffsetRoutine != null)
-            {
-                StopCoroutine(_externalOffsetRoutine);
-                _externalOffsetRoutine = null;
-            }
-
-            if (immediate)
-            {
-                panelRoot.anchoredPosition = GetTargetAnchoredPosition(_isOpen);
-                return;
-            }
-
-            _externalOffsetRoutine = StartCoroutine(AnimateExternalOffset());
+            ResolveAnchoredPositions();
+            _slideAnimator?.SetExternalOffset(offset, immediate);
         }
 
         private void OnUnitSelectionChanged(UnitView selected)
@@ -341,7 +308,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnPhaseChanged(PhaseChangedEvent _)
         {
-            if (_currentUnit == null || !_isOpen)
+            if (_currentUnit == null || !IsOpen)
             {
                 return;
             }
@@ -351,7 +318,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnGameOver(GameOverEvent _)
         {
-            if (_currentUnit == null || !_isOpen)
+            if (_currentUnit == null || !IsOpen)
             {
                 return;
             }
@@ -360,7 +327,7 @@ namespace Panoptes.Presentation.UI.HUD
         }
         private void OnActionLockChanged(bool _)
         {
-            if (_currentUnit == null || !_isOpen)
+            if (_currentUnit == null || !IsOpen)
             {
                 return;
             }
@@ -370,7 +337,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnActionRegistryChanged()
         {
-            if (_currentUnit == null || !_isOpen)
+            if (_currentUnit == null || !IsOpen)
             {
                 return;
             }
@@ -438,7 +405,7 @@ namespace Panoptes.Presentation.UI.HUD
             ResolveAnchoredPositions();
             if (immediate && panelRoot != null)
             {
-                panelRoot.anchoredPosition = GetTargetAnchoredPosition(_isOpen);
+                panelRoot.anchoredPosition = _slideAnimator.GetTargetAnchoredPosition(IsOpen);
             }
         }
 
@@ -482,44 +449,14 @@ namespace Panoptes.Presentation.UI.HUD
                 return false;
             }
 
-            if (!EnsurePortraitCameraAndTexture())
-            {
-                DisablePortraitCamera();
-                return false;
-            }
-
-            if (!UpdatePortraitCameraPose(_currentUnit))
-            {
-                DisablePortraitCamera();
-                return false;
-            }
-
-            UpdatePortraitCameraEnabledState();
-
-            if (_portraitCamera != null &&
-                _portraitCamera.targetTexture != null &&
-                (!portraitRealtime || forceRender))
-            {
-                var usePortraitFillLight = _portraitFillLight != null && enablePortraitFillLight;
-                if (usePortraitFillLight)
-                {
-                    _portraitFillLight.enabled = true;
-                }
-
-                try
-                {
-                    _portraitCamera.Render();
-                }
-                finally
-                {
-                    if (usePortraitFillLight)
-                    {
-                        _portraitFillLight.enabled = false;
-                    }
-                }
-            }
-
-            return true;
+            EnsureRuntimeHelpers();
+            return _portraitCameraLifecycle.TryRefresh(
+                _currentUnit,
+                unitPortraitRawImage,
+                forceRender,
+                BuildPortraitSettings(),
+                isActiveAndEnabled,
+                IsOpen);
         }
 
         private void EnsurePortraitUi()
@@ -578,7 +515,8 @@ namespace Panoptes.Presentation.UI.HUD
 
             unitPortraitRawImage.raycastTarget = false;
             unitPortraitRawImage.color = Color.white;
-            unitPortraitRawImage.texture = _portraitRenderTexture;
+            EnsureRuntimeHelpers();
+            _portraitCameraLifecycle.BindRawImageTexture(unitPortraitRawImage);
         }
 
         private void EnsureUnitDescriptionUi()
@@ -686,285 +624,40 @@ namespace Panoptes.Presentation.UI.HUD
             _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
         }
 
-        private bool EnsurePortraitCameraAndTexture()
-        {
-            if (!enablePortraitCamera)
-            {
-                return false;
-            }
-
-            var textureSize = Mathf.Clamp(portraitTextureSize, 64, 1024);
-            if (_portraitRenderTexture == null ||
-                _portraitRenderTexture.width != textureSize ||
-                _portraitRenderTexture.height != textureSize)
-            {
-                if (_portraitCamera != null && _portraitCamera.targetTexture == _portraitRenderTexture)
-                {
-                    _portraitCamera.targetTexture = null;
-                }
-
-                if (_portraitRenderTexture != null)
-                {
-                    _portraitRenderTexture.Release();
-                    Destroy(_portraitRenderTexture);
-                }
-
-                _portraitRenderTexture = new RenderTexture(textureSize, textureSize, 16, RenderTextureFormat.ARGB32)
-                {
-                    name = "UnitPortraitRT_Runtime",
-                    hideFlags = HideFlags.DontSave,
-                    antiAliasing = 1,
-                    useMipMap = false,
-                    autoGenerateMips = false
-                };
-                _portraitRenderTexture.Create();
-            }
-
-            if (_portraitCamera == null)
-            {
-                var cameraGo = new GameObject("UnitPortraitCamera_Runtime", typeof(Camera));
-                cameraGo.hideFlags = HideFlags.DontSave;
-                _portraitCamera = cameraGo.GetComponent<Camera>();
-            }
-
-            if (_portraitCamera == null || _portraitRenderTexture == null)
-            {
-                return false;
-            }
-
-            _portraitCamera.enabled = false;
-            _portraitCamera.orthographic = false;
-            _portraitCamera.fieldOfView = Mathf.Clamp(portraitFov, 10f, 80f);
-            _portraitCamera.nearClipPlane = 0.03f;
-            _portraitCamera.farClipPlane = 500f;
-            _portraitCamera.cullingMask = ~0;
-            _portraitCamera.targetTexture = _portraitRenderTexture;
-            ConfigurePortraitCameraClearFlags();
-            EnsurePortraitFillLight();
-            ConfigurePortraitFillLight();
-
-            if (unitPortraitRawImage != null)
-            {
-                unitPortraitRawImage.texture = _portraitRenderTexture;
-            }
-
-            return true;
-        }
-
-        private void ConfigurePortraitCameraClearFlags()
-        {
-            if (_portraitCamera == null)
-            {
-                return;
-            }
-
-            if (!portraitKeepSceneBackground)
-            {
-                _portraitCamera.clearFlags = CameraClearFlags.SolidColor;
-                _portraitCamera.backgroundColor = Color.clear;
-                return;
-            }
-
-            if (RenderSettings.skybox != null)
-            {
-                _portraitCamera.clearFlags = CameraClearFlags.Skybox;
-                return;
-            }
-
-            _portraitCamera.clearFlags = CameraClearFlags.SolidColor;
-            _portraitCamera.backgroundColor = Color.black;
-        }
-
-        private void EnsurePortraitFillLight()
-        {
-            if (_portraitCamera == null)
-            {
-                _portraitFillLight = null;
-                return;
-            }
-
-            if (_portraitFillLight != null)
-            {
-                return;
-            }
-
-            var fillLightGo = new GameObject("UnitPortraitFillLight_Runtime", typeof(Light));
-            fillLightGo.hideFlags = HideFlags.DontSave;
-            fillLightGo.transform.SetParent(_portraitCamera.transform, false);
-            _portraitFillLight = fillLightGo.GetComponent<Light>();
-        }
-
-        private void ConfigurePortraitFillLight()
-        {
-            if (_portraitFillLight == null)
-            {
-                return;
-            }
-
-            _portraitFillLight.enabled = false;
-            _portraitFillLight.type = LightType.Spot;
-            _portraitFillLight.shadows = LightShadows.None;
-            _portraitFillLight.renderMode = LightRenderMode.ForcePixel;
-            _portraitFillLight.cullingMask = _portraitCamera != null ? _portraitCamera.cullingMask : ~0;
-            _portraitFillLight.color = portraitFillLightColor;
-            _portraitFillLight.intensity = Mathf.Max(0f, portraitFillLightIntensity);
-            _portraitFillLight.range = Mathf.Max(1f, portraitFillLightRange);
-            _portraitFillLight.spotAngle = Mathf.Clamp(portraitFillLightSpotAngle, 15f, 150f);
-            _portraitFillLight.innerSpotAngle = Mathf.Clamp(
-                _portraitFillLight.spotAngle * 0.65f,
-                1f,
-                _portraitFillLight.spotAngle - 0.1f);
-        }
-
-        private bool UpdatePortraitCameraPose(UnitView unit)
-        {
-            if (_portraitCamera == null || unit == null)
-            {
-                return false;
-            }
-
-            if (!UnitInfoPortraitPresenter.TryComputeUnitBounds(unit, out var bounds))
-            {
-                return false;
-            }
-
-            var visualRoot = unit.VisualRoot != null ? unit.VisualRoot : unit.transform;
-            var forward = visualRoot != null ? visualRoot.forward : unit.transform.forward;
-            if (forward.sqrMagnitude <= 0.0001f)
-            {
-                forward = unit.transform.forward;
-            }
-
-            if (forward.sqrMagnitude <= 0.0001f)
-            {
-                forward = Vector3.forward;
-            }
-
-            forward.Normalize();
-            var lookAt = bounds.center + Vector3.up * (bounds.size.y * 0.15f + portraitHeightOffset);
-            var distance = Mathf.Max(
-                Mathf.Max(0.01f, portraitMinDistance),
-                bounds.extents.magnitude * Mathf.Max(0.01f, portraitDistanceScale))
-                + Mathf.Max(0f, portraitDistanceOffset);
-            var camPos = lookAt - forward * distance + Vector3.up * (bounds.size.y * portraitCameraVerticalOffsetScale);
-            var lookDir = lookAt - camPos;
-            if (lookDir.sqrMagnitude <= 0.0001f)
-            {
-                lookDir = forward;
-            }
-
-            _portraitCamera.transform.SetPositionAndRotation(
-                camPos,
-                Quaternion.LookRotation(lookDir.normalized, Vector3.up));
-            UpdatePortraitFillLightPose(lookAt);
-            return true;
-        }
-
-        private void UpdatePortraitFillLightPose(Vector3 lookAt)
-        {
-            if (_portraitFillLight == null || _portraitCamera == null)
-            {
-                return;
-            }
-
-            var cameraTransform = _portraitCamera.transform;
-            var fillPosition = cameraTransform.position +
-                               cameraTransform.up * portraitFillLightVerticalOffset +
-                               cameraTransform.forward * portraitFillLightForwardOffset;
-            var lightDirection = lookAt - fillPosition;
-            if (lightDirection.sqrMagnitude <= 0.0001f)
-            {
-                lightDirection = cameraTransform.forward;
-            }
-
-            _portraitFillLight.transform.SetPositionAndRotation(
-                fillPosition,
-                Quaternion.LookRotation(lightDirection.normalized, Vector3.up));
-        }
-
         private void SetPortraitVisible(bool visible)
         {
-            if (unitPortraitRawImage != null)
-            {
-                unitPortraitRawImage.enabled = visible;
-            }
-
-            if (unitIcon != null)
-            {
-                unitIcon.enabled = !visible;
-            }
-
-            UpdatePortraitCameraEnabledState();
+            EnsureRuntimeHelpers();
+            _portraitCameraLifecycle.SetVisible(
+                unitPortraitRawImage,
+                unitIcon,
+                visible,
+                BuildPortraitSettings(),
+                isActiveAndEnabled,
+                IsOpen,
+                _currentUnit != null);
         }
 
         private void UpdatePortraitCameraEnabledState()
         {
-            if (_portraitCamera == null)
-            {
-                return;
-            }
-
-            var shouldEnable = enablePortraitCamera &&
-                               portraitRealtime &&
-                               isActiveAndEnabled &&
-                               _isOpen &&
-                               _currentUnit != null &&
-                               unitPortraitRawImage != null &&
-                               unitPortraitRawImage.enabled &&
-                               _portraitRenderTexture != null;
-            _portraitCamera.enabled = shouldEnable;
-
-            if (_portraitFillLight != null)
-            {
-                _portraitFillLight.enabled = false;
-            }
+            EnsureRuntimeHelpers();
+            _portraitCameraLifecycle.SetVisible(
+                unitPortraitRawImage,
+                unitIcon,
+                unitPortraitRawImage != null && unitPortraitRawImage.enabled,
+                BuildPortraitSettings(),
+                isActiveAndEnabled,
+                IsOpen,
+                _currentUnit != null);
         }
 
         private void DisablePortraitCamera()
         {
-            if (_portraitCamera != null)
-            {
-                _portraitCamera.enabled = false;
-            }
-
-            if (_portraitFillLight != null)
-            {
-                _portraitFillLight.enabled = false;
-            }
+            _portraitCameraLifecycle?.Disable();
         }
 
         private void ReleasePortraitResources()
         {
-            DisablePortraitCamera();
-
-            if (_portraitCamera != null && _portraitCamera.targetTexture == _portraitRenderTexture)
-            {
-                _portraitCamera.targetTexture = null;
-            }
-
-            if (_portraitFillLight != null)
-            {
-                _portraitFillLight.enabled = false;
-                _portraitFillLight = null;
-            }
-
-            if (unitPortraitRawImage != null && unitPortraitRawImage.texture == _portraitRenderTexture)
-            {
-                unitPortraitRawImage.texture = null;
-            }
-
-            if (_portraitCamera != null)
-            {
-                Destroy(_portraitCamera.gameObject);
-                _portraitCamera = null;
-            }
-
-            if (_portraitRenderTexture != null)
-            {
-                _portraitRenderTexture.Release();
-                Destroy(_portraitRenderTexture);
-                _portraitRenderTexture = null;
-            }
+            _portraitCameraLifecycle?.Release(unitPortraitRawImage);
         }
 
         private void RefreshActionButtons()
@@ -1478,110 +1171,65 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void ResolveAnchoredPositions()
         {
-            var y = shownBottomMargin;
-            var x = -shownRightMargin;
-            if (dockRightOfRect != null)
-            {
-                x = dockRightOfRect.anchoredPosition.x - Mathf.Abs(dockRightOfRect.rect.width) - Mathf.Max(0f, dockSpacing);
-                y = dockRightOfRect.anchoredPosition.y;
-            }
-
-            var panelHeight = 0f;
-            if (panelRoot != null)
-            {
-                panelHeight = Mathf.Max(Mathf.Abs(panelRoot.rect.height), Mathf.Abs(panelRoot.sizeDelta.y));
-            }
-            if (panelHeight <= 0.01f)
-            {
-                panelHeight = 280f;
-            }
-
-            _shownAnchoredPos = new Vector2(x, y);
-            _hiddenAnchoredPos = new Vector2(
-                x + Mathf.Abs(hiddenOffsetX),
-                -panelHeight - Mathf.Max(0f, hiddenBottomMargin));
+            EnsureRuntimeHelpers();
+            ConfigureSlideAnimator();
         }
 
         private void AnimateVisibility(bool open)
         {
-            if (panelRoot == null)
-            {
-                return;
-            }
-
-            if (_slideRoutine != null)
-            {
-                StopCoroutine(_slideRoutine);
-                _slideRoutine = null;
-            }
-
-            _slideRoutine = StartCoroutine(SlideRoutine(open));
-        }
-
-        private IEnumerator SlideRoutine(bool open)
-        {
-            _isOpen = open;
-            UpdatePortraitCameraEnabledState();
-            var duration = Mathf.Max(0.01f, slideDuration);
-            var from = panelRoot.anchoredPosition;
-            var to = GetTargetAnchoredPosition(open);
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                var t = Mathf.Clamp01(elapsed / duration);
-                var curveT = slideCurve != null && slideCurve.keys != null && slideCurve.length > 0 ? slideCurve.Evaluate(t) : t;
-                panelRoot.anchoredPosition = Vector2.LerpUnclamped(from, to, curveT);
-                yield return null;
-            }
-
-            panelRoot.anchoredPosition = to;
-            UpdatePortraitCameraEnabledState();
-            _slideRoutine = null;
+            ResolveAnchoredPositions();
+            _slideAnimator?.AnimateVisibility(open);
         }
 
         private void SetPanelVisibleImmediate(bool open)
         {
-            _isOpen = open;
-            if (panelRoot != null)
-            {
-                panelRoot.anchoredPosition = GetTargetAnchoredPosition(open);
-            }
-            UpdatePortraitCameraEnabledState();
+            ResolveAnchoredPositions();
+            _slideAnimator?.SetImmediate(open);
         }
 
-        private IEnumerator AnimateExternalOffset()
+        private void EnsureRuntimeHelpers()
         {
-            if (panelRoot == null)
-            {
-                yield break;
-            }
-
-            var duration = Mathf.Max(0.01f, externalOffsetSlideDuration);
-            var from = panelRoot.anchoredPosition;
-            var to = GetTargetAnchoredPosition(_isOpen);
-            var elapsed = 0f;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                var t = Mathf.Clamp01(elapsed / duration);
-                var curveT = externalOffsetCurve != null && externalOffsetCurve.length > 0
-                    ? externalOffsetCurve.Evaluate(t)
-                    : t;
-                panelRoot.anchoredPosition = Vector2.LerpUnclamped(from, to, curveT);
-                yield return null;
-            }
-
-            panelRoot.anchoredPosition = to;
-            _externalOffsetRoutine = null;
+            _slideAnimator ??= new UnitInfoPanelSlideAnimator(this, UpdatePortraitCameraEnabledState);
+            _portraitCameraLifecycle ??= new UnitInfoPortraitCameraLifecycle();
         }
 
-        private Vector2 GetTargetAnchoredPosition(bool open)
+        private void ConfigureSlideAnimator()
         {
-            var basePos = open ? _shownAnchoredPos : _hiddenAnchoredPos;
-            return open ? basePos + _externalOffset : basePos;
+            EnsureRuntimeHelpers();
+            _slideAnimator.Configure(
+                panelRoot,
+                hiddenOffsetX,
+                hiddenBottomMargin,
+                shownRightMargin,
+                shownBottomMargin,
+                slideDuration,
+                slideCurve,
+                externalOffsetSlideDuration,
+                externalOffsetCurve,
+                dockRightOfRect,
+                dockSpacing);
+        }
+
+        private UnitInfoPortraitCameraLifecycle.Settings BuildPortraitSettings()
+        {
+            return new UnitInfoPortraitCameraLifecycle.Settings(
+                enablePortraitCamera,
+                portraitRealtime,
+                portraitKeepSceneBackground,
+                portraitTextureSize,
+                portraitFov,
+                portraitMinDistance,
+                portraitDistanceScale,
+                portraitDistanceOffset,
+                portraitHeightOffset,
+                portraitCameraVerticalOffsetScale,
+                enablePortraitFillLight,
+                portraitFillLightColor,
+                portraitFillLightIntensity,
+                portraitFillLightRange,
+                portraitFillLightSpotAngle,
+                portraitFillLightVerticalOffset,
+                portraitFillLightForwardOffset);
         }
 
         private ActionButtonSlot BuildDefaultButtonSlot(string actionId, string defaultLabel)
