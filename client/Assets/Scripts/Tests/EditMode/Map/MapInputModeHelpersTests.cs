@@ -112,12 +112,23 @@ namespace Panoptes.Tests.EditMode.Map
         }
 
         [Test]
+        public void MovePreviewGhostPresenter_ShouldAllowDeterministicCleanupWithoutRuntimeObjects()
+        {
+            var presenter = new MovePreviewGhostPresenter();
+
+            Assert.DoesNotThrow(() => presenter.Remove("missing-unit"));
+            Assert.DoesNotThrow(() => presenter.ClearAll());
+            Assert.DoesNotThrow(() => presenter.DisposeMaterial());
+        }
+
+        [Test]
         public void PlanningInputTypes_ShouldLiveOutsideMapNamespace()
         {
             Assert.That(typeof(IPlanningInputMode).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input"));
             Assert.That(typeof(BuildPlacementInputMode).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input.Modes"));
             Assert.That(typeof(PendingMoveState).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Input.State"));
             Assert.That(typeof(MovePreviewPresenter).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Feedback"));
+            Assert.That(typeof(MovePreviewGhostPresenter).Namespace, Is.EqualTo("Panoptes.Presentation.Planning.Feedback"));
         }
     }
 }

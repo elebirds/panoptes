@@ -360,3 +360,23 @@ Implemented on 2026-05-01 as the default-layout cleanup pass:
 `UnitInfoPanelController` is now mostly orchestration. Remaining work should
 focus on selection/ViewModel boundaries and catalog-backed display text
 projection.
+
+## MapPlanning Move Preview Ghost Refactor
+
+Implemented on 2026-05-01 as the first MapPlanning final-structure slice:
+
+- Extracted `MovePreviewGhostPresenter` from `MapPlanningInputController`.
+- Moved runtime move ghost object creation, clone/proxy visual setup, material
+  ownership, animation, removal, and cleanup out of the map input facade.
+- Kept all move ghost serialized fields on `MapPlanningInputController` for
+  scene/prefab compatibility; the facade now passes them through a presenter
+  settings struct.
+- Added EditMode coverage for the presenter namespace and deterministic cleanup
+  API.
+- Reduced `MapPlanningInputController.cs` from 3308 lines after C0p to 2931
+  lines.
+
+`MapPlanningInputController` is still the largest remaining Presentation
+facade. The next MapPlanning pass should focus on either build placement mode
+ownership or combat/move click routing, rather than re-expanding preview object
+lifecycle inside the controller.
