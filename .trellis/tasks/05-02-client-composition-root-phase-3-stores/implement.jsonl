@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "frontend store directory placement"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "store/read model contracts"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "boundary and quality requirements"}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Phase 3 target architecture"}

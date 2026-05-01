@@ -47,6 +47,18 @@ Target additions after dependency policy changes:
 - Form state: local, non-authoritative input such as search, filters, settings,
   and login fields.
 
+Current Phase 3 store classes live under `Core/Application/Stores`:
+
+- `StaticCatalogStore`
+- `GameStateStore`
+- `PlanningDraftStore`
+- `SelectionStore`
+- `TurnStore`
+
+Store state DTOs must be independent Core read models, not generated Protocol
+messages and not nested legacy cache JSON classes. Write/update methods stay
+`internal` so UI and Binders consume only `Snapshot` and `State`.
+
 ---
 
 ## When to Use Global State
@@ -98,6 +110,8 @@ migrate.
 - `GameLifetimeScope` must stay free of legacy `GameStateCache`,
   `PlanningDraftCache`, and `StaticCatalogCache` registrations. Phase 3+ stores
   should be registered directly as migrated read-model dependencies.
+- Project scope registers `StaticCatalogStore`; game scope registers
+  `GameStateStore`, `PlanningDraftStore`, `SelectionStore`, and `TurnStore`.
 
 ---
 
@@ -114,3 +128,5 @@ migrate.
   concept.
 - Adding a serialized project-level `Managers` object to `Boot.unity` while the
   runtime bootstrap already creates one.
+- Exposing legacy cache nested JSON types from Store state; map catalog data
+  into standalone Core DTOs before Store publication.
