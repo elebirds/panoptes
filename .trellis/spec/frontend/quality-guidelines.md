@@ -64,6 +64,9 @@ DLLs unless the R3 installation strategy is deliberately replaced.
 - Keep extracted helpers beside their facade unless they are clearly shared.
 - New management panels should prefer `Core store/DTO -> ViewModel -> Binder ->
   UI` flow through VContainer and R3.
+- Player command submission should prefer `Presentation command ->
+  Core command service -> IClientMessageSender -> Server`; migrated
+  Presentation code must not call static `GameIntents`.
 - If UI Toolkit is used, start with explicit Binder rendering and add data
   binding only for stable fields/forms after the pilot succeeds.
 - Helpers that own runtime Unity objects (`GameObject`, `RenderTexture`,

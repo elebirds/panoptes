@@ -10,10 +10,13 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Presentation.Common;
+using Panoptes.Presentation.Composition;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -48,9 +51,17 @@ namespace Panoptes.Presentation.UI.HUD
         private int _lastRemainingSeconds = int.MinValue;
         private readonly EventSubscriptionBag _subscriptions = new();
         private readonly EventSubscriptionBag _buttonSubscriptions = new();
+        private GameIntentService _gameIntentService;
+
+        [Inject]
+        private void Construct(GameIntentService gameIntentService)
+        {
+            _gameIntentService = gameIntentService;
+        }
 
         private void Awake()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             ResolveExternalTurnPanelReferences();
             ResolveNextStageButtonReference();
             EnsureUi();
@@ -166,7 +177,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            GameIntents.SubmitTurn();
+            _gameIntentService?.SubmitTurn();
             RefreshNextStageInteractable();
         }
 

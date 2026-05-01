@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Use final Core/Presentation directory ownership and VContainer migration shape."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Preserve prefab-facing MonoBehaviour facades while moving command work to services."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Follow target input flow through ViewModel/UI facade -> Service -> MessageSender -> Server."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Respect forbidden protocol/generated/singleton patterns and test requirements."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Phase 6 source of truth for command service migration."}

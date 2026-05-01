@@ -10,17 +10,18 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map.InputAdapter;
-using Panoptes.Presentation.Planning.Input.Intents;
 using Panoptes.Presentation.Planning.Input.Modes;
 using Panoptes.Presentation.Planning.Feedback;
 using Panoptes.Presentation.Planning.Input.State;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Common;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.Map
 {
@@ -142,7 +143,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
         private readonly MapPointerInput _pointerInput = new();
-        private readonly IPlanningIntentSender _intentSender = new GamePlanningIntentSender();
+        private PlanningIntentService _planningIntentService;
         private IMapSelectionSurface _selectionSurface;
 
         private Mode _mode = Mode.None;
@@ -178,6 +179,12 @@ namespace Panoptes.Presentation.Map
         public event Action CombatSelectionChanged;
         public event Action<UnitView> UnitSelectionChanged;
         public event Action NonBuildingMapClicked;
+
+        [Inject]
+        private void Construct(PlanningIntentService planningIntentService)
+        {
+            _planningIntentService = planningIntentService;
+        }
 
         private void Awake()
         {
@@ -399,7 +406,7 @@ namespace Panoptes.Presentation.Map
             ExitBuildMode();
             ClearMovePreviewState();
             _combatActionMode = CombatActionMode.None;
-            _intentSender.HoldUnit(_selectedUnit.UnitId);
+            _planningIntentService?.HoldUnit(_selectedUnit.UnitId);
             NotifyCombatSelectionChanged();
         }
 
@@ -427,7 +434,7 @@ namespace Panoptes.Presentation.Map
             }
 
             ShowPendingDeployCityCoreGhost(_selectedUnit.UnitId, centerNodeId);
-            _intentSender.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
+            _planningIntentService?.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapPlanningInputController] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
             return true;
@@ -454,7 +461,7 @@ namespace Panoptes.Presentation.Map
             }
 
             ShowPendingDeployCityCoreGhost(unitId, resolvedCenterNodeId);
-            _intentSender.ExpandTerritory(unitId, resolvedCenterNodeId);
+            _planningIntentService?.ExpandTerritory(unitId, resolvedCenterNodeId);
             var phase = _cache != null ? _cache.Phase : string.Empty;
             Debug.Log($"[MapPlanningInputController] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
             return true;
@@ -732,7 +739,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            _intentSender.BuildToken(nodeId, buildingType, _activeBuildCityId);
+            _planningIntentService?.BuildToken(nodeId, buildingType, _activeBuildCityId);
             BuildCommandSent?.Invoke(buildingType, nodeId);
             return true;
         }
@@ -808,7 +815,7 @@ namespace Panoptes.Presentation.Map
             var requestId = $"build-preview-{_buildType}-{_buildPreviewRequestSequence}";
             var draftCache = PlanningDraftCache.EnsureInstance();
             draftCache?.TrackBuildPreviewRequest(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
-            _intentSender.PreviewBuild(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
+            _planningIntentService?.PreviewBuild(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
         }
 
         private bool TryGetCurrentBuildPreview(string nodeId, out BuildPreviewDto preview)
@@ -1056,7 +1063,7 @@ namespace Panoptes.Presentation.Map
             var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
             PlanningDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, _selectedUnit.UnitId, "move", targetNodeId);
             Debug.Log($"[MapPlanningInputController] 请求路径预览 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
-            _intentSender.PreviewMove(requestId, _selectedUnit.UnitId, targetNodeId);
+            _planningIntentService?.PreviewMove(requestId, _selectedUnit.UnitId, targetNodeId);
         }
 
         private bool TryIssueAuthoritativeMoveOrder(string targetNodeId)
@@ -1123,7 +1130,7 @@ namespace Panoptes.Presentation.Map
                 case CombatActionMode.Attack:
                     TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
                     ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
-                    _intentSender.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
+                    _planningIntentService?.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
                     PlaySelectedAttackFeedback();
                     _combatActionMode = CombatActionMode.None;
                     NotifyCombatSelectionChanged();
@@ -1134,7 +1141,7 @@ namespace Panoptes.Presentation.Map
                     {
                         return false;
                     }
-                    _intentSender.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
+                    _planningIntentService?.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
                     _combatActionMode = CombatActionMode.None;
                     NotifyCombatSelectionChanged();
                     return true;
@@ -1195,7 +1202,7 @@ namespace Panoptes.Presentation.Map
 
             TryResolvePlannedMoveTargetNodeId(_selectedUnit.UnitId, out var plannedMoveTargetNodeId);
             ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
-            _intentSender.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
+            _planningIntentService?.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
             PlaySelectedAttackFeedback();
             _combatActionMode = CombatActionMode.None;
             NotifyCombatSelectionChanged();
@@ -1379,7 +1386,7 @@ namespace Panoptes.Presentation.Map
                 _movePathOverlay?.ClearMovePathMarkersForUnit(unitId);
             }
             Debug.Log($"[MapPlanningInputController] 发送移动消息 unit={unitId} target={targetNodeId}");
-            _intentSender.MoveUnit(unitId, targetNodeId);
+            _planningIntentService?.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
             ClearNodeHighlights();
         }

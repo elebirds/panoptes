@@ -1,0 +1,58 @@
+using System;
+using Panoptes.Core.Application.Intents;
+using Panoptes.Protocol.V1;
+using UnityEngine;
+
+namespace Panoptes.Core.Application.Services
+{
+    public sealed class MinisterCommandService
+    {
+        [Serializable]
+        private sealed class MinisterDirectivePayload
+        {
+            public string directive_type;
+            public string draft_id;
+        }
+
+        private readonly IClientMessageSender _sender;
+
+        public MinisterCommandService(IClientMessageSender sender)
+        {
+            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+        }
+
+        public bool AcceptDraft(string draftId, string ministerRole = "domestic")
+        {
+            return SendDirective("accept", draftId, ministerRole);
+        }
+
+        public bool RejectDraft(string draftId, string ministerRole = "domestic")
+        {
+            return SendDirective("reject", draftId, ministerRole);
+        }
+
+        private bool SendDirective(string directiveType, string draftId, string ministerRole)
+        {
+            if (ActionLock.IsLocked)
+            {
+                return false;
+            }
+
+            return _sender.Send(new MsgSetMinisterDirective
+            {
+                MinisterRole = ministerRole ?? string.Empty,
+                Content = BuildMinisterDirectiveContent(directiveType, draftId)
+            });
+        }
+
+        private static string BuildMinisterDirectiveContent(string directiveType, string draftId)
+        {
+            var payload = new MinisterDirectivePayload
+            {
+                directive_type = directiveType,
+                draft_id = draftId ?? string.Empty
+            };
+            return JsonUtility.ToJson(payload);
+        }
+    }
+}

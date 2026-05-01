@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
@@ -12,6 +12,8 @@ using Panoptes.Presentation.UI.Turn;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
+using VContainer.Unity;
 
 namespace Panoptes.Presentation.UI.Game
 {
@@ -22,6 +24,20 @@ namespace Panoptes.Presentation.UI.Game
         [SerializeField] private string fullscreenBackgroundObjectName = "Background";
 
         private GameStateCache _cache;
+        private GameIntentService _gameIntentService;
+        private IObjectResolver _resolver;
+
+        [Inject]
+        private void Construct(GameIntentService gameIntentService, IObjectResolver resolver)
+        {
+            _gameIntentService = gameIntentService;
+            _resolver = resolver;
+            InjectDynamicPresentationHelpers();
+            if (isActiveAndEnabled)
+            {
+                InitializeGameIntentService();
+            }
+        }
 
         private void Awake()
         {
@@ -36,7 +52,7 @@ namespace Panoptes.Presentation.UI.Game
 
             if (_cache != null)
             {
-                GameIntents.Initialize(_cache);
+                InitializeGameIntentService();
                 _cache.OnStateChanged += RefreshFromCache;
                 _cache.OnGameError += OnGameError;
                 _cache.OnTokenResult += OnTokenResult;
@@ -61,7 +77,7 @@ namespace Panoptes.Presentation.UI.Game
                 _cache.OnGameOver -= OnGameOver;
             }
 
-            GameIntents.Dispose();
+            _gameIntentService?.Dispose();
         }
 
         public void RefreshFromCache()
@@ -163,20 +179,20 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
-            EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
-            EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline");
-            EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel");
-            EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
-            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
+            InjectIfPossible(EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD"));
+            InjectIfPossible(EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel"));
+            InjectIfPossible(EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline"));
+            InjectIfPossible(EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel"));
+            InjectIfPossible(EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay"));
+            InjectIfPossible(EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController"));
         }
 
-        private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
+        private static T EnsureComponent<T>(Transform parent, string objectName) where T : Component
         {
             var existing = parent.Find(objectName);
             if (existing != null && existing.GetComponent<T>() != null)
             {
-                return;
+                return existing.GetComponent<T>();
             }
 
             var go = existing != null ? existing.gameObject : new GameObject(objectName, typeof(RectTransform));
@@ -185,26 +201,28 @@ namespace Panoptes.Presentation.UI.Game
             {
                 go.AddComponent<T>();
             }
+
+            return go.GetComponent<T>();
         }
 
-        private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
+        private static T EnsureRuntimeComponent<T>(string objectName) where T : Component
         {
             var existing = SceneObjectFinder.FindFirstSceneObject<T>();
             if (existing != null)
             {
-                return;
+                return existing;
             }
 
             var go = new GameObject(objectName);
-            go.AddComponent<T>();
+            return go.AddComponent<T>();
         }
 
-        private static void EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
+        private static T EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
         {
             var existing = parent.Find(objectName);
             if (existing != null && existing.GetComponent<T>() != null)
             {
-                return;
+                return existing.GetComponent<T>();
             }
 
             if (!string.IsNullOrWhiteSpace(resourcesPath))
@@ -214,14 +232,45 @@ namespace Panoptes.Presentation.UI.Game
                 {
                     var instance = Object.Instantiate(prefab, parent, false);
                     instance.name = objectName;
-                    if (instance.GetComponent<T>() != null)
+                    var prefabComponent = instance.GetComponent<T>();
+                    if (prefabComponent != null)
                     {
-                        return;
+                        return prefabComponent;
                     }
                 }
             }
 
-            EnsureComponent<T>(parent, objectName);
+            return EnsureComponent<T>(parent, objectName);
+        }
+
+        private void InitializeGameIntentService()
+        {
+            if (_cache != null)
+            {
+                _gameIntentService?.Initialize(_cache);
+            }
+        }
+
+        private void InjectDynamicPresentationHelpers()
+        {
+            if (_resolver == null)
+            {
+                return;
+            }
+
+            var canvas = statusText != null ? statusText.canvas : GetComponentInChildren<Canvas>(true);
+            if (canvas != null)
+            {
+                InjectIfPossible(canvas.GetComponentInChildren<TurnHUD>(true));
+            }
+        }
+
+        private void InjectIfPossible(Component component)
+        {
+            if (component != null)
+            {
+                _resolver?.Inject(component);
+            }
         }
 
         private List<string> CollectCompletedTechnologyNames(TurnSettledEvent evt)
