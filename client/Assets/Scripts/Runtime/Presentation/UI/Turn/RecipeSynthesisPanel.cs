@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
+using Panoptes.Presentation.Composition;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
@@ -71,13 +73,21 @@ namespace Panoptes.Presentation.UI.Domestic
         private string _lastRecipeFailureMessage = string.Empty;
         private float _nextRecipePreviewAt;
         private int _recipePreviewSequence;
+        private PlanningIntentService _planningIntentService;
 
         public event Action<bool> VisibilityChanged;
 
         public bool IsVisible => ComputeVisible();
 
+        [Inject]
+        private void Construct(PlanningIntentService planningIntentService)
+        {
+            _planningIntentService = planningIntentService;
+        }
+
         private void Awake()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             if (panelRoot == null) panelRoot = transform as RectTransform;
             ResolveSlideToggleReference();
 
@@ -817,7 +827,7 @@ namespace Panoptes.Presentation.UI.Domestic
             var draft = _draftCache ?? PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
             _draftCache = draft;
             draft?.TrackRecipePreviewRequest(requestId, _activeNodeId, _queuedPreviewRecipeId);
-            GameIntents.PreviewRecipe(requestId, _activeNodeId, _queuedPreviewRecipeId);
+            _planningIntentService?.PreviewRecipe(requestId, _activeNodeId, _queuedPreviewRecipeId);
             _queuedPreviewRecipeId = string.Empty;
         }
 
@@ -1114,7 +1124,7 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             var normalized = NormalizeToken(recipeToSend);
-            GameIntents.SetBuildingRecipe(_activeNodeId, normalized);
+            _planningIntentService?.SetBuildingRecipe(_activeNodeId, normalized);
             _lastSentRecipeByNodeId[_activeNodeId] = normalized;
         }
 

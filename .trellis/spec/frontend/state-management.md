@@ -84,6 +84,18 @@ Phase 5 establishes the first migrated UI Toolkit read-only slice:
 - UI Toolkit binders must not reference generated Protocol, legacy cache
   singletons, or `NetworkManager.Instance`.
 
+Phase 6 establishes injectable command services for migrated player commands:
+
+- `GameIntentService` owns general game commands such as submit turn, chat,
+  research target, policy, reveal, and war zone submission.
+- `PlanningIntentService` owns planning commands such as move, attack, charge,
+  build, build preview, recipe preview, and recipe selection.
+- `MinisterCommandService` owns minister draft accept/reject directives.
+- Presentation command callers should receive these services through VContainer
+  injection and must not call static `GameIntents`.
+- Command services may construct Protocol messages because they live in Core,
+  but they must send only through `IClientMessageSender`.
+
 ---
 
 ## When to Use Global State

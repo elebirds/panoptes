@@ -42,9 +42,45 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("SelectionStore"));
             Assert.That(installer, Does.Contain("TurnStore"));
             Assert.That(installer, Does.Contain("SelectionService"));
+            Assert.That(installer, Does.Contain("GameIntentService"));
+            Assert.That(installer, Does.Contain("PlanningIntentService"));
+            Assert.That(installer, Does.Contain("MinisterCommandService"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
+        }
+
+        [Test]
+        public void PresentationCommandCallers_ShouldUseServicesInsteadOfStaticGameIntents()
+        {
+            var root = ResolveAssetPath("Scripts/Runtime/Presentation");
+            var offenders = FindTokenOffenders(
+                new[] { root },
+                "*.cs",
+                "GameIntents.");
+
+            Assert.That(offenders, Is.Empty, "Migrated Presentation command callers must use injected command services.");
+        }
+
+        [Test]
+        public void CommandServices_ShouldNotDependOnUnityUiOrStaticNetworkSender()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Services/GameIntentService.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Services/PlanningIntentService.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Services/MinisterCommandService.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "UnityEngine.UI",
+                "TMPro",
+                "NetworkManager",
+                "MessageSender.");
+
+            Assert.That(offenders, Is.Empty, "Command services may build messages, but must not know about UI controls or static network senders.");
         }
 
         [Test]

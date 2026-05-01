@@ -24,7 +24,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 return;
             }
 
-            OnSendIntercepted?.Invoke(message.Descriptor.Name, message);
+            PublishSendIntercepted(message);
 
             var network = NetworkManager.Instance;
             if (network == null)
@@ -39,6 +39,14 @@ namespace Panoptes.Core.Infrastructure.Network
         public static void Send<T>(T message) where T : IMessage<T>
         {
             Send((IMessage)message);
+        }
+
+        internal static void PublishSendIntercepted(IMessage message)
+        {
+            if (message != null)
+            {
+                OnSendIntercepted?.Invoke(message.Descriptor.Name, message);
+            }
         }
     }
 }

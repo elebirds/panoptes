@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Composition;
 using Panoptes.Presentation.UI.HUD;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Domestic
 {
@@ -64,11 +67,19 @@ namespace Panoptes.Presentation.UI.Domestic
         private StaticCatalogCache _catalog;
         private GameStateCache _gameState;
         private PlanningDraftCache _planningDraft;
+        private GameIntentService _gameIntentService;
         private bool _loggedMissingConfigThisEnable;
         private bool _cityCoreOverlaySuppressed;
 
+        [Inject]
+        private void Construct(GameIntentService gameIntentService)
+        {
+            _gameIntentService = gameIntentService;
+        }
+
         private void Awake()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             EnsureRoots();
             EnsureCloseButton();
             ResolveTemplateFallback();
@@ -634,7 +645,7 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            GameIntents.SetResearchTarget(technologyId);
+            _gameIntentService?.SetResearchTarget(technologyId);
         }
 
         private void CreateLine(Vector2 start, Vector2 end)

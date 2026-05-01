@@ -1,9 +1,11 @@
 using System.Text;
 using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Composition;
 using TMPro;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -15,9 +17,17 @@ namespace Panoptes.Presentation.UI.HUD
 
         private GameChatCache _chatCache;
         private GameStateCache _gameStateCache;
+        private GameIntentService _gameIntentService;
+
+        [Inject]
+        private void Construct(GameIntentService gameIntentService)
+        {
+            _gameIntentService = gameIntentService;
+        }
 
         private void OnEnable()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             _chatCache = GameChatCache.EnsureInstance();
             _gameStateCache = GameStateCache.Instance;
 
@@ -81,7 +91,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         public void SendEmote(GameChatEmoteKind emote)
         {
-            GameIntents.SendChatEmote(emote);
+            _gameIntentService?.SendChatEmote(emote);
         }
 
         private void OnEntryAdded(GameChatEntryDto _)

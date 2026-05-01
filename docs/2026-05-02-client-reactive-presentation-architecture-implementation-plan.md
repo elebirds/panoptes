@@ -344,6 +344,19 @@ Acceptance:
 - ViewModels do not reference Protocol.
 - Services do not reference Unity UI controls.
 
+Status (2026-05-02):
+
+- Added injectable Core command services:
+  `GameIntentService`, `PlanningIntentService`, and
+  `MinisterCommandService`.
+- Migrated Presentation command callers away from static `GameIntents` for
+  turn submit, chat emotes, research selection, recipe commands, minister
+  directives, and map planning commands.
+- Command services send through `IClientMessageSender`; Protocol construction
+  stays in Core.
+- Legacy `GameIntents` remains for debug tooling and old non-migrated Core
+  paths only.
+
 ## Phase 7: Map Input Re-Architecture
 
 Goal: replace `MapPlanningInputController` as the planning input brain.

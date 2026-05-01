@@ -9,9 +9,11 @@
 using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
+using Panoptes.Presentation.Composition;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Minister
 {
@@ -19,13 +21,21 @@ namespace Panoptes.Presentation.UI.Minister
     {
         private readonly List<MinisterDraftDto> _visibleDrafts = new();
         private PlanningDraftCache _draftCache;
+        private MinisterCommandService _ministerCommandService;
 
         public IReadOnlyList<MinisterDraftDto> VisibleDrafts => _visibleDrafts;
 
         public event Action DraftsChanged;
 
+        [Inject]
+        private void Construct(MinisterCommandService ministerCommandService)
+        {
+            _ministerCommandService = ministerCommandService;
+        }
+
         private void OnEnable()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             AttachDraftCache();
             RefreshDrafts();
         }
@@ -45,7 +55,7 @@ namespace Panoptes.Presentation.UI.Minister
                 return;
             }
 
-            GameIntents.AcceptMinisterAction(draftId);
+            _ministerCommandService?.AcceptDraft(draftId);
         }
 
         public void RejectDraft(string draftId)
@@ -55,7 +65,7 @@ namespace Panoptes.Presentation.UI.Minister
                 return;
             }
 
-            GameIntents.RejectMinisterAction(draftId);
+            _ministerCommandService?.RejectDraft(draftId);
         }
 
         private void AttachDraftCache()

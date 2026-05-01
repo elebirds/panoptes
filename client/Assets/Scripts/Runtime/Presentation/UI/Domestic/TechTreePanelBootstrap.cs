@@ -7,6 +7,7 @@
  *************************************************/
 
 using Panoptes.Presentation.Common;
+using Panoptes.Presentation.Composition;
 using UnityEngine;
 
 namespace Panoptes.Presentation.UI.Domestic
@@ -57,7 +58,8 @@ namespace Panoptes.Presentation.UI.Domestic
                     return;
                 }
 
-                rect.gameObject.AddComponent<TechTreePanelController>();
+                var controller = rect.gameObject.AddComponent<TechTreePanelController>();
+                SceneCommandServiceInjector.InjectIfAvailable(controller);
             }
         }
     }
