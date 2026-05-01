@@ -216,6 +216,101 @@
       "max_hp": 95,
       "takeover_mode": "city_capture",
       "tags": ["production", "military", "siege", "sabotage"]
+    },
+    {
+      "id": "warehouse",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "ore": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["warehouse_reserve_rations"],
+      "default_recipe_id": "warehouse_reserve_rations",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 110,
+      "takeover_mode": "city_capture",
+      "tags": ["storage", "logistics", "industry"]
+    },
+    {
+      "id": "academy",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "ore": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": [],
+      "default_recipe_id": "",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "max_hp": 90,
+      "takeover_mode": "city_capture",
+      "tags": ["research", "governance"]
+    },
+    {
+      "id": "market",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2, "food": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["market_grain_contracts", "market_lumber_contracts", "market_ore_contracts"],
+      "default_recipe_id": "market_grain_contracts",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 85,
+      "takeover_mode": "city_capture",
+      "tags": ["trade", "logistics", "industry"]
+    },
+    {
+      "id": "watchtower",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 2 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["watchtower_scout"],
+      "default_recipe_id": "watchtower_scout",
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "max_hp": 80,
+      "takeover_mode": "city_capture",
+      "tags": ["defense", "visibility", "military"]
+    },
+    {
+      "id": "training_ground",
+      "placement_kind": "city_territory",
+      "building_scope": "in_city",
+      "required_resource_type": "",
+      "resource_costs": { "wood": 1, "food": 1 },
+      "point_costs": { "industry_output": 1 },
+      "recipe_ids": ["training_ground_spearman"],
+      "default_recipe_id": "training_ground_spearman",
+      "explicit_effects": [],
+      "modifier_effects": [],
+      "max_hp": 85,
+      "takeover_mode": "city_capture",
+      "tags": ["production", "military"]
     }
   ]
 }

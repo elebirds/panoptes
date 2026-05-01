@@ -15,6 +15,12 @@
     "smelter_refined_ore",
     "stable_cavalry",
     "engineer_camp_raider",
-    "engineer_camp_siege_engine"
+    "engineer_camp_siege_engine",
+    "warehouse_reserve_rations",
+    "market_grain_contracts",
+    "market_lumber_contracts",
+    "market_ore_contracts",
+    "watchtower_scout",
+    "training_ground_spearman"
   ]
 }

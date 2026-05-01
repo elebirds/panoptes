@@ -13,6 +13,11 @@
     { "id": "supply_depots", "name": "转运仓制", "description": "解锁粮仓并提高道路基础运量", "icon_key": "tech_civic_institutions", "sort_order": 100, "tags": ["governance", "logistics"] },
     { "id": "metallurgy", "name": "冶金术", "description": "解锁冶炼坊与冶造敕令", "icon_key": "tech_workshop_methods", "sort_order": 110, "tags": ["industry"] },
     { "id": "mounted_logistics", "name": "骑乘辎重", "description": "解锁马厩与骑兵训练", "icon_key": "tech_militia_mobilization", "sort_order": 120, "tags": ["military", "mobile"] },
-    { "id": "siegecraft", "name": "攻城术", "description": "解锁工程营、掠袭兵和攻城器械生产", "icon_key": "tech_fortifications", "sort_order": 130, "tags": ["military", "siege"] }
+    { "id": "siegecraft", "name": "攻城术", "description": "解锁工程营、掠袭兵和攻城器械生产", "icon_key": "tech_fortifications", "sort_order": 130, "tags": ["military", "siege"] },
+    { "id": "centralized_storage", "name": "统仓制", "description": "解锁转运仓并提高道路运量", "icon_key": "tech_civic_institutions", "sort_order": 140, "tags": ["governance", "logistics"] },
+    { "id": "trade_levies", "name": "商税法", "description": "解锁市集、资源契约与商贸特许", "icon_key": "tech_civic_institutions", "sort_order": 150, "tags": ["governance", "trade"] },
+    { "id": "scholastic_bureaucracy", "name": "学官制", "description": "解锁学宫与研学敕令", "icon_key": "tech_civic_institutions", "sort_order": 160, "tags": ["governance", "research"] },
+    { "id": "sentry_networks", "name": "哨戒网", "description": "解锁哨塔和斥候训练", "icon_key": "tech_fortifications", "sort_order": 170, "tags": ["defense", "visibility"] },
+    { "id": "professional_drill", "name": "职业操训", "description": "解锁校场和长矛兵训练", "icon_key": "tech_militia_mobilization", "sort_order": 180, "tags": ["military", "melee"] }
   ]
 }

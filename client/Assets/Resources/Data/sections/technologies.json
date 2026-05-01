@@ -425,6 +425,205 @@
         "military",
         "siege"
       ]
+    },
+    {
+      "id": "centralized_storage",
+      "name": "统仓制",
+      "description": "解锁转运仓并提高道路运量",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "warehouse"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "warehouse_reserve_rations"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 140,
+      "tags": [
+        "governance",
+        "logistics"
+      ]
+    },
+    {
+      "id": "trade_levies",
+      "name": "商税法",
+      "description": "解锁市集、资源契约与商贸特许",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "supply_depots"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "market"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_grain_contracts"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_lumber_contracts"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "market_ore_contracts"
+        },
+        {
+          "type": "unlock_policy",
+          "target_id": "mercantile_charter"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 150,
+      "tags": [
+        "governance",
+        "trade"
+      ]
+    },
+    {
+      "id": "scholastic_bureaucracy",
+      "name": "学官制",
+      "description": "解锁学宫与研学敕令",
+      "icon_key": "tech_civic_institutions",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "civic_institutions"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "academy"
+        },
+        {
+          "type": "unlock_policy",
+          "target_id": "research_mandate"
+        }
+      ],
+      "modifier_effects": [],
+      "sort_order": 160,
+      "tags": [
+        "governance",
+        "research"
+      ]
+    },
+    {
+      "id": "sentry_networks",
+      "name": "哨戒网",
+      "description": "解锁哨塔和斥候训练",
+      "icon_key": "tech_fortifications",
+      "branch": "defense",
+      "tier": 5,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "fortifications"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "ranged_drill"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "watchtower"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "watchtower_scout"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "sort_order": 170,
+      "tags": [
+        "defense",
+        "visibility"
+      ]
+    },
+    {
+      "id": "professional_drill",
+      "name": "职业操训",
+      "description": "解锁校场和长矛兵训练",
+      "icon_key": "tech_militia_mobilization",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "militia_mobilization"
+        },
+        {
+          "type": "technology_unlocked",
+          "target_id": "centralized_storage"
+        }
+      ],
+      "explicit_effects": [
+        {
+          "type": "unlock_building",
+          "target_id": "training_ground"
+        },
+        {
+          "type": "unlock_recipe",
+          "target_id": "training_ground_spearman"
+        }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "sort_order": 180,
+      "tags": [
+        "military",
+        "melee"
+      ]
     }
   ]
 }
