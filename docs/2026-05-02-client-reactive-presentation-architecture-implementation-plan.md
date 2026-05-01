@@ -310,6 +310,14 @@ Acceptance:
 - UXML/USS names are stable and documented.
 - uGUI and UI Toolkit share Store/ViewModel style.
 
+Status 2026-05-02: complete. `TurnSummaryViewModel` projects read-only turn
+status from `TurnStore` and `GameStateStore`; `TurnSummaryUiToolkitBinder`
+renders a runtime `UIDocument` through explicit named element lookup; and
+`TurnSummary.uxml` / `TurnSummary.uss` define the first stable UI Toolkit asset
+pair under `Assets/UI/Toolkit/Turn`. The binder is registered in
+`GameLifetimeScope` on a new runtime GameObject and remains read-only. No Unity
+automatic data binding is used.
+
 ## Phase 6: Command Service Migration
 
 Goal: standardize player command submission.

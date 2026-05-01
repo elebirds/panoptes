@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="turn-summary-root" class="turn-summary-root">
+        <ui:Label name="turn-summary-title" text="Turn Summary" class="turn-summary-title" />
+        <ui:VisualElement class="turn-summary-metric-row">
+            <ui:Label name="turn-summary-turn-value-label" text="Turn" class="turn-summary-metric-label" />
+            <ui:Label name="turn-summary-turn-value" text="--" class="turn-summary-metric-value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="turn-summary-metric-row">
+            <ui:Label name="turn-summary-phase-value-label" text="Phase" class="turn-summary-metric-label" />
+            <ui:Label name="turn-summary-phase-value" text="--" class="turn-summary-metric-value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="turn-summary-metric-row">
+            <ui:Label name="turn-summary-tokens-value-label" text="Tokens" class="turn-summary-metric-label" />
+            <ui:Label name="turn-summary-tokens-value" text="--" class="turn-summary-metric-value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="turn-summary-metric-row">
+            <ui:Label name="turn-summary-nodes-value-label" text="Visible Nodes" class="turn-summary-metric-label" />
+            <ui:Label name="turn-summary-nodes-value" text="0" class="turn-summary-metric-value" />
+        </ui:VisualElement>
+        <ui:VisualElement class="turn-summary-metric-row">
+            <ui:Label name="turn-summary-units-value-label" text="Units" class="turn-summary-metric-label" />
+            <ui:Label name="turn-summary-units-value" text="0" class="turn-summary-metric-value" />
+        </ui:VisualElement>
+        <ui:Label name="turn-summary-events-heading" text="Recent Events" class="turn-summary-section-title" />
+        <ui:Label name="turn-summary-empty-events" text="No recent events" class="turn-summary-empty-events" />
+        <ui:VisualElement name="turn-summary-events" class="turn-summary-events" />
+    </ui:VisualElement>
+</ui:UXML>
