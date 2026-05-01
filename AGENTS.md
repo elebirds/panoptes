@@ -117,7 +117,12 @@ panoptes/                          # Monorepo 根目录
 | 引擎 | Unity 6000.4.1f1，URP |
 | WebSocket | NativeWebSocket |
 | Protobuf | Google.Protobuf.dll |
-| UI | uGUI + TextMeshPro |
+| Lifecycle / DI | VContainer 1.17.0 |
+| Reactive state | R3 1.3.0 |
+| Async | UniTask 2.5.10 |
+| UI | uGUI + TextMeshPro + UI Toolkit |
+
+客户端架构目标：VContainer 管项目/场景生命周期，R3 管 Store/ViewModel 状态传播，UniTask 管 Unity 异步流程；UI Toolkit 用于部长、科技、制度、国策、账本、回合总结等信息密集面板，uGUI 保留地图 HUD、世界空间 UI、单位/建筑浮层、移动/战斗/建造预览。
 
 ### 禁止引入
 

@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Defines current and target client directory boundaries for Core/Presentation/ViewModels/Binders."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Defines facade/Binder expectations and UI Toolkit explicit binding policy."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Defines server-authoritative state and target reactive store/view-model flow."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Defines forbidden Presentation/protocol/network patterns and dependency policy gate."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Existing target architecture plan that must be amended to direct final Composition Root migration."}
+{"file": "docs/PANOPTES_AGENT_FRONTEND.md", "reason": "Frontend authority doc currently banning target dependencies and documenting singleton-first architecture."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Tracks current script debt and C0a entry constraints."}
+{"file": ".trellis/tasks/05-02-client-reactive-presentation-architecture-foundation/research/dependency-installation.md", "reason": "dependency installation details for VContainer, R3, UniTask"}

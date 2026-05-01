@@ -27,10 +27,13 @@ code is split by dependency direction:
 - `Tests/EditMode/`: static boundary tests and helper/presenter tests.
 
 The long-term target is documented in
-`docs/2026-05-01-client-reactive-ui-architecture-plan.md`: Core stores feed
-ViewModels, and explicit Binders render either uGUI prefabs or UI Toolkit
-UXML/USS. This is a migration target; do not install new packages or move
-existing prefabs until the dependency policy is updated.
+`docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md`:
+Core stores feed ViewModels, and explicit Binders render either uGUI prefabs or
+UI Toolkit UXML/USS. VContainer, R3, and UniTask are approved for this final
+architecture with locked versions. Migrated modules should move directly to the
+final Composition Root rather than adding singleton compatibility bridges.
+R3's Unity package is paired with vendored NuGet core DLLs under
+`client/Assets/Plugins/`.
 
 ---
 
@@ -72,6 +75,7 @@ client/Assets/UI/
     ├── Minister/
     ├── Tech/
     ├── Policy/
+    ├── Turn/
     └── Shared/
 ```
 
@@ -95,7 +99,9 @@ scene/prefab assets are updated and verified in the same change.
 
 For new UI Toolkit work, keep UXML/USS assets outside generated code paths and
 route state through Core stores and ViewModels. UI Toolkit and uGUI may coexist,
-but they must share the same application state model.
+but they must share the same application state model. New migrated modules must
+receive dependencies from VContainer scopes and must not actively call legacy
+singleton `*.Instance` APIs.
 
 ---
 

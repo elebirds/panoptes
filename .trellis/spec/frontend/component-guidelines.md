@@ -21,9 +21,10 @@ testable helpers. A facade MonoBehaviour owns serialized fields and Unity
 lifecycle methods; helpers own rendering, lookup, event bookkeeping, or
 read-only view-model construction.
 
-Long-term target: information-heavy panels may use UI Toolkit with explicit
+Final target: information-heavy panels may use UI Toolkit with explicit
 Binders, while map/HUD/world-space UI remains on uGUI. Both styles must consume
-the same Core DTO/store/ViewModel layer.
+the same Core DTO/store/ViewModel layer. Migrated Binders should receive
+ViewModels and Services through VContainer injection, not singleton lookup.
 
 ---
 
@@ -90,9 +91,8 @@ Use existing uGUI/TextMeshPro styling and prefab styling. Do not generate final
 production UI prefabs from code for C0/C0p; code may provide binders and
 presenters for manually-authored prefabs.
 
-For C0a+, UI Toolkit UXML/USS is allowed as a target plan for dense management
-panels once dependency policy is amended. Keep uGUI for scene-bound map
-presentation.
+For C0a+, UI Toolkit UXML/USS is approved for dense management panels. Keep
+uGUI for scene-bound map presentation.
 
 ---
 

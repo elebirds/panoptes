@@ -21,8 +21,12 @@ The client never becomes a second rules engine.
 
 Target direction for C0a+ is reactive read models: Core stores expose read-only
 state, ViewModels compose that state into panel/screen models, and Binders render
-those models to uGUI or UI Toolkit. R3 is the proposed state propagation library,
-but it is not installed yet.
+those models to uGUI or UI Toolkit. R3 is the approved state propagation library
+for migrated modules.
+
+The Unity R3 package depends on the vendored R3 core DLLs in
+`client/Assets/Plugins/`; Store/ViewModel code may use R3 APIs only through this
+approved installation.
 
 ---
 
@@ -76,6 +80,11 @@ Player input -> ViewModel command -> Service/Intent -> MessageSender -> Server
 UI Toolkit runtime data binding may be evaluated later for stable detail panels
 and forms, but the first implementation path is explicit Binder rendering. Do
 not bind UI Toolkit directly to mutable gameplay cache objects.
+
+Migrated modules should be owned by final VContainer scopes. Do not add a
+compatibility Composition Root that wraps old singleton caches as the new module
+API. Existing singleton caches may remain for legacy modules until those modules
+migrate.
 
 ---
 
