@@ -13,6 +13,11 @@ namespace Panoptes.Tests.EditMode
             "Panoptes.Protocol"
         };
 
+        private static readonly string[] FoundationProtocolForbiddenTokens =
+        {
+            "Panoptes.Protocol"
+        };
+
         private static readonly string[] UiNetworkForbiddenTokens =
         {
             "NetworkManager.Instance"
@@ -46,6 +51,17 @@ namespace Panoptes.Tests.EditMode
             var offenders = FindTokenOffenders(uiRoot, UiNetworkForbiddenTokens);
 
             Assert.That(offenders, Is.Empty, "UI scripts must send through services/intents, not NetworkManager.Instance.");
+        }
+
+        [Test]
+        public void CoreFoundation_ShouldNotReferenceProtocolAssembly()
+        {
+            var foundationRoot = ResolveAssetPath("Scripts/Runtime/Core/Foundation");
+            Assert.That(Directory.Exists(foundationRoot), Is.True, "Core/Foundation runtime source directory is missing.");
+
+            var offenders = FindTokenOffenders(foundationRoot, FoundationProtocolForbiddenTokens);
+
+            Assert.That(offenders, Is.Empty, "Core/Foundation must stay as pure DTO/value objects; protocol conversion belongs in Infrastructure/Mapper.");
         }
 
         [Test]

@@ -1,6 +1,4 @@
 using System;
-using Panoptes.Protocol.V1;
-using UnityEngine;
 
 namespace Panoptes.Core.Domain
 {
@@ -48,68 +46,6 @@ namespace Panoptes.Core.Domain
 
                 return Status ?? string.Empty;
             }
-        }
-
-        public static MinisterDraftDto FromView(MinisterDraftView view)
-        {
-            if (view == null || string.IsNullOrWhiteSpace(view.JsonPayload))
-            {
-                return null;
-            }
-
-            MinisterDraftPayload payload;
-            try
-            {
-                payload = JsonUtility.FromJson<MinisterDraftPayload>(view.JsonPayload);
-            }
-            catch (ArgumentException)
-            {
-                return null;
-            }
-
-            if (payload == null || string.IsNullOrWhiteSpace(payload.draft_id))
-            {
-                return null;
-            }
-
-            return new MinisterDraftDto
-            {
-                DraftId = payload.draft_id ?? string.Empty,
-                PlayerId = payload.player_id ?? string.Empty,
-                MinisterRole = !string.IsNullOrWhiteSpace(payload.minister_role)
-                    ? payload.minister_role
-                    : (view.MinisterRole ?? string.Empty),
-                Kind = payload.kind ?? string.Empty,
-                TargetId = payload.target_id ?? string.Empty,
-                TargetLabel = payload.target_label ?? string.Empty,
-                Title = payload.title ?? string.Empty,
-                Summary = payload.summary ?? string.Empty,
-                Rationale = payload.rationale ?? string.Empty,
-                RiskNote = payload.risk_note ?? string.Empty,
-                Status = payload.status ?? string.Empty,
-                Available = view.Available && payload.available,
-                Turn = payload.turn,
-                Source = payload.source ?? string.Empty
-            };
-        }
-
-        [Serializable]
-        private sealed class MinisterDraftPayload
-        {
-            public string draft_id;
-            public string player_id;
-            public string minister_role;
-            public string kind;
-            public string target_id;
-            public string target_label;
-            public string title;
-            public string summary;
-            public string rationale;
-            public string risk_note;
-            public string status;
-            public bool available;
-            public int turn;
-            public string source;
         }
     }
 }

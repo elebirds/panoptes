@@ -221,3 +221,18 @@ Current script refactor priority before and during C0a:
 | Medium | `SquadUnitVisualController` | Split health/flag/model/path/animation binders |
 | Medium | `RecipeSynthesisPanel` | Move to ViewModel + item lifecycle binder, then consider UI Toolkit |
 | Medium | `GameStateCache` / `StaticCatalogCache` | Split into domain stores/read models after R3 is introduced |
+
+## Script Architecture Refactor Phase 1
+
+Implemented on 2026-05-01 as the first post-plan cleanup slice:
+
+- Moved minister draft protocol conversion from `MinisterDraftDto` into
+  `MinisterMapper`.
+- Removed `Panoptes.Protocol` and `JsonUtility` usage from
+  `Core/Foundation/Domain/MinisterDto.cs`.
+- Updated `PlanningDraftCache` to consume the mapper path.
+- Extended static boundary coverage so `Runtime/Core/Foundation` cannot
+  reintroduce generated protocol references.
+
+Next script refactor candidates remain `MapPlanningInputController`,
+`UnitInfoPanelController`, `MapRenderer`, and `BuildCommandPanel`.
