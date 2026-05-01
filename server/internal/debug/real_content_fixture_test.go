@@ -9,6 +9,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	"github.com/elebirds/panoptes/internal/engine/maploader"
+	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/scenario"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
@@ -108,6 +109,74 @@ func newRealContentFacilityTakeoverDefinition(t *testing.T) *scenario.Definition
 		State:     state,
 		PlayerIDs: []string{"player-1"},
 		Usernames: []string{"alice"},
+	}
+}
+
+func newRealContentFrontierBasinPVESoakDefinition(t *testing.T) *scenario.Definition {
+	t.Helper()
+
+	catalog := loadRealContentCatalog(t)
+	staticdata.SetDefault(catalog)
+	mapBundle, ok := catalog.GetMap("frontier_basin")
+	if !ok {
+		t.Fatalf("real content map frontier_basin not found")
+	}
+
+	playerIDs := []string{"player-1", "bot-1"}
+	usernames := []string{"alice", "pve"}
+	world := donburi.NewWorld()
+	mapData := maploader.InitWorldFromMap(world, mapBundle, playerIDs)
+	state := domain.NewGameState("real-content-frontier-basin-pve-soak", playerIDs, usernames, mapData)
+	state.World = world
+
+	for _, playerID := range playerIDs {
+		spawn, ok := state.Map.PlayerSpawns[playerID]
+		if !ok {
+			t.Fatalf("missing spawn for %s", playerID)
+		}
+		spawnEntry, ok := domain.GetNodeAt(state.World, spawn)
+		if !ok {
+			t.Fatalf("missing spawn node for %s at %+v", playerID, spawn)
+		}
+		node := ecs.NodeC.Get(spawnEntry)
+		node.Owner = playerID
+		node.TerritoryOwner = playerID
+		node.HasRoad = true
+
+		if !spawnEntry.HasComponent(ecs.BuildingC) {
+			ecs.CreateBuilding(state.World, "city_core", playerID, node.ID, spawnEntry)
+		}
+		city := state.EnsureCityState(playerID, node.ID)
+		if city == nil {
+			t.Fatalf("city state not created for %s at %s", playerID, node.ID)
+		}
+		state.Players[playerID].CapitalCityID = node.ID
+		state.Players[playerID].CapitalCityCoreHP = staticdata.Default().Rules().CityCoreMaxHP
+		state.AddResourcesToCity(playerID, node.ID, domain.ResourceBag{
+			domain.ResourceFood: 8,
+			domain.ResourceWood: 8,
+			domain.ResourceOre:  4,
+		})
+		for _, id := range []string{"farm", "lumber", "mine", "workshop", "frontier_office", "barracks"} {
+			state.Players[playerID].Research.UnlockBuilding(id)
+		}
+		for _, id := range []string{"farm_food", "lumber_wood", "mine_ore", "workshop_tools", "frontier_office_settler", "barracks_infantry"} {
+			state.Players[playerID].Research.UnlockRecipe(id)
+		}
+		clearSelectedRecipe(t, state, node.ID)
+	}
+	state.RefreshStructuredModel()
+
+	return &scenario.Definition{
+		Name:      "real_content_frontier_basin_pve_soak",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: playerIDs,
+		Usernames: usernames,
+		Participants: []participant.Spec{
+			{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			{ID: "bot-1", Username: "pve", Kind: participant.KindBot},
+		},
 	}
 }
 
