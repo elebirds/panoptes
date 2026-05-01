@@ -86,6 +86,19 @@ compatibility Composition Root that wraps old singleton caches as the new module
 API. Existing singleton caches may remain for legacy modules until those modules
 migrate.
 
+### Composition Scope Ownership
+
+- `ProjectLifetimeScope` is owned by the startup/bootstrap path that creates the
+  persistent `Managers` object. Do not also serialize another `Managers`
+  hierarchy into `Boot.unity`; Unity runtime initialization runs before the
+  first scene loads, so duplicating it risks two project scopes.
+- Gameplay scenes that host migrated presentation/application modules should
+  own a real scene `GameLifetimeScope`. `Assets/Scenes/Game.unity` contains the
+  current `Game Composition` root for this purpose.
+- `GameLifetimeScope` must stay free of legacy `GameStateCache`,
+  `PlanningDraftCache`, and `StaticCatalogCache` registrations. Phase 3+ stores
+  should be registered directly as migrated read-model dependencies.
+
 ---
 
 ## Common Mistakes
@@ -99,3 +112,5 @@ migrate.
 - Using two-way binding to mutate authoritative game state.
 - Maintaining separate uGUI and UI Toolkit state models for the same gameplay
   concept.
+- Adding a serialized project-level `Managers` object to `Boot.unity` while the
+  runtime bootstrap already creates one.
