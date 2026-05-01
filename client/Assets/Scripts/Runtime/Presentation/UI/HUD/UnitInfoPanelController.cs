@@ -90,6 +90,7 @@ namespace Panoptes.Presentation.UI.HUD
         private PlanningDraftCache _planningDraftCache;
         private readonly EventSubscriptionBag _subscriptions = new();
         private readonly UnitInfoActionListBinder _actionListBinder = new();
+        private readonly UnitInfoDirectOrderPanelBinder _directOrderPanelBinder = new();
         private bool _unitSelectionSubscribed;
         private UnitInfoPanelSlideAnimator _slideAnimator;
         private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
@@ -124,7 +125,9 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 RepairActionButtonLayoutAndVisuals();
             }
-            BindDirectOrderButtons();
+            _directOrderPanelBinder.BindListeners(
+                GetDirectOrderButtons(),
+                UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
             SetPortraitVisible(false);
@@ -681,32 +684,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
-        private void BindDirectOrderButtons()
-        {
-            if (moveButton != null)
-            {
-                moveButton.onClick.RemoveAllListeners();
-                moveButton.onClick.AddListener(() => mapPlanningInputController?.BeginMoveSelection());
-            }
-
-            if (attackButton != null)
-            {
-                attackButton.onClick.RemoveAllListeners();
-                attackButton.onClick.AddListener(() => mapPlanningInputController?.BeginAttackSelection());
-            }
-
-            if (holdButton != null)
-            {
-                holdButton.onClick.RemoveAllListeners();
-                holdButton.onClick.AddListener(() => mapPlanningInputController?.IssueHoldOrder());
-            }
-
-            if (chargeButton != null)
-            {
-                chargeButton.onClick.RemoveAllListeners();
-                chargeButton.onClick.AddListener(() => mapPlanningInputController?.BeginChargeSelection());
-            }
-        }
         private void RefreshPlanningUi()
         {
             var interactive = IsInteractivePlanning();
@@ -717,38 +694,13 @@ namespace Panoptes.Presentation.UI.HUD
                                          controllable &&
                                          (directOrderState.CanMove || directOrderState.IsMilitaryUnit);
 
-            if (directOrderButtonsRoot != null)
-            {
-                directOrderButtonsRoot.gameObject.SetActive(showDirectOrderButtons);
-            }
-
             RefreshPlanningSummaryText();
-
-            if (!showDirectOrderButtons)
-            {
-                SetDirectOrderButtonState(moveButton, "Move", false, false);
-                SetDirectOrderButtonState(attackButton, "Attack", false, false);
-                SetDirectOrderButtonState(holdButton, "Hold", false, false);
-                SetDirectOrderButtonState(chargeButton, "Charge", false, false);
-                return;
-            }
-
-            SetDirectOrderButtonState(moveButton, "Move", true, directOrderState.CanMove);
-            SetDirectOrderButtonState(
-                attackButton,
-                "Attack",
-                directOrderState.IsMilitaryUnit,
-                directOrderState.CanAttack);
-            SetDirectOrderButtonState(
-                holdButton,
-                "Hold",
-                directOrderState.IsMilitaryUnit,
-                directOrderState.IsMilitaryUnit);
-            SetDirectOrderButtonState(
-                chargeButton,
-                "Charge",
-                directOrderState.IsMilitaryUnit,
-                directOrderState.CanCharge);
+            _directOrderPanelBinder.ApplyState(
+                directOrderButtonsRoot,
+                GetDirectOrderButtons(),
+                showDirectOrderButtons,
+                directOrderState,
+                ActionLock.IsLocked);
         }
 
         private void RefreshPlanningSummaryText()
@@ -775,11 +727,6 @@ namespace Panoptes.Presentation.UI.HUD
                    cache != null &&
                    !string.IsNullOrWhiteSpace(cache.MyPlayerID) &&
                    string.Equals(cache.MyPlayerID, _currentUnit.Faction, StringComparison.Ordinal);
-        }
-
-        private void SetDirectOrderButtonState(Button button, string label, bool visible, bool interactable)
-        {
-            UnitInfoActionButtonBinder.ApplyState(button, label, visible, interactable, ActionLock.IsLocked);
         }
 
         private void EnsureDefaultActionProviders()
@@ -1050,11 +997,20 @@ namespace Panoptes.Presentation.UI.HUD
                     CreateSerializedActionButtonSlot);
             }
 
-            moveButton ??= CreateDirectOrderButton("MoveButton", "移动", new Vector2(0f, 0f), new Vector2(88f, 30f));
-            attackButton ??= CreateDirectOrderButton("AttackButton", "攻击", new Vector2(98f, 0f), new Vector2(88f, 30f));
-            holdButton ??= CreateDirectOrderButton("HoldButton", "待命", new Vector2(0f, -38f), new Vector2(88f, 30f));
-            chargeButton ??= CreateDirectOrderButton("ChargeButton", "冲锋", new Vector2(98f, -38f), new Vector2(88f, 30f));
-            BindDirectOrderButtons();
+            var directOrderButtons = _directOrderPanelBinder.EnsureButtons(
+                directOrderButtonsRoot,
+                moveButton,
+                attackButton,
+                holdButton,
+                chargeButton,
+                defaultActionButtonColor);
+            moveButton = directOrderButtons.Move;
+            attackButton = directOrderButtons.Attack;
+            holdButton = directOrderButtons.Hold;
+            chargeButton = directOrderButtons.Charge;
+            _directOrderPanelBinder.BindListeners(
+                directOrderButtons,
+                UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
         }
 
         private void EnsureRequiredActionButtonSlots()
@@ -1113,6 +1069,11 @@ namespace Panoptes.Presentation.UI.HUD
                 dockSpacing);
         }
 
+        private UnitInfoDirectOrderButtons GetDirectOrderButtons()
+        {
+            return new UnitInfoDirectOrderButtons(moveButton, attackButton, holdButton, chargeButton);
+        }
+
         private UnitInfoPortraitCameraLifecycle.Settings BuildPortraitSettings()
         {
             return new UnitInfoPortraitCameraLifecycle.Settings(
@@ -1133,48 +1094,6 @@ namespace Panoptes.Presentation.UI.HUD
                 portraitFillLightSpotAngle,
                 portraitFillLightVerticalOffset,
                 portraitFillLightForwardOffset);
-        }
-
-        private Button CreateDirectOrderButton(string objectName, string label, Vector2 anchoredPosition, Vector2 size)
-        {
-            var buttonRect = EnsureChild(objectName);
-            buttonRect.SetParent(directOrderButtonsRoot, false);
-            buttonRect.anchorMin = new Vector2(0f, 1f);
-            buttonRect.anchorMax = new Vector2(0f, 1f);
-            buttonRect.pivot = new Vector2(0f, 1f);
-            buttonRect.anchoredPosition = anchoredPosition;
-            buttonRect.sizeDelta = size;
-
-            var image = buttonRect.GetComponent<Image>();
-            if (image == null)
-            {
-                image = buttonRect.gameObject.AddComponent<Image>();
-            }
-
-            image.color = defaultActionButtonColor;
-            if (image.sprite == null)
-            {
-                image.sprite = UnitInfoActionListBinder.GetFallbackButtonSprite();
-            }
-
-            var button = buttonRect.GetComponent<Button>();
-            if (button == null)
-            {
-                button = buttonRect.gameObject.AddComponent<Button>();
-            }
-
-            var labelRect = buttonRect.Find("Label") as RectTransform;
-            if (labelRect == null)
-            {
-                labelRect = new GameObject("Label", typeof(RectTransform)).GetComponent<RectTransform>();
-                labelRect.SetParent(buttonRect, false);
-            }
-
-            UnitInfoPanelLayoutBuilder.StretchToParent(labelRect, new Vector2(4f, 2f), new Vector2(-4f, -2f));
-            var labelText = UnitInfoPanelLayoutBuilder.CreateTmpText(labelRect, label);
-            labelText.alignment = TextAlignmentOptions.Center;
-            labelText.fontSize = 15f;
-            return button;
         }
 
         private void RepairActionButtonLayoutAndVisuals()
