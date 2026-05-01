@@ -2,6 +2,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Presentation.UI.Domestic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Panoptes.Tests.EditMode.UI
 {
@@ -28,7 +29,54 @@ namespace Panoptes.Tests.EditMode.UI
             finally
             {
                 Object.DestroyImmediate(panelObject);
-                Object.DestroyImmediate(listObject);
+                if (listObject != null)
+                {
+                    Object.DestroyImmediate(listObject);
+                }
+            }
+        }
+
+        [Test]
+        public void RefreshBuildItems_RepeatedRefresh_ShouldReplaceRenderedRowsAndPreserveTemplates()
+        {
+            var panelObject = new GameObject("BuildCommandPanel", typeof(RectTransform));
+            var listObject = new GameObject("BuildItemList", typeof(RectTransform));
+            var groupTemplateObject = new GameObject("BuildGroupTemplate", typeof(RectTransform));
+            var itemTemplateObject = new GameObject("BuildItemTemplate", typeof(RectTransform), typeof(Image), typeof(Button));
+
+            try
+            {
+                listObject.transform.SetParent(panelObject.transform, false);
+                groupTemplateObject.transform.SetParent(listObject.transform, false);
+                itemTemplateObject.transform.SetParent(listObject.transform, false);
+
+                var panel = panelObject.AddComponent<BuildCommandPanel>();
+                var listRoot = listObject.GetComponent<RectTransform>();
+                var groupTemplate = groupTemplateObject.AddComponent<BuildGroupView>();
+                var itemTemplate = itemTemplateObject.AddComponent<BuildItemView>();
+
+                SetPrivateField(panel, "listContent", listRoot);
+                SetPrivateField(panel, "buildItemListRoot", listRoot);
+                SetPrivateField(panel, "buildGroupPrefab", groupTemplate);
+                SetPrivateField(panel, "buildItemPrefab", itemTemplate);
+                SetPrivateField(panel, "buildConfigJson", new TextAsset(
+                    "{\"buildings\":[{\"id\":\"farm\",\"name\":\"Farm\",\"description\":\"Food\",\"placement_kind\":\"resource_node\",\"required_resource_type\":\"grain\",\"sort_order\":1}]}"));
+
+                panel.RefreshBuildItems();
+                panel.RefreshBuildItems();
+
+                Assert.That(listRoot.childCount, Is.EqualTo(4),
+                    "Two inactive templates plus one rendered group and one rendered item should remain after refresh.");
+                Assert.That(groupTemplateObject.activeSelf, Is.False);
+                Assert.That(itemTemplateObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(panelObject);
+                if (listObject != null)
+                {
+                    Object.DestroyImmediate(listObject);
+                }
             }
         }
 

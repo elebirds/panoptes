@@ -10,7 +10,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Panoptes.Presentation.Map
 {
@@ -1631,7 +1630,11 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var cap = Mathf.Max(1, maxVisibleRenderersPerMember);
+            var options = new SquadUnitRenderBudgetPresenter.Options(
+                maxVisibleRenderersPerMember,
+                disableCastShadows,
+                disableReceiveShadows,
+                rendererPriorityKeywords);
             for (var i = 0; i < members.Length; i++)
             {
                 var member = members[i];
@@ -1640,108 +1643,8 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                ApplyMemberRenderBudget(member.root, cap);
+                SquadUnitRenderBudgetPresenter.Apply(member.root, options);
             }
-        }
-
-        private void ApplyMemberRenderBudget(Transform memberRoot, int rendererCap)
-        {
-            var renderers = memberRoot.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length == 0)
-            {
-                return;
-            }
-
-            var scored = new List<(Renderer renderer, int score)>(renderers.Length);
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var renderer = renderers[i];
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                if (renderer.gameObject == null || !renderer.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                var score = CalculateRendererScore(renderer);
-                scored.Add((renderer, score));
-            }
-
-            scored.Sort((a, b) => b.score.CompareTo(a.score));
-            var keepSet = new HashSet<Renderer>();
-            for (var i = 0; i < scored.Count && i < rendererCap; i++)
-            {
-                var renderer = scored[i].renderer;
-                if (renderer != null)
-                {
-                    keepSet.Add(renderer);
-                }
-            }
-
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var renderer = renderers[i];
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                var keep = keepSet.Contains(renderer);
-                renderer.enabled = keep;
-
-                if (!keep)
-                {
-                    continue;
-                }
-
-                if (disableCastShadows)
-                {
-                    renderer.shadowCastingMode = ShadowCastingMode.Off;
-                }
-
-                if (disableReceiveShadows)
-                {
-                    renderer.receiveShadows = false;
-                }
-            }
-        }
-
-        private int CalculateRendererScore(Renderer renderer)
-        {
-            if (renderer == null)
-            {
-                return int.MinValue;
-            }
-
-            var score = 0;
-            var normalizedName = NormalizeToken(renderer.name);
-            var goName = renderer.gameObject != null ? NormalizeToken(renderer.gameObject.name) : string.Empty;
-            if (rendererPriorityKeywords != null)
-            {
-                for (var i = 0; i < rendererPriorityKeywords.Length; i++)
-                {
-                    var key = NormalizeToken(rendererPriorityKeywords[i]);
-                    if (string.IsNullOrEmpty(key))
-                    {
-                        continue;
-                    }
-
-                    if (normalizedName.Contains(key) || goName.Contains(key))
-                    {
-                        score += 100 - i;
-                    }
-                }
-            }
-
-            if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
-            {
-                score += Mathf.Clamp(skinned.sharedMesh.vertexCount / 500, 0, 120);
-            }
-
-            return score;
         }
 
         private bool IsRendererCountOverThreshold()
@@ -1760,23 +1663,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var renderers = member.root.GetComponentsInChildren<Renderer>(true);
-                if (renderers == null || renderers.Length == 0)
-                {
-                    continue;
-                }
-
-                var activeRendererCount = 0;
-                for (var r = 0; r < renderers.Length; r++)
-                {
-                    var renderer = renderers[r];
-                    if (renderer != null && renderer.gameObject != null && renderer.gameObject.activeInHierarchy)
-                    {
-                        activeRendererCount++;
-                    }
-                }
-
-                if (activeRendererCount > threshold)
+                if (SquadUnitRenderBudgetPresenter.IsOverThreshold(member.root, threshold))
                 {
                     return true;
                 }

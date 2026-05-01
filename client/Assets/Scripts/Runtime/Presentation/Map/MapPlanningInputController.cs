@@ -1408,50 +1408,12 @@ namespace Panoptes.Presentation.Map
 
         private bool TryResolvePlannedMoveTargetNodeId(string unitId, out string targetNodeId)
         {
-            targetNodeId = string.Empty;
-            if (string.IsNullOrWhiteSpace(unitId))
-            {
-                return false;
-            }
-
-            var normalizedUnitId = unitId.Trim();
-            if (_pendingMoveState.TryGetTargetNodeId(normalizedUnitId, out var pendingTargetNodeId))
-            {
-                targetNodeId = pendingTargetNodeId;
-                return true;
-            }
-
             var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            if (draftCache == null ||
-                !draftCache.OrdersByUnitId.TryGetValue(normalizedUnitId, out var order) ||
-                order == null ||
-                !string.Equals(order.Action, "move", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            if (order.PathNodeIds != null)
-            {
-                for (var i = order.PathNodeIds.Count - 1; i >= 0; i--)
-                {
-                    var pathNodeId = order.PathNodeIds[i];
-                    if (string.IsNullOrWhiteSpace(pathNodeId))
-                    {
-                        continue;
-                    }
-
-                    targetNodeId = pathNodeId.Trim();
-                    return true;
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(order.TargetNodeId))
-            {
-                targetNodeId = order.TargetNodeId.Trim();
-                return true;
-            }
-
-            return false;
+            return MoveSelectionInputMode.TryResolvePlannedTargetNodeId(
+                unitId,
+                _pendingMoveState,
+                draftCache?.OrdersByUnitId,
+                out targetNodeId);
         }
 
         private void ClearPendingMoveStateForUnit(string unitId)
@@ -1477,9 +1439,7 @@ namespace Panoptes.Presentation.Map
 
             var draftCache = _draftCache ?? PlanningDraftCache.Instance;
             preview = draftCache != null ? draftCache.CurrentPreview : null;
-            return preview != null &&
-                   string.Equals(preview.UnitId, unitId, StringComparison.Ordinal) &&
-                   string.Equals(preview.TargetNodeId, targetNodeId, StringComparison.Ordinal);
+            return MoveSelectionInputMode.MatchesPreview(preview, unitId, targetNodeId);
         }
 
         private IReadOnlyList<string> GetQueuedMovePathNodeIds(string unitId)
@@ -1490,21 +1450,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            if (draftCache == null)
-            {
-                return null;
-            }
-
-            if (!draftCache.OrdersByUnitId.TryGetValue(unitId, out var order) ||
-                order == null ||
-                !string.Equals(order.Action, "move", StringComparison.Ordinal) ||
-                order.PathNodeIds == null ||
-                order.PathNodeIds.Count < 2)
-            {
-                return null;
-            }
-
-            return order.PathNodeIds;
+            return MoveSelectionInputMode.GetQueuedMovePathNodeIds(unitId, draftCache?.OrdersByUnitId);
         }
 
         private void RememberQueuedMovePaths()
@@ -3289,21 +3235,7 @@ namespace Panoptes.Presentation.Map
 
         private bool IsTerritoryExpansionUnitType(string unitType)
         {
-            if (string.IsNullOrWhiteSpace(unitType) || territoryExpansionUnitTypes == null || territoryExpansionUnitTypes.Length == 0)
-            {
-                return false;
-            }
-
-            var normalized = NormalizeToken(unitType);
-            for (var i = 0; i < territoryExpansionUnitTypes.Length; i++)
-            {
-                if (string.Equals(normalized, NormalizeToken(territoryExpansionUnitTypes[i]), StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return TerritoryDeployInputMode.IsTerritoryExpansionUnitType(unitType, territoryExpansionUnitTypes);
         }
 
         private static void ShowUserError(string message)

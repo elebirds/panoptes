@@ -46,16 +46,14 @@ namespace Panoptes.Presentation.UI.HUD
         private bool _isInteractive;
         private bool _gameEnded;
         private int _lastRemainingSeconds = int.MinValue;
-        private bool _nextStageBound;
         private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly EventSubscriptionBag _buttonSubscriptions = new();
 
         private void Awake()
         {
             ResolveExternalTurnPanelReferences();
             ResolveNextStageButtonReference();
             EnsureUi();
-            _cache = GameStateCache.Instance;
-            BindNextStageButton();
             RefreshNextStageInteractable();
         }
 
@@ -89,7 +87,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnDisable()
         {
             _subscriptions.Clear();
-            UnbindNextStageButton();
+            _buttonSubscriptions.Clear();
             _cache = null;
         }
 
@@ -292,24 +290,24 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void BindNextStageButton()
         {
-            if (nextStageButton == null || _nextStageBound)
+            _buttonSubscriptions.Clear();
+            ResolveNextStageButtonReference();
+
+            var button = nextStageButton;
+            if (button == null)
             {
                 return;
             }
 
-            nextStageButton.onClick.AddListener(OnNextStageButtonClicked);
-            _nextStageBound = true;
-        }
-
-        private void UnbindNextStageButton()
-        {
-            if (nextStageButton == null || !_nextStageBound)
-            {
-                return;
-            }
-
-            nextStageButton.onClick.RemoveListener(OnNextStageButtonClicked);
-            _nextStageBound = false;
+            _buttonSubscriptions.Add(
+                () => button.onClick.AddListener(OnNextStageButtonClicked),
+                () =>
+                {
+                    if (button != null)
+                    {
+                        button.onClick.RemoveListener(OnNextStageButtonClicked);
+                    }
+                });
         }
 
         private void RefreshNextStageInteractable()

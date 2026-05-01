@@ -7,6 +7,8 @@
  *************************************************/
 
 using Panoptes.Presentation.Planning.Input;
+using Panoptes.Presentation.Planning.Feedback;
+using System;
 
 namespace Panoptes.Presentation.Planning.Input.Modes
 {
@@ -20,5 +22,26 @@ namespace Panoptes.Presentation.Planning.Input.Modes
         public void Tick() { }
         public bool HandlePrimary() => false;
         public bool HandleCancel() => false;
+
+        public static bool IsTerritoryExpansionUnitType(string unitType, string[] territoryExpansionUnitTypes)
+        {
+            if (string.IsNullOrWhiteSpace(unitType) ||
+                territoryExpansionUnitTypes == null ||
+                territoryExpansionUnitTypes.Length == 0)
+            {
+                return false;
+            }
+
+            var normalized = MapInputTokens.Normalize(unitType);
+            for (var i = 0; i < territoryExpansionUnitTypes.Length; i++)
+            {
+                if (string.Equals(normalized, MapInputTokens.Normalize(territoryExpansionUnitTypes[i]), StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

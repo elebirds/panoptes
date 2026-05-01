@@ -153,3 +153,39 @@ Remaining technical debt:
 - Presentation still has fallback object lookup in several scene bootstrap paths;
   future work should replace more of these with serialized references or
   `SceneObjectFinder`.
+
+## C0p Preflight Outcome
+
+Implemented on 2026-05-01 as the C0a entry cleanup pass:
+
+- Added static EditMode boundary coverage for:
+  - no direct `Panoptes.Protocol` references under `Runtime/Presentation`;
+  - no direct `NetworkManager.Instance` usage under `Runtime/Presentation/UI`;
+  - high-risk Presentation line-count baseline.
+- Improved prefab-ready lifecycle/binding:
+  - `GameSceneController` now uses `SceneObjectFinder` for runtime helper lookup.
+  - `ResourceHUD` and `TurnHUD` use `EventSubscriptionBag` for button/event binding.
+- Added facade-friendly helpers:
+  - `BuildCommandListRenderer`
+  - `RecipeSynthesisRenderedItemRegistry`
+  - `MoveSelectionInputMode` / `TerritoryDeployInputMode` helper methods
+  - `MapSourceResolver`, `MapSourceSnapshot`, `MapCameraContextBuilder`, `MapRenderTokens`
+  - `SquadUnitRenderBudgetPresenter`
+  - `CityCoreBuildingActionResolver`
+  - `GameStateCacheReadQueries`
+
+Post-C0p line-count snapshot:
+
+| File | Before C0p | After C0p |
+| --- | ---: | ---: |
+| `Presentation/Map/MapPlanningInputController.cs` | 3376 | 3308 |
+| `Presentation/Map/MapRenderer.cs` | 2014 | 1514 |
+| `Presentation/UI/Domestic/BuildCommandPanel.cs` | 1633 | 1497 |
+| `Presentation/UI/Turn/RecipeSynthesisPanel.cs` | 1392 | 1377 |
+| `Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs` | 1063 | 896 |
+| `Presentation/Map/SquadUnitVisualController.cs` | 1788 | 1675 |
+| `Core/Application/Cache/GameStateCache.cs` | 1542 | 1352 |
+
+Remaining large files are now treated as prefab-facing facades. Future C0a work
+should add new backend bindings through Core DTO/cache APIs and the extracted
+helpers instead of re-expanding these MonoBehaviours.

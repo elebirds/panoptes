@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Feedback;
@@ -25,6 +26,72 @@ namespace Panoptes.Tests.EditMode.Map
                 "tower",
                 disallowCityCorePlacement: false,
                 blockedBuildingTypes: new[] { "farm", "Tower" }), Is.True);
+        }
+
+        [Test]
+        public void MoveSelectionInputMode_ShouldPreferPendingTarget()
+        {
+            var pending = new PendingMoveState();
+            pending.MarkPending("unit-1", "N2");
+            var queuedOrders = new Dictionary<string, QueuedUnitOrderDto>
+            {
+                ["unit-1"] = new QueuedUnitOrderDto
+                {
+                    UnitId = "unit-1",
+                    Action = "move",
+                    TargetNodeId = "N3"
+                }
+            };
+
+            Assert.That(MoveSelectionInputMode.TryResolvePlannedTargetNodeId(
+                " unit-1 ",
+                pending,
+                queuedOrders,
+                out var targetNodeId), Is.True);
+            Assert.That(targetNodeId, Is.EqualTo("N2"));
+        }
+
+        [Test]
+        public void MoveSelectionInputMode_ShouldResolveQueuedPathDestination()
+        {
+            var queuedOrders = new Dictionary<string, QueuedUnitOrderDto>
+            {
+                ["unit-2"] = new QueuedUnitOrderDto
+                {
+                    UnitId = "unit-2",
+                    Action = "move",
+                    TargetNodeId = "fallback",
+                    PathNodeIds = new List<string> { "A1", " ", "C3" }
+                }
+            };
+
+            Assert.That(MoveSelectionInputMode.TryResolvePlannedTargetNodeId(
+                "unit-2",
+                null,
+                queuedOrders,
+                out var targetNodeId), Is.True);
+            Assert.That(targetNodeId, Is.EqualTo("C3"));
+        }
+
+        [Test]
+        public void MoveSelectionInputMode_ShouldMatchCurrentPreview()
+        {
+            var preview = new PathPreviewDto
+            {
+                UnitId = "unit-3",
+                TargetNodeId = "D4"
+            };
+
+            Assert.That(MoveSelectionInputMode.MatchesPreview(preview, "unit-3", "D4"), Is.True);
+            Assert.That(MoveSelectionInputMode.MatchesPreview(preview, "unit-3", "D5"), Is.False);
+        }
+
+        [Test]
+        public void TerritoryDeployInputMode_ShouldMatchExpansionUnitTypes()
+        {
+            Assert.That(TerritoryDeployInputMode.IsTerritoryExpansionUnitType(
+                " Pioneer ",
+                new[] { "settler", "pioneer" }), Is.True);
         }
 
         [Test]

@@ -5,6 +5,7 @@ using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Turn;
@@ -188,7 +189,7 @@ namespace Panoptes.Presentation.UI.Game
 
         private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
         {
-            var existing = UnityEngine.Object.FindAnyObjectByType<T>();
+            var existing = SceneObjectFinder.FindFirstSceneObject<T>();
             if (existing != null)
             {
                 return;

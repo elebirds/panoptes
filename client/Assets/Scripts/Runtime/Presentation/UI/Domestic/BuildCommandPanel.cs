@@ -14,7 +14,6 @@ using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
@@ -128,8 +127,6 @@ namespace Panoptes.Presentation.UI.Domestic
         [SerializeField] private string buildConfigResourcesPath = "Config/buildconfig";
         [SerializeField] private bool logConfigWarnings = true;
 
-        private readonly List<Button> _boundButtons = new();
-        private readonly List<UnityAction> _boundActions = new();
         private readonly Dictionary<string, BuildConfigEntry> _buildConfigById = new();
         private readonly Dictionary<string, List<BuildCostEntry>> _buildCostsById = new();
         private readonly Dictionary<string, StaticCatalogCache.ResourceEntryJson> _resourceMetaByKey = new();
@@ -138,12 +135,15 @@ namespace Panoptes.Presentation.UI.Domestic
         private readonly HashSet<string> _activeTechnologyIds = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _spriteCache = new();
         private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly BuildCommandListRenderer _listRenderer = new();
 
         private Coroutine _emblemLoadRoutine;
         private StaticCatalogCache _catalogCache;
         private GameStateCache _gameStateCache;
         private PlanningDraftCache _planningDraftCache;
         private readonly BuildPanelScrollState _buildListScrollState = new();
+        private Button _boundCancelButton;
+        private UnityAction _cancelAction;
         private string _activeCityCoreNodeId = string.Empty;
         private bool _loggedMissingBuildConfigThisEnable;
 
@@ -272,7 +272,15 @@ namespace Panoptes.Presentation.UI.Domestic
 
             var sources = BuildItemSources(renderEntries);
             var groups = BuildPanelRenderBuilder.Build(sources);
-            RebuildListContent(groups);
+            _listRenderer.Render(
+                listContent,
+                ResolveGroupPrefab(),
+                ResolveItemPrefab(),
+                groups,
+                buildItemLockedIcon,
+                tooltipView,
+                ResolveBuildRuleFor,
+                TriggerBuild);
         }
 
         private void BindCancelButton()
@@ -282,10 +290,10 @@ namespace Panoptes.Presentation.UI.Domestic
                 return;
             }
 
-            UnityAction cancelAction = CancelPlacement;
-            cancelButton.onClick.AddListener(cancelAction);
-            _boundButtons.Add(cancelButton);
-            _boundActions.Add(cancelAction);
+            UnbindCancelButton();
+            _cancelAction ??= CancelPlacement;
+            cancelButton.onClick.AddListener(_cancelAction);
+            _boundCancelButton = cancelButton;
         }
 
         private List<BuildItemRenderSource> BuildItemSources(IReadOnlyList<DynamicBuildRenderEntry> renderEntries)
@@ -327,130 +335,9 @@ namespace Panoptes.Presentation.UI.Domestic
             return result;
         }
 
-        private void RebuildListContent(IReadOnlyList<BuildGroupRenderModel> groups)
-        {
-            ClearRenderedItems();
-            if (groups == null || groups.Count == 0)
-            {
-                return;
-            }
-
-            for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
-            {
-                var groupModel = groups[groupIndex];
-                if (groupModel == null || groupModel.Items.Count == 0)
-                {
-                    continue;
-                }
-
-                var groupView = InstantiateGroupView();
-                if (groupView == null)
-                {
-                    continue;
-                }
-
-                groupView.Bind(groupModel.Title);
-                groupView.gameObject.SetActive(true);
-
-                for (var itemIndex = 0; itemIndex < groupModel.Items.Count; itemIndex++)
-                {
-                    var itemModel = groupModel.Items[itemIndex];
-                    var itemView = InstantiateItemView();
-                    if (itemView == null)
-                    {
-                        continue;
-                    }
-
-                    itemView.Bind(itemModel);
-                    itemView.SetLocked(itemModel.AvailabilityState == BuildItemAvailabilityState.Locked, buildItemLockedIcon);
-
-                    var targetBuilding = itemModel.BuildingId;
-                    var rule = ResolveBuildRuleFor(targetBuilding);
-                    UnityAction action = () => TriggerBuild(targetBuilding, rule);
-                    itemView.SetClickAction(action);
-                    if (itemView.ClickButton != null)
-                    {
-                        _boundButtons.Add(itemView.ClickButton);
-                        _boundActions.Add(action);
-                        InstallTooltip(itemView.ClickButton, itemModel.TooltipText);
-                    }
-
-                    itemView.gameObject.SetActive(true);
-                }
-            }
-        }
-
-        private BuildGroupView InstantiateGroupView()
-        {
-            var template = ResolveGroupPrefab();
-            if (template == null || listContent == null)
-            {
-                return null;
-            }
-
-            var instance = Instantiate(template.gameObject, listContent, false);
-            instance.name = "BuildGroup";
-            return instance.GetComponent<BuildGroupView>();
-        }
-
-        private BuildItemView InstantiateItemView()
-        {
-            var template = ResolveItemPrefab();
-            if (template == null || listContent == null)
-            {
-                return null;
-            }
-
-            var instance = Instantiate(template.gameObject, listContent, false);
-            instance.name = "BuildItem";
-            return instance.GetComponent<BuildItemView>();
-        }
-
         private void ClearRenderedItems()
         {
-            if (listContent == null)
-            {
-                return;
-            }
-
-            for (var i = listContent.childCount - 1; i >= 0; i--)
-            {
-                var child = listContent.GetChild(i);
-                if (child == null || IsTemplateTransform(child))
-                {
-                    continue;
-                }
-
-                DestroyUiObject(child.gameObject);
-            }
-        }
-
-        private bool IsTemplateTransform(Transform child)
-        {
-            if (child == null)
-            {
-                return false;
-            }
-
-            return (buildGroupPrefab != null && ReferenceEquals(child, buildGroupPrefab.transform))
-                   || (buildItemPrefab != null && ReferenceEquals(child, buildItemPrefab.transform));
-        }
-
-        private static void DestroyUiObject(UnityEngine.Object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(target);
-            }
-            else
-            {
-                DestroyImmediate(target);
-            }
+            _listRenderer.Clear(listContent, ResolveGroupPrefab(), ResolveItemPrefab());
         }
 
         private bool ResolveViewReferences()
@@ -850,19 +737,18 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void UnbindButtons()
         {
-            var count = Mathf.Min(_boundButtons.Count, _boundActions.Count);
-            for (var i = 0; i < count; i++)
+            UnbindCancelButton();
+            _listRenderer.Unbind();
+        }
+
+        private void UnbindCancelButton()
+        {
+            if (_boundCancelButton != null && _cancelAction != null)
             {
-                var button = _boundButtons[i];
-                var action = _boundActions[i];
-                if (button != null && action != null)
-                {
-                    button.onClick.RemoveListener(action);
-                }
+                _boundCancelButton.onClick.RemoveListener(_cancelAction);
             }
 
-            _boundButtons.Clear();
-            _boundActions.Clear();
+            _boundCancelButton = null;
         }
 
         private void TriggerBuild(string buildingType, BuildRule rule)
@@ -968,28 +854,6 @@ namespace Panoptes.Presentation.UI.Domestic
             }
 
             RefreshBuildItems();
-        }
-
-        private void InstallTooltip(Button button, string text)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var trigger = button.GetComponent<BuildTooltipTrigger>();
-            if (trigger == null)
-            {
-                trigger = button.gameObject.AddComponent<BuildTooltipTrigger>();
-            }
-
-            if (tooltipView == null || string.IsNullOrWhiteSpace(text))
-            {
-                trigger.Configure(null, string.Empty);
-                return;
-            }
-
-            trigger.Configure(tooltipView, text.Trim());
         }
 
         private void SubscribeCatalogUpdates()
