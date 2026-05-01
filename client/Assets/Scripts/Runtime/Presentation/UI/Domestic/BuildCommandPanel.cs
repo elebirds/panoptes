@@ -342,214 +342,24 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private bool ResolveViewReferences()
         {
-            ResolveTooltipView();
-            ResolveScrollRect();
-            ResolveListContent();
-            ResolveGroupPrefab();
-            ResolveItemPrefab();
-
-            return listContent != null && ResolveItemPrefab() != null && ResolveGroupPrefab() != null;
-        }
-
-        private void ResolveTooltipView()
-        {
-            if (tooltipView != null)
-            {
-                return;
-            }
-
-            tooltipView = GetComponentInChildren<BuildTooltipView>(true);
-            if (tooltipView == null)
-            {
-                tooltipView = UnityEngine.Object.FindAnyObjectByType<BuildTooltipView>();
-            }
-        }
-
-        private void ResolveScrollRect()
-        {
-            if (listScrollRect == null)
-            {
-                listScrollRect = GetComponent<ScrollRect>();
-            }
-
-            if (listScrollRect == null)
-            {
-                listScrollRect = gameObject.AddComponent<ScrollRect>();
-            }
-
-            listScrollRect.horizontal = false;
-            listScrollRect.vertical = true;
-            listScrollRect.movementType = ScrollRect.MovementType.Clamped;
-            listScrollRect.scrollSensitivity = 20f;
-        }
-
-        private void ResolveListContent()
-        {
-            if (listContent == null && listScrollRect != null && listScrollRect.content != null)
-            {
-                listContent = listScrollRect.content;
-            }
-
-            if (listContent == null && buildItemListRoot != null)
-            {
-                listContent = buildItemListRoot;
-            }
-
-            var viewport = transform.Find("Viewport") as RectTransform;
-            if (viewport == null)
-            {
-                var legacyViewport = transform.Find("OneGroup") as RectTransform;
-                if (legacyViewport != null)
-                {
-                    viewport = legacyViewport;
-                    legacyViewport.name = "Viewport";
-                }
-            }
-
-            if (viewport == null)
-            {
-                viewport = CreateViewport();
-            }
-
-            EnsureViewportComponents(viewport);
-
-            if (listContent == null)
-            {
-                var existingContent = viewport.Find("Content") as RectTransform;
-                listContent = existingContent != null ? existingContent : CreateContentRoot(viewport);
-            }
-
-            EnsureContentLayout(listContent);
-            buildItemListRoot = listContent;
-            listScrollRect.viewport = viewport;
-            listScrollRect.content = listContent;
-        }
-
-        private RectTransform CreateViewport()
-        {
-            var viewportGo = new GameObject("Viewport", typeof(RectTransform));
-            viewportGo.transform.SetParent(transform, false);
-            var viewport = viewportGo.GetComponent<RectTransform>();
-            viewport.anchorMin = new Vector2(0f, 0f);
-            viewport.anchorMax = new Vector2(1f, 1f);
-            viewport.pivot = new Vector2(0.5f, 0.5f);
-            viewport.anchoredPosition = new Vector2(0f, -28f);
-            viewport.sizeDelta = new Vector2(-20f, -120f);
-            return viewport;
-        }
-
-        private static void EnsureViewportComponents(RectTransform viewport)
-        {
-            if (viewport == null)
-            {
-                return;
-            }
-
-            var image = viewport.GetComponent<Image>();
-            if (image == null)
-            {
-                image = viewport.gameObject.AddComponent<Image>();
-            }
-
-            image.color = new Color(0.02f, 0.03f, 0.06f, 0.15f);
-            var mask = viewport.GetComponent<Mask>();
-            if (mask == null)
-            {
-                mask = viewport.gameObject.AddComponent<Mask>();
-            }
-
-            mask.showMaskGraphic = false;
-        }
-
-        private static RectTransform CreateContentRoot(RectTransform viewport)
-        {
-            var contentGo = new GameObject("Content", typeof(RectTransform));
-            contentGo.transform.SetParent(viewport, false);
-            var content = contentGo.GetComponent<RectTransform>();
-            content.anchorMin = new Vector2(0f, 1f);
-            content.anchorMax = new Vector2(1f, 1f);
-            content.pivot = new Vector2(0.5f, 1f);
-            content.anchoredPosition = Vector2.zero;
-            content.sizeDelta = new Vector2(-6f, 0f);
-            return content;
-        }
-
-        private static void EnsureContentLayout(RectTransform content)
-        {
-            if (content == null)
-            {
-                return;
-            }
-
-            var layout = content.GetComponent<VerticalLayoutGroup>();
-            if (layout == null)
-            {
-                layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
-            }
-
-            layout.padding = new RectOffset(0, 0, 0, 12);
-            layout.spacing = 10f;
-            layout.childAlignment = TextAnchor.UpperCenter;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-
-            var fitter = content.GetComponent<ContentSizeFitter>();
-            if (fitter == null)
-            {
-                fitter = content.gameObject.AddComponent<ContentSizeFitter>();
-            }
-
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            return BuildCommandPanelViewResolver.Resolve(
+                this,
+                ref tooltipView,
+                ref listScrollRect,
+                ref listContent,
+                ref buildItemListRoot,
+                ref buildGroupPrefab,
+                ref buildItemPrefab);
         }
 
         private BuildGroupView ResolveGroupPrefab()
         {
-            if (buildGroupPrefab != null)
-            {
-                buildGroupPrefab.gameObject.SetActive(false);
-                return buildGroupPrefab;
-            }
-
-            buildGroupPrefab = GetComponentInChildren<BuildGroupView>(true);
-            if (buildGroupPrefab != null)
-            {
-                buildGroupPrefab.gameObject.SetActive(false);
-            }
-
-            return buildGroupPrefab;
+            return BuildCommandPanelViewResolver.ResolveGroupPrefab(this, ref buildGroupPrefab);
         }
 
         private BuildItemView ResolveItemPrefab()
         {
-            if (buildItemPrefab != null)
-            {
-                buildItemPrefab.gameObject.SetActive(false);
-                return buildItemPrefab;
-            }
-
-            var candidates = GetComponentsInChildren<BuildItemView>(true);
-            for (var i = 0; i < candidates.Length; i++)
-            {
-                var candidate = candidates[i];
-                if (candidate == null)
-                {
-                    continue;
-                }
-
-                if (candidate.GetComponent<BuildGroupView>() != null)
-                {
-                    continue;
-                }
-
-                buildItemPrefab = candidate;
-                buildItemPrefab.gameObject.SetActive(false);
-                break;
-            }
-
-            return buildItemPrefab;
+            return BuildCommandPanelViewResolver.ResolveItemPrefab(this, ref buildItemPrefab);
         }
 
         private void ResetScrollPosition()

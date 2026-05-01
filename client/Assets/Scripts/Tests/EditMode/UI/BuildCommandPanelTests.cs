@@ -80,6 +80,41 @@ namespace Panoptes.Tests.EditMode.UI
             }
         }
 
+        [Test]
+        public void RefreshBuildItems_MissingScrollReferences_ShouldCreateViewportAndContent()
+        {
+            var panelObject = new GameObject("BuildCommandPanel", typeof(RectTransform));
+            var groupTemplateObject = new GameObject("BuildGroupTemplate", typeof(RectTransform));
+            var itemTemplateObject = new GameObject("BuildItemTemplate", typeof(RectTransform), typeof(Image), typeof(Button));
+
+            try
+            {
+                groupTemplateObject.transform.SetParent(panelObject.transform, false);
+                itemTemplateObject.transform.SetParent(panelObject.transform, false);
+
+                var panel = panelObject.AddComponent<BuildCommandPanel>();
+                groupTemplateObject.AddComponent<BuildGroupView>();
+                itemTemplateObject.AddComponent<BuildItemView>();
+                SetPrivateField(panel, "buildConfigJson", new TextAsset(
+                    "{\"buildings\":[{\"id\":\"farm\",\"name\":\"Farm\",\"description\":\"Food\",\"placement_kind\":\"resource_node\",\"required_resource_type\":\"grain\",\"sort_order\":1}]}"));
+
+                panel.RefreshBuildItems();
+
+                var scrollRect = panelObject.GetComponent<ScrollRect>();
+                Assert.That(scrollRect, Is.Not.Null);
+                Assert.That(scrollRect.viewport, Is.Not.Null);
+                Assert.That(scrollRect.viewport.name, Is.EqualTo("Viewport"));
+                Assert.That(scrollRect.content, Is.Not.Null);
+                Assert.That(scrollRect.content.name, Is.EqualTo("Content"));
+                Assert.That(scrollRect.content.childCount, Is.EqualTo(2),
+                    "A rendered group and item should be created under generated content.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(panelObject);
+            }
+        }
+
         private static void InvokePrivateMethod(object instance, string methodName, params object[] args)
         {
             var method = instance.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
