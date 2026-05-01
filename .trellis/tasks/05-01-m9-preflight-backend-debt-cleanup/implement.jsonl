@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend conventions and pre-development checklist for server changes."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Layer ownership rules for game/query/projection/session/debug changes."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Feature spans docs, protocol-facing projections, debug harness, and gameplay systems."}

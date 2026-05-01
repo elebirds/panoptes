@@ -247,6 +247,8 @@ for each player:
 
 ## 11. M9：PVE 国家
 
+入口债务：见 `docs/2026-05-01-backend-m9-preflight-debt-table.md`。
+
 目标：让服务器控制国家复用玩家规则。
 
 重点：

@@ -144,6 +144,103 @@ post-settlement active-march refresh belong in `game/orders`. Root `game` may
 provide route-preview callbacks because route preview still depends on room
 state and combat planner wiring.
 
+## Scenario: PVE Planning Controllers Reuse Player Rules
+
+### 1. Scope / Trigger
+
+Any server-controlled nation, bot, or future PVE controller that makes gameplay
+decisions for a participant must enter the turn through the same planning
+surface as humans and ministers. This applies before adding M9 PVE behavior,
+new AI providers, or scripted scenario nations.
+
+### 2. Signatures
+
+Provider output:
+
+```go
+provider.BuildPlanningIntents(ctx, ai.Request{
+	Participant: participant.Participant{ID: "bot-1", Kind: participant.KindBot},
+	State:       state,
+	Observation: runtime.BuildObservation("bot-1"),
+})
+```
+
+Submit through planning:
+
+```go
+planning.IntentEnvelope{
+	PlayerID: "bot-1",
+	Source:   "ai",
+	Intent:   planning.IssueUnitOrderIntent{UnitID: "u1", Action: "move"},
+}
+```
+
+### 3. Contracts
+
+* PVE providers read `observed` snapshots from `game/query`, not raw
+  omniscient truth by default.
+* Provider output is `planning.Intent` or an equivalent planning command shape.
+* Validation and draft writes remain owned by `game/planning` and `game/orders`.
+* Real state mutation still happens only in resolving stages through
+  `event.Apply()`.
+* Difficulty may change goals, scoring, initial conditions, or resource
+  environment; it must not bypass player rules.
+* M9 PVE treats `InformationReportView` as advisory metadata until a later
+  reported-content layer explicitly consumes distorted narrative reports.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+|---|---|
+| Provider emits an invalid planning intent | Existing planning validation rejects it with the normal error code |
+| Provider targets hidden truth not present in observation | Treat as a provider bug; add a regression and fix provider selection |
+| PVE needs a new action | Add/extend the planning intent first, then make every controller use it |
+| PVE wants a bonus | Model as data, modifier, starting condition, or scoring preference |
+| PVE needs direct state mutation | Reject; route through resolving events |
+
+### 5. Good/Base/Bad Cases
+
+* Good: a PVE controller observes visible enemy pressure, emits a normal unit
+  order intent, passes validation, and the unit moves during resolving.
+* Base: a scripted PVE nation receives extra starting resources from scenario
+  setup, then still spends them through normal recipes/build orders.
+* Bad: a PVE controller writes `state.Players[...]`, city storage, road flags,
+  ECS unit positions, or event collector entries directly.
+
+### 6. Tests Required
+
+* Provider tests assert generated intents are based on observation, including
+  hidden-map cases.
+* Coordinator tests assert autonomous controllers submit through the normal
+  planning flow and count as turn submissions.
+* Headless/debug long-game tests assert PVE-preflight systems still cross
+  planning, resolving, projection, minister draft, and information-report
+  boundaries.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```go
+// Do not let PVE mutate state as a shortcut.
+ecs.PositionC.Get(unitEntry).Q = targetQ
+state.AddResourceToCity("bot-1", "C1", domain.ResourceFood, 10)
+```
+
+#### Correct
+
+```go
+err := submitter.SubmitIntent(ctx, planning.IntentEnvelope{
+	PlayerID: "bot-1",
+	Source:   "ai",
+	Intent: planning.IssueUnitOrderIntent{
+		UnitID:       "u1",
+		Action:       "move",
+		TargetNodeID: "N2",
+	},
+})
+```
+
 ## Scenario: Road Map Actions And Connectivity
 
 ### 1. Scope / Trigger
