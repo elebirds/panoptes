@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Defines Core/Presentation boundaries and where extracted Presentation helpers should live."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Requires prefab-facing MonoBehaviours to delegate to small helpers while preserving serialized compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Confirms client state is presentation/cache-only and must not become server-authoritative rules."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lists forbidden Presentation/protocol/network patterns and cleanup/testing expectations for Unity helpers."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Records the target client architecture and names MapPlanningInputController as a high-priority split target."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Captures current high-risk facade baselines and the refactor direction for planning input."}
