@@ -6,6 +6,7 @@ import (
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/event"
 	"github.com/elebirds/panoptes/internal/game/scenario"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 )
@@ -235,7 +236,7 @@ func TestHarnessOuterFacilityCapture_DeactivatesContestedFacility(t *testing.T) 
 	}
 }
 
-func TestHarnessRealContentHappyPath_ReachesDisconnectedMilitaryShortage(t *testing.T) {
+func TestHarnessM9PreflightLongGame_CoversMinisterInfoLogisticsAndWarfare(t *testing.T) {
 	def := newRealContentHappyPathDefinition(t)
 
 	h, err := NewHarness(def)
@@ -246,9 +247,11 @@ func TestHarnessRealContentHappyPath_ReachesDisconnectedMilitaryShortage(t *test
 		t.Fatalf("Start() error = %v", err)
 	}
 
-	if _, err := h.WaitPlanningStart("player-1", 1, 2*time.Second); err != nil {
+	start1, err := h.WaitPlanningStart("player-1", 1, 2*time.Second)
+	if err != nil {
 		t.Fatalf("WaitPlanningStart(turn=1) error = %v", err)
 	}
+	assertM9PreflightPlanningStart(t, start1)
 	if err := h.InjectPlanningCommand("player-1", "req-research", &pb.PlanningCommand{
 		Body: &pb.PlanningCommand_SetResearchTarget{
 			SetResearchTarget: &pb.MsgSetResearchTarget{TechnologyId: "agrarian_foundations"},
@@ -388,6 +391,40 @@ func TestHarnessRealContentHappyPath_ReachesDisconnectedMilitaryShortage(t *test
 	if unitID := findOwnedUnitIDByTypeIfExists(h.room.State(), "player-1", "infantry"); unitID != "" {
 		t.Fatalf("disconnected new city produced infantry %q without reachable ore", unitID)
 	}
+
+	start7, err := h.WaitPlanningStart("player-1", 7, 2*time.Second)
+	if err != nil {
+		t.Fatalf("WaitPlanningStart(turn=7) error = %v", err)
+	}
+	if start7.GetInformationReport() == nil {
+		t.Fatalf("turn 7 planning start missing information report")
+	}
+	event.RoadBuiltEvent{FromNode: "D2", ToNode: "E2", Owner: "player-1"}.Apply(h.room.State().World, h.room.State())
+	raider := h.room.State().World.Entry(ecs.CreateUnit(h.room.State().World, "raider", "player-1", domain.Position{Q: 3, R: 1}))
+	ecs.UnitStatsC.Get(raider).ID = "preflight-raider-1"
+	if err := h.InjectPlanningCommand("player-1", "req-destroy-road", &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          "preflight-raider-1",
+				Action:          "destroy_road",
+				TargetNodeId:    "D2",
+				SecondaryNodeId: "E2",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("InjectPlanningCommand(destroy road) error = %v", err)
+	}
+	if err := h.SubmitTurn("player-1"); err != nil {
+		t.Fatalf("SubmitTurn(turn=7) error = %v", err)
+	}
+
+	turn7, err := h.WaitGameSync("player-1", 7, 3*time.Second)
+	if err != nil {
+		t.Fatalf("WaitGameSync(turn=7) error = %v", err)
+	}
+	if !hasTurnEvent(turn7.GameSync, "map", "road_destroyed") {
+		t.Fatalf("turn 7 missing road_destroyed event")
+	}
 }
 
 func TestHarnessRealContentFacilityTakeover_TransfersOwnershipAndReactivates(t *testing.T) {
@@ -483,4 +520,28 @@ func hasPlanningStartEvent(msg *pb.MsgPlanningStart, eventType string) bool {
 		}
 	}
 	return false
+}
+
+func assertM9PreflightPlanningStart(t *testing.T, start *pb.MsgPlanningStart) {
+	t.Helper()
+	if start == nil {
+		t.Fatalf("planning start = nil")
+	}
+	report := start.GetInformationReport()
+	if report == nil {
+		t.Fatalf("planning start missing information report")
+	}
+	if report.GetMode() == "" || report.GetConfidence() == "" {
+		t.Fatalf("information report = %#v, want mode and confidence", report)
+	}
+	if report.GetVisibleNodeCount() == 0 {
+		t.Fatalf("information report visible_node_count = 0, want visible map context")
+	}
+	if len(start.GetMinisterDrafts()) == 0 {
+		t.Fatalf("planning start should include minister default drafts")
+	}
+	snapshot := start.GetSnapshot()
+	if snapshot == nil {
+		t.Fatalf("planning start snapshot = nil")
+	}
 }
