@@ -122,6 +122,33 @@ func pveSkirmishMap(id string) *staticdata.MapRuntimeBundle {
 	}
 }
 
+func pveSoakMap(id string) *staticdata.MapRuntimeBundle {
+	zero := 0
+	one := 1
+	return &staticdata.MapRuntimeBundle{
+		ID:     id,
+		Name:   id,
+		Width:  5,
+		Height: 1,
+		SpawnPoints: []staticdata.SpawnPoint{
+			{Slot: 0, X: 0, Y: 0},
+			{Slot: 1, X: 4, Y: 0},
+		},
+		Nodes: []staticdata.MapRuntimeNode{
+			{ID: "A1", X: 0, Y: 0, Terrain: "plain", OwnerSlot: &zero, TerritoryOwnerSlot: &zero, BuildingType: "city_core", BuildingHP: 100},
+			{ID: "B1", X: 1, Y: 0, Terrain: "plain", TerritoryOwnerSlot: &zero},
+			{ID: "C1", X: 2, Y: 0, Terrain: "plain"},
+			{ID: "D1", X: 3, Y: 0, Terrain: "plain", TerritoryOwnerSlot: &one},
+			{ID: "E1", X: 4, Y: 0, Terrain: "plain", OwnerSlot: &one, TerritoryOwnerSlot: &one, BuildingType: "city_core", BuildingHP: 100},
+		},
+		NamedNodes: map[string]string{
+			"A1": "玩家主城",
+			"C1": "中立缓冲",
+			"E1": "PVE主城",
+		},
+	}
+}
+
 func allPlainNodes(width int, height int) []staticdata.MapRuntimeNode {
 	nodes := make([]staticdata.MapRuntimeNode, 0, width*height)
 	for y := 0; y < height; y++ {

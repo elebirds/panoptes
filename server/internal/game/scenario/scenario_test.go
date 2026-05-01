@@ -24,6 +24,7 @@ func TestScenarioBuildersProduceDeterministicStates(t *testing.T) {
 		{name: "outer_facility_capture", build: OuterFacilityCapture},
 		{name: "capital_destroy_gameover", build: CapitalDestroyGameOver},
 		{name: "pve_skirmish", build: PVESkirmish},
+		{name: "pve_soak", build: PVESoak},
 	}
 
 	for _, tc := range tests {
@@ -123,5 +124,20 @@ func TestScenarioDefinitionParticipantFallbackAndPVEKinds(t *testing.T) {
 	}
 	if got := pve.HumanPlayerIDs(); len(got) != 1 || got[0] != "player-1" {
 		t.Fatalf("pve human ids = %#v, want [player-1]", got)
+	}
+
+	soak, err := PVESoak()
+	if err != nil {
+		t.Fatalf("PVESoak() error = %v", err)
+	}
+	specs = soak.ParticipantSpecs()
+	if len(specs) != 2 {
+		t.Fatalf("pve soak participants = %#v, want 2", specs)
+	}
+	if specs[0].Kind != participant.KindHuman || specs[1].Kind != participant.KindBot {
+		t.Fatalf("pve soak participant kinds = %#v, want human/bot", specs)
+	}
+	if got := soak.HumanPlayerIDs(); len(got) != 1 || got[0] != "player-1" {
+		t.Fatalf("pve soak human ids = %#v, want [player-1]", got)
 	}
 }

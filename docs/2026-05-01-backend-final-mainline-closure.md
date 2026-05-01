@@ -63,6 +63,7 @@ M0-M9 已完成一轮后端基础实现。当前后端已经具备：
    - 30-100 回合 headless soak。
    - 多人/PVE 混合局长期资源守恒检查。
    - 事件审计和 replay 一致性抽查。
+   - 首轮门禁：`docs/2026-05-01-backend-h0-hardening-gate.md`。
 
 2. **C0 客户端接入**
    - 消费 road/network/storage/logistics/institution/information/PVE 投影。

@@ -489,3 +489,43 @@ func PVESkirmish() (*Definition, error) {
 		},
 	}, nil
 }
+
+func PVESoak() (*Definition, error) {
+	rules := baseRules()
+	rules.MaxTurns = 64
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Manifest: manifest("pve_soak"),
+		Rules:    rules,
+		Buildings: []staticdata.BuildingDefinition{
+			{
+				ID:            "city_core",
+				PlacementKind: "city_foundation_center",
+				BuildingScope: "city_core",
+				MaxHP:         100,
+				TakeoverMode:  "disabled",
+			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}, pveSoakMap("pve_soak"))
+
+	playerIDs := []string{"player-1", "bot-1"}
+	usernames := []string{"alice", "pve"}
+	state, err := newState("pve_soak", catalog, playerIDs, usernames, pveSoakMap("pve_soak"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Definition{
+		Name:      "pve_soak",
+		Catalog:   catalog,
+		State:     state,
+		PlayerIDs: playerIDs,
+		Usernames: usernames,
+		Participants: []participant.Spec{
+			{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			{ID: "bot-1", Username: "pve", Kind: participant.KindBot},
+		},
+	}, nil
+}

@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Quality check for backend hardening."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Verify hardening tests do not introduce gameplay shortcuts."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify invariants cover layer-boundary state flow."}
