@@ -275,6 +275,16 @@ Acceptance:
 - Binder does not inspect Protocol and does not call cache singletons.
 - Existing UI behavior remains.
 
+Status 2026-05-02: complete. `UnitInfoViewModel` now projects selected unit
+display state from `GameStateStore`, `SelectionStore`, `StaticCatalogStore`,
+and `PlanningDraftStore`; `UnitInfoUguiBinder` renders the uGUI text, HP, and
+direct-order state; and `UnitInfoPanelController` remains the prefab-facing
+facade for scene selection, animation, portrait camera, and legacy action
+registrars. The migrated ViewModel/Binder slice is registered in
+`GameLifetimeScope` through VContainer and is covered by EditMode/static
+boundary tests. Runtime falls back to the legacy facade path until server
+message hydration into the Phase 3 stores is completed.
+
 ## Phase 5: First UI Toolkit Read-Only Migration
 
 Recommended first target: `TurnSummary` or `NationalOverview`.

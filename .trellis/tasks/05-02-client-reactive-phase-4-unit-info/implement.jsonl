@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Frontend directory and final Store/ViewModel/Binder placement rules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Prefab-facing facade and explicit binder conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Reactive Store/ViewModel state ownership and singleton boundary rules."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, generated-file restrictions, and testing bar."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Phase4 spans Store, ViewModel, Binder, and Unity facade boundaries."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Existing UnitInfo helper reuse before introducing new binder code."}

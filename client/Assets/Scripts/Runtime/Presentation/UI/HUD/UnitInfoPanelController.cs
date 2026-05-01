@@ -5,9 +5,11 @@ using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.ViewModels;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -96,8 +98,18 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitInfoPanelSlideAnimator _slideAnimator;
         private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
         private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
+        private UnitInfoViewModel _unitInfoViewModel;
+        private UnitInfoReactiveBridge _reactiveBridge;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _slideAnimator != null && _slideAnimator.IsOpen;
+
+        [Inject]
+        private void Construct(UnitInfoViewModel unitInfoViewModel)
+        {
+            _unitInfoViewModel = unitInfoViewModel;
+            EnsureReactiveBridgeInstance();
+            _reactiveBridge.SetViewModel(unitInfoViewModel);
+        }
 
         private void Awake()
         {
@@ -129,6 +141,7 @@ namespace Panoptes.Presentation.UI.HUD
             _directOrderPanelBinder.BindListeners(
                 GetDirectOrderButtons(),
                 UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
+            EnsureReactiveBinder();
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
             SetPortraitVisible(false);
@@ -148,6 +161,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
             TrySubscribeUnitSelection();
             TrySubscribeActionRegistry();
+            EnsureReactiveBinder();
 
             var cache = GameStateCache.Instance;
             if (cache != null)
@@ -184,12 +198,15 @@ namespace Panoptes.Presentation.UI.HUD
             UnsubscribeActionRegistry();
             _subscriptions.Clear();
             _planningDraftCache = null;
+            _reactiveBridge?.Unbind();
             _slideAnimator?.StopAnimations();
             DisablePortraitCamera();
         }
 
         private void OnDestroy()
         {
+            _reactiveBridge?.Dispose();
+            _reactiveBridge = null;
             ReleasePortraitResources();
         }
 
@@ -225,6 +242,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _currentUnit = unit;
+            _reactiveBridge?.SelectUnit(unit, ActionLock.IsLocked);
             RefreshSelectionUi();
             AnimateVisibility(true);
         }
@@ -232,6 +250,7 @@ namespace Panoptes.Presentation.UI.HUD
         public void Close()
         {
             _currentUnit = null;
+            _reactiveBridge?.Clear();
             DisablePortraitCamera();
             SetPortraitVisible(false);
             AnimateVisibility(false);
@@ -240,6 +259,7 @@ namespace Panoptes.Presentation.UI.HUD
         public void ForceHideImmediate()
         {
             _currentUnit = null;
+            _reactiveBridge?.Clear();
 
             ResolveReferences();
             ResolveAnchoredPositions();
@@ -332,6 +352,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            _reactiveBridge?.SelectUnit(_currentUnit, ActionLock.IsLocked);
             RefreshPlanningUi();
         }
 
@@ -360,19 +381,23 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             EnsureUnitDescriptionUi();
-            ResolveUnitDisplayTexts(_currentUnit, out var displayName, out var description);
-            if (unitNameText != null)
+            if (!TryRenderReactiveState())
             {
-                unitNameText.text = displayName;
+                ResolveUnitDisplayTexts(_currentUnit, out var displayName, out var description);
+                if (unitNameText != null)
+                {
+                    unitNameText.text = displayName;
+                }
+
+                if (unitDescriptionText != null)
+                {
+                    unitDescriptionText.text = description;
+                    unitDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(description));
+                }
+
+                RefreshUnitHpFromCache();
             }
 
-            if (unitDescriptionText != null)
-            {
-                unitDescriptionText.text = description;
-                unitDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(description));
-            }
-
-            RefreshUnitHpFromCache();
             if (TryRefreshUnitPortrait(forceRender: true))
             {
                 SetPortraitVisible(true);
@@ -552,6 +577,11 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RefreshPlanningUi()
         {
+            if (TryRenderReactiveState())
+            {
+                return;
+            }
+
             var interactive = IsInteractivePlanning();
             var controllable = IsCurrentUnitControllable();
             var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
@@ -760,6 +790,7 @@ namespace Panoptes.Presentation.UI.HUD
             _directOrderPanelBinder.BindListeners(
                 GetDirectOrderButtons(),
                 UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
+            EnsureReactiveBinder();
         }
 
         private void EnsureRequiredActionButtonSlots()
@@ -821,6 +852,34 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitInfoDirectOrderButtons GetDirectOrderButtons()
         {
             return new UnitInfoDirectOrderButtons(moveButton, attackButton, holdButton, chargeButton);
+        }
+
+        private void EnsureReactiveBinder()
+        {
+            EnsureReactiveBridgeInstance();
+            _reactiveBridge.Bind(
+                unitNameText,
+                unitDescriptionText,
+                planningSummaryText,
+                hpSlider,
+                hpValueText,
+                directOrderButtonsRoot,
+                GetDirectOrderButtons());
+        }
+
+        private bool TryRenderReactiveState()
+        {
+            EnsureReactiveBinder();
+            return _reactiveBridge.TryRender(_currentUnit, ActionLock.IsLocked);
+        }
+
+        private void EnsureReactiveBridgeInstance()
+        {
+            _reactiveBridge ??= new UnitInfoReactiveBridge(_directOrderPanelBinder);
+            if (_unitInfoViewModel != null)
+            {
+                _reactiveBridge.SetViewModel(_unitInfoViewModel);
+            }
         }
 
         private UnitInfoPortraitCameraLifecycle.Settings BuildPortraitSettings()

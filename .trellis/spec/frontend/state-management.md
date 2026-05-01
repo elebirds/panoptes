@@ -59,6 +59,19 @@ Store state DTOs must be independent Core read models, not generated Protocol
 messages and not nested legacy cache JSON classes. Write/update methods stay
 `internal` so UI and Binders consume only `Snapshot` and `State`.
 
+Phase 4 establishes the first migrated uGUI slice:
+
+- `UnitInfoViewModel` composes `GameStateStore`, `SelectionStore`,
+  `StaticCatalogStore`, and `PlanningDraftStore` into `UnitInfoState`.
+- `UnitInfoUguiBinder` renders `UnitInfoState` into TMP, Slider, and Button
+  controls.
+- `UnitInfoPanelController` stays as the prefab-facing facade for existing
+  scene selection, slide animation, portrait camera, and legacy action
+  registrars. Do not move serialized fields out of that facade unless the
+  affected prefab/scene assets are updated and verified.
+- The migrated ViewModel/Binder files must not reference generated Protocol,
+  legacy cache singletons, or `NetworkManager.Instance`.
+
 ---
 
 ## When to Use Global State

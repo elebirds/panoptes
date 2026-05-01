@@ -3,6 +3,8 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.ViewModels;
 using VContainer;
 using VContainer.Unity;
 
@@ -45,6 +47,9 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningDraftStore>(Lifetime.Singleton).AsSelf();
             builder.Register<SelectionStore>(Lifetime.Singleton).AsSelf();
             builder.Register<TurnStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<SelectionService>(Lifetime.Singleton).AsSelf();
+            builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
+            builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
         }
     }
 }
