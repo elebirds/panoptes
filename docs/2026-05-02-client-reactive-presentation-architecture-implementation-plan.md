@@ -418,8 +418,20 @@ Status (2026-05-02):
   `MapTerritoryHighlightPresenter`, moving pending deploy city-core ghost
   bookkeeping/rendering and territory highlight restore/clear behavior out of
   the scene input controller.
+- Completed Phase 7 adapter split by extracting `MapBuildPlacementSession`,
+  `MapMoveCommandSession`, `MapPlanningCacheEventBridge`, and
+  `MapUnitDamagePopupPresenter`. `MapPlanningInputController` now keeps the
+  scene-facing Unity entry point, serialized map input settings, current
+  `UnitView` adapter reference, and narrow delegation methods; build mode,
+  move preview/pending state, cache subscription state, and damage popup
+  bookkeeping no longer live as scattered MonoBehaviour fields.
 - Existing map commands continue through `PlanningIntentService`; generated
   protocol files remain untouched.
+
+Completion status (2026-05-02): Phase 7 complete. The remaining scene component
+name is intentionally retained for prefab compatibility; functionally it is the
+current `MapInputBinder` / adapter until prefab assets are renamed in a
+separate verified asset migration.
 
 ## Phase 8: Management UI Migration
 

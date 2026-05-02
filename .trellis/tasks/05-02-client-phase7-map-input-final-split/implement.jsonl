@@ -1,0 +1,15 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Helper placement and final client architecture target."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Prefab-facing facade plus focused helper extraction pattern."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep planning/read-model state outside scattered MonoBehaviour fields."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, Unity compile, and helper test expectations."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Avoid duplicating existing map helper patterns."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Preserve UI -> service -> server command boundaries."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapBuildPlacementSession.cs", "reason": "Own build mode state, preview requests, ghost rendering, and pending build rollback bookkeeping."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapMoveCommandSession.cs", "reason": "Own move preview hover/throttle state and pending move path bookkeeping."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningCacheEventBridge.cs", "reason": "Own GameStateCache and PlanningDraftCache event subscription state."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapUnitDamagePopupPresenter.cs", "reason": "Own fallback unit damage HP tracking and popup cooldown bookkeeping."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs", "reason": "Reduce the scene component to the current map input adapter/facade with delegated stateful responsibilities."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapBuildPlacementSessionTests.cs", "reason": "Cover pending build helper behavior and missing city rejection."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapMoveCommandSessionTests.cs", "reason": "Cover pending move helper behavior and remembered path bookkeeping."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapUnitDamagePopupPresenterTests.cs", "reason": "Cover damage popup HP tracking bookkeeping."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Persist Phase 7 completion status and final adapter boundary."}
