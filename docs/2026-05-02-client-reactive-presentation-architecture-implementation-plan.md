@@ -409,6 +409,11 @@ Status (2026-05-02):
 - Extracted `MapNodeInfoProxyFactory` and `MapBuildingCatalogResolver`, moving
   node info proxy construction and building catalog alias resolution out of the
   scene input controller.
+- Extracted move/combat presentation helpers: `MapMovePreviewPresentationController`,
+  `MapMovePreviewRenderPlanner`, `MapAttackRangePresenter`, and
+  `MapCombatTargetingResolver`, so move overlays, move ghost presentation,
+  attack range projection, and combat target predicates no longer live inline
+  in the scene input controller.
 - Existing map commands continue through `PlanningIntentService`; generated
   protocol files remain untouched.
 
