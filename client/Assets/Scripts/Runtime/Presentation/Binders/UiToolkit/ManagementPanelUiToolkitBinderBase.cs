@@ -1,0 +1,156 @@
+using System;
+using Panoptes.Presentation.ViewModels;
+using R3;
+using UnityEngine;
+using UnityEngine.UIElements;
+using VContainer;
+
+namespace Panoptes.Presentation.Binders.UiToolkit
+{
+    [RequireComponent(typeof(UIDocument))]
+    public abstract class ManagementPanelUiToolkitBinderBase<TViewModel> : MonoBehaviour, IBinder<TViewModel>
+        where TViewModel : class, IViewModel<ManagementPanelState>
+    {
+        [SerializeField] private VisualTreeAsset visualTreeAsset;
+        [SerializeField] private StyleSheet styleSheet;
+
+        private readonly ManagementPanelUiToolkitRenderer _renderer = new();
+        private IDisposable _subscription;
+        private UIDocument _uiDocument;
+        private TViewModel _viewModel;
+
+        public event Action<string> RowActionRequested;
+
+        protected abstract string DefaultTitle { get; }
+
+        [Inject]
+        private void Construct(TViewModel viewModel)
+        {
+            Bind(viewModel);
+        }
+
+        private void Awake()
+        {
+            EnsureDocument();
+            EnsureVisualTree();
+            CacheElements();
+        }
+
+        private void OnEnable()
+        {
+            EnsureDocument();
+            EnsureVisualTree();
+            CacheElements();
+            if (_viewModel != null)
+            {
+                Bind(_viewModel);
+            }
+        }
+
+        private void OnDisable()
+        {
+            StopSubscription();
+        }
+
+        private void OnDestroy()
+        {
+            Unbind();
+        }
+
+        public void Bind(TViewModel viewModel)
+        {
+            if (ReferenceEquals(_viewModel, viewModel))
+            {
+                EnsureSubscription();
+                Render(viewModel?.Current);
+                return;
+            }
+
+            Unbind();
+            _viewModel = viewModel;
+            if (_viewModel == null)
+            {
+                Render(null);
+                return;
+            }
+
+            EnsureSubscription();
+            Render(_viewModel.Current);
+        }
+
+        public void Unbind()
+        {
+            StopSubscription();
+            _viewModel = null;
+        }
+
+        public void Render(ManagementPanelState state)
+        {
+            EnsureDocument();
+            EnsureVisualTree();
+            CacheElements();
+            _renderer.Render(state, id => RowActionRequested?.Invoke(id));
+        }
+
+        private void EnsureDocument()
+        {
+            if (_uiDocument == null)
+            {
+                _uiDocument = GetComponent<UIDocument>();
+            }
+
+            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            {
+                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+            }
+        }
+
+        private void EnsureVisualTree()
+        {
+            if (_uiDocument == null)
+            {
+                return;
+            }
+
+            var root = _uiDocument.rootVisualElement;
+            if (root == null || root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName) != null)
+            {
+                return;
+            }
+
+            root.Clear();
+            if (visualTreeAsset != null)
+            {
+                visualTreeAsset.CloneTree(root);
+            }
+            else
+            {
+                root.Add(ManagementPanelUiToolkitRenderer.BuildFallbackTree(DefaultTitle));
+            }
+
+            if (styleSheet != null && !root.styleSheets.Contains(styleSheet))
+            {
+                root.styleSheets.Add(styleSheet);
+            }
+        }
+
+        private void CacheElements()
+        {
+            _renderer.Cache(_uiDocument != null ? _uiDocument.rootVisualElement : null);
+        }
+
+        private void StopSubscription()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+        }
+
+        private void EnsureSubscription()
+        {
+            if (_viewModel != null && _subscription == null)
+            {
+                _subscription = _viewModel.State.Subscribe(this, static (state, self) => self.Render(state));
+            }
+        }
+    }
+}

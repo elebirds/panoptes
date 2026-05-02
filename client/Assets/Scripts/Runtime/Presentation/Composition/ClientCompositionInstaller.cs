@@ -63,14 +63,39 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<TechTreeViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<RecipeSynthesisViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<MinisterReportViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<PolicyFocusViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<NationalLedgerViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Turn Summary UI Toolkit");
             builder.RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Build Catalog UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Tech Tree UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<RecipeSynthesisUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Recipe Synthesis UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Minister Report UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Policy Focus UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>(
+                Lifetime.Singleton,
+                "National Ledger UI Toolkit");
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }
     }
 }
