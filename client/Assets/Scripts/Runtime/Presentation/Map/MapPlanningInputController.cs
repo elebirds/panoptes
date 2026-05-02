@@ -26,7 +26,7 @@ using VContainer;
 
 namespace Panoptes.Presentation.Map
 {
-    public sealed class MapPlanningInputController : MonoBehaviour
+    public sealed class MapPlanningInputController : MonoBehaviour, IMapPlanningInputCoordinatorContext, IMapBuildPlacementCoordinatorContext
     {
         public enum BuildPlacementRule
         {
@@ -138,7 +138,11 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
         private readonly MapPointerInput _pointerInput = new();
+        private readonly MapPlanningInputCoordinator _inputCoordinator = new();
+        private readonly MapBuildPlacementCoordinator _buildPlacementCoordinator = new();
         private readonly MapPlanningInputStateAdapter _inputState = new();
+        private readonly MapNodeInfoProxyFactory _nodeInfoProxyFactory = new();
+        private readonly MapBuildingCatalogResolver _buildingCatalogResolver = new();
         private PlanningIntentService _planningIntentService;
         private IMapSelectionSurface _selectionSurface;
 
@@ -160,8 +164,6 @@ namespace Panoptes.Presentation.Map
         private string _hoverPreviewNodeId = string.Empty;
         private string _hoverBuildPreviewNodeId = string.Empty;
         private UnitInfoPanelController _unitInfoPanelController;
-        private UnitView _buildingInfoProxy;
-        private StaticCatalogCache _staticCatalogCache;
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuildState.Records;
         public UnitView SelectedUnit => _selectedUnit;
@@ -226,11 +228,7 @@ namespace Panoptes.Presentation.Map
             _inputState.ClearToolAndSelection();
             _knownUnitHpByUnitId.Clear();
             _lastDamagePopupTimeByUnitId.Clear();
-            if (_buildingInfoProxy != null)
-            {
-                Destroy(_buildingInfoProxy.gameObject);
-                _buildingInfoProxy = null;
-            }
+            _nodeInfoProxyFactory.DestroyProxy();
         }
 
         private void Update()
@@ -255,80 +253,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_inputState.IsBuildModeActive())
-            {
-                UpdateBuildMode();
-                return;
-            }
-
-            UpdateCombatMode();
-
-            if (GetLeftMouseButtonDown())
-            {
-                if (IsPointerOverUI())
-                {
-                    return;
-                }
-
-                // In attack targeting mode, consume click as combat command first.
-                // This prevents building/resource info panels from hijacking the click.
-                if (_inputState.CombatActionMode == CombatActionMode.Attack)
-                {
-                    ClearTerritoryHighlights();
-                    NonBuildingMapClicked?.Invoke();
-
-                    if (TryGetClickedNodeContext(out var attackNode, out _) &&
-                        attackNode != null &&
-                        !string.IsNullOrWhiteSpace(attackNode.NodeId) &&
-                        IsEnemyStructureNode(attackNode.NodeId))
-                    {
-                        if (TryIssueStructureTargetOrder(attackNode.NodeId))
-                        {
-                            _inputState.SetCombatActionMode(CombatActionMode.None);
-                            NotifyCombatSelectionChanged();
-                        }
-                        return;
-                    }
-
-                    HandleCombatSelectionClick();
-                    return;
-                }
-
-                if (_inputState.CombatActionMode == CombatActionMode.Move)
-                {
-                    ClearTerritoryHighlights();
-                    NonBuildingMapClicked?.Invoke();
-                    HandleMoveSelectionClick();
-                    return;
-                }
-
-                if (ShouldPrioritizeStructureAttackClick())
-                {
-                    ClearTerritoryHighlights();
-                    NonBuildingMapClicked?.Invoke();
-                    HandleCombatSelectionClick();
-                    return;
-                }
-
-                if (TrySelectOwnedUnitFromNodeClick())
-                {
-                    return;
-                }
-
-                if (TryOpenBuildingInfoFromClick())
-                {
-                    return;
-                }
-
-                ClearTerritoryHighlights();
-                NonBuildingMapClicked?.Invoke();
-                HandleCombatSelectionClick();
-            }
-
-            if (GetRightMouseButtonDown())
-            {
-                HandleCombatCancel();
-            }
+            _inputCoordinator.Tick(this, GetLeftMouseButtonDown(), GetRightMouseButtonDown());
         }
 
         #region Commands
@@ -589,100 +514,9 @@ namespace Panoptes.Presentation.Map
             ClearBuildPreviewState();
         }
 
-        private void UpdateBuildMode()
+        private void UpdateBuildMode(bool leftMouseDown, bool rightMouseDown)
         {
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return;
-            }
-
-            if (GetRightMouseButtonDown())
-            {
-                ExitBuildMode();
-                return;
-            }
-
-            if (IsPointerOverUI())
-            {
-                RestoreNodeHighlightAfterHover(_hoverNode);
-                _hoverNode = null;
-                DestroyHoverGhost();
-                ClearBuildPreviewState();
-                return;
-            }
-
-            var hasNode = TryRaycastNode(out var node);
-            if (!hasNode)
-            {
-                RestoreNodeHighlightAfterHover(_hoverNode);
-                _hoverNode = null;
-                DestroyHoverGhost();
-                ClearBuildPreviewState();
-
-                if (GetLeftMouseButtonDown() && !IsPointerOverUI() && logInvalidBuildClick)
-                {
-                    Debug.LogWarning("[MapPlanningInputController] Invalid build target: cursor is outside map tile.");
-                }
-                return;
-            }
-
-            if (_hoverNode != node)
-            {
-                RestoreNodeHighlightAfterHover(_hoverNode);
-
-                _hoverNode = node;
-                RecreateHoverGhost(node);
-                RequestBuildPreview(node.NodeId);
-            }
-            else if (!TryGetCurrentBuildPreview(node.NodeId, out _) &&
-                     Time.unscaledTime >= _nextBuildPreviewRequestAt)
-            {
-                RequestBuildPreview(node.NodeId);
-            }
-
-            var highlightColor = ResolveBuildPreviewColor(node.NodeId);
-
-            if (_hoverNode != null)
-            {
-                _hoverNode.SetHighlight(true, highlightColor);
-            }
-
-            _buildPlacementGhostPresenter.Render(highlightColor);
-
-            if (GetLeftMouseButtonDown())
-            {
-                if (IsPointerOverUI())
-                {
-                    return;
-                }
-
-                var backendBuildingType = ResolveBackendBuildingType(_buildType);
-                if (TryGetCurrentBuildPreview(node.NodeId, out var preview) &&
-                    preview != null &&
-                    !preview.Valid)
-                {
-                    ShowUserError(BuildPreviewPresenter.ResolveMessage(preview));
-                }
-                if (!SendBuildCommand(backendBuildingType, node.NodeId))
-                {
-                    return;
-                }
-
-                var ownerId = GetLocalOwnerId();
-                if (ShouldRenderPendingBuildGhost(node.NodeId))
-                {
-                    map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
-                }
-                _pendingBuildState.Add(new PendingBuildRecord
-                {
-                    buildingType = backendBuildingType,
-                    nodeId = node.NodeId,
-                    ownerId = ownerId,
-                    isGhost = true
-                });
-                ExitBuildMode();
-            }
+            _buildPlacementCoordinator.Tick(this, leftMouseDown, rightMouseDown);
         }
 
         private Color ResolveBuildPreviewColor(string nodeId)
@@ -850,6 +684,121 @@ namespace Panoptes.Presentation.Map
             _nextBuildPreviewRequestAt = 0f;
             _inputState.ClearBuildPreviewTarget();
             (_draftCache ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
+        }
+
+        bool IMapBuildPlacementCoordinatorContext.HasMapRenderer => MapRenderer.Instance != null;
+
+        bool IMapBuildPlacementCoordinatorContext.ShouldLogInvalidBuildClick => logInvalidBuildClick;
+
+        bool IMapBuildPlacementCoordinatorContext.IsPointerOverUI()
+        {
+            return IsPointerOverUI();
+        }
+
+        bool IMapBuildPlacementCoordinatorContext.TryRaycastBuildNode(out NodeView node)
+        {
+            return TryRaycastNode(out node);
+        }
+
+        bool IMapBuildPlacementCoordinatorContext.IsCurrentHoverNode(NodeView node)
+        {
+            return _hoverNode == node;
+        }
+
+        bool IMapBuildPlacementCoordinatorContext.ShouldRequestBuildPreview(string nodeId)
+        {
+            return !TryGetCurrentBuildPreview(nodeId, out _) &&
+                   Time.unscaledTime >= _nextBuildPreviewRequestAt;
+        }
+
+        Color IMapBuildPlacementCoordinatorContext.ResolveBuildPreviewColor(string nodeId)
+        {
+            return ResolveBuildPreviewColor(nodeId);
+        }
+
+        void IMapBuildPlacementCoordinatorContext.ExitBuildMode()
+        {
+            ExitBuildMode();
+        }
+
+        void IMapBuildPlacementCoordinatorContext.ClearBuildHoverState()
+        {
+            RestoreNodeHighlightAfterHover(_hoverNode);
+            _hoverNode = null;
+            DestroyHoverGhost();
+            ClearBuildPreviewState();
+        }
+
+        void IMapBuildPlacementCoordinatorContext.MoveBuildHoverTo(NodeView node)
+        {
+            RestoreNodeHighlightAfterHover(_hoverNode);
+            _hoverNode = node;
+            RecreateHoverGhost(node);
+        }
+
+        void IMapBuildPlacementCoordinatorContext.RenderBuildHover(NodeView node, Color highlightColor)
+        {
+            if (node != null)
+            {
+                node.SetHighlight(true, highlightColor);
+            }
+        }
+
+        void IMapBuildPlacementCoordinatorContext.RenderBuildGhost(Color highlightColor)
+        {
+            _buildPlacementGhostPresenter.Render(highlightColor);
+        }
+
+        void IMapBuildPlacementCoordinatorContext.RequestBuildPreview(string nodeId)
+        {
+            RequestBuildPreview(nodeId);
+        }
+
+        void IMapBuildPlacementCoordinatorContext.LogInvalidBuildTarget()
+        {
+            Debug.LogWarning("[MapPlanningInputController] Invalid build target: cursor is outside map tile.");
+        }
+
+        void IMapBuildPlacementCoordinatorContext.TryCommitBuildPlacement(NodeView node)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(node.NodeId))
+            {
+                return;
+            }
+
+            var map = MapRenderer.Instance;
+            if (map == null)
+            {
+                return;
+            }
+
+            var backendBuildingType = ResolveBackendBuildingType(_buildType);
+            if (TryGetCurrentBuildPreview(node.NodeId, out var preview) &&
+                preview != null &&
+                !preview.Valid)
+            {
+                ShowUserError(BuildPreviewPresenter.ResolveMessage(preview));
+            }
+
+            if (!SendBuildCommand(backendBuildingType, node.NodeId))
+            {
+                return;
+            }
+
+            var ownerId = GetLocalOwnerId();
+            if (ShouldRenderPendingBuildGhost(node.NodeId))
+            {
+                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
+            }
+
+            _pendingBuildState.Add(new PendingBuildRecord
+            {
+                buildingType = backendBuildingType,
+                nodeId = node.NodeId,
+                ownerId = ownerId,
+                isGhost = true
+            });
+            ExitBuildMode();
         }
         #endregion
 
@@ -1107,6 +1056,77 @@ namespace Panoptes.Presentation.Map
         private void NotifyCombatSelectionChanged()
         {
             CombatSelectionChanged?.Invoke();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.IsBuildModeActive => _inputState.IsBuildModeActive();
+
+        CombatActionMode IMapPlanningInputCoordinatorContext.CombatActionMode => _inputState.CombatActionMode;
+
+        void IMapPlanningInputCoordinatorContext.UpdateBuildMode(bool leftMouseDown, bool rightMouseDown)
+        {
+            UpdateBuildMode(leftMouseDown, rightMouseDown);
+        }
+
+        void IMapPlanningInputCoordinatorContext.UpdateCombatMode()
+        {
+            UpdateCombatMode();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.IsPointerOverUI()
+        {
+            return IsPointerOverUI();
+        }
+
+        void IMapPlanningInputCoordinatorContext.PrepareMapCommandClick()
+        {
+            ClearTerritoryHighlights();
+            NonBuildingMapClicked?.Invoke();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.TryIssueAttackStructureFromCurrentClick()
+        {
+            if (TryGetClickedNodeContext(out var attackNode, out _) &&
+                attackNode != null &&
+                !string.IsNullOrWhiteSpace(attackNode.NodeId) &&
+                IsEnemyStructureNode(attackNode.NodeId) &&
+                TryIssueStructureTargetOrder(attackNode.NodeId))
+            {
+                _inputState.SetCombatActionMode(CombatActionMode.None);
+                NotifyCombatSelectionChanged();
+                return true;
+            }
+
+            return false;
+        }
+
+        void IMapPlanningInputCoordinatorContext.HandleCombatSelectionClick()
+        {
+            HandleCombatSelectionClick();
+        }
+
+        void IMapPlanningInputCoordinatorContext.HandleMoveSelectionClick()
+        {
+            HandleMoveSelectionClick();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.ShouldPrioritizeStructureAttackClick()
+        {
+            return ShouldPrioritizeStructureAttackClick();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.TrySelectOwnedUnitFromNodeClick()
+        {
+            return TrySelectOwnedUnitFromNodeClick();
+        }
+
+        bool IMapPlanningInputCoordinatorContext.TryOpenBuildingInfoFromClick()
+        {
+            return TryOpenBuildingInfoFromClick();
+        }
+
+        void IMapPlanningInputCoordinatorContext.HandleCombatCancel()
+        {
+            HandleCombatCancel();
         }
         #endregion
 
@@ -1709,7 +1729,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            if (!TryGetInspectableNodeInfo(nodeState, out var buildingType, out var isResourcePoint))
+            if (!MapNodeInfoProxyFactory.TryGetInspectableNodeInfo(nodeState, out var buildingType, out var isResourcePoint))
             {
                 return false;
             }
@@ -1723,7 +1743,7 @@ namespace Panoptes.Presentation.Map
                 ClearTerritoryHighlights();
             }
 
-            var proxy = GetOrCreateNodeInfoProxy(node, nodeState, buildingType, isResourcePoint);
+            var proxy = _nodeInfoProxyFactory.GetOrCreate(node, nodeState, buildingType, isResourcePoint);
             if (proxy == null)
             {
                 return false;
@@ -1780,7 +1800,7 @@ namespace Panoptes.Presentation.Map
             }
 
             if (ReferenceEquals(_selectedUnit, selectedOwnedUnit)
-                && TryGetInspectableNodeInfo(nodeState, out _, out _))
+                && MapNodeInfoProxyFactory.TryGetInspectableNodeInfo(nodeState, out _, out _))
             {
                 return false;
             }
@@ -1793,110 +1813,6 @@ namespace Panoptes.Presentation.Map
         {
             EnsureSelectionSurface();
             return _selectionSurface.TryGetClickedNodeContext(out nodeView, out nodeState);
-        }
-
-        private static bool TryGetInspectableNodeInfo(NodeDto nodeState, out string buildingType, out bool isResourcePoint)
-        {
-            buildingType = string.Empty;
-            isResourcePoint = false;
-            if (nodeState == null)
-            {
-                return false;
-            }
-
-            buildingType = NormalizeToken(nodeState.BuildingType);
-            isResourcePoint = nodeState.IsResourcePoint;
-            return !string.IsNullOrEmpty(buildingType) || isResourcePoint;
-        }
-
-        private UnitView GetOrCreateNodeInfoProxy(NodeView nodeView, NodeDto nodeState, string normalizedBuildingType, bool isResourcePoint)
-        {
-            if (nodeView == null || nodeState == null)
-            {
-                return null;
-            }
-
-            if (_buildingInfoProxy == null)
-            {
-                var proxyGo = new GameObject("BuildingInfoProxy");
-                _buildingInfoProxy = proxyGo.AddComponent<UnitView>();
-                proxyGo.hideFlags = HideFlags.DontSave;
-            }
-
-            var infoType = normalizedBuildingType;
-            if (string.IsNullOrEmpty(infoType) && isResourcePoint)
-            {
-                var resourceType = NormalizeToken(nodeState.ResourceType);
-                infoType = string.IsNullOrEmpty(resourceType) ? "resource_point" : $"resource_{resourceType}";
-            }
-
-            if (string.IsNullOrEmpty(infoType))
-            {
-                return null;
-            }
-
-            var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : (isResourcePoint ? 1 : 100);
-            var maxHp = ResolveNodeInfoMaxHp(nodeView, nodeState, infoType, hp, isResourcePoint);
-            var unit = new UnitDto
-            {
-                Id = nodeState.Id ?? string.Empty,
-                Type = infoType,
-                Owner = !string.IsNullOrWhiteSpace(nodeState.Owner) ? nodeState.Owner : nodeState.TerritoryOwner,
-                Q = nodeState.Q,
-                R = nodeState.R,
-                Hp = hp,
-                MaxHp = maxHp
-            };
-
-            var worldPos = nodeView.BuildingAnchor != null
-                ? nodeView.BuildingAnchor.position
-                : nodeView.transform.position;
-
-            _buildingInfoProxy.gameObject.SetActive(true);
-            _buildingInfoProxy.Bind(unit, worldPos);
-            _buildingInfoProxy.SetSelected(false);
-            var collider = _buildingInfoProxy.GetComponent<Collider>();
-            if (collider != null)
-            {
-                collider.enabled = false;
-            }
-            _buildingInfoProxy.gameObject.SetActive(false);
-            return _buildingInfoProxy;
-        }
-
-        private static int ResolveNodeInfoMaxHp(NodeView nodeView, NodeDto nodeState, string infoType, int hp, bool isResourcePoint)
-        {
-            if (isResourcePoint)
-            {
-                return Mathf.Max(1, hp);
-            }
-
-            var maxHp = nodeState != null ? nodeState.BuildingMaxHp : 0;
-            if (maxHp <= 0 && nodeView != null && nodeView.BuildingInstance != null)
-            {
-                maxHp = nodeView.BuildingInstance.MaxHitPoints;
-            }
-
-            if (maxHp <= 0)
-            {
-                var catalog = StaticCatalogCache.EnsureInstance();
-                var normalizedType = NormalizeToken(infoType);
-                if (catalog != null)
-                {
-                    if (string.Equals(normalizedType, "city_core", StringComparison.OrdinalIgnoreCase) &&
-                        catalog.Rules != null &&
-                        catalog.Rules.city_core_max_hp > 0)
-                    {
-                        maxHp = catalog.Rules.city_core_max_hp;
-                    }
-                    else if (catalog.TryGetBuilding(normalizedType, out var buildingEntry) && buildingEntry != null)
-                    {
-                        maxHp = buildingEntry.max_hp;
-                    }
-                }
-            }
-
-            return Mathf.Max(1, Mathf.Max(maxHp, hp));
         }
 
         private void CloseCurrentInfoSelection()
@@ -2720,115 +2636,20 @@ namespace Panoptes.Presentation.Map
 
         private string ResolveBackendBuildingType(string buildingType)
         {
-            var normalized = NormalizeToken(buildingType);
-            if (string.IsNullOrEmpty(normalized))
-            {
-                return string.Empty;
-            }
-
-            if (TryGetBuildingConfig(normalized, out var entry, out var resolvedId) && entry != null)
-            {
-                return NormalizeToken(string.IsNullOrWhiteSpace(entry.id) ? resolvedId : entry.id);
-            }
-
-            return normalized;
+            return _buildingCatalogResolver.ResolveBackendBuildingType(buildingType);
         }
 
         private bool TryGetServerPlacementRule(string buildingType, out string placementRule, out string requiredResourceType)
         {
-            placementRule = string.Empty;
-            requiredResourceType = string.Empty;
-
-            if (!TryGetBuildingConfig(buildingType, out var entry, out _ ) || entry == null)
-            {
-                return false;
-            }
-
-            placementRule = NormalizeToken(entry.placement_kind);
-            requiredResourceType = NormalizeToken(entry.required_resource_type);
-            return !string.IsNullOrEmpty(placementRule);
+            return _buildingCatalogResolver.TryGetServerPlacementRule(
+                buildingType,
+                out placementRule,
+                out requiredResourceType);
         }
 
         private bool TryGetBuildingConfig(string buildingType, out StaticCatalogCache.BuildingEntryJson entry, out string resolvedId)
         {
-            entry = null;
-            resolvedId = string.Empty;
-
-            var key = NormalizeToken(buildingType);
-            if (string.IsNullOrEmpty(key))
-            {
-                return false;
-            }
-
-            var cache = ResolveStaticCatalogCache();
-            if (cache == null)
-            {
-                return false;
-            }
-
-            if (cache.TryGetBuilding(key, out entry) && entry != null)
-            {
-                resolvedId = key;
-                return true;
-            }
-
-            var aliases = GetBuildingAliasKeys(key);
-            for (var i = 0; i < aliases.Length; i++)
-            {
-                var alias = aliases[i];
-                if (string.IsNullOrWhiteSpace(alias))
-                {
-                    continue;
-                }
-
-                if (cache.TryGetBuilding(alias, out entry) && entry != null)
-                {
-                    resolvedId = alias;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private StaticCatalogCache ResolveStaticCatalogCache()
-        {
-            if (_staticCatalogCache != null)
-            {
-                return _staticCatalogCache;
-            }
-
-            _staticCatalogCache = StaticCatalogCache.Instance;
-            if (_staticCatalogCache == null)
-            {
-                _staticCatalogCache = StaticCatalogCache.EnsureInstance();
-            }
-
-            return _staticCatalogCache;
-        }
-
-        private static string[] GetBuildingAliasKeys(string key)
-        {
-            switch (NormalizeToken(key))
-            {
-                case "lumberyard":
-                    return new[] { "lumber" };
-                case "lumber":
-                    return new[] { "lumberyard" };
-                case "engineer":
-                    return new[] { "engineer_camp" };
-                case "engineer_camp":
-                    return new[] { "engineer" };
-                case "archery":
-                    return new[] { "barracks" };
-                case "barracks":
-                    return new[] { "archery" };
-                case "blacksmith":
-                case "backsmith":
-                    return new[] { "workshop" };
-                default:
-                    return Array.Empty<string>();
-            }
+            return _buildingCatalogResolver.TryGetBuildingConfig(buildingType, out entry, out resolvedId);
         }
 
         private static string NormalizeToken(string value)
