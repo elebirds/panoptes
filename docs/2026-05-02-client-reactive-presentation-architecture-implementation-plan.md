@@ -604,6 +604,36 @@ Next work: either migrate static catalog section/chunk sync into a direct Core
 hydrator, or rename/extract the remaining static catalog bridge once its
 legacy-only role is isolated from game Store bootstrapping.
 
+## Phase 13: Split Bootstrap Seeder And Static Legacy Bridge
+
+Goal: remove the mixed `StoreHydrationCacheBridge` concept after its runtime
+event mirroring role was narrowed.
+
+Current split flow:
+
+```text
+Game scene scope starts
+  -> StoreHydrationBootstrapSeeder.SeedFromDefaultCaches()
+  -> GameStateStore / PlanningDraftStore / TurnStore initial snapshots
+
+StaticCatalogCache.CatalogChanged
+  -> StaticCatalogLegacyHydrationBridge
+  -> StaticCatalogStore
+```
+
+Status (2026-05-02):
+
+- Replaced `StoreHydrationCacheBridge` with
+  `StoreHydrationBootstrapSeeder` for one-shot cache snapshot seeding.
+- Added `StaticCatalogLegacyHydrationBridge` as the only remaining cache event
+  bridge, scoped to static catalog bundle/section sync.
+- Updated `GameLifetimeScope` registration so composition resolves the two
+  explicit roles instead of a generic cache bridge.
+- Updated EditMode coverage around the split behavior.
+
+Next work: migrate static catalog bundle/section sync behind a direct Core
+hydrator, then remove `StaticCatalogLegacyHydrationBridge`.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:

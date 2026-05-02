@@ -60,12 +60,8 @@ namespace Panoptes.Presentation.Composition
             builder.Register<MinisterCommandService>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
-            builder.Register(container =>
-            {
-                var bridge = new StoreHydrationCacheBridge(container.Resolve<StoreHydrationHelper>());
-                bridge.AttachToDefaultCaches();
-                return bridge;
-            }, Lifetime.Singleton).AsSelf();
+            builder.Register<StoreHydrationBootstrapSeeder>(Lifetime.Singleton).AsSelf();
+            builder.Register<StaticCatalogLegacyHydrationBridge>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
@@ -100,7 +96,8 @@ namespace Panoptes.Presentation.Composition
                 Lifetime.Singleton,
                 "National Ledger UI Toolkit");
             builder.RegisterBuildCallback(container => container.Resolve<StoreMessageHydrator>().Attach());
-            builder.RegisterBuildCallback(container => container.Resolve<StoreHydrationCacheBridge>());
+            builder.RegisterBuildCallback(container => container.Resolve<StoreHydrationBootstrapSeeder>().SeedFromDefaultCaches());
+            builder.RegisterBuildCallback(container => container.Resolve<StaticCatalogLegacyHydrationBridge>().AttachToDefaultCache());
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
