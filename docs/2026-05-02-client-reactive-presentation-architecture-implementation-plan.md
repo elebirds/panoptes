@@ -403,6 +403,12 @@ Status (2026-05-02):
   `SelectionService` and tool/preview transitions through `PlanningToolService`.
 - Extracted `MapPlanningInputStateAdapter` so the scene controller no longer
   directly stores planning tool / selection / ViewModel service references.
+- Extracted `MapPlanningInputCoordinator` and `MapBuildPlacementCoordinator`
+  for build/combat click routing; `MapPlanningInputController` now delegates
+  routing order through narrow context interfaces.
+- Extracted `MapNodeInfoProxyFactory` and `MapBuildingCatalogResolver`, moving
+  node info proxy construction and building catalog alias resolution out of the
+  scene input controller.
 - Existing map commands continue through `PlanningIntentService`; generated
   protocol files remain untouched.
 

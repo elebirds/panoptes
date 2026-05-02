@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify input routing does not own authoritative game state."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated-file, protocol, and compile gates."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapPlanningInputCoordinatorTests.cs", "reason": "Covers top-level input routing order."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapBuildPlacementCoordinatorTests.cs", "reason": "Covers build placement coordinator routing gates."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapNodeInfoProxyFactoryTests.cs", "reason": "Covers node info inspection projection."}
