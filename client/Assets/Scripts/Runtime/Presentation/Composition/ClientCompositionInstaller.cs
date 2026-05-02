@@ -3,8 +3,8 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
-using Panoptes.Presentation.Map;
 using Panoptes.Presentation.Binders.UiToolkit;
+using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
@@ -62,10 +62,15 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Turn Summary UI Toolkit");
+            builder.RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>(
+                Lifetime.Singleton,
+                "Build Catalog UI Toolkit");
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
         }
     }
 }

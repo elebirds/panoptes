@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Phase 8 UI Toolkit files and ViewModel placement."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Explicit UI Toolkit binder and prefab compatibility requirements."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel/Binder flow for migrated management panels."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Presentation boundary, singleton, and Unity compile gates."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing TurnSummary UI Toolkit binder and build render grouping patterns."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Preserve catalog store -> ViewModel -> binder data flow."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/BuildCatalogState.cs", "reason": "Define UI-ready build catalog groups and items."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/BuildCatalogViewModel.cs", "reason": "Project StaticCatalogStore and PlanningDraftStore into build catalog state."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/BuildCatalogUiToolkitBinder.cs", "reason": "Render build catalog state with explicit UI Toolkit binder and command callbacks."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Register the BuildCatalog ViewModel/Binder in final game scope."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/BuildCatalogViewModelTests.cs", "reason": "Cover grouping and pending projection."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/BuildCatalogUiToolkitBinderTests.cs", "reason": "Cover named UI Toolkit fallback rendering."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Persist Phase 8 migration start status."}
