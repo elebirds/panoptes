@@ -66,6 +66,16 @@ render without reaching through legacy cache singletons.
 - Extended local session reset and Store snapshot cloning to include settlement
   state.
 
+## Batch 3 Result
+
+- Added `GameplayFeedbackStore` / `GameplayFeedbackState` for toast-style
+  runtime feedback.
+- Extended `StoreMessageHydrator` to publish Problem frames, token failures,
+  and planning command failures into the feedback Store.
+- Migrated `GameIntentService` ActionLock release to `TurnStore + GameOverStore`
+  subscriptions.
+- Removed the remaining `GameStateCache` dependency from `GameSceneController`.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.

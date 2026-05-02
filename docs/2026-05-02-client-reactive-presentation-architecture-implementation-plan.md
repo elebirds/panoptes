@@ -678,9 +678,21 @@ Batch 2 status (2026-05-02):
   `SettlementStore + GameStateStore`.
 - Added local session reset coverage for settlement state.
 
-Next work: add a direct gameplay feedback Store for problem/token feedback,
-then finish removing `GameStateCache` from `GameSceneController` before
-attacking map/planning input and old HUD resolvers in a larger pass.
+Batch 3 status (2026-05-02):
+
+- Added `GameplayFeedbackStore` / `GameplayFeedbackState` as the Core read
+  model for toast-style runtime feedback.
+- Extended `StoreMessageHydrator` to publish Problem frames, token failures,
+  and planning command failures into `GameplayFeedbackStore`.
+- Migrated `GameIntentService` ActionLock release from `GameStateCache`
+  callbacks to `TurnStore + GameOverStore` subscriptions.
+- Removed `GameStateCache` dependency from `GameSceneController`; it now reads
+  game status, settlement toasts, game-over visibility, and gameplay feedback
+  through Stores.
+
+Next work: move the remaining map/planning feedback listeners and HUD
+resolvers off legacy cache singletons, then reduce `MapPlanningCacheEventBridge`
+and direct `*.Instance` calls in map-facing Presentation.
 
 ## Completion Standard
 

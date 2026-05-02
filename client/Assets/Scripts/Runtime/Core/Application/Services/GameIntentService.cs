@@ -1,51 +1,37 @@
 using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
 using Panoptes.Protocol.V1;
-using UnityEngine;
+using R3;
 
 namespace Panoptes.Core.Application.Services
 {
     public sealed class GameIntentService : IDisposable
     {
         private readonly IClientMessageSender _sender;
-        private GameStateCache _cache;
+        private readonly IDisposable _turnSubscription;
+        private readonly IDisposable _gameOverSubscription;
 
-        public GameIntentService(IClientMessageSender sender)
+        public GameIntentService(
+            IClientMessageSender sender,
+            TurnStore turnStore = null,
+            GameOverStore gameOverStore = null)
         {
             _sender = sender ?? throw new ArgumentNullException(nameof(sender));
+
+            _turnSubscription = turnStore?.State.Subscribe(static state => ReleaseActionLockIfInteractive(state));
+            _gameOverSubscription = gameOverStore?.State.Subscribe(static state => ReleaseActionLockIfGameOver(state));
         }
 
         public event Action TurnSubmitRequested;
 
-        public void Initialize(GameStateCache cache)
-        {
-            if (cache == null || ReferenceEquals(_cache, cache))
-            {
-                return;
-            }
-
-            if (_cache != null)
-            {
-                Unsubscribe(_cache);
-            }
-
-            _cache = cache;
-            Subscribe(_cache);
-        }
-
         public void Dispose()
         {
-            if (_cache != null)
-            {
-                Unsubscribe(_cache);
-                _cache = null;
-            }
-
+            _turnSubscription?.Dispose();
+            _gameOverSubscription?.Dispose();
             ActionLock.Release();
         }
 
@@ -143,21 +129,9 @@ namespace Panoptes.Core.Application.Services
             return _sender.Send(message);
         }
 
-        private void Subscribe(GameStateCache cache)
+        private static void ReleaseActionLockIfInteractive(TurnState state)
         {
-            cache.OnPhaseChanged += OnPhaseChanged;
-            cache.OnGameOver += OnGameOver;
-        }
-
-        private void Unsubscribe(GameStateCache cache)
-        {
-            cache.OnPhaseChanged -= OnPhaseChanged;
-            cache.OnGameOver -= OnGameOver;
-        }
-
-        private static void OnPhaseChanged(PhaseChangedEvent evt)
-        {
-            if (!ActionLock.IsLocked || evt == null || !evt.IsInteractive)
+            if (!ActionLock.IsLocked || state == null || !state.IsInteractive)
             {
                 return;
             }
@@ -165,9 +139,9 @@ namespace Panoptes.Core.Application.Services
             ActionLock.Release();
         }
 
-        private static void OnGameOver(GameOverEvent _)
+        private static void ReleaseActionLockIfGameOver(GameOverState state)
         {
-            if (ActionLock.IsLocked)
+            if (ActionLock.IsLocked && state != null && state.IsGameOver)
             {
                 ActionLock.Release();
             }

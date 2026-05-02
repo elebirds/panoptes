@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
-using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
@@ -26,55 +24,48 @@ namespace Panoptes.Presentation.UI.Game
         [SerializeField] private bool hideFullscreenBackgroundOnGameScene = true;
         [SerializeField] private string fullscreenBackgroundObjectName = "Background";
 
-        private GameStateCache _cache;
         private GameStateStore _gameStateStore;
         private SettlementStore _settlementStore;
+        private GameOverStore _gameOverStore;
+        private GameplayFeedbackStore _feedbackStore;
         private IDisposable _gameStateSubscription;
         private IDisposable _settlementSubscription;
-        private GameIntentService _gameIntentService;
+        private IDisposable _gameOverSubscription;
+        private IDisposable _feedbackSubscription;
         private IObjectResolver _resolver;
 
         [Inject]
         private void Construct(
-            GameIntentService gameIntentService,
             GameStateStore gameStateStore,
             SettlementStore settlementStore,
+            GameOverStore gameOverStore,
+            GameplayFeedbackStore feedbackStore,
             IObjectResolver resolver)
         {
-            _gameIntentService = gameIntentService;
             _gameStateStore = gameStateStore;
             _settlementStore = settlementStore;
+            _gameOverStore = gameOverStore;
+            _feedbackStore = feedbackStore;
             _resolver = resolver;
             InjectDynamicPresentationHelpers();
-            if (isActiveAndEnabled)
-            {
-                InitializeGameIntentService();
-            }
         }
 
         private void Awake()
         {
-            _cache = GameStateCache.Instance;
             HideFullscreenBackgroundIfNeeded();
             EnsurePresentationHelpers();
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-
-            if (_cache != null)
-            {
-                InitializeGameIntentService();
-                _cache.OnGameError += OnGameError;
-                _cache.OnTokenResult += OnTokenResult;
-                _cache.OnGameOver += OnGameOver;
-            }
-
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
             _settlementSubscription?.Dispose();
             _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = _gameOverStore?.State.Subscribe(this, static (state, self) => self.OnGameOverChanged(state));
+            _feedbackSubscription?.Dispose();
+            _feedbackSubscription = _feedbackStore?.State.Subscribe(this, static (state, self) => self.OnFeedbackChanged(state));
         }
 
         private void Start()
@@ -84,18 +75,14 @@ namespace Panoptes.Presentation.UI.Game
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnGameError -= OnGameError;
-                _cache.OnTokenResult -= OnTokenResult;
-                _cache.OnGameOver -= OnGameOver;
-            }
-
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = null;
             _settlementSubscription?.Dispose();
             _settlementSubscription = null;
-            _gameIntentService?.Dispose();
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = null;
+            _feedbackSubscription?.Dispose();
+            _feedbackSubscription = null;
         }
 
         public void RefreshFromState(GameStateStoreState state)
@@ -126,32 +113,24 @@ namespace Panoptes.Presentation.UI.Game
             RefreshFromState(_gameStateStore?.Snapshot);
         }
 
-        private void OnGameError(GameErrorEvent evt)
+        private void OnFeedbackChanged(GameplayFeedbackState state)
         {
-            if (evt == null)
+            if (state == null || !state.HasFeedback)
             {
                 return;
             }
 
-            ShowToast(GameplayFeedbackText.ResolveMessage(evt.Message, evt.Code), false);
+            ShowToast(GameplayFeedbackText.ResolveMessage(state.Message, state.Code), state.Success);
         }
 
-        private void OnTokenResult(TokenResultEvent evt)
+        private void OnGameOverChanged(GameOverState state)
         {
-            if (evt == null || evt.Success || string.IsNullOrWhiteSpace(evt.ErrorCode))
+            if (state == null || !state.IsGameOver || statusText == null)
             {
                 return;
             }
 
-            ShowToast(GameplayFeedbackText.ResolveMessage(string.Empty, evt.ErrorCode), false);
-        }
-
-        private void OnGameOver(GameOverEvent _)
-        {
-            if (statusText != null)
-            {
-                statusText.gameObject.SetActive(false);
-            }
+            statusText.gameObject.SetActive(false);
         }
 
         private void OnSettlementChanged(SettlementState state)
@@ -264,14 +243,6 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             return EnsureComponent<T>(parent, objectName);
-        }
-
-        private void InitializeGameIntentService()
-        {
-            if (_cache != null)
-            {
-                _gameIntentService?.Initialize(_cache);
-            }
         }
 
         private void InjectDynamicPresentationHelpers()

@@ -3,6 +3,7 @@ using Google.Protobuf;
 using NUnit.Framework;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Protocol.V1;
 
@@ -93,6 +94,23 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(new PlanningIntentService(sender).MoveUnit("unit-1", "node-b"), Is.False);
             Assert.That(new MinisterCommandService(sender).AcceptDraft("draft-1"), Is.False);
             Assert.That(sender.Sent, Is.Empty);
+        }
+
+        [Test]
+        public void GameIntentService_ShouldReleaseActionLockFromStores()
+        {
+            var sender = new FakeMessageSender();
+            var turnStore = new TurnStore();
+            var gameOverStore = new GameOverStore();
+            using var service = new GameIntentService(sender, turnStore, gameOverStore);
+
+            ActionLock.Acquire();
+            turnStore.Replace(new TurnState(phase: "planning", isInteractive: true));
+            Assert.That(ActionLock.IsLocked, Is.False);
+
+            ActionLock.Acquire();
+            gameOverStore.Replace(new GameOverState(isGameOver: true));
+            Assert.That(ActionLock.IsLocked, Is.False);
         }
 
         private sealed class FakeMessageSender : IClientMessageSender
