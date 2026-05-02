@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using R3;
 
@@ -8,9 +7,7 @@ namespace Panoptes.Presentation.ViewModels
 {
     public sealed class PlanningToolViewModel : IViewModel<PlanningToolViewState>, IDisposable
     {
-        private readonly PlanningToolService _planningToolService;
         private readonly PlanningToolStore _planningToolStore;
-        private readonly SelectionService _selectionService;
         private readonly SelectionStore _selectionStore;
         private readonly BehaviorSubject<PlanningToolViewState> _state;
         private readonly List<IDisposable> _subscriptions = new();
@@ -19,14 +16,10 @@ namespace Panoptes.Presentation.ViewModels
 
         public PlanningToolViewModel(
             PlanningToolStore planningToolStore,
-            SelectionStore selectionStore,
-            PlanningToolService planningToolService,
-            SelectionService selectionService)
+            SelectionStore selectionStore)
         {
             _planningToolStore = planningToolStore ?? throw new ArgumentNullException(nameof(planningToolStore));
             _selectionStore = selectionStore ?? throw new ArgumentNullException(nameof(selectionStore));
-            _planningToolService = planningToolService ?? throw new ArgumentNullException(nameof(planningToolService));
-            _selectionService = selectionService ?? throw new ArgumentNullException(nameof(selectionService));
             _current = Project();
             _state = new BehaviorSubject<PlanningToolViewState>(_current);
             _subscriptions.Add(_planningToolStore.State.Subscribe(this, static (_, self) => self.Publish()));
@@ -35,50 +28,6 @@ namespace Panoptes.Presentation.ViewModels
 
         public PlanningToolViewState Current => _current;
         public Observable<PlanningToolViewState> State => _state;
-
-        public void ClearTool()
-        {
-            _planningToolService.ClearTool();
-        }
-
-        public void EnterBuild(
-            string buildTypeId,
-            string buildCityId,
-            PlanningBuildPlacementRule buildRule)
-        {
-            _planningToolService.EnterBuild(buildTypeId, buildCityId, buildRule);
-        }
-
-        public void BeginMove()
-        {
-            _planningToolService.BeginMove();
-        }
-
-        public void BeginAttack()
-        {
-            _planningToolService.BeginAttack();
-        }
-
-        public void BeginCharge()
-        {
-            _planningToolService.BeginCharge();
-        }
-
-        public void SelectUnit(string unitId)
-        {
-            if (string.IsNullOrWhiteSpace(unitId))
-            {
-                _selectionService.Clear();
-                return;
-            }
-
-            _selectionService.SelectUnit(unitId);
-        }
-
-        public void ClearSelection()
-        {
-            _selectionService.Clear();
-        }
 
         public void Dispose()
         {

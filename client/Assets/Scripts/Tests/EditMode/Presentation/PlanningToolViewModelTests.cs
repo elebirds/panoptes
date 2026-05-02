@@ -12,14 +12,12 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var planningToolStore = new PlanningToolStore();
             var selectionStore = new SelectionStore();
-            using var viewModel = new PlanningToolViewModel(
-                planningToolStore,
-                selectionStore,
-                new PlanningToolService(planningToolStore),
-                new SelectionService(selectionStore));
+            var planningToolService = new PlanningToolService(planningToolStore);
+            var selectionService = new SelectionService(selectionStore);
+            using var viewModel = new PlanningToolViewModel(planningToolStore, selectionStore);
 
-            viewModel.SelectUnit("u1");
-            viewModel.BeginMove();
+            selectionService.SelectUnit("u1");
+            planningToolService.BeginMove();
 
             Assert.That(viewModel.Current.SelectedUnitId, Is.EqualTo("u1"));
             Assert.That(viewModel.Current.Mode, Is.EqualTo(PlanningToolMode.Move));
@@ -32,13 +30,10 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var planningToolStore = new PlanningToolStore();
             var selectionStore = new SelectionStore();
-            using var viewModel = new PlanningToolViewModel(
-                planningToolStore,
-                selectionStore,
-                new PlanningToolService(planningToolStore),
-                new SelectionService(selectionStore));
+            var planningToolService = new PlanningToolService(planningToolStore);
+            using var viewModel = new PlanningToolViewModel(planningToolStore, selectionStore);
 
-            viewModel.EnterBuild("mine", "capital", PlanningBuildPlacementRule.CityOnly);
+            planningToolService.EnterBuild("mine", "capital", PlanningBuildPlacementRule.CityOnly);
 
             Assert.That(viewModel.Current.Mode, Is.EqualTo(PlanningToolMode.Build));
             Assert.That(viewModel.Current.BuildTypeId, Is.EqualTo("mine"));

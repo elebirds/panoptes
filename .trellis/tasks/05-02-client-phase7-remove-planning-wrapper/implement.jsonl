@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Layer ownership rules for Core services/stores and Presentation ViewModels."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component and ViewModel/Binder conventions for migrated frontend modules."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel state ownership and command flow constraints."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Forbidden patterns and verification gates for client changes."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check the command/state flow boundary stays explicit."}
