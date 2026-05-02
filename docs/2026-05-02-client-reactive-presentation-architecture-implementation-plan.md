@@ -476,6 +476,36 @@ Completion status (2026-05-02): Phase 8 complete for migrated runtime slices.
 Final authored UXML/USS polish and old uGUI removal remain separate asset and
 cleanup work.
 
+## Phase 9: Store Hydration Migration
+
+Goal: make migrated Store/ViewModel/Binder slices receive live runtime data.
+
+Initial bridge:
+
+```text
+ServerFrame / MessageDispatcher
+  -> legacy cache hydration
+  -> StoreHydrationCacheBridge
+  -> GameStateStore / PlanningDraftStore / StaticCatalogStore / TurnStore
+  -> migrated ViewModels
+```
+
+Status (2026-05-02):
+
+- Added `StoreHydrationHelper` as the Core-owned write surface for current
+  Store snapshots.
+- Added `StoreHydrationCacheBridge` as a bounded migration bridge that captures
+  legacy cache snapshots and subscribes to cache change events.
+- Registered the bridge in `GameLifetimeScope`; when the Game scene scope is
+  built, current cache data is copied into Stores before migrated Binders
+  resolve.
+- Legacy cache hydration remains intact for non-migrated UI.
+- Added EditMode coverage for helper hydration and cache-to-Store bridge
+  updates.
+
+Next work: move protocol-to-Core mapping out of legacy caches into direct
+message hydrators, then retire the bridge slice by slice.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:
