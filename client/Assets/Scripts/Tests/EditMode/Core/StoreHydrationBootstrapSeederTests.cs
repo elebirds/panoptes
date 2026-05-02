@@ -6,22 +6,22 @@ using Panoptes.Protocol.V1;
 
 namespace Panoptes.Tests.EditMode.Core
 {
-    public sealed class StoreHydrationCacheBridgeTests
+    public sealed class StoreHydrationBootstrapSeederTests
     {
-        private StoreHydrationCacheBridge _bridge;
+        private StaticCatalogLegacyHydrationBridge _staticCatalogBridge;
 
         [TearDown]
         public void TearDown()
         {
-            _bridge?.Dispose();
-            _bridge = null;
+            _staticCatalogBridge?.Dispose();
+            _staticCatalogBridge = null;
             GameStateCache.Instance?.Clear();
             PlanningDraftCache.Instance?.ClearAll();
             StaticCatalogCache.Instance?.Clear();
         }
 
         [Test]
-        public void Attach_ShouldHydrateStoresFromExistingCacheSnapshots()
+        public void Seed_ShouldHydrateStoresFromExistingCacheSnapshots()
         {
             var gameCache = EnsureGameStateCache();
             var draftCache = PlanningDraftCache.EnsureInstance();
@@ -110,8 +110,8 @@ namespace Panoptes.Tests.EditMode.Core
                 }
             });
 
-            _bridge = new StoreHydrationCacheBridge(helper);
-            _bridge.Attach(gameCache, draftCache, catalogCache);
+            var seeder = new StoreHydrationBootstrapSeeder(helper);
+            seeder.Seed(gameCache, draftCache, catalogCache);
 
             Assert.That(gameStore.Snapshot.GameId, Is.EqualTo("game-1"));
             Assert.That(gameStore.Snapshot.Nodes["n1"].Owner, Is.EqualTo("player-1"));
@@ -126,7 +126,7 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
-        public void AttachedBridge_ShouldOnlyPublishLegacyStaticCatalogChangesAfterInitialSeed()
+        public void StaticCatalogBridge_ShouldOnlyPublishLegacyStaticCatalogChangesAfterInitialSeed()
         {
             var gameCache = EnsureGameStateCache();
             var draftCache = PlanningDraftCache.EnsureInstance();
@@ -137,8 +137,10 @@ namespace Panoptes.Tests.EditMode.Core
             var turnStore = new TurnStore();
             var helper = new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore);
 
-            _bridge = new StoreHydrationCacheBridge(helper);
-            _bridge.Attach(gameCache, draftCache, catalogCache);
+            var seeder = new StoreHydrationBootstrapSeeder(helper);
+            seeder.Seed(gameCache, draftCache, catalogCache);
+            _staticCatalogBridge = new StaticCatalogLegacyHydrationBridge(helper);
+            _staticCatalogBridge.Attach(catalogCache);
 
             Assert.That(gameStore.Snapshot.TokensLeft, Is.EqualTo(0));
             Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(0));

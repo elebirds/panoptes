@@ -6,45 +6,21 @@ using Panoptes.Core.Domain;
 
 namespace Panoptes.Core.Application.Stores
 {
-    // Temporary migration bridge: one-shot seed game/planning stores from legacy
-    // caches, while static catalog chunk sync still needs legacy cache events.
-    public sealed class StoreHydrationCacheBridge : IDisposable
+    public sealed class StoreHydrationBootstrapSeeder
     {
         private readonly StoreHydrationHelper _helper;
-        private StaticCatalogCache _staticCatalogCache;
 
-        public StoreHydrationCacheBridge(StoreHydrationHelper helper)
+        public StoreHydrationBootstrapSeeder(StoreHydrationHelper helper)
         {
             _helper = helper ?? throw new ArgumentNullException(nameof(helper));
         }
 
-        public void Attach(
-            GameStateCache gameStateCache,
-            PlanningDraftCache planningDraftCache,
-            StaticCatalogCache staticCatalogCache)
+        public void SeedFromDefaultCaches()
         {
-            Detach();
-            _staticCatalogCache = staticCatalogCache;
-
-            if (_staticCatalogCache != null)
-            {
-                _staticCatalogCache.CatalogChanged += HydrateStaticCatalog;
-            }
-
-            Seed(gameStateCache, planningDraftCache, staticCatalogCache);
-        }
-
-        public void AttachToDefaultCaches()
-        {
-            Attach(
+            Seed(
                 GameStateCache.Instance,
                 PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance(),
                 StaticCatalogCache.EnsureInstance());
-        }
-
-        public void Dispose()
-        {
-            Detach();
         }
 
         public void Seed(
@@ -133,21 +109,6 @@ namespace Panoptes.Core.Application.Stores
                 cache.TokensLeft,
                 cache.GetPlanningStartEvents(),
                 cache.IsGameOver);
-        }
-
-        private void Detach()
-        {
-            if (_staticCatalogCache != null)
-            {
-                _staticCatalogCache.CatalogChanged -= HydrateStaticCatalog;
-            }
-
-            _staticCatalogCache = null;
-        }
-
-        private void HydrateStaticCatalog()
-        {
-            _helper.HydrateStaticCatalog(CaptureStaticCatalog(_staticCatalogCache));
         }
 
         private static Dictionary<string, TValue> CopyDictionary<TValue>(IReadOnlyDictionary<string, TValue> source)
