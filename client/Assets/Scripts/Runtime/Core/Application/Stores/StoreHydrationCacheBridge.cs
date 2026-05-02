@@ -49,6 +49,14 @@ namespace Panoptes.Core.Application.Stores
             HydrateAll();
         }
 
+        public void AttachToDefaultCaches()
+        {
+            Attach(
+                GameStateCache.Instance,
+                PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance(),
+                StaticCatalogCache.EnsureInstance());
+        }
+
         public void Dispose()
         {
             Detach();
