@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Input.Modes;
@@ -51,7 +50,6 @@ namespace Panoptes.Presentation.Map
             _nextMovePreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, throttleSeconds);
             _movePreviewRequestSequence++;
             var requestId = $"move-preview-{normalizedUnitId}-{_movePreviewRequestSequence}";
-            PlanningDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, normalizedUnitId, "move", targetNodeId);
             Debug.Log($"[MapPlanningInputController] 请求路径预览 unit={normalizedUnitId} hover_node={targetNodeId} request={requestId}");
             planningIntentService?.PreviewMove(requestId, normalizedUnitId, targetNodeId);
         }
@@ -73,13 +71,13 @@ namespace Panoptes.Presentation.Map
 
         public bool TryResolvePlannedTargetNodeId(
             string unitId,
-            PlanningDraftCache draftCache,
+            IReadOnlyDictionary<string, QueuedUnitOrderDto> ordersByUnitId,
             out string targetNodeId)
         {
             return MoveSelectionInputMode.TryResolvePlannedTargetNodeId(
                 unitId,
                 _pendingMoveState,
-                draftCache?.OrdersByUnitId,
+                ordersByUnitId,
                 out targetNodeId);
         }
 
@@ -101,7 +99,7 @@ namespace Panoptes.Presentation.Map
         public bool TryGetCurrentPreview(
             string unitId,
             string targetNodeId,
-            PlanningDraftCache draftCache,
+            PathPreviewDto currentPreview,
             out PathPreviewDto preview)
         {
             preview = null;
@@ -110,25 +108,27 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            preview = draftCache != null ? draftCache.CurrentPreview : null;
+            preview = currentPreview;
             return MoveSelectionInputMode.MatchesPreview(preview, unitId, targetNodeId);
         }
 
-        public IReadOnlyList<string> GetQueuedMovePathNodeIds(string unitId, PlanningDraftCache draftCache)
+        public IReadOnlyList<string> GetQueuedMovePathNodeIds(
+            string unitId,
+            IReadOnlyDictionary<string, QueuedUnitOrderDto> ordersByUnitId)
         {
             return string.IsNullOrWhiteSpace(unitId)
                 ? null
-                : MoveSelectionInputMode.GetQueuedMovePathNodeIds(unitId, draftCache?.OrdersByUnitId);
+                : MoveSelectionInputMode.GetQueuedMovePathNodeIds(unitId, ordersByUnitId);
         }
 
-        public void RememberQueuedMovePaths(PlanningDraftCache draftCache)
+        public void RememberQueuedMovePaths(IReadOnlyDictionary<string, QueuedUnitOrderDto> ordersByUnitId)
         {
-            if (draftCache == null)
+            if (ordersByUnitId == null)
             {
                 return;
             }
 
-            foreach (var pair in draftCache.OrdersByUnitId)
+            foreach (var pair in ordersByUnitId)
             {
                 var order = pair.Value;
                 if (order == null || !string.Equals(order.Action, "move", StringComparison.OrdinalIgnoreCase))
@@ -174,14 +174,8 @@ namespace Panoptes.Presentation.Map
 
         public void ClearPreviewState(MapPlanningInputStateAdapter inputState)
         {
-            var hadHover = !string.IsNullOrEmpty(_hoverPreviewNodeId);
             _hoverPreviewNodeId = string.Empty;
             inputState?.ClearMovePreviewTarget();
-            var previewCache = PlanningDraftCache.Instance;
-            if (hadHover || previewCache?.CurrentPreview != null)
-            {
-                previewCache?.ClearPreview();
-            }
         }
     }
 }

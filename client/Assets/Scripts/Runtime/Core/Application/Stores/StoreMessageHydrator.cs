@@ -206,7 +206,7 @@ namespace Panoptes.Core.Application.Stores
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
             if (!msg.Success)
             {
-                _feedbackStore.PublishFeedback("token", msg.ErrorCode, string.Empty, false);
+                _feedbackStore.PublishFeedback("token", msg.ErrorCode, string.Empty, false, BuildDetails(("action", msg.Action)));
             }
         }
 
@@ -296,7 +296,16 @@ namespace Panoptes.Core.Application.Stores
         {
             if (msg != null && !msg.Success)
             {
-                _feedbackStore.PublishFeedback("build", msg.ErrorCode, msg.FeedbackMessage, false, ToDetailMap(msg.FeedbackDetails));
+                _feedbackStore.PublishFeedback(
+                    "build",
+                    msg.ErrorCode,
+                    msg.FeedbackMessage,
+                    false,
+                    MergeDetails(
+                        ToDetailMap(msg.FeedbackDetails),
+                        ("node_id", msg.NodeId),
+                        ("building_type_id", msg.BuildingTypeId),
+                        ("city_id", msg.CityId)));
             }
         }
 
@@ -396,6 +405,38 @@ namespace Panoptes.Core.Application.Stores
             for (var i = 0; i < pairs.Length; i++)
             {
                 if (!string.IsNullOrWhiteSpace(pairs[i].Key))
+                {
+                    result[pairs[i].Key] = pairs[i].Value ?? string.Empty;
+                }
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, string> MergeDetails(
+            IReadOnlyDictionary<string, string> details,
+            params (string Key, string Value)[] pairs)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (details != null)
+            {
+                foreach (var pair in details)
+                {
+                    if (!string.IsNullOrWhiteSpace(pair.Key))
+                    {
+                        result[pair.Key] = pair.Value ?? string.Empty;
+                    }
+                }
+            }
+
+            if (pairs == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < pairs.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(pairs[i].Key) && !result.ContainsKey(pairs[i].Key))
                 {
                     result[pairs[i].Key] = pairs[i].Value ?? string.Empty;
                 }

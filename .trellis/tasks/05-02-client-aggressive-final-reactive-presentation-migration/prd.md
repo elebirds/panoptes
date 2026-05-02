@@ -76,6 +76,20 @@ render without reaching through legacy cache singletons.
   subscriptions.
 - Removed the remaining `GameStateCache` dependency from `GameSceneController`.
 
+## Batch 4 Result
+
+- Removed `MapPlanningCacheEventBridge` and its Unity meta file.
+- Migrated `MapPlanningInputController` off `GameStateCache` /
+  `PlanningDraftCache` event subscriptions and onto injected `GameStateStore`,
+  `PlanningDraftStore`, `SettlementStore`, and `GameplayFeedbackStore`.
+- Added sequence tracking for `SettlementStore` state so map settlement playback
+  handles each pushed settlement once instead of relying on cache callbacks.
+- Extended feedback Store details for token/build failures so map planning can
+  rollback pending deploy/build/move presentation state without legacy planning
+  result events.
+- Moved map move/build placement helper preview reads from `PlanningDraftCache`
+  to `PlanningDraftState` snapshots supplied by the controller.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.
