@@ -143,6 +143,72 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(4));
         }
 
+        [Test]
+        public void HandleChatAndGameOver_ShouldHydrateReactiveStores()
+        {
+            var dispatcher = new GameObject("MessageDispatcher").AddComponent<MessageDispatcher>();
+            _dispatcherObject = dispatcher.gameObject;
+            var gameStore = new GameStateStore();
+            var draftStore = new PlanningDraftStore();
+            var catalogStore = new StaticCatalogStore();
+            var turnStore = new TurnStore();
+            var chatStore = new GameChatStore();
+            var gameOverStore = new GameOverStore();
+            _hydrator = new StoreMessageHydrator(
+                dispatcher,
+                new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore),
+                gameStore,
+                draftStore,
+                turnStore,
+                chatStore,
+                gameOverStore);
+
+            _hydrator.HandleGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 1,
+                Phase = "planning"
+            });
+            _hydrator.HandleGameChatSync(new MsgGameChatSync
+            {
+                Entries =
+                {
+                    new ChatEntry
+                    {
+                        SenderPlayerId = "player-2",
+                        Turn = 1,
+                        Payload = new ChatPayload { Emote = ChatEmote.Warning }
+                    }
+                }
+            });
+            _hydrator.HandleGameChatPosted(new MsgGameChatPosted
+            {
+                Entry = new ChatEntry
+                {
+                    SenderPlayerId = "player-1",
+                    Turn = 1,
+                    Payload = new ChatPayload { Text = "ready" }
+                }
+            });
+            _hydrator.HandleGameOver(new MsgGameOver
+            {
+                WinnerId = "player-1",
+                Reason = "conquest",
+                Narrative = "Victory"
+            });
+
+            Assert.That(chatStore.Snapshot.Entries, Has.Count.EqualTo(2));
+            Assert.That(chatStore.Snapshot.Entries[0].Payload.Emote, Is.EqualTo(GameChatEmoteKind.Warning));
+            Assert.That(chatStore.Snapshot.Entries[1].Payload.Text, Is.EqualTo("ready"));
+            Assert.That(gameOverStore.Snapshot.IsGameOver, Is.True);
+            Assert.That(gameOverStore.Snapshot.IsWinner, Is.True);
+            Assert.That(gameOverStore.Snapshot.WinnerId, Is.EqualTo("player-1"));
+            Assert.That(gameOverStore.Snapshot.Reason, Is.EqualTo("conquest"));
+            Assert.That(turnStore.Snapshot.IsGameOver, Is.True);
+            Assert.That(gameStore.Snapshot.IsGameOver, Is.True);
+        }
+
         private StoreMessageHydrator CreateHydrator(
             GameStateStore gameStore,
             PlanningDraftStore draftStore,
@@ -161,7 +227,9 @@ namespace Panoptes.Tests.EditMode.Core
                 new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore),
                 gameStore,
                 draftStore,
-                turnStore);
+                turnStore,
+                new GameChatStore(),
+                new GameOverStore());
         }
 
         private static ServerFrame GameFrame(MsgTokenResult msg)

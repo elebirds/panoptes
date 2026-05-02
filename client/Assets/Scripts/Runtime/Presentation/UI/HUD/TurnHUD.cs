@@ -6,13 +6,13 @@
  * Description: Turn/phase HUD that can bind to an external TurnPanel (turnNum).
  *************************************************/
 
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
+using System;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Composition;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -41,7 +41,8 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string nextStageButtonName = "NextStageBtn";
         [SerializeField] private bool disableNextStageWhenUnavailable = true;
 
-        private GameStateCache _cache;
+        private IDisposable _turnSubscription;
+        private TurnStore _turnStore;
         private float _deadline = -1f;
         private string _currentPhase = string.Empty;
         private string _nextPhase = string.Empty;
@@ -54,9 +55,10 @@ namespace Panoptes.Presentation.UI.HUD
         private GameIntentService _gameIntentService;
 
         [Inject]
-        private void Construct(GameIntentService gameIntentService)
+        private void Construct(GameIntentService gameIntentService, TurnStore turnStore)
         {
             _gameIntentService = gameIntentService;
+            _turnStore = turnStore;
         }
 
         private void Awake()
@@ -73,33 +75,22 @@ namespace Panoptes.Presentation.UI.HUD
             ResolveExternalTurnPanelReferences();
             ResolveNextStageButtonReference();
             _subscriptions.Clear();
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                var cache = _cache;
-                _subscriptions.Add(
-                    () => cache.OnPhaseChanged += OnPhaseChanged,
-                    () => cache.OnPhaseChanged -= OnPhaseChanged);
-                _subscriptions.Add(
-                    () => cache.OnGameOver += OnGameOver,
-                    () => cache.OnGameOver -= OnGameOver);
-                _subscriptions.Add(
-                    () => cache.OnStateChanged += RefreshFromCache,
-                    () => cache.OnStateChanged -= RefreshFromCache);
-            }
+            _turnSubscription?.Dispose();
+            _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
 
             _subscriptions.Add(
                 () => ActionLock.OnChanged += OnActionLockChanged,
                 () => ActionLock.OnChanged -= OnActionLockChanged);
             BindNextStageButton();
-            RefreshFromCache();
+            RefreshFromState(_turnStore?.Snapshot);
         }
 
         private void OnDisable()
         {
             _subscriptions.Clear();
             _buttonSubscriptions.Clear();
-            _cache = null;
+            _turnSubscription?.Dispose();
+            _turnSubscription = null;
         }
 
         private void Update()
@@ -114,50 +105,21 @@ namespace Panoptes.Presentation.UI.HUD
             RefreshText();
         }
 
-        private void OnPhaseChanged(PhaseChangedEvent evt)
+        private void RefreshFromState(TurnState state)
         {
-            if (evt == null)
+            if (state == null)
             {
                 return;
             }
 
-            _currentTurn = evt.Turn;
-            _currentPhase = evt.Phase ?? string.Empty;
-            _nextPhase = evt.NextPhase ?? string.Empty;
-            _isInteractive = evt.IsInteractive;
-            _deadline = evt.TimeoutSeconds > 0 && evt.IsInteractive
-                ? Time.unscaledTime + evt.TimeoutSeconds
+            _currentTurn = state.Turn;
+            _currentPhase = state.Phase ?? string.Empty;
+            _nextPhase = state.NextPhase ?? string.Empty;
+            _isInteractive = state.IsInteractive && !state.IsGameOver;
+            _gameEnded = state.IsGameOver;
+            _deadline = _isInteractive && state.TimeoutSeconds > 0
+                ? Time.unscaledTime + state.TimeoutSeconds
                 : -1f;
-            _gameEnded = false;
-            _lastRemainingSeconds = int.MinValue;
-            RefreshText();
-            RefreshNextStageInteractable();
-        }
-
-        private void OnGameOver(GameOverEvent _)
-        {
-            _gameEnded = true;
-            _deadline = -1f;
-            _lastRemainingSeconds = int.MinValue;
-            RefreshText();
-            RefreshNextStageInteractable();
-        }
-
-        private void RefreshFromCache()
-        {
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _currentTurn = _cache.Turn;
-            _currentPhase = _cache.Phase ?? string.Empty;
-            _isInteractive = GamePhases.IsPlanning(_currentPhase) && !_cache.IsGameOver;
-            _gameEnded = _cache.IsGameOver;
-            if (!_isInteractive)
-            {
-                _deadline = -1f;
-            }
 
             _lastRemainingSeconds = int.MinValue;
             RefreshText();

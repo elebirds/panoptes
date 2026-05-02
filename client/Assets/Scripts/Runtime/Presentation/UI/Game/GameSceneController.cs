@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Map;
@@ -9,6 +11,7 @@ using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Turn;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,13 +27,19 @@ namespace Panoptes.Presentation.UI.Game
         [SerializeField] private string fullscreenBackgroundObjectName = "Background";
 
         private GameStateCache _cache;
+        private GameStateStore _gameStateStore;
+        private IDisposable _gameStateSubscription;
         private GameIntentService _gameIntentService;
         private IObjectResolver _resolver;
 
         [Inject]
-        private void Construct(GameIntentService gameIntentService, IObjectResolver resolver)
+        private void Construct(
+            GameIntentService gameIntentService,
+            GameStateStore gameStateStore,
+            IObjectResolver resolver)
         {
             _gameIntentService = gameIntentService;
+            _gameStateStore = gameStateStore;
             _resolver = resolver;
             InjectDynamicPresentationHelpers();
             if (isActiveAndEnabled)
@@ -53,36 +62,39 @@ namespace Panoptes.Presentation.UI.Game
             if (_cache != null)
             {
                 InitializeGameIntentService();
-                _cache.OnStateChanged += RefreshFromCache;
                 _cache.OnGameError += OnGameError;
                 _cache.OnTokenResult += OnTokenResult;
                 _cache.OnTurnSettled += OnTurnSettled;
                 _cache.OnGameOver += OnGameOver;
             }
+
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
         }
 
         private void Start()
         {
-            RefreshFromCache();
+            RefreshFromState(_gameStateStore?.Snapshot);
         }
 
         private void OnDisable()
         {
             if (_cache != null)
             {
-                _cache.OnStateChanged -= RefreshFromCache;
                 _cache.OnGameError -= OnGameError;
                 _cache.OnTokenResult -= OnTokenResult;
                 _cache.OnTurnSettled -= OnTurnSettled;
                 _cache.OnGameOver -= OnGameOver;
             }
 
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = null;
             _gameIntentService?.Dispose();
         }
 
-        public void RefreshFromCache()
+        public void RefreshFromState(GameStateStoreState state)
         {
-            if (_cache == null || string.IsNullOrWhiteSpace(_cache.GameID) || string.IsNullOrWhiteSpace(_cache.MyPlayerID))
+            if (state == null || string.IsNullOrWhiteSpace(state.GameId) || string.IsNullOrWhiteSpace(state.MyPlayerId))
             {
                 if (statusText != null)
                 {
@@ -91,7 +103,7 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            var summary = $"Game {_cache.GameID}\n玩家 {_cache.MyPlayerID}\n回合 {_cache.Turn} / {GamePhases.ToDisplayText(_cache.Phase)}\n地图 {_cache.MapWidth}x{_cache.MapHeight}";
+            var summary = $"Game {state.GameId}\n玩家 {state.MyPlayerId}\n回合 {state.Turn} / {GamePhases.ToDisplayText(state.Phase)}\n地图 {state.MapWidth}x{state.MapHeight}";
             if (statusText != null)
             {
                 statusText.text = summary;
@@ -101,6 +113,11 @@ namespace Panoptes.Presentation.UI.Game
             {
                 Debug.Log($"[GameScene] {summary}");
             }
+        }
+
+        public void RefreshFromCache()
+        {
+            RefreshFromState(_gameStateStore?.Snapshot);
         }
 
         private void OnGameError(GameErrorEvent evt)
@@ -230,7 +247,7 @@ namespace Panoptes.Presentation.UI.Game
                 var prefab = Resources.Load<GameObject>(resourcesPath.Trim());
                 if (prefab != null)
                 {
-                    var instance = Object.Instantiate(prefab, parent, false);
+                    var instance = UnityEngine.Object.Instantiate(prefab, parent, false);
                     instance.name = objectName;
                     var prefabComponent = instance.GetComponent<T>();
                     if (prefabComponent != null)
