@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using Panoptes.Core.Domain;
+using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
 
@@ -11,6 +14,8 @@ namespace Panoptes.Core.Application.Stores
         private readonly GameStateStore _gameStateStore;
         private readonly PlanningDraftStore _planningDraftStore;
         private readonly TurnStore _turnStore;
+        private readonly GameChatStore _gameChatStore;
+        private readonly GameOverStore _gameOverStore;
         private bool _attached;
 
         public StoreMessageHydrator(
@@ -18,13 +23,17 @@ namespace Panoptes.Core.Application.Stores
             StoreHydrationHelper helper,
             GameStateStore gameStateStore,
             PlanningDraftStore planningDraftStore,
-            TurnStore turnStore)
+            TurnStore turnStore,
+            GameChatStore gameChatStore,
+            GameOverStore gameOverStore)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _helper = helper ?? throw new ArgumentNullException(nameof(helper));
             _gameStateStore = gameStateStore ?? throw new ArgumentNullException(nameof(gameStateStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
             _turnStore = turnStore ?? throw new ArgumentNullException(nameof(turnStore));
+            _gameChatStore = gameChatStore ?? throw new ArgumentNullException(nameof(gameChatStore));
+            _gameOverStore = gameOverStore ?? throw new ArgumentNullException(nameof(gameOverStore));
         }
 
         public void Attach()
@@ -43,6 +52,8 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Register<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Register<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
+            _dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
+            _dispatcher.Register<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Register<MsgGameOver>("MsgGameOver", HandleGameOver);
             _attached = true;
         }
@@ -68,6 +79,8 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
+            _dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
+            _dispatcher.Unregister<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Unregister<MsgGameOver>("MsgGameOver", HandleGameOver);
             _attached = false;
         }
@@ -81,6 +94,8 @@ namespace Panoptes.Core.Application.Stores
 
             _helper.HydrateGameState(StoreHydrationProtocolMapper.ToGameState(msg));
             _helper.HydrateTurn(StoreHydrationProtocolMapper.ToTurn(msg));
+            _gameChatStore.Clear();
+            _gameOverStore.Clear();
         }
 
         public void HandlePlanningStart(MsgPlanningStart msg)
@@ -188,6 +203,50 @@ namespace Panoptes.Core.Application.Stores
 
             _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeGameOver(_gameStateStore.Snapshot));
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeGameOver(_turnStore.Snapshot));
+            _gameOverStore.Replace(ToGameOverState(msg, _gameStateStore.Snapshot));
+        }
+
+        public void HandleGameChatPosted(MsgGameChatPosted msg)
+        {
+            var entry = GameChatMapper.ToDto(msg?.Entry);
+            if (entry != null)
+            {
+                _gameChatStore.Append(entry);
+            }
+        }
+
+        public void HandleGameChatSync(MsgGameChatSync msg)
+        {
+            var entries = new List<GameChatEntryDto>();
+            if (msg?.Entries != null)
+            {
+                for (var i = 0; i < msg.Entries.Count; i++)
+                {
+                    var entry = GameChatMapper.ToDto(msg.Entries[i]);
+                    if (entry != null)
+                    {
+                        entries.Add(entry);
+                    }
+                }
+            }
+
+            _gameChatStore.Replace(entries);
+        }
+
+        private static GameOverState ToGameOverState(MsgGameOver msg, GameStateStoreState gameState)
+        {
+            var myPlayerId = gameState?.MyPlayerId ?? string.Empty;
+            var winnerId = msg?.WinnerId ?? string.Empty;
+            var isWinner = !string.IsNullOrWhiteSpace(winnerId) &&
+                           string.Equals(winnerId, myPlayerId, StringComparison.Ordinal);
+
+            return new GameOverState(
+                true,
+                isWinner,
+                winnerId,
+                string.Empty,
+                msg?.Reason,
+                msg?.Narrative);
         }
     }
 }

@@ -82,6 +82,11 @@ namespace Panoptes.Core.Application.Stores
             return CloneList(source, CloneTurnEvent);
         }
 
+        public static List<GameChatEntryDto> CloneGameChatEntries(IEnumerable<GameChatEntryDto> source)
+        {
+            return CloneList(source, CloneGameChatEntry);
+        }
+
         public static List<string> CloneStrings(IEnumerable<string> source)
         {
             return source == null ? new List<string>() : source.Where(value => value != null).ToList();
@@ -251,6 +256,38 @@ namespace Panoptes.Core.Application.Stores
                 Q = source.Q,
                 R = source.R,
                 Type = source.Type
+            };
+        }
+
+        private static GameChatEntryDto CloneGameChatEntry(GameChatEntryDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new GameChatEntryDto
+            {
+                Phase = source.Phase,
+                Payload = CloneGameChatPayload(source.Payload),
+                SenderPlayerId = source.SenderPlayerId,
+                Sequence = source.Sequence,
+                Turn = source.Turn
+            };
+        }
+
+        private static GameChatPayloadDto CloneGameChatPayload(GameChatPayloadDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new GameChatPayloadDto
+            {
+                Emote = source.Emote,
+                Kind = source.Kind,
+                Text = source.Text
             };
         }
 

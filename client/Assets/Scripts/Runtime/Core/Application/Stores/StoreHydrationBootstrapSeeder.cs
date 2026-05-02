@@ -108,7 +108,10 @@ namespace Panoptes.Core.Application.Stores
                 cache.Phase,
                 cache.TokensLeft,
                 cache.GetPlanningStartEvents(),
-                cache.IsGameOver);
+                cache.IsGameOver,
+                0,
+                string.Empty,
+                GamePhases.IsPlanning(cache.Phase) && !cache.IsGameOver);
         }
 
         private static Dictionary<string, TValue> CopyDictionary<TValue>(IReadOnlyDictionary<string, TValue> source)

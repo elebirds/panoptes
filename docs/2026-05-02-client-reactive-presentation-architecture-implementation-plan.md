@@ -634,6 +634,42 @@ Status (2026-05-02):
 Next work: migrate static catalog bundle/section sync behind a direct Core
 hydrator, then remove `StaticCatalogLegacyHydrationBridge`.
 
+## Phase 14: Aggressive Reactive Presentation Migration Batch
+
+Goal: stop treating every compatibility bridge as a milestone and move whole
+presentation flows directly onto final Store/ViewModel/Binder architecture.
+
+Batch 1 flow:
+
+```text
+MessageDispatcher
+  -> StoreMessageHydrator
+  -> GameStateStore / TurnStore / GameChatStore / GameOverStore
+  -> uGUI facades and existing binders
+```
+
+Status (2026-05-02):
+
+- Added `GameChatStore` / `GameChatState` and direct chat hydration from
+  `MsgGameChatSync` and `MsgGameChatPosted`.
+- Added `GameOverStore` / `GameOverState` and direct game-over hydration from
+  `MsgGameOver`.
+- Extended `TurnState` with timeout, next phase, and interactivity fields so
+  `TurnHUD` can render from `TurnStore` instead of subscribing to
+  `GameStateCache` phase events.
+- Added `LocalGameSessionResetService` as a Core service for local session
+  cleanup, keeping temporary legacy cache cleanup out of UI code.
+- Migrated `TurnHUD`, `GameChatPanelController`, and `GameOverOverlay` to
+  injected Store/service dependencies.
+- Migrated `GameSceneController` status rendering to `GameStateStore`; legacy
+  cache event subscriptions remain only for toast-style feedback paths that do
+  not yet have Store equivalents.
+- Added EditMode coverage for chat and game-over direct Store hydration.
+
+Next work: add direct Core stores for gameplay feedback/settlement events, then
+finish removing `GameStateCache` from `GameSceneController`, turn report, and
+settlement timeline before attacking map/planning input.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:

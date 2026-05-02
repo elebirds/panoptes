@@ -230,7 +230,15 @@ namespace Panoptes.Core.Application.Stores
                 return new TurnState();
             }
 
-            return new TurnState(msg.Turn, msg.Phase, msg.MyPlayer?.TokensLeft ?? 0);
+            return new TurnState(
+                msg.Turn,
+                msg.Phase,
+                msg.MyPlayer?.TokensLeft ?? 0,
+                null,
+                false,
+                0,
+                string.Empty,
+                GamePhases.IsPlanning(msg.Phase));
         }
 
         public static TurnState ToTurn(MsgPlanningStart msg)
@@ -245,7 +253,10 @@ namespace Panoptes.Core.Application.Stores
                 msg.Phase,
                 msg.Tokens,
                 SettlementMapper.ToPlanningStartEvents(msg),
-                false);
+                false,
+                msg.Timeout,
+                string.Empty,
+                GamePhases.IsPlanning(msg.Phase));
         }
 
         public static TurnState MergeTurn(TurnState current, MsgPlanningSnapshot msg)
@@ -261,7 +272,10 @@ namespace Panoptes.Core.Application.Stores
                 string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase,
                 previous.TokensLeft,
                 previous.PlanningStartEvents,
-                previous.IsGameOver);
+                previous.IsGameOver,
+                previous.TimeoutSeconds,
+                previous.NextPhase,
+                previous.IsInteractive);
         }
 
         public static TurnState MergeTurn(TurnState current, MsgGameSync msg)
@@ -277,14 +291,25 @@ namespace Panoptes.Core.Application.Stores
                 string.IsNullOrWhiteSpace(msg.Phase) ? previous.Phase : msg.Phase,
                 msg.MyPlayer != null ? msg.MyPlayer.TokensLeft : previous.TokensLeft,
                 previous.PlanningStartEvents,
-                previous.IsGameOver);
+                previous.IsGameOver,
+                0,
+                msg.NextPhase,
+                GamePhases.IsPlanning(msg.Phase) && !previous.IsGameOver);
         }
 
         public static TurnState MergeTurn(TurnState current, MsgTokenResult msg)
         {
             var previous = current ?? new TurnState();
             return msg != null && msg.Success
-                ? new TurnState(previous.Turn, previous.Phase, msg.TokensLeft, previous.PlanningStartEvents, previous.IsGameOver)
+                ? new TurnState(
+                    previous.Turn,
+                    previous.Phase,
+                    msg.TokensLeft,
+                    previous.PlanningStartEvents,
+                    previous.IsGameOver,
+                    previous.TimeoutSeconds,
+                    previous.NextPhase,
+                    previous.IsInteractive)
                 : previous.Clone();
         }
 
@@ -292,14 +317,30 @@ namespace Panoptes.Core.Application.Stores
         {
             var previous = current ?? new TurnState();
             return msg != null && msg.TokensLeft > 0
-                ? new TurnState(previous.Turn, previous.Phase, msg.TokensLeft, previous.PlanningStartEvents, previous.IsGameOver)
+                ? new TurnState(
+                    previous.Turn,
+                    previous.Phase,
+                    msg.TokensLeft,
+                    previous.PlanningStartEvents,
+                    previous.IsGameOver,
+                    previous.TimeoutSeconds,
+                    previous.NextPhase,
+                    previous.IsInteractive)
                 : previous.Clone();
         }
 
         public static TurnState MergeGameOver(TurnState current)
         {
             var previous = current ?? new TurnState();
-            return new TurnState(previous.Turn, previous.Phase, previous.TokensLeft, previous.PlanningStartEvents, true);
+            return new TurnState(
+                previous.Turn,
+                previous.Phase,
+                previous.TokensLeft,
+                previous.PlanningStartEvents,
+                true,
+                0,
+                previous.NextPhase,
+                false);
         }
 
         private static GameStateStoreState WithTokens(GameStateStoreState previous, int tokensLeft)
