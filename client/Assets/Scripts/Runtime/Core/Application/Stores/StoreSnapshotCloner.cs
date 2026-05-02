@@ -82,6 +82,26 @@ namespace Panoptes.Core.Application.Stores
             return CloneList(source, CloneTurnEvent);
         }
 
+        public static TurnSettlementDto CloneTurnSettlement(TurnSettlementDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new TurnSettlementDto
+            {
+                BuiltBuildings = CloneList(source.BuiltBuildings, CloneBuiltStructure),
+                BuiltNodeIDs = CloneStrings(source.BuiltNodeIDs),
+                CityCoreDamaged = source.CityCoreDamaged,
+                DeadUnitIDs = CloneStrings(source.DeadUnitIDs),
+                MovedUnitIDs = CloneStrings(source.MovedUnitIDs),
+                NextPhase = source.NextPhase,
+                Phase = source.Phase,
+                Sections = CloneList(source.Sections, CloneSettlementSection)
+            };
+        }
+
         public static List<GameChatEntryDto> CloneGameChatEntries(IEnumerable<GameChatEntryDto> source)
         {
             return CloneList(source, CloneGameChatEntry);
@@ -273,6 +293,37 @@ namespace Panoptes.Core.Application.Stores
                 SenderPlayerId = source.SenderPlayerId,
                 Sequence = source.Sequence,
                 Turn = source.Turn
+            };
+        }
+
+        private static SettlementSectionDto CloneSettlementSection(SettlementSectionDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new SettlementSectionDto
+            {
+                Events = CloneTurnEvents(source.Events),
+                Section = source.Section
+            };
+        }
+
+        private static BuiltStructureDto CloneBuiltStructure(BuiltStructureDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new BuiltStructureDto
+            {
+                BuildingHp = source.BuildingHp,
+                BuildingType = source.BuildingType,
+                CityId = source.CityId,
+                NodeId = source.NodeId,
+                OwnerId = source.OwnerId
             };
         }
 

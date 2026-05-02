@@ -6,14 +6,17 @@
  * Description: Displays the latest settlement sections as a lightweight timeline.
  *************************************************/
 
+using System;
 using System.Text;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
+using Panoptes.Presentation.Composition;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Turn
 {
@@ -24,33 +27,37 @@ namespace Panoptes.Presentation.UI.Turn
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI timelineText;
 
-        private GameStateCache _cache;
+        private IDisposable _settlementSubscription;
+        private SettlementStore _settlementStore;
         private bool _warnedMissingUi;
+
+        [Inject]
+        private void Construct(SettlementStore settlementStore)
+        {
+            _settlementStore = settlementStore;
+        }
 
         private void Awake()
         {
+            SceneCommandServiceInjector.InjectIfAvailable(this);
             TryResolveUiReferences(false);
-            _cache = GameStateCache.Instance;
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled += OnTurnSettled;
-            }
+            SceneCommandServiceInjector.InjectIfAvailable(this);
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            OnSettlementChanged(_settlementStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled -= OnTurnSettled;
-            }
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
         }
 
-        private void OnTurnSettled(TurnSettledEvent evt)
+        private void OnSettlementChanged(SettlementState state)
         {
             if (!TryResolveUiReferences(true))
             {
@@ -58,7 +65,8 @@ namespace Panoptes.Presentation.UI.Turn
             }
 
             titleText.text = "结算时间线";
-            if (evt?.Settlement?.Sections == null || evt.Settlement.Sections.Count == 0)
+            var settlement = state?.Settlement;
+            if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
                 timelineText.text = "本回合没有结算提示";
                 return;
@@ -66,9 +74,9 @@ namespace Panoptes.Presentation.UI.Turn
 
             var builder = new StringBuilder();
             var lineCount = 0;
-            for (var i = 0; i < evt.Settlement.Sections.Count; i++)
+            for (var i = 0; i < settlement.Sections.Count; i++)
             {
-                var section = evt.Settlement.Sections[i];
+                var section = settlement.Sections[i];
                 if (section?.Events == null)
                 {
                     continue;

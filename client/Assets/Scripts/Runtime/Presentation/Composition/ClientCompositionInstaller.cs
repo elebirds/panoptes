@@ -55,6 +55,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<TurnStore>(Lifetime.Singleton).AsSelf();
             builder.Register<GameChatStore>(Lifetime.Singleton).AsSelf();
             builder.Register<GameOverStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<SettlementStore>(Lifetime.Singleton).AsSelf();
             builder.Register<SelectionService>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolService>(Lifetime.Singleton).AsSelf();
             builder.Register<GameIntentService>(Lifetime.Singleton).AsSelf();

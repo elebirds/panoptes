@@ -16,6 +16,7 @@ namespace Panoptes.Core.Application.Stores
         private readonly TurnStore _turnStore;
         private readonly GameChatStore _gameChatStore;
         private readonly GameOverStore _gameOverStore;
+        private readonly SettlementStore _settlementStore;
         private bool _attached;
 
         public StoreMessageHydrator(
@@ -25,7 +26,8 @@ namespace Panoptes.Core.Application.Stores
             PlanningDraftStore planningDraftStore,
             TurnStore turnStore,
             GameChatStore gameChatStore,
-            GameOverStore gameOverStore)
+            GameOverStore gameOverStore,
+            SettlementStore settlementStore)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _helper = helper ?? throw new ArgumentNullException(nameof(helper));
@@ -34,6 +36,7 @@ namespace Panoptes.Core.Application.Stores
             _turnStore = turnStore ?? throw new ArgumentNullException(nameof(turnStore));
             _gameChatStore = gameChatStore ?? throw new ArgumentNullException(nameof(gameChatStore));
             _gameOverStore = gameOverStore ?? throw new ArgumentNullException(nameof(gameOverStore));
+            _settlementStore = settlementStore ?? throw new ArgumentNullException(nameof(settlementStore));
         }
 
         public void Attach()
@@ -96,6 +99,7 @@ namespace Panoptes.Core.Application.Stores
             _helper.HydrateTurn(StoreHydrationProtocolMapper.ToTurn(msg));
             _gameChatStore.Clear();
             _gameOverStore.Clear();
+            _settlementStore.Clear();
         }
 
         public void HandlePlanningStart(MsgPlanningStart msg)
@@ -170,6 +174,7 @@ namespace Panoptes.Core.Application.Stores
                 _helper.HydratePlanningDraft(StoreHydrationProtocolMapper.ToPlanningDraft(msg.Snapshot));
             }
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
+            _settlementStore.Replace(SettlementMapper.ToDto(msg));
         }
 
         public void HandleTokenResult(MsgTokenResult msg)

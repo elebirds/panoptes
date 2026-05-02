@@ -154,6 +154,7 @@ namespace Panoptes.Tests.EditMode.Core
             var turnStore = new TurnStore();
             var chatStore = new GameChatStore();
             var gameOverStore = new GameOverStore();
+            var settlementStore = new SettlementStore();
             _hydrator = new StoreMessageHydrator(
                 dispatcher,
                 new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore),
@@ -161,7 +162,8 @@ namespace Panoptes.Tests.EditMode.Core
                 draftStore,
                 turnStore,
                 chatStore,
-                gameOverStore);
+                gameOverStore,
+                settlementStore);
 
             _hydrator.HandleGameInit(new MsgGameInit
             {
@@ -191,6 +193,12 @@ namespace Panoptes.Tests.EditMode.Core
                     Payload = new ChatPayload { Text = "ready" }
                 }
             });
+            _hydrator.HandleGameSync(new MsgGameSync
+            {
+                Turn = 2,
+                Phase = "settlement",
+                NextPhase = "planning"
+            });
             _hydrator.HandleGameOver(new MsgGameOver
             {
                 WinnerId = "player-1",
@@ -205,6 +213,7 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(gameOverStore.Snapshot.IsWinner, Is.True);
             Assert.That(gameOverStore.Snapshot.WinnerId, Is.EqualTo("player-1"));
             Assert.That(gameOverStore.Snapshot.Reason, Is.EqualTo("conquest"));
+            Assert.That(settlementStore.Snapshot.Settlement.NextPhase, Is.EqualTo("planning"));
             Assert.That(turnStore.Snapshot.IsGameOver, Is.True);
             Assert.That(gameStore.Snapshot.IsGameOver, Is.True);
         }
@@ -229,7 +238,8 @@ namespace Panoptes.Tests.EditMode.Core
                 draftStore,
                 turnStore,
                 new GameChatStore(),
-                new GameOverStore());
+                new GameOverStore(),
+                new SettlementStore());
         }
 
         private static ServerFrame GameFrame(MsgTokenResult msg)

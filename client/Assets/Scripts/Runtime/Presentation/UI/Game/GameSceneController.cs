@@ -28,7 +28,9 @@ namespace Panoptes.Presentation.UI.Game
 
         private GameStateCache _cache;
         private GameStateStore _gameStateStore;
+        private SettlementStore _settlementStore;
         private IDisposable _gameStateSubscription;
+        private IDisposable _settlementSubscription;
         private GameIntentService _gameIntentService;
         private IObjectResolver _resolver;
 
@@ -36,10 +38,12 @@ namespace Panoptes.Presentation.UI.Game
         private void Construct(
             GameIntentService gameIntentService,
             GameStateStore gameStateStore,
+            SettlementStore settlementStore,
             IObjectResolver resolver)
         {
             _gameIntentService = gameIntentService;
             _gameStateStore = gameStateStore;
+            _settlementStore = settlementStore;
             _resolver = resolver;
             InjectDynamicPresentationHelpers();
             if (isActiveAndEnabled)
@@ -64,12 +68,13 @@ namespace Panoptes.Presentation.UI.Game
                 InitializeGameIntentService();
                 _cache.OnGameError += OnGameError;
                 _cache.OnTokenResult += OnTokenResult;
-                _cache.OnTurnSettled += OnTurnSettled;
                 _cache.OnGameOver += OnGameOver;
             }
 
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
         }
 
         private void Start()
@@ -83,12 +88,13 @@ namespace Panoptes.Presentation.UI.Game
             {
                 _cache.OnGameError -= OnGameError;
                 _cache.OnTokenResult -= OnTokenResult;
-                _cache.OnTurnSettled -= OnTurnSettled;
                 _cache.OnGameOver -= OnGameOver;
             }
 
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = null;
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
             _gameIntentService?.Dispose();
         }
 
@@ -148,9 +154,9 @@ namespace Panoptes.Presentation.UI.Game
             }
         }
 
-        private void OnTurnSettled(TurnSettledEvent evt)
+        private void OnSettlementChanged(SettlementState state)
         {
-            var completedTechnologyNames = CollectCompletedTechnologyNames(evt);
+            var completedTechnologyNames = CollectCompletedTechnologyNames(state?.Settlement);
             if (completedTechnologyNames.Count == 0)
             {
                 return;
@@ -290,18 +296,19 @@ namespace Panoptes.Presentation.UI.Game
             }
         }
 
-        private List<string> CollectCompletedTechnologyNames(TurnSettledEvent evt)
+        private List<string> CollectCompletedTechnologyNames(TurnSettlementDto settlement)
         {
             var result = new List<string>();
-            if (_cache == null || evt?.Settlement?.Sections == null || string.IsNullOrWhiteSpace(_cache.MyPlayerID))
+            var myPlayerId = _gameStateStore?.Snapshot.MyPlayerId ?? string.Empty;
+            if (settlement?.Sections == null || string.IsNullOrWhiteSpace(myPlayerId))
             {
                 return result;
             }
 
             var seenTechnologyIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
-            for (var sectionIndex = 0; sectionIndex < evt.Settlement.Sections.Count; sectionIndex++)
+            for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
             {
-                var section = evt.Settlement.Sections[sectionIndex];
+                var section = settlement.Sections[sectionIndex];
                 if (section?.Events == null)
                 {
                     continue;
@@ -310,7 +317,7 @@ namespace Panoptes.Presentation.UI.Game
                 for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                 {
                     var turnEvent = section.Events[eventIndex];
-                    if (!IsOwnedTechnologyCompletion(turnEvent, _cache.MyPlayerID))
+                    if (!IsOwnedTechnologyCompletion(turnEvent, myPlayerId))
                     {
                         continue;
                     }
