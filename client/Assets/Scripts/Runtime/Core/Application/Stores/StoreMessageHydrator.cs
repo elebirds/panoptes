@@ -17,6 +17,7 @@ namespace Panoptes.Core.Application.Stores
         private readonly GameChatStore _gameChatStore;
         private readonly GameOverStore _gameOverStore;
         private readonly SettlementStore _settlementStore;
+        private readonly GameplayFeedbackStore _feedbackStore;
         private bool _attached;
 
         public StoreMessageHydrator(
@@ -27,7 +28,8 @@ namespace Panoptes.Core.Application.Stores
             TurnStore turnStore,
             GameChatStore gameChatStore,
             GameOverStore gameOverStore,
-            SettlementStore settlementStore)
+            SettlementStore settlementStore,
+            GameplayFeedbackStore feedbackStore)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _helper = helper ?? throw new ArgumentNullException(nameof(helper));
@@ -37,6 +39,7 @@ namespace Panoptes.Core.Application.Stores
             _gameChatStore = gameChatStore ?? throw new ArgumentNullException(nameof(gameChatStore));
             _gameOverStore = gameOverStore ?? throw new ArgumentNullException(nameof(gameOverStore));
             _settlementStore = settlementStore ?? throw new ArgumentNullException(nameof(settlementStore));
+            _feedbackStore = feedbackStore ?? throw new ArgumentNullException(nameof(feedbackStore));
         }
 
         public void Attach()
@@ -55,9 +58,16 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Register<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Register<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Register<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
+            _dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
+            _dispatcher.Register<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
+            _dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", HandleSetPolicyResult);
+            _dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
+            _dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
+            _dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
             _dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             _dispatcher.Register<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Register<MsgGameOver>("MsgGameOver", HandleGameOver);
+            _dispatcher.Register<Problem>("Problem", HandleProblem);
             _attached = true;
         }
 
@@ -82,9 +92,16 @@ namespace Panoptes.Core.Application.Stores
             _dispatcher.Unregister<MsgGameSync>("MsgGameSync", HandleGameSync);
             _dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", HandleTokenResult);
             _dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", HandleRevealResult);
+            _dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", HandleIssueUnitOrderResult);
+            _dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
+            _dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", HandleSetPolicyResult);
+            _dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
+            _dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
+            _dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
             _dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             _dispatcher.Unregister<MsgGameChatSync>("MsgGameChatSync", HandleGameChatSync);
             _dispatcher.Unregister<MsgGameOver>("MsgGameOver", HandleGameOver);
+            _dispatcher.Unregister<Problem>("Problem", HandleProblem);
             _attached = false;
         }
 
@@ -100,6 +117,7 @@ namespace Panoptes.Core.Application.Stores
             _gameChatStore.Clear();
             _gameOverStore.Clear();
             _settlementStore.Clear();
+            _feedbackStore.Clear();
         }
 
         public void HandlePlanningStart(MsgPlanningStart msg)
@@ -186,6 +204,10 @@ namespace Panoptes.Core.Application.Stores
 
             _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeTokenResult(_gameStateStore.Snapshot, msg));
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeTurn(_turnStore.Snapshot, msg));
+            if (!msg.Success)
+            {
+                _feedbackStore.PublishFeedback("token", msg.ErrorCode, string.Empty, false);
+            }
         }
 
         public void HandleRevealResult(MsgRevealResult msg)
@@ -209,6 +231,73 @@ namespace Panoptes.Core.Application.Stores
             _helper.HydrateGameState(StoreHydrationProtocolMapper.MergeGameOver(_gameStateStore.Snapshot));
             _helper.HydrateTurn(StoreHydrationProtocolMapper.MergeGameOver(_turnStore.Snapshot));
             _gameOverStore.Replace(ToGameOverState(msg, _gameStateStore.Snapshot));
+        }
+
+        public void HandleProblem(Problem msg)
+        {
+            if (msg == null)
+            {
+                return;
+            }
+
+            _feedbackStore.PublishFeedback("problem", msg.Code, msg.Message, false, ToDetailMap(msg.Details));
+        }
+
+        public void HandleIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback("unit_order", msg.ErrorCode, string.Empty, false, BuildDetails(
+                    ("unit_id", msg.UnitId),
+                    ("action", msg.Action),
+                    ("target_node_id", msg.TargetNodeId),
+                    ("target_unit_id", msg.TargetUnitId)));
+            }
+        }
+
+        public void HandleResearchResult(MsgResearchResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback("research", msg.ErrorCode, string.Empty, false, BuildDetails(("technology_id", msg.TechnologyId)));
+            }
+        }
+
+        public void HandleSetPolicyResult(MsgSetPolicyResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback("policy", msg.ErrorCode, string.Empty, false, BuildDetails(("national_policy_id", msg.NationalPolicyId)));
+            }
+        }
+
+        public void HandleSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback(
+                    "institution_loadout",
+                    msg.ErrorCode,
+                    string.Empty,
+                    false,
+                    BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
+            }
+        }
+
+        public void HandleSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback("building_recipe", msg.ErrorCode, msg.FeedbackMessage, false, ToDetailMap(msg.FeedbackDetails));
+            }
+        }
+
+        public void HandleBuildStructureResult(MsgBuildStructureResult msg)
+        {
+            if (msg != null && !msg.Success)
+            {
+                _feedbackStore.PublishFeedback("build", msg.ErrorCode, msg.FeedbackMessage, false, ToDetailMap(msg.FeedbackDetails));
+            }
         }
 
         public void HandleGameChatPosted(MsgGameChatPosted msg)
@@ -252,6 +341,67 @@ namespace Panoptes.Core.Application.Stores
                 string.Empty,
                 msg?.Reason,
                 msg?.Narrative);
+        }
+
+        private static Dictionary<string, string> ToDetailMap(IEnumerable<FeedbackDetail> details)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (details == null)
+            {
+                return result;
+            }
+
+            foreach (var detail in details)
+            {
+                if (detail == null || string.IsNullOrWhiteSpace(detail.Key))
+                {
+                    continue;
+                }
+
+                result[detail.Key] = detail.Value ?? string.Empty;
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, string> ToDetailMap(IEnumerable<ProblemDetail> details)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (details == null)
+            {
+                return result;
+            }
+
+            foreach (var detail in details)
+            {
+                if (detail == null || string.IsNullOrWhiteSpace(detail.Path))
+                {
+                    continue;
+                }
+
+                result[detail.Path] = detail.Detail ?? string.Empty;
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, string> BuildDetails(params (string Key, string Value)[] pairs)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (pairs == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < pairs.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(pairs[i].Key))
+                {
+                    result[pairs[i].Key] = pairs[i].Value ?? string.Empty;
+                }
+            }
+
+            return result;
         }
     }
 }

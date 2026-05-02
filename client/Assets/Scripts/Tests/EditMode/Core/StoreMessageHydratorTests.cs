@@ -155,6 +155,7 @@ namespace Panoptes.Tests.EditMode.Core
             var chatStore = new GameChatStore();
             var gameOverStore = new GameOverStore();
             var settlementStore = new SettlementStore();
+            var feedbackStore = new GameplayFeedbackStore();
             _hydrator = new StoreMessageHydrator(
                 dispatcher,
                 new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore),
@@ -163,7 +164,8 @@ namespace Panoptes.Tests.EditMode.Core
                 turnStore,
                 chatStore,
                 gameOverStore,
-                settlementStore);
+                settlementStore,
+                feedbackStore);
 
             _hydrator.HandleGameInit(new MsgGameInit
             {
@@ -218,6 +220,52 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(gameStore.Snapshot.IsGameOver, Is.True);
         }
 
+        [Test]
+        public void HandleFailures_ShouldHydrateGameplayFeedbackStore()
+        {
+            var gameStore = new GameStateStore();
+            var draftStore = new PlanningDraftStore();
+            var catalogStore = new StaticCatalogStore();
+            var turnStore = new TurnStore();
+            var feedbackStore = new GameplayFeedbackStore();
+            var dispatcher = new GameObject("MessageDispatcher").AddComponent<MessageDispatcher>();
+            _dispatcherObject = dispatcher.gameObject;
+            _hydrator = new StoreMessageHydrator(
+                dispatcher,
+                new StoreHydrationHelper(gameStore, draftStore, catalogStore, turnStore),
+                gameStore,
+                draftStore,
+                turnStore,
+                new GameChatStore(),
+                new GameOverStore(),
+                new SettlementStore(),
+                feedbackStore);
+
+            _hydrator.HandleTokenResult(new MsgTokenResult { Success = false, ErrorCode = "no_tokens_left" });
+            Assert.That(feedbackStore.Snapshot.Source, Is.EqualTo("token"));
+            Assert.That(feedbackStore.Snapshot.Code, Is.EqualTo("no_tokens_left"));
+
+            _hydrator.HandleProblem(new Problem
+            {
+                Code = "phase_mismatch",
+                Message = "wrong phase",
+                Details = { new ProblemDetail { Path = "phase", Detail = "settlement" } }
+            });
+            Assert.That(feedbackStore.Snapshot.Source, Is.EqualTo("problem"));
+            Assert.That(feedbackStore.Snapshot.Message, Is.EqualTo("wrong phase"));
+            Assert.That(feedbackStore.Snapshot.Details["phase"], Is.EqualTo("settlement"));
+
+            _hydrator.HandleBuildStructureResult(new MsgBuildStructureResult
+            {
+                Success = false,
+                ErrorCode = "building_exists",
+                FeedbackMessage = "occupied"
+            });
+            Assert.That(feedbackStore.Snapshot.Source, Is.EqualTo("build"));
+            Assert.That(feedbackStore.Snapshot.Code, Is.EqualTo("building_exists"));
+            Assert.That(feedbackStore.Snapshot.Message, Is.EqualTo("occupied"));
+        }
+
         private StoreMessageHydrator CreateHydrator(
             GameStateStore gameStore,
             PlanningDraftStore draftStore,
@@ -239,7 +287,8 @@ namespace Panoptes.Tests.EditMode.Core
                 turnStore,
                 new GameChatStore(),
                 new GameOverStore(),
-                new SettlementStore());
+                new SettlementStore(),
+                new GameplayFeedbackStore());
         }
 
         private static ServerFrame GameFrame(MsgTokenResult msg)
