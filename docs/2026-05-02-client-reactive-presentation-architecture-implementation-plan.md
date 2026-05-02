@@ -401,6 +401,8 @@ Status (2026-05-02):
 - Wired `MapPlanningInputController` as the current Unity map adapter: it still
   owns raycast/world feedback, but publishes selection IDs through
   `SelectionService` and tool/preview transitions through `PlanningToolService`.
+- Extracted `MapPlanningInputStateAdapter` so the scene controller no longer
+  directly stores planning tool / selection / ViewModel service references.
 - Existing map commands continue through `PlanningIntentService`; generated
   protocol files remain untouched.
 

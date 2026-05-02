@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify state ownership did not move back into the controller or ViewModel."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify boundary checks, generated-file rules, and Unity compile gate."}
