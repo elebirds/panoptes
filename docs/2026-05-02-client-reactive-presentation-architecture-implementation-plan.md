@@ -569,6 +569,41 @@ Next work: split the remaining cache bridge into narrower bootstrap seeders,
 then remove Store writes from cache event mirroring where direct hydrators now
 own the message family.
 
+## Phase 12: Narrow Cache Bridge Runtime Role
+
+Goal: prevent the migration bridge from behaving like the final runtime Store
+hydration path after direct message hydrators own game/planning messages.
+
+Current bounded bridge flow:
+
+```text
+Game scene scope starts
+  -> StoreHydrationCacheBridge.Seed(...)
+  -> GameStateStore / PlanningDraftStore / TurnStore initial snapshots
+
+StaticCatalogCache.CatalogChanged
+  -> StoreHydrationCacheBridge
+  -> StaticCatalogStore
+```
+
+Status (2026-05-02):
+
+- `StoreHydrationCacheBridge` no longer subscribes to `GameStateCache` or
+  `PlanningDraftCache` change events.
+- The bridge still seeds game, planning, turn, and static catalog Stores once
+  from existing cache snapshots when the Game scope is built. This covers
+  messages that arrived before scene-scope Store hydrators existed.
+- The bridge still listens to `StaticCatalogCache.CatalogChanged` only because
+  static catalog bundle/section chunk sync is still assembled by the legacy
+  cache and does not yet have a direct Store hydrator.
+- Added EditMode coverage that subsequent game/planning cache changes do not
+  write Stores through this bridge, while legacy static catalog changes still
+  publish to `StaticCatalogStore`.
+
+Next work: either migrate static catalog section/chunk sync into a direct Core
+hydrator, or rename/extract the remaining static catalog bridge once its
+legacy-only role is isolated from game Store bootstrapping.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:
