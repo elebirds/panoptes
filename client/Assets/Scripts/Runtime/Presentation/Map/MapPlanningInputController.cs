@@ -128,19 +128,18 @@ namespace Panoptes.Presentation.Map
         };
 
         private readonly HashSet<string> _highlightNodeIds = new();
-        private readonly PendingBuildState<PendingBuildRecord> _pendingBuildState = new(record => record.nodeId);
-        private readonly BuildPlacementGhostPresenter _buildPlacementGhostPresenter = new();
+        private readonly MapBuildPlacementSession _buildPlacement = new();
         private readonly MapMovePreviewPresentationController _movePreviewPresentation = new();
         private readonly MapPendingDeployGhostController _pendingDeployGhosts = new();
         private readonly MapTerritoryHighlightPresenter _territoryHighlights = new();
-        private readonly PendingMoveState _pendingMoveState = new();
+        private readonly MapMoveCommandSession _moveCommands = new();
         private readonly List<UnitView> _nodeClickUnits = new();
-        private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
-        private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
+        private readonly MapUnitDamagePopupPresenter _unitDamagePopups = new();
         private readonly MapPointerInput _pointerInput = new();
         private readonly MapPlanningInputCoordinator _inputCoordinator = new();
         private readonly MapBuildPlacementCoordinator _buildPlacementCoordinator = new();
         private readonly MapPlanningInputStateAdapter _inputState = new();
+        private readonly MapPlanningCacheEventBridge _cacheEvents = new();
         private readonly MapNodeInfoProxyFactory _nodeInfoProxyFactory = new();
         private readonly MapBuildingCatalogResolver _buildingCatalogResolver = new();
         private readonly MapAttackRangePresenter _attackRangePresenter = new();
@@ -148,23 +147,10 @@ namespace Panoptes.Presentation.Map
         private IMapSelectionSurface _selectionSurface;
 
         private UnitView _selectedUnit;
-        private BuildPlacementRule _buildRule;
-        private string _buildType = string.Empty;
-        private string _activeBuildCityId = string.Empty;
-        private NodeView _hoverNode;
-        private GameStateCache _cache;
-        private PlanningDraftCache _draftCache;
-        private bool _cacheEventsSubscribed;
         private float _ignoreInputUntilTime;
-        private float _nextMovePreviewRequestAt;
-        private float _nextBuildPreviewRequestAt;
-        private int _movePreviewRequestSequence;
-        private int _buildPreviewRequestSequence;
-        private string _hoverPreviewNodeId = string.Empty;
-        private string _hoverBuildPreviewNodeId = string.Empty;
         private UnitInfoPanelController _unitInfoPanelController;
 
-        public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuildState.Records;
+        public IReadOnlyList<PendingBuildRecord> PendingBuilds => _buildPlacement.PendingBuilds;
         public UnitView SelectedUnit => _selectedUnit;
         public CombatActionMode CurrentCombatActionMode => _inputState.CombatActionMode;
         public string CurrentCombatPrompt => _selectedUnit == null
@@ -204,6 +190,7 @@ namespace Panoptes.Presentation.Map
 
             _movePreviewPresentation.Ensure(transform);
             _selectionSurface = new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance);
+            ConfigureBuildPlacementSession();
         }
 
         private void OnEnable()
@@ -224,14 +211,14 @@ namespace Panoptes.Presentation.Map
             ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
             _inputState.ClearToolAndSelection();
-            _knownUnitHpByUnitId.Clear();
-            _lastDamagePopupTimeByUnitId.Clear();
+            _buildPlacement.ClearHoverState();
+            _unitDamagePopups.Clear();
             _nodeInfoProxyFactory.DestroyProxy();
         }
 
         private void Update()
         {
-            if (!_cacheEventsSubscribed)
+            if (!_cacheEvents.IsGameStateSubscribed)
             {
                 SubscribeCacheEvents();
             }
@@ -365,7 +352,7 @@ namespace Panoptes.Presentation.Map
 
             ShowPendingDeployCityCoreGhost(_selectedUnit.UnitId, centerNodeId);
             _planningIntentService?.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
-            var phase = _cache != null ? _cache.Phase : string.Empty;
+            var phase = _cacheEvents.Cache != null ? _cacheEvents.Cache.Phase : string.Empty;
             Debug.Log($"[MapPlanningInputController] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
             return true;
         }
@@ -392,7 +379,7 @@ namespace Panoptes.Presentation.Map
 
             ShowPendingDeployCityCoreGhost(unitId, resolvedCenterNodeId);
             _planningIntentService?.ExpandTerritory(unitId, resolvedCenterNodeId);
-            var phase = _cache != null ? _cache.Phase : string.Empty;
+            var phase = _cacheEvents.Cache != null ? _cacheEvents.Cache.Phase : string.Empty;
             Debug.Log($"[MapPlanningInputController] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
             return true;
         }
@@ -404,7 +391,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            return _pendingMoveState.Has(unitId);
+            return _moveCommands.IsUnitMovePending(unitId);
         }
 
         public void ApplyBackendMoveCommand(string unitId, string targetNodeId, bool enqueue = true, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
@@ -440,27 +427,8 @@ namespace Panoptes.Presentation.Map
 
         public void ApplyBackendBuildCommand(string buildingType, string nodeId, bool isGhost, string ownerId, int hp = 100)
         {
-            if (MapRenderer.Instance == null)
-            {
-                return;
-            }
-
-            MapRenderer.Instance.ApplyBuildingPlacement(nodeId, buildingType, ownerId, isGhost, hp, buildPlacedGhostColor);
-            if (GameStateCache.Instance != null)
-            {
-                var cacheNode = GameStateCache.Instance.GetNode(nodeId);
-                if (cacheNode != null)
-                {
-                    cacheNode.BuildingType = buildingType ?? string.Empty;
-                    cacheNode.Owner = ownerId ?? string.Empty;
-                    cacheNode.BuildingHp = hp;
-                }
-            }
-
-            if (!isGhost)
-            {
-                RemovePendingBuild(nodeId);
-            }
+            ConfigureBuildPlacementSession();
+            _buildPlacement.ApplyBackendBuildCommand(buildingType, nodeId, isGhost, ownerId, hp, buildPlacedGhostColor);
         }
         #endregion
 
@@ -468,48 +436,25 @@ namespace Panoptes.Presentation.Map
 
         private void EnterBuildPlacement(string buildingType, string cityId, BuildPlacementRule rule)
         {
-            _buildType = ResolveBackendBuildingType(NormalizeToken(buildingType));
-            if (IsManualPlacementBlocked(_buildType))
+            ConfigureBuildPlacementSession();
+            if (!_buildPlacement.EnterBuildPlacement(
+                    buildingType,
+                    cityId,
+                    rule,
+                    CreateBuildPlacementVisualSettings(),
+                    ShowUserError))
             {
-                Debug.Log($"[MapPlanningInputController] {_buildType} is pre-placed by map config and cannot be manually built.");
-                ExitBuildMode();
-                return;
-            }
-            _activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();
-            if (string.IsNullOrEmpty(_activeBuildCityId))
-            {
-                Debug.LogWarning($"[MapPlanningInputController] Missing build city context before entering build mode. building={_buildType}");
-                ShowUserError("缺少建造城市上下文，无法进入建造模式");
-                ExitBuildMode();
                 return;
             }
 
-            _buildRule = rule;
-            _inputState.SetBuildModeActive(true, _buildType, _activeBuildCityId, _buildRule);
             BlockInputAfterModeSwitch();
-
             ClearCombatSelection(preserveToolMode: true);
-            DestroyHoverGhost();
-        }
-
-        private bool IsManualPlacementBlocked(string buildingType)
-        {
-            return BuildPlacementInputMode.IsManualPlacementBlocked(
-                buildingType,
-                disallowManualCityCorePlacement,
-                manualPlacementBlockedBuildingTypes);
         }
 
         private void ExitBuildMode()
         {
-            RestoreNodeHighlightAfterHover(_hoverNode);
-
-            _inputState.SetBuildModeActive(false, _buildType, _activeBuildCityId, _buildRule);
-            _buildType = string.Empty;
-            _activeBuildCityId = string.Empty;
-            _hoverNode = null;
-            DestroyHoverGhost();
-            ClearBuildPreviewState();
+            ConfigureBuildPlacementSession();
+            _buildPlacement.ExitBuildMode();
         }
 
         private void UpdateBuildMode(bool leftMouseDown, bool rightMouseDown)
@@ -519,169 +464,45 @@ namespace Panoptes.Presentation.Map
 
         private Color ResolveBuildPreviewColor(string nodeId)
         {
-            if (string.IsNullOrEmpty(nodeId))
-            {
-                return buildInvalidColor;
-            }
-
-            if (HasPendingBuild(nodeId))
-            {
-                return buildPlacedGhostColor;
-            }
-
-            if (TryGetCurrentBuildPreview(nodeId, out var preview) && preview != null)
-            {
-                return preview.Valid ? buildValidColor : buildInvalidColor;
-            }
-
-            return string.Equals(_hoverBuildPreviewNodeId, nodeId, StringComparison.Ordinal)
-                ? buildPendingColor
-                : buildInvalidColor;
-        }
-
-        private bool ShouldRenderPendingBuildGhost(string nodeId)
-        {
-            var map = MapRenderer.Instance;
-            if (map == null || string.IsNullOrWhiteSpace(nodeId))
-            {
-                return false;
-            }
-
-            return map.TryGetNodeState(nodeId, out var nodeState) &&
-                   nodeState != null &&
-                   string.IsNullOrWhiteSpace(nodeState.BuildingType);
-        }
-
-        private void RecreateHoverGhost(NodeView node)
-        {
-            DestroyHoverGhost();
-            if (node == null || string.IsNullOrEmpty(_buildType))
-            {
-                return;
-            }
-
-            _buildPlacementGhostPresenter.Recreate(node, _buildType, GetLocalOwnerId(), buildValidColor);
-        }
-
-        private void DestroyHoverGhost()
-        {
-            _buildPlacementGhostPresenter.Clear();
-        }
-
-        private bool SendBuildCommand(string buildingType, string nodeId)
-        {
-            buildingType = ResolveBackendBuildingType(buildingType);
-            if (string.IsNullOrWhiteSpace(_activeBuildCityId))
-            {
-                Debug.LogWarning($"[MapPlanningInputController] Missing build city context. node={nodeId} building={buildingType}");
-                ShowUserError("Current node is missing city context.");
-                return false;
-            }
-
-            _planningIntentService?.BuildToken(nodeId, buildingType, _activeBuildCityId);
-            BuildCommandSent?.Invoke(buildingType, nodeId);
-            return true;
+            ConfigureBuildPlacementSession();
+            return _buildPlacement.ResolveBuildPreviewColor(nodeId, CreateBuildPlacementVisualSettings());
         }
 
         private void RemovePendingBuild(string nodeId)
         {
-            if (string.IsNullOrEmpty(nodeId))
-            {
-                return;
-            }
-
-            _pendingBuildState.RemoveNode(nodeId);
+            _buildPlacement.RemovePendingBuild(nodeId);
         }
 
         private string GetLastPendingBuildNodeId()
         {
-            return _pendingBuildState.GetLastNodeId();
+            return _buildPlacement.GetLastPendingBuildNodeId();
         }
 
         private void RollbackPendingBuild(string nodeId)
         {
-            if (string.IsNullOrWhiteSpace(nodeId))
-            {
-                return;
-            }
-
-            nodeId = nodeId.Trim();
-            RemovePendingBuild(nodeId);
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return;
-            }
-
-            map.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
+            _buildPlacement.RollbackPendingBuild(nodeId);
         }
 
         private bool HasPendingBuild(string nodeId)
         {
-            if (string.IsNullOrWhiteSpace(nodeId))
-            {
-                return false;
-            }
-
-            return _pendingBuildState.HasNode(nodeId);
+            return _buildPlacement.HasPendingBuild(nodeId);
         }
 
         private void RefreshBuildPreviewVisuals()
         {
-            if (!_inputState.IsBuildModeActive() || _hoverNode == null)
-            {
-                return;
-            }
-
-            var color = ResolveBuildPreviewColor(_hoverNode.NodeId);
-            _hoverNode.SetHighlight(true, color);
-            _buildPlacementGhostPresenter.Render(color);
+            ConfigureBuildPlacementSession();
+            _buildPlacement.RefreshPreviewVisuals(CreateBuildPlacementVisualSettings());
         }
 
         private void RequestBuildPreview(string nodeId)
         {
-            if (string.IsNullOrWhiteSpace(nodeId) ||
-                string.IsNullOrWhiteSpace(_buildType) ||
-                string.IsNullOrWhiteSpace(_activeBuildCityId))
-            {
-                return;
-            }
-
-            _hoverBuildPreviewNodeId = nodeId.Trim();
-            _inputState.SetBuildPreviewTarget(_hoverBuildPreviewNodeId);
-            _nextBuildPreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, buildPreviewRequestThrottleSeconds);
-            _buildPreviewRequestSequence++;
-            var requestId = $"build-preview-{_buildType}-{_buildPreviewRequestSequence}";
-            var draftCache = PlanningDraftCache.EnsureInstance();
-            draftCache?.TrackBuildPreviewRequest(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
-            _planningIntentService?.PreviewBuild(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
-        }
-
-        private bool TryGetCurrentBuildPreview(string nodeId, out BuildPreviewDto preview)
-        {
-            preview = null;
-            if (string.IsNullOrWhiteSpace(nodeId) ||
-                string.IsNullOrWhiteSpace(_buildType) ||
-                string.IsNullOrWhiteSpace(_activeBuildCityId))
-            {
-                return false;
-            }
-
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            preview = draftCache != null ? draftCache.CurrentBuildPreview : null;
-            return preview != null &&
-                   string.Equals(preview.NodeId, nodeId.Trim(), StringComparison.Ordinal) &&
-                   string.Equals(preview.BuildingTypeId, _buildType, StringComparison.Ordinal) &&
-                   string.Equals(preview.CityId, _activeBuildCityId, StringComparison.Ordinal);
+            ConfigureBuildPlacementSession();
+            _buildPlacement.RequestBuildPreview(nodeId, CreateBuildPlacementVisualSettings());
         }
 
         private void ClearBuildPreviewState()
         {
-            _hoverBuildPreviewNodeId = string.Empty;
-            _nextBuildPreviewRequestAt = 0f;
-            _inputState.ClearBuildPreviewTarget();
-            (_draftCache ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
+            _buildPlacement.ClearBuildPreviewState();
         }
 
         bool IMapBuildPlacementCoordinatorContext.HasMapRenderer => MapRenderer.Instance != null;
@@ -700,13 +521,12 @@ namespace Panoptes.Presentation.Map
 
         bool IMapBuildPlacementCoordinatorContext.IsCurrentHoverNode(NodeView node)
         {
-            return _hoverNode == node;
+            return _buildPlacement.IsCurrentHoverNode(node);
         }
 
         bool IMapBuildPlacementCoordinatorContext.ShouldRequestBuildPreview(string nodeId)
         {
-            return !TryGetCurrentBuildPreview(nodeId, out _) &&
-                   Time.unscaledTime >= _nextBuildPreviewRequestAt;
+            return _buildPlacement.ShouldRequestBuildPreview(nodeId);
         }
 
         Color IMapBuildPlacementCoordinatorContext.ResolveBuildPreviewColor(string nodeId)
@@ -721,30 +541,22 @@ namespace Panoptes.Presentation.Map
 
         void IMapBuildPlacementCoordinatorContext.ClearBuildHoverState()
         {
-            RestoreNodeHighlightAfterHover(_hoverNode);
-            _hoverNode = null;
-            DestroyHoverGhost();
-            ClearBuildPreviewState();
+            _buildPlacement.ClearHoverState();
         }
 
         void IMapBuildPlacementCoordinatorContext.MoveBuildHoverTo(NodeView node)
         {
-            RestoreNodeHighlightAfterHover(_hoverNode);
-            _hoverNode = node;
-            RecreateHoverGhost(node);
+            _buildPlacement.MoveHoverTo(node, CreateBuildPlacementVisualSettings());
         }
 
         void IMapBuildPlacementCoordinatorContext.RenderBuildHover(NodeView node, Color highlightColor)
         {
-            if (node != null)
-            {
-                node.SetHighlight(true, highlightColor);
-            }
+            _buildPlacement.RenderHover(node, highlightColor);
         }
 
         void IMapBuildPlacementCoordinatorContext.RenderBuildGhost(Color highlightColor)
         {
-            _buildPlacementGhostPresenter.Render(highlightColor);
+            _buildPlacement.RenderGhost(highlightColor);
         }
 
         void IMapBuildPlacementCoordinatorContext.RequestBuildPreview(string nodeId)
@@ -759,44 +571,11 @@ namespace Panoptes.Presentation.Map
 
         void IMapBuildPlacementCoordinatorContext.TryCommitBuildPlacement(NodeView node)
         {
-            if (node == null || string.IsNullOrWhiteSpace(node.NodeId))
-            {
-                return;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return;
-            }
-
-            var backendBuildingType = ResolveBackendBuildingType(_buildType);
-            if (TryGetCurrentBuildPreview(node.NodeId, out var preview) &&
-                preview != null &&
-                !preview.Valid)
-            {
-                ShowUserError(BuildPreviewPresenter.ResolveMessage(preview));
-            }
-
-            if (!SendBuildCommand(backendBuildingType, node.NodeId))
-            {
-                return;
-            }
-
-            var ownerId = GetLocalOwnerId();
-            if (ShouldRenderPendingBuildGhost(node.NodeId))
-            {
-                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, buildPlacedGhostColor);
-            }
-
-            _pendingBuildState.Add(new PendingBuildRecord
-            {
-                buildingType = backendBuildingType,
-                nodeId = node.NodeId,
-                ownerId = ownerId,
-                isGhost = true
-            });
-            ExitBuildMode();
+            _buildPlacement.TryCommitBuildPlacement(
+                node,
+                CreateBuildPlacementVisualSettings(),
+                ShowUserError,
+                (buildingType, nodeId) => BuildCommandSent?.Invoke(buildingType, nodeId));
         }
         #endregion
 
@@ -921,7 +700,7 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null)
             {
-                if (!string.IsNullOrEmpty(_hoverPreviewNodeId))
+                if (_moveCommands.HasHoverPreview)
                 {
                     ClearMovePreviewState();
                 }
@@ -948,7 +727,7 @@ namespace Panoptes.Presentation.Map
                 {
                     ClearNodeHighlights();
                 }
-                if (!string.IsNullOrEmpty(_hoverPreviewNodeId))
+                if (_moveCommands.HasHoverPreview)
                 {
                     ClearMovePreviewState();
                 }
@@ -967,12 +746,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (string.Equals(_hoverPreviewNodeId, node.NodeId, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            if (Time.unscaledTime < _nextMovePreviewRequestAt)
+            if (!_moveCommands.ShouldRequestPreview(node.NodeId))
             {
                 return;
             }
@@ -1013,14 +787,12 @@ namespace Panoptes.Presentation.Map
             }
 
             ClearNodeHighlights();
-            _hoverPreviewNodeId = targetNodeId;
-            _inputState.SetMovePreviewTarget(_hoverPreviewNodeId);
-            _nextMovePreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, movePreviewRequestThrottleSeconds);
-            _movePreviewRequestSequence++;
-            var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
-            PlanningDraftCache.EnsureInstance()?.TrackPreviewRequest(requestId, _selectedUnit.UnitId, "move", targetNodeId);
-            Debug.Log($"[MapPlanningInputController] 请求路径预览 unit={_selectedUnit.UnitId} hover_node={targetNodeId} request={requestId}");
-            _planningIntentService?.PreviewMove(requestId, _selectedUnit.UnitId, targetNodeId);
+            _moveCommands.RequestPreview(
+                _selectedUnit.UnitId,
+                targetNodeId,
+                movePreviewRequestThrottleSeconds,
+                _inputState,
+                _planningIntentService);
         }
 
         private bool TryIssueAuthoritativeMoveOrder(string targetNodeId)
@@ -1363,13 +1135,8 @@ namespace Panoptes.Presentation.Map
                 var normalizedUnitId = unitId.Trim();
                 // Move command should cancel any pending deploy intent for the same unit.
                 ClearPendingDeployCityCoreGhostForUnit(normalizedUnitId);
-                _pendingMoveState.MarkPending(normalizedUnitId, targetNodeId);
-                if (TryGetCurrentMovePreview(normalizedUnitId, targetNodeId, out var preview) &&
-                    preview != null &&
-                    preview.Valid)
-                {
-                    _pendingMoveState.RememberPath(normalizedUnitId, preview.PathNodeIds);
-                }
+                TryGetCurrentMovePreview(normalizedUnitId, targetNodeId, out var preview);
+                _moveCommands.MarkPendingMove(normalizedUnitId, targetNodeId, preview);
             }
 
             RemoveMovePreview(unitId);
@@ -1385,12 +1152,8 @@ namespace Panoptes.Presentation.Map
 
         private bool TryResolvePlannedMoveTargetNodeId(string unitId, out string targetNodeId)
         {
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            return MoveSelectionInputMode.TryResolvePlannedTargetNodeId(
-                unitId,
-                _pendingMoveState,
-                draftCache?.OrdersByUnitId,
-                out targetNodeId);
+            var draftCache = _cacheEvents.DraftCache ?? PlanningDraftCache.Instance;
+            return _moveCommands.TryResolvePlannedTargetNodeId(unitId, draftCache, out targetNodeId);
         }
 
         private void ClearPendingMoveStateForUnit(string unitId)
@@ -1401,7 +1164,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var normalizedUnitId = unitId.Trim();
-            _pendingMoveState.ClearUnit(normalizedUnitId);
+            _moveCommands.ClearUnit(normalizedUnitId);
             _movePreviewPresentation.ClearMovePathMarkersForUnit(normalizedUnitId);
             RemoveMovePreview(normalizedUnitId);
         }
@@ -1414,9 +1177,8 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            preview = draftCache != null ? draftCache.CurrentPreview : null;
-            return MoveSelectionInputMode.MatchesPreview(preview, unitId, targetNodeId);
+            var draftCache = _cacheEvents.DraftCache ?? PlanningDraftCache.Instance;
+            return _moveCommands.TryGetCurrentPreview(unitId, targetNodeId, draftCache, out preview);
         }
 
         private IReadOnlyList<string> GetQueuedMovePathNodeIds(string unitId)
@@ -1426,38 +1188,19 @@ namespace Panoptes.Presentation.Map
                 return null;
             }
 
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            return MoveSelectionInputMode.GetQueuedMovePathNodeIds(unitId, draftCache?.OrdersByUnitId);
+            var draftCache = _cacheEvents.DraftCache ?? PlanningDraftCache.Instance;
+            return _moveCommands.GetQueuedMovePathNodeIds(unitId, draftCache);
         }
 
         private void RememberQueuedMovePaths()
         {
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
-            if (draftCache == null)
-            {
-                return;
-            }
-
-            foreach (var pair in draftCache.OrdersByUnitId)
-            {
-                var order = pair.Value;
-                if (order == null || !string.Equals(order.Action, "move", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                RememberPendingMovePath(order.UnitId, order.PathNodeIds);
-            }
+            var draftCache = _cacheEvents.DraftCache ?? PlanningDraftCache.Instance;
+            _moveCommands.RememberQueuedMovePaths(draftCache);
         }
 
         private void RememberPendingMovePath(string unitId, IReadOnlyList<string> pathNodeIds)
         {
-            if (string.IsNullOrWhiteSpace(unitId) || pathNodeIds == null || pathNodeIds.Count < 2)
-            {
-                return;
-            }
-
-            _pendingMoveState.RememberPath(unitId, pathNodeIds);
+            _moveCommands.RememberPath(unitId, pathNodeIds);
         }
 
         private IReadOnlyList<string> GetRememberedMovePathNodeIds(string unitId)
@@ -1467,7 +1210,7 @@ namespace Panoptes.Presentation.Map
                 return null;
             }
 
-            return _pendingMoveState.GetRememberedPath(unitId);
+            return _moveCommands.GetRememberedPath(unitId);
         }
 
         private void RefreshPreviewVisuals()
@@ -1477,7 +1220,7 @@ namespace Panoptes.Presentation.Map
             var preview = PlanningDraftCache.Instance != null ? PlanningDraftCache.Instance.CurrentPreview : null;
             _movePreviewPresentation.RefreshPreview(
                 preview,
-                _hoverPreviewNodeId,
+                _moveCommands.HoverPreviewNodeId,
                 _selectedUnit?.UnitId,
                 MapRenderer.Instance != null,
                 moveInvalidColor,
@@ -1489,14 +1232,7 @@ namespace Panoptes.Presentation.Map
 
         private void ClearMovePreviewState()
         {
-            var hadHover = !string.IsNullOrEmpty(_hoverPreviewNodeId);
-            _hoverPreviewNodeId = string.Empty;
-            _inputState.ClearMovePreviewTarget();
-            var previewCache = PlanningDraftCache.Instance;
-            if (hadHover || previewCache?.CurrentPreview != null)
-            {
-                previewCache?.ClearPreview();
-            }
+            _moveCommands.ClearPreviewState(_inputState);
             ClearNodeHighlights();
         }
 
@@ -1519,7 +1255,7 @@ namespace Panoptes.Presentation.Map
 
         private void RefreshQueuedMovePathMarkers()
         {
-            var draftCache = _draftCache ?? PlanningDraftCache.Instance;
+            var draftCache = _cacheEvents.DraftCache ?? PlanningDraftCache.Instance;
             _movePreviewPresentation.RefreshQueuedMovePathMarkers(
                 draftCache?.OrdersByUnitId,
                 movePathArrowColor,
@@ -1557,7 +1293,7 @@ namespace Panoptes.Presentation.Map
         {
             var normalizedUnitId = string.IsNullOrWhiteSpace(unitId) ? string.Empty : unitId.Trim();
             if (!string.IsNullOrEmpty(normalizedUnitId)
-                && _pendingMoveState.TryGetTargetNodeId(normalizedUnitId, out var pendingNodeId))
+                && _moveCommands.TryGetPendingTargetNodeId(normalizedUnitId, out var pendingNodeId))
             {
                 return pendingNodeId;
             }
@@ -1896,81 +1632,46 @@ namespace Panoptes.Presentation.Map
 
         private void SubscribeCacheEvents()
         {
-            if (_cacheEventsSubscribed)
-            {
-                return;
-            }
-
-            _cache = GameStateCache.Instance;
-            _draftCache = PlanningDraftCache.EnsureInstance();
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _cache.OnTurnSettled += OnTurnSettled;
-            _cache.OnNodeChanged += OnNodeChanged;
-            _cache.OnUnitsChanged += OnUnitsChanged;
-            _cache.OnTokenResult += OnTokenResult;
-            _cache.OnPlanningCommandResult += OnPlanningCommandResult;
-            _cacheEventsSubscribed = true;
+            _cacheEvents.SubscribeGameState(
+                OnTurnSettled,
+                OnNodeChanged,
+                OnUnitsChanged,
+                OnTokenResult,
+                OnPlanningCommandResult);
         }
 
         private void SubscribeDraftCacheEvents()
         {
-            _draftCache = PlanningDraftCache.EnsureInstance();
             _movePreviewPresentation.Ensure(transform);
-            if (_draftCache == null)
-            {
-                return;
-            }
-
-            _draftCache.PreviewChanged -= OnPreviewChanged;
-            _draftCache.PreviewChanged += OnPreviewChanged;
-            _draftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
-            _draftCache.BuildPreviewChanged += OnBuildPreviewChanged;
-            _draftCache.OrdersChanged -= OnOrdersChanged;
-            _draftCache.OrdersChanged += OnOrdersChanged;
+            _cacheEvents.SubscribeDraft(
+                OnPreviewChanged,
+                OnBuildPreviewChanged,
+                OnOrdersChanged);
             RefreshQueuedMovePathMarkers();
         }
 
         private void UnsubscribeCacheEvents()
         {
-            if (!_cacheEventsSubscribed)
-            {
-                return;
-            }
-
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled -= OnTurnSettled;
-                _cache.OnNodeChanged -= OnNodeChanged;
-                _cache.OnUnitsChanged -= OnUnitsChanged;
-                _cache.OnTokenResult -= OnTokenResult;
-                _cache.OnPlanningCommandResult -= OnPlanningCommandResult;
-            }
-
-            _cache = null;
-            _cacheEventsSubscribed = false;
+            _cacheEvents.UnsubscribeGameState(
+                OnTurnSettled,
+                OnNodeChanged,
+                OnUnitsChanged,
+                OnTokenResult,
+                OnPlanningCommandResult);
         }
 
         private void UnsubscribeDraftCacheEvents()
         {
-            if (_draftCache == null)
-            {
-                return;
-            }
-
-            _draftCache.PreviewChanged -= OnPreviewChanged;
-            _draftCache.BuildPreviewChanged -= OnBuildPreviewChanged;
-            _draftCache.OrdersChanged -= OnOrdersChanged;
-            _draftCache = null;
+            _cacheEvents.UnsubscribeDraft(
+                OnPreviewChanged,
+                OnBuildPreviewChanged,
+                OnOrdersChanged);
         }
 
         private void OnTurnSettled(TurnSettledEvent settledEvent)
         {
             ClearCombatSelection();
-            _pendingMoveState.ClearAll();
+            _moveCommands.ClearAll();
             _movePreviewPresentation.ClearAllMovePathMarkers();
 
             var settlement = settledEvent?.Settlement;
@@ -1997,7 +1698,7 @@ namespace Panoptes.Presentation.Map
                         if (!string.IsNullOrWhiteSpace(eventItem.UnitId))
                         {
                             var normalizedUnitId = eventItem.UnitId.Trim();
-                            _pendingMoveState.ClearUnit(normalizedUnitId);
+                            _moveCommands.ClearUnit(normalizedUnitId);
                             _movePreviewPresentation.ClearMovePathMarkersForUnit(normalizedUnitId);
                         }
 
@@ -2016,7 +1717,7 @@ namespace Panoptes.Presentation.Map
                     }
                 }
             }
-            _pendingMoveState.ClearRememberedPaths();
+            _moveCommands.ClearRememberedPaths();
 
             var builtBuildings = settlement?.BuiltBuildings;
             if (builtBuildings == null || builtBuildings.Count == 0)
@@ -2092,7 +1793,7 @@ namespace Panoptes.Presentation.Map
                 var unitId = evt.PrimaryId?.Trim();
                 if (!string.IsNullOrWhiteSpace(unitId))
                 {
-                    _pendingMoveState.ClearUnit(unitId);
+                    _moveCommands.ClearUnit(unitId);
                     _movePreviewPresentation.ClearMovePathMarkersForUnit(unitId);
                     RemoveMovePreview(unitId);
                 }
@@ -2162,11 +1863,10 @@ namespace Panoptes.Presentation.Map
                     map.RemoveRuntimeUnit(removedId, false);
                     RemoveMovePreview(removedId);
                     var normalizedRemovedId = removedId.Trim();
-                    _pendingMoveState.ClearUnit(normalizedRemovedId);
+                    _moveCommands.ClearUnit(normalizedRemovedId);
                     _movePreviewPresentation.ClearMovePathMarkersForUnit(normalizedRemovedId);
                     ClearPendingDeployCityCoreGhostForUnit(normalizedRemovedId);
-                    _knownUnitHpByUnitId.Remove(normalizedRemovedId);
-                    _lastDamagePopupTimeByUnitId.Remove(normalizedRemovedId);
+                    _unitDamagePopups.ForgetUnit(normalizedRemovedId);
                     if (_selectedUnit != null && string.Equals(_selectedUnit.UnitId, removedId, StringComparison.Ordinal))
                     {
                         ClearMoveSelection();
@@ -2185,11 +1885,7 @@ namespace Panoptes.Presentation.Map
                     }
 
                     map.TrySpawnRuntimeUnit(added, true, false);
-                    var addedId = string.IsNullOrWhiteSpace(added.Id) ? string.Empty : added.Id.Trim();
-                    if (!string.IsNullOrEmpty(addedId))
-                    {
-                        _knownUnitHpByUnitId[addedId] = Mathf.Max(0, added.Hp);
-                    }
+                    _unitDamagePopups.RememberUnit(added);
                 }
             }
 
@@ -2205,28 +1901,11 @@ namespace Panoptes.Presentation.Map
                         continue;
                     }
 
-                    var unitId = moved.Id.Trim();
-                    var hpAfter = Mathf.Max(0, moved.Hp);
-
-                    if (!_knownUnitHpByUnitId.TryGetValue(unitId, out var hpBefore))
-                    {
-                        if (map.TryGetUnitView(unitId, out var unitView) && unitView != null)
-                        {
-                            hpBefore = Mathf.Max(0, unitView.HitPoints);
-                        }
-                        else
-                        {
-                            hpBefore = hpAfter;
-                        }
-                    }
-
-                    _knownUnitHpByUnitId[unitId] = hpAfter;
-
-                    var damage = hpBefore - hpAfter;
-                    if (allowFallbackPopup && damage > 0)
-                    {
-                        TryShowUnitDamagePopup(unitId, damage);
-                    }
+                    _unitDamagePopups.TrackMovedUnit(
+                        moved,
+                        allowFallbackPopup,
+                        damagePopupRepeatCooldownSeconds,
+                        ref damagePopupController);
                 }
             }
 
@@ -2234,44 +1913,6 @@ namespace Panoptes.Presentation.Map
             {
                 RefreshAttackRangeHighlights();
             }
-        }
-
-        private void TryShowUnitDamagePopup(string unitId, int damage)
-        {
-            if (string.IsNullOrWhiteSpace(unitId) || damage <= 0)
-            {
-                return;
-            }
-
-            var normalizedUnitId = unitId.Trim();
-            if (_lastDamagePopupTimeByUnitId.TryGetValue(normalizedUnitId, out var lastPopupAt))
-            {
-                var cooldown = Mathf.Max(0f, damagePopupRepeatCooldownSeconds);
-                if (Time.unscaledTime - lastPopupAt < cooldown)
-                {
-                    return;
-                }
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(normalizedUnitId, out var unitView) || unitView == null)
-            {
-                return;
-            }
-
-            if (damagePopupController == null)
-            {
-                damagePopupController = SceneObjectFinder.FindFirstSceneObject<DamageNumberPopupController>();
-            }
-
-            if (damagePopupController == null)
-            {
-                var popupRoot = new GameObject("DamageNumberPopupController_Fallback");
-                damagePopupController = popupRoot.AddComponent<DamageNumberPopupController>();
-            }
-
-            damagePopupController.ShowDamage(unitView.transform, damage, isBuilding: false);
-            _lastDamagePopupTimeByUnitId[normalizedUnitId] = Time.unscaledTime;
         }
 
         private void OnPreviewChanged()
@@ -2296,6 +1937,29 @@ namespace Panoptes.Presentation.Map
         #endregion
 
         #region Context
+
+        private void ConfigureBuildPlacementSession()
+        {
+            _buildPlacement.Configure(
+                _inputState,
+                () => _cacheEvents.DraftCache ?? PlanningDraftCache.Instance,
+                () => _planningIntentService,
+                GetLocalOwnerId,
+                ResolveBackendBuildingType,
+                RestoreNodeHighlightAfterHover);
+        }
+
+        private MapBuildPlacementVisualSettings CreateBuildPlacementVisualSettings()
+        {
+            return new MapBuildPlacementVisualSettings(
+                buildValidColor,
+                buildInvalidColor,
+                buildPendingColor,
+                buildPlacedGhostColor,
+                buildPreviewRequestThrottleSeconds,
+                disallowManualCityCorePlacement,
+                manualPlacementBlockedBuildingTypes);
+        }
 
         private string GetLocalOwnerId()
         {
@@ -2391,7 +2055,7 @@ namespace Panoptes.Presentation.Map
 
         private bool IsCombatPhase()
         {
-            var phase = _cache != null ? _cache.Phase : string.Empty;
+            var phase = _cacheEvents.Cache != null ? _cacheEvents.Cache.Phase : string.Empty;
             if (string.IsNullOrWhiteSpace(phase) && GameStateCache.Instance != null)
             {
                 phase = GameStateCache.Instance.Phase;
