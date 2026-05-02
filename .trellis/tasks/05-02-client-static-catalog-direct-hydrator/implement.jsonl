@@ -3,8 +3,8 @@
 {"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Static catalog snapshot flows across protocol, dispatcher, mapper, Store, and ViewModels."}
 {"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Authoritative migration phase plan and status."}
 {"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StaticCatalogProtocolMapper.cs", "reason": "Map protocol static catalog snapshots into Core Store DTOs."}
-{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StaticCatalogMessageHydrator.cs", "reason": "Subscribe to catalog messages and hydrate StaticCatalogStore in project scope."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StaticCatalogStoreHydrator.cs", "reason": "Hydrate StaticCatalogStore from protocol snapshots and cache data in project scope."}
 {"file": "client/Assets/Scripts/Runtime/Core/Infrastructure/Network/GameEventSessionGate.cs", "reason": "Allow catalog snapshots before active game session exists."}
 {"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Register project-scope static catalog hydrator through VContainer."}
-{"file": "client/Assets/Scripts/Tests/EditMode/Core/StaticCatalogMessageHydratorTests.cs", "reason": "Verify direct dispatcher-to-store static catalog hydration."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StaticCatalogStoreHydratorTests.cs", "reason": "Verify static catalog Store hydration from snapshots and cache data."}
 {"file": "client/Assets/Scripts/Tests/EditMode/Core/StaticCatalogProtocolMapperTests.cs", "reason": "Verify protocol-to-Core catalog mapping."}

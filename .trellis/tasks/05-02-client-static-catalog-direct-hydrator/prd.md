@@ -3,8 +3,8 @@
 ## Goal
 
 Move static catalog Store hydration into the project scope so catalog snapshots
-can update `StaticCatalogStore` directly from `MessageDispatcher` without
-waiting for the game-scoped legacy cache bridge.
+and section sync completion update `StaticCatalogStore` from the AppManager
+static catalog boundary without waiting for the game-scoped legacy cache bridge.
 
 ## What I Already Know
 
@@ -28,8 +28,9 @@ waiting for the game-scoped legacy cache bridge.
 ## Requirements
 
 * Add Core mapping from `StaticCatalogSnapshot` to `StaticCatalogState`.
-* Add a project-scope message hydrator for `MsgStaticCatalogSnapshot`.
-* Register the hydrator through VContainer `ProjectLifetimeScope`.
+* Add a project-scope Store hydrator for static catalog snapshots/cache data.
+* Register the hydrator through VContainer `ProjectLifetimeScope` and attach it
+  to `AppManager`.
 * Allow static catalog snapshots through the session gate before Game init.
 * Keep Presentation free of protocol and legacy cache dependencies.
 * Add EditMode tests for mapper, hydrator register/unregister, and gate behavior.
@@ -42,7 +43,7 @@ waiting for the game-scoped legacy cache bridge.
       session.
 * [x] Legacy `StaticCatalogCache` handling remains intact for local bundle and
       section sync behavior.
-* [x] Tests cover mapper and dispatcher hydration behavior.
+* [x] Tests cover mapper and Store hydration behavior.
 * [x] `dotnet build`, `dotnet test`, static boundary checks, Unity batchmode
       compile, and focused Unity EditMode tests pass.
 
@@ -65,7 +66,7 @@ waiting for the game-scoped legacy cache bridge.
 ## Technical Notes
 
 * Target direct flow:
-  `MessageDispatcher -> StaticCatalogMessageHydrator ->
-  StaticCatalogProtocolMapper -> StaticCatalogStore`.
+  `MessageDispatcher -> AppManager static catalog handlers ->
+  StaticCatalogCache -> StaticCatalogStoreHydrator -> StaticCatalogStore`.
 * Existing game-scope bridge remains for cache/local bundle fallback:
   `StaticCatalogCache -> StoreHydrationCacheBridge -> StaticCatalogStore`.

@@ -3,85 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
+using Panoptes.Protocol.V1;
 
 namespace Panoptes.Core.Application.Stores
 {
-    public sealed class StoreHydrationBootstrapSeeder
+    public sealed class StaticCatalogStoreHydrator
     {
-        private readonly StoreHydrationHelper _helper;
+        private readonly StaticCatalogStore _store;
 
-        public StoreHydrationBootstrapSeeder(StoreHydrationHelper helper)
+        public StaticCatalogStoreHydrator(StaticCatalogStore store)
         {
-            _helper = helper ?? throw new ArgumentNullException(nameof(helper));
+            _store = store ?? throw new ArgumentNullException(nameof(store));
         }
 
-        public void SeedFromDefaultCaches()
+        public void HydrateFromSnapshot(StaticCatalogSnapshot snapshot)
         {
-            Seed(
-                GameStateCache.Instance,
-                PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance(),
-                StaticCatalogCache.EnsureInstance());
+            _store.Replace(StaticCatalogProtocolMapper.ToState(snapshot));
         }
 
-        public void Seed(
-            GameStateCache gameStateCache,
-            PlanningDraftCache planningDraftCache,
-            StaticCatalogCache staticCatalogCache)
+        public void HydrateFromCache(StaticCatalogCache cache)
         {
-            _helper.Hydrate(new StoreHydrationSnapshot(
-                CaptureGameState(gameStateCache),
-                CapturePlanningDraft(planningDraftCache),
-                CaptureStaticCatalog(staticCatalogCache),
-                CaptureTurn(gameStateCache)));
+            _store.Replace(ToState(cache));
         }
 
-        public static GameStateStoreState CaptureGameState(GameStateCache cache)
-        {
-            if (cache == null)
-            {
-                return new GameStateStoreState();
-            }
-
-            return new GameStateStoreState(
-                gameId: cache.GameID,
-                activeGameSessionId: cache.ActiveGameSessionID,
-                myPlayerId: cache.MyPlayerID,
-                turn: cache.Turn,
-                phase: cache.Phase,
-                mapWidth: cache.MapWidth,
-                mapHeight: cache.MapHeight,
-                isGameOver: cache.IsGameOver,
-                tokensLeft: cache.TokensLeft,
-                nodes: CopyDictionary(cache.Nodes),
-                units: CopyDictionary(cache.Units),
-                myResources: cache.GetMyResources());
-        }
-
-        public static PlanningDraftState CapturePlanningDraft(PlanningDraftCache cache)
-        {
-            if (cache == null)
-            {
-                return new PlanningDraftState();
-            }
-
-            return new PlanningDraftState(
-                snapshotTurn: cache.SnapshotTurn,
-                snapshotPhase: cache.SnapshotPhase,
-                unitOrders: cache.GetOrdersInDisplayOrder(),
-                buildOrders: cache.BuildOrders,
-                recipeSelections: cache.RecipeSelections,
-                warZoneDirectives: cache.WarZoneDirectives,
-                warZones: cache.WarZones,
-                ministerDrafts: cache.MinisterDrafts,
-                currentPreview: cache.CurrentPreview,
-                currentBuildPreview: cache.CurrentBuildPreview,
-                currentRecipePreview: cache.CurrentRecipePreview,
-                plannedResearchTargetTechnologyId: cache.PlannedResearchTargetTechnologyId,
-                plannedNationalPolicyId: cache.PlannedNationalPolicyId,
-                plannedInstitutionPolicyIds: cache.PlannedInstitutionPolicyIds);
-        }
-
-        public static StaticCatalogState CaptureStaticCatalog(StaticCatalogCache cache)
+        public static StaticCatalogState ToState(StaticCatalogCache cache)
         {
             if (cache == null)
             {
@@ -94,43 +39,6 @@ namespace Panoptes.Core.Application.Stores
                 technologies: MapTechnologies(cache.Technologies),
                 policies: MapPolicies(cache.Policies),
                 units: MapUnits(cache.Units));
-        }
-
-        public static TurnState CaptureTurn(GameStateCache cache)
-        {
-            if (cache == null)
-            {
-                return new TurnState();
-            }
-
-            return new TurnState(
-                cache.Turn,
-                cache.Phase,
-                cache.TokensLeft,
-                cache.GetPlanningStartEvents(),
-                cache.IsGameOver,
-                0,
-                string.Empty,
-                GamePhases.IsPlanning(cache.Phase) && !cache.IsGameOver);
-        }
-
-        private static Dictionary<string, TValue> CopyDictionary<TValue>(IReadOnlyDictionary<string, TValue> source)
-        {
-            var result = new Dictionary<string, TValue>(StringComparer.OrdinalIgnoreCase);
-            if (source == null)
-            {
-                return result;
-            }
-
-            foreach (var pair in source)
-            {
-                if (!string.IsNullOrWhiteSpace(pair.Key) && pair.Value != null)
-                {
-                    result[pair.Key] = pair.Value;
-                }
-            }
-
-            return result;
         }
 
         private static Dictionary<string, CatalogBuildingDto> MapBuildings(

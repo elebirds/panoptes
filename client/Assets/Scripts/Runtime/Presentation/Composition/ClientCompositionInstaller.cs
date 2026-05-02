@@ -1,4 +1,5 @@
 using System;
+using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
@@ -17,10 +18,16 @@ namespace Panoptes.Presentation.Composition
     {
         public static void RegisterProject(
             IContainerBuilder builder,
+            AppManager appManager,
             NetworkManager networkManager,
             MessageDispatcher messageDispatcher,
             SessionManager sessionManager)
         {
+            if (appManager == null)
+            {
+                throw new ArgumentNullException(nameof(appManager));
+            }
+
             if (networkManager == null)
             {
                 throw new ArgumentNullException(nameof(networkManager));
@@ -36,14 +43,15 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(sessionManager));
             }
 
+            builder.RegisterComponent(appManager).AsSelf();
             builder.RegisterComponent(networkManager).AsSelf();
             builder.RegisterComponent(messageDispatcher).AsSelf();
             builder.RegisterComponent(sessionManager).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
             builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
-            builder.Register<StaticCatalogMessageHydrator>(Lifetime.Singleton).AsSelf();
-            builder.RegisterBuildCallback(container => container.Resolve<StaticCatalogMessageHydrator>().Attach());
+            builder.Register<StaticCatalogStoreHydrator>(Lifetime.Singleton).AsSelf();
+            builder.RegisterBuildCallback(container => container.Resolve<AppManager>().UseStaticCatalogStoreHydrator(container.Resolve<StaticCatalogStoreHydrator>()));
         }
 
         public static void RegisterGame(IContainerBuilder builder)
@@ -65,8 +73,6 @@ namespace Panoptes.Presentation.Composition
             builder.Register<LocalGameSessionResetService>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
-            builder.Register<StoreHydrationBootstrapSeeder>(Lifetime.Singleton).AsSelf();
-            builder.Register<StaticCatalogLegacyHydrationBridge>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
@@ -101,8 +107,6 @@ namespace Panoptes.Presentation.Composition
                 Lifetime.Singleton,
                 "National Ledger UI Toolkit");
             builder.RegisterBuildCallback(container => container.Resolve<StoreMessageHydrator>().Attach());
-            builder.RegisterBuildCallback(container => container.Resolve<StoreHydrationBootstrapSeeder>().SeedFromDefaultCaches());
-            builder.RegisterBuildCallback(container => container.Resolve<StaticCatalogLegacyHydrationBridge>().AttachToDefaultCache());
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
