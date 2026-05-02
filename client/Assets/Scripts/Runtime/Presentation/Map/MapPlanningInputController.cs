@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
@@ -20,6 +21,7 @@ using Panoptes.Presentation.Planning.Feedback;
 using Panoptes.Presentation.Planning.Input.State;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Common;
+using Panoptes.Presentation.ViewModels;
 using UnityEngine;
 using VContainer;
 
@@ -49,12 +51,6 @@ namespace Panoptes.Presentation.Map
             public string ownerId;
             public Vector2Int center;
             public Vector2Int size;
-        }
-
-        private enum Mode
-        {
-            None = 0,
-            Build = 1
         }
 
         // Legacy enum name kept for existing planning action semantics.
@@ -144,9 +140,12 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
         private readonly MapPointerInput _pointerInput = new();
         private PlanningIntentService _planningIntentService;
+        private PlanningToolService _planningToolService;
+        private SelectionService _selectionService;
+        private PlanningToolViewModel _planningToolViewModel;
         private IMapSelectionSurface _selectionSurface;
 
-        private Mode _mode = Mode.None;
+        private bool _legacyBuildModeActive;
         private CombatActionMode _combatActionMode = CombatActionMode.None;
         private UnitView _selectedUnit;
         private BuildPlacementRule _buildRule;
@@ -172,7 +171,9 @@ namespace Panoptes.Presentation.Map
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _pendingBuildState.Records;
         public UnitView SelectedUnit => _selectedUnit;
         public CombatActionMode CurrentCombatActionMode => _combatActionMode;
-        public string CurrentCombatPrompt => GetCombatPrompt();
+        public string CurrentCombatPrompt => _planningToolViewModel != null
+            ? _planningToolViewModel.Current.Prompt
+            : GetCombatPrompt();
 
         public event Action<string, string> MoveCommandSent;
         public event Action<string, string> BuildCommandSent;
@@ -181,9 +182,16 @@ namespace Panoptes.Presentation.Map
         public event Action NonBuildingMapClicked;
 
         [Inject]
-        private void Construct(PlanningIntentService planningIntentService)
+        private void Construct(
+            PlanningIntentService planningIntentService,
+            PlanningToolService planningToolService,
+            SelectionService selectionService,
+            PlanningToolViewModel planningToolViewModel)
         {
             _planningIntentService = planningIntentService;
+            _planningToolService = planningToolService;
+            _selectionService = selectionService;
+            _planningToolViewModel = planningToolViewModel;
         }
 
         private void Awake()
@@ -222,6 +230,8 @@ namespace Panoptes.Presentation.Map
             _movePreviewGhostPresenter.DisposeMaterial();
             ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
+            _planningToolService?.ClearTool();
+            _selectionService?.Clear();
             _knownUnitHpByUnitId.Clear();
             _lastDamagePopupTimeByUnitId.Clear();
             if (_buildingInfoProxy != null)
@@ -253,7 +263,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_mode == Mode.Build)
+            if (IsBuildModeActive())
             {
                 UpdateBuildMode();
                 return;
@@ -282,7 +292,7 @@ namespace Panoptes.Presentation.Map
                     {
                         if (TryIssueStructureTargetOrder(attackNode.NodeId))
                         {
-                            _combatActionMode = CombatActionMode.None;
+                            SetCombatActionMode(CombatActionMode.None);
                             NotifyCombatSelectionChanged();
                         }
                         return;
@@ -361,7 +371,7 @@ namespace Panoptes.Presentation.Map
             }
 
             ExitBuildMode();
-            _combatActionMode = CombatActionMode.Move;
+            SetCombatActionMode(CombatActionMode.Move);
             RefreshPreviewVisuals();
             NotifyCombatSelectionChanged();
             BlockInputAfterModeSwitch();
@@ -376,7 +386,7 @@ namespace Panoptes.Presentation.Map
 
             ExitBuildMode();
             ClearMovePreviewState();
-            _combatActionMode = CombatActionMode.Attack;
+            SetCombatActionMode(CombatActionMode.Attack);
             RefreshAttackRangeHighlights();
             NotifyCombatSelectionChanged();
             BlockInputAfterModeSwitch();
@@ -391,7 +401,7 @@ namespace Panoptes.Presentation.Map
 
             ExitBuildMode();
             ClearMovePreviewState();
-            _combatActionMode = CombatActionMode.Charge;
+            SetCombatActionMode(CombatActionMode.Charge);
             NotifyCombatSelectionChanged();
             BlockInputAfterModeSwitch();
         }
@@ -405,16 +415,21 @@ namespace Panoptes.Presentation.Map
 
             ExitBuildMode();
             ClearMovePreviewState();
-            _combatActionMode = CombatActionMode.None;
+            SetCombatActionMode(CombatActionMode.None);
             _planningIntentService?.HoldUnit(_selectedUnit.UnitId);
             NotifyCombatSelectionChanged();
         }
 
         public void ClearCombatSelection()
         {
+            ClearCombatSelection(preserveToolMode: false);
+        }
+
+        private void ClearCombatSelection(bool preserveToolMode)
+        {
             ClearMoveSelection();
             ClearMovePreviewState();
-            _combatActionMode = CombatActionMode.None;
+            SetCombatActionMode(CombatActionMode.None, publishToolState: !preserveToolMode);
             NotifyCombatSelectionChanged();
         }
 
@@ -554,11 +569,11 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            _mode = Mode.Build;
             _buildRule = rule;
+            SetBuildModeActive(true);
             BlockInputAfterModeSwitch();
 
-            ClearCombatSelection();
+            ClearCombatSelection(preserveToolMode: true);
             DestroyHoverGhost();
         }
 
@@ -574,7 +589,7 @@ namespace Panoptes.Presentation.Map
         {
             RestoreNodeHighlightAfterHover(_hoverNode);
 
-            _mode = Mode.None;
+            SetBuildModeActive(false);
             _buildType = string.Empty;
             _activeBuildCityId = string.Empty;
             _hoverNode = null;
@@ -790,7 +805,7 @@ namespace Panoptes.Presentation.Map
 
         private void RefreshBuildPreviewVisuals()
         {
-            if (_mode != Mode.Build || _hoverNode == null)
+            if (!IsBuildModeActive() || _hoverNode == null)
             {
                 return;
             }
@@ -810,6 +825,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _hoverBuildPreviewNodeId = nodeId.Trim();
+            _planningToolService?.SetBuildPreviewTarget(_hoverBuildPreviewNodeId);
             _nextBuildPreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, buildPreviewRequestThrottleSeconds);
             _buildPreviewRequestSequence++;
             var requestId = $"build-preview-{_buildType}-{_buildPreviewRequestSequence}";
@@ -840,6 +856,7 @@ namespace Panoptes.Presentation.Map
         {
             _hoverBuildPreviewNodeId = string.Empty;
             _nextBuildPreviewRequestAt = 0f;
+            _planningToolService?.ClearBuildPreviewTarget();
             (_draftCache ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
         }
         #endregion
@@ -850,7 +867,7 @@ namespace Panoptes.Presentation.Map
         {
             if (_selectedUnit == null)
             {
-                _combatActionMode = CombatActionMode.None;
+                SetCombatActionMode(CombatActionMode.None);
                 NotifyCombatSelectionChanged();
                 return;
             }
@@ -865,7 +882,7 @@ namespace Panoptes.Presentation.Map
 
             if (TryIssueAuthoritativeMoveOrder(node.NodeId))
             {
-                _combatActionMode = CombatActionMode.None;
+                SetCombatActionMode(CombatActionMode.None);
                 NotifyCombatSelectionChanged();
             }
         }
@@ -895,7 +912,7 @@ namespace Panoptes.Presentation.Map
             {
                 if (TryIssueStructureTargetOrder(attackNodeView.NodeId))
                 {
-                    _combatActionMode = CombatActionMode.None;
+                    SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
                 }
                 return;
@@ -932,7 +949,7 @@ namespace Panoptes.Presentation.Map
                     {
                         if (TryIssueStructureTargetOrder(node.NodeId))
                         {
-                            _combatActionMode = CombatActionMode.None;
+                            SetCombatActionMode(CombatActionMode.None);
                             NotifyCombatSelectionChanged();
                         }
                         return;
@@ -941,7 +958,7 @@ namespace Panoptes.Presentation.Map
                     {
                         if (TryIssueAuthoritativeMoveOrder(node.NodeId))
                         {
-                            _combatActionMode = CombatActionMode.None;
+                            SetCombatActionMode(CombatActionMode.None);
                             NotifyCombatSelectionChanged();
                         }
                         return;
@@ -1026,7 +1043,7 @@ namespace Panoptes.Presentation.Map
 
         private void HandleCombatCancel()
         {
-            if (_mode == Mode.Build)
+            if (IsBuildModeActive())
             {
                 ExitBuildMode();
                 BlockInputAfterModeSwitch();
@@ -1035,7 +1052,7 @@ namespace Panoptes.Presentation.Map
 
             if (_combatActionMode != CombatActionMode.None)
             {
-                _combatActionMode = CombatActionMode.None;
+                SetCombatActionMode(CombatActionMode.None);
                 ClearMovePreviewState();
                 NotifyCombatSelectionChanged();
                 BlockInputAfterModeSwitch();
@@ -1058,6 +1075,7 @@ namespace Panoptes.Presentation.Map
 
             ClearNodeHighlights();
             _hoverPreviewNodeId = targetNodeId;
+            _planningToolService?.SetMovePreviewTarget(_hoverPreviewNodeId);
             _nextMovePreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, movePreviewRequestThrottleSeconds);
             _movePreviewRequestSequence++;
             var requestId = $"move-preview-{_selectedUnit.UnitId}-{_movePreviewRequestSequence}";
@@ -1114,6 +1132,82 @@ namespace Panoptes.Presentation.Map
         {
             CombatSelectionChanged?.Invoke();
         }
+
+        private void SetCombatActionMode(CombatActionMode mode, bool publishToolState = true)
+        {
+            _combatActionMode = mode;
+            if (!publishToolState)
+            {
+                return;
+            }
+
+            switch (mode)
+            {
+                case CombatActionMode.Move:
+                    _planningToolService?.BeginMove();
+                    break;
+                case CombatActionMode.Attack:
+                    _planningToolService?.BeginAttack();
+                    break;
+                case CombatActionMode.Charge:
+                    _planningToolService?.BeginCharge();
+                    break;
+                default:
+                    _planningToolService?.ClearTool();
+                    break;
+            }
+        }
+
+        private void PublishBuildToolState()
+        {
+            _planningToolService?.EnterBuild(
+                _buildType,
+                _activeBuildCityId,
+                ConvertBuildRule(_buildRule));
+        }
+
+        private void SetBuildModeActive(bool active)
+        {
+            _legacyBuildModeActive = active;
+            if (active)
+            {
+                PublishBuildToolState();
+                return;
+            }
+
+            _planningToolService?.ClearTool();
+        }
+
+        private bool IsBuildModeActive()
+        {
+            if (_planningToolViewModel != null)
+            {
+                return _planningToolViewModel.Current.Mode == PlanningToolMode.Build;
+            }
+
+            return _legacyBuildModeActive;
+        }
+
+        private void PublishSelectedUnit(UnitView unit)
+        {
+            if (unit == null || string.IsNullOrWhiteSpace(unit.UnitId))
+            {
+                _selectionService?.Clear();
+                return;
+            }
+
+            _selectionService?.SelectUnit(unit.UnitId);
+        }
+
+        private static PlanningBuildPlacementRule ConvertBuildRule(BuildPlacementRule rule)
+        {
+            return rule switch
+            {
+                BuildPlacementRule.ResourceOnly => PlanningBuildPlacementRule.ResourceOnly,
+                BuildPlacementRule.CityOnly => PlanningBuildPlacementRule.CityOnly,
+                _ => PlanningBuildPlacementRule.AnyTerrain
+            };
+        }
         #endregion
 
         #region Targeting
@@ -1132,7 +1226,7 @@ namespace Panoptes.Presentation.Map
                     ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
                     _planningIntentService?.AttackUnit(_selectedUnit.UnitId, targetUnit.UnitId, plannedMoveTargetNodeId);
                     PlaySelectedAttackFeedback();
-                    _combatActionMode = CombatActionMode.None;
+                    SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
                     return true;
                 case CombatActionMode.Charge:
@@ -1142,7 +1236,7 @@ namespace Panoptes.Presentation.Map
                         return false;
                     }
                     _planningIntentService?.ChargeUnit(_selectedUnit.UnitId, targetNodeId, targetUnit.UnitId);
-                    _combatActionMode = CombatActionMode.None;
+                    SetCombatActionMode(CombatActionMode.None);
                     NotifyCombatSelectionChanged();
                     return true;
                 default:
@@ -1204,7 +1298,7 @@ namespace Panoptes.Presentation.Map
             ClearPendingMoveStateForUnit(_selectedUnit.UnitId);
             _planningIntentService?.AttackNode(_selectedUnit.UnitId, nodeId, plannedMoveTargetNodeId);
             PlaySelectedAttackFeedback();
-            _combatActionMode = CombatActionMode.None;
+            SetCombatActionMode(CombatActionMode.None);
             NotifyCombatSelectionChanged();
             return true;
         }
@@ -1516,6 +1610,7 @@ namespace Panoptes.Presentation.Map
         {
             var hadHover = !string.IsNullOrEmpty(_hoverPreviewNodeId);
             _hoverPreviewNodeId = string.Empty;
+            _planningToolService?.ClearMovePreviewTarget();
             var previewCache = PlanningDraftCache.Instance;
             if (hadHover || previewCache?.CurrentPreview != null)
             {
@@ -1929,7 +2024,8 @@ namespace Panoptes.Presentation.Map
             ClearMoveSelection(false);
             _selectedUnit = unit;
             _selectedUnit.SetSelected(true);
-            _combatActionMode = CombatActionMode.None;
+            PublishSelectedUnit(unit);
+            SetCombatActionMode(CombatActionMode.None);
             ClearMovePreviewState();
             NotifyCombatSelectionChanged();
             NotifyUnitSelectionChanged(_selectedUnit);
@@ -1951,6 +2047,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _selectedUnit = null;
+            PublishSelectedUnit(null);
             ClearNodeHighlights();
 
             if (notify && changed)

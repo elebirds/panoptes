@@ -391,6 +391,19 @@ Acceptance:
 - `MapPlanningInputController` is removed or reduced to a Binder/Adapter.
 - Planning mode state no longer lives as scattered MonoBehaviour fields.
 
+Status (2026-05-02):
+
+- Added final Core map input state ownership with `PlanningToolStore`,
+  `PlanningToolState`, `PlanningToolMode`, and `PlanningToolService`.
+- Added `PlanningToolViewModel` / `PlanningToolViewState` so UI-facing prompt
+  and mode projection are derived from `PlanningToolStore + SelectionStore`.
+- Registered the planning tool stack in `ClientCompositionInstaller.RegisterGame`.
+- Wired `MapPlanningInputController` as the current Unity map adapter: it still
+  owns raycast/world feedback, but publishes selection IDs through
+  `SelectionService` and tool/preview transitions through `PlanningToolService`.
+- Existing map commands continue through `PlanningIntentService`; generated
+  protocol files remain untouched.
+
 ## Phase 8: Management UI Migration
 
 Recommended order:

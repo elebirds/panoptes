@@ -161,6 +161,7 @@ namespace Panoptes.Tests.EditMode.Core
             {
                 typeof(GameStateStore),
                 typeof(PlanningDraftStore),
+                typeof(PlanningToolStore),
                 typeof(SelectionStore),
                 typeof(StaticCatalogStore),
                 typeof(TurnStore)
