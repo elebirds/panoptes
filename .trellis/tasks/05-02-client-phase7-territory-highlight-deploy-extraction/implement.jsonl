@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Helper placement beside prefab-facing map facade."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Facade plus testable helper extraction pattern."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep extracted map helpers presentation-only and non-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, Unity compile, and helper testing requirements."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Maintain map input/presentation/cache boundaries."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPendingDeployGhostController.cs", "reason": "Own pending deploy city-core ghost bookkeeping and map rendering cleanup."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapTerritoryHighlightPresenter.cs", "reason": "Own territory highlight bookkeeping plus restore/clear interactions with attack and move overlays."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs", "reason": "Delegate pending deploy ghost and territory highlight responsibilities to focused map presentation helpers."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapPendingDeployGhostControllerTests.cs", "reason": "Cover pending deploy helper bookkeeping and committed-node resolution."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapTerritoryHighlightPresenterTests.cs", "reason": "Cover territory highlight tracking, restore, and clear bookkeeping behavior."}
