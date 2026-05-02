@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Direct hydrator must preserve Store/ViewModel state ownership and avoid legacy singleton dependencies."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, generated protocol constraints, and testing expectations."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Place Core hydrator and tests in established runtime/test directories."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Message-to-store hydration spans protocol, mapper, store, ViewModel, and UI boundaries."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Authoritative migration phase plan and status."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreMessageHydrator.cs", "reason": "Directly hydrate game runtime Stores from MessageDispatcher messages."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreHydrationProtocolMapper.cs", "reason": "Map protocol messages into Core Store states without legacy caches."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Register direct hydrator through GameLifetimeScope."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StoreMessageHydratorTests.cs", "reason": "Verify direct dispatcher-to-store hydration paths."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StoreHydrationProtocolMapperTests.cs", "reason": "Verify protocol-to-Core mapping and merge behavior."}

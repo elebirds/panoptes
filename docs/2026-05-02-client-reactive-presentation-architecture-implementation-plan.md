@@ -506,6 +506,37 @@ Status (2026-05-02):
 Next work: move protocol-to-Core mapping out of legacy caches into direct
 message hydrators, then retire the bridge slice by slice.
 
+## Phase 10: Direct Store Message Hydrator
+
+Goal: start moving runtime message hydration out of legacy cache event
+mirroring.
+
+Direct runtime flow:
+
+```text
+MessageDispatcher
+  -> StoreMessageHydrator
+  -> StoreHydrationProtocolMapper
+  -> StoreHydrationHelper
+  -> GameStateStore / PlanningDraftStore / TurnStore
+```
+
+Status (2026-05-02):
+
+- Added `StoreHydrationProtocolMapper` to map representative runtime protocol
+  messages into Core Store DTOs without relying on legacy cache singletons.
+- Added `StoreMessageHydrator` as a game-scope dispatcher subscriber for
+  `MsgGameInit`, `MsgPlanningStart`, `MsgPlanningSnapshot`, preview responses,
+  `MsgGameSync`, `MsgTokenResult`, `MsgRevealResult`, and `MsgGameOver`.
+- Registered the hydrator in `GameLifetimeScope`; the Phase 9 cache bridge
+  remains as the bounded fallback for pre-Game-scope initial seeding and
+  non-migrated UI.
+- Added EditMode coverage for protocol-to-Store mapping and hydrator
+  register/unregister behavior.
+
+Next work: add a project-scope static catalog direct hydrator, then retire
+cache bridge responsibilities one message family at a time.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:

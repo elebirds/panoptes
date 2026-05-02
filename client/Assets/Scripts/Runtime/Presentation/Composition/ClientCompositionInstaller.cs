@@ -1,5 +1,4 @@
 using System;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
@@ -58,13 +57,11 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningIntentService>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterCommandService>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();
+            builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.Register(container =>
             {
                 var bridge = new StoreHydrationCacheBridge(container.Resolve<StoreHydrationHelper>());
-                bridge.Attach(
-                    GameStateCache.Instance,
-                    PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance(),
-                    StaticCatalogCache.EnsureInstance());
+                bridge.AttachToDefaultCaches();
                 return bridge;
             }, Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
@@ -100,6 +97,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>(
                 Lifetime.Singleton,
                 "National Ledger UI Toolkit");
+            builder.RegisterBuildCallback(container => container.Resolve<StoreMessageHydrator>().Attach());
             builder.RegisterBuildCallback(container => container.Resolve<StoreHydrationCacheBridge>());
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
