@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Map facade/helper placement and no prefab-facing rename rules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Facade plus helper extraction conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel/service ownership boundaries for map input state."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary and Unity verification requirements."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Keep Unity input to Core service data flow explicit."}

@@ -144,6 +144,7 @@ namespace Panoptes.Tests.EditMode.Composition
             {
                 ResolveAssetPath("Scripts/Runtime/Core/Application/Stores/PlanningToolStore.cs"),
                 ResolveAssetPath("Scripts/Runtime/Core/Application/Services/PlanningToolService.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputStateAdapter.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/PlanningToolViewModel.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/PlanningToolViewState.cs")
             };
@@ -178,13 +179,17 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(controller, Does.Contain("PlanningToolService"));
             Assert.That(controller, Does.Contain("PlanningToolViewModel"));
             Assert.That(controller, Does.Contain("SelectionService"));
-            Assert.That(controller, Does.Contain("_selectionService?.SelectUnit(unit.UnitId)"));
+            Assert.That(controller, Does.Contain("MapPlanningInputStateAdapter"));
+            Assert.That(controller, Does.Contain("_inputState.PublishSelectedUnit(unit.UnitId)"));
+            Assert.That(controller, Does.Not.Contain("private PlanningToolService"));
+            Assert.That(controller, Does.Not.Contain("private SelectionService"));
+            Assert.That(controller, Does.Not.Contain("private PlanningToolViewModel"));
             Assert.That(controller, Does.Not.Contain("private enum Mode"));
             Assert.That(controller, Does.Not.Contain("_mode"));
             Assert.That(
-                CountOccurrences(controller, "_combatActionMode ="),
-                Is.EqualTo(2),
-                "Combat mode writes should be field initialization plus SetCombatActionMode only.");
+                CountOccurrences(controller, ".SetCombatActionMode("),
+                Is.GreaterThan(0),
+                "Controller should delegate combat mode mutations to the extracted adapter.");
         }
 
         [Test]
