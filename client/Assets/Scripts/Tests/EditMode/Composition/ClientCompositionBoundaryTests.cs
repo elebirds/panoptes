@@ -40,12 +40,15 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("GameStateStore"));
             Assert.That(installer, Does.Contain("PlanningDraftStore"));
             Assert.That(installer, Does.Contain("SelectionStore"));
+            Assert.That(installer, Does.Contain("PlanningToolStore"));
             Assert.That(installer, Does.Contain("TurnStore"));
             Assert.That(installer, Does.Contain("SelectionService"));
+            Assert.That(installer, Does.Contain("PlanningToolService"));
             Assert.That(installer, Does.Contain("GameIntentService"));
             Assert.That(installer, Does.Contain("PlanningIntentService"));
             Assert.That(installer, Does.Contain("MinisterCommandService"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
+            Assert.That(installer, Does.Contain("PlanningToolViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
         }
@@ -135,6 +138,48 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void PlanningToolMigratedSlice_ShouldUseFinalStores()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Stores/PlanningToolStore.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Services/PlanningToolService.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/PlanningToolViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/PlanningToolViewState.cs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                ".Instance",
+                "UnityEngine.UI",
+                "TMPro");
+
+            Assert.That(offenders, Is.Empty, "PlanningTool state and ViewModel must consume final stores/services only.");
+        }
+
+        [Test]
+        public void MapInputAdapter_ShouldPublishToolAndSelectionState()
+        {
+            var controller = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"));
+
+            Assert.That(controller, Does.Contain("PlanningToolService"));
+            Assert.That(controller, Does.Contain("PlanningToolViewModel"));
+            Assert.That(controller, Does.Contain("SelectionService"));
+            Assert.That(controller, Does.Contain("_selectionService?.SelectUnit(unit.UnitId)"));
+            Assert.That(controller, Does.Not.Contain("private enum Mode"));
+            Assert.That(controller, Does.Not.Contain("_mode"));
+            Assert.That(
+                CountOccurrences(controller, "_combatActionMode ="),
+                Is.EqualTo(2),
+                "Combat mode writes should be field initialization plus SetCombatActionMode only.");
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");
@@ -216,6 +261,19 @@ namespace Panoptes.Tests.EditMode.Composition
                 .FirstOrDefault(line => line.StartsWith("guid:", StringComparison.Ordinal));
             Assert.That(guidLine, Is.Not.Null, $"{metaPath} does not contain a Unity guid.");
             return guidLine.Substring("guid:".Length).Trim();
+        }
+
+        private static int CountOccurrences(string content, string token)
+        {
+            var count = 0;
+            var index = 0;
+            while ((index = content.IndexOf(token, index, StringComparison.Ordinal)) >= 0)
+            {
+                count++;
+                index += token.Length;
+            }
+
+            return count;
         }
     }
 }

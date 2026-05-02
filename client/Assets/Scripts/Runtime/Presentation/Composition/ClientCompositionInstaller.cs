@@ -49,14 +49,17 @@ namespace Panoptes.Presentation.Composition
             builder.Register<GameStateStore>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningDraftStore>(Lifetime.Singleton).AsSelf();
             builder.Register<SelectionStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlanningToolStore>(Lifetime.Singleton).AsSelf();
             builder.Register<TurnStore>(Lifetime.Singleton).AsSelf();
             builder.Register<SelectionService>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlanningToolService>(Lifetime.Singleton).AsSelf();
             builder.Register<GameIntentService>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningIntentService>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterCommandService>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
