@@ -55,6 +55,17 @@ render without reaching through legacy cache singletons.
 - Unity briefly failed during the broad edit, then compile was restored before
   commit.
 
+## Batch 2 Result
+
+- Added `SettlementStore` / `SettlementState` and direct `MsgGameSync`
+  settlement hydration.
+- Migrated `SettlementTimeline` and `TurnReportPanel` from
+  `GameStateCache.OnTurnSettled` to injected Store subscriptions.
+- Migrated the `GameSceneController` technology-completion toast projection to
+  `SettlementStore + GameStateStore`.
+- Extended local session reset and Store snapshot cloning to include settlement
+  state.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.

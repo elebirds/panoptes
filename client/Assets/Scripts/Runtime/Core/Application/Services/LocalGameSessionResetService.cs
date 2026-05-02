@@ -10,19 +10,22 @@ namespace Panoptes.Core.Application.Services
         private readonly TurnStore _turnStore;
         private readonly GameChatStore _gameChatStore;
         private readonly GameOverStore _gameOverStore;
+        private readonly SettlementStore _settlementStore;
 
         public LocalGameSessionResetService(
             GameStateStore gameStateStore,
             PlanningDraftStore planningDraftStore,
             TurnStore turnStore,
             GameChatStore gameChatStore,
-            GameOverStore gameOverStore)
+            GameOverStore gameOverStore,
+            SettlementStore settlementStore)
         {
             _gameStateStore = gameStateStore;
             _planningDraftStore = planningDraftStore;
             _turnStore = turnStore;
             _gameChatStore = gameChatStore;
             _gameOverStore = gameOverStore;
+            _settlementStore = settlementStore;
         }
 
         public void ResetLocalGameSession()
@@ -32,6 +35,7 @@ namespace Panoptes.Core.Application.Services
             _turnStore?.Replace(new TurnState());
             _gameChatStore?.Clear();
             _gameOverStore?.Clear();
+            _settlementStore?.Clear();
 
             // Temporary until every legacy presentation surface reads Stores.
             GameStateCache.Instance?.Clear();

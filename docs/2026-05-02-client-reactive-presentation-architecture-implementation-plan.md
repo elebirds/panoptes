@@ -666,9 +666,21 @@ Status (2026-05-02):
   not yet have Store equivalents.
 - Added EditMode coverage for chat and game-over direct Store hydration.
 
-Next work: add direct Core stores for gameplay feedback/settlement events, then
-finish removing `GameStateCache` from `GameSceneController`, turn report, and
-settlement timeline before attacking map/planning input.
+Batch 2 status (2026-05-02):
+
+- Added `SettlementStore` / `SettlementState` and direct settlement hydration
+  from `MsgGameSync` through `StoreMessageHydrator`.
+- Extended `StoreSnapshotCloner` so settlement DTO snapshots are cloned before
+  publication.
+- Migrated `SettlementTimeline` and `TurnReportPanel` from
+  `GameStateCache.OnTurnSettled` to injected `SettlementStore` subscriptions.
+- Migrated `GameSceneController` technology-completion toast projection to
+  `SettlementStore + GameStateStore`.
+- Added local session reset coverage for settlement state.
+
+Next work: add a direct gameplay feedback Store for problem/token feedback,
+then finish removing `GameStateCache` from `GameSceneController` before
+attacking map/planning input and old HUD resolvers in a larger pass.
 
 ## Completion Standard
 
