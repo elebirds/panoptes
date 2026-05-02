@@ -414,6 +414,10 @@ Status (2026-05-02):
   `MapCombatTargetingResolver`, so move overlays, move ghost presentation,
   attack range projection, and combat target predicates no longer live inline
   in the scene input controller.
+- Extracted `MapPendingDeployGhostController` and
+  `MapTerritoryHighlightPresenter`, moving pending deploy city-core ghost
+  bookkeeping/rendering and territory highlight restore/clear behavior out of
+  the scene input controller.
 - Existing map commands continue through `PlanningIntentService`; generated
   protocol files remain untouched.
 

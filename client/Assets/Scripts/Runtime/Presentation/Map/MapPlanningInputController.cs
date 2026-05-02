@@ -128,11 +128,11 @@ namespace Panoptes.Presentation.Map
         };
 
         private readonly HashSet<string> _highlightNodeIds = new();
-        private readonly HashSet<string> _territoryHighlightNodeIds = new();
         private readonly PendingBuildState<PendingBuildRecord> _pendingBuildState = new(record => record.nodeId);
-        private readonly PendingDeployState _pendingDeployState = new();
         private readonly BuildPlacementGhostPresenter _buildPlacementGhostPresenter = new();
         private readonly MapMovePreviewPresentationController _movePreviewPresentation = new();
+        private readonly MapPendingDeployGhostController _pendingDeployGhosts = new();
+        private readonly MapTerritoryHighlightPresenter _territoryHighlights = new();
         private readonly PendingMoveState _pendingMoveState = new();
         private readonly List<UnitView> _nodeClickUnits = new();
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
@@ -1531,113 +1531,26 @@ namespace Panoptes.Presentation.Map
 
         private void ShowPendingDeployCityCoreGhost(string unitId, string centerNodeId)
         {
-            var normalizedUnitId = NormalizeToken(unitId);
-            var normalizedNodeId = string.IsNullOrWhiteSpace(centerNodeId) ? string.Empty : centerNodeId.Trim();
-            if (string.IsNullOrEmpty(normalizedUnitId) || string.IsNullOrEmpty(normalizedNodeId))
-            {
-                return;
-            }
-
-            if (_pendingDeployState.TryGetGhostNode(normalizedUnitId, out var oldNodeId)
-                && !string.IsNullOrWhiteSpace(oldNodeId)
-                && !string.Equals(oldNodeId, normalizedNodeId, StringComparison.Ordinal))
-            {
-                TryClearPendingDeployGhostNode(oldNodeId);
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return;
-            }
-
-            if (!ShouldRenderPendingBuildGhost(normalizedNodeId))
-            {
-                _pendingDeployState.RemoveUnit(normalizedUnitId);
-                return;
-            }
-
-            map.ApplyBuildingPlacement(normalizedNodeId, "city_core", GetLocalOwnerId(), true, 100, buildPlacedGhostColor);
-            _pendingDeployState.SetGhostNode(normalizedUnitId, normalizedNodeId);
+            _pendingDeployGhosts.ShowCityCoreGhost(
+                unitId,
+                centerNodeId,
+                GetLocalOwnerId(),
+                buildPlacedGhostColor);
         }
 
         private void ClearPendingDeployCityCoreGhostForUnit(string unitId)
         {
-            var normalizedUnitId = NormalizeToken(unitId);
-            if (string.IsNullOrEmpty(normalizedUnitId))
-            {
-                return;
-            }
-
-            if (!_pendingDeployState.TryRemoveUnit(normalizedUnitId, out var nodeId))
-            {
-                return;
-            }
-
-            TryClearPendingDeployGhostNode(nodeId);
+            _pendingDeployGhosts.ClearForUnit(unitId);
         }
 
         private void ClearAllPendingDeployGhosts()
         {
-            if (_pendingDeployState.Count == 0)
-            {
-                return;
-            }
-
-            var nodeIDs = _pendingDeployState.SnapshotGhostNodes();
-            _pendingDeployState.Clear();
-
-            foreach (var nodeId in nodeIDs)
-            {
-                TryClearPendingDeployGhostNode(nodeId);
-            }
-        }
-
-        private void TryClearPendingDeployGhostNode(string nodeId)
-        {
-            if (string.IsNullOrWhiteSpace(nodeId))
-            {
-                return;
-            }
-
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                return;
-            }
-
-            // Keep real buildings intact; only clear stale ghost markers.
-            if (map.TryGetNodeState(nodeId, out var state) && state != null &&
-                !string.IsNullOrWhiteSpace(state.BuildingType))
-            {
-                return;
-            }
-
-            map.ApplyBuildingPlacement(nodeId.Trim(), string.Empty, string.Empty, false, 0);
+            _pendingDeployGhosts.ClearAll();
         }
 
         private void TryResolvePendingDeployGhostByNode(string nodeId, NodeDto node)
         {
-            if (string.IsNullOrWhiteSpace(nodeId) || node == null)
-            {
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(node.BuildingType))
-            {
-                return;
-            }
-
-            if (_pendingDeployState.Count == 0)
-            {
-                return;
-            }
-
-            var normalizedNodeId = nodeId.Trim();
-            if (_pendingDeployState.TryFindUnitByNode(normalizedNodeId, out var unitIdToRemove))
-            {
-                _pendingDeployState.RemoveUnit(unitIdToRemove);
-            }
+            _pendingDeployGhosts.ResolveCommittedNode(nodeId, node);
         }
 
         private string ResolveExpandCenterNodeId(string unitId, Vector2Int fallbackGrid)
@@ -1881,7 +1794,7 @@ namespace Panoptes.Presentation.Map
             {
                 if (map.TryGetNodeView(nodeId, out var node))
                 {
-                    if (_territoryHighlightNodeIds.Contains(nodeId))
+                    if (_territoryHighlights.Contains(nodeId))
                     {
                         node.SetHighlight(true, territoryHighlightColor);
                     }
@@ -1898,18 +1811,7 @@ namespace Panoptes.Presentation.Map
 
         private bool RestoreTerritoryHighlightAfterPreviewOverlayClear(string nodeId, NodeView node)
         {
-            if (node == null || string.IsNullOrWhiteSpace(nodeId))
-            {
-                return false;
-            }
-
-            if (_territoryHighlightNodeIds.Contains(nodeId))
-            {
-                node.SetHighlight(true, territoryHighlightColor);
-                return true;
-            }
-
-            return false;
+            return _territoryHighlights.TryRestore(nodeId, node, territoryHighlightColor);
         }
 
         private void RestoreNodeHighlightAfterHover(NodeView node)
@@ -1920,9 +1822,8 @@ namespace Panoptes.Presentation.Map
             }
 
             var nodeId = node.NodeId;
-            if (!string.IsNullOrWhiteSpace(nodeId) && _territoryHighlightNodeIds.Contains(nodeId))
+            if (_territoryHighlights.TryRestore(nodeId, node, territoryHighlightColor))
             {
-                node.SetHighlight(true, territoryHighlightColor);
                 return;
             }
 
@@ -1942,84 +1843,15 @@ namespace Panoptes.Presentation.Map
 
         private void HighlightTerritoryForNode(NodeDto centerNode)
         {
-            ClearTerritoryHighlights();
-
-            var map = MapRenderer.Instance;
-            if (map == null || centerNode == null || map.TileViews == null || map.TileViews.Count == 0)
-            {
-                return;
-            }
-
-            var owner = NormalizeToken(centerNode.TerritoryOwner);
-            if (string.IsNullOrEmpty(owner))
-            {
-                // Fallback for compatibility: if territory_owner is absent on center node, do not highlight.
-                return;
-            }
-
-            foreach (var pair in map.TileViews)
-            {
-                var nodeId = pair.Key;
-                var nodeView = pair.Value;
-                if (string.IsNullOrWhiteSpace(nodeId) || nodeView == null)
-                {
-                    continue;
-                }
-
-                if (!map.TryGetNodeState(nodeId, out var nodeState) || nodeState == null)
-                {
-                    continue;
-                }
-
-                var territoryOwner = NormalizeToken(nodeState.TerritoryOwner);
-                if (string.IsNullOrEmpty(territoryOwner))
-                {
-                    continue;
-                }
-
-                if (!string.Equals(territoryOwner, owner, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                nodeView.SetHighlight(true, territoryHighlightColor);
-                _territoryHighlightNodeIds.Add(nodeId);
-            }
+            _territoryHighlights.HighlightForNode(centerNode, territoryHighlightColor);
         }
 
         private void ClearTerritoryHighlights()
         {
-            var map = MapRenderer.Instance;
-            if (map == null)
-            {
-                _territoryHighlightNodeIds.Clear();
-                return;
-            }
-
-            foreach (var nodeId in _territoryHighlightNodeIds)
-            {
-                if (string.IsNullOrWhiteSpace(nodeId))
-                {
-                    continue;
-                }
-
-                if (map.TryGetNodeView(nodeId, out var nodeView) && nodeView != null)
-                {
-                    if (_highlightNodeIds.Contains(nodeId))
-                    {
-                        nodeView.SetHighlight(true, attackRangeHighlightColor);
-                    }
-                    else if (_movePreviewPresentation.TryRestorePreviewHighlight(nodeId, nodeView))
-                    {
-                    }
-                    else
-                    {
-                        nodeView.SetHighlightVisible(false);
-                    }
-                }
-            }
-
-            _territoryHighlightNodeIds.Clear();
+            _territoryHighlights.Clear(
+                _highlightNodeIds,
+                attackRangeHighlightColor,
+                _movePreviewPresentation.TryRestorePreviewHighlight);
         }
         #endregion
 
@@ -2291,9 +2123,8 @@ namespace Panoptes.Presentation.Map
             TryResolvePendingDeployGhostByNode(evt.NodeID, evt.Node);
             if (map.TryGetNodeView(evt.NodeID, out var nodeView) && nodeView != null)
             {
-                if (_territoryHighlightNodeIds.Contains(evt.NodeID))
+                if (_territoryHighlights.TryRestore(evt.NodeID, nodeView, territoryHighlightColor))
                 {
-                    nodeView.SetHighlight(true, territoryHighlightColor);
                 }
                 else if (_highlightNodeIds.Contains(evt.NodeID))
                 {
