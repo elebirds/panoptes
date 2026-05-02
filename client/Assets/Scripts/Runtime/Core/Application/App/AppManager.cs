@@ -9,6 +9,7 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
@@ -149,10 +150,12 @@ namespace Panoptes.Core.Application.App
 
         private bool _pendingCatalogSync;
         private MsgGameInit _deferredGameInit;
+        private StaticCatalogStoreHydrator _staticCatalogStoreHydrator;
 
         void Start()
         {
             RegisterGlobalHandlers();
+            HydrateStaticCatalogStore(StaticCatalogCache.Instance);
             if (bypassLoginForLocalTest)
             {
                 EnterLocalTestMode();
@@ -246,6 +249,7 @@ namespace Panoptes.Core.Application.App
         {
             var cache = StaticCatalogCache.EnsureInstance();
             var decision = cache?.CompareManifest(msg?.Manifest) ?? new StaticCatalogCache.CatalogSyncDecision();
+            HydrateStaticCatalogStore(cache);
             cache?.BeginSectionSync(msg?.Manifest, decision.RequestedSections);
 
             _pendingCatalogSync = true;
@@ -275,13 +279,16 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogSyncComplete(MsgStaticCatalogSyncComplete msg)
         {
-            var synchronized = StaticCatalogCache.EnsureInstance()?.FinalizeSectionSync(msg) ?? false;
+            var cache = StaticCatalogCache.EnsureInstance();
+            var synchronized = cache?.FinalizeSectionSync(msg) ?? false;
             _pendingCatalogSync = false;
             if (!synchronized)
             {
                 _deferredGameInit = null;
                 return;
             }
+
+            HydrateStaticCatalogStore(cache);
 
             if (_deferredGameInit == null)
             {
@@ -294,7 +301,20 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogSnapshot(MsgStaticCatalogSnapshot msg)
         {
-            StaticCatalogCache.EnsureInstance()?.ApplySnapshot(msg?.Snapshot);
+            var cache = StaticCatalogCache.EnsureInstance();
+            cache?.ApplySnapshot(msg?.Snapshot);
+            HydrateStaticCatalogStore(cache);
+        }
+
+        public void UseStaticCatalogStoreHydrator(StaticCatalogStoreHydrator hydrator)
+        {
+            _staticCatalogStoreHydrator = hydrator;
+            HydrateStaticCatalogStore(StaticCatalogCache.Instance);
+        }
+
+        private void HydrateStaticCatalogStore(StaticCatalogCache cache)
+        {
+            _staticCatalogStoreHydrator?.HydrateFromCache(cache);
         }
 
         private void OnGameInit(MsgGameInit msg)

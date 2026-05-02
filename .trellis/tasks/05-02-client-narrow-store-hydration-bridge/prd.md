@@ -13,8 +13,9 @@ legacy-only gaps.
 - `StoreMessageHydrator` now hydrates game runtime stores directly from
   `MsgGameInit`, `MsgGameSnapshot`, `MsgPlanningDraft`, `MsgPlanningPreview`,
   `MsgTurnStarted`, `MsgTurnSummary`, and phase messages.
-- `StaticCatalogMessageHydrator` now hydrates `StaticCatalogStore` directly
-  from `MsgStaticCatalogSnapshot`.
+- `AppManager` now hydrates `StaticCatalogStore` through
+  `StaticCatalogStoreHydrator` when static catalog snapshots or section sync
+  completion refresh `StaticCatalogCache`.
 - `ClientCompositionInstaller` no longer directly references legacy cache
   singletons in composition code.
 - `StoreHydrationCacheBridge` still exists and may still mirror legacy caches.

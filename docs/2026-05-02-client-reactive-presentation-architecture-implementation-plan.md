@@ -485,7 +485,7 @@ Initial bridge:
 ```text
 ServerFrame / MessageDispatcher
   -> legacy cache hydration
-  -> StoreHydrationCacheBridge
+  -> temporary cache-to-Store mirror
   -> GameStateStore / PlanningDraftStore / StaticCatalogStore / TurnStore
   -> migrated ViewModels
 ```
@@ -494,7 +494,7 @@ Status (2026-05-02):
 
 - Added `StoreHydrationHelper` as the Core-owned write surface for current
   Store snapshots.
-- Added `StoreHydrationCacheBridge` as a bounded migration bridge that captures
+- Added a bounded migration bridge that captures
   legacy cache snapshots and subscribes to cache change events.
 - Registered the bridge in `GameLifetimeScope`; when the Game scene scope is
   built, current cache data is copied into Stores before migrated Binders
@@ -528,8 +528,8 @@ Status (2026-05-02):
 - Added `StoreMessageHydrator` as a game-scope dispatcher subscriber for
   `MsgGameInit`, `MsgPlanningStart`, `MsgPlanningSnapshot`, preview responses,
   `MsgGameSync`, `MsgTokenResult`, `MsgRevealResult`, and `MsgGameOver`.
-- Registered the hydrator in `GameLifetimeScope`; the Phase 9 cache bridge
-  remains as the bounded fallback for pre-Game-scope initial seeding and
+- Registered the hydrator in `GameLifetimeScope`; the Phase 9 cache mirror
+  remains as the bounded fallback for pre-Game-scope initial hydration and
   non-migrated UI.
 - Added EditMode coverage for protocol-to-Store mapping and hydrator
   register/unregister behavior.
@@ -545,8 +545,9 @@ Direct catalog flow:
 
 ```text
 MessageDispatcher
-  -> StaticCatalogMessageHydrator
-  -> StaticCatalogProtocolMapper
+  -> AppManager static catalog handlers
+  -> StaticCatalogCache
+  -> StaticCatalogStoreHydrator
   -> StaticCatalogStore
 ```
 
@@ -554,16 +555,16 @@ Status (2026-05-02):
 
 - Added `StaticCatalogProtocolMapper` to map `StaticCatalogSnapshot` protocol
   messages into independent Core catalog DTOs.
-- Added `StaticCatalogMessageHydrator` and registered it in
-  `ProjectLifetimeScope` through `ClientCompositionInstaller.RegisterProject`.
+- Added `StaticCatalogStoreHydrator` and attached it to `AppManager` at the
+  project static catalog boundary through `ClientCompositionInstaller.RegisterProject`.
 - Updated `GameEventSessionGate` so `MsgStaticCatalogSnapshot` is treated like
   the other static catalog messages and can pass before an active game session
   exists.
 - Legacy `StaticCatalogCache` remains responsible for local bundle loading,
   section chunk sync, and richer JSON-only catalog fields until that path is
   migrated explicitly.
-- Added EditMode coverage for direct catalog mapping, dispatcher hydration,
-  unregister behavior, and session-gate pass-through.
+- Added EditMode coverage for direct catalog mapping, Store hydration from
+  protocol snapshots/cache data, and session-gate pass-through.
 
 Next work: split the remaining cache bridge into narrower bootstrap seeders,
 then remove Store writes from cache event mirroring where direct hydrators now
@@ -578,17 +579,17 @@ Current bounded bridge flow:
 
 ```text
 Game scene scope starts
-  -> StoreHydrationCacheBridge.Seed(...)
+  -> one-shot cache snapshot seed
   -> GameStateStore / PlanningDraftStore / TurnStore initial snapshots
 
 StaticCatalogCache.CatalogChanged
-  -> StoreHydrationCacheBridge
+  -> temporary static catalog mirror
   -> StaticCatalogStore
 ```
 
 Status (2026-05-02):
 
-- `StoreHydrationCacheBridge` no longer subscribes to `GameStateCache` or
+- The cache mirror no longer subscribes to `GameStateCache` or
   `PlanningDraftCache` change events.
 - The bridge still seeds game, planning, turn, and static catalog Stores once
   from existing cache snapshots when the Game scope is built. This covers
@@ -606,33 +607,31 @@ legacy-only role is isolated from game Store bootstrapping.
 
 ## Phase 13: Split Bootstrap Seeder And Static Legacy Bridge
 
-Goal: remove the mixed `StoreHydrationCacheBridge` concept after its runtime
+Goal: remove the mixed cache mirror concept after its runtime
 event mirroring role was narrowed.
 
 Current split flow:
 
 ```text
 Game scene scope starts
-  -> StoreHydrationBootstrapSeeder.SeedFromDefaultCaches()
+  -> one-shot cache snapshot seed
   -> GameStateStore / PlanningDraftStore / TurnStore initial snapshots
 
 StaticCatalogCache.CatalogChanged
-  -> StaticCatalogLegacyHydrationBridge
+  -> temporary static catalog event adapter
   -> StaticCatalogStore
 ```
 
 Status (2026-05-02):
 
-- Replaced `StoreHydrationCacheBridge` with
-  `StoreHydrationBootstrapSeeder` for one-shot cache snapshot seeding.
-- Added `StaticCatalogLegacyHydrationBridge` as the only remaining cache event
-  bridge, scoped to static catalog bundle/section sync.
+- Replaced the mixed cache mirror with one-shot cache snapshot seeding.
+- Added a scoped static catalog cache event adapter for bundle/section sync.
 - Updated `GameLifetimeScope` registration so composition resolves the two
   explicit roles instead of a generic cache bridge.
 - Updated EditMode coverage around the split behavior.
 
 Next work: migrate static catalog bundle/section sync behind a direct Core
-hydrator, then remove `StaticCatalogLegacyHydrationBridge`.
+hydrator, then remove the cache event adapter.
 
 ## Phase 14: Aggressive Reactive Presentation Migration Batch
 
@@ -705,6 +704,19 @@ Batch 4 status (2026-05-02):
 - Moved `MapMoveCommandSession` and `MapBuildPlacementSession` preview/order
   reads from `PlanningDraftCache` to `PlanningDraftState` snapshots supplied by
   the controller.
+
+Batch 5 status (2026-05-02):
+
+- Removed the remaining game-scope cache snapshot seeding and static catalog
+  cache event adapter registrations from `ClientCompositionInstaller`.
+- Added `StaticCatalogStoreHydrator` as a direct Core service for writing
+  project-owned static catalog Store state from protocol snapshots or the
+  assembled local/static catalog cache on explicit AppManager sync boundaries.
+- Updated `AppManager` static catalog handlers to hydrate `StaticCatalogStore`
+  after local manifest comparison, section sync completion, and snapshot
+  application without subscribing to `StaticCatalogCache.CatalogChanged`.
+- Replaced cache bridge/seeder EditMode coverage with direct static catalog
+  Store hydrator coverage.
 
 Next work: continue moving the remaining map renderer, settlement playback, and
 HUD resolver direct `*.Instance` reads onto injected Stores/ViewModels.

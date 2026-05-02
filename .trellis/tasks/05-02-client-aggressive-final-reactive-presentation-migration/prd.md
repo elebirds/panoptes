@@ -90,6 +90,18 @@ render without reaching through legacy cache singletons.
 - Moved map move/build placement helper preview reads from `PlanningDraftCache`
   to `PlanningDraftState` snapshots supplied by the controller.
 
+## Batch 5 Result
+
+- Removed the remaining Store compatibility seed/event-adapter classes and
+  their game-scope composition registrations.
+- Added a direct Core static catalog Store hydrator used by protocol snapshot
+  hydration and AppManager static catalog sync boundaries.
+- Updated AppManager static catalog handling to write `StaticCatalogStore`
+  after local manifest comparison, section sync completion, and server snapshot
+  application without subscribing a Store writer to cache change events.
+- Replaced compatibility seed/event-adapter EditMode tests with direct static
+  catalog Store hydrator tests.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.
