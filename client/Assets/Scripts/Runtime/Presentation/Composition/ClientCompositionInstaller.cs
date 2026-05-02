@@ -42,6 +42,8 @@ namespace Panoptes.Presentation.Composition
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
             builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<StaticCatalogMessageHydrator>(Lifetime.Singleton).AsSelf();
+            builder.RegisterBuildCallback(container => container.Resolve<StaticCatalogMessageHydrator>().Attach());
         }
 
         public static void RegisterGame(IContainerBuilder builder)

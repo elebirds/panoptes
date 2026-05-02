@@ -39,6 +39,7 @@ namespace Panoptes.Core.Infrastructure.Network
             }
 
             if (gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogManifest ||
+                gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogSnapshot ||
                 gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogSectionChunk ||
                 gameEvent.BodyCase == GameEvent.BodyOneofCase.StaticCatalogSyncComplete ||
                 gameEvent.BodyCase == GameEvent.BodyOneofCase.ConfigBatchJson)

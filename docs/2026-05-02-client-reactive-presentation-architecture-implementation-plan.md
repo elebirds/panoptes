@@ -537,6 +537,38 @@ Status (2026-05-02):
 Next work: add a project-scope static catalog direct hydrator, then retire
 cache bridge responsibilities one message family at a time.
 
+## Phase 11: Project Static Catalog Hydrator
+
+Goal: hydrate project-owned static catalog Store before the Game scene exists.
+
+Direct catalog flow:
+
+```text
+MessageDispatcher
+  -> StaticCatalogMessageHydrator
+  -> StaticCatalogProtocolMapper
+  -> StaticCatalogStore
+```
+
+Status (2026-05-02):
+
+- Added `StaticCatalogProtocolMapper` to map `StaticCatalogSnapshot` protocol
+  messages into independent Core catalog DTOs.
+- Added `StaticCatalogMessageHydrator` and registered it in
+  `ProjectLifetimeScope` through `ClientCompositionInstaller.RegisterProject`.
+- Updated `GameEventSessionGate` so `MsgStaticCatalogSnapshot` is treated like
+  the other static catalog messages and can pass before an active game session
+  exists.
+- Legacy `StaticCatalogCache` remains responsible for local bundle loading,
+  section chunk sync, and richer JSON-only catalog fields until that path is
+  migrated explicitly.
+- Added EditMode coverage for direct catalog mapping, dispatcher hydration,
+  unregister behavior, and session-gate pass-through.
+
+Next work: split the remaining cache bridge into narrower bootstrap seeders,
+then remove Store writes from cache event mirroring where direct hydrators now
+own the message family.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:
