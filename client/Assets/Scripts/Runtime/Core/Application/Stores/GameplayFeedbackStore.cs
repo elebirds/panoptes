@@ -23,7 +23,6 @@ namespace Panoptes.Core.Application.Stores
 
         internal void Clear()
         {
-            _sequence = 0;
             Publish(new GameplayFeedbackState());
         }
 

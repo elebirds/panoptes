@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Feedback;
 using Panoptes.Presentation.Planning.Input.Modes;
@@ -47,7 +47,7 @@ namespace Panoptes.Presentation.Map
         private readonly BuildPlacementGhostPresenter _ghostPresenter = new();
 
         private MapPlanningInputStateAdapter _inputState;
-        private Func<PlanningDraftCache> _draftCacheProvider;
+        private Func<PlanningDraftState> _planningDraftStateProvider;
         private Func<PlanningIntentService> _planningIntentServiceProvider;
         private Func<string> _localOwnerIdProvider;
         private Func<string, string> _backendBuildingTypeResolver;
@@ -68,14 +68,14 @@ namespace Panoptes.Presentation.Map
 
         public void Configure(
             MapPlanningInputStateAdapter inputState,
-            Func<PlanningDraftCache> draftCacheProvider,
+            Func<PlanningDraftState> planningDraftStateProvider,
             Func<PlanningIntentService> planningIntentServiceProvider,
             Func<string> localOwnerIdProvider,
             Func<string, string> backendBuildingTypeResolver,
             Action<NodeView> restoreNodeHighlight)
         {
             _inputState = inputState;
-            _draftCacheProvider = draftCacheProvider;
+            _planningDraftStateProvider = planningDraftStateProvider;
             _planningIntentServiceProvider = planningIntentServiceProvider;
             _localOwnerIdProvider = localOwnerIdProvider;
             _backendBuildingTypeResolver = backendBuildingTypeResolver;
@@ -211,8 +211,6 @@ namespace Panoptes.Presentation.Map
             _nextBuildPreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, settings.PreviewRequestThrottleSeconds);
             _buildPreviewRequestSequence++;
             var requestId = $"build-preview-{_buildType}-{_buildPreviewRequestSequence}";
-            var draftCache = PlanningDraftCache.EnsureInstance();
-            draftCache?.TrackBuildPreviewRequest(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
             _planningIntentServiceProvider?.Invoke()?.PreviewBuild(requestId, _hoverBuildPreviewNodeId, _buildType, _activeBuildCityId);
         }
 
@@ -271,16 +269,6 @@ namespace Panoptes.Presentation.Map
             }
 
             MapRenderer.Instance.ApplyBuildingPlacement(nodeId, buildingType, ownerId, isGhost, hp, placedGhostColor);
-            if (GameStateCache.Instance != null)
-            {
-                var cacheNode = GameStateCache.Instance.GetNode(nodeId);
-                if (cacheNode != null)
-                {
-                    cacheNode.BuildingType = buildingType ?? string.Empty;
-                    cacheNode.Owner = ownerId ?? string.Empty;
-                    cacheNode.BuildingHp = hp;
-                }
-            }
 
             if (!isGhost)
             {
@@ -335,7 +323,6 @@ namespace Panoptes.Presentation.Map
             _hoverBuildPreviewNodeId = string.Empty;
             _nextBuildPreviewRequestAt = 0f;
             _inputState?.ClearBuildPreviewTarget();
-            (_draftCacheProvider?.Invoke() ?? PlanningDraftCache.Instance)?.ClearBuildPreview();
         }
 
         private void RecreateHoverGhost(NodeView node, MapBuildPlacementVisualSettings settings)
@@ -383,8 +370,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var draftCache = _draftCacheProvider?.Invoke() ?? PlanningDraftCache.Instance;
-            preview = draftCache != null ? draftCache.CurrentBuildPreview : null;
+            preview = _planningDraftStateProvider?.Invoke()?.CurrentBuildPreview;
             return preview != null &&
                    string.Equals(preview.NodeId, nodeId.Trim(), StringComparison.Ordinal) &&
                    string.Equals(preview.BuildingTypeId, _buildType, StringComparison.Ordinal) &&

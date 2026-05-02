@@ -419,8 +419,8 @@ Status (2026-05-02):
   bookkeeping/rendering and territory highlight restore/clear behavior out of
   the scene input controller.
 - Completed Phase 7 adapter split by extracting `MapBuildPlacementSession`,
-  `MapMoveCommandSession`, `MapPlanningCacheEventBridge`, and
-  `MapUnitDamagePopupPresenter`. `MapPlanningInputController` now keeps the
+  `MapMoveCommandSession`, and `MapUnitDamagePopupPresenter`.
+  `MapPlanningInputController` now keeps the
   scene-facing Unity entry point, serialized map input settings, current
   `UnitView` adapter reference, and narrow delegation methods; build mode,
   move preview/pending state, cache subscription state, and damage popup
@@ -690,9 +690,24 @@ Batch 3 status (2026-05-02):
   game status, settlement toasts, game-over visibility, and gameplay feedback
   through Stores.
 
-Next work: move the remaining map/planning feedback listeners and HUD
-resolvers off legacy cache singletons, then reduce `MapPlanningCacheEventBridge`
-and direct `*.Instance` calls in map-facing Presentation.
+Batch 4 status (2026-05-02):
+
+- Removed `MapPlanningCacheEventBridge` instead of preserving it as a
+  compatibility event wrapper.
+- Migrated `MapPlanningInputController` to injected `GameStateStore`,
+  `PlanningDraftStore`, `SettlementStore`, and `GameplayFeedbackStore`
+  subscriptions for settlement playback, feedback rollback, map node/unit
+  refresh, and planning preview/order rendering.
+- Added settlement state sequencing and richer feedback details so map planning
+  can consume Store state once per server result without subscribing to
+  `GameStateCache.OnTurnSettled`, `OnTokenResult`, or
+  `OnPlanningCommandResult`.
+- Moved `MapMoveCommandSession` and `MapBuildPlacementSession` preview/order
+  reads from `PlanningDraftCache` to `PlanningDraftState` snapshots supplied by
+  the controller.
+
+Next work: continue moving the remaining map renderer, settlement playback, and
+HUD resolver direct `*.Instance` reads onto injected Stores/ViewModels.
 
 ## Completion Standard
 

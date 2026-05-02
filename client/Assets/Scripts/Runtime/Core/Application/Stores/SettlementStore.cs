@@ -4,6 +4,8 @@ namespace Panoptes.Core.Application.Stores
 {
     public sealed class SettlementStore : ReactiveStore<SettlementState>
     {
+        private int _sequence;
+
         public SettlementStore()
             : base(new SettlementState())
         {
@@ -11,7 +13,7 @@ namespace Panoptes.Core.Application.Stores
 
         internal void Replace(TurnSettlementDto settlement)
         {
-            Publish(new SettlementState(settlement));
+            Publish(new SettlementState(settlement, ++_sequence));
         }
 
         internal void Clear()
