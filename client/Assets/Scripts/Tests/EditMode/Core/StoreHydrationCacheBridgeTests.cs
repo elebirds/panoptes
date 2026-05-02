@@ -126,7 +126,7 @@ namespace Panoptes.Tests.EditMode.Core
         }
 
         [Test]
-        public void AttachedBridge_ShouldPublishSubsequentCacheChanges()
+        public void AttachedBridge_ShouldOnlyPublishLegacyStaticCatalogChangesAfterInitialSeed()
         {
             var gameCache = EnsureGameStateCache();
             var draftCache = PlanningDraftCache.EnsureInstance();
@@ -139,6 +139,10 @@ namespace Panoptes.Tests.EditMode.Core
 
             _bridge = new StoreHydrationCacheBridge(helper);
             _bridge.Attach(gameCache, draftCache, catalogCache);
+
+            Assert.That(gameStore.Snapshot.TokensLeft, Is.EqualTo(0));
+            Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(0));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Is.Empty);
 
             gameCache.UpdateTokens(6);
             draftCache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
@@ -165,9 +169,9 @@ namespace Panoptes.Tests.EditMode.Core
                 }
             });
 
-            Assert.That(gameStore.Snapshot.TokensLeft, Is.EqualTo(6));
-            Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(6));
-            Assert.That(draftStore.Snapshot.RecipeSelections[0].RecipeId, Is.EqualTo("grain"));
+            Assert.That(gameStore.Snapshot.TokensLeft, Is.EqualTo(0));
+            Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(0));
+            Assert.That(draftStore.Snapshot.RecipeSelections, Is.Empty);
             Assert.That(catalogStore.Snapshot.Recipes["grain"].BuildingId, Is.EqualTo("mill"));
         }
 

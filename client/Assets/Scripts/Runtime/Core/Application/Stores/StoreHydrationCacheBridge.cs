@@ -6,11 +6,11 @@ using Panoptes.Core.Domain;
 
 namespace Panoptes.Core.Application.Stores
 {
+    // Temporary migration bridge: one-shot seed game/planning stores from legacy
+    // caches, while static catalog chunk sync still needs legacy cache events.
     public sealed class StoreHydrationCacheBridge : IDisposable
     {
         private readonly StoreHydrationHelper _helper;
-        private GameStateCache _gameStateCache;
-        private PlanningDraftCache _planningDraftCache;
         private StaticCatalogCache _staticCatalogCache;
 
         public StoreHydrationCacheBridge(StoreHydrationHelper helper)
@@ -24,29 +24,14 @@ namespace Panoptes.Core.Application.Stores
             StaticCatalogCache staticCatalogCache)
         {
             Detach();
-            _gameStateCache = gameStateCache;
-            _planningDraftCache = planningDraftCache;
             _staticCatalogCache = staticCatalogCache;
-
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnStateChanged += HydrateGameAndTurn;
-            }
-
-            if (_planningDraftCache != null)
-            {
-                _planningDraftCache.OrdersChanged += HydratePlanningDraft;
-                _planningDraftCache.PreviewChanged += HydratePlanningDraft;
-                _planningDraftCache.BuildPreviewChanged += HydratePlanningDraft;
-                _planningDraftCache.RecipePreviewChanged += HydratePlanningDraft;
-            }
 
             if (_staticCatalogCache != null)
             {
                 _staticCatalogCache.CatalogChanged += HydrateStaticCatalog;
             }
 
-            HydrateAll();
+            Seed(gameStateCache, planningDraftCache, staticCatalogCache);
         }
 
         public void AttachToDefaultCaches()
@@ -62,13 +47,16 @@ namespace Panoptes.Core.Application.Stores
             Detach();
         }
 
-        public void HydrateAll()
+        public void Seed(
+            GameStateCache gameStateCache,
+            PlanningDraftCache planningDraftCache,
+            StaticCatalogCache staticCatalogCache)
         {
             _helper.Hydrate(new StoreHydrationSnapshot(
-                CaptureGameState(_gameStateCache),
-                CapturePlanningDraft(_planningDraftCache),
-                CaptureStaticCatalog(_staticCatalogCache),
-                CaptureTurn(_gameStateCache)));
+                CaptureGameState(gameStateCache),
+                CapturePlanningDraft(planningDraftCache),
+                CaptureStaticCatalog(staticCatalogCache),
+                CaptureTurn(gameStateCache)));
         }
 
         public static GameStateStoreState CaptureGameState(GameStateCache cache)
@@ -149,38 +137,12 @@ namespace Panoptes.Core.Application.Stores
 
         private void Detach()
         {
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnStateChanged -= HydrateGameAndTurn;
-            }
-
-            if (_planningDraftCache != null)
-            {
-                _planningDraftCache.OrdersChanged -= HydratePlanningDraft;
-                _planningDraftCache.PreviewChanged -= HydratePlanningDraft;
-                _planningDraftCache.BuildPreviewChanged -= HydratePlanningDraft;
-                _planningDraftCache.RecipePreviewChanged -= HydratePlanningDraft;
-            }
-
             if (_staticCatalogCache != null)
             {
                 _staticCatalogCache.CatalogChanged -= HydrateStaticCatalog;
             }
 
-            _gameStateCache = null;
-            _planningDraftCache = null;
             _staticCatalogCache = null;
-        }
-
-        private void HydrateGameAndTurn()
-        {
-            _helper.HydrateGameState(CaptureGameState(_gameStateCache));
-            _helper.HydrateTurn(CaptureTurn(_gameStateCache));
-        }
-
-        private void HydratePlanningDraft()
-        {
-            _helper.HydratePlanningDraft(CapturePlanningDraft(_planningDraftCache));
         }
 
         private void HydrateStaticCatalog()
