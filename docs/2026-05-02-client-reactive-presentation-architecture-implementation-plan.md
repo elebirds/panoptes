@@ -451,6 +451,16 @@ Every migrated panel follows:
 Store -> ViewModel -> Binder -> View
 ```
 
+Status (2026-05-02):
+
+- Phase 8 entered with the first `BuildCommandPanel` migration slice.
+- Added `BuildCatalogViewModel` / `BuildCatalogState`, projecting
+  `StaticCatalogStore + PlanningDraftStore` into grouped build catalog items.
+- Added `BuildCatalogUiToolkitBinder` as the UI Toolkit build catalog surface
+  with explicit fallback tree rendering and button command callbacks.
+- Registered the build catalog ViewModel and binder in `RegisterGame` while
+  keeping the existing uGUI `BuildCommandPanel` intact for prefab compatibility.
+
 ## Completion Standard
 
 C0a architecture foundation is complete when:

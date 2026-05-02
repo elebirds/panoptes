@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify migrated build catalog state comes from Stores and stays non-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify Presentation does not reference Protocol or NetworkManager singleton."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/BuildCatalogViewModel.cs", "reason": "Verified Store-only inputs and no legacy cache singleton usage."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/BuildCatalogUiToolkitBinder.cs", "reason": "Verified explicit UI Toolkit rendering and no authoritative state mutation."}
