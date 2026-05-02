@@ -160,6 +160,14 @@ namespace Panoptes.Tests.EditMode.Composition
                 "TMPro");
 
             Assert.That(offenders, Is.Empty, "PlanningTool state and ViewModel must consume final stores/services only.");
+
+            var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/PlanningToolViewModel.cs"));
+            Assert.That(viewModel, Does.Not.Contain("PlanningToolService"));
+            Assert.That(viewModel, Does.Not.Contain("SelectionService"));
+            Assert.That(viewModel, Does.Not.Contain("public void Begin"));
+            Assert.That(viewModel, Does.Not.Contain("public void Enter"));
+            Assert.That(viewModel, Does.Not.Contain("public void Select"));
+            Assert.That(viewModel, Does.Not.Contain("public void Clear"));
         }
 
         [Test]
