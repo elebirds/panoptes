@@ -460,6 +460,21 @@ Status (2026-05-02):
   with explicit fallback tree rendering and button command callbacks.
 - Registered the build catalog ViewModel and binder in `RegisterGame` while
   keeping the existing uGUI `BuildCommandPanel` intact for prefab compatibility.
+- Completed the remaining Phase 8 management slices:
+  `TechTree`, `RecipeSynthesis`, `MinisterReport`, `Policy/NationalFocus`,
+  and `NationalLedger`.
+- Added shared `ManagementPanelState`, `ManagementPanelViewModelBase`, and
+  `ManagementPanelUiToolkitRenderer` primitives so information-dense panels
+  use one explicit UI Toolkit rendering shape without automatic data binding.
+- Registered all Phase 8 ViewModels and UI Toolkit binders in the final game
+  composition root. Existing uGUI management panels remain intact as authored
+  prefab surfaces.
+- Added EditMode coverage for representative management ViewModel projections
+  and shared UI Toolkit rendering.
+
+Completion status (2026-05-02): Phase 8 complete for migrated runtime slices.
+Final authored UXML/USS polish and old uGUI removal remain separate asset and
+cleanup work.
 
 ## Completion Standard
 

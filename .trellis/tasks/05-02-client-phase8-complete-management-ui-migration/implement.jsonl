@@ -1,0 +1,25 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Phase 8 UI Toolkit/ViewModel placement."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Explicit UI Toolkit binder and prefab compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel/Binder management panel migration."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Presentation boundary, generated file, and Unity compile gates."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse shared renderer/state across management panels."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Preserve Store -> ViewModel -> Binder data flow."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/ManagementPanelState.cs", "reason": "Shared read-only management panel state for Phase 8 UI Toolkit slices."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/ManagementPanelViewModelBase.cs", "reason": "Shared R3 ViewModel base for management panel projections."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs", "reason": "Project technology catalog and planned research state."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisViewModel.cs", "reason": "Project recipe catalog and selected recipe draft state."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/MinisterReportViewModel.cs", "reason": "Project minister drafts into grouped management report rows."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/PolicyFocusViewModel.cs", "reason": "Project policy catalog and planned focus/institution state."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/ViewModels/NationalLedgerViewModel.cs", "reason": "Project game, resource, and catalog counters for the national ledger."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementPanelUiToolkitRenderer.cs", "reason": "Shared explicit UI Toolkit rendering for management panels."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementPanelUiToolkitBinderBase.cs", "reason": "Shared UIDocument binder lifecycle for management panel ViewModels."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs", "reason": "Phase 8 TechTree UI Toolkit binder."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/RecipeSynthesisUiToolkitBinder.cs", "reason": "Phase 8 RecipeSynthesis UI Toolkit binder."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/MinisterReportUiToolkitBinder.cs", "reason": "Phase 8 MinisterReport UI Toolkit binder."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/PolicyFocusUiToolkitBinder.cs", "reason": "Phase 8 Policy/NationalFocus UI Toolkit binder."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/NationalLedgerUiToolkitBinder.cs", "reason": "Phase 8 NationalLedger UI Toolkit binder."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Register Phase 8 management ViewModels and UI Toolkit binders in the final game composition root."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/ManagementPanelUiToolkitBinderTests.cs", "reason": "Verify shared UI Toolkit rendering with named management elements."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/TechTreeViewModelTests.cs", "reason": "Verify TechTree projection from stores."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/Phase8ManagementViewModelCoverageTests.cs", "reason": "Verify remaining management ViewModel projections."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Record Phase 8 completion status."}

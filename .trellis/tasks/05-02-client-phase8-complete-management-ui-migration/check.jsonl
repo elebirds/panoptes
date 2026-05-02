@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify migrated panels consume Store state and stay presentation-only."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify Presentation does not reference Protocol or NetworkManager singleton."}
+{"file": "client/Panoptes.Tests.EditMode.csproj", "reason": "dotnet build client/Panoptes.Tests.EditMode.csproj passed with existing warnings."}
+{"file": "client/Panoptes.Tests.EditMode.csproj", "reason": "dotnet test client/Panoptes.Tests.EditMode.csproj --no-build exited successfully."}
+{"file": "/tmp/panoptes-unity-phase8-complete.log", "reason": "Unity 6000.4.1f1 batchmode exited successfully after script compilation; log contains existing package/network warnings only."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Static boundary checks found no Presentation Protocol references and no UI NetworkManager singleton calls."}
