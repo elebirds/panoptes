@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Helper placement beside prefab-facing facade."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Facade plus small testable helper extraction pattern."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep extracted map helpers presentation-only and non-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks, Unity compile, and helper testing requirements."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Maintain clean input/service/presentation boundaries."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapMovePreviewPresentationController.cs", "reason": "Centralizes move preview overlays, move path overlays, and move ghost presentation."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapMovePreviewRenderPlanner.cs", "reason": "Extracts move preview render decision projection."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapAttackRangePresenter.cs", "reason": "Extracts attack range highlight projection."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapCombatTargetingResolver.cs", "reason": "Extracts combat target predicates from scene input controller."}
