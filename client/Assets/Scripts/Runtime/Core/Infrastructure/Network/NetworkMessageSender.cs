@@ -27,7 +27,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 return false;
             }
 
-            MessageSender.PublishSendIntercepted(message);
+            MessageSendDiagnostics.PublishSendIntercepted(message);
             _networkManager.Send(message);
             return true;
         }

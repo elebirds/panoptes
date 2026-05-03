@@ -74,7 +74,7 @@ namespace Panoptes.DebugTools
         {
             if (_senderHooked)
             {
-                MessageSender.OnSendIntercepted -= OnSendIntercepted;
+                MessageSendDiagnostics.OnSendIntercepted -= OnSendIntercepted;
                 _senderHooked = false;
             }
 
@@ -103,7 +103,7 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            MessageSender.OnSendIntercepted += OnSendIntercepted;
+            MessageSendDiagnostics.OnSendIntercepted += OnSendIntercepted;
             _senderHooked = true;
         }
 

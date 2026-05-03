@@ -16,7 +16,7 @@ namespace Panoptes.Tests.EditMode.Debug
         private readonly string _debugPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugPanel.cs");
         private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
         private readonly string _networkManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/NetworkManager.cs");
-        private readonly string _messageSenderPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSender.cs");
+        private readonly string _messageSendDiagnosticsPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSendDiagnostics.cs");
 
         [Test]
         public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
@@ -224,15 +224,15 @@ namespace Panoptes.Tests.EditMode.Debug
         public void NetworkRuntime_ShouldNotExposeLegacySendRawPath()
         {
             Assert.That(File.Exists(_networkManagerPath), Is.True, "NetworkManager.cs 不存在。");
-            Assert.That(File.Exists(_messageSenderPath), Is.True, "MessageSender.cs 不存在。");
+            Assert.That(File.Exists(_messageSendDiagnosticsPath), Is.True, "MessageSendDiagnostics.cs 不存在。");
 
             var networkContent = File.ReadAllText(_networkManagerPath);
-            var senderContent = File.ReadAllText(_messageSenderPath);
+            var diagnosticsContent = File.ReadAllText(_messageSendDiagnosticsPath);
 
             Assert.That(networkContent, Does.Not.Contain("public void SendRaw("),
                 "Transport V2 下 NetworkManager 不应继续暴露 SendRaw。");
-            Assert.That(senderContent, Does.Not.Contain("public static void SendRaw("),
-                "Transport V2 下 MessageSender 不应继续暴露 SendRaw。");
+            Assert.That(diagnosticsContent, Does.Not.Contain("public static void Send("),
+                "Transport V2 下诊断事件源不应继续暴露静态发送 API。");
         }
 
         [Test]
