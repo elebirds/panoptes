@@ -23,8 +23,8 @@ Protocol / WebSocket
 
 Player Input
   -> ViewModel Command
-  -> Application Service / Intent
-  -> MessageSender
+  -> Application Command Service
+  -> IClientMessageSender
   -> Server
 ```
 
@@ -209,8 +209,9 @@ Rules:
 Acceptance:
 
 - At least one scene owns a real `LifetimeScope`.
-- New architecture code paths do not call `GameStateCache.Instance`,
-  `PlanningDraftCache.Instance`, or `StaticCatalogCache.Instance`.
+- New architecture code paths receive `GameStateCache`, `PlanningDraftCache`,
+  and `StaticCatalogCache` from composition when they still have to maintain
+  legacy Core mirrors; migrated Presentation code consumes Stores/ViewModels.
 
 Status 2026-05-02: complete. `Assets/Scenes/Game.unity` owns the scene-level
 `GameLifetimeScope` through a `Game Composition` root, while
@@ -345,7 +346,7 @@ Command flow:
 Button / click
   -> ViewModel.Command()
   -> Service
-  -> MessageSender
+  -> IClientMessageSender
   -> Server
 ```
 
@@ -360,13 +361,13 @@ Status (2026-05-02):
 - Added injectable Core command services:
   `GameIntentService`, `PlanningIntentService`, and
   `MinisterCommandService`.
-- Migrated Presentation command callers away from static `GameIntents` for
-  turn submit, chat emotes, research selection, recipe commands, minister
-  directives, and map planning commands.
+- Migrated Presentation command callers onto injected command services for turn
+  submit, chat emotes, research selection, recipe commands, minister directives,
+  and map planning commands.
 - Command services send through `IClientMessageSender`; Protocol construction
   stays in Core.
-- Legacy `GameIntents` remains for debug tooling and old non-migrated Core
-  paths only.
+- The static command compatibility shell has been removed; debug tooling sends
+  through the same injected sender port.
 
 ## Phase 7: Map Input Re-Architecture
 
@@ -760,6 +761,15 @@ Batch 7 status (2026-05-03):
   and block `LifetimeScope.Find<GameLifetimeScope>()` / `InjectGameObject`
   patterns under Presentation composition.
 
+Composition exceptions:
+
+- The debug panel may still be attached dynamically from
+  `PanoptesCompositionBootstrap`, but only inside the editor/dev/debug compile
+  gate because the debug type is not compiled into normal player builds.
+- UI Toolkit management binders may use `RegisterComponentOnNewGameObject`
+  until authored `UIDocument` prefabs exist. The allowed list is locked by
+  EditMode composition boundary tests.
+
 Batch 8 status (2026-05-03):
 
 - Removed the remaining `UnitInfoPanelController` direct subscriptions to
@@ -789,8 +799,11 @@ Batch 9 status (2026-05-03):
   deleted and scans the `Presentation/Planning/Input` slice for legacy cache
   exposure.
 
-Next work: continue moving the remaining map renderer, settlement playback, and
-HUD direct `*.Instance` reads onto injected Stores/ViewModels.
+Final cleanup status (2026-05-03): formal runtime paths no longer use static
+cache/network entrypoints for mapper catalog lookups, game-session gating,
+local game reset, or `GameStateCache` companion cache updates. Remaining
+singleton reads are debug-only diagnostics or legacy cache ownership internals
+that are not the standard Presentation path.
 
 ## Completion Standard
 

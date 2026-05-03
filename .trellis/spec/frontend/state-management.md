@@ -70,7 +70,7 @@ Phase 4 establishes the first migrated uGUI slice:
   registrars. Do not move serialized fields out of that facade unless the
   affected prefab/scene assets are updated and verified.
 - The migrated ViewModel/Binder files must not reference generated Protocol,
-  legacy cache singletons, or `NetworkManager.Instance`.
+  legacy cache singletons, or direct NetworkManager singleton calls.
 
 Phase 5 establishes the first migrated UI Toolkit read-only slice:
 
@@ -82,7 +82,7 @@ Phase 5 establishes the first migrated UI Toolkit read-only slice:
   binder constants and tests should reference the same names.
 - Do not use Unity automatic data binding for gameplay state in this pilot.
 - UI Toolkit binders must not reference generated Protocol, legacy cache
-  singletons, or `NetworkManager.Instance`.
+  singletons, or direct NetworkManager singleton calls.
 
 Phase 6 establishes injectable command services for migrated player commands:
 
@@ -92,7 +92,7 @@ Phase 6 establishes injectable command services for migrated player commands:
   build, build preview, recipe preview, and recipe selection.
 - `MinisterCommandService` owns minister draft accept/reject directives.
 - Presentation command callers should receive these services through VContainer
-  injection and must not call static `GameIntents`.
+  injection and must not call static command compatibility shells.
 - Command services may construct Protocol messages because they live in Core,
   but they must send only through `IClientMessageSender`.
 
@@ -123,7 +123,7 @@ Default data flow:
 
 ```text
 Server -> Core cache/store -> ViewModel -> Binder -> UI
-Player input -> ViewModel command -> Service/Intent -> MessageSender -> Server
+Player input -> ViewModel command -> Core command service -> IClientMessageSender -> Server
 ```
 
 UI Toolkit runtime data binding may be evaluated later for stable detail panels
@@ -149,6 +149,12 @@ migrate.
   should be registered directly as migrated read-model dependencies.
 - Project scope registers `StaticCatalogStore`; game scope registers
   `GameStateStore`, `PlanningDraftStore`, `SelectionStore`, and `TurnStore`.
+- Formal runtime services that still maintain legacy Core mirrors receive
+  companion caches from the project composition root; they must not rediscover
+  those collaborators through static singleton entrypoints.
+- Debug-only diagnostics may read singleton runtime objects when compiled under
+  editor/development/debug-panel gates. Those reads are not the standard
+  Presentation dependency path.
 
 ---
 

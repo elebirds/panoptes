@@ -23,6 +23,13 @@ namespace Panoptes.Tests.EditMode
             "NetworkManager.Instance"
         };
 
+        private static readonly string[] PresentationCommandForbiddenTokens =
+        {
+            "MessageSender.Send",
+            "GameIntents.",
+            "NetworkManager.Instance"
+        };
+
         private static readonly IReadOnlyList<LineCountBaseline> HighRiskLineBaselines = new[]
         {
             new LineCountBaseline("Runtime/Presentation/Map/MapPlanningInputController.cs", 3376),
@@ -49,6 +56,68 @@ namespace Panoptes.Tests.EditMode
             var offenders = FindTokenOffenders(uiRoot, UiNetworkForbiddenTokens);
 
             Assert.That(offenders, Is.Empty, "UI scripts must send through services/intents, not NetworkManager.Instance.");
+        }
+
+        [Test]
+        public void PresentationRuntimeOutsideComposition_ShouldNotUseLegacyCommandEntrypoints()
+        {
+            var presentationRoot = ResolveAssetPath("Scripts/Runtime/Presentation");
+            var files = Directory.GetFiles(presentationRoot, "*.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Composition{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .ToArray();
+
+            var offenders = FindTokenOffenders(files, "*.cs", PresentationCommandForbiddenTokens);
+
+            Assert.That(offenders, Is.Empty, "Presentation commands must route through injected Core services and IClientMessageSender.");
+        }
+
+        [Test]
+        public void FormalCoreRuntime_ShouldNotUseLegacySingletonCompatibilityEntrypoints()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Mapper/NodeMapper.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Mapper/UnitMapper.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Network/GameEventSessionGate.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Network/ServerEndpointResolver.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Services/LocalGameSessionResetService.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/GameStateCache.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "StaticCatalogCache.Instance",
+                "GameStateCache.Instance",
+                "PlanningDraftCache.EnsureInstance",
+                "PlanningDraftCache.Instance",
+                "GameChatCache.Instance",
+                "NetworkManager.Instance");
+
+            Assert.That(offenders, Is.Empty, "Formal runtime bridges must receive dependencies from composition instead of static compatibility entrypoints.");
+        }
+
+        [Test]
+        public void ArchitectureDocs_ShouldNotTeachLegacyClientCommandPath()
+        {
+            var roots = new[]
+            {
+                Path.GetFullPath("AGENTS.md"),
+                Path.GetFullPath("docs/PANOPTES_AGENT_FRONTEND.md"),
+                Path.GetFullPath("docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md"),
+                Path.GetFullPath("docs/2026-05-01-client-reactive-ui-architecture-plan.md"),
+                Path.GetFullPath(".trellis/spec/frontend/state-management.md")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.md",
+                "MessageSender.Send",
+                "GameIntents.",
+                "NetworkManager.Instance",
+                "MessageDispatcher.Instance.Register");
+
+            Assert.That(offenders, Is.Empty, "Architecture docs must teach VContainer + Store/ViewModel/Binder + IClientMessageSender, not the retired static path.");
         }
 
         [Test]
@@ -178,7 +247,7 @@ namespace Panoptes.Tests.EditMode
             for (var rootIndex = 0; rootIndex < roots.Count; rootIndex++)
             {
                 var root = roots[rootIndex];
-                foreach (var path in Directory.EnumerateFiles(root, searchPattern, SearchOption.AllDirectories))
+                foreach (var path in EnumerateFiles(root, searchPattern))
                 {
                     var content = File.ReadAllText(path);
                     for (var i = 0; i < forbiddenTokens.Length; i++)
@@ -195,6 +264,25 @@ namespace Panoptes.Tests.EditMode
             }
 
             return offenders;
+        }
+
+        private static IEnumerable<string> EnumerateFiles(string path, string searchPattern)
+        {
+            if (File.Exists(path))
+            {
+                yield return path;
+                yield break;
+            }
+
+            if (!Directory.Exists(path))
+            {
+                yield break;
+            }
+
+            foreach (var file in Directory.EnumerateFiles(path, searchPattern, SearchOption.AllDirectories))
+            {
+                yield return file;
+            }
         }
 
         private static string ResolveAssetPath(string assetRelativePath)

@@ -24,8 +24,8 @@ Protocol / WebSocket
 
 Player Input
   -> ViewModel Command
-  -> Application Service / Intent
-  -> MessageSender
+  -> Application Command Service
+  -> IClientMessageSender
   -> Server
 ```
 
@@ -173,7 +173,8 @@ Each phase must keep these gates green:
 
 - No generated protocol edits.
 - No `Panoptes.Protocol` references under `Runtime/Presentation`.
-- No `NetworkManager.Instance` under `Runtime/Presentation/UI`.
+- No direct NetworkManager singleton calls under `Runtime/Presentation/UI`.
+- No static command compatibility shell in migrated Presentation paths.
 - Unity script import/compile succeeds.
 
 ## 8. Current Script Refactor Plan
