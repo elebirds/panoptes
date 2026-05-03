@@ -228,11 +228,6 @@ namespace Panoptes.Presentation.Map
 
             if (targetCamera == null)
             {
-                targetCamera = FindAnyObjectByType<CinemachineCamera>();
-            }
-
-            if (targetCamera == null)
-            {
                 _followComponent = null;
                 return;
             }
