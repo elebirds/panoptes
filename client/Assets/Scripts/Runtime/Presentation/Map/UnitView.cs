@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 
 namespace Panoptes.Presentation.Map
@@ -87,6 +86,7 @@ namespace Panoptes.Presentation.Map
         public int MaxHitPoints { get; private set; }
         public Vector2Int GridPos { get; private set; }
         public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
+        private string _localPlayerId = string.Empty;
         private int _movingBoolHash;
         private int _speedFloatHash;
         private int _attackTriggerHash;
@@ -156,6 +156,12 @@ namespace Panoptes.Presentation.Map
                 collider.radius = 0.35f;
                 collider.center = new Vector3(0f, 0.35f, 0f);
             }
+        }
+
+        public void SetLocalPlayerId(string localPlayerId)
+        {
+            _localPlayerId = localPlayerId ?? string.Empty;
+            ApplyFactionTint();
         }
 
         private void Update()
@@ -668,9 +674,9 @@ namespace Panoptes.Presentation.Map
             return false;
         }
 
-        private static Color ResolveFactionColor(string faction)
+        private Color ResolveFactionColor(string faction)
         {
-            var myPlayerId = GameStateCache.Instance != null ? GameStateCache.Instance.MyPlayerID : string.Empty;
+            var myPlayerId = _localPlayerId;
             if (!string.IsNullOrEmpty(myPlayerId) && !string.IsNullOrEmpty(faction))
             {
                 return faction == myPlayerId

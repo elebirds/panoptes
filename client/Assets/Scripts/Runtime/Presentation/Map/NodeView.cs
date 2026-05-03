@@ -117,6 +117,7 @@ namespace Panoptes.Presentation.Map
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;
         private string _buildingType = string.Empty;
+        private string _localPlayerId = string.Empty;
         private bool _roadVisibleWanted;
         private bool _resourceVisibleWanted;
         private bool _isCurrentlyVisible = true;
@@ -211,6 +212,15 @@ namespace Panoptes.Presentation.Map
             }
             ApplyObservationState(node);
             SetHighlightVisible(false);
+        }
+
+        public void SetLocalPlayerId(string localPlayerId)
+        {
+            _localPlayerId = localPlayerId ?? string.Empty;
+            if (_buildingInstance != null)
+            {
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
+            }
         }
 
         /// <summary>
@@ -903,6 +913,7 @@ namespace Panoptes.Presentation.Map
             if (_buildingInstance != null)
             {
                 _buildingInstance.SetBuildingType(normalized);
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
                 _buildingInstance.SetOwner(ownerId);
                 _buildingInstance.SetHitPoints(buildingHp, buildingMaxHp);
                 _buildingInstance.SetPlacementGhost(isGhost);
@@ -935,6 +946,7 @@ namespace Panoptes.Presentation.Map
             if (_buildingInstance != null)
             {
                 _buildingInstance.SetBuildingType(normalized);
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
                 _buildingInstance.SetOwner(ownerId);
                 _buildingInstance.SetPlacementGhost(true, ghostColor);
             }
@@ -977,6 +989,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _buildingInstance = Instantiate(prefab, buildingAnchor, false);
+            _buildingInstance.SetLocalPlayerId(_localPlayerId);
         }
 
         private Material GetTerrainMaterial(string terrain)
