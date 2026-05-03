@@ -3,6 +3,7 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
@@ -99,7 +100,10 @@ namespace Panoptes.Presentation.UI.HUD
         private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
         private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
         private UnitInfoViewModel _unitInfoViewModel;
-        private UnitInfoReactiveBridge _reactiveBridge;
+        private UnitInfoUguiBinder _unitInfoBinder;
+        private UnitInfoUguiBinder.References _unitInfoBinderReferences;
+        private bool _unitInfoBinderReferencesSet;
+        private bool _reactiveBinderReady;
         public UnitView CurrentUnit => _currentUnit;
         public bool IsOpen => _slideAnimator != null && _slideAnimator.IsOpen;
 
@@ -107,8 +111,10 @@ namespace Panoptes.Presentation.UI.HUD
         private void Construct(UnitInfoViewModel unitInfoViewModel)
         {
             _unitInfoViewModel = unitInfoViewModel;
-            EnsureReactiveBridgeInstance();
-            _reactiveBridge.SetViewModel(unitInfoViewModel);
+            if (_reactiveBinderReady)
+            {
+                EnsureReactiveBinder();
+            }
         }
 
         private void Awake()
@@ -141,6 +147,7 @@ namespace Panoptes.Presentation.UI.HUD
             _directOrderPanelBinder.BindListeners(
                 GetDirectOrderButtons(),
                 UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
+            _reactiveBinderReady = true;
             EnsureReactiveBinder();
             ResolveAnchoredPositions();
             SetPanelVisibleImmediate(false);
@@ -198,15 +205,16 @@ namespace Panoptes.Presentation.UI.HUD
             UnsubscribeActionRegistry();
             _subscriptions.Clear();
             _planningDraftCache = null;
-            _reactiveBridge?.Unbind();
+            _unitInfoBinder?.Unbind();
             _slideAnimator?.StopAnimations();
             DisablePortraitCamera();
         }
 
         private void OnDestroy()
         {
-            _reactiveBridge?.Dispose();
-            _reactiveBridge = null;
+            _unitInfoBinder?.Dispose();
+            _unitInfoBinder = null;
+            _unitInfoBinderReferencesSet = false;
             ReleasePortraitResources();
         }
 
@@ -242,7 +250,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _currentUnit = unit;
-            _reactiveBridge?.SelectUnit(unit, ActionLock.IsLocked);
+            SelectReactiveUnit(unit);
             RefreshSelectionUi();
             AnimateVisibility(true);
         }
@@ -250,7 +258,7 @@ namespace Panoptes.Presentation.UI.HUD
         public void Close()
         {
             _currentUnit = null;
-            _reactiveBridge?.Clear();
+            ClearReactiveSelection();
             DisablePortraitCamera();
             SetPortraitVisible(false);
             AnimateVisibility(false);
@@ -259,7 +267,7 @@ namespace Panoptes.Presentation.UI.HUD
         public void ForceHideImmediate()
         {
             _currentUnit = null;
-            _reactiveBridge?.Clear();
+            ClearReactiveSelection();
 
             ResolveReferences();
             ResolveAnchoredPositions();
@@ -352,7 +360,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            _reactiveBridge?.SelectUnit(_currentUnit, ActionLock.IsLocked);
+            SelectReactiveUnit(_currentUnit);
             RefreshPlanningUi();
         }
 
@@ -790,7 +798,7 @@ namespace Panoptes.Presentation.UI.HUD
             _directOrderPanelBinder.BindListeners(
                 GetDirectOrderButtons(),
                 UnitInfoDirectOrderButtonActions.ForController(() => mapPlanningInputController));
-            EnsureReactiveBinder();
+            RecreateReactiveBinder();
         }
 
         private void EnsureRequiredActionButtonSlots()
@@ -856,8 +864,79 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureReactiveBinder()
         {
-            EnsureReactiveBridgeInstance();
-            _reactiveBridge.Bind(
+            if (_unitInfoViewModel == null)
+            {
+                return;
+            }
+
+            var references = BuildReactiveBinderReferences();
+            if (_unitInfoBinder != null &&
+                (!_unitInfoBinderReferencesSet || !ReactiveBinderReferencesMatch(_unitInfoBinderReferences, references)))
+            {
+                _unitInfoBinder.Dispose();
+                _unitInfoBinder = null;
+                _unitInfoBinderReferencesSet = false;
+            }
+
+            if (_unitInfoBinder == null)
+            {
+                _unitInfoBinderReferences = references;
+                _unitInfoBinderReferencesSet = true;
+                _unitInfoBinder = new UnitInfoUguiBinder(references, _directOrderPanelBinder);
+            }
+
+            _unitInfoBinder.Bind(_unitInfoViewModel);
+        }
+
+        private bool TryRenderReactiveState()
+        {
+            EnsureReactiveBinder();
+            if (_unitInfoViewModel == null || _currentUnit == null)
+            {
+                return false;
+            }
+
+            SelectReactiveUnit(_currentUnit);
+            var state = _unitInfoViewModel.Current;
+            if (state == null ||
+                !state.HasSelection ||
+                !string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            _unitInfoBinder?.Render(state);
+            return true;
+        }
+
+        private void SelectReactiveUnit(UnitView unit)
+        {
+            if (_unitInfoViewModel == null || unit == null)
+            {
+                return;
+            }
+
+            _unitInfoViewModel.SelectUnit(unit.UnitId);
+            _unitInfoViewModel.SetActionLocked(ActionLock.IsLocked);
+        }
+
+        private void ClearReactiveSelection()
+        {
+            _unitInfoViewModel?.ClearSelection();
+            _unitInfoBinder?.Render(_unitInfoViewModel?.Current);
+        }
+
+        private void RecreateReactiveBinder()
+        {
+            _unitInfoBinder?.Dispose();
+            _unitInfoBinder = null;
+            _unitInfoBinderReferencesSet = false;
+            EnsureReactiveBinder();
+        }
+
+        private UnitInfoUguiBinder.References BuildReactiveBinderReferences()
+        {
+            return new UnitInfoUguiBinder.References(
                 unitNameText,
                 unitDescriptionText,
                 planningSummaryText,
@@ -867,19 +946,20 @@ namespace Panoptes.Presentation.UI.HUD
                 GetDirectOrderButtons());
         }
 
-        private bool TryRenderReactiveState()
+        private static bool ReactiveBinderReferencesMatch(
+            UnitInfoUguiBinder.References current,
+            UnitInfoUguiBinder.References next)
         {
-            EnsureReactiveBinder();
-            return _reactiveBridge.TryRender(_currentUnit, ActionLock.IsLocked);
-        }
-
-        private void EnsureReactiveBridgeInstance()
-        {
-            _reactiveBridge ??= new UnitInfoReactiveBridge(_directOrderPanelBinder);
-            if (_unitInfoViewModel != null)
-            {
-                _reactiveBridge.SetViewModel(_unitInfoViewModel);
-            }
+            return ReferenceEquals(current.UnitNameText, next.UnitNameText) &&
+                   ReferenceEquals(current.UnitDescriptionText, next.UnitDescriptionText) &&
+                   ReferenceEquals(current.PlanningSummaryText, next.PlanningSummaryText) &&
+                   ReferenceEquals(current.HpSlider, next.HpSlider) &&
+                   ReferenceEquals(current.HpValueText, next.HpValueText) &&
+                   ReferenceEquals(current.DirectOrderButtonsRoot, next.DirectOrderButtonsRoot) &&
+                   ReferenceEquals(current.DirectOrderButtons.Move, next.DirectOrderButtons.Move) &&
+                   ReferenceEquals(current.DirectOrderButtons.Attack, next.DirectOrderButtons.Attack) &&
+                   ReferenceEquals(current.DirectOrderButtons.Hold, next.DirectOrderButtons.Hold) &&
+                   ReferenceEquals(current.DirectOrderButtons.Charge, next.DirectOrderButtons.Charge);
         }
 
         private UnitInfoPortraitCameraLifecycle.Settings BuildPortraitSettings()

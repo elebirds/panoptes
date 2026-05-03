@@ -102,6 +102,18 @@ render without reaching through legacy cache singletons.
 - Replaced compatibility seed/event-adapter EditMode tests with direct static
   catalog Store hydrator tests.
 
+## Batch 6 Result
+
+- Removed `UnitInfoReactiveBridge` and its Unity meta file.
+- Updated `UnitInfoPanelController` to directly own the
+  `UnitInfoUguiBinder + UnitInfoViewModel` binding lifecycle without adding a
+  replacement bridge or facade.
+- Preserved the existing `UnitInfoPanelController` type and serialized field
+  names while removing bridge-specific methods and fields.
+- Updated migrated UnitInfo boundary coverage to scan only the ViewModel/Binder
+  path for Protocol, legacy cache, and singleton `Instance` usage, plus an
+  explicit guard that the bridge file stays deleted.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.

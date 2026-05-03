@@ -92,8 +92,7 @@ namespace Panoptes.Tests.EditMode.Composition
             var roots = new[]
             {
                 ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/UnitInfoViewModel.cs"),
-                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/UnitInfoUguiBinder.cs"),
-                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoReactiveBridge.cs")
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/UnitInfoUguiBinder.cs")
             };
 
             var offenders = FindTokenOffenders(
@@ -107,6 +106,10 @@ namespace Panoptes.Tests.EditMode.Composition
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "Migrated UnitInfo ViewModel/Binder must consume final stores and services only.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoReactiveBridge.cs")),
+                Is.False,
+                "UnitInfo must not reintroduce a compatibility bridge between controller, ViewModel, and Binder.");
         }
 
         [Test]
