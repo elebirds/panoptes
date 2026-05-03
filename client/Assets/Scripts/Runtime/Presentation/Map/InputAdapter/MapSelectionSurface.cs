@@ -20,17 +20,25 @@ namespace Panoptes.Presentation.Map.InputAdapter
         private readonly System.Func<Camera> _cameraProvider;
         private readonly System.Func<LayerMask> _maskProvider;
         private readonly System.Func<float> _distanceProvider;
+        private MapRenderer _mapRenderer;
 
         public MapSelectionSurface(
             MapPointerInput pointerInput,
             System.Func<Camera> cameraProvider,
             System.Func<LayerMask> maskProvider,
-            System.Func<float> distanceProvider)
+            System.Func<float> distanceProvider,
+            MapRenderer mapRenderer)
         {
             _pointerInput = pointerInput;
             _cameraProvider = cameraProvider;
             _maskProvider = maskProvider;
             _distanceProvider = distanceProvider;
+            _mapRenderer = mapRenderer;
+        }
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
         }
 
         public bool TryRaycastNode(out NodeView nodeView)
@@ -41,7 +49,7 @@ namespace Panoptes.Presentation.Map.InputAdapter
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             return map != null && map.TryGetNodeViewByWorld(hit.point, out nodeView) && nodeView != null;
         }
 
@@ -67,7 +75,7 @@ namespace Panoptes.Presentation.Map.InputAdapter
             nodeView = null;
             nodeState = null;
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return false;
