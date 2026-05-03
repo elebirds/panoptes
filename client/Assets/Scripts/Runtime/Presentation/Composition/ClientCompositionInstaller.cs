@@ -193,7 +193,9 @@ namespace Panoptes.Presentation.Composition
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ManagementPanelVisibilityStore>(Lifetime.Singleton).AsSelf();
-            builder.RegisterComponentOnNewGameObject<TokenHUD>(Lifetime.Singleton, "TokenHUD");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<TokenHUD>("Prefabs/UI/TokenHUD"),
+                Lifetime.Singleton);
             builder.RegisterComponentInHierarchy<ResourceHUD>();
             builder.RegisterComponentInHierarchy<TurnHUD>();
             builder.RegisterComponentInNewPrefab(
@@ -202,15 +204,15 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<BuildingConstructionOverlayController>("Prefabs/UI/BuildingConstructionOverlay"),
                 Lifetime.Singleton);
-            builder.RegisterComponentOnNewGameObject<GameChatPanelController>(
-                Lifetime.Singleton,
-                "GameChatPanel");
-            builder.RegisterComponentOnNewGameObject<SettlementTimeline>(
-                Lifetime.Singleton,
-                "SettlementTimeline");
-            builder.RegisterComponentOnNewGameObject<TurnReportPanel>(
-                Lifetime.Singleton,
-                "TurnReportPanel");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<GameChatPanelController>("Prefabs/UI/GameChatPanel"),
+                Lifetime.Singleton);
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<SettlementTimeline>("Prefabs/UI/SettlementTimeline"),
+                Lifetime.Singleton);
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<TurnReportPanel>("Prefabs/UI/TurnReportPanel"),
+                Lifetime.Singleton);
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<GameOverOverlay>("Prefabs/UI/GameOverOverlay"),
                 Lifetime.Singleton);
