@@ -1,8 +1,10 @@
 using System;
-using Panoptes.Core.Application.Cache;
-using Panoptes.Presentation.Common;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Map;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -11,26 +13,26 @@ namespace Panoptes.Presentation.UI.HUD
     /// </summary>
     public sealed class SettlerUnitActionRegistrar : UnitInfoActionProviderBase
     {
-        [SerializeField] private MapPlanningInputController mapPlanningInputController;
         [SerializeField] private string actionId = "settle_city";
         [SerializeField] private string actionLabel = "坐城";
         [SerializeField] private bool planningPhaseOnly = true;
         [SerializeField] private string[] supportedUnitTypes = { "settler", "pioneer", "expander", "engineer" };
+
+        private GameStateStore _gameStateStore;
+        private PlanningIntentService _planningIntentService;
+
+        [Inject]
+        private void Construct(GameStateStore gameStateStore, PlanningIntentService planningIntentService)
+        {
+            _gameStateStore = gameStateStore;
+            _planningIntentService = planningIntentService;
+        }
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
         {
             if (registry == null)
             {
                 return;
-            }
-
-            if (mapPlanningInputController == null)
-            {
-                mapPlanningInputController = MapPlanningInputController.Instance;
-                if (mapPlanningInputController == null)
-                {
-                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-                }
             }
 
             registry.RegisterAction(
@@ -47,22 +49,24 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (mapPlanningInputController == null)
+            if (!IsSupportedSettlerUnit(unit))
             {
-                mapPlanningInputController = MapPlanningInputController.Instance;
-                if (mapPlanningInputController == null)
-                {
-                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-                }
-            }
-
-            if (mapPlanningInputController == null)
-            {
-                Debug.LogWarning("[SettlerUnitActionRegistrar] MapPlanningInputController missing, cannot send expand request.");
                 return;
             }
 
-            mapPlanningInputController.RequestExpandTerritory(unit.UnitId);
+            if (_planningIntentService == null)
+            {
+                Debug.LogWarning("[SettlerUnitActionRegistrar] PlanningIntentService missing, cannot send expand request.");
+                return;
+            }
+
+            if (!TryResolveCenterNodeId(unit, out var centerNodeId))
+            {
+                Debug.LogWarning("[SettlerUnitActionRegistrar] Could not resolve center node from GameStateStore; sending empty center for server-side unit-position resolution.");
+                centerNodeId = string.Empty;
+            }
+
+            _planningIntentService.ExpandTerritory(unit.UnitId, centerNodeId);
         }
 
         private bool IsSupportedSettlerUnit(UnitView unit)
@@ -74,8 +78,8 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (planningPhaseOnly)
             {
-                var cache = GameStateCache.Instance;
-                if (cache == null || !IsPlanningPhase(cache.Phase))
+                var phase = _gameStateStore?.Snapshot?.Phase;
+                if (!IsPlanningPhase(phase))
                 {
                     return false;
                 }
@@ -91,6 +95,62 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 if (string.Equals(unitType, NormalizeToken(supportedUnitTypes[i]), StringComparison.Ordinal))
                 {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryResolveCenterNodeId(UnitView unit, out string centerNodeId)
+        {
+            centerNodeId = string.Empty;
+            var state = _gameStateStore?.Snapshot;
+            if (unit == null ||
+                state?.Units == null ||
+                state.Nodes == null ||
+                !TryGetUnit(state, unit.UnitId, out var unitState))
+            {
+                return false;
+            }
+
+            foreach (var node in state.Nodes.Values)
+            {
+                if (node == null ||
+                    node.Q != unitState.Q ||
+                    node.R != unitState.R ||
+                    string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                centerNodeId = node.Id.Trim();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetUnit(GameStateStoreState state, string unitId, out UnitDto unit)
+        {
+            unit = null;
+            if (state?.Units == null || string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            if (state.Units.TryGetValue(normalizedUnitId, out unit) && unit != null)
+            {
+                return true;
+            }
+
+            foreach (var candidate in state.Units.Values)
+            {
+                if (candidate != null &&
+                    string.Equals(candidate.Id?.Trim(), normalizedUnitId, StringComparison.OrdinalIgnoreCase))
+                {
+                    unit = candidate;
                     return true;
                 }
             }

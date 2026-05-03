@@ -244,7 +244,6 @@ namespace Panoptes.Presentation.Map
                     "UnitInfoPanel",
                     typeof(RectTransform),
                     typeof(UnitInfoActionRegistry),
-                    typeof(SettlerUnitActionRegistrar),
                     typeof(UnitInfoPanelController));
                 if (canvas != null)
                 {
@@ -256,10 +255,6 @@ namespace Panoptes.Presentation.Map
             if (unitInfoPanel.GetComponent<UnitInfoActionRegistry>() == null)
             {
                 unitInfoPanel.gameObject.AddComponent<UnitInfoActionRegistry>();
-            }
-            if (unitInfoPanel.GetComponent<SettlerUnitActionRegistrar>() == null)
-            {
-                unitInfoPanel.gameObject.AddComponent<SettlerUnitActionRegistrar>();
             }
         }
 

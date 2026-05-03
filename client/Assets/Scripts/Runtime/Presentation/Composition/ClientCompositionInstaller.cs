@@ -93,6 +93,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             RegisterRuntimeSceneComponent<UnitInfoPanelController>(builder, "UnitInfoPanel");
             RegisterUnitInfoActionProvider<CityCoreBuildingActionRegistrar>(builder);
+            RegisterUnitInfoActionProvider<SettlerUnitActionRegistrar>(builder);
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogContextStore>(Lifetime.Singleton).AsSelf();
