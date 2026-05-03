@@ -1,4 +1,5 @@
 using System;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.ViewModels;
 using R3;
@@ -22,6 +23,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private Label _empty;
         private VisualElement _groups;
         private IDisposable _subscription;
+        private IDisposable _visibilitySubscription;
+        private BuildCatalogContextStore _contextStore;
+        private ManagementPanelVisibilityStore _visibilityStore;
+        private PlanningToolService _planningToolService;
         private Label _title;
         private UIDocument _uiDocument;
         private BuildCatalogViewModel _viewModel;
@@ -29,9 +34,18 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public event Action<string, PlanningBuildPlacementRule> BuildRequested;
 
         [Inject]
-        private void Construct(BuildCatalogViewModel viewModel)
+        private void Construct(
+            BuildCatalogViewModel viewModel,
+            PlanningToolService planningToolService,
+            ManagementPanelVisibilityStore visibilityStore,
+            BuildCatalogContextStore contextStore)
         {
+            _planningToolService = planningToolService;
+            _visibilityStore = visibilityStore;
+            _contextStore = contextStore;
             Bind(viewModel);
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
         }
 
         private void Awake()
@@ -39,6 +53,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             EnsureDocument();
             EnsureVisualTree();
             CacheElements();
+            ApplyVisibility();
         }
 
         private void OnEnable()
@@ -46,6 +61,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             EnsureDocument();
             EnsureVisualTree();
             CacheElements();
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
             if (_viewModel != null)
             {
                 Bind(_viewModel);
@@ -55,10 +72,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void OnDisable()
         {
             StopSubscription();
+            StopVisibilitySubscription();
         }
 
         private void OnDestroy()
         {
+            StopVisibilitySubscription();
             Unbind();
         }
 
@@ -99,6 +118,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             SetText(_title, "Build Catalog");
             if (_groups == null)
             {
+                ApplyVisibility();
                 return;
             }
 
@@ -110,6 +130,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     _empty.style.display = DisplayStyle.Flex;
                 }
 
+                ApplyVisibility();
                 return;
             }
 
@@ -122,6 +143,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 _groups.Add(CreateGroup(state.Groups[i]));
             }
+
+            ApplyVisibility();
         }
 
         private VisualElement CreateGroup(BuildCatalogGroupState group)
@@ -168,9 +191,18 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     return;
                 }
 
-                BuildRequested?.Invoke(captured.BuildingId, captured.PlacementRule);
+                RequestBuild(captured.BuildingId, captured.PlacementRule);
             };
             return button;
+        }
+
+        private void RequestBuild(string buildingId, PlanningBuildPlacementRule placementRule)
+        {
+            BuildRequested?.Invoke(buildingId, placementRule);
+            _planningToolService?.EnterBuild(
+                buildingId,
+                _contextStore?.Current?.CityCoreNodeId ?? string.Empty,
+                placementRule);
         }
 
         private void EnsureDocument()
@@ -247,12 +279,40 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _subscription = null;
         }
 
+        private void StopVisibilitySubscription()
+        {
+            _visibilitySubscription?.Dispose();
+            _visibilitySubscription = null;
+        }
+
         private void EnsureSubscription()
         {
             if (_viewModel != null && _subscription == null)
             {
                 _subscription = _viewModel.State.Subscribe(this, static (state, self) => self.Render(state));
             }
+        }
+
+        private void EnsureVisibilitySubscription()
+        {
+            if (_visibilityStore != null && _visibilitySubscription == null)
+            {
+                _visibilitySubscription = _visibilityStore.State.Subscribe(this, static (_, self) => self.ApplyVisibility());
+            }
+        }
+
+        private void ApplyVisibility()
+        {
+            EnsureDocument();
+            if (_uiDocument?.rootVisualElement == null)
+            {
+                return;
+            }
+
+            _uiDocument.rootVisualElement.style.display =
+                _visibilityStore != null && _visibilityStore.IsVisible(ManagementPanelId.BuildCatalog)
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
         }
     }
 }

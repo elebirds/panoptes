@@ -93,9 +93,11 @@ namespace Panoptes.Presentation.Composition
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             RegisterRuntimeSceneComponent<UnitInfoPanelController>(builder, "UnitInfoPanel");
+            RegisterUnitInfoActionProvider<CityCoreBuildingActionRegistrar>(builder);
             RegisterOptionalSceneComponent<RecipeSynthesisPanel>(builder);
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<BuildCatalogContextStore>(Lifetime.Singleton).AsSelf();
             builder.Register<TechTreeViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<RecipeSynthesisViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterReportViewModel>(Lifetime.Singleton).AsSelf();
@@ -164,6 +166,25 @@ namespace Panoptes.Presentation.Composition
             where T : Component
         {
             var component = SceneObjectFinder.FindFirstSceneObject<T>();
+            if (component != null)
+            {
+                builder.RegisterComponent(component).AsSelf();
+            }
+        }
+
+        private static void RegisterUnitInfoActionProvider<T>(IContainerBuilder builder)
+            where T : UnitInfoActionProviderBase
+        {
+            var component = SceneObjectFinder.FindFirstSceneObject<T>();
+            if (component == null)
+            {
+                var unitInfo = SceneObjectFinder.FindFirstSceneObject<UnitInfoPanelController>();
+                if (unitInfo != null)
+                {
+                    component = unitInfo.gameObject.AddComponent<T>();
+                }
+            }
+
             if (component != null)
             {
                 builder.RegisterComponent(component).AsSelf();

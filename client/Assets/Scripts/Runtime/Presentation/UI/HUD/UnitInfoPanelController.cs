@@ -486,7 +486,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void EnsureDefaultActionProviders()
         {
             // Some prefab variants only contain Settler registrar.
-            // Ensure city-core actions (Build/Production/Tech) can still be registered at runtime.
+            // Ensure city-core actions can still be registered at runtime.
             if (GetComponent<CityCoreBuildingActionRegistrar>() == null &&
                 UnityEngine.Object.FindAnyObjectByType<CityCoreBuildingActionRegistrar>() == null)
             {

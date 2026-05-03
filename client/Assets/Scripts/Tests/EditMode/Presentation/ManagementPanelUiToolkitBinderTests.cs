@@ -86,6 +86,15 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.TechTree));
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.True);
 
+            visibilityStore.Show(ManagementPanelId.BuildCatalog);
+            Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.BuildCatalog));
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.BuildCatalog), Is.True);
+
+            visibilityStore.Toggle(ManagementPanelId.TechTree);
+            Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.TechTree));
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.BuildCatalog), Is.False);
+
             visibilityStore.Toggle(ManagementPanelId.TechTree);
             Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.None));
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);

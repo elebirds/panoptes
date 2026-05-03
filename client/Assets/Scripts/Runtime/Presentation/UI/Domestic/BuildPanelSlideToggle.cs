@@ -47,7 +47,6 @@ namespace Panoptes.Presentation.UI.Domestic
         private bool _isCollapsed;
         private bool _positionsInitialized;
         private bool _moveButtonIndependently;
-        private bool _warnedInvalidRootBinding;
         private Coroutine _animRoutine;
         public bool IsCollapsed => _isCollapsed;
 
@@ -320,37 +319,6 @@ namespace Panoptes.Presentation.UI.Domestic
             if (toggleButtonRect == null && toggleButton != null)
             {
                 toggleButtonRect = toggleButton.transform as RectTransform;
-            }
-
-            var buildPanel = GetComponentInParent<BuildCommandPanel>(true);
-            var panelRect = buildPanel != null ? buildPanel.transform as RectTransform : null;
-            if (panelRect != null)
-            {
-                if (!ReferenceEquals(buildPanelRoot, panelRect))
-                {
-                    if (buildPanelRoot != null && !_warnedInvalidRootBinding)
-                    {
-                        var owner = buildPanelRoot.GetComponentInParent<BuildCommandPanel>(true);
-                        if (!ReferenceEquals(owner, buildPanel))
-                        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-                            Debug.LogWarning(
-                                $"[BuildPanelSlideToggle] Invalid buildPanelRoot '{buildPanelRoot.name}' bound to '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
-#endif
-                        }
-                        else
-                        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-                            Debug.LogWarning(
-                                $"[BuildPanelSlideToggle] Non-root buildPanelRoot '{buildPanelRoot.name}' on '{name}'. Expected BuildCommandPanel root '{panelRect.name}'. Auto-correcting.");
-#endif
-                        }
-
-                        _warnedInvalidRootBinding = true;
-                    }
-
-                    buildPanelRoot = panelRect;
-                }
             }
 
             if (buildPanelRoot == null)
