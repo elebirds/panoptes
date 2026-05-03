@@ -1,4 +1,7 @@
+using System;
 using Panoptes.Core.Application.App;
+using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Presentation.UI.Common;
@@ -29,11 +32,22 @@ namespace Panoptes.Presentation.Composition
                 managers = new GameObject("Managers");
             }
 
-            Object.DontDestroyOnLoad(managers);
+            UnityEngine.Object.DontDestroyOnLoad(managers);
             EnsureComponent<AppManager>(managers);
             EnsureComponent<NetworkManager>(managers);
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
+            EnsureComponent<ClientRuntimeConfigCache>(managers);
+            EnsureComponent<ConfigCache>(managers);
+            EnsureComponent<StaticCatalogCache>(managers);
+            EnsureComponent<RoomCache>(managers);
+            EnsureComponent<GameStateCache>(managers);
+            EnsureComponent<GameChatCache>(managers);
+            EnsureComponent<PlanningDraftCache>(managers);
+            EnsureComponent<LobbyMessageHandler>(managers);
+            EnsureComponent<GameMessageHandler>(managers);
+            EnsureComponent<LoadingOverlay>(managers);
+            EnsureOptionalDebugPanel(managers);
             var overlays = EnsureComponent<ProjectOverlayRegistry>(managers);
             overlays.Configure(
                 EnsureProjectOverlay<ErrorToast>("ErrorToast", "Prefabs/UI/ErrorToast"),
@@ -47,9 +61,22 @@ namespace Panoptes.Presentation.Composition
             return component != null ? component : owner.AddComponent<T>();
         }
 
+        private static void EnsureOptionalDebugPanel(GameObject owner)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
+            var debugPanelType = Type.GetType("Panoptes.DebugTools.DebugPanel, Panoptes.Core");
+            if (debugPanelType == null || owner.GetComponent(debugPanelType) != null)
+            {
+                return;
+            }
+
+            owner.AddComponent(debugPanelType);
+#endif
+        }
+
         private static T EnsureProjectOverlay<T>(string objectName, string resourcePath) where T : Component
         {
-            var instance = Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
+            var instance = UnityEngine.Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
             if (instance != null)
             {
                 return instance;
@@ -62,11 +89,11 @@ namespace Panoptes.Presentation.Composition
                 return null;
             }
 
-            var overlayObject = Object.Instantiate(prefab);
+            var overlayObject = UnityEngine.Object.Instantiate(prefab);
             overlayObject.name = objectName;
             overlayObject.transform.SetParent(null, false);
             overlayObject.transform.localScale = Vector3.one;
-            Object.DontDestroyOnLoad(overlayObject);
+            UnityEngine.Object.DontDestroyOnLoad(overlayObject);
             return overlayObject.GetComponent<T>();
         }
     }

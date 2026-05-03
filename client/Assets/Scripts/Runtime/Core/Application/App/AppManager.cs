@@ -13,9 +13,6 @@ using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-using Panoptes.DebugTools;
-#endif
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -46,54 +43,6 @@ namespace Panoptes.Core.Application.App
         [SerializeField] private string localTestSceneName = "Game";
         [SerializeField] private AppState localTestState = AppState.Game;
         [SerializeField] private bool logLocalTestBypass = true;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void EnsureManagersBootstrap()
-        {
-            var managers = GameObject.Find("Managers");
-            if (managers == null)
-            {
-                managers = new GameObject("Managers");
-            }
-
-            DontDestroyOnLoad(managers);
-            EnsureComponent<AppManager>(managers);
-            EnsureComponent<NetworkManager>(managers);
-            EnsureComponent<MessageDispatcher>(managers);
-            EnsureComponent<SessionManager>(managers);
-            EnsureComponent<ClientRuntimeConfigCache>(managers);
-            EnsureComponent<ConfigCache>(managers);
-            EnsureComponent<StaticCatalogCache>(managers);
-            EnsureComponent<RoomCache>(managers);
-            EnsureComponent<GameStateCache>(managers);
-            EnsureComponent<GameChatCache>(managers);
-            EnsureComponent<PlanningDraftCache>(managers);
-            EnsureComponent<LobbyMessageHandler>(managers);
-            EnsureComponent<GameMessageHandler>(managers);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-            EnsureComponent<DebugPanel>(managers);
-#endif
-            EnsureOptionalLoadingOverlay(managers);
-        }
-
-        private static void EnsureComponent<T>(GameObject owner) where T : Component
-        {
-            if (owner.GetComponent<T>() == null)
-            {
-                owner.AddComponent<T>();
-            }
-        }
-
-        private static void EnsureOptionalLoadingOverlay(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.LoadingOverlay, Panoptes.Presentation");
-            if (overlayType == null || owner.GetComponent(overlayType) != null)
-            {
-                return;
-            }
-
-            owner.AddComponent(overlayType);
-        }
 
         void Awake()
         {
