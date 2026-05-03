@@ -1,5 +1,6 @@
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
@@ -22,6 +23,9 @@ namespace Panoptes.Presentation.Composition
     [UnityEngine.RequireComponent(typeof(RoomCache))]
     [UnityEngine.RequireComponent(typeof(GameStateCache))]
     [UnityEngine.RequireComponent(typeof(GameChatCache))]
+    [UnityEngine.RequireComponent(typeof(PlanningDraftCache))]
+    [UnityEngine.RequireComponent(typeof(LobbyMessageHandler))]
+    [UnityEngine.RequireComponent(typeof(GameMessageHandler))]
     [UnityEngine.RequireComponent(typeof(LoadingOverlay))]
     [UnityEngine.RequireComponent(typeof(ProjectOverlayRegistry))]
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
@@ -32,21 +36,28 @@ namespace Panoptes.Presentation.Composition
         protected override void Configure(IContainerBuilder builder)
         {
             var overlays = GetComponent<ProjectOverlayRegistry>();
+            var messageDispatcher = GetComponent<MessageDispatcher>();
+            var roomCache = GetComponent<RoomCache>();
+            var gameStateCache = GetComponent<GameStateCache>();
+            var gameChatCache = GetComponent<GameChatCache>();
+            var planningDraftCache = GetComponent<PlanningDraftCache>();
             ClientCompositionInstaller.RegisterProject(
                 builder,
                 GetComponent<AppManager>(),
                 GetComponent<NetworkManager>(),
-                GetComponent<MessageDispatcher>(),
+                messageDispatcher,
                 GetComponent<SessionManager>(),
                 GetComponent<ConfigCache>(),
                 GetComponent<ClientRuntimeConfigCache>(),
                 GetComponent<StaticCatalogCache>(),
-                GetComponent<RoomCache>(),
-                GetComponent<GameStateCache>(),
-                GetComponent<GameChatCache>(),
+                roomCache,
+                gameStateCache,
+                gameChatCache,
                 GetComponent<LoadingOverlay>(),
                 overlays.ErrorToast,
                 overlays.ConfirmDialog);
+            GetComponent<LobbyMessageHandler>().UseProjectServices(messageDispatcher, roomCache);
+            GetComponent<GameMessageHandler>().UseProjectServices(messageDispatcher, gameStateCache, planningDraftCache, gameChatCache);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
             builder.RegisterBuildCallback(container =>
                 GetComponent<DebugPanel>().UseMessageSender(container.Resolve<IClientMessageSender>()));

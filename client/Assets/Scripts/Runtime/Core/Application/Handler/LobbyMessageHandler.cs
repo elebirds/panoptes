@@ -8,6 +8,15 @@ namespace Panoptes.Core.Application.Handler
     public sealed class LobbyMessageHandler : MonoBehaviour
     {
         private bool _registered;
+        private MessageDispatcher _dispatcher;
+        private RoomCache _roomCache;
+
+        public void UseProjectServices(MessageDispatcher dispatcher, RoomCache roomCache)
+        {
+            _dispatcher = dispatcher;
+            _roomCache = roomCache;
+            RegisterHandlers();
+        }
 
         private void Awake()
         {
@@ -21,7 +30,7 @@ namespace Panoptes.Core.Application.Handler
 
         private void RegisterHandlers()
         {
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             if (_registered || dispatcher == null)
             {
                 return;
@@ -38,12 +47,12 @@ namespace Panoptes.Core.Application.Handler
 
         private void UnregisterHandlers()
         {
-            if (!_registered || MessageDispatcher.Instance == null)
+            if (!_registered || _dispatcher == null)
             {
                 return;
             }
 
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             dispatcher.Unregister<MsgRoomCreated>("MsgRoomCreated", OnRoomCreated);
             dispatcher.Unregister<MsgRoomState>("MsgRoomState", OnRoomState);
             dispatcher.Unregister<MsgGameStarting>("MsgGameStarting", OnGameStarting);
@@ -53,29 +62,29 @@ namespace Panoptes.Core.Application.Handler
             _registered = false;
         }
 
-        private static void OnRoomCreated(MsgRoomCreated msg)
+        private void OnRoomCreated(MsgRoomCreated msg)
         {
-            RoomCache.Instance?.PublishRoomCreated(msg);
+            _roomCache?.PublishRoomCreated(msg);
         }
 
-        private static void OnRoomState(MsgRoomState msg)
+        private void OnRoomState(MsgRoomState msg)
         {
-            RoomCache.Instance?.Apply(msg);
+            _roomCache?.Apply(msg);
         }
 
-        private static void OnGameStarting(MsgGameStarting msg)
+        private void OnGameStarting(MsgGameStarting msg)
         {
-            RoomCache.Instance?.PublishGameStarting(msg);
+            _roomCache?.PublishGameStarting(msg);
         }
 
-        private static void OnPlayerKicked(MsgPlayerKicked msg)
+        private void OnPlayerKicked(MsgPlayerKicked msg)
         {
-            RoomCache.Instance?.PublishPlayerKicked(msg);
+            _roomCache?.PublishPlayerKicked(msg);
         }
 
-        private static void OnLobbyError(MsgLobbyError msg)
+        private void OnLobbyError(MsgLobbyError msg)
         {
-            RoomCache.Instance?.PublishLobbyError(msg);
+            _roomCache?.PublishLobbyError(msg);
         }
     }
 }
