@@ -52,6 +52,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<ResourceHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlementPlaybackController>"));
             Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<SettlementTimeline>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
@@ -310,6 +311,51 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(mapRenderer, Does.Contain("[Inject]"));
             Assert.That(mapRenderer, Does.Contain(".State.Subscribe"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
+        }
+
+        [Test]
+        public void SettlementPlaybackController_ShouldUseFinalStoreAndInjectedMapRenderer()
+        {
+            var playbackPath = ResolveAssetPath("Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
+            var dynamicCreationRoots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs")
+            };
+            var offenders = FindTokenOffenders(
+                new[] { playbackPath },
+                "*.cs",
+                "Panoptes.Protocol",
+                "NetworkManager.Instance",
+                "GameStateCache",
+                "OnTurnSettled",
+                "MapRenderer.Instance",
+                "EnsureInstance");
+
+            Assert.That(offenders, Is.Empty, "Settlement playback must consume SettlementStore and injected MapRenderer only.");
+
+            var dynamicCreationOffenders = FindTokenOffenders(
+                dynamicCreationRoots,
+                "*.cs",
+                "SettlementPlaybackController.EnsureInstance",
+                "EnsureRuntimeComponent<SettlementPlaybackController>",
+                "EnsureSettlementPlaybackController",
+                "AddComponent<SettlementPlaybackController>");
+
+            Assert.That(dynamicCreationOffenders, Is.Empty, "Settlement playback must be authored and VContainer-owned, not dynamically created.");
+
+            var playback = File.ReadAllText(playbackPath);
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var gameScene = File.ReadAllText(ResolveAssetPath("Scenes/Game.unity"));
+            Assert.That(playback, Does.Contain("SettlementStore"));
+            Assert.That(playback, Does.Contain("MapRenderer _mapRenderer"));
+            Assert.That(playback, Does.Contain("[Inject]"));
+            Assert.That(playback, Does.Contain(".State.Subscribe"));
+            Assert.That(playback, Does.Contain("state.Sequence"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlementPlaybackController>"));
+            Assert.That(gameScene, Does.Contain("SettlementPlaybackController"));
+            Assert.That(gameScene, Does.Contain("8d4f90e3c7b24a3ea9822cf7d9709b54"));
         }
 
         [Test]

@@ -4,8 +4,6 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Map;
-using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
 using R3;
@@ -177,7 +175,6 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
-            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
         }
 
         private static T EnsureComponent<T>(Transform parent, string objectName) where T : Component
@@ -196,18 +193,6 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             return go.GetComponent<T>();
-        }
-
-        private static T EnsureRuntimeComponent<T>(string objectName) where T : Component
-        {
-            var existing = SceneObjectFinder.FindFirstSceneObject<T>();
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var go = new GameObject(objectName);
-            return go.AddComponent<T>();
         }
 
         private List<string> CollectCompletedTechnologyNames(TurnSettlementDto settlement)
