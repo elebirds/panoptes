@@ -1290,7 +1290,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
             var content = File.ReadAllText(_gameSceneControllerPath);
-            StringAssert.Contains("EnsureComponent<ResourceHUD>(canvas.transform, \"ResourcePanel\");", content);
+            StringAssert.DoesNotContain("EnsureComponent<ResourceHUD>", content,
+                "ResourceHUD 应由 ResourcePanel prefab + VContainer 场景注册装配，GameSceneController 不应运行时补组件。");
             StringAssert.DoesNotContain("EnsureRuntimeComponent<SettlementPlaybackController>", content,
                 "Settlement playback 应由 VContainer + 场景实例装配，GameSceneController 不应动态创建。");
             Assert.That(content, Does.Not.Contain("EnsureComponent<StrategicPanel>"),

@@ -148,7 +148,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(source, Does.Contain("GameStateStore"));
             Assert.That(source, Does.Contain("PlanningIntentService"));
             Assert.That(source, Does.Contain(".ExpandTerritory("));
-            Assert.That(installer, Does.Contain("RegisterUnitInfoActionProvider<SettlerUnitActionRegistrar>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlerUnitActionRegistrar>"));
             Assert.That(unitInfoPanel, Does.Not.Contain("AddComponent<SettlerUnitActionRegistrar>"));
             Assert.That(mapRenderer, Does.Not.Contain("AddComponent<SettlerUnitActionRegistrar>"));
             Assert.That(mapRenderer, Does.Not.Contain("typeof(SettlerUnitActionRegistrar)"));
