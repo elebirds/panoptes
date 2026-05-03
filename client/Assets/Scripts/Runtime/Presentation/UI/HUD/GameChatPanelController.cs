@@ -84,7 +84,12 @@ namespace Panoptes.Presentation.UI.HUD
 
         public void SendEmote(GameChatEmoteKind emote)
         {
-            _gameIntentService?.SendChatEmote(emote);
+            if (_gameIntentService == null)
+            {
+                return;
+            }
+
+            _gameIntentService.SendChatEmote(emote);
         }
 
         private void RefreshTranscript(GameChatState state)

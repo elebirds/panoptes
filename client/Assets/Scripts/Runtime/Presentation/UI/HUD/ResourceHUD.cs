@@ -46,6 +46,8 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _viewModel = viewModel;
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
+            ResolvePrefabReferences();
+            BindTechButton();
         }
 
         private void Awake()

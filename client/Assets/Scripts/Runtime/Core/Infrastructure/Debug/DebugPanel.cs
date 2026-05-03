@@ -29,7 +29,7 @@ namespace Panoptes.DebugTools
             _messageSender = messageSender;
             if (_context != null)
             {
-                _tabs = DebugTabRegistry.CreateDefaultTabs(_messageSender);
+                _tabs = DebugTabRegistry.CreateDefaultTabsForSender(_messageSender);
             }
         }
 
@@ -69,7 +69,7 @@ namespace Panoptes.DebugTools
             }
 
             _context = new DebugPanelContext(_sharedState);
-            _tabs = DebugTabRegistry.CreateDefaultTabs(_messageSender);
+            _tabs = DebugTabRegistry.CreateDefaultTabsForSender(_messageSender);
         }
 
         private void OnDestroy()

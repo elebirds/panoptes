@@ -1182,6 +1182,10 @@ namespace Panoptes.Core.Application.Cache
                     description = item != null ? item.Description : string.Empty,
                     icon_key = item != null ? item.IconKey : string.Empty,
                     prefab_key = item != null ? item.PrefabKey : string.Empty,
+                    flags = new UnitEntryJson.UnitFlagsJson
+                    {
+                        can_attack_structures = item != null && item.CanAttackStructures
+                    },
                     tags = item != null ? item.Tags.ToArray() : Array.Empty<string>()
                 };
             }

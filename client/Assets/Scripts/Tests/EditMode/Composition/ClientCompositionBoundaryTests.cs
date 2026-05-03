@@ -82,7 +82,10 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RecipeSynthesisViewModel"));
             Assert.That(installer, Does.Contain("RecipeSynthesisUiToolkitBinder"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<BuildCatalogUiToolkitBinder>(\"Prefabs/UI/BuildCatalog\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>(\"Prefabs/UI/RecipeSynthesis\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
             Assert.That(installer, Does.Contain("MinisterReportViewModel"));
             Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
         }
@@ -94,18 +97,22 @@ namespace Panoptes.Tests.EditMode.Composition
             var expected = new[]
             {
                 "RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"
+                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>"
             };
 
             Assert.That(CountOccurrences(installer, "RegisterComponentOnNewGameObject<"), Is.EqualTo(expected.Length),
-                "Only UIDocument-backed UI Toolkit binders may use generated GameObjects until prefab assets exist.");
+                "Only UI Toolkit binders without authored prefabs may use generated GameObjects.");
             for (var i = 0; i < expected.Length; i++)
             {
                 Assert.That(installer, Does.Contain(expected[i]));
             }
+
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"));
         }
 
         [Test]

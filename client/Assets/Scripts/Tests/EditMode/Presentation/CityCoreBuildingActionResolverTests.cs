@@ -210,7 +210,9 @@ namespace Panoptes.Tests.EditMode.Presentation
                     staticCatalogStore,
                     visibilityStore,
                     buildContextStore,
-                    recipeContextStore
+                    recipeContextStore,
+                    null,
+                    null
                 });
         }
     }

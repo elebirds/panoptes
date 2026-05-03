@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify no client-authoritative logic or singleton fallback in migrated panels."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify Presentation boundaries, prefab-backed UI Toolkit, and tests."}
+{"file": "docs/2026-05-03-c0a-ui-inventory-and-integration-plan-zh.md", "reason": "Verify C0a-3/4/5 are complete."}
+{"ts":"2026-05-03T23:57:50+08:00","kind":"verification","command":"dotnet build client/Panoptes.Tests.EditMode.csproj","result":"passed"}
+{"ts":"2026-05-03T23:57:50+08:00","kind":"verification","command":"dotnet test client/Panoptes.Tests.EditMode.csproj --no-build","result":"passed"}
+{"ts":"2026-05-03T23:57:50+08:00","kind":"verification","command":"Unity EditMode /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity -batchmode -projectPath client -runTests -testPlatform EditMode","result":"passed","total":304,"passed":304,"failed":0,"xml":"client/client/Temp/C0aFullEditMode.xml"}

@@ -251,21 +251,21 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<BuildCatalogUiToolkitBinder>("Prefabs/UI/BuildCatalog"),
                 Lifetime.Singleton);
-            builder.RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Tech Tree UI Toolkit");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<TechTreeUiToolkitBinder>("Prefabs/UI/TechTree"),
+                Lifetime.Singleton);
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>("Prefabs/UI/RecipeSynthesis"),
                 Lifetime.Singleton);
             builder.RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Minister Report UI Toolkit");
-            builder.RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Policy Focus UI Toolkit");
-            builder.RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>(
-                Lifetime.Singleton,
-                "National Ledger UI Toolkit");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<PolicyFocusUiToolkitBinder>("Prefabs/UI/PolicyFocus"),
+                Lifetime.Singleton);
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<NationalLedgerUiToolkitBinder>("Prefabs/UI/NationalLedger"),
+                Lifetime.Singleton);
             builder.RegisterBuildCallback(container => container.Resolve<StoreMessageHydrator>().Attach());
             builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());

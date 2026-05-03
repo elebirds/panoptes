@@ -212,6 +212,8 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
 
 ### C0a-3：科技树
 
+状态：已完成。当前实现提供 `TechTree.uxml` / `TechTree.uss` 与 `Prefabs/UI/TechTree`，并通过 `GameIntentService.SetResearchTarget` 发送研究目标命令。
+
 交付物：
 
 - 手工 UI Toolkit 科技列表/科技树。
@@ -231,6 +233,8 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
 - 设置研究目标
 
 ### C0a-4：政策 / 国策
+
+状态：已完成。当前实现提供 `PolicyFocus.uxml` / `PolicyFocus.uss` 与 `Prefabs/UI/PolicyFocus`，接入 `ManagementPanelVisibilityStore`，并将国策行转发到 `SetPolicy`、制度行转发到 `SetInstitutionLoadout`。
 
 交付物：
 
@@ -252,6 +256,8 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
 - 设置制度 loadout
 
 ### C0a-5：国家账本
+
+状态：已完成。当前实现提供 `NationalLedger.uxml` / `NationalLedger.uss` 与 `Prefabs/UI/NationalLedger`，接入 `ManagementPanelVisibilityStore`，保持只读展示。
 
 交付物：
 
@@ -314,4 +320,3 @@ C0a 从以下内容开始：
 - [x] 每个界面都列出展示信息和玩家操作。
 - [x] C0a 顺序明确。
 - [x] 当前已知缺口已记录。
-

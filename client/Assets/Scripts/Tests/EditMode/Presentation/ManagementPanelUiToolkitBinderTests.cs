@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.ViewModels;
 using Panoptes.Protocol.V1;
@@ -63,8 +64,9 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             _root = new GameObject("TechTreeVisibilityTest");
             var binder = _root.AddComponent<TechTreeUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
             var visibilityStore = new ManagementPanelVisibilityStore();
-            InjectVisibilityStore(binder, visibilityStore);
+            InjectTechTreeFlow(binder, new GameIntentService(sender), visibilityStore);
 
             var document = _root.GetComponent<UIDocument>();
             var rootElement = document.rootVisualElement;
@@ -77,6 +79,76 @@ namespace Panoptes.Tests.EditMode.Presentation
             visibilityStore.Toggle(ManagementPanelId.TechTree);
             Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
 
+            visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void TechTreeBinder_ShouldSubmitResearchTargetThroughGameIntentService()
+        {
+            ActionLock.Release();
+            _root = new GameObject("TechTreeCommandTest");
+            var binder = _root.AddComponent<TechTreeUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectTechTreeFlow(binder, new GameIntentService(sender), visibilityStore);
+
+            RequestManagementRowAction(binder, "agrarian_foundations");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetResearchTarget>());
+            Assert.That(((MsgSetResearchTarget)sender.LastMessage).TechnologyId, Is.EqualTo("agrarian_foundations"));
+            visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void PolicyFocusBinder_ShouldRouteNationalAndInstitutionCommands()
+        {
+            ActionLock.Release();
+            _root = new GameObject("PolicyFocusCommandTest");
+            var binder = _root.AddComponent<PolicyFocusUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var planningDraftStore = new PlanningDraftStore();
+            var viewModel = new PolicyFocusViewModel(staticCatalogStore, planningDraftStore);
+
+            staticCatalogStore.Replace(new StaticCatalogState(policies: new System.Collections.Generic.Dictionary<string, CatalogPolicyDto>
+            {
+                ["recovery"] = new CatalogPolicyDto { Id = "recovery", Name = "Recovery", Layer = "national" },
+                ["academy_charter"] = new CatalogPolicyDto { Id = "academy_charter", Name = "Academy", Layer = "institution" }
+            }));
+            InjectPolicyFlow(binder, new GameIntentService(sender), viewModel, visibilityStore);
+
+            RequestManagementRowAction(binder, "recovery");
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetPolicy>());
+            Assert.That(((MsgSetPolicy)sender.LastMessage).NationalPolicyId, Is.EqualTo("recovery"));
+
+            ActionLock.Release();
+            RequestManagementRowAction(binder, "academy_charter");
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetInstitutionLoadout>());
+            Assert.That(((MsgSetInstitutionLoadout)sender.LastMessage).PolicyIds, Is.EquivalentTo(new[] { "academy_charter" }));
+
+            visibilityStore.Show(ManagementPanelId.PolicyFocus);
+            Assert.That(_root.GetComponent<UIDocument>().rootVisualElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+        }
+
+        [Test]
+        public void NationalLedgerBinder_ShouldFollowManagementPanelVisibilityStore()
+        {
+            _root = new GameObject("NationalLedgerVisibilityTest");
+            var binder = _root.AddComponent<NationalLedgerUiToolkitBinder>();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectNationalLedgerVisibility(binder, visibilityStore);
+
+            var rootElement = _root.GetComponent<UIDocument>().rootVisualElement;
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            visibilityStore.Show(ManagementPanelId.NationalLedger);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+            visibilityStore.Show(ManagementPanelId.TechTree);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
             visibilityStore.Dispose();
         }
 
@@ -196,9 +268,36 @@ namespace Panoptes.Tests.EditMode.Presentation
             contextStore.Dispose();
         }
 
-        private static void InjectVisibilityStore(TechTreeUiToolkitBinder binder, ManagementPanelVisibilityStore visibilityStore)
+        private static void InjectTechTreeFlow(
+            TechTreeUiToolkitBinder binder,
+            GameIntentService gameIntentService,
+            ManagementPanelVisibilityStore visibilityStore)
         {
             var method = typeof(TechTreeUiToolkitBinder).GetMethod(
+                "ConstructTechFlow",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { gameIntentService, visibilityStore });
+        }
+
+        private static void InjectPolicyFlow(
+            PolicyFocusUiToolkitBinder binder,
+            GameIntentService gameIntentService,
+            PolicyFocusViewModel viewModel,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(PolicyFocusUiToolkitBinder).GetMethod(
+                "ConstructPolicyFlow",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { gameIntentService, viewModel, visibilityStore });
+        }
+
+        private static void InjectNationalLedgerVisibility(
+            NationalLedgerUiToolkitBinder binder,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(NationalLedgerUiToolkitBinder).GetMethod(
                 "ConstructVisibility",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
@@ -246,6 +345,17 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[] { recipeId });
+        }
+
+        private static void RequestManagementRowAction(object binder, string rowId)
+        {
+            var eventField = typeof(ManagementPanelUiToolkitBinderBase<>)
+                .MakeGenericType(binder.GetType().BaseType!.GetGenericArguments()[0])
+                .GetField("RowActionRequested", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(eventField, Is.Not.Null);
+            var handler = eventField!.GetValue(binder) as System.Action<string>;
+            Assert.That(handler, Is.Not.Null);
+            handler!.Invoke(rowId);
         }
 
         private sealed class RecordingMessageSender : IClientMessageSender
