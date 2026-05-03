@@ -9,7 +9,6 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Panoptes.Presentation.Map
 {
@@ -206,24 +205,9 @@ namespace Panoptes.Presentation.Map
                 return true;
             }
 
-            var canvasGo = new GameObject("DamageNumberPopupCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            canvasGo.transform.SetParent(transform, false);
-            _canvas = canvasGo.GetComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 32000;
-
-            var scaler = canvasGo.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
-
-            _canvasRect = canvasGo.GetComponent<RectTransform>();
-            _canvasRect.anchorMin = Vector2.zero;
-            _canvasRect.anchorMax = Vector2.one;
-            _canvasRect.offsetMin = Vector2.zero;
-            _canvasRect.offsetMax = Vector2.zero;
-            return true;
+            _canvas = GetComponentInParent<Canvas>();
+            _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            return _canvas != null && _canvasRect != null;
         }
 
         private static bool TryResolveScreenPosition(Vector3 worldPosition, out Vector2 screenPosition)

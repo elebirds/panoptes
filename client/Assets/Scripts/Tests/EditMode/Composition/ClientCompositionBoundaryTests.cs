@@ -826,7 +826,8 @@ namespace Panoptes.Tests.EditMode.Composition
             var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
             var queue = File.ReadAllText(roots[0]);
             var presenter = File.ReadAllText(roots[1]);
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<AnimationQueue>"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<AnimationQueue>(\"Prefabs/Runtime/AnimationQueue\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<AnimationQueue>"));
             Assert.That(queue, Does.Contain("Construct(MapRenderer mapRenderer)"));
             Assert.That(presenter, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
         }
@@ -896,8 +897,11 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(offenders, Is.Empty, "Damage popup presentation should use the composed DamageNumberPopupController.");
 
             var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var controller = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/DamageNumberPopupController.cs"));
             var presenter = File.ReadAllText(roots[0]);
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<DamageNumberPopupController>"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<DamageNumberPopupController>(\"Prefabs/UI/DamageNumberPopupController\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<DamageNumberPopupController>"));
+            Assert.That(controller, Does.Not.Contain("new GameObject(\"DamageNumberPopupCanvas\""));
             Assert.That(presenter, Does.Contain("SetDamagePopupController(DamageNumberPopupController popupController)"));
         }
 
