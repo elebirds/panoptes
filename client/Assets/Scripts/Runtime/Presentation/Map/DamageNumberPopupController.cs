@@ -229,7 +229,7 @@ namespace Panoptes.Presentation.Map
         private static bool TryResolveScreenPosition(Vector3 worldPosition, out Vector2 screenPosition)
         {
             screenPosition = default;
-            var camera = Camera.main != null ? Camera.main : FindAnyObjectByType<Camera>();
+            var camera = Camera.main;
             if (camera == null)
             {
                 return false;
