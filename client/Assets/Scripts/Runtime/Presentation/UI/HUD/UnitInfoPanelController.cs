@@ -485,18 +485,12 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void EnsureDefaultActionProviders()
         {
-            // Some prefab variants only contain Settler registrar.
-            // Ensure city-core actions can still be registered at runtime.
+            // Settler actions are registered through ClientCompositionInstaller so
+            // VContainer can inject their Store/service dependencies.
             if (GetComponent<CityCoreBuildingActionRegistrar>() == null &&
                 UnityEngine.Object.FindAnyObjectByType<CityCoreBuildingActionRegistrar>() == null)
             {
                 gameObject.AddComponent<CityCoreBuildingActionRegistrar>();
-            }
-
-            if (GetComponent<SettlerUnitActionRegistrar>() == null &&
-                UnityEngine.Object.FindAnyObjectByType<SettlerUnitActionRegistrar>() == null)
-            {
-                gameObject.AddComponent<SettlerUnitActionRegistrar>();
             }
         }
 
