@@ -7,7 +7,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class NodeMapper
     {
-        public static NodeDto ToDto(NodeView view)
+        public static NodeDto ToDto(NodeView view, StaticCatalogCache catalog = null)
         {
             if (view == null)
             {
@@ -24,7 +24,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 TerritoryOwner = string.IsNullOrWhiteSpace(view.TerritoryOwnerPlayerId) ? view.ControllerPlayerId : view.TerritoryOwnerPlayerId,
                 BuildingType = view.BuildingTypeId,
                 BuildingHp = view.BuildingHp,
-                BuildingMaxHp = ResolveBuildingMaxHp(view),
+                BuildingMaxHp = ResolveBuildingMaxHp(view, catalog),
                 BuildingStatus = view.BuildingStatus,
                 OperationSelectedRecipeId = view.Operation != null ? view.Operation.SelectedRecipeId : string.Empty,
                 OperationCurrentProgress = view.Operation != null ? view.Operation.CurrentProgress : 0,
@@ -48,7 +48,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             };
         }
 
-        private static int ResolveBuildingMaxHp(NodeView view)
+        private static int ResolveBuildingMaxHp(NodeView view, StaticCatalogCache catalog)
         {
             if (view == null)
             {
@@ -61,22 +61,21 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 return 0;
             }
 
-            var cache = StaticCatalogCache.Instance;
-            if (cache == null)
+            if (catalog == null)
             {
                 return 0;
             }
 
             if (string.Equals(buildingType, "city_core", StringComparison.OrdinalIgnoreCase))
             {
-                var cityCoreMaxHp = cache.Rules != null ? cache.Rules.city_core_max_hp : 0;
+                var cityCoreMaxHp = catalog.Rules != null ? catalog.Rules.city_core_max_hp : 0;
                 if (cityCoreMaxHp > 0)
                 {
                     return cityCoreMaxHp;
                 }
             }
 
-            if (!cache.TryGetBuilding(buildingType, out var buildingEntry) || buildingEntry == null)
+            if (!catalog.TryGetBuilding(buildingType, out var buildingEntry) || buildingEntry == null)
             {
                 return 0;
             }

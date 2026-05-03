@@ -56,6 +56,10 @@ namespace Panoptes.Core.Application.Cache
         public int EnemyCityCoreHP { get; private set; }
         public int EnemyMaxCityCoreHP { get; private set; }
 
+        private StaticCatalogCache _staticCatalogCache;
+        private PlanningDraftCache _planningDraftCache;
+        private GameChatCache _gameChatCache;
+
         public event Action OnStateChanged;
         public event Action<PhaseChangedEvent> OnPhaseChanged;
         public event Action<ResourcesChangedEvent> OnResourcesChanged;
@@ -82,6 +86,16 @@ namespace Panoptes.Core.Application.Cache
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        public void UseProjectCaches(
+            StaticCatalogCache staticCatalogCache,
+            PlanningDraftCache planningDraftCache,
+            GameChatCache gameChatCache)
+        {
+            _staticCatalogCache = staticCatalogCache;
+            _planningDraftCache = planningDraftCache;
+            _gameChatCache = gameChatCache;
         }
 
         public void ApplyGameInit(MsgGameInit msg)
@@ -208,7 +222,7 @@ namespace Panoptes.Core.Application.Cache
             }
 
             Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
-            PlanningDraftCache.EnsureInstance()?.ApplyPlanningSnapshot(msg);
+            _planningDraftCache?.ApplyPlanningSnapshot(msg);
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
         }
@@ -263,7 +277,7 @@ namespace Panoptes.Core.Application.Cache
 
             var settlement = SettlementMapper.ToDto(msg);
             TrackCityBuiltBuildings(settlement);
-            PlanningDraftCache.Instance?.ClearAll();
+            _planningDraftCache?.ClearAll();
 
             Fire(OnTurnSettled, new TurnSettledEvent
             {
@@ -497,8 +511,8 @@ namespace Panoptes.Core.Application.Cache
             EnemyMaxCityCoreHP = 0;
             _researchState = new TechnologyDto();
             _institutionState = new InstitutionStateDto();
-            PlanningDraftCache.Instance?.ClearAll();
-            GameChatCache.Instance?.Clear();
+            _planningDraftCache?.ClearAll();
+            _gameChatCache?.Clear();
             OnStateChanged?.Invoke();
         }
 
@@ -550,9 +564,9 @@ namespace Panoptes.Core.Application.Cache
             }, nameof(OnTokensChanged));
         }
 
-        private static void ApplyPlanningStartDraft(MsgPlanningSnapshot snapshot)
+        private void ApplyPlanningStartDraft(MsgPlanningSnapshot snapshot)
         {
-            var draftCache = PlanningDraftCache.EnsureInstance();
+            var draftCache = _planningDraftCache;
             draftCache?.ClearAll();
             if (snapshot != null)
             {
@@ -573,7 +587,7 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    nextUnits[unit.Id] = UnitMapper.ToDto(unit);
+                    nextUnits[unit.Id] = UnitMapper.ToDto(unit, _staticCatalogCache);
                 }
             }
 
@@ -638,7 +652,7 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    var dto = NodeMapper.ToDto(node);
+                    var dto = NodeMapper.ToDto(node, _staticCatalogCache);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
                     StabilizeNodeBuildingMaxHp(dto, previousNode);
@@ -685,7 +699,7 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    var dto = NodeMapper.ToDto(node);
+                    var dto = NodeMapper.ToDto(node, _staticCatalogCache);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
                     StabilizeNodeBuildingMaxHp(dto, previousNode);

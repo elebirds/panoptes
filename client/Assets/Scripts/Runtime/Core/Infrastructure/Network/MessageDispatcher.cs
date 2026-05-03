@@ -34,6 +34,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
         public static MessageDispatcher Instance { get; private set; }
         public event Action<DispatchEntry> OnDispatching;
+        private GameEventSessionGate _gameEventSessionGate;
 
         private readonly Dictionary<string, List<Action<IMessage>>> _typedHandlers =
             new(StringComparer.Ordinal);
@@ -52,6 +53,11 @@ namespace Panoptes.Core.Infrastructure.Network
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        public void UseGameEventSessionGate(GameEventSessionGate gameEventSessionGate)
+        {
+            _gameEventSessionGate = gameEventSessionGate;
         }
 
         public void Register<T>(string messageType, Action<T> handler)
@@ -214,7 +220,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
             var entry = new DispatchEntry(frame, messageType, message, payloadJson);
             OnDispatching?.Invoke(entry);
-            if (!GameEventSessionGate.ShouldDispatch(entry))
+            if (_gameEventSessionGate != null && !_gameEventSessionGate.ShouldDispatch(entry))
             {
                 return;
             }

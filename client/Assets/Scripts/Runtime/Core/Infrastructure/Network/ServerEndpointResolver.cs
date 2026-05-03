@@ -15,11 +15,11 @@ namespace Panoptes.Core.Infrastructure.Network
             return isEditor ? EditorWebSocketUrl : RemoteWebSocketUrl;
         }
 
-        public static string ResolveCurrentWebSocketUrl()
+        public static string ResolveCurrentWebSocketUrl(string configuredEndpoint)
         {
-            if (NetworkManager.Instance != null && !string.IsNullOrWhiteSpace(NetworkManager.Instance.ServerUrl))
+            if (!string.IsNullOrWhiteSpace(configuredEndpoint))
             {
-                return NetworkManager.Instance.ServerUrl;
+                return configuredEndpoint;
             }
 
             return DefaultWebSocketUrl;

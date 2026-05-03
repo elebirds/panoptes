@@ -6,7 +6,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class UnitMapper
     {
-        public static UnitDto ToDto(UnitView view)
+        public static UnitDto ToDto(UnitView view, StaticCatalogCache catalog = null)
         {
             if (view == null)
             {
@@ -14,8 +14,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             }
 
             var maxHp = view.MaxHp;
-            var cache = StaticCatalogCache.Instance;
-            if (cache != null && cache.TryGetUnit(view.UnitType, out var unitEntry) && unitEntry != null)
+            if (catalog != null && catalog.TryGetUnit(view.UnitType, out var unitEntry) && unitEntry != null)
             {
                 maxHp = unitEntry.max_hp > 0 ? unitEntry.max_hp : maxHp;
             }

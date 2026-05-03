@@ -44,7 +44,7 @@ namespace Panoptes.Core.Infrastructure.Service
         public AuthService(string baseUrl = null)
         {
             var resolvedBaseUrl = string.IsNullOrWhiteSpace(baseUrl)
-                ? ServerEndpointResolver.ResolveHttpBaseUrl(ServerEndpointResolver.ResolveCurrentWebSocketUrl())
+                ? ServerEndpointResolver.ResolveHttpBaseUrl(ServerEndpointResolver.ResolveCurrentWebSocketUrl(null))
                 : ServerEndpointResolver.ResolveHttpBaseUrl(baseUrl);
             _baseUrl = resolvedBaseUrl.TrimEnd('/');
         }

@@ -1,7 +1,10 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using System.Collections.Generic;
+using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Infrastructure.Network;
+using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
 
 namespace Panoptes.DebugTools
@@ -28,6 +31,23 @@ namespace Panoptes.DebugTools
             {
                 _tabs = DebugTabRegistry.CreateDefaultTabs(_messageSender);
             }
+        }
+
+        public void UseRuntimeServices(
+            AppManager appManager,
+            SessionManager sessionManager,
+            RoomCache roomCache,
+            GameStateCache gameStateCache,
+            ClientRuntimeConfigCache runtimeConfigCache,
+            NetworkManager networkManager)
+        {
+            _context?.UseRuntimeServices(
+                appManager,
+                sessionManager,
+                roomCache,
+                gameStateCache,
+                runtimeConfigCache,
+                networkManager);
         }
 
         private void Awake()
