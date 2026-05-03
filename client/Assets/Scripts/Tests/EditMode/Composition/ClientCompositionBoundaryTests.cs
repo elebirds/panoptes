@@ -41,12 +41,14 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("PlanningDraftStore"));
             Assert.That(installer, Does.Contain("SelectionStore"));
             Assert.That(installer, Does.Contain("PlanningToolStore"));
+            Assert.That(installer, Does.Contain("ActionLockStore"));
             Assert.That(installer, Does.Contain("TurnStore"));
             Assert.That(installer, Does.Contain("SelectionService"));
             Assert.That(installer, Does.Contain("PlanningToolService"));
             Assert.That(installer, Does.Contain("GameIntentService"));
             Assert.That(installer, Does.Contain("PlanningIntentService"));
             Assert.That(installer, Does.Contain("MinisterCommandService"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TokenHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
@@ -58,6 +60,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("PlanningToolViewModel"));
+            Assert.That(installer, Does.Contain("TokenHudViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
         }
@@ -170,6 +173,36 @@ namespace Panoptes.Tests.EditMode.Composition
                 File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderStateResolver.cs")),
                 Is.False,
                 "UnitInfo direct-order state must come from UnitInfoViewModel, not a cache fallback resolver.");
+        }
+
+        [Test]
+        public void TokenHudMigratedSlice_ShouldUseViewModelAndFinalStore()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/TokenHUD.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TokenHudViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TokenHudState.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                "ActionLock.",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "TokenHUD must bind to TokenHudViewModel state instead of legacy cache singletons.");
+
+            var hud = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/TokenHUD.cs"));
+            var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TokenHudViewModel.cs"));
+            Assert.That(hud, Does.Contain("TokenHudViewModel"));
+            Assert.That(viewModel, Does.Contain("ActionLockStore"));
+            Assert.That(viewModel, Does.Not.Contain("Panoptes.Core.Application.Intents"));
         }
 
         [Test]

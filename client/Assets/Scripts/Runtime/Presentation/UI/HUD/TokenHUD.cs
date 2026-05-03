@@ -6,12 +6,12 @@
  * Description: Token/submit-state HUD bound to prefab references only.
  *************************************************/
 
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Intents;
-using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
+using System;
+using Panoptes.Presentation.ViewModels;
+using R3;
 using TMPro;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -21,93 +21,44 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TextMeshProUGUI tokenText;
         [SerializeField] private TextMeshProUGUI stateText;
 
-        private GameStateCache _cache;
+        private IDisposable _stateSubscription;
+        private TokenHudViewModel _viewModel;
         private bool _warnedMissingUi;
+
+        [Inject]
+        private void Construct(TokenHudViewModel viewModel)
+        {
+            _viewModel = viewModel;
+        }
 
         private void Awake()
         {
             TryResolveUiReferences(false);
-            _cache = GameStateCache.Instance;
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnTokensChanged += OnTokensChanged;
-                _cache.OnPhaseChanged += OnPhaseChanged;
-                _cache.OnGameOver += OnGameOver;
-                _cache.OnStateChanged += Refresh;
-            }
-
-            ActionLock.OnChanged += OnActionLockChanged;
-            Refresh();
+            _stateSubscription?.Dispose();
+            _stateSubscription = _viewModel?.State.Subscribe(this, static (state, self) => self.Render(state));
+            Render(_viewModel?.Current ?? new TokenHudState(statusText: "Waiting Sync"));
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnTokensChanged -= OnTokensChanged;
-                _cache.OnPhaseChanged -= OnPhaseChanged;
-                _cache.OnGameOver -= OnGameOver;
-                _cache.OnStateChanged -= Refresh;
-            }
-
-            ActionLock.OnChanged -= OnActionLockChanged;
+            _stateSubscription?.Dispose();
+            _stateSubscription = null;
         }
 
-        private void OnTokensChanged(TokensChangedEvent _)
-        {
-            Refresh();
-        }
-
-        private void OnPhaseChanged(PhaseChangedEvent _)
-        {
-            Refresh();
-        }
-
-        private void OnGameOver(GameOverEvent _)
-        {
-            Refresh();
-        }
-
-        private void OnActionLockChanged(bool _)
-        {
-            Refresh();
-        }
-
-        private void Refresh()
+        private void Render(TokenHudState state)
         {
             if (!TryResolveUiReferences(true))
             {
                 return;
             }
 
-            var cache = _cache ?? GameStateCache.Instance;
-            var tokens = cache != null ? cache.TokensLeft : 0;
-            tokenText.text = $"Tokens {tokens}";
-
-            if (cache == null)
-            {
-                stateText.text = "Waiting Sync";
-                return;
-            }
-
-            if (cache.IsGameOver)
-            {
-                stateText.text = "Game Over";
-                return;
-            }
-
-            if (ActionLock.IsLocked)
-            {
-                stateText.text = "Submitted";
-                return;
-            }
-
-            stateText.text = GamePhases.IsResolving(cache.Phase) ? "Resolving" : "Ready";
+            state ??= new TokenHudState(statusText: "Waiting Sync");
+            tokenText.text = state.TokenText;
+            stateText.text = state.StatusText;
         }
 
         private bool TryResolveUiReferences(bool logWarning)
