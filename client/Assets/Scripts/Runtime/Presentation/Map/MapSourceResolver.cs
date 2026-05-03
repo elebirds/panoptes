@@ -63,6 +63,7 @@ namespace Panoptes.Presentation.Map
             public bool AutoFillMissingJsonTiles { get; set; }
             public string LocalFallbackMapResourcePath { get; set; }
             public string ServerMapConfigKey { get; set; }
+            public IReadOnlyDictionary<string, CatalogBuildingDto> BuildingCatalog { get; set; }
         }
 
         private readonly Options _options;
@@ -125,7 +126,7 @@ namespace Panoptes.Presentation.Map
                     TerritoryOwner = MapRenderTokens.Normalize(node.territory_owner),
                     BuildingType = buildingType,
                     BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp),
-                    BuildingMaxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, node.building_hp)
+                    BuildingMaxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, node.building_hp, _options.BuildingCatalog)
                 });
             }
 
@@ -346,7 +347,7 @@ namespace Panoptes.Presentation.Map
                     ResourceType = isResourcePoint ? resourceType : string.Empty,
                     BuildingType = buildingType,
                     BuildingHp = hasBuilding ? (buildingHp > 0 ? buildingHp : 100) : 0,
-                    BuildingMaxHp = hasBuilding ? MapRenderTokens.ResolveBuildingMaxHp(buildingType, buildingHp) : 0,
+                    BuildingMaxHp = hasBuilding ? MapRenderTokens.ResolveBuildingMaxHp(buildingType, buildingHp, _options.BuildingCatalog) : 0,
                     Owner = (jsonNode.owner ?? string.Empty).Trim(),
                     TerritoryOwner = territoryOwner
                 });

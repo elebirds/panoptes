@@ -1,5 +1,6 @@
 using System;
-using Panoptes.Core.Application.Cache;
+using System.Collections.Generic;
+using Panoptes.Core.Domain;
 using UnityEngine;
 
 namespace Panoptes.Presentation.Map
@@ -11,7 +12,10 @@ namespace Panoptes.Presentation.Map
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
-        public static int ResolveBuildingMaxHp(string buildingType, int fallbackHp)
+        public static int ResolveBuildingMaxHp(
+            string buildingType,
+            int fallbackHp,
+            IReadOnlyDictionary<string, CatalogBuildingDto> buildings = null)
         {
             var normalized = Normalize(buildingType);
             if (string.IsNullOrEmpty(normalized))
@@ -19,22 +23,12 @@ namespace Panoptes.Presentation.Map
                 return 0;
             }
 
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null)
+            if (buildings != null &&
+                buildings.TryGetValue(normalized, out var entry) &&
+                entry != null &&
+                entry.MaxHp > 0)
             {
-                if (string.Equals(normalized, "city_core", StringComparison.OrdinalIgnoreCase) &&
-                    catalog.Rules != null &&
-                    catalog.Rules.city_core_max_hp > 0)
-                {
-                    return catalog.Rules.city_core_max_hp;
-                }
-
-                if (catalog.TryGetBuilding(normalized, out var buildingEntry) &&
-                    buildingEntry != null &&
-                    buildingEntry.max_hp > 0)
-                {
-                    return buildingEntry.max_hp;
-                }
+                return entry.MaxHp;
             }
 
             return Mathf.Max(0, fallbackHp);
