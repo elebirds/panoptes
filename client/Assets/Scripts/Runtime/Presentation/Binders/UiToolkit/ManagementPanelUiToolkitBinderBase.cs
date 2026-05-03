@@ -16,6 +16,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private readonly ManagementPanelUiToolkitRenderer _renderer = new();
         private IDisposable _subscription;
+        private IDisposable _visibilitySubscription;
+        private ManagementPanelId _visibilityPanelId;
+        private ManagementPanelVisibilityStore _visibilityStore;
+        private bool _hasVisibilityBinding;
         private UIDocument _uiDocument;
         private TViewModel _viewModel;
 
@@ -41,6 +45,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             EnsureDocument();
             EnsureVisualTree();
             CacheElements();
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
             if (_viewModel != null)
             {
                 Bind(_viewModel);
@@ -50,10 +56,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void OnDisable()
         {
             StopSubscription();
+            StopVisibilitySubscription();
         }
 
         private void OnDestroy()
         {
+            StopVisibilitySubscription();
             Unbind();
         }
 
@@ -90,6 +98,17 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             EnsureVisualTree();
             CacheElements();
             _renderer.Render(state, id => RowActionRequested?.Invoke(id));
+            ApplyVisibility();
+        }
+
+        protected void BindVisibility(ManagementPanelVisibilityStore store, ManagementPanelId panelId)
+        {
+            StopVisibilitySubscription();
+            _visibilityStore = store;
+            _visibilityPanelId = panelId;
+            _hasVisibilityBinding = store != null && panelId != ManagementPanelId.None;
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
         }
 
         private void EnsureDocument()
@@ -145,12 +164,44 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _subscription = null;
         }
 
+        private void StopVisibilitySubscription()
+        {
+            _visibilitySubscription?.Dispose();
+            _visibilitySubscription = null;
+        }
+
         private void EnsureSubscription()
         {
             if (_viewModel != null && _subscription == null)
             {
                 _subscription = _viewModel.State.Subscribe(this, static (state, self) => self.Render(state));
             }
+        }
+
+        private void EnsureVisibilitySubscription()
+        {
+            if (_hasVisibilityBinding && _visibilitySubscription == null)
+            {
+                _visibilitySubscription = _visibilityStore.State.Subscribe(this, static (_, self) => self.ApplyVisibility());
+            }
+        }
+
+        private void ApplyVisibility()
+        {
+            if (!_hasVisibilityBinding)
+            {
+                return;
+            }
+
+            EnsureDocument();
+            if (_uiDocument?.rootVisualElement == null)
+            {
+                return;
+            }
+
+            _uiDocument.rootVisualElement.style.display = _visibilityStore.IsVisible(_visibilityPanelId)
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
     }
 }

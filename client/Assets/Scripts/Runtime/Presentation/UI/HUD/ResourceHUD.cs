@@ -9,7 +9,6 @@
 using System;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
-using Panoptes.Presentation.UI.Domestic;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using UnityEngine;
@@ -23,7 +22,6 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
         [SerializeField] private Button techButton;
-        [SerializeField] private TechTreePanelController techTreePanelController;
 
         [Header("Data")]
         [SerializeField] private bool includePoints = true;
@@ -39,13 +37,15 @@ namespace Panoptes.Presentation.UI.HUD
 
         private readonly EventSubscriptionBag _buttonSubscriptions = new();
         private ResourceHudUguiBinder _binder;
+        private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
         private IDisposable _stateSubscription;
         private ResourceHudViewModel _viewModel;
 
         [Inject]
-        private void Construct(ResourceHudViewModel viewModel)
+        private void Construct(ResourceHudViewModel viewModel, ManagementPanelVisibilityStore managementPanelVisibilityStore)
         {
             _viewModel = viewModel;
+            _managementPanelVisibilityStore = managementPanelVisibilityStore;
         }
 
         private void Awake()
@@ -148,33 +148,16 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnTechButtonClicked()
         {
-            ResolveTechTreePanelController();
-            if (techTreePanelController == null)
+            if (_managementPanelVisibilityStore == null)
             {
                 if (logWarnings)
                 {
-                    Debug.LogWarning("[ResourceHUD] TechTreePanelController not found.");
+                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
                 }
                 return;
             }
 
-            var panelGo = techTreePanelController.gameObject;
-            var nextState = !panelGo.activeSelf;
-            panelGo.SetActive(nextState);
-            if (nextState && techTreePanelController.transform is RectTransform panelRect)
-            {
-                panelRect.SetAsLastSibling();
-            }
-        }
-
-        private void ResolveTechTreePanelController()
-        {
-            if (techTreePanelController != null)
-            {
-                return;
-            }
-
-            techTreePanelController = SceneObjectFinder.FindFirstSceneObject<TechTreePanelController>();
+            _managementPanelVisibilityStore.Toggle(ManagementPanelId.TechTree);
         }
 
         private void EnsureBinder()

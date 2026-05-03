@@ -83,6 +83,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<ManagementPanelVisibilityStore>(Lifetime.Singleton).AsSelf();
             RegisterRuntimeSceneComponent<TokenHUD>(builder, "TokenHUD");
             RegisterRuntimeSceneComponent<ResourceHUD>(builder, "ResourcePanel");
             RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
@@ -95,7 +96,6 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             RegisterRuntimeSceneComponent<UnitInfoPanelController>(builder, "UnitInfoPanel");
             RegisterOptionalSceneComponent<RecipeSynthesisPanel>(builder);
-            RegisterOptionalSceneComponent<TechTreePanelController>(builder);
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<TechTreeViewModel>(Lifetime.Singleton).AsSelf();
