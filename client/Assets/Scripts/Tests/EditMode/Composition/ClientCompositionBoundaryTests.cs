@@ -296,8 +296,10 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(constructionOverlay, Does.Contain("MapRenderer"));
             Assert.That(constructionOverlay, Does.Contain("[Inject]"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<CityCoreHpBarOverlayController>"));
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<BuildingConstructionOverlayController>"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<CityCoreHpBarOverlayController>(\"Prefabs/UI/CityCoreHpBarOverlay\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<BuildingConstructionOverlayController>(\"Prefabs/UI/BuildingConstructionOverlay\")"));
+            Assert.That(cityOverlay, Does.Not.Contain("GameObject.Find"));
+            Assert.That(constructionOverlay, Does.Not.Contain("GameObject.Find"));
             Assert.That(mapRenderer, Does.Not.Contain("AddComponent<CityCoreHpBarOverlayController>"));
             Assert.That(mapRenderer, Does.Not.Contain("AddComponent<BuildingConstructionOverlayController>"));
             Assert.That(mapRenderer, Does.Not.Contain("FindAnyObjectByType<CityCoreHpBarOverlayController>"));
