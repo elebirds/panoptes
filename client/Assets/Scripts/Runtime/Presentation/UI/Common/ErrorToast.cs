@@ -22,8 +22,6 @@ namespace Panoptes.Presentation.UI.Common
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class ErrorToast : MonoBehaviour
     {
-        public static ErrorToast Instance { get; private set; }
-
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform toastRoot;
         [SerializeField] private Image toastBackground;
@@ -37,13 +35,6 @@ namespace Panoptes.Presentation.UI.Common
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
             if (Application.isPlaying)
             {
                 DontDestroyOnLoad(gameObject);
@@ -52,14 +43,6 @@ namespace Panoptes.Presentation.UI.Common
             ConfigureCanvas();
             ApplyVisualStyle();
             Hide();
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
         }
 
         // 业务侧只传文案和语义，不关心 prefab 层级。
