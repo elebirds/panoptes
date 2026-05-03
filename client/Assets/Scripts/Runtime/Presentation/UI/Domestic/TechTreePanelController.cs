@@ -4,7 +4,6 @@ using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Composition;
 using Panoptes.Presentation.UI.HUD;
 using TMPro;
 using UnityEngine;
@@ -79,7 +78,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             EnsureRoots();
             EnsureCloseButton();
             ResolveTemplateFallback();

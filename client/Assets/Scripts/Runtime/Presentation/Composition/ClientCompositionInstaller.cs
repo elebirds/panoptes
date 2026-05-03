@@ -5,10 +5,15 @@ using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Presentation.Binders.UiToolkit;
+using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Domestic;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Minister;
+using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
+using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
@@ -75,9 +80,17 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
+            RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
+            RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
+            RegisterRuntimeSceneComponent<MinisterPanel>(builder, "MinisterPanel");
+            RegisterRuntimeSceneComponent<SettlementTimeline>(builder, "SettlementTimeline");
+            RegisterRuntimeSceneComponent<TurnReportPanel>(builder, "TurnReportPanel");
+            RegisterRuntimeSceneComponent<GameOverOverlay>(builder, "GameOverOverlay");
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
-            builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
+            RegisterRuntimeSceneComponent<UnitInfoPanelController>(builder, "UnitInfoPanel");
+            RegisterOptionalSceneComponent<RecipeSynthesisPanel>(builder);
+            RegisterOptionalSceneComponent<TechTreePanelController>(builder);
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<TechTreeViewModel>(Lifetime.Singleton).AsSelf();
@@ -114,6 +127,50 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
+        }
+
+        private static void RegisterRuntimeSceneComponent<T>(
+            IContainerBuilder builder,
+            string objectName)
+            where T : Component
+        {
+            var component = SceneObjectFinder.FindFirstSceneObject<T>();
+            var createdByComposition = component == null;
+            if (component == null)
+            {
+                var go = new GameObject(objectName, typeof(RectTransform));
+                go.SetActive(false);
+
+                var canvasTransform = FindGameCanvasTransform();
+                if (canvasTransform != null)
+                {
+                    go.transform.SetParent(canvasTransform, false);
+                }
+
+                component = go.AddComponent<T>();
+            }
+
+            builder.RegisterComponent(component).AsSelf();
+            if (createdByComposition)
+            {
+                builder.RegisterBuildCallback(_ => component.gameObject.SetActive(true));
+            }
+        }
+
+        private static void RegisterOptionalSceneComponent<T>(IContainerBuilder builder)
+            where T : Component
+        {
+            var component = SceneObjectFinder.FindFirstSceneObject<T>();
+            if (component != null)
+            {
+                builder.RegisterComponent(component).AsSelf();
+            }
+        }
+
+        private static Transform FindGameCanvasTransform()
+        {
+            var canvas = SceneObjectFinder.FindFirstSceneObject<Canvas>();
+            return canvas != null ? canvas.transform : null;
         }
     }
 }

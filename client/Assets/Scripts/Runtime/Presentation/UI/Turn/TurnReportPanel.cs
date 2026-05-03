@@ -8,7 +8,6 @@
 
 using System;
 using Panoptes.Core.Application.Stores;
-using Panoptes.Presentation.Composition;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -36,13 +35,11 @@ namespace Panoptes.Presentation.UI.Turn
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             TryResolveUiReferences(false);
         }
 
         private void OnEnable()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             _settlementSubscription?.Dispose();
             _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
             OnSettlementChanged(_settlementStore?.Snapshot);

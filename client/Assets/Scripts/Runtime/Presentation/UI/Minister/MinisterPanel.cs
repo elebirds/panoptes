@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Composition;
 using UnityEngine;
 using VContainer;
 
@@ -35,7 +34,6 @@ namespace Panoptes.Presentation.UI.Minister
 
         private void OnEnable()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             AttachDraftCache();
             RefreshDrafts();
         }

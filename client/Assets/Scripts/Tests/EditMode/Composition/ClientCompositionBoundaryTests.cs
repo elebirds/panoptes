@@ -47,10 +47,38 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("GameIntentService"));
             Assert.That(installer, Does.Contain("PlanningIntentService"));
             Assert.That(installer, Does.Contain("MinisterCommandService"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<SettlementTimeline>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameOverOverlay>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<UnitInfoPanelController>"));
+            Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<RecipeSynthesisPanel>"));
+            Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("PlanningToolViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
+        }
+
+        [Test]
+        public void CompositionRuntime_ShouldNotReintroduceManualSceneInjectionShells()
+        {
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/SceneCommandServiceInjector.cs")),
+                Is.False,
+                "Scene command injection must be owned by GameLifetimeScope registrations, not a manual scope lookup shell.");
+
+            var root = ResolveAssetPath("Scripts/Runtime/Presentation/Composition");
+            var offenders = FindTokenOffenders(
+                new[] { root },
+                "*.cs",
+                "SceneCommandServiceInjector",
+                "LifetimeScope.Find<GameLifetimeScope>()",
+                "InjectGameObject");
+
+            Assert.That(offenders, Is.Empty, "Presentation composition must not perform manual scene injection.");
         }
 
         [Test]
@@ -63,6 +91,23 @@ namespace Panoptes.Tests.EditMode.Composition
                 "GameIntents.");
 
             Assert.That(offenders, Is.Empty, "Migrated Presentation command callers must use injected command services.");
+        }
+
+        [Test]
+        public void GameSceneController_ShouldOnlyEnsureHelpersNotInjectThemManually()
+        {
+            var controller = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs"));
+
+            Assert.That(controller, Does.Not.Contain("IObjectResolver"));
+            Assert.That(controller, Does.Not.Contain("InjectIfPossible"));
+            Assert.That(controller, Does.Not.Contain("InjectDynamicPresentationHelpers"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<GameChatPanelController>"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<MinisterPanel>"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<TurnHUD>"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<SettlementTimeline>"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<TurnReportPanel>"));
+            Assert.That(controller, Does.Not.Contain("EnsurePrefabComponent<GameOverOverlay>"));
+            Assert.That(controller, Does.Contain("EnsureComponent<ResourceHUD>"));
         }
 
         [Test]

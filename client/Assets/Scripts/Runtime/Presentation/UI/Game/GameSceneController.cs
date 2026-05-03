@@ -8,13 +8,11 @@ using Panoptes.Presentation.Map;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
-using Panoptes.Presentation.UI.Turn;
 using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
-using VContainer.Unity;
 
 namespace Panoptes.Presentation.UI.Game
 {
@@ -32,22 +30,19 @@ namespace Panoptes.Presentation.UI.Game
         private IDisposable _settlementSubscription;
         private IDisposable _gameOverSubscription;
         private IDisposable _feedbackSubscription;
-        private IObjectResolver _resolver;
 
         [Inject]
         private void Construct(
             GameStateStore gameStateStore,
             SettlementStore settlementStore,
             GameOverStore gameOverStore,
-            GameplayFeedbackStore feedbackStore,
-            IObjectResolver resolver)
+            GameplayFeedbackStore feedbackStore)
         {
             _gameStateStore = gameStateStore;
             _settlementStore = settlementStore;
             _gameOverStore = gameOverStore;
             _feedbackStore = feedbackStore;
-            _resolver = resolver;
-            InjectDynamicPresentationHelpers();
+            EnsurePresentationHelpers();
         }
 
         private void Awake()
@@ -181,12 +176,8 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            InjectIfPossible(EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD"));
-            InjectIfPossible(EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel"));
-            InjectIfPossible(EnsureComponent<SettlementTimeline>(canvas.transform, "SettlementTimeline"));
-            InjectIfPossible(EnsureComponent<TurnReportPanel>(canvas.transform, "TurnReportPanel"));
-            InjectIfPossible(EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay"));
-            InjectIfPossible(EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController"));
+            EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
+            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
         }
 
         private static T EnsureComponent<T>(Transform parent, string objectName) where T : Component
@@ -217,54 +208,6 @@ namespace Panoptes.Presentation.UI.Game
 
             var go = new GameObject(objectName);
             return go.AddComponent<T>();
-        }
-
-        private static T EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
-        {
-            var existing = parent.Find(objectName);
-            if (existing != null && existing.GetComponent<T>() != null)
-            {
-                return existing.GetComponent<T>();
-            }
-
-            if (!string.IsNullOrWhiteSpace(resourcesPath))
-            {
-                var prefab = Resources.Load<GameObject>(resourcesPath.Trim());
-                if (prefab != null)
-                {
-                    var instance = UnityEngine.Object.Instantiate(prefab, parent, false);
-                    instance.name = objectName;
-                    var prefabComponent = instance.GetComponent<T>();
-                    if (prefabComponent != null)
-                    {
-                        return prefabComponent;
-                    }
-                }
-            }
-
-            return EnsureComponent<T>(parent, objectName);
-        }
-
-        private void InjectDynamicPresentationHelpers()
-        {
-            if (_resolver == null)
-            {
-                return;
-            }
-
-            var canvas = statusText != null ? statusText.canvas : GetComponentInChildren<Canvas>(true);
-            if (canvas != null)
-            {
-                InjectIfPossible(canvas.GetComponentInChildren<TurnHUD>(true));
-            }
-        }
-
-        private void InjectIfPossible(Component component)
-        {
-            if (component != null)
-            {
-                _resolver?.Inject(component);
-            }
         }
 
         private List<string> CollectCompletedTechnologyNames(TurnSettlementDto settlement)

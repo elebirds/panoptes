@@ -7,7 +7,6 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
 using Panoptes.Presentation.Common;
-using Panoptes.Presentation.Composition;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -87,7 +86,6 @@ namespace Panoptes.Presentation.UI.Domestic
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             if (panelRoot == null) panelRoot = transform as RectTransform;
             ResolveSlideToggleReference();
 

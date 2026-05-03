@@ -9,7 +9,6 @@
 using System;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
-using Panoptes.Presentation.Composition;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -61,7 +60,6 @@ namespace Panoptes.Presentation.UI.Game
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             EnsureUi();
             BindBackButton();
             Hide();
@@ -69,7 +67,6 @@ namespace Panoptes.Presentation.UI.Game
 
         private void OnEnable()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             _gameOverSubscription?.Dispose();
             _gameOverSubscription = _gameOverStore?.State.Subscribe(this, static (state, self) => self.OnGameOver(state));
             OnGameOver(_gameOverStore?.Snapshot);

@@ -114,6 +114,29 @@ render without reaching through legacy cache singletons.
   path for Protocol, legacy cache, and singleton `Instance` usage, plus an
   explicit guard that the bridge file stays deleted.
 
+## Batch 7 Result
+
+- Removed `SceneCommandServiceInjector` and its Unity meta file.
+- Removed all `SceneCommandServiceInjector.InjectIfAvailable(...)` calls from
+  migrated Presentation components instead of introducing another injection
+  wrapper/helper/facade.
+- Registered the current `[Inject]` scene/prefab-mounted Presentation
+  components through `ClientCompositionInstaller.RegisterGame` with
+  `RegisterComponentInHierarchy`, covering map planning, chat, game-over, turn
+  HUD, recipe synthesis, settlement timeline/report, tech tree, minister, game
+  scene, and unit info controllers.
+- Removed the remaining `GameSceneController` resolver-based helper injection;
+  any legacy runtime helper objects it creates are injected only through the
+  registered VContainer scene component types.
+- Removed `TechTreePanelBootstrap` and its Unity meta file. The final
+  architecture requires `TechTreePanelController` to be mounted on the authored
+  prefab or scene instance; runtime dynamic controller creation is no longer a
+  supported compatibility path.
+- Updated composition boundary coverage so the injection shell stays deleted
+  and Presentation composition cannot reintroduce
+  `LifetimeScope.Find<GameLifetimeScope>()` or `InjectGameObject` manual
+  injection patterns.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.

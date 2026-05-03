@@ -3,7 +3,6 @@ using System.Text;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Composition;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -37,7 +36,6 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OnEnable()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             _chatSubscription?.Dispose();
             _gameStateSubscription?.Dispose();
             _chatSubscription = _gameChatStore?.State.Subscribe(this, static (state, self) => self.RefreshTranscript(state));

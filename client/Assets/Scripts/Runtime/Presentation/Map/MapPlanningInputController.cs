@@ -14,7 +14,6 @@ using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Common;
-using Panoptes.Presentation.Composition;
 using Panoptes.Presentation.Map.InputAdapter;
 using Panoptes.Presentation.Planning.Input.Modes;
 using Panoptes.Presentation.Planning.Feedback;
@@ -198,7 +197,6 @@ namespace Panoptes.Presentation.Map
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -218,7 +216,6 @@ namespace Panoptes.Presentation.Map
 
         private void OnEnable()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             SubscribeStoreEvents();
         }
 
