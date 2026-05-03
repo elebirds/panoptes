@@ -10,8 +10,10 @@ using Panoptes.Presentation.Animation;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
+using Panoptes.Presentation.UI.Auth;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
+using Panoptes.Presentation.UI.Lobby;
 using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
@@ -124,6 +126,19 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
             builder.Register<StaticCatalogStoreHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterBuildCallback(container => container.Resolve<AppManager>().UseStaticCatalogStoreHydrator(container.Resolve<StaticCatalogStoreHydrator>()));
+        }
+
+        public static void RegisterAuth(IContainerBuilder builder)
+        {
+            builder.RegisterComponentInHierarchy<LoginPanel>();
+        }
+
+        public static void RegisterLobby(IContainerBuilder builder)
+        {
+            builder.Register<LobbyService>(Lifetime.Scoped).AsSelf();
+            builder.RegisterComponentInHierarchy<LobbySceneController>();
+            builder.RegisterComponentInHierarchy<LobbyPanelController>();
+            builder.RegisterComponentInHierarchy<RoomPanelController>();
         }
 
         public static void RegisterGame(IContainerBuilder builder)

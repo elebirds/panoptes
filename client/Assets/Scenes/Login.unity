@@ -1059,6 +1059,7 @@ GameObject:
   - component: {fileID: 699890251}
   - component: {fileID: 699890250}
   - component: {fileID: 699890249}
+  - component: {fileID: 699890253}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1083,6 +1084,22 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &699890253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699890248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97b66d4da43b4b5a90916d0c07cd2e3b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Composition.AuthLifetimeScope
+  parentReference:
+    TypeName:
+  autoRun: 1
+  autoInjectGameObjects: []
 --- !u!114 &699890250
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2729,7 +2746,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9ffaf310d4d4d128a71deb5752699ff, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Panoptes.Runtime::Panoptes.Runtime.UI.Auth.LoginPanel
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Auth.LoginPanel
   usernameInput: {fileID: 1383782257}
   passwordInput: {fileID: 2085346466}
   loginButton: {fileID: 312073792}
