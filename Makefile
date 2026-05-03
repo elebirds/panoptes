@@ -1,4 +1,4 @@
-.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity c0c-check c0c-check-unity c0d-check c0d-check-unity c0e-check c0e-check-unity c0-ui-check db-migrate-up db-migrate-down db-reset db-sqlc
+.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity c0c-check c0c-check-unity c0d-check c0d-check-unity c0e-check c0e-check-unity c0f-fixture c0f-check c0f-check-unity c0-ui-check db-migrate-up db-migrate-down db-reset db-sqlc
 
 UNITY ?= /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity
 
@@ -78,7 +78,20 @@ c0e-check:
 c0e-check-unity:
 	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform PlayMode -testFilter Panoptes.Tests.PlayMode.Composition.C0ePlayModeCompositionBootstrapTests -testResults $(CURDIR)/client/Temp/C0ePlayModeCompositionBootstrapResults.xml -logFile -
 
-c0-ui-check: c0b-check c0c-check c0d-check c0e-check
+c0f-fixture:
+	cd server && go run ./cmd/c0fgatefixture -out ../client/Assets/Scripts/Tests/EditMode/Fixtures/C0f/server_frames.jsonl
+
+c0f-check: c0f-fixture
+	git diff --exit-code -- client/Assets/Scripts/Tests/EditMode/Fixtures/C0f/server_frames.jsonl
+	cd server && go test -count=1 ./internal/transport/codec ./internal/transport/websocket ./internal/lobby ./internal/game
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0f-check-unity
+	git diff --check
+
+c0f-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Presentation.C0fEndToEndProtocolHydrationGateTests -testResults $(CURDIR)/client/Temp/C0fEndToEndProtocolHydrationResults.xml -logFile -
+
+c0-ui-check: c0b-check c0c-check c0d-check c0e-check c0f-check
 
 # Database migrations
 db-migrate-up:

@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "server/cmd/c0fgatefixture/main.go", "reason": "真实 HTTP/WebSocket/lobby/game C0f fixture 生成器"}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/C0fEndToEndProtocolHydrationGateTests.cs", "reason": "Unity EditMode 回放 C0f 后端 ServerFrame 并断言 Store/ViewModel"}
+{"file": "Makefile", "reason": "接入 c0f-check 与 c0-ui-check"}
+{"file": "docs/2026-05-04-c0f-end-to-end-backend-client-protocol-gate.md", "reason": "持久化 C0f 门禁定位和维护规则"}
