@@ -11,6 +11,8 @@ namespace Panoptes.Core.Application.Services
             _selectionStore = selectionStore;
         }
 
+        public bool IsDisposed => _selectionStore.IsDisposed;
+
         public void Clear()
         {
             _selectionStore.Clear();

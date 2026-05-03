@@ -1,4 +1,4 @@
-.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity c0c-check c0c-check-unity c0d-check c0d-check-unity c0-ui-check db-migrate-up db-migrate-down db-reset db-sqlc
+.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity c0c-check c0c-check-unity c0d-check c0d-check-unity c0e-check c0e-check-unity c0-ui-check db-migrate-up db-migrate-down db-reset db-sqlc
 
 UNITY ?= /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity
 
@@ -70,7 +70,15 @@ c0d-check:
 c0d-check-unity:
 	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Composition.C0dGameSceneCompositionSmokeTests -testResults $(CURDIR)/client/Temp/C0dGameSceneCompositionSmokeResults.xml -logFile -
 
-c0-ui-check: c0b-check c0c-check c0d-check
+c0e-check:
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0e-check-unity
+	git diff --check
+
+c0e-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform PlayMode -testFilter Panoptes.Tests.PlayMode.Composition.C0ePlayModeCompositionBootstrapTests -testResults $(CURDIR)/client/Temp/C0ePlayModeCompositionBootstrapResults.xml -logFile -
+
+c0-ui-check: c0b-check c0c-check c0d-check c0e-check
 
 # Database migrations
 db-migrate-up:

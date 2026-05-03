@@ -32,6 +32,10 @@ namespace Panoptes.Core.Application.App
     {
         public static AppManager Instance { get; private set; }
 
+#if UNITY_INCLUDE_TESTS
+        public static bool SuppressInitialTransitionForTests { get; set; }
+#endif
+
         public AppState State { get; private set; } = AppState.Initializing;
 
         [Header("Config")]
@@ -99,6 +103,12 @@ namespace Panoptes.Core.Application.App
         {
             RegisterGlobalHandlers();
             HydrateStaticCatalogStore(_staticCatalogCache);
+#if UNITY_INCLUDE_TESTS
+            if (SuppressInitialTransitionForTests)
+            {
+                return;
+            }
+#endif
             if (bypassLoginForLocalTest)
             {
                 EnterLocalTestMode();

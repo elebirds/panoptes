@@ -1,0 +1,7 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "client/Assets/Scripts/Tests/PlayMode/Composition/C0ePlayModeCompositionBootstrapTests.cs", "reason": "C0e PlayMode project/game composition smoke coverage"}
+{"file": "Makefile", "reason": "C0e check entry points and c0-ui-check integration"}
+{"file": "docs/2026-05-04-c0e-playmode-composition-bootstrap-smoke-gate.md", "reason": "C0e gate documentation"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ProjectOverlayRegistry.cs", "reason": "Split project overlay registry into a prefab-bindable MonoBehaviour script"}
+{"file": "client/Assets/Resources/Prefabs/Composition/PanoptesProjectComposition.prefab", "reason": "Fixed project composition prefab script GUID bindings"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputStateAdapter.cs", "reason": "Guarded teardown cleanup against disposed reactive stores"}
