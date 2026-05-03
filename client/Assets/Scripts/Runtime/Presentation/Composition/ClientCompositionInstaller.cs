@@ -79,6 +79,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
+            builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();

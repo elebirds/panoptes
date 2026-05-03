@@ -1253,15 +1253,17 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void GameSceneController_ShouldSubscribeGameSyncSettlement_ForTechnologyCompletionToast()
+        public void GameSceneController_ShouldSubscribeSettlementStore_ForTechnologyCompletionToast()
         {
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
             var content = File.ReadAllText(_gameSceneControllerPath);
-            StringAssert.Contains("_cache.OnTurnSettled += OnTurnSettled;", content,
-                "GameSceneController 应订阅结算事件以展示科技完成提示。");
-            StringAssert.Contains("_cache.OnTurnSettled -= OnTurnSettled;", content,
-                "GameSceneController 停用时应取消订阅结算事件。");
+            StringAssert.Contains("SettlementStore", content,
+                "GameSceneController 应通过 SettlementStore 展示科技完成提示。");
+            StringAssert.Contains("_settlementStore?.State.Subscribe", content,
+                "GameSceneController 应订阅结算 Store 状态。");
+            StringAssert.DoesNotContain("OnTurnSettled", content,
+                "GameSceneController 不应再订阅 legacy GameStateCache 结算事件。");
             StringAssert.Contains("technology_completed", content,
                 "GameSceneController 应识别 technology_completed 结算事件。");
             StringAssert.Contains("科技研究完成：", content,
@@ -1288,9 +1290,9 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
             var content = File.ReadAllText(_gameSceneControllerPath);
-            StringAssert.Contains("EnsureComponent<SettlementTimeline>(canvas.transform, \"SettlementTimeline\");", content);
-            StringAssert.Contains("EnsureComponent<TurnReportPanel>(canvas.transform, \"TurnReportPanel\");", content);
-            StringAssert.Contains("EnsureRuntimeComponent<SettlementPlaybackController>(\"SettlementPlaybackController\");", content);
+            StringAssert.Contains("EnsureComponent<ResourceHUD>(canvas.transform, \"ResourcePanel\");", content);
+            StringAssert.DoesNotContain("EnsureRuntimeComponent<SettlementPlaybackController>", content,
+                "Settlement playback 应由 VContainer + 场景实例装配，GameSceneController 不应动态创建。");
             Assert.That(content, Does.Not.Contain("EnsureComponent<StrategicPanel>"),
                 "Game 场景不应再装配 StrategicPanel。");
             Assert.That(content, Does.Not.Contain("EnsureComponent<UnitOrdersPanel>"),
@@ -1547,6 +1549,24 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_settlementPlaybackControllerPath), Is.True, "SettlementPlaybackController.cs 不存在。");
 
             var content = File.ReadAllText(_settlementPlaybackControllerPath);
+            StringAssert.Contains("SettlementStore", content,
+                "结算回放应订阅 SettlementStore。");
+            StringAssert.Contains("MapRenderer _mapRenderer", content,
+                "结算回放应使用注入的 MapRenderer。");
+            StringAssert.Contains("[Inject]", content,
+                "结算回放应由 VContainer 注入依赖。");
+            StringAssert.Contains(".State.Subscribe", content,
+                "结算回放应订阅 Store 状态流。");
+            StringAssert.Contains("state.Sequence", content,
+                "结算回放应按 Store sequence 去重。");
+            StringAssert.DoesNotContain("GameStateCache", content,
+                "结算回放不应直接消费 legacy GameStateCache。");
+            StringAssert.DoesNotContain("OnTurnSettled", content,
+                "结算回放不应订阅 legacy OnTurnSettled。");
+            StringAssert.DoesNotContain("MapRenderer.Instance", content,
+                "结算回放应使用注入的 MapRenderer。");
+            StringAssert.DoesNotContain("EnsureInstance", content,
+                "结算回放不应保留动态创建入口。");
             StringAssert.Contains("case \"city_founded\":", content,
                 "结算回放应消费建城事件。");
             StringAssert.Contains("case \"building_status_changed\":", content,

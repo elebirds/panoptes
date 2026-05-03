@@ -231,8 +231,6 @@ namespace Panoptes.Presentation.Map
                 go.AddComponent<MapPlanningInputController>();
             }
 
-            SettlementPlaybackController.EnsureInstance();
-
             var cameraAnchor = GameObject.Find("CameraAnchor");
             if (cameraAnchor == null)
             {

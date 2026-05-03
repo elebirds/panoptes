@@ -6,12 +6,14 @@
  * Description: Plays unified turn settlement sections in server order.
  *************************************************/
 
+using System;
 using System.Collections;
-using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
 using Panoptes.Presentation.Animation;
+using R3;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.Map
 {
@@ -25,42 +27,37 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
-        private GameStateCache _cache;
+        private SettlementStore _settlementStore;
+        private MapRenderer _mapRenderer;
+        private IDisposable _settlementSubscription;
         private Coroutine _playbackCoroutine;
+        private int _lastHandledSettlementSequence;
 
-        public static SettlementPlaybackController EnsureInstance()
+        [Inject]
+        private void Construct(SettlementStore settlementStore, MapRenderer mapRenderer)
         {
-            var existing = FindAnyObjectByType<SettlementPlaybackController>();
-            if (existing != null)
+            _settlementStore = settlementStore;
+            _mapRenderer = mapRenderer;
+            if (isActiveAndEnabled)
             {
-                return existing;
+                SubscribeSettlement();
             }
-
-            var go = new GameObject("SettlementPlaybackController");
-            return go.AddComponent<SettlementPlaybackController>();
         }
 
         private void Awake()
         {
-            _cache = GameStateCache.Instance;
             EnsureDamagePopupController();
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled += OnTurnSettled;
-            }
+            SubscribeSettlement();
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled -= OnTurnSettled;
-            }
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
 
             if (_playbackCoroutine != null)
             {
@@ -69,9 +66,23 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void OnTurnSettled(TurnSettledEvent evt)
+        private void SubscribeSettlement()
         {
-            if (evt?.Settlement?.Sections == null || evt.Settlement.Sections.Count == 0)
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            OnSettlementChanged(_settlementStore?.Snapshot);
+        }
+
+        private void OnSettlementChanged(SettlementState state)
+        {
+            if (state == null || state.Sequence <= 0 || state.Sequence == _lastHandledSettlementSequence)
+            {
+                return;
+            }
+
+            _lastHandledSettlementSequence = state.Sequence;
+            var settlement = state.Settlement;
+            if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
                 return;
             }
@@ -81,7 +92,7 @@ namespace Panoptes.Presentation.Map
                 StopCoroutine(_playbackCoroutine);
             }
 
-            _playbackCoroutine = StartCoroutine(PlaySettlement(evt.Settlement));
+            _playbackCoroutine = StartCoroutine(PlaySettlement(settlement));
         }
 
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
@@ -164,8 +175,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayConflict(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !TryResolveNodeForEvent(evt, out var node))
+            if (_mapRenderer == null || !TryResolveNodeForEvent(evt, out var node))
             {
                 yield break;
             }
@@ -179,8 +189,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayDamage(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
                 TryPlayAttackerAnimation(evt);
                 TryShowUnitDamagePopupFallback(evt);
@@ -194,8 +203,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayDeath(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
                 TryPlayUnitAttackAnimation(evt.KillerId);
                 TryShowUnitDamagePopupFallback(evt);
@@ -205,7 +213,7 @@ namespace Panoptes.Presentation.Map
             TryPlayUnitAttackAnimation(evt.KillerId);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
-            map.RemoveRuntimeUnit(evt.UnitId, false);
+            _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
         }
 
         private IEnumerator PlayBuildingDamage(TurnEventDto evt)
@@ -224,7 +232,7 @@ namespace Panoptes.Presentation.Map
             node.SetHighlightVisible(false);
         }
 
-        private static bool TryPlayAttackerAnimation(TurnEventDto evt)
+        private bool TryPlayAttackerAnimation(TurnEventDto evt)
         {
             if (evt == null)
             {
@@ -235,15 +243,14 @@ namespace Panoptes.Presentation.Map
                    TryPlayUnitAttackAnimation(ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id"));
         }
 
-        private static bool TryPlayUnitAttackAnimation(string unitId)
+        private bool TryPlayUnitAttackAnimation(string unitId)
         {
             if (string.IsNullOrWhiteSpace(unitId))
             {
                 return false;
             }
 
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(unitId, out var unit) || unit == null)
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(unitId, out var unit) || unit == null)
             {
                 return false;
             }
@@ -369,13 +376,12 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
-            if (map == null)
+            if (_mapRenderer == null)
             {
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(evt.NodeId) && map.TryGetNodeView(evt.NodeId, out var eventNode) && eventNode != null)
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && _mapRenderer.TryGetNodeView(evt.NodeId, out var eventNode) && eventNode != null)
             {
                 position = eventNode.transform.position;
                 return true;
@@ -383,8 +389,8 @@ namespace Panoptes.Presentation.Map
 
             if (HasEventKey(evt, "pos_q") || HasEventKey(evt, "pos_r"))
             {
-                if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var eventNodeId) &&
-                    map.TryGetNodeView(eventNodeId, out eventNode) &&
+                if (_mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var eventNodeId) &&
+                    _mapRenderer.TryGetNodeView(eventNodeId, out eventNode) &&
                     eventNode != null)
                 {
                     position = eventNode.transform.position;
@@ -392,8 +398,10 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            var unit = _cache != null ? _cache.GetUnit(evt.UnitId) : null;
-            if (unit != null && map.TryGetNodeIdByGrid(new Vector2Int(unit.Q, unit.R), out var nodeId) && map.TryGetNodeView(nodeId, out var node) && node != null)
+            if (_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) && unit != null &&
+                _mapRenderer.TryGetNodeIdByGrid(unit.GridPos, out var nodeId) &&
+                _mapRenderer.TryGetNodeView(nodeId, out var node) &&
+                node != null)
             {
                 position = node.transform.position;
                 return true;
@@ -482,23 +490,22 @@ namespace Panoptes.Presentation.Map
             return string.Empty;
         }
 
-        private static bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
+        private bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
         {
             node = null;
-            var map = MapRenderer.Instance;
-            if (map == null || evt == null)
+            if (_mapRenderer == null || evt == null)
             {
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(evt.NodeId) && map.TryGetNodeView(evt.NodeId, out node))
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && _mapRenderer.TryGetNodeView(evt.NodeId, out node))
             {
                 return node != null;
             }
 
-            if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId))
+            if (_mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId))
             {
-                return map.TryGetNodeView(nodeId, out node) && node != null;
+                return _mapRenderer.TryGetNodeView(nodeId, out node) && node != null;
             }
 
             return false;
