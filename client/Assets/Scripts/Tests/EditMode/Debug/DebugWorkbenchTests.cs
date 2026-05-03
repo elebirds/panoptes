@@ -9,6 +9,8 @@ namespace Panoptes.Tests.EditMode.Debug
     public sealed class DebugWorkbenchTests
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _compositionBootstrapPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs");
+        private readonly string _projectCompositionPrefabPath = Path.GetFullPath("Assets/Resources/Prefabs/Composition/PanoptesProjectComposition.prefab");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
         private readonly string _gameChatPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/GameChatPanelController.cs");
         private readonly string _debugPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugPanel.cs");
@@ -111,11 +113,11 @@ namespace Panoptes.Tests.EditMode.Debug
         [Test]
         public void AppManager_ShouldBootstrapDebugPanel_FromManagers()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_compositionBootstrapPath), Is.True, "PanoptesCompositionBootstrap.cs 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<DebugPanel>(managers);", content,
-                "多 Tab DebugPanel 应从 Managers 全局挂载，覆盖 Login/Lobby/Game。");
+            var content = File.ReadAllText(_compositionBootstrapPath);
+            StringAssert.Contains("EnsureOptionalDebugPanel(managers);", content,
+                "多 Tab DebugPanel 应从 Project Composition 根对象挂载，覆盖 Login/Lobby/Game。");
         }
 
         [Test]
@@ -124,7 +126,7 @@ namespace Panoptes.Tests.EditMode.Debug
             Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
             Assert.That(File.Exists(_debugPanelPath), Is.True, "DebugPanel.cs 不存在。");
 
-            var appManagerContent = File.ReadAllText(_appManagerPath);
+            var appManagerContent = File.ReadAllText(_compositionBootstrapPath);
             var debugPanelContent = File.ReadAllText(_debugPanelPath);
 
             StringAssert.Contains("PANOPTES_DEBUG_PANEL", appManagerContent,
@@ -138,22 +140,22 @@ namespace Panoptes.Tests.EditMode.Debug
         [Test]
         public void AppManager_ShouldBootstrapPlanningDraftCache_InsteadOfCombatDraftCache()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_projectCompositionPrefabPath), Is.True, "PanoptesProjectComposition.prefab 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content,
+            var content = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("PlanningDraftCache", content,
                 "Managers 应挂载统一的 PlanningDraftCache。");
-            Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
+            Assert.That(content, Does.Not.Contain("CombatDraftCache"),
                 "客户端不应再挂载旧 CombatDraftCache。");
         }
 
         [Test]
         public void AppManager_ShouldBootstrapGameChatCache()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_projectCompositionPrefabPath), Is.True, "PanoptesProjectComposition.prefab 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<GameChatCache>(managers);", content,
+            var content = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("GameChatCache", content,
                 "Managers 应挂载 GameChatCache，保证 HUD 可以直接订阅聊天流。");
         }
 
