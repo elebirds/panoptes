@@ -16,12 +16,12 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
 
 - 运行时代码架构已经为主要 HUD 和管理面板建立了最终形态的 Store / ViewModel / Binder 切片。
 - 大部分地图、HUD、世界空间 UI 已经有 uGUI prefab 资产。
-- 当前真正手工制作的 UI Toolkit 资产只有 `TurnSummary`。
-- `BuildCatalog`、`TechTree`、`RecipeSynthesis`、`MinisterReport`、`PolicyFocus`、`NationalLedger` 已经有 ViewModel/Binder，但在手工 UI Toolkit prefab 出现前，仍依赖 composition 注册出来的 fallback `UIDocument` 树。
+- 当前已手工制作的 UI Toolkit 管理资产包括 `ManagementHost`、`BuildCatalog`、`RecipeSynthesis`、`TechTree`、`PolicyFocus`、`NationalLedger`；`TurnSummary` 仍是早期试点资产。
+- `BuildCatalog`、`TechTree`、`RecipeSynthesis`、`PolicyFocus`、`NationalLedger` 已经有 ViewModel/Binder 和手工 UI Toolkit prefab；`MinisterReport` 仍依赖 composition 注册出来的 fallback `UIDocument` 树。
 - `RecipeSynthesis` 已经有通向 `PlanningIntentService` 的命令路径。
 - `BuildCatalog` 已经通过 `PlanningToolService` 进入建造放置模式。
-- `TechTree`、`PolicyFocus`、`MinisterReport` 的行状态里已经有操作按钮文案，但 UI Toolkit binder 还没有完整命令接线。
-- `PolicyFocus`、`MinisterReport`、`NationalLedger` 还没有接入 `ManagementPanelVisibilityStore`；当前可见性枚举只覆盖 `TechTree`、`BuildCatalog`、`RecipeSynthesis`。
+- `TechTree`、`PolicyFocus` 已经完成行操作命令接线；`MinisterReport` 的行状态里已有操作按钮文案，但后续接受/拒绝/指令行为尚未定稿。
+- `PolicyFocus`、`NationalLedger` 已经接入 `ManagementPanelVisibilityStore`；`MinisterReport` 尚未作为 C0a 交互面板接入。
 
 ## 已有 UI 资产
 
@@ -102,14 +102,14 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
 
 | 界面 | 技术 | 当前脚本支持 | 展示信息 | 玩家操作 | C0a 状态 |
 |---|---|---|---|---|---|
-| 管理宿主/导航 | UI Toolkit | 只有部分 visibility store | 当前面板、tab/侧边栏、关闭状态 | 打开/关闭/切换面板 | 真正做 C0a 面板前必须先做 |
-| 回合摘要 | UI Toolkit | `TurnSummaryViewModel`、`TurnSummaryUiToolkitBinder`、已有 UXML/USS | 回合、阶段、令牌、可见节点、已知单位、最近 planning-start 事件 | 只读 | 试点已存在；适合做第一个验证界面 |
-| 国家概览 | UI Toolkit | 可从 `NationalLedgerViewModel` 派生，或新增聚焦 ViewModel | 简明状态：回合、阶段、资源、单位、城市、当前国策/研究 | 初期只读 | 推荐作为 C0a 第一个产品切片 |
-| 国家账本 | UI Toolkit | `NationalLedgerViewModel`、`NationalLedgerUiToolkitBinder` | 总览计数、资源、目录数量 | 只读 | 脚本已有；缺手工资产和可见性 |
-| 建筑目录 | UI Toolkit | `BuildCatalogViewModel`、`BuildCatalogUiToolkitBinder` | 建筑分组、名称、描述、放置类型、pending 状态 | 选择建筑，进入地图放置模式 | 脚本已有；缺手工资产 |
-| 科技树 | UI Toolkit | `TechTreeViewModel`、`TechTreeUiToolkitBinder` | 分支、阶级、成本、描述、计划研究状态 | 设置研究目标 | 缺手工资产和命令接线 |
-| 配方合成/生产 | UI Toolkit | `RecipeSynthesisViewModel`、`RecipeSynthesisUiToolkitBinder` | 选中建筑的配方、工作量/基础进度、预览/选中状态 | 设置建筑配方 | 脚本和命令路径已有；缺手工资产 |
-| 政策/国策 | UI Toolkit | `PolicyFocusViewModel`、`PolicyFocusUiToolkitBinder` | 国策选项、制度政策、激活时机、计划状态 | 采用国策、设置制度 loadout | 缺可见性和命令接线 |
+| 管理宿主/导航 | UI Toolkit | `ManagementHostUiToolkitBinder`、`NationalOverviewViewModel`、`Prefabs/UI/ManagementHost` | 当前面板、概览、共享面板入口、关闭状态 | 打开/关闭/切换面板 | C0a 已完成 |
+| 回合摘要 | UI Toolkit | `TurnSummaryViewModel`、`TurnSummaryUiToolkitBinder`、已有 UXML/USS | 回合、阶段、令牌、可见节点、已知单位、最近 planning-start 事件 | 只读 | 试点已存在；后续可整合进管理宿主 |
+| 国家概览 | UI Toolkit | `NationalOverviewViewModel`、`ManagementHostUiToolkitBinder`、`Prefabs/UI/ManagementHost` | 简明状态：回合、阶段、资源、单位、城市、当前国策/研究 | 初期只读 | C0a 已完成 |
+| 国家账本 | UI Toolkit | `NationalLedgerViewModel`、`NationalLedgerUiToolkitBinder`、`Prefabs/UI/NationalLedger` | 总览计数、资源、目录数量 | 只读 | C0a 已完成：手工资产、prefab composition、可见性 |
+| 建筑目录 | UI Toolkit | `BuildCatalogViewModel`、`BuildCatalogUiToolkitBinder`、`Prefabs/UI/BuildCatalog` | 建筑分组、名称、描述、放置类型、pending 状态 | 选择建筑，进入地图放置模式 | C0a 已完成：手工资产和命令路径 |
+| 科技树 | UI Toolkit | `TechTreeViewModel`、`TechTreeUiToolkitBinder`、`Prefabs/UI/TechTree` | 分支、阶级、成本、描述、计划研究状态 | 设置研究目标 | C0a 已完成：手工资产和命令接线 |
+| 配方合成/生产 | UI Toolkit | `RecipeSynthesisViewModel`、`RecipeSynthesisUiToolkitBinder`、`Prefabs/UI/RecipeSynthesis` | 选中建筑的配方、工作量/基础进度、预览/选中状态 | 设置建筑配方 | C0a 已完成：手工资产和命令路径 |
+| 政策/国策 | UI Toolkit | `PolicyFocusViewModel`、`PolicyFocusUiToolkitBinder`、`Prefabs/UI/PolicyFocus` | 国策选项、制度政策、激活时机、计划状态 | 采用国策、设置制度 loadout | C0a 已完成：手工资产、可见性、命令接线 |
 | 大臣报告 | UI Toolkit | `MinisterReportViewModel`、`MinisterReportUiToolkitBinder` | 按角色分组的大臣草案、摘要、理由、状态 | 审阅；后续接受/拒绝/指令 | C0a 可先只读或隐藏 |
 | 回合报告/结算复盘 | 长期可用 UI Toolkit；当前已有 uGUI | uGUI `TurnReportPanel`、`SettlementTimeline`；UI Toolkit `TurnSummary` | 结算计数、事件、警告、生产/建造结果 | 只读 | C0a 可保留现有 uGUI，后续再整合 |
 
@@ -132,13 +132,13 @@ Store / Service -> ViewModel -> Binder -> 手工制作的 uGUI prefab 或 UI Too
    - C0a 仍需要一个稳定的全局入口，用于 `NationalOverview`、`NationalLedger`、`PolicyFocus`，以及后续 `MinisterReport`。
 
 4. 扩展 `ManagementPanelVisibilityStore`。
-   - 当前枚举：`TechTree`、`BuildCatalog`、`RecipeSynthesis`。
-   - 需要新增：`TurnSummary`、`NationalOverview`、`NationalLedger`、`PolicyFocus`，以及可选的 `MinisterReport`。
+   - 已完成：`TurnSummary`、`NationalOverview`、`NationalLedger`、`PolicyFocus` 已纳入管理面板可见性。
+   - 后续可选：`MinisterReport` 需要等大臣报告产品行为定稿后再纳入。
 
 5. 接上缺失的行操作命令。
-   - `TechTree`：行操作应调用 `GameIntentService.SetResearchTarget`。
-   - `PolicyFocus`：national 行应调用 `GameIntentService.SetPolicy`；institution 行在调用 `SetInstitutionLoadout` 前，需要先明确 loadout 交互方式。
-   - `MinisterReport`：目前建议只读；接受/拒绝应等大臣产品需求重新打开后再做。
+   - 已完成：`TechTree` 行操作调用 `GameIntentService.SetResearchTarget`。
+   - 已完成：`PolicyFocus` national 行调用 `GameIntentService.SetPolicy`，institution 行调用 `GameIntentService.SetInstitutionLoadout`。
+   - 后续：`MinisterReport` 目前建议只读或隐藏；接受/拒绝应等大臣产品需求重新打开后再做。
 
 ### 第一段 C0a 不需要做
 

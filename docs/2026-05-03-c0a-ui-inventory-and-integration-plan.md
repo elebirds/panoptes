@@ -21,19 +21,21 @@ cleanup or rely on generated fallback UI.
 - The runtime script architecture has final Store/ViewModel/Binder slices for
   the major HUD and management panels.
 - uGUI prefab assets already exist for most map/HUD/world-space surfaces.
-- UI Toolkit authored assets currently exist only for `TurnSummary`.
-- `BuildCatalog`, `TechTree`, `RecipeSynthesis`, `MinisterReport`,
-  `PolicyFocus`, and `NationalLedger` have ViewModel/Binder slices, but still
-  rely on fallback `UIDocument` trees registered by composition until authored
-  UI Toolkit prefabs exist.
+- UI Toolkit authored assets now exist for `TurnSummary`, `ManagementHost`,
+  `BuildCatalog`, `RecipeSynthesis`, `TechTree`, `PolicyFocus`, and
+  `NationalLedger`.
+- `BuildCatalog`, `TechTree`, `RecipeSynthesis`, `PolicyFocus`, and
+  `NationalLedger` have ViewModel/Binder slices and authored UI Toolkit
+  prefabs. `MinisterReport` still relies on a fallback `UIDocument` tree
+  registered by composition until its product behavior is reopened.
 - `RecipeSynthesis` already has a command path to `PlanningIntentService`.
 - `BuildCatalog` enters build placement through `PlanningToolService`.
-- `TechTree`, `PolicyFocus`, and `MinisterReport` expose action labels in row
-  state, but do not yet have complete command wiring in their UI Toolkit
-  binders.
-- `PolicyFocus`, `MinisterReport`, and `NationalLedger` do not yet participate
-  in `ManagementPanelVisibilityStore`; the visibility enum currently covers
-  only `TechTree`, `BuildCatalog`, and `RecipeSynthesis`.
+- `TechTree` and `PolicyFocus` now have complete C0a command wiring.
+  `MinisterReport` exposes action labels in row state, but accept/reject/direct
+  behavior is intentionally later-scope.
+- `PolicyFocus` and `NationalLedger` now participate in
+  `ManagementPanelVisibilityStore`; `MinisterReport` is not yet a C0a
+  interactive management panel.
 
 ## Existing UI Assets
 
@@ -117,14 +119,14 @@ UI Toolkit, with authored UXML/USS and explicit binders.
 
 | Surface | Technology | Current script support | Information displayed | Player operations | C0a status |
 |---|---|---|---|---|---|
-| Management host / navigation | UI Toolkit | Partial visibility store only | active panel, tabs/sidebar, close state | open/close/switch panels | Must build before real C0a panel work |
-| Turn summary | UI Toolkit | `TurnSummaryViewModel`, `TurnSummaryUiToolkitBinder`, authored UXML/USS | turn, phase, tokens, visible nodes, known units, recent planning-start events | read-only | Pilot exists; good first validation surface |
-| National overview | UI Toolkit | can be derived from `NationalLedgerViewModel` or a new focused ViewModel | compact state: turn, phase, resources, units, cities, active focus/research | read-only initially | Recommended C0a first product slice |
-| National ledger | UI Toolkit | `NationalLedgerViewModel`, `NationalLedgerUiToolkitBinder` | overview counters, resources, catalog counts | read-only | Script exists; needs authored asset and visibility |
-| Build catalog | UI Toolkit | `BuildCatalogViewModel`, `BuildCatalogUiToolkitBinder` | building groups, names, descriptions, placement kind, pending state | choose building, enter map placement mode | Script exists; needs authored asset |
-| Tech tree | UI Toolkit | `TechTreeViewModel`, `TechTreeUiToolkitBinder` | branch, tier, cost, description, planned research state | set research target | Needs authored asset and command wiring |
-| Recipe synthesis | UI Toolkit | `RecipeSynthesisViewModel`, `RecipeSynthesisUiToolkitBinder` | recipes for selected building, work/base progress, preview/selected state | set building recipe | Script and command path exist; needs authored asset |
-| Policy / national focus | UI Toolkit | `PolicyFocusViewModel`, `PolicyFocusUiToolkitBinder` | national focus options, institution policies, activation timing, planned state | adopt national focus, set institution loadout | Needs visibility and command wiring |
+| Management host / navigation | UI Toolkit | `ManagementHostUiToolkitBinder`, `NationalOverviewViewModel`, `Prefabs/UI/ManagementHost` | active panel, overview, shared panel entries, close state | open/close/switch panels | C0a complete |
+| Turn summary | UI Toolkit | `TurnSummaryViewModel`, `TurnSummaryUiToolkitBinder`, authored UXML/USS | turn, phase, tokens, visible nodes, known units, recent planning-start events | read-only | Pilot exists; later can be integrated into management host |
+| National overview | UI Toolkit | `NationalOverviewViewModel`, `ManagementHostUiToolkitBinder`, `Prefabs/UI/ManagementHost` | compact state: turn, phase, resources, units, cities, active focus/research | read-only initially | C0a complete |
+| National ledger | UI Toolkit | `NationalLedgerViewModel`, `NationalLedgerUiToolkitBinder`, `Prefabs/UI/NationalLedger` | overview counters, resources, catalog counts | read-only | C0a complete: authored asset, prefab composition, visibility |
+| Build catalog | UI Toolkit | `BuildCatalogViewModel`, `BuildCatalogUiToolkitBinder`, `Prefabs/UI/BuildCatalog` | building groups, names, descriptions, placement kind, pending state | choose building, enter map placement mode | C0a complete: authored asset and command path |
+| Tech tree | UI Toolkit | `TechTreeViewModel`, `TechTreeUiToolkitBinder`, `Prefabs/UI/TechTree` | branch, tier, cost, description, planned research state | set research target | C0a complete: authored asset and command wiring |
+| Recipe synthesis | UI Toolkit | `RecipeSynthesisViewModel`, `RecipeSynthesisUiToolkitBinder`, `Prefabs/UI/RecipeSynthesis` | recipes for selected building, work/base progress, preview/selected state | set building recipe | C0a complete: authored asset and command path |
+| Policy / national focus | UI Toolkit | `PolicyFocusViewModel`, `PolicyFocusUiToolkitBinder`, `Prefabs/UI/PolicyFocus` | national focus options, institution policies, activation timing, planned state | adopt national focus, set institution loadout | C0a complete: authored asset, visibility, command wiring |
 | Minister report | UI Toolkit | `MinisterReportViewModel`, `MinisterReportUiToolkitBinder` | minister drafts grouped by role, summary/rationale/status | review; later accept/reject/direct | Keep read-only or hidden for C0a unless needed |
 | Turn report / settlement review | UI Toolkit long-term, uGUI existing now | uGUI `TurnReportPanel`, `SettlementTimeline`; UI Toolkit `TurnSummary` | settlement counts, events, warnings, production/build results | read-only | C0a can keep existing uGUI; later consolidate |
 
@@ -151,17 +153,17 @@ UI Toolkit, with authored UXML/USS and explicit binders.
      `NationalLedger`, `PolicyFocus`, and later `MinisterReport`.
 
 4. Extend `ManagementPanelVisibilityStore`.
-   - Current enum: `TechTree`, `BuildCatalog`, `RecipeSynthesis`.
-   - Needed: `TurnSummary`, `NationalOverview`, `NationalLedger`,
-     `PolicyFocus`, and optionally `MinisterReport`.
+   - Done: `TurnSummary`, `NationalOverview`, `NationalLedger`, and
+     `PolicyFocus` now participate in management panel visibility.
+   - Later optional: `MinisterReport` should wait until minister report product
+     behavior is reopened.
 
 5. Wire missing row commands.
-   - `TechTree`: row action should call `GameIntentService.SetResearchTarget`.
-   - `PolicyFocus`: national rows should call `GameIntentService.SetPolicy`;
-     institution rows need a clear loadout interaction before calling
-     `SetInstitutionLoadout`.
-   - `MinisterReport`: for now likely read-only; accept/reject should wait
-     until minister product requirements are reopened.
+   - Done: `TechTree` row action calls `GameIntentService.SetResearchTarget`.
+   - Done: `PolicyFocus` national rows call `GameIntentService.SetPolicy`;
+     institution rows call `GameIntentService.SetInstitutionLoadout`.
+   - Later: `MinisterReport` is likely read-only or hidden for now;
+     accept/reject should wait until minister product requirements are reopened.
 
 ### Not required for first C0a slice
 
@@ -340,4 +342,3 @@ more command-heavy panels.
 - [x] Each surface lists information displayed and player operations.
 - [x] C0a order is explicit.
 - [x] Known current gaps are captured.
-
