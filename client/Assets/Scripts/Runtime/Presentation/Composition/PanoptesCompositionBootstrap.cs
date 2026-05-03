@@ -1,10 +1,23 @@
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
+using Panoptes.Presentation.UI.Common;
 using UnityEngine;
 
 namespace Panoptes.Presentation.Composition
 {
+    public sealed class ProjectOverlayRegistry : MonoBehaviour
+    {
+        public ErrorToast ErrorToast { get; private set; }
+        public ConfirmDialog ConfirmDialog { get; private set; }
+
+        public void Configure(ErrorToast errorToast, ConfirmDialog confirmDialog)
+        {
+            ErrorToast = errorToast;
+            ConfirmDialog = confirmDialog;
+        }
+    }
+
     public static class PanoptesCompositionBootstrap
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -21,15 +34,40 @@ namespace Panoptes.Presentation.Composition
             EnsureComponent<NetworkManager>(managers);
             EnsureComponent<MessageDispatcher>(managers);
             EnsureComponent<SessionManager>(managers);
+            var overlays = EnsureComponent<ProjectOverlayRegistry>(managers);
+            overlays.Configure(
+                EnsureProjectOverlay<ErrorToast>("ErrorToast", "Prefabs/UI/ErrorToast"),
+                EnsureProjectOverlay<ConfirmDialog>("ConfirmDialog", "Prefabs/UI/ConfirmDialog"));
             EnsureComponent<ProjectLifetimeScope>(managers);
         }
 
-        private static void EnsureComponent<T>(GameObject owner) where T : Component
+        private static T EnsureComponent<T>(GameObject owner) where T : Component
         {
-            if (owner.GetComponent<T>() == null)
+            var component = owner.GetComponent<T>();
+            return component != null ? component : owner.AddComponent<T>();
+        }
+
+        private static T EnsureProjectOverlay<T>(string objectName, string resourcePath) where T : Component
+        {
+            var instance = Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
+            if (instance != null)
             {
-                owner.AddComponent<T>();
+                return instance;
             }
+
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[Composition] Missing overlay prefab at Resources/{resourcePath}.prefab");
+                return null;
+            }
+
+            var overlayObject = Object.Instantiate(prefab);
+            overlayObject.name = objectName;
+            overlayObject.transform.SetParent(null, false);
+            overlayObject.transform.localScale = Vector3.one;
+            Object.DontDestroyOnLoad(overlayObject);
+            return overlayObject.GetComponent<T>();
         }
     }
 }

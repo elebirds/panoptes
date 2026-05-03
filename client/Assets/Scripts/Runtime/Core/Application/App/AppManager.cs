@@ -74,8 +74,6 @@ namespace Panoptes.Core.Application.App
             EnsureComponent<DebugPanel>(managers);
 #endif
             EnsureOptionalLoadingOverlay(managers);
-            EnsureOptionalErrorToast(managers);
-            EnsureOptionalConfirmDialog(managers);
         }
 
         private static void EnsureComponent<T>(GameObject owner) where T : Component
@@ -95,46 +93,6 @@ namespace Panoptes.Core.Application.App
             }
 
             owner.AddComponent(overlayType);
-        }
-
-        private static void EnsureOptionalErrorToast(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ErrorToast, Panoptes.Presentation");
-            EnsureOptionalOverlayPrefab(owner, overlayType, "ErrorToast", "Prefabs/UI/ErrorToast");
-        }
-
-        private static void EnsureOptionalConfirmDialog(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ConfirmDialog, Panoptes.Presentation");
-            EnsureOptionalOverlayPrefab(owner, overlayType, "ConfirmDialog", "Prefabs/UI/ConfirmDialog");
-        }
-
-        // LoadingOverlay 直接挂在 Managers 上，因此其他通用弹层必须作为独立根对象存在，
-        // 否则会被 Managers 上的 CanvasGroup 一起隐藏。
-        private static void EnsureOptionalOverlayPrefab(GameObject owner, Type overlayType, string objectName, string resourcePath)
-        {
-            if (overlayType == null || owner == null)
-            {
-                return;
-            }
-
-            var existing = GameObject.Find(objectName);
-            if (existing != null && existing.GetComponent(overlayType) != null)
-            {
-                return;
-            }
-
-            var prefab = Resources.Load<GameObject>(resourcePath);
-            if (prefab == null)
-            {
-                Debug.LogError($"[AppManager] Missing overlay prefab at Resources/{resourcePath}.prefab");
-                return;
-            }
-
-            var overlayObject = UnityEngine.Object.Instantiate(prefab);
-            overlayObject.name = objectName;
-            overlayObject.transform.SetParent(null, false);
-            overlayObject.transform.localScale = Vector3.one;
         }
 
         void Awake()

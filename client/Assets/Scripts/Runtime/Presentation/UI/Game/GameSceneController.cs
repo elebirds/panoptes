@@ -23,6 +23,7 @@ namespace Panoptes.Presentation.UI.Game
         private GameOverStore _gameOverStore;
         private GameplayFeedbackStore _feedbackStore;
         private StaticCatalogStore _staticCatalogStore;
+        private ErrorToast _errorToast;
         private IDisposable _gameStateSubscription;
         private IDisposable _settlementSubscription;
         private IDisposable _gameOverSubscription;
@@ -34,13 +35,15 @@ namespace Panoptes.Presentation.UI.Game
             SettlementStore settlementStore,
             GameOverStore gameOverStore,
             GameplayFeedbackStore feedbackStore,
-            StaticCatalogStore staticCatalogStore)
+            StaticCatalogStore staticCatalogStore,
+            ErrorToast errorToast)
         {
             _gameStateStore = gameStateStore;
             _settlementStore = settlementStore;
             _gameOverStore = gameOverStore;
             _feedbackStore = feedbackStore;
             _staticCatalogStore = staticCatalogStore;
+            _errorToast = errorToast;
         }
 
         private void Awake()
@@ -277,11 +280,11 @@ namespace Panoptes.Presentation.UI.Game
             return string.Empty;
         }
 
-        private static void ShowToast(string message, bool success)
+        private void ShowToast(string message, bool success)
         {
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, success);
+                _errorToast.Show(message, success);
                 return;
             }
 
