@@ -78,6 +78,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
+            builder.RegisterComponentInHierarchy<MapRenderer>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
@@ -85,6 +86,8 @@ namespace Panoptes.Presentation.Composition
             RegisterRuntimeSceneComponent<TokenHUD>(builder, "TokenHUD");
             RegisterRuntimeSceneComponent<ResourceHUD>(builder, "ResourcePanel");
             RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
+            RegisterRuntimeSceneComponent<CityCoreHpBarOverlayController>(builder, "CityCoreHpBarOverlayController");
+            RegisterRuntimeSceneComponent<BuildingConstructionOverlayController>(builder, "BuildingConstructionOverlayController");
             RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
             RegisterRuntimeSceneComponent<SettlementTimeline>(builder, "SettlementTimeline");
             RegisterRuntimeSceneComponent<TurnReportPanel>(builder, "TurnReportPanel");

@@ -246,6 +246,49 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void HudOverlayControllers_ShouldBeFinalPathOwnedByComposition()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/BuildingConstructionOverlayController.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                "MapRenderer.Instance",
+                "MapPlanningInputController.Instance");
+
+            Assert.That(offenders, Is.Empty, "HUD overlay controllers must consume final Stores and injected MapRenderer instead of legacy singleton/cache paths.");
+
+            var cityOverlay = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs"));
+            var constructionOverlay = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/BuildingConstructionOverlayController.cs"));
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var mapRenderer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"));
+
+            Assert.That(cityOverlay, Does.Contain("GameStateStore"));
+            Assert.That(cityOverlay, Does.Contain("MapRenderer"));
+            Assert.That(cityOverlay, Does.Contain("[Inject]"));
+            Assert.That(constructionOverlay, Does.Contain("GameStateStore"));
+            Assert.That(constructionOverlay, Does.Contain("PlanningDraftStore"));
+            Assert.That(constructionOverlay, Does.Contain("MapRenderer"));
+            Assert.That(constructionOverlay, Does.Contain("[Inject]"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<CityCoreHpBarOverlayController>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<BuildingConstructionOverlayController>"));
+            Assert.That(mapRenderer, Does.Not.Contain("AddComponent<CityCoreHpBarOverlayController>"));
+            Assert.That(mapRenderer, Does.Not.Contain("AddComponent<BuildingConstructionOverlayController>"));
+            Assert.That(mapRenderer, Does.Not.Contain("FindAnyObjectByType<CityCoreHpBarOverlayController>"));
+            Assert.That(mapRenderer, Does.Not.Contain("FindAnyObjectByType<BuildingConstructionOverlayController>"));
+        }
+
+        [Test]
         public void TechTreeUiToolkitSlice_ShouldUseViewModelVisibilityStoreAndNoLegacyPanel()
         {
             Assert.That(
