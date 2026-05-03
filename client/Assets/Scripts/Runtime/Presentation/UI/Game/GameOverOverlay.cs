@@ -3,7 +3,7 @@
  * File: GameOverOverlay.cs
  * Author: Panoptes Team
  * Date: 2026-04-13
- * Description: End-of-game overlay (prefab-first with runtime fallback).
+ * Description: End-of-game overlay bound to the authored overlay prefab.
  *************************************************/
 
 using System;
@@ -22,6 +22,9 @@ using UnityEditor.SceneManagement;
 
 namespace Panoptes.Presentation.UI.Game
 {
+    [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(CanvasScaler))]
+    [RequireComponent(typeof(GraphicRaycaster))]
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class GameOverOverlay : MonoBehaviour
     {
