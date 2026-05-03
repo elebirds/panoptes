@@ -13,6 +13,7 @@ namespace Panoptes.Tests.EditMode.UI
     {
         private const string ErrorToastRuntimePath = "Assets/Resources/Prefabs/UI/ErrorToast.prefab";
         private const string ConfirmDialogRuntimePath = "Assets/Resources/Prefabs/UI/ConfirmDialog.prefab";
+        private const string CompositionBootstrapType = "Panoptes.Presentation.Composition.PanoptesCompositionBootstrap, Panoptes.Presentation";
 
         [TearDown]
         public void TearDown()
@@ -186,14 +187,8 @@ namespace Panoptes.Tests.EditMode.UI
                 managers.hideFlags = HideFlags.HideAndDontSave;
                 managers.AddComponent<CanvasGroup>().alpha = 0f;
 
-                InvokePrivateStaticMethod(
-                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
-                    "EnsureOptionalErrorToast",
-                    managers);
-                InvokePrivateStaticMethod(
-                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
-                    "EnsureOptionalConfirmDialog",
-                    managers);
+                InvokeProjectOverlayBootstrap<ErrorToast>("ErrorToast", "Prefabs/UI/ErrorToast");
+                InvokeProjectOverlayBootstrap<ConfirmDialog>("ConfirmDialog", "Prefabs/UI/ConfirmDialog");
 
                 var toastObject = GameObject.Find("ErrorToast");
                 var dialogObject = GameObject.Find("ConfirmDialog");
@@ -245,6 +240,17 @@ namespace Panoptes.Tests.EditMode.UI
             var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null, $"{typeName} 缺少私有静态方法 {methodName}。");
             return method.Invoke(null, args);
+        }
+
+        private static void InvokeProjectOverlayBootstrap<T>(string objectName, string resourcePath) where T : Component
+        {
+            var type = Type.GetType(CompositionBootstrapType);
+            Assert.That(type, Is.Not.Null, $"{CompositionBootstrapType} 类型不存在。");
+
+            var method = type.GetMethod("EnsureProjectOverlay", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"{CompositionBootstrapType} 缺少私有静态方法 EnsureProjectOverlay。");
+            var overlay = method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { objectName, resourcePath });
+            Assert.That(overlay, Is.Not.Null);
         }
 
         private static void InvokeLifecycle(Component component, string methodName)

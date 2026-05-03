@@ -9,6 +9,7 @@ using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.Animation;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
+using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Turn;
@@ -26,7 +27,9 @@ namespace Panoptes.Presentation.Composition
             NetworkManager networkManager,
             MessageDispatcher messageDispatcher,
             SessionManager sessionManager,
-            ConfigCache configCache)
+            ConfigCache configCache,
+            ErrorToast errorToast,
+            ConfirmDialog confirmDialog)
         {
             if (appManager == null)
             {
@@ -53,11 +56,23 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(configCache));
             }
 
+            if (errorToast == null)
+            {
+                throw new ArgumentNullException(nameof(errorToast));
+            }
+
+            if (confirmDialog == null)
+            {
+                throw new ArgumentNullException(nameof(confirmDialog));
+            }
+
             builder.RegisterComponent(appManager).AsSelf();
             builder.RegisterComponent(networkManager).AsSelf();
             builder.RegisterComponent(messageDispatcher).AsSelf();
             builder.RegisterComponent(sessionManager).AsSelf();
             builder.RegisterComponent(configCache).AsSelf();
+            builder.RegisterComponent(errorToast).AsSelf();
+            builder.RegisterComponent(confirmDialog).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
             builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();

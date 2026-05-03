@@ -150,6 +150,7 @@ namespace Panoptes.Presentation.Map
         private PlanningDraftStore _planningDraftStore;
         private SettlementStore _settlementStore;
         private GameplayFeedbackStore _feedbackStore;
+        private ErrorToast _errorToast;
         private IDisposable _gameStateSubscription;
         private IDisposable _planningDraftSubscription;
         private IDisposable _settlementSubscription;
@@ -189,7 +190,8 @@ namespace Panoptes.Presentation.Map
             GameStateStore gameStateStore,
             PlanningDraftStore planningDraftStore,
             SettlementStore settlementStore,
-            GameplayFeedbackStore feedbackStore)
+            GameplayFeedbackStore feedbackStore,
+            ErrorToast errorToast)
         {
             _planningIntentService = planningIntentService;
             _animationQueue = animationQueue;
@@ -204,6 +206,7 @@ namespace Panoptes.Presentation.Map
             _planningDraftStore = planningDraftStore;
             _settlementStore = settlementStore;
             _feedbackStore = feedbackStore;
+            _errorToast = errorToast;
             _inputState.Configure(planningToolService, selectionService, planningToolViewModel);
             if (isActiveAndEnabled)
             {
@@ -2219,16 +2222,16 @@ namespace Panoptes.Presentation.Map
             return TerritoryDeployInputMode.IsTerritoryExpansionUnitType(unitType, territoryExpansionUnitTypes);
         }
 
-        private static void ShowUserError(string message)
+        private void ShowUserError(string message)
         {
             if (string.IsNullOrWhiteSpace(message))
             {
                 return;
             }
 
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, false);
+                _errorToast.Show(message, false);
                 return;
             }
 

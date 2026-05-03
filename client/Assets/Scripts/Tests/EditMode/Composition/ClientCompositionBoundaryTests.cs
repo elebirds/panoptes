@@ -328,10 +328,33 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(mapRenderer, Does.Contain("AppManager appManager"));
             Assert.That(mapRenderer, Does.Contain("ConfigCache configCache"));
             Assert.That(mapRenderer, Does.Contain("UnitCache unitCache"));
+            Assert.That(mapRenderer, Does.Contain("ErrorToast errorToast"));
             Assert.That(mapRenderer, Does.Contain("[Inject]"));
             Assert.That(mapRenderer, Does.Contain(".State.Subscribe"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
             Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<UnitCache>"));
+        }
+
+        [Test]
+        public void GameMapToastCallers_ShouldUseInjectedProjectOverlay()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs")
+            };
+
+            var offenders = FindTokenOffenders(roots, "*.cs", "ErrorToast.Instance");
+
+            Assert.That(offenders, Is.Empty, "Game/Map presentation code must receive ErrorToast from Project scope instead of global singleton lookup.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var projectScope = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ProjectLifetimeScope.cs"));
+            var bootstrap = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs"));
+            Assert.That(installer, Does.Contain("RegisterComponent(errorToast)"));
+            Assert.That(projectScope, Does.Contain("ProjectOverlayRegistry"));
+            Assert.That(bootstrap, Does.Contain("EnsureProjectOverlay<ErrorToast>"));
         }
 
         [Test]

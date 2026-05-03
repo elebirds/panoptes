@@ -101,6 +101,7 @@ namespace Panoptes.Presentation.Map
         private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
         private UnitCache _unitCache;
+        private ErrorToast _errorToast;
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
         private IDisposable _staticCatalogSubscription;
@@ -122,13 +123,15 @@ namespace Panoptes.Presentation.Map
             StaticCatalogStore staticCatalogStore,
             AppManager appManager,
             ConfigCache configCache,
-            UnitCache unitCache)
+            UnitCache unitCache,
+            ErrorToast errorToast)
         {
             _gameStateStore = gameStateStore;
             _staticCatalogStore = staticCatalogStore;
             _appManager = appManager;
             _configCache = configCache;
             _unitCache = unitCache;
+            _errorToast = errorToast;
             _latestGameState = _gameStateStore?.Snapshot ?? new GameStateStoreState();
             if (isActiveAndEnabled)
             {
@@ -509,9 +512,9 @@ namespace Panoptes.Presentation.Map
                 : message.Trim();
             Debug.LogError($"[MapRenderer] {resolvedMessage}");
 
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(resolvedMessage, false);
+                _errorToast.Show(resolvedMessage, false);
             }
         }
 

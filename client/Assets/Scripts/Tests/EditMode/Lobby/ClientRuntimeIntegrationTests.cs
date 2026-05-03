@@ -18,6 +18,7 @@ namespace Panoptes.Tests.EditMode.Lobby
     public sealed class ClientRuntimeIntegrationTests
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _compositionBootstrapPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs");
         private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Service/LobbyService.cs");
         private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
         private readonly string _lobbyPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbyPanelController.cs");
@@ -861,13 +862,19 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
                 "Managers 不应再挂载 CombatDraftCache。");
             StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
-            StringAssert.Contains("EnsureOptionalErrorToast(managers);", content);
-            StringAssert.Contains("EnsureOptionalConfirmDialog(managers);", content);
-            StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", content,
+            Assert.That(content, Does.Not.Contain("EnsureOptionalErrorToast(managers);"),
+                "ErrorToast 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
+            Assert.That(content, Does.Not.Contain("EnsureOptionalConfirmDialog(managers);"),
+                "ConfirmDialog 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
+
+            var compositionBootstrap = File.ReadAllText(_compositionBootstrapPath);
+            StringAssert.Contains("EnsureProjectOverlay<ErrorToast>(\"ErrorToast\", \"Prefabs/UI/ErrorToast\")", compositionBootstrap);
+            StringAssert.Contains("EnsureProjectOverlay<ConfirmDialog>(\"ConfirmDialog\", \"Prefabs/UI/ConfirmDialog\")", compositionBootstrap);
+            StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", compositionBootstrap,
                 "通用弹层应优先从 prefab 资源实例化，而不是继续直接挂在 Managers 上。");
-            StringAssert.Contains("Instantiate(prefab)", content,
+            StringAssert.Contains("Object.Instantiate(prefab)", compositionBootstrap,
                 "通用弹层应生成为独立根对象，而不是继续复用 Managers 树。");
-            StringAssert.Contains("overlayObject.transform.SetParent(null, false);", content,
+            StringAssert.Contains("overlayObject.transform.SetParent(null, false);", compositionBootstrap,
                 "通用弹层必须与 Managers 脱离父子关系，避开 LoadingOverlay 的 CanvasGroup。");
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
             StringAssert.Contains("Register<MsgConfigBatchJson>(\"MsgConfigBatchJson\", OnConfigBatchJson)", content);
