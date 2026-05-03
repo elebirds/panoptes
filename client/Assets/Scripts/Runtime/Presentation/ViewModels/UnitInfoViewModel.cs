@@ -115,7 +115,7 @@ namespace Panoptes.Presentation.ViewModels
             var game = _gameStateStore.Snapshot;
             var catalog = _staticCatalogStore.Snapshot;
             var planning = _planningDraftStore.Snapshot;
-            var selected = ResolveSelectedUnit(selectedId, game);
+            var selected = ResolveSelectedUnit(selectedId, game, catalog);
             if (!selected.HasSelection)
             {
                 return new UnitInfoState(actionLocked: _actionLocked);
@@ -153,7 +153,10 @@ namespace Panoptes.Presentation.ViewModels
                 actionLocked: _actionLocked);
         }
 
-        private static SelectedUnitProjection ResolveSelectedUnit(string selectedId, GameStateStoreState game)
+        private static SelectedUnitProjection ResolveSelectedUnit(
+            string selectedId,
+            GameStateStoreState game,
+            StaticCatalogState catalog)
         {
             if (game?.Units != null &&
                 game.Units.TryGetValue(selectedId, out var unit) &&
@@ -177,7 +180,7 @@ namespace Panoptes.Presentation.ViewModels
                 var type = !string.IsNullOrWhiteSpace(node.BuildingType) ? node.BuildingType : node.ResourceType;
                 var owner = !string.IsNullOrWhiteSpace(node.Owner) ? node.Owner : node.TerritoryOwner;
                 var hp = node.BuildingHp > 0 ? node.BuildingHp : 1;
-                var maxHp = Math.Max(1, Math.Max(node.BuildingMaxHp, hp));
+                var maxHp = ResolveBuildingMaxHp(node, type, hp, catalog);
                 return new SelectedUnitProjection(
                     true,
                     selectedId,
@@ -189,6 +192,31 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return default;
+        }
+
+        private static int ResolveBuildingMaxHp(
+            NodeDto node,
+            string buildingType,
+            int hp,
+            StaticCatalogState catalog)
+        {
+            if (node == null || node.IsResourcePoint)
+            {
+                return Math.Max(1, hp);
+            }
+
+            var maxHp = node.BuildingMaxHp;
+            var normalizedType = NormalizeToken(buildingType);
+            if (maxHp <= 0 &&
+                !string.IsNullOrWhiteSpace(normalizedType) &&
+                catalog?.Buildings != null &&
+                catalog.Buildings.TryGetValue(normalizedType, out var building) &&
+                building != null)
+            {
+                maxHp = building.MaxHp;
+            }
+
+            return Math.Max(1, Math.Max(maxHp, hp));
         }
 
         private static void ResolveCatalogText(

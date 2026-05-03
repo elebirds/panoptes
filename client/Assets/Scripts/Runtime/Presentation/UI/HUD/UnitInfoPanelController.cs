@@ -1,12 +1,10 @@
 using System;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Intents;
-using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -90,17 +88,18 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Color defaultActionButtonColor = new Color(0.2f, 0.45f, 0.8f, 0.92f);
 
         private UnitView _currentUnit;
-        private PlanningDraftCache _planningDraftCache;
+        private MapPlanningInputController _injectedMapPlanningInputController;
         private readonly EventSubscriptionBag _subscriptions = new();
         private readonly UnitInfoDefaultLayoutBuilder _defaultLayoutBuilder = new();
         private readonly UnitInfoActionListBinder _actionListBinder = new();
         private readonly UnitInfoDirectOrderPanelBinder _directOrderPanelBinder = new();
         private bool _unitSelectionSubscribed;
+        private MapPlanningInputController _subscribedMapPlanningInputController;
         private UnitInfoPanelSlideAnimator _slideAnimator;
         private UnitInfoPortraitCameraLifecycle _portraitCameraLifecycle;
-        private UnitInfoPlanningSummaryPresenter _planningSummaryPresenter;
         private UnitInfoViewModel _unitInfoViewModel;
         private UnitInfoUguiBinder _unitInfoBinder;
+        private IDisposable _unitInfoStateSubscription;
         private UnitInfoUguiBinder.References _unitInfoBinderReferences;
         private bool _unitInfoBinderReferencesSet;
         private bool _reactiveBinderReady;
@@ -108,9 +107,13 @@ namespace Panoptes.Presentation.UI.HUD
         public bool IsOpen => _slideAnimator != null && _slideAnimator.IsOpen;
 
         [Inject]
-        private void Construct(UnitInfoViewModel unitInfoViewModel)
+        private void Construct(
+            UnitInfoViewModel unitInfoViewModel,
+            MapPlanningInputController injectedMapPlanningInputController)
         {
             _unitInfoViewModel = unitInfoViewModel;
+            _injectedMapPlanningInputController = injectedMapPlanningInputController;
+            ResolveInjectedMapPlanningInputController();
             if (_reactiveBinderReady)
             {
                 EnsureReactiveBinder();
@@ -158,34 +161,9 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveReferences();
             _subscriptions.Clear();
-            _planningDraftCache = PlanningDraftCache.Instance ?? PlanningDraftCache.EnsureInstance();
-            if (_planningDraftCache != null)
-            {
-                var planningDraftCache = _planningDraftCache;
-                _subscriptions.Add(
-                    () => planningDraftCache.OrdersChanged += RefreshPlanningUi,
-                    () => planningDraftCache.OrdersChanged -= RefreshPlanningUi);
-            }
             TrySubscribeUnitSelection();
             TrySubscribeActionRegistry();
             EnsureReactiveBinder();
-
-            var cache = GameStateCache.Instance;
-            if (cache != null)
-            {
-                _subscriptions.Add(
-                    () => cache.OnUnitsChanged += OnUnitsChanged,
-                    () => cache.OnUnitsChanged -= OnUnitsChanged);
-                _subscriptions.Add(
-                    () => cache.OnNodeChanged += OnNodeChanged,
-                    () => cache.OnNodeChanged -= OnNodeChanged);
-                _subscriptions.Add(
-                    () => cache.OnPhaseChanged += OnPhaseChanged,
-                    () => cache.OnPhaseChanged -= OnPhaseChanged);
-                _subscriptions.Add(
-                    () => cache.OnGameOver += OnGameOver,
-                    () => cache.OnGameOver -= OnGameOver);
-            }
 
             _subscriptions.Add(
                 () => ActionLock.OnChanged += OnActionLockChanged,
@@ -204,8 +182,8 @@ namespace Panoptes.Presentation.UI.HUD
             UnsubscribeUnitSelection();
             UnsubscribeActionRegistry();
             _subscriptions.Clear();
-            _planningDraftCache = null;
             _unitInfoBinder?.Unbind();
+            UnsubscribeReactiveState();
             _slideAnimator?.StopAnimations();
             DisablePortraitCamera();
         }
@@ -214,13 +192,14 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _unitInfoBinder?.Dispose();
             _unitInfoBinder = null;
+            UnsubscribeReactiveState();
             _unitInfoBinderReferencesSet = false;
             ReleasePortraitResources();
         }
 
         private void LateUpdate()
         {
-            if (!_unitSelectionSubscribed || mapPlanningInputController == null)
+            if (!_unitSelectionSubscribed)
             {
                 TrySubscribeUnitSelection();
             }
@@ -296,63 +275,6 @@ namespace Panoptes.Presentation.UI.HUD
             OpenForUnit(selected);
         }
 
-        private void OnUnitsChanged(Panoptes.Core.Events.UnitsChangedEvent evt)
-        {
-            if (_currentUnit == null || evt == null)
-            {
-                return;
-            }
-
-            if (evt.RemovedIDs != null)
-            {
-                for (var i = 0; i < evt.RemovedIDs.Count; i++)
-                {
-                    if (string.Equals(evt.RemovedIDs[i], _currentUnit.UnitId, StringComparison.Ordinal))
-                    {
-                        Close();
-                        return;
-                    }
-                }
-            }
-
-            RefreshUnitHpFromCache();
-            RefreshPlanningUi();
-        }
-
-        private void OnNodeChanged(NodeChangedEvent evt)
-        {
-            if (_currentUnit == null || evt == null || string.IsNullOrWhiteSpace(evt.NodeID))
-            {
-                return;
-            }
-
-            if (!string.Equals(evt.NodeID, _currentUnit.UnitId, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            RefreshUnitHpFromCache();
-        }
-
-        private void OnPhaseChanged(PhaseChangedEvent _)
-        {
-            if (_currentUnit == null || !IsOpen)
-            {
-                return;
-            }
-
-            RefreshSelectionUi();
-        }
-
-        private void OnGameOver(GameOverEvent _)
-        {
-            if (_currentUnit == null || !IsOpen)
-            {
-                return;
-            }
-
-            RefreshSelectionUi();
-        }
         private void OnActionLockChanged(bool _)
         {
             if (_currentUnit == null || !IsOpen)
@@ -361,7 +283,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             SelectReactiveUnit(_currentUnit);
-            RefreshPlanningUi();
+            RenderReactiveState();
         }
 
         private void OnActionRegistryChanged()
@@ -389,22 +311,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             EnsureUnitDescriptionUi();
-            if (!TryRenderReactiveState())
-            {
-                ResolveUnitDisplayTexts(_currentUnit, out var displayName, out var description);
-                if (unitNameText != null)
-                {
-                    unitNameText.text = displayName;
-                }
-
-                if (unitDescriptionText != null)
-                {
-                    unitDescriptionText.text = description;
-                    unitDescriptionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(description));
-                }
-
-                RefreshUnitHpFromCache();
-            }
+            RenderReactiveState();
 
             if (TryRefreshUnitPortrait(forceRender: true))
             {
@@ -414,12 +321,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             SetPortraitVisible(false);
             RefreshUnitIcon();
-        }
-
-        private void RefreshUnitHpFromCache()
-        {
-            var state = UnitInfoHpStateResolver.Resolve(_currentUnit, GameStateCache.Instance);
-            UnitInfoHpBinder.Apply(hpSlider, hpValueText, state);
         }
 
         public void SetDockRightOf(RectTransform target, float spacing = -1f, bool immediate = true)
@@ -514,12 +415,6 @@ namespace Panoptes.Presentation.UI.HUD
             planningSummaryText = UnitInfoDefaultLayoutBuilder.EnsurePlanningSummaryText(
                 panelRoot,
                 planningSummaryText);
-            if (planningSummaryText == null)
-            {
-                return;
-            }
-
-            _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
         }
 
         private void SetPortraitVisible(bool visible)
@@ -585,52 +480,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void RefreshPlanningUi()
         {
-            if (TryRenderReactiveState())
-            {
-                return;
-            }
-
-            var interactive = IsInteractivePlanning();
-            var controllable = IsCurrentUnitControllable();
-            var unitType = _currentUnit != null ? _currentUnit.UnitType : string.Empty;
-            var directOrderState = UnitInfoDirectOrderStateResolver.Resolve(unitType);
-            var showDirectOrderButtons = interactive &&
-                                         controllable &&
-                                         (directOrderState.CanMove || directOrderState.IsMilitaryUnit);
-
-            RefreshPlanningSummaryText();
-            _directOrderPanelBinder.ApplyState(
-                directOrderButtonsRoot,
-                GetDirectOrderButtons(),
-                showDirectOrderButtons,
-                directOrderState,
-                ActionLock.IsLocked);
-        }
-
-        private void RefreshPlanningSummaryText()
-        {
-            if (planningSummaryText == null)
-            {
-                return;
-            }
-
-            _planningSummaryPresenter ??= new UnitInfoPlanningSummaryPresenter(planningSummaryText);
-            _planningSummaryPresenter.Refresh(_currentUnit, _planningDraftCache ?? PlanningDraftCache.Instance);
-        }
-
-        private bool IsInteractivePlanning()
-        {
-            var cache = GameStateCache.Instance;
-            return cache != null && GamePhases.IsPlanning(cache.Phase) && !cache.IsGameOver;
-        }
-
-        private bool IsCurrentUnitControllable()
-        {
-            var cache = GameStateCache.Instance;
-            return _currentUnit != null &&
-                   cache != null &&
-                   !string.IsNullOrWhiteSpace(cache.MyPlayerID) &&
-                   string.Equals(cache.MyPlayerID, _currentUnit.Faction, StringComparison.Ordinal);
+            RenderReactiveState();
         }
 
         private void EnsureDefaultActionProviders()
@@ -676,11 +526,15 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (autoFindMapPlanningInputController && mapPlanningInputController == null)
             {
-                mapPlanningInputController = MapPlanningInputController.Instance;
-                if (mapPlanningInputController == null)
-                {
-                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-                }
+                ResolveInjectedMapPlanningInputController();
+            }
+        }
+
+        private void ResolveInjectedMapPlanningInputController()
+        {
+            if (mapPlanningInputController == null)
+            {
+                mapPlanningInputController = _injectedMapPlanningInputController;
             }
         }
 
@@ -707,40 +561,37 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void TrySubscribeUnitSelection()
         {
-            if (_unitSelectionSubscribed && mapPlanningInputController != null)
-            {
-                return;
-            }
-
-            if (mapPlanningInputController == null)
-            {
-                mapPlanningInputController = MapPlanningInputController.Instance;
-                if (mapPlanningInputController == null)
-                {
-                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-                }
-            }
+            ResolveInjectedMapPlanningInputController();
 
             if (mapPlanningInputController == null)
             {
                 return;
             }
 
+            if (_unitSelectionSubscribed &&
+                ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
+            {
+                return;
+            }
+
+            UnsubscribeUnitSelection();
             mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
             mapPlanningInputController.UnitSelectionChanged += OnUnitSelectionChanged;
             mapPlanningInputController.CombatSelectionChanged -= RefreshPlanningUi;
             mapPlanningInputController.CombatSelectionChanged += RefreshPlanningUi;
+            _subscribedMapPlanningInputController = mapPlanningInputController;
             _unitSelectionSubscribed = true;
         }
 
         private void UnsubscribeUnitSelection()
         {
-            if (mapPlanningInputController != null)
+            if (_subscribedMapPlanningInputController != null)
             {
-                mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
-                mapPlanningInputController.CombatSelectionChanged -= RefreshPlanningUi;
+                _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+                _subscribedMapPlanningInputController.CombatSelectionChanged -= RefreshPlanningUi;
             }
 
+            _subscribedMapPlanningInputController = null;
             _unitSelectionSubscribed = false;
         }
 
@@ -790,10 +641,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             EnsureRuntimeHelpers();
             _portraitCameraLifecycle.BindRawImageTexture(unitPortraitRawImage);
-            if (planningSummaryText != null)
-            {
-                _planningSummaryPresenter = new UnitInfoPlanningSummaryPresenter(planningSummaryText);
-            }
 
             _directOrderPanelBinder.BindListeners(
                 GetDirectOrderButtons(),
@@ -886,27 +733,61 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _unitInfoBinder.Bind(_unitInfoViewModel);
+            SubscribeReactiveState();
         }
 
-        private bool TryRenderReactiveState()
+        private void RenderReactiveState()
         {
             EnsureReactiveBinder();
-            if (_unitInfoViewModel == null || _currentUnit == null)
+            if (_unitInfoViewModel == null)
             {
-                return false;
+                return;
             }
 
-            SelectReactiveUnit(_currentUnit);
-            var state = _unitInfoViewModel.Current;
-            if (state == null ||
-                !state.HasSelection ||
-                !string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal))
+            if (_currentUnit != null)
             {
-                return false;
+                SelectReactiveUnit(_currentUnit);
             }
 
-            _unitInfoBinder?.Render(state);
-            return true;
+            _unitInfoBinder?.Render(_unitInfoViewModel.Current);
+        }
+
+        private void SubscribeReactiveState()
+        {
+            if (_unitInfoStateSubscription != null || _unitInfoViewModel == null)
+            {
+                return;
+            }
+
+            _unitInfoStateSubscription = _unitInfoViewModel.State.Subscribe(
+                this,
+                static (state, self) => self.OnReactiveStateChanged(state));
+        }
+
+        private void UnsubscribeReactiveState()
+        {
+            _unitInfoStateSubscription?.Dispose();
+            _unitInfoStateSubscription = null;
+        }
+
+        private void OnReactiveStateChanged(UnitInfoState state)
+        {
+            if (_currentUnit == null)
+            {
+                return;
+            }
+
+            if (state != null &&
+                state.HasSelection &&
+                string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _currentUnit = null;
+            DisablePortraitCamera();
+            SetPortraitVisible(false);
+            AnimateVisibility(false);
         }
 
         private void SelectReactiveUnit(UnitView unit)
@@ -991,72 +872,6 @@ namespace Panoptes.Presentation.UI.HUD
                 actionButtonsRoot,
                 defaultActionButtonSize,
                 defaultActionButtonColor);
-        }
-
-        private void ResolveUnitDisplayTexts(UnitView unit, out string displayName, out string description)
-        {
-            displayName = BuildUnitDisplayName(unit);
-            description = string.Empty;
-            if (unit == null)
-            {
-                return;
-            }
-
-            var unitType = NormalizeToken(unit.UnitType);
-            if (string.IsNullOrWhiteSpace(unitType))
-            {
-                return;
-            }
-
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog == null)
-            {
-                return;
-            }
-
-            if (catalog.TryGetUnit(unitType, out var unitEntry) && unitEntry != null)
-            {
-                if (!string.IsNullOrWhiteSpace(unitEntry.name))
-                {
-                    displayName = unitEntry.name.Trim();
-                }
-
-                if (!string.IsNullOrWhiteSpace(unitEntry.description))
-                {
-                    description = unitEntry.description.Trim();
-                }
-
-                return;
-            }
-
-            if (catalog.TryGetBuilding(unitType, out var buildingEntry) && buildingEntry != null)
-            {
-                if (!string.IsNullOrWhiteSpace(buildingEntry.name))
-                {
-                    displayName = buildingEntry.name.Trim();
-                }
-
-                if (!string.IsNullOrWhiteSpace(buildingEntry.description))
-                {
-                    description = buildingEntry.description.Trim();
-                }
-            }
-        }
-
-        private static string BuildUnitDisplayName(UnitView unit)
-        {
-            if (unit == null)
-            {
-                return "Unit";
-            }
-
-            var type = NormalizeToken(unit.UnitType);
-            if (string.IsNullOrEmpty(type))
-            {
-                return $"Unit {unit.UnitId}";
-            }
-
-            return $"{type} [{unit.UnitId}]";
         }
 
         private static string NormalizeToken(string value)

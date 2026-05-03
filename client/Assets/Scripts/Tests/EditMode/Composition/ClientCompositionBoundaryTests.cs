@@ -136,8 +136,11 @@ namespace Panoptes.Tests.EditMode.Composition
         {
             var roots = new[]
             {
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/UnitInfoViewModel.cs"),
-                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/UnitInfoUguiBinder.cs")
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/UnitInfoUguiBinder.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoHpState.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderState.cs")
             };
 
             var offenders = FindTokenOffenders(
@@ -155,6 +158,18 @@ namespace Panoptes.Tests.EditMode.Composition
                 File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoReactiveBridge.cs")),
                 Is.False,
                 "UnitInfo must not reintroduce a compatibility bridge between controller, ViewModel, and Binder.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoPlanningSummaryPresenter.cs")),
+                Is.False,
+                "UnitInfo planning summary must be projected by UnitInfoViewModel and rendered by UnitInfoUguiBinder.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoHpStateResolver.cs")),
+                Is.False,
+                "UnitInfo HP state must come from UnitInfoViewModel, not a cache fallback resolver.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderStateResolver.cs")),
+                Is.False,
+                "UnitInfo direct-order state must come from UnitInfoViewModel, not a cache fallback resolver.");
         }
 
         [Test]

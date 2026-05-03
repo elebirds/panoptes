@@ -137,6 +137,21 @@ render without reaching through legacy cache singletons.
   `LifetimeScope.Find<GameLifetimeScope>()` or `InjectGameObject` manual
   injection patterns.
 
+## Batch 8 Result
+
+- Removed `UnitInfoPanelController` direct `PlanningDraftCache`,
+  `GameStateCache`, and `StaticCatalogCache` usage and its cache event
+  subscriptions.
+- Replaced UnitInfo fallback rendering with the final
+  `UnitInfoViewModel + UnitInfoUguiBinder` render path for display text, HP,
+  planning summary, and direct-order state.
+- Injected `MapPlanningInputController` via VContainer, keeping the serialized
+  field as the scene-authored override and dropping singleton lookup fallback.
+- Removed legacy UnitInfo planning summary, HP resolver, and direct-order
+  resolver files plus their tests, leaving only the binder state DTOs.
+- Expanded UnitInfo boundary tests to cover `UnitInfoPanelController` against
+  Protocol, legacy caches, singleton `Instance`, and direct network usage.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.

@@ -51,7 +51,6 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
         private readonly string _unitInfoPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs");
         private readonly string _unitInfoDirectOrderPanelBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderPanelBinder.cs");
-        private readonly string _unitInfoPlanningSummaryPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPlanningSummaryPresenter.cs");
         private readonly string _unitOrdersPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/UnitOrdersPanel.cs");
         private readonly string _runtimeScriptsRoot = Path.GetFullPath("Assets/Scripts/Runtime");
 
@@ -1528,19 +1527,35 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void UnitInfoPanel_ShouldOwnPlanningSummary_AndDelegateDirectOrderActions()
+        public void UnitInfoPanel_ShouldRenderThroughViewModelBinder_AndDelegateDirectOrderActions()
         {
             Assert.That(File.Exists(_unitInfoPanelPath), Is.True, "UnitInfoPanelController.cs 不存在。");
             Assert.That(File.Exists(_unitInfoDirectOrderPanelBinderPath), Is.True, "UnitInfoDirectOrderPanelBinder.cs 不存在。");
-            Assert.That(File.Exists(_unitInfoPlanningSummaryPresenterPath), Is.True, "UnitInfoPlanningSummaryPresenter.cs 不存在。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPlanningSummaryPresenter.cs")),
+                Is.False,
+                "UnitInfo 规划摘要应由 ViewModel/Binder 渲染，不应保留 legacy presenter。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoHpStateResolver.cs")),
+                Is.False,
+                "UnitInfo HP 应由 ViewModel/Binder 渲染，不应保留 legacy resolver。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderStateResolver.cs")),
+                Is.False,
+                "UnitInfo direct-order 状态应由 ViewModel 投影，不应保留 legacy resolver。");
 
             var content = File.ReadAllText(_unitInfoPanelPath);
             var directOrderContent = File.ReadAllText(_unitInfoDirectOrderPanelBinderPath);
-            var planningSummaryContent = File.ReadAllText(_unitInfoPlanningSummaryPresenterPath);
-            StringAssert.Contains("PlanningDraftCache", content,
-                "UnitInfoPanel 应直接消费规划草稿缓存。");
-            StringAssert.Contains("GetOrdersInDisplayOrder", planningSummaryContent,
-                "UnitInfoPanel 的规划摘要 presenter 应展示当前规划中的单位命令摘要。");
+            StringAssert.Contains("UnitInfoViewModel", content,
+                "UnitInfoPanel 应通过 ViewModel 选择当前单位。");
+            StringAssert.Contains("UnitInfoUguiBinder", content,
+                "UnitInfoPanel 应通过 Binder 渲染文本、HP、规划摘要和 direct-order 状态。");
+            StringAssert.DoesNotContain("PlanningDraftCache", content,
+                "UnitInfoPanel 不应再直接消费规划草稿缓存。");
+            StringAssert.DoesNotContain("GameStateCache", content,
+                "UnitInfoPanel 不应再直接消费游戏状态缓存。");
+            StringAssert.DoesNotContain("StaticCatalogCache", content,
+                "UnitInfoPanel 不应再直接消费静态目录缓存。");
             StringAssert.Contains("UnitInfoDirectOrderPanelBinder", content,
                 "UnitInfoPanel 应委托 direct-order helper 渲染和绑定按钮。");
             StringAssert.Contains("BeginMoveSelection", directOrderContent,
