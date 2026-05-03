@@ -57,7 +57,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -87,7 +87,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name: ""
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -269,6 +269,7 @@ GameObject:
   - component: {fileID: 2552761068511580735}
   - component: {fileID: 3165297515586724012}
   - component: {fileID: 2453317702144611495}
+  - component: {fileID: 830009100001}
   m_Layer: 0
   m_Name: ResourcePanel
   m_TagString: Untagged
@@ -335,6 +336,29 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &830009100001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4348037497199738759}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91e4854cd16992247b1e8986523e5179, type: 3}
+  m_Name: ""
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.ResourceHUD
+  resourceListRoot: {fileID: 3591150627554691593}
+  techButton: {fileID: 2544276165122947556}
+  includePoints: 1
+  logWarnings: 0
+  iconResourcesRoots:
+  - Icons/Resources
+  - Icons/Points
+  - Icons
+  changeVisibleSeconds: 3
+  increaseColor: {r: 0.15, g: 0.95, b: 0.35, a: 1}
+  decreaseColor: {r: 0.95, g: 0.25, b: 0.25, a: 1}
 --- !u!1 &7892254517966363383
 GameObject:
   m_ObjectHideFlags: 0

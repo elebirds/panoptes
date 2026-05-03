@@ -12,7 +12,6 @@ using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
-using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
@@ -88,20 +87,32 @@ namespace Panoptes.Presentation.Composition
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ManagementPanelVisibilityStore>(Lifetime.Singleton).AsSelf();
-            RegisterRuntimeSceneComponent<TokenHUD>(builder, "TokenHUD");
-            RegisterRuntimeSceneComponent<ResourceHUD>(builder, "ResourcePanel");
-            RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
-            RegisterRuntimeSceneComponent<CityCoreHpBarOverlayController>(builder, "CityCoreHpBarOverlayController");
-            RegisterRuntimeSceneComponent<BuildingConstructionOverlayController>(builder, "BuildingConstructionOverlayController");
-            RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
-            RegisterRuntimeSceneComponent<SettlementTimeline>(builder, "SettlementTimeline");
-            RegisterRuntimeSceneComponent<TurnReportPanel>(builder, "TurnReportPanel");
-            RegisterRuntimeSceneComponent<GameOverOverlay>(builder, "GameOverOverlay");
+            builder.RegisterComponentOnNewGameObject<TokenHUD>(Lifetime.Singleton, "TokenHUD");
+            builder.RegisterComponentInHierarchy<ResourceHUD>();
+            builder.RegisterComponentInHierarchy<TurnHUD>();
+            builder.RegisterComponentOnNewGameObject<CityCoreHpBarOverlayController>(
+                Lifetime.Singleton,
+                "CityCoreHpBarOverlayController");
+            builder.RegisterComponentOnNewGameObject<BuildingConstructionOverlayController>(
+                Lifetime.Singleton,
+                "BuildingConstructionOverlayController");
+            builder.RegisterComponentOnNewGameObject<GameChatPanelController>(
+                Lifetime.Singleton,
+                "GameChatPanel");
+            builder.RegisterComponentOnNewGameObject<SettlementTimeline>(
+                Lifetime.Singleton,
+                "SettlementTimeline");
+            builder.RegisterComponentOnNewGameObject<TurnReportPanel>(
+                Lifetime.Singleton,
+                "TurnReportPanel");
+            builder.RegisterComponentOnNewGameObject<GameOverOverlay>(
+                Lifetime.Singleton,
+                "GameOverOverlay");
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
-            RegisterRuntimeSceneComponent<UnitInfoPanelController>(builder, "UnitInfoPanel");
-            RegisterUnitInfoActionProvider<CityCoreBuildingActionRegistrar>(builder);
-            RegisterUnitInfoActionProvider<SettlerUnitActionRegistrar>(builder);
+            builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
+            builder.RegisterComponentInHierarchy<CityCoreBuildingActionRegistrar>();
+            builder.RegisterComponentInHierarchy<SettlerUnitActionRegistrar>();
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogContextStore>(Lifetime.Singleton).AsSelf();
@@ -142,72 +153,5 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }
 
-        private static void RegisterRuntimeSceneComponent<T>(
-            IContainerBuilder builder,
-            string objectName)
-            where T : Component
-        {
-            var component = SceneObjectFinder.FindFirstSceneObject<T>();
-            var createdByComposition = component == null;
-            if (component == null)
-            {
-                var go = new GameObject(objectName, typeof(RectTransform));
-                go.SetActive(false);
-
-                var canvasTransform = FindGameCanvasTransform();
-                if (canvasTransform != null)
-                {
-                    go.transform.SetParent(canvasTransform, false);
-                }
-
-                component = go.AddComponent<T>();
-            }
-
-            builder.RegisterComponent(component).AsSelf();
-            if (createdByComposition)
-            {
-                builder.RegisterBuildCallback(_ => component.gameObject.SetActive(true));
-            }
-        }
-
-        private static void RegisterOptionalSceneComponent<T>(IContainerBuilder builder)
-            where T : Component
-        {
-            var component = SceneObjectFinder.FindFirstSceneObject<T>();
-            if (component != null)
-            {
-                builder.RegisterComponent(component).AsSelf();
-            }
-        }
-
-        private static void RegisterUnitInfoActionProvider<T>(IContainerBuilder builder)
-            where T : UnitInfoActionProviderBase
-        {
-            var component = SceneObjectFinder.FindFirstSceneObject<T>();
-            if (component == null)
-            {
-                var unitInfo = SceneObjectFinder.FindFirstSceneObject<UnitInfoPanelController>();
-                if (unitInfo != null)
-                {
-                    if (unitInfo.GetComponent<UnitInfoActionRegistry>() == null)
-                    {
-                        unitInfo.gameObject.AddComponent<UnitInfoActionRegistry>();
-                    }
-
-                    component = unitInfo.gameObject.AddComponent<T>();
-                }
-            }
-
-            if (component != null)
-            {
-                builder.RegisterComponent(component).AsSelf();
-            }
-        }
-
-        private static Transform FindGameCanvasTransform()
-        {
-            var canvas = SceneObjectFinder.FindFirstSceneObject<Canvas>();
-            return canvas != null ? canvas.transform : null;
-        }
     }
 }

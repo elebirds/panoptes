@@ -4,7 +4,6 @@ using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.UI.Common;
-using Panoptes.Presentation.UI.HUD;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -42,13 +41,11 @@ namespace Panoptes.Presentation.UI.Game
             _gameOverStore = gameOverStore;
             _feedbackStore = feedbackStore;
             _staticCatalogStore = staticCatalogStore;
-            EnsurePresentationHelpers();
         }
 
         private void Awake()
         {
             HideFullscreenBackgroundIfNeeded();
-            EnsurePresentationHelpers();
         }
 
         private void OnEnable()
@@ -166,35 +163,6 @@ namespace Panoptes.Presentation.UI.Game
             }
 
             target.gameObject.SetActive(false);
-        }
-
-        private void EnsurePresentationHelpers()
-        {
-            var canvas = statusText != null ? statusText.canvas : GetComponentInChildren<Canvas>(true);
-            if (canvas == null)
-            {
-                return;
-            }
-
-            EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
-        }
-
-        private static T EnsureComponent<T>(Transform parent, string objectName) where T : Component
-        {
-            var existing = parent.Find(objectName);
-            if (existing != null && existing.GetComponent<T>() != null)
-            {
-                return existing.GetComponent<T>();
-            }
-
-            var go = existing != null ? existing.gameObject : new GameObject(objectName, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            if (go.GetComponent<T>() == null)
-            {
-                go.AddComponent<T>();
-            }
-
-            return go.GetComponent<T>();
         }
 
         private List<string> CollectCompletedTechnologyNames(TurnSettlementDto settlement)

@@ -57,7 +57,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.2, g: 0.45, b: 0.8, a: 0.92}
@@ -87,7 +87,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name: ""
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -1561,6 +1561,7 @@ GameObject:
   - component: {fileID: 3537405132778839573}
   - component: {fileID: 6096424715818392492}
   - component: {fileID: 1747656647470765277}
+  - component: {fileID: 830009100101}
   - component: {fileID: 2274049074370358003}
   m_Layer: 0
   m_Name: UnitInfoPanel
@@ -1630,6 +1631,35 @@ MonoBehaviour:
   - pioneer
   - expander
   - engineer
+--- !u!114 &830009100101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8964596231676242117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f0f5f4d1b9d4a63a7cd94f0b3a8453c, type: 3}
+  m_Name: ""
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CityCoreBuildingActionRegistrar
+  actionRegistry: {fileID: 6096424715818392492}
+  buildActionId: action_3
+  recipeActionId: open_recipe_synthesis
+  buildActionLabel: Build
+  recipeActionLabel: Synthesis
+  mapPlanningInputController: {fileID: 0}
+  unitInfoPanelController: {fileID: 2274049074370358003}
+  nextStageButtonRect: {fileID: 0}
+  turnPanelRect: {fileID: 0}
+  recipePanelShiftXWhenOpen: 360
+  rightGroupShiftDuration: 0.2
+  rightGroupShiftCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &2274049074370358003
 MonoBehaviour:
   m_ObjectHideFlags: 0

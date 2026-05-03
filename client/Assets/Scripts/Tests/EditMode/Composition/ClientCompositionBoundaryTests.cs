@@ -56,17 +56,17 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("GameIntentService"));
             Assert.That(installer, Does.Contain("PlanningIntentService"));
             Assert.That(installer, Does.Contain("MinisterCommandService"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TokenHUD>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<ResourceHUD>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<TokenHUD>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<ResourceHUD>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<TurnHUD>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<GameChatPanelController>"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlementPlaybackController>"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<CinemachineMapCameraController>"));
             Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<SettlementTimeline>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameOverOverlay>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<UnitInfoPanelController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<SettlementTimeline>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<TurnReportPanel>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<GameOverOverlay>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<UnitInfoPanelController>"));
             Assert.That(installer, Does.Not.Contain("RecipeSynthesisPanel"));
             Assert.That(installer, Does.Not.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
@@ -100,6 +100,11 @@ namespace Panoptes.Tests.EditMode.Composition
                 "InjectGameObject");
 
             Assert.That(offenders, Is.Empty, "Presentation composition must not perform manual scene injection.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent"));
+            Assert.That(installer, Does.Not.Contain("SceneObjectFinder"));
+            Assert.That(installer, Does.Not.Contain("FindFirstSceneObject"));
         }
 
         [Test]
@@ -115,20 +120,20 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
-        public void GameSceneController_ShouldOnlyEnsureHelpersNotInjectThemManually()
+        public void GameSceneController_ShouldNotCreatePresentationHelpers()
         {
             var controller = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs"));
 
             Assert.That(controller, Does.Not.Contain("IObjectResolver"));
             Assert.That(controller, Does.Not.Contain("InjectIfPossible"));
             Assert.That(controller, Does.Not.Contain("InjectDynamicPresentationHelpers"));
+            Assert.That(controller, Does.Not.Contain("EnsureComponent<"));
             Assert.That(controller, Does.Not.Contain("EnsureComponent<GameChatPanelController>"));
             Assert.That(controller, Does.Not.Contain("EnsureComponent<MinisterPanel>"));
             Assert.That(controller, Does.Not.Contain("EnsureComponent<TurnHUD>"));
             Assert.That(controller, Does.Not.Contain("EnsureComponent<SettlementTimeline>"));
             Assert.That(controller, Does.Not.Contain("EnsureComponent<TurnReportPanel>"));
             Assert.That(controller, Does.Not.Contain("EnsurePrefabComponent<GameOverOverlay>"));
-            Assert.That(controller, Does.Contain("EnsureComponent<ResourceHUD>"));
         }
 
         [Test]
@@ -291,8 +296,8 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(constructionOverlay, Does.Contain("MapRenderer"));
             Assert.That(constructionOverlay, Does.Contain("[Inject]"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<CityCoreHpBarOverlayController>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<BuildingConstructionOverlayController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<CityCoreHpBarOverlayController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<BuildingConstructionOverlayController>"));
             Assert.That(mapRenderer, Does.Not.Contain("AddComponent<CityCoreHpBarOverlayController>"));
             Assert.That(mapRenderer, Does.Not.Contain("AddComponent<BuildingConstructionOverlayController>"));
             Assert.That(mapRenderer, Does.Not.Contain("FindAnyObjectByType<CityCoreHpBarOverlayController>"));
