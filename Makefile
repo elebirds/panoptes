@@ -1,4 +1,6 @@
-.PHONY: data-gen data-validate gen proto-gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
+.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity db-migrate-up db-migrate-down db-reset db-sqlc
+
+UNITY ?= /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity
 
 PROTO_GEN_PATHS = \
 	--path panoptes/proto/v1/common.proto \
@@ -37,6 +39,20 @@ server:
 lint:
 	cd server && go vet ./...
 	cd protocol && buf lint
+
+c0b-fixture:
+	cd server && go run ./cmd/c0bgatefixture -out ../client/Assets/Scripts/Tests/EditMode/Fixtures/C0b/server_frames.jsonl
+
+c0b-check: c0b-fixture
+	git diff --exit-code -- client/Assets/Scripts/Tests/EditMode/Fixtures/C0b/server_frames.jsonl
+	cd server && go test -count=1 ./internal/debug ./internal/transport/codec
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	dotnet test client/Panoptes.Tests.EditMode.csproj --no-build
+	$(MAKE) c0b-check-unity
+	git diff --check
+
+c0b-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Presentation.C0bProtocolReplayGateTests -testResults $(CURDIR)/client/Temp/C0bProtocolReplayResults.xml -logFile -
 
 # Database migrations
 db-migrate-up:

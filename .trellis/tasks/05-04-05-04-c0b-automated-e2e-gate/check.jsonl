@@ -1,0 +1,5 @@
+{"file":"AGENTS.md","reason":"Verify no generated protocol edits and no client architecture boundary regressions."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Review backend fixture generation and Go test coverage."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Review Unity EditMode gate, forbidden patterns, and test hygiene."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify replay exercises final Store/ViewModel read-model flow rather than legacy UI paths."}
+{"file":"docs/2026-05-04-c0b-automated-integration-gate.md","reason":"Verify implementation matches the documented automated gate."}
