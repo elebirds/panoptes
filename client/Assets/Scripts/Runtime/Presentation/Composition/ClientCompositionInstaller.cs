@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Core.Application.App;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
@@ -24,7 +25,8 @@ namespace Panoptes.Presentation.Composition
             AppManager appManager,
             NetworkManager networkManager,
             MessageDispatcher messageDispatcher,
-            SessionManager sessionManager)
+            SessionManager sessionManager,
+            ConfigCache configCache)
         {
             if (appManager == null)
             {
@@ -46,10 +48,16 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(sessionManager));
             }
 
+            if (configCache == null)
+            {
+                throw new ArgumentNullException(nameof(configCache));
+            }
+
             builder.RegisterComponent(appManager).AsSelf();
             builder.RegisterComponent(networkManager).AsSelf();
             builder.RegisterComponent(messageDispatcher).AsSelf();
             builder.RegisterComponent(sessionManager).AsSelf();
+            builder.RegisterComponent(configCache).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
             builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
@@ -79,6 +87,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
+            builder.RegisterComponentOnNewGameObject<UnitCache>(Lifetime.Singleton, "UnitCache");
             builder.RegisterComponentOnNewGameObject<AnimationQueue>(Lifetime.Singleton, "AnimationQueue");
             builder.RegisterComponentOnNewGameObject<DamageNumberPopupController>(Lifetime.Singleton, "DamageNumberPopupController");
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();

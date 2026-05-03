@@ -1,4 +1,5 @@
 using Panoptes.Core.Application.App;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using VContainer;
@@ -10,6 +11,7 @@ namespace Panoptes.Presentation.Composition
     [UnityEngine.RequireComponent(typeof(MessageDispatcher))]
     [UnityEngine.RequireComponent(typeof(SessionManager))]
     [UnityEngine.RequireComponent(typeof(AppManager))]
+    [UnityEngine.RequireComponent(typeof(ConfigCache))]
     public sealed class ProjectLifetimeScope : LifetimeScope
     {
         protected override void Configure(IContainerBuilder builder)
@@ -19,7 +21,8 @@ namespace Panoptes.Presentation.Composition
                 GetComponent<AppManager>(),
                 GetComponent<NetworkManager>(),
                 GetComponent<MessageDispatcher>(),
-                GetComponent<SessionManager>());
+                GetComponent<SessionManager>(),
+                GetComponent<ConfigCache>());
         }
     }
 }
