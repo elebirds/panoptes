@@ -1,4 +1,3 @@
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Feedback;
 using UnityEngine;
@@ -113,25 +112,6 @@ namespace Panoptes.Presentation.Map
             if (maxHp <= 0 && nodeView != null && nodeView.BuildingInstance != null)
             {
                 maxHp = nodeView.BuildingInstance.MaxHitPoints;
-            }
-
-            if (maxHp <= 0)
-            {
-                var catalog = StaticCatalogCache.EnsureInstance();
-                var normalizedType = NormalizeToken(infoType);
-                if (catalog != null)
-                {
-                    if (string.Equals(normalizedType, "city_core", System.StringComparison.OrdinalIgnoreCase) &&
-                        catalog.Rules != null &&
-                        catalog.Rules.city_core_max_hp > 0)
-                    {
-                        maxHp = catalog.Rules.city_core_max_hp;
-                    }
-                    else if (catalog.TryGetBuilding(normalizedType, out var buildingEntry) && buildingEntry != null)
-                    {
-                        maxHp = buildingEntry.max_hp;
-                    }
-                }
             }
 
             return Mathf.Max(1, Mathf.Max(maxHp, hp));

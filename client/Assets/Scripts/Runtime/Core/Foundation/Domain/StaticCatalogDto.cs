@@ -119,4 +119,29 @@ namespace Panoptes.Core.Domain
         public CatalogUnitFlagsDto Flags;
         public List<string> Tags;
     }
+
+    public sealed class CatalogMapRuntimeNodeDto
+    {
+        public string Id;
+        public int X;
+        public int Y;
+        public string Terrain;
+        public bool HasRoad;
+        public bool IsResourcePoint;
+        public string ResourceType;
+        public string NodeName;
+        public string Owner;
+        public string TerritoryOwner;
+        public string BuildingType;
+        public int BuildingHp;
+    }
+
+    public sealed class CatalogMapRuntimeBundleDto
+    {
+        public string Id;
+        public string Name;
+        public int Width;
+        public int Height;
+        public List<CatalogMapRuntimeNodeDto> Nodes;
+    }
 }

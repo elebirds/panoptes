@@ -12,7 +12,8 @@ namespace Panoptes.Core.Application.Stores
             IReadOnlyDictionary<string, CatalogRecipeDto> recipes = null,
             IReadOnlyDictionary<string, CatalogTechnologyDto> technologies = null,
             IReadOnlyDictionary<string, CatalogPolicyDto> policies = null,
-            IReadOnlyDictionary<string, CatalogUnitDto> units = null)
+            IReadOnlyDictionary<string, CatalogUnitDto> units = null,
+            CatalogMapRuntimeBundleDto defaultMap = null)
         {
             Resources = StoreSnapshotCloner.CloneCatalogHudEntries(resources);
             Points = StoreSnapshotCloner.CloneCatalogHudEntries(points);
@@ -21,6 +22,7 @@ namespace Panoptes.Core.Application.Stores
             Technologies = StoreSnapshotCloner.CloneCatalogTechnologies(technologies);
             Policies = StoreSnapshotCloner.CloneCatalogPolicies(policies);
             Units = StoreSnapshotCloner.CloneCatalogUnits(units);
+            DefaultMap = StoreSnapshotCloner.CloneCatalogMapRuntimeBundle(defaultMap);
         }
 
         public IReadOnlyDictionary<string, CatalogHudEntryDto> Resources { get; }
@@ -30,10 +32,11 @@ namespace Panoptes.Core.Application.Stores
         public IReadOnlyDictionary<string, CatalogTechnologyDto> Technologies { get; }
         public IReadOnlyDictionary<string, CatalogPolicyDto> Policies { get; }
         public IReadOnlyDictionary<string, CatalogUnitDto> Units { get; }
+        public CatalogMapRuntimeBundleDto DefaultMap { get; }
 
         internal StaticCatalogState Clone()
         {
-            return new StaticCatalogState(Resources, Points, Buildings, Recipes, Technologies, Policies, Units);
+            return new StaticCatalogState(Resources, Points, Buildings, Recipes, Technologies, Policies, Units, DefaultMap);
         }
     }
 }

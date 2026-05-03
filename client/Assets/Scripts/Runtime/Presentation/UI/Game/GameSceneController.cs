@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
@@ -24,6 +23,7 @@ namespace Panoptes.Presentation.UI.Game
         private SettlementStore _settlementStore;
         private GameOverStore _gameOverStore;
         private GameplayFeedbackStore _feedbackStore;
+        private StaticCatalogStore _staticCatalogStore;
         private IDisposable _gameStateSubscription;
         private IDisposable _settlementSubscription;
         private IDisposable _gameOverSubscription;
@@ -34,12 +34,14 @@ namespace Panoptes.Presentation.UI.Game
             GameStateStore gameStateStore,
             SettlementStore settlementStore,
             GameOverStore gameOverStore,
-            GameplayFeedbackStore feedbackStore)
+            GameplayFeedbackStore feedbackStore,
+            StaticCatalogStore staticCatalogStore)
         {
             _gameStateStore = gameStateStore;
             _settlementStore = settlementStore;
             _gameOverStore = gameOverStore;
             _feedbackStore = feedbackStore;
+            _staticCatalogStore = staticCatalogStore;
             EnsurePresentationHelpers();
         }
 
@@ -227,7 +229,7 @@ namespace Panoptes.Presentation.UI.Game
                         continue;
                     }
 
-                    result.Add(ResolveTechnologyDisplayName(technologyId));
+                    result.Add(ResolveTechnologyDisplayName(technologyId, _staticCatalogStore?.Snapshot));
                 }
             }
 
@@ -252,7 +254,7 @@ namespace Panoptes.Presentation.UI.Game
             return string.Equals(eventPlayerId?.Trim(), playerId.Trim(), System.StringComparison.Ordinal);
         }
 
-        private static string ResolveTechnologyDisplayName(string technologyId)
+        private static string ResolveTechnologyDisplayName(string technologyId, StaticCatalogState catalog)
         {
             var normalizedTechnologyId = technologyId?.Trim();
             if (string.IsNullOrWhiteSpace(normalizedTechnologyId))
@@ -260,13 +262,12 @@ namespace Panoptes.Presentation.UI.Game
                 return string.Empty;
             }
 
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null &&
-                catalog.TryGetTechnology(normalizedTechnologyId, out var technology) &&
+            if (catalog?.Technologies != null &&
+                catalog.Technologies.TryGetValue(normalizedTechnologyId, out var technology) &&
                 technology != null &&
-                !string.IsNullOrWhiteSpace(technology.name))
+                !string.IsNullOrWhiteSpace(technology.Name))
             {
-                return technology.name.Trim();
+                return technology.Name.Trim();
             }
 
             return normalizedTechnologyId;

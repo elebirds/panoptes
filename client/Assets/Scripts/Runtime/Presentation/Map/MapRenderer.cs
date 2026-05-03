@@ -104,12 +104,12 @@ namespace Panoptes.Presentation.Map
 
         private readonly List<UnitDto> _jsonUnits = new();
         private readonly MapCameraContextBuilder _cameraContextBuilder = new();
-        private StaticCatalogCache _catalogCache;
         private ConfigCache _configCache;
         private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
+        private IDisposable _staticCatalogSubscription;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -142,6 +142,10 @@ namespace Panoptes.Presentation.Map
             if (isActiveAndEnabled)
             {
                 SubscribeGameState();
+                if (!IsGameRuntime())
+                {
+                    SubscribeServerMapConfig();
+                }
             }
         }
 
@@ -424,6 +428,7 @@ namespace Panoptes.Presentation.Map
                 if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
                 {
                     view.SetLocalPlayerId(GetLocalPlayerId());
+                    view.SetBuildingCatalog(GetBuildingCatalog());
                     view.Bind(node);
                 }
             }
@@ -458,10 +463,13 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            _catalogCache = StaticCatalogCache.EnsureInstance();
-            if (_catalogCache != null)
+            _staticCatalogSubscription?.Dispose();
+            _staticCatalogSubscription = _staticCatalogStore?.State.Subscribe(this, static (state, self) => self.OnStaticCatalogChanged(state));
+
+            if (_configCache != null)
             {
-                _catalogCache.CatalogChanged += OnServerMapCatalogChanged;
+                _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
+                _configCache = null;
             }
 
             _configCache = ConfigCache.EnsureInstance();
@@ -473,11 +481,8 @@ namespace Panoptes.Presentation.Map
 
         private void UnsubscribeServerMapConfig()
         {
-            if (_catalogCache != null)
-            {
-                _catalogCache.CatalogChanged -= OnServerMapCatalogChanged;
-                _catalogCache = null;
-            }
+            _staticCatalogSubscription?.Dispose();
+            _staticCatalogSubscription = null;
 
             if (_configCache != null)
             {
@@ -486,7 +491,7 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void OnServerMapCatalogChanged()
+        private void OnStaticCatalogChanged(StaticCatalogState state)
         {
             if (IsGameRuntime())
             {
@@ -546,8 +551,7 @@ namespace Panoptes.Presentation.Map
 
         private bool TryLoadToolSceneMapFromStaticCatalog()
         {
-            var cache = _catalogCache != null ? _catalogCache : StaticCatalogCache.Instance;
-            return CreateSourceResolver().TryResolveStaticCatalog(cache, out var snapshot) &&
+            return CreateSourceResolver().TryResolveStaticCatalog(_staticCatalogStore?.Snapshot?.DefaultMap, out var snapshot) &&
                    BuildFromSourceSnapshot(snapshot);
         }
 
@@ -1044,6 +1048,7 @@ namespace Panoptes.Presentation.Map
                 var tile = Instantiate(nodeTilePrefab, EnsureTilesRoot(), false);
                 tile.transform.localPosition = GridToWorldWithTerrain(node.Q, node.R, node.Terrain);
                 tile.SetLocalPlayerId(GetLocalPlayerId());
+                tile.SetBuildingCatalog(GetBuildingCatalog());
                 tile.Bind(node);
 
                 _tileViews[node.Id] = tile;

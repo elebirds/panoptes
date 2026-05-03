@@ -33,6 +33,7 @@ namespace Panoptes.Core.Application.Stores
                 return new StaticCatalogState();
             }
 
+            cache.TryGetDefaultMap(out var defaultMap);
             return new StaticCatalogState(
                 resources: MapResourceHudEntries(cache.Resources),
                 points: MapPointHudEntries(cache.Points),
@@ -40,7 +41,8 @@ namespace Panoptes.Core.Application.Stores
                 recipes: MapRecipes(cache.Recipes),
                 technologies: MapTechnologies(cache.Technologies),
                 policies: MapPolicies(cache.Policies),
-                units: MapUnits(cache.Units));
+                units: MapUnits(cache.Units),
+                defaultMap: MapRuntimeBundle(defaultMap));
         }
 
         private static Dictionary<string, CatalogHudEntryDto> MapResourceHudEntries(
@@ -166,6 +168,51 @@ namespace Panoptes.Core.Application.Stores
                 },
                 Tags = ToList(entry.tags)
             });
+        }
+
+        private static CatalogMapRuntimeBundleDto MapRuntimeBundle(StaticCatalogCache.MapRuntimeBundleJson source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CatalogMapRuntimeBundleDto
+            {
+                Height = source.height,
+                Id = source.id,
+                Name = source.name,
+                Nodes = MapRuntimeNodes(source.nodes),
+                Width = source.width
+            };
+        }
+
+        private static List<CatalogMapRuntimeNodeDto> MapRuntimeNodes(
+            IEnumerable<StaticCatalogCache.MapRuntimeNodeJson> source)
+        {
+            if (source == null)
+            {
+                return new List<CatalogMapRuntimeNodeDto>();
+            }
+
+            return source
+                .Where(entry => entry != null)
+                .Select(entry => new CatalogMapRuntimeNodeDto
+                {
+                    BuildingHp = entry.building_hp,
+                    BuildingType = entry.building_type,
+                    HasRoad = entry.has_road,
+                    Id = entry.id,
+                    IsResourcePoint = entry.is_resource_point,
+                    NodeName = entry.node_name,
+                    Owner = entry.owner,
+                    ResourceType = entry.resource_type,
+                    Terrain = entry.terrain,
+                    TerritoryOwner = entry.territory_owner,
+                    X = entry.x,
+                    Y = entry.y
+                })
+                .ToList();
         }
 
         private static Dictionary<string, TResult> MapCatalog<TSource, TResult>(

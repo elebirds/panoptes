@@ -8,7 +8,7 @@
 
 using UnityEngine;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Application.Cache;
+using System.Collections.Generic;
 
 namespace Panoptes.Presentation.Map
 {
@@ -141,6 +141,7 @@ namespace Panoptes.Presentation.Map
         private bool _fogTextureLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
             new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
+        private IReadOnlyDictionary<string, CatalogBuildingDto> _buildingCatalog;
 
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
@@ -221,6 +222,12 @@ namespace Panoptes.Presentation.Map
             {
                 _buildingInstance.SetLocalPlayerId(_localPlayerId);
             }
+        }
+
+        public void SetBuildingCatalog(IReadOnlyDictionary<string, CatalogBuildingDto> buildingCatalog)
+        {
+            _buildingCatalog = buildingCatalog;
+            _runtimeBuildingPrefabCache.Clear();
         }
 
         /// <summary>
@@ -1148,16 +1155,15 @@ namespace Panoptes.Presentation.Map
             var prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{lookupKey}");
             if (prefab == null)
             {
-                var cache = StaticCatalogCache.Instance;
-                if (cache != null && cache.TryGetBuilding(lookupKey, out var entry) && entry != null)
+                if (_buildingCatalog != null &&
+                    _buildingCatalog.TryGetValue(lookupKey, out var entry) &&
+                    entry != null &&
+                    !string.IsNullOrWhiteSpace(entry.PrefabKey))
                 {
-                    if (!string.IsNullOrWhiteSpace(entry.prefab_key))
+                    prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{NormalizeToken(entry.PrefabKey)}");
+                    if (prefab == null)
                     {
-                        prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{NormalizeToken(entry.prefab_key)}");
-                        if (prefab == null)
-                        {
-                            prefab = LoadBuildingPrefabByPath(NormalizeToken(entry.prefab_key));
-                        }
+                        prefab = LoadBuildingPrefabByPath(NormalizeToken(entry.PrefabKey));
                     }
                 }
             }

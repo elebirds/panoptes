@@ -53,6 +53,23 @@ namespace Panoptes.Core.Application.Stores
             return CloneDictionary(source, CloneCatalogUnit);
         }
 
+        public static CatalogMapRuntimeBundleDto CloneCatalogMapRuntimeBundle(CatalogMapRuntimeBundleDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CatalogMapRuntimeBundleDto
+            {
+                Height = source.Height,
+                Id = source.Id,
+                Name = source.Name,
+                Nodes = CloneCatalogMapRuntimeNodes(source.Nodes),
+                Width = source.Width
+            };
+        }
+
         public static List<QueuedUnitOrderDto> CloneUnitOrders(IEnumerable<QueuedUnitOrderDto> source)
         {
             return CloneList(source, CloneQueuedUnitOrder);
@@ -571,6 +588,30 @@ namespace Panoptes.Core.Application.Stores
                 Tags = CloneStrings(source.Tags),
                 VisionRange = source.VisionRange
             };
+        }
+
+        private static List<CatalogMapRuntimeNodeDto> CloneCatalogMapRuntimeNodes(
+            IEnumerable<CatalogMapRuntimeNodeDto> source)
+        {
+            return source == null
+                ? new List<CatalogMapRuntimeNodeDto>()
+                : source.Where(value => value != null)
+                    .Select(value => new CatalogMapRuntimeNodeDto
+                    {
+                        BuildingHp = value.BuildingHp,
+                        BuildingType = value.BuildingType,
+                        HasRoad = value.HasRoad,
+                        Id = value.Id,
+                        IsResourcePoint = value.IsResourcePoint,
+                        NodeName = value.NodeName,
+                        Owner = value.Owner,
+                        ResourceType = value.ResourceType,
+                        Terrain = value.Terrain,
+                        TerritoryOwner = value.TerritoryOwner,
+                        X = value.X,
+                        Y = value.Y
+                    })
+                    .ToList();
         }
 
         private static CatalogRecipeOutputsDto CloneCatalogRecipeOutputs(CatalogRecipeOutputsDto source)

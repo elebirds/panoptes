@@ -89,44 +89,39 @@ namespace Panoptes.Presentation.Map
             return TryParseJsonString(json, out snapshot);
         }
 
-        public bool TryResolveStaticCatalog(StaticCatalogCache cache, out MapSourceSnapshot snapshot)
+        public bool TryResolveStaticCatalog(CatalogMapRuntimeBundleDto mapBundle, out MapSourceSnapshot snapshot)
         {
             snapshot = default;
-            if (cache == null)
+            if (mapBundle?.Nodes == null || mapBundle.Nodes.Count == 0)
             {
                 return false;
             }
 
-            if (!cache.TryGetDefaultMap(out var mapBundle) || mapBundle?.nodes == null || mapBundle.nodes.Length == 0)
+            var nodes = new List<NodeDto>(mapBundle.Nodes.Count);
+            for (var i = 0; i < mapBundle.Nodes.Count; i++)
             {
-                return false;
-            }
-
-            var nodes = new List<NodeDto>(mapBundle.nodes.Length);
-            for (var i = 0; i < mapBundle.nodes.Length; i++)
-            {
-                var node = mapBundle.nodes[i];
+                var node = mapBundle.Nodes[i];
                 if (node == null)
                 {
                     continue;
                 }
 
-                var buildingType = MapRenderTokens.Normalize(node.building_type);
-                var axial = HexGrid.OffsetToAxial(node.x, node.y);
+                var buildingType = MapRenderTokens.Normalize(node.BuildingType);
+                var axial = HexGrid.OffsetToAxial(node.X, node.Y);
                 nodes.Add(new NodeDto
                 {
-                    Id = string.IsNullOrWhiteSpace(node.id) ? $"N_{node.x}_{node.y}" : node.id.Trim(),
+                    Id = string.IsNullOrWhiteSpace(node.Id) ? $"N_{node.X}_{node.Y}" : node.Id.Trim(),
                     Q = axial.x,
                     R = axial.y,
-                    Terrain = MapRenderTokens.Normalize(node.terrain),
-                    HasRoad = node.has_road,
-                    IsResourcePoint = node.is_resource_point,
-                    ResourceType = MapRenderTokens.Normalize(node.resource_type),
-                    Owner = MapRenderTokens.Normalize(node.owner),
-                    TerritoryOwner = MapRenderTokens.Normalize(node.territory_owner),
+                    Terrain = MapRenderTokens.Normalize(node.Terrain),
+                    HasRoad = node.HasRoad,
+                    IsResourcePoint = node.IsResourcePoint,
+                    ResourceType = MapRenderTokens.Normalize(node.ResourceType),
+                    Owner = MapRenderTokens.Normalize(node.Owner),
+                    TerritoryOwner = MapRenderTokens.Normalize(node.TerritoryOwner),
                     BuildingType = buildingType,
-                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.building_hp),
-                    BuildingMaxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, node.building_hp, _options.BuildingCatalog)
+                    BuildingHp = string.IsNullOrEmpty(buildingType) ? 0 : Mathf.Max(0, node.BuildingHp),
+                    BuildingMaxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, node.BuildingHp, _options.BuildingCatalog)
                 });
             }
 
