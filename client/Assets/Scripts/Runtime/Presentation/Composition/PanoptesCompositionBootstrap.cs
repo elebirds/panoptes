@@ -1,9 +1,4 @@
 using System;
-using Panoptes.Core.Application.App;
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Handler;
-using Panoptes.Core.Infrastructure.Network;
-using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Presentation.UI.Common;
 using UnityEngine;
 
@@ -23,42 +18,40 @@ namespace Panoptes.Presentation.Composition
 
     public static class PanoptesCompositionBootstrap
     {
+        private const string ProjectCompositionPrefabPath = "Prefabs/Composition/PanoptesProjectComposition";
+        private static bool _projectScopeStarted;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureProjectScope()
         {
-            var managers = GameObject.Find("Managers");
-            if (managers == null)
+            if (_projectScopeStarted)
             {
-                managers = new GameObject("Managers");
+                return;
             }
 
+            var prefab = Resources.Load<GameObject>(ProjectCompositionPrefabPath);
+            if (prefab == null)
+            {
+                Debug.LogError($"[Composition] Missing project composition prefab at Resources/{ProjectCompositionPrefabPath}.prefab");
+                return;
+            }
+
+            var managers = UnityEngine.Object.Instantiate(prefab);
+            managers.name = "Managers";
             UnityEngine.Object.DontDestroyOnLoad(managers);
-            EnsureComponent<AppManager>(managers);
-            EnsureComponent<NetworkManager>(managers);
-            EnsureComponent<MessageDispatcher>(managers);
-            EnsureComponent<SessionManager>(managers);
-            EnsureComponent<ClientRuntimeConfigCache>(managers);
-            EnsureComponent<ConfigCache>(managers);
-            EnsureComponent<StaticCatalogCache>(managers);
-            EnsureComponent<RoomCache>(managers);
-            EnsureComponent<GameStateCache>(managers);
-            EnsureComponent<GameChatCache>(managers);
-            EnsureComponent<PlanningDraftCache>(managers);
-            EnsureComponent<LobbyMessageHandler>(managers);
-            EnsureComponent<GameMessageHandler>(managers);
-            EnsureComponent<LoadingOverlay>(managers);
             EnsureOptionalDebugPanel(managers);
-            var overlays = EnsureComponent<ProjectOverlayRegistry>(managers);
+            var overlays = managers.GetComponent<ProjectOverlayRegistry>();
+            if (overlays == null)
+            {
+                Debug.LogError("[Composition] Project composition prefab is missing ProjectOverlayRegistry.");
+                return;
+            }
+
             overlays.Configure(
                 EnsureProjectOverlay<ErrorToast>("ErrorToast", "Prefabs/UI/ErrorToast"),
                 EnsureProjectOverlay<ConfirmDialog>("ConfirmDialog", "Prefabs/UI/ConfirmDialog"));
-            EnsureComponent<ProjectLifetimeScope>(managers);
-        }
-
-        private static T EnsureComponent<T>(GameObject owner) where T : Component
-        {
-            var component = owner.GetComponent<T>();
-            return component != null ? component : owner.AddComponent<T>();
+            managers.SetActive(true);
+            _projectScopeStarted = true;
         }
 
         private static void EnsureOptionalDebugPanel(GameObject owner)
@@ -76,12 +69,6 @@ namespace Panoptes.Presentation.Composition
 
         private static T EnsureProjectOverlay<T>(string objectName, string resourcePath) where T : Component
         {
-            var instance = UnityEngine.Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
-            if (instance != null)
-            {
-                return instance;
-            }
-
             var prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
             {

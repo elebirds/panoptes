@@ -75,6 +75,11 @@ namespace Panoptes.Core.Infrastructure.Network
 
         void Awake()
         {
+            if (string.IsNullOrWhiteSpace(serverUrl))
+            {
+                serverUrl = ServerEndpointResolver.DefaultWebSocketUrl;
+            }
+
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);

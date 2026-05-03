@@ -19,6 +19,7 @@ namespace Panoptes.Tests.EditMode.Lobby
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
         private readonly string _compositionBootstrapPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs");
+        private readonly string _projectCompositionPrefabPath = Path.GetFullPath("Assets/Resources/Prefabs/Composition/PanoptesProjectComposition.prefab");
         private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Service/LobbyService.cs");
         private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
         private readonly string _lobbyPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbyPanelController.cs");
@@ -856,13 +857,16 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_appManagerPath);
             var compositionBootstrap = File.ReadAllText(_compositionBootstrapPath);
-            StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", compositionBootstrap);
-            StringAssert.Contains("EnsureComponent<ConfigCache>(managers);", compositionBootstrap);
-            StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", compositionBootstrap);
-            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", compositionBootstrap);
+            var projectCompositionPrefab = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("ClientRuntimeConfigCache", projectCompositionPrefab);
+            StringAssert.Contains("ConfigCache", projectCompositionPrefab);
+            StringAssert.Contains("GameStateCache", projectCompositionPrefab);
+            StringAssert.Contains("PlanningDraftCache", projectCompositionPrefab);
             Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
                 "Managers 不应再挂载 CombatDraftCache。");
-            StringAssert.Contains("EnsureComponent<LoadingOverlay>(managers);", compositionBootstrap);
+            StringAssert.Contains("LoadingOverlay", projectCompositionPrefab);
+            Assert.That(compositionBootstrap, Does.Not.Contain("EnsureComponent<"),
+                "项目级组件应来自显式 Project Composition prefab，不应在 bootstrap 中 AddComponent。");
             Assert.That(content, Does.Not.Contain("EnsureOptionalErrorToast(managers);"),
                 "ErrorToast 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
             Assert.That(content, Does.Not.Contain("EnsureOptionalConfirmDialog(managers);"),
