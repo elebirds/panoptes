@@ -534,6 +534,7 @@ namespace Panoptes.Tests.EditMode.Composition
             var roots = new[]
             {
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapBuildPlacementSession.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapMovePreviewPresentationController.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePreviewOverlayController.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePathOverlayController.cs"),
@@ -563,11 +564,14 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(controller, Does.Contain("_mapRenderer"));
             Assert.That(controller, Does.Contain("[Inject]"));
 
-            var previewPresentation = File.ReadAllText(roots[1]);
-            var previewOverlay = File.ReadAllText(roots[2]);
-            var pathOverlay = File.ReadAllText(roots[3]);
-            var pendingDeploy = File.ReadAllText(roots[4]);
-            var territoryHighlight = File.ReadAllText(roots[5]);
+            var buildPlacementSession = File.ReadAllText(roots[1]);
+            var previewPresentation = File.ReadAllText(roots[2]);
+            var previewOverlay = File.ReadAllText(roots[3]);
+            var pathOverlay = File.ReadAllText(roots[4]);
+            var pendingDeploy = File.ReadAllText(roots[5]);
+            var territoryHighlight = File.ReadAllText(roots[6]);
+            Assert.That(buildPlacementSession, Does.Contain("MapRenderer _mapRenderer"));
+            Assert.That(buildPlacementSession, Does.Contain("MapRenderer mapRenderer"));
             Assert.That(previewPresentation, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
             Assert.That(previewPresentation, Does.Contain("_pathOverlay?.SetMapRenderer(mapRenderer)"));
             Assert.That(previewPresentation, Does.Contain("_previewOverlay?.SetMapRenderer(mapRenderer)"));
