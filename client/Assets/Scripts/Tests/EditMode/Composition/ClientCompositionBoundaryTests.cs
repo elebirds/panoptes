@@ -334,7 +334,8 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(mapRenderer, Does.Contain("[Inject]"));
             Assert.That(mapRenderer, Does.Contain(".State.Subscribe"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<UnitCache>"));
+            Assert.That(installer, Does.Contain("Register<UnitCache>(Lifetime.Singleton)"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<UnitCache>"));
         }
 
         [Test]
