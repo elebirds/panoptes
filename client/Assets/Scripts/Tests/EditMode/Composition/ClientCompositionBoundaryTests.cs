@@ -235,6 +235,25 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void PlanningInputSlice_ShouldNotExposeLegacyCaches()
+        {
+            var root = ResolveAssetPath("Scripts/Runtime/Presentation/Planning/Input");
+            Assert.That(
+                File.Exists(Path.Combine(root, "PlanningInputContext.cs")),
+                Is.False,
+                "Planning input modes must not retain an empty compatibility context shell.");
+
+            var offenders = FindTokenOffenders(
+                new[] { root },
+                "*.cs",
+                "Panoptes.Core.Application.Cache",
+                "GameStateCache",
+                "PlanningDraftCache");
+
+            Assert.That(offenders, Is.Empty, "Planning input context and modes must not expose legacy cache channels.");
+        }
+
+        [Test]
         public void MapInputAdapter_ShouldPublishToolAndSelectionState()
         {
             var controller = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"));

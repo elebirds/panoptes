@@ -9,19 +9,13 @@
 namespace Panoptes.Presentation.Planning.Input
 {
     /// <summary>
-    /// Owns the active planning input mode lifecycle without knowing map rendering details.
+    /// Owns the active planning input mode lifecycle without reading authoritative gameplay state.
     /// </summary>
     public sealed class PlanningInputCoordinator
     {
         private IPlanningInputMode _activeMode;
-        private PlanningInputContext _context;
 
         public IPlanningInputMode ActiveMode => _activeMode;
-
-        public void SetContext(PlanningInputContext context)
-        {
-            _context = context;
-        }
 
         public void Enter(IPlanningInputMode mode)
         {
@@ -32,7 +26,7 @@ namespace Panoptes.Presentation.Planning.Input
 
             _activeMode?.Exit();
             _activeMode = mode;
-            _activeMode?.Enter(_context);
+            _activeMode?.Enter();
         }
 
         public void Tick()

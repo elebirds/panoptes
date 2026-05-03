@@ -17,7 +17,7 @@ namespace Panoptes.Presentation.Planning.Input.Modes
     /// </summary>
     public sealed class TerritoryDeployInputMode : IPlanningInputMode
     {
-        public void Enter(PlanningInputContext context) { }
+        public void Enter() { }
         public void Exit() { }
         public void Tick() { }
         public bool HandlePrimary() => false;

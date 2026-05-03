@@ -777,6 +777,18 @@ Batch 8 status (2026-05-03):
   slice scan for Protocol, legacy cache, singleton `Instance`, and direct
   network usage.
 
+Batch 9 status (2026-05-03):
+
+- Removed the empty `PlanningInputContext` compatibility shell and its Unity
+  meta file after legacy cache access was eliminated.
+- Simplified `IPlanningInputMode.Enter(PlanningInputContext context)` to
+  `Enter()` and removed `PlanningInputCoordinator.SetContext(...)`.
+- Updated planning input lifecycle documentation to make input modes
+  presentation-only, with no context channel for authoritative gameplay state.
+- Added composition boundary coverage that asserts the context file stays
+  deleted and scans the `Presentation/Planning/Input` slice for legacy cache
+  exposure.
+
 Next work: continue moving the remaining map renderer, settlement playback, and
 HUD direct `*.Instance` reads onto injected Stores/ViewModels.
 
