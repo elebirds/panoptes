@@ -115,12 +115,12 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentOnNewGameObject<TokenHUD>(Lifetime.Singleton, "TokenHUD");
             builder.RegisterComponentInHierarchy<ResourceHUD>();
             builder.RegisterComponentInHierarchy<TurnHUD>();
-            builder.RegisterComponentOnNewGameObject<CityCoreHpBarOverlayController>(
-                Lifetime.Singleton,
-                "CityCoreHpBarOverlayController");
-            builder.RegisterComponentOnNewGameObject<BuildingConstructionOverlayController>(
-                Lifetime.Singleton,
-                "BuildingConstructionOverlayController");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<CityCoreHpBarOverlayController>("Prefabs/UI/CityCoreHpBarOverlay"),
+                Lifetime.Singleton);
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<BuildingConstructionOverlayController>("Prefabs/UI/BuildingConstructionOverlay"),
+                Lifetime.Singleton);
             builder.RegisterComponentOnNewGameObject<GameChatPanelController>(
                 Lifetime.Singleton,
                 "GameChatPanel");

@@ -160,21 +160,14 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (!autoCreateOverlayCanvas)
+            _canvas = GetComponentInParent<Canvas>();
+            _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            if (_canvas != null && _canvasRect != null)
             {
-                _canvas = GetComponentInParent<Canvas>();
-                _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
                 return;
             }
 
-            var existing = GameObject.Find(canvasName);
-            if (existing != null)
-            {
-                _canvas = existing.GetComponent<Canvas>();
-                _canvasRect = existing.transform as RectTransform;
-            }
-
-            if (_canvas != null && _canvasRect != null)
+            if (!autoCreateOverlayCanvas)
             {
                 return;
             }
