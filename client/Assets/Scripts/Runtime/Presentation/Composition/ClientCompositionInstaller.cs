@@ -204,6 +204,10 @@ namespace Panoptes.Presentation.Composition
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ManagementPanelVisibilityStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<NationalOverviewViewModel>(Lifetime.Singleton).AsSelf();
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<ManagementHostUiToolkitBinder>("Prefabs/UI/ManagementHost"),
+                Lifetime.Singleton);
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<TokenHUD>("Prefabs/UI/TokenHUD"),
                 Lifetime.Singleton);

@@ -1,0 +1,48 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="management-host-root" class="management-host-root">
+        <ui:VisualElement name="management-host-header" class="management-host-header">
+            <ui:Label name="management-host-title" text="National Overview" class="management-host-title" />
+            <ui:Button name="management-host-close" text="Close" class="management-host-close" />
+        </ui:VisualElement>
+        <ui:VisualElement name="management-host-nav" class="management-host-nav">
+            <ui:Button name="management-host-nav-overview" text="Overview" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-turn-summary" text="Turn" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-ledger" text="Ledger" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-tech" text="Tech" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-build" text="Build" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-recipe" text="Recipe" class="management-host-nav-button" />
+            <ui:Button name="management-host-nav-policy" text="Policy" class="management-host-nav-button" />
+        </ui:VisualElement>
+        <ui:VisualElement name="management-host-overview-panel" class="national-overview-panel">
+            <ui:VisualElement class="national-overview-summary-grid">
+                <ui:VisualElement class="national-overview-summary-row">
+                    <ui:Label name="national-overview-turn-value-label" text="Turn" class="national-overview-label" />
+                    <ui:Label name="national-overview-turn-value" text="--" class="national-overview-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="national-overview-summary-row">
+                    <ui:Label name="national-overview-phase-value-label" text="Phase" class="national-overview-label" />
+                    <ui:Label name="national-overview-phase-value" text="--" class="national-overview-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="national-overview-summary-row">
+                    <ui:Label name="national-overview-tokens-value-label" text="Tokens" class="national-overview-label" />
+                    <ui:Label name="national-overview-tokens-value" text="--" class="national-overview-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="national-overview-summary-row">
+                    <ui:Label name="national-overview-research-value-label" text="Research" class="national-overview-label" />
+                    <ui:Label name="national-overview-research-value" text="None" class="national-overview-value" />
+                </ui:VisualElement>
+                <ui:VisualElement class="national-overview-summary-row">
+                    <ui:Label name="national-overview-policy-value-label" text="Policy" class="national-overview-label" />
+                    <ui:Label name="national-overview-policy-value" text="None" class="national-overview-value" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="national-overview-metrics-title" text="Metrics" class="national-overview-section-title" />
+            <ui:VisualElement name="national-overview-metrics" class="national-overview-list" />
+            <ui:Label name="national-overview-resources-title" text="Resources" class="national-overview-section-title" />
+            <ui:VisualElement name="national-overview-resources" class="national-overview-list" />
+            <ui:Label name="national-overview-events-title" text="Recent Events" class="national-overview-section-title" />
+            <ui:Label name="national-overview-empty-events" text="No recent events" class="national-overview-empty" />
+            <ui:VisualElement name="national-overview-events" class="national-overview-events" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

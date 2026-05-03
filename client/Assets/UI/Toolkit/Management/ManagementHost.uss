@@ -1,0 +1,111 @@
+.management-host-root {
+    position: absolute;
+    left: 20px;
+    top: 88px;
+    width: 360px;
+    padding: 12px;
+    background-color: rgba(16, 21, 24, 0.9);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(181, 190, 184, 0.34);
+    border-right-color: rgba(181, 190, 184, 0.34);
+    border-top-color: rgba(181, 190, 184, 0.34);
+    border-bottom-color: rgba(181, 190, 184, 0.34);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.management-host-header {
+    min-height: 30px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.management-host-title {
+    color: rgb(237, 238, 231);
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.management-host-close {
+    min-width: 68px;
+    min-height: 26px;
+}
+
+.management-host-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.management-host-nav-button {
+    min-width: 78px;
+    min-height: 26px;
+    margin-right: 6px;
+    margin-bottom: 6px;
+}
+
+.national-overview-panel {
+    margin-top: 2px;
+}
+
+.national-overview-summary-row,
+.national-overview-pair-row {
+    flex-direction: row;
+    justify-content: space-between;
+    min-height: 22px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.national-overview-label {
+    color: rgb(164, 174, 175);
+    font-size: 12px;
+}
+
+.national-overview-value {
+    color: rgb(238, 238, 229);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.national-overview-section-title {
+    margin-top: 10px;
+    margin-bottom: 4px;
+    color: rgb(216, 222, 218);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.national-overview-list {
+    border-top-width: 1px;
+    border-top-color: rgba(181, 190, 184, 0.2);
+}
+
+.national-overview-empty {
+    color: rgb(137, 148, 150);
+    font-size: 12px;
+}
+
+.national-overview-event {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-width: 1px;
+    border-top-color: rgba(181, 190, 184, 0.2);
+}
+
+.national-overview-event-title {
+    color: rgb(236, 238, 232);
+    font-size: 12px;
+}
+
+.national-overview-event-detail {
+    color: rgb(166, 176, 177);
+    font-size: 11px;
+}

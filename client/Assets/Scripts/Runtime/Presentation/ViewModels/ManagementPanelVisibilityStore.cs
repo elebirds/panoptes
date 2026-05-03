@@ -8,7 +8,12 @@ namespace Panoptes.Presentation.ViewModels
         None = 0,
         TechTree = 1,
         BuildCatalog = 2,
-        RecipeSynthesis = 3
+        RecipeSynthesis = 3,
+        NationalOverview = 4,
+        TurnSummary = 5,
+        PolicyFocus = 6,
+        NationalLedger = 7,
+        MinisterReport = 8
     }
 
     public sealed class ManagementPanelVisibilityState
