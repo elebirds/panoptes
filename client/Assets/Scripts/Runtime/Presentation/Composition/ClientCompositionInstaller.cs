@@ -65,6 +65,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<PlanningDraftStore>(Lifetime.Singleton).AsSelf();
             builder.Register<SelectionStore>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolStore>(Lifetime.Singleton).AsSelf();
+            builder.Register<ActionLockStore>(Lifetime.Singleton).AsSelf();
             builder.Register<TurnStore>(Lifetime.Singleton).AsSelf();
             builder.Register<GameChatStore>(Lifetime.Singleton).AsSelf();
             builder.Register<GameOverStore>(Lifetime.Singleton).AsSelf();
@@ -80,6 +81,8 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
+            builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
+            RegisterRuntimeSceneComponent<TokenHUD>(builder, "TokenHUD");
             RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
             RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
             RegisterRuntimeSceneComponent<MinisterPanel>(builder, "MinisterPanel");
