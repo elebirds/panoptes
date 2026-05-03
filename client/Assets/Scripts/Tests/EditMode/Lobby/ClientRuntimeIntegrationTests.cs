@@ -855,19 +855,19 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
 
             var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<ConfigCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content);
+            var compositionBootstrap = File.ReadAllText(_compositionBootstrapPath);
+            StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", compositionBootstrap);
+            StringAssert.Contains("EnsureComponent<ConfigCache>(managers);", compositionBootstrap);
+            StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", compositionBootstrap);
+            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", compositionBootstrap);
             Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
                 "Managers 不应再挂载 CombatDraftCache。");
-            StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
+            StringAssert.Contains("EnsureComponent<LoadingOverlay>(managers);", compositionBootstrap);
             Assert.That(content, Does.Not.Contain("EnsureOptionalErrorToast(managers);"),
                 "ErrorToast 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
             Assert.That(content, Does.Not.Contain("EnsureOptionalConfirmDialog(managers);"),
                 "ConfirmDialog 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
 
-            var compositionBootstrap = File.ReadAllText(_compositionBootstrapPath);
             StringAssert.Contains("EnsureProjectOverlay<ErrorToast>(\"ErrorToast\", \"Prefabs/UI/ErrorToast\")", compositionBootstrap);
             StringAssert.Contains("EnsureProjectOverlay<ConfirmDialog>(\"ConfirmDialog\", \"Prefabs/UI/ConfirmDialog\")", compositionBootstrap);
             StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", compositionBootstrap,
@@ -884,7 +884,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "AppManager 必须注册 Catalog V2 sync complete 事件。");
             StringAssert.Contains("MessageSender.Send(new MsgStaticCatalogSyncRequest", content,
                 "收到 manifest 后，AppManager 必须主动发起 Catalog V2 同步请求。");
-            StringAssert.Contains("ConfigCache.Instance?.Clear();", content,
+            StringAssert.Contains("_configCache?.Clear();", content,
                 "进入 Login 或回退会话时必须清理会话级 ConfigCache。");
             Assert.That(content, Does.Not.Contain("StaticCatalogCache.Instance?.Clear();"),
                 "AppManager 不应在登录态清空应用级静态目录缓存。");
@@ -893,8 +893,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("_pendingCatalogSync", content,
                 "AppManager 必须显式跟踪 Catalog 同步中的 bootstrap 状态。");
 
-            var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
-            var clearRoomIndex = content.IndexOf("RoomCache.Instance?.Clear();", StringComparison.Ordinal);
+            var applyIndex = content.IndexOf("_gameStateCache?.ApplyGameInit(msg);", StringComparison.Ordinal);
+            var clearRoomIndex = content.IndexOf("_roomCache?.Clear();", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
             Assert.That(clearRoomIndex, Is.GreaterThan(applyIndex), "进入 Game 前必须清空大厅房间缓存，避免返回 Lobby 时残留旧房间。");

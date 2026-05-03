@@ -18,6 +18,7 @@ namespace Panoptes.Presentation.Composition
     [UnityEngine.RequireComponent(typeof(RoomCache))]
     [UnityEngine.RequireComponent(typeof(GameStateCache))]
     [UnityEngine.RequireComponent(typeof(GameChatCache))]
+    [UnityEngine.RequireComponent(typeof(LoadingOverlay))]
     [UnityEngine.RequireComponent(typeof(ProjectOverlayRegistry))]
     public sealed class ProjectLifetimeScope : LifetimeScope
     {
@@ -36,6 +37,7 @@ namespace Panoptes.Presentation.Composition
                 GetComponent<RoomCache>(),
                 GetComponent<GameStateCache>(),
                 GetComponent<GameChatCache>(),
+                GetComponent<LoadingOverlay>(),
                 overlays.ErrorToast,
                 overlays.ConfirmDialog);
         }
