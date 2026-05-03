@@ -1,6 +1,7 @@
 using System;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Feedback;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
@@ -36,6 +37,7 @@ namespace Panoptes.Presentation.Composition
             RoomCache roomCache,
             GameStateCache gameStateCache,
             GameChatCache gameChatCache,
+            LoadingOverlay loadingOverlay,
             ErrorToast errorToast,
             ConfirmDialog confirmDialog)
         {
@@ -89,6 +91,11 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(gameChatCache));
             }
 
+            if (loadingOverlay == null)
+            {
+                throw new ArgumentNullException(nameof(loadingOverlay));
+            }
+
             if (errorToast == null)
             {
                 throw new ArgumentNullException(nameof(errorToast));
@@ -109,6 +116,15 @@ namespace Panoptes.Presentation.Composition
                 roomCache,
                 gameStateCache,
                 gameChatCache);
+            networkManager.UseProjectServices(
+                sessionManager,
+                messageDispatcher,
+                roomCache,
+                clientRuntimeConfigCache,
+                configCache,
+                gameStateCache,
+                appManager,
+                loadingOverlay);
             builder.RegisterComponent(appManager).AsSelf();
             builder.RegisterComponent(networkManager).AsSelf();
             builder.RegisterComponent(messageDispatcher).AsSelf();
@@ -119,6 +135,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponent(roomCache).AsSelf();
             builder.RegisterComponent(gameStateCache).AsSelf();
             builder.RegisterComponent(gameChatCache).AsSelf();
+            builder.RegisterComponent(loadingOverlay).AsSelf().As<ILoadingOverlayPresenter>();
             builder.RegisterComponent(errorToast).AsSelf();
             builder.RegisterComponent(confirmDialog).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
