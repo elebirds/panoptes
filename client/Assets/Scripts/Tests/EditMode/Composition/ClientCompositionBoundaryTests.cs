@@ -52,7 +52,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<ResourceHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
-            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
+            Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<SettlementTimeline>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameOverOverlay>"));
@@ -66,6 +66,8 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("ManagementPanelVisibilityStore"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
+            Assert.That(installer, Does.Contain("MinisterReportViewModel"));
+            Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
         }
 
         [Test]
@@ -326,6 +328,60 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(uxml, Does.Contain("turn-summary-turn-value"));
             Assert.That(uxml, Does.Contain("turn-summary-phase-value"));
             Assert.That(uxml, Does.Contain("turn-summary-events"));
+        }
+
+        [Test]
+        public void MinisterReportUiToolkitSlice_ShouldRetireLegacyPanelAndUseFinalStores()
+        {
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Minister/MinisterPanel.cs")),
+                Is.False,
+                "Minister UI must not reintroduce the cache-backed MinisterPanel controller.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Minister/MinisterPanel.cs.meta")),
+                Is.False,
+                "Deleted MinisterPanel must not keep a Unity meta file or GUID alive.");
+
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/MinisterReportViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/MinisterReportUiToolkitBinder.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "Minister report final UI slice must render PlanningDraftStore through ViewModel/Binder only.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/MinisterReportViewModel.cs"));
+            var binder = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/MinisterReportUiToolkitBinder.cs"));
+
+            Assert.That(installer, Does.Contain("MinisterCommandService"));
+            Assert.That(installer, Does.Contain("MinisterReportViewModel"));
+            Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
+            Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
+            Assert.That(viewModel, Does.Contain("PlanningDraftStore"));
+            Assert.That(binder, Does.Contain("ManagementPanelUiToolkitBinderBase<MinisterReportViewModel>"));
+
+            var assetOffenders = FindTokenOffenders(
+                new[]
+                {
+                    ResolveAssetPath("Scenes"),
+                    ResolveAssetPath("Prefabs")
+                },
+                "*.*",
+                "3d8e60f192d6861409a7e45a51dc4617",
+                "MinisterPanel");
+
+            Assert.That(assetOffenders, Is.Empty, "Scenes and prefabs must not retain MinisterPanel script or GUID references.");
         }
 
         [Test]

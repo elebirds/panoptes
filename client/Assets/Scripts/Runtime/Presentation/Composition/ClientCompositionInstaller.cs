@@ -10,7 +10,6 @@ using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Domestic;
 using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
-using Panoptes.Presentation.UI.Minister;
 using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
@@ -88,7 +87,6 @@ namespace Panoptes.Presentation.Composition
             RegisterRuntimeSceneComponent<ResourceHUD>(builder, "ResourcePanel");
             RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
             RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
-            RegisterRuntimeSceneComponent<MinisterPanel>(builder, "MinisterPanel");
             RegisterRuntimeSceneComponent<SettlementTimeline>(builder, "SettlementTimeline");
             RegisterRuntimeSceneComponent<TurnReportPanel>(builder, "TurnReportPanel");
             RegisterRuntimeSceneComponent<GameOverOverlay>(builder, "GameOverOverlay");
