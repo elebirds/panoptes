@@ -1,0 +1,1 @@
+{"ts":"2026-05-04T00:00:00+08:00","kind":"implementation","summary":"Added C0c UI Toolkit asset smoke gate to load real Resources prefabs, verify binder components, serialized UXML/USS references, required UI Toolkit element names, and TurnSummary UXML contract before manual Unity prefab debugging."}

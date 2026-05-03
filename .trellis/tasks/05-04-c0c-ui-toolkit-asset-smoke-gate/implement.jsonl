@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/C0cUiToolkitAssetSmokeTests.cs", "reason": "C0c Unity EditMode asset smoke coverage"}
+{"file": "Makefile", "reason": "C0c check entry points"}
+{"file": "docs/2026-05-04-c0c-ui-toolkit-asset-smoke-gate.md", "reason": "C0c gate documentation"}
