@@ -58,11 +58,43 @@ namespace Panoptes.Core.Application.App
         private bool _pendingCatalogSync;
         private MsgGameInit _deferredGameInit;
         private StaticCatalogStoreHydrator _staticCatalogStoreHydrator;
+        private NetworkManager _networkManager;
+        private MessageDispatcher _messageDispatcher;
+        private SessionManager _sessionManager;
+        private ClientRuntimeConfigCache _clientRuntimeConfigCache;
+        private ConfigCache _configCache;
+        private StaticCatalogCache _staticCatalogCache;
+        private RoomCache _roomCache;
+        private GameStateCache _gameStateCache;
+        private GameChatCache _gameChatCache;
+
+        public void UseProjectServices(
+            NetworkManager networkManager,
+            MessageDispatcher messageDispatcher,
+            SessionManager sessionManager,
+            ClientRuntimeConfigCache clientRuntimeConfigCache,
+            ConfigCache configCache,
+            StaticCatalogCache staticCatalogCache,
+            RoomCache roomCache,
+            GameStateCache gameStateCache,
+            GameChatCache gameChatCache)
+        {
+            _networkManager = networkManager;
+            _messageDispatcher = messageDispatcher;
+            _sessionManager = sessionManager;
+            _clientRuntimeConfigCache = clientRuntimeConfigCache;
+            _configCache = configCache;
+            _staticCatalogCache = staticCatalogCache;
+            _roomCache = roomCache;
+            _gameStateCache = gameStateCache;
+            _gameChatCache = gameChatCache;
+            HydrateStaticCatalogStore(_staticCatalogCache);
+        }
 
         void Start()
         {
             RegisterGlobalHandlers();
-            HydrateStaticCatalogStore(StaticCatalogCache.Instance);
+            HydrateStaticCatalogStore(_staticCatalogCache);
             if (bypassLoginForLocalTest)
             {
                 EnterLocalTestMode();
@@ -74,16 +106,16 @@ namespace Panoptes.Core.Application.App
 
         void OnDestroy()
         {
-            if (MessageDispatcher.Instance != null)
+            if (_messageDispatcher != null)
             {
-                MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
-                MessageDispatcher.Instance.Unregister("MsgConfigBatchJson");
-                MessageDispatcher.Instance.Unregister("MsgGameInit");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSectionChunk");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSyncComplete");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSnapshot");
-                MessageDispatcher.Instance.Unregister("Problem");
+                _messageDispatcher.Unregister("MsgClientRuntimeConfig");
+                _messageDispatcher.Unregister("MsgConfigBatchJson");
+                _messageDispatcher.Unregister("MsgGameInit");
+                _messageDispatcher.Unregister("MsgStaticCatalogManifest");
+                _messageDispatcher.Unregister("MsgStaticCatalogSectionChunk");
+                _messageDispatcher.Unregister("MsgStaticCatalogSyncComplete");
+                _messageDispatcher.Unregister("MsgStaticCatalogSnapshot");
+                _messageDispatcher.Unregister("Problem");
             }
         }
 
@@ -95,10 +127,10 @@ namespace Panoptes.Core.Application.App
                 _pendingCatalogSync = false;
                 _deferredGameInit = null;
                 ClearLobbyRoomCache();
-                ClientRuntimeConfigCache.Instance?.Clear();
-                ConfigCache.Instance?.Clear();
-                GameStateCache.Instance?.Clear();
-                GameChatCache.Instance?.Clear();
+                _clientRuntimeConfigCache?.Clear();
+                _configCache?.Clear();
+                _gameStateCache?.Clear();
+                _gameChatCache?.Clear();
             }
 
             EnsureRealtimeConnectionIfNeeded(newState);
@@ -127,34 +159,34 @@ namespace Panoptes.Core.Application.App
 
         private void RegisterGlobalHandlers()
         {
-            if (MessageDispatcher.Instance == null)
+            if (_messageDispatcher == null)
             {
                 return;
             }
 
-            MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
-            MessageDispatcher.Instance.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSectionChunk>("MsgStaticCatalogSectionChunk", OnStaticCatalogSectionChunk);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSyncComplete>("MsgStaticCatalogSyncComplete", OnStaticCatalogSyncComplete);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
-            MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
-            MessageDispatcher.Instance.Register<Problem>("Problem", OnProblem);
+            _messageDispatcher.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
+            _messageDispatcher.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
+            _messageDispatcher.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
+            _messageDispatcher.Register<MsgStaticCatalogSectionChunk>("MsgStaticCatalogSectionChunk", OnStaticCatalogSectionChunk);
+            _messageDispatcher.Register<MsgStaticCatalogSyncComplete>("MsgStaticCatalogSyncComplete", OnStaticCatalogSyncComplete);
+            _messageDispatcher.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
+            _messageDispatcher.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+            _messageDispatcher.Register<Problem>("Problem", OnProblem);
         }
 
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
         {
-            ClientRuntimeConfigCache.Instance?.Apply(msg);
+            _clientRuntimeConfigCache?.Apply(msg);
         }
 
         private void OnConfigBatchJson(MsgConfigBatchJson msg)
         {
-            ConfigCache.Instance?.ApplyBatch(msg);
+            _configCache?.ApplyBatch(msg);
         }
 
         private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
         {
-            var cache = StaticCatalogCache.EnsureInstance();
+            var cache = _staticCatalogCache;
             var decision = cache?.CompareManifest(msg?.Manifest) ?? new StaticCatalogCache.CatalogSyncDecision();
             HydrateStaticCatalogStore(cache);
             cache?.BeginSectionSync(msg?.Manifest, decision.RequestedSections);
@@ -181,12 +213,12 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogSectionChunk(MsgStaticCatalogSectionChunk msg)
         {
-            StaticCatalogCache.EnsureInstance()?.ApplySectionChunk(msg);
+            _staticCatalogCache?.ApplySectionChunk(msg);
         }
 
         private void OnStaticCatalogSyncComplete(MsgStaticCatalogSyncComplete msg)
         {
-            var cache = StaticCatalogCache.EnsureInstance();
+            var cache = _staticCatalogCache;
             var synchronized = cache?.FinalizeSectionSync(msg) ?? false;
             _pendingCatalogSync = false;
             if (!synchronized)
@@ -208,7 +240,7 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogSnapshot(MsgStaticCatalogSnapshot msg)
         {
-            var cache = StaticCatalogCache.EnsureInstance();
+            var cache = _staticCatalogCache;
             cache?.ApplySnapshot(msg?.Snapshot);
             HydrateStaticCatalogStore(cache);
         }
@@ -216,7 +248,7 @@ namespace Panoptes.Core.Application.App
         public void UseStaticCatalogStoreHydrator(StaticCatalogStoreHydrator hydrator)
         {
             _staticCatalogStoreHydrator = hydrator;
-            HydrateStaticCatalogStore(StaticCatalogCache.Instance);
+            HydrateStaticCatalogStore(_staticCatalogCache);
         }
 
         private void HydrateStaticCatalogStore(StaticCatalogCache cache)
@@ -237,16 +269,15 @@ namespace Panoptes.Core.Application.App
 
         private void ApplyGameInitAndTransition(MsgGameInit msg)
         {
-            GameChatCache.Instance?.Clear();
-            GameStateCache.Instance?.ApplyGameInit(msg);
-            RoomCache.Instance?.Clear();
+            _gameChatCache?.Clear();
+            _gameStateCache?.ApplyGameInit(msg);
+            _roomCache?.Clear();
             TransitionTo(AppState.Game);
         }
 
-        private static void ClearLobbyRoomCache()
+        private void ClearLobbyRoomCache()
         {
-            var roomCache = RoomCache.Instance;
-            roomCache?.Clear();
+            _roomCache?.Clear();
         }
 
         private void OnProblem(Problem problem)
@@ -257,14 +288,14 @@ namespace Panoptes.Core.Application.App
             switch (State)
             {
                 case AppState.Lobby:
-                    RoomCache.Instance?.PublishLobbyError(new MsgLobbyError
+                    _roomCache?.PublishLobbyError(new MsgLobbyError
                     {
                         Code = code,
                         Message = message
                     });
                     break;
                 case AppState.Game:
-                    GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+                    _gameStateCache?.PublishGameError(new GameErrorEvent
                     {
                         Code = code,
                         Message = message
@@ -283,21 +314,21 @@ namespace Panoptes.Core.Application.App
                 return;
             }
 
-            if (NetworkManager.Instance == null ||
-                NetworkManager.Instance.IsConnected ||
-                NetworkManager.Instance.IsConnecting)
+            if (_networkManager == null ||
+                _networkManager.IsConnected ||
+                _networkManager.IsConnecting)
             {
                 return;
             }
 
-            if (SessionManager.Instance == null || !SessionManager.Instance.IsLoggedIn)
+            if (_sessionManager == null || !_sessionManager.IsLoggedIn)
             {
                 return;
             }
 
             try
             {
-                await NetworkManager.Instance.ConnectWithSessionAsync();
+                await _networkManager.ConnectWithSessionAsync();
             }
             catch (System.Exception e)
             {

@@ -13,6 +13,11 @@ namespace Panoptes.Presentation.Composition
     [UnityEngine.RequireComponent(typeof(SessionManager))]
     [UnityEngine.RequireComponent(typeof(AppManager))]
     [UnityEngine.RequireComponent(typeof(ConfigCache))]
+    [UnityEngine.RequireComponent(typeof(ClientRuntimeConfigCache))]
+    [UnityEngine.RequireComponent(typeof(StaticCatalogCache))]
+    [UnityEngine.RequireComponent(typeof(RoomCache))]
+    [UnityEngine.RequireComponent(typeof(GameStateCache))]
+    [UnityEngine.RequireComponent(typeof(GameChatCache))]
     [UnityEngine.RequireComponent(typeof(ProjectOverlayRegistry))]
     public sealed class ProjectLifetimeScope : LifetimeScope
     {
@@ -26,6 +31,11 @@ namespace Panoptes.Presentation.Composition
                 GetComponent<MessageDispatcher>(),
                 GetComponent<SessionManager>(),
                 GetComponent<ConfigCache>(),
+                GetComponent<ClientRuntimeConfigCache>(),
+                GetComponent<StaticCatalogCache>(),
+                GetComponent<RoomCache>(),
+                GetComponent<GameStateCache>(),
+                GetComponent<GameChatCache>(),
                 overlays.ErrorToast,
                 overlays.ConfirmDialog);
         }
