@@ -52,6 +52,7 @@ namespace Panoptes.Presentation.Map
         private Func<string> _localOwnerIdProvider;
         private Func<string, string> _backendBuildingTypeResolver;
         private Action<NodeView> _restoreNodeHighlight;
+        private MapRenderer _mapRenderer;
         private NodeView _hoverNode;
         private MapPlanningInputController.BuildPlacementRule _buildRule;
         private string _buildType = string.Empty;
@@ -72,6 +73,7 @@ namespace Panoptes.Presentation.Map
             Func<PlanningIntentService> planningIntentServiceProvider,
             Func<string> localOwnerIdProvider,
             Func<string, string> backendBuildingTypeResolver,
+            MapRenderer mapRenderer,
             Action<NodeView> restoreNodeHighlight)
         {
             _inputState = inputState;
@@ -79,6 +81,7 @@ namespace Panoptes.Presentation.Map
             _planningIntentServiceProvider = planningIntentServiceProvider;
             _localOwnerIdProvider = localOwnerIdProvider;
             _backendBuildingTypeResolver = backendBuildingTypeResolver;
+            _mapRenderer = mapRenderer;
             _restoreNodeHighlight = restoreNodeHighlight;
         }
 
@@ -225,8 +228,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
-            if (map == null)
+            if (_mapRenderer == null)
             {
                 return false;
             }
@@ -247,7 +249,7 @@ namespace Panoptes.Presentation.Map
             var ownerId = ResolveLocalOwnerId();
             if (ShouldRenderPendingBuildGhost(node.NodeId))
             {
-                map.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, settings.PlacedGhostColor);
+                _mapRenderer.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, settings.PlacedGhostColor);
             }
 
             _pendingBuildState.Add(new MapPlanningInputController.PendingBuildRecord
@@ -263,12 +265,12 @@ namespace Panoptes.Presentation.Map
 
         public void ApplyBackendBuildCommand(string buildingType, string nodeId, bool isGhost, string ownerId, int hp, Color placedGhostColor)
         {
-            if (MapRenderer.Instance == null)
+            if (_mapRenderer == null)
             {
                 return;
             }
 
-            MapRenderer.Instance.ApplyBuildingPlacement(nodeId, buildingType, ownerId, isGhost, hp, placedGhostColor);
+            _mapRenderer.ApplyBuildingPlacement(nodeId, buildingType, ownerId, isGhost, hp, placedGhostColor);
 
             if (!isGhost)
             {
@@ -304,13 +306,12 @@ namespace Panoptes.Presentation.Map
             nodeId = nodeId.Trim();
             RemovePendingBuild(nodeId);
 
-            var map = MapRenderer.Instance;
-            if (map == null)
+            if (_mapRenderer == null)
             {
                 return;
             }
 
-            map.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
+            _mapRenderer.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
         }
 
         public bool HasPendingBuild(string nodeId)
@@ -379,13 +380,12 @@ namespace Panoptes.Presentation.Map
 
         private bool ShouldRenderPendingBuildGhost(string nodeId)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || string.IsNullOrWhiteSpace(nodeId))
+            if (_mapRenderer == null || string.IsNullOrWhiteSpace(nodeId))
             {
                 return false;
             }
 
-            return map.TryGetNodeState(nodeId, out var nodeState) &&
+            return _mapRenderer.TryGetNodeState(nodeId, out var nodeState) &&
                    nodeState != null &&
                    string.IsNullOrWhiteSpace(nodeState.BuildingType);
         }

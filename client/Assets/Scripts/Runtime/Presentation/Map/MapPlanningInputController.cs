@@ -2077,6 +2077,7 @@ namespace Panoptes.Presentation.Map
                 () => _planningIntentService,
                 GetLocalOwnerId,
                 ResolveBackendBuildingType,
+                _mapRenderer,
                 RestoreNodeHighlightAfterHover);
         }
 
