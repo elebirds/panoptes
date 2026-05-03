@@ -483,24 +483,6 @@ namespace Panoptes.Core.Application.Cache
             }
         }
 
-        public static StaticCatalogCache EnsureInstance()
-        {
-            if (Instance != null)
-            {
-                return Instance;
-            }
-
-            var existing = UnityEngine.Object.FindAnyObjectByType<StaticCatalogCache>();
-            if (existing != null)
-            {
-                Instance = existing;
-                return existing;
-            }
-
-            var go = new GameObject("StaticCatalogCache");
-            return go.AddComponent<StaticCatalogCache>();
-        }
-
         public bool LoadLocalCatalog()
         {
             var asset = UnityEngine.Resources.Load<TextAsset>(catalogBundleResourcePath);

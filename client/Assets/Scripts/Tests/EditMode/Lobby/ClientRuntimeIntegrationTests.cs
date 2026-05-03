@@ -327,7 +327,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void PlanningDraftCache_ShouldClearPreview_WhenPlanningSnapshotApplied()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             var previewChanged = 0;
             cache.PreviewChanged += () => previewChanged++;
 
@@ -359,7 +359,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void PlanningDraftCache_ShouldParseAndFilterMinisterDrafts_FromPlanningSnapshot()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
 
             cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
             {
@@ -405,6 +405,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             var cacheObject = new GameObject("GameStateCache");
             var cache = cacheObject.AddComponent<GameStateCache>();
+            var planningDraftCache = CreatePlanningDraftCache();
+            cache.UseProjectCaches(null, planningDraftCache, null);
 
             var nodeEvents = 0;
             var unitEvents = 0;
@@ -541,8 +543,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
             Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
             Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
-            Assert.That(PlanningDraftCache.EnsureInstance().GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
-            Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
+            Assert.That(planningDraftCache.GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
+            Assert.That(planningDraftCache.PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);
             Assert.That(lastNodeEvent.ChangeType, Is.EqualTo("planning_start"));
@@ -972,7 +974,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void PlanningDraftCache_ShouldExposeRecipeSelectionLookup_ForUiConsumers()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
             {
                 RecipeSelections =
@@ -1774,6 +1776,11 @@ namespace Panoptes.Tests.EditMode.Lobby
                 .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
                 .OrderBy(file => file, StringComparer.Ordinal)
                 .Select(File.ReadAllText));
+        }
+
+        private static PlanningDraftCache CreatePlanningDraftCache()
+        {
+            return new GameObject("PlanningDraftCache").AddComponent<PlanningDraftCache>();
         }
 
         private static void SetSingletonInstance(Type type, object value)

@@ -61,24 +61,6 @@ namespace Panoptes.Core.Application.Cache
             DontDestroyOnLoad(gameObject);
         }
 
-        public static ConfigCache EnsureInstance()
-        {
-            if (Instance != null)
-            {
-                return Instance;
-            }
-
-            var existing = UnityEngine.Object.FindAnyObjectByType<ConfigCache>();
-            if (existing != null)
-            {
-                Instance = existing;
-                return existing;
-            }
-
-            var go = new GameObject("ConfigCache");
-            return go.AddComponent<ConfigCache>();
-        }
-
         public bool TryGetJson(string key, out string json)
         {
             json = string.Empty;

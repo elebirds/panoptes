@@ -37,24 +37,6 @@ namespace Panoptes.Core.Application.Cache
             DontDestroyOnLoad(gameObject);
         }
 
-        public static GameChatCache EnsureInstance()
-        {
-            if (Instance != null)
-            {
-                return Instance;
-            }
-
-            var existing = UnityEngine.Object.FindAnyObjectByType<GameChatCache>();
-            if (existing != null)
-            {
-                Instance = existing;
-                return existing;
-            }
-
-            var go = new GameObject("GameChatCache");
-            return go.AddComponent<GameChatCache>();
-        }
-
         public void ApplyPosted(MsgGameChatPosted msg)
         {
             var entry = GameChatMapper.ToDto(msg?.Entry);

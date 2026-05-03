@@ -630,14 +630,24 @@ public class MinisterPanel : MonoBehaviour
 }
 ```
 
-处理`MsgMinisterReportChunk`消息：
+处理 `MsgMinisterReportChunk` 消息时，正式路径由 Core 消息处理器更新
+`PlanningDraftStore` / 部长报告读模型，`MinisterReportViewModel` 投影为
+UI 状态，`MinisterReportUiToolkitBinder` 渲染：
 ```csharp
-private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
+public sealed class MinisterReportUiToolkitBinder : MonoBehaviour
 {
-    if (!msg.IsFinal)
-        MinisterPanel.Instance.AppendChunk(msg.Chunk);
-    else
-        MinisterPanel.Instance.FinalizeReport();
+    private MinisterReportViewModel _viewModel;
+
+    [Inject]
+    private void Construct(MinisterReportViewModel viewModel)
+    {
+        _viewModel = viewModel;
+    }
+
+    private void OnEnable()
+    {
+        _viewModel.State.Subscribe(Render).AddTo(this);
+    }
 }
 ```
 
@@ -764,12 +774,11 @@ public class OrderReviewPanel : MonoBehaviour
 // App启动流程
 async void Start()
 {
-    // 1. 连接WebSocket
+    // 1. NetworkManager 由 ProjectLifetimeScope 注册，发送端口是 IClientMessageSender
     await _networkManager.ConnectAsync(Config.ServerURL);
 
-    // 2. 如果有本地存储的token，尝试自动登录
-    // Gamejam阶段跳过，直接显示登录界面
-    SceneLoader.Instance.LoadScene("Login");
+    // 2. 场景切换通过注入的 AppManager / Scene 服务完成
+    _appManager.TransitionTo(AppState.Login);
 }
 
 // 登录成功后
@@ -778,7 +787,7 @@ private void OnLoginSuccess(MsgLoginSuccess msg)
     // 保存token和player_id
     PlayerPrefs.SetString("token", msg.Token);
     PlayerPrefs.SetString("player_id", msg.PlayerId);
-    SceneLoader.Instance.LoadScene("Lobby");
+    _appManager.TransitionTo(AppState.Lobby);
 }
 ```
 
@@ -798,8 +807,8 @@ public interface IClientMessageSender
 // NetworkManager内部处理
 private async void HandleDisconnect()
 {
-    // 显示断线提示
-    LoadingOverlay.Instance.Show("连接断开，正在重连...");
+    // 通过注入的项目级 overlay / feedback service 显示断线提示
+    _feedback.Show("连接断开，正在重连...");
 
     int retries = 0;
     while (retries < 5)
@@ -809,14 +818,14 @@ private async void HandleDisconnect()
         {
             await ConnectAsync(Config.ServerURL);
             // 重连成功后，服务端检测到相同player_id会重发MsgGameInit
-            LoadingOverlay.Instance.Hide();
+            _feedback.Hide();
             return;
         }
         catch { retries++; }
     }
 
     // 重连失败，返回登录界面
-    SceneLoader.Instance.LoadScene("Login");
+    _appManager.TransitionTo(AppState.Login);
 }
 ```
 
@@ -847,8 +856,8 @@ internal void ApplyGameInit(MsgGameInit msg)
     MyPlayer = msg.MyPlayer;
     _ministers = msg.Ministers.ToList();
 
-    // 通知MapRenderer重建地图
-    MapRenderer.Instance.RebuildMap();
+    // StoreMessageHydrator 更新 GameStateStore，MapRenderer 订阅 Store 后重建地图
+    _hydrationHelper.HydrateGameState(StoreHydrationProtocolMapper.ToGameState(msg));
 }
 ```
 
@@ -868,8 +877,11 @@ internal void ApplyGameSync(MsgGameSync msg)
     foreach (var unit in msg.Units)
         _units[unit.Id] = unit;
 
-    // 结算动画和时间线消费 msg.Events / DomainEventEnvelope，再刷新地图表现。
-    MapRenderer.Instance.RebuildMap();
+    // 结算动画和时间线消费 msg.Events / DomainEventEnvelope。
+    // Store 更新后，MapRenderer / HUD 通过 Store 订阅刷新表现。
+    _hydrationHelper.HydrateGameState(
+        StoreHydrationProtocolMapper.MergeGameSync(_gameStateStore.Snapshot, msg));
+    _settlementStore.Replace(SettlementMapper.ToDto(msg));
 }
 ```
 
@@ -884,50 +896,55 @@ internal void ApplyGameSync(MsgGameSync msg)
 ```csharp
 public class AnimationQueue : MonoBehaviour
 {
-    public static AnimationQueue Instance { get; private set; }
-
-    private Queue<DomainEventEnvelope> _queue = new();
-    private bool _isPlaying = false;
-
-    // 收到 MsgGameSync 时调用
-    public void Enqueue(IList<DomainEventEnvelope> events)
+    private readonly struct UnitMoveCommand
     {
-        foreach (var e in events)
-            _queue.Enqueue(e);
+        public readonly string UnitId;
+        public readonly string TargetNodeId;
 
-        if (!_isPlaying)
-            StartCoroutine(PlayQueue());
+        public UnitMoveCommand(string unitId, string targetNodeId)
+        {
+            UnitId = unitId;
+            TargetNodeId = targetNodeId;
+        }
     }
 
-    private IEnumerator PlayQueue()
-    {
-        _isPlaying = true;
-        while (_queue.Count > 0)
-        {
-            var e = _queue.Dequeue();
-            yield return StartCoroutine(PlayEvent(e));
-        }
-        _isPlaying = false;
+    private Queue<UnitMoveCommand> _unitMoveQueue = new();
+    private bool _isPlayingUnitMoves = false;
+    private MapRenderer _mapRenderer;
 
-        // 动画播放完成后，更新缓存和UI
-        _gameStateCache.ApplyCombatSettlement(_pendingSettlement);
+    [Inject]
+    private void Construct(MapRenderer mapRenderer)
+    {
+        _mapRenderer = mapRenderer;
     }
 
-    private IEnumerator PlayEvent(CombatEvent e)
+    // SettlementPlaybackController 消费 SettlementStore 后调用
+    public void EnqueueUnitMove(string unitId, string targetNodeId)
     {
-        switch (e.DataCase)
+        _unitMoveQueue.Enqueue(new UnitMoveCommand(unitId, targetNodeId));
+
+        if (!_isPlayingUnitMoves)
+            StartCoroutine(PlayUnitMoveQueue());
+    }
+
+    private IEnumerator PlayUnitMoveQueue()
+    {
+        _isPlayingUnitMoves = true;
+        while (_unitMoveQueue.Count > 0)
         {
-            case CombatEvent.DataOneofCase.UnitMove:
-                yield return UnitMoveAnim.Play(e.UnitMove);
-                break;
-            case CombatEvent.DataOneofCase.UnitDied:
-                yield return CombatAnim.PlayDeath(e.UnitDied);
-                break;
-            case CombatEvent.DataOneofCase.CastleDamaged:
-                yield return CastleDamageAnim.Play(e.CastleDamaged);
-                break;
-            // ...
+            var cmd = _unitMoveQueue.Dequeue();
+            yield return StartCoroutine(PlaySingleUnitMove(cmd));
         }
+        _isPlayingUnitMoves = false;
+    }
+
+    private IEnumerator PlaySingleUnitMove(UnitMoveCommand cmd)
+    {
+        if (!_mapRenderer.TryGetUnitView(cmd.UnitId, out var unitView)) yield break;
+        if (!_mapRenderer.TryGetNodeView(cmd.TargetNodeId, out var nodeView)) yield break;
+
+        yield return UnitMoveAnim.Play(unitView, nodeView.transform.position, 0.35f);
+        _mapRenderer.SetUnitNode(cmd.UnitId, cmd.TargetNodeId);
     }
 }
 ```
@@ -938,25 +955,22 @@ public class AnimationQueue : MonoBehaviour
 public class UnitMoveAnim : MonoBehaviour
 {
     // 播放单位移动动画
-    public static IEnumerator Play(UnitMoveEvent e)
+    public static IEnumerator Play(UnitView unitView, Vector3 targetWorldPos, float duration)
     {
-        var unitView = UnitCache.Instance.GetView(e.UnitId);
         if (unitView == null) yield break;
 
-        var startPos = GridToWorld(e.From);
-        var endPos = GridToWorld(e.To);
-        float duration = 0.3f;
+        var startPos = unitView.transform.position;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             unitView.transform.position =
-                Vector3.Lerp(startPos, endPos, elapsed / duration);
+                Vector3.Lerp(startPos, targetWorldPos, elapsed / duration);
             yield return null;
         }
 
-        unitView.transform.position = endPos;
+        unitView.transform.position = targetWorldPos;
     }
 }
 ```
