@@ -11,7 +11,6 @@ using Panoptes.Core.Application.Intents;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Common;
-using Panoptes.Presentation.Composition;
 using R3;
 using TMPro;
 using UnityEngine;
@@ -63,7 +62,6 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Awake()
         {
-            SceneCommandServiceInjector.InjectIfAvailable(this);
             ResolveExternalTurnPanelReferences();
             ResolveNextStageButtonReference();
             EnsureUi();

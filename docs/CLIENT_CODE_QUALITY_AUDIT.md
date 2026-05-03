@@ -28,7 +28,9 @@ UI construction, input modes, and presentation state.
 Presentation still contains scattered fallback scene lookup:
 
 - `Resources.FindObjectsOfTypeAll<T>()` appears in `ResourceHUD`,
-  `CityCoreBuildingActionRegistrar`, `TurnHUD`, and `TechTreePanelBootstrap`.
+  `CityCoreBuildingActionRegistrar`, and `TurnHUD`. The former
+  `TechTreePanelBootstrap` lookup path was removed during the final reactive
+  Presentation migration.
 - `FindAnyObjectByType` / `FindObjectsByType` appears across map, HUD, domestic
   UI, and game scene bootstrap classes.
 - Several callers need the same rule: fallback lookup may return only valid

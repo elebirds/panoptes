@@ -738,6 +738,28 @@ Batch 6 status (2026-05-02):
   Binder path is scanned for forbidden Protocol/cache/singleton dependencies,
   with a direct assertion that the compatibility bridge remains deleted.
 
+Batch 7 status (2026-05-03):
+
+- Removed `SceneCommandServiceInjector` and its `.meta` so scene command
+  service injection no longer depends on a manual `LifetimeScope.Find` shell.
+- Removed all `SceneCommandServiceInjector.InjectIfAvailable(...)` calls from
+  migrated Presentation components; their `[Inject]` dependencies are now owned
+  by `GameLifetimeScope` / `ClientCompositionInstaller` registrations.
+- Added `RegisterComponentInHierarchy` registrations for the migrated
+  scene/prefab-mounted command and Store consumers, including chat, game-over,
+  turn HUD, recipe synthesis, settlement timeline/report, tech tree, and
+  minister panels.
+- Removed the remaining `GameSceneController` resolver-based helper injection;
+  it may still ensure legacy runtime helper objects exist, but VContainer
+  performs injection through the registered scene component types.
+- Removed `TechTreePanelBootstrap` and its `.meta`. `TechTreePanelController`
+  must be mounted on the authored prefab or scene instance; runtime
+  `AddComponent<TechTreePanelController>()` is no longer part of the final
+  architecture.
+- Extended composition boundary coverage to keep the injection shell deleted
+  and block `LifetimeScope.Find<GameLifetimeScope>()` / `InjectGameObject`
+  patterns under Presentation composition.
+
 Next work: continue moving the remaining map renderer, settlement playback, and
 HUD resolver direct `*.Instance` reads onto injected Stores/ViewModels.
 
