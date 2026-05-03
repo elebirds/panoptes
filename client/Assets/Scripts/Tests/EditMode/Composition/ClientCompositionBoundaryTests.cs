@@ -684,6 +684,15 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void MapDebugLocalSpawnHotkey_ShouldStayRemoved()
+        {
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/Map/DebugUnitSpawnHotkey.cs")),
+                Is.False,
+                "Local debug unit spawning mutates client-only map state and must not return to final Presentation.");
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");
