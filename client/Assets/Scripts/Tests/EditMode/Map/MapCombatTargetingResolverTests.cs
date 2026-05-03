@@ -1,5 +1,4 @@
 using NUnit.Framework;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Map;
 
@@ -10,9 +9,9 @@ namespace Panoptes.Tests.EditMode.Map
         [Test]
         public void CanAttack_ShouldRejectCivilianUnits()
         {
-            var entry = new StaticCatalogCache.UnitEntryJson
+            var entry = new CatalogUnitDto
             {
-                tags = new[] { "civilian" }
+                Tags = new System.Collections.Generic.List<string> { "civilian" }
             };
 
             Assert.That(MapCombatTargetingResolver.CanAttack(entry), Is.False);
@@ -21,11 +20,11 @@ namespace Panoptes.Tests.EditMode.Map
         [Test]
         public void CanAttackStructures_ShouldReadCatalogFlag()
         {
-            var entry = new StaticCatalogCache.UnitEntryJson
+            var entry = new CatalogUnitDto
             {
-                flags = new StaticCatalogCache.UnitEntryJson.UnitFlagsJson
+                Flags = new CatalogUnitFlagsDto
                 {
-                    can_attack_structures = true
+                    CanAttackStructures = true
                 }
             };
 
