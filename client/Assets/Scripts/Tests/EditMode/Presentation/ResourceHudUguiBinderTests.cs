@@ -1,5 +1,8 @@
+using System.Reflection;
 using NUnit.Framework;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Binders.Ugui;
+using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
 using TMPro;
 using UnityEngine;
@@ -74,6 +77,28 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(changeText.gameObject.activeSelf, Is.False);
         }
 
+        [Test]
+        public void TechButton_ShouldToggleFinalTechTreeVisibilityStore()
+        {
+            _root = new GameObject("ResourceHudTechButtonTest", typeof(RectTransform));
+            var listObject = new GameObject("ResourceList", typeof(RectTransform));
+            listObject.transform.SetParent(_root.transform, false);
+            var buttonObject = new GameObject("TechBtn", typeof(RectTransform), typeof(Button));
+            buttonObject.transform.SetParent(_root.transform, false);
+
+            var hud = _root.AddComponent<ResourceHUD>();
+            using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectDependencies(hud, viewModel, visibilityStore);
+
+            var button = buttonObject.GetComponent<Button>();
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.True);
+
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
+        }
+
         private RectTransform CreateResourceListRoot()
         {
             _root = new GameObject("ResourceHudBinderTestRoot", typeof(RectTransform), typeof(CoroutineHost));
@@ -92,6 +117,16 @@ namespace Panoptes.Tests.EditMode.Presentation
                 3f,
                 Color.green,
                 Color.red);
+        }
+
+        private static void InjectDependencies(
+            ResourceHUD hud,
+            ResourceHudViewModel viewModel,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(ResourceHUD).GetMethod("Construct", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(hud, new object[] { viewModel, visibilityStore });
         }
 
         private static void CreateResourceItem(Transform parent)

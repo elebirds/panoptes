@@ -1,3 +1,4 @@
+using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.ViewModels;
@@ -50,6 +51,53 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(rootElement.Q<VisualElement>(ManagementPanelUiToolkitRenderer.GroupsName).childCount, Is.EqualTo(1));
             Assert.That(rootElement.Q<Button>("management-panel-row-irrigation"), Is.Not.Null);
             Assert.That(rootElement.Q<Label>("management-panel-row-status").text, Is.EqualTo("Planned research"));
+        }
+
+        [Test]
+        public void TechTreeBinder_ShouldFollowManagementPanelVisibilityStore()
+        {
+            _root = new GameObject("TechTreeVisibilityTest");
+            var binder = _root.AddComponent<TechTreeUiToolkitBinder>();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectVisibilityStore(binder, visibilityStore);
+
+            var document = _root.GetComponent<UIDocument>();
+            var rootElement = document.rootVisualElement;
+
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            visibilityStore.Toggle(ManagementPanelId.TechTree);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+            visibilityStore.Toggle(ManagementPanelId.TechTree);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void ManagementPanelVisibilityStore_ShouldToggleSingleActivePanel()
+        {
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
+
+            visibilityStore.Toggle(ManagementPanelId.TechTree);
+            Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.TechTree));
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.True);
+
+            visibilityStore.Toggle(ManagementPanelId.TechTree);
+            Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.None));
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
+        }
+
+        private static void InjectVisibilityStore(TechTreeUiToolkitBinder binder, ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(TechTreeUiToolkitBinder).GetMethod(
+                "ConstructVisibility",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { visibilityStore });
         }
     }
 }

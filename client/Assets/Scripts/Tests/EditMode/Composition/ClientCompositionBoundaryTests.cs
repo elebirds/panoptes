@@ -58,11 +58,12 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameOverOverlay>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<UnitInfoPanelController>"));
             Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<RecipeSynthesisPanel>"));
-            Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
+            Assert.That(installer, Does.Not.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("PlanningToolViewModel"));
             Assert.That(installer, Does.Contain("TokenHudViewModel"));
             Assert.That(installer, Does.Contain("ResourceHudViewModel"));
+            Assert.That(installer, Does.Contain("ManagementPanelVisibilityStore"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
         }
@@ -226,6 +227,7 @@ namespace Panoptes.Tests.EditMode.Composition
                 "PlanningDraftCache",
                 "StaticCatalogCache",
                 "NetworkManager.Instance",
+                "TechTreePanelController",
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "ResourceHUD must bind to ResourceHudViewModel state instead of legacy cache singletons.");
@@ -236,6 +238,66 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(hud, Does.Contain("ResourceHudUguiBinder"));
             Assert.That(viewModel, Does.Contain("GameStateStore"));
             Assert.That(viewModel, Does.Contain("StaticCatalogStore"));
+        }
+
+        [Test]
+        public void TechTreeUiToolkitSlice_ShouldUseViewModelVisibilityStoreAndNoLegacyPanel()
+        {
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs")),
+                Is.False,
+                "Tech tree must not reintroduce the legacy uGUI/cache controller.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelStateBuilder.cs")),
+                Is.False,
+                "Tech tree state must be projected by the final ViewModel path, not the legacy cache builder.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Prefabs/UI/Tech/TechTreePanel.prefab")),
+                Is.False,
+                "The deleted legacy TechTreePanelController must not remain as an authored prefab path.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Scripts/Runtime/Presentation/UI/Domestic/TechTreeNodeView.cs")),
+                Is.False,
+                "The legacy uGUI tech node view must stay deleted; the final tech tree renders through UI Toolkit.");
+            Assert.That(
+                File.Exists(ResolveAssetPath("Prefabs/UI/Tech/TechNodeItem.prefab")),
+                Is.False,
+                "The legacy uGUI tech node prefab must stay deleted with TechTreeNodeView.");
+
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/ManagementPanelVisibilityStore.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementPanelUiToolkitBinderBase.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "ActionLock.",
+                "NetworkManager.Instance",
+                "TechTreePanelController",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "Tech tree final UI slice must use Store/ViewModel/Binder plus presentation visibility state only.");
+
+            var resourceHud = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs"));
+            var binder = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs"));
+            var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs"));
+            Assert.That(resourceHud, Does.Contain("ManagementPanelVisibilityStore"));
+            Assert.That(resourceHud, Does.Contain("ManagementPanelId.TechTree"));
+            Assert.That(binder, Does.Contain("BindVisibility"));
+            Assert.That(viewModel, Does.Contain("StaticCatalogStore"));
+            Assert.That(viewModel, Does.Contain("PlanningDraftStore"));
+
+            var scene = File.ReadAllText(ResolveAssetPath("Scenes/Game.unity"));
+            Assert.That(scene, Does.Not.Contain("TechTreePanel"));
         }
 
         [Test]

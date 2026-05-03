@@ -33,6 +33,9 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
         private readonly string _resourceHudPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs");
         private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
+        private readonly string _techTreeViewModelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs");
+        private readonly string _techTreeUiToolkitBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs");
+        private readonly string _managementPanelVisibilityStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/ManagementPanelVisibilityStore.cs");
         private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
         private readonly string _staticCatalogCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs");
@@ -893,14 +896,18 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_configCachePath), Is.True, "ConfigCache.cs 不存在。");
             Assert.That(File.Exists(_staticCatalogCachePath), Is.True, "StaticCatalogCache.cs 不存在。");
-            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
+            Assert.That(File.Exists(_techTreePanelPath), Is.False, "TechTreePanelController.cs 应已删除。");
+            Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
+            Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
             Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
             Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
             Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.False, "CityCoreProductionPanel.cs 应已删除。");
 
             var configCacheContent = File.ReadAllText(_configCachePath);
             var staticCatalogCacheContent = File.ReadAllText(_staticCatalogCachePath);
-            var techTreeContent = File.ReadAllText(_techTreePanelPath);
+            var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
+            var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
             var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
             var buildContent = File.ReadAllText(_buildCommandPanelPath);
 
@@ -923,10 +930,12 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "科技树面板不应再等待服务端 snapshot 作为主路径。");
             Assert.That(techTreeContent, Does.Not.Contain("ConfigCache"),
                 "科技树面板不应再通过 ConfigCache 读取静态科技实体。");
-            StringAssert.Contains("TitleText", techTreeContent,
-                "科技树在模板缺失时也必须生成可见标题文本，避免界面空白。");
-            StringAssert.Contains("DescriptionText", techTreeContent,
-                "科技树在模板缺失时也必须生成可见描述文本，避免界面空白。");
+            StringAssert.Contains("StaticCatalogStore", techTreeContent,
+                "科技树应通过静态目录 Store 投影 UI Toolkit 状态。");
+            StringAssert.Contains("PlanningDraftStore", techTreeContent,
+                "科技树应通过规划草稿 Store 标记计划研究目标。");
+            StringAssert.Contains("ManagementPanelVisibilityStore", techTreeBinderContent,
+                "科技树 UI Toolkit binder 应订阅最终管理面板显隐状态。");
             Assert.That(recipeContent, Does.Not.Contain("ConfigCache.Instance"),
                 "配方面板不应再通过 ConfigCache 读取静态配方实体。");
             Assert.That(buildContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
@@ -965,20 +974,31 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void TechnologyAndBuildingUi_ShouldAlignToDtoQueries_AndAvoidLegacyFallbacks()
         {
-            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
+            Assert.That(File.Exists(_techTreePanelPath), Is.False, "TechTreePanelController.cs 应已删除。");
+            Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
+            Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
             Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
             Assert.That(File.Exists(_resourceHudPath), Is.True, "ResourceHUD.cs 不存在。");
 
-            var techTreeContent = File.ReadAllText(_techTreePanelPath);
+            var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
+            var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
+            var managementPanelVisibilityContent = File.ReadAllText(_managementPanelVisibilityStorePath);
             var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
             var resourceHudContent = File.ReadAllText(_resourceHudPath);
 
-            StringAssert.Contains("GetCurrentResearchState()", techTreeContent,
-                "科技树状态构建应直接消费权威研究 DTO。");
-            Assert.That(techTreeContent, Does.Not.Contain("GetPropertyValue(GetPropertyValue(gameState, \"MyPlayer\"), \"Research\")"),
-                "科技树不应继续通过 MyPlayer.Research 反射取状态。");
+            StringAssert.Contains("StaticCatalogStore", techTreeContent,
+                "科技树状态构建应消费最终静态目录 Store。");
+            StringAssert.Contains("PlanningDraftStore", techTreeContent,
+                "科技树状态构建应消费最终规划草稿 Store。");
+            StringAssert.Contains("BindVisibility", techTreeBinderContent,
+                "科技树 UI Toolkit binder 应通过显隐 Store 控制面板显隐。");
+            StringAssert.Contains("Toggle(ManagementPanelId.TechTree)", resourceHudContent,
+                "ResourceHUD 全局按钮应切换最终 UI Toolkit 科技树面板。");
+            StringAssert.Contains("BehaviorSubject<ManagementPanelVisibilityState>", managementPanelVisibilityContent,
+                "管理面板显隐状态应通过可订阅 Store 传播。");
 
             StringAssert.Contains("OnPlanningCommandResult", recipeContent,
                 "配方面板应订阅统一规划命令结果事件以便失败回滚。");
