@@ -760,8 +760,25 @@ Batch 7 status (2026-05-03):
   and block `LifetimeScope.Find<GameLifetimeScope>()` / `InjectGameObject`
   patterns under Presentation composition.
 
+Batch 8 status (2026-05-03):
+
+- Removed the remaining `UnitInfoPanelController` direct subscriptions to
+  `PlanningDraftCache`, `GameStateCache`, and `StaticCatalogCache` fallback
+  lookup.
+- Collapsed UnitInfo rendering to the final `UnitInfoViewModel` +
+  `UnitInfoUguiBinder` path; name/description, HP, planning summary, and
+  direct-order state no longer fall back to legacy resolver/presenter helpers.
+- Injected `MapPlanningInputController` through VContainer while preserving the
+  serialized field as the authored-scene override.
+- Removed legacy UnitInfo planning summary, HP resolver, and direct-order
+  resolver helper files plus their narrow tests; retained only lightweight
+  binder state DTOs.
+- Extended UnitInfo boundary coverage so the controller is part of the migrated
+  slice scan for Protocol, legacy cache, singleton `Instance`, and direct
+  network usage.
+
 Next work: continue moving the remaining map renderer, settlement playback, and
-HUD resolver direct `*.Instance` reads onto injected Stores/ViewModels.
+HUD direct `*.Instance` reads onto injected Stores/ViewModels.
 
 ## Completion Standard
 
