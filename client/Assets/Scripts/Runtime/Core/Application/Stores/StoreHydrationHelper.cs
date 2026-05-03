@@ -1,4 +1,5 @@
 using System;
+using Panoptes.Core.Application.Cache;
 
 namespace Panoptes.Core.Application.Stores
 {
@@ -68,6 +69,32 @@ namespace Panoptes.Core.Application.Stores
         public void HydrateTurn(TurnState state)
         {
             _turnStore.Replace(state);
+        }
+
+        public bool HydrateGameRuntimeFromCache(GameStateCache cache)
+        {
+            if (cache == null || !HasRuntimeGameState(cache))
+            {
+                return false;
+            }
+
+            HydrateGameState(StoreHydrationProtocolMapper.ToGameState(cache));
+            HydrateTurn(StoreHydrationProtocolMapper.ToTurn(cache));
+            return true;
+        }
+
+        private static bool HasRuntimeGameState(GameStateCache cache)
+        {
+            if (cache == null)
+            {
+                return false;
+            }
+
+            return !string.IsNullOrWhiteSpace(cache.GameID)
+                || !string.IsNullOrWhiteSpace(cache.ActiveGameSessionID)
+                || cache.Nodes.Count > 0
+                || cache.Units.Count > 0
+                || cache.Turn > 0;
         }
     }
 }

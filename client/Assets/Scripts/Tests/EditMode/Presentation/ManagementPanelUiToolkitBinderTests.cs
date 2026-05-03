@@ -57,6 +57,9 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(rootElement.Q<VisualElement>(ManagementPanelUiToolkitRenderer.GroupsName).childCount, Is.EqualTo(1));
             Assert.That(rootElement.Q<Button>("management-panel-row-irrigation"), Is.Not.Null);
             Assert.That(rootElement.Q<Label>("management-panel-row-status").text, Is.EqualTo("Planned research"));
+            Assert.That(rootElement.Q<Label>("management-panel-row-title").ClassListContains("management-panel-row-title"), Is.True);
+            Assert.That(rootElement.Q<Label>("management-panel-row-summary").ClassListContains("management-panel-row-summary"), Is.True);
+            Assert.That(rootElement.Q<Label>("management-panel-row-status").ClassListContains("management-panel-row-status"), Is.True);
         }
 
         [Test]
@@ -75,6 +78,8 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             visibilityStore.Toggle(ManagementPanelId.TechTree);
             Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(rootElement.pickingMode, Is.EqualTo(PickingMode.Ignore));
+            Assert.That(rootElement.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName).pickingMode, Is.EqualTo(PickingMode.Position));
 
             visibilityStore.Toggle(ManagementPanelId.TechTree);
             Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
@@ -204,12 +209,23 @@ namespace Panoptes.Tests.EditMode.Presentation
             var document = _root.GetComponent<UIDocument>();
             var rootElement = document.rootVisualElement;
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.RootName), Is.Not.Null);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(rootElement.pickingMode, Is.EqualTo(PickingMode.Ignore));
+            Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.RootName).pickingMode, Is.EqualTo(PickingMode.Position));
+            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("Management"));
+            Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.OverviewPanelName).style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            ShowNationalOverview(binder);
+            Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.NationalOverview));
             Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("National Overview"));
             Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TurnValueName).text, Is.EqualTo("6"));
             Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.ResearchValueName).text, Is.EqualTo("Irrigation"));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.MetricsName).childCount, Is.EqualTo(1));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.ResourcesName).childCount, Is.EqualTo(1));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.EventsName).childCount, Is.EqualTo(1));
+            Assert.That(rootElement.Q<Label>("national-overview-metric-units-label").ClassListContains("national-overview-label"), Is.True);
+            Assert.That(rootElement.Q<Label>("national-overview-resource-food-value").ClassListContains("national-overview-value"), Is.True);
+            Assert.That(rootElement.Q<Label>("national-overview-event-title").ClassListContains("national-overview-event-title"), Is.True);
 
             ShowTechTree(binder);
             Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.TechTree));
@@ -320,6 +336,15 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var method = typeof(ManagementHostUiToolkitBinder).GetMethod(
                 "ShowTechTree",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, null);
+        }
+
+        private static void ShowNationalOverview(ManagementHostUiToolkitBinder binder)
+        {
+            var method = typeof(ManagementHostUiToolkitBinder).GetMethod(
+                "ShowNationalOverview",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, null);

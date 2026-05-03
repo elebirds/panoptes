@@ -1,12 +1,17 @@
 .management-panel-root {
-    flex-grow: 1;
-    padding: 18px;
-    background-color: rgba(18, 22, 27, 0.96);
+    position: absolute;
+    left: 396px;
+    top: 88px;
+    width: 430px;
+    max-height: 620px;
+    padding: 12px;
+    background-color: rgba(18, 22, 27, 0.94);
     color: rgb(236, 240, 243);
 }
 
 .management-panel-title {
-    font-size: 24px;
+    color: rgb(237, 239, 232);
+    font-size: 16px;
     -unity-font-style: bold;
     margin-bottom: 12px;
 }
@@ -17,7 +22,7 @@
 }
 
 .management-panel-scroll {
-    flex-grow: 1;
+    max-height: 560px;
 }
 
 .management-panel-group {

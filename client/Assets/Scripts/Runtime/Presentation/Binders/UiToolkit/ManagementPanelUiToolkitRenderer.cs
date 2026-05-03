@@ -49,9 +49,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             var root = new VisualElement { name = RootName };
             root.AddToClassList("management-panel-root");
-            root.Add(new Label(string.IsNullOrWhiteSpace(title) ? "Panel" : title) { name = TitleName });
-            root.Add(new Label("No entries") { name = EmptyName });
-            root.Add(new VisualElement { name = GroupsName });
+            root.Add(CreateLabel(string.IsNullOrWhiteSpace(title) ? "Panel" : title, TitleName, "management-panel-title"));
+            root.Add(CreateLabel("No entries", EmptyName, "management-panel-empty"));
+
+            var groups = new VisualElement { name = GroupsName };
+            groups.AddToClassList("management-panel-groups");
+            root.Add(groups);
             return root;
         }
 
@@ -59,7 +62,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             var groupElement = new VisualElement { name = "management-panel-group-" + SafeName(group?.Id) };
             groupElement.AddToClassList("management-panel-group");
-            groupElement.Add(new Label(group?.Title ?? "Other") { name = "management-panel-group-title" });
+            groupElement.Add(CreateLabel(group?.Title ?? "Other", "management-panel-group-title", "management-panel-group-title"));
             if (group?.Rows == null)
             {
                 return groupElement;
@@ -80,29 +83,40 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 : new VisualElement();
             rowElement.name = "management-panel-row-" + SafeName(row?.Id);
             rowElement.AddToClassList("management-panel-row");
-            rowElement.Add(new Label(row?.Title ?? "Entry") { name = "management-panel-row-title" });
+            rowElement.Add(CreateLabel(row?.Title ?? "Entry", "management-panel-row-title", "management-panel-row-title"));
 
             if (!string.IsNullOrWhiteSpace(row?.Summary))
             {
-                rowElement.Add(new Label(row.Summary) { name = "management-panel-row-summary" });
+                rowElement.Add(CreateLabel(row.Summary, "management-panel-row-summary", "management-panel-row-summary"));
             }
 
             if (!string.IsNullOrWhiteSpace(row?.Detail))
             {
-                rowElement.Add(new Label(row.Detail) { name = "management-panel-row-detail" });
+                rowElement.Add(CreateLabel(row.Detail, "management-panel-row-detail", "management-panel-row-detail"));
             }
 
             if (!string.IsNullOrWhiteSpace(row?.Status))
             {
-                rowElement.Add(new Label(row.Status) { name = "management-panel-row-status" });
+                rowElement.Add(CreateLabel(row.Status, "management-panel-row-status", "management-panel-row-status"));
             }
 
             if (row != null && row.HasAction)
             {
-                rowElement.Add(new Label(row.ActionLabel) { name = "management-panel-row-action" });
+                rowElement.Add(CreateLabel(row.ActionLabel, "management-panel-row-action", "management-panel-row-action"));
             }
 
             return rowElement;
+        }
+
+        private static Label CreateLabel(string text, string name, string className)
+        {
+            var label = new Label(text ?? string.Empty) { name = name };
+            if (!string.IsNullOrWhiteSpace(className))
+            {
+                label.AddToClassList(className);
+            }
+
+            return label;
         }
 
         private static string SafeName(string value)

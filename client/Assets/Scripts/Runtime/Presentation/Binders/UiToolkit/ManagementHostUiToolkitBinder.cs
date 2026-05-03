@@ -67,7 +67,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _visibilityStore = visibilityStore;
             Bind(viewModel);
             EnsureVisibilitySubscription();
-            EnsureDefaultPanel();
             ApplyVisibility();
         }
 
@@ -87,7 +86,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             BindButtons();
             EnsureOverviewSubscription();
             EnsureVisibilitySubscription();
-            EnsureDefaultPanel();
             Render(_viewModel?.Current);
             ApplyVisibility();
         }
@@ -203,10 +201,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 var row = new VisualElement { name = "national-overview-event-" + i };
                 row.AddToClassList("national-overview-event");
-                row.Add(new Label(state.Events[i].Title) { name = "national-overview-event-title" });
+                row.Add(CreateLabel(state.Events[i].Title, "national-overview-event-title", "national-overview-event-title"));
                 if (!string.IsNullOrWhiteSpace(state.Events[i].Detail))
                 {
-                    row.Add(new Label(state.Events[i].Detail) { name = "national-overview-event-detail" });
+                    row.Add(CreateLabel(state.Events[i].Detail, "national-overview-event-detail", "national-overview-event-detail"));
                 }
 
                 _events.Add(row);
@@ -217,8 +215,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             var row = new VisualElement { name = name };
             row.AddToClassList("national-overview-pair-row");
-            row.Add(new Label(label ?? string.Empty) { name = name + "-label" });
-            row.Add(new Label(value ?? string.Empty) { name = name + "-value" });
+            row.Add(CreateLabel(label, name + "-label", "national-overview-label"));
+            row.Add(CreateLabel(value, name + "-value", "national-overview-value"));
             return row;
         }
 
@@ -233,9 +231,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 }
             }
 
-            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            if (_uiDocument != null)
             {
-                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument);
             }
         }
 
@@ -274,19 +272,21 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             root.AddToClassList("management-host-root");
             var header = new VisualElement { name = "management-host-header" };
             header.AddToClassList("management-host-header");
-            header.Add(new Label("National Overview") { name = TitleName });
-            header.Add(new Button { name = CloseButtonName, text = "Close" });
+            header.Add(CreateLabel("Management", TitleName, "management-host-title"));
+            var closeButton = new Button { name = CloseButtonName, text = "Close" };
+            closeButton.AddToClassList("management-host-close");
+            header.Add(closeButton);
             root.Add(header);
 
             var nav = new VisualElement { name = "management-host-nav" };
             nav.AddToClassList("management-host-nav");
-            nav.Add(new Button { name = OverviewButtonName, text = "Overview" });
-            nav.Add(new Button { name = TurnSummaryButtonName, text = "Turn" });
-            nav.Add(new Button { name = LedgerButtonName, text = "Ledger" });
-            nav.Add(new Button { name = TechButtonName, text = "Tech" });
-            nav.Add(new Button { name = BuildButtonName, text = "Build" });
-            nav.Add(new Button { name = RecipeButtonName, text = "Recipe" });
-            nav.Add(new Button { name = PolicyButtonName, text = "Policy" });
+            nav.Add(CreateNavButton(OverviewButtonName, "Overview"));
+            nav.Add(CreateNavButton(TurnSummaryButtonName, "Turn"));
+            nav.Add(CreateNavButton(LedgerButtonName, "Ledger"));
+            nav.Add(CreateNavButton(TechButtonName, "Tech"));
+            nav.Add(CreateNavButton(BuildButtonName, "Build"));
+            nav.Add(CreateNavButton(RecipeButtonName, "Recipe"));
+            nav.Add(CreateNavButton(PolicyButtonName, "Policy"));
             root.Add(nav);
 
             var overview = new VisualElement { name = OverviewPanelName };
@@ -296,23 +296,30 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             overview.Add(BuildSummaryRow("Tokens", TokensValueName));
             overview.Add(BuildSummaryRow("Research", ResearchValueName));
             overview.Add(BuildSummaryRow("Policy", PolicyValueName));
-            overview.Add(new Label("Metrics") { name = "national-overview-metrics-title" });
+            overview.Add(CreateLabel("Metrics", "national-overview-metrics-title", "national-overview-section-title"));
             overview.Add(new VisualElement { name = MetricsName });
-            overview.Add(new Label("Resources") { name = "national-overview-resources-title" });
+            overview.Add(CreateLabel("Resources", "national-overview-resources-title", "national-overview-section-title"));
             overview.Add(new VisualElement { name = ResourcesName });
-            overview.Add(new Label("Recent Events") { name = "national-overview-events-title" });
-            overview.Add(new Label("No recent events") { name = EmptyEventsName });
+            overview.Add(CreateLabel("Recent Events", "national-overview-events-title", "national-overview-section-title"));
+            overview.Add(CreateLabel("No recent events", EmptyEventsName, "national-overview-empty"));
             overview.Add(new VisualElement { name = EventsName });
             root.Add(overview);
             return root;
+        }
+
+        private static Button CreateNavButton(string name, string text)
+        {
+            var button = new Button { name = name, text = text };
+            button.AddToClassList("management-host-nav-button");
+            return button;
         }
 
         private static VisualElement BuildSummaryRow(string label, string valueName)
         {
             var row = new VisualElement();
             row.AddToClassList("national-overview-summary-row");
-            row.Add(new Label(label) { name = valueName + "-label" });
-            row.Add(new Label("--") { name = valueName });
+            row.Add(CreateLabel(label, valueName + "-label", "national-overview-label"));
+            row.Add(CreateLabel("--", valueName, "national-overview-value"));
             return row;
         }
 
@@ -395,7 +402,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void ShowTurnSummary()
         {
-            _visibilityStore?.Show(ManagementPanelId.TurnSummary);
+            _visibilityStore?.Hide();
         }
 
         private void ShowNationalLedger()
@@ -421,14 +428,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void ShowPolicyFocus()
         {
             _visibilityStore?.Show(ManagementPanelId.PolicyFocus);
-        }
-
-        private void EnsureDefaultPanel()
-        {
-            if (_visibilityStore != null && _visibilityStore.Current.ActivePanel == ManagementPanelId.None)
-            {
-                _visibilityStore.Show(ManagementPanelId.NationalOverview);
-            }
         }
 
         private void EnsureOverviewSubscription()
@@ -469,8 +468,17 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var activePanel = _visibilityStore?.Current.ActivePanel ?? ManagementPanelId.None;
-            root.style.display = activePanel == ManagementPanelId.None ? DisplayStyle.None : DisplayStyle.Flex;
+            root.pickingMode = PickingMode.Ignore;
+            var hostRoot = root.Q<VisualElement>(RootName);
+            if (hostRoot != null)
+            {
+                hostRoot.pickingMode = PickingMode.Position;
+            }
+
+            root.style.display = DisplayStyle.Flex;
             SetDisplay(_overviewPanel, activePanel == ManagementPanelId.NationalOverview ? DisplayStyle.Flex : DisplayStyle.None);
+            SetDisplay(_closeButton, activePanel == ManagementPanelId.None ? DisplayStyle.None : DisplayStyle.Flex);
+            SetDisplay(_turnSummaryButton, DisplayStyle.None);
             SetText(_title, ResolveTitle(activePanel));
         }
 
@@ -486,8 +494,19 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 ManagementPanelId.RecipeSynthesis => "Recipe Synthesis",
                 ManagementPanelId.PolicyFocus => "Policy Focus",
                 ManagementPanelId.MinisterReport => "Minister Report",
-                _ => string.Empty
+                _ => "Management"
             };
+        }
+
+        private static Label CreateLabel(string text, string name, string className)
+        {
+            var label = new Label(text ?? string.Empty) { name = name };
+            if (!string.IsNullOrWhiteSpace(className))
+            {
+                label.AddToClassList(className);
+            }
+
+            return label;
         }
 
         private static string SafeName(string value)

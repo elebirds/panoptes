@@ -122,9 +122,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 }
             }
 
-            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            if (_uiDocument != null)
             {
-                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument);
             }
         }
 
@@ -203,9 +203,84 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            _uiDocument.rootVisualElement.style.display = _visibilityStore.IsVisible(_visibilityPanelId)
+            var root = _uiDocument.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore;
+            var panelRoot = root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName);
+            if (panelRoot != null)
+            {
+                panelRoot.pickingMode = PickingMode.Position;
+            }
+
+            root.style.display = _visibilityStore.IsVisible(_visibilityPanelId)
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+        }
+    }
+
+    internal static class UiToolkitRuntimeDocument
+    {
+        private const string RuntimeThemeResourcePath = "UnityDefaultRuntimeTheme";
+        private static PanelSettings _sharedPanelSettings;
+        private static ThemeStyleSheet _runtimeTheme;
+
+        public static void EnsureConfigured(UIDocument document, int sortingOrder = 420)
+        {
+            if (document == null)
+            {
+                return;
+            }
+
+            if (document.panelSettings == null || document.panelSettings.name == "RuntimePanelSettings")
+            {
+                document.panelSettings = GetSharedPanelSettings(sortingOrder);
+                return;
+            }
+
+            Configure(document.panelSettings, sortingOrder);
+        }
+
+        private static PanelSettings GetSharedPanelSettings(int sortingOrder)
+        {
+            if (_sharedPanelSettings == null)
+            {
+                _sharedPanelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                _sharedPanelSettings.name = "PanoptesRuntimePanelSettings";
+            }
+
+            Configure(_sharedPanelSettings, sortingOrder);
+            return _sharedPanelSettings;
+        }
+
+        private static void Configure(PanelSettings settings, int sortingOrder)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(1920, 1080);
+            settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            settings.match = 0.5f;
+            settings.sortingOrder = sortingOrder;
+            settings.targetDisplay = 0;
+            settings.clearColor = false;
+            settings.clearDepthStencil = false;
+            var theme = ResolveRuntimeTheme();
+            if (theme != null)
+            {
+                settings.themeStyleSheet = theme;
+            }
+        }
+
+        private static ThemeStyleSheet ResolveRuntimeTheme()
+        {
+            if (_runtimeTheme == null)
+            {
+                _runtimeTheme = Resources.Load<ThemeStyleSheet>(RuntimeThemeResourcePath);
+            }
+
+            return _runtimeTheme;
         }
     }
 }

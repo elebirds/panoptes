@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement name="management-host-root" class="management-host-root">
         <ui:VisualElement name="management-host-header" class="management-host-header">
-            <ui:Label name="management-host-title" text="National Overview" class="management-host-title" />
-            <ui:Button name="management-host-close" text="Close" class="management-host-close" />
+            <ui:Label name="management-host-title" text="Management" class="management-host-title" />
+            <ui:Button name="management-host-close" text="Close" class="management-host-close" style="display: none;" />
         </ui:VisualElement>
         <ui:VisualElement name="management-host-nav" class="management-host-nav">
             <ui:Button name="management-host-nav-overview" text="Overview" class="management-host-nav-button" />
@@ -13,7 +13,7 @@
             <ui:Button name="management-host-nav-recipe" text="Recipe" class="management-host-nav-button" />
             <ui:Button name="management-host-nav-policy" text="Policy" class="management-host-nav-button" />
         </ui:VisualElement>
-        <ui:VisualElement name="management-host-overview-panel" class="national-overview-panel">
+        <ui:VisualElement name="management-host-overview-panel" class="national-overview-panel" style="display: none;">
             <ui:VisualElement class="national-overview-summary-grid">
                 <ui:VisualElement class="national-overview-summary-row">
                     <ui:Label name="national-overview-turn-value-label" text="Turn" class="national-overview-label" />

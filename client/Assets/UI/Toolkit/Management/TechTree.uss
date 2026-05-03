@@ -1,23 +1,41 @@
 .management-panel-root {
-    flex-grow: 1;
-    padding: 18px;
-    background-color: rgba(18, 22, 27, 0.96);
+    position: absolute;
+    left: 396px;
+    top: 88px;
+    width: 430px;
+    max-height: 620px;
+    padding: 12px;
+    background-color: rgba(18, 22, 27, 0.94);
     color: rgb(236, 240, 243);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(181, 190, 184, 0.34);
+    border-right-color: rgba(181, 190, 184, 0.34);
+    border-top-color: rgba(181, 190, 184, 0.34);
+    border-bottom-color: rgba(181, 190, 184, 0.34);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
 }
 
 .management-panel-title {
-    font-size: 24px;
+    color: rgb(237, 239, 232);
+    font-size: 16px;
     -unity-font-style: bold;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .management-panel-empty {
     color: rgb(166, 174, 183);
+    font-size: 12px;
     margin-bottom: 10px;
 }
 
 .management-panel-scroll {
-    flex-grow: 1;
+    max-height: 560px;
 }
 
 .management-panel-group {
@@ -25,7 +43,7 @@
 }
 
 .management-panel-group-title {
-    font-size: 15px;
+    font-size: 12px;
     -unity-font-style: bold;
     color: rgb(130, 190, 178);
     margin-bottom: 6px;
@@ -41,8 +59,9 @@
 }
 
 .management-panel-row-title {
-    font-size: 16px;
+    font-size: 13px;
     -unity-font-style: bold;
+    color: rgb(236, 240, 243);
 }
 
 .management-panel-row-summary,
@@ -51,6 +70,7 @@
 .management-panel-row-action {
     font-size: 13px;
     white-space: normal;
+    color: rgb(190, 199, 207);
 }
 
 .management-panel-row-detail {

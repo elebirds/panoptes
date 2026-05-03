@@ -105,6 +105,7 @@ namespace Panoptes.Presentation.Map
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
         private IDisposable _staticCatalogSubscription;
+        private bool _hasRenderedBackendMap;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -243,7 +244,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or fallback map available.");
+            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or local tool-scene map source available.");
         }
 
         private bool BuildBackendGameMap()
@@ -264,6 +265,7 @@ namespace Panoptes.Presentation.Map
             var backendNodes = SnapshotBackendNodes(state);
             Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
             BuildFromBackendNodes(backendNodes);
+            _hasRenderedBackendMap = true;
             return true;
         }
 
@@ -271,6 +273,7 @@ namespace Panoptes.Presentation.Map
         {
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.OnGameStateChanged(state));
+            OnGameStateChanged(_gameStateStore?.Snapshot);
         }
 
         private void UnsubscribeGameState()
@@ -282,7 +285,7 @@ namespace Panoptes.Presentation.Map
         private void OnGameStateChanged(GameStateStoreState state)
         {
             _latestGameState = state ?? new GameStateStoreState();
-            if (!isActiveAndEnabled || !IsGameRuntime() || !HasBackendNodes(_latestGameState))
+            if (!isActiveAndEnabled || !HasBackendNodes(_latestGameState))
             {
                 return;
             }
@@ -360,9 +363,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_tileViews.Count != state.Nodes.Count || HasMissingRenderedNode(state))
+            if (!_hasRenderedBackendMap || _tileViews.Count != state.Nodes.Count || HasMissingRenderedNode(state))
             {
                 BuildFromBackendNodes(SnapshotBackendNodes(state));
+                _hasRenderedBackendMap = true;
                 return;
             }
 
@@ -1515,6 +1519,7 @@ namespace Panoptes.Presentation.Map
             _tileViews.Clear();
             _tileViewsByGrid.Clear();
             _nodeStates.Clear();
+            _hasRenderedBackendMap = false;
             if (_mapFogOverlayController != null)
             {
                 _mapFogOverlayController.ClearOverlay();

@@ -245,9 +245,6 @@ namespace Panoptes.Presentation.Composition
             builder.Register<MinisterReportViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PolicyFocusViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<NationalLedgerViewModel>(Lifetime.Singleton).AsSelf();
-            builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Turn Summary UI Toolkit");
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<BuildCatalogUiToolkitBinder>("Prefabs/UI/BuildCatalog"),
                 Lifetime.Singleton);
@@ -257,21 +254,27 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>("Prefabs/UI/RecipeSynthesis"),
                 Lifetime.Singleton);
-            builder.RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Minister Report UI Toolkit");
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<PolicyFocusUiToolkitBinder>("Prefabs/UI/PolicyFocus"),
                 Lifetime.Singleton);
             builder.RegisterComponentInNewPrefab(
                 LoadRequiredComponent<NationalLedgerUiToolkitBinder>("Prefabs/UI/NationalLedger"),
                 Lifetime.Singleton);
-            builder.RegisterBuildCallback(container => container.Resolve<StoreMessageHydrator>().Attach());
-            builder.RegisterBuildCallback(container => container.Resolve<TurnSummaryUiToolkitBinder>());
+            builder.RegisterBuildCallback(container =>
+            {
+                var hydrationHelper = container.Resolve<StoreHydrationHelper>();
+                var gameStateCache = container.Resolve<GameStateCache>();
+                if (hydrationHelper.HydrateGameRuntimeFromCache(gameStateCache))
+                {
+                    var gameState = container.Resolve<GameStateStore>().Snapshot;
+                    Debug.Log($"[GameStore] Hydrated initial game runtime from project cache: turn={gameState.Turn} phase={gameState.Phase} nodes={gameState.Nodes.Count} units={gameState.Units.Count}");
+                }
+
+                container.Resolve<StoreMessageHydrator>().Attach();
+            });
             builder.RegisterBuildCallback(container => container.Resolve<BuildCatalogUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
-            builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }
