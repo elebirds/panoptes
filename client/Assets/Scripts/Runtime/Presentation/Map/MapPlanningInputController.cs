@@ -60,8 +60,6 @@ namespace Panoptes.Presentation.Map
             Charge = 3
         }
 
-        public static MapPlanningInputController Instance { get; private set; }
-
         [Header("Raycast")]
         [SerializeField] private Camera inputCamera;
         [SerializeField] private LayerMask raycastMask = ~0;
@@ -216,13 +214,6 @@ namespace Panoptes.Presentation.Map
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
             if (inputCamera == null)
             {
                 inputCamera = Camera.main;
