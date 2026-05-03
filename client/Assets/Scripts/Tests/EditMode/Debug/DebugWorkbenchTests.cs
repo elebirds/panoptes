@@ -46,7 +46,7 @@ namespace Panoptes.Tests.EditMode.Debug
 
             Assert.That(count, Is.EqualTo(6), "当前默认应提供 6 个调试 Tab。");
             CollectionAssert.AreEqual(
-                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game", "GameIntents" },
+                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game", "Commands" },
                 titles);
         }
 
@@ -215,7 +215,7 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_gameChatPanelControllerPath);
             StringAssert.Contains("SendThumbsUp()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
             StringAssert.Contains("SendThinking()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
-            StringAssert.Contains("GameIntents.SendChatEmote", content, "聊天面板应通过 GameIntents 发送表情。");
+            StringAssert.Contains("_gameIntentService.SendChatEmote", content, "聊天面板应通过注入的 GameIntentService 发送表情。");
             Assert.That(content, Does.Not.Contain("Panoptes.Protocol.V1"),
                 "Presentation 层聊天脚本不应直接依赖 protocol。");
         }
@@ -250,7 +250,7 @@ namespace Panoptes.Tests.EditMode.Debug
         }
 
         [Test]
-        public void DebugTabRegistry_ShouldKeepOverviewScrollable_AndProvideGameIntentsTab()
+        public void DebugTabRegistry_ShouldKeepOverviewScrollable_AndProvideCommandsTab()
         {
             var path = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugTabRegistry.cs");
             Assert.That(File.Exists(path), Is.True, "DebugTabRegistry.cs 不存在。");
@@ -260,8 +260,8 @@ namespace Panoptes.Tests.EditMode.Debug
                 "总览页应支持滚动，避免内容增多后被截断。");
             StringAssert.Contains("ProgressBar(", content,
                 "总览页应提供进度条摘要视图。");
-            StringAssert.Contains("GameIntentsDebugTab", content,
-                "调试工作台应提供独立的 GameIntents 面板。");
+            StringAssert.Contains("CommandDebugTab", content,
+                "调试工作台应提供独立的 Commands 面板。");
         }
 
         [Test]
