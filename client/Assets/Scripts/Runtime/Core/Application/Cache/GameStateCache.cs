@@ -1261,13 +1261,55 @@ namespace Panoptes.Core.Application.Cache
 
         private static ResourceDto ComputeResourceDelta(ResourceDto before, ResourceDto after)
         {
+            before ??= new ResourceDto();
+            after ??= new ResourceDto();
+
             return new ResourceDto
             {
                 Ore = after.Ore - before.Ore,
                 Wood = after.Wood - before.Wood,
                 Food = after.Food - before.Food,
-                IndustryOutput = after.IndustryOutput - before.IndustryOutput
+                IndustryOutput = after.IndustryOutput - before.IndustryOutput,
+                ResourceAmounts = ComputeAmountDelta(before.ResourceAmounts, after.ResourceAmounts),
+                PointAmounts = ComputeAmountDelta(before.PointAmounts, after.PointAmounts)
             };
+        }
+
+        private static Dictionary<string, int> ComputeAmountDelta(
+            IReadOnlyDictionary<string, int> before,
+            IReadOnlyDictionary<string, int> after)
+        {
+            var delta = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            AddDeltaKeys(delta, before);
+            AddDeltaKeys(delta, after);
+
+            var keys = delta.Keys.ToList();
+            for (var i = 0; i < keys.Count; i++)
+            {
+                var beforeAmount = 0;
+                var afterAmount = 0;
+                before?.TryGetValue(keys[i], out beforeAmount);
+                after?.TryGetValue(keys[i], out afterAmount);
+                delta[keys[i]] = afterAmount - beforeAmount;
+            }
+
+            return delta;
+        }
+
+        private static void AddDeltaKeys(Dictionary<string, int> delta, IReadOnlyDictionary<string, int> values)
+        {
+            if (values == null)
+            {
+                return;
+            }
+
+            foreach (var pair in values)
+            {
+                if (!string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    delta[pair.Key.Trim()] = 0;
+                }
+            }
         }
 
         private static string NormalizePlayerId(params string[] candidates)

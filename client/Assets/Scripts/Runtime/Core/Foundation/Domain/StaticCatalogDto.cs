@@ -8,6 +8,14 @@ namespace Panoptes.Core.Domain
         public int Amount;
     }
 
+    public sealed class CatalogHudEntryDto
+    {
+        public string Key;
+        public string IconKey;
+        public int SortOrder;
+        public bool VisibleInHud;
+    }
+
     public sealed class CatalogRecipeOutputsDto
     {
         public List<CatalogAmountDto> Resources;

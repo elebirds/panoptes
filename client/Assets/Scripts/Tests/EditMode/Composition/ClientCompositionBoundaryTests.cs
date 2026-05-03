@@ -49,6 +49,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("PlanningIntentService"));
             Assert.That(installer, Does.Contain("MinisterCommandService"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TokenHUD>"));
+            Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<ResourceHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
@@ -61,6 +62,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("PlanningToolViewModel"));
             Assert.That(installer, Does.Contain("TokenHudViewModel"));
+            Assert.That(installer, Does.Contain("ResourceHudViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
         }
@@ -203,6 +205,37 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(hud, Does.Contain("TokenHudViewModel"));
             Assert.That(viewModel, Does.Contain("ActionLockStore"));
             Assert.That(viewModel, Does.Not.Contain("Panoptes.Core.Application.Intents"));
+        }
+
+        [Test]
+        public void ResourceHudMigratedSlice_ShouldUseViewModelAndFinalStores()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/Ugui/ResourceHudUguiBinder.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/ResourceHudViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/ResourceHudState.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                "NetworkManager.Instance",
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "ResourceHUD must bind to ResourceHudViewModel state instead of legacy cache singletons.");
+
+            var hud = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs"));
+            var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/ResourceHudViewModel.cs"));
+            Assert.That(hud, Does.Contain("ResourceHudViewModel"));
+            Assert.That(hud, Does.Contain("ResourceHudUguiBinder"));
+            Assert.That(viewModel, Does.Contain("GameStateStore"));
+            Assert.That(viewModel, Does.Contain("StaticCatalogStore"));
         }
 
         [Test]

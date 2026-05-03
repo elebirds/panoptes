@@ -23,6 +23,12 @@ namespace Panoptes.Core.Application.Stores
             return CloneDictionary(source, CloneCatalogBuilding);
         }
 
+        public static Dictionary<string, CatalogHudEntryDto> CloneCatalogHudEntries(
+            IReadOnlyDictionary<string, CatalogHudEntryDto> source)
+        {
+            return CloneDictionary(source, CloneCatalogHudEntry);
+        }
+
         public static Dictionary<string, CatalogRecipeDto> CloneCatalogRecipes(
             IReadOnlyDictionary<string, CatalogRecipeDto> source)
         {
@@ -124,7 +130,9 @@ namespace Panoptes.Core.Application.Stores
                 Food = source.Food,
                 IndustryOutput = source.IndustryOutput,
                 Ore = source.Ore,
-                Wood = source.Wood
+                Wood = source.Wood,
+                ResourceAmounts = CloneIntDictionary(source.ResourceAmounts),
+                PointAmounts = CloneIntDictionary(source.PointAmounts)
             };
         }
 
@@ -479,6 +487,17 @@ namespace Panoptes.Core.Application.Stores
             };
         }
 
+        private static CatalogHudEntryDto CloneCatalogHudEntry(CatalogHudEntryDto source)
+        {
+            return new CatalogHudEntryDto
+            {
+                IconKey = source.IconKey,
+                Key = source.Key,
+                SortOrder = source.SortOrder,
+                VisibleInHud = source.VisibleInHud
+            };
+        }
+
         private static CatalogRecipeDto CloneCatalogRecipe(CatalogRecipeDto source)
         {
             return new CatalogRecipeDto
@@ -617,6 +636,25 @@ namespace Panoptes.Core.Application.Stores
             return source == null
                 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 : new Dictionary<string, string>(source, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static Dictionary<string, int> CloneIntDictionary(IDictionary<string, int> source)
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (var pair in source)
+            {
+                if (!string.IsNullOrWhiteSpace(pair.Key))
+                {
+                    result[pair.Key.Trim()] = pair.Value;
+                }
+            }
+
+            return result;
         }
     }
 }

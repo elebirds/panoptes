@@ -24,33 +24,12 @@ namespace Panoptes.Core.Application.Cache
 
         internal static ResourceDto SnapshotResources(ResourceBag bag, PointBag points)
         {
-            var resources = new ResourceDto();
-            if (bag?.Items != null)
+            var resources = new ResourceDto
             {
-                for (var i = 0; i < bag.Items.Count; i++)
-                {
-                    var item = bag.Items[i];
-                    if (item == null)
-                    {
-                        continue;
-                    }
-
-                    switch (item.Key)
-                    {
-                        case ResourceKeys.ResourceOre:
-                            resources.Ore = item.Amount;
-                            break;
-                        case ResourceKeys.ResourceWood:
-                            resources.Wood = item.Amount;
-                            break;
-                        case ResourceKeys.ResourceFood:
-                            resources.Food = item.Amount;
-                            break;
-                    }
-                }
-            }
-
-            resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
+                ResourceAmounts = SnapshotResourceAmounts(bag),
+                PointAmounts = SnapshotPointAmounts(points)
+            };
+            ApplyFixedResourceFields(resources);
             return resources;
         }
 
@@ -66,7 +45,9 @@ namespace Panoptes.Core.Application.Cache
                 Ore = source.Ore,
                 Wood = source.Wood,
                 Food = source.Food,
-                IndustryOutput = source.IndustryOutput
+                IndustryOutput = source.IndustryOutput,
+                ResourceAmounts = CloneAmounts(source.ResourceAmounts),
+                PointAmounts = CloneAmounts(source.PointAmounts)
             };
         }
 
@@ -132,28 +113,35 @@ namespace Panoptes.Core.Application.Cache
             values[key.Trim()] = amount;
         }
 
-        private static int FindPointAmount(PointBag bag, string key)
+        private static void ApplyFixedResourceFields(ResourceDto resources)
         {
-            if (bag?.Items == null || string.IsNullOrWhiteSpace(key))
+            if (resources == null)
             {
-                return 0;
+                return;
             }
 
-            for (var i = 0; i < bag.Items.Count; i++)
-            {
-                var item = bag.Items[i];
-                if (item == null)
-                {
-                    continue;
-                }
+            resources.ResourceAmounts ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            resources.PointAmounts ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceOre, out resources.Ore);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceWood, out resources.Wood);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceFood, out resources.Food);
+            resources.PointAmounts.TryGetValue(IndustryOutputPointKey, out resources.IndustryOutput);
+        }
 
-                if (string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return item.Amount;
-                }
+        private static Dictionary<string, int> CloneAmounts(IReadOnlyDictionary<string, int> source)
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (source == null)
+            {
+                return result;
             }
 
-            return 0;
+            foreach (var pair in source)
+            {
+                AddAmount(result, pair.Key, pair.Value);
+            }
+
+            return result;
         }
 
         private static string TrimOrEmpty(string value)
