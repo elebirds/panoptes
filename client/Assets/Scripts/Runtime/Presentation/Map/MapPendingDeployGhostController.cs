@@ -8,8 +8,14 @@ namespace Panoptes.Presentation.Map
     public sealed class MapPendingDeployGhostController
     {
         private readonly PendingDeployState _state = new();
+        private MapRenderer _mapRenderer;
 
         public int Count => _state.Count;
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+        }
 
         public void ShowCityCoreGhost(
             string unitId,
@@ -31,7 +37,7 @@ namespace Panoptes.Presentation.Map
                 ClearGhostNode(oldNodeId);
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;
@@ -105,14 +111,14 @@ namespace Panoptes.Presentation.Map
             return _state.TryGetGhostNode(unitId, out _);
         }
 
-        private static void ClearGhostNode(string nodeId)
+        private void ClearGhostNode(string nodeId)
         {
             if (string.IsNullOrWhiteSpace(nodeId))
             {
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;

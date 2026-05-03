@@ -9,13 +9,21 @@ namespace Panoptes.Presentation.Map
     public sealed class MapMovePreviewPresentationController
     {
         private readonly MovePreviewGhostPresenter _ghostPresenter = new();
+        private MapRenderer _mapRenderer;
         private MovePathOverlayController _pathOverlay;
         private MovePreviewOverlayController _previewOverlay;
 
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+            _pathOverlay?.SetMapRenderer(mapRenderer);
+            _previewOverlay?.SetMapRenderer(mapRenderer);
+        }
+
         public void Ensure(Transform hostTransform)
         {
-            _pathOverlay ??= new MovePathOverlayController(hostTransform);
-            _previewOverlay ??= new MovePreviewOverlayController(hostTransform);
+            _pathOverlay ??= new MovePathOverlayController(_mapRenderer);
+            _previewOverlay ??= new MovePreviewOverlayController(_mapRenderer, hostTransform);
             _previewOverlay.SetHostTransform(hostTransform);
         }
 

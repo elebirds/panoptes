@@ -17,11 +17,18 @@ namespace Panoptes.Presentation.Map
     {
         private readonly Dictionary<string, Color> _previewHighlightColorsByNodeId = new(StringComparer.Ordinal);
         private readonly Dictionary<string, GameObject> _moveTurnMarkers = new(StringComparer.Ordinal);
+        private MapRenderer _mapRenderer;
         private Transform _hostTransform;
 
-        public MovePreviewOverlayController(Transform hostTransform)
+        public MovePreviewOverlayController(MapRenderer mapRenderer, Transform hostTransform)
         {
+            _mapRenderer = mapRenderer;
             _hostTransform = hostTransform;
+        }
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
         }
 
         public void SetHostTransform(Transform hostTransform)
@@ -36,7 +43,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || !map.TryGetNodeView(nodeId, out var invalidNode) || invalidNode == null)
             {
                 return;
@@ -58,7 +65,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;
@@ -105,7 +112,7 @@ namespace Panoptes.Presentation.Map
 
         public void ClearPreview(Func<string, NodeView, bool> restoreNodeHighlight = null)
         {
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map != null)
             {
                 foreach (var pair in _previewHighlightColorsByNodeId)

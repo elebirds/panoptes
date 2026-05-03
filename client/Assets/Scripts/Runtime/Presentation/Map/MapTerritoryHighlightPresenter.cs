@@ -9,8 +9,14 @@ namespace Panoptes.Presentation.Map
     public sealed class MapTerritoryHighlightPresenter
     {
         private readonly HashSet<string> _highlightedNodeIds = new(StringComparer.Ordinal);
+        private MapRenderer _mapRenderer;
 
         public int Count => _highlightedNodeIds.Count;
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+        }
 
         public bool Contains(string nodeId)
         {
@@ -29,7 +35,7 @@ namespace Panoptes.Presentation.Map
         {
             Clear(null, default, null);
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || centerNode == null || map.TileViews == null || map.TileViews.Count == 0)
             {
                 return;
@@ -72,7 +78,7 @@ namespace Panoptes.Presentation.Map
             Color attackHighlightColor,
             Func<string, NodeView, bool> tryRestorePreviewHighlight)
         {
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 _highlightedNodeIds.Clear();

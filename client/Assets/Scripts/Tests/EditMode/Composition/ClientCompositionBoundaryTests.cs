@@ -254,6 +254,8 @@ namespace Panoptes.Tests.EditMode.Composition
                 ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/BuildingConstructionOverlayController.cs")
             };
 
+            var mapRendererSingletonToken = "MapRenderer" + ".Instance";
+            var mapPlanningInputSingletonToken = "MapPlanningInputController" + ".Instance";
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
@@ -262,8 +264,8 @@ namespace Panoptes.Tests.EditMode.Composition
                 "PlanningDraftCache",
                 "StaticCatalogCache",
                 "NetworkManager.Instance",
-                "MapRenderer.Instance",
-                "MapPlanningInputController.Instance");
+                mapRendererSingletonToken,
+                mapPlanningInputSingletonToken);
 
             Assert.That(offenders, Is.Empty, "HUD overlay controllers must consume final Stores and injected MapRenderer instead of legacy singleton/cache paths.");
 
@@ -524,6 +526,59 @@ namespace Panoptes.Tests.EditMode.Composition
                 CountOccurrences(controller, ".SetCombatActionMode("),
                 Is.GreaterThan(0),
                 "Controller should delegate combat mode mutations to the extracted adapter.");
+        }
+
+        [Test]
+        public void MapPlanningInputPresenterSlice_ShouldUseInjectedMapRenderer()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapMovePreviewPresentationController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePreviewOverlayController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePathOverlayController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPendingDeployGhostController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapTerritoryHighlightPresenter.cs")
+            };
+
+            var mapRendererSingletonToken = "MapRenderer" + ".Instance";
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                mapRendererSingletonToken,
+                "SceneObjectFinder.FindFirstSceneObject<MapRenderer>",
+                "FindAnyObjectByType<MapRenderer>",
+                "FindFirstObjectByType<MapRenderer>",
+                "FindObjectOfType<MapRenderer>",
+                "NetworkManager.Instance",
+                "Panoptes.Protocol");
+
+            Assert.That(offenders, Is.Empty, "Map planning input presenters must receive MapRenderer explicitly instead of looking up singleton or scene fallbacks.");
+
+            var controller = File.ReadAllText(roots[0]);
+            Assert.That(controller, Does.Contain("MapRenderer mapRenderer"));
+            Assert.That(controller, Does.Contain("ConfigureMapRenderer(mapRenderer)"));
+            Assert.That(controller, Does.Contain("if (isActiveAndEnabled)"));
+            Assert.That(controller, Does.Contain("SubscribeStoreEvents();"));
+            Assert.That(controller, Does.Contain("_mapRenderer"));
+            Assert.That(controller, Does.Contain("[Inject]"));
+
+            var previewPresentation = File.ReadAllText(roots[1]);
+            var previewOverlay = File.ReadAllText(roots[2]);
+            var pathOverlay = File.ReadAllText(roots[3]);
+            var pendingDeploy = File.ReadAllText(roots[4]);
+            var territoryHighlight = File.ReadAllText(roots[5]);
+            Assert.That(previewPresentation, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(previewPresentation, Does.Contain("_pathOverlay?.SetMapRenderer(mapRenderer)"));
+            Assert.That(previewPresentation, Does.Contain("_previewOverlay?.SetMapRenderer(mapRenderer)"));
+            Assert.That(previewPresentation, Does.Contain("new MovePathOverlayController(_mapRenderer)"));
+            Assert.That(previewPresentation, Does.Contain("new MovePreviewOverlayController(_mapRenderer, hostTransform)"));
+            Assert.That(previewOverlay, Does.Contain("MovePreviewOverlayController(MapRenderer mapRenderer, Transform hostTransform)"));
+            Assert.That(previewOverlay, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(pathOverlay, Does.Contain("MovePathOverlayController(MapRenderer mapRenderer)"));
+            Assert.That(pathOverlay, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(pendingDeploy, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(territoryHighlight, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
         }
 
         [Test]
