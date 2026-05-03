@@ -30,7 +30,12 @@ namespace Panoptes.Tests.EditMode.Core
                 phase: "planning",
                 nodes: nodes,
                 units: units,
-                myResources: new ResourceDto { Food = 5 }));
+                myResources: new ResourceDto
+                {
+                    Food = 5,
+                    ResourceAmounts = new Dictionary<string, int> { ["grain"] = 12 },
+                    PointAmounts = new Dictionary<string, int> { ["logistics_capacity"] = 4 }
+                }));
             nodes["n1"].Owner = "mutated-input";
             units["u1"].Hp = 1;
 
@@ -39,13 +44,19 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(snapshot.Turn, Is.EqualTo(3));
             Assert.That(snapshot.Nodes["n1"].Owner, Is.EqualTo("p1"));
             Assert.That(snapshot.Units["u1"].Hp, Is.EqualTo(10));
+            Assert.That(snapshot.MyResources.ResourceAmounts["grain"], Is.EqualTo(12));
+            Assert.That(snapshot.MyResources.PointAmounts["logistics_capacity"], Is.EqualTo(4));
 
             ((Dictionary<string, NodeDto>)snapshot.Nodes)["n1"].Owner = "mutated-snapshot";
             ((Dictionary<string, UnitDto>)snapshot.Units)["u1"].Hp = 2;
+            snapshot.MyResources.ResourceAmounts["grain"] = 99;
+            snapshot.MyResources.PointAmounts["logistics_capacity"] = 99;
 
             var nextSnapshot = store.Snapshot;
             Assert.That(nextSnapshot.Nodes["n1"].Owner, Is.EqualTo("p1"));
             Assert.That(nextSnapshot.Units["u1"].Hp, Is.EqualTo(10));
+            Assert.That(nextSnapshot.MyResources.ResourceAmounts["grain"], Is.EqualTo(12));
+            Assert.That(nextSnapshot.MyResources.PointAmounts["logistics_capacity"], Is.EqualTo(4));
         }
 
         [Test]
@@ -93,16 +104,42 @@ namespace Panoptes.Tests.EditMode.Core
             var store = new StaticCatalogStore();
 
             store.Replace(new StaticCatalogState(
+                resources: new Dictionary<string, CatalogHudEntryDto>
+                {
+                    ["ore"] = new CatalogHudEntryDto
+                    {
+                        Key = "ore",
+                        IconKey = "ore_icon",
+                        SortOrder = 10,
+                        VisibleInHud = true
+                    }
+                },
+                points: new Dictionary<string, CatalogHudEntryDto>
+                {
+                    ["industry_output"] = new CatalogHudEntryDto
+                    {
+                        Key = "industry_output",
+                        IconKey = "industry_icon",
+                        SortOrder = 20,
+                        VisibleInHud = true
+                    }
+                },
                 buildings: new Dictionary<string, CatalogBuildingDto> { ["farm"] = building }));
             building.RecipeIds[0] = "mutated-input";
 
             var snapshot = store.Snapshot;
             Assert.That(snapshot.Buildings["farm"].RecipeIds, Is.EqualTo(new[] { "grain" }));
+            Assert.That(snapshot.Resources["ore"].IconKey, Is.EqualTo("ore_icon"));
+            Assert.That(snapshot.Points["industry_output"].VisibleInHud, Is.True);
 
             snapshot.Buildings["farm"].RecipeIds[0] = "mutated-snapshot";
+            ((Dictionary<string, CatalogHudEntryDto>)snapshot.Resources)["ore"].IconKey = "mutated-resource";
+            ((Dictionary<string, CatalogHudEntryDto>)snapshot.Points)["industry_output"].VisibleInHud = false;
 
             var nextSnapshot = store.Snapshot;
             Assert.That(nextSnapshot.Buildings["farm"].RecipeIds, Is.EqualTo(new[] { "grain" }));
+            Assert.That(nextSnapshot.Resources["ore"].IconKey, Is.EqualTo("ore_icon"));
+            Assert.That(nextSnapshot.Points["industry_output"].VisibleInHud, Is.True);
         }
 
         [Test]

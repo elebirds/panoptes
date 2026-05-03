@@ -82,7 +82,9 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
+            builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
             RegisterRuntimeSceneComponent<TokenHUD>(builder, "TokenHUD");
+            RegisterRuntimeSceneComponent<ResourceHUD>(builder, "ResourcePanel");
             RegisterRuntimeSceneComponent<TurnHUD>(builder, "TurnHUD");
             RegisterRuntimeSceneComponent<GameChatPanelController>(builder, "GameChatPanel");
             RegisterRuntimeSceneComponent<MinisterPanel>(builder, "MinisterPanel");

@@ -16,11 +16,35 @@ namespace Panoptes.Core.Application.Stores
             }
 
             return new StaticCatalogState(
+                resources: MapResources(snapshot.Resources),
+                points: MapPoints(snapshot.Points),
                 buildings: MapBuildings(snapshot.Buildings),
                 recipes: MapRecipes(snapshot.Recipes),
                 technologies: MapTechnologies(snapshot.Technologies),
                 policies: MapPolicies(snapshot.Policies),
                 units: MapUnits(snapshot.Units));
+        }
+
+        private static Dictionary<string, CatalogHudEntryDto> MapResources(IEnumerable<ResourceDescriptor> source)
+        {
+            return MapCatalog(source, entry => entry?.Key, entry => new CatalogHudEntryDto
+            {
+                Key = entry.Key,
+                IconKey = entry.IconKey,
+                SortOrder = entry.SortOrder,
+                VisibleInHud = entry.VisibleInHud
+            });
+        }
+
+        private static Dictionary<string, CatalogHudEntryDto> MapPoints(IEnumerable<PointDescriptor> source)
+        {
+            return MapCatalog(source, entry => entry?.Key, entry => new CatalogHudEntryDto
+            {
+                Key = entry.Key,
+                IconKey = entry.IconKey,
+                SortOrder = entry.SortOrder,
+                VisibleInHud = entry.VisibleInHud
+            });
         }
 
         private static Dictionary<string, CatalogBuildingDto> MapBuildings(IEnumerable<BuildingCatalogEntry> source)

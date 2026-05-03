@@ -465,33 +465,70 @@ namespace Panoptes.Core.Application.Stores
 
         private static ResourceDto MapResources(PlayerView player)
         {
-            var resources = new ResourceDto();
-            if (player?.Resources?.Items != null)
+            var resources = new ResourceDto
             {
-                foreach (var item in player.Resources.Items)
-                {
-                    if (item == null)
-                    {
-                        continue;
-                    }
+                ResourceAmounts = MapResourceAmounts(player?.Resources),
+                PointAmounts = MapPointAmounts(player?.Points)
+            };
+            ApplyFixedResourceFields(resources);
+            return resources;
+        }
 
-                    switch (item.Key)
-                    {
-                        case ResourceKeys.ResourceOre:
-                            resources.Ore = item.Amount;
-                            break;
-                        case ResourceKeys.ResourceWood:
-                            resources.Wood = item.Amount;
-                            break;
-                        case ResourceKeys.ResourceFood:
-                            resources.Food = item.Amount;
-                            break;
-                    }
-                }
+        private static Dictionary<string, int> MapResourceAmounts(ResourceBag bag)
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (bag?.Items == null)
+            {
+                return result;
             }
 
-            resources.IndustryOutput = FindPointAmount(player?.Points, IndustryOutputPointKey);
-            return resources;
+            foreach (var item in bag.Items)
+            {
+                AddAmount(result, item?.Key, item?.Amount ?? 0);
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, int> MapPointAmounts(PointBag points)
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (points?.Items == null)
+            {
+                return result;
+            }
+
+            foreach (var item in points.Items)
+            {
+                AddAmount(result, item?.Key, item?.Amount ?? 0);
+            }
+
+            return result;
+        }
+
+        private static void AddAmount(Dictionary<string, int> values, string key, int amount)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return;
+            }
+
+            values[key.Trim()] = amount;
+        }
+
+        private static void ApplyFixedResourceFields(ResourceDto resources)
+        {
+            if (resources == null)
+            {
+                return;
+            }
+
+            resources.ResourceAmounts ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            resources.PointAmounts ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceOre, out resources.Ore);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceWood, out resources.Wood);
+            resources.ResourceAmounts.TryGetValue(ResourceKeys.ResourceFood, out resources.Food);
+            resources.PointAmounts.TryGetValue(IndustryOutputPointKey, out resources.IndustryOutput);
         }
 
         private static List<QueuedUnitOrderDto> MapUnitOrders(IEnumerable<QueuedUnitOrder> orders)
@@ -679,24 +716,6 @@ namespace Panoptes.Core.Application.Stores
             }
 
             return result;
-        }
-
-        private static int FindPointAmount(PointBag points, string key)
-        {
-            if (points?.Items == null || string.IsNullOrWhiteSpace(key))
-            {
-                return 0;
-            }
-
-            foreach (var item in points.Items)
-            {
-                if (item != null && string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return item.Amount;
-                }
-            }
-
-            return 0;
         }
 
         private static Dictionary<string, NodeDto> CloneNodes(IReadOnlyDictionary<string, NodeDto> source)

@@ -6,12 +6,16 @@ namespace Panoptes.Core.Application.Stores
     public sealed class StaticCatalogState
     {
         public StaticCatalogState(
+            IReadOnlyDictionary<string, CatalogHudEntryDto> resources = null,
+            IReadOnlyDictionary<string, CatalogHudEntryDto> points = null,
             IReadOnlyDictionary<string, CatalogBuildingDto> buildings = null,
             IReadOnlyDictionary<string, CatalogRecipeDto> recipes = null,
             IReadOnlyDictionary<string, CatalogTechnologyDto> technologies = null,
             IReadOnlyDictionary<string, CatalogPolicyDto> policies = null,
             IReadOnlyDictionary<string, CatalogUnitDto> units = null)
         {
+            Resources = StoreSnapshotCloner.CloneCatalogHudEntries(resources);
+            Points = StoreSnapshotCloner.CloneCatalogHudEntries(points);
             Buildings = StoreSnapshotCloner.CloneCatalogBuildings(buildings);
             Recipes = StoreSnapshotCloner.CloneCatalogRecipes(recipes);
             Technologies = StoreSnapshotCloner.CloneCatalogTechnologies(technologies);
@@ -19,6 +23,8 @@ namespace Panoptes.Core.Application.Stores
             Units = StoreSnapshotCloner.CloneCatalogUnits(units);
         }
 
+        public IReadOnlyDictionary<string, CatalogHudEntryDto> Resources { get; }
+        public IReadOnlyDictionary<string, CatalogHudEntryDto> Points { get; }
         public IReadOnlyDictionary<string, CatalogBuildingDto> Buildings { get; }
         public IReadOnlyDictionary<string, CatalogRecipeDto> Recipes { get; }
         public IReadOnlyDictionary<string, CatalogTechnologyDto> Technologies { get; }
@@ -27,7 +33,7 @@ namespace Panoptes.Core.Application.Stores
 
         internal StaticCatalogState Clone()
         {
-            return new StaticCatalogState(Buildings, Recipes, Technologies, Policies, Units);
+            return new StaticCatalogState(Resources, Points, Buildings, Recipes, Technologies, Policies, Units);
         }
     }
 }

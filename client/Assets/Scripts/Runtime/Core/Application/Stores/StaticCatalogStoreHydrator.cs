@@ -34,11 +34,37 @@ namespace Panoptes.Core.Application.Stores
             }
 
             return new StaticCatalogState(
+                resources: MapResourceHudEntries(cache.Resources),
+                points: MapPointHudEntries(cache.Points),
                 buildings: MapBuildings(cache.Buildings),
                 recipes: MapRecipes(cache.Recipes),
                 technologies: MapTechnologies(cache.Technologies),
                 policies: MapPolicies(cache.Policies),
                 units: MapUnits(cache.Units));
+        }
+
+        private static Dictionary<string, CatalogHudEntryDto> MapResourceHudEntries(
+            IReadOnlyDictionary<string, StaticCatalogCache.ResourceEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.key, entry => new CatalogHudEntryDto
+            {
+                Key = entry.key,
+                IconKey = entry.icon_key,
+                SortOrder = entry.sort_order,
+                VisibleInHud = entry.visible_in_hud
+            });
+        }
+
+        private static Dictionary<string, CatalogHudEntryDto> MapPointHudEntries(
+            IReadOnlyDictionary<string, StaticCatalogCache.PointEntryJson> source)
+        {
+            return MapCatalog(source, entry => entry?.key, entry => new CatalogHudEntryDto
+            {
+                Key = entry.key,
+                IconKey = entry.icon_key,
+                SortOrder = entry.sort_order,
+                VisibleInHud = entry.visible_in_hud
+            });
         }
 
         private static Dictionary<string, CatalogBuildingDto> MapBuildings(

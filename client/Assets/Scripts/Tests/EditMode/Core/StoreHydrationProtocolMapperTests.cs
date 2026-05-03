@@ -40,7 +40,19 @@ namespace Panoptes.Tests.EditMode.Core
                     TokensLeft = 1,
                     Resources = new ResourceBag
                     {
-                        Items = { new ResourceValue { Key = ResourceKeys.ResourceFood, Amount = 9 } }
+                        Items =
+                        {
+                            new ResourceValue { Key = ResourceKeys.ResourceFood, Amount = 9 },
+                            new ResourceValue { Key = " coal ", Amount = 6 }
+                        }
+                    },
+                    Points = new PointBag
+                    {
+                        Items =
+                        {
+                            new PointValue { Key = "industry_output", Amount = 4 },
+                            new PointValue { Key = " logistics_capacity ", Amount = 11 }
+                        }
                     }
                 },
                 Nodes =
@@ -73,6 +85,9 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(mapped.Phase, Is.EqualTo("resolving"));
             Assert.That(mapped.TokensLeft, Is.EqualTo(1));
             Assert.That(mapped.MyResources.Food, Is.EqualTo(9));
+            Assert.That(mapped.MyResources.IndustryOutput, Is.EqualTo(4));
+            Assert.That(mapped.MyResources.ResourceAmounts["coal"], Is.EqualTo(6));
+            Assert.That(mapped.MyResources.PointAmounts["logistics_capacity"], Is.EqualTo(11));
             Assert.That(mapped.Nodes["n1"].BuildingMaxHp, Is.EqualTo(12));
             Assert.That(mapped.Units["u1"].MaxHp, Is.EqualTo(6));
         }
