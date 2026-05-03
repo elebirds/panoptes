@@ -161,7 +161,7 @@ namespace Panoptes.Presentation.UI.HUD
             ApplyButtonState(buttons.Move, "Move", visible: true, interactable: state.CanMove, actionLocked: actionLocked);
             ApplyButtonState(buttons.Attack, "Attack", visible: state.IsMilitaryUnit, interactable: state.CanAttack, actionLocked: actionLocked);
             ApplyButtonState(buttons.Hold, "Hold", visible: state.IsMilitaryUnit, interactable: state.IsMilitaryUnit, actionLocked: actionLocked);
-            ApplyButtonState(buttons.Charge, "Charge", visible: state.IsMilitaryUnit, interactable: state.CanCharge, actionLocked: actionLocked);
+            ApplyButtonState(buttons.Charge, "Charge", visible: state.CanCharge, interactable: state.CanCharge, actionLocked: actionLocked);
         }
 
         private static void Bind(Button button, Action action)

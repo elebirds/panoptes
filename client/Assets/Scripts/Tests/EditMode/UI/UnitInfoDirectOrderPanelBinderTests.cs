@@ -106,7 +106,7 @@ namespace Panoptes.Tests.EditMode.UI
         }
 
         [Test]
-        public void ApplyState_ShouldRenderMilitaryActionsAndDisableUnavailableCharge()
+        public void ApplyState_ShouldRenderMilitaryActionsAndHideUnavailableCharge()
         {
             var binder = new UnitInfoDirectOrderPanelBinder();
             var root = CreateRoot();
@@ -124,7 +124,7 @@ namespace Panoptes.Tests.EditMode.UI
             Assert.That(buttons.Attack.interactable, Is.True);
             Assert.That(buttons.Hold.gameObject.activeSelf, Is.True);
             Assert.That(buttons.Hold.interactable, Is.True);
-            Assert.That(buttons.Charge.gameObject.activeSelf, Is.True);
+            Assert.That(buttons.Charge.gameObject.activeSelf, Is.False);
             Assert.That(buttons.Charge.interactable, Is.False);
         }
 

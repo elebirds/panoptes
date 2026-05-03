@@ -282,8 +282,19 @@ direct-order state; and `UnitInfoPanelController` remains the prefab-facing
 facade for scene selection, animation, portrait camera, and legacy action
 registrars. The migrated ViewModel/Binder slice is registered in
 `GameLifetimeScope` through VContainer and is covered by EditMode/static
-boundary tests. Runtime falls back to the legacy facade path until server
-message hydration into the Phase 3 stores is completed.
+boundary tests.
+
+Batch 6 status (2026-05-02):
+
+- Removed `UnitInfoReactiveBridge` and its Unity meta file instead of replacing
+  it with another compatibility facade.
+- Moved the `UnitInfoUguiBinder` ownership, binding, selection forwarding, and
+  disposal lifecycle directly into `UnitInfoPanelController` while preserving
+  the existing controller type and serialized field names.
+- Kept the migrated UnitInfo boundary test focused on `UnitInfoViewModel` and
+  `UnitInfoUguiBinder`, with an explicit guard that the bridge file is absent
+  and that the ViewModel/Binder path still has no Protocol, legacy cache, or
+  singleton `Instance` dependency.
 
 ## Phase 5: First UI Toolkit Read-Only Migration
 
@@ -717,6 +728,15 @@ Batch 5 status (2026-05-02):
   application without subscribing to `StaticCatalogCache.CatalogChanged`.
 - Replaced cache bridge/seeder EditMode coverage with direct static catalog
   Store hydrator coverage.
+
+Batch 6 status (2026-05-02):
+
+- Removed `UnitInfoReactiveBridge` and its `.meta`.
+- Updated `UnitInfoPanelController` to directly own `UnitInfoUguiBinder`
+  binding, unbinding, render, selection forwarding, and disposal lifecycle.
+- Updated UnitInfo migrated-slice boundary coverage so only the ViewModel and
+  Binder path is scanned for forbidden Protocol/cache/singleton dependencies,
+  with a direct assertion that the compatibility bridge remains deleted.
 
 Next work: continue moving the remaining map renderer, settlement playback, and
 HUD resolver direct `*.Instance` reads onto injected Stores/ViewModels.
