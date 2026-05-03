@@ -13,6 +13,23 @@ namespace Panoptes.Core.Application.Handler
     public sealed class GameMessageHandler : MonoBehaviour
     {
         private bool _registered;
+        private MessageDispatcher _dispatcher;
+        private GameStateCache _gameStateCache;
+        private PlanningDraftCache _planningDraftCache;
+        private GameChatCache _gameChatCache;
+
+        public void UseProjectServices(
+            MessageDispatcher dispatcher,
+            GameStateCache gameStateCache,
+            PlanningDraftCache planningDraftCache,
+            GameChatCache gameChatCache)
+        {
+            _dispatcher = dispatcher;
+            _gameStateCache = gameStateCache;
+            _planningDraftCache = planningDraftCache;
+            _gameChatCache = gameChatCache;
+            RegisterHandlers();
+        }
 
         private void Awake()
         {
@@ -26,7 +43,7 @@ namespace Panoptes.Core.Application.Handler
 
         private void RegisterHandlers()
         {
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             if (_registered || dispatcher == null)
             {
                 return;
@@ -56,12 +73,12 @@ namespace Panoptes.Core.Application.Handler
 
         private void UnregisterHandlers()
         {
-            if (!_registered || MessageDispatcher.Instance == null)
+            if (!_registered || _dispatcher == null)
             {
                 return;
             }
 
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
             dispatcher.Unregister<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
             dispatcher.Unregister<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
@@ -84,63 +101,63 @@ namespace Panoptes.Core.Application.Handler
             _registered = false;
         }
 
-        private static void OnPlanningStart(MsgPlanningStart msg)
+        private void OnPlanningStart(MsgPlanningStart msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyPlanningStart(msg);
+            _gameStateCache?.ApplyPlanningStart(msg);
             Debug.Log(FormatPhaseStartLog($"[Game] 规划阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
-        private static void OnPlanningSnapshot(MsgPlanningSnapshot msg)
+        private void OnPlanningSnapshot(MsgPlanningSnapshot msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyPlanningSnapshot(msg);
+            _gameStateCache?.ApplyPlanningSnapshot(msg);
             Debug.Log($"[Game] 规划快照 turn={msg.Turn} phase={msg.Phase} unit_orders={msg.UnitOrders.Count}");
         }
 
-        private static void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
+        private void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyPreviewResponse(msg);
+            _planningDraftCache?.ApplyPreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnBuildStructurePreviewResponse(MsgBuildStructurePreviewResponse msg)
+        private void OnBuildStructurePreviewResponse(MsgBuildStructurePreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyBuildPreviewResponse(msg);
+            _planningDraftCache?.ApplyBuildPreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 建造预览 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnSetBuildingRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
+        private void OnSetBuildingRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyRecipePreviewResponse(msg);
+            _planningDraftCache?.ApplyRecipePreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 配方预览 node={msg.NodeId} recipe={msg.RecipeId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnGameSync(MsgGameSync msg)
+        private void OnGameSync(MsgGameSync msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyGameSync(msg);
+            _gameStateCache?.ApplyGameSync(msg);
             Debug.Log($"[Game] 游戏同步 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} events={msg.Events.Count}");
             for (var i = 0; i < msg.Events.Count; i++)
             {
@@ -189,14 +206,14 @@ namespace Panoptes.Core.Application.Handler
             }
         }
 
-        private static void OnTokenResult(MsgTokenResult msg)
+        private void OnTokenResult(MsgTokenResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
+            var cache = _gameStateCache;
             if (msg.Success)
             {
                 cache?.UpdateTokens(msg.TokensLeft);
@@ -216,14 +233,14 @@ namespace Panoptes.Core.Application.Handler
             });
         }
 
-        private static void OnRevealResult(MsgRevealResult msg)
+        private void OnRevealResult(MsgRevealResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
+            var cache = _gameStateCache;
             var trueState = NodeMapper.ToDto(msg.TrueState);
             cache?.UpdateNode(trueState);
             cache?.PublishRevealResult(new RevealResultEvent
@@ -234,7 +251,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
         }
 
-        private static void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
+        private void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
         {
             if (msg == null)
             {
@@ -272,7 +289,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 单位命令草案已接受 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId}");
         }
 
-        private static void OnResearchResult(MsgResearchResult msg)
+        private void OnResearchResult(MsgResearchResult msg)
         {
             if (msg == null)
             {
@@ -300,7 +317,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 研究目标草案已接受 tech={msg.TechnologyId}");
         }
 
-        private static void OnSetPolicyResult(MsgSetPolicyResult msg)
+        private void OnSetPolicyResult(MsgSetPolicyResult msg)
         {
             if (msg == null)
             {
@@ -328,7 +345,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
         }
 
-        private static void OnSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
+        private void OnSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
         {
             if (msg == null)
             {
@@ -357,7 +374,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
         }
 
-        private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
+        private void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
         {
             if (msg == null)
             {
@@ -388,7 +405,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
         }
 
-        private static void OnBuildStructureResult(MsgBuildStructureResult msg)
+        private void OnBuildStructureResult(MsgBuildStructureResult msg)
         {
             if (msg == null)
             {
@@ -420,14 +437,14 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
         }
 
-        private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)
+        private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishMinisterChunk(new MinisterChunkEvent
+            _gameStateCache?.PublishMinisterChunk(new MinisterChunkEvent
             {
                 MinisterRole = msg.MinisterRole,
                 Chunk = msg.Chunk,
@@ -435,57 +452,57 @@ namespace Panoptes.Core.Application.Handler
             });
         }
 
-        private static void OnMinisterMetrics(MsgMinisterMetrics msg)
+        private void OnMinisterMetrics(MsgMinisterMetrics msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishMinisterMetrics(new MinisterMetricsEvent
+            _gameStateCache?.PublishMinisterMetrics(new MinisterMetricsEvent
             {
                 MinisterRole = msg.MinisterRole,
                 Metrics = MinisterMapper.ToDtoList(msg.Metrics)
             });
         }
 
-        private static void OnGameChatPosted(MsgGameChatPosted msg)
+        private void OnGameChatPosted(MsgGameChatPosted msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameChatCache.EnsureInstance()?.ApplyPosted(msg);
+            _gameChatCache?.ApplyPosted(msg);
             var entry = msg.Entry;
             Debug.Log($"[Game] 聊天表情 sender={entry?.SenderPlayerId} turn={entry?.Turn} phase={entry?.Phase} payload={entry?.Payload?.BodyCase}");
         }
 
-        private static void OnGameChatSync(MsgGameChatSync msg)
+        private void OnGameChatSync(MsgGameChatSync msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameChatCache.EnsureInstance()?.ApplySync(msg);
+            _gameChatCache?.ApplySync(msg);
             Debug.Log($"[Game] 聊天同步 entries={msg.Entries.Count}");
         }
 
-        private static void OnGameOver(MsgGameOver msg)
+        private void OnGameOver(MsgGameOver msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyGameOver(msg);
+            _gameStateCache?.ApplyGameOver(msg);
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
         }
 
-        private static void PublishGameError(string code, string message, Dictionary<string, string> details = null)
+        private void PublishGameError(string code, string message, Dictionary<string, string> details = null)
         {
-            GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+            _gameStateCache?.PublishGameError(new GameErrorEvent
             {
                 Code = code ?? string.Empty,
                 Message = message ?? string.Empty,
@@ -540,14 +557,14 @@ namespace Panoptes.Core.Application.Handler
             return result;
         }
 
-        private static void PublishPlanningCommandResult(PlanningCommandResultEvent evt)
+        private void PublishPlanningCommandResult(PlanningCommandResultEvent evt)
         {
             if (evt == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishPlanningCommandResult(evt);
+            _gameStateCache?.PublishPlanningCommandResult(evt);
         }
 
         private static string FormatPhaseStartLog(string text)
