@@ -26,9 +26,8 @@ namespace Panoptes.Tests.EditMode
         private static readonly IReadOnlyList<LineCountBaseline> HighRiskLineBaselines = new[]
         {
             new LineCountBaseline("Runtime/Presentation/Map/MapPlanningInputController.cs", 3376),
-            new LineCountBaseline("Runtime/Presentation/UI/Domestic/BuildCommandPanel.cs", 1633),
             new LineCountBaseline("Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs", 1392),
-            new LineCountBaseline("Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs", 1063),
+            new LineCountBaseline("Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs", 650),
         };
 
         [Test]
@@ -83,6 +82,46 @@ namespace Panoptes.Tests.EditMode
             }
 
             Assert.That(failures, Is.Empty, "High-risk preflight scripts grew past the captured C0p0 baseline.");
+        }
+
+        [Test]
+        public void FinalBuildCatalogSlice_ShouldNotReferenceLegacyBuildPanelOrSingletons()
+        {
+            var relativePaths = new[]
+            {
+                "Runtime/Presentation/Binders/UiToolkit/BuildCatalogUiToolkitBinder.cs",
+                "Runtime/Presentation/UI/HUD/ResourceHUD.cs",
+                "Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs",
+                "Runtime/Presentation/UI/HUD/CityCoreBuildingActionResolver.cs"
+            };
+            var forbidden = new[]
+            {
+                "BuildCommandPanel",
+                "StaticCatalogCache",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "MapPlanningInputController.Instance",
+                "NetworkManager.Instance",
+                "Panoptes.Protocol",
+                ".Instance"
+            };
+
+            var offenders = new List<string>();
+            for (var i = 0; i < relativePaths.Length; i++)
+            {
+                var path = ResolveAssetPath($"Scripts/{relativePaths[i]}");
+                Assert.That(File.Exists(path), Is.True, $"{relativePaths[i]} is missing.");
+                var content = File.ReadAllText(path);
+                for (var j = 0; j < forbidden.Length; j++)
+                {
+                    if (content.Contains(forbidden[j]))
+                    {
+                        offenders.Add($"{relativePaths[i]} contains {forbidden[j]}");
+                    }
+                }
+            }
+
+            Assert.That(offenders, Is.Empty, "Final build catalog slice must stay on Store/ViewModel/Binder/service dependencies.");
         }
 
         private static List<string> FindTokenOffenders(string root, IReadOnlyList<string> forbiddenTokens)

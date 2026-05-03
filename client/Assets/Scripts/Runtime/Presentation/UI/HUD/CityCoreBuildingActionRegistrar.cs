@@ -1,17 +1,15 @@
 using System;
 using System.Collections;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Domestic;
+using Panoptes.Presentation.ViewModels;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
-    /// <summary>
-    /// Registers city-core-specific actions on UnitInfoPanel:
-    /// 1) open derived build panel
-    /// 2) open unified recipe panel
-    /// </summary>
     public sealed class CityCoreBuildingActionRegistrar : UnitInfoActionProviderBase
     {
         [Header("Action IDs")]
@@ -28,23 +26,9 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
         [SerializeField] private RecipeSynthesisPanel recipeSynthesisPanel;
-        [SerializeField] private BuildPanelSlideToggle buildPanelSlideToggle;
-        [SerializeField] private BuildCommandPanel buildCommandPanel;
         [SerializeField] private bool hideRecipePanelOnStart = true;
         [SerializeField] private bool autoFindNextStageButton = true;
         [SerializeField] private bool autoFindTurnPanel = true;
-
-        [Header("Build Derived Panel")]
-        [SerializeField] private bool startBuildPanelCollapsed = true;
-        [SerializeField] private bool forceBuildPanelCollapsedOnStartup = true;
-        [SerializeField] private bool hideBuildPanelToggleButton = false;
-        [SerializeField] private bool hideRecipePanelToggleButton = false;
-        [SerializeField] private bool hideBuildPanelCancelButton = true;
-        [SerializeField] private bool fallbackHideBuildPanelGameObjectWhenNoSlideToggle = true;
-        [SerializeField] private float unitInfoShiftXWhenBuildPanelOpen = 360f;
-        [SerializeField] private bool useBuildPanelWidthForShift = true;
-        [SerializeField] private float buildPanelWidthShiftFactor = 1.18f;
-        [SerializeField] private float buildPanelWidthShiftExtra = 0f;
 
         [Header("Recipe Derived Panel")]
         [SerializeField] private float recipePanelShiftXWhenOpen = 360f;
@@ -56,7 +40,9 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private float rightGroupShiftDuration = 0.2f;
         [SerializeField] private AnimationCurve rightGroupShiftCurve = null;
 
-        private bool _buildPanelOpen;
+        private BuildCatalogContextStore _buildCatalogContextStore;
+        private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
+        private CityCoreBuildingActionResolver _resolver;
         private RecipeSynthesisPanel _subscribedRecipePanel;
         private bool _nextStageBasePositionReady;
         private Vector2 _nextStageBaseAnchoredPos;
@@ -67,8 +53,20 @@ namespace Panoptes.Presentation.UI.HUD
         private Coroutine _initialPanelStateRoutine;
         private MapPlanningInputController _subscribedMapPlanningInputController;
         private string _activeUnitInfoNodeId = string.Empty;
-        private bool _lastBuildPanelVisible;
+        private bool _lastBuildCatalogVisible;
         private bool _lastRecipePanelVisible;
+
+        [Inject]
+        private void Construct(
+            GameStateStore gameStateStore,
+            StaticCatalogStore staticCatalogStore,
+            ManagementPanelVisibilityStore managementPanelVisibilityStore,
+            BuildCatalogContextStore buildCatalogContextStore)
+        {
+            _resolver = new CityCoreBuildingActionResolver(gameStateStore, staticCatalogStore);
+            _managementPanelVisibilityStore = managementPanelVisibilityStore;
+            _buildCatalogContextStore = buildCatalogContextStore;
+        }
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
         {
@@ -84,13 +82,21 @@ namespace Panoptes.Presentation.UI.HUD
                 buildActionId,
                 OnBuildActionClicked,
                 string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
-                CityCoreBuildingActionResolver.IsOwnedCityCoreBuildingProxy);
+                unit => _resolver != null && _resolver.IsOwnedCityCoreBuildingProxy(unit));
 
             registry.RegisterAction(
                 recipeActionId,
                 OnRecipeActionClicked,
                 string.IsNullOrWhiteSpace(recipeActionLabel) ? "Synthesis" : recipeActionLabel,
-                CityCoreBuildingActionResolver.IsOwnedRecipeBuildingProxy);
+                unit => _resolver != null && _resolver.IsOwnedRecipeBuildingProxy(unit));
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            ResolveReferences();
+            EnsureRightGroupAnimationCurve();
+            EnsureInitialPanelState();
         }
 
         protected override void OnEnable()
@@ -103,14 +109,6 @@ namespace Panoptes.Presentation.UI.HUD
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        protected override void Awake()
-        {
-            base.Awake();
-            ResolveReferences();
-            EnsureRightGroupAnimationCurve();
-            EnsureInitialPanelState();
-        }
-
         private void Start()
         {
             if (_initialPanelStateRoutine != null)
@@ -119,28 +117,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _initialPanelStateRoutine = StartCoroutine(ForceInitialPanelStateAfterLayout());
-        }
-
-        private void OnDisable()
-        {
-            UnsubscribeInputEvents();
-            if (_initialPanelStateRoutine != null)
-            {
-                StopCoroutine(_initialPanelStateRoutine);
-                _initialPanelStateRoutine = null;
-            }
-
-            UnsubscribeRecipePanelEvents();
-            if (_nextStageShiftRoutine != null)
-            {
-                StopCoroutine(_nextStageShiftRoutine);
-                _nextStageShiftRoutine = null;
-            }
-            if (_panelSwitchRoutine != null)
-            {
-                StopCoroutine(_panelSwitchRoutine);
-                _panelSwitchRoutine = null;
-            }
         }
 
         private void LateUpdate()
@@ -166,103 +142,46 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             if (currentSelection != null &&
-                IsBuildPanelCurrentlyVisible() &&
-                !CityCoreBuildingActionResolver.IsOwnedCityCoreBuildingProxy(currentSelection))
+                IsBuildCatalogVisible() &&
+                (_resolver == null || !_resolver.IsOwnedCityCoreBuildingProxy(currentSelection)))
             {
-                CloseBuildPanel(resetUnitInfoOffset: true);
+                CloseBuildCatalog(resetUnitInfoOffset: true);
             }
 
             if (currentSelection != null &&
                 recipeSynthesisPanel != null &&
                 recipeSynthesisPanel.IsVisible &&
-                !CityCoreBuildingActionResolver.IsOwnedRecipeBuildingProxy(currentSelection))
+                (_resolver == null || !_resolver.IsOwnedRecipeBuildingProxy(currentSelection)))
             {
                 recipeSynthesisPanel.Hide();
                 ReapplyRightBottomShift(false);
             }
         }
 
-        private void SubscribeInputEvents()
+        private void OnDisable()
         {
-            if (mapPlanningInputController == null)
+            UnsubscribeInputEvents();
+            if (_initialPanelStateRoutine != null)
             {
-                return;
+                StopCoroutine(_initialPanelStateRoutine);
+                _initialPanelStateRoutine = null;
             }
 
-            if (ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
-            {
-                return;
-            }
-
-            if (_subscribedMapPlanningInputController != null)
-            {
-                _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-                _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
-            }
-
-            mapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-            mapPlanningInputController.NonBuildingMapClicked += OnNonBuildingMapClicked;
-
-            mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
-            mapPlanningInputController.UnitSelectionChanged += OnUnitSelectionChanged;
-            _subscribedMapPlanningInputController = mapPlanningInputController;
-        }
-
-        private void UnsubscribeInputEvents()
-        {
-            if (_subscribedMapPlanningInputController == null)
-            {
-                return;
-            }
-
-            _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
-            _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
-            _subscribedMapPlanningInputController = null;
+            UnsubscribeRecipePanelEvents();
+            StopShiftRoutine();
+            StopPanelSwitchRoutine();
         }
 
         private void ResolveReferences()
         {
             if (mapPlanningInputController == null)
             {
-                mapPlanningInputController = MapPlanningInputController.Instance;
-                if (mapPlanningInputController == null)
-                {
-                    mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-                }
+                mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
             }
 
             if (unitInfoPanelController == null)
             {
                 unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            }
-
-            if (buildCommandPanel == null)
-            {
-                buildCommandPanel = SceneObjectFinder.FindFirstSceneObject<BuildCommandPanel>();
-            }
-
-            if (buildPanelSlideToggle == null && buildCommandPanel != null)
-            {
-                buildPanelSlideToggle = ResolveBuildPanelSlideToggleForBuildPanel(buildCommandPanel);
-            }
-
-            if (buildCommandPanel == null && buildPanelSlideToggle != null)
-            {
-                buildCommandPanel = buildPanelSlideToggle.GetComponentInParent<BuildCommandPanel>(true);
-            }
-
-            if (buildPanelSlideToggle == null)
-            {
-                buildPanelSlideToggle = SceneObjectFinder.FindFirstSceneObject<BuildPanelSlideToggle>(candidate =>
-                {
-                    if (buildCommandPanel == null)
-                    {
-                        return true;
-                    }
-
-                    var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
-                    return ReferenceEquals(owner, buildCommandPanel);
-                });
             }
 
             if (recipeSynthesisPanel == null)
@@ -288,6 +207,38 @@ namespace Panoptes.Presentation.UI.HUD
             SubscribeRecipePanelEvents();
         }
 
+        private void SubscribeInputEvents()
+        {
+            if (mapPlanningInputController == null || ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
+            {
+                return;
+            }
+
+            if (_subscribedMapPlanningInputController != null)
+            {
+                _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+                _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            }
+
+            mapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+            mapPlanningInputController.NonBuildingMapClicked += OnNonBuildingMapClicked;
+            mapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            mapPlanningInputController.UnitSelectionChanged += OnUnitSelectionChanged;
+            _subscribedMapPlanningInputController = mapPlanningInputController;
+        }
+
+        private void UnsubscribeInputEvents()
+        {
+            if (_subscribedMapPlanningInputController == null)
+            {
+                return;
+            }
+
+            _subscribedMapPlanningInputController.NonBuildingMapClicked -= OnNonBuildingMapClicked;
+            _subscribedMapPlanningInputController.UnitSelectionChanged -= OnUnitSelectionChanged;
+            _subscribedMapPlanningInputController = null;
+        }
+
         private IEnumerator ForceInitialPanelStateAfterLayout()
         {
             yield return null;
@@ -300,45 +251,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             EnsureRightGroupAnimationCurve();
             CacheRightGroupBasePositionIfNeeded();
-            var collapseBuildPanelOnStartup = forceBuildPanelCollapsedOnStartup || startBuildPanelCollapsed;
-
-            if (buildPanelSlideToggle != null)
-            {
-                if (collapseBuildPanelOnStartup)
-                {
-                    buildPanelSlideToggle.ForceRecalculatePositions();
-                    buildPanelSlideToggle.SetCollapsed(true, true);
-                    _buildPanelOpen = false;
-                }
-
-                if (hideBuildPanelToggleButton)
-                {
-                    buildPanelSlideToggle.SetToggleButtonVisible(false);
-                }
-            }
-            else if (fallbackHideBuildPanelGameObjectWhenNoSlideToggle && buildCommandPanel != null)
-            {
-                if (collapseBuildPanelOnStartup)
-                {
-                    SetBuildPanelDirectVisible(false);
-                    _buildPanelOpen = false;
-                }
-            }
-
-            if (hideBuildPanelCancelButton && buildCommandPanel != null)
-            {
-                buildCommandPanel.SetCancelButtonVisible(false);
-            }
-
-            if (recipeSynthesisPanel != null)
-            {
-                recipeSynthesisPanel.SetSlideToggleButtonVisible(!hideRecipePanelToggleButton);
-            }
-
-            if (!_buildPanelOpen)
-            {
-                ReapplyRightBottomShift(true);
-            }
+            CloseBuildCatalog(resetUnitInfoOffset: false);
 
             if (hideRecipePanelOnStart && recipeSynthesisPanel != null)
             {
@@ -351,14 +264,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private void EnsureRightGroupAnimationCurve()
-        {
-            if (rightGroupShiftCurve == null || rightGroupShiftCurve.length == 0)
-            {
-                rightGroupShiftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-            }
         }
 
         private void SubscribeRecipePanelEvents()
@@ -394,86 +299,235 @@ namespace Panoptes.Presentation.UI.HUD
             ReapplyRightBottomShift(false);
         }
 
-        private bool IsBuildPanelCurrentlyVisible()
+        private bool IsBuildCatalogVisible()
         {
-            return buildPanelSlideToggle != null
-                ? !buildPanelSlideToggle.IsCollapsed
-                : (buildCommandPanel != null && buildCommandPanel.gameObject.activeSelf);
+            return _managementPanelVisibilityStore != null &&
+                   _managementPanelVisibilityStore.IsVisible(ManagementPanelId.BuildCatalog);
         }
 
         private bool IsAnyDerivedPanelVisible()
         {
-            return IsBuildPanelCurrentlyVisible()
-                   || (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible);
+            return IsBuildCatalogVisible() || (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible);
         }
 
         private void UpdateDerivedPanelVisibilitySnapshot()
         {
-            _lastBuildPanelVisible = IsBuildPanelCurrentlyVisible();
+            _lastBuildCatalogVisible = IsBuildCatalogVisible();
             _lastRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
         }
 
         private void SyncDerivedPanelStateFromVisibility()
         {
-            var buildVisible = IsBuildPanelCurrentlyVisible();
+            var buildVisible = IsBuildCatalogVisible();
             var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
 
-            if (!buildVisible && _buildPanelOpen)
+            if (!buildVisible)
             {
-                _buildPanelOpen = false;
-                if (buildCommandPanel != null)
-                {
-                    buildCommandPanel.ClearCityCoreContext();
-                }
+                _buildCatalogContextStore?.Clear();
             }
 
-            var changed = buildVisible != _lastBuildPanelVisible
-                          || recipeVisible != _lastRecipePanelVisible;
-
-            if (changed)
+            var changed = buildVisible != _lastBuildCatalogVisible || recipeVisible != _lastRecipePanelVisible;
+            if (!changed)
             {
-                _lastBuildPanelVisible = buildVisible;
-                _lastRecipePanelVisible = recipeVisible;
+                return;
+            }
+
+            _lastBuildCatalogVisible = buildVisible;
+            _lastRecipePanelVisible = recipeVisible;
+            ReapplyRightBottomShift(false);
+        }
+
+        private void OpenBuildCatalogForNode(string nodeId)
+        {
+            if (_managementPanelVisibilityStore == null || _buildCatalogContextStore == null)
+            {
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Build catalog stores are missing.");
+                return;
+            }
+
+            _buildCatalogContextStore.SetCityCoreNode(nodeId);
+            _managementPanelVisibilityStore.Show(ManagementPanelId.BuildCatalog);
+            ReapplyRightBottomShift(false);
+            UpdateDerivedPanelVisibilitySnapshot();
+        }
+
+        private void OpenRecipePanelForBuilding(string nodeId, string buildingType, string ownerId)
+        {
+            if (recipeSynthesisPanel == null)
+            {
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] RecipeSynthesisPanel missing.");
+                return;
+            }
+
+            recipeSynthesisPanel.OpenForBuilding(nodeId, buildingType, ownerId);
+            var panelRect = recipeSynthesisPanel.transform as RectTransform;
+            if (panelRect != null)
+            {
+                panelRect.SetAsLastSibling();
+            }
+
+            ReapplyRightBottomShift(false);
+            UpdateDerivedPanelVisibilitySnapshot();
+        }
+
+        private IEnumerator SwitchFromRecipeToBuild(string nodeId)
+        {
+            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
+            {
+                recipeSynthesisPanel.Hide();
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, GetRecipePanelSlideDuration()));
+            }
+
+            OpenBuildCatalogForNode(nodeId);
+            _panelSwitchRoutine = null;
+        }
+
+        private IEnumerator SwitchFromBuildToRecipe(string nodeId, string buildingType, string ownerId)
+        {
+            if (IsBuildCatalogVisible())
+            {
+                CloseBuildCatalog(resetUnitInfoOffset: false);
+            }
+
+            OpenRecipePanelForBuilding(nodeId, buildingType, ownerId);
+            _panelSwitchRoutine = null;
+            yield break;
+        }
+
+        private void CloseAllDerivedPanels(bool resetUnitInfoOffset)
+        {
+            StopPanelSwitchRoutine();
+            recipeSynthesisPanel?.Hide();
+            CloseBuildCatalog(resetUnitInfoOffset: false);
+
+            if (resetUnitInfoOffset)
+            {
                 ReapplyRightBottomShift(false);
             }
+
+            UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        private void CacheRightGroupBasePositionIfNeeded()
+        private void OnBuildActionClicked(UnitView unit)
         {
-            if (!_nextStageBasePositionReady && nextStageButtonRect != null)
+            if (_resolver == null || !_resolver.TryResolveCityCoreNodeId(unit, out var nodeId))
             {
-                _nextStageBaseAnchoredPos = nextStageButtonRect.anchoredPosition;
-                _nextStageBasePositionReady = true;
+                return;
             }
 
-            if (!_turnPanelBasePositionReady && turnPanelRect != null)
+            _activeUnitInfoNodeId = nodeId;
+            ResolveReferences();
+            StopPanelSwitchRoutine();
+
+            if (IsBuildCatalogVisible())
             {
-                _turnPanelBaseAnchoredPos = turnPanelRect.anchoredPosition;
-                _turnPanelBasePositionReady = true;
-            }
-        }
-
-        private void ReapplyRightBottomShift(bool immediate)
-        {
-            var shiftX = ResolveActiveDerivedPanelShiftX();
-            ApplyRightBottomShift(shiftX, immediate);
-        }
-
-        private float ResolveActiveDerivedPanelShiftX()
-        {
-            var maxShift = 0f;
-
-            if (IsBuildPanelCurrentlyVisible())
-            {
-                maxShift = Mathf.Max(maxShift, ResolveUnitInfoShiftX());
+                CloseBuildCatalog(resetUnitInfoOffset: true);
+                return;
             }
 
             if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
             {
-                maxShift = Mathf.Max(maxShift, ResolveRecipeShiftX());
+                _panelSwitchRoutine = StartCoroutine(SwitchFromRecipeToBuild(nodeId));
+                return;
             }
 
-            return maxShift;
+            OpenBuildCatalogForNode(nodeId);
+        }
+
+        private void OnRecipeActionClicked(UnitView unit)
+        {
+            if (_resolver == null || !_resolver.TryResolveRecipeBuilding(unit, out var context))
+            {
+                return;
+            }
+
+            _activeUnitInfoNodeId = context.NodeId;
+            ResolveReferences();
+            StopPanelSwitchRoutine();
+
+            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
+            {
+                recipeSynthesisPanel.Hide();
+                ReapplyRightBottomShift(false);
+                UpdateDerivedPanelVisibilitySnapshot();
+                return;
+            }
+
+            if (IsBuildCatalogVisible())
+            {
+                _panelSwitchRoutine = StartCoroutine(SwitchFromBuildToRecipe(
+                    context.NodeId,
+                    context.BuildingTypeId,
+                    context.OwnerId));
+                return;
+            }
+
+            OpenRecipePanelForBuilding(context.NodeId, context.BuildingTypeId, context.OwnerId);
+        }
+
+        private void OnNonBuildingMapClicked()
+        {
+            _activeUnitInfoNodeId = string.Empty;
+            CloseAllDerivedPanels(resetUnitInfoOffset: true);
+        }
+
+        private void OnUnitSelectionChanged(UnitView selected)
+        {
+            if (selected != null &&
+                !string.IsNullOrWhiteSpace(_activeUnitInfoNodeId) &&
+                string.Equals(selected.UnitId, _activeUnitInfoNodeId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _activeUnitInfoNodeId = selected != null ? selected.UnitId : string.Empty;
+            CloseAllDerivedPanels(resetUnitInfoOffset: true);
+        }
+
+        private void CloseBuildCatalog(bool resetUnitInfoOffset)
+        {
+            if (IsBuildCatalogVisible())
+            {
+                _managementPanelVisibilityStore.Hide();
+            }
+
+            _buildCatalogContextStore?.Clear();
+
+            if (resetUnitInfoOffset)
+            {
+                ReapplyRightBottomShift(false);
+            }
+
+            UpdateDerivedPanelVisibilitySnapshot();
+        }
+
+        private void ReapplyRightBottomShift(bool immediate)
+        {
+            ApplyRightBottomShift(ResolveRecipeShiftXWhenVisible(), immediate);
+        }
+
+        private float ResolveRecipeShiftXWhenVisible()
+        {
+            if (recipeSynthesisPanel == null || !recipeSynthesisPanel.IsVisible)
+            {
+                return 0f;
+            }
+
+            var fallback = Mathf.Abs(recipePanelShiftXWhenOpen);
+            if (!useRecipePanelWidthForShift)
+            {
+                return fallback;
+            }
+
+            var panelWidth = recipeSynthesisPanel.GetPanelWidth();
+            if (panelWidth <= 1f)
+            {
+                return fallback;
+            }
+
+            var shiftFactor = Mathf.Max(1.05f, recipePanelWidthShiftFactor);
+            var resolved = panelWidth * shiftFactor + recipePanelWidthShiftExtra;
+            return Mathf.Max(1f, resolved);
         }
 
         private void ApplyRightBottomShift(float shiftX, bool immediate)
@@ -496,12 +550,7 @@ namespace Panoptes.Presentation.UI.HUD
             var nextStageTarget = _nextStageBaseAnchoredPos + new Vector2(-clampedShift, 0f);
             var turnPanelTarget = _turnPanelBaseAnchoredPos + new Vector2(-clampedShift, 0f);
 
-            if (_nextStageShiftRoutine != null)
-            {
-                StopCoroutine(_nextStageShiftRoutine);
-                _nextStageShiftRoutine = null;
-            }
-
+            StopShiftRoutine();
             if (immediate || !isActiveAndEnabled)
             {
                 if (nextStageButtonRect != null)
@@ -518,7 +567,7 @@ namespace Panoptes.Presentation.UI.HUD
             _nextStageShiftRoutine = StartCoroutine(AnimateNextStageShift(nextStageTarget, turnPanelTarget));
         }
 
-        private System.Collections.IEnumerator AnimateNextStageShift(Vector2 nextStageTarget, Vector2 turnPanelTarget)
+        private IEnumerator AnimateNextStageShift(Vector2 nextStageTarget, Vector2 turnPanelTarget)
         {
             if (nextStageButtonRect == null && turnPanelRect == null)
             {
@@ -556,6 +605,40 @@ namespace Panoptes.Presentation.UI.HUD
             _nextStageShiftRoutine = null;
         }
 
+        private void CacheRightGroupBasePositionIfNeeded()
+        {
+            if (!_nextStageBasePositionReady && nextStageButtonRect != null)
+            {
+                _nextStageBaseAnchoredPos = nextStageButtonRect.anchoredPosition;
+                _nextStageBasePositionReady = true;
+            }
+
+            if (!_turnPanelBasePositionReady && turnPanelRect != null)
+            {
+                _turnPanelBaseAnchoredPos = turnPanelRect.anchoredPosition;
+                _turnPanelBasePositionReady = true;
+            }
+        }
+
+        private void EnsureRightGroupAnimationCurve()
+        {
+            if (rightGroupShiftCurve == null || rightGroupShiftCurve.length == 0)
+            {
+                rightGroupShiftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+            }
+        }
+
+        private void StopShiftRoutine()
+        {
+            if (_nextStageShiftRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_nextStageShiftRoutine);
+            _nextStageShiftRoutine = null;
+        }
+
         private void StopPanelSwitchRoutine()
         {
             if (_panelSwitchRoutine == null)
@@ -567,330 +650,9 @@ namespace Panoptes.Presentation.UI.HUD
             _panelSwitchRoutine = null;
         }
 
-        private float GetBuildPanelSlideDuration()
-        {
-            if (buildPanelSlideToggle != null)
-            {
-                return buildPanelSlideToggle.GetDuration();
-            }
-
-            return 0.22f;
-        }
-
         private float GetRecipePanelSlideDuration()
         {
-            if (recipeSynthesisPanel != null)
-            {
-                return recipeSynthesisPanel.GetSlideDuration();
-            }
-
-            return 0.22f;
-        }
-
-        private void OpenBuildPanelForNode(string nodeId)
-        {
-            if (buildCommandPanel != null)
-            {
-                if (!buildCommandPanel.gameObject.activeSelf)
-                {
-                    buildCommandPanel.gameObject.SetActive(true);
-                }
-                buildCommandPanel.SetCityCoreContext(nodeId);
-            }
-
-            var buildPanelRect = buildCommandPanel != null ? buildCommandPanel.transform as RectTransform : null;
-            if (buildPanelSlideToggle == null ||
-                (buildPanelRect != null && !buildPanelSlideToggle.ControlsPanel(buildPanelRect)))
-            {
-                buildPanelSlideToggle = ResolveBuildPanelSlideToggleForBuildPanel(buildCommandPanel);
-            }
-
-            if (buildPanelSlideToggle != null)
-            {
-                if (!buildPanelSlideToggle.gameObject.activeSelf)
-                {
-                    buildPanelSlideToggle.gameObject.SetActive(true);
-                }
-                buildPanelSlideToggle.ForceRecalculatePositions();
-                buildPanelSlideToggle.SetCollapsed(true, true);
-                buildPanelSlideToggle.Expand();
-            }
-            else if (fallbackHideBuildPanelGameObjectWhenNoSlideToggle && buildCommandPanel != null)
-            {
-                SetBuildPanelDirectVisible(true);
-            }
-            else
-            {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Build panel reference missing.");
-                return;
-            }
-
-            _buildPanelOpen = true;
-            ReapplyRightBottomShift(false);
-            UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private void OpenRecipePanelForBuilding(string nodeId, string buildingType, string ownerId)
-        {
-            if (recipeSynthesisPanel == null)
-            {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] RecipeSynthesisPanel missing.");
-                return;
-            }
-
-            recipeSynthesisPanel.OpenForBuilding(nodeId, buildingType, ownerId);
-            var panelRect = recipeSynthesisPanel.transform as RectTransform;
-            if (panelRect != null)
-            {
-                panelRect.SetAsLastSibling();
-            }
-            ReapplyRightBottomShift(false);
-            UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private System.Collections.IEnumerator SwitchFromRecipeToBuild(string nodeId)
-        {
-            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
-            {
-                recipeSynthesisPanel.Hide();
-                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, GetRecipePanelSlideDuration()));
-            }
-
-            OpenBuildPanelForNode(nodeId);
-            _panelSwitchRoutine = null;
-        }
-
-        private System.Collections.IEnumerator SwitchFromBuildToRecipe(string nodeId, string buildingType, string ownerId)
-        {
-            if (IsBuildPanelCurrentlyVisible())
-            {
-                CloseBuildPanel(false);
-                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, GetBuildPanelSlideDuration()));
-            }
-
-            OpenRecipePanelForBuilding(nodeId, buildingType, ownerId);
-            _panelSwitchRoutine = null;
-        }
-
-        private void CloseAllDerivedPanels(bool resetUnitInfoOffset)
-        {
-            StopPanelSwitchRoutine();
-
-            if (recipeSynthesisPanel != null)
-            {
-                recipeSynthesisPanel.Hide();
-            }
-
-            CloseBuildPanel(resetUnitInfoOffset: false);
-
-            if (resetUnitInfoOffset)
-            {
-                ReapplyRightBottomShift(false);
-            }
-
-            UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private void OnBuildActionClicked(UnitView unit)
-        {
-            if (!CityCoreBuildingActionResolver.TryResolveCityCoreNodeId(unit, out var nodeId))
-            {
-                return;
-            }
-
-            _activeUnitInfoNodeId = nodeId;
-            ResolveReferences();
-            StopPanelSwitchRoutine();
-
-            var isBuildPanelVisible = IsBuildPanelCurrentlyVisible();
-            var isRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
-
-            if (isBuildPanelVisible)
-            {
-                CloseBuildPanel(true);
-                return;
-            }
-
-            if (isRecipePanelVisible)
-            {
-                _panelSwitchRoutine = StartCoroutine(SwitchFromRecipeToBuild(nodeId));
-                return;
-            }
-
-            OpenBuildPanelForNode(nodeId);
-        }
-
-        private void OnRecipeActionClicked(UnitView unit)
-        {
-            if (!CityCoreBuildingActionResolver.TryResolveRecipeBuilding(unit, out var context))
-            {
-                return;
-            }
-
-            _activeUnitInfoNodeId = context.NodeId;
-            ResolveReferences();
-            StopPanelSwitchRoutine();
-
-            var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
-            if (recipeVisible)
-            {
-                recipeSynthesisPanel.Hide();
-                ReapplyRightBottomShift(false);
-                UpdateDerivedPanelVisibilitySnapshot();
-                return;
-            }
-
-            if (IsBuildPanelCurrentlyVisible())
-            {
-                _panelSwitchRoutine = StartCoroutine(SwitchFromBuildToRecipe(
-                    context.NodeId,
-                    context.BuildingTypeId,
-                    context.OwnerId));
-                return;
-            }
-
-            OpenRecipePanelForBuilding(context.NodeId, context.BuildingTypeId, context.OwnerId);
-        }
-
-        private void OnNonBuildingMapClicked()
-        {
-            _activeUnitInfoNodeId = string.Empty;
-            CloseAllDerivedPanels(resetUnitInfoOffset: true);
-        }
-
-        private void OnUnitSelectionChanged(UnitView selected)
-        {
-            if (selected != null &&
-                !string.IsNullOrWhiteSpace(_activeUnitInfoNodeId) &&
-                string.Equals(selected.UnitId, _activeUnitInfoNodeId, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _activeUnitInfoNodeId = selected != null ? selected.UnitId : string.Empty;
-            CloseAllDerivedPanels(resetUnitInfoOffset: true);
-        }
-
-        private void CloseBuildPanel(bool resetUnitInfoOffset)
-        {
-            if (buildPanelSlideToggle != null)
-            {
-                buildPanelSlideToggle.Collapse();
-            }
-            else if (fallbackHideBuildPanelGameObjectWhenNoSlideToggle && buildCommandPanel != null)
-            {
-                SetBuildPanelDirectVisible(false);
-            }
-            _buildPanelOpen = false;
-
-            if (buildCommandPanel != null)
-            {
-                buildCommandPanel.ClearCityCoreContext();
-            }
-
-            if (resetUnitInfoOffset)
-            {
-                ReapplyRightBottomShift(false);
-            }
-
-            UpdateDerivedPanelVisibilitySnapshot();
-        }
-
-        private void SetBuildPanelDirectVisible(bool visible)
-        {
-            if (buildCommandPanel == null)
-            {
-                return;
-            }
-
-            buildCommandPanel.gameObject.SetActive(visible);
-            if (!visible)
-            {
-                buildCommandPanel.ClearCityCoreContext();
-            }
-        }
-
-        private static BuildPanelSlideToggle ResolveBuildPanelSlideToggleForBuildPanel(BuildCommandPanel panel)
-        {
-            if (panel == null)
-            {
-                return null;
-            }
-
-            var toggles = panel.GetComponentsInChildren<BuildPanelSlideToggle>(true);
-            if (toggles == null || toggles.Length == 0)
-            {
-                return null;
-            }
-
-            for (var i = 0; i < toggles.Length; i++)
-            {
-                var candidate = toggles[i];
-                if (candidate == null)
-                {
-                    continue;
-                }
-
-                var owner = candidate.GetComponentInParent<BuildCommandPanel>(true);
-                if (ReferenceEquals(owner, panel) && candidate.ControlsPanel(panel.transform as RectTransform))
-                {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
-
-        private float ResolveUnitInfoShiftX()
-        {
-            var fallback = Mathf.Abs(unitInfoShiftXWhenBuildPanelOpen);
-            if (!useBuildPanelWidthForShift)
-            {
-                return fallback;
-            }
-
-            var panelWidth = 0f;
-            if (buildPanelSlideToggle != null)
-            {
-                panelWidth = Mathf.Max(panelWidth, buildPanelSlideToggle.GetPanelWidth());
-            }
-
-            if (buildCommandPanel != null)
-            {
-                var rect = buildCommandPanel.transform as RectTransform;
-                if (rect != null)
-                {
-                    panelWidth = Mathf.Max(panelWidth, Mathf.Abs(rect.rect.width));
-                }
-            }
-
-            if (panelWidth <= 1f)
-            {
-                return fallback;
-            }
-
-            var shiftFactor = Mathf.Max(1.15f, buildPanelWidthShiftFactor);
-            var resolved = panelWidth * shiftFactor + buildPanelWidthShiftExtra;
-            return Mathf.Max(1f, resolved);
-        }
-
-        private float ResolveRecipeShiftX()
-        {
-            var fallback = Mathf.Abs(recipePanelShiftXWhenOpen);
-            if (!useRecipePanelWidthForShift || recipeSynthesisPanel == null)
-            {
-                return fallback;
-            }
-
-            var panelWidth = recipeSynthesisPanel.GetPanelWidth();
-            if (panelWidth <= 1f)
-            {
-                return fallback;
-            }
-
-            var shiftFactor = Mathf.Max(1.05f, recipePanelWidthShiftFactor);
-            var resolved = panelWidth * shiftFactor + recipePanelWidthShiftExtra;
-            return Mathf.Max(1f, resolved);
+            return recipeSynthesisPanel != null ? recipeSynthesisPanel.GetSlideDuration() : 0.22f;
         }
     }
 }

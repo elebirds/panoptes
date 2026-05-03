@@ -6,7 +6,8 @@ namespace Panoptes.Presentation.ViewModels
     public enum ManagementPanelId
     {
         None = 0,
-        TechTree = 1
+        TechTree = 1,
+        BuildCatalog = 2
     }
 
     public sealed class ManagementPanelVisibilityState
