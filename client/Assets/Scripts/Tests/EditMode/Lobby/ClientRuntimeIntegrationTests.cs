@@ -43,7 +43,6 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _recipeSynthesisContextStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisContextStore.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
         private readonly string _staticCatalogCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs");
-        private readonly string _configBridgePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs");
         private readonly string _cityCoreHpBarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHPBar.cs");
         private readonly string _cityCoreHpBarOverlayControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs");
         private readonly string _buildingViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/BuildingView.cs");
