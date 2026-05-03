@@ -104,8 +104,12 @@ namespace Panoptes.Presentation.Composition
             builder.Register<UnitCache>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
-            builder.RegisterComponentOnNewGameObject<AnimationQueue>(Lifetime.Singleton, "AnimationQueue");
-            builder.RegisterComponentOnNewGameObject<DamageNumberPopupController>(Lifetime.Singleton, "DamageNumberPopupController");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<AnimationQueue>("Prefabs/Runtime/AnimationQueue"),
+                Lifetime.Singleton);
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<DamageNumberPopupController>("Prefabs/UI/DamageNumberPopupController"),
+                Lifetime.Singleton);
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
             builder.RegisterComponentInHierarchy<CinemachineMapCameraController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
