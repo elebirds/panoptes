@@ -1056,8 +1056,10 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_lobbyPanelControllerPath);
             StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
-            StringAssert.Contains("ErrorToast.Instance", content,
-                "大厅面板应优先通过 ErrorToast 展示错误/成功提示。");
+            StringAssert.Contains("ErrorToast errorToast", content,
+                "大厅面板应通过 VContainer 注入的 ErrorToast 展示错误/成功提示。");
+            Assert.That(content, Does.Not.Contain("ErrorToast.Instance"),
+                "大厅面板不应再读取 ErrorToast singleton。");
             StringAssert.Contains("ShowToast(message, false);", content,
                 "大厅错误提示应走 ErrorToast。");
             StringAssert.Contains("ShowToast($\"房间已创建，邀请码：{roomCode}\", true);", content,
@@ -1086,8 +1088,10 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_roomPanelControllerPath);
             StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
-            StringAssert.Contains("ConfirmDialog.Instance", content,
-                "房间敏感操作应优先通过 ConfirmDialog 二次确认。");
+            StringAssert.Contains("ConfirmDialog confirmDialog", content,
+                "房间敏感操作应通过 VContainer 注入的 ConfirmDialog 二次确认。");
+            Assert.That(content, Does.Not.Contain("ConfirmDialog.Instance"),
+                "房间面板不应再读取 ConfirmDialog singleton。");
             StringAssert.Contains("ShowConfirmation(", content);
             StringAssert.Contains("\"开始游戏\"", content,
                 "开始游戏前应弹确认框。");

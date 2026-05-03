@@ -200,8 +200,12 @@ namespace Panoptes.Tests.EditMode.UI
                 InvokeLifecycle(toast, "Awake");
                 InvokeLifecycle(dialog, "Awake");
 
-                Assert.That(ErrorToast.Instance, Is.SameAs(toast));
-                Assert.That(ConfirmDialog.Instance, Is.SameAs(dialog));
+                Assert.That(
+                    typeof(ErrorToast).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static),
+                    Is.Null);
+                Assert.That(
+                    typeof(ConfirmDialog).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static),
+                    Is.Null);
                 Assert.That(toast.transform.parent, Is.Null);
                 Assert.That(dialog.transform.parent, Is.Null);
             }
