@@ -863,6 +863,27 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void PresentationRuntimeOutsideComposition_ShouldNotUseSceneLookup()
+        {
+            var roots = Directory.GetFiles(
+                    ResolveAssetPath("Scripts/Runtime/Presentation"),
+                    "*.cs",
+                    SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Composition{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .ToArray();
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "SceneObjectFinder.Find",
+                "FindAnyObjectByType",
+                "FindFirstObjectByType",
+                "FindObjectOfType");
+
+            Assert.That(offenders, Is.Empty, "Scene lookup belongs at the composition boundary, not in runtime Presentation scripts.");
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");

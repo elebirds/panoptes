@@ -36,8 +36,6 @@ namespace Panoptes.Presentation.UI.HUD
 
         [Header("Submit Button")]
         [SerializeField] private Button nextStageButton;
-        [SerializeField] private bool autoFindNextStageButton = true;
-        [SerializeField] private string nextStageButtonName = "NextStageBtn";
         [SerializeField] private bool disableNextStageWhenUnavailable = true;
 
         private IDisposable _turnSubscription;
@@ -63,7 +61,6 @@ namespace Panoptes.Presentation.UI.HUD
         private void Awake()
         {
             ResolveExternalTurnPanelReferences();
-            ResolveNextStageButtonReference();
             EnsureUi();
             RefreshNextStageInteractable();
         }
@@ -71,7 +68,6 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnEnable()
         {
             ResolveExternalTurnPanelReferences();
-            ResolveNextStageButtonReference();
             _subscriptions.Clear();
             _turnSubscription?.Dispose();
             _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
@@ -222,15 +218,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (externalTurnPanelRoot == null)
             {
-                externalTurnPanelRoot = FindRectByName("TrunPanel");
-                if (externalTurnPanelRoot == null)
-                {
-                    externalTurnPanelRoot = FindRectByName("TurnPanel");
-                }
-            }
-
-            if (externalTurnPanelRoot == null)
-            {
                 return;
             }
 
@@ -245,24 +232,9 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
-        private void ResolveNextStageButtonReference()
-        {
-            if (nextStageButton != null || !autoFindNextStageButton)
-            {
-                return;
-            }
-
-            nextStageButton = SceneObjectFinder.FindFirstSceneObject<Button>(button =>
-            {
-                return !string.IsNullOrWhiteSpace(button.name) &&
-                    string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase);
-            });
-        }
-
         private void BindNextStageButton()
         {
             _buttonSubscriptions.Clear();
-            ResolveNextStageButtonReference();
 
             var button = nextStageButton;
             if (button == null)
@@ -289,15 +261,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             nextStageButton.interactable = !_gameEnded && _isInteractive && !ActionLock.IsLocked;
-        }
-
-        private static RectTransform FindRectByName(string name)
-        {
-            return SceneObjectFinder.FindFirstSceneObject<RectTransform>(rect =>
-            {
-                return !string.IsNullOrWhiteSpace(rect.name) &&
-                    string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase);
-            });
         }
 
         private static TextMeshProUGUI FindTextByName(RectTransform rootRect, string name)
