@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using System.Collections.Generic;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Cache;
 using UnityEngine;
 
@@ -16,8 +17,18 @@ namespace Panoptes.DebugTools
         private readonly DebugPanelContext.SharedState _sharedState = new();
         private IReadOnlyList<IDebugTab> _tabs;
         private DebugPanelContext _context;
+        private IClientMessageSender _messageSender;
         private bool _expanded;
         private int _selectedTabIndex;
+
+        public void UseMessageSender(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+            if (_context != null)
+            {
+                _tabs = DebugTabRegistry.CreateDefaultTabs(_messageSender);
+            }
+        }
 
         private void Awake()
         {
@@ -38,7 +49,7 @@ namespace Panoptes.DebugTools
             }
 
             _context = new DebugPanelContext(_sharedState);
-            _tabs = DebugTabRegistry.CreateDefaultTabs();
+            _tabs = DebugTabRegistry.CreateDefaultTabs(_messageSender);
         }
 
         private void OnDestroy()

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Network;
@@ -14,14 +15,14 @@ namespace Panoptes.DebugTools
 {
     public static class DebugTabRegistry
     {
-        public static IReadOnlyList<IDebugTab> CreateDefaultTabs()
+        public static IReadOnlyList<IDebugTab> CreateDefaultTabs(IClientMessageSender messageSender)
         {
             return new IDebugTab[]
             {
                 new OverviewDebugTab(),
                 new TimelineDebugTab(),
                 new RawSenderDebugTab(),
-                new LobbyDebugTab(),
+                new LobbyDebugTab(messageSender),
                 new GameDebugTab(),
                 new GameIntentsDebugTab(),
             };
@@ -501,7 +502,7 @@ namespace Panoptes.DebugTools
 
     internal sealed class LobbyDebugTab : IDebugTab
     {
-        private readonly LobbyService _service = new();
+        private readonly LobbyService _service;
         private string _roomName = "debug-room";
         private string _maxPlayersText = "2";
         private string _roomCode = string.Empty;
@@ -510,6 +511,11 @@ namespace Panoptes.DebugTools
 
         public string Id => "lobby";
         public string Title => "Lobby";
+
+        public LobbyDebugTab(IClientMessageSender messageSender)
+        {
+            _service = new LobbyService(messageSender);
+        }
 
         public bool IsAvailable(DebugPanelContext context, out string reason)
         {
