@@ -188,6 +188,11 @@ namespace Panoptes.Presentation.Composition
                 var unitInfo = SceneObjectFinder.FindFirstSceneObject<UnitInfoPanelController>();
                 if (unitInfo != null)
                 {
+                    if (unitInfo.GetComponent<UnitInfoActionRegistry>() == null)
+                    {
+                        unitInfo.gameObject.AddComponent<UnitInfoActionRegistry>();
+                    }
+
                     component = unitInfo.gameObject.AddComponent<T>();
                 }
             }

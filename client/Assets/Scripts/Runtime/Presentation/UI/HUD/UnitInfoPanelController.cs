@@ -41,9 +41,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private UnitInfoActionRegistry actionRegistry;
         [SerializeField] private MapPlanningInputController mapPlanningInputController;
 
-        [Header("Auto Find")]
-        [SerializeField] private bool autoFindActionRegistry = true;
-        [SerializeField] private bool autoFindMapPlanningInputController = true;
+        [Header("Auto Layout")]
         [SerializeField] private bool autoBuildDefaultLayout = true;
 
         [Header("Icon")]
@@ -123,7 +121,6 @@ namespace Panoptes.Presentation.UI.HUD
         private void Awake()
         {
             ResolveReferences();
-            EnsureDefaultActionProviders();
             if (slideCurve == null || slideCurve.length == 0)
             {
                 slideCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -483,17 +480,6 @@ namespace Panoptes.Presentation.UI.HUD
             RenderReactiveState();
         }
 
-        private void EnsureDefaultActionProviders()
-        {
-            // Settler actions are registered through ClientCompositionInstaller so
-            // VContainer can inject their Store/service dependencies.
-            if (GetComponent<CityCoreBuildingActionRegistrar>() == null &&
-                UnityEngine.Object.FindAnyObjectByType<CityCoreBuildingActionRegistrar>() == null)
-            {
-                gameObject.AddComponent<CityCoreBuildingActionRegistrar>();
-            }
-        }
-
         private void ResolveReferences()
         {
             if (panelRoot == null)
@@ -505,20 +491,16 @@ namespace Panoptes.Presentation.UI.HUD
                 panelRoot = gameObject.AddComponent<RectTransform>();
             }
 
-            if (autoFindActionRegistry && actionRegistry == null)
+            if (actionRegistry == null)
             {
                 actionRegistry = GetComponent<UnitInfoActionRegistry>();
-                if (actionRegistry == null)
-                {
-                    actionRegistry = UnityEngine.Object.FindAnyObjectByType<UnitInfoActionRegistry>();
-                }
                 if (actionRegistry == null)
                 {
                     actionRegistry = gameObject.AddComponent<UnitInfoActionRegistry>();
                 }
             }
 
-            if (autoFindMapPlanningInputController && mapPlanningInputController == null)
+            if (mapPlanningInputController == null)
             {
                 ResolveInjectedMapPlanningInputController();
             }

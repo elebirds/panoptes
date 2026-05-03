@@ -9,7 +9,6 @@ namespace Panoptes.Presentation.UI.HUD
     public abstract class UnitInfoActionProviderBase : MonoBehaviour
     {
         [SerializeField] protected UnitInfoActionRegistry actionRegistry;
-        [SerializeField] private bool autoFindActionRegistry = true;
 
         private bool _registered;
 
@@ -35,13 +34,9 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (actionRegistry == null && autoFindActionRegistry)
+            if (actionRegistry == null)
             {
                 actionRegistry = GetComponent<UnitInfoActionRegistry>();
-                if (actionRegistry == null)
-                {
-                    actionRegistry = UnityEngine.Object.FindAnyObjectByType<UnitInfoActionRegistry>();
-                }
             }
 
             if (actionRegistry == null)

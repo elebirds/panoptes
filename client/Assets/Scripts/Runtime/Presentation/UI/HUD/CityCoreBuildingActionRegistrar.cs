@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using Panoptes.Core.Application.Stores;
-using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
@@ -24,8 +23,6 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
-        [SerializeField] private bool autoFindNextStageButton = true;
-        [SerializeField] private bool autoFindTurnPanel = true;
 
         [Header("Recipe Derived Panel")]
         [SerializeField] private float recipePanelShiftXWhenOpen = 360f;
@@ -55,12 +52,22 @@ namespace Panoptes.Presentation.UI.HUD
             StaticCatalogStore staticCatalogStore,
             ManagementPanelVisibilityStore managementPanelVisibilityStore,
             BuildCatalogContextStore buildCatalogContextStore,
-            RecipeSynthesisContextStore recipeSynthesisContextStore)
+            RecipeSynthesisContextStore recipeSynthesisContextStore,
+            MapPlanningInputController injectedMapPlanningInputController,
+            UnitInfoPanelController injectedUnitInfoPanelController)
         {
             _resolver = new CityCoreBuildingActionResolver(gameStateStore, staticCatalogStore);
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
             _buildCatalogContextStore = buildCatalogContextStore;
             _recipeSynthesisContextStore = recipeSynthesisContextStore;
+            if (mapPlanningInputController == null)
+            {
+                mapPlanningInputController = injectedMapPlanningInputController;
+            }
+            if (unitInfoPanelController == null)
+            {
+                unitInfoPanelController = injectedUnitInfoPanelController;
+            }
         }
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
@@ -89,7 +96,6 @@ namespace Panoptes.Presentation.UI.HUD
         protected override void Awake()
         {
             base.Awake();
-            ResolveReferences();
             EnsureRightGroupAnimationCurve();
             EnsureInitialPanelState();
         }
@@ -97,7 +103,6 @@ namespace Panoptes.Presentation.UI.HUD
         protected override void OnEnable()
         {
             base.OnEnable();
-            ResolveReferences();
             EnsureRightGroupAnimationCurve();
             EnsureInitialPanelState();
             SubscribeInputEvents();
@@ -116,12 +121,6 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void LateUpdate()
         {
-            if (_subscribedMapPlanningInputController == null || !ReferenceEquals(_subscribedMapPlanningInputController, mapPlanningInputController))
-            {
-                ResolveReferences();
-                SubscribeInputEvents();
-            }
-
             SyncDerivedPanelStateFromVisibility();
 
             if (unitInfoPanelController != null && !unitInfoPanelController.IsOpen && IsAnyDerivedPanelVisible())
@@ -166,31 +165,10 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void ResolveReferences()
         {
-            if (mapPlanningInputController == null)
-            {
-                mapPlanningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-            }
-
-            if (unitInfoPanelController == null)
-            {
-                unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            }
-
-            if (nextStageButtonRect == null && autoFindNextStageButton)
-            {
-                nextStageButtonRect = SceneObjectFinder.FindSceneRectByName("NextStageBtn");
-            }
-
             if (unitInfoPanelController != null && nextStageButtonRect != null)
             {
                 unitInfoPanelController.SetDockRightOf(nextStageButtonRect);
             }
-
-            if (turnPanelRect == null && autoFindTurnPanel)
-            {
-                turnPanelRect = SceneObjectFinder.FindSceneRectByName("TrunPanel", "TurnPanel");
-            }
-
         }
 
         private void SubscribeInputEvents()
