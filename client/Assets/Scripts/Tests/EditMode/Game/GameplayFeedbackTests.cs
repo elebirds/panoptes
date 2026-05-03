@@ -32,7 +32,7 @@ namespace Panoptes.Tests.EditMode.Game
         [Test]
         public void PlanningDraftCache_ShouldDiscardStaleBuildPreviewResponses()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             cache.TrackBuildPreviewRequest("build-preview-1", "A1", "farm", "city-1");
             cache.TrackBuildPreviewRequest("build-preview-2", "A2", "smelter", "city-1");
 
@@ -75,7 +75,7 @@ namespace Panoptes.Tests.EditMode.Game
         [Test]
         public void PlanningDraftCache_ShouldDiscardStaleRecipePreviewResponses()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             cache.TrackRecipePreviewRequest("recipe-preview-1", "A2", "smelt_iron");
             cache.TrackRecipePreviewRequest("recipe-preview-2", "A2", "forge_tools");
 
@@ -110,6 +110,11 @@ namespace Panoptes.Tests.EditMode.Game
             Assert.That(cache.CurrentRecipePreview.Message, Is.EqualTo("当前可切换到该配方"));
             Assert.That(cache.CurrentRecipePreview.Valid, Is.True);
             Assert.That(cache.CurrentRecipePreview.Details["recipe_id"], Is.EqualTo("forge_tools"));
+        }
+
+        private static PlanningDraftCache CreatePlanningDraftCache()
+        {
+            return new GameObject("PlanningDraftCache").AddComponent<PlanningDraftCache>();
         }
 
         private static void DestroySingleton(System.Type type)

@@ -74,7 +74,7 @@ namespace Panoptes.DebugTools
         {
             if (_senderHooked)
             {
-                MessageSender.OnSendIntercepted -= OnSendIntercepted;
+                MessageSendDiagnostics.OnSendIntercepted -= OnSendIntercepted;
                 _senderHooked = false;
             }
 
@@ -103,7 +103,7 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            MessageSender.OnSendIntercepted += OnSendIntercepted;
+            MessageSendDiagnostics.OnSendIntercepted += OnSendIntercepted;
             _senderHooked = true;
         }
 
@@ -267,8 +267,8 @@ namespace Panoptes.DebugTools
                     return $"role={metrics.MinisterRole} metrics_count={metrics.Metrics.Count}";
                 case MsgTurnReport turnReport:
                     return $"turn={turnReport.Turn} summary_len={(turnReport.Summary ?? string.Empty).Length}";
-                case MsgTurnSettlement turnSettlement:
-                    return $"turn={turnSettlement.Turn} sections={turnSettlement.Sections.Count} next_phase={turnSettlement.NextPhase}";
+                case MsgGameSync gameSync:
+                    return $"turn={gameSync.Turn} events={gameSync.Events.Count} next_phase={gameSync.NextPhase}";
                 case MsgGameOver gameOver:
                     return $"winner={gameOver.WinnerId} reason={gameOver.Reason}";
                 case Problem problem:

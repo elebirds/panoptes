@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify ViewModel remains read-only projection and commands use services."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify boundary checks, generated-file rules, and Unity compile gate."}

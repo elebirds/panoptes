@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry point for M2 implementation."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Backend package boundaries, resolving/event/state ownership, and M1 rules that M2 must preserve."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Road command validation must use the project's existing error vocabulary and response conventions."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality expectations for backend code and tests."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "M2 spans planning, orders, events, domain state, projection, and tests."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "M2 should reuse existing graph/path/event patterns before adding helpers."}

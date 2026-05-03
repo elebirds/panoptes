@@ -170,7 +170,7 @@ func resolveTargetNode(ctx *ResolutionContext, nodeID string) domain.Position {
 		return domain.Position{}
 	}
 	pos := ecs.PositionC.Get(entry)
-	return domain.Position{X: pos.X, Y: pos.Y}
+	return domain.Position{Q: pos.Q, R: pos.R}
 }
 
 func resolveChargeGoal(ctx *ResolutionContext, order domain.UnitResolutionOrder) domain.Position {

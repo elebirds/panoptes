@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: minister.proto
+// source: panoptes/proto/v1/minister.proto
 
 package protov1
 
@@ -33,7 +33,7 @@ type MsgMinisterReportChunk struct {
 
 func (x *MsgMinisterReportChunk) Reset() {
 	*x = MsgMinisterReportChunk{}
-	mi := &file_minister_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *MsgMinisterReportChunk) String() string {
 func (*MsgMinisterReportChunk) ProtoMessage() {}
 
 func (x *MsgMinisterReportChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_minister_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *MsgMinisterReportChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgMinisterReportChunk.ProtoReflect.Descriptor instead.
 func (*MsgMinisterReportChunk) Descriptor() ([]byte, []int) {
-	return file_minister_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_minister_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MsgMinisterReportChunk) GetMinisterRole() string {
@@ -93,7 +93,7 @@ type MsgMinisterMetrics struct {
 
 func (x *MsgMinisterMetrics) Reset() {
 	*x = MsgMinisterMetrics{}
-	mi := &file_minister_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +105,7 @@ func (x *MsgMinisterMetrics) String() string {
 func (*MsgMinisterMetrics) ProtoMessage() {}
 
 func (x *MsgMinisterMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_minister_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +118,7 @@ func (x *MsgMinisterMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgMinisterMetrics.ProtoReflect.Descriptor instead.
 func (*MsgMinisterMetrics) Descriptor() ([]byte, []int) {
-	return file_minister_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_minister_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MsgMinisterMetrics) GetMinisterRole() string {
@@ -148,7 +148,7 @@ type MetricItem struct {
 
 func (x *MetricItem) Reset() {
 	*x = MetricItem{}
-	mi := &file_minister_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -160,7 +160,7 @@ func (x *MetricItem) String() string {
 func (*MetricItem) ProtoMessage() {}
 
 func (x *MetricItem) ProtoReflect() protoreflect.Message {
-	mi := &file_minister_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_minister_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -173,7 +173,7 @@ func (x *MetricItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricItem.ProtoReflect.Descriptor instead.
 func (*MetricItem) Descriptor() ([]byte, []int) {
-	return file_minister_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_minister_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MetricItem) GetLabel() string {
@@ -211,11 +211,11 @@ func (x *MetricItem) GetIsDelayed() bool {
 	return false
 }
 
-var File_minister_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_minister_proto protoreflect.FileDescriptor
 
-const file_minister_proto_rawDesc = "" +
+const file_panoptes_proto_v1_minister_proto_rawDesc = "" +
 	"\n" +
-	"\x0eminister.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"n\n" +
+	" panoptes/proto/v1/minister.proto\x12\x11panoptes.proto.v1\"n\n" +
 	"\x16MsgMinisterReportChunk\x12#\n" +
 	"\rminister_role\x18\x01 \x01(\tR\fministerRole\x12\x14\n" +
 	"\x05chunk\x18\x02 \x01(\tR\x05chunk\x12\x19\n" +
@@ -232,27 +232,27 @@ const file_minister_proto_rawDesc = "" +
 	"confidence\x18\x04 \x01(\tR\n" +
 	"confidence\x12\x1d\n" +
 	"\n" +
-	"is_delayed\x18\x05 \x01(\bR\tisDelayedBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"is_delayed\x18\x05 \x01(\bR\tisDelayedBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_minister_proto_rawDescOnce sync.Once
-	file_minister_proto_rawDescData []byte
+	file_panoptes_proto_v1_minister_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_minister_proto_rawDescData []byte
 )
 
-func file_minister_proto_rawDescGZIP() []byte {
-	file_minister_proto_rawDescOnce.Do(func() {
-		file_minister_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_minister_proto_rawDesc), len(file_minister_proto_rawDesc)))
+func file_panoptes_proto_v1_minister_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_minister_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_minister_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_minister_proto_rawDesc), len(file_panoptes_proto_v1_minister_proto_rawDesc)))
 	})
-	return file_minister_proto_rawDescData
+	return file_panoptes_proto_v1_minister_proto_rawDescData
 }
 
-var file_minister_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_minister_proto_goTypes = []any{
+var file_panoptes_proto_v1_minister_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_panoptes_proto_v1_minister_proto_goTypes = []any{
 	(*MsgMinisterReportChunk)(nil), // 0: panoptes.proto.v1.MsgMinisterReportChunk
 	(*MsgMinisterMetrics)(nil),     // 1: panoptes.proto.v1.MsgMinisterMetrics
 	(*MetricItem)(nil),             // 2: panoptes.proto.v1.MetricItem
 }
-var file_minister_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_minister_proto_depIdxs = []int32{
 	2, // 0: panoptes.proto.v1.MsgMinisterMetrics.metrics:type_name -> panoptes.proto.v1.MetricItem
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -261,27 +261,26 @@ var file_minister_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_minister_proto_init() }
-func file_minister_proto_init() {
-	if File_minister_proto != nil {
+func init() { file_panoptes_proto_v1_minister_proto_init() }
+func file_panoptes_proto_v1_minister_proto_init() {
+	if File_panoptes_proto_v1_minister_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_minister_proto_rawDesc), len(file_minister_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_minister_proto_rawDesc), len(file_panoptes_proto_v1_minister_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_minister_proto_goTypes,
-		DependencyIndexes: file_minister_proto_depIdxs,
-		MessageInfos:      file_minister_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_minister_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_minister_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_minister_proto_msgTypes,
 	}.Build()
-	File_minister_proto = out.File
-	file_minister_proto_goTypes = nil
-	file_minister_proto_depIdxs = nil
+	File_panoptes_proto_v1_minister_proto = out.File
+	file_panoptes_proto_v1_minister_proto_goTypes = nil
+	file_panoptes_proto_v1_minister_proto_depIdxs = nil
 }

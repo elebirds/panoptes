@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "facade/helper and prefab compatibility conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Presentation/Core boundary conventions"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "helper testing and Unity quality gates"}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "current UnitInfo refactor audit"}

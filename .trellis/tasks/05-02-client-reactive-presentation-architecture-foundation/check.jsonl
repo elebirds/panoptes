@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify target directories and ownership language stay consistent."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify final Binder/ViewModel rules preserve prefab compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify stores remain server-authoritative read models."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify allowed dependencies and forbidden patterns are coherent."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Verify the old compatibility rollout no longer contradicts the new plan."}
+{"file": "docs/PANOPTES_AGENT_FRONTEND.md", "reason": "Verify frontend authority doc reflects the approved final architecture stack."}
+{"file": ".trellis/tasks/05-02-client-reactive-presentation-architecture-foundation/research/dependency-installation.md", "reason": "verify dependency installation shape and Unity compile requirement"}

@@ -13,11 +13,11 @@ import (
 func TestLifecycleSystemCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
-			TokensPerTurn:               3,
-			CityCoreMaxHP:               100,
-			BaseResearchOutputPerTurn:   1,
-			BaseIndustryOutputPerTurn:   2,
-			InitialCityTerritoryRadius:  1,
+			TokensPerTurn:              3,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			InitialCityTerritoryRadius: 1,
 		},
 		Buildings: []staticdata.BuildingDefinition{
 			{ID: "city_core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
@@ -32,7 +32,7 @@ func TestLifecycleSystemCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{}
 	createNode := func(id string, x int, y int, owner string) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, Q: x, R: y, Terrain: "plain"})
 		nodeIndex[id] = entity
 		entry := world.Entry(entity)
 		node := ecs.NodeC.Get(entry)
@@ -51,12 +51,12 @@ func TestLifecycleSystemCapturesNonCapitalCityWithoutGameOver(t *testing.T) {
 	ecs.CreateBuilding(world, "wall", "player-1", "C3", wallEntry)
 	ecs.CreateBuilding(world, "city_core", "player-2", "E5", enemyCapitalEntry)
 	ecs.BuildingC.Get(cityEntry).HP = 0
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 2, Y: 2}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 2, R: 2}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
 
 	state := domain.NewGameState("city-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:           "city-capture",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 4, R: 4}},
 		NodeIndex:    nodeIndex,
 	})
 	state.World = world
@@ -114,7 +114,7 @@ func TestLifecycleSystemCompletesFacilityTakeoverAfterConsecutiveControl(t *test
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{}
 	createNode := func(id string, x int, y int, owner string, resource bool) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, Q: x, R: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
 		nodeIndex[id] = entity
 		entry := world.Entry(entity)
 		node := ecs.NodeC.Get(entry)
@@ -128,12 +128,12 @@ func TestLifecycleSystemCompletesFacilityTakeoverAfterConsecutiveControl(t *test
 	ecs.CreateBuilding(world, "city_core", "player-1", "C1", player1Capital)
 	ecs.CreateBuilding(world, "city_core", "player-2", "E5", player2Capital)
 	ecs.CreateBuilding(world, "farm", "player-1", "C1", farmEntry)
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 1}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 1, R: 1}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "enemy-1"
 
 	state := domain.NewGameState("facility-capture", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:           "facility-capture",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "player-2": {X: 4, Y: 4}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "player-2": {Q: 4, R: 4}},
 		NodeIndex:    nodeIndex,
 	})
 	state.World = world

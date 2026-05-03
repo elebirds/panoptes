@@ -23,6 +23,10 @@ func (s *CombatUpkeepSystem) Run(world donburi.World, state *domain.GameState) [
 
 	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
 		stats := ecs.UnitStatsC.Get(entry)
+		if !unitHasSupply(state, entry, stats.Faction) {
+			events = append(events, event.UnitStarvingEvent{UnitID: stats.ID, DamagePerTurn: 1})
+			return
+		}
 		unitsByPlayer[stats.Faction] = append(unitsByPlayer[stats.Faction], stats.ID)
 		unitCfg, ok := staticdata.Default().GetUnit(string(stats.Type))
 		if !ok {
@@ -44,4 +48,49 @@ func (s *CombatUpkeepSystem) Run(world donburi.World, state *domain.GameState) [
 	}
 
 	return events
+}
+
+func unitHasSupply(state *domain.GameState, entry *donburi.Entry, playerID string) bool {
+	if state == nil || entry == nil || playerID == "" {
+		return true
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil || len(playerState.Cities) == 0 {
+		return true
+	}
+	if !playerHasRoadSupplyNetwork(state, playerID) {
+		return true
+	}
+	pos := ecs.PositionC.Get(entry)
+	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{Q: pos.Q, R: pos.R})
+	if !ok || nodeEntry == nil {
+		return false
+	}
+	nodeID := ecs.NodeC.Get(nodeEntry).ID
+	status := domain.NodeNetworkStatusForPlayer(state, playerID, nodeID)
+	return status.Connected
+}
+
+func playerHasRoadSupplyNetwork(state *domain.GameState, playerID string) bool {
+	if state == nil || playerID == "" {
+		return false
+	}
+	playerState := state.Players[playerID]
+	if playerState == nil {
+		return false
+	}
+	for cityID, city := range playerState.Cities {
+		if city == nil {
+			continue
+		}
+		coreNodeID := city.CoreNodeID
+		if coreNodeID == "" {
+			coreNodeID = cityID
+		}
+		entry, ok := state.GetNode(coreNodeID)
+		if ok && entry != nil && ecs.NodeC.Get(entry).HasRoad {
+			return true
+		}
+	}
+	return false
 }

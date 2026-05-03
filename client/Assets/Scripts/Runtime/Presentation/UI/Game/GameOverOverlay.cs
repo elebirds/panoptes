@@ -3,15 +3,18 @@
  * File: GameOverOverlay.cs
  * Author: Panoptes Team
  * Date: 2026-04-13
- * Description: End-of-game overlay (prefab-first with runtime fallback).
+ * Description: End-of-game overlay bound to the authored overlay prefab.
  *************************************************/
 
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Events;
+using System;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using VContainer;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -19,6 +22,9 @@ using UnityEditor.SceneManagement;
 
 namespace Panoptes.Presentation.UI.Game
 {
+    [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(CanvasScaler))]
+    [RequireComponent(typeof(GraphicRaycaster))]
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class GameOverOverlay : MonoBehaviour
     {
@@ -38,8 +44,22 @@ namespace Panoptes.Presentation.UI.Game
         private bool _editorRebuilding;
 #endif
 
-        private GameStateCache _cache;
+        private IDisposable _gameOverSubscription;
+        private GameStateStore _gameStateStore;
+        private GameOverStore _gameOverStore;
+        private LocalGameSessionResetService _resetService;
         private bool _buttonBound;
+
+        [Inject]
+        private void Construct(
+            GameOverStore gameOverStore,
+            GameStateStore gameStateStore,
+            LocalGameSessionResetService resetService)
+        {
+            _gameOverStore = gameOverStore;
+            _gameStateStore = gameStateStore;
+            _resetService = resetService;
+        }
 
         private void Awake()
         {
@@ -50,19 +70,15 @@ namespace Panoptes.Presentation.UI.Game
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnGameOver += OnGameOver;
-            }
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = _gameOverStore?.State.Subscribe(this, static (state, self) => self.OnGameOver(state));
+            OnGameOver(_gameOverStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnGameOver -= OnGameOver;
-            }
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = null;
 
             if (backToBuildRoomButton != null)
             {
@@ -88,9 +104,9 @@ namespace Panoptes.Presentation.UI.Game
         }
 #endif
 
-        private void OnGameOver(GameOverEvent evt)
+        private void OnGameOver(GameOverState evt)
         {
-            if (evt == null)
+            if (evt == null || !evt.IsGameOver)
             {
                 return;
             }
@@ -101,11 +117,11 @@ namespace Panoptes.Presentation.UI.Game
 
             titleText.text = MapTitle(evt.IsWinner, evt.Reason);
             reasonText.text = MapReason(evt.Reason);
-            winnerIdText.text = $"Winner ID: {SafeId(evt.WinnerID)}";
+            winnerIdText.text = $"Winner ID: {SafeId(evt.WinnerId)}";
 
-            var loser = !string.IsNullOrWhiteSpace(evt.LoserID)
-                ? evt.LoserID
-                : (evt.IsWinner ? "unknown" : (_cache != null ? _cache.MyPlayerID : string.Empty));
+            var loser = !string.IsNullOrWhiteSpace(evt.LoserId)
+                ? evt.LoserId
+                : (evt.IsWinner ? "unknown" : (_gameStateStore?.Snapshot.MyPlayerId ?? string.Empty));
             loserIdText.text = $"Loser ID: {SafeId(loser)}";
 
             narrativeText.text = string.IsNullOrWhiteSpace(evt.Narrative)
@@ -175,7 +191,7 @@ namespace Panoptes.Presentation.UI.Game
         private void OnBackToBuildRoomClicked()
         {
             var sceneName = string.IsNullOrWhiteSpace(buildRoomSceneName) ? "Lobby" : buildRoomSceneName.Trim();
-            GameStateCache.Instance?.Clear();
+            _resetService?.ResetLocalGameSession();
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {

@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for quality verification."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Package boundary guidance for review."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality checklist for review."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Ensure no inconsistent error handling is introduced."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/backend-current-state.md", "reason": "Review against the accepted optimization scope and current-state analysis."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/runtime-orchestration.md", "reason": "Review against comprehensive runtime orchestration findings."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/command-projection-boundaries.md", "reason": "Review command/projection boundary changes against the planned batches."}
+{"file": ".trellis/tasks/04-30-backend-mvp-structure-optimization/research/domain-engine-boundaries.md", "reason": "Review broader domain/engine boundary implications and avoid unsafe package moves."}

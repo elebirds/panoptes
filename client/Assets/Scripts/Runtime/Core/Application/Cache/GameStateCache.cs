@@ -19,8 +19,6 @@ namespace Panoptes.Core.Application.Cache
 {
     public class GameStateCache : MonoBehaviour
     {
-        private const string IndustryOutputPointKey = "industry_output";
-
         public static GameStateCache Instance { get; private set; }
 
         public string GameID { get; private set; }
@@ -58,6 +56,10 @@ namespace Panoptes.Core.Application.Cache
         public int EnemyCityCoreHP { get; private set; }
         public int EnemyMaxCityCoreHP { get; private set; }
 
+        private StaticCatalogCache _staticCatalogCache;
+        private PlanningDraftCache _planningDraftCache;
+        private GameChatCache _gameChatCache;
+
         public event Action OnStateChanged;
         public event Action<PhaseChangedEvent> OnPhaseChanged;
         public event Action<ResourcesChangedEvent> OnResourcesChanged;
@@ -84,6 +86,16 @@ namespace Panoptes.Core.Application.Cache
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        public void UseProjectCaches(
+            StaticCatalogCache staticCatalogCache,
+            PlanningDraftCache planningDraftCache,
+            GameChatCache gameChatCache)
+        {
+            _staticCatalogCache = staticCatalogCache;
+            _planningDraftCache = planningDraftCache;
+            _gameChatCache = gameChatCache;
         }
 
         public void ApplyGameInit(MsgGameInit msg)
@@ -141,7 +153,7 @@ namespace Panoptes.Core.Application.Cache
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
-                Resources = SnapshotResources(MyPlayer),
+                Resources = GameStateCacheReadQueries.SnapshotResources(MyPlayer),
                 Delta = new ResourceDto()
             }, nameof(OnResourcesChanged));
             Fire(OnTokensChanged, new TokensChangedEvent
@@ -210,19 +222,19 @@ namespace Panoptes.Core.Application.Cache
             }
 
             Phase = NormalizePhase(msg.Phase, GamePhases.Planning);
-            PlanningDraftCache.EnsureInstance()?.ApplyPlanningSnapshot(msg);
+            _planningDraftCache?.ApplyPlanningSnapshot(msg);
             PublishPhaseState(Turn, Phase, 0, TokensLeft, string.Empty);
             OnStateChanged?.Invoke();
         }
 
-        public void ApplyTurnSettlement(MsgTurnSettlement msg)
+        public void ApplyGameSync(MsgGameSync msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var resourcesBefore = SnapshotResources(MyPlayer);
+            var resourcesBefore = GameStateCacheReadQueries.SnapshotResources(MyPlayer);
             var myHpBefore = MyPlayer != null ? MyPlayer.CapitalCityCoreHp : 0;
             var enemyHpBefore = EnemyCityCoreHP;
             var oldUnits = CloneUnitMap(_units);
@@ -230,12 +242,12 @@ namespace Panoptes.Core.Application.Cache
             Turn = msg.Turn > 0 ? msg.Turn : Turn;
             Phase = NormalizePhase(msg.Phase, GamePhases.Resolving);
 
-            ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "settlement");
-            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "settlement");
+            ReplaceNodes(msg.Nodes, publishChanges: true, changeType: "game_sync");
+            var unitChanges = ReplaceUnits(msg.Units, publishChanges: true, oldUnits, "game_sync");
 
-            if (msg.MyPlayerAfter != null)
+            if (msg.MyPlayer != null)
             {
-                MyPlayer = msg.MyPlayerAfter.Clone();
+                MyPlayer = msg.MyPlayer.Clone();
             }
 
             TokensLeft = MyPlayer != null ? MyPlayer.TokensLeft : TokensLeft;
@@ -243,7 +255,7 @@ namespace Panoptes.Core.Application.Cache
             SynchronizeCityCoreState();
             RebuildAuthoritativeProjections();
 
-            var resourcesAfter = SnapshotResources(MyPlayer);
+            var resourcesAfter = GameStateCacheReadQueries.SnapshotResources(MyPlayer);
             Fire(OnResourcesChanged, new ResourcesChangedEvent
             {
                 Resources = resourcesAfter,
@@ -265,7 +277,7 @@ namespace Panoptes.Core.Application.Cache
 
             var settlement = SettlementMapper.ToDto(msg);
             TrackCityBuiltBuildings(settlement);
-            PlanningDraftCache.Instance?.ClearAll();
+            _planningDraftCache?.ClearAll();
 
             Fire(OnTurnSettled, new TurnSettledEvent
             {
@@ -330,6 +342,7 @@ namespace Panoptes.Core.Application.Cache
 
             _nodes.TryGetValue(node.Id, out var previousNode);
             StabilizeNodeTerrain(node, previousNode);
+            StabilizeNodeBuildingMaxHp(node, previousNode);
             _nodes[node.Id] = node;
             RebuildAuthoritativeProjections();
             Fire(OnNodeChanged, new NodeChangedEvent
@@ -373,83 +386,38 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return _cityResources.TryGetValue(cityId.Trim(), out var resources) && resources != null
-                ? CloneResources(resources)
+                ? GameStateCacheReadQueries.CloneResources(resources)
                 : new ResourceDto();
         }
 
         public ResourceDto GetMyResources()
         {
-            return SnapshotResources(MyPlayer);
+            return GameStateCacheReadQueries.SnapshotResources(MyPlayer);
         }
 
         public Dictionary<string, int> GetMyResourceAmounts()
         {
-            return SnapshotAmounts(MyPlayer != null ? MyPlayer.Resources : null);
+            return GameStateCacheReadQueries.SnapshotResourceAmounts(MyPlayer != null ? MyPlayer.Resources : null);
         }
 
         public Dictionary<string, int> GetMyPointAmounts()
         {
-            return SnapshotPointAmounts(MyPlayer != null ? MyPlayer.Points : null);
+            return GameStateCacheReadQueries.SnapshotPointAmounts(MyPlayer != null ? MyPlayer.Points : null);
         }
 
         public IReadOnlyList<string> GetCompletedTechnologyIds()
         {
-            if (_researchState?.CompletedTechnologyIds == null || _researchState.CompletedTechnologyIds.Count == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            var result = new List<string>(_researchState.CompletedTechnologyIds.Count);
-            for (var i = 0; i < _researchState.CompletedTechnologyIds.Count; i++)
-            {
-                var id = _researchState.CompletedTechnologyIds[i];
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    result.Add(id);
-                }
-            }
-
-            return result;
+            return GameStateCacheReadQueries.SnapshotStringList(_researchState?.CompletedTechnologyIds);
         }
 
         public IReadOnlyList<string> GetActiveTechnologyIds()
         {
-            if (_researchState?.ActiveTechnologyIds == null || _researchState.ActiveTechnologyIds.Count == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            var result = new List<string>(_researchState.ActiveTechnologyIds.Count);
-            for (var i = 0; i < _researchState.ActiveTechnologyIds.Count; i++)
-            {
-                var id = _researchState.ActiveTechnologyIds[i];
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    result.Add(id);
-                }
-            }
-
-            return result;
+            return GameStateCacheReadQueries.SnapshotStringList(_researchState?.ActiveTechnologyIds);
         }
 
         public IReadOnlyList<string> GetPendingActivationTechnologyIds()
         {
-            if (_researchState?.PendingActivationTechnologyIds == null || _researchState.PendingActivationTechnologyIds.Count == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            var result = new List<string>(_researchState.PendingActivationTechnologyIds.Count);
-            for (var i = 0; i < _researchState.PendingActivationTechnologyIds.Count; i++)
-            {
-                var id = _researchState.PendingActivationTechnologyIds[i];
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    result.Add(id);
-                }
-            }
-
-            return result;
+            return GameStateCacheReadQueries.SnapshotStringList(_researchState?.PendingActivationTechnologyIds);
         }
 
         public TechnologyDto GetCurrentResearchState()
@@ -543,8 +511,8 @@ namespace Panoptes.Core.Application.Cache
             EnemyMaxCityCoreHP = 0;
             _researchState = new TechnologyDto();
             _institutionState = new InstitutionStateDto();
-            PlanningDraftCache.Instance?.ClearAll();
-            GameChatCache.Instance?.Clear();
+            _planningDraftCache?.ClearAll();
+            _gameChatCache?.Clear();
             OnStateChanged?.Invoke();
         }
 
@@ -596,9 +564,9 @@ namespace Panoptes.Core.Application.Cache
             }, nameof(OnTokensChanged));
         }
 
-        private static void ApplyPlanningStartDraft(MsgPlanningSnapshot snapshot)
+        private void ApplyPlanningStartDraft(MsgPlanningSnapshot snapshot)
         {
-            var draftCache = PlanningDraftCache.EnsureInstance();
+            var draftCache = _planningDraftCache;
             draftCache?.ClearAll();
             if (snapshot != null)
             {
@@ -619,7 +587,7 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    nextUnits[unit.Id] = UnitMapper.ToDto(unit);
+                    nextUnits[unit.Id] = UnitMapper.ToDto(unit, _staticCatalogCache);
                 }
             }
 
@@ -641,7 +609,7 @@ namespace Panoptes.Core.Application.Cache
                     continue;
                 }
 
-                if (oldUnit.X != pair.Value.X || oldUnit.Y != pair.Value.Y || oldUnit.Hp != pair.Value.Hp)
+                if (oldUnit.Q != pair.Value.Q || oldUnit.R != pair.Value.R || oldUnit.Hp != pair.Value.Hp)
                 {
                     moved.Add(CloneUnitDto(pair.Value));
                 }
@@ -663,7 +631,7 @@ namespace Panoptes.Core.Application.Cache
                 ChangeType = changeType ?? string.Empty
             };
 
-            if (publishChanges)
+            if (publishChanges && (added.Count > 0 || moved.Count > 0 || removed.Count > 0))
             {
                 Fire(OnUnitsChanged, evt, nameof(OnUnitsChanged));
             }
@@ -684,9 +652,10 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    var dto = NodeMapper.ToDto(node);
+                    var dto = NodeMapper.ToDto(node, _staticCatalogCache);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
+                    StabilizeNodeBuildingMaxHp(dto, previousNode);
                     nextNodes[node.Id] = dto;
                 }
             }
@@ -730,9 +699,10 @@ namespace Panoptes.Core.Application.Cache
                         continue;
                     }
 
-                    var dto = NodeMapper.ToDto(node);
+                    var dto = NodeMapper.ToDto(node, _staticCatalogCache);
                     previousNodes.TryGetValue(node.Id, out var previousNode);
                     StabilizeNodeTerrain(dto, previousNode);
+                    StabilizeNodeBuildingMaxHp(dto, previousNode);
                     nextNodes[node.Id] = dto;
                 }
             }
@@ -784,15 +754,15 @@ namespace Panoptes.Core.Application.Cache
                 {
                     NodeId = built.NodeId?.Trim() ?? string.Empty,
                     BuildingType = built.BuildingType.Trim(),
-                    X = 0,
-                    Y = 0,
+                    Q = 0,
+                    R = 0,
                     HasCoordinates = false
                 };
 
                 if (!string.IsNullOrWhiteSpace(record.NodeId) && _nodes.TryGetValue(record.NodeId, out var node) && node != null)
                 {
-                    record.X = node.X;
-                    record.Y = node.Y;
+                    record.Q = node.Q;
+                    record.R = node.R;
                     record.HasCoordinates = true;
                 }
 
@@ -820,7 +790,7 @@ namespace Panoptes.Core.Application.Cache
             for (var i = 0; i < ownedCityIds.Count; i++)
             {
                 _cityResources[ownedCityIds[i]] = i == 0
-                    ? SnapshotResources(MyPlayer)
+                    ? GameStateCacheReadQueries.SnapshotResources(MyPlayer)
                     : new ResourceDto();
             }
         }
@@ -961,9 +931,9 @@ namespace Panoptes.Core.Application.Cache
             projected.TechnologyId = TrimOrEmpty(research.CurrentTargetTechnologyId);
             projected.CurrentProgress = research.CurrentProgress;
             projected.RequiredProgress = research.RequiredProgress;
-            projected.CompletedTechnologyIds = SnapshotStringList(research.CompletedTechnologyIds);
-            projected.ActiveTechnologyIds = SnapshotStringList(research.ActiveTechnologyIds);
-            projected.PendingActivationTechnologyIds = SnapshotStringList(research.PendingActivationTechnologyIds);
+            projected.CompletedTechnologyIds = GameStateCacheReadQueries.SnapshotStringList(research.CompletedTechnologyIds);
+            projected.ActiveTechnologyIds = GameStateCacheReadQueries.SnapshotStringList(research.ActiveTechnologyIds);
+            projected.PendingActivationTechnologyIds = GameStateCacheReadQueries.SnapshotStringList(research.PendingActivationTechnologyIds);
             projected.SavedProgress = SnapshotResearchProgress(research.SavedProgress);
             return projected;
         }
@@ -977,8 +947,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             projected.SlotCount = institution.SlotCount;
-            projected.CandidatePolicyIds = SnapshotStringList(institution.CandidatePolicyIds);
-            projected.ActivePolicyIds = SnapshotStringList(institution.ActivePolicyIds);
+            projected.CandidatePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.CandidatePolicyIds);
+            projected.ActivePolicyIds = GameStateCacheReadQueries.SnapshotStringList(institution.ActivePolicyIds);
             return projected;
         }
 
@@ -1090,8 +1060,8 @@ namespace Panoptes.Core.Application.Cache
             return new NodeDto
             {
                 Id = source.Id,
-                X = source.X,
-                Y = source.Y,
+                Q = source.Q,
+                R = source.R,
                 Type = source.Type,
                 Owner = source.Owner,
                 TerritoryOwner = source.TerritoryOwner,
@@ -1134,8 +1104,8 @@ namespace Panoptes.Core.Application.Cache
             }
 
             return string.Equals(left.Id, right.Id, StringComparison.Ordinal) &&
-                   left.X == right.X &&
-                   left.Y == right.Y &&
+                   left.Q == right.Q &&
+                   left.R == right.R &&
                    string.Equals(left.Type, right.Type, StringComparison.Ordinal) &&
                    string.Equals(left.Owner, right.Owner, StringComparison.Ordinal) &&
                    string.Equals(left.TerritoryOwner, right.TerritoryOwner, StringComparison.Ordinal) &&
@@ -1284,26 +1254,6 @@ namespace Panoptes.Core.Application.Cache
                 };
         }
 
-        private static List<string> SnapshotStringList(System.Collections.Generic.IEnumerable<string> values)
-        {
-            if (values == null)
-            {
-                return new List<string>();
-            }
-
-            var result = new List<string>();
-            foreach (var value in values)
-            {
-                var normalized = TrimOrEmpty(value);
-                if (!string.IsNullOrWhiteSpace(normalized))
-                {
-                    result.Add(normalized);
-                }
-            }
-
-            return result;
-        }
-
         private static UnitDto CloneUnitDto(UnitDto source)
         {
             if (source == null)
@@ -1316,8 +1266,8 @@ namespace Panoptes.Core.Application.Cache
                 Id = source.Id,
                 Type = source.Type,
                 Owner = source.Owner,
-                X = source.X,
-                Y = source.Y,
+                Q = source.Q,
+                R = source.R,
                 Hp = source.Hp,
                 MaxHp = source.MaxHp
             };
@@ -1325,69 +1275,55 @@ namespace Panoptes.Core.Application.Cache
 
         private static ResourceDto ComputeResourceDelta(ResourceDto before, ResourceDto after)
         {
+            before ??= new ResourceDto();
+            after ??= new ResourceDto();
+
             return new ResourceDto
             {
                 Ore = after.Ore - before.Ore,
                 Wood = after.Wood - before.Wood,
                 Food = after.Food - before.Food,
-                IndustryOutput = after.IndustryOutput - before.IndustryOutput
+                IndustryOutput = after.IndustryOutput - before.IndustryOutput,
+                ResourceAmounts = ComputeAmountDelta(before.ResourceAmounts, after.ResourceAmounts),
+                PointAmounts = ComputeAmountDelta(before.PointAmounts, after.PointAmounts)
             };
         }
 
-        private static ResourceDto SnapshotResources(PlayerView player)
+        private static Dictionary<string, int> ComputeAmountDelta(
+            IReadOnlyDictionary<string, int> before,
+            IReadOnlyDictionary<string, int> after)
         {
-            return SnapshotResources(player?.Resources, player?.Points);
+            var delta = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            AddDeltaKeys(delta, before);
+            AddDeltaKeys(delta, after);
+
+            var keys = delta.Keys.ToList();
+            for (var i = 0; i < keys.Count; i++)
+            {
+                var beforeAmount = 0;
+                var afterAmount = 0;
+                before?.TryGetValue(keys[i], out beforeAmount);
+                after?.TryGetValue(keys[i], out afterAmount);
+                delta[keys[i]] = afterAmount - beforeAmount;
+            }
+
+            return delta;
         }
 
-        private static ResourceDto SnapshotResources(ResourceBag bag, PointBag points)
+        private static void AddDeltaKeys(Dictionary<string, int> delta, IReadOnlyDictionary<string, int> values)
         {
-            var resources = new ResourceDto();
-            if (bag == null || bag.Items == null)
+            if (values == null)
             {
-                resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
-                return resources;
+                return;
             }
 
-            for (var i = 0; i < bag.Items.Count; i++)
+            foreach (var pair in values)
             {
-                var item = bag.Items[i];
-                if (item == null)
+                if (!string.IsNullOrWhiteSpace(pair.Key))
                 {
-                    continue;
-                }
-
-                switch (item.Key)
-                {
-                    case ResourceKeys.ResourceOre:
-                        resources.Ore = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceWood:
-                        resources.Wood = item.Amount;
-                        break;
-                    case ResourceKeys.ResourceFood:
-                        resources.Food = item.Amount;
-                        break;
+                    delta[pair.Key.Trim()] = 0;
                 }
             }
-
-            resources.IndustryOutput = FindPointAmount(points, IndustryOutputPointKey);
-            return resources;
-        }
-
-        private static ResourceDto CloneResources(ResourceDto source)
-        {
-            if (source == null)
-            {
-                return new ResourceDto();
-            }
-
-            return new ResourceDto
-            {
-                Ore = source.Ore,
-                Wood = source.Wood,
-                Food = source.Food,
-                IndustryOutput = source.IndustryOutput
-            };
         }
 
         private static string NormalizePlayerId(params string[] candidates)
@@ -1440,77 +1376,33 @@ namespace Panoptes.Core.Application.Cache
             incoming.Type = type;
         }
 
+        private static void StabilizeNodeBuildingMaxHp(NodeDto incoming, NodeDto previous)
+        {
+            if (incoming == null || string.IsNullOrWhiteSpace(incoming.BuildingType))
+            {
+                return;
+            }
+
+            var sameBuilding = previous != null &&
+                               string.Equals(TrimOrEmpty(previous.BuildingType), TrimOrEmpty(incoming.BuildingType), StringComparison.OrdinalIgnoreCase);
+
+            if (incoming.BuildingMaxHp <= 0 && sameBuilding && previous.BuildingMaxHp > 0)
+            {
+                incoming.BuildingMaxHp = previous.BuildingMaxHp;
+            }
+
+            if (sameBuilding &&
+                previous.BuildingMaxHp > incoming.BuildingMaxHp &&
+                incoming.BuildingMaxHp <= Math.Max(0, incoming.BuildingHp))
+            {
+                incoming.BuildingMaxHp = previous.BuildingMaxHp;
+            }
+        }
+
         private static string TrimOrEmpty(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
         }
 
-        private static Dictionary<string, int> SnapshotAmounts(ResourceBag bag)
-        {
-            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            if (bag?.Items == null)
-            {
-                return values;
-            }
-
-            for (var i = 0; i < bag.Items.Count; i++)
-            {
-                var item = bag.Items[i];
-                if (item == null || string.IsNullOrWhiteSpace(item.Key))
-                {
-                    continue;
-                }
-
-                values[item.Key.Trim()] = item.Amount;
-            }
-
-            return values;
-        }
-
-        private static Dictionary<string, int> SnapshotPointAmounts(PointBag bag)
-        {
-            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            if (bag?.Items == null)
-            {
-                return values;
-            }
-
-            for (var i = 0; i < bag.Items.Count; i++)
-            {
-                var item = bag.Items[i];
-                if (item == null || string.IsNullOrWhiteSpace(item.Key))
-                {
-                    continue;
-                }
-
-                values[item.Key.Trim()] = item.Amount;
-            }
-
-            return values;
-        }
-
-        private static int FindPointAmount(PointBag bag, string key)
-        {
-            if (bag == null || bag.Items == null || string.IsNullOrWhiteSpace(key))
-            {
-                return 0;
-            }
-
-            for (var i = 0; i < bag.Items.Count; i++)
-            {
-                var item = bag.Items[i];
-                if (item == null)
-                {
-                    continue;
-                }
-
-                if (string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return item.Amount;
-                }
-            }
-
-            return 0;
-        }
     }
 }

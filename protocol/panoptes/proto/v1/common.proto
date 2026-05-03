@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message Position {
+  int32 q = 1;
+  int32 r = 2;
+}
+
+message MsgClientRuntimeConfig {
+  bool dev_mode = 1;
+}

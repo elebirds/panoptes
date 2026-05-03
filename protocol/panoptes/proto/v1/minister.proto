@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+// 部长汇报（流式，多条chunk）
+message MsgMinisterReportChunk {
+  string minister_role = 1;
+  string chunk = 2;
+  bool is_final = 3;
+}
+
+// 数值轨（与叙事轨同时推送，is_final=true时一并发送）
+message MsgMinisterMetrics {
+  string minister_role = 1;
+  repeated MetricItem metrics = 2;
+}
+
+message MetricItem {
+  string label = 1;
+  string value = 2;
+  string trend = 3; // "up|down|stable"
+  string confidence = 4; // "high|medium|low"
+  bool is_delayed = 5;
+}

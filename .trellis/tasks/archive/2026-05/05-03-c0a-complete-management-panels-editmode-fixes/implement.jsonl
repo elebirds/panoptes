@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "C0a UI Toolkit asset placement and final Composition Root rules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Prefab-backed binder and explicit UI Toolkit rendering conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel/Binder state flow and Core command service ownership."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Presentation boundary and authored prefab requirements."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Management commands cross ViewModel/Binder/Core intent layers."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse shared management panel renderer and prefab conventions."}
+{"file": "docs/2026-05-03-c0a-ui-inventory-and-integration-plan-zh.md", "reason": "Approved C0a sequencing and panel scope."}
+{"ts":"2026-05-03T23:57:50+08:00","kind":"implementation","summary":"Completed C0a-3/4/5 management panels with authored UI Toolkit assets and prefab-backed composition. Wired TechTree, PolicyFocus, and NationalLedger visibility/commands through final Store/ViewModel/Binder architecture."}

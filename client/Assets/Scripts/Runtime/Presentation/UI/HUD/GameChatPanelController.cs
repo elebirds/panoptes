@@ -1,9 +1,12 @@
+using System;
 using System.Text;
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using R3;
 using TMPro;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -13,40 +16,40 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private int maxVisibleEntries = 8;
         [SerializeField] private string emptyText = "聊天消息会显示在这里";
 
-        private GameChatCache _chatCache;
-        private GameStateCache _gameStateCache;
+        private IDisposable _chatSubscription;
+        private IDisposable _gameStateSubscription;
+        private GameChatState _chatState = new();
+        private GameStateStore _gameStateStore;
+        private GameChatStore _gameChatStore;
+        private GameIntentService _gameIntentService;
+
+        [Inject]
+        private void Construct(
+            GameIntentService gameIntentService,
+            GameChatStore gameChatStore,
+            GameStateStore gameStateStore)
+        {
+            _gameIntentService = gameIntentService;
+            _gameChatStore = gameChatStore;
+            _gameStateStore = gameStateStore;
+        }
 
         private void OnEnable()
         {
-            _chatCache = GameChatCache.EnsureInstance();
-            _gameStateCache = GameStateCache.Instance;
+            _chatSubscription?.Dispose();
+            _gameStateSubscription?.Dispose();
+            _chatSubscription = _gameChatStore?.State.Subscribe(this, static (state, self) => self.RefreshTranscript(state));
+            _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (_, self) => self.RefreshTranscript());
 
-            if (_chatCache != null)
-            {
-                _chatCache.OnEntriesChanged += RefreshTranscript;
-                _chatCache.OnEntryAdded += OnEntryAdded;
-            }
-
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnStateChanged += RefreshTranscript;
-            }
-
-            RefreshTranscript();
+            RefreshTranscript(_gameChatStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            if (_chatCache != null)
-            {
-                _chatCache.OnEntriesChanged -= RefreshTranscript;
-                _chatCache.OnEntryAdded -= OnEntryAdded;
-            }
-
-            if (_gameStateCache != null)
-            {
-                _gameStateCache.OnStateChanged -= RefreshTranscript;
-            }
+            _chatSubscription?.Dispose();
+            _chatSubscription = null;
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = null;
         }
 
         public void SendThumbsUp()
@@ -81,11 +84,17 @@ namespace Panoptes.Presentation.UI.HUD
 
         public void SendEmote(GameChatEmoteKind emote)
         {
-            GameIntents.SendChatEmote(emote);
+            if (_gameIntentService == null)
+            {
+                return;
+            }
+
+            _gameIntentService.SendChatEmote(emote);
         }
 
-        private void OnEntryAdded(GameChatEntryDto _)
+        private void RefreshTranscript(GameChatState state)
         {
+            _chatState = state ?? new GameChatState();
             RefreshTranscript();
         }
 
@@ -96,7 +105,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var entries = _chatCache != null ? _chatCache.Entries : null;
+            var entries = _chatState?.Entries;
             if (entries == null || entries.Count == 0)
             {
                 transcriptText.text = emptyText ?? string.Empty;
@@ -137,7 +146,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private string ResolveSpeaker(string senderPlayerId)
         {
-            var myPlayerId = _gameStateCache != null ? (_gameStateCache.MyPlayerID ?? string.Empty) : string.Empty;
+            var myPlayerId = _gameStateStore?.Snapshot.MyPlayerId ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(myPlayerId) && string.Equals(senderPlayerId, myPlayerId))
             {
                 return "我";

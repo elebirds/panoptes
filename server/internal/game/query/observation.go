@@ -35,21 +35,24 @@ func (r *RememberedUnitView) GetLastObservedTurn() int32 {
 }
 
 type ObservationSnapshot struct {
-	ViewerID       string
-	MyPlayer       *pb.PlayerView
-	Nodes          []*pb.NodeView
-	VisibleNodes   []*pb.NodeView
-	MemoryNodes    []*pb.NodeView
-	Units          []*pb.UnitView
-	MemoryUnits    []*RememberedUnitView
-	VisibleNodeIDs map[string]struct{}
+	ViewerID         string
+	ReportingMode    string
+	DirectInspection bool
+	MyPlayer         *pb.PlayerView
+	Nodes            []*pb.NodeView
+	VisibleNodes     []*pb.NodeView
+	MemoryNodes      []*pb.NodeView
+	Units            []*pb.UnitView
+	MemoryUnits      []*RememberedUnitView
+	VisibleNodeIDs   map[string]struct{}
 }
 
 type ObservationStore struct {
-	mu         sync.Mutex
-	nodeMemory map[string]map[string]storedNodeObservation
-	unitMemory map[string]map[string]storedUnitObservation
-	omniscient map[string]bool
+	mu             sync.Mutex
+	nodeMemory     map[string]map[string]storedNodeObservation
+	unitMemory     map[string]map[string]storedUnitObservation
+	omniscient     map[string]bool
+	reportingModes map[string]string
 }
 
 type storedNodeObservation struct {
@@ -64,9 +67,10 @@ type storedUnitObservation struct {
 
 func NewObservationStore() *ObservationStore {
 	return &ObservationStore{
-		nodeMemory: make(map[string]map[string]storedNodeObservation),
-		unitMemory: make(map[string]map[string]storedUnitObservation),
-		omniscient: make(map[string]bool),
+		nodeMemory:     make(map[string]map[string]storedNodeObservation),
+		unitMemory:     make(map[string]map[string]storedUnitObservation),
+		omniscient:     make(map[string]bool),
+		reportingModes: make(map[string]string),
 	}
 }
 
@@ -79,6 +83,7 @@ func (s *ObservationStore) Reset() {
 	s.nodeMemory = make(map[string]map[string]storedNodeObservation)
 	s.unitMemory = make(map[string]map[string]storedUnitObservation)
 	s.omniscient = make(map[string]bool)
+	s.reportingModes = make(map[string]string)
 }
 
 func (s *ObservationStore) SetOmniscient(viewerID string, enabled bool) {
@@ -115,17 +120,24 @@ func (s *ObservationStore) IsOmniscient(viewerID string) bool {
 }
 
 func (s *ObservationStore) BuildObservation(state *domain.GameState, viewerID string) *ObservationSnapshot {
+	reportingMode := s.ReportingMode(viewerID)
+	directInspection := s.IsOmniscient(viewerID)
+	if directInspection {
+		reportingMode = ReportingModeClear
+	}
 	snapshot := &ObservationSnapshot{
-		ViewerID:       strings.TrimSpace(viewerID),
-		MyPlayer:       BuildPlayerView(state, viewerID),
-		VisibleNodeIDs: make(map[string]struct{}),
+		ViewerID:         strings.TrimSpace(viewerID),
+		ReportingMode:    reportingMode,
+		DirectInspection: directInspection,
+		MyPlayer:         BuildPlayerView(state, viewerID),
+		VisibleNodeIDs:   make(map[string]struct{}),
 	}
 	if state == nil || state.World == nil {
 		return snapshot
 	}
 
 	visibleNodeIDs := computeVisibleNodeIDs(state, viewerID)
-	if s != nil && s.IsOmniscient(viewerID) {
+	if directInspection {
 		visibleNodeIDs = allNodeIDs(state)
 	}
 	for nodeID := range visibleNodeIDs {
@@ -328,7 +340,7 @@ func computeVisibleNodeIDs(state *domain.GameState, viewerID string) map[string]
 		}
 		pos := ecs.PositionC.Get(entry)
 		sources = append(sources, visionSource{
-			pos:    domain.Position{X: pos.X, Y: pos.Y},
+			pos:    domain.Position{Q: pos.Q, R: pos.R},
 			range_: unitVisionRange(stats.Type),
 		})
 	})
@@ -346,7 +358,7 @@ func computeVisibleNodeIDs(state *domain.GameState, viewerID string) map[string]
 			return
 		}
 		pos := ecs.PositionC.Get(entry)
-		nodePos := domain.Position{X: pos.X, Y: pos.Y}
+		nodePos := domain.Position{Q: pos.Q, R: pos.R}
 		for _, source := range sources {
 			if nodePos.DistanceTo(source.pos) <= source.range_ {
 				visible[nodeID] = struct{}{}
@@ -374,7 +386,7 @@ func unitVisibleToPlayer(state *domain.GameState, entry *donburi.Entry, visibleN
 		return false
 	}
 	pos := ecs.PositionC.Get(entry)
-	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	nodeEntry, ok := domain.GetNodeAt(state.World, domain.Position{Q: pos.Q, R: pos.R})
 	if !ok || nodeEntry == nil {
 		return false
 	}
@@ -409,12 +421,14 @@ func buildUnknownNodeView(state *domain.GameState, entry *donburi.Entry, viewerI
 	pos := ecs.PositionC.Get(entry)
 	return &pb.NodeView{
 		Id:                     node.ID,
-		Pos:                    &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Pos:                    &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 		Terrain:                string(node.Terrain),
 		HasRoad:                node.HasRoad,
+		RoadStatus:             string(domain.RoadStatusForNode(state, node.ID)),
+		NetworkStatus:          domain.NetworkStatusUnknown,
 		IsResourcePoint:        node.IsResource,
 		ResourceType:           node.ResourceType,
-		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, viewerID),
+		IsSafeZone:             domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, viewerID),
 		BuildingStatus:         "unknown",
 		IsCurrentlyVisible:     false,
 		IsMemory:               false,
@@ -438,7 +452,7 @@ func buildUnitViewFromEntry(entry *donburi.Entry) *pb.UnitView {
 		UnitType: string(stats.Type),
 		Hp:       int32(stats.HP),
 		MaxHp:    int32(stats.MaxHP),
-		Pos:      &pb.Position{X: int32(pos.X), Y: int32(pos.Y)},
+		Pos:      &pb.Position{Q: int32(pos.Q), R: int32(pos.R)},
 	}
 }
 

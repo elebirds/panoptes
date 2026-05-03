@@ -55,7 +55,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -148,6 +148,7 @@ GameObject:
   - component: {fileID: 4264437872512284280}
   - component: {fileID: 1073249532383447567}
   - component: {fileID: 2660245740347819899}
+  - component: {fileID: 830009100201}
   m_Layer: 0
   m_Name: TrunPanel
   m_TagString: Untagged
@@ -193,7 +194,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name: ""
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.392}
@@ -213,3 +214,26 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &830009100201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7253319632225781551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4e70b8faf033c44aad146799b840c48, type: 3}
+  m_Name: ""
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.TurnHUD
+  root: {fileID: 4264437872512284280}
+  titleText: {fileID: 6905421854477868879}
+  detailText: {fileID: 0}
+  preferExternalTurnPanel: 1
+  preserveExternalLayout: 1
+  externalTurnPanelRoot: {fileID: 4264437872512284280}
+  externalTurnNumText: {fileID: 6905421854477868879}
+  externalPhaseText: {fileID: 0}
+  externalTurnTextFormat: "\u5F53\u524D\u56DE\u5408\u6570\uFF1A{0}\n\u5F53\u524D\u56DE\u5408\u5012\u8BA1\u65F6\uFF1A{1}"
+  nextStageButton: {fileID: 0}
+  disableNextStageWhenUnavailable: 1

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+// 客户端→服务端
+message MsgRegister {
+  string username = 1;
+  string password = 2;
+}
+
+message MsgLogin {
+  string username = 1;
+  string password = 2;
+}
+
+// 服务端→客户端
+message MsgLoginSuccess {
+  string token = 1;
+  string player_id = 2;
+  string username = 3;
+}
+
+message MsgAuthError {
+  string code = 1;
+  string message = 2;
+}

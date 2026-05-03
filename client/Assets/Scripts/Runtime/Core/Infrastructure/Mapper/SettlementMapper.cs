@@ -7,7 +7,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
 {
     public static class SettlementMapper
     {
-        public static TurnSettlementDto ToDto(MsgTurnSettlement msg)
+        public static TurnSettlementDto ToDto(MsgGameSync msg)
         {
             if (msg == null)
             {
@@ -21,19 +21,20 @@ namespace Panoptes.Core.Infrastructure.Mapper
             var deadUnitIds = new List<string>();
             var cityCoreDamaged = false;
 
-            for (var sectionIndex = 0; sectionIndex < msg.Sections.Count; sectionIndex++)
-            {
-                var section = msg.Sections[sectionIndex];
-                if (section == null)
-                {
-                    continue;
-                }
+            var groupedEvents = msg.Events
+                .Where(evt => evt != null)
+                .GroupBy(evt => NormalizeToken(evt.Channel))
+                .ToList();
 
-                var sectionName = NormalizeToken(section.Section);
+            for (var sectionIndex = 0; sectionIndex < groupedEvents.Count; sectionIndex++)
+            {
+                var section = groupedEvents[sectionIndex];
+                var sectionName = NormalizeToken(section.Key);
                 var events = new List<TurnEventDto>();
-                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
+                var sectionEvents = section.ToList();
+                for (var eventIndex = 0; eventIndex < sectionEvents.Count; eventIndex++)
                 {
-                    var evt = MapEvent(section.Events[eventIndex], sectionName, eventIndex);
+                    var evt = MapEvent(sectionEvents[eventIndex], sectionName, eventIndex);
                     if (evt == null)
                     {
                         continue;
@@ -120,7 +121,7 @@ namespace Panoptes.Core.Infrastructure.Mapper
             return events;
         }
 
-        private static TurnEventDto MapEvent(TurnEvent evt, string section, int sequence)
+        private static TurnEventDto MapEvent(DomainEventEnvelope evt, string section, int sequence)
         {
             if (evt == null)
             {
@@ -134,12 +135,12 @@ namespace Panoptes.Core.Infrastructure.Mapper
             return new TurnEventDto
             {
                 Section = section,
-                Type = NormalizeToken(evt.Type),
+                Type = NormalizeToken(evt.Kind),
                 Data = data,
                 ReasonMessage = ReadString(data, "reason_message"),
                 BlockedReasonMessage = ReadString(data, "blocked_reason_message"),
-                UnitId = ReadString(data, "unit_id", "attacker"),
-                TargetUnitId = ReadString(data, "target_unit_id"),
+                UnitId = ReadString(data, "unit_id", "attacker", "unit_a_id"),
+                TargetUnitId = ReadString(data, "target_unit_id", "unit_b_id"),
                 EnemyUnitId = ReadString(data, "enemy_unit_id", "unit_b_id"),
                 KillerId = ReadString(data, "killer_id"),
                 NodeId = ReadString(data, "node_id"),
@@ -148,12 +149,12 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Damage = ReadInt(data, 0, "damage"),
                 HpAfter = ReadInt(data, 0, "hp_after", "building_hp"),
                 Sequence = sequence,
-                PosX = ReadInt(data, 0, "pos_x"),
-                PosY = ReadInt(data, 0, "pos_y"),
-                FromX = ReadInt(data, 0, "from_x"),
-                FromY = ReadInt(data, 0, "from_y"),
-                ToX = ReadInt(data, 0, "to_x"),
-                ToY = ReadInt(data, 0, "to_y")
+                PosQ = ReadInt(data, 0, "pos_q"),
+                PosR = ReadInt(data, 0, "pos_r"),
+                FromQ = ReadInt(data, 0, "from_q"),
+                FromR = ReadInt(data, 0, "from_r"),
+                ToQ = ReadInt(data, 0, "to_q"),
+                ToR = ReadInt(data, 0, "to_r")
             };
         }
 

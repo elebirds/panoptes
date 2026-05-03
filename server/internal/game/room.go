@@ -16,6 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	"github.com/elebirds/panoptes/internal/event"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
@@ -199,56 +200,11 @@ func (r *GameRoom) SetWarDirectives(playerID string, directives []domain.WarZone
 }
 
 func (r *GameRoom) SetUnitOrder(order gameorders.UnitOrder) {
-	state := r.State()
-	if state == nil || order.UnitID == "" {
-		return
-	}
-	if state.TurnRuntime.Planning.UnitOrders == nil {
-		state.TurnRuntime.Planning.UnitOrders = make(map[string]domain.UnitDirective)
-	}
-	if order.PlayerID == "" {
-		order.PlayerID = r.playerIDForUnit(order.UnitID)
-	}
-
-	// Preserve the latest planned march path when replacing move->attack in the same planning window.
-	// This allows settlement to resolve "move then attack" from the moved position.
-	if order.Action == gameorders.ActionAttack && len(order.PathNodeIDs) == 0 {
-		if march, ok := state.TurnRuntime.Resolving.ActiveMarches[order.UnitID]; ok {
-			if len(march.LastPreview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), march.LastPreview.PathNodeIDs...)
-			} else if preview, ok := r.buildRoutePreview(order.UnitID, march.DestinationNodeID); ok && len(preview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
-			}
-		}
-		if len(order.PathNodeIDs) == 0 && order.SecondaryNodeID != "" {
-			if preview, ok := r.buildRoutePreview(order.UnitID, order.SecondaryNodeID); ok && len(preview.PathNodeIDs) > 0 {
-				order.PathNodeIDs = append([]string(nil), preview.PathNodeIDs...)
-			}
-		}
-	}
-
-	state.TurnRuntime.Planning.UnitOrders[order.UnitID] = order.ToDirective()
-	if resolutionOrder, ok := order.ToResolutionOrder(); ok && resolutionOrder.Action == domain.UnitResolutionActionMove {
-		r.syncActiveMarchWithOrder(resolutionOrder)
-		return
-	}
-	delete(state.TurnRuntime.Resolving.ActiveMarches, order.UnitID)
+	gameorders.ApplyPlanningUnitOrder(r.State(), order, r.routePreviewCallbacks())
 }
 
 func (r *GameRoom) CancelUnitOrder(playerID string, unitID string) {
-	state := r.State()
-	if state == nil {
-		return
-	}
-	directive, ok := state.TurnRuntime.Planning.UnitOrders[unitID]
-	if !ok {
-		return
-	}
-	if playerID != "" && directive.PlayerID != "" && directive.PlayerID != playerID {
-		return
-	}
-	delete(state.TurnRuntime.Planning.UnitOrders, unitID)
-	delete(state.TurnRuntime.Resolving.ActiveMarches, unitID)
+	gameorders.CancelPlanningUnitOrder(r.State(), playerID, unitID)
 }
 
 func (r *GameRoom) SendPlanningSnapshot(ctx context.Context, playerID string) error {
@@ -324,7 +280,7 @@ func (r *GameRoom) NodeByID(nodeID string) (*donburi.Entry, bool) {
 	return state.GetNode(nodeID)
 }
 
-func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) {
+func (r *GameRoom) broadcastGameSync(collector *gameresolution.Collector) {
 	state := r.State()
 	if state == nil {
 		return
@@ -335,18 +291,19 @@ func (r *GameRoom) broadcastTurnSettlement(collector *gameresolution.Collector) 
 		nextPhase = ""
 	}
 	for _, participantID := range r.HumanParticipantIDs() {
-		msg := gameprojection.ProjectTurnSettlementFromObservation(
+		observation := r.runtime.BuildObservation(participantID)
+		syncMsg := gameprojection.ProjectGameSyncFromObservation(
 			state,
-			r.runtime.BuildObservation(participantID),
+			observation,
 			int32(state.Turn),
 			domain.PhaseResolving.String(),
 			nextPhase,
 			collector,
 		)
-		if hooks := currentDebugHooks(); hooks.RecordSettlement != nil {
-			hooks.RecordSettlement(r.ID, participantID, msg)
+		_ = r.SendToPlayer(context.Background(), participantID, syncMsg)
+		if hooks := currentDebugHooks(); hooks.RecordGameSync != nil {
+			hooks.RecordGameSync(r.ID, participantID, syncMsg)
 		}
-		_ = r.SendToPlayer(context.Background(), participantID, msg)
 	}
 }
 
@@ -410,9 +367,7 @@ func (r *GameRoom) handleDraw() {
 	if state == nil {
 		return
 	}
-	state.IsOver = true
-	state.WinnerID = ""
-	state.OverReason = "timeout_draw"
+	event.GameOverEvent{Reason: "timeout_draw"}.Apply(state.World, state)
 	msg := &pb.MsgGameOver{WinnerId: "", Reason: "timeout_draw"}
 	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
 		hooks.RecordGameOver(r.ID, msg)
@@ -435,9 +390,7 @@ func (r *GameRoom) forfeitDisconnectedPlayer(playerID string) bool {
 		return false
 	}
 
-	state.IsOver = true
-	state.WinnerID = winnerID
-	state.OverReason = "player_disconnected"
+	event.GameOverEvent{WinnerID: winnerID, Reason: "player_disconnected"}.Apply(state.World, state)
 	msg := &pb.MsgGameOver{WinnerId: winnerID, Reason: "player_disconnected"}
 	if hooks := currentDebugHooks(); hooks.RecordGameOver != nil {
 		hooks.RecordGameOver(r.ID, msg)
@@ -468,22 +421,4 @@ func (r *GameRoom) nodeIDAt(pos domain.Position) string {
 		return ecs.NodeC.Get(entry).ID
 	}
 	return ""
-}
-
-func (r *GameRoom) playerIDForUnit(unitID string) string {
-	state := r.State()
-	if state == nil || state.World == nil {
-		return ""
-	}
-	var playerID string
-	ecs.AllUnits(state.World).Each(state.World, func(entry *donburi.Entry) {
-		if playerID != "" {
-			return
-		}
-		stats := ecs.UnitStatsC.Get(entry)
-		if stats.ID == unitID {
-			playerID = stats.Faction
-		}
-	})
-	return playerID
 }

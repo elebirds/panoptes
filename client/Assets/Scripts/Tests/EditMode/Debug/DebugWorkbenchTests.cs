@@ -9,12 +9,14 @@ namespace Panoptes.Tests.EditMode.Debug
     public sealed class DebugWorkbenchTests
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _compositionBootstrapPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs");
+        private readonly string _projectCompositionPrefabPath = Path.GetFullPath("Assets/Resources/Prefabs/Composition/PanoptesProjectComposition.prefab");
         private readonly string _gameMessageHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Handler/GameMessageHandler.cs");
         private readonly string _gameChatPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/GameChatPanelController.cs");
         private readonly string _debugPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugPanel.cs");
         private readonly string _messageLoggerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/MessageLogger.cs");
         private readonly string _networkManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/NetworkManager.cs");
-        private readonly string _messageSenderPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSender.cs");
+        private readonly string _messageSendDiagnosticsPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/MessageSendDiagnostics.cs");
 
         [Test]
         public void DebugTabRegistry_ShouldExposeDefaultSixTabs()
@@ -44,7 +46,7 @@ namespace Panoptes.Tests.EditMode.Debug
 
             Assert.That(count, Is.EqualTo(6), "当前默认应提供 6 个调试 Tab。");
             CollectionAssert.AreEqual(
-                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game", "GameIntents" },
+                new[] { "总览", "消息时间线", "原始发送器", "Lobby", "Game", "Commands" },
                 titles);
         }
 
@@ -102,20 +104,20 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_messageLoggerPath);
             StringAssert.Contains("case Problem problem:", content,
                 "入站日志应支持统一 Problem 摘要。");
-            StringAssert.Contains("case MsgCombatOrder combatOrder:", content,
-                "出站日志应支持 CombatOrder 摘要。");
-            StringAssert.Contains("case MsgCombatPathPreviewRequest combatPreview:", content,
-                "出站日志应支持 CombatPathPreviewRequest 摘要。");
+            StringAssert.Contains("MsgIssueUnitOrder issueUnitOrder =>", content,
+                "出站日志应支持统一单位指令摘要。");
+            StringAssert.Contains("MsgPlanningPathPreviewRequest planningPreview =>", content,
+                "出站日志应支持 planning 路径预览摘要。");
         }
 
         [Test]
         public void AppManager_ShouldBootstrapDebugPanel_FromManagers()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_compositionBootstrapPath), Is.True, "PanoptesCompositionBootstrap.cs 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<DebugPanel>(managers);", content,
-                "多 Tab DebugPanel 应从 Managers 全局挂载，覆盖 Login/Lobby/Game。");
+            var content = File.ReadAllText(_compositionBootstrapPath);
+            StringAssert.Contains("EnsureOptionalDebugPanel(managers);", content,
+                "多 Tab DebugPanel 应从 Project Composition 根对象挂载，覆盖 Login/Lobby/Game。");
         }
 
         [Test]
@@ -124,7 +126,7 @@ namespace Panoptes.Tests.EditMode.Debug
             Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
             Assert.That(File.Exists(_debugPanelPath), Is.True, "DebugPanel.cs 不存在。");
 
-            var appManagerContent = File.ReadAllText(_appManagerPath);
+            var appManagerContent = File.ReadAllText(_compositionBootstrapPath);
             var debugPanelContent = File.ReadAllText(_debugPanelPath);
 
             StringAssert.Contains("PANOPTES_DEBUG_PANEL", appManagerContent,
@@ -138,22 +140,22 @@ namespace Panoptes.Tests.EditMode.Debug
         [Test]
         public void AppManager_ShouldBootstrapPlanningDraftCache_InsteadOfCombatDraftCache()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_projectCompositionPrefabPath), Is.True, "PanoptesProjectComposition.prefab 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content,
+            var content = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("PlanningDraftCache", content,
                 "Managers 应挂载统一的 PlanningDraftCache。");
-            Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
+            Assert.That(content, Does.Not.Contain("CombatDraftCache"),
                 "客户端不应再挂载旧 CombatDraftCache。");
         }
 
         [Test]
         public void AppManager_ShouldBootstrapGameChatCache()
         {
-            Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
+            Assert.That(File.Exists(_projectCompositionPrefabPath), Is.True, "PanoptesProjectComposition.prefab 不存在。");
 
-            var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<GameChatCache>(managers);", content,
+            var content = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("GameChatCache", content,
                 "Managers 应挂载 GameChatCache，保证 HUD 可以直接订阅聊天流。");
         }
 
@@ -165,11 +167,11 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_gameMessageHandlerPath);
             StringAssert.Contains("Register<MsgPlanningStart>(\"MsgPlanningStart\", OnPlanningStart);", content);
             StringAssert.Contains("Register<MsgPlanningSnapshot>(\"MsgPlanningSnapshot\", OnPlanningSnapshot);", content);
-            StringAssert.Contains("Register<MsgTurnSettlement>(\"MsgTurnSettlement\", OnTurnSettlement);", content);
+            StringAssert.Contains("Register<MsgGameSync>(\"MsgGameSync\", OnGameSync);", content);
             StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
-            StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", OnResearchResult);", content);
-            StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", OnSetBuildingRecipeResult);", content);
-            StringAssert.Contains("Register<MsgGameChatPosted>(\"MsgGameChatPosted\", OnGameChatPosted);", content);
+            StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", HandleResearchResult);", content);
+            StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", HandleSetBuildingRecipeResult);", content);
+            StringAssert.Contains("Register<MsgGameChatPosted>(\"MsgGameChatPosted\", HandleGameChatPosted);", content);
             StringAssert.Contains("Register<MsgGameChatSync>(\"MsgGameChatSync\", OnGameChatSync);", content);
             Assert.That(content, Does.Not.Contain("Register<ErrorResponse>(\"ErrorResponse\", OnGameError);"),
                 "GameMessageHandler 不应继续注册旧 ErrorResponse。");
@@ -213,7 +215,7 @@ namespace Panoptes.Tests.EditMode.Debug
             var content = File.ReadAllText(_gameChatPanelControllerPath);
             StringAssert.Contains("SendThumbsUp()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
             StringAssert.Contains("SendThinking()", content, "聊天面板脚本应提供直接可绑按钮的快捷方法。");
-            StringAssert.Contains("GameIntents.SendChatEmote", content, "聊天面板应通过 GameIntents 发送表情。");
+            StringAssert.Contains("_gameIntentService.SendChatEmote", content, "聊天面板应通过注入的 GameIntentService 发送表情。");
             Assert.That(content, Does.Not.Contain("Panoptes.Protocol.V1"),
                 "Presentation 层聊天脚本不应直接依赖 protocol。");
         }
@@ -222,15 +224,15 @@ namespace Panoptes.Tests.EditMode.Debug
         public void NetworkRuntime_ShouldNotExposeLegacySendRawPath()
         {
             Assert.That(File.Exists(_networkManagerPath), Is.True, "NetworkManager.cs 不存在。");
-            Assert.That(File.Exists(_messageSenderPath), Is.True, "MessageSender.cs 不存在。");
+            Assert.That(File.Exists(_messageSendDiagnosticsPath), Is.True, "MessageSendDiagnostics.cs 不存在。");
 
             var networkContent = File.ReadAllText(_networkManagerPath);
-            var senderContent = File.ReadAllText(_messageSenderPath);
+            var diagnosticsContent = File.ReadAllText(_messageSendDiagnosticsPath);
 
             Assert.That(networkContent, Does.Not.Contain("public void SendRaw("),
                 "Transport V2 下 NetworkManager 不应继续暴露 SendRaw。");
-            Assert.That(senderContent, Does.Not.Contain("public static void SendRaw("),
-                "Transport V2 下 MessageSender 不应继续暴露 SendRaw。");
+            Assert.That(diagnosticsContent, Does.Not.Contain("public static void Send("),
+                "Transport V2 下诊断事件源不应继续暴露静态发送 API。");
         }
 
         [Test]
@@ -248,7 +250,7 @@ namespace Panoptes.Tests.EditMode.Debug
         }
 
         [Test]
-        public void DebugTabRegistry_ShouldKeepOverviewScrollable_AndProvideGameIntentsTab()
+        public void DebugTabRegistry_ShouldKeepOverviewScrollable_AndProvideCommandsTab()
         {
             var path = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/DebugTabRegistry.cs");
             Assert.That(File.Exists(path), Is.True, "DebugTabRegistry.cs 不存在。");
@@ -258,8 +260,8 @@ namespace Panoptes.Tests.EditMode.Debug
                 "总览页应支持滚动，避免内容增多后被截断。");
             StringAssert.Contains("ProgressBar(", content,
                 "总览页应提供进度条摘要视图。");
-            StringAssert.Contains("GameIntentsDebugTab", content,
-                "调试工作台应提供独立的 GameIntents 面板。");
+            StringAssert.Contains("CommandDebugTab", content,
+                "调试工作台应提供独立的 Commands 面板。");
         }
 
         [Test]
@@ -292,6 +294,27 @@ namespace Panoptes.Tests.EditMode.Debug
 
             var result = method.Invoke(null, new object[] { input }) as string;
             Assert.That(result, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ServerEndpointResolver_ShouldChooseLocalhostInEditor_AndRemoteInPlayer()
+        {
+            var resolverType = Type.GetType("Panoptes.Core.Infrastructure.Network.ServerEndpointResolver, Panoptes.Core")
+                               ?? throw new AssertionException("ServerEndpointResolver 类型不存在。");
+            var method = resolverType.GetMethod("ResolveDefaultWebSocketUrl",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                null,
+                new[] { typeof(bool) },
+                null)
+                         ?? throw new AssertionException("ServerEndpointResolver 缺少 ResolveDefaultWebSocketUrl(bool) 静态方法。");
+
+            var editorUrl = method.Invoke(null, new object[] { true }) as string;
+            var playerUrl = method.Invoke(null, new object[] { false }) as string;
+
+            Assert.That(editorUrl, Is.EqualTo("ws://localhost:8080/ws"),
+                "Unity 编辑器内默认应连接 localhost。");
+            Assert.That(playerUrl, Is.EqualTo("ws://47.116.32.157:8080/ws"),
+                "非编辑器环境默认应连接远端服务器。");
         }
     }
 }

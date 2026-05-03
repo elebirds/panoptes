@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store hydration must preserve reactive read model and no legacy singleton dependency rules for migrated modules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Hydrated Stores feed ViewModels/Binders without new prefab-facing singleton lookup."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks and generated protocol constraints for client migration."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Migration spans server messages, protocol mapping, stores, ViewModels, and UI."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Authoritative migration plan and phase status."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreHydrationHelper.cs", "reason": "Hydrate Store snapshots through Core-owned write APIs."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreHydrationCacheBridge.cs", "reason": "Bridge legacy cache snapshots and change events into reactive Stores."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Register hydration helper and bounded cache bridge in GameLifetimeScope."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StoreHydrationHelperTests.cs", "reason": "Verify helper publishes representative Store state."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StoreHydrationCacheBridgeTests.cs", "reason": "Verify legacy cache snapshots and updates hydrate Stores."}

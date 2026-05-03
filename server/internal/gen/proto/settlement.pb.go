@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: settlement.proto
+// source: panoptes/proto/v1/settlement.proto
 
 package protov1
 
@@ -21,29 +21,44 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type TurnEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	Data          map[string]string      `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+type DomainEventEnvelope struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	EventId string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Turn    int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
+	Phase   string                 `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
+	Channel string                 `protobuf:"bytes,4,opt,name=channel,proto3" json:"channel,omitempty"`
+	Source  string                 `protobuf:"bytes,5,opt,name=source,proto3" json:"source,omitempty"`
+	Kind    string                 `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
+	Data    map[string]string      `protobuf:"bytes,7,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Types that are valid to be assigned to Event:
+	//
+	//	*DomainEventEnvelope_ResearchTargetChanged
+	//	*DomainEventEnvelope_PolicyChanged
+	//	*DomainEventEnvelope_TechnologyCompleted
+	//	*DomainEventEnvelope_TechnologyActivated
+	//	*DomainEventEnvelope_UnitMoved
+	//	*DomainEventEnvelope_CityFounded
+	//	*DomainEventEnvelope_BuildingBuilt
+	Event         isDomainEventEnvelope_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TurnEvent) Reset() {
-	*x = TurnEvent{}
-	mi := &file_settlement_proto_msgTypes[0]
+func (x *DomainEventEnvelope) Reset() {
+	*x = DomainEventEnvelope{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TurnEvent) String() string {
+func (x *DomainEventEnvelope) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TurnEvent) ProtoMessage() {}
+func (*DomainEventEnvelope) ProtoMessage() {}
 
-func (x *TurnEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[0]
+func (x *DomainEventEnvelope) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -54,250 +69,730 @@ func (x *TurnEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TurnEvent.ProtoReflect.Descriptor instead.
-func (*TurnEvent) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use DomainEventEnvelope.ProtoReflect.Descriptor instead.
+func (*DomainEventEnvelope) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *TurnEvent) GetType() string {
+func (x *DomainEventEnvelope) GetEventId() string {
 	if x != nil {
-		return x.Type
+		return x.EventId
 	}
 	return ""
 }
 
-func (x *TurnEvent) GetData() map[string]string {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-type SettlementSection struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Section       string                 `protobuf:"bytes,1,opt,name=section,proto3" json:"section,omitempty"`
-	Events        []*TurnEvent           `protobuf:"bytes,2,rep,name=events,proto3" json:"events,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SettlementSection) Reset() {
-	*x = SettlementSection{}
-	mi := &file_settlement_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SettlementSection) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SettlementSection) ProtoMessage() {}
-
-func (x *SettlementSection) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SettlementSection.ProtoReflect.Descriptor instead.
-func (*SettlementSection) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *SettlementSection) GetSection() string {
-	if x != nil {
-		return x.Section
-	}
-	return ""
-}
-
-func (x *SettlementSection) GetEvents() []*TurnEvent {
-	if x != nil {
-		return x.Events
-	}
-	return nil
-}
-
-type MsgTurnSettlement struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Sections      []*SettlementSection   `protobuf:"bytes,1,rep,name=sections,proto3" json:"sections,omitempty"`
-	Turn          int32                  `protobuf:"varint,2,opt,name=turn,proto3" json:"turn,omitempty"`
-	Phase         string                 `protobuf:"bytes,3,opt,name=phase,proto3" json:"phase,omitempty"`
-	NextPhase     string                 `protobuf:"bytes,4,opt,name=next_phase,json=nextPhase,proto3" json:"next_phase,omitempty"`
-	Nodes         []*NodeView            `protobuf:"bytes,5,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	Units         []*UnitView            `protobuf:"bytes,6,rep,name=units,proto3" json:"units,omitempty"`
-	MyPlayerAfter *PlayerView            `protobuf:"bytes,7,opt,name=my_player_after,json=myPlayerAfter,proto3" json:"my_player_after,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *MsgTurnSettlement) Reset() {
-	*x = MsgTurnSettlement{}
-	mi := &file_settlement_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *MsgTurnSettlement) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*MsgTurnSettlement) ProtoMessage() {}
-
-func (x *MsgTurnSettlement) ProtoReflect() protoreflect.Message {
-	mi := &file_settlement_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use MsgTurnSettlement.ProtoReflect.Descriptor instead.
-func (*MsgTurnSettlement) Descriptor() ([]byte, []int) {
-	return file_settlement_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *MsgTurnSettlement) GetSections() []*SettlementSection {
-	if x != nil {
-		return x.Sections
-	}
-	return nil
-}
-
-func (x *MsgTurnSettlement) GetTurn() int32 {
+func (x *DomainEventEnvelope) GetTurn() int32 {
 	if x != nil {
 		return x.Turn
 	}
 	return 0
 }
 
-func (x *MsgTurnSettlement) GetPhase() string {
+func (x *DomainEventEnvelope) GetPhase() string {
 	if x != nil {
 		return x.Phase
 	}
 	return ""
 }
 
-func (x *MsgTurnSettlement) GetNextPhase() string {
+func (x *DomainEventEnvelope) GetChannel() string {
 	if x != nil {
-		return x.NextPhase
+		return x.Channel
 	}
 	return ""
 }
 
-func (x *MsgTurnSettlement) GetNodes() []*NodeView {
+func (x *DomainEventEnvelope) GetSource() string {
 	if x != nil {
-		return x.Nodes
+		return x.Source
+	}
+	return ""
+}
+
+func (x *DomainEventEnvelope) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *DomainEventEnvelope) GetData() map[string]string {
+	if x != nil {
+		return x.Data
 	}
 	return nil
 }
 
-func (x *MsgTurnSettlement) GetUnits() []*UnitView {
+func (x *DomainEventEnvelope) GetEvent() isDomainEventEnvelope_Event {
 	if x != nil {
-		return x.Units
+		return x.Event
 	}
 	return nil
 }
 
-func (x *MsgTurnSettlement) GetMyPlayerAfter() *PlayerView {
+func (x *DomainEventEnvelope) GetResearchTargetChanged() *DomainResearchTargetChangedEvent {
 	if x != nil {
-		return x.MyPlayerAfter
+		if x, ok := x.Event.(*DomainEventEnvelope_ResearchTargetChanged); ok {
+			return x.ResearchTargetChanged
+		}
 	}
 	return nil
 }
 
-var File_settlement_proto protoreflect.FileDescriptor
+func (x *DomainEventEnvelope) GetPolicyChanged() *DomainPolicyChangedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_PolicyChanged); ok {
+			return x.PolicyChanged
+		}
+	}
+	return nil
+}
 
-const file_settlement_proto_rawDesc = "" +
+func (x *DomainEventEnvelope) GetTechnologyCompleted() *DomainTechnologyCompletedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_TechnologyCompleted); ok {
+			return x.TechnologyCompleted
+		}
+	}
+	return nil
+}
+
+func (x *DomainEventEnvelope) GetTechnologyActivated() *DomainTechnologyActivatedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_TechnologyActivated); ok {
+			return x.TechnologyActivated
+		}
+	}
+	return nil
+}
+
+func (x *DomainEventEnvelope) GetUnitMoved() *DomainUnitMovedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_UnitMoved); ok {
+			return x.UnitMoved
+		}
+	}
+	return nil
+}
+
+func (x *DomainEventEnvelope) GetCityFounded() *DomainCityFoundedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_CityFounded); ok {
+			return x.CityFounded
+		}
+	}
+	return nil
+}
+
+func (x *DomainEventEnvelope) GetBuildingBuilt() *DomainBuildingBuiltEvent {
+	if x != nil {
+		if x, ok := x.Event.(*DomainEventEnvelope_BuildingBuilt); ok {
+			return x.BuildingBuilt
+		}
+	}
+	return nil
+}
+
+type isDomainEventEnvelope_Event interface {
+	isDomainEventEnvelope_Event()
+}
+
+type DomainEventEnvelope_ResearchTargetChanged struct {
+	ResearchTargetChanged *DomainResearchTargetChangedEvent `protobuf:"bytes,11,opt,name=research_target_changed,json=researchTargetChanged,proto3,oneof"`
+}
+
+type DomainEventEnvelope_PolicyChanged struct {
+	PolicyChanged *DomainPolicyChangedEvent `protobuf:"bytes,12,opt,name=policy_changed,json=policyChanged,proto3,oneof"`
+}
+
+type DomainEventEnvelope_TechnologyCompleted struct {
+	TechnologyCompleted *DomainTechnologyCompletedEvent `protobuf:"bytes,13,opt,name=technology_completed,json=technologyCompleted,proto3,oneof"`
+}
+
+type DomainEventEnvelope_TechnologyActivated struct {
+	TechnologyActivated *DomainTechnologyActivatedEvent `protobuf:"bytes,14,opt,name=technology_activated,json=technologyActivated,proto3,oneof"`
+}
+
+type DomainEventEnvelope_UnitMoved struct {
+	UnitMoved *DomainUnitMovedEvent `protobuf:"bytes,15,opt,name=unit_moved,json=unitMoved,proto3,oneof"`
+}
+
+type DomainEventEnvelope_CityFounded struct {
+	CityFounded *DomainCityFoundedEvent `protobuf:"bytes,16,opt,name=city_founded,json=cityFounded,proto3,oneof"`
+}
+
+type DomainEventEnvelope_BuildingBuilt struct {
+	BuildingBuilt *DomainBuildingBuiltEvent `protobuf:"bytes,17,opt,name=building_built,json=buildingBuilt,proto3,oneof"`
+}
+
+func (*DomainEventEnvelope_ResearchTargetChanged) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_PolicyChanged) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_TechnologyCompleted) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_TechnologyActivated) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_UnitMoved) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_CityFounded) isDomainEventEnvelope_Event() {}
+
+func (*DomainEventEnvelope_BuildingBuilt) isDomainEventEnvelope_Event() {}
+
+type DomainResearchTargetChangedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	TechnologyId  string                 `protobuf:"bytes,2,opt,name=technology_id,json=technologyId,proto3" json:"technology_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainResearchTargetChangedEvent) Reset() {
+	*x = DomainResearchTargetChangedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainResearchTargetChangedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainResearchTargetChangedEvent) ProtoMessage() {}
+
+func (x *DomainResearchTargetChangedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainResearchTargetChangedEvent.ProtoReflect.Descriptor instead.
+func (*DomainResearchTargetChangedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *DomainResearchTargetChangedEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *DomainResearchTargetChangedEvent) GetTechnologyId() string {
+	if x != nil {
+		return x.TechnologyId
+	}
+	return ""
+}
+
+type DomainPolicyChangedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	OldPolicy     string                 `protobuf:"bytes,2,opt,name=old_policy,json=oldPolicy,proto3" json:"old_policy,omitempty"`
+	NewPolicy     string                 `protobuf:"bytes,3,opt,name=new_policy,json=newPolicy,proto3" json:"new_policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainPolicyChangedEvent) Reset() {
+	*x = DomainPolicyChangedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainPolicyChangedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainPolicyChangedEvent) ProtoMessage() {}
+
+func (x *DomainPolicyChangedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainPolicyChangedEvent.ProtoReflect.Descriptor instead.
+func (*DomainPolicyChangedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DomainPolicyChangedEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *DomainPolicyChangedEvent) GetOldPolicy() string {
+	if x != nil {
+		return x.OldPolicy
+	}
+	return ""
+}
+
+func (x *DomainPolicyChangedEvent) GetNewPolicy() string {
+	if x != nil {
+		return x.NewPolicy
+	}
+	return ""
+}
+
+type DomainTechnologyCompletedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	TechnologyId  string                 `protobuf:"bytes,2,opt,name=technology_id,json=technologyId,proto3" json:"technology_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainTechnologyCompletedEvent) Reset() {
+	*x = DomainTechnologyCompletedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainTechnologyCompletedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainTechnologyCompletedEvent) ProtoMessage() {}
+
+func (x *DomainTechnologyCompletedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainTechnologyCompletedEvent.ProtoReflect.Descriptor instead.
+func (*DomainTechnologyCompletedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *DomainTechnologyCompletedEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *DomainTechnologyCompletedEvent) GetTechnologyId() string {
+	if x != nil {
+		return x.TechnologyId
+	}
+	return ""
+}
+
+type DomainTechnologyActivatedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	TechnologyId  string                 `protobuf:"bytes,2,opt,name=technology_id,json=technologyId,proto3" json:"technology_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainTechnologyActivatedEvent) Reset() {
+	*x = DomainTechnologyActivatedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainTechnologyActivatedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainTechnologyActivatedEvent) ProtoMessage() {}
+
+func (x *DomainTechnologyActivatedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainTechnologyActivatedEvent.ProtoReflect.Descriptor instead.
+func (*DomainTechnologyActivatedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DomainTechnologyActivatedEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *DomainTechnologyActivatedEvent) GetTechnologyId() string {
+	if x != nil {
+		return x.TechnologyId
+	}
+	return ""
+}
+
+type DomainUnitMovedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UnitId        string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	FromQ         int32                  `protobuf:"varint,2,opt,name=from_q,json=fromQ,proto3" json:"from_q,omitempty"`
+	FromR         int32                  `protobuf:"varint,3,opt,name=from_r,json=fromR,proto3" json:"from_r,omitempty"`
+	ToQ           int32                  `protobuf:"varint,4,opt,name=to_q,json=toQ,proto3" json:"to_q,omitempty"`
+	ToR           int32                  `protobuf:"varint,5,opt,name=to_r,json=toR,proto3" json:"to_r,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainUnitMovedEvent) Reset() {
+	*x = DomainUnitMovedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainUnitMovedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainUnitMovedEvent) ProtoMessage() {}
+
+func (x *DomainUnitMovedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainUnitMovedEvent.ProtoReflect.Descriptor instead.
+func (*DomainUnitMovedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DomainUnitMovedEvent) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *DomainUnitMovedEvent) GetFromQ() int32 {
+	if x != nil {
+		return x.FromQ
+	}
+	return 0
+}
+
+func (x *DomainUnitMovedEvent) GetFromR() int32 {
+	if x != nil {
+		return x.FromR
+	}
+	return 0
+}
+
+func (x *DomainUnitMovedEvent) GetToQ() int32 {
+	if x != nil {
+		return x.ToQ
+	}
+	return 0
+}
+
+func (x *DomainUnitMovedEvent) GetToR() int32 {
+	if x != nil {
+		return x.ToR
+	}
+	return 0
+}
+
+type DomainCityFoundedEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	UnitId        string                 `protobuf:"bytes,2,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	CityId        string                 `protobuf:"bytes,3,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	CenterNodeId  string                 `protobuf:"bytes,4,opt,name=center_node_id,json=centerNodeId,proto3" json:"center_node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DomainCityFoundedEvent) Reset() {
+	*x = DomainCityFoundedEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainCityFoundedEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainCityFoundedEvent) ProtoMessage() {}
+
+func (x *DomainCityFoundedEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainCityFoundedEvent.ProtoReflect.Descriptor instead.
+func (*DomainCityFoundedEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *DomainCityFoundedEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *DomainCityFoundedEvent) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *DomainCityFoundedEvent) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+func (x *DomainCityFoundedEvent) GetCenterNodeId() string {
+	if x != nil {
+		return x.CenterNodeId
+	}
+	return ""
+}
+
+type DomainBuildingBuiltEvent struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	NodeId         string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	BuildingTypeId string                 `protobuf:"bytes,2,opt,name=building_type_id,json=buildingTypeId,proto3" json:"building_type_id,omitempty"`
+	Owner          string                 `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	CityId         string                 `protobuf:"bytes,4,opt,name=city_id,json=cityId,proto3" json:"city_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DomainBuildingBuiltEvent) Reset() {
+	*x = DomainBuildingBuiltEvent{}
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DomainBuildingBuiltEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DomainBuildingBuiltEvent) ProtoMessage() {}
+
+func (x *DomainBuildingBuiltEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_panoptes_proto_v1_settlement_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DomainBuildingBuiltEvent.ProtoReflect.Descriptor instead.
+func (*DomainBuildingBuiltEvent) Descriptor() ([]byte, []int) {
+	return file_panoptes_proto_v1_settlement_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DomainBuildingBuiltEvent) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *DomainBuildingBuiltEvent) GetBuildingTypeId() string {
+	if x != nil {
+		return x.BuildingTypeId
+	}
+	return ""
+}
+
+func (x *DomainBuildingBuiltEvent) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *DomainBuildingBuiltEvent) GetCityId() string {
+	if x != nil {
+		return x.CityId
+	}
+	return ""
+}
+
+var File_panoptes_proto_v1_settlement_proto protoreflect.FileDescriptor
+
+const file_panoptes_proto_v1_settlement_proto_rawDesc = "" +
 	"\n" +
-	"\x10settlement.proto\x12\x11panoptes.proto.v1\x1a\x10game_state.proto\"\x94\x01\n" +
-	"\tTurnEvent\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\x12:\n" +
-	"\x04data\x18\x02 \x03(\v2&.panoptes.proto.v1.TurnEvent.DataEntryR\x04data\x1a7\n" +
+	"\"panoptes/proto/v1/settlement.proto\x12\x11panoptes.proto.v1\"\xad\a\n" +
+	"\x13DomainEventEnvelope\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x12\n" +
+	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x14\n" +
+	"\x05phase\x18\x03 \x01(\tR\x05phase\x12\x18\n" +
+	"\achannel\x18\x04 \x01(\tR\achannel\x12\x16\n" +
+	"\x06source\x18\x05 \x01(\tR\x06source\x12\x12\n" +
+	"\x04kind\x18\x06 \x01(\tR\x04kind\x12D\n" +
+	"\x04data\x18\a \x03(\v20.panoptes.proto.v1.DomainEventEnvelope.DataEntryR\x04data\x12m\n" +
+	"\x17research_target_changed\x18\v \x01(\v23.panoptes.proto.v1.DomainResearchTargetChangedEventH\x00R\x15researchTargetChanged\x12T\n" +
+	"\x0epolicy_changed\x18\f \x01(\v2+.panoptes.proto.v1.DomainPolicyChangedEventH\x00R\rpolicyChanged\x12f\n" +
+	"\x14technology_completed\x18\r \x01(\v21.panoptes.proto.v1.DomainTechnologyCompletedEventH\x00R\x13technologyCompleted\x12f\n" +
+	"\x14technology_activated\x18\x0e \x01(\v21.panoptes.proto.v1.DomainTechnologyActivatedEventH\x00R\x13technologyActivated\x12H\n" +
+	"\n" +
+	"unit_moved\x18\x0f \x01(\v2'.panoptes.proto.v1.DomainUnitMovedEventH\x00R\tunitMoved\x12N\n" +
+	"\fcity_founded\x18\x10 \x01(\v2).panoptes.proto.v1.DomainCityFoundedEventH\x00R\vcityFounded\x12T\n" +
+	"\x0ebuilding_built\x18\x11 \x01(\v2+.panoptes.proto.v1.DomainBuildingBuiltEventH\x00R\rbuildingBuilt\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"c\n" +
-	"\x11SettlementSection\x12\x18\n" +
-	"\asection\x18\x01 \x01(\tR\asection\x124\n" +
-	"\x06events\x18\x02 \x03(\v2\x1c.panoptes.proto.v1.TurnEventR\x06events\"\xcb\x02\n" +
-	"\x11MsgTurnSettlement\x12@\n" +
-	"\bsections\x18\x01 \x03(\v2$.panoptes.proto.v1.SettlementSectionR\bsections\x12\x12\n" +
-	"\x04turn\x18\x02 \x01(\x05R\x04turn\x12\x14\n" +
-	"\x05phase\x18\x03 \x01(\tR\x05phase\x12\x1d\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\a\n" +
+	"\x05event\"d\n" +
+	" DomainResearchTargetChangedEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12#\n" +
+	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"u\n" +
+	"\x18DomainPolicyChangedEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x1d\n" +
 	"\n" +
-	"next_phase\x18\x04 \x01(\tR\tnextPhase\x121\n" +
-	"\x05nodes\x18\x05 \x03(\v2\x1b.panoptes.proto.v1.NodeViewR\x05nodes\x121\n" +
-	"\x05units\x18\x06 \x03(\v2\x1b.panoptes.proto.v1.UnitViewR\x05units\x12E\n" +
-	"\x0fmy_player_after\x18\a \x01(\v2\x1d.panoptes.proto.v1.PlayerViewR\rmyPlayerAfterBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"old_policy\x18\x02 \x01(\tR\toldPolicy\x12\x1d\n" +
+	"\n" +
+	"new_policy\x18\x03 \x01(\tR\tnewPolicy\"b\n" +
+	"\x1eDomainTechnologyCompletedEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12#\n" +
+	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"b\n" +
+	"\x1eDomainTechnologyActivatedEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12#\n" +
+	"\rtechnology_id\x18\x02 \x01(\tR\ftechnologyId\"\x83\x01\n" +
+	"\x14DomainUnitMovedEvent\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12\x15\n" +
+	"\x06from_q\x18\x02 \x01(\x05R\x05fromQ\x12\x15\n" +
+	"\x06from_r\x18\x03 \x01(\x05R\x05fromR\x12\x11\n" +
+	"\x04to_q\x18\x04 \x01(\x05R\x03toQ\x12\x11\n" +
+	"\x04to_r\x18\x05 \x01(\x05R\x03toR\"\x8d\x01\n" +
+	"\x16DomainCityFoundedEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
+	"\aunit_id\x18\x02 \x01(\tR\x06unitId\x12\x17\n" +
+	"\acity_id\x18\x03 \x01(\tR\x06cityId\x12$\n" +
+	"\x0ecenter_node_id\x18\x04 \x01(\tR\fcenterNodeId\"\x8c\x01\n" +
+	"\x18DomainBuildingBuiltEvent\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12(\n" +
+	"\x10building_type_id\x18\x02 \x01(\tR\x0ebuildingTypeId\x12\x14\n" +
+	"\x05owner\x18\x03 \x01(\tR\x05owner\x12\x17\n" +
+	"\acity_id\x18\x04 \x01(\tR\x06cityIdBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_settlement_proto_rawDescOnce sync.Once
-	file_settlement_proto_rawDescData []byte
+	file_panoptes_proto_v1_settlement_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_settlement_proto_rawDescData []byte
 )
 
-func file_settlement_proto_rawDescGZIP() []byte {
-	file_settlement_proto_rawDescOnce.Do(func() {
-		file_settlement_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_settlement_proto_rawDesc), len(file_settlement_proto_rawDesc)))
+func file_panoptes_proto_v1_settlement_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_settlement_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_settlement_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_settlement_proto_rawDesc), len(file_panoptes_proto_v1_settlement_proto_rawDesc)))
 	})
-	return file_settlement_proto_rawDescData
+	return file_panoptes_proto_v1_settlement_proto_rawDescData
 }
 
-var file_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_settlement_proto_goTypes = []any{
-	(*TurnEvent)(nil),         // 0: panoptes.proto.v1.TurnEvent
-	(*SettlementSection)(nil), // 1: panoptes.proto.v1.SettlementSection
-	(*MsgTurnSettlement)(nil), // 2: panoptes.proto.v1.MsgTurnSettlement
-	nil,                       // 3: panoptes.proto.v1.TurnEvent.DataEntry
-	(*NodeView)(nil),          // 4: panoptes.proto.v1.NodeView
-	(*UnitView)(nil),          // 5: panoptes.proto.v1.UnitView
-	(*PlayerView)(nil),        // 6: panoptes.proto.v1.PlayerView
+var file_panoptes_proto_v1_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_panoptes_proto_v1_settlement_proto_goTypes = []any{
+	(*DomainEventEnvelope)(nil),              // 0: panoptes.proto.v1.DomainEventEnvelope
+	(*DomainResearchTargetChangedEvent)(nil), // 1: panoptes.proto.v1.DomainResearchTargetChangedEvent
+	(*DomainPolicyChangedEvent)(nil),         // 2: panoptes.proto.v1.DomainPolicyChangedEvent
+	(*DomainTechnologyCompletedEvent)(nil),   // 3: panoptes.proto.v1.DomainTechnologyCompletedEvent
+	(*DomainTechnologyActivatedEvent)(nil),   // 4: panoptes.proto.v1.DomainTechnologyActivatedEvent
+	(*DomainUnitMovedEvent)(nil),             // 5: panoptes.proto.v1.DomainUnitMovedEvent
+	(*DomainCityFoundedEvent)(nil),           // 6: panoptes.proto.v1.DomainCityFoundedEvent
+	(*DomainBuildingBuiltEvent)(nil),         // 7: panoptes.proto.v1.DomainBuildingBuiltEvent
+	nil,                                      // 8: panoptes.proto.v1.DomainEventEnvelope.DataEntry
 }
-var file_settlement_proto_depIdxs = []int32{
-	3, // 0: panoptes.proto.v1.TurnEvent.data:type_name -> panoptes.proto.v1.TurnEvent.DataEntry
-	0, // 1: panoptes.proto.v1.SettlementSection.events:type_name -> panoptes.proto.v1.TurnEvent
-	1, // 2: panoptes.proto.v1.MsgTurnSettlement.sections:type_name -> panoptes.proto.v1.SettlementSection
-	4, // 3: panoptes.proto.v1.MsgTurnSettlement.nodes:type_name -> panoptes.proto.v1.NodeView
-	5, // 4: panoptes.proto.v1.MsgTurnSettlement.units:type_name -> panoptes.proto.v1.UnitView
-	6, // 5: panoptes.proto.v1.MsgTurnSettlement.my_player_after:type_name -> panoptes.proto.v1.PlayerView
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+var file_panoptes_proto_v1_settlement_proto_depIdxs = []int32{
+	8, // 0: panoptes.proto.v1.DomainEventEnvelope.data:type_name -> panoptes.proto.v1.DomainEventEnvelope.DataEntry
+	1, // 1: panoptes.proto.v1.DomainEventEnvelope.research_target_changed:type_name -> panoptes.proto.v1.DomainResearchTargetChangedEvent
+	2, // 2: panoptes.proto.v1.DomainEventEnvelope.policy_changed:type_name -> panoptes.proto.v1.DomainPolicyChangedEvent
+	3, // 3: panoptes.proto.v1.DomainEventEnvelope.technology_completed:type_name -> panoptes.proto.v1.DomainTechnologyCompletedEvent
+	4, // 4: panoptes.proto.v1.DomainEventEnvelope.technology_activated:type_name -> panoptes.proto.v1.DomainTechnologyActivatedEvent
+	5, // 5: panoptes.proto.v1.DomainEventEnvelope.unit_moved:type_name -> panoptes.proto.v1.DomainUnitMovedEvent
+	6, // 6: panoptes.proto.v1.DomainEventEnvelope.city_founded:type_name -> panoptes.proto.v1.DomainCityFoundedEvent
+	7, // 7: panoptes.proto.v1.DomainEventEnvelope.building_built:type_name -> panoptes.proto.v1.DomainBuildingBuiltEvent
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_settlement_proto_init() }
-func file_settlement_proto_init() {
-	if File_settlement_proto != nil {
+func init() { file_panoptes_proto_v1_settlement_proto_init() }
+func file_panoptes_proto_v1_settlement_proto_init() {
+	if File_panoptes_proto_v1_settlement_proto != nil {
 		return
 	}
-	file_game_state_proto_init()
+	file_panoptes_proto_v1_settlement_proto_msgTypes[0].OneofWrappers = []any{
+		(*DomainEventEnvelope_ResearchTargetChanged)(nil),
+		(*DomainEventEnvelope_PolicyChanged)(nil),
+		(*DomainEventEnvelope_TechnologyCompleted)(nil),
+		(*DomainEventEnvelope_TechnologyActivated)(nil),
+		(*DomainEventEnvelope_UnitMoved)(nil),
+		(*DomainEventEnvelope_CityFounded)(nil),
+		(*DomainEventEnvelope_BuildingBuilt)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_settlement_proto_rawDesc), len(file_settlement_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_settlement_proto_rawDesc), len(file_panoptes_proto_v1_settlement_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_settlement_proto_goTypes,
-		DependencyIndexes: file_settlement_proto_depIdxs,
-		MessageInfos:      file_settlement_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_settlement_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_settlement_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_settlement_proto_msgTypes,
 	}.Build()
-	File_settlement_proto = out.File
-	file_settlement_proto_goTypes = nil
-	file_settlement_proto_depIdxs = nil
+	File_panoptes_proto_v1_settlement_proto = out.File
+	file_panoptes_proto_v1_settlement_proto_goTypes = nil
+	file_panoptes_proto_v1_settlement_proto_depIdxs = nil
 }

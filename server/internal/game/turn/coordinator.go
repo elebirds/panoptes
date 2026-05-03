@@ -16,9 +16,7 @@ import (
 	"github.com/elebirds/panoptes/internal/game/chat"
 	"github.com/elebirds/panoptes/internal/game/planning"
 	"github.com/elebirds/panoptes/internal/game/session"
-	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
-	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
 )
 
 var ErrPhaseMismatch = errors.New("phase_mismatch")
@@ -97,6 +95,7 @@ func (c *Coordinator) beginPlanning(ctx context.Context, notifyHumans bool) {
 	if c.runtime == nil {
 		return
 	}
+	c.applyMinisterDefaultPlans(ctx)
 	if notifyHumans {
 		for _, human := range c.runtime.HumanParticipants() {
 			if err := c.runtime.SendPlanningStart(ctx, human.ID); err != nil {
@@ -142,46 +141,6 @@ func (c *Coordinator) SubmitChecked(playerID string) error {
 	}
 	c.Submit(playerID)
 	return nil
-}
-
-func (c *Coordinator) HandleGameCommand(ctx cmddispatch.InboundContext, cmd *pb.GameCommand) error {
-	if c.runtime == nil || c.runtime.State() == nil || cmd == nil || cmd.Body == nil {
-		return ErrPhaseMismatch
-	}
-	switch cmd.Body.(type) {
-	case *pb.GameCommand_StaticCatalogSyncRequest, *pb.GameCommand_Chat:
-		return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
-	}
-	if c.runtime.State().Phase != domain.PhasePlanning.String() {
-		return ErrPhaseMismatch
-	}
-
-	return cmddispatch.DispatchGameCommand(ctx, cmd, gameCommandHandler{coordinator: c})
-}
-
-type gameCommandHandler struct {
-	coordinator *Coordinator
-}
-
-func (h gameCommandHandler) Planning(ctx cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
-	if h.coordinator == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.planningService.HandleCommand(h.coordinator.host, ctx, cmd)
-}
-
-func (h gameCommandHandler) Chat(ctx cmddispatch.InboundContext, cmd *pb.ChatCommand) error {
-	if h.coordinator == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.chatService.HandleCommand(h.coordinator.host, ctx, cmd)
-}
-
-func (h gameCommandHandler) StaticCatalogSyncRequest(ctx cmddispatch.InboundContext, cmd *pb.MsgStaticCatalogSyncRequest) error {
-	if h.coordinator == nil || h.coordinator.runtime == nil {
-		return ErrPhaseMismatch
-	}
-	return h.coordinator.runtime.HandleStaticCatalogSyncRequest(context.Background(), ctx.PlayerID, cmd)
 }
 
 func (c *Coordinator) waitAllSubmit(ctx context.Context, timeout time.Duration) {

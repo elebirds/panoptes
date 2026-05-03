@@ -9,7 +9,7 @@ package domain
 import "github.com/yohamta/donburi"
 
 type PositionComp struct {
-	X, Y int
+	Q, R int
 }
 
 type NodeComp struct {
@@ -39,11 +39,11 @@ type BuildingBindingComp struct {
 }
 
 type BuildingOperationComp struct {
-	SelectedRecipeID string
-	ProgressTurns    int
-	RequiredTurns    int
-	DelayTurns       int
-	BlockedReason    string
+	SelectedRecipeID  string
+	ProgressTurns     int
+	RequiredTurns     int
+	DelayTurns        int
+	BlockedReason     string
 	ProgressRemainder int
 	ConsumedResources ResourceBag
 	ConsumedPoints    PointBag

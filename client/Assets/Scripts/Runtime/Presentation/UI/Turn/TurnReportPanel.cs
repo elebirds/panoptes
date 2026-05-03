@@ -6,11 +6,13 @@
  * Description: Displays the latest turn settlement summary for player review.
  *************************************************/
 
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Events;
+using System;
+using Panoptes.Core.Application.Stores;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Turn
 {
@@ -21,33 +23,35 @@ namespace Panoptes.Presentation.UI.Turn
         [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private TextMeshProUGUI reportText;
 
-        private GameStateCache _cache;
+        private IDisposable _settlementSubscription;
+        private SettlementStore _settlementStore;
         private bool _warnedMissingUi;
+
+        [Inject]
+        private void Construct(SettlementStore settlementStore)
+        {
+            _settlementStore = settlementStore;
+        }
 
         private void Awake()
         {
             TryResolveUiReferences(false);
-            _cache = GameStateCache.Instance;
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled += OnTurnSettled;
-            }
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            OnSettlementChanged(_settlementStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled -= OnTurnSettled;
-            }
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
         }
 
-        private void OnTurnSettled(TurnSettledEvent evt)
+        private void OnSettlementChanged(SettlementState state)
         {
             if (!TryResolveUiReferences(true))
             {
@@ -55,18 +59,19 @@ namespace Panoptes.Presentation.UI.Turn
             }
 
             titleText.text = "Turn Report";
-            if (evt == null)
+            var settlement = state?.Settlement;
+            if (settlement == null)
             {
                 reportText.text = "Waiting settlement";
                 return;
             }
 
             reportText.text =
-                $"Built: {SafeCount(evt.BuiltNodeIDs)}\n" +
-                $"Moved: {SafeCount(evt.MovedUnitIDs)}\n" +
-                $"Lost: {SafeCount(evt.DeadUnitIDs)}\n" +
-                $"City Core Hit: {(evt.CityCoreDamaged ? "Yes" : "No")}\n" +
-                $"Next Phase: {evt.Settlement?.NextPhase ?? string.Empty}";
+                $"Built: {SafeCount(settlement.BuiltNodeIDs)}\n" +
+                $"Moved: {SafeCount(settlement.MovedUnitIDs)}\n" +
+                $"Lost: {SafeCount(settlement.DeadUnitIDs)}\n" +
+                $"City Core Hit: {(settlement.CityCoreDamaged ? "Yes" : "No")}\n" +
+                $"Next Phase: {settlement.NextPhase ?? string.Empty}";
         }
 
         private bool TryResolveUiReferences(bool logWarning)

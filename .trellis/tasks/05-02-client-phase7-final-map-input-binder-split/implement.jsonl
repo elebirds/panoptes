@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Facade/helper placement and no prefab-facing rename constraints."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Facade plus testable helper extraction conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "State ownership and service/ViewModel boundaries."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary checks and Unity verification gates."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Keep input routing boundary explicit."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputCoordinator.cs", "reason": "Extracted top-level build/combat click routing from the scene controller."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapBuildPlacementCoordinator.cs", "reason": "Extracted build placement routing and hover/commit order into a testable coordinator."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapNodeInfoProxyFactory.cs", "reason": "Moved node info proxy construction out of map input controller."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapBuildingCatalogResolver.cs", "reason": "Moved building catalog alias lookup out of map input controller."}

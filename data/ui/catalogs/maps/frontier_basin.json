@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schema/ui/maps/catalog.schema.json",
+  "id": "frontier_basin",
+  "name": "边地盆谷",
+  "description": "30x30 中型边境地图，预置短道路、河谷中场和对称工业资源，适合长局 PVE/PVP 验收。",
+  "thumbnail_key": "map_default",
+  "legend": [
+    { "id": "resource_point", "name": "资源点", "icon_key": "marker_resource" },
+    { "id": "road", "name": "初始道路", "icon_key": "marker_road" }
+  ]
+}

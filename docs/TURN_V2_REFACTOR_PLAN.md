@@ -162,14 +162,14 @@ ClientPayload() *pb.CombatEvent
 
 以下 proto 保留，必要时只做字段调整：
 
-- `protocol/common.proto`
-- `protocol/auth.proto`
-- `protocol/lobby.proto`
-- `protocol/data_types.proto`
-- `protocol/data_catalog.proto`
-- `protocol/map_catalog.proto`
-- `protocol/game_state.proto`
-- `protocol/minister.proto`
+- `protocol/panoptes/proto/v1/common.proto`
+- `protocol/panoptes/proto/v1/auth.proto`
+- `protocol/panoptes/proto/v1/lobby.proto`
+- `protocol/panoptes/proto/v1/data_types.proto`
+- `protocol/panoptes/proto/v1/data_catalog.proto`
+- `protocol/panoptes/proto/v1/map_catalog.proto`
+- `protocol/panoptes/proto/v1/game_state.proto`
+- `protocol/panoptes/proto/v1/minister.proto`
 
 ### 5.2 删除的 proto
 
@@ -189,7 +189,7 @@ ClientPayload() *pb.CombatEvent
 
 新增三个 proto：
 
-### `protocol/orders.proto`
+### `protocol/panoptes/proto/v1/orders.proto`
 
 职责：承载玩家在 `planning` 阶段发出的所有命令。
 
@@ -209,7 +209,7 @@ ClientPayload() *pb.CombatEvent
 - `MsgIssueUnitOrder` 统一承载 `move | hold | attack | charge | settle_city | build_road | repair_road | build_improvement | repair_improvement`
 - 不再为“内政动作”和“战斗动作”拆不同消息域
 
-### `protocol/turn.proto`
+### `protocol/panoptes/proto/v1/turn.proto`
 
 职责：承载回合开始、规划开始、规划快照、回合结束等控制类消息。
 
@@ -227,7 +227,7 @@ ClientPayload() *pb.CombatEvent
 - `MsgDomesticPhaseStart` 与 `MsgCombatPhaseStart` 被 `MsgPlanningStart` 替代
 - `MsgDomesticSettlement` 与 `MsgCombatSettlement` 被 `MsgTurnSettlement` 替代
 
-### `protocol/settlement.proto`
+### `protocol/panoptes/proto/v1/settlement.proto`
 
 职责：定义统一回合结算载荷。
 

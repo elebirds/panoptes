@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Review whether extracted helpers preserve facade and serialized-field compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Review whether the client remains presentation-only and avoids gameplay validation."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Run the static boundary and generated-file checks required by frontend quality policy."}
+{"file": "docs/2026-05-01-client-reactive-ui-architecture-plan.md", "reason": "Confirm the slice moves toward planning tool/preview presenter structure."}
+{"file": "docs/CLIENT_CODE_QUALITY_AUDIT.md", "reason": "Update line-count/refactor outcome notes after implementation."}

@@ -3,8 +3,10 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
 using Panoptes.Presentation.UI.Common;
@@ -18,6 +20,8 @@ namespace Panoptes.Tests.EditMode.Lobby
     public sealed class ClientRuntimeIntegrationTests
     {
         private readonly string _appManagerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/App/AppManager.cs");
+        private readonly string _compositionBootstrapPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs");
+        private readonly string _projectCompositionPrefabPath = Path.GetFullPath("Assets/Resources/Prefabs/Composition/PanoptesProjectComposition.prefab");
         private readonly string _lobbyServicePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Service/LobbyService.cs");
         private readonly string _lobbyScenePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbySceneController.cs");
         private readonly string _lobbyPanelControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Lobby/LobbyPanelController.cs");
@@ -25,20 +29,27 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _gamePhasesPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Foundation/Domain/GamePhases.cs");
         private readonly string _gameSceneControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs");
         private readonly string _mapRendererPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs");
-        private readonly string _mapInputHandlerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapInputHandler.cs");
+        private readonly string _mapPlanningInputControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs");
+        private readonly string _movePreviewPresenterPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Planning/Feedback/MovePreviewPresenter.cs");
         private readonly string _nodeViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/NodeView.cs");
         private readonly string _settlementPlaybackControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs");
         private readonly string _cityCoreBuildingActionRegistrarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs");
         private readonly string _cityCoreProductionPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/CityCoreProductionPanel.cs");
         private readonly string _resourceHudPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/ResourceHUD.cs");
         private readonly string _techTreePanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/TechTreePanelController.cs");
-        private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
+        private readonly string _techTreeViewModelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs");
+        private readonly string _techTreeUiToolkitBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs");
+        private readonly string _managementPanelVisibilityStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/ManagementPanelVisibilityStore.cs");
+        private readonly string _recipeSynthesisViewModelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisViewModel.cs");
+        private readonly string _recipeSynthesisUiToolkitBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/RecipeSynthesisUiToolkitBinder.cs");
+        private readonly string _recipeSynthesisContextStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisContextStore.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
         private readonly string _staticCatalogCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs");
-        private readonly string _configBridgePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs");
         private readonly string _cityCoreHpBarPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHPBar.cs");
         private readonly string _cityCoreHpBarOverlayControllerPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreHpBarOverlayController.cs");
         private readonly string _buildingViewPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Map/BuildingView.cs");
+        private readonly string _buildCatalogBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/BuildCatalogUiToolkitBinder.cs");
+        private readonly string _buildCatalogContextStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/BuildCatalogContextStore.cs");
         private readonly string _buildCommandPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Domestic/BuildCommandPanel.cs");
         private readonly string _nodeTilePrefabPath = Path.GetFullPath("Assets/Prefabs/Map/NodeTile3D.prefab");
         private readonly string _cityCorePrefabAssetPath = Path.GetFullPath("Assets/Prefabs/Map/CityCore.prefab");
@@ -49,6 +60,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _integrationCheckerPath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Debug/IntegrationChecker.cs");
         private readonly string _strategicPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/StrategicPanel.cs");
         private readonly string _unitInfoPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs");
+        private readonly string _unitInfoDirectOrderPanelBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderPanelBinder.cs");
         private readonly string _unitOrdersPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/UnitOrdersPanel.cs");
         private readonly string _runtimeScriptsRoot = Path.GetFullPath("Assets/Scripts/Runtime");
 
@@ -281,11 +293,11 @@ namespace Panoptes.Tests.EditMode.Lobby
             var dispatcher = dispatcherObject.AddComponent<MessageDispatcher>();
             SetSingletonInstance(typeof(MessageDispatcher), dispatcher);
 
-            var settlementDispatches = 0;
-            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", _ => settlementDispatches++);
+            var syncDispatches = 0;
+            dispatcher.Register<MsgGameSync>("MsgGameSync", _ => syncDispatches++);
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 1, Phase = "resolving" }, "session-stale"));
-            Assert.That(settlementDispatches, Is.EqualTo(0),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 1, Phase = "resolving" }, "session-stale"));
+            Assert.That(syncDispatches, Is.EqualTo(0),
                 "未建立激活会话前，不应处理非 MsgGameInit 的游戏消息。");
 
             dispatcher.Dispatch(BuildGameFrame(new MsgGameInit
@@ -305,19 +317,19 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(activeSession, Is.EqualTo("session-a"),
                 "MsgGameInit 建立当前会话后，应记录激活中的 game session id。");
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-b"));
-            Assert.That(settlementDispatches, Is.EqualTo(0),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 2, Phase = "resolving" }, "session-b"));
+            Assert.That(syncDispatches, Is.EqualTo(0),
                 "不同 session 的游戏消息必须在分发前被丢弃。");
 
-            dispatcher.Dispatch(BuildGameFrame(new MsgTurnSettlement { Turn = 2, Phase = "resolving" }, "session-a"));
-            Assert.That(settlementDispatches, Is.EqualTo(1),
+            dispatcher.Dispatch(BuildGameFrame(new MsgGameSync { Turn = 2, Phase = "resolving" }, "session-a"));
+            Assert.That(syncDispatches, Is.EqualTo(1),
                 "同一 session 的游戏消息应继续正常分发。");
         }
 
         [Test]
         public void PlanningDraftCache_ShouldClearPreview_WhenPlanningSnapshotApplied()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             var previewChanged = 0;
             cache.PreviewChanged += () => previewChanged++;
 
@@ -349,7 +361,7 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void PlanningDraftCache_ShouldParseAndFilterMinisterDrafts_FromPlanningSnapshot()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
 
             cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
             {
@@ -395,6 +407,8 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             var cacheObject = new GameObject("GameStateCache");
             var cache = cacheObject.AddComponent<GameStateCache>();
+            var planningDraftCache = CreatePlanningDraftCache();
+            cache.UseProjectCaches(null, planningDraftCache, null);
 
             var nodeEvents = 0;
             var unitEvents = 0;
@@ -432,7 +446,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -449,7 +463,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         UnitType = "settler",
                         Hp = 10,
                         MaxHp = 10,
-                        Pos = new Position { X = 0, Y = 0 }
+                        Pos = new Position { Q = 0, R = 0 }
                     }
                 }
             });
@@ -467,9 +481,10 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Tokens = 3,
                 PlanningStartEvents =
                 {
-                    new TurnEvent
+                    new DomainEventEnvelope
                     {
-                        Type = "technology_activated",
+                        Kind = "technology_activated",
+                        Channel = "planning",
                         Data = { { "technology_id", "agrarian_foundations" }, { "player_id", "player-1" } }
                     }
                 },
@@ -500,7 +515,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -517,7 +532,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         UnitType = "settler",
                         Hp = 10,
                         MaxHp = 10,
-                        Pos = new Position { X = 1, Y = 0 }
+                        Pos = new Position { Q = 1, R = 0 }
                     }
                 }
             };
@@ -530,8 +545,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(cache.MyPlayer.TokensLeft, Is.EqualTo(3));
             Assert.That(cache.LastPlanningStartEvents.Count, Is.EqualTo(1));
             Assert.That(cache.LastPlanningStartEvents[0].Type, Is.EqualTo("technology_activated"));
-            Assert.That(PlanningDraftCache.EnsureInstance().GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
-            Assert.That(PlanningDraftCache.EnsureInstance().PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
+            Assert.That(planningDraftCache.GetDomesticMinisterDrafts().Count, Is.EqualTo(1));
+            Assert.That(planningDraftCache.PlannedInstitutionPolicyIds.Single(), Is.EqualTo("academy_charter"));
             Assert.That(nodeEvents, Is.EqualTo(1));
             Assert.That(lastNodeEvent, Is.Not.Null);
             Assert.That(lastNodeEvent.ChangeType, Is.EqualTo("planning_start"));
@@ -595,7 +610,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -609,7 +624,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                     new NodeView
                     {
                         Id = "A2",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         Terrain = "plain",
                         ControllerPlayerId = "player-1",
                         TerritoryOwnerPlayerId = "player-1",
@@ -822,11 +837,13 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_lobbyServicePath);
             StringAssert.Contains("public void AddBot()", content);
-            StringAssert.Contains("MessageSender.Send(new MsgAddBot())", content);
+            StringAssert.Contains("Send(new MsgAddBot())", content);
             StringAssert.Contains("public void KickPlayer(string playerId)", content);
-            StringAssert.Contains("MessageSender.Send(new MsgKickPlayer", content);
+            StringAssert.Contains("Send(new MsgKickPlayer", content);
             StringAssert.Contains("public void StartGame()", content);
-            StringAssert.Contains("MessageSender.Send(new MsgStartGame())", content);
+            StringAssert.Contains("Send(new MsgStartGame())", content);
+            Assert.That(content, Does.Not.Contain("MessageSender.Send"),
+                "LobbyService 应通过注入的 IClientMessageSender 发送，不应回到静态 MessageSender。");
         }
 
         [Test]
@@ -844,20 +861,29 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_appManagerPath), Is.True, "AppManager.cs 不存在。");
 
             var content = File.ReadAllText(_appManagerPath);
-            StringAssert.Contains("EnsureComponent<ClientRuntimeConfigCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<ConfigCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<GameStateCache>(managers);", content);
-            StringAssert.Contains("EnsureComponent<PlanningDraftCache>(managers);", content);
+            var compositionBootstrap = File.ReadAllText(_compositionBootstrapPath);
+            var projectCompositionPrefab = File.ReadAllText(_projectCompositionPrefabPath);
+            StringAssert.Contains("ClientRuntimeConfigCache", projectCompositionPrefab);
+            StringAssert.Contains("ConfigCache", projectCompositionPrefab);
+            StringAssert.Contains("GameStateCache", projectCompositionPrefab);
+            StringAssert.Contains("PlanningDraftCache", projectCompositionPrefab);
             Assert.That(content, Does.Not.Contain("EnsureComponent<CombatDraftCache>(managers);"),
                 "Managers 不应再挂载 CombatDraftCache。");
-            StringAssert.Contains("EnsureOptionalLoadingOverlay(managers);", content);
-            StringAssert.Contains("EnsureOptionalErrorToast(managers);", content);
-            StringAssert.Contains("EnsureOptionalConfirmDialog(managers);", content);
-            StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", content,
+            StringAssert.Contains("LoadingOverlay", projectCompositionPrefab);
+            Assert.That(compositionBootstrap, Does.Not.Contain("EnsureComponent<"),
+                "项目级组件应来自显式 Project Composition prefab，不应在 bootstrap 中 AddComponent。");
+            Assert.That(content, Does.Not.Contain("EnsureOptionalErrorToast(managers);"),
+                "ErrorToast 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
+            Assert.That(content, Does.Not.Contain("EnsureOptionalConfirmDialog(managers);"),
+                "ConfirmDialog 的生命周期应由 Presentation Project scope 管理，Core AppManager 不应反射创建 Presentation UI。");
+
+            StringAssert.Contains("EnsureProjectOverlay<ErrorToast>(\"ErrorToast\", \"Prefabs/UI/ErrorToast\")", compositionBootstrap);
+            StringAssert.Contains("EnsureProjectOverlay<ConfirmDialog>(\"ConfirmDialog\", \"Prefabs/UI/ConfirmDialog\")", compositionBootstrap);
+            StringAssert.Contains("Resources.Load<GameObject>(resourcePath)", compositionBootstrap,
                 "通用弹层应优先从 prefab 资源实例化，而不是继续直接挂在 Managers 上。");
-            StringAssert.Contains("Instantiate(prefab)", content,
+            StringAssert.Contains("Object.Instantiate(prefab)", compositionBootstrap,
                 "通用弹层应生成为独立根对象，而不是继续复用 Managers 树。");
-            StringAssert.Contains("overlayObject.transform.SetParent(null, false);", content,
+            StringAssert.Contains("overlayObject.transform.SetParent(null, false);", compositionBootstrap,
                 "通用弹层必须与 Managers 脱离父子关系，避开 LoadingOverlay 的 CanvasGroup。");
             StringAssert.Contains("Register<MsgClientRuntimeConfig>(\"MsgClientRuntimeConfig\", OnClientRuntimeConfig)", content);
             StringAssert.Contains("Register<MsgConfigBatchJson>(\"MsgConfigBatchJson\", OnConfigBatchJson)", content);
@@ -865,9 +891,9 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "AppManager 必须注册 Catalog V2 section chunk 事件。");
             StringAssert.Contains("Register<MsgStaticCatalogSyncComplete>(\"MsgStaticCatalogSyncComplete\", OnStaticCatalogSyncComplete)", content,
                 "AppManager 必须注册 Catalog V2 sync complete 事件。");
-            StringAssert.Contains("MessageSender.Send(new MsgStaticCatalogSyncRequest", content,
-                "收到 manifest 后，AppManager 必须主动发起 Catalog V2 同步请求。");
-            StringAssert.Contains("ConfigCache.Instance?.Clear();", content,
+            StringAssert.Contains("_messageSender?.Send(request);", content,
+                "收到 manifest 后，AppManager 必须通过注入的消息发送器发起 Catalog V2 同步请求。");
+            StringAssert.Contains("_configCache?.Clear();", content,
                 "进入 Login 或回退会话时必须清理会话级 ConfigCache。");
             Assert.That(content, Does.Not.Contain("StaticCatalogCache.Instance?.Clear();"),
                 "AppManager 不应在登录态清空应用级静态目录缓存。");
@@ -876,8 +902,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("_pendingCatalogSync", content,
                 "AppManager 必须显式跟踪 Catalog 同步中的 bootstrap 状态。");
 
-            var applyIndex = content.IndexOf("GameStateCache.Instance?.ApplyGameInit(msg);", StringComparison.Ordinal);
-            var clearRoomIndex = content.IndexOf("RoomCache.Instance?.Clear();", StringComparison.Ordinal);
+            var applyIndex = content.IndexOf("_gameStateCache?.ApplyGameInit(msg);", StringComparison.Ordinal);
+            var clearRoomIndex = content.IndexOf("_roomCache?.Clear();", StringComparison.Ordinal);
             var transitionIndex = content.IndexOf("TransitionTo(AppState.Game);", StringComparison.Ordinal);
             Assert.That(applyIndex, Is.GreaterThanOrEqualTo(0), "AppManager 必须先写入 GameStateCache。");
             Assert.That(clearRoomIndex, Is.GreaterThan(applyIndex), "进入 Game 前必须清空大厅房间缓存，避免返回 Lobby 时残留旧房间。");
@@ -890,16 +916,25 @@ namespace Panoptes.Tests.EditMode.Lobby
         {
             Assert.That(File.Exists(_configCachePath), Is.True, "ConfigCache.cs 不存在。");
             Assert.That(File.Exists(_staticCatalogCachePath), Is.True, "StaticCatalogCache.cs 不存在。");
-            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
-            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
-            Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
+            Assert.That(File.Exists(_techTreePanelPath), Is.False, "TechTreePanelController.cs 应已删除。");
+            Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
+            Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisViewModelPath), Is.True, "RecipeSynthesisViewModel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisUiToolkitBinderPath), Is.True, "RecipeSynthesisUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisContextStorePath), Is.True, "RecipeSynthesisContextStore.cs 不存在。");
+            Assert.That(File.Exists(_buildCommandPanelPath), Is.False, "BuildCommandPanel.cs 应已删除。");
+            Assert.That(File.Exists(_buildCatalogBinderPath), Is.True, "BuildCatalogUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_buildCatalogContextStorePath), Is.True, "BuildCatalogContextStore.cs 不存在。");
             Assert.That(File.Exists(_cityCoreProductionPanelPath), Is.False, "CityCoreProductionPanel.cs 应已删除。");
 
             var configCacheContent = File.ReadAllText(_configCachePath);
             var staticCatalogCacheContent = File.ReadAllText(_staticCatalogCachePath);
-            var techTreeContent = File.ReadAllText(_techTreePanelPath);
-            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
-            var buildContent = File.ReadAllText(_buildCommandPanelPath);
+            var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
+            var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
+            var recipeViewModelContent = File.ReadAllText(_recipeSynthesisViewModelPath);
+            var recipeBinderContent = File.ReadAllText(_recipeSynthesisUiToolkitBinderPath);
+            var buildBinderContent = File.ReadAllText(_buildCatalogBinderPath);
 
             StringAssert.Contains("public void Clear()", configCacheContent,
                 "ConfigCache 必须暴露会话级清理入口。");
@@ -920,20 +955,28 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "科技树面板不应再等待服务端 snapshot 作为主路径。");
             Assert.That(techTreeContent, Does.Not.Contain("ConfigCache"),
                 "科技树面板不应再通过 ConfigCache 读取静态科技实体。");
-            StringAssert.Contains("TitleText", techTreeContent,
-                "科技树在模板缺失时也必须生成可见标题文本，避免界面空白。");
-            StringAssert.Contains("DescriptionText", techTreeContent,
-                "科技树在模板缺失时也必须生成可见描述文本，避免界面空白。");
-            Assert.That(recipeContent, Does.Not.Contain("ConfigCache.Instance"),
-                "配方面板不应再通过 ConfigCache 读取静态配方实体。");
-            Assert.That(buildContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
-                "建造面板不应再把 buildconfig 作为正式运行时主数据源。");
+            StringAssert.Contains("StaticCatalogStore", techTreeContent,
+                "科技树应通过静态目录 Store 投影 UI Toolkit 状态。");
+            StringAssert.Contains("PlanningDraftStore", techTreeContent,
+                "科技树应通过规划草稿 Store 标记计划研究目标。");
+            StringAssert.Contains("ManagementPanelVisibilityStore", techTreeBinderContent,
+                "科技树 UI Toolkit binder 应订阅最终管理面板显隐状态。");
+            Assert.That(recipeViewModelContent, Does.Not.Contain("ConfigCache.Instance"),
+                "配方视图模型不应再通过 ConfigCache 读取静态配方实体。");
+            StringAssert.Contains("RecipeSynthesisContextStore", recipeViewModelContent,
+                "配方合成状态应通过最终上下文 Store 过滤。");
+            StringAssert.Contains("PlanningIntentService", recipeBinderContent,
+                "配方合成点击应通过最终 PlanningIntentService 提交。");
+            Assert.That(buildBinderContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
+                "建造目录不应再把 buildconfig 作为正式运行时主数据源。");
+            StringAssert.Contains("PlanningToolService", buildBinderContent,
+                "建造目录点击应进入最终 PlanningToolService。");
         }
 
         [Test]
         public void PlanningDraftCache_ShouldExposeRecipeSelectionLookup_ForUiConsumers()
         {
-            var cache = PlanningDraftCache.EnsureInstance();
+            var cache = CreatePlanningDraftCache();
             cache.ApplyPlanningSnapshot(new MsgPlanningSnapshot
             {
                 RecipeSelections =
@@ -962,27 +1005,51 @@ namespace Panoptes.Tests.EditMode.Lobby
         [Test]
         public void TechnologyAndBuildingUi_ShouldAlignToDtoQueries_AndAvoidLegacyFallbacks()
         {
-            Assert.That(File.Exists(_techTreePanelPath), Is.True, "TechTreePanelController.cs 不存在。");
-            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_techTreePanelPath), Is.False, "TechTreePanelController.cs 应已删除。");
+            Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
+            Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisViewModelPath), Is.True, "RecipeSynthesisViewModel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisUiToolkitBinderPath), Is.True, "RecipeSynthesisUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisContextStorePath), Is.True, "RecipeSynthesisContextStore.cs 不存在。");
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
             Assert.That(File.Exists(_resourceHudPath), Is.True, "ResourceHUD.cs 不存在。");
 
-            var techTreeContent = File.ReadAllText(_techTreePanelPath);
-            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
+            var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
+            var managementPanelVisibilityContent = File.ReadAllText(_managementPanelVisibilityStorePath);
+            var recipeViewModelContent = File.ReadAllText(_recipeSynthesisViewModelPath);
+            var recipeBinderContent = File.ReadAllText(_recipeSynthesisUiToolkitBinderPath);
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
             var resourceHudContent = File.ReadAllText(_resourceHudPath);
 
-            StringAssert.Contains("GetCurrentResearchState()", techTreeContent,
-                "科技树状态构建应直接消费权威研究 DTO。");
-            Assert.That(techTreeContent, Does.Not.Contain("GetPropertyValue(GetPropertyValue(gameState, \"MyPlayer\"), \"Research\")"),
-                "科技树不应继续通过 MyPlayer.Research 反射取状态。");
+            StringAssert.Contains("StaticCatalogStore", techTreeContent,
+                "科技树状态构建应消费最终静态目录 Store。");
+            StringAssert.Contains("PlanningDraftStore", techTreeContent,
+                "科技树状态构建应消费最终规划草稿 Store。");
+            StringAssert.Contains("BindVisibility", techTreeBinderContent,
+                "科技树 UI Toolkit binder 应通过显隐 Store 控制面板显隐。");
+            StringAssert.Contains("Toggle(ManagementPanelId.TechTree)", resourceHudContent,
+                "ResourceHUD 全局按钮应切换最终 UI Toolkit 科技树面板。");
+            StringAssert.Contains("BehaviorSubject<ManagementPanelVisibilityState>", managementPanelVisibilityContent,
+                "管理面板显隐状态应通过可订阅 Store 传播。");
 
-            StringAssert.Contains("OnPlanningCommandResult", recipeContent,
-                "配方面板应订阅统一规划命令结果事件以便失败回滚。");
-            StringAssert.Contains("TryGetRecipeSelection(", recipeContent,
-                "配方面板应通过 PlanningDraftCache helper 读取当前节点的配方草稿。");
-            StringAssert.Contains("TryGetBuilding(", registrarContent,
-                "主城建筑入口应优先通过 BuildingDto 查询建筑业务状态。");
+            StringAssert.Contains("PlanningDraftStore", recipeViewModelContent,
+                "配方合成 ViewModel 应通过最终规划草稿 Store 标记当前选择。");
+            StringAssert.Contains("RecipeSynthesisContextStore", recipeViewModelContent,
+                "配方合成 ViewModel 应按最终上下文 Store 过滤当前建筑。");
+            StringAssert.Contains("SetBuildingRecipe(nodeId, recipeId)", recipeBinderContent,
+                "配方合成 Binder 应通过 PlanningIntentService 提交当前节点配方。");
+            StringAssert.Contains("BuildCatalogContextStore", registrarContent,
+                "主城 Build 入口应把主城节点上下文写入最终建造目录上下文 Store。");
+            StringAssert.Contains("Show(ManagementPanelId.BuildCatalog)", registrarContent,
+                "主城 Build 入口应显示最终 UI Toolkit 建造目录。");
+            StringAssert.Contains("RecipeSynthesisContextStore", registrarContent,
+                "Synthesis 入口应把当前建筑上下文写入最终配方上下文 Store。");
+            StringAssert.Contains("Show(ManagementPanelId.RecipeSynthesis)", registrarContent,
+                "Synthesis 入口应显示最终 UI Toolkit 配方面板。");
+            Assert.That(registrarContent, Does.Not.Contain("BuildCommandPanel"),
+                "主城 Build 入口不应再引用 legacy BuildCommandPanel。");
             Assert.That(registrarContent, Does.Not.Contain("OnProductionActionClicked("),
                 "城市核心动作注册器不应再保留 Production 入口。");
             Assert.That(registrarContent, Does.Not.Contain("OnTechTreeActionClicked("),
@@ -998,8 +1065,10 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_lobbyPanelControllerPath);
             StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
-            StringAssert.Contains("ErrorToast.Instance", content,
-                "大厅面板应优先通过 ErrorToast 展示错误/成功提示。");
+            StringAssert.Contains("ErrorToast errorToast", content,
+                "大厅面板应通过 VContainer 注入的 ErrorToast 展示错误/成功提示。");
+            Assert.That(content, Does.Not.Contain("ErrorToast.Instance"),
+                "大厅面板不应再读取 ErrorToast singleton。");
             StringAssert.Contains("ShowToast(message, false);", content,
                 "大厅错误提示应走 ErrorToast。");
             StringAssert.Contains("ShowToast($\"房间已创建，邀请码：{roomCode}\", true);", content,
@@ -1028,8 +1097,10 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_roomPanelControllerPath);
             StringAssert.Contains("using Panoptes.Presentation.UI.Common;", content);
-            StringAssert.Contains("ConfirmDialog.Instance", content,
-                "房间敏感操作应优先通过 ConfirmDialog 二次确认。");
+            StringAssert.Contains("ConfirmDialog confirmDialog", content,
+                "房间敏感操作应通过 VContainer 注入的 ConfirmDialog 二次确认。");
+            Assert.That(content, Does.Not.Contain("ConfirmDialog.Instance"),
+                "房间面板不应再读取 ConfirmDialog singleton。");
             StringAssert.Contains("ShowConfirmation(", content);
             StringAssert.Contains("\"开始游戏\"", content,
                 "开始游戏前应弹确认框。");
@@ -1077,10 +1148,16 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Assert.That(catalog.LoadLocalCatalog(), Is.True, "StaticCatalogCache 本地目录加载失败。");
                 Assert.That(catalog.TryGetTechnology("agrarian_foundations", out var technology), Is.True, "测试依赖农业基础科技目录项。");
                 Assert.That(technology, Is.Not.Null);
+                var staticCatalogStore = new StaticCatalogStore();
+                new StaticCatalogStoreHydrator(staticCatalogStore).HydrateFromCache(catalog);
 
                 var cache = cacheObject.AddComponent<GameStateCache>();
                 SetSingletonInstance(typeof(GameStateCache), cache);
-                cache.ApplyGameInit(new MsgGameInit
+                var gameStateStore = new GameStateStore();
+                var settlementStore = new SettlementStore();
+                var gameOverStore = new GameOverStore();
+                var feedbackStore = new GameplayFeedbackStore();
+                var init = new MsgGameInit
                 {
                     GameId = "game-1",
                     YourPlayerId = "player-1",
@@ -1100,7 +1177,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         new NodeView
                         {
                             Id = "A1",
-                            Pos = new Position { X = 0, Y = 0 },
+                            Pos = new Position { Q = 0, R = 0 },
                             Terrain = "plain",
                             ControllerPlayerId = "player-1",
                             TerritoryOwnerPlayerId = "player-1",
@@ -1108,7 +1185,9 @@ namespace Panoptes.Tests.EditMode.Lobby
                             BuildingHp = 100
                         }
                     }
-                });
+                };
+                cache.ApplyGameInit(init);
+                gameStateStore.Replace(StoreHydrationProtocolMapper.ToGameState(init));
 
                 var toastPrefab = Resources.Load<GameObject>("Prefabs/UI/ErrorToast");
                 Assert.That(toastPrefab, Is.Not.Null, "ErrorToast 运行时 prefab 不存在。");
@@ -1128,15 +1207,23 @@ namespace Panoptes.Tests.EditMode.Lobby
                 var errorColor = background.color;
 
                 var controller = controllerObject.AddComponent<GameSceneController>();
+                InjectGameSceneController(
+                    controller,
+                    gameStateStore,
+                    settlementStore,
+                    gameOverStore,
+                    feedbackStore,
+                    staticCatalogStore,
+                    toast);
                 InvokeLifecycle(controller, "Awake");
                 InvokeLifecycle(controller, "OnEnable");
 
-                cache.ApplyTurnSettlement(new MsgTurnSettlement
+                var sync = new MsgGameSync
                 {
                     Turn = 1,
                     Phase = "resolving",
                     NextPhase = "planning",
-                    MyPlayerAfter = new PlayerView
+                    MyPlayer = new PlayerView
                     {
                         Id = "player-1",
                         TokensLeft = 3,
@@ -1148,7 +1235,7 @@ namespace Panoptes.Tests.EditMode.Lobby
                         new NodeView
                         {
                             Id = "A1",
-                            Pos = new Position { X = 0, Y = 0 },
+                            Pos = new Position { Q = 0, R = 0 },
                             Terrain = "plain",
                             ControllerPlayerId = "player-1",
                             TerritoryOwnerPlayerId = "player-1",
@@ -1156,35 +1243,33 @@ namespace Panoptes.Tests.EditMode.Lobby
                             BuildingHp = 100
                         }
                     },
-                    Sections =
+                    Events =
                     {
-                        new SettlementSection
+                        new DomainEventEnvelope
                         {
-                            Section = "economy",
-                            Events =
+                            Channel = "economy",
+                            Kind = "technology_completed",
+                            Data =
                             {
-                                new TurnEvent
-                                {
-                                    Type = "technology_completed",
-                                    Data =
-                                    {
-                                        { "technology_id", "agrarian_foundations" },
-                                        { "player_id", "player-1" }
-                                    }
-                                },
-                                new TurnEvent
-                                {
-                                    Type = "technology_completed",
-                                    Data =
-                                    {
-                                        { "technology_id", "organized_labor" },
-                                        { "player_id", "player-2" }
-                                    }
-                                }
+                                { "technology_id", "agrarian_foundations" },
+                                { "player_id", "player-1" }
+                            }
+                        },
+                        new DomainEventEnvelope
+                        {
+                            Channel = "economy",
+                            Kind = "technology_completed",
+                            Data =
+                            {
+                                { "technology_id", "organized_labor" },
+                                { "player_id", "player-2" }
                             }
                         }
                     }
-                });
+                };
+                cache.ApplyGameSync(sync);
+                gameStateStore.Replace(StoreHydrationProtocolMapper.MergeGameSync(gameStateStore.Snapshot, sync));
+                settlementStore.Replace(SettlementMapper.ToDto(sync));
 
                 Assert.That(message.text, Is.EqualTo("科技研究完成：农业基础"));
                 Assert.That(background.color, Is.Not.EqualTo(errorColor));
@@ -1207,15 +1292,17 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void GameSceneController_ShouldSubscribeTurnSettlement_ForTechnologyCompletionToast()
+        public void GameSceneController_ShouldSubscribeSettlementStore_ForTechnologyCompletionToast()
         {
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
             var content = File.ReadAllText(_gameSceneControllerPath);
-            StringAssert.Contains("_cache.OnTurnSettled += OnTurnSettled;", content,
-                "GameSceneController 应订阅结算事件以展示科技完成提示。");
-            StringAssert.Contains("_cache.OnTurnSettled -= OnTurnSettled;", content,
-                "GameSceneController 停用时应取消订阅结算事件。");
+            StringAssert.Contains("SettlementStore", content,
+                "GameSceneController 应通过 SettlementStore 展示科技完成提示。");
+            StringAssert.Contains("_settlementStore?.State.Subscribe", content,
+                "GameSceneController 应订阅结算 Store 状态。");
+            StringAssert.DoesNotContain("OnTurnSettled", content,
+                "GameSceneController 不应再订阅 legacy GameStateCache 结算事件。");
             StringAssert.Contains("technology_completed", content,
                 "GameSceneController 应识别 technology_completed 结算事件。");
             StringAssert.Contains("科技研究完成：", content,
@@ -1242,9 +1329,10 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_gameSceneControllerPath), Is.True, "GameSceneController.cs 不存在。");
 
             var content = File.ReadAllText(_gameSceneControllerPath);
-            StringAssert.Contains("EnsureComponent<SettlementTimeline>(canvas.transform, \"SettlementTimeline\");", content);
-            StringAssert.Contains("EnsureComponent<TurnReportPanel>(canvas.transform, \"TurnReportPanel\");", content);
-            StringAssert.Contains("EnsureRuntimeComponent<SettlementPlaybackController>(\"SettlementPlaybackController\");", content);
+            StringAssert.DoesNotContain("EnsureComponent<ResourceHUD>", content,
+                "ResourceHUD 应由 ResourcePanel prefab + VContainer 场景注册装配，GameSceneController 不应运行时补组件。");
+            StringAssert.DoesNotContain("EnsureRuntimeComponent<SettlementPlaybackController>", content,
+                "Settlement playback 应由 VContainer + 场景实例装配，GameSceneController 不应动态创建。");
             Assert.That(content, Does.Not.Contain("EnsureComponent<StrategicPanel>"),
                 "Game 场景不应再装配 StrategicPanel。");
             Assert.That(content, Does.Not.Contain("EnsureComponent<UnitOrdersPanel>"),
@@ -1255,17 +1343,18 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldOnlyIssueMoveOrders_FromAuthoritativePreview()
+        public void MapPlanningInputController_ShouldOnlyIssueMoveOrders_FromAuthoritativePreview()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
             StringAssert.Contains("TryIssueAuthoritativeMoveOrder(node.NodeId)", content,
                 "移动点击应只通过服务端权威 preview 结果发单。");
             StringAssert.Contains("TryGetCurrentMovePreview", content,
-                "MapInputHandler 应读取当前服务端 preview，而不是继续走本地规则。");
-            StringAssert.Contains("ResolveMovePreviewErrorMessage", content,
-                "无效 preview 应给出明确反馈。");
+                "MapPlanningInputController 应读取当前服务端 preview，而不是继续走本地规则。");
+            Assert.That(File.Exists(_movePreviewPresenterPath), Is.True, "MovePreviewPresenter.cs 不存在。");
+            StringAssert.Contains("ResolveErrorMessage", File.ReadAllText(_movePreviewPresenterPath),
+                "无效 preview 应通过 presenter 给出明确反馈。");
             Assert.That(content, Does.Not.Contain("Backward-compatible quick move"),
                 "不应继续保留基于本地高亮的快速移动兼容壳。");
             Assert.That(content, Does.Not.Contain("moveRange = 4"),
@@ -1273,35 +1362,36 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldRequireExplicitBuildCityContext()
+        public void MapPlanningInputController_ShouldRequireExplicitBuildCityContext()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
+            var buildPlacementContent = ReadMapPlanningBuildPlacementSources(_mapPlanningInputControllerPath);
             StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
                 "建造入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
                 "资源建筑入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementCity(string buildingType, string cityId)", content,
                 "城内建筑入口应显式要求 cityId。");
-            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", content,
+            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", buildPlacementContent,
                 "建造模式应保存显式传入的 cityId，而不是临时猜测。");
-            StringAssert.Contains("GameIntents.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
+            StringAssert.Contains("BuildToken(nodeId, buildingType, _activeBuildCityId);", buildPlacementContent,
                 "建造消息必须透传显式 cityId。");
             Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
                 "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");
             Assert.That(content, Does.Not.Contain("TryResolveBuildCityId"),
                 "不应再在客户端本地猜测 cityId。");
-            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", content,
+            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", buildPlacementContent,
                 "缺少 cityId 时应在进入建造模式前直接失败。");
         }
 
         [Test]
-        public void MapInputHandler_ShouldNotGateCommandsByLocalPlacementOrTargetRules()
+        public void MapPlanningInputController_ShouldNotGateCommandsByLocalPlacementOrTargetRules()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
             Assert.That(content, Does.Not.Contain("territoryOnlyBuildingTypes"),
                 "Chunk 8A 后不应再靠本地 territoryOnlyBuildingTypes 过滤发送建造。");
             Assert.That(content, Does.Not.Contain("globalPlacementBuildingTypes"),
@@ -1315,11 +1405,11 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void MapInputHandler_ShouldPreferOwnedUnitSelectionBeforeBuildingInfo_OnSharedCityCoreTile()
+        public void MapPlanningInputController_ShouldPreferOwnedUnitSelectionBeforeBuildingInfo_OnSharedCityCoreTile()
         {
-            Assert.That(File.Exists(_mapInputHandlerPath), Is.True, "MapInputHandler.cs 不存在。");
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
-            var content = File.ReadAllText(_mapInputHandlerPath);
+            var content = File.ReadAllText(_mapPlanningInputControllerPath);
             var unitSelectionIndex = content.IndexOf("TrySelectOwnedUnitFromNodeClick()", StringComparison.Ordinal);
             var buildingInfoIndex = content.IndexOf("TryOpenBuildingInfoFromClick()", StringComparison.Ordinal);
 
@@ -1330,13 +1420,48 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
+        public void MapPlanningInputController_ShouldBeSingleUnityEntryAndMovePlanningHelpersOutOfMapInput()
+        {
+            Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
+
+            var mapDirectory = Path.GetDirectoryName(_mapPlanningInputControllerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            var mapPlanningInputControllerFiles = Directory
+                .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
+                .Select(Path.GetFileName)
+                .OrderBy(fileName => fileName, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(mapPlanningInputControllerFiles, Is.EqualTo(new[] { "MapPlanningInputController.cs" }),
+                "MapPlanningInputController 应保持单一 Unity 入口，不应继续通过 partial 文件膨胀。");
+            Assert.That(File.Exists(Path.Combine(mapDirectory, "MapInputHandler.cs")), Is.False,
+                "旧 MapInputHandler 命名应彻底移除。");
+
+            var oldInputDirectory = Path.Combine(mapDirectory, "Input");
+            var oldInputScripts = Directory.Exists(oldInputDirectory)
+                ? Directory.GetFiles(oldInputDirectory, "*.cs", SearchOption.AllDirectories)
+                : Array.Empty<string>();
+            Assert.That(oldInputScripts, Is.Empty,
+                "规划输入和反馈 helper 不应继续停留在 Presentation/Map/Input。");
+
+            var planningRoot = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Planning");
+            Assert.That(Directory.Exists(planningRoot), Is.True, "Planning 表现层包不存在。");
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/BuildPlacementGhostPresenter.cs")), Is.True);
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/MovePreviewPresenter.cs")), Is.True);
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Feedback/MovePreviewGhostPresenter.cs")), Is.True);
+            Assert.That(File.Exists(Path.Combine(planningRoot, "Input/State/PendingMoveState.cs")), Is.True);
+        }
+
+        [Test]
         public void CityCoreRuntimeActions_ShouldUseCityCoreWithoutCastleAlias()
         {
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
 
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+            var resolverContent = File.ReadAllText(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionResolver.cs"));
 
-            StringAssert.Contains("\"city_core\"", registrarContent,
+            StringAssert.Contains("\"city_core\"", resolverContent,
                 "主城动作注册必须显式接受 city_core。");
             Assert.That(registrarContent, Does.Not.Contain("= \"castle\""),
                 "主城动作注册不应再保留 castle 运行时别名。");
@@ -1360,7 +1485,9 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_cityCoreHpBarPath), Is.True, "CityCoreHPBar.cs 不存在。");
             Assert.That(File.Exists(_cityCoreHpBarOverlayControllerPath), Is.True, "CityCoreHpBarOverlayController.cs 不存在。");
             Assert.That(File.Exists(_buildingViewPath), Is.True, "BuildingView.cs 不存在。");
-            Assert.That(File.Exists(_buildCommandPanelPath), Is.True, "BuildCommandPanel.cs 不存在。");
+            Assert.That(File.Exists(_buildCommandPanelPath), Is.False, "BuildCommandPanel.cs 应已删除。");
+            Assert.That(File.Exists(_buildCatalogBinderPath), Is.True, "BuildCatalogUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_buildCatalogContextStorePath), Is.True, "BuildCatalogContextStore.cs 不存在。");
             Assert.That(File.Exists(_cityCorePrefabAssetPath), Is.True, "CityCore.prefab 不存在。");
             Assert.That(File.Exists(_cityCoreHpBarPrefabPath), Is.True, "CityCoreHPBar.prefab 不存在。");
             Assert.That(File.Exists(_cityCoreProductionPanelPrefabPath), Is.False, "CityCoreProductionPanel.prefab 应已删除。");
@@ -1368,7 +1495,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             var hpBarContent = File.ReadAllText(_cityCoreHpBarPath);
             var overlayContent = File.ReadAllText(_cityCoreHpBarOverlayControllerPath);
             var buildingViewContent = File.ReadAllText(_buildingViewPath);
-            var buildCommandPanelContent = File.ReadAllText(_buildCommandPanelPath);
+            var buildBinderContent = File.ReadAllText(_buildCatalogBinderPath);
+            var buildContextContent = File.ReadAllText(_buildCatalogContextStorePath);
             var hpBarPrefabContent = File.ReadAllText(_cityCoreHpBarPrefabPath);
 
             Assert.That(hpBarContent, Does.Not.Contain("Castle"),
@@ -1377,14 +1505,10 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "主城覆盖层脚本不应再保留 Castle 命名。");
             Assert.That(buildingViewContent, Does.Not.Contain("Castle"),
                 "建筑视图脚本不应再保留 Castle 命名。");
-            Assert.That(buildCommandPanelContent, Does.Not.Contain("SetCastleContext"),
-                "建造面板不应再保留 SetCastleContext 命名。");
-            Assert.That(buildCommandPanelContent, Does.Not.Contain("ClearCastleContext"),
-                "建造面板不应再保留 ClearCastleContext 命名。");
-            StringAssert.Contains("SetCityCoreContext", buildCommandPanelContent,
-                "建造面板应改用 CityCore 命名的上下文入口。");
-            StringAssert.Contains("ClearCityCoreContext", buildCommandPanelContent,
-                "建造面板应改用 CityCore 命名的上下文清理入口。");
+            StringAssert.Contains("PlanningToolService", buildBinderContent,
+                "建造目录点击应通过最终规划工具服务。");
+            StringAssert.Contains("CityCoreNodeId", buildContextContent,
+                "建造目录应保留主城节点上下文。");
             StringAssert.Contains("Panoptes.Presentation::Panoptes.Presentation.UI.HUD.CityCoreHPBar", hpBarPrefabContent,
                 "主城血条 prefab 应绑定 CityCoreHPBar 组件。");
         }
@@ -1467,6 +1591,24 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_settlementPlaybackControllerPath), Is.True, "SettlementPlaybackController.cs 不存在。");
 
             var content = File.ReadAllText(_settlementPlaybackControllerPath);
+            StringAssert.Contains("SettlementStore", content,
+                "结算回放应订阅 SettlementStore。");
+            StringAssert.Contains("MapRenderer _mapRenderer", content,
+                "结算回放应使用注入的 MapRenderer。");
+            StringAssert.Contains("[Inject]", content,
+                "结算回放应由 VContainer 注入依赖。");
+            StringAssert.Contains(".State.Subscribe", content,
+                "结算回放应订阅 Store 状态流。");
+            StringAssert.Contains("state.Sequence", content,
+                "结算回放应按 Store sequence 去重。");
+            StringAssert.DoesNotContain("GameStateCache", content,
+                "结算回放不应直接消费 legacy GameStateCache。");
+            StringAssert.DoesNotContain("OnTurnSettled", content,
+                "结算回放不应订阅 legacy OnTurnSettled。");
+            StringAssert.DoesNotContain("MapRenderer.Instance", content,
+                "结算回放应使用注入的 MapRenderer。");
+            StringAssert.DoesNotContain("EnsureInstance", content,
+                "结算回放不应保留动态创建入口。");
             StringAssert.Contains("case \"city_founded\":", content,
                 "结算回放应消费建城事件。");
             StringAssert.Contains("case \"building_status_changed\":", content,
@@ -1494,23 +1636,45 @@ namespace Panoptes.Tests.EditMode.Lobby
         }
 
         [Test]
-        public void UnitInfoPanel_ShouldOwnPerUnitPlanningSummary_AndDirectOrderActions()
+        public void UnitInfoPanel_ShouldRenderThroughViewModelBinder_AndDelegateDirectOrderActions()
         {
             Assert.That(File.Exists(_unitInfoPanelPath), Is.True, "UnitInfoPanelController.cs 不存在。");
+            Assert.That(File.Exists(_unitInfoDirectOrderPanelBinderPath), Is.True, "UnitInfoDirectOrderPanelBinder.cs 不存在。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoPlanningSummaryPresenter.cs")),
+                Is.False,
+                "UnitInfo 规划摘要应由 ViewModel/Binder 渲染，不应保留 legacy presenter。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoHpStateResolver.cs")),
+                Is.False,
+                "UnitInfo HP 应由 ViewModel/Binder 渲染，不应保留 legacy resolver。");
+            Assert.That(
+                File.Exists(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/UnitInfoDirectOrderStateResolver.cs")),
+                Is.False,
+                "UnitInfo direct-order 状态应由 ViewModel 投影，不应保留 legacy resolver。");
 
             var content = File.ReadAllText(_unitInfoPanelPath);
-            StringAssert.Contains("PlanningDraftCache", content,
-                "UnitInfoPanel 应直接消费规划草稿缓存。");
-            StringAssert.Contains("GetOrdersInDisplayOrder", content,
-                "UnitInfoPanel 应展示当前规划中的单位命令摘要。");
-            StringAssert.Contains("BeginMoveSelection", content,
-                "UnitInfoPanel 应直接承载移动命令入口。");
-            StringAssert.Contains("BeginAttackSelection", content,
-                "UnitInfoPanel 应直接承载攻击命令入口。");
-            StringAssert.Contains("IssueHoldOrder", content,
-                "UnitInfoPanel 应直接承载待命命令入口。");
-            StringAssert.Contains("BeginChargeSelection", content,
-                "UnitInfoPanel 应直接承载冲锋命令入口。");
+            var directOrderContent = File.ReadAllText(_unitInfoDirectOrderPanelBinderPath);
+            StringAssert.Contains("UnitInfoViewModel", content,
+                "UnitInfoPanel 应通过 ViewModel 选择当前单位。");
+            StringAssert.Contains("UnitInfoUguiBinder", content,
+                "UnitInfoPanel 应通过 Binder 渲染文本、HP、规划摘要和 direct-order 状态。");
+            StringAssert.DoesNotContain("PlanningDraftCache", content,
+                "UnitInfoPanel 不应再直接消费规划草稿缓存。");
+            StringAssert.DoesNotContain("GameStateCache", content,
+                "UnitInfoPanel 不应再直接消费游戏状态缓存。");
+            StringAssert.DoesNotContain("StaticCatalogCache", content,
+                "UnitInfoPanel 不应再直接消费静态目录缓存。");
+            StringAssert.Contains("UnitInfoDirectOrderPanelBinder", content,
+                "UnitInfoPanel 应委托 direct-order helper 渲染和绑定按钮。");
+            StringAssert.Contains("BeginMoveSelection", directOrderContent,
+                "direct-order helper 应绑定移动命令入口。");
+            StringAssert.Contains("BeginAttackSelection", directOrderContent,
+                "direct-order helper 应绑定攻击命令入口。");
+            StringAssert.Contains("IssueHoldOrder", directOrderContent,
+                "direct-order helper 应绑定待命命令入口。");
+            StringAssert.Contains("BeginChargeSelection", directOrderContent,
+                "direct-order helper 应绑定冲锋命令入口。");
         }
 
         [Test]
@@ -1589,8 +1753,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                 case MsgGameInit gameInit:
                     gameEvent.GameInit = gameInit;
                     break;
-                case MsgTurnSettlement settlement:
-                    gameEvent.TurnSettlement = settlement;
+                case MsgGameSync gameSync:
+                    gameEvent.GameSync = gameSync;
                     break;
                 default:
                     throw new AssertionException($"不支持的测试消息类型: {message?.GetType().Name ?? "null"}");
@@ -1612,6 +1776,35 @@ namespace Panoptes.Tests.EditMode.Lobby
             method.Invoke(instance, null);
         }
 
+        private static void InjectGameSceneController(
+            GameSceneController controller,
+            GameStateStore gameStateStore,
+            SettlementStore settlementStore,
+            GameOverStore gameOverStore,
+            GameplayFeedbackStore feedbackStore,
+            StaticCatalogStore staticCatalogStore,
+            ErrorToast errorToast)
+        {
+            var method = typeof(GameSceneController).GetMethod("Construct",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new AssertionException("缺少 GameSceneController.Construct 注入方法。");
+            }
+
+            method.Invoke(
+                controller,
+                new object[]
+                {
+                    gameStateStore,
+                    settlementStore,
+                    gameOverStore,
+                    feedbackStore,
+                    staticCatalogStore,
+                    errorToast
+                });
+        }
+
         private static void InvokeStaticMessageHandler(string methodName, object message)
         {
             var method = typeof(Panoptes.Core.Application.Handler.GameMessageHandler).GetMethod(methodName,
@@ -1622,6 +1815,40 @@ namespace Panoptes.Tests.EditMode.Lobby
             }
 
             method.Invoke(null, new[] { message });
+        }
+
+        private static string ReadMapPlanningInputControllerSources(string mapPlanningInputControllerPath)
+        {
+            Assert.That(File.Exists(mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
+
+            var mapDirectory = Path.GetDirectoryName(mapPlanningInputControllerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            return string.Join("\n", Directory
+                .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
+                .OrderBy(file => file, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+        }
+
+        private static string ReadMapPlanningBuildPlacementSources(string mapPlanningInputControllerPath)
+        {
+            var mapDirectory = Path.GetDirectoryName(mapPlanningInputControllerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            return string.Join("\n", new[]
+            {
+                mapPlanningInputControllerPath,
+                Path.Combine(mapDirectory!, "MapBuildPlacementSession.cs"),
+                Path.Combine(mapDirectory!, "../Planning/Input/MapBuildPlacementSession.cs")
+            }
+                .Select(Path.GetFullPath)
+                .Where(File.Exists)
+                .Select(File.ReadAllText));
+        }
+
+        private static PlanningDraftCache CreatePlanningDraftCache()
+        {
+            return new GameObject("PlanningDraftCache").AddComponent<PlanningDraftCache>();
         }
 
         private static void SetSingletonInstance(Type type, object value)

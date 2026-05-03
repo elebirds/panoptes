@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/directory-structure.md","reason":"Backend package ownership, map action ownership, and event Apply write path."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"M6 touches static units, order validation, map action settlement, events, and combat upkeep."}
+{"file":"docs/2026-04-30-backend-final-roadmap.md","reason":"M6 final-goal scope and acceptance criteria."}

@@ -7,9 +7,9 @@
  *************************************************/
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Panoptes.Presentation.Map
 {
@@ -56,6 +56,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string speedFloatParam = "moveSpeed";
         [SerializeField] private string attackTriggerParam = "attack";
         [SerializeField] private string attackStateName = "Attack";
+        [SerializeField] private float attackReturnToIdleSeconds = 0.8f;
         [SerializeField] private bool useStateFallbackWhenNoParams = false;
         [SerializeField] private bool forceStatePlayback = true;
         [SerializeField] private bool preferDirectStatePlay = true;
@@ -91,10 +92,13 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private RuntimeAnimatorController bowAnimatorController;
         [SerializeField] private string unarmedIdleState = "infantry_01_idle";
         [SerializeField] private string unarmedMoveState = "infantry_03_run";
+        [SerializeField] private string unarmedAttackState = "infantry_04_attack_A";
         [SerializeField] private string swordIdleState = "twohanded_01_idle";
         [SerializeField] private string swordMoveState = "twohanded_03_run";
+        [SerializeField] private string swordAttackState = "twohanded_04_attack_A";
         [SerializeField] private string bowIdleState = "archer_01_idle";
         [SerializeField] private string bowMoveState = "archer_03_run";
+        [SerializeField] private string bowAttackState = "archer_04_attack_A";
         [SerializeField] private string[] unarmedUnitTypeAliases = { "unarmed", "settler", "civilian", "fighter_basic", "fighter", "militia", "pioneer", "expander", "engineer" };
         [SerializeField] private string[] swordUnitTypeAliases = { "sword", "swordsman", "melee", "fighter_sword", "infantry", "cavalry" };
         [SerializeField] private string[] bowUnitTypeAliases = { "bow", "archer", "ranged", "fighter_bow" };
@@ -378,11 +382,23 @@ namespace Panoptes.Presentation.Map
                 if (attackStateHash != 0 && member.animator.HasState(0, attackStateHash))
                 {
                     member.animator.CrossFade(attackStateHash, Mathf.Max(0f, stateCrossFadeSeconds), 0);
+                    member.isMoveStatePlaying = false;
                     played = true;
                 }
             }
 
+            if (played)
+            {
+                StartCoroutine(ReturnMembersToIdleAfterAttack());
+            }
+
             return played;
+        }
+
+        private IEnumerator ReturnMembersToIdleAfterAttack()
+        {
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, attackReturnToIdleSeconds));
+            ForceIdlePose();
         }
 
         public void OnUnitBound(string unitId, string unitType, string faction)
@@ -1167,6 +1183,7 @@ namespace Panoptes.Presentation.Map
             RuntimeAnimatorController controller;
             string idleState;
             string moveState;
+            string attackState;
 
             switch (variant)
             {
@@ -1174,24 +1191,27 @@ namespace Panoptes.Presentation.Map
                     controller = bowAnimatorController;
                     idleState = bowIdleState;
                     moveState = bowMoveState;
+                    attackState = bowAttackState;
                     break;
                 case UnitRoleVariant.Sword:
                     controller = swordAnimatorController;
                     idleState = swordIdleState;
                     moveState = swordMoveState;
+                    attackState = swordAttackState;
                     break;
                 default:
                     controller = unarmedAnimatorController;
                     idleState = unarmedIdleState;
                     moveState = unarmedMoveState;
+                    attackState = unarmedAttackState;
                     break;
             }
 
-            ApplyAnimatorController(controller, idleState, moveState);
+            ApplyAnimatorController(controller, idleState, moveState, attackState);
             ApplyWeaponVisualByRole(variant);
         }
 
-        private void ApplyAnimatorController(RuntimeAnimatorController controller, string idleState, string moveState)
+        private void ApplyAnimatorController(RuntimeAnimatorController controller, string idleState, string moveState, string attackState)
         {
             var changedController = false;
             var changedStates = false;
@@ -1225,6 +1245,12 @@ namespace Panoptes.Presentation.Map
             if (!string.IsNullOrWhiteSpace(moveState) && !string.Equals(moveStateName, moveState, StringComparison.Ordinal))
             {
                 moveStateName = moveState;
+                changedStates = true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(attackState) && !string.Equals(attackStateName, attackState, StringComparison.Ordinal))
+            {
+                attackStateName = attackState;
                 changedStates = true;
             }
 
@@ -1604,7 +1630,11 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var cap = Mathf.Max(1, maxVisibleRenderersPerMember);
+            var options = new SquadUnitRenderBudgetPresenter.Options(
+                maxVisibleRenderersPerMember,
+                disableCastShadows,
+                disableReceiveShadows,
+                rendererPriorityKeywords);
             for (var i = 0; i < members.Length; i++)
             {
                 var member = members[i];
@@ -1613,108 +1643,8 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                ApplyMemberRenderBudget(member.root, cap);
+                SquadUnitRenderBudgetPresenter.Apply(member.root, options);
             }
-        }
-
-        private void ApplyMemberRenderBudget(Transform memberRoot, int rendererCap)
-        {
-            var renderers = memberRoot.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length == 0)
-            {
-                return;
-            }
-
-            var scored = new List<(Renderer renderer, int score)>(renderers.Length);
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var renderer = renderers[i];
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                if (renderer.gameObject == null || !renderer.gameObject.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                var score = CalculateRendererScore(renderer);
-                scored.Add((renderer, score));
-            }
-
-            scored.Sort((a, b) => b.score.CompareTo(a.score));
-            var keepSet = new HashSet<Renderer>();
-            for (var i = 0; i < scored.Count && i < rendererCap; i++)
-            {
-                var renderer = scored[i].renderer;
-                if (renderer != null)
-                {
-                    keepSet.Add(renderer);
-                }
-            }
-
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var renderer = renderers[i];
-                if (renderer == null)
-                {
-                    continue;
-                }
-
-                var keep = keepSet.Contains(renderer);
-                renderer.enabled = keep;
-
-                if (!keep)
-                {
-                    continue;
-                }
-
-                if (disableCastShadows)
-                {
-                    renderer.shadowCastingMode = ShadowCastingMode.Off;
-                }
-
-                if (disableReceiveShadows)
-                {
-                    renderer.receiveShadows = false;
-                }
-            }
-        }
-
-        private int CalculateRendererScore(Renderer renderer)
-        {
-            if (renderer == null)
-            {
-                return int.MinValue;
-            }
-
-            var score = 0;
-            var normalizedName = NormalizeToken(renderer.name);
-            var goName = renderer.gameObject != null ? NormalizeToken(renderer.gameObject.name) : string.Empty;
-            if (rendererPriorityKeywords != null)
-            {
-                for (var i = 0; i < rendererPriorityKeywords.Length; i++)
-                {
-                    var key = NormalizeToken(rendererPriorityKeywords[i]);
-                    if (string.IsNullOrEmpty(key))
-                    {
-                        continue;
-                    }
-
-                    if (normalizedName.Contains(key) || goName.Contains(key))
-                    {
-                        score += 100 - i;
-                    }
-                }
-            }
-
-            if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
-            {
-                score += Mathf.Clamp(skinned.sharedMesh.vertexCount / 500, 0, 120);
-            }
-
-            return score;
         }
 
         private bool IsRendererCountOverThreshold()
@@ -1733,23 +1663,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var renderers = member.root.GetComponentsInChildren<Renderer>(true);
-                if (renderers == null || renderers.Length == 0)
-                {
-                    continue;
-                }
-
-                var activeRendererCount = 0;
-                for (var r = 0; r < renderers.Length; r++)
-                {
-                    var renderer = renderers[r];
-                    if (renderer != null && renderer.gameObject != null && renderer.gameObject.activeInHierarchy)
-                    {
-                        activeRendererCount++;
-                    }
-                }
-
-                if (activeRendererCount > threshold)
+                if (SquadUnitRenderBudgetPresenter.IsOverThreshold(member.root, threshold))
                 {
                     return true;
                 }

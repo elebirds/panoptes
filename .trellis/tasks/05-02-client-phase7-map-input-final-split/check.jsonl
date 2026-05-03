@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify extracted helpers stay presentation-only and non-authoritative."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated-file, protocol, singleton, and compile gates."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapBuildPlacementSession.cs", "reason": "Verified build state moved out without adding protocol dependencies or legality checks."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapMoveCommandSession.cs", "reason": "Verified move preview/pending state moved out and still relies on server preview/cache data."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningCacheEventBridge.cs", "reason": "Verified cache subscription lifecycle is isolated and symmetric."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapUnitDamagePopupPresenter.cs", "reason": "Verified damage popup state is presentation-only."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs", "reason": "Verified remaining fields are scene adapter references/settings rather than planning mode state."}

@@ -8,7 +8,7 @@
 
 using UnityEngine;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Application.Cache;
+using System.Collections.Generic;
 
 namespace Panoptes.Presentation.Map
 {
@@ -110,11 +110,14 @@ namespace Panoptes.Presentation.Map
         public int TakeoverRequired { get; private set; }
         public bool IsCityCoreNode { get; private set; }
         public bool IsSafeZoneNode { get; private set; }
+        public bool IsCurrentlyVisible => _isCurrentlyVisible;
+        public bool IsMemoryVisible => _isMemoryVisible;
 
         private ResourcePointView _resourceInstance;
         private string _resourceType = string.Empty;
         private BuildingView _buildingInstance;
         private string _buildingType = string.Empty;
+        private string _localPlayerId = string.Empty;
         private bool _roadVisibleWanted;
         private bool _resourceVisibleWanted;
         private bool _isCurrentlyVisible = true;
@@ -138,6 +141,7 @@ namespace Panoptes.Presentation.Map
         private bool _fogTextureLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
             new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
+        private IReadOnlyDictionary<string, CatalogBuildingDto> _buildingCatalog;
 
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int BaseMapStId = Shader.PropertyToID("_BaseMap_ST");
@@ -188,7 +192,7 @@ namespace Panoptes.Presentation.Map
             }
 
             NodeId = node.Id ?? string.Empty;
-            GridPos = new Vector2Int(node.X, node.Y);
+            GridPos = new Vector2Int(node.Q, node.R);
             name = $"Node_{NodeId}";
             BuildingStatus = NormalizeToken(node.BuildingStatus);
             CityId = node.CityId ?? string.Empty;
@@ -209,6 +213,21 @@ namespace Panoptes.Presentation.Map
             }
             ApplyObservationState(node);
             SetHighlightVisible(false);
+        }
+
+        public void SetLocalPlayerId(string localPlayerId)
+        {
+            _localPlayerId = localPlayerId ?? string.Empty;
+            if (_buildingInstance != null)
+            {
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
+            }
+        }
+
+        public void SetBuildingCatalog(IReadOnlyDictionary<string, CatalogBuildingDto> buildingCatalog)
+        {
+            _buildingCatalog = buildingCatalog;
+            _runtimeBuildingPrefabCache.Clear();
         }
 
         /// <summary>
@@ -630,7 +649,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var dir = new Vector3(direction.x, 0f, direction.y);
+            var dir = HexGrid.AxialToWorld(direction.x, direction.y, 1f);
             if (dir.sqrMagnitude <= 0.0001f)
             {
                 dir = Vector3.forward;
@@ -901,6 +920,7 @@ namespace Panoptes.Presentation.Map
             if (_buildingInstance != null)
             {
                 _buildingInstance.SetBuildingType(normalized);
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
                 _buildingInstance.SetOwner(ownerId);
                 _buildingInstance.SetHitPoints(buildingHp, buildingMaxHp);
                 _buildingInstance.SetPlacementGhost(isGhost);
@@ -933,6 +953,7 @@ namespace Panoptes.Presentation.Map
             if (_buildingInstance != null)
             {
                 _buildingInstance.SetBuildingType(normalized);
+                _buildingInstance.SetLocalPlayerId(_localPlayerId);
                 _buildingInstance.SetOwner(ownerId);
                 _buildingInstance.SetPlacementGhost(true, ghostColor);
             }
@@ -975,6 +996,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _buildingInstance = Instantiate(prefab, buildingAnchor, false);
+            _buildingInstance.SetLocalPlayerId(_localPlayerId);
         }
 
         private Material GetTerrainMaterial(string terrain)
@@ -1133,16 +1155,15 @@ namespace Panoptes.Presentation.Map
             var prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{lookupKey}");
             if (prefab == null)
             {
-                var cache = StaticCatalogCache.Instance;
-                if (cache != null && cache.TryGetBuilding(lookupKey, out var entry) && entry != null)
+                if (_buildingCatalog != null &&
+                    _buildingCatalog.TryGetValue(lookupKey, out var entry) &&
+                    entry != null &&
+                    !string.IsNullOrWhiteSpace(entry.PrefabKey))
                 {
-                    if (!string.IsNullOrWhiteSpace(entry.prefab_key))
+                    prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{NormalizeToken(entry.PrefabKey)}");
+                    if (prefab == null)
                     {
-                        prefab = LoadBuildingPrefabByPath($"{buildingPrefabResourcesRoot}/{NormalizeToken(entry.prefab_key)}");
-                        if (prefab == null)
-                        {
-                            prefab = LoadBuildingPrefabByPath(NormalizeToken(entry.prefab_key));
-                        }
+                        prefab = LoadBuildingPrefabByPath(NormalizeToken(entry.PrefabKey));
                     }
                 }
             }

@@ -22,7 +22,7 @@ type Harness struct {
 type TurnRecord struct {
 	Turn          int
 	PlanningStart *pb.MsgPlanningStart
-	Settlement    *pb.MsgTurnSettlement
+	GameSync      *pb.MsgGameSync
 	GameOver      *pb.MsgGameOver
 	Summary       StateSummary
 }
@@ -37,18 +37,15 @@ func NewHarness(def *scenario.Definition) (*Harness, error) {
 	if def.State == nil {
 		return nil, fmt.Errorf("scenario state is nil")
 	}
-	if len(def.PlayerIDs) == 0 {
-		return nil, fmt.Errorf("scenario players are empty")
+	participantSpecs := def.ParticipantSpecs()
+	if len(participantSpecs) == 0 {
+		return nil, fmt.Errorf("scenario participants are empty")
 	}
 
 	transport := NewCaptureTransport()
-	participants := make([]game.ParticipantSpec, 0, len(def.PlayerIDs))
-	for idx, playerID := range def.PlayerIDs {
-		username := playerID
-		if idx < len(def.Usernames) && def.Usernames[idx] != "" {
-			username = def.Usernames[idx]
-		}
-		participants = append(participants, game.NewHumanParticipantSpec(playerID, username))
+	participants := make([]game.ParticipantSpec, 0, len(participantSpecs))
+	for _, spec := range participantSpecs {
+		participants = append(participants, game.ParticipantSpec(spec))
 	}
 
 	room := game.NewPreparedRoom(
@@ -74,7 +71,7 @@ func (h *Harness) Start() error {
 		staticdata.SetDefault(h.definition.Catalog)
 	}
 	h.room.Start()
-	for _, playerID := range h.definition.PlayerIDs {
+	for _, playerID := range h.definition.HumanPlayerIDs() {
 		if err := h.room.HandleGameCommand(cmddispatch.InboundContext{
 			PlayerID:  playerID,
 			RequestID: "bootstrap-sync-" + playerID,
@@ -129,14 +126,14 @@ func (h *Harness) WaitPlanningStart(playerID string, turn int, timeout time.Dura
 	return nil, fmt.Errorf("planning start turn=%d not received within %s", turn, timeout)
 }
 
-func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
+func (h *Harness) WaitGameSync(playerID string, turn int, timeout time.Duration) (*TurnRecord, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		msgs := h.transport.Snapshot(playerID)
-		settlement := latestMessage[*pb.MsgTurnSettlement](msgs, func(msg *pb.MsgTurnSettlement) bool {
+		syncMsg := latestMessage[*pb.MsgGameSync](msgs, func(msg *pb.MsgGameSync) bool {
 			return int(msg.GetTurn()) == turn
 		})
-		if settlement == nil {
+		if syncMsg == nil {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
@@ -144,7 +141,7 @@ func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duratio
 		record := &TurnRecord{
 			Turn:          turn,
 			PlanningStart: latestMessage[*pb.MsgPlanningStart](msgs, func(msg *pb.MsgPlanningStart) bool { return int(msg.GetTurn()) == turn }),
-			Settlement:    settlement,
+			GameSync:      syncMsg,
 			Summary:       BuildStateSummary(h.room.State()),
 		}
 		if record.Summary.IsOver {
@@ -156,7 +153,7 @@ func (h *Harness) WaitSettlement(playerID string, turn int, timeout time.Duratio
 		}
 		return record, nil
 	}
-	return nil, fmt.Errorf("settlement turn=%d not received within %s", turn, timeout)
+	return nil, fmt.Errorf("game sync turn=%d not received within %s", turn, timeout)
 }
 
 func (h *Harness) Messages(playerID string) []proto.Message {

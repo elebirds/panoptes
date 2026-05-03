@@ -15,49 +15,58 @@ namespace Panoptes.Editor
 
         static CommonOverlayPrefabBuilder()
         {
-            EditorApplication.delayCall += AutoEnsurePrefabs;
+            EditorApplication.delayCall += ValidatePrefabAssets;
         }
 
         [MenuItem("Panoptes/UI/Rebuild Common Overlay Prefabs")]
         public static void RebuildPrefabs()
         {
-            EnsureErrorToastPrefab(ErrorToastRuntimePrefabPath, true);
-            EnsureErrorToastPrefab(ErrorToastUiPrefabPath, true);
-            EnsureConfirmDialogPrefab(ConfirmDialogRuntimePrefabPath, true);
-            EnsureConfirmDialogPrefab(ConfirmDialogUiPrefabPath, true);
+            SaveErrorToastPrefab(ErrorToastRuntimePrefabPath);
+            SaveErrorToastPrefab(ErrorToastUiPrefabPath);
+            SaveConfirmDialogPrefab(ConfirmDialogRuntimePrefabPath);
+            SaveConfirmDialogPrefab(ConfirmDialogUiPrefabPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("[CommonOverlayPrefabBuilder] Rebuilt common overlay prefabs.");
         }
 
-        private static void AutoEnsurePrefabs()
+        private static void ValidatePrefabAssets()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
 
-            EnsureErrorToastPrefab(ErrorToastRuntimePrefabPath, false);
-            EnsureErrorToastPrefab(ErrorToastUiPrefabPath, false);
-            EnsureConfirmDialogPrefab(ConfirmDialogRuntimePrefabPath, false);
-            EnsureConfirmDialogPrefab(ConfirmDialogUiPrefabPath, false);
-            AssetDatabase.SaveAssets();
+            WarnIfPrefabInvalid<ErrorToast>(ErrorToastRuntimePrefabPath, IsErrorToastMissingOrEmpty);
+            WarnIfPrefabInvalid<ErrorToast>(ErrorToastUiPrefabPath, IsErrorToastMissingOrEmpty);
+            WarnIfPrefabInvalid<ConfirmDialog>(ConfirmDialogRuntimePrefabPath, IsConfirmDialogMissingOrEmpty);
+            WarnIfPrefabInvalid<ConfirmDialog>(ConfirmDialogUiPrefabPath, IsConfirmDialogMissingOrEmpty);
         }
 
-        private static void EnsureErrorToastPrefab(string prefabPath, bool forceRebuild)
+        public static GameObject CreateErrorToastPrefabRoot()
         {
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (!forceRebuild && !IsErrorToastMissingOrEmpty(existing))
-            {
-                return;
-            }
-
-            EnsureFolder(prefabPath);
             var root = new GameObject("ErrorToast", typeof(RectTransform));
+            var toast = root.AddComponent<ErrorToast>();
+            toast.EditorRebuildUiForPrefab();
+            NormalizeRootTransform(root);
+            return root;
+        }
+
+        public static GameObject CreateConfirmDialogPrefabRoot()
+        {
+            var root = new GameObject("ConfirmDialog", typeof(RectTransform));
+            var dialog = root.AddComponent<ConfirmDialog>();
+            dialog.EditorRebuildUiForPrefab();
+            NormalizeRootTransform(root);
+            return root;
+        }
+
+        private static void SaveErrorToastPrefab(string prefabPath)
+        {
+            EnsureFolder(prefabPath);
+            var root = CreateErrorToastPrefabRoot();
             try
             {
-                var toast = root.AddComponent<ErrorToast>();
-                toast.EditorRebuildUiForPrefab();
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 NormalizePrefabRootTransform(prefabPath);
             }
@@ -67,20 +76,12 @@ namespace Panoptes.Editor
             }
         }
 
-        private static void EnsureConfirmDialogPrefab(string prefabPath, bool forceRebuild)
+        private static void SaveConfirmDialogPrefab(string prefabPath)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (!forceRebuild && !IsConfirmDialogMissingOrEmpty(existing))
-            {
-                return;
-            }
-
             EnsureFolder(prefabPath);
-            var root = new GameObject("ConfirmDialog", typeof(RectTransform));
+            var root = CreateConfirmDialogPrefabRoot();
             try
             {
-                var dialog = root.AddComponent<ConfirmDialog>();
-                dialog.EditorRebuildUiForPrefab();
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 NormalizePrefabRootTransform(prefabPath);
             }
@@ -88,6 +89,20 @@ namespace Panoptes.Editor
             {
                 Object.DestroyImmediate(root);
             }
+        }
+
+        private static void WarnIfPrefabInvalid<T>(string prefabPath, System.Func<GameObject, bool> isMissingOrEmpty)
+            where T : Component
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (!isMissingOrEmpty(prefab))
+            {
+                return;
+            }
+
+            Debug.LogWarning(
+                $"[CommonOverlayPrefabBuilder] {prefabPath} is missing or incomplete. " +
+                $"Use Panoptes/UI/Rebuild Common Overlay Prefabs to regenerate {typeof(T).Name} assets.");
         }
 
         private static bool IsErrorToastMissingOrEmpty(GameObject prefab)
@@ -135,6 +150,23 @@ namespace Panoptes.Editor
                 return;
             }
 
+            NormalizeRectTransform(rectTransform);
+            EditorUtility.SetDirty(prefab);
+            PrefabUtility.SavePrefabAsset(prefab);
+        }
+
+        private static void NormalizeRootTransform(GameObject root)
+        {
+            if (root == null || root.transform is not RectTransform rectTransform)
+            {
+                return;
+            }
+
+            NormalizeRectTransform(rectTransform);
+        }
+
+        private static void NormalizeRectTransform(RectTransform rectTransform)
+        {
             rectTransform.anchorMin = Vector2.zero;
             rectTransform.anchorMax = Vector2.one;
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
@@ -144,8 +176,6 @@ namespace Panoptes.Editor
             rectTransform.offsetMax = Vector2.zero;
             rectTransform.localScale = Vector3.one;
             rectTransform.localRotation = Quaternion.identity;
-            EditorUtility.SetDirty(prefab);
-            PrefabUtility.SavePrefabAsset(prefab);
         }
     }
 }

@@ -1,0 +1,1 @@
+{"ts":"2026-05-04T00:00:00+08:00","kind":"implementation","summary":"Added C0d Game scene composition smoke gate to open the real Game scene in Unity EditMode, verify final composition root ownership, critical scene components, and composition Resources prefab paths before manual scene debugging."}

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: map_catalog.proto
+// source: panoptes/proto/v1/map_catalog.proto
 
 package protov1
 
@@ -32,7 +32,7 @@ type MapLegendEntry struct {
 
 func (x *MapLegendEntry) Reset() {
 	*x = MapLegendEntry{}
-	mi := &file_map_catalog_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *MapLegendEntry) String() string {
 func (*MapLegendEntry) ProtoMessage() {}
 
 func (x *MapLegendEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_map_catalog_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *MapLegendEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapLegendEntry.ProtoReflect.Descriptor instead.
 func (*MapLegendEntry) Descriptor() ([]byte, []int) {
-	return file_map_catalog_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_map_catalog_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MapLegendEntry) GetId() string {
@@ -95,7 +95,7 @@ type MapCatalogEntry struct {
 
 func (x *MapCatalogEntry) Reset() {
 	*x = MapCatalogEntry{}
-	mi := &file_map_catalog_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -107,7 +107,7 @@ func (x *MapCatalogEntry) String() string {
 func (*MapCatalogEntry) ProtoMessage() {}
 
 func (x *MapCatalogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_map_catalog_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,7 +120,7 @@ func (x *MapCatalogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapCatalogEntry.ProtoReflect.Descriptor instead.
 func (*MapCatalogEntry) Descriptor() ([]byte, []int) {
-	return file_map_catalog_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_map_catalog_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MapCatalogEntry) GetId() string {
@@ -174,7 +174,7 @@ type MapCatalog struct {
 
 func (x *MapCatalog) Reset() {
 	*x = MapCatalog{}
-	mi := &file_map_catalog_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -186,7 +186,7 @@ func (x *MapCatalog) String() string {
 func (*MapCatalog) ProtoMessage() {}
 
 func (x *MapCatalog) ProtoReflect() protoreflect.Message {
-	mi := &file_map_catalog_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_map_catalog_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -199,7 +199,7 @@ func (x *MapCatalog) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapCatalog.ProtoReflect.Descriptor instead.
 func (*MapCatalog) Descriptor() ([]byte, []int) {
-	return file_map_catalog_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_map_catalog_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MapCatalog) GetMaps() []*MapCatalogEntry {
@@ -209,11 +209,11 @@ func (x *MapCatalog) GetMaps() []*MapCatalogEntry {
 	return nil
 }
 
-var File_map_catalog_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_map_catalog_proto protoreflect.FileDescriptor
 
-const file_map_catalog_proto_rawDesc = "" +
+const file_panoptes_proto_v1_map_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x11map_catalog.proto\x12\x11panoptes.proto.v1\"O\n" +
+	"#panoptes/proto/v1/map_catalog.proto\x12\x11panoptes.proto.v1\"O\n" +
 	"\x0eMapLegendEntry\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -227,27 +227,27 @@ const file_map_catalog_proto_rawDesc = "" +
 	"\x06height\x18\x06 \x01(\x05R\x06height\"D\n" +
 	"\n" +
 	"MapCatalog\x126\n" +
-	"\x04maps\x18\x01 \x03(\v2\".panoptes.proto.v1.MapCatalogEntryR\x04mapsBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x04maps\x18\x01 \x03(\v2\".panoptes.proto.v1.MapCatalogEntryR\x04mapsBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_map_catalog_proto_rawDescOnce sync.Once
-	file_map_catalog_proto_rawDescData []byte
+	file_panoptes_proto_v1_map_catalog_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_map_catalog_proto_rawDescData []byte
 )
 
-func file_map_catalog_proto_rawDescGZIP() []byte {
-	file_map_catalog_proto_rawDescOnce.Do(func() {
-		file_map_catalog_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_map_catalog_proto_rawDesc), len(file_map_catalog_proto_rawDesc)))
+func file_panoptes_proto_v1_map_catalog_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_map_catalog_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_map_catalog_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_map_catalog_proto_rawDesc), len(file_panoptes_proto_v1_map_catalog_proto_rawDesc)))
 	})
-	return file_map_catalog_proto_rawDescData
+	return file_panoptes_proto_v1_map_catalog_proto_rawDescData
 }
 
-var file_map_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_map_catalog_proto_goTypes = []any{
+var file_panoptes_proto_v1_map_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_panoptes_proto_v1_map_catalog_proto_goTypes = []any{
 	(*MapLegendEntry)(nil),  // 0: panoptes.proto.v1.MapLegendEntry
 	(*MapCatalogEntry)(nil), // 1: panoptes.proto.v1.MapCatalogEntry
 	(*MapCatalog)(nil),      // 2: panoptes.proto.v1.MapCatalog
 }
-var file_map_catalog_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_map_catalog_proto_depIdxs = []int32{
 	1, // 0: panoptes.proto.v1.MapCatalog.maps:type_name -> panoptes.proto.v1.MapCatalogEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -256,26 +256,26 @@ var file_map_catalog_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_map_catalog_proto_init() }
-func file_map_catalog_proto_init() {
-	if File_map_catalog_proto != nil {
+func init() { file_panoptes_proto_v1_map_catalog_proto_init() }
+func file_panoptes_proto_v1_map_catalog_proto_init() {
+	if File_panoptes_proto_v1_map_catalog_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_map_catalog_proto_rawDesc), len(file_map_catalog_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_map_catalog_proto_rawDesc), len(file_panoptes_proto_v1_map_catalog_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_map_catalog_proto_goTypes,
-		DependencyIndexes: file_map_catalog_proto_depIdxs,
-		MessageInfos:      file_map_catalog_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_map_catalog_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_map_catalog_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_map_catalog_proto_msgTypes,
 	}.Build()
-	File_map_catalog_proto = out.File
-	file_map_catalog_proto_goTypes = nil
-	file_map_catalog_proto_depIdxs = nil
+	File_panoptes_proto_v1_map_catalog_proto = out.File
+	file_panoptes_proto_v1_map_catalog_proto_goTypes = nil
+	file_panoptes_proto_v1_map_catalog_proto_depIdxs = nil
 }

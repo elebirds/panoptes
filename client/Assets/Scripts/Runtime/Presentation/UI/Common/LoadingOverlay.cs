@@ -9,25 +9,17 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Panoptes.Core.Application.Feedback;
 
 namespace Panoptes.Presentation.UI.Common
 {
-    public sealed class LoadingOverlay : MonoBehaviour
+    public sealed class LoadingOverlay : MonoBehaviour, ILoadingOverlayPresenter
     {
-        public static LoadingOverlay Instance { get; private set; }
-
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TextMeshProUGUI messageText;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
             DontDestroyOnLoad(gameObject);
             EnsureVisualTree();
             Hide();

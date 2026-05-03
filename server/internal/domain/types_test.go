@@ -14,23 +14,25 @@ import (
 )
 
 func TestPositionMethods(t *testing.T) {
-	pos := Position{X: 3, Y: 4}
-	other := Position{X: 1, Y: 9}
+	pos := Position{Q: 3, R: 4}
+	other := Position{Q: 1, R: 9}
 
-	if got := pos.DistanceTo(other); got != 7 {
+	if got := pos.DistanceTo(other); got != 5 {
 		t.Fatalf("DistanceTo() = %d", got)
 	}
 
-	if got := pos.Add(Position{X: -2, Y: 5}); got != (Position{X: 1, Y: 9}) {
+	if got := pos.Add(Position{Q: -2, R: 5}); got != (Position{Q: 1, R: 9}) {
 		t.Fatalf("Add() = %#v", got)
 	}
 
 	neighbors := pos.Neighbors()
 	want := []Position{
-		{X: 3, Y: 3},
-		{X: 3, Y: 5},
-		{X: 2, Y: 4},
-		{X: 4, Y: 4},
+		{Q: 4, R: 4},
+		{Q: 4, R: 3},
+		{Q: 3, R: 3},
+		{Q: 2, R: 4},
+		{Q: 2, R: 5},
+		{Q: 3, R: 5},
 	}
 	if len(neighbors) != len(want) {
 		t.Fatalf("Neighbors len = %d", len(neighbors))
@@ -168,8 +170,8 @@ func TestNewGameStateInitializesPlayersAndWorld(t *testing.T) {
 		Width:  20,
 		Height: 20,
 		SpawnPoints: map[int]Position{
-			0: {X: 2, Y: 10},
-			1: {X: 17, Y: 10},
+			0: {Q: -3, R: 10},
+			1: {Q: 12, R: 10},
 		},
 		NamedNodes: map[string]string{"K10": "龙脊"},
 	}

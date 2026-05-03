@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify helpers do not become gameplay state owners."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated-file, protocol, and compile gates."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapPendingDeployGhostController.cs", "reason": "Verified no generated protocol dependency and no gameplay legality validation."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapTerritoryHighlightPresenter.cs", "reason": "Verified presentation-only overlay ownership and restore behavior."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapPendingDeployGhostControllerTests.cs", "reason": "Included in dotnet build/test and Unity batch compile."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapTerritoryHighlightPresenterTests.cs", "reason": "Included in dotnet build/test and Unity batch compile."}

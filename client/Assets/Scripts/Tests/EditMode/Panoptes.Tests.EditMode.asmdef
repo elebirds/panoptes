@@ -1,12 +1,13 @@
 {
   "name": "Panoptes.Tests.EditMode",
   "references": [
-    "Panoptes.Core", 
+    "Panoptes.Core",
     "Panoptes.Protocol",
     "Panoptes.Presentation",
     "Unity.TextMeshPro",
-    "UnityEngine.TestRunner", 
-    "UnityEditor.TestRunner"
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "VContainer"
   ],
   "includePlatforms": ["Editor"],
   "autoReferenced": false

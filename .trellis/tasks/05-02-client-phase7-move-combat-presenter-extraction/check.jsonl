@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify extracted helpers do not become gameplay state owners."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated-file, protocol, and compile gates."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapMovePreviewRenderPlannerTests.cs", "reason": "Covers move preview render decisions."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapAttackRangePresenterTests.cs", "reason": "Covers attack range projection."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Map/MapCombatTargetingResolverTests.cs", "reason": "Covers combat targeting predicates."}

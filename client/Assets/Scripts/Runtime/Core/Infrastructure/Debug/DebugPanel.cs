@@ -1,6 +1,10 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
 using System.Collections.Generic;
+using Panoptes.Core.Application.App;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Infrastructure.Network;
+using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
 
 namespace Panoptes.DebugTools
@@ -16,8 +20,35 @@ namespace Panoptes.DebugTools
         private readonly DebugPanelContext.SharedState _sharedState = new();
         private IReadOnlyList<IDebugTab> _tabs;
         private DebugPanelContext _context;
+        private IClientMessageSender _messageSender;
         private bool _expanded;
         private int _selectedTabIndex;
+
+        public void UseMessageSender(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+            if (_context != null)
+            {
+                _tabs = DebugTabRegistry.CreateDefaultTabsForSender(_messageSender);
+            }
+        }
+
+        public void UseRuntimeServices(
+            AppManager appManager,
+            SessionManager sessionManager,
+            RoomCache roomCache,
+            GameStateCache gameStateCache,
+            ClientRuntimeConfigCache runtimeConfigCache,
+            NetworkManager networkManager)
+        {
+            _context?.UseRuntimeServices(
+                appManager,
+                sessionManager,
+                roomCache,
+                gameStateCache,
+                runtimeConfigCache,
+                networkManager);
+        }
 
         private void Awake()
         {
@@ -38,7 +69,7 @@ namespace Panoptes.DebugTools
             }
 
             _context = new DebugPanelContext(_sharedState);
-            _tabs = DebugTabRegistry.CreateDefaultTabs();
+            _tabs = DebugTabRegistry.CreateDefaultTabsForSender(_messageSender);
         }
 
         private void OnDestroy()

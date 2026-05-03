@@ -37,6 +37,26 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if duelLarge.Width != 36 || duelLarge.Height != 36 {
 		t.Fatalf("duel_large size = %dx%d, want 36x36", duelLarge.Width, duelLarge.Height)
 	}
+	frontierBasin, ok := catalog.GetMap("frontier_basin")
+	if !ok {
+		t.Fatalf("frontier_basin map missing")
+	}
+	if frontierBasin.Width != 30 || frontierBasin.Height != 30 {
+		t.Fatalf("frontier_basin size = %dx%d, want 30x30", frontierBasin.Width, frontierBasin.Height)
+	}
+	frontierResources := 0
+	frontierRoadNodes := 0
+	for _, node := range frontierBasin.Nodes {
+		if node.IsResourcePoint {
+			frontierResources++
+		}
+		if node.HasRoad {
+			frontierRoadNodes++
+		}
+	}
+	if frontierResources != 12 || frontierRoadNodes != 6 {
+		t.Fatalf("frontier_basin resources=%d roads=%d, want 12 resources and 6 road nodes", frontierResources, frontierRoadNodes)
+	}
 
 	workshop, ok := catalog.GetBuilding("workshop")
 	if !ok {
@@ -115,6 +135,125 @@ func TestRealContentCatalogSupportsExpandedMVPContent(t *testing.T) {
 	if len(reorganization.ModifierEffects) != 1 || reorganization.ModifierEffects[0].PointKey != "industry_output" {
 		t.Fatalf("reorganization = %#v, want industry output modifier", reorganization)
 	}
+
+	for _, tc := range []struct {
+		buildingID string
+		recipeID   string
+	}{
+		{buildingID: "granary", recipeID: "granary_rations"},
+		{buildingID: "smelter", recipeID: "smelter_refined_ore"},
+		{buildingID: "stable", recipeID: "stable_cavalry"},
+		{buildingID: "engineer_camp", recipeID: "engineer_camp_raider"},
+	} {
+		building, ok := catalog.GetBuilding(tc.buildingID)
+		if !ok {
+			t.Fatalf("%s missing", tc.buildingID)
+		}
+		if building.DefaultRecipeID != tc.recipeID {
+			t.Fatalf("%s default recipe = %q, want %q", tc.buildingID, building.DefaultRecipeID, tc.recipeID)
+		}
+		if _, ok := catalog.GetRecipe(tc.recipeID); !ok {
+			t.Fatalf("%s missing", tc.recipeID)
+		}
+	}
+
+	cavalry, ok := catalog.GetUnit("cavalry")
+	if !ok {
+		t.Fatalf("cavalry missing")
+	}
+	if cavalry.Class != "mobile" || cavalry.ChargeBonus <= 0 || cavalry.MoveRange < 5 {
+		t.Fatalf("cavalry = %#v, want mobile charge unit", cavalry)
+	}
+	staticdata.SetDefault(catalog)
+	cavalryWorld := donburi.NewWorld()
+	cavalryEntry := cavalryWorld.Entry(ecs.CreateUnit(cavalryWorld, "cavalry", "player-1", domain.Position{}))
+	if !cavalryEntry.HasComponent(ecs.ChargeAbilityC) {
+		t.Fatalf("cavalry should receive ChargeAbilityC from authored content")
+	}
+
+	for _, techID := range []string{"supply_depots", "metallurgy", "mounted_logistics", "siegecraft"} {
+		if _, ok := catalog.GetTechnology(techID); !ok {
+			t.Fatalf("%s technology missing", techID)
+		}
+	}
+	mountedLogistics, _ := catalog.GetTechnology("mounted_logistics")
+	if len(mountedLogistics.ExplicitEffects) != 2 || mountedLogistics.ExplicitEffects[0].TargetID != "stable" || mountedLogistics.ExplicitEffects[1].TargetID != "stable_cavalry" {
+		t.Fatalf("mounted_logistics explicit effects = %#v, want stable unlocks", mountedLogistics.ExplicitEffects)
+	}
+	foundryDirectives, ok := catalog.GetPolicy("foundry_directives")
+	if !ok {
+		t.Fatalf("foundry_directives missing")
+	}
+	if foundryDirectives.Layer != "institutional" || len(foundryDirectives.LogisticsPriority) == 0 {
+		t.Fatalf("foundry_directives = %#v, want institutional logistics policy", foundryDirectives)
+	}
+
+	for _, tc := range []struct {
+		buildingID string
+		recipeID   string
+	}{
+		{buildingID: "warehouse", recipeID: "warehouse_reserve_rations"},
+		{buildingID: "market", recipeID: "market_grain_contracts"},
+		{buildingID: "watchtower", recipeID: "watchtower_scout"},
+		{buildingID: "training_ground", recipeID: "training_ground_spearman"},
+	} {
+		building, ok := catalog.GetBuilding(tc.buildingID)
+		if !ok {
+			t.Fatalf("%s missing", tc.buildingID)
+		}
+		if building.DefaultRecipeID != tc.recipeID {
+			t.Fatalf("%s default recipe = %q, want %q", tc.buildingID, building.DefaultRecipeID, tc.recipeID)
+		}
+		if _, ok := catalog.GetRecipe(tc.recipeID); !ok {
+			t.Fatalf("%s missing", tc.recipeID)
+		}
+	}
+	academy, ok := catalog.GetBuilding("academy")
+	if !ok {
+		t.Fatalf("academy missing")
+	}
+	if academy.DefaultRecipeID != "" || len(academy.ModifierEffects) != 1 || academy.ModifierEffects[0].PointKey != "research_output" || academy.ModifierEffects[0].Value != 2 {
+		t.Fatalf("academy = %#v, want research output modifier and no default recipe", academy)
+	}
+
+	scout, ok := catalog.GetUnit("scout")
+	if !ok {
+		t.Fatalf("scout missing")
+	}
+	if scout.Class != "civilian" || scout.VisionRange < 6 || scout.MoveRange < 6 {
+		t.Fatalf("scout = %#v, want fast high-vision civilian", scout)
+	}
+	scoutEntry := cavalryWorld.Entry(ecs.CreateUnit(cavalryWorld, "scout", "player-1", domain.Position{}))
+	scoutCaps := ecs.UnitCapabilitiesC.Get(scoutEntry)
+	if !scoutCaps.Civilian || scoutCaps.Melee || scoutCaps.Ranged {
+		t.Fatalf("scout capabilities = %#v, want pure civilian", scoutCaps)
+	}
+	spearman, ok := catalog.GetUnit("spearman")
+	if !ok {
+		t.Fatalf("spearman missing")
+	}
+	if spearman.Class != "melee" || !spearman.Flags.CanAttackStructures || !spearman.Flags.CanCapture {
+		t.Fatalf("spearman = %#v, want capturable melee structure attacker", spearman)
+	}
+
+	for _, techID := range []string{"centralized_storage", "trade_levies", "scholastic_bureaucracy", "sentry_networks", "professional_drill"} {
+		if _, ok := catalog.GetTechnology(techID); !ok {
+			t.Fatalf("%s technology missing", techID)
+		}
+	}
+	tradeLevies, _ := catalog.GetTechnology("trade_levies")
+	if len(tradeLevies.ExplicitEffects) != 5 || tradeLevies.ExplicitEffects[0].TargetID != "market" || tradeLevies.ExplicitEffects[4].TargetID != "mercantile_charter" {
+		t.Fatalf("trade_levies explicit effects = %#v, want market recipes and mercantile charter", tradeLevies.ExplicitEffects)
+	}
+	for _, policyID := range []string{"mercantile_charter", "research_mandate"} {
+		policy, ok := catalog.GetPolicy(policyID)
+		if !ok {
+			t.Fatalf("%s missing", policyID)
+		}
+		if policy.Layer != "institutional" || len(policy.ModifierEffects) == 0 {
+			t.Fatalf("%s = %#v, want institutional modifier policy", policyID, policy)
+		}
+	}
 }
 
 func TestRealContentCityCoreProvidesStartupFoodAndGovernance(t *testing.T) {
@@ -122,7 +261,7 @@ func TestRealContentCityCoreProvidesStartupFoodAndGovernance(t *testing.T) {
 	staticdata.SetDefault(catalog)
 
 	world := donburi.NewWorld()
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	node := ecs.NodeC.Get(cityEntry)
 	node.Owner = "player-1"

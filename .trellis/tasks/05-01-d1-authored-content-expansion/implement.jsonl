@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend-adjacent quality expectations for static catalog verification."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Authored content flows into generated server/client catalogs and debug tests."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "D1 extends repeated content structures; search and follow D0 patterns."}
+{"file": "docs/STATIC_DATA_EDITING_GUIDE.md", "reason": "Static data authoring and generation workflow."}

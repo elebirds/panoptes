@@ -149,10 +149,10 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 1, Y: 1, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 1, R: 1, Terrain: "plain"})
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 1, Y: 1}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 1, R: 1}},
 		NodeIndex:    map[string]donburi.Entity{"C1": nodeEntity},
 	})
 	state.World = world
@@ -164,7 +164,7 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
 		t.Fatalf("food after completion turn = %d, want 0", got)
 	}
-	if got := domain.GetUnitsByNode(world, domain.Position{X: 1, Y: 1}); len(got) != 0 {
+	if got := domain.GetUnitsByNode(world, domain.Position{Q: 1, R: 1}); len(got) != 0 {
 		t.Fatalf("granted units at spawn on completion turn = %d, want 0", len(got))
 	}
 
@@ -174,7 +174,7 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
 		t.Fatalf("food after activation = %d, want 3", got)
 	}
-	if got := domain.GetUnitsByNode(world, domain.Position{X: 1, Y: 1}); len(got) != 1 {
+	if got := domain.GetUnitsByNode(world, domain.Position{Q: 1, R: 1}); len(got) != 1 {
 		t.Fatalf("granted units at spawn after activation = %d, want 1", len(got))
 	}
 }
@@ -260,9 +260,9 @@ func TestEconomyRunnerConsumesSameTurnIndustryBudgetInOrder(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	cityNode := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 1, Terrain: "plain"})
-	nodeB := ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"})
+	cityNode := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 1, Terrain: "plain"})
+	nodeB := ecs.CreateNode(world, ecs.MapNode{ID: "A2", Q: 1, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityNode)
 	entryA := world.Entry(nodeA)
 	entryB := world.Entry(nodeB)
@@ -531,8 +531,8 @@ func newPipelineRules() staticdata.Rules {
 
 func newOwnedNodeState() (donburi.World, *domain.GameState, *donburi.Entry) {
 	world := donburi.NewWorld()
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 1, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	nodeEntry := world.Entry(nodeEntity)
 	for _, entry := range []*donburi.Entry{cityEntry, nodeEntry} {

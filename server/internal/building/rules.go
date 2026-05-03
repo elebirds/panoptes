@@ -1,3 +1,9 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载建筑规则、组件装配或建筑相关测试逻辑。
+
 package building
 
 import (
@@ -9,8 +15,6 @@ import (
 	"github.com/yohamta/donburi"
 	"github.com/yohamta/donburi/filter"
 )
-
-var nodesWithBuildingQuery = donburi.NewQuery(filter.Contains(domain.PositionC, domain.NodeC, domain.BuildingC))
 
 func ResolveCityContext(state *domain.GameState, playerID string, cityID string) (*donburi.Entry, *domain.CityState, string) {
 	if state == nil {
@@ -67,7 +71,7 @@ func ValidatePlacement(state *domain.GameState, nodeEntry *donburi.Entry, player
 	if !domain.IsCityOnline(state, cityState) {
 		return "invalid_directive"
 	}
-	if errCode := canPlaceAtStatic(state, nodeEntry, playerID, cfg); errCode != "" {
+	if errCode := ValidateNodePlacement(state, nodeEntry, playerID, cfg); errCode != "" {
 		return errCode
 	}
 	if scope != domain.BuildingScopeInCity {
@@ -79,23 +83,19 @@ func ValidatePlacement(state *domain.GameState, nodeEntry *donburi.Entry, player
 	}
 	targetPos := domain.PositionC.Get(nodeEntry)
 	cityPos := domain.PositionC.Get(cityEntry)
-	dx := targetPos.X - cityPos.X
-	if dx < 0 {
-		dx = -dx
-	}
-	dy := targetPos.Y - cityPos.Y
-	if dy < 0 {
-		dy = -dy
-	}
-	if dx <= radius && dy <= radius {
+	target := domain.Position{Q: targetPos.Q, R: targetPos.R}
+	city := domain.Position{Q: cityPos.Q, R: cityPos.R}
+	if target.DistanceTo(city) <= radius {
 		return ""
 	}
 	return "outside_territory"
 }
 
-// canPlaceAtStatic 只判断“节点本身是否满足放置条件”。
-// 城市上下文、城市是否在线、城内建筑半径这些更高层约束由 ValidatePlacement 统一包裹。
-func canPlaceAtStatic(state *domain.GameState, entry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition) string {
+// ValidateNodePlacement only checks whether the target node itself satisfies a
+// building's placement kind. City context, online city state, and in-city radius
+// remain the responsibility of ValidatePlacement, which is the canonical
+// placement rule for player build commands.
+func ValidateNodePlacement(state *domain.GameState, entry *donburi.Entry, playerID string, cfg staticdata.BuildingDefinition) string {
 	if entry == nil {
 		return "invalid_target"
 	}
@@ -110,7 +110,7 @@ func canPlaceAtStatic(state *domain.GameState, entry *donburi.Entry, playerID st
 	case "city_territory":
 		player := normalizeToken(playerID)
 		pos := domain.PositionC.Get(entry)
-		if normalizeToken(node.TerritoryOwner) != player && normalizeToken(node.Owner) != player && !domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID) {
+		if normalizeToken(node.TerritoryOwner) != player && normalizeToken(node.Owner) != player && !domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, playerID) {
 			return "outside_territory"
 		}
 	case "resource_node":
@@ -141,18 +141,17 @@ func TerritoryFootprint(state *domain.GameState, centerEntry *donburi.Entry) ([]
 		return nil, nil, "invalid_target"
 	}
 	centerPos := domain.PositionC.Get(centerEntry)
-	entries := make([]*donburi.Entry, 0, 9)
-	ids := make([]string, 0, 9)
-	for dy := -1; dy <= 1; dy++ {
-		for dx := -1; dx <= 1; dx++ {
-			pos := domain.Position{X: centerPos.X + dx, Y: centerPos.Y + dy}
-			entry, ok := domain.GetNodeAt(state.World, pos)
-			if !ok {
-				return nil, nil, "territory_out_of_bounds"
-			}
-			entries = append(entries, entry)
-			ids = append(ids, domain.NodeC.Get(entry).ID)
+	center := domain.Position{Q: centerPos.Q, R: centerPos.R}
+	positions := append([]domain.Position{center}, center.Neighbors()...)
+	entries := make([]*donburi.Entry, 0, len(positions))
+	ids := make([]string, 0, len(positions))
+	for _, pos := range positions {
+		entry, ok := domain.GetNodeAt(state.World, pos)
+		if !ok {
+			return nil, nil, "territory_out_of_bounds"
 		}
+		entries = append(entries, entry)
+		ids = append(ids, domain.NodeC.Get(entry).ID)
 	}
 	return entries, ids, ""
 }
@@ -186,7 +185,8 @@ func CanFoundCityAt(state *domain.GameState, centerEntry *donburi.Entry) (bool, 
 	centerPos := domain.PositionC.Get(centerEntry)
 	minimumDistance := staticdata.Default().Rules().MinimumCityDistance
 	if minimumDistance > 0 {
-		nodesWithBuildingQuery.Each(state.World, func(entry *donburi.Entry) {
+		// Donburi Query 内部带缓存；建筑规则可能被多个房间并发读写，查询对象不能包级共享。
+		donburi.NewQuery(filter.Contains(domain.PositionC, domain.NodeC, domain.BuildingC)).Each(state.World, func(entry *donburi.Entry) {
 			if entry == nil || !entry.HasComponent(domain.BuildingC) {
 				return
 			}
@@ -199,7 +199,7 @@ func CanFoundCityAt(state *domain.GameState, centerEntry *donburi.Entry) (bool, 
 				return
 			}
 			pos := domain.PositionC.Get(entry)
-			if geometry.Manhattan(domain.Position{X: centerPos.X, Y: centerPos.Y}, domain.Position{X: pos.X, Y: pos.Y}) < minimumDistance {
+			if geometry.AxialDistance(domain.Position{Q: centerPos.Q, R: centerPos.R}, domain.Position{Q: pos.Q, R: pos.R}) < minimumDistance {
 				reason = "minimum_city_distance"
 			}
 		})
@@ -221,7 +221,7 @@ func nodeControlledByPlayer(state *domain.GameState, entry *donburi.Entry, playe
 	}
 	if state != nil {
 		pos := domain.PositionC.Get(entry)
-		if domain.IsInSafeZone(state, domain.Position{X: pos.X, Y: pos.Y}, playerID) {
+		if domain.IsInSafeZone(state, domain.Position{Q: pos.Q, R: pos.R}, playerID) {
 			return true
 		}
 	}
@@ -233,7 +233,7 @@ func ExclusiveController(state *domain.GameState, entry *donburi.Entry) (string,
 		return "", false
 	}
 	pos := domain.PositionC.Get(entry)
-	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{X: pos.X, Y: pos.Y})
+	unitsByFaction := domain.UnitsByFactionAtNode(state.World, domain.Position{Q: pos.Q, R: pos.R})
 	if len(unitsByFaction) == 0 {
 		return "", false
 	}

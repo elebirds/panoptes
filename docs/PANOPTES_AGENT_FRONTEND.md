@@ -29,7 +29,7 @@
 
 **项目代号**：Panoptes
 **Unity仓库名**：`panoptes-client`
-**Unity版本**：2022.3 LTS（稳定版，Gamejam首选）
+**Unity版本**：6000.4.1f1
 **渲染管线**：URP（Universal Render Pipeline）
 **目标平台**：PC（Windows/Mac）
 
@@ -54,6 +54,32 @@
 com.unity.textmeshpro          TextMeshPro（UI文字）
 com.unity.ugui                 uGUI（UI系统）
 com.unity.inputsystem          新版输入系统
+com.unity.modules.uielements   UI Toolkit runtime（信息密集型面板）
+```
+
+### 批准的第三方依赖（Unity Package Manager）
+
+```
+VContainer                    生命周期与依赖注入
+  包名：jp.hadashikick.vcontainer
+  版本：1.17.0
+  来源：https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.17.0
+  用途：ProjectLifetimeScope / GameLifetimeScope、Store/Service/ViewModel 注入
+
+R3                            响应式状态传播
+  包名：com.cysharp.r3
+  版本：1.3.0
+  来源：https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity#1.3.0
+  核心程序集：R3 NuGet 1.3.0 的 netstandard2.1 `R3.dll`
+  运行依赖：Microsoft.Bcl.TimeProvider 8.0.0、Microsoft.Bcl.AsyncInterfaces 8.0.0、System.Threading.Channels 8.0.0、System.Runtime.CompilerServices.Unsafe 6.0.0、System.ComponentModel.Annotations 5.0.0
+  导入位置：client/Assets/Plugins/
+  用途：Store / ViewModel 的只读 reactive state
+
+UniTask                       Unity 异步流程
+  包名：com.cysharp.unitask
+  版本：2.5.10
+  来源：https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#2.5.10
+  用途：登录、连接、catalog 加载、请求响应、场景初始化
 ```
 
 ### 第三方插件（手动导入Assets/Plugins）
@@ -72,10 +98,10 @@ Google.Protobuf                Protobuf C#运行时
 ### 不引入的插件（明确禁止）
 
 ```
-❌ Zenject/VContainer（依赖注入）
-❌ UniRx/R3（响应式）
+❌ Zenject（依赖注入；统一使用 VContainer）
+❌ UniRx（响应式；统一使用 R3）
 ❌ Photon/Mirror（网络框架，用NativeWebSocket代替）
-❌ DOTween（动画，用Unity Coroutine代替）
+❌ DOTween（动画依赖暂不批准；继续使用现有 Unity 动画/Coroutine/UniTask 流程）
 ❌ 任何付费插件
 ```
 
@@ -113,18 +139,22 @@ panoptes-client/
 │   │   │   │   │   ├── Domain/        # DTO（NodeDto/UnitDto/ResourceDto/SettlementDto/...）
 │   │   │   │   │   └── Events/        # GameEvents（仅暴露 DTO）
 │   │   │   │   ├── Infrastructure/
-│   │   │   │   │   ├── Network/       # NetworkManager/MessageDispatcher/MessageSender
+│   │   │   │   │   ├── Network/       # NetworkManager/MessageDispatcher/NetworkMessageSender
 │   │   │   │   │   ├── Mapper/        # NodeMapper/UnitMapper/MinisterMapper/SettlementMapper
 │   │   │   │   │   ├── Service/       # AuthService/LobbyService/SessionManager
 │   │   │   │   │   └── Debug/         # 调试组件
 │   │   │   │   └── Application/
 │   │   │   │       ├── Cache/         # GameStateCache/StaticCatalogCache/RoomCache
 │   │   │   │       ├── Handler/       # GameMessageHandler/LobbyMessageHandler
-│   │   │   │       ├── Intents/       # GameIntents（原 GameAction）
+│   │   │   │       ├── Services/      # GameIntentService/PlanningIntentService/MinisterCommandService
 │   │   │   │       └── App/           # AppManager/SceneLoader/Config
 │   │   │   │
 │   │   │   └── Presentation/          # Panoptes.Presentation.asmdef
 │   │   │       ├── Map/
+│   │   │       │   └── InputAdapter/  # Pointer/UI hit-test/raycast 到 NodeView/UnitView
+│   │   │       ├── Planning/
+│   │   │       │   ├── Feedback/      # 服务端 preview/result 的展示文案
+│   │   │       │   └── Input/         # 玩家规划输入模式、pending state、intent port
 │   │   │       ├── Animation/
 │   │   │       └── UI/
 │   │   │           ├── Auth/
@@ -182,6 +212,14 @@ Panoptes.Presentation  仅引用 Panoptes.Core，不引用 Panoptes.Protocol
 => 协议类型通过 Core 的 DTO + Mapper 在边界内完成转换
 ```
 
+### 表现层包结构约定
+
+- `Presentation/Map`：地图渲染、节点/单位/建筑 View、地图 overlay、相机上下文、debug map 数据和地图拾取适配。
+- `Presentation/Map/InputAdapter`：只负责把 Unity pointer / physics raycast 转换为 `NodeView`、`UnitView` 或节点上下文，不发送 intent，不管理规划状态。
+- `Presentation/Planning/Input`：玩家规划输入控制、输入模式生命周期、pending build/move/deploy 表现状态、intent 发送端口。
+- `Presentation/Planning/Feedback`：把服务端 preview/result DTO 转成展示文案；不得在这里推导合法性。
+- `MapPlanningInputController` 是地图上的玩家规划输入入口。它可以协调地图 adapter、Planning state 和 overlay，但不应再被命名或理解为通用 Map input。
+
 
 ---
 
@@ -234,9 +272,32 @@ GameStateCache 中已有服务端节点
 - 自己拼装地图默认节点
 - 根据静态目录推导建造合法性、资源是否足够等业务规则
 
-### 原则三：单例管理
+### 原则三：最终生命周期与依赖注入
 
-全局单例通过`Boot.unity`场景初始化，`DontDestroyOnLoad`。场景间通信通过单例，不使用静态变量。
+新架构模块通过 VContainer 的 `LifetimeScope` 管理生命周期和依赖注入。迁移后的 Store、Service、ViewModel、Binder 不得主动查找 `*.Instance`。
+
+目标结构：
+
+```
+ProjectLifetimeScope
+  AuthStore
+  ConfigStore
+  StaticCatalogStore
+  Network services
+  App navigation services
+
+GameLifetimeScope
+  GameStateStore
+  PlanningDraftStore
+  SelectionStore
+  TurnStore
+  Game intent services
+  Panel ViewModels
+```
+
+旧单例可以在未迁移模块中暂时保留，但不得作为新架构模块的兼容入口。迁移一个模块时，该模块的依赖所有权必须同时切到最终 `LifetimeScope`。
+
+旧系统仍可能存在的 legacy 单例：
 
 ```
 NetworkManager     单例，管理WebSocket连接
@@ -244,6 +305,8 @@ GameStateCache     单例，管理游戏状态镜像
 AppManager         单例，管理全局状态机
 AnimationQueue     单例，管理动画队列
 ```
+
+这些 legacy 单例只服务未迁移旧模块。新 C0a 功能和已迁移模块必须使用 Store -> ViewModel -> Binder / Service 链路。
 
 ### 原则四：消息处理在主线程
 
@@ -264,7 +327,7 @@ WebSocket在后台线程接收消息，必须通过`UnityMainThreadDispatcher`�
     "planning": {
       "buildStructure": {
         "nodeId": "C3",
-        "buildingType": "farm"
+        "buildingTypeId": "farm"
       }
     }
   }
@@ -286,22 +349,26 @@ MsgJoinRoom
 MsgLeaveRoom
 MsgReadyUp
 
-// 内政阶段
+// Planning 阶段
 MsgSetPolicy
-MsgMinisterDirective
-MsgTokenBuild
+MsgSetInstitutionLoadout
+MsgSetResearchTarget
+MsgSetBuildingRecipe
+MsgBuildStructure
+MsgBuildStructurePreviewRequest
+MsgSetBuildingRecipePreviewRequest
 MsgTokenReveal
-MsgTokenVeto
-MsgTokenAdjustFlow
-MsgBuildRoad
-MsgSubmitDomestic
-
-// 战斗阶段
 MsgSetWarZone
 MsgWarZoneDirective
-MsgTokenVetoCombat
-MsgTokenMicro
-MsgSubmitCombat
+MsgSetMinisterDirective
+MsgIssueUnitOrder
+MsgCancelUnitOrder
+MsgPlanningPathPreviewRequest
+MsgSubmitTurn
+
+// 游戏通用
+MsgStaticCatalogSyncRequest
+ChatCommand
 ```
 
 **服务端→客户端：**
@@ -321,20 +388,26 @@ MsgLobbyError
 MsgGameInit
 MsgGameOver
 
-// 内政阶段
-MsgDomesticPhaseStart
+// Planning / Resolving
+MsgPlanningStart
+MsgPlanningSnapshot
+MsgPlanningPathPreviewResponse
+MsgBuildStructurePreviewResponse
+MsgSetBuildingRecipePreviewResponse
 MsgTokenResult
 MsgRevealResult
-MsgMinisterAction
+MsgResearchResult
+MsgSetPolicyResult
+MsgSetInstitutionLoadoutResult
+MsgSetBuildingRecipeResult
+MsgBuildStructureResult
+MsgIssueUnitOrderResult
+MsgTurnReport
+MsgGameSync
 MsgMinisterReportChunk
 MsgMinisterMetrics
-MsgDomesticSettlement
-
-// 战斗阶段
-MsgCombatPhaseStart
-MsgMinisterCombatChunk
-MsgMinisterCombatOrders
-MsgCombatSettlement
+MsgGameChatPosted
+MsgGameChatSync
 
 // 通用
 Problem
@@ -463,9 +536,7 @@ public class NetworkManager : MonoBehaviour
 // 从ServerFrame提取具体payload并路由到对应Handler
 public class MessageDispatcher : MonoBehaviour
 {
-    public static MessageDispatcher Instance { get; private set; }
-
-    // 注册Handler（在Awake中调用）
+    // 注册Handler（由ProjectLifetimeScope注入后调用）
     public void Register<T>(string messageType, Action<T> handler)
         where T : IMessage<T>, new();
 
@@ -476,13 +547,15 @@ public class MessageDispatcher : MonoBehaviour
 
 Handler注册示例：
 ```csharp
-void Awake()
+public void UseProjectServices(MessageDispatcher dispatcher, GameStateCache cache)
 {
-    MessageDispatcher.Instance.Register<MsgGameInit>(
-        "MsgGameInit", OnGameInit);
-    MessageDispatcher.Instance.Register<MsgDomesticPhaseStart>(
-        "MsgDomesticPhaseStart", OnDomesticPhaseStart);
-    // ...
+    _dispatcher = dispatcher;
+    _cache = cache;
+    _dispatcher.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+    _dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+    _dispatcher.Register<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
+    _dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
+	// ...
 }
 ```
 
@@ -499,7 +572,7 @@ public class GameStateCache : MonoBehaviour
     public string GameID { get; private set; }
     public string MyPlayerID { get; private set; }
     public int Turn { get; private set; }
-    public string Phase { get; private set; }  // "domestic|combat"
+    public string Phase { get; private set; }  // "planning|resolving"
 
     // 节点（key = node_id）
     public IReadOnlyDictionary<string, NodeView> Nodes { get; }
@@ -518,8 +591,9 @@ public class GameStateCache : MonoBehaviour
 
     // 内部更新方法（由MessageDispatcher调用）
     internal void ApplyGameInit(MsgGameInit msg);
-    internal void ApplyDomesticSettlement(MsgDomesticSettlement msg);
-    internal void ApplyCombatSettlement(MsgCombatSettlement msg);
+    internal void ApplyPlanningStart(MsgPlanningStart msg);
+    internal void ApplyPlanningSnapshot(MsgPlanningSnapshot msg);
+    internal void ApplyGameSync(MsgGameSync msg);
     internal void UpdateTokens(int tokensLeft);
     internal void UpdateNodeView(NodeView node);
 }
@@ -556,14 +630,24 @@ public class MinisterPanel : MonoBehaviour
 }
 ```
 
-处理`MsgMinisterReportChunk`消息：
+处理 `MsgMinisterReportChunk` 消息时，正式路径由 Core 消息处理器更新
+`PlanningDraftStore` / 部长报告读模型，`MinisterReportViewModel` 投影为
+UI 状态，`MinisterReportUiToolkitBinder` 渲染：
 ```csharp
-private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
+public sealed class MinisterReportUiToolkitBinder : MonoBehaviour
 {
-    if (!msg.IsFinal)
-        MinisterPanel.Instance.AppendChunk(msg.Chunk);
-    else
-        MinisterPanel.Instance.FinalizeReport();
+    private MinisterReportViewModel _viewModel;
+
+    [Inject]
+    private void Construct(MinisterReportViewModel viewModel)
+    {
+        _viewModel = viewModel;
+    }
+
+    private void OnEnable()
+    {
+        _viewModel.State.Subscribe(Render).AddTo(this);
+    }
 }
 ```
 
@@ -589,6 +673,14 @@ public class MetricsPanel : MonoBehaviour
 ```csharp
 public class BuildMenu : MonoBehaviour
 {
+    private PlanningIntentService _planningIntentService;
+
+    [Inject]
+    private void Construct(PlanningIntentService planningIntentService)
+    {
+        _planningIntentService = planningIntentService;
+    }
+
     // 在指定屏幕位置显示可建造列表
     // buildingTypes由外部传入，不在本类计算
     public void Show(string nodeId, Vector2 screenPos, IList<string> buildingTypes);
@@ -596,14 +688,10 @@ public class BuildMenu : MonoBehaviour
     // 隐藏
     public void Hide();
 
-    // 玩家选择某个建筑时的回调
-    // 直接调用MessageSender发送，不做任何校验
-    private void OnBuildingSelected(string nodeId, string buildingType)
+    // 玩家选择某个建筑时的回调；这里只打包输入，不做合法性校验
+    private void OnBuildingSelected(string nodeId, string buildingTypeId, string cityId)
     {
-        MessageSender.Send(new MsgTokenBuild {
-            NodeId = nodeId,
-            BuildingType = buildingType
-        });
+        _planningIntentService.BuildStructure(nodeId, buildingTypeId, cityId);
         Hide();
     }
 }
@@ -616,6 +704,14 @@ public class BuildMenu : MonoBehaviour
 ```csharp
 public class WarZonePanel : MonoBehaviour
 {
+    private GameIntentService _gameIntentService;
+
+    [Inject]
+    private void Construct(GameIntentService gameIntentService)
+    {
+        _gameIntentService = gameIntentService;
+    }
+
     // 进入战区划定模式（格子可框选）
     public void EnterZoneEditMode(string zoneId);
 
@@ -628,11 +724,7 @@ public class WarZonePanel : MonoBehaviour
     // 发送战区指令
     private void OnDirectiveSelected(string zoneId, string directive, string targetNode)
     {
-        MessageSender.Send(new MsgWarZoneDirective {
-            ZoneId = zoneId,
-            Directive = directive,
-            TargetNode = targetNode
-        });
+        _gameIntentService.SetWarZoneDirective(zoneId, directive, targetNode);
     }
 }
 ```
@@ -644,20 +736,30 @@ public class WarZonePanel : MonoBehaviour
 ```csharp
 public class OrderReviewPanel : MonoBehaviour
 {
+    private PlanningToolService _planningToolService;
+    private GameIntentService _gameIntentService;
+
+    [Inject]
+    private void Construct(PlanningToolService planningToolService, GameIntentService gameIntentService)
+    {
+        _planningToolService = planningToolService;
+        _gameIntentService = gameIntentService;
+    }
+
     // 显示部长生成的指令列表
     public void ShowOrders(IList<UnitOrder> orders);
 
     // 否决某条指令（消耗令牌）
     private void OnVetoOrder(string unitId)
     {
-        MessageSender.Send(new MsgTokenVetoCombat { UnitId = unitId });
+        _gameIntentService.VetoCombatOrder(unitId);
     }
 
     // 修改为精确微操（消耗令牌）
     private void OnMicroOrder(string unitId)
     {
-        // 进入地图微操模式，等待玩家点击目标格子
-        MapInputHandler.Instance.EnterMicroMode(unitId);
+        // 进入地图规划输入流程，实际合法性仍由服务端判定
+        _planningToolService.BeginMoveSelection(unitId);
     }
 }
 ```
@@ -672,12 +774,11 @@ public class OrderReviewPanel : MonoBehaviour
 // App启动流程
 async void Start()
 {
-    // 1. 连接WebSocket
-    await NetworkManager.Instance.ConnectAsync(Config.ServerURL);
+    // 1. NetworkManager 由 ProjectLifetimeScope 注册，发送端口是 IClientMessageSender
+    await _networkManager.ConnectAsync(Config.ServerURL);
 
-    // 2. 如果有本地存储的token，尝试自动登录
-    // Gamejam阶段跳过，直接显示登录界面
-    SceneLoader.Instance.LoadScene("Login");
+    // 2. 场景切换通过注入的 AppManager / Scene 服务完成
+    _appManager.TransitionTo(AppState.Login);
 }
 
 // 登录成功后
@@ -686,20 +787,17 @@ private void OnLoginSuccess(MsgLoginSuccess msg)
     // 保存token和player_id
     PlayerPrefs.SetString("token", msg.Token);
     PlayerPrefs.SetString("player_id", msg.PlayerId);
-    SceneLoader.Instance.LoadScene("Lobby");
+    _appManager.TransitionTo(AppState.Lobby);
 }
 ```
 
-### MessageSender.cs
+### IClientMessageSender / NetworkMessageSender
 
 ```csharp
-// 工具类，统一封装并发送 ClientFrame
-public static class MessageSender
+// 注入式端口，统一封装并发送 ClientFrame
+public interface IClientMessageSender
 {
-    public static void Send<T>(T message) where T : IMessage<T>
-    {
-        NetworkManager.Instance.Send(message);
-    }
+    bool Send(IMessage message);
 }
 ```
 
@@ -709,8 +807,8 @@ public static class MessageSender
 // NetworkManager内部处理
 private async void HandleDisconnect()
 {
-    // 显示断线提示
-    LoadingOverlay.Instance.Show("连接断开，正在重连...");
+    // 通过注入的项目级 overlay / feedback service 显示断线提示
+    _feedback.Show("连接断开，正在重连...");
 
     int retries = 0;
     while (retries < 5)
@@ -720,14 +818,14 @@ private async void HandleDisconnect()
         {
             await ConnectAsync(Config.ServerURL);
             // 重连成功后，服务端检测到相同player_id会重发MsgGameInit
-            LoadingOverlay.Instance.Hide();
+            _feedback.Hide();
             return;
         }
         catch { retries++; }
     }
 
     // 重连失败，返回登录界面
-    SceneLoader.Instance.LoadScene("Login");
+    _appManager.TransitionTo(AppState.Login);
 }
 ```
 
@@ -758,39 +856,32 @@ internal void ApplyGameInit(MsgGameInit msg)
     MyPlayer = msg.MyPlayer;
     _ministers = msg.Ministers.ToList();
 
-    // 通知MapRenderer重建地图
-    MapRenderer.Instance.RebuildMap();
+    // StoreMessageHydrator 更新 GameStateStore，MapRenderer 订阅 Store 后重建地图
+    _hydrationHelper.HydrateGameState(StoreHydrationProtocolMapper.ToGameState(msg));
 }
 ```
 
-### 增量更新（MsgDomesticSettlement）
+### 同步更新（MsgGameSync）
 
 ```csharp
-internal void ApplyDomesticSettlement(MsgDomesticSettlement msg)
+internal void ApplyGameSync(MsgGameSync msg)
 {
-    // 更新资源
-    MyPlayer.Resources = msg.MyResourcesAfter;
-
-    // 应用每个变更
-    foreach (var change in msg.Changes)
+    Turn = msg.Turn;
+    Phase = msg.Phase;
+    if (msg.MyPlayer != null)
     {
-        switch (change.Type)
-        {
-            case "building_built":
-                var nodeId = change.Data["node_id"];
-                var buildingType = change.Data["building_type"];
-                if (_nodes.TryGetValue(nodeId, out var node))
-                {
-                    node.BuildingType = buildingType;
-                    MapRenderer.Instance.RefreshNode(nodeId);
-                }
-                break;
-            case "road_built":
-                // 更新道路状态
-                break;
-            // ...
-        }
+        MyPlayer = msg.MyPlayer;
     }
+    foreach (var node in msg.Nodes)
+        _nodes[node.Id] = node;
+    foreach (var unit in msg.Units)
+        _units[unit.Id] = unit;
+
+    // 结算动画和时间线消费 msg.Events / DomainEventEnvelope。
+    // Store 更新后，MapRenderer / HUD 通过 Store 订阅刷新表现。
+    _hydrationHelper.HydrateGameState(
+        StoreHydrationProtocolMapper.MergeGameSync(_gameStateStore.Snapshot, msg));
+    _settlementStore.Replace(SettlementMapper.ToDto(msg));
 }
 ```
 
@@ -800,55 +891,60 @@ internal void ApplyDomesticSettlement(MsgDomesticSettlement msg)
 
 ### AnimationQueue.cs
 
-战斗结算后，服务端推送`MsgCombatSettlement`包含完整的事件序列，客户端按顺序播放动画。
+统一结算后，服务端推送 `MsgGameSync`。客户端按 `DomainEventEnvelope.channel/kind/data` 顺序播放移动、伤害、建筑、科技和胜负表现。
 
 ```csharp
 public class AnimationQueue : MonoBehaviour
 {
-    public static AnimationQueue Instance { get; private set; }
-
-    private Queue<CombatEvent> _queue = new();
-    private bool _isPlaying = false;
-
-    // 收到MsgCombatSettlement时调用
-    public void Enqueue(IList<CombatEvent> events)
+    private readonly struct UnitMoveCommand
     {
-        foreach (var e in events)
-            _queue.Enqueue(e);
+        public readonly string UnitId;
+        public readonly string TargetNodeId;
 
-        if (!_isPlaying)
-            StartCoroutine(PlayQueue());
+        public UnitMoveCommand(string unitId, string targetNodeId)
+        {
+            UnitId = unitId;
+            TargetNodeId = targetNodeId;
+        }
     }
 
-    private IEnumerator PlayQueue()
-    {
-        _isPlaying = true;
-        while (_queue.Count > 0)
-        {
-            var e = _queue.Dequeue();
-            yield return StartCoroutine(PlayEvent(e));
-        }
-        _isPlaying = false;
+    private Queue<UnitMoveCommand> _unitMoveQueue = new();
+    private bool _isPlayingUnitMoves = false;
+    private MapRenderer _mapRenderer;
 
-        // 动画播放完成后，更新缓存和UI
-        GameStateCache.Instance.ApplyCombatSettlement(_pendingSettlement);
+    [Inject]
+    private void Construct(MapRenderer mapRenderer)
+    {
+        _mapRenderer = mapRenderer;
     }
 
-    private IEnumerator PlayEvent(CombatEvent e)
+    // SettlementPlaybackController 消费 SettlementStore 后调用
+    public void EnqueueUnitMove(string unitId, string targetNodeId)
     {
-        switch (e.DataCase)
+        _unitMoveQueue.Enqueue(new UnitMoveCommand(unitId, targetNodeId));
+
+        if (!_isPlayingUnitMoves)
+            StartCoroutine(PlayUnitMoveQueue());
+    }
+
+    private IEnumerator PlayUnitMoveQueue()
+    {
+        _isPlayingUnitMoves = true;
+        while (_unitMoveQueue.Count > 0)
         {
-            case CombatEvent.DataOneofCase.UnitMove:
-                yield return UnitMoveAnim.Play(e.UnitMove);
-                break;
-            case CombatEvent.DataOneofCase.UnitDied:
-                yield return CombatAnim.PlayDeath(e.UnitDied);
-                break;
-            case CombatEvent.DataOneofCase.CastleDamaged:
-                yield return CastleDamageAnim.Play(e.CastleDamaged);
-                break;
-            // ...
+            var cmd = _unitMoveQueue.Dequeue();
+            yield return StartCoroutine(PlaySingleUnitMove(cmd));
         }
+        _isPlayingUnitMoves = false;
+    }
+
+    private IEnumerator PlaySingleUnitMove(UnitMoveCommand cmd)
+    {
+        if (!_mapRenderer.TryGetUnitView(cmd.UnitId, out var unitView)) yield break;
+        if (!_mapRenderer.TryGetNodeView(cmd.TargetNodeId, out var nodeView)) yield break;
+
+        yield return UnitMoveAnim.Play(unitView, nodeView.transform.position, 0.35f);
+        _mapRenderer.SetUnitNode(cmd.UnitId, cmd.TargetNodeId);
     }
 }
 ```
@@ -859,25 +955,22 @@ public class AnimationQueue : MonoBehaviour
 public class UnitMoveAnim : MonoBehaviour
 {
     // 播放单位移动动画
-    public static IEnumerator Play(UnitMoveEvent e)
+    public static IEnumerator Play(UnitView unitView, Vector3 targetWorldPos, float duration)
     {
-        var unitView = UnitCache.Instance.GetView(e.UnitId);
         if (unitView == null) yield break;
 
-        var startPos = GridToWorld(e.From);
-        var endPos = GridToWorld(e.To);
-        float duration = 0.3f;
+        var startPos = unitView.transform.position;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             unitView.transform.position =
-                Vector3.Lerp(startPos, endPos, elapsed / duration);
+                Vector3.Lerp(startPos, targetWorldPos, elapsed / duration);
             yield return null;
         }
 
-        unitView.transform.position = endPos;
+        unitView.transform.position = targetWorldPos;
     }
 }
 ```
@@ -896,7 +989,7 @@ Step 1：项目基础（Day 1）
   - Boot场景，单例初始化
   - NetworkManager：连接，发送，接收，主线程回调
   - MessageDispatcher：ServerFrame提取与payload路由骨架
-  - MessageSender工具类
+  - IClientMessageSender 与 NetworkMessageSender 注入式发送端口
   - Config.cs：服务器地址配置
 
 Step 2：登录和大厅（Day 2上午）
@@ -915,36 +1008,28 @@ Step 3：地图渲染（Day 2下午）
   - UnitView Prefab（简单图标）
   - 格子点击高亮
 
-Step 4：内政阶段UI（Day 3）
+Step 4：规划 UI（Day 3）
   - HUD：资源显示，令牌显示，回合/阶段显示
-  - 处理MsgDomesticPhaseStart：显示阶段和倒计时
+  - 处理MsgPlanningStart：显示阶段、倒计时和当前 planning snapshot
   - BuildMenu：点击格子弹出，选择建筑类型发送
   - PolicyPanel：国策选择发送
-  - TokenActionBar：令牌操作按钮
+  - TechTreePanel：科研目标选择发送
+  - UnitInfoPanel：单位移动、攻击、建城等 planning 指令发送
   - 处理MsgTokenResult：成功/失败Toast
   - MsgMinisterReportChunk：流式文字显示
   - MsgMinisterMetrics：数值轨显示
-  - MsgMinisterAction：行动卡片通知
-  - MsgDomesticSettlement：更新缓存，刷新格子
+  - MsgPlanningSnapshot：更新草稿显示
+  - MsgGameSync：更新缓存，刷新格子
   - SubmitButton和倒计时
 
-Step 5：战斗阶段UI（Day 4）
-  - 处理MsgCombatPhaseStart
-  - WarZonePanel：框选格子，设置战区
-  - 战区指令下达UI
-  - MsgMinisterCombatChunk：流式显示部长拆解
-  - MsgMinisterCombatOrders：指令列表显示
-  - OrderReviewPanel：否决/微操按钮
-  - MsgTokenVetoCombat/MsgTokenMicro发送
-
-Step 6：战斗动画（Day 5）
+Step 5：结算动画（Day 4～5）
   - AnimationQueue
   - UnitMoveAnim（线性插值移动）
   - CombatAnim（简单震动+闪红）
   - CastleDamageAnim（血条减少动画）
-  - MsgCombatSettlement：队列播放，完成后更新缓存
+  - MsgGameSync：队列播放，完成后更新缓存
 
-Step 7：联调和打磨（Day 6～7）
+Step 6：联调和打磨（Day 6～7）
   - 和服务端全流程联调
   - 断线重连处理
   - MsgGameOver：胜负界面，LLM叙事文字显示

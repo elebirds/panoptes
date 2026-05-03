@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify TurnSummary consumes final stores and does not bridge legacy caches."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify UI Toolkit binder uses explicit named element lookup and render method."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify protocol, NetworkManager, generated-file, and test boundaries remain clean."}
+{"file": "/tmp/panoptes-phase5-editmode.log", "reason": "Unity batchmode TestRunner exited 0 but did not produce a testResults XML; dotnet build and Unity compile logs are the authoritative checks for this phase."}

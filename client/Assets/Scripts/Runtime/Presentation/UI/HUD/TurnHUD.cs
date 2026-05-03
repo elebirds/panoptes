@@ -6,13 +6,16 @@
  * Description: Turn/phase HUD that can bind to an external TurnPanel (turnNum).
  *************************************************/
 
-using Panoptes.Core.Application.Cache;
-using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
+using System;
 using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Presentation.Common;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -33,11 +36,10 @@ namespace Panoptes.Presentation.UI.HUD
 
         [Header("Submit Button")]
         [SerializeField] private Button nextStageButton;
-        [SerializeField] private bool autoFindNextStageButton = true;
-        [SerializeField] private string nextStageButtonName = "NextStageBtn";
         [SerializeField] private bool disableNextStageWhenUnavailable = true;
 
-        private GameStateCache _cache;
+        private IDisposable _turnSubscription;
+        private TurnStore _turnStore;
         private float _deadline = -1f;
         private string _currentPhase = string.Empty;
         private string _nextPhase = string.Empty;
@@ -45,49 +47,44 @@ namespace Panoptes.Presentation.UI.HUD
         private bool _isInteractive;
         private bool _gameEnded;
         private int _lastRemainingSeconds = int.MinValue;
-        private bool _nextStageBound;
+        private readonly EventSubscriptionBag _subscriptions = new();
+        private readonly EventSubscriptionBag _buttonSubscriptions = new();
+        private GameIntentService _gameIntentService;
+
+        [Inject]
+        private void Construct(GameIntentService gameIntentService, TurnStore turnStore)
+        {
+            _gameIntentService = gameIntentService;
+            _turnStore = turnStore;
+        }
 
         private void Awake()
         {
             ResolveExternalTurnPanelReferences();
-            ResolveNextStageButtonReference();
             EnsureUi();
-            _cache = GameStateCache.Instance;
-            BindNextStageButton();
             RefreshNextStageInteractable();
         }
 
         private void OnEnable()
         {
             ResolveExternalTurnPanelReferences();
-            ResolveNextStageButtonReference();
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnPhaseChanged += OnPhaseChanged;
-                _cache.OnGameOver += OnGameOver;
-                _cache.OnStateChanged += RefreshFromCache;
-            }
+            _subscriptions.Clear();
+            _turnSubscription?.Dispose();
+            _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
 
-            ActionLock.OnChanged -= OnActionLockChanged;
-            ActionLock.OnChanged += OnActionLockChanged;
+            _subscriptions.Add(
+                () => ActionLock.OnChanged += OnActionLockChanged,
+                () => ActionLock.OnChanged -= OnActionLockChanged);
             BindNextStageButton();
-            RefreshFromCache();
+            RefreshFromState(_turnStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            ActionLock.OnChanged -= OnActionLockChanged;
-            UnbindNextStageButton();
-
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _cache.OnPhaseChanged -= OnPhaseChanged;
-            _cache.OnGameOver -= OnGameOver;
-            _cache.OnStateChanged -= RefreshFromCache;
+            _subscriptions.Clear();
+            _buttonSubscriptions.Clear();
+            _turnSubscription?.Dispose();
+            _turnSubscription = null;
         }
 
         private void Update()
@@ -102,50 +99,21 @@ namespace Panoptes.Presentation.UI.HUD
             RefreshText();
         }
 
-        private void OnPhaseChanged(PhaseChangedEvent evt)
+        private void RefreshFromState(TurnState state)
         {
-            if (evt == null)
+            if (state == null)
             {
                 return;
             }
 
-            _currentTurn = evt.Turn;
-            _currentPhase = evt.Phase ?? string.Empty;
-            _nextPhase = evt.NextPhase ?? string.Empty;
-            _isInteractive = evt.IsInteractive;
-            _deadline = evt.TimeoutSeconds > 0 && evt.IsInteractive
-                ? Time.unscaledTime + evt.TimeoutSeconds
+            _currentTurn = state.Turn;
+            _currentPhase = state.Phase ?? string.Empty;
+            _nextPhase = state.NextPhase ?? string.Empty;
+            _isInteractive = state.IsInteractive && !state.IsGameOver;
+            _gameEnded = state.IsGameOver;
+            _deadline = _isInteractive && state.TimeoutSeconds > 0
+                ? Time.unscaledTime + state.TimeoutSeconds
                 : -1f;
-            _gameEnded = false;
-            _lastRemainingSeconds = int.MinValue;
-            RefreshText();
-            RefreshNextStageInteractable();
-        }
-
-        private void OnGameOver(GameOverEvent _)
-        {
-            _gameEnded = true;
-            _deadline = -1f;
-            _lastRemainingSeconds = int.MinValue;
-            RefreshText();
-            RefreshNextStageInteractable();
-        }
-
-        private void RefreshFromCache()
-        {
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _currentTurn = _cache.Turn;
-            _currentPhase = _cache.Phase ?? string.Empty;
-            _isInteractive = GamePhases.IsPlanning(_currentPhase) && !_cache.IsGameOver;
-            _gameEnded = _cache.IsGameOver;
-            if (!_isInteractive)
-            {
-                _deadline = -1f;
-            }
 
             _lastRemainingSeconds = int.MinValue;
             RefreshText();
@@ -165,7 +133,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            GameIntents.SubmitTurn();
+            _gameIntentService?.SubmitTurn();
             RefreshNextStageInteractable();
         }
 
@@ -250,15 +218,6 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (externalTurnPanelRoot == null)
             {
-                externalTurnPanelRoot = FindRectByName("TrunPanel");
-                if (externalTurnPanelRoot == null)
-                {
-                    externalTurnPanelRoot = FindRectByName("TurnPanel");
-                }
-            }
-
-            if (externalTurnPanelRoot == null)
-            {
                 return;
             }
 
@@ -273,53 +232,25 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
-        private void ResolveNextStageButtonReference()
-        {
-            if (nextStageButton != null || !autoFindNextStageButton)
-            {
-                return;
-            }
-
-            var allButtons = UnityEngine.Object.FindObjectsByType<Button>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            for (var i = 0; i < allButtons.Length; i++)
-            {
-                var button = allButtons[i];
-                if (button == null || string.IsNullOrWhiteSpace(button.name))
-                {
-                    continue;
-                }
-
-                if (string.Equals(button.name, nextStageButtonName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    nextStageButton = button;
-                    break;
-                }
-            }
-        }
-
         private void BindNextStageButton()
         {
-            if (nextStageButton == null || _nextStageBound)
+            _buttonSubscriptions.Clear();
+
+            var button = nextStageButton;
+            if (button == null)
             {
                 return;
             }
 
-            nextStageButton.onClick.AddListener(OnNextStageButtonClicked);
-            _nextStageBound = true;
-        }
-
-        private void UnbindNextStageButton()
-        {
-            if (nextStageButton == null || !_nextStageBound)
-            {
-                return;
-            }
-
-            nextStageButton.onClick.RemoveListener(OnNextStageButtonClicked);
-            _nextStageBound = false;
+            _buttonSubscriptions.Add(
+                () => button.onClick.AddListener(OnNextStageButtonClicked),
+                () =>
+                {
+                    if (button != null)
+                    {
+                        button.onClick.RemoveListener(OnNextStageButtonClicked);
+                    }
+                });
         }
 
         private void RefreshNextStageInteractable()
@@ -330,28 +261,6 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             nextStageButton.interactable = !_gameEnded && _isInteractive && !ActionLock.IsLocked;
-        }
-
-        private static RectTransform FindRectByName(string name)
-        {
-            var all = UnityEngine.Object.FindObjectsByType<RectTransform>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (var i = 0; i < all.Length; i++)
-            {
-                var rect = all[i];
-                if (rect == null || string.IsNullOrWhiteSpace(rect.name))
-                {
-                    continue;
-                }
-
-                if (string.Equals(rect.name, name, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return rect;
-                }
-            }
-
-            return null;
         }
 
         private static TextMeshProUGUI FindTextByName(RectTransform rootRect, string name)

@@ -9,6 +9,7 @@
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using VContainer;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -48,6 +49,7 @@ namespace Panoptes.Presentation.Map
         private MapRenderer _mapRenderer;
         private MapCameraContext _cameraContext;
         private bool _hasCameraContext;
+        private bool _subscribedToMapRenderer;
         private bool _dragging;
         private Vector3 _dragGroundPoint;
         private Vector2 _currentAnchorXZ;
@@ -61,6 +63,12 @@ namespace Panoptes.Presentation.Map
         {
             ResolveRig();
             InitializeStateFromRig();
+        }
+
+        [Inject]
+        private void Construct(MapRenderer mapRenderer)
+        {
+            ConfigureMapRenderer(mapRenderer);
         }
 
         private void OnEnable()
@@ -79,7 +87,6 @@ namespace Panoptes.Presentation.Map
         private void Update()
         {
             ResolveRig();
-            SubscribeToMapRenderer();
             if (_followComponent == null)
             {
                 return;
@@ -156,40 +163,60 @@ namespace Panoptes.Presentation.Map
             ApplyCameraContext(context, true);
         }
 
-        private void SubscribeToMapRenderer()
+        private void ConfigureMapRenderer(MapRenderer mapRenderer)
         {
-            var renderer = MapRenderer.Instance != null ? MapRenderer.Instance : FindAnyObjectByType<MapRenderer>();
-            if (renderer == null || renderer == _mapRenderer)
+            if (_mapRenderer == mapRenderer)
             {
-                if (renderer != null &&
-                    renderer.TryGetCameraContext(out var existingContext) &&
-                    (!_hasCameraContext || !SameContext(existingContext, _cameraContext)))
+                if (isActiveAndEnabled)
                 {
-                    HandleMapCameraContextReady(existingContext);
+                    SyncCameraContextFromMapRenderer();
                 }
-
                 return;
             }
 
             UnsubscribeFromMapRenderer();
-            _mapRenderer = renderer;
-            _mapRenderer.CameraContextReady += HandleMapCameraContextReady;
-
-            if (_mapRenderer.TryGetCameraContext(out var context))
+            _mapRenderer = mapRenderer;
+            if (isActiveAndEnabled)
             {
-                HandleMapCameraContextReady(context);
+                SubscribeToMapRenderer();
             }
         }
 
-        private void UnsubscribeFromMapRenderer()
+        private void SubscribeToMapRenderer()
         {
             if (_mapRenderer == null)
             {
                 return;
             }
 
+            if (!_subscribedToMapRenderer)
+            {
+                _mapRenderer.CameraContextReady += HandleMapCameraContextReady;
+                _subscribedToMapRenderer = true;
+            }
+
+            SyncCameraContextFromMapRenderer();
+        }
+
+        private void UnsubscribeFromMapRenderer()
+        {
+            if (_mapRenderer == null || !_subscribedToMapRenderer)
+            {
+                return;
+            }
+
             _mapRenderer.CameraContextReady -= HandleMapCameraContextReady;
-            _mapRenderer = null;
+            _subscribedToMapRenderer = false;
+        }
+
+        private void SyncCameraContextFromMapRenderer()
+        {
+            if (_mapRenderer != null &&
+                _mapRenderer.TryGetCameraContext(out var existingContext) &&
+                (!_hasCameraContext || !SameContext(existingContext, _cameraContext)))
+            {
+                HandleMapCameraContextReady(existingContext);
+            }
         }
 
         private void ResolveRig()
@@ -197,11 +224,6 @@ namespace Panoptes.Presentation.Map
             if (renderCamera == null)
             {
                 renderCamera = Camera.main;
-            }
-
-            if (targetCamera == null)
-            {
-                targetCamera = FindAnyObjectByType<CinemachineCamera>();
             }
 
             if (targetCamera == null)

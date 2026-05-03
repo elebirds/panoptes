@@ -30,7 +30,7 @@ func TestBuildPlayerViewUsesCurrentResearchTargetAndCost(t *testing.T) {
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 	})
 	player := state.Players["player-1"]
 	player.Research.SetCurrentTarget("agrarian_foundations")
@@ -120,7 +120,7 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 
@@ -133,7 +133,9 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 		node := ecs.NodeC.Get(entry)
 		node.Owner = "player-1"
 		node.TerritoryOwner = "player-1"
+		node.HasRoad = true
 	}
+	ecs.NodeC.Get(emptyEntry).HasRoad = false
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, mapData)
 	state.World = world
@@ -168,6 +170,12 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	if got := cityView.GetOperation().GetBaseProgress(); got != 2 {
 		t.Fatalf("city core base_progress = %d, want 2", got)
 	}
+	if !cityView.GetIsNetworkConnected() || cityView.GetNetworkStatus() != "connected" || cityView.GetNetworkCityId() != "C1" {
+		t.Fatalf("city network fields = connected:%v status:%q city:%q, want connected/C1", cityView.GetIsNetworkConnected(), cityView.GetNetworkStatus(), cityView.GetNetworkCityId())
+	}
+	if got := cityView.GetRoadStatus(); got != "intact" {
+		t.Fatalf("city road_status = %q, want intact", got)
+	}
 
 	barracksView := BuildNodeView(state, barracksEntry, "player-1")
 	if got := barracksView.GetCityId(); got != "C1" {
@@ -184,6 +192,9 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	}
 	if got := barracksView.GetOperation().GetBaseProgress(); got != 3 {
 		t.Fatalf("barracks base_progress = %d, want 3", got)
+	}
+	if !barracksView.GetIsNetworkConnected() || barracksView.GetNetworkCityId() != "C1" {
+		t.Fatalf("barracks network fields = connected:%v city:%q, want connected C1", barracksView.GetIsNetworkConnected(), barracksView.GetNetworkCityId())
 	}
 
 	farmView := BuildNodeView(state, farmEntry, "player-1")
@@ -208,6 +219,9 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	if got := farmView.GetOperation().GetBlockedMessage(); got != "生产所需资源不足，本回合无法推进。" {
 		t.Fatalf("farm blocked_message = %q, want localized blocked message", got)
 	}
+	if !farmView.GetIsNetworkConnected() || farmView.GetNetworkStatus() != "connected" || farmView.GetNetworkCityId() != "C1" {
+		t.Fatalf("farm network fields = connected:%v status:%q city:%q, want connected/C1", farmView.GetIsNetworkConnected(), farmView.GetNetworkStatus(), farmView.GetNetworkCityId())
+	}
 
 	emptyView := BuildNodeView(state, emptyEntry, "player-1")
 	if got := emptyView.GetBuildingStatus(); got != "empty" {
@@ -218,6 +232,9 @@ func TestBuildNodeViewPopulatesCityServiceStatusAndTakeoverFields(t *testing.T) 
 	}
 	if got := emptyView.GetTakeoverRequired(); got != 0 {
 		t.Fatalf("empty takeover_required = %d, want 0", got)
+	}
+	if emptyView.GetIsNetworkConnected() || emptyView.GetNetworkStatus() != "disconnected" || emptyView.GetRoadStatus() != "destroyed" {
+		t.Fatalf("empty network fields = connected:%v status:%q road:%q, want disconnected/destroyed", emptyView.GetIsNetworkConnected(), emptyView.GetNetworkStatus(), emptyView.GetRoadStatus())
 	}
 }
 
@@ -244,7 +261,7 @@ func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	nodeEntry := createNodeForViewTest(world, mapData, "F1", 0, 0)
@@ -284,7 +301,7 @@ func TestBuildNodeViewUsesDisabledBuildingStateAndTakeoverRuntime(t *testing.T) 
 }
 
 func createNodeForViewTest(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) *donburi.Entry {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 	return world.Entry(entity)
 }

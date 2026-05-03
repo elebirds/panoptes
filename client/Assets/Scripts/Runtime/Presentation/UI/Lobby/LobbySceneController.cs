@@ -1,6 +1,7 @@
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Service;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Lobby
 {
@@ -11,25 +12,22 @@ namespace Panoptes.Presentation.UI.Lobby
         private LobbyPanelController _lobbyPanelController;
         private RoomPanelController _roomPanelController;
         private RoomCache _cache;
+        private SessionManager _sessionManager;
+
+        [Inject]
+        public void Construct(RoomCache roomCache, SessionManager sessionManager)
+        {
+            _cache = roomCache;
+            _sessionManager = sessionManager;
+            SubscribeStore();
+        }
 
         private void Awake()
         {
-            _cache = RoomCache.Instance;
             _lobbyPanel = transform.Find("LobbyPanel")?.gameObject;
             _roomPanel = transform.Find("RoomPanel")?.gameObject;
             _lobbyPanelController = _lobbyPanel != null ? _lobbyPanel.GetComponent<LobbyPanelController>() : null;
             _roomPanelController = _roomPanel != null ? _roomPanel.GetComponent<RoomPanelController>() : null;
-
-            if (_cache == null)
-            {
-                return;
-            }
-
-            _cache.OnRoomCreated += OnRoomCreated;
-            _cache.OnRoomStateChanged += OnRoomState;
-            _cache.OnGameStarting += OnGameStarting;
-            _cache.OnPlayerKicked += OnPlayerKicked;
-            _cache.OnLobbyError += OnLobbyError;
         }
 
         private void Start()
@@ -97,7 +95,7 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnPlayerKicked(string playerId, string username)
         {
-            var selfPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            var selfPlayerId = _sessionManager != null ? _sessionManager.PlayerID : string.Empty;
             if (playerId != selfPlayerId)
             {
                 return;
@@ -125,6 +123,25 @@ namespace Panoptes.Presentation.UI.Lobby
             {
                 _lobbyPanel.SetActive(!visible);
             }
+        }
+
+        private void SubscribeStore()
+        {
+            if (_cache == null)
+            {
+                return;
+            }
+
+            _cache.OnRoomCreated -= OnRoomCreated;
+            _cache.OnRoomStateChanged -= OnRoomState;
+            _cache.OnGameStarting -= OnGameStarting;
+            _cache.OnPlayerKicked -= OnPlayerKicked;
+            _cache.OnLobbyError -= OnLobbyError;
+            _cache.OnRoomCreated += OnRoomCreated;
+            _cache.OnRoomStateChanged += OnRoomState;
+            _cache.OnGameStarting += OnGameStarting;
+            _cache.OnPlayerKicked += OnPlayerKicked;
+            _cache.OnLobbyError += OnLobbyError;
         }
     }
 }

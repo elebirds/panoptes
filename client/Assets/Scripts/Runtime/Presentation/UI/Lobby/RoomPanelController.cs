@@ -7,6 +7,7 @@ using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Lobby
 {
@@ -30,29 +31,38 @@ namespace Panoptes.Presentation.UI.Lobby
         private LobbyService _lobbySvc;
         private RoomCache _cache;
         private ClientRuntimeConfigCache _runtimeConfig;
+        private SessionManager _sessionManager;
+        private ConfirmDialog _confirmDialog;
+        private ErrorToast _errorToast;
         private Coroutine _countdownCoroutine;
         private Coroutine _statusResetCoroutine;
         private TextMeshProUGUI _readyButtonText;
         private LobbySceneController _sceneController;
         private bool _isWaitingForGameInit;
 
+        [Inject]
+        public void Construct(
+            LobbyService lobbyService,
+            RoomCache roomCache,
+            ClientRuntimeConfigCache runtimeConfig,
+            SessionManager sessionManager,
+            ConfirmDialog confirmDialog,
+            ErrorToast errorToast,
+            LobbySceneController sceneController)
+        {
+            _lobbySvc = lobbyService;
+            _cache = roomCache;
+            _runtimeConfig = runtimeConfig;
+            _sessionManager = sessionManager;
+            _confirmDialog = confirmDialog;
+            _errorToast = errorToast;
+            _sceneController = sceneController;
+            SubscribeStores();
+        }
+
         private void Awake()
         {
-            _lobbySvc = new LobbyService();
-            _cache = RoomCache.Instance;
-            _runtimeConfig = ClientRuntimeConfigCache.Instance;
             _readyButtonText = readyButton != null ? readyButton.GetComponentInChildren<TextMeshProUGUI>(true) : null;
-            _sceneController = transform.parent != null ? transform.parent.GetComponent<LobbySceneController>() : null;
-
-            if (_cache != null)
-            {
-                _cache.OnRoomStateChanged += RefreshUI;
-            }
-
-            if (_runtimeConfig != null)
-            {
-                _runtimeConfig.OnConfigChanged += RefreshUI;
-            }
 
             addBotButton?.onClick.AddListener(OnClickAddBot);
             startGameButton?.onClick.AddListener(OnClickStartGame);
@@ -187,7 +197,7 @@ namespace Panoptes.Presentation.UI.Lobby
             {
                 StopCountdown();
                 _isWaitingForGameInit = false;
-                RoomCache.Instance?.Clear();
+                _cache?.Clear();
                 return;
             }
 
@@ -251,7 +261,7 @@ namespace Panoptes.Presentation.UI.Lobby
                     StopCountdown();
                     _isWaitingForGameInit = false;
                     _lobbySvc.LeaveRoom();
-                    RoomCache.Instance?.Clear();
+                    _cache?.Clear();
                     _sceneController?.ShowLobbyPanel();
                 });
         }
@@ -291,7 +301,7 @@ namespace Panoptes.Presentation.UI.Lobby
                 return;
             }
 
-            var myPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            var myPlayerId = _sessionManager != null ? _sessionManager.PlayerID : string.Empty;
             var isReady = false;
             foreach (var player in _cache.Players)
             {
@@ -464,7 +474,7 @@ namespace Panoptes.Presentation.UI.Lobby
                 return false;
             }
 
-            var selfPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            var selfPlayerId = _sessionManager != null ? _sessionManager.PlayerID : string.Empty;
             return !string.IsNullOrWhiteSpace(player.PlayerId) && player.PlayerId != selfPlayerId;
         }
 
@@ -489,9 +499,9 @@ namespace Panoptes.Presentation.UI.Lobby
         // 房间里的敏感操作都先走这里，避免开始游戏/离开房间/踢人散落着各写一套确认逻辑。
         private void ShowConfirmation(string title, string message, System.Action onConfirm)
         {
-            if (ConfirmDialog.Instance != null)
+            if (_confirmDialog != null)
             {
-                ConfirmDialog.Instance.Show(title, message, onConfirm, null);
+                _confirmDialog.Show(title, message, onConfirm, null);
                 return;
             }
 
@@ -500,11 +510,11 @@ namespace Panoptes.Presentation.UI.Lobby
         }
 
         // 房间面板只负责把事件转成提示，不直接关心 toast 是通过 prefab 还是运行时补 UI 出来的。
-        private static void ShowToast(string message, bool success)
+        private void ShowToast(string message, bool success)
         {
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, success);
+                _errorToast.Show(message, success);
                 return;
             }
 
@@ -533,6 +543,21 @@ namespace Panoptes.Presentation.UI.Lobby
             }
 
             return string.Empty;
+        }
+
+        private void SubscribeStores()
+        {
+            if (_cache != null)
+            {
+                _cache.OnRoomStateChanged -= RefreshUI;
+                _cache.OnRoomStateChanged += RefreshUI;
+            }
+
+            if (_runtimeConfig != null)
+            {
+                _runtimeConfig.OnConfigChanged -= RefreshUI;
+                _runtimeConfig.OnConfigChanged += RefreshUI;
+            }
         }
     }
 }

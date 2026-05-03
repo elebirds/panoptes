@@ -1,6 +1,6 @@
 # Panoptes 服务端运行时与规则现状说明
 
-> 更新时间：2026-04-16  
+> 更新时间：2026-04-29
 > 适用范围：当前仓库服务端真实实现  
 > 本文描述“代码现在是如何工作的”，不是目标设计稿，也不是历史方案。若本文与 `server/internal/*` 当前实现不一致，应以代码为准，并尽快回写本文。
 >
@@ -28,8 +28,8 @@ Panoptes 当前服务端已经切到统一的 `planning / resolving` 回合模�
 2. 向玩家发送 `MsgPlanningStart` 与当前 planning snapshot。
 3. 在 planning 阶段收集草案输入。
 4. 所有玩家提交或超时后进入 `resolving`。
-5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、建筑生命周期、经济结算。
-6. 生成 `MsgTurnSettlement`，并把新的权威状态投影为 `PlayerView / NodeView / UnitView`。
+5. 先执行 `PlanningStartRunner`，再在 resolving 中按 `game/resolution.TurnResolutionRunner` 的 stage 顺序执行锁定、单位结算、地图动作、建筑生命周期、经济结算。
+6. 生成 `MsgGameSync`，把 resolving 事件流与新的权威状态投影为 `PlayerView / NodeView / UnitView`。
 7. 若未终局，则推进到下一回合的 planning。
 
 ```mermaid
@@ -44,7 +44,7 @@ flowchart LR
     H --> I["MapActionStage"]
     I --> J["BuildingStage"]
     J --> K["EconomyStage"]
-    K --> L["BuildTurnSettlement"]
+    K --> L["BuildGameSync"]
     L --> M["checkGameOver / turn++"]
 ```
 
@@ -73,9 +73,64 @@ flowchart LR
 - “结算阶段的正式裁决写回，主要通过 `event.Apply()` 完成。”
 - “planning 草案与 planning-start promotion 属于运行时编排层的直接状态写入例外。”
 
+### 2.3 MVP 收口后的后端结构边界
+
+2026-04-30 后端结构优化后，当前代码采用“按运行时职责分包、按规则主题拆文件”的约定。该约定不是为了追求小文件本身，而是为了让后续 MVP 功能开发能快速判断“这段逻辑应该放在哪里”。
+
+核心边界如下：
+
+- `game/turn`
+  - `coordinator.go` 只描述回合推进主循环：进入 planning、等待提交/超时、进入 resolving、终局/平局处理、推进回合。
+  - `command_handler.go` 承担 game command 分发，不把 oneof 分发逻辑塞回主循环。
+- `game/planning`
+  - 拥有 planning 命令适配、命令端口、响应投递顺序、preview 命令和各类 planning handler。
+  - `Service.HandleCommand` 仍是外部入口，但内部按 policy/research/institution/build/recipe/unit/minister/reveal/submit 拆分。
+  - preview 是只读路径，不写草案、不自动推送 planning snapshot。
+- `game/orders`
+  - 拥有单位订单从 planning 到 resolving 的状态生命周期。
+  - 包括单位指令校验、planning 草案写入/取消、ActiveMarch 同步、resolving order freeze、结算后 ActiveMarch 刷新，以及 `settle_city` 地图动作事件构造。
+  - root `game` 只通过 route preview callback 提供路径预览能力。
+- `game/resolution`
+  - 拥有 resolving runner、stage 顺序、事件 collector 和 planning commit event 构造。
+  - 不 import root `game`，避免结算内核反向依赖房间生命周期。
+- `game/projection` 与 `game/query`
+  - `query` 负责权威状态到观察/视图的只读查询。
+  - `projection` 负责把观察和事件投影成客户端消息；planning start 与 game sync 共用 `ObservedState` 组合逻辑，避免玩家视角字段漂移。
+- `game/session`
+  - `runtime.go` 保留会话状态与生命周期 facade。
+  - 初始化、bootstrap/catalog sync、catalog payload、参与者、玩家出生、城邦初始化、开发资源发放分别拆到独立文件。
+- `domain`
+  - 保留权威状态模型与状态本地 helper。
+  - modifier、unlock、building HP、turn runtime cleanup 等按主题拆文件。
+- `event`
+  - 保持正式状态写入口职责。
+  - 新代码不得在一个事件的 `Apply()` 内直接调用另一个事件的 `Apply()`；应抽私有 mutation helper，或由 producer 显式发出多个可报告事件。
+- `building` 与 `ecs`
+  - `ecs` 负责实体创建与通用查询。
+  - 建筑 binding、operation、takeover 等建筑专属组件装配归 `building`；`building.ValidatePlacement` 是完整放置规则。
+  - Donburi `Query` 对象按调用创建，不做包级共享；这是为了避免多房间或并发测试读不同 world 时写同一份 query 内部缓存。
+- `staticdata` 与 `datagen`
+  - `staticdata` 按模型主题、默认目录、加载、索引、查询、hash 拆分。
+  - `datagen` 按 emit/json/map/ui/render/schema/validate 拆分，但不改变生成路径或输出结构。
+- `transport`
+  - 入站 frame 分发复用 `transport/dispatch` 的 oneof dispatcher。
+  - `transport/inbound` 只是兼容 auth/lobby/game 粗粒度 handler 的 adapter。
+  - websocket 入站日志名通过 proto oneof 反射获取，不再维护另一套手写 command name switch。
+
+后续新增后端逻辑时，优先按以下顺序判断归属：
+
+1. 只需要 `*domain.GameState` 的状态逻辑，不放 root `game`。
+2. 产生 resolving 事件的规则逻辑，优先放 `engine/<area>`、`building/orchestration` 或 `game/resolution` 的对应 stage/helper。
+3. planning 阶段的命令适配、校验、投递，放 `game/planning`。
+4. 单位订单、地图动作、ActiveMarch 生命周期，放 `game/orders`。
+5. 客户端可见消息组装，放 `game/query` / `game/projection`，不要在 room/session 里重复拼字段。
+6. 只有确实需要 transport、debug hook、participant/session 生命周期时，才留在 root `game` 或 `game/session`。
+
 ## 3. 权威状态模型
 
 核心状态根是 `server/internal/domain/state.go` 中的 `GameState`。
+M1.5 的 durable/runtime/truth 边界详表见
+`docs/2026-04-30-backend-state-responsibility.md`；本节只保留当前代码现状摘要。
 
 ### 3.1 `GameState`
 
@@ -105,7 +160,24 @@ flowchart LR
   - `ActiveMarches`
   - `PointBudgets`
 
-### 3.2 ECS 组件
+### 3.2 状态责任边界
+
+当前后端状态责任按三类归位：
+
+| 类别 | 当前落点 | 生命周期 | 责任边界 |
+|---|---|---:|---|
+| durable truth | `GameState` 的对局、世界、玩家、ECS、地图索引字段 | 整局 | 只能由后端规则、状态 helper 或事件写入；客户端只接收投影。 |
+| planning runtime | `TurnRuntime.Planning` | 当前 planning turn | planning 命令草案和待 lock-in 输入。它不代表已经生效的世界状态。 |
+| resolving runtime | `TurnRuntime.Resolving` | 当前 resolving pass 或跨回合 runtime cache | frozen order、point budget 等结算输入/预算；`ActiveMarches` 是跨回合指令缓存，但物理单位位置仍以 ECS truth 为准。 |
+
+未来 M2/M3 状态新增的默认落点：
+
+- 本地仓储、道路/设施事实、持久运输实体：放在 `domain`/ECS 的 durable truth，并通过事件或明确 state helper 写入。
+- 物流图、flow allocation、当回合求解缓存：放在 future logistics resolving stage 的局部 scratch 或 `TurnRuntime.Resolving` 子结构，不作为源状态保存。
+- priority profile：commit 后属于玩家/国家 durable truth，pending 编辑属于 `TurnRuntime.Planning`；政策/制度推导出的 priority 不要复制进物流 scratch 当源状态。
+- `truth / observed / reported` 暂不实现信息不对称；现有 `game/query` 与 `game/projection` 仍应作为客户端视图边界，避免 transport/client 直接依赖 raw truth。
+
+### 3.3 ECS 组件
 
 当前运行时的核心 ECS 组件定义在 `server/internal/domain/components.go`，`server/internal/ecs/components.go` 只是别名转发。
 
@@ -130,7 +202,7 @@ flowchart LR
   - `ChargeAbilityComp`
   - `StarvingComp`
 
-### 3.3 建筑作用域与绑定关系
+### 3.4 建筑作用域与绑定关系
 
 建筑创建时由 `ecs.CreateBuilding()` 按静态数据写入统一 binding：
 
@@ -201,23 +273,27 @@ flowchart LR
 
 ### 4.3 Resolving 总入口
 
-统一结算入口在 `server/internal/game/settlement.go` 的 `RunTurnResolution()`，其内部已经改为调用 `TurnResolutionRunner`。
+统一结算入口在 `server/internal/game/settlement.go` 的 `RunTurnResolution()`，其内部已经改为调用 `server/internal/game/resolution` 包内的 `TurnResolutionRunner`。`game` 包只通过 hooks 提供 planning lock-in、order freeze、active march refresh 与 map action event collection，不再持有 resolving runner 的 stage 实现。
 
 当前固定顺序是：
 
-1. `PlanningCommitStage`
-2. `OrderFreezeStage`
-3. `UnitResolutionStage`
-4. `MapActionStage`
-5. `BuildingStage`
-6. `EconomyStage`
-7. `broadcastTurnSettlement()`
-8. `checkGameOver()`
-9. 清理本回合 planning / resolving 临时数据
+| 顺序 | Stage | 职责 |
+|---:|---|---|
+| 1 | `PlanningCommitStage` | 把 planning 草案锁定为正式事件并立即 apply，包括国策、科研目标等回合承诺。 |
+| 2 | `OrderFreezeStage` | 把 planning 单位指令冻结为 `TurnRuntime.Resolving.UnitOrders`，并合并持续行军输入。 |
+| 3 | `UnitResolutionStage` | 先执行 combat，再在非 fatal 情况下执行 combat upkeep；若 combat 或 upkeep 令 `state.IsOver` 为 true，立即停止后续 stage。 |
+| 4 | `MapActionStage` | 在非 fatal 情况下刷新 active marches，并 apply `settle_city` 等地图动作事件。 |
+| 5 | `BuildingStage` | 在非 fatal 情况下执行建筑生命周期事件。 |
+| 6 | `EconomyStage` | 在非 fatal 情况下执行经济 runner，并把各经济子阶段事件写入 economy channel。 |
+| 7 | `broadcastGameSync()` | 推送 resolving collector 中已发生的事件和新的权威状态投影。 |
+| 8 | `checkGameOver()` | 若 resolving stage 已令 `state.IsOver` 为 true，广播 `MsgGameOver` 并关闭房间运行时。 |
+| 9 | `ClearPostResolutionScratch()` | 清理本回合 planning / resolving 临时数据。 |
+
+这个顺序是 M1 后端规则地基的一部分。新增 M2+ 规则时必须先决定它属于现有 stage 的内部规则，还是需要更新 `TurnResolutionRunner` 合同与对应测试。
 
 需要注意两点：
 
-- fatal turn 会在 combat 后直接终止后续 map/economy 链。
+- fatal turn 通过 `StageOutcome.Stop` 短路：已经 apply 的 planning/unit 事件保留，后续 map action、building、economy stage 不再执行。
 - planning lock-in 事件不再散落在 `RunTurnResolution()` 顶层手写 apply，而是统一由 `PlanningCommitStage + ResolutionCollector.ApplyNow()` 完成。
 
 ## 5. Planning 子系统
@@ -980,17 +1056,14 @@ stateDiagram-v2
 - `takeover_progress / takeover_required`
 - 当前选中 recipe 与 operation 进度
 
-### 12.3 TurnSettlement
+### 12.3 GameSync
 
-`ProjectTurnSettlement()` 会把结果按三段分组：
+`ProjectGameSync()` 会把 resolving 结果投影为统一同步消息，包含：
 
-- `unit`
-- `map`
-- `economy`
-
-并附带：
-
-- `Nodes`
+- `turn / phase / next_phase`
+- 按玩家视野过滤后的 `nodes / units / my_player`
+- `DomainEventEnvelope` 事件流：每条事件都有 `event_id / turn / phase / channel / source / kind / data`，核心事件额外进入 typed oneof
+- planning 阶段可附带 `snapshot` 与 typed minister proposals
 - `Units`
 - `MyPlayerAfter`
 
@@ -1000,6 +1073,7 @@ stateDiagram-v2
 
 - `technology_completed` 只出现在 settlement
 - `technology_activated` 不再出现在 settlement，而只出现在下一回合的 planning start
+- `recipe_selected` 属于服务端内部 operation reset 审计事件，不进入 `DomainEventEnvelope`；客户端通过结算后的节点 operation 快照看到当前配方
 
 ## 13. Minister 与 War Zone 的当前接线状态
 
@@ -1034,7 +1108,7 @@ stateDiagram-v2
 | Planning 草案 | `game/planning/service.go` | `TurnRuntime.Planning.*` | 即时返回 result 消息，不直接写世界 | 是 |
 | 行军与路径预览 | `game/room_march.go`、`combat/route_planner.go` | `Resolving.ActiveMarches` | 无专门 event，结果进入 snapshot / queued orders | 是 |
 | 单位结算 | `engine/unit_resolution_runner.go`、`combat/*` | `Resolving.UnitOrders`、combat snapshot | `UnitMovedEvent`、`UnitDamagedEvent`、`UnitDiedEvent`、`CityCoreDestroyedEvent` | 是 |
-| 地图动作 | `game/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
+| 地图动作 | `game/orders/map_actions.go`、`event/map.go` | 单位指令与地图节点 | `CityFoundedEvent`、`CityFoundingFailedEvent` | 仅 `settle_city` 闭环 |
 | 经济点数 | `engine/economy/orchestrator.go`、`domain/economy.go` | `PointBudgets`、玩家资源 | `PointBudgetRefreshedEvent`、`PointSpentEvent` | 是 |
 | 科研推进与激活 | `engine/economy/research.go`、`session/planning_start_runner.go` | `ResearchState` | `ResearchProgressAppliedEvent`、`TechnologyCompletedEvent`、`TechnologyActivatedEvent`、`TechnologyGrantAppliedEvent` | 是 |
 | 建筑建造 | `engine/economy/build.go` | `BuildOrders`、ECS building state | `BuildingBuiltEvent`、`BuildSkippedEvent` | 是 |

@@ -74,32 +74,38 @@ const (
 )
 
 type Position struct {
-	X int
-	Y int
+	Q int
+	R int
 }
 
 func (p Position) DistanceTo(other Position) int {
-	dx := p.X - other.X
-	if dx < 0 {
-		dx = -dx
+	dq := p.Q - other.Q
+	if dq < 0 {
+		dq = -dq
 	}
-	dy := p.Y - other.Y
-	if dy < 0 {
-		dy = -dy
+	dr := p.R - other.R
+	if dr < 0 {
+		dr = -dr
 	}
-	return dx + dy
+	ds := p.Q + p.R - other.Q - other.R
+	if ds < 0 {
+		ds = -ds
+	}
+	return (dq + ds + dr) / 2
 }
 
 func (p Position) Add(other Position) Position {
-	return Position{X: p.X + other.X, Y: p.Y + other.Y}
+	return Position{Q: p.Q + other.Q, R: p.R + other.R}
 }
 
 func (p Position) Neighbors() []Position {
 	return []Position{
-		{X: p.X, Y: p.Y - 1},
-		{X: p.X, Y: p.Y + 1},
-		{X: p.X - 1, Y: p.Y},
-		{X: p.X + 1, Y: p.Y},
+		{Q: p.Q + 1, R: p.R},
+		{Q: p.Q + 1, R: p.R - 1},
+		{Q: p.Q, R: p.R - 1},
+		{Q: p.Q - 1, R: p.R},
+		{Q: p.Q - 1, R: p.R + 1},
+		{Q: p.Q, R: p.R + 1},
 	}
 }
 

@@ -8,7 +8,6 @@ package ecs
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
@@ -19,8 +18,8 @@ import (
 
 type MapNode struct {
 	ID              string `json:"id"`
-	X               int    `json:"x"`
-	Y               int    `json:"y"`
+	Q               int    `json:"q"`
+	R               int    `json:"r"`
 	Terrain         string `json:"terrain"`
 	IsResourcePoint bool   `json:"is_resource_point"`
 	ResourceType    string `json:"resource_type"`
@@ -29,7 +28,7 @@ type MapNode struct {
 func CreateNode(world donburi.World, mapNode MapNode) donburi.Entity {
 	entity := world.Create(PositionC, NodeC)
 	entry := world.Entry(entity)
-	PositionC.SetValue(entry, PositionComp{X: mapNode.X, Y: mapNode.Y})
+	PositionC.SetValue(entry, PositionComp{Q: mapNode.Q, R: mapNode.R})
 	NodeC.SetValue(entry, NodeComp{
 		ID:           mapNode.ID,
 		Terrain:      domain.Terrain(mapNode.Terrain),
@@ -51,7 +50,7 @@ func CreateUnit(world donburi.World, unitType string, faction string, pos domain
 
 	entity := world.Create(PositionC, UnitStatsC, UnitCategoryC, UnitCapabilitiesC)
 	entry := world.Entry(entity)
-	PositionC.SetValue(entry, PositionComp{X: pos.X, Y: pos.Y})
+	PositionC.SetValue(entry, PositionComp{Q: pos.Q, R: pos.R})
 	UnitStatsC.SetValue(entry, UnitStatsComp{
 		ID:          uuid.NewString(),
 		Faction:     faction,
@@ -141,19 +140,13 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 			nodeEntry.AddComponent(BuildingC)
 		}
 		BuildingC.SetValue(nodeEntry, comp)
-		attachBuildingScopeComponents(nodeEntry, cfg, cityID)
+		attachBuildingComponents(nodeEntry, cfg, cityID)
 		if cfg.DefaultRecipeID != "" {
-			if !nodeEntry.HasComponent(BuildingOperationC) {
-				nodeEntry.AddComponent(BuildingOperationC)
-			}
 			requiredTurns := 0
 			if recipe, ok := staticdata.Default().GetRecipe(cfg.DefaultRecipeID); ok {
 				requiredTurns = recipe.WorkAmount
 			}
-			BuildingOperationC.SetValue(nodeEntry, BuildingOperationComp{
-				SelectedRecipeID: cfg.DefaultRecipeID,
-				RequiredTurns:    requiredTurns,
-			})
+			building.AttachDefaultOperation(nodeEntry, cfg.DefaultRecipeID, requiredTurns)
 		}
 		node := NodeC.Get(nodeEntry)
 		node.Owner = owner
@@ -163,47 +156,15 @@ func CreateBuilding(world donburi.World, buildingType string, owner string, city
 	entity := world.Create(BuildingC)
 	buildingEntry := world.Entry(entity)
 	BuildingC.SetValue(buildingEntry, comp)
-	attachBuildingScopeComponents(buildingEntry, cfg, cityID)
+	attachBuildingComponents(buildingEntry, cfg, cityID)
 	return entity
 }
 
-func attachBuildingScopeComponents(entry *donburi.Entry, cfg staticdata.BuildingDefinition, cityID string) {
+func attachBuildingComponents(entry *donburi.Entry, cfg staticdata.BuildingDefinition, cityID string) {
 	if entry == nil {
 		return
 	}
-	removeBuildingScopeComponents(entry)
-	building.SetBinding(entry, cfg.BuildingScope, cityID, cityID)
-
-	if normalizeBuildingToken(cfg.TakeoverMode) != "disabled" {
-		required := staticdata.Default().Rules().FacilityTakeoverTurns
-		current := FacilityTakeoverComp{}
-		if entry.HasComponent(FacilityTakeoverC) {
-			current = *FacilityTakeoverC.Get(entry)
-		} else {
-			entry.AddComponent(FacilityTakeoverC)
-		}
-		current.Mode = cfg.TakeoverMode
-		current.Required = required
-		FacilityTakeoverC.SetValue(entry, current)
-	}
-}
-
-func removeBuildingScopeComponents(entry *donburi.Entry) {
-	if entry == nil {
-		return
-	}
-	for _, component := range []donburi.IComponentType{
-		BuildingBindingC,
-		FacilityTakeoverC,
-	} {
-		if entry.HasComponent(component) {
-			entry.RemoveComponent(component)
-		}
-	}
-}
-
-func normalizeBuildingToken(value string) string {
-	return strings.ToLower(strings.TrimSpace(value))
+	building.AttachComponents(entry, cfg, cityID, staticdata.Default().Rules().FacilityTakeoverTurns)
 }
 
 func fallbackBuildingDefinition(buildingType string) (staticdata.BuildingDefinition, bool) {

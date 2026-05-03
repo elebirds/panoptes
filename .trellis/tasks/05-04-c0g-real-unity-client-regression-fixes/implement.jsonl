@@ -1,0 +1,20 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementPanelUiToolkitRenderer.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementHostUiToolkitBinder.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementPanelUiToolkitBinderBase.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/UI/Toolkit/Management/TechTree.uss", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Map/MapRenderer.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Editor/PanoptesPlayModeStartScene.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Editor/PanoptesAssetIntegrityCheck.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/Scripts/Tests/EditMode/Presentation/ManagementPanelUiToolkitBinderTests.cs", "reason": "C0g regression fix"}
+{"file": "client/Assets/UI/Toolkit/Management/ManagementHost.uxml", "reason": "C0g default management entry state"}
+{"file": "client/Assets/Resources/UnityDefaultRuntimeTheme.tss", "reason": "C0g runtime UI Toolkit default theme"}
+{"file": "client/Assets/UI/Toolkit/Management/PolicyFocus.uss", "reason": "C0g management panel layout convergence"}
+{"file": "client/Assets/UI/Toolkit/Management/NationalLedger.uss", "reason": "C0g management panel layout convergence"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/MinisterReportUiToolkitBinder.cs", "reason": "C0g hide unstyled minister report behind visibility store"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/TurnSummaryUiToolkitBinder.cs", "reason": "C0g hide unstyled turn summary behind visibility store"}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "C0g stop dynamic unstyled UI Toolkit panels"}
+{"file": ".trellis/tasks/05-04-c0g-real-unity-client-regression-fixes/research/unity-ui-toolkit-real-regression-root-cause.md", "reason": "C0g UI Toolkit root cause research"}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreHydrationHelper.cs", "reason": "Implemented root-cause bridge: seed GameStateStore and TurnStore from project GameStateCache when Game scene scope starts, before StoreMessageHydrator attaches."}
+{"file": "client/Assets/Scripts/Runtime/Core/Application/Stores/StoreHydrationProtocolMapper.cs", "reason": "Added GameStateCache to final Store read-model mapping so the first MsgGameInit snapshot survives scene transition."}
+{"file": "client/Assets/Scripts/Tests/EditMode/Core/StoreHydrationHelperTests.cs", "reason": "Added regression coverage for first Game scene Store hydration from GameStateCache without clearing catalog state."}

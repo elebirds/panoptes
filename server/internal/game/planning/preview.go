@@ -1,36 +1,72 @@
+// Copyright (c) 2026 Panoptes Project Authors.
+// Project: Panoptes
+// Author: elebirds <hhmcn@outlook.com>
+// Updated: 2026-04-30 00:00:00 +0800
+// Description: 承载 planning 命令处理、端口拆分与响应投递相关逻辑。
+
 package planning
 
 import (
+	"context"
 	"strings"
 
 	"github.com/elebirds/panoptes/internal/building"
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
+	"github.com/elebirds/panoptes/internal/engine/combat"
 	"github.com/elebirds/panoptes/internal/engine/economy"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/staticdata"
+	coretransport "github.com/elebirds/panoptes/internal/transport"
+	cmddispatch "github.com/elebirds/panoptes/internal/transport/dispatch"
+	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 	"github.com/yohamta/donburi"
+	"google.golang.org/protobuf/proto"
 )
 
 type buildCommandEvaluation struct {
-	OK               bool
-	ErrorCode        string
-	Validation       economy.BuildOrderValidation
-	ResourceCost     domain.ResourceBag
-	PointCost        domain.PointBag
-	FeedbackMessage  string
-	FeedbackDetails  []*pb.FeedbackDetail
-	ReplacingDraft   bool
+	OK              bool
+	ErrorCode       string
+	Validation      economy.BuildOrderValidation
+	ResourceCost    domain.ResourceBag
+	PointCost       domain.PointBag
+	FeedbackMessage string
+	FeedbackDetails []*pb.FeedbackDetail
+	ReplacingDraft  bool
 }
 
 type recipeCommandEvaluation struct {
-	OK               bool
-	ErrorCode        string
-	Validation       economy.RecipeSelectionValidation
-	FeedbackMessage  string
-	FeedbackDetails  []*pb.FeedbackDetail
-	WarningMessage   string
-	WarningDetails   []*pb.FeedbackDetail
+	OK              bool
+	ErrorCode       string
+	Validation      economy.RecipeSelectionValidation
+	FeedbackMessage string
+	FeedbackDetails []*pb.FeedbackDetail
+	WarningMessage  string
+	WarningDetails  []*pb.FeedbackDetail
+}
+
+func handlePreviewCommand(room Session, inbound cmddispatch.InboundContext, cmd *pb.PlanningCommand) error {
+	msg, err := previewCommandResponse(room, inbound.PlayerID, cmd)
+	if err != nil {
+		return err
+	}
+	eventCtx := coretransport.ContextWithEventMeta(context.Background(), coretransport.EventMetaFromInbound(inbound))
+	newCommandDelivery(eventCtx, inbound.PlayerID, room).send(msg)
+	return nil
+}
+
+func previewCommandResponse(room Session, playerID string, cmd *pb.PlanningCommand) (proto.Message, error) {
+	switch body := cmd.GetBody().(type) {
+	case *pb.PlanningCommand_PlanningPathPreviewRequest:
+		return buildPlanningPathPreviewResponse(room.State(), playerID, body.PlanningPathPreviewRequest), nil
+	case *pb.PlanningCommand_BuildStructurePreview:
+		return buildStructurePreviewResponse(room, playerID, body.BuildStructurePreview), nil
+	case *pb.PlanningCommand_SetBuildingRecipePreview:
+		return setBuildingRecipePreviewResponse(room.State(), playerID, body.SetBuildingRecipePreview), nil
+	default:
+		return nil, transportproblem.InvalidRequest("unsupported planning preview command")
+	}
 }
 
 func evaluateBuildCommand(room Session, playerID string, playerState *domain.PlayerState, nodeID string, buildingType string, cityID string) buildCommandEvaluation {
@@ -176,6 +212,52 @@ func setBuildingRecipePreviewResponse(state *domain.GameState, playerID string, 
 	}
 	resp.FeedbackMessage = eval.FeedbackMessage
 	resp.FeedbackDetails = eval.FeedbackDetails
+	return resp
+}
+
+func buildPlanningPathPreviewResponse(state *domain.GameState, playerID string, msg *pb.MsgPlanningPathPreviewRequest) *pb.MsgPlanningPathPreviewResponse {
+	resp := &pb.MsgPlanningPathPreviewResponse{
+		RequestId:    msg.GetRequestId(),
+		UnitId:       msg.GetUnitId(),
+		Action:       msg.GetAction(),
+		TargetNodeId: msg.GetTargetNodeId(),
+		Valid:        false,
+	}
+	if state == nil || msg == nil {
+		resp.ErrorCode = "invalid_request"
+		return resp
+	}
+	if gameorders.UnitAction(msg.GetAction()) != gameorders.ActionMove {
+		resp.ErrorCode = "invalid_directive"
+		return resp
+	}
+	entry, ok := findPreviewUnit(state, msg.GetUnitId(), playerID)
+	if !ok {
+		resp.ErrorCode = "unit_not_found"
+		return resp
+	}
+	if _, ok := state.GetNode(msg.GetTargetNodeId()); !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	planner := combat.NewWeightedRoutePlanner(combat.DefaultTerrainCostPolicy{})
+	preview, ok := planner.BuildPreview(state.World, state, ecs.UnitStatsC.Get(entry).ID, msg.GetTargetNodeId())
+	if !ok {
+		resp.ErrorCode = "invalid_target"
+		return resp
+	}
+
+	resp.Valid = true
+	resp.PathNodeIds = append(resp.PathNodeIds, preview.PathNodeIDs...)
+	resp.FirstTurnNodeId = preview.FirstTurnNodeID
+	resp.TotalTurns = int32(preview.TotalTurns)
+	for _, stop := range preview.TurnStops {
+		resp.TurnStops = append(resp.TurnStops, &pb.MarchTurnStop{
+			TurnIndex: int32(stop.TurnIndex),
+			NodeId:    stop.NodeID,
+		})
+	}
 	return resp
 }
 

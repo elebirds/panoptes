@@ -23,7 +23,7 @@ namespace Panoptes.Tests.EditMode.Cache
             var dto = NodeMapper.ToDto(new NodeView
             {
                 Id = "N1",
-                Pos = new Position { X = 1, Y = 2 },
+                Pos = new Position { Q = 1, R = 2 },
                 Terrain = "plain",
                 IsCurrentlyVisible = false,
                 IsMemory = true,
@@ -54,7 +54,7 @@ namespace Panoptes.Tests.EditMode.Cache
                     new NodeView
                     {
                         Id = "N1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         IsCurrentlyVisible = true,
                         LastObservedTurn = 1
@@ -62,7 +62,7 @@ namespace Panoptes.Tests.EditMode.Cache
                     new NodeView
                     {
                         Id = "N2",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         Terrain = "plain",
                         BuildingTypeId = "farm",
                         IsCurrentlyVisible = true,
@@ -76,7 +76,7 @@ namespace Panoptes.Tests.EditMode.Cache
                         Id = "enemy-1",
                         Faction = "player-2",
                         UnitType = "infantry",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         Hp = 30,
                         MaxHp = 30
                     }
@@ -94,7 +94,7 @@ namespace Panoptes.Tests.EditMode.Cache
                     new NodeView
                     {
                         Id = "N1",
-                        Pos = new Position { X = 0, Y = 0 },
+                        Pos = new Position { Q = 0, R = 0 },
                         Terrain = "plain",
                         IsCurrentlyVisible = true,
                         LastObservedTurn = 2
@@ -102,7 +102,7 @@ namespace Panoptes.Tests.EditMode.Cache
                     new NodeView
                     {
                         Id = "N2",
-                        Pos = new Position { X = 1, Y = 0 },
+                        Pos = new Position { Q = 1, R = 0 },
                         Terrain = "plain",
                         BuildingTypeId = "farm",
                         IsCurrentlyVisible = false,

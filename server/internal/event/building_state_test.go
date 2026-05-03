@@ -18,7 +18,7 @@ func TestBuildingStatusChangedEventApplyMarksBuildingDisabled(t *testing.T) {
 			{ID: "farm", MaxHP: 80},
 		},
 	}))
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	ecs.CreateBuilding(world, "farm", "player-1", "", nodeEntry)
 
@@ -46,6 +46,34 @@ func TestBuildingStatusChangedEventApplyMarksBuildingDisabled(t *testing.T) {
 	}
 }
 
+func TestBuildingRepairedEventApplyRestoresHPAndIdleState(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", MaxHP: 80, TakeoverMode: "delayed"},
+		},
+	}))
+	world := donburi.NewWorld()
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
+	nodeEntry := world.Entry(nodeEntity)
+	ecs.CreateBuilding(world, "farm", "player-1", "C1", nodeEntry)
+	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{NodeIndex: map[string]donburi.Entity{"A1": nodeEntity}})
+	state.World = world
+	state.RefreshBuildingMaxHPAtEntry(nodeEntry)
+	ecs.BuildingC.Get(nodeEntry).HP = 7
+	domain.SetBuildingLifecycleState(nodeEntry, domain.BuildingStatusRuined, "damaged", 0)
+
+	BuildingRepairedEvent{NodeID: "A1", Owner: "player-1"}.Apply(world, state)
+
+	building := ecs.BuildingC.Get(nodeEntry)
+	if building.HP != building.MaxHP || building.HP != 80 {
+		t.Fatalf("building hp = %d/%d, want 80/80", building.HP, building.MaxHP)
+	}
+	status, reason := domain.BuildingLifecycleStateAtTurn(nodeEntry, state.Turn)
+	if status != domain.BuildingStatusIdle || reason != "" {
+		t.Fatalf("building status = %q reason=%q, want idle empty", status, reason)
+	}
+}
+
 func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *testing.T) {
 	world := donburi.NewWorld()
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
@@ -64,7 +92,7 @@ func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *test
 
 	nodeIndex := map[string]donburi.Entity{}
 	createNode := func(id string, x int, y int, owner string, resource bool) *donburi.Entry {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, X: x, Y: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: id, Q: x, R: y, Terrain: "plain", IsResourcePoint: resource, ResourceType: "food"})
 		nodeIndex[id] = entity
 		entry := world.Entry(entity)
 		node := ecs.NodeC.Get(entry)
@@ -89,7 +117,7 @@ func TestFacilityTakeoverCompletedEventApplyTransfersOwnershipAndBinding(t *test
 
 	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 1}, "player-2": {X: 4, Y: 1}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 1}, "player-2": {Q: 4, R: 1}},
 		NodeIndex:    nodeIndex,
 	})
 	state.World = world

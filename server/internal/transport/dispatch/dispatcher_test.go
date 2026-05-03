@@ -26,6 +26,7 @@ type stubGameHandler struct {
 	planning *pb.PlanningCommand
 	syncReq  *pb.MsgStaticCatalogSyncRequest
 	chat     *pb.ChatCommand
+	batch    *pb.MsgGameCommandBatch
 }
 
 func (h *stubGameHandler) Planning(_ InboundContext, cmd *pb.PlanningCommand) error {
@@ -40,6 +41,11 @@ func (h *stubGameHandler) StaticCatalogSyncRequest(_ InboundContext, cmd *pb.Msg
 
 func (h *stubGameHandler) Chat(_ InboundContext, cmd *pb.ChatCommand) error {
 	h.chat = cmd
+	return nil
+}
+
+func (h *stubGameHandler) CommandBatch(_ InboundContext, cmd *pb.MsgGameCommandBatch) error {
+	h.batch = cmd
 	return nil
 }
 

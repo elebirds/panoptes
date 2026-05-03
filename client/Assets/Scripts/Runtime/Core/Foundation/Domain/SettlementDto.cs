@@ -101,8 +101,8 @@ namespace Panoptes.Core.Domain
     {
         public string NodeId;
         public string BuildingType;
-        public int X;
-        public int Y;
+        public int Q;
+        public int R;
         public bool HasCoordinates;
     }
 
@@ -141,11 +141,11 @@ namespace Panoptes.Core.Domain
         public int Damage;
         public int HpAfter;
         public int Sequence;
-        public int PosX;
-        public int PosY;
-        public int FromX;
-        public int FromY;
-        public int ToX;
-        public int ToY;
+        public int PosQ;
+        public int PosR;
+        public int FromQ;
+        public int FromR;
+        public int ToQ;
+        public int ToR;
     }
 }

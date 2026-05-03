@@ -7,11 +7,12 @@
  *************************************************/
 
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Map;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -60,8 +61,16 @@ namespace Panoptes.Presentation.UI.HUD
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
-        private GameStateCache _cache;
+        private GameStateStore _gameStateStore;
+        private MapRenderer _mapRenderer;
         private Sprite _defaultUiSprite;
+
+        [Inject]
+        private void Construct(GameStateStore gameStateStore, MapRenderer mapRenderer)
+        {
+            _gameStateStore = gameStateStore;
+            _mapRenderer = mapRenderer;
+        }
 
         public static void PushUiSuppression()
         {
@@ -77,7 +86,6 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void Awake()
         {
-            _cache = GameStateCache.Instance;
             ResolveCamera();
             EnsureCanvas();
         }
@@ -106,7 +114,7 @@ namespace Panoptes.Presentation.UI.HUD
                 _canvas.enabled = true;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || map.TileViews == null || map.TileViews.Count == 0)
             {
                 HideAll();
@@ -132,21 +140,14 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (!autoCreateOverlayCanvas)
+            _canvas = GetComponentInParent<Canvas>();
+            _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            if (_canvas != null && _canvasRect != null)
             {
-                _canvas = GetComponentInParent<Canvas>();
-                _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
                 return;
             }
 
-            var found = GameObject.Find(canvasName);
-            if (found != null)
-            {
-                _canvas = found.GetComponent<Canvas>();
-                _canvasRect = found.transform as RectTransform;
-            }
-
-            if (_canvas != null && _canvasRect != null)
+            if (!autoCreateOverlayCanvas)
             {
                 return;
             }
@@ -420,7 +421,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return neutralOwnerColor;
             }
 
-            var myPlayerId = _cache != null ? _cache.MyPlayerID : string.Empty;
+            var myPlayerId = _gameStateStore != null ? _gameStateStore.Snapshot.MyPlayerId : string.Empty;
             if (!string.IsNullOrWhiteSpace(myPlayerId))
             {
                 return string.Equals(ownerId, myPlayerId, System.StringComparison.OrdinalIgnoreCase)

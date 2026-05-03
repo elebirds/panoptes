@@ -16,7 +16,19 @@ Questions to answer:
 - What code review standards apply?
 -->
 
-(To be filled by the team)
+The client quality bar protects Unity prefab compatibility and the pure
+presentation boundary. Most changes should be small extractions from large
+MonoBehaviours into helper classes with EditMode/static coverage.
+
+The C0a+ target architecture is documented in
+`docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md`.
+VContainer, R3, UniTask, and UI Toolkit are approved for migrated modules with
+locked versions. Do not introduce compatibility Composition Roots that make new
+modules depend on legacy singleton lookup.
+
+R3.Unity is installed through UPM, while the R3 core and its required BCL
+runtime DLLs are vendored under `client/Assets/Plugins/`. Do not remove those
+DLLs unless the R3 installation strategy is deliberately replaced.
 
 ---
 
@@ -24,7 +36,18 @@ Questions to answer:
 
 <!-- Patterns that should never be used and why -->
 
-(To be filled by the team)
+- Manual edits under `client/Assets/Scripts/Protocol/`.
+- `Panoptes.Protocol` references under `client/Assets/Scripts/Runtime/Presentation`.
+- Direct NetworkManager singleton calls under `client/Assets/Scripts/Runtime/Presentation/UI`.
+- UI scripts performing gameplay legality validation or resource affordability
+  checks.
+- Broad scene/prefab-facing MonoBehaviour renames without updating and
+  verifying affected assets.
+- UI Toolkit binders or uGUI panels directly mutating authoritative game state.
+- New C0a backend binding logic added directly to high-risk facade scripts when
+  a ViewModel/helper/binder extraction is feasible.
+- New migrated Store/ViewModel/Binder code actively calling legacy singleton
+  `*.Instance` APIs instead of receiving dependencies from VContainer.
 
 ---
 
@@ -32,7 +55,29 @@ Questions to answer:
 
 <!-- Patterns that must always be used -->
 
-(To be filled by the team)
+- Keep Presentation depending on Core DTO/cache APIs, not protocol messages.
+- Keep UI command submission routed through Core services/intents.
+- Use `EventSubscriptionBag` for repeated event/button subscriptions where
+  lifecycle symmetry matters.
+- Prefer `SceneObjectFinder` for fallback scene lookup when serialized
+  references are unavailable.
+- Keep extracted helpers beside their facade unless they are clearly shared.
+- New management panels should prefer `Core store/DTO -> ViewModel -> Binder ->
+  UI` flow through VContainer and R3.
+- Player command submission should prefer `Presentation command ->
+  Core command service -> IClientMessageSender -> Server`; migrated
+  Presentation code must not call static command compatibility shells.
+- If UI Toolkit is used, start with explicit Binder rendering and add data
+  binding only for stable fields/forms after the pilot succeeds.
+- `RegisterComponentOnNewGameObject` is reserved for the current UIDocument
+  management binders until authored UI Toolkit prefabs exist; any expansion of
+  that exception needs a boundary test update.
+- Debug panel dynamic component creation is allowed only behind
+  `UNITY_EDITOR`, `DEVELOPMENT_BUILD`, or `PANOPTES_DEBUG_PANEL` compile gates.
+- Helpers that own runtime Unity objects (`GameObject`, `RenderTexture`,
+  cameras, lights) must expose deterministic cleanup. If cleanup can run in
+  EditMode tests, use `DestroyImmediate` outside play mode and `Destroy` during
+  play mode.
 
 ---
 
@@ -40,7 +85,19 @@ Questions to answer:
 
 <!-- What level of testing is expected -->
 
-(To be filled by the team)
+- Add EditMode tests for extracted non-trivial helpers.
+- Keep static boundary tests green:
+  - no Protocol usage in Presentation;
+  - no direct NetworkManager singleton usage in Presentation UI;
+  - high-risk facade line counts should not grow past their captured baseline
+    without updating the audit/gate docs.
+- Run Unity batchmode or EditMode tests when a licensed Unity environment is
+  available. If TestRunner XML is unavailable, record the limitation and at
+  least verify Unity script import/compile logs contain no `error CS`.
+- `dotnet test client/Panoptes.Tests.EditMode.csproj` is not sufficient as a
+  Unity assertion gate in the current project shape; it can pass while filtered
+  Unity EditMode tests fail. Use Unity batchmode `-runTests -testPlatform
+  EditMode` for tests that depend on Unity TestRunner behavior.
 
 ---
 
@@ -48,4 +105,11 @@ Questions to answer:
 
 <!-- What reviewers should check -->
 
-(To be filled by the team)
+- Does the change preserve serialized field and public MonoBehaviour entry
+  compatibility?
+- Did large MonoBehaviours shrink or stay stable?
+- Did helpers avoid becoming hidden gameplay rules?
+- Do helpers that create runtime Unity objects release them with EditMode-safe
+  cleanup?
+- Are event listeners unsubscribed symmetrically?
+- Are generated protocol files untouched?

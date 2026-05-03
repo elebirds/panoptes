@@ -16,7 +16,15 @@ Questions to answer:
 - What accessibility standards apply?
 -->
 
-(To be filled by the team)
+Unity UI and map scripts should be built as prefab-facing facades plus small
+testable helpers. A facade MonoBehaviour owns serialized fields and Unity
+lifecycle methods; helpers own rendering, lookup, event bookkeeping, or
+read-only view-model construction.
+
+Final target: information-heavy panels may use UI Toolkit with explicit
+Binders, while map/HUD/world-space UI remains on uGUI. Both styles must consume
+the same Core DTO/store/ViewModel layer. Migrated Binders should receive
+ViewModels and Services through VContainer injection, not singleton lookup.
 
 ---
 
@@ -24,7 +32,44 @@ Questions to answer:
 
 <!-- Standard structure of a component file -->
 
-(To be filled by the team)
+Recommended shape:
+
+```csharp
+public sealed class SomePanel : MonoBehaviour
+{
+    [SerializeField] private SomeItemView itemPrefab;
+
+    private readonly SomePanelRenderer _renderer = new();
+    private readonly EventSubscriptionBag _subscriptions = new();
+
+    private void OnEnable()
+    {
+        _subscriptions.Add(
+            () => cache.OnChanged += Refresh,
+            () => cache.OnChanged -= Refresh);
+        Refresh();
+    }
+
+    private void OnDisable()
+    {
+        _subscriptions.Clear();
+        _renderer.Clear();
+    }
+}
+```
+
+Keep serialized field names stable unless the related prefab/scene assets are
+updated and verified in the same commit.
+
+When extracting a `[Serializable]` custom class used inside a serialized
+MonoBehaviour field, preserve the old serialized field element type if an
+authored prefab/scene already contains data for that field. Prefer a thin
+nested compatibility wrapper that inherits from a top-level helper slot over
+changing the field from the old nested type to the new helper type.
+
+For UI Toolkit binders, prefer explicit `root.Q<T>("name")` lookup and a single
+`Render(state)` method during the pilot phase. Do not start with reflection,
+string-path binding engines, or hidden view locators.
 
 ---
 
@@ -32,7 +77,9 @@ Questions to answer:
 
 <!-- How props should be defined and typed -->
 
-(To be filled by the team)
+Unity serialized fields are the primary "props" for prefab-facing components.
+New runtime collaborators should be plain C# helpers created by the facade, not
+new required scene singletons.
 
 ---
 
@@ -40,7 +87,12 @@ Questions to answer:
 
 <!-- How styles are applied (CSS modules, styled-components, Tailwind, etc.) -->
 
-(To be filled by the team)
+Use existing uGUI/TextMeshPro styling and prefab styling. Do not generate final
+production UI prefabs from code for C0/C0p; code may provide binders and
+presenters for manually-authored prefabs.
+
+For C0a+, UI Toolkit UXML/USS is approved for dense management panels. Keep
+uGUI for scene-bound map presentation.
 
 ---
 
@@ -48,7 +100,9 @@ Questions to answer:
 
 <!-- A11y requirements and patterns -->
 
-(To be filled by the team)
+Prefer predictable focus/click behavior and avoid hidden client-side
+validation. Disabled or locked states must reflect server/Core cache state or
+static catalog metadata, not client-authored gameplay rules.
 
 ---
 
@@ -56,4 +110,10 @@ Questions to answer:
 
 <!-- Component-related mistakes your team has made -->
 
-(To be filled by the team)
+- Adding backend/protocol types directly to Presentation.
+- Adding gameplay legality checks to UI click handlers.
+- Binding button listeners in `Awake` without symmetric unsubscribe.
+- Using fallback scene lookup when a serialized reference or
+  `SceneObjectFinder` is available.
+- Letting UI Toolkit and uGUI panels duplicate business state instead of sharing
+  Core stores/ViewModels.

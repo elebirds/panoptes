@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: transport.proto
+// source: panoptes/proto/v1/transport.proto
 
 package protov1
 
@@ -33,7 +33,7 @@ type CommandMeta struct {
 
 func (x *CommandMeta) Reset() {
 	*x = CommandMeta{}
-	mi := &file_transport_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +45,7 @@ func (x *CommandMeta) String() string {
 func (*CommandMeta) ProtoMessage() {}
 
 func (x *CommandMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +58,7 @@ func (x *CommandMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandMeta.ProtoReflect.Descriptor instead.
 func (*CommandMeta) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CommandMeta) GetRequestId() string {
@@ -101,7 +101,7 @@ type EventMeta struct {
 
 func (x *EventMeta) Reset() {
 	*x = EventMeta{}
-	mi := &file_transport_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +113,7 @@ func (x *EventMeta) String() string {
 func (*EventMeta) ProtoMessage() {}
 
 func (x *EventMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +126,7 @@ func (x *EventMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventMeta.ProtoReflect.Descriptor instead.
 func (*EventMeta) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EventMeta) GetRequestId() string {
@@ -167,7 +167,7 @@ type ProblemDetail struct {
 
 func (x *ProblemDetail) Reset() {
 	*x = ProblemDetail{}
-	mi := &file_transport_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -179,7 +179,7 @@ func (x *ProblemDetail) String() string {
 func (*ProblemDetail) ProtoMessage() {}
 
 func (x *ProblemDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -192,7 +192,7 @@ func (x *ProblemDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemDetail.ProtoReflect.Descriptor instead.
 func (*ProblemDetail) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ProblemDetail) GetPath() string {
@@ -220,7 +220,7 @@ type Problem struct {
 
 func (x *Problem) Reset() {
 	*x = Problem{}
-	mi := &file_transport_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +232,7 @@ func (x *Problem) String() string {
 func (*Problem) ProtoMessage() {}
 
 func (x *Problem) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +245,7 @@ func (x *Problem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Problem.ProtoReflect.Descriptor instead.
 func (*Problem) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Problem) GetCode() string {
@@ -282,7 +282,7 @@ type AuthCommand struct {
 
 func (x *AuthCommand) Reset() {
 	*x = AuthCommand{}
-	mi := &file_transport_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +294,7 @@ func (x *AuthCommand) String() string {
 func (*AuthCommand) ProtoMessage() {}
 
 func (x *AuthCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[4]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +307,7 @@ func (x *AuthCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthCommand.ProtoReflect.Descriptor instead.
 func (*AuthCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{4}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AuthCommand) GetBody() isAuthCommand_Body {
@@ -369,7 +369,7 @@ type LobbyCommand struct {
 
 func (x *LobbyCommand) Reset() {
 	*x = LobbyCommand{}
-	mi := &file_transport_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -381,7 +381,7 @@ func (x *LobbyCommand) String() string {
 func (*LobbyCommand) ProtoMessage() {}
 
 func (x *LobbyCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[5]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -394,7 +394,7 @@ func (x *LobbyCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LobbyCommand.ProtoReflect.Descriptor instead.
 func (*LobbyCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{5}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LobbyCommand) GetBody() isLobbyCommand_Body {
@@ -539,7 +539,7 @@ type PlanningCommand struct {
 
 func (x *PlanningCommand) Reset() {
 	*x = PlanningCommand{}
-	mi := &file_transport_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +551,7 @@ func (x *PlanningCommand) String() string {
 func (*PlanningCommand) ProtoMessage() {}
 
 func (x *PlanningCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[6]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +564,7 @@ func (x *PlanningCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanningCommand.ProtoReflect.Descriptor instead.
 func (*PlanningCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{6}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PlanningCommand) GetBody() isPlanningCommand_Body {
@@ -810,6 +810,7 @@ type GameCommand struct {
 	//	*GameCommand_Planning
 	//	*GameCommand_StaticCatalogSyncRequest
 	//	*GameCommand_Chat
+	//	*GameCommand_CommandBatch
 	Body          isGameCommand_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -817,7 +818,7 @@ type GameCommand struct {
 
 func (x *GameCommand) Reset() {
 	*x = GameCommand{}
-	mi := &file_transport_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -829,7 +830,7 @@ func (x *GameCommand) String() string {
 func (*GameCommand) ProtoMessage() {}
 
 func (x *GameCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[7]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -842,7 +843,7 @@ func (x *GameCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameCommand.ProtoReflect.Descriptor instead.
 func (*GameCommand) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{7}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GameCommand) GetBody() isGameCommand_Body {
@@ -879,6 +880,15 @@ func (x *GameCommand) GetChat() *ChatCommand {
 	return nil
 }
 
+func (x *GameCommand) GetCommandBatch() *MsgGameCommandBatch {
+	if x != nil {
+		if x, ok := x.Body.(*GameCommand_CommandBatch); ok {
+			return x.CommandBatch
+		}
+	}
+	return nil
+}
+
 type isGameCommand_Body interface {
 	isGameCommand_Body()
 }
@@ -895,11 +905,17 @@ type GameCommand_Chat struct {
 	Chat *ChatCommand `protobuf:"bytes,3,opt,name=chat,proto3,oneof"`
 }
 
+type GameCommand_CommandBatch struct {
+	CommandBatch *MsgGameCommandBatch `protobuf:"bytes,4,opt,name=command_batch,json=commandBatch,proto3,oneof"`
+}
+
 func (*GameCommand_Planning) isGameCommand_Body() {}
 
 func (*GameCommand_StaticCatalogSyncRequest) isGameCommand_Body() {}
 
 func (*GameCommand_Chat) isGameCommand_Body() {}
+
+func (*GameCommand_CommandBatch) isGameCommand_Body() {}
 
 type ClientFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -916,7 +932,7 @@ type ClientFrame struct {
 
 func (x *ClientFrame) Reset() {
 	*x = ClientFrame{}
-	mi := &file_transport_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -928,7 +944,7 @@ func (x *ClientFrame) String() string {
 func (*ClientFrame) ProtoMessage() {}
 
 func (x *ClientFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[8]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -941,7 +957,7 @@ func (x *ClientFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientFrame.ProtoReflect.Descriptor instead.
 func (*ClientFrame) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{8}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ClientFrame) GetMeta() *CommandMeta {
@@ -1021,7 +1037,7 @@ type AuthEvent struct {
 
 func (x *AuthEvent) Reset() {
 	*x = AuthEvent{}
-	mi := &file_transport_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1033,7 +1049,7 @@ func (x *AuthEvent) String() string {
 func (*AuthEvent) ProtoMessage() {}
 
 func (x *AuthEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[9]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1046,7 +1062,7 @@ func (x *AuthEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthEvent.ProtoReflect.Descriptor instead.
 func (*AuthEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{9}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AuthEvent) GetBody() isAuthEvent_Body {
@@ -1121,7 +1137,7 @@ type LobbyEvent struct {
 
 func (x *LobbyEvent) Reset() {
 	*x = LobbyEvent{}
-	mi := &file_transport_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1133,7 +1149,7 @@ func (x *LobbyEvent) String() string {
 func (*LobbyEvent) ProtoMessage() {}
 
 func (x *LobbyEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[10]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1146,7 +1162,7 @@ func (x *LobbyEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LobbyEvent.ProtoReflect.Descriptor instead.
 func (*LobbyEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{10}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *LobbyEvent) GetBody() isLobbyEvent_Body {
@@ -1252,7 +1268,6 @@ type GameEvent struct {
 	//	*GameEvent_SetBuildingRecipeResult
 	//	*GameEvent_BuildStructureResult
 	//	*GameEvent_TurnReport
-	//	*GameEvent_TurnSettlement
 	//	*GameEvent_GameOver
 	//	*GameEvent_MinisterReportChunk
 	//	*GameEvent_MinisterMetrics
@@ -1265,6 +1280,8 @@ type GameEvent struct {
 	//	*GameEvent_SetBuildingRecipePreviewResponse
 	//	*GameEvent_GameChatPosted
 	//	*GameEvent_GameChatSync
+	//	*GameEvent_CommandAck
+	//	*GameEvent_GameSync
 	Body          isGameEvent_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1272,7 +1289,7 @@ type GameEvent struct {
 
 func (x *GameEvent) Reset() {
 	*x = GameEvent{}
-	mi := &file_transport_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1284,7 +1301,7 @@ func (x *GameEvent) String() string {
 func (*GameEvent) ProtoMessage() {}
 
 func (x *GameEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[11]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1297,7 +1314,7 @@ func (x *GameEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameEvent.ProtoReflect.Descriptor instead.
 func (*GameEvent) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{11}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GameEvent) GetBody() isGameEvent_Body {
@@ -1424,15 +1441,6 @@ func (x *GameEvent) GetTurnReport() *MsgTurnReport {
 	return nil
 }
 
-func (x *GameEvent) GetTurnSettlement() *MsgTurnSettlement {
-	if x != nil {
-		if x, ok := x.Body.(*GameEvent_TurnSettlement); ok {
-			return x.TurnSettlement
-		}
-	}
-	return nil
-}
-
 func (x *GameEvent) GetGameOver() *MsgGameOver {
 	if x != nil {
 		if x, ok := x.Body.(*GameEvent_GameOver); ok {
@@ -1541,6 +1549,24 @@ func (x *GameEvent) GetGameChatSync() *MsgGameChatSync {
 	return nil
 }
 
+func (x *GameEvent) GetCommandAck() *MsgCommandAck {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_CommandAck); ok {
+			return x.CommandAck
+		}
+	}
+	return nil
+}
+
+func (x *GameEvent) GetGameSync() *MsgGameSync {
+	if x != nil {
+		if x, ok := x.Body.(*GameEvent_GameSync); ok {
+			return x.GameSync
+		}
+	}
+	return nil
+}
+
 type isGameEvent_Body interface {
 	isGameEvent_Body()
 }
@@ -1597,10 +1623,6 @@ type GameEvent_TurnReport struct {
 	TurnReport *MsgTurnReport `protobuf:"bytes,13,opt,name=turn_report,json=turnReport,proto3,oneof"`
 }
 
-type GameEvent_TurnSettlement struct {
-	TurnSettlement *MsgTurnSettlement `protobuf:"bytes,14,opt,name=turn_settlement,json=turnSettlement,proto3,oneof"`
-}
-
 type GameEvent_GameOver struct {
 	GameOver *MsgGameOver `protobuf:"bytes,15,opt,name=game_over,json=gameOver,proto3,oneof"`
 }
@@ -1649,6 +1671,14 @@ type GameEvent_GameChatSync struct {
 	GameChatSync *MsgGameChatSync `protobuf:"bytes,26,opt,name=game_chat_sync,json=gameChatSync,proto3,oneof"`
 }
 
+type GameEvent_CommandAck struct {
+	CommandAck *MsgCommandAck `protobuf:"bytes,27,opt,name=command_ack,json=commandAck,proto3,oneof"`
+}
+
+type GameEvent_GameSync struct {
+	GameSync *MsgGameSync `protobuf:"bytes,28,opt,name=game_sync,json=gameSync,proto3,oneof"`
+}
+
 func (*GameEvent_StaticCatalogManifest) isGameEvent_Body() {}
 
 func (*GameEvent_StaticCatalogSnapshot) isGameEvent_Body() {}
@@ -1675,8 +1705,6 @@ func (*GameEvent_BuildStructureResult) isGameEvent_Body() {}
 
 func (*GameEvent_TurnReport) isGameEvent_Body() {}
 
-func (*GameEvent_TurnSettlement) isGameEvent_Body() {}
-
 func (*GameEvent_GameOver) isGameEvent_Body() {}
 
 func (*GameEvent_MinisterReportChunk) isGameEvent_Body() {}
@@ -1701,6 +1729,10 @@ func (*GameEvent_GameChatPosted) isGameEvent_Body() {}
 
 func (*GameEvent_GameChatSync) isGameEvent_Body() {}
 
+func (*GameEvent_CommandAck) isGameEvent_Body() {}
+
+func (*GameEvent_GameSync) isGameEvent_Body() {}
+
 type ServerFrame struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Meta  *EventMeta             `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -1717,7 +1749,7 @@ type ServerFrame struct {
 
 func (x *ServerFrame) Reset() {
 	*x = ServerFrame{}
-	mi := &file_transport_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1729,7 +1761,7 @@ func (x *ServerFrame) String() string {
 func (*ServerFrame) ProtoMessage() {}
 
 func (x *ServerFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_transport_proto_msgTypes[12]
+	mi := &file_panoptes_proto_v1_transport_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1742,7 +1774,7 @@ func (x *ServerFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerFrame.ProtoReflect.Descriptor instead.
 func (*ServerFrame) Descriptor() ([]byte, []int) {
-	return file_transport_proto_rawDescGZIP(), []int{12}
+	return file_panoptes_proto_v1_transport_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ServerFrame) GetMeta() *EventMeta {
@@ -1823,14 +1855,11 @@ func (*ServerFrame_Game) isServerFrame_Target() {}
 
 func (*ServerFrame_Problem) isServerFrame_Target() {}
 
-var File_transport_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_transport_proto protoreflect.FileDescriptor
 
-const file_transport_proto_rawDesc = "" +
+const file_panoptes_proto_v1_transport_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftransport.proto\x12\x11panoptes.proto.v1\x1a\n" +
-	"auth.proto\x1a\n" +
-	"chat.proto\x1a\fcommon.proto\x1a\fconfig.proto\x1a\x12data_catalog.proto\x1a\x10game_state.proto\x1a\vlobby.proto\x1a\x0eminister.proto\x1a\forders.proto\x1a\x10settlement.proto\x1a\n" +
-	"turn.proto\"\x92\x01\n" +
+	"!panoptes/proto/v1/transport.proto\x12\x11panoptes.proto.v1\x1a\x1cpanoptes/proto/v1/auth.proto\x1a\x1cpanoptes/proto/v1/chat.proto\x1a\x1epanoptes/proto/v1/common.proto\x1a\x1epanoptes/proto/v1/config.proto\x1a$panoptes/proto/v1/data_catalog.proto\x1a\"panoptes/proto/v1/game_state.proto\x1a\x1dpanoptes/proto/v1/lobby.proto\x1a panoptes/proto/v1/minister.proto\x1a\x1epanoptes/proto/v1/orders.proto\x1a\x1cpanoptes/proto/v1/turn.proto\"\x92\x01\n" +
 	"\vCommandMeta\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
@@ -1889,11 +1918,12 @@ const file_transport_proto_rawDesc = "" +
 	"\x17set_institution_loadout\x18\r \x01(\v2+.panoptes.proto.v1.MsgSetInstitutionLoadoutH\x00R\x15setInstitutionLoadout\x12l\n" +
 	"\x17build_structure_preview\x18\x0e \x01(\v22.panoptes.proto.v1.MsgBuildStructurePreviewRequestH\x00R\x15buildStructurePreview\x12v\n" +
 	"\x1bset_building_recipe_preview\x18\x0f \x01(\v25.panoptes.proto.v1.MsgSetBuildingRecipePreviewRequestH\x00R\x18setBuildingRecipePreviewB\x06\n" +
-	"\x04body\"\xfe\x01\n" +
+	"\x04body\"\xcd\x02\n" +
 	"\vGameCommand\x12@\n" +
 	"\bplanning\x18\x01 \x01(\v2\".panoptes.proto.v1.PlanningCommandH\x00R\bplanning\x12o\n" +
 	"\x1bstatic_catalog_sync_request\x18\x02 \x01(\v2..panoptes.proto.v1.MsgStaticCatalogSyncRequestH\x00R\x18staticCatalogSyncRequest\x124\n" +
-	"\x04chat\x18\x03 \x01(\v2\x1e.panoptes.proto.v1.ChatCommandH\x00R\x04chatB\x06\n" +
+	"\x04chat\x18\x03 \x01(\v2\x1e.panoptes.proto.v1.ChatCommandH\x00R\x04chat\x12M\n" +
+	"\rcommand_batch\x18\x04 \x01(\v2&.panoptes.proto.v1.MsgGameCommandBatchH\x00R\fcommandBatchB\x06\n" +
 	"\x04body\"\xf0\x01\n" +
 	"\vClientFrame\x122\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1e.panoptes.proto.v1.CommandMetaR\x04meta\x124\n" +
@@ -1917,7 +1947,7 @@ const file_transport_proto_rawDesc = "" +
 	"\rplayer_kicked\x18\x04 \x01(\v2\".panoptes.proto.v1.MsgPlayerKickedH\x00R\fplayerKicked\x12C\n" +
 	"\vlobby_error\x18\x05 \x01(\v2 .panoptes.proto.v1.MsgLobbyErrorH\x00R\n" +
 	"lobbyErrorB\x06\n" +
-	"\x04body\"\x99\x13\n" +
+	"\x04body\"\xcc\x13\n" +
 	"\tGameEvent\x12e\n" +
 	"\x17static_catalog_manifest\x18\x01 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogManifestH\x00R\x15staticCatalogManifest\x12e\n" +
 	"\x17static_catalog_snapshot\x18\x02 \x01(\v2+.panoptes.proto.v1.MsgStaticCatalogSnapshotH\x00R\x15staticCatalogSnapshot\x12=\n" +
@@ -1933,8 +1963,7 @@ const file_transport_proto_rawDesc = "" +
 	"\x1aset_building_recipe_result\x18\v \x01(\v2-.panoptes.proto.v1.MsgSetBuildingRecipeResultH\x00R\x17setBuildingRecipeResult\x12b\n" +
 	"\x16build_structure_result\x18\f \x01(\v2*.panoptes.proto.v1.MsgBuildStructureResultH\x00R\x14buildStructureResult\x12C\n" +
 	"\vturn_report\x18\r \x01(\v2 .panoptes.proto.v1.MsgTurnReportH\x00R\n" +
-	"turnReport\x12O\n" +
-	"\x0fturn_settlement\x18\x0e \x01(\v2$.panoptes.proto.v1.MsgTurnSettlementH\x00R\x0eturnSettlement\x12=\n" +
+	"turnReport\x12=\n" +
 	"\tgame_over\x18\x0f \x01(\v2\x1e.panoptes.proto.v1.MsgGameOverH\x00R\bgameOver\x12_\n" +
 	"\x15minister_report_chunk\x18\x10 \x01(\v2).panoptes.proto.v1.MsgMinisterReportChunkH\x00R\x13ministerReportChunk\x12R\n" +
 	"\x10minister_metrics\x18\x11 \x01(\v2%.panoptes.proto.v1.MsgMinisterMetricsH\x00R\x0fministerMetrics\x12x\n" +
@@ -1946,7 +1975,10 @@ const file_transport_proto_rawDesc = "" +
 	" build_structure_preview_response\x18\x17 \x01(\v23.panoptes.proto.v1.MsgBuildStructurePreviewResponseH\x00R\x1dbuildStructurePreviewResponse\x12\x88\x01\n" +
 	"$set_building_recipe_preview_response\x18\x18 \x01(\v26.panoptes.proto.v1.MsgSetBuildingRecipePreviewResponseH\x00R setBuildingRecipePreviewResponse\x12P\n" +
 	"\x10game_chat_posted\x18\x19 \x01(\v2$.panoptes.proto.v1.MsgGameChatPostedH\x00R\x0egameChatPosted\x12J\n" +
-	"\x0egame_chat_sync\x18\x1a \x01(\v2\".panoptes.proto.v1.MsgGameChatSyncH\x00R\fgameChatSyncB\x06\n" +
+	"\x0egame_chat_sync\x18\x1a \x01(\v2\".panoptes.proto.v1.MsgGameChatSyncH\x00R\fgameChatSync\x12C\n" +
+	"\vcommand_ack\x18\x1b \x01(\v2 .panoptes.proto.v1.MsgCommandAckH\x00R\n" +
+	"commandAck\x12=\n" +
+	"\tgame_sync\x18\x1c \x01(\v2\x1e.panoptes.proto.v1.MsgGameSyncH\x00R\bgameSyncB\x06\n" +
 	"\x04body\"\xa0\x02\n" +
 	"\vServerFrame\x120\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1c.panoptes.proto.v1.EventMetaR\x04meta\x122\n" +
@@ -1955,22 +1987,22 @@ const file_transport_proto_rawDesc = "" +
 	"\x05lobby\x18\v \x01(\v2\x1d.panoptes.proto.v1.LobbyEventH\x00R\x05lobby\x122\n" +
 	"\x04game\x18\f \x01(\v2\x1c.panoptes.proto.v1.GameEventH\x00R\x04game\x126\n" +
 	"\aproblem\x18\r \x01(\v2\x1a.panoptes.proto.v1.ProblemH\x00R\aproblemB\b\n" +
-	"\x06targetBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\x06targetBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_transport_proto_rawDescOnce sync.Once
-	file_transport_proto_rawDescData []byte
+	file_panoptes_proto_v1_transport_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_transport_proto_rawDescData []byte
 )
 
-func file_transport_proto_rawDescGZIP() []byte {
-	file_transport_proto_rawDescOnce.Do(func() {
-		file_transport_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_transport_proto_rawDesc), len(file_transport_proto_rawDesc)))
+func file_panoptes_proto_v1_transport_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_transport_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_transport_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_transport_proto_rawDesc), len(file_panoptes_proto_v1_transport_proto_rawDesc)))
 	})
-	return file_transport_proto_rawDescData
+	return file_panoptes_proto_v1_transport_proto_rawDescData
 }
 
-var file_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_transport_proto_goTypes = []any{
+var file_panoptes_proto_v1_transport_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_panoptes_proto_v1_transport_proto_goTypes = []any{
 	(*CommandMeta)(nil),                         // 0: panoptes.proto.v1.CommandMeta
 	(*EventMeta)(nil),                           // 1: panoptes.proto.v1.EventMeta
 	(*ProblemDetail)(nil),                       // 2: panoptes.proto.v1.ProblemDetail
@@ -2010,28 +2042,28 @@ var file_transport_proto_goTypes = []any{
 	(*MsgSetBuildingRecipePreviewRequest)(nil),  // 36: panoptes.proto.v1.MsgSetBuildingRecipePreviewRequest
 	(*MsgStaticCatalogSyncRequest)(nil),         // 37: panoptes.proto.v1.MsgStaticCatalogSyncRequest
 	(*ChatCommand)(nil),                         // 38: panoptes.proto.v1.ChatCommand
-	(*MsgLoginSuccess)(nil),                     // 39: panoptes.proto.v1.MsgLoginSuccess
-	(*MsgAuthError)(nil),                        // 40: panoptes.proto.v1.MsgAuthError
-	(*MsgClientRuntimeConfig)(nil),              // 41: panoptes.proto.v1.MsgClientRuntimeConfig
-	(*MsgRoomCreated)(nil),                      // 42: panoptes.proto.v1.MsgRoomCreated
-	(*MsgRoomState)(nil),                        // 43: panoptes.proto.v1.MsgRoomState
-	(*MsgGameStarting)(nil),                     // 44: panoptes.proto.v1.MsgGameStarting
-	(*MsgPlayerKicked)(nil),                     // 45: panoptes.proto.v1.MsgPlayerKicked
-	(*MsgLobbyError)(nil),                       // 46: panoptes.proto.v1.MsgLobbyError
-	(*MsgStaticCatalogManifest)(nil),            // 47: panoptes.proto.v1.MsgStaticCatalogManifest
-	(*MsgStaticCatalogSnapshot)(nil),            // 48: panoptes.proto.v1.MsgStaticCatalogSnapshot
-	(*MsgGameInit)(nil),                         // 49: panoptes.proto.v1.MsgGameInit
-	(*MsgPlanningStart)(nil),                    // 50: panoptes.proto.v1.MsgPlanningStart
-	(*MsgPlanningSnapshot)(nil),                 // 51: panoptes.proto.v1.MsgPlanningSnapshot
-	(*MsgPlanningPathPreviewResponse)(nil),      // 52: panoptes.proto.v1.MsgPlanningPathPreviewResponse
-	(*MsgTokenResult)(nil),                      // 53: panoptes.proto.v1.MsgTokenResult
-	(*MsgRevealResult)(nil),                     // 54: panoptes.proto.v1.MsgRevealResult
-	(*MsgResearchResult)(nil),                   // 55: panoptes.proto.v1.MsgResearchResult
-	(*MsgSetPolicyResult)(nil),                  // 56: panoptes.proto.v1.MsgSetPolicyResult
-	(*MsgSetBuildingRecipeResult)(nil),          // 57: panoptes.proto.v1.MsgSetBuildingRecipeResult
-	(*MsgBuildStructureResult)(nil),             // 58: panoptes.proto.v1.MsgBuildStructureResult
-	(*MsgTurnReport)(nil),                       // 59: panoptes.proto.v1.MsgTurnReport
-	(*MsgTurnSettlement)(nil),                   // 60: panoptes.proto.v1.MsgTurnSettlement
+	(*MsgGameCommandBatch)(nil),                 // 39: panoptes.proto.v1.MsgGameCommandBatch
+	(*MsgLoginSuccess)(nil),                     // 40: panoptes.proto.v1.MsgLoginSuccess
+	(*MsgAuthError)(nil),                        // 41: panoptes.proto.v1.MsgAuthError
+	(*MsgClientRuntimeConfig)(nil),              // 42: panoptes.proto.v1.MsgClientRuntimeConfig
+	(*MsgRoomCreated)(nil),                      // 43: panoptes.proto.v1.MsgRoomCreated
+	(*MsgRoomState)(nil),                        // 44: panoptes.proto.v1.MsgRoomState
+	(*MsgGameStarting)(nil),                     // 45: panoptes.proto.v1.MsgGameStarting
+	(*MsgPlayerKicked)(nil),                     // 46: panoptes.proto.v1.MsgPlayerKicked
+	(*MsgLobbyError)(nil),                       // 47: panoptes.proto.v1.MsgLobbyError
+	(*MsgStaticCatalogManifest)(nil),            // 48: panoptes.proto.v1.MsgStaticCatalogManifest
+	(*MsgStaticCatalogSnapshot)(nil),            // 49: panoptes.proto.v1.MsgStaticCatalogSnapshot
+	(*MsgGameInit)(nil),                         // 50: panoptes.proto.v1.MsgGameInit
+	(*MsgPlanningStart)(nil),                    // 51: panoptes.proto.v1.MsgPlanningStart
+	(*MsgPlanningSnapshot)(nil),                 // 52: panoptes.proto.v1.MsgPlanningSnapshot
+	(*MsgPlanningPathPreviewResponse)(nil),      // 53: panoptes.proto.v1.MsgPlanningPathPreviewResponse
+	(*MsgTokenResult)(nil),                      // 54: panoptes.proto.v1.MsgTokenResult
+	(*MsgRevealResult)(nil),                     // 55: panoptes.proto.v1.MsgRevealResult
+	(*MsgResearchResult)(nil),                   // 56: panoptes.proto.v1.MsgResearchResult
+	(*MsgSetPolicyResult)(nil),                  // 57: panoptes.proto.v1.MsgSetPolicyResult
+	(*MsgSetBuildingRecipeResult)(nil),          // 58: panoptes.proto.v1.MsgSetBuildingRecipeResult
+	(*MsgBuildStructureResult)(nil),             // 59: panoptes.proto.v1.MsgBuildStructureResult
+	(*MsgTurnReport)(nil),                       // 60: panoptes.proto.v1.MsgTurnReport
 	(*MsgGameOver)(nil),                         // 61: panoptes.proto.v1.MsgGameOver
 	(*MsgMinisterReportChunk)(nil),              // 62: panoptes.proto.v1.MsgMinisterReportChunk
 	(*MsgMinisterMetrics)(nil),                  // 63: panoptes.proto.v1.MsgMinisterMetrics
@@ -2044,8 +2076,10 @@ var file_transport_proto_goTypes = []any{
 	(*MsgSetBuildingRecipePreviewResponse)(nil), // 70: panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
 	(*MsgGameChatPosted)(nil),                   // 71: panoptes.proto.v1.MsgGameChatPosted
 	(*MsgGameChatSync)(nil),                     // 72: panoptes.proto.v1.MsgGameChatSync
+	(*MsgCommandAck)(nil),                       // 73: panoptes.proto.v1.MsgCommandAck
+	(*MsgGameSync)(nil),                         // 74: panoptes.proto.v1.MsgGameSync
 }
-var file_transport_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_transport_proto_depIdxs = []int32{
 	2,  // 0: panoptes.proto.v1.Problem.details:type_name -> panoptes.proto.v1.ProblemDetail
 	13, // 1: panoptes.proto.v1.AuthCommand.register:type_name -> panoptes.proto.v1.MsgRegister
 	14, // 2: panoptes.proto.v1.AuthCommand.login:type_name -> panoptes.proto.v1.MsgLogin
@@ -2074,32 +2108,32 @@ var file_transport_proto_depIdxs = []int32{
 	6,  // 25: panoptes.proto.v1.GameCommand.planning:type_name -> panoptes.proto.v1.PlanningCommand
 	37, // 26: panoptes.proto.v1.GameCommand.static_catalog_sync_request:type_name -> panoptes.proto.v1.MsgStaticCatalogSyncRequest
 	38, // 27: panoptes.proto.v1.GameCommand.chat:type_name -> panoptes.proto.v1.ChatCommand
-	0,  // 28: panoptes.proto.v1.ClientFrame.meta:type_name -> panoptes.proto.v1.CommandMeta
-	4,  // 29: panoptes.proto.v1.ClientFrame.auth:type_name -> panoptes.proto.v1.AuthCommand
-	5,  // 30: panoptes.proto.v1.ClientFrame.lobby:type_name -> panoptes.proto.v1.LobbyCommand
-	7,  // 31: panoptes.proto.v1.ClientFrame.game:type_name -> panoptes.proto.v1.GameCommand
-	39, // 32: panoptes.proto.v1.AuthEvent.login_success:type_name -> panoptes.proto.v1.MsgLoginSuccess
-	40, // 33: panoptes.proto.v1.AuthEvent.auth_error:type_name -> panoptes.proto.v1.MsgAuthError
-	41, // 34: panoptes.proto.v1.AuthEvent.client_runtime_config:type_name -> panoptes.proto.v1.MsgClientRuntimeConfig
-	42, // 35: panoptes.proto.v1.LobbyEvent.room_created:type_name -> panoptes.proto.v1.MsgRoomCreated
-	43, // 36: panoptes.proto.v1.LobbyEvent.room_state:type_name -> panoptes.proto.v1.MsgRoomState
-	44, // 37: panoptes.proto.v1.LobbyEvent.game_starting:type_name -> panoptes.proto.v1.MsgGameStarting
-	45, // 38: panoptes.proto.v1.LobbyEvent.player_kicked:type_name -> panoptes.proto.v1.MsgPlayerKicked
-	46, // 39: panoptes.proto.v1.LobbyEvent.lobby_error:type_name -> panoptes.proto.v1.MsgLobbyError
-	47, // 40: panoptes.proto.v1.GameEvent.static_catalog_manifest:type_name -> panoptes.proto.v1.MsgStaticCatalogManifest
-	48, // 41: panoptes.proto.v1.GameEvent.static_catalog_snapshot:type_name -> panoptes.proto.v1.MsgStaticCatalogSnapshot
-	49, // 42: panoptes.proto.v1.GameEvent.game_init:type_name -> panoptes.proto.v1.MsgGameInit
-	50, // 43: panoptes.proto.v1.GameEvent.planning_start:type_name -> panoptes.proto.v1.MsgPlanningStart
-	51, // 44: panoptes.proto.v1.GameEvent.planning_snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
-	52, // 45: panoptes.proto.v1.GameEvent.planning_path_preview_response:type_name -> panoptes.proto.v1.MsgPlanningPathPreviewResponse
-	53, // 46: panoptes.proto.v1.GameEvent.token_result:type_name -> panoptes.proto.v1.MsgTokenResult
-	54, // 47: panoptes.proto.v1.GameEvent.reveal_result:type_name -> panoptes.proto.v1.MsgRevealResult
-	55, // 48: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
-	56, // 49: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
-	57, // 50: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
-	58, // 51: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
-	59, // 52: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
-	60, // 53: panoptes.proto.v1.GameEvent.turn_settlement:type_name -> panoptes.proto.v1.MsgTurnSettlement
+	39, // 28: panoptes.proto.v1.GameCommand.command_batch:type_name -> panoptes.proto.v1.MsgGameCommandBatch
+	0,  // 29: panoptes.proto.v1.ClientFrame.meta:type_name -> panoptes.proto.v1.CommandMeta
+	4,  // 30: panoptes.proto.v1.ClientFrame.auth:type_name -> panoptes.proto.v1.AuthCommand
+	5,  // 31: panoptes.proto.v1.ClientFrame.lobby:type_name -> panoptes.proto.v1.LobbyCommand
+	7,  // 32: panoptes.proto.v1.ClientFrame.game:type_name -> panoptes.proto.v1.GameCommand
+	40, // 33: panoptes.proto.v1.AuthEvent.login_success:type_name -> panoptes.proto.v1.MsgLoginSuccess
+	41, // 34: panoptes.proto.v1.AuthEvent.auth_error:type_name -> panoptes.proto.v1.MsgAuthError
+	42, // 35: panoptes.proto.v1.AuthEvent.client_runtime_config:type_name -> panoptes.proto.v1.MsgClientRuntimeConfig
+	43, // 36: panoptes.proto.v1.LobbyEvent.room_created:type_name -> panoptes.proto.v1.MsgRoomCreated
+	44, // 37: panoptes.proto.v1.LobbyEvent.room_state:type_name -> panoptes.proto.v1.MsgRoomState
+	45, // 38: panoptes.proto.v1.LobbyEvent.game_starting:type_name -> panoptes.proto.v1.MsgGameStarting
+	46, // 39: panoptes.proto.v1.LobbyEvent.player_kicked:type_name -> panoptes.proto.v1.MsgPlayerKicked
+	47, // 40: panoptes.proto.v1.LobbyEvent.lobby_error:type_name -> panoptes.proto.v1.MsgLobbyError
+	48, // 41: panoptes.proto.v1.GameEvent.static_catalog_manifest:type_name -> panoptes.proto.v1.MsgStaticCatalogManifest
+	49, // 42: panoptes.proto.v1.GameEvent.static_catalog_snapshot:type_name -> panoptes.proto.v1.MsgStaticCatalogSnapshot
+	50, // 43: panoptes.proto.v1.GameEvent.game_init:type_name -> panoptes.proto.v1.MsgGameInit
+	51, // 44: panoptes.proto.v1.GameEvent.planning_start:type_name -> panoptes.proto.v1.MsgPlanningStart
+	52, // 45: panoptes.proto.v1.GameEvent.planning_snapshot:type_name -> panoptes.proto.v1.MsgPlanningSnapshot
+	53, // 46: panoptes.proto.v1.GameEvent.planning_path_preview_response:type_name -> panoptes.proto.v1.MsgPlanningPathPreviewResponse
+	54, // 47: panoptes.proto.v1.GameEvent.token_result:type_name -> panoptes.proto.v1.MsgTokenResult
+	55, // 48: panoptes.proto.v1.GameEvent.reveal_result:type_name -> panoptes.proto.v1.MsgRevealResult
+	56, // 49: panoptes.proto.v1.GameEvent.research_result:type_name -> panoptes.proto.v1.MsgResearchResult
+	57, // 50: panoptes.proto.v1.GameEvent.set_policy_result:type_name -> panoptes.proto.v1.MsgSetPolicyResult
+	58, // 51: panoptes.proto.v1.GameEvent.set_building_recipe_result:type_name -> panoptes.proto.v1.MsgSetBuildingRecipeResult
+	59, // 52: panoptes.proto.v1.GameEvent.build_structure_result:type_name -> panoptes.proto.v1.MsgBuildStructureResult
+	60, // 53: panoptes.proto.v1.GameEvent.turn_report:type_name -> panoptes.proto.v1.MsgTurnReport
 	61, // 54: panoptes.proto.v1.GameEvent.game_over:type_name -> panoptes.proto.v1.MsgGameOver
 	62, // 55: panoptes.proto.v1.GameEvent.minister_report_chunk:type_name -> panoptes.proto.v1.MsgMinisterReportChunk
 	63, // 56: panoptes.proto.v1.GameEvent.minister_metrics:type_name -> panoptes.proto.v1.MsgMinisterMetrics
@@ -2112,39 +2146,40 @@ var file_transport_proto_depIdxs = []int32{
 	70, // 63: panoptes.proto.v1.GameEvent.set_building_recipe_preview_response:type_name -> panoptes.proto.v1.MsgSetBuildingRecipePreviewResponse
 	71, // 64: panoptes.proto.v1.GameEvent.game_chat_posted:type_name -> panoptes.proto.v1.MsgGameChatPosted
 	72, // 65: panoptes.proto.v1.GameEvent.game_chat_sync:type_name -> panoptes.proto.v1.MsgGameChatSync
-	1,  // 66: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
-	9,  // 67: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
-	10, // 68: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
-	11, // 69: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
-	3,  // 70: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
-	71, // [71:71] is the sub-list for method output_type
-	71, // [71:71] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	73, // 66: panoptes.proto.v1.GameEvent.command_ack:type_name -> panoptes.proto.v1.MsgCommandAck
+	74, // 67: panoptes.proto.v1.GameEvent.game_sync:type_name -> panoptes.proto.v1.MsgGameSync
+	1,  // 68: panoptes.proto.v1.ServerFrame.meta:type_name -> panoptes.proto.v1.EventMeta
+	9,  // 69: panoptes.proto.v1.ServerFrame.auth:type_name -> panoptes.proto.v1.AuthEvent
+	10, // 70: panoptes.proto.v1.ServerFrame.lobby:type_name -> panoptes.proto.v1.LobbyEvent
+	11, // 71: panoptes.proto.v1.ServerFrame.game:type_name -> panoptes.proto.v1.GameEvent
+	3,  // 72: panoptes.proto.v1.ServerFrame.problem:type_name -> panoptes.proto.v1.Problem
+	73, // [73:73] is the sub-list for method output_type
+	73, // [73:73] is the sub-list for method input_type
+	73, // [73:73] is the sub-list for extension type_name
+	73, // [73:73] is the sub-list for extension extendee
+	0,  // [0:73] is the sub-list for field type_name
 }
 
-func init() { file_transport_proto_init() }
-func file_transport_proto_init() {
-	if File_transport_proto != nil {
+func init() { file_panoptes_proto_v1_transport_proto_init() }
+func file_panoptes_proto_v1_transport_proto_init() {
+	if File_panoptes_proto_v1_transport_proto != nil {
 		return
 	}
-	file_auth_proto_init()
-	file_chat_proto_init()
-	file_common_proto_init()
-	file_config_proto_init()
-	file_data_catalog_proto_init()
-	file_game_state_proto_init()
-	file_lobby_proto_init()
-	file_minister_proto_init()
-	file_orders_proto_init()
-	file_settlement_proto_init()
-	file_turn_proto_init()
-	file_transport_proto_msgTypes[4].OneofWrappers = []any{
+	file_panoptes_proto_v1_auth_proto_init()
+	file_panoptes_proto_v1_chat_proto_init()
+	file_panoptes_proto_v1_common_proto_init()
+	file_panoptes_proto_v1_config_proto_init()
+	file_panoptes_proto_v1_data_catalog_proto_init()
+	file_panoptes_proto_v1_game_state_proto_init()
+	file_panoptes_proto_v1_lobby_proto_init()
+	file_panoptes_proto_v1_minister_proto_init()
+	file_panoptes_proto_v1_orders_proto_init()
+	file_panoptes_proto_v1_turn_proto_init()
+	file_panoptes_proto_v1_transport_proto_msgTypes[4].OneofWrappers = []any{
 		(*AuthCommand_Register)(nil),
 		(*AuthCommand_Login)(nil),
 	}
-	file_transport_proto_msgTypes[5].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[5].OneofWrappers = []any{
 		(*LobbyCommand_CreateRoom)(nil),
 		(*LobbyCommand_JoinRoom)(nil),
 		(*LobbyCommand_LeaveRoom)(nil),
@@ -2153,7 +2188,7 @@ func file_transport_proto_init() {
 		(*LobbyCommand_StartGame)(nil),
 		(*LobbyCommand_KickPlayer)(nil),
 	}
-	file_transport_proto_msgTypes[6].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[6].OneofWrappers = []any{
 		(*PlanningCommand_SetPolicy)(nil),
 		(*PlanningCommand_SetResearchTarget)(nil),
 		(*PlanningCommand_SetBuildingRecipe)(nil),
@@ -2170,29 +2205,30 @@ func file_transport_proto_init() {
 		(*PlanningCommand_BuildStructurePreview)(nil),
 		(*PlanningCommand_SetBuildingRecipePreview)(nil),
 	}
-	file_transport_proto_msgTypes[7].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[7].OneofWrappers = []any{
 		(*GameCommand_Planning)(nil),
 		(*GameCommand_StaticCatalogSyncRequest)(nil),
 		(*GameCommand_Chat)(nil),
+		(*GameCommand_CommandBatch)(nil),
 	}
-	file_transport_proto_msgTypes[8].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[8].OneofWrappers = []any{
 		(*ClientFrame_Auth)(nil),
 		(*ClientFrame_Lobby)(nil),
 		(*ClientFrame_Game)(nil),
 	}
-	file_transport_proto_msgTypes[9].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[9].OneofWrappers = []any{
 		(*AuthEvent_LoginSuccess)(nil),
 		(*AuthEvent_AuthError)(nil),
 		(*AuthEvent_ClientRuntimeConfig)(nil),
 	}
-	file_transport_proto_msgTypes[10].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[10].OneofWrappers = []any{
 		(*LobbyEvent_RoomCreated)(nil),
 		(*LobbyEvent_RoomState)(nil),
 		(*LobbyEvent_GameStarting)(nil),
 		(*LobbyEvent_PlayerKicked)(nil),
 		(*LobbyEvent_LobbyError)(nil),
 	}
-	file_transport_proto_msgTypes[11].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[11].OneofWrappers = []any{
 		(*GameEvent_StaticCatalogManifest)(nil),
 		(*GameEvent_StaticCatalogSnapshot)(nil),
 		(*GameEvent_GameInit)(nil),
@@ -2206,7 +2242,6 @@ func file_transport_proto_init() {
 		(*GameEvent_SetBuildingRecipeResult)(nil),
 		(*GameEvent_BuildStructureResult)(nil),
 		(*GameEvent_TurnReport)(nil),
-		(*GameEvent_TurnSettlement)(nil),
 		(*GameEvent_GameOver)(nil),
 		(*GameEvent_MinisterReportChunk)(nil),
 		(*GameEvent_MinisterMetrics)(nil),
@@ -2219,8 +2254,10 @@ func file_transport_proto_init() {
 		(*GameEvent_SetBuildingRecipePreviewResponse)(nil),
 		(*GameEvent_GameChatPosted)(nil),
 		(*GameEvent_GameChatSync)(nil),
+		(*GameEvent_CommandAck)(nil),
+		(*GameEvent_GameSync)(nil),
 	}
-	file_transport_proto_msgTypes[12].OneofWrappers = []any{
+	file_panoptes_proto_v1_transport_proto_msgTypes[12].OneofWrappers = []any{
 		(*ServerFrame_Auth)(nil),
 		(*ServerFrame_Lobby)(nil),
 		(*ServerFrame_Game)(nil),
@@ -2230,17 +2267,17 @@ func file_transport_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_transport_proto_rawDesc), len(file_transport_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_transport_proto_rawDesc), len(file_panoptes_proto_v1_transport_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_transport_proto_goTypes,
-		DependencyIndexes: file_transport_proto_depIdxs,
-		MessageInfos:      file_transport_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_transport_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_transport_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_transport_proto_msgTypes,
 	}.Build()
-	File_transport_proto = out.File
-	file_transport_proto_goTypes = nil
-	file_transport_proto_depIdxs = nil
+	File_panoptes_proto_v1_transport_proto = out.File
+	file_panoptes_proto_v1_transport_proto_goTypes = nil
+	file_panoptes_proto_v1_transport_proto_depIdxs = nil
 }

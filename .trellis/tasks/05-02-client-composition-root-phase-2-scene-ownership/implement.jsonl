@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "frontend directory and scene/prefab modification rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Unity component and prefab-facing rules"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "composition root and no compatibility cache rules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "boundary and test requirements"}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Phase 2 acceptance criteria"}

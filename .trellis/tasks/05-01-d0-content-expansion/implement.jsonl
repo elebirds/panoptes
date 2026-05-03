@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend standards relevant to static data verification and generated artifacts."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Static content flows through authored data, generated server catalog, generated client catalog, and tests."}
+{"file": "docs/STATIC_DATA_EDITING_GUIDE.md", "reason": "Authoring and generation workflow for static data."}
+{"file": "docs/2026-04-30-backend-final-target.md", "reason": "D0 content expansion supports the final backend country-machine target."}

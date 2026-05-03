@@ -94,20 +94,20 @@ func TestBuildPlanningSnapshot_IncludesDraftPlanningFields(t *testing.T) {
 	state.TurnRuntime.Planning.SetPendingInstitutionLoadout("player-1", []string{"academy_charter"})
 	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
 		{
-			DraftID:       "draft-research-1",
-			PlayerID:      "player-1",
-			MinisterRole:  "domestic",
-			Kind:          domain.MinisterDraftKindResearch,
-			TargetID:      "agrarian_foundations",
-			TargetLabel:   "Agrarian Foundations",
-			Title:         "建议优先推进农业根基",
-			Summary:       "粮食与开局扩张更稳。",
-			Rationale:     "当前局势适合优先补足基础生产。",
-			RiskNote:      "会推迟军事科技。",
-			Status:        domain.MinisterDraftStatusPending,
-			Available:     true,
-			Turn:          1,
-			Source:        domain.MinisterDraftSourceRuleOnly,
+			DraftID:      "draft-research-1",
+			PlayerID:     "player-1",
+			MinisterRole: "domestic",
+			Kind:         domain.MinisterDraftKindResearch,
+			TargetID:     "agrarian_foundations",
+			TargetLabel:  "Agrarian Foundations",
+			Title:        "建议优先推进农业根基",
+			Summary:      "粮食与开局扩张更稳。",
+			Rationale:    "当前局势适合优先补足基础生产。",
+			RiskNote:     "会推迟军事科技。",
+			Status:       domain.MinisterDraftStatusPending,
+			Available:    true,
+			Turn:         1,
+			Source:       domain.MinisterDraftSourceRuleOnly,
 		},
 	})
 	state.TurnRuntime.Planning.BuildOrders = []domain.BuildOrder{
@@ -182,14 +182,14 @@ func newPreviewState(t *testing.T) (*domain.GameState, string) {
 		ID:           "preview",
 		Width:        5,
 		Height:       1,
-		SpawnPoints:  map[int]domain.Position{0: {X: 0, Y: 0}},
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}},
+		SpawnPoints:  map[int]domain.Position{0: {Q: 0, R: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}},
 		NamedNodes:   map[string]string{},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	for x := 0; x < 5; x++ {
 		nodeID := nodeID(x)
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: 0, Terrain: "plain"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: 0, Terrain: "plain"})
 		mapData.NodeIndex[nodeID] = entity
 	}
 

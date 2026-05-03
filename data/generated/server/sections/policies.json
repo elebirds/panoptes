@@ -17,6 +17,16 @@
           "value": -1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "expansion",
+          "priority": 100
+        },
+        {
+          "target_id": "city_core_settler",
+          "priority": 120
+        }
+      ],
       "sort_order": 10,
       "tags": [
         "national"
@@ -43,6 +53,20 @@
           "target_id": "archery_archer",
           "modifier_type": "flat",
           "value": -1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "military",
+          "priority": 100
+        },
+        {
+          "target_id": "barracks_infantry",
+          "priority": 120
+        },
+        {
+          "target_id": "archery_archer",
+          "priority": 120
         }
       ],
       "sort_order": 20,
@@ -75,6 +99,12 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "food",
+          "priority": 80
+        }
+      ],
       "sort_order": 30,
       "tags": [
         "national"
@@ -95,6 +125,12 @@
           "point_key": "industry_output",
           "modifier_type": "flat",
           "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 70
         }
       ],
       "sort_order": 40,
@@ -119,9 +155,173 @@
           "value": 1
         }
       ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 70
+        }
+      ],
       "sort_order": 50,
       "tags": [
         "institutional"
+      ]
+    },
+    {
+      "id": "logistics_corps",
+      "name": "转运署",
+      "description": "制度层面的转运组织，提高道路基础运量。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 90
+        },
+        {
+          "tag": "military",
+          "priority": 60
+        },
+        {
+          "tag": "expansion",
+          "priority": 60
+        }
+      ],
+      "sort_order": 60,
+      "tags": [
+        "institutional",
+        "logistics"
+      ]
+    },
+    {
+      "id": "foundry_directives",
+      "name": "冶造敕令",
+      "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
+      "icon_key": "policy_reorganization",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "metallurgy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "smelter_refined_ore",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "industry",
+          "priority": 110
+        },
+        {
+          "target_id": "smelter_refined_ore",
+          "priority": 130
+        }
+      ],
+      "sort_order": 70,
+      "tags": [
+        "institutional",
+        "industry"
+      ]
+    },
+    {
+      "id": "mercantile_charter",
+      "name": "商贸特许",
+      "description": "制度层面的市集授权，提高契约调拨效率。",
+      "icon_key": "policy_logistics_corps",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "trade_levies"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_grain_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_lumber_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        },
+        {
+          "trigger": "recipe.base_progress",
+          "target_id": "market_ore_contracts",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "trade",
+          "priority": 120
+        },
+        {
+          "tag": "industry",
+          "priority": 80
+        }
+      ],
+      "sort_order": 80,
+      "tags": [
+        "institutional",
+        "trade"
+      ]
+    },
+    {
+      "id": "research_mandate",
+      "name": "研学敕令",
+      "description": "制度层面的学术优先令，显著提高科研产出。",
+      "icon_key": "policy_academy_charter",
+      "layer": "institutional",
+      "activation_timing": "next_turn",
+      "prerequisites": [
+        {
+          "type": "technology_unlocked",
+          "target_id": "scholastic_bureaucracy"
+        }
+      ],
+      "explicit_effects": [],
+      "modifier_effects": [
+        {
+          "trigger": "point.output",
+          "point_key": "research_output",
+          "modifier_type": "flat",
+          "value": 2
+        }
+      ],
+      "logistics_priority": [
+        {
+          "tag": "research",
+          "priority": 120
+        }
+      ],
+      "sort_order": 90,
+      "tags": [
+        "institutional",
+        "research"
       ]
     }
   ]

@@ -19,7 +19,7 @@ import (
 
 type DebugHandler struct {
 	rooms          coretransport.GameRoomRegistry
-	recorder       *debug.SettlementRecorder
+	recorder       *debug.GameSyncRecorder
 	commandResults *debug.CommandResultRecorder
 	unmarshalOpts  protojson.UnmarshalOptions
 }
@@ -47,15 +47,15 @@ type debugSubmitResponse struct {
 	State debug.StateSummary `json:"state"`
 }
 
-type debugSettlementResponse struct {
-	TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement,omitempty"`
-	GameOver       *pb.MsgGameOver       `json:"game_over,omitempty"`
+type debugGameSyncResponse struct {
+	GameSync json.RawMessage `json:"game_sync,omitempty"`
+	GameOver json.RawMessage `json:"game_over,omitempty"`
 }
 
 type debugStepTurnResponse struct {
-	TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement,omitempty"`
-	GameOver       *pb.MsgGameOver       `json:"game_over,omitempty"`
-	State          debug.StateSummary    `json:"state"`
+	GameSync json.RawMessage    `json:"game_sync,omitempty"`
+	GameOver json.RawMessage    `json:"game_over,omitempty"`
+	State    debug.StateSummary `json:"state"`
 }
 
 type debugVisionResponse struct {
@@ -67,7 +67,7 @@ type debugVisionResponse struct {
 	Refreshed        bool   `json:"refreshed"`
 }
 
-func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.SettlementRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
+func NewDebugHandler(rooms coretransport.GameRoomRegistry, recorder *debug.GameSyncRecorder, commandResults *debug.CommandResultRecorder) *DebugHandler {
 	return &DebugHandler{
 		rooms:          rooms,
 		recorder:       recorder,
@@ -85,15 +85,15 @@ func (h *DebugHandler) GetState(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, debug.BuildStateSummary(room.State()))
 }
 
-func (h *DebugHandler) GetSettlement(w http.ResponseWriter, r *http.Request) {
+func (h *DebugHandler) GetGameSync(w http.ResponseWriter, r *http.Request) {
 	playerID, room, ok := h.lookupRoom(r)
 	if !ok {
 		writeError(w, http.StatusNotFound, "game_not_found")
 		return
 	}
-	writeJSON(w, http.StatusOK, debugSettlementResponse{
-		TurnSettlement: h.latestSettlement(room.ID, playerID),
-		GameOver:       h.latestGameOver(room.ID),
+	writeJSON(w, http.StatusOK, debugGameSyncResponse{
+		GameSync: debugProtoJSON(h.latestGameSync(room.ID, playerID)),
+		GameOver: debugProtoJSON(h.latestGameOver(room.ID)),
 	})
 }
 
@@ -249,26 +249,38 @@ func (h *DebugHandler) Vision(w http.ResponseWriter, r *http.Request) {
 func (h *DebugHandler) waitForTurn(room *game.GameRoom, playerID string, turn int, timeout time.Duration) (*debugStepTurnResponse, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		settlement := h.latestSettlement(room.ID, playerID)
-		if settlement == nil || int(settlement.GetTurn()) != turn {
+		syncMsg := h.latestGameSync(room.ID, playerID)
+		if syncMsg == nil || int(syncMsg.GetTurn()) != turn {
 			time.Sleep(20 * time.Millisecond)
 			continue
 		}
 
 		resp := &debugStepTurnResponse{
-			TurnSettlement: settlement,
-			State:          debug.BuildStateSummary(room.State()),
+			GameSync: debugProtoJSON(syncMsg),
+			State:    debug.BuildStateSummary(room.State()),
 		}
 		if resp.State.IsOver {
-			resp.GameOver = h.latestGameOver(room.ID)
-			if resp.GameOver == nil {
+			gameOver := h.latestGameOver(room.ID)
+			if gameOver == nil {
 				time.Sleep(20 * time.Millisecond)
 				continue
 			}
+			resp.GameOver = debugProtoJSON(gameOver)
 		}
 		return resp, nil
 	}
-	return nil, errors.New("turn settlement timeout")
+	return nil, errors.New("game sync timeout")
+}
+
+func debugProtoJSON(msg proto.Message) json.RawMessage {
+	if msg == nil {
+		return nil
+	}
+	encoded, err := protojson.Marshal(msg)
+	if err != nil {
+		return nil
+	}
+	return json.RawMessage(encoded)
 }
 
 func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool) {
@@ -291,11 +303,11 @@ func (h *DebugHandler) lookupRoom(r *http.Request) (string, *game.GameRoom, bool
 	return playerID, gameRoom, true
 }
 
-func (h *DebugHandler) latestSettlement(roomID string, playerID string) *pb.MsgTurnSettlement {
+func (h *DebugHandler) latestGameSync(roomID string, playerID string) *pb.MsgGameSync {
 	if h == nil || h.recorder == nil {
 		return nil
 	}
-	return h.recorder.LatestSettlement(roomID, playerID)
+	return h.recorder.LatestGameSync(roomID, playerID)
 }
 
 func (h *DebugHandler) latestGameOver(roomID string) *pb.MsgGameOver {

@@ -11,16 +11,9 @@ namespace Panoptes.Tests.EditMode.UI
 {
     public sealed class CommonOverlayTests
     {
-        private const string BuilderTypeName = "Panoptes.Editor.CommonOverlayPrefabBuilder, Panoptes.Editor";
         private const string ErrorToastRuntimePath = "Assets/Resources/Prefabs/UI/ErrorToast.prefab";
         private const string ConfirmDialogRuntimePath = "Assets/Resources/Prefabs/UI/ConfirmDialog.prefab";
-
-        [SetUp]
-        public void SetUp()
-        {
-            InvokeBuilder("RebuildPrefabs");
-            AssetDatabase.Refresh();
-        }
+        private const string CompositionBootstrapType = "Panoptes.Presentation.Composition.PanoptesCompositionBootstrap, Panoptes.Presentation";
 
         [TearDown]
         public void TearDown()
@@ -41,7 +34,7 @@ namespace Panoptes.Tests.EditMode.UI
             var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                toast.Show("资源不足", false);
+                toast.Show("insufficient resources", false);
 
                 var canvasGroup = toast.GetComponent<CanvasGroup>();
                 Assert.That(canvasGroup, Is.Not.Null);
@@ -51,7 +44,7 @@ namespace Panoptes.Tests.EditMode.UI
                 var toastRoot = toast.transform.Find("ToastRoot");
                 var message = toastRoot?.Find("Message")?.GetComponent<TextMeshProUGUI>();
                 Assert.That(message, Is.Not.Null);
-                Assert.That(message.text, Is.EqualTo("资源不足"));
+                Assert.That(message.text, Is.EqualTo("insufficient resources"));
                 Assert.That(message.font, Is.EqualTo(TMP_Settings.defaultFontAsset));
             }
             finally
@@ -66,7 +59,7 @@ namespace Panoptes.Tests.EditMode.UI
             var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                toast.Show("需要隐藏", false);
+                toast.Show("hide me", false);
                 toast.Hide();
 
                 var canvasGroup = toast.GetComponent<CanvasGroup>();
@@ -86,18 +79,18 @@ namespace Panoptes.Tests.EditMode.UI
             var toast = InstantiateOverlayPrefab<ErrorToast>(ErrorToastRuntimePath);
             try
             {
-                toast.Show("第一次提示", false);
+                toast.Show("first message", false);
                 var background = toast.transform.Find("ToastRoot")?.GetComponent<Image>();
                 Assert.That(background, Is.Not.Null);
                 var errorColor = background.color;
                 Assert.That(background.sprite, Is.Not.Null);
                 Assert.That(background.type, Is.EqualTo(Image.Type.Sliced));
 
-                toast.Show("第二次提示", true);
+                toast.Show("second message", true);
 
                 var message = toast.transform.Find("ToastRoot/Message")?.GetComponent<TextMeshProUGUI>();
                 Assert.That(message, Is.Not.Null);
-                Assert.That(message.text, Is.EqualTo("第二次提示"));
+                Assert.That(message.text, Is.EqualTo("second message"));
                 Assert.That(background.color, Is.Not.EqualTo(errorColor));
             }
             finally
@@ -114,7 +107,7 @@ namespace Panoptes.Tests.EditMode.UI
             var dialog = InstantiateOverlayPrefab<ConfirmDialog>(ConfirmDialogRuntimePath);
             try
             {
-                dialog.Show("确认退出", "离开当前房间？", null, null);
+                dialog.Show("Confirm Exit", "Leave current room?", null, null);
 
                 var canvasGroup = dialog.GetComponent<CanvasGroup>();
                 Assert.That(canvasGroup, Is.Not.Null);
@@ -133,8 +126,8 @@ namespace Panoptes.Tests.EditMode.UI
 
                 Assert.That(title, Is.Not.Null);
                 Assert.That(message, Is.Not.Null);
-                Assert.That(title.text, Is.EqualTo("确认退出"));
-                Assert.That(message.text, Is.EqualTo("离开当前房间？"));
+                Assert.That(title.text, Is.EqualTo("Confirm Exit"));
+                Assert.That(message.text, Is.EqualTo("Leave current room?"));
                 Assert.That(panelBackground, Is.Not.Null);
                 Assert.That(panelBackground.sprite, Is.Not.Null);
                 Assert.That(panelBackground.type, Is.EqualTo(Image.Type.Sliced));
@@ -159,7 +152,7 @@ namespace Panoptes.Tests.EditMode.UI
                 var confirmCount = 0;
                 var cancelCount = 0;
 
-                dialog.Show("确认", "是否继续？",
+                dialog.Show("Confirm", "Continue?",
                     () => confirmCount++,
                     () => cancelCount++);
 
@@ -171,7 +164,7 @@ namespace Panoptes.Tests.EditMode.UI
                 Assert.That(cancelCount, Is.EqualTo(0));
                 AssertCanvasHidden(dialog.gameObject);
 
-                dialog.Show("确认", "是否继续？",
+                dialog.Show("Confirm", "Continue?",
                     () => confirmCount += 10,
                     () => cancelCount += 10);
                 panelRoot.Find("CancelButton")?.GetComponent<Button>().onClick.Invoke();
@@ -194,14 +187,8 @@ namespace Panoptes.Tests.EditMode.UI
                 managers.hideFlags = HideFlags.HideAndDontSave;
                 managers.AddComponent<CanvasGroup>().alpha = 0f;
 
-                InvokePrivateStaticMethod(
-                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
-                    "EnsureOptionalErrorToast",
-                    managers);
-                InvokePrivateStaticMethod(
-                    "Panoptes.Core.Application.App.AppManager, Panoptes.Core",
-                    "EnsureOptionalConfirmDialog",
-                    managers);
+                InvokeProjectOverlayBootstrap<ErrorToast>("ErrorToast", "Prefabs/UI/ErrorToast");
+                InvokeProjectOverlayBootstrap<ConfirmDialog>("ConfirmDialog", "Prefabs/UI/ConfirmDialog");
 
                 var toastObject = GameObject.Find("ErrorToast");
                 var dialogObject = GameObject.Find("ConfirmDialog");
@@ -213,8 +200,12 @@ namespace Panoptes.Tests.EditMode.UI
                 InvokeLifecycle(toast, "Awake");
                 InvokeLifecycle(dialog, "Awake");
 
-                Assert.That(ErrorToast.Instance, Is.SameAs(toast));
-                Assert.That(ConfirmDialog.Instance, Is.SameAs(dialog));
+                Assert.That(
+                    typeof(ErrorToast).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static),
+                    Is.Null);
+                Assert.That(
+                    typeof(ConfirmDialog).GetProperty("Instance", BindingFlags.Public | BindingFlags.Static),
+                    Is.Null);
                 Assert.That(toast.transform.parent, Is.Null);
                 Assert.That(dialog.transform.parent, Is.Null);
             }
@@ -245,16 +236,6 @@ namespace Panoptes.Tests.EditMode.UI
             Assert.That(canvasGroup.blocksRaycasts, Is.False);
         }
 
-        private static void InvokeBuilder(string methodName, BindingFlags flags = BindingFlags.Static | BindingFlags.Public)
-        {
-            var builderType = Type.GetType(BuilderTypeName);
-            Assert.That(builderType, Is.Not.Null);
-
-            var method = builderType.GetMethod(methodName, flags);
-            Assert.That(method, Is.Not.Null);
-            method.Invoke(null, null);
-        }
-
         private static object InvokePrivateStaticMethod(string typeName, string methodName, params object[] args)
         {
             var type = Type.GetType(typeName);
@@ -263,6 +244,17 @@ namespace Panoptes.Tests.EditMode.UI
             var method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null, $"{typeName} 缺少私有静态方法 {methodName}。");
             return method.Invoke(null, args);
+        }
+
+        private static void InvokeProjectOverlayBootstrap<T>(string objectName, string resourcePath) where T : Component
+        {
+            var type = Type.GetType(CompositionBootstrapType);
+            Assert.That(type, Is.Not.Null, $"{CompositionBootstrapType} 类型不存在。");
+
+            var method = type.GetMethod("EnsureProjectOverlay", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"{CompositionBootstrapType} 缺少私有静态方法 EnsureProjectOverlay。");
+            var overlay = method.MakeGenericMethod(typeof(T)).Invoke(null, new object[] { objectName, resourcePath });
+            Assert.That(overlay, Is.Not.Null);
         }
 
         private static void InvokeLifecycle(Component component, string methodName)

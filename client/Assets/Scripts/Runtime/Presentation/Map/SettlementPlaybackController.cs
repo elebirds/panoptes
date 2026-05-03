@@ -6,12 +6,13 @@
  * Description: Plays unified turn settlement sections in server order.
  *************************************************/
 
+using System;
 using System.Collections;
-using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
-using Panoptes.Presentation.Animation;
+using R3;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.Map
 {
@@ -25,30 +26,39 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
-        private GameStateCache _cache;
+        private SettlementStore _settlementStore;
+        private MapRenderer _mapRenderer;
+        private IDisposable _settlementSubscription;
         private Coroutine _playbackCoroutine;
+        private int _lastHandledSettlementSequence;
 
-        private void Awake()
+        [Inject]
+        private void Construct(
+            SettlementStore settlementStore,
+            MapRenderer mapRenderer,
+            DamageNumberPopupController injectedDamagePopupController)
         {
-            _cache = GameStateCache.Instance;
-            EnsureDamagePopupController();
+            _settlementStore = settlementStore;
+            _mapRenderer = mapRenderer;
+            if (damagePopupController == null)
+            {
+                damagePopupController = injectedDamagePopupController;
+            }
+            if (isActiveAndEnabled)
+            {
+                SubscribeSettlement();
+            }
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled += OnTurnSettled;
-            }
+            SubscribeSettlement();
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnTurnSettled -= OnTurnSettled;
-            }
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
 
             if (_playbackCoroutine != null)
             {
@@ -57,9 +67,23 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private void OnTurnSettled(TurnSettledEvent evt)
+        private void SubscribeSettlement()
         {
-            if (evt?.Settlement?.Sections == null || evt.Settlement.Sections.Count == 0)
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            OnSettlementChanged(_settlementStore?.Snapshot);
+        }
+
+        private void OnSettlementChanged(SettlementState state)
+        {
+            if (state == null || state.Sequence <= 0 || state.Sequence == _lastHandledSettlementSequence)
+            {
+                return;
+            }
+
+            _lastHandledSettlementSequence = state.Sequence;
+            var settlement = state.Settlement;
+            if (settlement?.Sections == null || settlement.Sections.Count == 0)
             {
                 return;
             }
@@ -69,13 +93,11 @@ namespace Panoptes.Presentation.Map
                 StopCoroutine(_playbackCoroutine);
             }
 
-            _playbackCoroutine = StartCoroutine(PlaySettlement(evt.Settlement));
+            _playbackCoroutine = StartCoroutine(PlaySettlement(settlement));
         }
 
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
-            EnsureAnimationQueue();
-
             for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
             {
                 var section = settlement.Sections[sectionIndex];
@@ -152,12 +174,13 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayConflict(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !TryResolveNodeForEvent(evt, out var node))
+            if (_mapRenderer == null || !TryResolveNodeForEvent(evt, out var node))
             {
                 yield break;
             }
 
+            TryPlayUnitAttackAnimation(evt.UnitId);
+            TryPlayUnitAttackAnimation(!string.IsNullOrWhiteSpace(evt.TargetUnitId) ? evt.TargetUnitId : evt.EnemyUnitId);
             node.SetHighlight(true, new Color(1f, 0.45f, 0.2f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
@@ -165,27 +188,31 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayDamage(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
+                TryPlayAttackerAnimation(evt);
+                TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
+            TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
         }
 
         private IEnumerator PlayDeath(TurnEventDto evt)
         {
-            var map = MapRenderer.Instance;
-            if (map == null || !map.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
+                TryPlayUnitAttackAnimation(evt.KillerId);
+                TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
+            TryPlayUnitAttackAnimation(evt.KillerId);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
-            map.RemoveRuntimeUnit(evt.UnitId, false);
+            _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
         }
 
         private IEnumerator PlayBuildingDamage(TurnEventDto evt)
@@ -196,6 +223,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
+            TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
@@ -203,9 +231,40 @@ namespace Panoptes.Presentation.Map
             node.SetHighlightVisible(false);
         }
 
+        private bool TryPlayAttackerAnimation(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                return false;
+            }
+
+            return TryPlayUnitAttackAnimation(evt.UnitId) ||
+                   TryPlayUnitAttackAnimation(ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id"));
+        }
+
+        private bool TryPlayUnitAttackAnimation(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return false;
+            }
+
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(unitId, out var unit) || unit == null)
+            {
+                return false;
+            }
+
+            return unit.PlayAttackAnimation();
+        }
+
         private IEnumerator PlayMapPulse(TurnEventDto evt)
         {
             if (!TryResolveNodeForEvent(evt, out var node) || node == null)
+            {
+                yield break;
+            }
+
+            if (!CanShowNodeCue(node))
             {
                 yield break;
             }
@@ -224,6 +283,11 @@ namespace Panoptes.Presentation.Map
 
             if (TryResolveNodeForEvent(evt, out var node) && node != null)
             {
+                if (!CanShowNodeCue(node))
+                {
+                    yield break;
+                }
+
                 node.SetHighlight(true, new Color(1f, 0.9f, 0.35f, 1f));
                 yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, sectionPauseSeconds));
                 node.SetHighlightVisible(false);
@@ -271,7 +335,6 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureDamagePopupController();
             if (damagePopupController == null)
             {
                 return;
@@ -284,6 +347,71 @@ namespace Panoptes.Presentation.Map
             }
 
             damagePopupController.ShowDamage(target, damage, isBuilding);
+        }
+
+        private void TryShowUnitDamagePopupFallback(TurnEventDto evt)
+        {
+            var damage = ResolveDamageValue(evt);
+            if (damage <= 0 || !TryResolveUnitPopupPosition(evt, out var position))
+            {
+                return;
+            }
+
+            if (damagePopupController == null)
+            {
+                return;
+            }
+
+            damagePopupController.ShowDamage(position, damage, isBuilding: false);
+        }
+
+        private bool TryResolveUnitPopupPosition(TurnEventDto evt, out Vector3 position)
+        {
+            position = default;
+            if (evt == null)
+            {
+                return false;
+            }
+
+            if (_mapRenderer == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && _mapRenderer.TryGetNodeView(evt.NodeId, out var eventNode) && eventNode != null)
+            {
+                position = eventNode.transform.position;
+                return true;
+            }
+
+            if (HasEventKey(evt, "pos_q") || HasEventKey(evt, "pos_r"))
+            {
+                if (_mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var eventNodeId) &&
+                    _mapRenderer.TryGetNodeView(eventNodeId, out eventNode) &&
+                    eventNode != null)
+                {
+                    position = eventNode.transform.position;
+                    return true;
+                }
+            }
+
+            if (_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) && unit != null &&
+                _mapRenderer.TryGetNodeIdByGrid(unit.GridPos, out var nodeId) &&
+                _mapRenderer.TryGetNodeView(nodeId, out var node) &&
+                node != null)
+            {
+                position = node.transform.position;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasEventKey(TurnEventDto evt, string key)
+        {
+            return evt?.Data != null &&
+                   !string.IsNullOrWhiteSpace(key) &&
+                   evt.Data.ContainsKey(key);
         }
 
         private static int ResolveDamageValue(TurnEventDto evt)
@@ -335,54 +463,55 @@ namespace Panoptes.Presentation.Map
             return 0;
         }
 
-        private static bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
+        private static string ReadEventString(TurnEventDto evt, params string[] keys)
+        {
+            if (evt?.Data == null || keys == null)
+            {
+                return string.Empty;
+            }
+
+            for (var i = 0; i < keys.Length; i++)
+            {
+                var key = keys[i];
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                if (evt.Data.TryGetValue(key, out var raw) && !string.IsNullOrWhiteSpace(raw))
+                {
+                    return raw;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private bool TryResolveNodeForEvent(TurnEventDto evt, out NodeView node)
         {
             node = null;
-            var map = MapRenderer.Instance;
-            if (map == null || evt == null)
+            if (_mapRenderer == null || evt == null)
             {
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(evt.NodeId) && map.TryGetNodeView(evt.NodeId, out node))
+            if (!string.IsNullOrWhiteSpace(evt.NodeId) && _mapRenderer.TryGetNodeView(evt.NodeId, out node))
             {
                 return node != null;
             }
 
-            if (map.TryGetNodeIdByGrid(new Vector2Int(evt.PosX, evt.PosY), out var nodeId))
+            if (_mapRenderer.TryGetNodeIdByGrid(new Vector2Int(evt.PosQ, evt.PosR), out var nodeId))
             {
-                return map.TryGetNodeView(nodeId, out node) && node != null;
+                return _mapRenderer.TryGetNodeView(nodeId, out node) && node != null;
             }
 
             return false;
         }
 
-        private static void EnsureAnimationQueue()
+        private static bool CanShowNodeCue(NodeView node)
         {
-            if (AnimationQueue.Instance != null)
-            {
-                return;
-            }
-
-            var go = new GameObject("AnimationQueue");
-            go.AddComponent<AnimationQueue>();
+            return node != null && node.IsCurrentlyVisible;
         }
 
-        private void EnsureDamagePopupController()
-        {
-            if (!enableDamagePopups || damagePopupController != null)
-            {
-                return;
-            }
-
-            damagePopupController = FindAnyObjectByType<DamageNumberPopupController>();
-            if (damagePopupController != null)
-            {
-                return;
-            }
-
-            var popupRoot = new GameObject("DamageNumberPopupController");
-            damagePopupController = popupRoot.AddComponent<DamageNumberPopupController>();
-        }
     }
 }

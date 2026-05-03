@@ -90,6 +90,105 @@
       "work_amount": 2,
       "base_progress": 1,
       "outputs": { "units": ["archer"] }
+    },
+    {
+      "id": "granary_rations",
+      "building_id": "granary",
+      "resource_inputs": { "food": 2 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "food": 4 } }
+    },
+    {
+      "id": "smelter_refined_ore",
+      "building_id": "smelter",
+      "resource_inputs": { "ore": 2, "wood": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "ore": 4 } }
+    },
+    {
+      "id": "stable_cavalry",
+      "building_id": "stable",
+      "resource_inputs": { "food": 2, "ore": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 3,
+      "base_progress": 1,
+      "outputs": { "units": ["cavalry"] }
+    },
+    {
+      "id": "engineer_camp_raider",
+      "building_id": "engineer_camp",
+      "resource_inputs": { "food": 1, "ore": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "units": ["raider"] }
+    },
+    {
+      "id": "engineer_camp_siege_engine",
+      "building_id": "engineer_camp",
+      "resource_inputs": { "wood": 2, "ore": 2 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 4,
+      "base_progress": 1,
+      "outputs": { "units": ["siege_engine"] }
+    },
+    {
+      "id": "warehouse_reserve_rations",
+      "building_id": "warehouse",
+      "resource_inputs": { "food": 2 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "food": 3 } }
+    },
+    {
+      "id": "market_grain_contracts",
+      "building_id": "market",
+      "resource_inputs": { "wood": 1, "ore": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "food": 3 } }
+    },
+    {
+      "id": "market_lumber_contracts",
+      "building_id": "market",
+      "resource_inputs": { "food": 1, "ore": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "wood": 3 } }
+    },
+    {
+      "id": "market_ore_contracts",
+      "building_id": "market",
+      "resource_inputs": { "food": 1, "wood": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "resources": { "ore": 2 } }
+    },
+    {
+      "id": "watchtower_scout",
+      "building_id": "watchtower",
+      "resource_inputs": { "food": 1, "wood": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "units": ["scout"] }
+    },
+    {
+      "id": "training_ground_spearman",
+      "building_id": "training_ground",
+      "resource_inputs": { "food": 1, "wood": 1 },
+      "point_inputs": { "industry_output": 1 },
+      "work_amount": 2,
+      "base_progress": 1,
+      "outputs": { "units": ["spearman"] }
     }
   ]
 }

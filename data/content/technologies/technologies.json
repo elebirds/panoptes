@@ -47,6 +47,7 @@
       "prerequisites": [],
       "explicit_effects": [
         { "type": "unlock_policy", "target_id": "academy_charter" },
+        { "type": "unlock_policy", "target_id": "logistics_corps" },
         { "type": "add_institution_slots", "institution_slots": 1 }
       ],
       "modifier_effects": []
@@ -131,6 +132,184 @@
           "target_id": "wall",
           "modifier_type": "flat",
           "value": 30
+        }
+      ]
+    },
+    {
+      "id": "supply_depots",
+      "branch": "governance",
+      "tier": 2,
+      "research_cost": 2,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "agrarian_foundations" },
+        { "type": "technology_unlocked", "target_id": "organized_labor" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "granary" },
+        { "type": "unlock_recipe", "target_id": "granary_rations" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "metallurgy",
+      "branch": "industry",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "mining_survey" },
+        { "type": "technology_unlocked", "target_id": "workshop_methods" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "smelter" },
+        { "type": "unlock_recipe", "target_id": "smelter_refined_ore" },
+        { "type": "unlock_policy", "target_id": "foundry_directives" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "mounted_logistics",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "militia_mobilization" },
+        { "type": "technology_unlocked", "target_id": "supply_depots" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "stable" },
+        { "type": "unlock_recipe", "target_id": "stable_cavalry" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.move_range",
+          "target_id": "cavalry",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "siegecraft",
+      "branch": "military",
+      "tier": 5,
+      "research_cost": 4,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "metallurgy" },
+        { "type": "technology_unlocked", "target_id": "fortifications" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "engineer_camp" },
+        { "type": "unlock_recipe", "target_id": "engineer_camp_raider" },
+        { "type": "unlock_recipe", "target_id": "engineer_camp_siege_engine" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.siege_multiplier",
+          "target_id": "siege_engine",
+          "modifier_type": "flat",
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": "centralized_storage",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "supply_depots" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "warehouse" },
+        { "type": "unlock_recipe", "target_id": "warehouse_reserve_rations" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "logistics.road_capacity",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "trade_levies",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "supply_depots" },
+        { "type": "technology_unlocked", "target_id": "civic_institutions" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "market" },
+        { "type": "unlock_recipe", "target_id": "market_grain_contracts" },
+        { "type": "unlock_recipe", "target_id": "market_lumber_contracts" },
+        { "type": "unlock_recipe", "target_id": "market_ore_contracts" },
+        { "type": "unlock_policy", "target_id": "mercantile_charter" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "scholastic_bureaucracy",
+      "branch": "governance",
+      "tier": 3,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "civic_institutions" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "academy" },
+        { "type": "unlock_policy", "target_id": "research_mandate" }
+      ],
+      "modifier_effects": []
+    },
+    {
+      "id": "sentry_networks",
+      "branch": "defense",
+      "tier": 5,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "fortifications" },
+        { "type": "technology_unlocked", "target_id": "ranged_drill" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "watchtower" },
+        { "type": "unlock_recipe", "target_id": "watchtower_scout" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "archer",
+          "modifier_type": "flat",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "professional_drill",
+      "branch": "military",
+      "tier": 4,
+      "research_cost": 3,
+      "prerequisites": [
+        { "type": "technology_unlocked", "target_id": "militia_mobilization" },
+        { "type": "technology_unlocked", "target_id": "centralized_storage" }
+      ],
+      "explicit_effects": [
+        { "type": "unlock_building", "target_id": "training_ground" },
+        { "type": "unlock_recipe", "target_id": "training_ground_spearman" }
+      ],
+      "modifier_effects": [
+        {
+          "trigger": "unit.attack",
+          "target_id": "spearman",
+          "modifier_type": "flat",
+          "value": 2
         }
       ]
     }

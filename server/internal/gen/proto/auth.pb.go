@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: auth.proto
+// source: panoptes/proto/v1/auth.proto
 
 package protov1
 
@@ -32,7 +32,7 @@ type MsgRegister struct {
 
 func (x *MsgRegister) Reset() {
 	*x = MsgRegister{}
-	mi := &file_auth_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *MsgRegister) String() string {
 func (*MsgRegister) ProtoMessage() {}
 
 func (x *MsgRegister) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *MsgRegister) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgRegister.ProtoReflect.Descriptor instead.
 func (*MsgRegister) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_auth_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MsgRegister) GetUsername() string {
@@ -84,7 +84,7 @@ type MsgLogin struct {
 
 func (x *MsgLogin) Reset() {
 	*x = MsgLogin{}
-	mi := &file_auth_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +96,7 @@ func (x *MsgLogin) String() string {
 func (*MsgLogin) ProtoMessage() {}
 
 func (x *MsgLogin) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +109,7 @@ func (x *MsgLogin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgLogin.ProtoReflect.Descriptor instead.
 func (*MsgLogin) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_auth_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MsgLogin) GetUsername() string {
@@ -138,7 +138,7 @@ type MsgLoginSuccess struct {
 
 func (x *MsgLoginSuccess) Reset() {
 	*x = MsgLoginSuccess{}
-	mi := &file_auth_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +150,7 @@ func (x *MsgLoginSuccess) String() string {
 func (*MsgLoginSuccess) ProtoMessage() {}
 
 func (x *MsgLoginSuccess) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[2]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +163,7 @@ func (x *MsgLoginSuccess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgLoginSuccess.ProtoReflect.Descriptor instead.
 func (*MsgLoginSuccess) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{2}
+	return file_panoptes_proto_v1_auth_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MsgLoginSuccess) GetToken() string {
@@ -197,7 +197,7 @@ type MsgAuthError struct {
 
 func (x *MsgAuthError) Reset() {
 	*x = MsgAuthError{}
-	mi := &file_auth_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +209,7 @@ func (x *MsgAuthError) String() string {
 func (*MsgAuthError) ProtoMessage() {}
 
 func (x *MsgAuthError) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[3]
+	mi := &file_panoptes_proto_v1_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +222,7 @@ func (x *MsgAuthError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgAuthError.ProtoReflect.Descriptor instead.
 func (*MsgAuthError) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{3}
+	return file_panoptes_proto_v1_auth_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MsgAuthError) GetCode() string {
@@ -239,12 +239,11 @@ func (x *MsgAuthError) GetMessage() string {
 	return ""
 }
 
-var File_auth_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_auth_proto protoreflect.FileDescriptor
 
-const file_auth_proto_rawDesc = "" +
+const file_panoptes_proto_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\n" +
-	"auth.proto\x12\x11panoptes.proto.v1\x1a\fcommon.proto\"E\n" +
+	"\x1cpanoptes/proto/v1/auth.proto\x12\x11panoptes.proto.v1\"E\n" +
 	"\vMsgRegister\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"B\n" +
@@ -257,28 +256,28 @@ const file_auth_proto_rawDesc = "" +
 	"\busername\x18\x03 \x01(\tR\busername\"<\n" +
 	"\fMsgAuthError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessageBXZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x19Panoptes.Protocol.V1.Authb\x06proto3"
+	"\amessage\x18\x02 \x01(\tR\amessageBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_auth_proto_rawDescOnce sync.Once
-	file_auth_proto_rawDescData []byte
+	file_panoptes_proto_v1_auth_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_auth_proto_rawDescData []byte
 )
 
-func file_auth_proto_rawDescGZIP() []byte {
-	file_auth_proto_rawDescOnce.Do(func() {
-		file_auth_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)))
+func file_panoptes_proto_v1_auth_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_auth_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_auth_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_auth_proto_rawDesc), len(file_panoptes_proto_v1_auth_proto_rawDesc)))
 	})
-	return file_auth_proto_rawDescData
+	return file_panoptes_proto_v1_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_auth_proto_goTypes = []any{
+var file_panoptes_proto_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_panoptes_proto_v1_auth_proto_goTypes = []any{
 	(*MsgRegister)(nil),     // 0: panoptes.proto.v1.MsgRegister
 	(*MsgLogin)(nil),        // 1: panoptes.proto.v1.MsgLogin
 	(*MsgLoginSuccess)(nil), // 2: panoptes.proto.v1.MsgLoginSuccess
 	(*MsgAuthError)(nil),    // 3: panoptes.proto.v1.MsgAuthError
 }
-var file_auth_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_auth_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -286,27 +285,26 @@ var file_auth_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_auth_proto_init() }
-func file_auth_proto_init() {
-	if File_auth_proto != nil {
+func init() { file_panoptes_proto_v1_auth_proto_init() }
+func file_panoptes_proto_v1_auth_proto_init() {
+	if File_panoptes_proto_v1_auth_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_auth_proto_rawDesc), len(file_panoptes_proto_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_auth_proto_goTypes,
-		DependencyIndexes: file_auth_proto_depIdxs,
-		MessageInfos:      file_auth_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_auth_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_auth_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_auth_proto_msgTypes,
 	}.Build()
-	File_auth_proto = out.File
-	file_auth_proto_goTypes = nil
-	file_auth_proto_depIdxs = nil
+	File_panoptes_proto_v1_auth_proto = out.File
+	file_panoptes_proto_v1_auth_proto_goTypes = nil
+	file_panoptes_proto_v1_auth_proto_depIdxs = nil
 }

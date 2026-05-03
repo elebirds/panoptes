@@ -29,7 +29,7 @@ func TestBuildStructureRejectedOutsideTerritory(t *testing.T) {
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Research.UnlockBuilding("farm")
 	state.Players["player-1"].Research.UnlockRecipe("farm_food")
-	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
+	state.Map.PlayerSpawns["player-1"] = domain.Position{Q: 99, R: 99}
 
 	nodeEntry, ok := state.GetNode("A2")
 	if !ok {
@@ -107,7 +107,7 @@ func TestBuildStructurePreviewRejectedOutsideTerritoryDoesNotMutateState(t *test
 	state := def.State
 	state.Players["player-1"].TokensLeft = 3
 	state.Players["player-1"].Research.UnlockBuilding("farm")
-	state.Map.PlayerSpawns["player-1"] = domain.Position{X: 99, Y: 99}
+	state.Map.PlayerSpawns["player-1"] = domain.Position{Q: 99, R: 99}
 
 	nodeEntry, ok := state.GetNode("A2")
 	if !ok {
@@ -170,8 +170,8 @@ func TestBuildStructureRejectedInsufficientPointsIncludesFeedback(t *testing.T) 
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "point-preview", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["N1"] = targetEntity
 	for _, entity := range []donburi.Entity{cityEntity, targetEntity} {
@@ -231,8 +231,8 @@ func TestSetBuildingRecipePreviewWarnsWhenBuildingBlocked(t *testing.T) {
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "recipe-preview", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	farmEntity := ecs.CreateNode(world, ecs.MapNode{ID: "F1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	farmEntity := ecs.CreateNode(world, ecs.MapNode{ID: "F1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["F1"] = farmEntity
 	for _, entity := range []donburi.Entity{cityEntity, farmEntity} {
@@ -306,7 +306,7 @@ func TestSetBuildingRecipeRejectedIncludesSpecificFeedback(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-1"
@@ -428,8 +428,8 @@ func TestBuildStructureReplacesDraftOnSameNodeWithoutChargingExtraToken(t *testi
 
 	world := donburi.NewWorld()
 	mapData := &domain.MapData{ID: "default", NodeIndex: map[string]donburi.Entity{}}
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	mapData.NodeIndex["C1"] = cityEntity
 	mapData.NodeIndex["N1"] = targetEntity
 	cityEntry := world.Entry(cityEntity)
@@ -499,7 +499,7 @@ func TestSetBuildingRecipeReplacesDraftOnSameNode(t *testing.T) {
 	}))
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntry := world.Entry(nodeEntity)
 	node := ecs.NodeC.Get(nodeEntry)
 	node.Owner = "player-1"
@@ -562,12 +562,18 @@ func TestSetWarZoneRejectedAsNonMVP(t *testing.T) {
 	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
 		t.Fatalf("planning war directives = %#v, want empty", got)
 	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
 	if len(session.sent["player-1"]) != 0 {
 		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
 	}
 }
 
-func TestSetMinisterDirectiveAcceptsResearchDraftAndRefreshesSnapshot(t *testing.T) {
+func TestSetMinisterDirectiveAcceptsResearchDraft(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -598,24 +604,25 @@ func TestSetMinisterDirectiveAcceptsResearchDraftAndRefreshesSnapshot(t *testing
 	if err != nil {
 		t.Fatalf("HandleCommand() error = %v", err)
 	}
-	result := lastMessage[*pb.MsgResearchResult](session.sent["player-1"])
-	if result == nil || !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
-		t.Fatalf("research result = %#v, want accepted agrarian_foundations", result)
-	}
 	if got := state.TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
 		t.Fatalf("pending research target = %q, want agrarian_foundations", got)
 	}
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || snapshot.GetPlannedResearchTargetTechnologyId() != "agrarian_foundations" {
-		t.Fatalf("planning snapshot = %#v, want agrarian_foundations", snapshot)
+	if result := lastMessage[*pb.MsgResearchResult](session.sent["player-1"]); result == nil || !result.GetSuccess() || result.GetTechnologyId() != "agrarian_foundations" {
+		t.Fatalf("research result = %#v, want accepted agrarian_foundations", result)
 	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-research-1")
-	if status != "accepted" {
-		t.Fatalf("draft status = %q, want accepted", status)
+	if got := len(session.memoryEntries); got == 0 {
+		t.Fatalf("memory entries = 0, want accepted transition recorded")
+	}
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want one draft", drafts)
+	}
+	if drafts[0].Status != domain.MinisterDraftStatusAccepted || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want accepted and available", drafts[0])
 	}
 }
 
-func TestSetMinisterDirectiveRejectsDraftAndMarksItUnavailable(t *testing.T) {
+func TestSetMinisterDirectiveIntentAcceptsPolicyDraft(t *testing.T) {
 	state := newMinisterDraftPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -635,30 +642,32 @@ func TestSetMinisterDirectiveRejectsDraftAndMarksItUnavailable(t *testing.T) {
 		},
 	})
 
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"reject","draft_id":"draft-policy-1"}`,
-			},
+	err := service.HandleIntent(session, IntentEnvelope{
+		ParticipantID: "player-1",
+		Intent: SetMinisterDirectiveIntent{
+			MinisterRole:  "domestic",
+			DirectiveType: "accept",
+			DraftID:       "draft-policy-1",
 		},
 	})
 	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
+		t.Fatalf("HandleIntent() error = %v", err)
 	}
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil {
-		t.Fatalf("planning snapshot is nil")
+	if got := state.TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
+		t.Fatalf("pending policy = %q, want expansion", got)
 	}
-	if got := len(snapshot.GetMinisterDrafts()); got != 1 {
-		t.Fatalf("minister draft count = %d, want 1", got)
+	if result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"]); result == nil || !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
+		t.Fatalf("policy result = %#v, want accepted expansion", result)
 	}
-	if snapshot.GetMinisterDrafts()[0].GetAvailable() {
-		t.Fatalf("rejected draft should be unavailable")
+	if got := len(session.memoryEntries); got == 0 {
+		t.Fatalf("memory entries = 0, want accepted transition recorded")
 	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
-	if status != "rejected" {
-		t.Fatalf("draft status = %q, want rejected", status)
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer("player-1")
+	if len(drafts) != 1 {
+		t.Fatalf("minister drafts = %#v, want one draft", drafts)
+	}
+	if drafts[0].Status != domain.MinisterDraftStatusAccepted || !drafts[0].Available {
+		t.Fatalf("minister draft = %#v, want accepted and available", drafts[0])
 	}
 }
 
@@ -698,95 +707,6 @@ func TestManualPolicyChangeMarksAcceptedDraftStale(t *testing.T) {
 	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
 	if status != "stale" {
 		t.Fatalf("draft status = %q, want stale", status)
-	}
-}
-
-func TestStaleMinisterDraftCanBeAcceptedAgain(t *testing.T) {
-	state := newMinisterDraftPlanningState(t)
-	session := newPlanningSessionStub(state)
-	service := &Service{}
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
-		{
-			DraftID:      "draft-policy-1",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindPolicy,
-			TargetID:     "expansion",
-			TargetLabel:  "Expansion",
-			Title:        "建议转向扩张",
-			Status:       domain.MinisterDraftStatusStale,
-			Available:    true,
-			Turn:         1,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-	})
-	state.TurnRuntime.Planning.SetPendingPolicy("player-1", domain.Policy("reorganization"))
-
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
-	}
-
-	result := lastMessage[*pb.MsgSetPolicyResult](session.sent["player-1"])
-	if result == nil || !result.GetSuccess() || result.GetNationalPolicyId() != "expansion" {
-		t.Fatalf("policy result = %#v, want accepted expansion", result)
-	}
-
-	snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"])
-	if snapshot == nil || snapshot.GetPlannedNationalPolicyId() != "expansion" {
-		t.Fatalf("planning snapshot = %#v, want expansion", snapshot)
-	}
-	status := decodeMinisterDraftStatus(t, snapshot.GetMinisterDrafts(), "draft-policy-1")
-	if status != "accepted" {
-		t.Fatalf("draft status = %q, want accepted", status)
-	}
-}
-
-func TestMinisterDirectiveTransitionsRecordDomesticMemory(t *testing.T) {
-	state := newMinisterDraftPlanningState(t)
-	session := newPlanningSessionStub(state)
-	service := &Service{}
-	state.TurnRuntime.Planning.SetMinisterDrafts("player-1", []domain.MinisterDraft{
-		{
-			DraftID:      "draft-policy-1",
-			PlayerID:     "player-1",
-			MinisterRole: "domestic",
-			Kind:         domain.MinisterDraftKindPolicy,
-			TargetID:     "expansion",
-			TargetLabel:  "Expansion",
-			Title:        "建议转向扩张",
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         1,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		},
-	})
-
-	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
-		Body: &pb.PlanningCommand_SetMinisterDirective{
-			SetMinisterDirective: &pb.MsgSetMinisterDirective{
-				MinisterRole: "domestic",
-				Content:      `{"directive_type":"accept","draft_id":"draft-policy-1"}`,
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("HandleCommand() error = %v", err)
-	}
-
-	if len(session.memoryEntries) == 0 {
-		t.Fatalf("memoryEntries = 0, want accepted domestic draft recorded")
-	}
-	last := session.memoryEntries[len(session.memoryEntries)-1]
-	if last.Role != "domestic" || last.Entry.Outcome != "accepted" {
-		t.Fatalf("last memory entry = %#v, want domestic accepted", last)
 	}
 }
 
@@ -849,6 +769,12 @@ func TestWarZoneDirectiveRejectedAsNonMVP(t *testing.T) {
 	if got := state.TurnRuntime.Planning.WarDirectives["player-1"]; len(got) != 0 {
 		t.Fatalf("planning war directives = %#v, want empty", got)
 	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
 	if len(session.sent["player-1"]) != 0 {
 		t.Fatalf("sent messages = %d, want 0", len(session.sent["player-1"]))
 	}
@@ -900,7 +826,96 @@ func decodeMinisterDraftStatus(t *testing.T, drafts []*pb.MinisterDraftView, dra
 	return ""
 }
 
-func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
+func TestIssueUnitOrderRejectsReservedImprovementActionsWithoutStateWrites(t *testing.T) {
+	for _, action := range []string{"build_improvement", "repair_improvement"} {
+		t.Run(action, func(t *testing.T) {
+			state := newStructureAttackPlanningState(t)
+			session := newPlanningSessionStub(state)
+			service := &Service{}
+
+			err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_IssueUnitOrder{
+					IssueUnitOrder: &pb.MsgIssueUnitOrder{
+						UnitId:          "infantry-1",
+						Action:          action,
+						TargetNodeId:    "A2",
+						SecondaryNodeId: "A3",
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("HandleCommand() error = %v", err)
+			}
+
+			result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+			if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_directive" {
+				t.Fatalf("unit order result = %#v, want invalid_directive", result)
+			}
+			if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+				t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+			}
+			if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
+				t.Fatalf("planning unit orders = %#v, want no reserved draft recorded", state.TurnRuntime.Planning.UnitOrders)
+			}
+			if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+				t.Fatalf("resolving unit orders = %d, want 0", got)
+			}
+			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+				t.Fatalf("active marches = %d, want 0", got)
+			}
+		})
+	}
+}
+
+func TestIssueUnitOrderAcceptsRoadActionsForCivilian(t *testing.T) {
+	for _, action := range []string{"build_road", "repair_road"} {
+		t.Run(action, func(t *testing.T) {
+			state := newStructureAttackPlanningState(t)
+			settler := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+			ecs.UnitStatsC.Get(settler).ID = "settler-1"
+			if action == "repair_road" {
+				a1, _ := state.GetNode("A1")
+				ecs.NodeC.Get(a1).HasRoad = true
+			}
+			session := newPlanningSessionStub(state)
+			service := &Service{}
+
+			err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+				Body: &pb.PlanningCommand_IssueUnitOrder{
+					IssueUnitOrder: &pb.MsgIssueUnitOrder{
+						UnitId:          "settler-1",
+						Action:          action,
+						TargetNodeId:    "A1",
+						SecondaryNodeId: "A2",
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("HandleCommand() error = %v", err)
+			}
+
+			result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+			if result == nil || !result.GetSuccess() || result.GetErrorCode() != "" {
+				t.Fatalf("unit order result = %#v, want success", result)
+			}
+			if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot == nil {
+				t.Fatalf("planning snapshot missing on accepted road action")
+			}
+			directive, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]
+			if !ok || directive.Action != action {
+				t.Fatalf("planning unit order = %#v, ok=%v, want %s", directive, ok, action)
+			}
+			if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+				t.Fatalf("resolving unit orders = %d, want 0", got)
+			}
+			if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+				t.Fatalf("active marches = %d, want 0", got)
+			}
+		})
+	}
+}
+
+func TestIssueUnitOrderRejectsRoadActionsForInfantryWithoutStateWrites(t *testing.T) {
 	state := newStructureAttackPlanningState(t)
 	session := newPlanningSessionStub(state)
 	service := &Service{}
@@ -910,8 +925,8 @@ func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
 			IssueUnitOrder: &pb.MsgIssueUnitOrder{
 				UnitId:          "infantry-1",
 				Action:          "build_road",
-				TargetNodeId:    "A2",
-				SecondaryNodeId: "A3",
+				TargetNodeId:    "A1",
+				SecondaryNodeId: "A2",
 			},
 		},
 	})
@@ -928,6 +943,54 @@ func TestIssueUnitOrderRejectsNonMVPRoadAction(t *testing.T) {
 	}
 	if _, ok := state.TurnRuntime.Planning.UnitOrders["infantry-1"]; ok {
 		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
+	}
+}
+
+func TestIssueUnitOrderRejectsInvalidRoadEndpointsWithoutStateWrites(t *testing.T) {
+	state := newStructureAttackPlanningState(t)
+	settler := state.World.Entry(ecs.CreateUnit(state.World, "settler", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(settler).ID = "settler-1"
+	session := newPlanningSessionStub(state)
+	service := &Service{}
+
+	err := service.HandleCommand(session, cmddispatch.InboundContext{PlayerID: "player-1"}, &pb.PlanningCommand{
+		Body: &pb.PlanningCommand_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          "settler-1",
+				Action:          "build_road",
+				TargetNodeId:    "A1",
+				SecondaryNodeId: "A3",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("HandleCommand() error = %v", err)
+	}
+
+	result := lastMessage[*pb.MsgIssueUnitOrderResult](session.sent["player-1"])
+	if result == nil || result.GetSuccess() || result.GetErrorCode() != "invalid_target" {
+		t.Fatalf("unit order result = %#v, want invalid_target", result)
+	}
+	if snapshot := lastMessage[*pb.MsgPlanningSnapshot](session.sent["player-1"]); snapshot != nil {
+		t.Fatalf("planning snapshot = %#v, want nil on failure", snapshot)
+	}
+	if _, ok := state.TurnRuntime.Planning.UnitOrders["settler-1"]; ok {
+		t.Fatalf("planning unit orders = %#v, want no road draft recorded", state.TurnRuntime.Planning.UnitOrders)
+	}
+	if got := len(state.TurnRuntime.Resolving.UnitOrders); got != 0 {
+		t.Fatalf("resolving unit orders = %d, want 0", got)
+	}
+	if got := len(state.TurnRuntime.Resolving.ActiveMarches); got != 0 {
+		t.Fatalf("active marches = %d, want 0", got)
+	}
+	for _, nodeID := range []string{"A1", "A3"} {
+		nodeEntry, ok := state.GetNode(nodeID)
+		if !ok {
+			t.Fatalf("node %s missing", nodeID)
+		}
+		if ecs.NodeC.Get(nodeEntry).HasRoad {
+			t.Fatalf("node %s HasRoad = true, want false after rejected command", nodeID)
+		}
 	}
 }
 
@@ -1181,6 +1244,19 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 		},
 		Units: []staticdata.UnitDefinition{
 			{
+				ID:          "settler",
+				Class:       "civilian",
+				MaxHP:       12,
+				MoveRange:   2,
+				VisionRange: 2,
+				TrainCost:   staticdata.ResourceAmounts{},
+				Upkeep:      staticdata.ResourceAmounts{"food": 1},
+				Multipliers: map[string]float64{},
+				Flags: staticdata.UnitFlags{
+					CanCapture: true,
+				},
+			},
+			{
 				ID:          "infantry",
 				Class:       "melee",
 				MaxHP:       30,
@@ -1209,7 +1285,7 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{}
 	for idx, nodeID := range []string{"A1", "A2", "A3"} {
-		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: idx, Y: 0, Terrain: "plain"})
+		entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: idx, R: 0, Terrain: "plain"})
 		nodeIndex[nodeID] = entity
 	}
 	state := domain.NewGameState("planning-structure-attack", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
@@ -1232,7 +1308,7 @@ func newStructureAttackPlanningState(t *testing.T) *domain.GameState {
 	allyNodeState.Owner = "player-1"
 	allyNodeState.TerritoryOwner = "player-1"
 
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	return state
 }

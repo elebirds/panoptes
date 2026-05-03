@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="management-panel-root" class="management-panel-root tech-tree-root">
+        <ui:Label name="management-panel-title" text="Tech Tree" class="management-panel-title" />
+        <ui:Label name="management-panel-empty" text="No technologies available" class="management-panel-empty" />
+        <ui:ScrollView name="management-panel-scroll" class="management-panel-scroll">
+            <ui:VisualElement name="management-panel-groups" class="management-panel-groups" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

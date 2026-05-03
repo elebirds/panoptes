@@ -1,16 +1,25 @@
 using System;
+using UnityEngine;
 
 namespace Panoptes.Core.Infrastructure.Network
 {
     public static class ServerEndpointResolver
     {
-        public const string DefaultWebSocketUrl = "ws://47.116.32.157:8080/ws";
+        public const string EditorWebSocketUrl = "ws://localhost:8080/ws";
+        public const string RemoteWebSocketUrl = "ws://47.116.32.157:8080/ws";
 
-        public static string ResolveCurrentWebSocketUrl()
+        public static string DefaultWebSocketUrl => ResolveDefaultWebSocketUrl(UnityEngine.Application.isEditor);
+
+        public static string ResolveDefaultWebSocketUrl(bool isEditor)
         {
-            if (NetworkManager.Instance != null && !string.IsNullOrWhiteSpace(NetworkManager.Instance.ServerUrl))
+            return isEditor ? EditorWebSocketUrl : RemoteWebSocketUrl;
+        }
+
+        public static string ResolveCurrentWebSocketUrl(string configuredEndpoint)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredEndpoint))
             {
-                return NetworkManager.Instance.ServerUrl;
+                return configuredEndpoint;
             }
 
             return DefaultWebSocketUrl;

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        (unknown)
-// source: config.proto
+// source: panoptes/proto/v1/config.proto
 
 package protov1
 
@@ -31,7 +31,7 @@ type ConfigJsonEntry struct {
 
 func (x *ConfigJsonEntry) Reset() {
 	*x = ConfigJsonEntry{}
-	mi := &file_config_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_config_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *ConfigJsonEntry) String() string {
 func (*ConfigJsonEntry) ProtoMessage() {}
 
 func (x *ConfigJsonEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_config_proto_msgTypes[0]
+	mi := &file_panoptes_proto_v1_config_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *ConfigJsonEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigJsonEntry.ProtoReflect.Descriptor instead.
 func (*ConfigJsonEntry) Descriptor() ([]byte, []int) {
-	return file_config_proto_rawDescGZIP(), []int{0}
+	return file_panoptes_proto_v1_config_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ConfigJsonEntry) GetKey() string {
@@ -82,7 +82,7 @@ type MsgConfigBatchJson struct {
 
 func (x *MsgConfigBatchJson) Reset() {
 	*x = MsgConfigBatchJson{}
-	mi := &file_config_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_config_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +94,7 @@ func (x *MsgConfigBatchJson) String() string {
 func (*MsgConfigBatchJson) ProtoMessage() {}
 
 func (x *MsgConfigBatchJson) ProtoReflect() protoreflect.Message {
-	mi := &file_config_proto_msgTypes[1]
+	mi := &file_panoptes_proto_v1_config_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +107,7 @@ func (x *MsgConfigBatchJson) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MsgConfigBatchJson.ProtoReflect.Descriptor instead.
 func (*MsgConfigBatchJson) Descriptor() ([]byte, []int) {
-	return file_config_proto_rawDescGZIP(), []int{1}
+	return file_panoptes_proto_v1_config_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *MsgConfigBatchJson) GetConfigs() []*ConfigJsonEntry {
@@ -117,35 +117,35 @@ func (x *MsgConfigBatchJson) GetConfigs() []*ConfigJsonEntry {
 	return nil
 }
 
-var File_config_proto protoreflect.FileDescriptor
+var File_panoptes_proto_v1_config_proto protoreflect.FileDescriptor
 
-const file_config_proto_rawDesc = "" +
+const file_panoptes_proto_v1_config_proto_rawDesc = "" +
 	"\n" +
-	"\fconfig.proto\x12\x11panoptes.proto.v1\"7\n" +
+	"\x1epanoptes/proto/v1/config.proto\x12\x11panoptes.proto.v1\"7\n" +
 	"\x0fConfigJsonEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04json\x18\x02 \x01(\tR\x04json\"R\n" +
 	"\x12MsgConfigBatchJson\x12<\n" +
-	"\aconfigs\x18\x01 \x03(\v2\".panoptes.proto.v1.ConfigJsonEntryR\aconfigsBSZ:github.com/elebirds/panoptes/internal/gen/proto/v1;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
+	"\aconfigs\x18\x01 \x03(\v2\".panoptes.proto.v1.ConfigJsonEntryR\aconfigsBPZ7github.com/elebirds/panoptes/internal/gen/proto;protov1\xaa\x02\x14Panoptes.Protocol.V1b\x06proto3"
 
 var (
-	file_config_proto_rawDescOnce sync.Once
-	file_config_proto_rawDescData []byte
+	file_panoptes_proto_v1_config_proto_rawDescOnce sync.Once
+	file_panoptes_proto_v1_config_proto_rawDescData []byte
 )
 
-func file_config_proto_rawDescGZIP() []byte {
-	file_config_proto_rawDescOnce.Do(func() {
-		file_config_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_config_proto_rawDesc), len(file_config_proto_rawDesc)))
+func file_panoptes_proto_v1_config_proto_rawDescGZIP() []byte {
+	file_panoptes_proto_v1_config_proto_rawDescOnce.Do(func() {
+		file_panoptes_proto_v1_config_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_config_proto_rawDesc), len(file_panoptes_proto_v1_config_proto_rawDesc)))
 	})
-	return file_config_proto_rawDescData
+	return file_panoptes_proto_v1_config_proto_rawDescData
 }
 
-var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_config_proto_goTypes = []any{
+var file_panoptes_proto_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_panoptes_proto_v1_config_proto_goTypes = []any{
 	(*ConfigJsonEntry)(nil),    // 0: panoptes.proto.v1.ConfigJsonEntry
 	(*MsgConfigBatchJson)(nil), // 1: panoptes.proto.v1.MsgConfigBatchJson
 }
-var file_config_proto_depIdxs = []int32{
+var file_panoptes_proto_v1_config_proto_depIdxs = []int32{
 	0, // 0: panoptes.proto.v1.MsgConfigBatchJson.configs:type_name -> panoptes.proto.v1.ConfigJsonEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
@@ -154,26 +154,26 @@ var file_config_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_config_proto_init() }
-func file_config_proto_init() {
-	if File_config_proto != nil {
+func init() { file_panoptes_proto_v1_config_proto_init() }
+func file_panoptes_proto_v1_config_proto_init() {
+	if File_panoptes_proto_v1_config_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_config_proto_rawDesc), len(file_config_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_panoptes_proto_v1_config_proto_rawDesc), len(file_panoptes_proto_v1_config_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_config_proto_goTypes,
-		DependencyIndexes: file_config_proto_depIdxs,
-		MessageInfos:      file_config_proto_msgTypes,
+		GoTypes:           file_panoptes_proto_v1_config_proto_goTypes,
+		DependencyIndexes: file_panoptes_proto_v1_config_proto_depIdxs,
+		MessageInfos:      file_panoptes_proto_v1_config_proto_msgTypes,
 	}.Build()
-	File_config_proto = out.File
-	file_config_proto_goTypes = nil
-	file_config_proto_depIdxs = nil
+	File_panoptes_proto_v1_config_proto = out.File
+	file_panoptes_proto_v1_config_proto_goTypes = nil
+	file_panoptes_proto_v1_config_proto_depIdxs = nil
 }

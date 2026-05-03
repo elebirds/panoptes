@@ -31,7 +31,7 @@ func TestNewServerDoesNotRegisterDevGameRoutesWhenDevModeFalse(t *testing.T) {
 		nil,
 		nil,
 		false,
-		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewSettlementRecorder(), debug.NewCommandResultRecorder()),
+		NewDebugHandler(game.NewGameRoomRegistry(), debug.NewGameSyncRecorder(), debug.NewCommandResultRecorder()),
 	)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/state", nil)
@@ -103,7 +103,7 @@ func TestDebugHandlerCommandQueuesPlanningCommand(t *testing.T) {
 		t.Fatalf("protojson.Unmarshal() error = %v", err)
 	}
 	if !result.GetSuccess() || result.GetTechnologyId() != "agri_unlock_farm" {
-		t.Fatalf("research result = %#v", result)
+		t.Fatalf("research result success=%v technology_id=%q error_code=%q", result.GetSuccess(), result.GetTechnologyId(), result.GetErrorCode())
 	}
 
 	if got := fixture.room.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agri_unlock_farm" {
@@ -144,7 +144,7 @@ func TestDebugHandlerCommandReturnsConflictForRejectedPlanningCommand(t *testing
 		t.Fatalf("protojson.Unmarshal() error = %v", err)
 	}
 	if result.GetSuccess() {
-		t.Fatalf("research result should fail: %#v", result)
+		t.Fatalf("research result should fail: success=%v technology_id=%q error_code=%q", result.GetSuccess(), result.GetTechnologyId(), result.GetErrorCode())
 	}
 	if result.GetErrorCode() != "invalid_target" {
 		t.Fatalf("error_code = %q, want invalid_target", result.GetErrorCode())
@@ -167,12 +167,12 @@ func TestDebugHandlerSubmitAdvancesSinglePlayerRoom(t *testing.T) {
 	}
 
 	waitForDebugHTTP(t, 3*time.Second, func() bool {
-		msg := fixture.recorder.LatestSettlement(fixture.room.ID, "player-1")
+		msg := fixture.recorder.LatestGameSync(fixture.room.ID, "player-1")
 		return msg != nil && msg.GetTurn() == 1
 	})
 }
 
-func TestDebugHandlerStepTurnReturnsLatestSettlement(t *testing.T) {
+func TestDebugHandlerStepTurnReturnsLatestGameSync(t *testing.T) {
 	fixture := newDebugHTTPFixture(t)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/dev/game/step-turn", bytes.NewBufferString(`{}`))
@@ -185,21 +185,25 @@ func TestDebugHandlerStepTurnReturnsLatestSettlement(t *testing.T) {
 	}
 
 	var body struct {
-		TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement"`
-		State          debug.StateSummary    `json:"state"`
+		GameSync json.RawMessage    `json:"game_sync"`
+		State    debug.StateSummary `json:"state"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.TurnSettlement == nil || body.TurnSettlement.GetTurn() != 1 {
-		t.Fatalf("turn settlement = %#v", body.TurnSettlement)
+	var gameSync pb.MsgGameSync
+	if err := protojson.Unmarshal(body.GameSync, &gameSync); err != nil {
+		t.Fatalf("protojson.Unmarshal(game_sync) error = %v", err)
+	}
+	if gameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", &gameSync)
 	}
 	if body.State.Turn != 2 || body.State.Phase != domain.PhasePlanning.String() {
 		t.Fatalf("state summary = %#v", body.State)
 	}
 }
 
-func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
+func TestDebugHandlerGetGameSyncReturnsRecorderGameSync(t *testing.T) {
 	fixture := newDebugHTTPFixture(t)
 
 	stepReq := httptest.NewRequest(http.MethodPost, "/api/dev/game/step-turn", bytes.NewBufferString(`{}`))
@@ -210,7 +214,7 @@ func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
 		t.Fatalf("step status = %d, want 200 body=%s", stepResp.Code, stepResp.Body.String())
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/settlement", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/dev/game/sync", nil)
 	req.Header.Set("Authorization", "Bearer "+fixture.token)
 	resp := httptest.NewRecorder()
 	fixture.server.Handler().ServeHTTP(resp, req)
@@ -220,13 +224,17 @@ func TestDebugHandlerGetSettlementReturnsRecorderPayload(t *testing.T) {
 	}
 
 	var body struct {
-		TurnSettlement *pb.MsgTurnSettlement `json:"turn_settlement"`
+		GameSync json.RawMessage `json:"game_sync"`
 	}
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
-	if body.TurnSettlement == nil || body.TurnSettlement.GetTurn() != 1 {
-		t.Fatalf("turn settlement = %#v", body.TurnSettlement)
+	var gameSync pb.MsgGameSync
+	if err := protojson.Unmarshal(body.GameSync, &gameSync); err != nil {
+		t.Fatalf("protojson.Unmarshal(game_sync) error = %v", err)
+	}
+	if gameSync.GetTurn() != 1 {
+		t.Fatalf("game sync = %#v", &gameSync)
 	}
 }
 
@@ -309,7 +317,7 @@ func TestDebugHandlerVisionTogglesFullMapAndPushesPlanningRefresh(t *testing.T) 
 type debugHTTPFixture struct {
 	server          *Server
 	room            *game.GameRoom
-	recorder        *debug.SettlementRecorder
+	recorder        *debug.GameSyncRecorder
 	commandRecorder *debug.CommandResultRecorder
 	transport       *debug.CaptureTransport
 	token           string
@@ -324,7 +332,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	}
 	staticdata.SetDefault(def.Catalog)
 
-	recorder := debug.NewSettlementRecorder()
+	recorder := debug.NewGameSyncRecorder()
 	commandRecorder := debug.NewCommandResultRecorder()
 	previousRegistry := game.Registry
 	game.Registry = game.NewGameRoomRegistry()
@@ -334,7 +342,7 @@ func newDebugHTTPFixture(t *testing.T) *debugHTTPFixture {
 	})
 	game.SetDebugHooks(game.DebugHooks{
 		DumpStateSummary:      debug.DumpGameStateSummary,
-		RecordSettlement:      recorder.RecordSettlement,
+		RecordGameSync:        recorder.RecordGameSync,
 		RecordGameOver:        recorder.RecordGameOver,
 		RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 	})
@@ -405,7 +413,7 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 		ID:           "debug-fog",
 		Width:        4,
 		Height:       1,
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 0, Y: 0}, "bot-1": {X: 3, Y: 0}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 0, R: 0}, "bot-1": {Q: 3, R: 0}},
 		NodeIndex:    map[string]donburi.Entity{},
 	}
 	_ = createDebugHTTPNode(world, mapData, "N0", 0, 0)
@@ -418,12 +426,12 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 	state.Turn = 1
 	state.Phase = domain.PhasePlanning.String()
 
-	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
-	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{X: 3, Y: 0}))
+	allyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	enemyEntry := world.Entry(ecs.CreateUnit(world, "infantry", "bot-1", domain.Position{Q: 3, R: 0}))
 	ecs.UnitStatsC.Get(allyEntry).ID = "ally-1"
 	ecs.UnitStatsC.Get(enemyEntry).ID = "enemy-1"
 
-	recorder := debug.NewSettlementRecorder()
+	recorder := debug.NewGameSyncRecorder()
 	commandRecorder := debug.NewCommandResultRecorder()
 	previousRegistry := game.Registry
 	game.Registry = game.NewGameRoomRegistry()
@@ -433,7 +441,7 @@ func newDebugFogHTTPFixture(t *testing.T) *debugHTTPFixture {
 	})
 	game.SetDebugHooks(game.DebugHooks{
 		DumpStateSummary:      debug.DumpGameStateSummary,
-		RecordSettlement:      recorder.RecordSettlement,
+		RecordGameSync:        recorder.RecordGameSync,
 		RecordGameOver:        recorder.RecordGameOver,
 		RecordOutgoingMessage: commandRecorder.RecordOutgoingMessage,
 	})
@@ -526,7 +534,7 @@ func (s *stubUserStore) GetByID(_ context.Context, id string) (*auth.User, error
 }
 
 func createDebugHTTPNode(world donburi.World, mapData *domain.MapData, nodeID string, x int, y int) *donburi.Entry {
-	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, X: x, Y: y, Terrain: "plain"})
+	entity := ecs.CreateNode(world, ecs.MapNode{ID: nodeID, Q: x, R: y, Terrain: "plain"})
 	mapData.NodeIndex[nodeID] = entity
 	return world.Entry(entity)
 }

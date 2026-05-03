@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify Store hydration owns runtime read model updates."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated files untouched and Presentation boundary remains clean."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Verify implementation keeps the final architecture data flow."}
+{"file": "client/Panoptes.Tests.EditMode.csproj", "reason": "dotnet build/test verify Store hydration code and tests."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Static boundary checks verify Presentation keeps Protocol and NetworkManager singleton boundaries."}

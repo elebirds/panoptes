@@ -36,7 +36,7 @@ namespace Panoptes.DebugTools
 
             var dispatcher = MessageDispatcher.Instance;
             dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
-            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
             _registered = true;
         }
 
@@ -49,7 +49,7 @@ namespace Panoptes.DebugTools
 
             var dispatcher = MessageDispatcher.Instance;
             dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
-            dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Unregister<MsgGameSync>("MsgGameSync", OnGameSync);
             _registered = false;
         }
 
@@ -141,23 +141,23 @@ namespace Panoptes.DebugTools
             TryFinalize();
         }
 
-        private void OnTurnSettlement(MsgTurnSettlement msg)
+        private void OnGameSync(MsgGameSync msg)
         {
             try
             {
-                if (msg == null || msg.Sections == null)
+                if (msg == null || msg.Events == null)
                 {
-                    Fail("TurnSettlement 为空");
+                    Fail("GameSync 为空");
                     return;
                 }
 
                 _settlementChecked = true;
-                Debug.Log("[Check] ✓ TurnSettlement 处理正常");
+                Debug.Log("[Check] ✓ GameSync 处理正常");
                 TryFinalize();
             }
             catch (System.Exception e)
             {
-                Fail($"TurnSettlement 处理异常: {e.Message}");
+                Fail($"GameSync 处理异常: {e.Message}");
             }
         }
 

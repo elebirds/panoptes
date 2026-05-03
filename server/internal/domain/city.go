@@ -18,6 +18,7 @@ type CityState struct {
 	OwnerID             string
 	TerritoryBaseRadius int
 	OnlineOnTurn        int
+	Storage             ResourceBag
 }
 
 func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
@@ -42,6 +43,9 @@ func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
 		if city.TerritoryBaseRadius <= 0 {
 			city.TerritoryBaseRadius = baseRadius
 		}
+		if city.Storage == nil {
+			city.Storage = NewResourceBag()
+		}
 		return city
 	}
 
@@ -51,9 +55,32 @@ func (s *GameState) EnsureCityState(playerID string, cityID string) *CityState {
 		OwnerID:             playerID,
 		TerritoryBaseRadius: baseRadius,
 		OnlineOnTurn:        0,
+		Storage:             NewResourceBag(),
 	}
 	playerState.Cities[cityID] = city
 	return city
+}
+
+func (s *GameState) CityCoreNodeID(playerID string, cityID string) string {
+	city := s.CityState(playerID, cityID)
+	if city == nil {
+		return ""
+	}
+	if city.CoreNodeID != "" {
+		return city.CoreNodeID
+	}
+	return city.CityID
+}
+
+func (s *GameState) CityState(playerID string, cityID string) *CityState {
+	if s == nil || playerID == "" || cityID == "" {
+		return nil
+	}
+	playerState := s.Players[playerID]
+	if playerState == nil {
+		return nil
+	}
+	return playerState.Cities[cityID]
 }
 
 // PrimaryCityState returns a stable fallback city for player-scoped logic.

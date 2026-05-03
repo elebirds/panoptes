@@ -49,13 +49,7 @@ namespace Panoptes.Presentation.Map
         private readonly List<GameObject> _spawned = new();
         private readonly Dictionary<string, List<GameObject>> _spawnedByNodeId =
             new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
-        private static readonly Vector2Int[] CardinalDirs =
-        {
-            new Vector2Int(1, 0),
-            new Vector2Int(-1, 0),
-            new Vector2Int(0, 1),
-            new Vector2Int(0, -1)
-        };
+        private static readonly Vector2Int[] AxialDirs = HexGrid.AxialDirections;
 
         public void RebuildDecorations(IReadOnlyList<NodeDto> nodes, IReadOnlyDictionary<string, NodeView> tileViews)
         {
@@ -95,13 +89,13 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var ruleValue = rule.Value;
-                var prefab = PickPrefab(ruleValue.prefabs, node.X, node.Y);
+                var prefab = PickPrefab(ruleValue.prefabs, node.Q, node.R);
                 if (prefab == null)
                 {
                     continue;
                 }
 
-                var nodeRandom = BuildNodeRandom(node.X, node.Y);
+                var nodeRandom = BuildNodeRandom(node.Q, node.R);
                 SpawnTerrainTransitionDecor(
                     node,
                     tile,
@@ -116,7 +110,7 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var instance = Instantiate(prefab, decorRoot, false);
-                instance.name = $"{prefab.name}_Decor_{node.X}_{node.Y}";
+                instance.name = $"{prefab.name}_Decor_{node.Q}_{node.R}";
 
                 var pos = tile.transform.position;
                 var jitter = Mathf.Clamp(positionJitter, 0f, 0.45f);
@@ -178,7 +172,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                result[new Vector2Int(node.X, node.Y)] = node;
+                result[new Vector2Int(node.Q, node.R)] = node;
             }
 
             return result;
@@ -203,10 +197,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            for (var i = 0; i < CardinalDirs.Length; i++)
+            for (var i = 0; i < AxialDirs.Length; i++)
             {
-                var dir = CardinalDirs[i];
-                var neighborCoord = new Vector2Int(node.X + dir.x, node.Y + dir.y);
+                var dir = AxialDirs[i];
+                var neighborCoord = new Vector2Int(node.Q + dir.x, node.R + dir.y);
                 if (!nodeByGrid.TryGetValue(neighborCoord, out var neighbor) || neighbor == null)
                 {
                     continue;
@@ -227,7 +221,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                var prefab = PickPrefab(ruleValue.prefabs, node.X * 31 + dir.x, node.Y * 31 + dir.y);
+                var prefab = PickPrefab(ruleValue.prefabs, node.Q * 31 + dir.x, node.R * 31 + dir.y);
                 if (prefab == null)
                 {
                     continue;
@@ -249,7 +243,7 @@ namespace Panoptes.Presentation.Map
                 pos.y = Mathf.Max(tile.transform.position.y, neighborTile.transform.position.y) + transitionYOffset;
 
                 var instance = Instantiate(prefab, decorRoot, false);
-                instance.name = $"{prefab.name}_Transition_{node.X}_{node.Y}_{neighbor.X}_{neighbor.Y}";
+                instance.name = $"{prefab.name}_Transition_{node.Q}_{node.R}_{neighbor.Q}_{neighbor.R}";
                 instance.transform.position = pos;
 
                 if (randomYaw)
@@ -289,7 +283,7 @@ namespace Panoptes.Presentation.Map
             }
 
             // Deduplicate edge spawn: only spawn once per undirected edge.
-            if (neighbor.X < node.X || (neighbor.X == node.X && neighbor.Y <= node.Y))
+            if (neighbor.Q < node.Q || (neighbor.Q == node.Q && neighbor.R <= node.R))
             {
                 return false;
             }

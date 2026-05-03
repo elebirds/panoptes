@@ -36,6 +36,16 @@ func buildMinisterObservationSummary(state *domain.GameState, observation *gameq
 		fmt.Sprintf("visible_units=%d", len(observation.Units)),
 		fmt.Sprintf("memory_units=%d", len(observation.MemoryUnits)),
 	}
+	report := gamequery.BuildInformationReport(observation)
+	if report != nil {
+		parts = append(parts,
+			"report_mode="+strings.TrimSpace(report.GetMode()),
+			"report_confidence="+strings.TrimSpace(report.GetConfidence()),
+			fmt.Sprintf("reported_omitted=%d", report.GetOmittedCount()),
+			fmt.Sprintf("reported_delayed=%d", report.GetDelayedCount()),
+			fmt.Sprintf("reported_misread=%d", report.GetMisreadCount()),
+		)
+	}
 
 	if state != nil {
 		if player := state.Players[strings.TrimSpace(observation.ViewerID)]; player != nil {

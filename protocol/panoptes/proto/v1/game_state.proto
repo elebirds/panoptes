@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+import "panoptes/proto/v1/common.proto";
+import "panoptes/proto/v1/data_types.proto";
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message NodeView {
+  string id = 1;
+  Position pos = 2;
+  string terrain = 3;
+  string controller_player_id = 4;
+  string building_type_id = 5;
+  int32 building_hp = 6;
+  int32 my_unit_count = 7;
+  int32 enemy_unit_count = 8;
+  bool has_road = 9;
+  bool is_resource_point = 10;
+  string resource_type = 11;
+  bool is_safe_zone = 12;
+  string territory_owner_player_id = 13;
+  BuildingOperationView operation = 14;
+  string building_status = 15;
+  string city_id = 16;
+  string service_city_id = 17;
+  bool is_city_core = 18;
+  int32 takeover_progress = 19;
+  int32 takeover_required = 20;
+  bool is_currently_visible = 21;
+  bool is_memory = 22;
+  int32 last_observed_turn = 23;
+  string road_status = 24;
+  string network_status = 25;
+  string network_city_id = 26;
+  bool is_network_connected = 27;
+}
+
+message UnitView {
+  string id = 1;
+  string faction = 2;
+  string unit_type = 3;
+  int32 hp = 4;
+  int32 max_hp = 5;
+  Position pos = 6;
+}
+
+message PlayerView {
+  string id = 1;
+  string username = 2;
+  ResourceBag resources = 3;
+  PointBag points = 4;
+  int32 tokens_left = 5;
+  string active_national_policy_id = 6;
+  int32 capital_city_core_hp = 7;
+  int32 capital_city_core_max_hp = 8;
+  repeated WarZone war_zones = 9;
+  ResearchStateView research = 10;
+  InstitutionStateView institutions = 11;
+}
+
+message ResearchStateView {
+  string current_target_technology_id = 1;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+  repeated string completed_technology_ids = 4;
+  repeated string active_technology_ids = 5;
+  repeated string pending_activation_technology_ids = 6;
+  repeated ResearchProgressEntry saved_progress = 7;
+}
+
+message ResearchProgressEntry {
+  string technology_id = 1;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+}
+
+message InstitutionStateView {
+  int32 slot_count = 1;
+  repeated string candidate_policy_ids = 2;
+  repeated string active_policy_ids = 3;
+}
+
+message BuildingOperationView {
+  string selected_recipe_id = 1;
+  int32 current_progress = 2;
+  int32 required_progress = 3;
+  int32 base_progress = 4;
+  string blocked_reason = 5;
+  string blocked_message = 6;
+}
+
+message WarZone {
+  string id = 1;
+  string name = 2;
+  repeated string node_ids = 3;
+  string directive = 4;
+  string target_node = 5;
+}
+
+message MinisterView {
+  string role = 1;
+  string name = 2;
+  int32 ability = 3;
+  string personality = 4;
+}
+
+message InformationReportView {
+  string mode = 1;
+  string confidence = 2;
+  int32 visible_node_count = 3;
+  int32 memory_node_count = 4;
+  int32 unknown_node_count = 5;
+  int32 visible_unit_count = 6;
+  int32 memory_unit_count = 7;
+  int32 omitted_count = 8;
+  int32 delayed_count = 9;
+  int32 misread_count = 10;
+  bool direct_inspection = 11;
+  repeated string notes = 12;
+}
+
+message MsgGameInit {
+  string game_id = 1;
+  string your_player_id = 2;
+  int32 turn = 3;
+  string phase = 4;
+  repeated NodeView nodes = 5;
+  repeated UnitView units = 6;
+  PlayerView my_player = 7;
+  repeated MinisterView ministers = 8;
+  int32 map_width = 9;
+  int32 map_height = 10;
+  InformationReportView information_report = 11;
+}
+
+message MsgGameOver {
+  string winner_id = 1;
+  string reason = 2; // "city_core_destroyed|timeout_draw"
+  string narrative = 3;
+}

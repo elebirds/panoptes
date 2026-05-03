@@ -66,8 +66,8 @@ func newStateSummaryFixture() (*domain.GameState, *donburi.Entry) {
 	world := donburi.NewWorld()
 	entity := ecs.CreateNode(world, ecs.MapNode{
 		ID:              "F1",
-		X:               0,
-		Y:               0,
+		Q:               0,
+		R:               0,
 		Terrain:         "plain",
 		IsResourcePoint: true,
 		ResourceType:    "food",

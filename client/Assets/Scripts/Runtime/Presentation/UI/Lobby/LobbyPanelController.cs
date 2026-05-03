@@ -4,6 +4,7 @@ using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Lobby
 {
@@ -19,13 +20,24 @@ namespace Panoptes.Presentation.UI.Lobby
         [SerializeField] private TextMeshProUGUI usernameText;
 
         private LobbyService _lobbySvc;
+        private SessionManager _sessionManager;
+        private ErrorToast _errorToast;
         private Coroutine _createTimeoutCoroutine;
         private Coroutine _joinTimeoutCoroutine;
 
+        [Inject]
+        public void Construct(
+            LobbyService lobbyService,
+            SessionManager sessionManager,
+            ErrorToast errorToast)
+        {
+            _lobbySvc = lobbyService;
+            _sessionManager = sessionManager;
+            _errorToast = errorToast;
+        }
+
         private void Awake()
         {
-            _lobbySvc = new LobbyService();
-
             createButton?.onClick.AddListener(OnClickCreateRoom);
             joinButton?.onClick.AddListener(OnClickJoinRoom);
         }
@@ -34,8 +46,8 @@ namespace Panoptes.Presentation.UI.Lobby
         {
             if (usernameText != null)
             {
-                usernameText.text = SessionManager.Instance != null
-                    ? SessionManager.Instance.Username ?? string.Empty
+                usernameText.text = _sessionManager != null
+                    ? _sessionManager.Username ?? string.Empty
                     : string.Empty;
             }
 
@@ -196,11 +208,11 @@ namespace Panoptes.Presentation.UI.Lobby
 
         // 大厅页统一通过这个入口抛出轻提示。
         // 这样既能复用全局 toast，也保留了没有 overlay 实例时的日志降级。
-        private static void ShowToast(string message, bool success)
+        private void ShowToast(string message, bool success)
         {
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, success);
+                _errorToast.Show(message, success);
                 return;
             }
 

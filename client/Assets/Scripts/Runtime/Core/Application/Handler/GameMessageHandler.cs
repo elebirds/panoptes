@@ -13,6 +13,26 @@ namespace Panoptes.Core.Application.Handler
     public sealed class GameMessageHandler : MonoBehaviour
     {
         private bool _registered;
+        private MessageDispatcher _dispatcher;
+        private GameStateCache _gameStateCache;
+        private PlanningDraftCache _planningDraftCache;
+        private GameChatCache _gameChatCache;
+        private StaticCatalogCache _staticCatalogCache;
+
+        public void UseProjectServices(
+            MessageDispatcher dispatcher,
+            GameStateCache gameStateCache,
+            PlanningDraftCache planningDraftCache,
+            GameChatCache gameChatCache,
+            StaticCatalogCache staticCatalogCache)
+        {
+            _dispatcher = dispatcher;
+            _gameStateCache = gameStateCache;
+            _planningDraftCache = planningDraftCache;
+            _gameChatCache = gameChatCache;
+            _staticCatalogCache = staticCatalogCache;
+            RegisterHandlers();
+        }
 
         private void Awake()
         {
@@ -26,7 +46,7 @@ namespace Panoptes.Core.Application.Handler
 
         private void RegisterHandlers()
         {
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             if (_registered || dispatcher == null)
             {
                 return;
@@ -37,18 +57,18 @@ namespace Panoptes.Core.Application.Handler
             dispatcher.Register<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
             dispatcher.Register<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Register<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
-            dispatcher.Register<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Register<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Register<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Register<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
-            dispatcher.Register<MsgResearchResult>("MsgResearchResult", OnResearchResult);
-            dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
-            dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
-            dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
-            dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
+            dispatcher.Register<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
+            dispatcher.Register<MsgSetPolicyResult>("MsgSetPolicyResult", HandleSetPolicyResult);
+            dispatcher.Register<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
+            dispatcher.Register<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
+            dispatcher.Register<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
             dispatcher.Register<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Register<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
-            dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", OnGameChatPosted);
+            dispatcher.Register<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             dispatcher.Register<MsgGameChatSync>("MsgGameChatSync", OnGameChatSync);
             dispatcher.Register<MsgGameOver>("MsgGameOver", OnGameOver);
             _registered = true;
@@ -56,101 +76,101 @@ namespace Panoptes.Core.Application.Handler
 
         private void UnregisterHandlers()
         {
-            if (!_registered || MessageDispatcher.Instance == null)
+            if (!_registered || _dispatcher == null)
             {
                 return;
             }
 
-            var dispatcher = MessageDispatcher.Instance;
+            var dispatcher = _dispatcher;
             dispatcher.Unregister<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
             dispatcher.Unregister<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
             dispatcher.Unregister<MsgPlanningPathPreviewResponse>("MsgPlanningPathPreviewResponse", OnPlanningPathPreviewResponse);
             dispatcher.Unregister<MsgBuildStructurePreviewResponse>("MsgBuildStructurePreviewResponse", OnBuildStructurePreviewResponse);
             dispatcher.Unregister<MsgSetBuildingRecipePreviewResponse>("MsgSetBuildingRecipePreviewResponse", OnSetBuildingRecipePreviewResponse);
-            dispatcher.Unregister<MsgTurnSettlement>("MsgTurnSettlement", OnTurnSettlement);
+            dispatcher.Unregister<MsgGameSync>("MsgGameSync", OnGameSync);
             dispatcher.Unregister<MsgTokenResult>("MsgTokenResult", OnTokenResult);
             dispatcher.Unregister<MsgRevealResult>("MsgRevealResult", OnRevealResult);
             dispatcher.Unregister<MsgIssueUnitOrderResult>("MsgIssueUnitOrderResult", OnIssueUnitOrderResult);
-            dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", OnResearchResult);
-            dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", OnSetPolicyResult);
-            dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", OnSetInstitutionLoadoutResult);
-            dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", OnSetBuildingRecipeResult);
-            dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", OnBuildStructureResult);
+            dispatcher.Unregister<MsgResearchResult>("MsgResearchResult", HandleResearchResult);
+            dispatcher.Unregister<MsgSetPolicyResult>("MsgSetPolicyResult", HandleSetPolicyResult);
+            dispatcher.Unregister<MsgSetInstitutionLoadoutResult>("MsgSetInstitutionLoadoutResult", HandleSetInstitutionLoadoutResult);
+            dispatcher.Unregister<MsgSetBuildingRecipeResult>("MsgSetBuildingRecipeResult", HandleSetBuildingRecipeResult);
+            dispatcher.Unregister<MsgBuildStructureResult>("MsgBuildStructureResult", HandleBuildStructureResult);
             dispatcher.Unregister<MsgMinisterReportChunk>("MsgMinisterReportChunk", OnMinisterReportChunk);
             dispatcher.Unregister<MsgMinisterMetrics>("MsgMinisterMetrics", OnMinisterMetrics);
-            dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", OnGameChatPosted);
+            dispatcher.Unregister<MsgGameChatPosted>("MsgGameChatPosted", HandleGameChatPosted);
             dispatcher.Unregister<MsgGameChatSync>("MsgGameChatSync", OnGameChatSync);
             dispatcher.Unregister<MsgGameOver>("MsgGameOver", OnGameOver);
             _registered = false;
         }
 
-        private static void OnPlanningStart(MsgPlanningStart msg)
+        private void OnPlanningStart(MsgPlanningStart msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyPlanningStart(msg);
+            _gameStateCache?.ApplyPlanningStart(msg);
             Debug.Log(FormatPhaseStartLog($"[Game] 规划阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
-        private static void OnPlanningSnapshot(MsgPlanningSnapshot msg)
+        private void OnPlanningSnapshot(MsgPlanningSnapshot msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyPlanningSnapshot(msg);
+            _gameStateCache?.ApplyPlanningSnapshot(msg);
             Debug.Log($"[Game] 规划快照 turn={msg.Turn} phase={msg.Phase} unit_orders={msg.UnitOrders.Count}");
         }
 
-        private static void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
+        private void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyPreviewResponse(msg);
+            _planningDraftCache?.ApplyPreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnBuildStructurePreviewResponse(MsgBuildStructurePreviewResponse msg)
+        private void OnBuildStructurePreviewResponse(MsgBuildStructurePreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyBuildPreviewResponse(msg);
+            _planningDraftCache?.ApplyBuildPreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 建造预览 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnSetBuildingRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
+        private void OnSetBuildingRecipePreviewResponse(MsgSetBuildingRecipePreviewResponse msg)
         {
-            PlanningDraftCache.EnsureInstance()?.ApplyRecipePreviewResponse(msg);
+            _planningDraftCache?.ApplyRecipePreviewResponse(msg);
             if (msg != null)
             {
                 Debug.Log($"[Game] 配方预览 node={msg.NodeId} recipe={msg.RecipeId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
-        private static void OnTurnSettlement(MsgTurnSettlement msg)
+        private void OnGameSync(MsgGameSync msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyTurnSettlement(msg);
-            Debug.Log($"[Game] 回合结算 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} sections={msg.Sections.Count}");
-            for (var i = 0; i < msg.Sections.Count; i++)
+            _gameStateCache?.ApplyGameSync(msg);
+            Debug.Log($"[Game] 游戏同步 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} events={msg.Events.Count}");
+            for (var i = 0; i < msg.Events.Count; i++)
             {
-                var section = msg.Sections[i];
-                if (section == null)
+                var evt = msg.Events[i];
+                if (evt == null)
                 {
                     continue;
                 }
 
-                Debug.Log($"  section={section.Section} events={section.Events.Count}");
+                Debug.Log($"  event={evt.Kind} channel={evt.Channel}");
             }
 
             // Combat diagnostics: quickly surface whether structure damage actually arrived from server.
@@ -184,19 +204,19 @@ namespace Panoptes.Core.Application.Handler
                         continue;
                     }
 
-                    Debug.Log($"[Game][SettlementEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
+                    Debug.Log($"[Game][SyncEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
                 }
             }
         }
 
-        private static void OnTokenResult(MsgTokenResult msg)
+        private void OnTokenResult(MsgTokenResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
+            var cache = _gameStateCache;
             if (msg.Success)
             {
                 cache?.UpdateTokens(msg.TokensLeft);
@@ -216,15 +236,15 @@ namespace Panoptes.Core.Application.Handler
             });
         }
 
-        private static void OnRevealResult(MsgRevealResult msg)
+        private void OnRevealResult(MsgRevealResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            var cache = GameStateCache.Instance;
-            var trueState = NodeMapper.ToDto(msg.TrueState);
+            var cache = _gameStateCache;
+            var trueState = NodeMapper.ToDto(msg.TrueState, _staticCatalogCache);
             cache?.UpdateNode(trueState);
             cache?.PublishRevealResult(new RevealResultEvent
             {
@@ -234,7 +254,7 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
         }
 
-        private static void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
+        private void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
         {
             if (msg == null)
             {
@@ -272,14 +292,24 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 单位命令草案已接受 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId}");
         }
 
+        private void HandleResearchResult(MsgResearchResult msg)
+        {
+            PublishResearchResult(_gameStateCache, msg);
+        }
+
         private static void OnResearchResult(MsgResearchResult msg)
+        {
+            PublishResearchResult(GameStateCache.Instance, msg);
+        }
+
+        private static void PublishResearchResult(GameStateCache cache, MsgResearchResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
             {
                 CommandType = "research",
                 Action = "set_research",
@@ -292,7 +322,7 @@ namespace Panoptes.Core.Application.Handler
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("technology_id", msg.TechnologyId)));
+                PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("technology_id", msg.TechnologyId)));
                 Debug.LogWarning($"[Game] 研究目标设置失败 tech={msg.TechnologyId} error={msg.ErrorCode}");
                 return;
             }
@@ -300,14 +330,24 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 研究目标草案已接受 tech={msg.TechnologyId}");
         }
 
+        private void HandleSetPolicyResult(MsgSetPolicyResult msg)
+        {
+            PublishSetPolicyResult(_gameStateCache, msg);
+        }
+
         private static void OnSetPolicyResult(MsgSetPolicyResult msg)
+        {
+            PublishSetPolicyResult(GameStateCache.Instance, msg);
+        }
+
+        private static void PublishSetPolicyResult(GameStateCache cache, MsgSetPolicyResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
             {
                 CommandType = "policy",
                 Action = "set_policy",
@@ -320,7 +360,7 @@ namespace Panoptes.Core.Application.Handler
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("national_policy_id", msg.NationalPolicyId)));
+                PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("national_policy_id", msg.NationalPolicyId)));
                 Debug.LogWarning($"[Game] 国策设置失败 policy={msg.NationalPolicyId} error={msg.ErrorCode}");
                 return;
             }
@@ -328,14 +368,24 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
         }
 
+        private void HandleSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
+        {
+            PublishSetInstitutionLoadoutResult(_gameStateCache, msg);
+        }
+
         private static void OnSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
+        {
+            PublishSetInstitutionLoadoutResult(GameStateCache.Instance, msg);
+        }
+
+        private static void PublishSetInstitutionLoadoutResult(GameStateCache cache, MsgSetInstitutionLoadoutResult msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
             {
                 CommandType = "institution_loadout",
                 Action = "set_institution_loadout",
@@ -349,7 +399,7 @@ namespace Panoptes.Core.Application.Handler
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
+                PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
                 Debug.LogWarning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
                 return;
             }
@@ -357,7 +407,17 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
         }
 
+        private void HandleSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
+        {
+            PublishSetBuildingRecipeResult(_gameStateCache, msg);
+        }
+
         private static void OnSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
+        {
+            PublishSetBuildingRecipeResult(GameStateCache.Instance, msg);
+        }
+
+        private static void PublishSetBuildingRecipeResult(GameStateCache cache, MsgSetBuildingRecipeResult msg)
         {
             if (msg == null)
             {
@@ -366,7 +426,7 @@ namespace Panoptes.Core.Application.Handler
 
             var details = ToDetailMap(msg.FeedbackDetails);
             var message = ResolveFailureMessage(msg.Success, msg.FeedbackMessage, msg.ErrorCode);
-            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
             {
                 CommandType = "building_recipe",
                 Action = "set_building_recipe",
@@ -380,7 +440,7 @@ namespace Panoptes.Core.Application.Handler
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, message, details);
+                PublishGameError(cache, msg.ErrorCode, message, details);
                 Debug.LogWarning($"[Game] 生产配方设置失败 node={msg.NodeId} recipe={msg.RecipeId} error={msg.ErrorCode}");
                 return;
             }
@@ -388,7 +448,17 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
         }
 
+        private void HandleBuildStructureResult(MsgBuildStructureResult msg)
+        {
+            PublishBuildStructureResult(_gameStateCache, msg);
+        }
+
         private static void OnBuildStructureResult(MsgBuildStructureResult msg)
+        {
+            PublishBuildStructureResult(GameStateCache.Instance, msg);
+        }
+
+        private static void PublishBuildStructureResult(GameStateCache cache, MsgBuildStructureResult msg)
         {
             if (msg == null)
             {
@@ -397,7 +467,7 @@ namespace Panoptes.Core.Application.Handler
 
             var details = ToDetailMap(msg.FeedbackDetails);
             var message = ResolveFailureMessage(msg.Success, msg.FeedbackMessage, msg.ErrorCode);
-            PublishPlanningCommandResult(new PlanningCommandResultEvent
+            PublishPlanningCommandResult(cache, new PlanningCommandResultEvent
             {
                 CommandType = "build",
                 Action = "build_structure",
@@ -412,7 +482,7 @@ namespace Panoptes.Core.Application.Handler
 
             if (!msg.Success)
             {
-                PublishGameError(msg.ErrorCode, message, details);
+                PublishGameError(cache, msg.ErrorCode, message, details);
                 Debug.LogWarning($"[Game] 建筑建造失败 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} error={msg.ErrorCode}");
                 return;
             }
@@ -420,14 +490,14 @@ namespace Panoptes.Core.Application.Handler
             Debug.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
         }
 
-        private static void OnMinisterReportChunk(MsgMinisterReportChunk msg)
+        private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishMinisterChunk(new MinisterChunkEvent
+            _gameStateCache?.PublishMinisterChunk(new MinisterChunkEvent
             {
                 MinisterRole = msg.MinisterRole,
                 Chunk = msg.Chunk,
@@ -435,57 +505,77 @@ namespace Panoptes.Core.Application.Handler
             });
         }
 
-        private static void OnMinisterMetrics(MsgMinisterMetrics msg)
+        private void OnMinisterMetrics(MsgMinisterMetrics msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishMinisterMetrics(new MinisterMetricsEvent
+            _gameStateCache?.PublishMinisterMetrics(new MinisterMetricsEvent
             {
                 MinisterRole = msg.MinisterRole,
                 Metrics = MinisterMapper.ToDtoList(msg.Metrics)
             });
         }
 
+        private void HandleGameChatPosted(MsgGameChatPosted msg)
+        {
+            PublishGameChatPosted(_gameChatCache, msg);
+        }
+
         private static void OnGameChatPosted(MsgGameChatPosted msg)
+        {
+            PublishGameChatPosted(GameChatCache.Instance, msg);
+        }
+
+        private static void PublishGameChatPosted(GameChatCache cache, MsgGameChatPosted msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameChatCache.EnsureInstance()?.ApplyPosted(msg);
+            cache?.ApplyPosted(msg);
             var entry = msg.Entry;
             Debug.Log($"[Game] 聊天表情 sender={entry?.SenderPlayerId} turn={entry?.Turn} phase={entry?.Phase} payload={entry?.Payload?.BodyCase}");
         }
 
-        private static void OnGameChatSync(MsgGameChatSync msg)
+        private void OnGameChatSync(MsgGameChatSync msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameChatCache.EnsureInstance()?.ApplySync(msg);
+            _gameChatCache?.ApplySync(msg);
             Debug.Log($"[Game] 聊天同步 entries={msg.Entries.Count}");
         }
 
-        private static void OnGameOver(MsgGameOver msg)
+        private void OnGameOver(MsgGameOver msg)
         {
             if (msg == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.ApplyGameOver(msg);
+            _gameStateCache?.ApplyGameOver(msg);
             Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
         }
 
-        private static void PublishGameError(string code, string message, Dictionary<string, string> details = null)
+        private void PublishGameError(string code, string message, Dictionary<string, string> details = null)
         {
-            GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+            _gameStateCache?.PublishGameError(new GameErrorEvent
+            {
+                Code = code ?? string.Empty,
+                Message = message ?? string.Empty,
+                Details = details
+            });
+        }
+
+        private static void PublishGameError(GameStateCache cache, string code, string message, Dictionary<string, string> details = null)
+        {
+            cache?.PublishGameError(new GameErrorEvent
             {
                 Code = code ?? string.Empty,
                 Message = message ?? string.Empty,
@@ -540,14 +630,24 @@ namespace Panoptes.Core.Application.Handler
             return result;
         }
 
-        private static void PublishPlanningCommandResult(PlanningCommandResultEvent evt)
+        private void PublishPlanningCommandResult(PlanningCommandResultEvent evt)
         {
             if (evt == null)
             {
                 return;
             }
 
-            GameStateCache.Instance?.PublishPlanningCommandResult(evt);
+            _gameStateCache?.PublishPlanningCommandResult(evt);
+        }
+
+        private static void PublishPlanningCommandResult(GameStateCache cache, PlanningCommandResultEvent evt)
+        {
+            if (evt == null)
+            {
+                return;
+            }
+
+            cache?.PublishPlanningCommandResult(evt);
         }
 
         private static string FormatPhaseStartLog(string text)

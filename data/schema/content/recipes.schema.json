@@ -50,14 +50,23 @@
           },
           "building_id": {
             "enum": [
+              "academy",
               "archery",
               "barracks",
               "city_core",
+              "engineer_camp",
               "farm",
               "frontier_office",
+              "granary",
               "lumber",
+              "market",
               "mine",
+              "smelter",
+              "stable",
+              "training_ground",
               "wall",
+              "warehouse",
+              "watchtower",
               "workshop"
             ],
             "type": "string"
@@ -84,8 +93,13 @@
                 "items": {
                   "enum": [
                     "archer",
+                    "cavalry",
                     "infantry",
-                    "settler"
+                    "raider",
+                    "scout",
+                    "settler",
+                    "siege_engine",
+                    "spearman"
                   ],
                   "type": "string"
                 },

@@ -23,8 +23,6 @@ namespace Panoptes.Presentation.UI.Common
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class ConfirmDialog : MonoBehaviour
     {
-        public static ConfirmDialog Instance { get; private set; }
-
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private Button maskButton;
         [SerializeField] private Image maskImage;
@@ -45,13 +43,6 @@ namespace Panoptes.Presentation.UI.Common
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
             if (Application.isPlaying)
             {
                 DontDestroyOnLoad(gameObject);
@@ -61,14 +52,6 @@ namespace Panoptes.Presentation.UI.Common
             ApplyVisualStyle();
             WireButtons();
             Hide();
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this)
-            {
-                Instance = null;
-            }
         }
 
         // ConfirmDialog 只负责展示和收集用户确认，不承载业务逻辑。
@@ -161,6 +144,11 @@ namespace Panoptes.Presentation.UI.Common
 
             ApplyButtonStyle(confirmButton, confirmButtonColor);
             ApplyButtonStyle(cancelButton, cancelButtonColor);
+            if (TMP_Settings.defaultFontAsset != null)
+            {
+                titleText.font = TMP_Settings.defaultFontAsset;
+                messageText.font = TMP_Settings.defaultFontAsset;
+            }
             ConfigureText(titleText, 30f, FontStyles.Bold, TextAlignmentOptions.Center, TextWrappingModes.NoWrap);
             ConfigureText(messageText, 24f, FontStyles.Normal, TextAlignmentOptions.Midline, TextWrappingModes.Normal);
         }
@@ -212,7 +200,6 @@ namespace Panoptes.Presentation.UI.Common
             TextAlignmentOptions alignment,
             TextWrappingModes wrappingMode)
         {
-            text.font = TMP_Settings.defaultFontAsset;
             text.fontSize = fontSize;
             text.fontStyle = style;
             text.alignment = alignment;

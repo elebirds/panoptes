@@ -149,7 +149,7 @@ func BuildStateSummary(state *domain.GameState) StateSummary {
 			UnitID: stats.ID,
 			Type:   string(stats.Type),
 			Owner:  stats.Faction,
-			NodeID: nodeIDAt(state.World, domain.Position{X: pos.X, Y: pos.Y}),
+			NodeID: nodeIDAt(state.World, domain.Position{Q: pos.Q, R: pos.R}),
 			HP:     stats.HP,
 			MaxHP:  stats.MaxHP,
 		}

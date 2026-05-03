@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+import "panoptes/proto/v1/game_state.proto";
+import "panoptes/proto/v1/orders.proto";
+import "panoptes/proto/v1/settlement.proto";
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message MsgPlanningStart {
+  int32 timeout = 1;
+  int32 turn = 2;
+  int32 tokens = 3;
+  string phase = 4;
+  string active_national_policy_id = 5;
+  MsgPlanningSnapshot snapshot = 6;
+  repeated MinisterDraftView minister_drafts = 7;
+  PlayerView my_player = 8;
+  repeated NodeView nodes = 9;
+  repeated UnitView units = 10;
+  repeated DomainEventEnvelope planning_start_events = 11;
+  InformationReportView information_report = 12;
+}
+
+message MinisterDraftView {
+  string minister_role = 1;
+  string json_payload = 2;
+  bool available = 3;
+}
+
+message MarchTurnStop {
+  int32 turn_index = 1;
+  string node_id = 2;
+}
+
+message QueuedUnitOrder {
+  string unit_id = 1;
+  string action = 2;
+  string target_node_id = 3;
+  string target_unit_id = 4;
+  string secondary_node_id = 5;
+  map<string, string> params = 6;
+  repeated string path_node_ids = 7;
+  string first_turn_node_id = 8;
+  int32 total_turns = 9;
+  repeated MarchTurnStop turn_stops = 10;
+}
+
+message QueuedBuildOrder {
+  string node_id = 1;
+  string building_type_id = 2;
+  string city_id = 3;
+}
+
+message QueuedRecipeSelection {
+  string node_id = 1;
+  string recipe_id = 2;
+}
+
+message QueuedWarZoneDirective {
+  string zone_id = 1;
+  string directive = 2;
+  string target_node = 3;
+}
+
+message MsgPlanningSnapshot {
+  int32 turn = 1;
+  string phase = 2;
+  repeated QueuedUnitOrder unit_orders = 3;
+  repeated WarZone war_zones = 4;
+  repeated MinisterDraftView minister_drafts = 5;
+  string planned_research_target_technology_id = 6;
+  string planned_national_policy_id = 7;
+  repeated QueuedBuildOrder build_orders = 8;
+  repeated QueuedRecipeSelection recipe_selections = 9;
+  repeated QueuedWarZoneDirective war_zone_directives = 10;
+  repeated string planned_institution_policy_ids = 11;
+}
+
+message MsgPlanningPathPreviewResponse {
+  string request_id = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  bool valid = 5;
+  string error_code = 6;
+  repeated string path_node_ids = 7;
+  string first_turn_node_id = 8;
+  int32 total_turns = 9;
+  repeated MarchTurnStop turn_stops = 10;
+}
+
+message FeedbackDetail {
+  string key = 1;
+  string value = 2;
+}
+
+message MsgBuildStructurePreviewRequest {
+  string request_id = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+}
+
+message MsgBuildStructurePreviewResponse {
+  string request_id = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+  bool valid = 5;
+  string error_code = 6;
+  string feedback_message = 7;
+  repeated FeedbackDetail feedback_details = 8;
+}
+
+message MsgSetBuildingRecipePreviewRequest {
+  string request_id = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+}
+
+message MsgSetBuildingRecipePreviewResponse {
+  string request_id = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+  bool valid = 4;
+  string error_code = 5;
+  string feedback_message = 6;
+  repeated FeedbackDetail feedback_details = 7;
+}
+
+message MsgTokenResult {
+  bool success = 1;
+  string action = 2;
+  int32 tokens_left = 3;
+  string error_code = 4;
+}
+
+message MsgRevealResult {
+  string node_id = 1;
+  NodeView true_state = 2;
+  int32 tokens_left = 3;
+}
+
+message MsgResearchResult {
+  bool success = 1;
+  string technology_id = 2;
+  string error_code = 3;
+}
+
+message MsgSetPolicyResult {
+  bool success = 1;
+  string national_policy_id = 2;
+  string error_code = 3;
+}
+
+message MsgSetInstitutionLoadoutResult {
+  bool success = 1;
+  repeated string policy_ids = 2;
+  string error_code = 3;
+}
+
+message MsgSetBuildingRecipeResult {
+  bool success = 1;
+  string node_id = 2;
+  string recipe_id = 3;
+  string error_code = 4;
+  string feedback_message = 5;
+  repeated FeedbackDetail feedback_details = 6;
+}
+
+message MsgBuildStructureResult {
+  bool success = 1;
+  string node_id = 2;
+  string building_type_id = 3;
+  string city_id = 4;
+  string error_code = 5;
+  string feedback_message = 6;
+  repeated FeedbackDetail feedback_details = 7;
+}
+
+message MsgIssueUnitOrderResult {
+  bool success = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  string target_unit_id = 5;
+  string error_code = 6;
+}
+
+message MsgTurnReport {
+  int32 turn = 1;
+  string summary = 2;
+}
+
+message MinisterProposalView {
+  string proposal_id = 1;
+  string minister_role = 2;
+  string kind = 3;
+  string title = 4;
+  string summary = 5;
+  string rationale = 6;
+  string risk_note = 7;
+  CommandEnvelope proposed_command = 8;
+  string raw_json = 9;
+}
+
+message MsgGameSync {
+  int32 turn = 1;
+  string phase = 2;
+  string next_phase = 3;
+  MsgPlanningSnapshot snapshot = 4;
+  PlayerView my_player = 5;
+  repeated NodeView nodes = 6;
+  repeated UnitView units = 7;
+  repeated DomainEventEnvelope events = 8;
+  repeated MsgCommandAck command_acks = 9;
+  repeated MinisterProposalView minister_proposals = 10;
+  InformationReportView information_report = 11;
+}

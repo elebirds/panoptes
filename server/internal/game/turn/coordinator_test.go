@@ -2,16 +2,19 @@ package turn
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/elebirds/panoptes/internal/config"
 	"github.com/elebirds/panoptes/internal/domain"
+	"github.com/elebirds/panoptes/internal/ecs"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/game/ai"
 	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	"github.com/elebirds/panoptes/internal/game/participant"
 	"github.com/elebirds/panoptes/internal/game/planning"
+	gamequery "github.com/elebirds/panoptes/internal/game/query"
 	gamesession "github.com/elebirds/panoptes/internal/game/session"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	"github.com/elebirds/panoptes/internal/llm"
@@ -149,6 +152,128 @@ func TestCoordinatorBeginPlanningTriggersDomesticMinisterReports(t *testing.T) {
 	}
 }
 
+func TestCoordinatorBeginPlanningAppliesHumanMinisterDefaultsBeforeNotify(t *testing.T) {
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Rules: staticdata.Rules{
+			TurnTimeLimitPlanning:      10,
+			TokensPerTurn:              3,
+			SafeZoneRadius:             2,
+			CityCoreMaxHP:              100,
+			BaseResearchOutputPerTurn:  1,
+			BaseIndustryOutputPerTurn:  2,
+			FacilityTakeoverTurns:      2,
+			InitialCityTerritoryRadius: 1,
+		},
+		Technologies: []staticdata.TechnologyDefinition{
+			{ID: "agrarian_foundations", Name: "Agrarian Foundations", ResearchCost: 3},
+		},
+		Policies: []staticdata.PolicyDefinition{
+			{ID: "reorganization", Name: "Reorganization", Layer: "national"},
+			{ID: "expansion", Name: "Expansion", Layer: "national"},
+		},
+		Units: []staticdata.UnitDefinition{
+			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 2},
+		},
+		Buildings: []staticdata.BuildingDefinition{
+			{ID: "city_core", Name: "City Core", PlacementKind: "city_foundation_center", BuildingScope: "city_core", MaxHP: 100, TakeoverMode: "disabled"},
+			{ID: "farm", Name: "Farm", PlacementKind: "resource_node", BuildingScope: "out_of_city", RequiredResourceType: "food", MaxHP: 60, TakeoverMode: "delayed"},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
+	}))
+
+	transport := &coordinatorCaptureTransport{messages: make(map[string][]proto.Message)}
+	runtime := gamesession.NewRuntime("game-1", []gamesession.ParticipantBinding{
+		{
+			Participant: participant.Participant{ID: "player-1", Username: "alice", Kind: participant.KindHuman},
+			Controller:  gamesession.HumanController{},
+		},
+	}, transport, &config.Config{DevMode: true})
+	runtime.SetState(newMinisterDefaultCoordinatorState(t))
+	runtime.State().Phase = domain.PhasePlanning.String()
+	runtime.State().Turn = 1
+
+	host := &stubCoordinatorHost{runtime: runtime}
+	coordinator := NewCoordinator(runtime, host)
+	runtime.PreparePlanningStartStateIfNeeded()
+	coordinator.beginPlanning(context.Background(), true)
+
+	if got := runtime.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
+		t.Fatalf("pending research = %q, want agrarian_foundations", got)
+	}
+	if got := runtime.State().TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
+		t.Fatalf("pending policy = %q, want expansion", got)
+	}
+	if len(runtime.State().TurnRuntime.Planning.BuildOrders) != 1 {
+		t.Fatalf("build orders = %#v, want one minister default", runtime.State().TurnRuntime.Planning.BuildOrders)
+	}
+
+	msgs := transport.messages["player-1"]
+	start, ok := msgs[len(msgs)-1].(*pb.MsgPlanningStart)
+	if !ok {
+		t.Fatalf("last message = %T, want MsgPlanningStart", msgs[len(msgs)-1])
+	}
+	if start.GetSnapshot().GetPlannedResearchTargetTechnologyId() != "agrarian_foundations" ||
+		start.GetSnapshot().GetPlannedNationalPolicyId() != "expansion" {
+		t.Fatalf("planning snapshot = %#v, want minister defaults", start.GetSnapshot())
+	}
+	if status := ministerDraftStatusFromStart(t, start, "research"); status != string(domain.MinisterDraftStatusAccepted) {
+		t.Fatalf("research draft status = %q, want accepted", status)
+	}
+}
+
+func newMinisterDefaultCoordinatorState(t *testing.T) *domain.GameState {
+	t.Helper()
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"N0": ecs.CreateNode(world, ecs.MapNode{ID: "N0", Q: 0, R: 0, Terrain: "plain"}),
+		"N1": ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain", IsResourcePoint: true, ResourceType: "food"}),
+		"N2": ecs.CreateNode(world, ecs.MapNode{ID: "N2", Q: 2, R: 0, Terrain: "plain"}),
+	}
+	state := domain.NewGameState("minister-default-test", []string{"player-1"}, []string{"alice"}, &domain.MapData{
+		ID:        "minister-default-test",
+		Width:     3,
+		Height:    1,
+		NodeIndex: nodeIndex,
+	})
+	state.World = world
+	state.NodeIndex = nodeIndex
+	for _, nodeID := range []string{"N0", "N1"} {
+		entry := world.Entry(nodeIndex[nodeID])
+		node := ecs.NodeC.Get(entry)
+		node.Owner = "player-1"
+		node.TerritoryOwner = "player-1"
+	}
+	state.EnsureCityState("player-1", "N0")
+	state.Players["player-1"].CapitalCityID = "N0"
+	state.Players["player-1"].Policy = domain.Policy("reorganization")
+	state.Players["player-1"].Research.UnlockBuilding("farm")
+	state.Players["player-1"].Resources.Set(domain.ResourceFood, 3)
+	ecs.CreateBuilding(world, "city_core", "player-1", "N0", world.Entry(nodeIndex["N0"]))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
+	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
+	return state
+}
+
+func ministerDraftStatusFromStart(t *testing.T, start *pb.MsgPlanningStart, kind string) string {
+	t.Helper()
+	for _, draft := range start.GetMinisterDrafts() {
+		var payload struct {
+			Kind   string `json:"kind"`
+			Status string `json:"status"`
+		}
+		if err := json.Unmarshal([]byte(draft.GetJsonPayload()), &payload); err != nil {
+			t.Fatalf("unmarshal minister draft: %v", err)
+		}
+		if payload.Kind == kind {
+			return payload.Status
+		}
+	}
+	t.Fatalf("minister draft kind %q not found", kind)
+	return ""
+}
+
 type coordinatorCaptureTransport struct {
 	messages map[string][]proto.Message
 }
@@ -243,19 +368,45 @@ func (h *stubCoordinatorHost) Submit(playerID string) {
 func (h *stubCoordinatorHost) SendToPlayer(context.Context, string, proto.Message) error {
 	return nil
 }
-func (h *stubCoordinatorHost) Broadcast(context.Context, proto.Message)           {}
-func (h *stubCoordinatorHost) NextChatSequence() int64                            { return 1 }
-func (h *stubCoordinatorHost) IsDevMode() bool                                    { return false }
-func (h *stubCoordinatorHost) QueueBuildOrder(domain.BuildOrder)                  {}
-func (h *stubCoordinatorHost) QueueRecipeSelection(domain.RecipeSelectionOrder)   {}
-func (h *stubCoordinatorHost) SetInstitutionLoadout(string, []string)             {}
+func (h *stubCoordinatorHost) Broadcast(context.Context, proto.Message) {}
+func (h *stubCoordinatorHost) NextChatSequence() int64                  { return 1 }
+func (h *stubCoordinatorHost) IsDevMode() bool {
+	return h != nil && h.runtime != nil && h.runtime.IsDevMode()
+}
+func (h *stubCoordinatorHost) QueueBuildOrder(order domain.BuildOrder) {
+	if h.State() != nil {
+		h.State().TurnRuntime.Planning.UpsertBuildOrder(order)
+	}
+}
+func (h *stubCoordinatorHost) QueueRecipeSelection(order domain.RecipeSelectionOrder) {
+	if h.State() != nil {
+		h.State().TurnRuntime.Planning.UpsertRecipeSelection(order)
+	}
+}
+func (h *stubCoordinatorHost) SetInstitutionLoadout(playerID string, policyIDs []string) {
+	if h.State() != nil {
+		h.State().TurnRuntime.Planning.SetPendingInstitutionLoadout(playerID, policyIDs)
+	}
+}
 func (h *stubCoordinatorHost) SetMinisterDirective(string, string)                {}
 func (h *stubCoordinatorHost) SetWarDirectives(string, []domain.WarZoneDirective) {}
-func (h *stubCoordinatorHost) SetUnitOrder(gameorders.UnitOrder)                  {}
-func (h *stubCoordinatorHost) CancelUnitOrder(string, string)                     {}
+func (h *stubCoordinatorHost) SetUnitOrder(order gameorders.UnitOrder) {
+	gameorders.ApplyPlanningUnitOrder(h.State(), order, gameorders.RoutePreviewCallbacks{})
+}
+func (h *stubCoordinatorHost) CancelUnitOrder(playerID string, unitID string) {
+	gameorders.CancelPlanningUnitOrder(h.State(), playerID, unitID)
+}
 func (h *stubCoordinatorHost) SendPlanningSnapshot(context.Context, string) error { return nil }
-func (h *stubCoordinatorHost) BuildNodeViewForPlayer(string, string) *pb.NodeView { return nil }
-func (h *stubCoordinatorHost) NodeByID(string) (*donburi.Entry, bool)             { return nil, false }
+func (h *stubCoordinatorHost) BuildNodeViewForPlayer(nodeID string, viewerID string) *pb.NodeView {
+	entry, ok := h.State().GetNode(nodeID)
+	if !ok {
+		return nil
+	}
+	return gamequery.BuildNodeView(h.State(), entry, viewerID)
+}
+func (h *stubCoordinatorHost) NodeByID(nodeID string) (*donburi.Entry, bool) {
+	return h.State().GetNode(nodeID)
+}
 func (h *stubCoordinatorHost) RunTurnResolution() {
 	if h.runTurnResolution != nil {
 		h.runTurnResolution()

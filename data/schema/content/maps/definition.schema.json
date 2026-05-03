@@ -87,6 +87,7 @@
             "unit.attack",
             "unit.move_range",
             "unit.siege_multiplier",
+            "logistics.road_capacity",
             "point.output"
           ],
           "type": "string"
@@ -460,14 +461,23 @@
           },
           "building_type": {
             "enum": [
+              "academy",
               "archery",
               "barracks",
               "city_core",
+              "engineer_camp",
               "farm",
               "frontier_office",
+              "granary",
               "lumber",
+              "market",
               "mine",
+              "smelter",
+              "stable",
+              "training_ground",
               "wall",
+              "warehouse",
+              "watchtower",
               "workshop",
               ""
             ],

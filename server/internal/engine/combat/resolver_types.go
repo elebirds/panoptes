@@ -268,10 +268,10 @@ func sortConflictGroups(groups []ConflictGroup) {
 			return groups[i].ConflictType < groups[j].ConflictType
 		}
 		if groups[i].Location != groups[j].Location {
-			if groups[i].Location.X != groups[j].Location.X {
-				return groups[i].Location.X < groups[j].Location.X
+			if groups[i].Location.Q != groups[j].Location.Q {
+				return groups[i].Location.Q < groups[j].Location.Q
 			}
-			return groups[i].Location.Y < groups[j].Location.Y
+			return groups[i].Location.R < groups[j].Location.R
 		}
 		limit := len(groups[i].Members)
 		if len(groups[j].Members) < limit {

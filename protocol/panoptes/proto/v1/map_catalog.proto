@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message MapLegendEntry {
+  string id = 1;
+  string name = 2;
+  string icon_key = 3;
+}
+
+message MapCatalogEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string thumbnail_key = 4;
+  int32 width = 5;
+  int32 height = 6;
+}
+
+message MapCatalog {
+  repeated MapCatalogEntry maps = 1;
+}

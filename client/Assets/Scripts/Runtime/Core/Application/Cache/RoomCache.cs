@@ -10,6 +10,7 @@ namespace Panoptes.Core.Application.Cache
     public sealed class RoomCache : MonoBehaviour
     {
         public static RoomCache Instance { get; private set; }
+        private SessionManager _sessionManager;
 
         public string RoomID { get; private set; } = string.Empty;
         public string RoomCode { get; private set; } = string.Empty;
@@ -35,6 +36,11 @@ namespace Panoptes.Core.Application.Cache
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        public void UseSessionManager(SessionManager sessionManager)
+        {
+            _sessionManager = sessionManager;
         }
 
         public void Apply(MsgRoomState msg)
@@ -68,7 +74,7 @@ namespace Panoptes.Core.Application.Cache
                 });
             }
 
-            var selfPlayerId = SessionManager.Instance != null ? SessionManager.Instance.PlayerID : string.Empty;
+            var selfPlayerId = _sessionManager != null ? _sessionManager.PlayerID : string.Empty;
             IsHost = false;
             foreach (var player in Players)
             {

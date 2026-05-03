@@ -39,6 +39,74 @@
       "upkeep": { "food": 1 },
       "multipliers": {},
       "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": true }
+    },
+    {
+      "id": "raider",
+      "class": "melee",
+      "max_hp": 22,
+      "attack": 7,
+      "attack_range": 1,
+      "move_range": 5,
+      "vision_range": 4,
+      "train_cost": { "food": 1, "ore": 1 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": false, "can_attack_structures": true, "can_destroy_road": true, "destroy_multiplier": 2, "can_capture": false }
+    },
+    {
+      "id": "siege_engine",
+      "class": "siege",
+      "max_hp": 36,
+      "attack": 14,
+      "attack_range": 1,
+      "move_range": 3,
+      "vision_range": 3,
+      "train_cost": { "wood": 2, "ore": 2 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": true, "siege_multiplier": 2, "can_attack_structures": true, "can_destroy_road": false, "can_capture": false }
+    },
+    {
+      "id": "cavalry",
+      "class": "mobile",
+      "max_hp": 26,
+      "attack": 12,
+      "attack_range": 1,
+      "move_range": 5,
+      "vision_range": 4,
+      "train_cost": { "food": 2, "ore": 1 },
+      "upkeep": { "food": 2 },
+      "multipliers": {},
+      "road_speed_bonus": 1,
+      "charge_bonus": 1.5,
+      "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": true }
+    },
+    {
+      "id": "scout",
+      "class": "civilian",
+      "max_hp": 14,
+      "attack": 0,
+      "attack_range": 0,
+      "move_range": 6,
+      "vision_range": 6,
+      "train_cost": { "food": 1, "wood": 1 },
+      "upkeep": {},
+      "multipliers": {},
+      "road_speed_bonus": 1,
+      "flags": { "can_siege": false, "can_attack_structures": false, "can_destroy_road": false, "can_capture": false }
+    },
+    {
+      "id": "spearman",
+      "class": "melee",
+      "max_hp": 28,
+      "attack": 9,
+      "attack_range": 1,
+      "move_range": 4,
+      "vision_range": 3,
+      "train_cost": { "food": 1, "wood": 1 },
+      "upkeep": { "food": 1 },
+      "multipliers": {},
+      "flags": { "can_siege": false, "can_attack_structures": true, "can_destroy_road": false, "can_capture": true }
     }
   ]
 }

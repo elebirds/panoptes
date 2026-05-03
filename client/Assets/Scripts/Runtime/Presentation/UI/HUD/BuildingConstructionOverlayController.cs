@@ -6,12 +6,16 @@
  * Description: Screen-space text overlay for under-construction buildings.
  *************************************************/
 
+using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Map;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.HUD
 {
@@ -56,12 +60,69 @@ namespace Panoptes.Presentation.UI.HUD
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
-        private MapInputHandler _mapInput;
+        private GameStateStore _gameStateStore;
+        private PlanningDraftStore _planningDraftStore;
+        private MapRenderer _mapRenderer;
+        private GameStateStoreState _latestGameState = new();
+        private PlanningDraftState _latestPlanningDraft = new();
+        private IDisposable _gameStateSubscription;
+        private IDisposable _planningDraftSubscription;
+
+        [Inject]
+        private void Construct(
+            GameStateStore gameStateStore,
+            PlanningDraftStore planningDraftStore,
+            MapRenderer mapRenderer)
+        {
+            _gameStateStore = gameStateStore;
+            _planningDraftStore = planningDraftStore;
+            _mapRenderer = mapRenderer;
+            _latestGameState = _gameStateStore?.Snapshot ?? new GameStateStoreState();
+            _latestPlanningDraft = _planningDraftStore?.Snapshot ?? new PlanningDraftState();
+            if (isActiveAndEnabled)
+            {
+                SubscribeToStores();
+            }
+        }
 
         private void Awake()
         {
             ResolveCamera();
             EnsureCanvas();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeToStores();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromStores();
+        }
+
+        private void SubscribeToStores()
+        {
+            _gameStateSubscription?.Dispose();
+            _planningDraftSubscription?.Dispose();
+            _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) =>
+            {
+                self._latestGameState = state ?? new GameStateStoreState();
+            });
+            _planningDraftSubscription = _planningDraftStore?.State.Subscribe(this, static (state, self) =>
+            {
+                self._latestPlanningDraft = state ?? new PlanningDraftState();
+            });
+            _latestGameState = _gameStateStore?.Snapshot ?? _latestGameState ?? new GameStateStoreState();
+            _latestPlanningDraft = _planningDraftStore?.Snapshot ?? _latestPlanningDraft ?? new PlanningDraftState();
+        }
+
+        private void UnsubscribeFromStores()
+        {
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = null;
+            _planningDraftSubscription?.Dispose();
+            _planningDraftSubscription = null;
         }
 
         private void LateUpdate()
@@ -72,7 +133,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || map.TileViews == null || map.TileViews.Count == 0)
             {
                 HideAll();
@@ -99,21 +160,14 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            if (!autoCreateOverlayCanvas)
+            _canvas = GetComponentInParent<Canvas>();
+            _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            if (_canvas != null && _canvasRect != null)
             {
-                _canvas = GetComponentInParent<Canvas>();
-                _canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
                 return;
             }
 
-            var existing = GameObject.Find(canvasName);
-            if (existing != null)
-            {
-                _canvas = existing.GetComponent<Canvas>();
-                _canvasRect = existing.transform as RectTransform;
-            }
-
-            if (_canvas != null && _canvasRect != null)
+            if (!autoCreateOverlayCanvas)
             {
                 return;
             }
@@ -142,16 +196,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _pendingBuildNodeIds.Clear();
 
-            if (_mapInput == null)
-            {
-                _mapInput = MapInputHandler.Instance;
-                if (_mapInput == null)
-                {
-                    _mapInput = Object.FindAnyObjectByType<MapInputHandler>();
-                }
-            }
-
-            var pending = _mapInput != null ? _mapInput.PendingBuilds : null;
+            var pending = _latestPlanningDraft?.BuildOrders;
             if (pending == null)
             {
                 return;
@@ -159,7 +204,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             for (var i = 0; i < pending.Count; i++)
             {
-                var nodeId = pending[i].nodeId;
+                var nodeId = pending[i]?.NodeId;
                 if (!string.IsNullOrWhiteSpace(nodeId))
                 {
                     _pendingBuildNodeIds.Add(nodeId.Trim());
@@ -191,7 +236,7 @@ namespace Panoptes.Presentation.UI.HUD
                     continue;
                 }
 
-                map.TryGetNodeState(nodeId, out var nodeState);
+                TryGetNodeState(nodeId, out var nodeState);
                 if (!ShouldShow(nodeView, nodeState))
                 {
                     continue;
@@ -239,6 +284,11 @@ namespace Panoptes.Presentation.UI.HUD
                 return true;
             }
 
+            if (_pendingBuildNodeIds.Contains(nodeView.NodeId))
+            {
+                return true;
+            }
+
             if (preferGhostOnly)
             {
                 return false;
@@ -257,6 +307,18 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return false;
+        }
+
+        private bool TryGetNodeState(string nodeId, out NodeDto nodeState)
+        {
+            nodeState = null;
+            if (string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var nodes = _latestGameState?.Nodes;
+            return nodes != null && nodes.TryGetValue(nodeId, out nodeState) && nodeState != null;
         }
 
         private Entry CreateEntry(string nodeId, BuildingView building)
@@ -284,7 +346,7 @@ namespace Panoptes.Presentation.UI.HUD
             text.fontSize = fontSize;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Truncate;
             text.color = textColor;
             text.raycastTarget = false;
@@ -460,5 +522,3 @@ namespace Panoptes.Presentation.UI.HUD
         }
     }
 }
-
-

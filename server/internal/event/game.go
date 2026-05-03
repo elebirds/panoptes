@@ -21,6 +21,7 @@ type TurnStartedEvent struct {
 func (e TurnStartedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.Turn = e.Turn
 	state.Phase = e.Phase
+	state.RefreshStructuredModel()
 }
 
 func (e TurnStartedEvent) Kind() string { return "turn_started" }
@@ -36,6 +37,7 @@ type PhaseChangedEvent struct {
 
 func (e PhaseChangedEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.Phase = e.To
+	state.RefreshStructuredModel()
 }
 
 func (e PhaseChangedEvent) Kind() string { return "phase_changed" }
@@ -55,6 +57,7 @@ func (e GameOverEvent) Apply(_ donburi.World, state *domain.GameState) {
 	state.WinnerID = e.WinnerID
 	state.OverReason = e.Reason
 	state.Narrative = e.Narrative
+	state.RefreshStructuredModel()
 }
 
 func (e GameOverEvent) Kind() string { return "game_over" }

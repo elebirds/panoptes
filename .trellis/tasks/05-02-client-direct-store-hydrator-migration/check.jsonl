@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify direct Store hydration remains presentation-only and Store-owned."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify generated files untouched and Presentation boundaries remain clean."}
+{"file": "docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md", "reason": "Verify plan records direct hydrator migration status and remaining bridge fallback."}
+{"file": "client/Panoptes.Tests.EditMode.csproj", "reason": "dotnet build/test and Unity EditMode focused tests verify new hydrator coverage."}
+{"file": "client/Assets/Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs", "reason": "Verify direct hydrator is registered in GameLifetimeScope and bridge remains bounded fallback."}

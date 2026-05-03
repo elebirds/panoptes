@@ -9,12 +9,11 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Services;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-using Panoptes.DebugTools;
-#endif
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,6 +32,10 @@ namespace Panoptes.Core.Application.App
     {
         public static AppManager Instance { get; private set; }
 
+#if UNITY_INCLUDE_TESTS
+        public static bool SuppressInitialTransitionForTests { get; set; }
+#endif
+
         public AppState State { get; private set; } = AppState.Initializing;
 
         [Header("Config")]
@@ -45,96 +48,6 @@ namespace Panoptes.Core.Application.App
         [SerializeField] private string localTestSceneName = "Game";
         [SerializeField] private AppState localTestState = AppState.Game;
         [SerializeField] private bool logLocalTestBypass = true;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void EnsureManagersBootstrap()
-        {
-            var managers = GameObject.Find("Managers");
-            if (managers == null)
-            {
-                managers = new GameObject("Managers");
-            }
-
-            DontDestroyOnLoad(managers);
-            EnsureComponent<AppManager>(managers);
-            EnsureComponent<NetworkManager>(managers);
-            EnsureComponent<MessageDispatcher>(managers);
-            EnsureComponent<SessionManager>(managers);
-            EnsureComponent<ClientRuntimeConfigCache>(managers);
-            EnsureComponent<ConfigCache>(managers);
-            EnsureComponent<StaticCatalogCache>(managers);
-            EnsureComponent<RoomCache>(managers);
-            EnsureComponent<GameStateCache>(managers);
-            EnsureComponent<GameChatCache>(managers);
-            EnsureComponent<PlanningDraftCache>(managers);
-            EnsureComponent<LobbyMessageHandler>(managers);
-            EnsureComponent<GameMessageHandler>(managers);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
-            EnsureComponent<DebugPanel>(managers);
-#endif
-            EnsureOptionalLoadingOverlay(managers);
-            EnsureOptionalErrorToast(managers);
-            EnsureOptionalConfirmDialog(managers);
-        }
-
-        private static void EnsureComponent<T>(GameObject owner) where T : Component
-        {
-            if (owner.GetComponent<T>() == null)
-            {
-                owner.AddComponent<T>();
-            }
-        }
-
-        private static void EnsureOptionalLoadingOverlay(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.LoadingOverlay, Panoptes.Presentation");
-            if (overlayType == null || owner.GetComponent(overlayType) != null)
-            {
-                return;
-            }
-
-            owner.AddComponent(overlayType);
-        }
-
-        private static void EnsureOptionalErrorToast(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ErrorToast, Panoptes.Presentation");
-            EnsureOptionalOverlayPrefab(owner, overlayType, "ErrorToast", "Prefabs/UI/ErrorToast");
-        }
-
-        private static void EnsureOptionalConfirmDialog(GameObject owner)
-        {
-            var overlayType = Type.GetType("Panoptes.Presentation.UI.Common.ConfirmDialog, Panoptes.Presentation");
-            EnsureOptionalOverlayPrefab(owner, overlayType, "ConfirmDialog", "Prefabs/UI/ConfirmDialog");
-        }
-
-        // LoadingOverlay 直接挂在 Managers 上，因此其他通用弹层必须作为独立根对象存在，
-        // 否则会被 Managers 上的 CanvasGroup 一起隐藏。
-        private static void EnsureOptionalOverlayPrefab(GameObject owner, Type overlayType, string objectName, string resourcePath)
-        {
-            if (overlayType == null || owner == null)
-            {
-                return;
-            }
-
-            var existing = GameObject.Find(objectName);
-            if (existing != null && existing.GetComponent(overlayType) != null)
-            {
-                return;
-            }
-
-            var prefab = Resources.Load<GameObject>(resourcePath);
-            if (prefab == null)
-            {
-                Debug.LogError($"[AppManager] Missing overlay prefab at Resources/{resourcePath}.prefab");
-                return;
-            }
-
-            var overlayObject = UnityEngine.Object.Instantiate(prefab);
-            overlayObject.name = objectName;
-            overlayObject.transform.SetParent(null, false);
-            overlayObject.transform.localScale = Vector3.one;
-        }
 
         void Awake()
         {
@@ -149,10 +62,53 @@ namespace Panoptes.Core.Application.App
 
         private bool _pendingCatalogSync;
         private MsgGameInit _deferredGameInit;
+        private StaticCatalogStoreHydrator _staticCatalogStoreHydrator;
+        private NetworkManager _networkManager;
+        private MessageDispatcher _messageDispatcher;
+        private SessionManager _sessionManager;
+        private ClientRuntimeConfigCache _clientRuntimeConfigCache;
+        private ConfigCache _configCache;
+        private StaticCatalogCache _staticCatalogCache;
+        private RoomCache _roomCache;
+        private GameStateCache _gameStateCache;
+        private GameChatCache _gameChatCache;
+        private IClientMessageSender _messageSender;
+
+        public void UseProjectServices(
+            NetworkManager networkManager,
+            MessageDispatcher messageDispatcher,
+            SessionManager sessionManager,
+            ClientRuntimeConfigCache clientRuntimeConfigCache,
+            ConfigCache configCache,
+            StaticCatalogCache staticCatalogCache,
+            RoomCache roomCache,
+            GameStateCache gameStateCache,
+            GameChatCache gameChatCache,
+            IClientMessageSender messageSender)
+        {
+            _networkManager = networkManager;
+            _messageDispatcher = messageDispatcher;
+            _sessionManager = sessionManager;
+            _clientRuntimeConfigCache = clientRuntimeConfigCache;
+            _configCache = configCache;
+            _staticCatalogCache = staticCatalogCache;
+            _roomCache = roomCache;
+            _gameStateCache = gameStateCache;
+            _gameChatCache = gameChatCache;
+            _messageSender = messageSender;
+            HydrateStaticCatalogStore(_staticCatalogCache);
+        }
 
         void Start()
         {
             RegisterGlobalHandlers();
+            HydrateStaticCatalogStore(_staticCatalogCache);
+#if UNITY_INCLUDE_TESTS
+            if (SuppressInitialTransitionForTests)
+            {
+                return;
+            }
+#endif
             if (bypassLoginForLocalTest)
             {
                 EnterLocalTestMode();
@@ -164,16 +120,16 @@ namespace Panoptes.Core.Application.App
 
         void OnDestroy()
         {
-            if (MessageDispatcher.Instance != null)
+            if (_messageDispatcher != null)
             {
-                MessageDispatcher.Instance.Unregister("MsgClientRuntimeConfig");
-                MessageDispatcher.Instance.Unregister("MsgConfigBatchJson");
-                MessageDispatcher.Instance.Unregister("MsgGameInit");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogManifest");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSectionChunk");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSyncComplete");
-                MessageDispatcher.Instance.Unregister("MsgStaticCatalogSnapshot");
-                MessageDispatcher.Instance.Unregister("Problem");
+                _messageDispatcher.Unregister("MsgClientRuntimeConfig");
+                _messageDispatcher.Unregister("MsgConfigBatchJson");
+                _messageDispatcher.Unregister("MsgGameInit");
+                _messageDispatcher.Unregister("MsgStaticCatalogManifest");
+                _messageDispatcher.Unregister("MsgStaticCatalogSectionChunk");
+                _messageDispatcher.Unregister("MsgStaticCatalogSyncComplete");
+                _messageDispatcher.Unregister("MsgStaticCatalogSnapshot");
+                _messageDispatcher.Unregister("Problem");
             }
         }
 
@@ -184,11 +140,11 @@ namespace Panoptes.Core.Application.App
             {
                 _pendingCatalogSync = false;
                 _deferredGameInit = null;
-                RoomCache.Instance?.Clear();
-                ClientRuntimeConfigCache.Instance?.Clear();
-                ConfigCache.Instance?.Clear();
-                GameStateCache.Instance?.Clear();
-                GameChatCache.Instance?.Clear();
+                ClearLobbyRoomCache();
+                _clientRuntimeConfigCache?.Clear();
+                _configCache?.Clear();
+                _gameStateCache?.Clear();
+                _gameChatCache?.Clear();
             }
 
             EnsureRealtimeConnectionIfNeeded(newState);
@@ -217,35 +173,36 @@ namespace Panoptes.Core.Application.App
 
         private void RegisterGlobalHandlers()
         {
-            if (MessageDispatcher.Instance == null)
+            if (_messageDispatcher == null)
             {
                 return;
             }
 
-            MessageDispatcher.Instance.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
-            MessageDispatcher.Instance.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSectionChunk>("MsgStaticCatalogSectionChunk", OnStaticCatalogSectionChunk);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSyncComplete>("MsgStaticCatalogSyncComplete", OnStaticCatalogSyncComplete);
-            MessageDispatcher.Instance.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
-            MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
-            MessageDispatcher.Instance.Register<Problem>("Problem", OnProblem);
+            _messageDispatcher.Register<MsgClientRuntimeConfig>("MsgClientRuntimeConfig", OnClientRuntimeConfig);
+            _messageDispatcher.Register<MsgConfigBatchJson>("MsgConfigBatchJson", OnConfigBatchJson);
+            _messageDispatcher.Register<MsgStaticCatalogManifest>("MsgStaticCatalogManifest", OnStaticCatalogManifest);
+            _messageDispatcher.Register<MsgStaticCatalogSectionChunk>("MsgStaticCatalogSectionChunk", OnStaticCatalogSectionChunk);
+            _messageDispatcher.Register<MsgStaticCatalogSyncComplete>("MsgStaticCatalogSyncComplete", OnStaticCatalogSyncComplete);
+            _messageDispatcher.Register<MsgStaticCatalogSnapshot>("MsgStaticCatalogSnapshot", OnStaticCatalogSnapshot);
+            _messageDispatcher.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+            _messageDispatcher.Register<Problem>("Problem", OnProblem);
         }
 
         private void OnClientRuntimeConfig(MsgClientRuntimeConfig msg)
         {
-            ClientRuntimeConfigCache.Instance?.Apply(msg);
+            _clientRuntimeConfigCache?.Apply(msg);
         }
 
         private void OnConfigBatchJson(MsgConfigBatchJson msg)
         {
-            ConfigCache.Instance?.ApplyBatch(msg);
+            _configCache?.ApplyBatch(msg);
         }
 
         private void OnStaticCatalogManifest(MsgStaticCatalogManifest msg)
         {
-            var cache = StaticCatalogCache.EnsureInstance();
+            var cache = _staticCatalogCache;
             var decision = cache?.CompareManifest(msg?.Manifest) ?? new StaticCatalogCache.CatalogSyncDecision();
+            HydrateStaticCatalogStore(cache);
             cache?.BeginSectionSync(msg?.Manifest, decision.RequestedSections);
 
             _pendingCatalogSync = true;
@@ -260,28 +217,26 @@ namespace Panoptes.Core.Application.App
             {
                 request.SectionNames.Add(decision.RequestedSections);
             }
-            MessageSender.Send(new MsgStaticCatalogSyncRequest
-            {
-                BundleHash = request.BundleHash,
-                ForceFullSync = request.ForceFullSync,
-                SectionNames = { request.SectionNames }
-            });
+            _messageSender?.Send(request);
         }
 
         private void OnStaticCatalogSectionChunk(MsgStaticCatalogSectionChunk msg)
         {
-            StaticCatalogCache.EnsureInstance()?.ApplySectionChunk(msg);
+            _staticCatalogCache?.ApplySectionChunk(msg);
         }
 
         private void OnStaticCatalogSyncComplete(MsgStaticCatalogSyncComplete msg)
         {
-            var synchronized = StaticCatalogCache.EnsureInstance()?.FinalizeSectionSync(msg) ?? false;
+            var cache = _staticCatalogCache;
+            var synchronized = cache?.FinalizeSectionSync(msg) ?? false;
             _pendingCatalogSync = false;
             if (!synchronized)
             {
                 _deferredGameInit = null;
                 return;
             }
+
+            HydrateStaticCatalogStore(cache);
 
             if (_deferredGameInit == null)
             {
@@ -294,7 +249,20 @@ namespace Panoptes.Core.Application.App
 
         private void OnStaticCatalogSnapshot(MsgStaticCatalogSnapshot msg)
         {
-            StaticCatalogCache.EnsureInstance()?.ApplySnapshot(msg?.Snapshot);
+            var cache = _staticCatalogCache;
+            cache?.ApplySnapshot(msg?.Snapshot);
+            HydrateStaticCatalogStore(cache);
+        }
+
+        public void UseStaticCatalogStoreHydrator(StaticCatalogStoreHydrator hydrator)
+        {
+            _staticCatalogStoreHydrator = hydrator;
+            HydrateStaticCatalogStore(_staticCatalogCache);
+        }
+
+        private void HydrateStaticCatalogStore(StaticCatalogCache cache)
+        {
+            _staticCatalogStoreHydrator?.HydrateFromCache(cache);
         }
 
         private void OnGameInit(MsgGameInit msg)
@@ -310,10 +278,15 @@ namespace Panoptes.Core.Application.App
 
         private void ApplyGameInitAndTransition(MsgGameInit msg)
         {
-            GameChatCache.Instance?.Clear();
-            GameStateCache.Instance?.ApplyGameInit(msg);
-            RoomCache.Instance?.Clear();
+            _gameChatCache?.Clear();
+            _gameStateCache?.ApplyGameInit(msg);
+            _roomCache?.Clear();
             TransitionTo(AppState.Game);
+        }
+
+        private void ClearLobbyRoomCache()
+        {
+            _roomCache?.Clear();
         }
 
         private void OnProblem(Problem problem)
@@ -324,14 +297,14 @@ namespace Panoptes.Core.Application.App
             switch (State)
             {
                 case AppState.Lobby:
-                    RoomCache.Instance?.PublishLobbyError(new MsgLobbyError
+                    _roomCache?.PublishLobbyError(new MsgLobbyError
                     {
                         Code = code,
                         Message = message
                     });
                     break;
                 case AppState.Game:
-                    GameStateCache.Instance?.PublishGameError(new GameErrorEvent
+                    _gameStateCache?.PublishGameError(new GameErrorEvent
                     {
                         Code = code,
                         Message = message
@@ -350,21 +323,21 @@ namespace Panoptes.Core.Application.App
                 return;
             }
 
-            if (NetworkManager.Instance == null ||
-                NetworkManager.Instance.IsConnected ||
-                NetworkManager.Instance.IsConnecting)
+            if (_networkManager == null ||
+                _networkManager.IsConnected ||
+                _networkManager.IsConnecting)
             {
                 return;
             }
 
-            if (SessionManager.Instance == null || !SessionManager.Instance.IsLoggedIn)
+            if (_sessionManager == null || !_sessionManager.IsLoggedIn)
             {
                 return;
             }
 
             try
             {
-                await NetworkManager.Instance.ConnectWithSessionAsync();
+                await _networkManager.ConnectWithSessionAsync();
             }
             catch (System.Exception e)
             {

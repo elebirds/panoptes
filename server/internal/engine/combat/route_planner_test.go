@@ -86,7 +86,7 @@ func TestSingleStepResolver_MoveBudgetUsesTerrainCost(t *testing.T) {
 	events := resolver.Run(state.World, state)
 	applyCombatEvents(state, events)
 
-	if got := unitPosition(t, state.World, unitID); got != (domain.Position{X: 1, Y: 0}) {
+	if got := unitPosition(t, state.World, unitID); got != (domain.Position{Q: 1, R: 0}) {
 		t.Fatalf("unit position = %#v, want stop at forest tile", got)
 	}
 }

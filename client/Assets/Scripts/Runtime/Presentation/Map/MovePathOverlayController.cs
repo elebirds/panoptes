@@ -16,9 +16,16 @@ namespace Panoptes.Presentation.Map
     public sealed class MovePathOverlayController
     {
         private readonly Dictionary<string, List<string>> _movePathNodeIdsByUnitId = new(StringComparer.Ordinal);
+        private MapRenderer _mapRenderer;
 
-        public MovePathOverlayController(Transform hostTransform)
+        public MovePathOverlayController(MapRenderer mapRenderer)
         {
+            _mapRenderer = mapRenderer;
+        }
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
         }
 
         public bool TryApplyAuthoritativeMovePathMarkers(
@@ -88,7 +95,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map != null)
             {
                 for (var i = 0; i < nodeIds.Count; i++)
@@ -138,7 +145,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return false;

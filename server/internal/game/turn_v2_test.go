@@ -535,8 +535,8 @@ func TestHandleGameCommandBuildStructureSendsBuildStructureResult(t *testing.T) 
 	room.State().Players["player-1"].Research.UnlockBuilding("farm")
 
 	world := donburi.NewWorld()
-	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", X: 0, Y: 0, Terrain: "plain"})
-	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", X: 1, Y: 0, Terrain: "plain"})
+	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
+	targetEntity := ecs.CreateNode(world, ecs.MapNode{ID: "N1", Q: 1, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	targetEntry := world.Entry(targetEntity)
 	for _, entry := range []*donburi.Entry{cityEntry, targetEntry} {
@@ -615,7 +615,7 @@ func TestRunTurnResolutionLocksPendingPolicyAndResearchIntoActiveState(t *testin
 	}
 }
 
-func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testing.T) {
+func TestRunTurnResolutionIncludesPlanningLockInEventsInPlanningSection(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TokensPerTurn:             3,
@@ -645,33 +645,17 @@ func TestRunTurnResolutionIncludesPlanningLockInEventsInEconomySection(t *testin
 
 	msgs := tp.sent["player-1"]
 	if len(msgs) != 1 {
-		t.Fatalf("send count = %d, want 1 settlement", len(msgs))
+		t.Fatalf("send count = %d, want only game sync", len(msgs))
 	}
-	settlement, ok := msgs[0].(*pb.MsgTurnSettlement)
+	syncMsg, ok := msgs[0].(*pb.MsgGameSync)
 	if !ok {
-		t.Fatalf("message type = %T, want MsgTurnSettlement", msgs[0])
+		t.Fatalf("message type = %T, want MsgGameSync", msgs[0])
 	}
-	if len(settlement.GetSections()) == 0 {
-		t.Fatalf("settlement sections empty")
+	if !gameSyncHasEvent(syncMsg, "planning", "national_policy_changed") {
+		t.Fatalf("game sync missing national_policy_changed: %#v", syncMsg.GetEvents())
 	}
-	var economy *pb.SettlementSection
-	for _, section := range settlement.GetSections() {
-		if section.GetSection() == "economy" {
-			economy = section
-			break
-		}
-	}
-	if economy == nil {
-		t.Fatalf("economy section missing: %#v", settlement.GetSections())
-	}
-	if len(economy.GetEvents()) < 2 {
-		t.Fatalf("economy events len = %d, want at least 2", len(economy.GetEvents()))
-	}
-	if got := economy.GetEvents()[0].GetType(); got != "national_policy_changed" {
-		t.Fatalf("economy first event = %q, want national_policy_changed", got)
-	}
-	if got := economy.GetEvents()[1].GetType(); got != "research_target_changed" {
-		t.Fatalf("economy second event = %q, want research_target_changed", got)
+	if !gameSyncHasEvent(syncMsg, "planning", "research_target_changed") {
+		t.Fatalf("game sync missing research_target_changed: %#v", syncMsg.GetEvents())
 	}
 }
 
@@ -712,10 +696,10 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 
 	world := donburi.NewWorld()
 	nodeIndex := map[string]donburi.Entity{
-		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"}),
-		"A2": ecs.CreateNode(world, ecs.MapNode{ID: "A2", X: 1, Y: 0, Terrain: "plain"}),
-		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", X: 0, Y: 1, Terrain: "plain"}),
-		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", X: 1, Y: 1, Terrain: "plain"}),
+		"A1": ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"}),
+		"A2": ecs.CreateNode(world, ecs.MapNode{ID: "A2", Q: 1, R: 0, Terrain: "plain"}),
+		"B1": ecs.CreateNode(world, ecs.MapNode{ID: "B1", Q: 0, R: 1, Terrain: "plain"}),
+		"B2": ecs.CreateNode(world, ecs.MapNode{ID: "B2", Q: 1, R: 1, Terrain: "plain"}),
 	}
 	state := domain.NewGameState("game-1", []string{"player-1", "player-2"}, []string{"alice", "bob"}, &domain.MapData{
 		ID:        "turn-fatal",
@@ -738,9 +722,9 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	state.Players["player-1"].CapitalCityID = "A1"
 	state.Players["player-1"].CapitalCityCoreHP = 10
 
-	attackerEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{X: 1, Y: 0}))
+	attackerEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-2", domain.Position{Q: 1, R: 0}))
 	ecs.UnitStatsC.Get(attackerEntry).ID = "infantry-attack"
-	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{X: 0, Y: 1}))
+	settlerEntry := world.Entry(ecs.CreateUnit(world, "settler", "player-1", domain.Position{Q: 0, R: 1}))
 	ecs.UnitStatsC.Get(settlerEntry).ID = "settler-1"
 	state.TurnRuntime.Planning.UnitOrders["infantry-attack"] = domain.UnitDirective{
 		PlayerID:     "player-2",
@@ -765,24 +749,24 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 		t.Fatalf("research target after fatal turn = %q, want agrarian_foundations", got)
 	}
 
-	settlement := firstMessage[*pb.MsgTurnSettlement](tp.sent["player-1"])
-	if settlement == nil {
-		t.Fatalf("fatal turn settlement not sent")
+	syncMsg := firstMessage[*pb.MsgGameSync](tp.sent["player-1"])
+	if syncMsg == nil {
+		t.Fatalf("fatal turn game sync not sent")
 	}
-	if !hasSettlementEvent(settlement, "unit", "city_core_destroyed") {
+	if !gameSyncHasEvent(syncMsg, "unit", "city_core_destroyed") {
 		t.Fatalf("fatal turn missing city_core_destroyed event")
 	}
-	if hasSettlementEvent(settlement, "unit", "upkeep_paid") {
+	if gameSyncHasEvent(syncMsg, "unit", "upkeep_paid") {
 		t.Fatalf("fatal turn should skip upkeep_paid")
 	}
-	if hasSettlementEvent(settlement, "map", "city_founded") {
+	if gameSyncHasEvent(syncMsg, "map", "city_founded") {
 		t.Fatalf("fatal turn should skip settle_city map action")
 	}
-	if hasSettlementEvent(settlement, "economy", "point_budget_refreshed") {
+	if gameSyncHasEvent(syncMsg, "economy", "point_budget_refreshed") {
 		t.Fatalf("fatal turn should skip economy pipeline")
 	}
-	if !hasSettlementEvent(settlement, "economy", "national_policy_changed") || !hasSettlementEvent(settlement, "economy", "research_target_changed") {
-		t.Fatalf("fatal turn should keep planning lock-in events in economy section")
+	if !gameSyncHasEvent(syncMsg, "planning", "national_policy_changed") || !gameSyncHasEvent(syncMsg, "planning", "research_target_changed") {
+		t.Fatalf("fatal turn should keep planning lock-in events")
 	}
 	if _, ok := room.State().GetNode("B2"); !ok {
 		t.Fatalf("missing node B2")
@@ -791,7 +775,7 @@ func TestRunTurnResolutionFatalCapitalDestroySkipsPostCombatSystemsButKeepsLockI
 	if targetNode.HasComponent(ecs.BuildingC) {
 		t.Fatalf("fatal turn should skip settle_city build on B2")
 	}
-	if _, ok := findUnitEntryByID(room.State().World, "settler-1"); !ok {
+	if _, ok := findUnitEntryByIDForGameTest(room.State().World, "settler-1"); !ok {
 		t.Fatalf("settler-1 should remain when map actions are skipped")
 	}
 }
@@ -819,26 +803,26 @@ func TestRunTurnResolutionNonFatalStillIncludesCombatUpkeepInUnitSection(t *test
 	room.coordinator = gameturn.NewCoordinator(room.runtime, room)
 
 	world := donburi.NewWorld()
-	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", X: 0, Y: 0, Terrain: "plain"})
+	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 0, R: 0, Terrain: "plain"})
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{ID: "upkeep-test", Width: 1, Height: 1, NodeIndex: map[string]donburi.Entity{"A1": nodeEntity}})
 	state.World = world
 	state.NodeIndex = state.Map.NodeIndex
 	state.Phase = domain.PhaseResolving.String()
 	state.Players["player-1"].Resources.Set(domain.ResourceFood, 0)
-	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{X: 0, Y: 0}))
+	unitEntry := world.Entry(ecs.CreateUnit(world, "infantry", "player-1", domain.Position{Q: 0, R: 0}))
 	ecs.UnitStatsC.Get(unitEntry).ID = "infantry-1"
 	room.runtime.SetState(state)
 
 	room.RunTurnResolution()
 
-	settlement := firstMessage[*pb.MsgTurnSettlement](tp.sent["player-1"])
-	if settlement == nil {
-		t.Fatalf("non-fatal settlement not sent")
+	syncMsg := firstMessage[*pb.MsgGameSync](tp.sent["player-1"])
+	if syncMsg == nil {
+		t.Fatalf("non-fatal game sync not sent")
 	}
-	if !hasSettlementEvent(settlement, "unit", "upkeep_paid") {
+	if !gameSyncHasEvent(syncMsg, "unit", "upkeep_paid") {
 		t.Fatalf("non-fatal turn should include upkeep_paid in unit section")
 	}
-	if !hasSettlementEvent(settlement, "unit", "unit_starving") {
+	if !gameSyncHasEvent(syncMsg, "unit", "unit_starving") {
 		t.Fatalf("non-fatal turn should include unit_starving in unit section")
 	}
 }
@@ -902,18 +886,16 @@ func newTestRuntime(gameID string, tp *stubTransport) *gamesession.Runtime {
 	return runtime
 }
 
-func hasSettlementEvent(msg *pb.MsgTurnSettlement, section string, eventType string) bool {
+func gameSyncHasEvent(msg *pb.MsgGameSync, channel string, eventType string) bool {
 	if msg == nil {
 		return false
 	}
-	for _, currentSection := range msg.GetSections() {
-		if currentSection.GetSection() != section {
+	for _, evt := range msg.GetEvents() {
+		if evt.GetChannel() != channel {
 			continue
 		}
-		for _, event := range currentSection.GetEvents() {
-			if event.GetType() == eventType {
-				return true
-			}
+		if evt.GetKind() == eventType {
+			return true
 		}
 	}
 	return false
@@ -938,4 +920,17 @@ func firstMessage[T proto.Message](msgs []proto.Message) T {
 		}
 	}
 	return zero
+}
+
+func findUnitEntryByIDForGameTest(world donburi.World, unitID string) (*donburi.Entry, bool) {
+	var found *donburi.Entry
+	ecs.AllUnits(world).Each(world, func(entry *donburi.Entry) {
+		if found != nil || entry == nil {
+			return
+		}
+		if ecs.UnitStatsC.Get(entry).ID == unitID {
+			found = entry
+		}
+	})
+	return found, found != nil
 }

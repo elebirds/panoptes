@@ -27,14 +27,14 @@ func (e UnitMovedEvent) Apply(world donburi.World, _ *domain.GameState) {
 		return
 	}
 	pos := ecs.PositionC.Get(entry)
-	pos.X = e.To.X
-	pos.Y = e.To.Y
+	pos.Q = e.To.Q
+	pos.R = e.To.R
 }
 
 func (e UnitMovedEvent) Kind() string { return "unit_moved" }
 
 func (e UnitMovedEvent) String() string {
-	return fmt.Sprintf("UnitMovedEvent unit=%s from=(%d,%d) to=(%d,%d)", e.UnitID, e.From.X, e.From.Y, e.To.X, e.To.Y)
+	return fmt.Sprintf("UnitMovedEvent unit=%s from=(%d,%d) to=(%d,%d)", e.UnitID, e.From.Q, e.From.R, e.To.Q, e.To.R)
 }
 
 type UnitDamagedEvent struct {
@@ -66,11 +66,7 @@ type UnitDiedEvent struct {
 }
 
 func (e UnitDiedEvent) Apply(world donburi.World, _ *domain.GameState) {
-	entry, ok := findUnitByID(world, e.UnitID)
-	if !ok {
-		return
-	}
-	world.Remove(entry.Entity())
+	removeUnitByID(world, e.UnitID)
 }
 
 func (e UnitDiedEvent) Kind() string { return "unit_died" }
@@ -112,24 +108,7 @@ type CityCoreDestroyedEvent struct {
 }
 
 func (e CityCoreDestroyedEvent) Apply(world donburi.World, state *domain.GameState) {
-	nodeEntry, ok := findNodeByID(world, state, e.NodeID)
-	if !ok || !nodeEntry.HasComponent(ecs.BuildingC) {
-		return
-	}
-	building := ecs.BuildingC.Get(nodeEntry)
-	ownerState, ok := state.Players[building.Owner]
-	if !ok || ownerState == nil {
-		return
-	}
-	if cityID := ecs.ResolveCityID(nodeEntry); cityID == "" || cityID != ownerState.CapitalCityID {
-		return
-	}
-	node := ecs.NodeC.Get(nodeEntry)
-	node.Owner = e.ConquerorFaction
-	building.Owner = e.ConquerorFaction
-	state.IsOver = true
-	state.WinnerID = e.ConquerorFaction
-	state.OverReason = "city_core_destroyed"
+	destroyCapitalCityCore(world, state, e.NodeID, e.ConquerorFaction)
 }
 
 func (e CityCoreDestroyedEvent) Kind() string { return "city_core_destroyed" }

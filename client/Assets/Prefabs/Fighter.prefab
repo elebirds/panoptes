@@ -48,10 +48,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tintRenderers: []
   selectedRing: {fileID: 0}
-  factionTintStrength: 0.35
+  factionTintStrength: 0.55
   autoCollectTintRenderers: 1
   tintKeyRenderersOnly: 1
-  autoTintRendererLimit: 8
+  autoTintRendererLimit: 24
   tintRendererNameKeywords:
   - body
   - head

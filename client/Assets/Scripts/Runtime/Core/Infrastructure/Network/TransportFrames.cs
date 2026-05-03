@@ -1,7 +1,6 @@
 using System;
 using Google.Protobuf;
 using Panoptes.Protocol.V1;
-using AuthMessages = Panoptes.Protocol.V1.Auth;
 
 namespace Panoptes.Core.Infrastructure.Network
 {
@@ -22,14 +21,14 @@ namespace Panoptes.Core.Infrastructure.Network
 
             switch (command)
             {
-                case AuthMessages.MsgRegister register:
+                case MsgRegister register:
                     frame = new ClientFrame
                     {
                         Meta = BuildMeta(),
                         Auth = new AuthCommand { Register = register }
                     };
                     return true;
-                case AuthMessages.MsgLogin login:
+                case MsgLogin login:
                     frame = new ClientFrame
                     {
                         Meta = BuildMeta(),
@@ -264,7 +263,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 GameEvent.BodyOneofCase.SetBuildingRecipeResult => evt.SetBuildingRecipeResult,
                 GameEvent.BodyOneofCase.BuildStructureResult => evt.BuildStructureResult,
                 GameEvent.BodyOneofCase.TurnReport => evt.TurnReport,
-                GameEvent.BodyOneofCase.TurnSettlement => evt.TurnSettlement,
+                GameEvent.BodyOneofCase.GameSync => evt.GameSync,
                 GameEvent.BodyOneofCase.GameOver => evt.GameOver,
                 GameEvent.BodyOneofCase.MinisterReportChunk => evt.MinisterReportChunk,
                 GameEvent.BodyOneofCase.MinisterMetrics => evt.MinisterMetrics,

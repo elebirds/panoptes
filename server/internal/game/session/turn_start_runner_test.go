@@ -46,7 +46,7 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
-		PlayerSpawns: map[string]domain.Position{"player-1": {X: 2, Y: 1}},
+		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 2, R: 1}},
 	})
 	state.Turn = 3
 	state.Players["player-1"].TokensLeft = 1
@@ -110,7 +110,7 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 		}
 		stats := ecs.UnitStatsC.Get(entry)
 		pos := ecs.PositionC.Get(entry)
-		if stats.Faction == "player-1" && string(stats.Type) == "scout" && pos.X == 2 && pos.Y == 1 {
+		if stats.Faction == "player-1" && string(stats.Type) == "scout" && pos.Q == 2 && pos.R == 1 {
 			unitsAtSpawn++
 		}
 	})

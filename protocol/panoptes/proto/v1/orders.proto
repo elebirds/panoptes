@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message MsgSetPolicy {
+  string national_policy_id = 1;
+}
+
+message MsgSetInstitutionLoadout {
+  repeated string policy_ids = 1;
+}
+
+message MsgSetResearchTarget {
+  string technology_id = 1;
+}
+
+message MsgSetBuildingRecipe {
+  string node_id = 1;
+  string recipe_id = 2;
+}
+
+message MsgBuildStructure {
+  string node_id = 1;
+  string building_type_id = 2;
+  string city_id = 3;
+}
+
+message MsgRevealNode {
+  string node_id = 1;
+}
+
+message MsgSetWarZone {
+  string zone_id = 1;
+  string name = 2;
+  repeated string node_ids = 3;
+}
+
+message MsgWarZoneDirective {
+  string zone_id = 1;
+  string directive = 2;
+  string target_node = 3;
+}
+
+message MsgSetMinisterDirective {
+  string minister_role = 1;
+  string content = 2;
+}
+
+message MsgIssueUnitOrder {
+  string unit_id = 1;
+  string action = 2;
+  string target_node_id = 3;
+  string target_unit_id = 4;
+  string secondary_node_id = 5;
+  map<string, string> params = 6;
+}
+
+message MsgCancelUnitOrder {
+  string unit_id = 1;
+}
+
+message MsgPlanningPathPreviewRequest {
+  string request_id = 1;
+  string unit_id = 2;
+  string action = 3;
+  string target_node_id = 4;
+  string secondary_node_id = 5;
+}
+
+message MsgSubmitTurn {}
+
+message CommandEnvelope {
+  string command_id = 1;
+  string participant_id = 2;
+  string source = 3;
+  int32 turn = 4;
+
+  oneof body {
+    MsgSetPolicy set_policy = 10;
+    MsgSetInstitutionLoadout set_institution_loadout = 11;
+    MsgSetResearchTarget set_research_target = 12;
+    MsgSetBuildingRecipe set_building_recipe = 13;
+    MsgBuildStructure build_structure = 14;
+    MsgRevealNode reveal_node = 15;
+    MsgSetWarZone set_war_zone = 16;
+    MsgWarZoneDirective war_zone_directive = 17;
+    MsgSetMinisterDirective set_minister_directive = 18;
+    MsgIssueUnitOrder issue_unit_order = 19;
+    MsgCancelUnitOrder cancel_unit_order = 20;
+    MsgSubmitTurn submit_turn = 21;
+  }
+}
+
+message MsgGameCommandBatch {
+  repeated CommandEnvelope commands = 1;
+}
+
+message MsgCommandAck {
+  string command_id = 1;
+  bool accepted = 2;
+  string error_code = 3;
+  string source = 4;
+  int32 turn = 5;
+}

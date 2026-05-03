@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend quality conventions for debug gate tests."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Headless and PVE tests must respect planning/resolving boundaries."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "D2 verifies authored content through generated catalog, game state, projection, and debug tests."}
+{"file": "docs/2026-05-01-backend-d1-authored-content-expansion-gate.md", "reason": "D1 content inventory is the input to D2 playability verification."}

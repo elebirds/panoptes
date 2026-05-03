@@ -65,7 +65,7 @@ func FindPath(grid Grid, start, goal domain.Position) ([]domain.Position, bool) 
 	gScore := map[domain.Position]int{start: 0}
 	open := make(priorityQueue, 0, 16)
 	heap.Init(&open)
-	heap.Push(&open, &node{pos: start, g: 0, priority: geometry.Manhattan(start, goal)})
+	heap.Push(&open, &node{pos: start, g: 0, priority: geometry.AxialDistance(start, goal)})
 
 	closed := map[domain.Position]bool{}
 
@@ -89,7 +89,7 @@ func FindPath(grid Grid, start, goal domain.Position) ([]domain.Position, bool) 
 			}
 			cameFrom[next] = cur.pos
 			gScore[next] = tentative
-			heap.Push(&open, &node{pos: next, g: tentative, priority: tentative + geometry.Manhattan(next, goal)})
+			heap.Push(&open, &node{pos: next, g: tentative, priority: tentative + geometry.AxialDistance(next, goal)})
 		}
 	}
 

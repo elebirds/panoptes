@@ -1,16 +1,14 @@
+using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Feedback;
-using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Core.Events;
-using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Common;
-using Panoptes.Presentation.UI.HUD;
-using Panoptes.Presentation.UI.Turn;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Game
 {
@@ -20,52 +18,71 @@ namespace Panoptes.Presentation.UI.Game
         [SerializeField] private bool hideFullscreenBackgroundOnGameScene = true;
         [SerializeField] private string fullscreenBackgroundObjectName = "Background";
 
-        private GameStateCache _cache;
+        private GameStateStore _gameStateStore;
+        private SettlementStore _settlementStore;
+        private GameOverStore _gameOverStore;
+        private GameplayFeedbackStore _feedbackStore;
+        private StaticCatalogStore _staticCatalogStore;
+        private ErrorToast _errorToast;
+        private IDisposable _gameStateSubscription;
+        private IDisposable _settlementSubscription;
+        private IDisposable _gameOverSubscription;
+        private IDisposable _feedbackSubscription;
+
+        [Inject]
+        private void Construct(
+            GameStateStore gameStateStore,
+            SettlementStore settlementStore,
+            GameOverStore gameOverStore,
+            GameplayFeedbackStore feedbackStore,
+            StaticCatalogStore staticCatalogStore,
+            ErrorToast errorToast)
+        {
+            _gameStateStore = gameStateStore;
+            _settlementStore = settlementStore;
+            _gameOverStore = gameOverStore;
+            _feedbackStore = feedbackStore;
+            _staticCatalogStore = staticCatalogStore;
+            _errorToast = errorToast;
+        }
 
         private void Awake()
         {
-            _cache = GameStateCache.Instance;
             HideFullscreenBackgroundIfNeeded();
-            EnsurePresentationHelpers();
         }
 
         private void OnEnable()
         {
-            _cache = GameStateCache.Instance;
-
-            if (_cache != null)
-            {
-                GameIntents.Initialize(_cache);
-                _cache.OnStateChanged += RefreshFromCache;
-                _cache.OnGameError += OnGameError;
-                _cache.OnTokenResult += OnTokenResult;
-                _cache.OnTurnSettled += OnTurnSettled;
-                _cache.OnGameOver += OnGameOver;
-            }
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = _settlementStore?.State.Subscribe(this, static (state, self) => self.OnSettlementChanged(state));
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = _gameOverStore?.State.Subscribe(this, static (state, self) => self.OnGameOverChanged(state));
+            _feedbackSubscription?.Dispose();
+            _feedbackSubscription = _feedbackStore?.State.Subscribe(this, static (state, self) => self.OnFeedbackChanged(state));
         }
 
         private void Start()
         {
-            RefreshFromCache();
+            RefreshFromState(_gameStateStore?.Snapshot);
         }
 
         private void OnDisable()
         {
-            if (_cache != null)
-            {
-                _cache.OnStateChanged -= RefreshFromCache;
-                _cache.OnGameError -= OnGameError;
-                _cache.OnTokenResult -= OnTokenResult;
-                _cache.OnTurnSettled -= OnTurnSettled;
-                _cache.OnGameOver -= OnGameOver;
-            }
-
-            GameIntents.Dispose();
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = null;
+            _settlementSubscription?.Dispose();
+            _settlementSubscription = null;
+            _gameOverSubscription?.Dispose();
+            _gameOverSubscription = null;
+            _feedbackSubscription?.Dispose();
+            _feedbackSubscription = null;
         }
 
-        public void RefreshFromCache()
+        public void RefreshFromState(GameStateStoreState state)
         {
-            if (_cache == null || string.IsNullOrWhiteSpace(_cache.GameID) || string.IsNullOrWhiteSpace(_cache.MyPlayerID))
+            if (state == null || string.IsNullOrWhiteSpace(state.GameId) || string.IsNullOrWhiteSpace(state.MyPlayerId))
             {
                 if (statusText != null)
                 {
@@ -74,7 +91,7 @@ namespace Panoptes.Presentation.UI.Game
                 return;
             }
 
-            var summary = $"Game {_cache.GameID}\n玩家 {_cache.MyPlayerID}\n回合 {_cache.Turn} / {GamePhases.ToDisplayText(_cache.Phase)}\n地图 {_cache.MapWidth}x{_cache.MapHeight}";
+            var summary = $"Game {state.GameId}\n玩家 {state.MyPlayerId}\n回合 {state.Turn} / {GamePhases.ToDisplayText(state.Phase)}\n地图 {state.MapWidth}x{state.MapHeight}";
             if (statusText != null)
             {
                 statusText.text = summary;
@@ -86,37 +103,34 @@ namespace Panoptes.Presentation.UI.Game
             }
         }
 
-        private void OnGameError(GameErrorEvent evt)
+        public void RefreshFromCache()
         {
-            if (evt == null)
+            RefreshFromState(_gameStateStore?.Snapshot);
+        }
+
+        private void OnFeedbackChanged(GameplayFeedbackState state)
+        {
+            if (state == null || !state.HasFeedback)
             {
                 return;
             }
 
-            ShowToast(GameplayFeedbackText.ResolveMessage(evt.Message, evt.Code), false);
+            ShowToast(GameplayFeedbackText.ResolveMessage(state.Message, state.Code), state.Success);
         }
 
-        private void OnTokenResult(TokenResultEvent evt)
+        private void OnGameOverChanged(GameOverState state)
         {
-            if (evt == null || evt.Success || string.IsNullOrWhiteSpace(evt.ErrorCode))
+            if (state == null || !state.IsGameOver || statusText == null)
             {
                 return;
             }
 
-            ShowToast(GameplayFeedbackText.ResolveMessage(string.Empty, evt.ErrorCode), false);
+            statusText.gameObject.SetActive(false);
         }
 
-        private void OnGameOver(GameOverEvent _)
+        private void OnSettlementChanged(SettlementState state)
         {
-            if (statusText != null)
-            {
-                statusText.gameObject.SetActive(false);
-            }
-        }
-
-        private void OnTurnSettled(TurnSettledEvent evt)
-        {
-            var completedTechnologyNames = CollectCompletedTechnologyNames(evt);
+            var completedTechnologyNames = CollectCompletedTechnologyNames(state?.Settlement);
             if (completedTechnologyNames.Count == 0)
             {
                 return;
@@ -154,85 +168,19 @@ namespace Panoptes.Presentation.UI.Game
             target.gameObject.SetActive(false);
         }
 
-        private void EnsurePresentationHelpers()
-        {
-            var canvas = statusText != null ? statusText.canvas : GetComponentInChildren<Canvas>(true);
-            if (canvas == null)
-            {
-                return;
-            }
-
-            EnsureComponent<TurnHUD>(canvas.transform, "TurnHUD");
-            EnsureComponent<ResourceHUD>(canvas.transform, "ResourcePanel");
-            EnsurePrefabComponent<GameOverOverlay>(canvas.transform, "GameOverOverlay", "Prefabs/UI/GameOverOverlay");
-            EnsureRuntimeComponent<SettlementPlaybackController>("SettlementPlaybackController");
-        }
-
-        private static void EnsureComponent<T>(Transform parent, string objectName) where T : Component
-        {
-            var existing = parent.Find(objectName);
-            if (existing != null && existing.GetComponent<T>() != null)
-            {
-                return;
-            }
-
-            var go = existing != null ? existing.gameObject : new GameObject(objectName, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            if (go.GetComponent<T>() == null)
-            {
-                go.AddComponent<T>();
-            }
-        }
-
-        private static void EnsureRuntimeComponent<T>(string objectName) where T : Component
-        {
-            var existing = UnityEngine.Object.FindAnyObjectByType<T>();
-            if (existing != null)
-            {
-                return;
-            }
-
-            var go = new GameObject(objectName);
-            go.AddComponent<T>();
-        }
-
-        private static void EnsurePrefabComponent<T>(Transform parent, string objectName, string resourcesPath) where T : Component
-        {
-            var existing = parent.Find(objectName);
-            if (existing != null && existing.GetComponent<T>() != null)
-            {
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(resourcesPath))
-            {
-                var prefab = Resources.Load<GameObject>(resourcesPath.Trim());
-                if (prefab != null)
-                {
-                    var instance = Object.Instantiate(prefab, parent, false);
-                    instance.name = objectName;
-                    if (instance.GetComponent<T>() != null)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            EnsureComponent<T>(parent, objectName);
-        }
-
-        private List<string> CollectCompletedTechnologyNames(TurnSettledEvent evt)
+        private List<string> CollectCompletedTechnologyNames(TurnSettlementDto settlement)
         {
             var result = new List<string>();
-            if (_cache == null || evt?.Settlement?.Sections == null || string.IsNullOrWhiteSpace(_cache.MyPlayerID))
+            var myPlayerId = _gameStateStore?.Snapshot.MyPlayerId ?? string.Empty;
+            if (settlement?.Sections == null || string.IsNullOrWhiteSpace(myPlayerId))
             {
                 return result;
             }
 
             var seenTechnologyIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
-            for (var sectionIndex = 0; sectionIndex < evt.Settlement.Sections.Count; sectionIndex++)
+            for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
             {
-                var section = evt.Settlement.Sections[sectionIndex];
+                var section = settlement.Sections[sectionIndex];
                 if (section?.Events == null)
                 {
                     continue;
@@ -241,7 +189,7 @@ namespace Panoptes.Presentation.UI.Game
                 for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                 {
                     var turnEvent = section.Events[eventIndex];
-                    if (!IsOwnedTechnologyCompletion(turnEvent, _cache.MyPlayerID))
+                    if (!IsOwnedTechnologyCompletion(turnEvent, myPlayerId))
                     {
                         continue;
                     }
@@ -252,7 +200,7 @@ namespace Panoptes.Presentation.UI.Game
                         continue;
                     }
 
-                    result.Add(ResolveTechnologyDisplayName(technologyId));
+                    result.Add(ResolveTechnologyDisplayName(technologyId, _staticCatalogStore?.Snapshot));
                 }
             }
 
@@ -277,7 +225,7 @@ namespace Panoptes.Presentation.UI.Game
             return string.Equals(eventPlayerId?.Trim(), playerId.Trim(), System.StringComparison.Ordinal);
         }
 
-        private static string ResolveTechnologyDisplayName(string technologyId)
+        private static string ResolveTechnologyDisplayName(string technologyId, StaticCatalogState catalog)
         {
             var normalizedTechnologyId = technologyId?.Trim();
             if (string.IsNullOrWhiteSpace(normalizedTechnologyId))
@@ -285,13 +233,12 @@ namespace Panoptes.Presentation.UI.Game
                 return string.Empty;
             }
 
-            var catalog = StaticCatalogCache.EnsureInstance();
-            if (catalog != null &&
-                catalog.TryGetTechnology(normalizedTechnologyId, out var technology) &&
+            if (catalog?.Technologies != null &&
+                catalog.Technologies.TryGetValue(normalizedTechnologyId, out var technology) &&
                 technology != null &&
-                !string.IsNullOrWhiteSpace(technology.name))
+                !string.IsNullOrWhiteSpace(technology.Name))
             {
-                return technology.name.Trim();
+                return technology.Name.Trim();
             }
 
             return normalizedTechnologyId;
@@ -333,11 +280,11 @@ namespace Panoptes.Presentation.UI.Game
             return string.Empty;
         }
 
-        private static void ShowToast(string message, bool success)
+        private void ShowToast(string message, bool success)
         {
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, success);
+                _errorToast.Show(message, success);
                 return;
             }
 

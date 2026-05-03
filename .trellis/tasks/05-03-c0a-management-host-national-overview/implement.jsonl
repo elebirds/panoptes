@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "C0a UI Toolkit asset and Presentation placement rules."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "UI Toolkit binder and prefab-facing facade conventions."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Store/ViewModel/Binder and command boundary requirements."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Boundary and testing requirements for Unity client Presentation changes."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "C0a data flow spans Core stores, ViewModels, binders, and UI assets."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse existing UI Toolkit rendering and visibility patterns."}
+{"file": "docs/2026-05-03-c0a-ui-inventory-and-integration-plan-zh.md", "reason": "Approved C0a UI implementation plan."}

@@ -14,8 +14,8 @@ import (
 
 func midpoint(a, b domain.Position) domain.Position {
 	return domain.Position{
-		X: (a.X + b.X) / 2,
-		Y: (a.Y + b.Y) / 2,
+		Q: (a.Q + b.Q) / 2,
+		R: (a.R + b.R) / 2,
 	}
 }
 

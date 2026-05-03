@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package panoptes.proto.v1;
+
+option go_package = "github.com/elebirds/panoptes/internal/gen/proto;protov1";
+option csharp_namespace = "Panoptes.Protocol.V1";
+
+message ConfigJsonEntry {
+  string key = 1;
+  string json = 2;
+}
+
+message MsgConfigBatchJson {
+  repeated ConfigJsonEntry configs = 1;
+}
