@@ -81,6 +81,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
             builder.RegisterComponentOnNewGameObject<AnimationQueue>(Lifetime.Singleton, "AnimationQueue");
+            builder.RegisterComponentOnNewGameObject<DamageNumberPopupController>(Lifetime.Singleton, "DamageNumberPopupController");
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
             builder.RegisterComponentInHierarchy<CinemachineMapCameraController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();

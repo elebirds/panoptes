@@ -33,19 +33,21 @@ namespace Panoptes.Presentation.Map
         private int _lastHandledSettlementSequence;
 
         [Inject]
-        private void Construct(SettlementStore settlementStore, MapRenderer mapRenderer)
+        private void Construct(
+            SettlementStore settlementStore,
+            MapRenderer mapRenderer,
+            DamageNumberPopupController injectedDamagePopupController)
         {
             _settlementStore = settlementStore;
             _mapRenderer = mapRenderer;
+            if (damagePopupController == null)
+            {
+                damagePopupController = injectedDamagePopupController;
+            }
             if (isActiveAndEnabled)
             {
                 SubscribeSettlement();
             }
-        }
-
-        private void Awake()
-        {
-            EnsureDamagePopupController();
         }
 
         private void OnEnable()
@@ -333,7 +335,6 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureDamagePopupController();
             if (damagePopupController == null)
             {
                 return;
@@ -356,7 +357,6 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            EnsureDamagePopupController();
             if (damagePopupController == null)
             {
                 return;
@@ -513,21 +513,5 @@ namespace Panoptes.Presentation.Map
             return node != null && node.IsCurrentlyVisible;
         }
 
-        private void EnsureDamagePopupController()
-        {
-            if (!enableDamagePopups || damagePopupController != null)
-            {
-                return;
-            }
-
-            damagePopupController = FindAnyObjectByType<DamageNumberPopupController>();
-            if (damagePopupController != null)
-            {
-                return;
-            }
-
-            var popupRoot = new GameObject("DamageNumberPopupController");
-            damagePopupController = popupRoot.AddComponent<DamageNumberPopupController>();
-        }
     }
 }

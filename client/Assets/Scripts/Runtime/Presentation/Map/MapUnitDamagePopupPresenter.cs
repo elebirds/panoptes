@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Planning.Feedback;
 using UnityEngine;
 
@@ -11,12 +10,18 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
         private MapRenderer _mapRenderer;
+        private DamageNumberPopupController _popupController;
 
         public int KnownUnitCount => _knownUnitHpByUnitId.Count;
 
         public void SetMapRenderer(MapRenderer mapRenderer)
         {
             _mapRenderer = mapRenderer;
+        }
+
+        public void SetDamagePopupController(DamageNumberPopupController popupController)
+        {
+            _popupController = popupController;
         }
 
         public void Clear()
@@ -54,8 +59,7 @@ namespace Panoptes.Presentation.Map
         public void TrackMovedUnit(
             UnitDto moved,
             bool allowFallbackPopup,
-            float repeatCooldownSeconds,
-            ref DamageNumberPopupController popupController)
+            float repeatCooldownSeconds)
         {
             if (moved == null || string.IsNullOrWhiteSpace(moved.Id))
             {
@@ -83,15 +87,14 @@ namespace Panoptes.Presentation.Map
             var damage = hpBefore - hpAfter;
             if (allowFallbackPopup && damage > 0)
             {
-                TryShowUnitDamagePopup(unitId, damage, repeatCooldownSeconds, ref popupController);
+                TryShowUnitDamagePopup(unitId, damage, repeatCooldownSeconds);
             }
         }
 
         private void TryShowUnitDamagePopup(
             string unitId,
             int damage,
-            float repeatCooldownSeconds,
-            ref DamageNumberPopupController popupController)
+            float repeatCooldownSeconds)
         {
             if (string.IsNullOrWhiteSpace(unitId) || damage <= 0)
             {
@@ -114,18 +117,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (popupController == null)
-            {
-                popupController = SceneObjectFinder.FindFirstSceneObject<DamageNumberPopupController>();
-            }
-
-            if (popupController == null)
-            {
-                var popupRoot = new GameObject("DamageNumberPopupController_Fallback");
-                popupController = popupRoot.AddComponent<DamageNumberPopupController>();
-            }
-
-            popupController.ShowDamage(unitView.transform, damage, isBuilding: false);
+            _popupController?.ShowDamage(unitView.transform, damage, isBuilding: false);
             _lastDamagePopupTimeByUnitId[normalizedUnitId] = Time.unscaledTime;
         }
 
