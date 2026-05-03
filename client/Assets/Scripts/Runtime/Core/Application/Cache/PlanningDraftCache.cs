@@ -72,24 +72,6 @@ namespace Panoptes.Core.Application.Cache
             DontDestroyOnLoad(gameObject);
         }
 
-        public static PlanningDraftCache EnsureInstance()
-        {
-            if (Instance != null)
-            {
-                return Instance;
-            }
-
-            var existing = UnityEngine.Object.FindAnyObjectByType<PlanningDraftCache>();
-            if (existing != null)
-            {
-                Instance = existing;
-                return existing;
-            }
-
-            var go = new GameObject("PlanningDraftCache");
-            return go.AddComponent<PlanningDraftCache>();
-        }
-
         public List<QueuedUnitOrderDto> GetOrdersInDisplayOrder()
         {
             return _ordersByUnitId.Values

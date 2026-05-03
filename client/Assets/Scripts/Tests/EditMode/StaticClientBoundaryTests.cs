@@ -81,7 +81,11 @@ namespace Panoptes.Tests.EditMode
                 ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Network/GameEventSessionGate.cs"),
                 ResolveAssetPath("Scripts/Runtime/Core/Infrastructure/Network/ServerEndpointResolver.cs"),
                 ResolveAssetPath("Scripts/Runtime/Core/Application/Services/LocalGameSessionResetService.cs"),
-                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/GameStateCache.cs")
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/GameStateCache.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/ConfigCache.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/GameChatCache.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/PlanningDraftCache.cs"),
+                ResolveAssetPath("Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs")
             };
 
             var offenders = FindTokenOffenders(
@@ -92,9 +96,31 @@ namespace Panoptes.Tests.EditMode
                 "PlanningDraftCache.EnsureInstance",
                 "PlanningDraftCache.Instance",
                 "GameChatCache.Instance",
-                "NetworkManager.Instance");
+                "NetworkManager.Instance",
+                "EnsureInstance(");
 
             Assert.That(offenders, Is.Empty, "Formal runtime bridges must receive dependencies from composition instead of static compatibility entrypoints.");
+        }
+
+        [Test]
+        public void RemovedStaticCommandCompatibilityShells_ShouldStayDeleted()
+        {
+            var deletedPaths = new[]
+            {
+                "Scripts/Runtime/Core/Application/Intents/GameIntents.cs",
+                "Scripts/Runtime/Core/Application/Intents/GameIntents.cs.meta",
+                "Scripts/Runtime/Core/Application/Services/MessageSender.cs",
+                "Scripts/Runtime/Core/Application/Services/MessageSender.cs.meta",
+                "Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs",
+                "Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs.meta",
+                "Scripts/Runtime/Core/Infrastructure/Network/StaticMessageSender.cs",
+                "Scripts/Runtime/Core/Infrastructure/Network/StaticMessageSender.cs.meta"
+            };
+
+            for (var i = 0; i < deletedPaths.Length; i++)
+            {
+                Assert.That(File.Exists(ResolveAssetPath(deletedPaths[i])), Is.False, $"{deletedPaths[i]} should stay deleted.");
+            }
         }
 
         [Test]
@@ -106,7 +132,7 @@ namespace Panoptes.Tests.EditMode
                 Path.GetFullPath("docs/PANOPTES_AGENT_FRONTEND.md"),
                 Path.GetFullPath("docs/2026-05-02-client-reactive-presentation-architecture-implementation-plan.md"),
                 Path.GetFullPath("docs/2026-05-01-client-reactive-ui-architecture-plan.md"),
-                Path.GetFullPath(".trellis/spec/frontend/state-management.md")
+                Path.GetFullPath(".trellis/spec/frontend")
             };
 
             var offenders = FindTokenOffenders(
@@ -115,7 +141,16 @@ namespace Panoptes.Tests.EditMode
                 "MessageSender.Send",
                 "GameIntents.",
                 "NetworkManager.Instance",
-                "MessageDispatcher.Instance.Register");
+                "MessageDispatcher.Instance.Register",
+                "ConfigMessageBridge",
+                "StaticMessageSender",
+                "EnsureInstance",
+                "MinisterPanel.Instance",
+                "SceneLoader.Instance",
+                "LoadingOverlay.Instance",
+                "MapRenderer.Instance",
+                "AnimationQueue.Instance",
+                "UnitCache.Instance");
 
             Assert.That(offenders, Is.Empty, "Architecture docs must teach VContainer + Store/ViewModel/Binder + IClientMessageSender, not the retired static path.");
         }
