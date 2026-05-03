@@ -12,9 +12,7 @@ using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
-using Panoptes.Presentation.UI.HUD;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -34,10 +32,6 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool preferServerPushedMapConfig = true;
         [SerializeField] private string serverMapConfigKey = "mapconfig";
         [SerializeField] private bool listenServerMapConfigUpdates = true;
-        
-        [Header("Runtime Helpers")]
-        [SerializeField] private bool autoEnsureRuntimeControllers = true;
-
         [Header("Prefab")]
         [SerializeField] private NodeView nodeTilePrefab;
         [SerializeField] private Transform tilesRoot;
@@ -176,11 +170,6 @@ namespace Panoptes.Presentation.Map
 
             if (generateDebugMapOnStart)
             {
-                if (autoEnsureRuntimeControllers)
-                {
-                    EnsureRuntimeControllers();
-                }
-
                 BuildDebugMap();
                 return;
             }
@@ -191,17 +180,7 @@ namespace Panoptes.Presentation.Map
                 {
                     return;
                 }
-
-                if (autoEnsureRuntimeControllers)
-                {
-                    EnsureRuntimeControllers();
-                }
                 return;
-            }
-
-            if (autoEnsureRuntimeControllers)
-            {
-                EnsureRuntimeControllers();
             }
 
             if (useJsonMapOnStart && startupMapJson != null && LoadMapFromJsonAsset(startupMapJson))
@@ -227,36 +206,6 @@ namespace Panoptes.Presentation.Map
             }
 
             return true;
-        }
-
-        private static void EnsureRuntimeControllers()
-        {
-            if (SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>() == null)
-            {
-                var go = new GameObject("MapPlanningInputController");
-                go.AddComponent<MapPlanningInputController>();
-            }
-
-            var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            if (unitInfoPanel == null)
-            {
-                var canvas = UnityEngine.Object.FindAnyObjectByType<Canvas>();
-                var go = new GameObject(
-                    "UnitInfoPanel",
-                    typeof(RectTransform),
-                    typeof(UnitInfoActionRegistry),
-                    typeof(UnitInfoPanelController));
-                if (canvas != null)
-                {
-                    go.transform.SetParent(canvas.transform, false);
-                }
-                return;
-            }
-
-            if (unitInfoPanel.GetComponent<UnitInfoActionRegistry>() == null)
-            {
-                unitInfoPanel.gameObject.AddComponent<UnitInfoActionRegistry>();
-            }
         }
 
         public void RebuildMap()
@@ -565,7 +514,6 @@ namespace Panoptes.Presentation.Map
         {
             ClearMap();
             ClearUnits();
-            DisableGameplayInput();
 
             var resolvedMessage = string.IsNullOrWhiteSpace(message)
                 ? "服务端地图加载失败。"
@@ -575,21 +523,6 @@ namespace Panoptes.Presentation.Map
             if (ErrorToast.Instance != null)
             {
                 ErrorToast.Instance.Show(resolvedMessage, false);
-            }
-        }
-
-        private static void DisableGameplayInput()
-        {
-            var planningInputController = SceneObjectFinder.FindFirstSceneObject<MapPlanningInputController>();
-            if (planningInputController != null)
-            {
-                planningInputController.enabled = false;
-            }
-
-            var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            if (unitInfoPanel != null)
-            {
-                unitInfoPanel.gameObject.SetActive(false);
             }
         }
 

@@ -789,6 +789,20 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void MapRenderer_ShouldNotCreateOrFindPresentationControllers()
+        {
+            var renderer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"));
+
+            Assert.That(renderer, Does.Not.Contain("EnsureRuntimeControllers"));
+            Assert.That(renderer, Does.Not.Contain("autoEnsureRuntimeControllers"));
+            Assert.That(renderer, Does.Not.Contain("SceneObjectFinder"));
+            Assert.That(renderer, Does.Not.Contain("FindAnyObjectByType"));
+            Assert.That(renderer, Does.Not.Contain("MapPlanningInputController"));
+            Assert.That(renderer, Does.Not.Contain("UnitInfoPanelController"));
+            Assert.That(renderer, Does.Not.Contain("DisableGameplayInput"));
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");
