@@ -21,8 +21,6 @@ namespace Panoptes.Presentation.Map
 {
     public sealed class MapRenderer : MonoBehaviour
     {
-        public static MapRenderer Instance { get; private set; }
-
         [Header("Map Source")]
         [SerializeField] private bool useJsonMapOnStart = false;
         [SerializeField] private TextAsset startupMapJson;
@@ -98,9 +96,11 @@ namespace Panoptes.Presentation.Map
 
         private readonly List<UnitDto> _jsonUnits = new();
         private readonly MapCameraContextBuilder _cameraContextBuilder = new();
+        private AppManager _appManager;
         private ConfigCache _configCache;
         private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
+        private UnitCache _unitCache;
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
         private IDisposable _staticCatalogSubscription;
@@ -116,22 +116,19 @@ namespace Panoptes.Presentation.Map
             return _hasCameraContext && context.IsValid;
         }
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-        }
-
         [Inject]
-        private void Construct(GameStateStore gameStateStore, StaticCatalogStore staticCatalogStore)
+        private void Construct(
+            GameStateStore gameStateStore,
+            StaticCatalogStore staticCatalogStore,
+            AppManager appManager,
+            ConfigCache configCache,
+            UnitCache unitCache)
         {
             _gameStateStore = gameStateStore;
             _staticCatalogStore = staticCatalogStore;
+            _appManager = appManager;
+            _configCache = configCache;
+            _unitCache = unitCache;
             _latestGameState = _gameStateStore?.Snapshot ?? new GameStateStoreState();
             if (isActiveAndEnabled)
             {
@@ -199,7 +196,7 @@ namespace Panoptes.Presentation.Map
                 return true;
             }
 
-            var app = AppManager.Instance;
+            var app = _appManager;
             if (app != null && app.State != AppState.Game)
             {
                 return false;
@@ -418,12 +415,6 @@ namespace Panoptes.Presentation.Map
             if (_configCache != null)
             {
                 _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
-                _configCache = null;
-            }
-
-            _configCache = ConfigCache.EnsureInstance();
-            if (_configCache != null)
-            {
                 _configCache.ConfigUpdated += OnServerMapConfigUpdated;
             }
         }
@@ -436,7 +427,6 @@ namespace Panoptes.Presentation.Map
             if (_configCache != null)
             {
                 _configCache.ConfigUpdated -= OnServerMapConfigUpdated;
-                _configCache = null;
             }
         }
 
@@ -493,8 +483,7 @@ namespace Panoptes.Presentation.Map
 
         private bool TryLoadToolSceneMapFromServerConfig()
         {
-            var cache = _configCache != null ? _configCache : ConfigCache.Instance;
-            return CreateSourceResolver().TryResolveServerConfig(cache, out var snapshot) &&
+            return CreateSourceResolver().TryResolveServerConfig(_configCache, out var snapshot) &&
                    BuildFromSourceSnapshot(snapshot);
         }
 
@@ -526,9 +515,9 @@ namespace Panoptes.Presentation.Map
             }
         }
 
-        private static bool IsGameRuntime()
+        private bool IsGameRuntime()
         {
-            return AppManager.Instance != null && AppManager.Instance.State == AppState.Game;
+            return _appManager != null && _appManager.State == AppState.Game;
         }
 
         public bool LoadMapFromJsonString(string json)
@@ -730,9 +719,9 @@ namespace Panoptes.Presentation.Map
                 oldSet.Remove(unitId);
             }
 
-            if (UnitCache.Instance != null)
+            if (_unitCache != null)
             {
-                UnitCache.Instance.Unregister(unitView);
+                _unitCache.Unregister(unitView);
             }
 
             Destroy(unitView.gameObject);
@@ -1236,13 +1225,6 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var unitCache = UnitCache.Instance;
-            if (unitCache == null)
-            {
-                var cacheGo = new GameObject("UnitCache");
-                unitCache = cacheGo.AddComponent<UnitCache>();
-            }
-
             foreach (var unit in units)
             {
                 if (unit == null)
@@ -1250,7 +1232,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                TrySpawnUnitInternal(unit, false, false, unitCache);
+                TrySpawnUnitInternal(unit, false, false, _unitCache);
             }
         }
 
@@ -1420,13 +1402,8 @@ namespace Panoptes.Presentation.Map
             }
             set.Add(unit.Id);
 
-            var unitCache = unitCacheOverride != null ? unitCacheOverride : UnitCache.Instance;
-            if (unitCache == null)
-            {
-                var cacheGo = new GameObject("UnitCache");
-                unitCache = cacheGo.AddComponent<UnitCache>();
-            }
-            unitCache.Register(instance);
+            var unitCache = unitCacheOverride != null ? unitCacheOverride : _unitCache;
+            unitCache?.Register(instance);
 
             return true;
         }
@@ -1547,9 +1524,9 @@ namespace Panoptes.Presentation.Map
             {
                 if (pair.Value != null)
                 {
-                    if (UnitCache.Instance != null)
+                    if (_unitCache != null)
                     {
-                        UnitCache.Instance.Unregister(pair.Value);
+                        _unitCache.Unregister(pair.Value);
                     }
 
                     Destroy(pair.Value.gameObject);
