@@ -888,8 +888,8 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "AppManager 必须注册 Catalog V2 section chunk 事件。");
             StringAssert.Contains("Register<MsgStaticCatalogSyncComplete>(\"MsgStaticCatalogSyncComplete\", OnStaticCatalogSyncComplete)", content,
                 "AppManager 必须注册 Catalog V2 sync complete 事件。");
-            StringAssert.Contains("MessageSender.Send(new MsgStaticCatalogSyncRequest", content,
-                "收到 manifest 后，AppManager 必须主动发起 Catalog V2 同步请求。");
+            StringAssert.Contains("_messageSender?.Send(request);", content,
+                "收到 manifest 后，AppManager 必须通过注入的消息发送器发起 Catalog V2 同步请求。");
             StringAssert.Contains("_configCache?.Clear();", content,
                 "进入 Login 或回退会话时必须清理会话级 ConfigCache。");
             Assert.That(content, Does.Not.Contain("StaticCatalogCache.Instance?.Clear();"),

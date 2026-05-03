@@ -9,6 +9,7 @@
 using Panoptes.Protocol.V1;
 using Panoptes.Core.Application.Handler;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Events;
 using Panoptes.Core.Infrastructure.Network;
@@ -67,6 +68,7 @@ namespace Panoptes.Core.Application.App
         private RoomCache _roomCache;
         private GameStateCache _gameStateCache;
         private GameChatCache _gameChatCache;
+        private IClientMessageSender _messageSender;
 
         public void UseProjectServices(
             NetworkManager networkManager,
@@ -77,7 +79,8 @@ namespace Panoptes.Core.Application.App
             StaticCatalogCache staticCatalogCache,
             RoomCache roomCache,
             GameStateCache gameStateCache,
-            GameChatCache gameChatCache)
+            GameChatCache gameChatCache,
+            IClientMessageSender messageSender)
         {
             _networkManager = networkManager;
             _messageDispatcher = messageDispatcher;
@@ -88,6 +91,7 @@ namespace Panoptes.Core.Application.App
             _roomCache = roomCache;
             _gameStateCache = gameStateCache;
             _gameChatCache = gameChatCache;
+            _messageSender = messageSender;
             HydrateStaticCatalogStore(_staticCatalogCache);
         }
 
@@ -203,12 +207,7 @@ namespace Panoptes.Core.Application.App
             {
                 request.SectionNames.Add(decision.RequestedSections);
             }
-            MessageSender.Send(new MsgStaticCatalogSyncRequest
-            {
-                BundleHash = request.BundleHash,
-                ForceFullSync = request.ForceFullSync,
-                SectionNames = { request.SectionNames }
-            });
+            _messageSender?.Send(request);
         }
 
         private void OnStaticCatalogSectionChunk(MsgStaticCatalogSectionChunk msg)

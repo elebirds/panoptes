@@ -106,6 +106,7 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(confirmDialog));
             }
 
+            var messageSender = new NetworkMessageSender(networkManager);
             appManager.UseProjectServices(
                 networkManager,
                 messageDispatcher,
@@ -115,7 +116,8 @@ namespace Panoptes.Presentation.Composition
                 staticCatalogCache,
                 roomCache,
                 gameStateCache,
-                gameChatCache);
+                gameChatCache,
+                messageSender);
             networkManager.UseProjectServices(
                 sessionManager,
                 messageDispatcher,
@@ -139,7 +141,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponent(errorToast).AsSelf();
             builder.RegisterComponent(confirmDialog).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
-            builder.Register<IClientMessageSender, NetworkMessageSender>(Lifetime.Singleton);
+            builder.RegisterInstance(messageSender).As<IClientMessageSender>();
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
             builder.Register<StaticCatalogStoreHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterBuildCallback(container => container.Resolve<AppManager>().UseStaticCatalogStoreHydrator(container.Resolve<StaticCatalogStoreHydrator>()));
