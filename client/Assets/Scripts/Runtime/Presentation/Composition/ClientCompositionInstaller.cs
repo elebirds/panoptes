@@ -14,6 +14,7 @@ using Panoptes.Presentation.UI.Game;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.UI.Turn;
 using Panoptes.Presentation.ViewModels;
+using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
@@ -129,9 +130,9 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentOnNewGameObject<TurnReportPanel>(
                 Lifetime.Singleton,
                 "TurnReportPanel");
-            builder.RegisterComponentOnNewGameObject<GameOverOverlay>(
-                Lifetime.Singleton,
-                "GameOverOverlay");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<GameOverOverlay>("Prefabs/UI/GameOverOverlay"),
+                Lifetime.Singleton);
             builder.Register<UnitInfoViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<PlanningToolViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
@@ -177,5 +178,21 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }
 
+        private static T LoadRequiredComponent<T>(string resourcePath) where T : Component
+        {
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException($"Missing prefab at Resources/{resourcePath}.prefab");
+            }
+
+            var component = prefab.GetComponent<T>();
+            if (component == null)
+            {
+                throw new InvalidOperationException($"Prefab Resources/{resourcePath}.prefab is missing {typeof(T).Name}.");
+            }
+
+            return component;
+        }
     }
 }

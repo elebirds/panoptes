@@ -65,7 +65,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
             Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<SettlementTimeline>"));
             Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<TurnReportPanel>"));
-            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<GameOverOverlay>"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<GameOverOverlay>(\"Prefabs/UI/GameOverOverlay\")"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<UnitInfoPanelController>"));
             Assert.That(installer, Does.Not.Contain("RecipeSynthesisPanel"));
             Assert.That(installer, Does.Not.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
