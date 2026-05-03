@@ -3,7 +3,6 @@ using System.Collections;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
-using Panoptes.Presentation.UI.Domestic;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
 using VContainer;
@@ -25,16 +24,11 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private UnitInfoPanelController unitInfoPanelController;
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
-        [SerializeField] private RecipeSynthesisPanel recipeSynthesisPanel;
-        [SerializeField] private bool hideRecipePanelOnStart = true;
         [SerializeField] private bool autoFindNextStageButton = true;
         [SerializeField] private bool autoFindTurnPanel = true;
 
         [Header("Recipe Derived Panel")]
         [SerializeField] private float recipePanelShiftXWhenOpen = 360f;
-        [SerializeField] private bool useRecipePanelWidthForShift = true;
-        [SerializeField] private float recipePanelWidthShiftFactor = 1.12f;
-        [SerializeField] private float recipePanelWidthShiftExtra = 0f;
 
         [Header("Right-Bottom Group Shift")]
         [SerializeField] private float rightGroupShiftDuration = 0.2f;
@@ -42,14 +36,13 @@ namespace Panoptes.Presentation.UI.HUD
 
         private BuildCatalogContextStore _buildCatalogContextStore;
         private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
+        private RecipeSynthesisContextStore _recipeSynthesisContextStore;
         private CityCoreBuildingActionResolver _resolver;
-        private RecipeSynthesisPanel _subscribedRecipePanel;
         private bool _nextStageBasePositionReady;
         private Vector2 _nextStageBaseAnchoredPos;
         private bool _turnPanelBasePositionReady;
         private Vector2 _turnPanelBaseAnchoredPos;
         private Coroutine _nextStageShiftRoutine;
-        private Coroutine _panelSwitchRoutine;
         private Coroutine _initialPanelStateRoutine;
         private MapPlanningInputController _subscribedMapPlanningInputController;
         private string _activeUnitInfoNodeId = string.Empty;
@@ -61,11 +54,13 @@ namespace Panoptes.Presentation.UI.HUD
             GameStateStore gameStateStore,
             StaticCatalogStore staticCatalogStore,
             ManagementPanelVisibilityStore managementPanelVisibilityStore,
-            BuildCatalogContextStore buildCatalogContextStore)
+            BuildCatalogContextStore buildCatalogContextStore,
+            RecipeSynthesisContextStore recipeSynthesisContextStore)
         {
             _resolver = new CityCoreBuildingActionResolver(gameStateStore, staticCatalogStore);
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
             _buildCatalogContextStore = buildCatalogContextStore;
+            _recipeSynthesisContextStore = recipeSynthesisContextStore;
         }
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
@@ -149,11 +144,10 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             if (currentSelection != null &&
-                recipeSynthesisPanel != null &&
-                recipeSynthesisPanel.IsVisible &&
+                IsRecipeSynthesisVisible() &&
                 (_resolver == null || !_resolver.IsOwnedRecipeBuildingProxy(currentSelection)))
             {
-                recipeSynthesisPanel.Hide();
+                CloseRecipeSynthesis(resetUnitInfoOffset: false);
                 ReapplyRightBottomShift(false);
             }
         }
@@ -167,9 +161,7 @@ namespace Panoptes.Presentation.UI.HUD
                 _initialPanelStateRoutine = null;
             }
 
-            UnsubscribeRecipePanelEvents();
             StopShiftRoutine();
-            StopPanelSwitchRoutine();
         }
 
         private void ResolveReferences()
@@ -182,11 +174,6 @@ namespace Panoptes.Presentation.UI.HUD
             if (unitInfoPanelController == null)
             {
                 unitInfoPanelController = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
-            }
-
-            if (recipeSynthesisPanel == null)
-            {
-                recipeSynthesisPanel = SceneObjectFinder.FindFirstSceneObject<RecipeSynthesisPanel>();
             }
 
             if (nextStageButtonRect == null && autoFindNextStageButton)
@@ -204,7 +191,6 @@ namespace Panoptes.Presentation.UI.HUD
                 turnPanelRect = SceneObjectFinder.FindSceneRectByName("TrunPanel", "TurnPanel");
             }
 
-            SubscribeRecipePanelEvents();
         }
 
         private void SubscribeInputEvents()
@@ -252,11 +238,7 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureRightGroupAnimationCurve();
             CacheRightGroupBasePositionIfNeeded();
             CloseBuildCatalog(resetUnitInfoOffset: false);
-
-            if (hideRecipePanelOnStart && recipeSynthesisPanel != null)
-            {
-                recipeSynthesisPanel.Hide();
-            }
+            CloseRecipeSynthesis(resetUnitInfoOffset: false);
 
             if (forceUnitInfoHidden && unitInfoPanelController != null)
             {
@@ -266,64 +248,42 @@ namespace Panoptes.Presentation.UI.HUD
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        private void SubscribeRecipePanelEvents()
-        {
-            if (ReferenceEquals(_subscribedRecipePanel, recipeSynthesisPanel))
-            {
-                return;
-            }
-
-            UnsubscribeRecipePanelEvents();
-            if (recipeSynthesisPanel == null)
-            {
-                return;
-            }
-
-            recipeSynthesisPanel.VisibilityChanged += OnRecipePanelVisibilityChanged;
-            _subscribedRecipePanel = recipeSynthesisPanel;
-        }
-
-        private void UnsubscribeRecipePanelEvents()
-        {
-            if (_subscribedRecipePanel == null)
-            {
-                return;
-            }
-
-            _subscribedRecipePanel.VisibilityChanged -= OnRecipePanelVisibilityChanged;
-            _subscribedRecipePanel = null;
-        }
-
-        private void OnRecipePanelVisibilityChanged(bool _)
-        {
-            ReapplyRightBottomShift(false);
-        }
-
         private bool IsBuildCatalogVisible()
         {
             return _managementPanelVisibilityStore != null &&
                    _managementPanelVisibilityStore.IsVisible(ManagementPanelId.BuildCatalog);
         }
 
+        private bool IsRecipeSynthesisVisible()
+        {
+            return _managementPanelVisibilityStore != null &&
+                   _managementPanelVisibilityStore.IsVisible(ManagementPanelId.RecipeSynthesis);
+        }
+
         private bool IsAnyDerivedPanelVisible()
         {
-            return IsBuildCatalogVisible() || (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible);
+            return IsBuildCatalogVisible() || IsRecipeSynthesisVisible();
         }
 
         private void UpdateDerivedPanelVisibilitySnapshot()
         {
             _lastBuildCatalogVisible = IsBuildCatalogVisible();
-            _lastRecipePanelVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
+            _lastRecipePanelVisible = IsRecipeSynthesisVisible();
         }
 
         private void SyncDerivedPanelStateFromVisibility()
         {
             var buildVisible = IsBuildCatalogVisible();
-            var recipeVisible = recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible;
+            var recipeVisible = IsRecipeSynthesisVisible();
 
             if (!buildVisible)
             {
                 _buildCatalogContextStore?.Clear();
+            }
+
+            if (!recipeVisible)
+            {
+                _recipeSynthesisContextStore?.Clear();
             }
 
             var changed = buildVisible != _lastBuildCatalogVisible || recipeVisible != _lastRecipePanelVisible;
@@ -346,6 +306,7 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _buildCatalogContextStore.SetCityCoreNode(nodeId);
+            _recipeSynthesisContextStore?.Clear();
             _managementPanelVisibilityStore.Show(ManagementPanelId.BuildCatalog);
             ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
@@ -353,51 +314,22 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void OpenRecipePanelForBuilding(string nodeId, string buildingType, string ownerId)
         {
-            if (recipeSynthesisPanel == null)
+            if (_managementPanelVisibilityStore == null || _recipeSynthesisContextStore == null)
             {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] RecipeSynthesisPanel missing.");
+                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Recipe synthesis stores are missing.");
                 return;
             }
 
-            recipeSynthesisPanel.OpenForBuilding(nodeId, buildingType, ownerId);
-            var panelRect = recipeSynthesisPanel.transform as RectTransform;
-            if (panelRect != null)
-            {
-                panelRect.SetAsLastSibling();
-            }
-
+            _recipeSynthesisContextStore.SetContext(nodeId, buildingType, ownerId);
+            _buildCatalogContextStore?.Clear();
+            _managementPanelVisibilityStore.Show(ManagementPanelId.RecipeSynthesis);
             ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        private IEnumerator SwitchFromRecipeToBuild(string nodeId)
-        {
-            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
-            {
-                recipeSynthesisPanel.Hide();
-                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, GetRecipePanelSlideDuration()));
-            }
-
-            OpenBuildCatalogForNode(nodeId);
-            _panelSwitchRoutine = null;
-        }
-
-        private IEnumerator SwitchFromBuildToRecipe(string nodeId, string buildingType, string ownerId)
-        {
-            if (IsBuildCatalogVisible())
-            {
-                CloseBuildCatalog(resetUnitInfoOffset: false);
-            }
-
-            OpenRecipePanelForBuilding(nodeId, buildingType, ownerId);
-            _panelSwitchRoutine = null;
-            yield break;
-        }
-
         private void CloseAllDerivedPanels(bool resetUnitInfoOffset)
         {
-            StopPanelSwitchRoutine();
-            recipeSynthesisPanel?.Hide();
+            CloseRecipeSynthesis(resetUnitInfoOffset: false);
             CloseBuildCatalog(resetUnitInfoOffset: false);
 
             if (resetUnitInfoOffset)
@@ -417,17 +349,10 @@ namespace Panoptes.Presentation.UI.HUD
 
             _activeUnitInfoNodeId = nodeId;
             ResolveReferences();
-            StopPanelSwitchRoutine();
 
             if (IsBuildCatalogVisible())
             {
                 CloseBuildCatalog(resetUnitInfoOffset: true);
-                return;
-            }
-
-            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
-            {
-                _panelSwitchRoutine = StartCoroutine(SwitchFromRecipeToBuild(nodeId));
                 return;
             }
 
@@ -443,22 +368,10 @@ namespace Panoptes.Presentation.UI.HUD
 
             _activeUnitInfoNodeId = context.NodeId;
             ResolveReferences();
-            StopPanelSwitchRoutine();
 
-            if (recipeSynthesisPanel != null && recipeSynthesisPanel.IsVisible)
+            if (IsRecipeSynthesisVisible())
             {
-                recipeSynthesisPanel.Hide();
-                ReapplyRightBottomShift(false);
-                UpdateDerivedPanelVisibilitySnapshot();
-                return;
-            }
-
-            if (IsBuildCatalogVisible())
-            {
-                _panelSwitchRoutine = StartCoroutine(SwitchFromBuildToRecipe(
-                    context.NodeId,
-                    context.BuildingTypeId,
-                    context.OwnerId));
+                CloseRecipeSynthesis(resetUnitInfoOffset: true);
                 return;
             }
 
@@ -501,6 +414,23 @@ namespace Panoptes.Presentation.UI.HUD
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
+        private void CloseRecipeSynthesis(bool resetUnitInfoOffset)
+        {
+            if (IsRecipeSynthesisVisible())
+            {
+                _managementPanelVisibilityStore.Hide();
+            }
+
+            _recipeSynthesisContextStore?.Clear();
+
+            if (resetUnitInfoOffset)
+            {
+                ReapplyRightBottomShift(false);
+            }
+
+            UpdateDerivedPanelVisibilitySnapshot();
+        }
+
         private void ReapplyRightBottomShift(bool immediate)
         {
             ApplyRightBottomShift(ResolveRecipeShiftXWhenVisible(), immediate);
@@ -508,26 +438,12 @@ namespace Panoptes.Presentation.UI.HUD
 
         private float ResolveRecipeShiftXWhenVisible()
         {
-            if (recipeSynthesisPanel == null || !recipeSynthesisPanel.IsVisible)
+            if (!IsRecipeSynthesisVisible())
             {
                 return 0f;
             }
 
-            var fallback = Mathf.Abs(recipePanelShiftXWhenOpen);
-            if (!useRecipePanelWidthForShift)
-            {
-                return fallback;
-            }
-
-            var panelWidth = recipeSynthesisPanel.GetPanelWidth();
-            if (panelWidth <= 1f)
-            {
-                return fallback;
-            }
-
-            var shiftFactor = Mathf.Max(1.05f, recipePanelWidthShiftFactor);
-            var resolved = panelWidth * shiftFactor + recipePanelWidthShiftExtra;
-            return Mathf.Max(1f, resolved);
+            return Mathf.Max(1f, Mathf.Abs(recipePanelShiftXWhenOpen));
         }
 
         private void ApplyRightBottomShift(float shiftX, bool immediate)
@@ -639,20 +555,5 @@ namespace Panoptes.Presentation.UI.HUD
             _nextStageShiftRoutine = null;
         }
 
-        private void StopPanelSwitchRoutine()
-        {
-            if (_panelSwitchRoutine == null)
-            {
-                return;
-            }
-
-            StopCoroutine(_panelSwitchRoutine);
-            _panelSwitchRoutine = null;
-        }
-
-        private float GetRecipePanelSlideDuration()
-        {
-            return recipeSynthesisPanel != null ? recipeSynthesisPanel.GetSlideDuration() : 0.22f;
-        }
     }
 }
