@@ -697,6 +697,7 @@ namespace Panoptes.Tests.EditMode.Composition
         {
             var roots = new[]
             {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/NodeView.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/UnitView.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/BuildingView.cs")
             };
@@ -713,16 +714,50 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(offenders, Is.Empty, "Runtime map views must receive display context from MapRenderer, not legacy caches.");
 
             var renderer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"));
-            var nodeView = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/NodeView.cs"));
-            var unitView = File.ReadAllText(roots[0]);
-            var buildingView = File.ReadAllText(roots[1]);
+            var nodeView = File.ReadAllText(roots[0]);
+            var unitView = File.ReadAllText(roots[1]);
+            var buildingView = File.ReadAllText(roots[2]);
             Assert.That(renderer, Does.Contain("GetLocalPlayerId()"));
             Assert.That(renderer, Does.Contain("tile.SetLocalPlayerId(GetLocalPlayerId())"));
+            Assert.That(renderer, Does.Contain("tile.SetBuildingCatalog(GetBuildingCatalog())"));
             Assert.That(renderer, Does.Contain("instance.SetLocalPlayerId(GetLocalPlayerId())"));
             Assert.That(nodeView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
+            Assert.That(nodeView, Does.Contain("SetBuildingCatalog(IReadOnlyDictionary<string, CatalogBuildingDto> buildingCatalog)"));
             Assert.That(nodeView, Does.Contain("_buildingInstance.SetLocalPlayerId(_localPlayerId)"));
             Assert.That(unitView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
             Assert.That(buildingView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
+        }
+
+        [Test]
+        public void MapStaticCatalogSources_ShouldFlowThroughStoreReadModel()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapSourceResolver.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderTokens.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapNodeInfoProxyFactory.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/Game/GameSceneController.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "StaticCatalogCache",
+                "GameStateCache",
+                "PlanningDraftCache",
+                MapRendererSingletonToken,
+                NetworkManagerSingletonToken,
+                ProtocolNamespaceToken);
+
+            Assert.That(offenders, Is.Empty, "Migrated map/UI catalog reads must flow through Store read models.");
+
+            var state = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Core/Application/Stores/StaticCatalogState.cs"));
+            var hydrator = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Core/Application/Stores/StaticCatalogStoreHydrator.cs"));
+            var renderer = File.ReadAllText(roots[0]);
+            Assert.That(state, Does.Contain("CatalogMapRuntimeBundleDto DefaultMap"));
+            Assert.That(hydrator, Does.Contain("defaultMap: MapRuntimeBundle(defaultMap)"));
+            Assert.That(renderer, Does.Contain("_staticCatalogStore?.Snapshot?.DefaultMap"));
         }
 
         [Test]
