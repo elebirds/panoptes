@@ -231,17 +231,6 @@ namespace Panoptes.Presentation.Map
                 go.AddComponent<MapPlanningInputController>();
             }
 
-            var cameraAnchor = GameObject.Find("CameraAnchor");
-            if (cameraAnchor == null)
-            {
-                cameraAnchor = new GameObject("CameraAnchor");
-            }
-
-            if (cameraAnchor.GetComponent<CinemachineMapCameraController>() == null)
-            {
-                cameraAnchor.AddComponent<CinemachineMapCameraController>();
-            }
-
             var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
             if (unitInfoPanel == null)
             {

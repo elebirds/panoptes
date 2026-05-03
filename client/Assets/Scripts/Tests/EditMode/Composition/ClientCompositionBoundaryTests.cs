@@ -61,6 +61,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnHUD>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameChatPanelController>"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlementPlaybackController>"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<CinemachineMapCameraController>"));
             Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<SettlementTimeline>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
@@ -363,6 +364,40 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<SettlementPlaybackController>"));
             Assert.That(gameScene, Does.Contain("SettlementPlaybackController"));
             Assert.That(gameScene, Does.Contain("8d4f90e3c7b24a3ea9822cf7d9709b54"));
+        }
+
+        [Test]
+        public void CinemachineMapCameraController_ShouldUseInjectedMapRenderer()
+        {
+            var cameraPath = ResolveAssetPath("Scripts/Runtime/Presentation/Map/CinemachineMapCameraController.cs");
+            var rendererPath = ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs");
+            var offenders = FindTokenOffenders(
+                new[] { cameraPath },
+                "*.cs",
+                ProtocolNamespaceToken,
+                NetworkManagerSingletonToken,
+                MapRendererSingletonToken,
+                SceneObjectFinderMapRendererToken,
+                FindAnyMapRendererToken,
+                FindFirstMapRendererToken,
+                FindObjectOfTypeMapRendererToken);
+
+            Assert.That(offenders, Is.Empty, "Strategic camera must receive MapRenderer from VContainer instead of singleton or scene lookup.");
+
+            var camera = File.ReadAllText(cameraPath);
+            var renderer = File.ReadAllText(rendererPath);
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var gameScene = File.ReadAllText(ResolveAssetPath("Scenes/Game.unity"));
+
+            Assert.That(camera, Does.Contain("[Inject]"));
+            Assert.That(camera, Does.Contain("MapRenderer _mapRenderer"));
+            Assert.That(camera, Does.Contain("ConfigureMapRenderer(mapRenderer)"));
+            Assert.That(camera, Does.Contain("_mapRenderer.CameraContextReady +="));
+            Assert.That(renderer, Does.Not.Contain("AddComponent<CinemachineMapCameraController>"));
+            Assert.That(renderer, Does.Not.Contain("GameObject.Find(\"CameraAnchor\")"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<CinemachineMapCameraController>"));
+            Assert.That(gameScene, Does.Contain("CameraAnchor"));
+            Assert.That(gameScene, Does.Contain("CinemachineMapCameraController"));
         }
 
         [Test]

@@ -37,6 +37,8 @@ namespace Panoptes.Tests.EditMode.Map
                 "MapRenderer 不应继续自动补挂 TopDownCameraController。");
             Assert.That(content, Does.Not.Contain("CameraSafeAreaBootstrapper"),
                 "MapRenderer 不应继续自动补挂 CameraSafeAreaBootstrapper。");
+            Assert.That(content, Does.Not.Contain("AddComponent<CinemachineMapCameraController>"),
+                "CinemachineMapCameraController 应由场景和 GameLifetimeScope 拥有，不应由 MapRenderer 动态补挂。");
         }
 
         [Test]
