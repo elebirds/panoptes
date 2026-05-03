@@ -7482,6 +7482,7 @@ GameObject:
   - component: {fileID: 1721835976}
   - component: {fileID: 1721835975}
   - component: {fileID: 1721835974}
+  - component: {fileID: 1721835979}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -7501,6 +7502,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d8f6318897744d8936c5555fbe52360, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.Lobby.LobbySceneController
+--- !u!114 &1721835979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721835973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 343b8d978f1a4a3a9e315e85a43f2d63, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Composition.LobbyLifetimeScope
+  parentReference:
+    TypeName:
+  autoRun: 1
+  autoInjectGameObjects: []
 --- !u!114 &1721835975
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -13,6 +13,7 @@ using Panoptes.Presentation.UI.Common;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Panoptes.Presentation.UI.Auth
 {
@@ -25,14 +26,28 @@ namespace Panoptes.Presentation.UI.Auth
         public Button registerButton;
         
         private AuthService _authService;
+        private SessionManager _sessionManager;
+        private AppManager _appManager;
+        private ErrorToast _errorToast;
 
+        [Inject]
+        public void Construct(
+            AuthService authService,
+            SessionManager sessionManager,
+            AppManager appManager,
+            ErrorToast errorToast)
+        {
+            _authService = authService;
+            _sessionManager = sessionManager;
+            _appManager = appManager;
+            _errorToast = errorToast;
+        }
 
         private string Username => usernameInput != null ? usernameInput.text.Trim() : string.Empty;
         private string Password => passwordInput != null ? passwordInput.text : string.Empty;
 
         private void Awake()
         {
-            _authService = new AuthService();
             loginButton.onClick.AddListener(OnClickLogin);
             registerButton.onClick.AddListener(OnClickRegister);
         }
@@ -60,9 +75,9 @@ namespace Panoptes.Presentation.UI.Auth
 
         private void ShowTip(string message, bool success)
         {
-            if (ErrorToast.Instance != null)
+            if (_errorToast != null)
             {
-                ErrorToast.Instance.Show(message, success);
+                _errorToast.Show(message, success);
                 return;
             }
 
@@ -91,21 +106,21 @@ namespace Panoptes.Presentation.UI.Auth
                     return;
                 }
 
-                if (SessionManager.Instance == null)
+                if (_sessionManager == null)
                 {
                     ShowTip("系统未初始化", false);
                     return;
                 }
 
-                SessionManager.Instance.SetSession(result.Token, result.PlayerID, result.Username);
+                _sessionManager.SetSession(result.Token, result.PlayerID, result.Username);
 
-                if (AppManager.Instance == null)
+                if (_appManager == null)
                 {
                     ShowTip("系统未初始化", false);
                     return;
                 }
 
-                AppManager.Instance.TransitionTo(AppState.Lobby);
+                _appManager.TransitionTo(AppState.Lobby);
             }
             catch (Exception e)
             {
