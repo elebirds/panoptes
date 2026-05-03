@@ -10,8 +10,14 @@ namespace Panoptes.Presentation.Map
     {
         private readonly Dictionary<string, int> _knownUnitHpByUnitId = new();
         private readonly Dictionary<string, float> _lastDamagePopupTimeByUnitId = new();
+        private MapRenderer _mapRenderer;
 
         public int KnownUnitCount => _knownUnitHpByUnitId.Count;
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+        }
 
         public void Clear()
         {
@@ -61,7 +67,7 @@ namespace Panoptes.Presentation.Map
 
             if (!_knownUnitHpByUnitId.TryGetValue(unitId, out var hpBefore))
             {
-                var map = MapRenderer.Instance;
+                var map = _mapRenderer;
                 if (map != null && map.TryGetUnitView(unitId, out var unitView) && unitView != null)
                 {
                     hpBefore = Mathf.Max(0, unitView.HitPoints);
@@ -102,7 +108,7 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || !map.TryGetUnitView(normalizedUnitId, out var unitView) || unitView == null)
             {
                 return;

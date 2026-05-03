@@ -8,6 +8,14 @@ namespace Panoptes.Tests.EditMode.Composition
 {
     public sealed class ClientCompositionBoundaryTests
     {
+        private static readonly string ProtocolNamespaceToken = Token("Panoptes", ".Protocol");
+        private static readonly string NetworkManagerSingletonToken = Token("NetworkManager", ".Instance");
+        private static readonly string MapRendererSingletonToken = Token("MapRenderer", ".Instance");
+        private static readonly string SceneObjectFinderMapRendererToken = Token("SceneObjectFinder.FindFirstSceneObject", "<MapRenderer>");
+        private static readonly string FindAnyMapRendererToken = Token("FindAnyObjectByType", "<MapRenderer>");
+        private static readonly string FindFirstMapRendererToken = Token("FindFirstObjectByType", "<MapRenderer>");
+        private static readonly string FindObjectOfTypeMapRendererToken = Token("FindObjectOfType", "<MapRenderer>");
+
         [Test]
         public void CompositionRuntime_ShouldNotUseLegacySingletonLookup()
         {
@@ -158,11 +166,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "Migrated UnitInfo ViewModel/Binder must consume final stores and services only.");
@@ -197,11 +205,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 "ActionLock.",
                 ".Instance");
 
@@ -228,11 +236,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 "TechTreePanelController",
                 ".Instance");
 
@@ -255,17 +263,16 @@ namespace Panoptes.Tests.EditMode.Composition
                 ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/BuildingConstructionOverlayController.cs")
             };
 
-            var mapRendererSingletonToken = "MapRenderer" + ".Instance";
             var mapPlanningInputSingletonToken = "MapPlanningInputController" + ".Instance";
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
-                mapRendererSingletonToken,
+                NetworkManagerSingletonToken,
+                MapRendererSingletonToken,
                 mapPlanningInputSingletonToken);
 
             Assert.That(offenders, Is.Empty, "HUD overlay controllers must consume final Stores and injected MapRenderer instead of legacy singleton/cache paths.");
@@ -299,9 +306,9 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 new[] { rendererPath, cameraContextBuilderPath },
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
-                "NetworkManager.Instance");
+                NetworkManagerSingletonToken);
 
             Assert.That(offenders, Is.Empty, "MapRenderer must render authoritative game state from GameStateStore, not Protocol or legacy cache paths.");
 
@@ -326,11 +333,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 new[] { playbackPath },
                 "*.cs",
-                "Panoptes.Protocol",
-                "NetworkManager.Instance",
+                ProtocolNamespaceToken,
+                NetworkManagerSingletonToken,
                 "GameStateCache",
                 "OnTurnSettled",
-                "MapRenderer.Instance",
+                MapRendererSingletonToken,
                 "EnsureInstance");
 
             Assert.That(offenders, Is.Empty, "Settlement playback must consume SettlementStore and injected MapRenderer only.");
@@ -394,12 +401,12 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
                 "ActionLock.",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 "TechTreePanelController",
                 ".Instance");
 
@@ -429,11 +436,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "Migrated TurnSummary ViewModel/Binder must consume final stores only.");
@@ -467,11 +474,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 ".Instance");
 
             Assert.That(offenders, Is.Empty, "Minister report final UI slice must render PlanningDraftStore through ViewModel/Binder only.");
@@ -514,11 +521,11 @@ namespace Panoptes.Tests.EditMode.Composition
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                "Panoptes.Protocol",
+                ProtocolNamespaceToken,
                 "GameStateCache",
                 "PlanningDraftCache",
                 "StaticCatalogCache",
-                "NetworkManager.Instance",
+                NetworkManagerSingletonToken,
                 ".Instance",
                 "UnityEngine.UI",
                 "TMPro");
@@ -585,20 +592,21 @@ namespace Panoptes.Tests.EditMode.Composition
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePreviewOverlayController.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MovePathOverlayController.cs"),
                 ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPendingDeployGhostController.cs"),
-                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapTerritoryHighlightPresenter.cs")
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapTerritoryHighlightPresenter.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/InputAdapter/MapSelectionSurface.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapUnitDamagePopupPresenter.cs")
             };
 
-            var mapRendererSingletonToken = "MapRenderer" + ".Instance";
             var offenders = FindTokenOffenders(
                 roots,
                 "*.cs",
-                mapRendererSingletonToken,
-                "SceneObjectFinder.FindFirstSceneObject<MapRenderer>",
-                "FindAnyObjectByType<MapRenderer>",
-                "FindFirstObjectByType<MapRenderer>",
-                "FindObjectOfType<MapRenderer>",
-                "NetworkManager.Instance",
-                "Panoptes.Protocol");
+                MapRendererSingletonToken,
+                SceneObjectFinderMapRendererToken,
+                FindAnyMapRendererToken,
+                FindFirstMapRendererToken,
+                FindObjectOfTypeMapRendererToken,
+                NetworkManagerSingletonToken,
+                ProtocolNamespaceToken);
 
             Assert.That(offenders, Is.Empty, "Map planning input presenters must receive MapRenderer explicitly instead of looking up singleton or scene fallbacks.");
 
@@ -609,6 +617,9 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(controller, Does.Contain("SubscribeStoreEvents();"));
             Assert.That(controller, Does.Contain("_mapRenderer"));
             Assert.That(controller, Does.Contain("[Inject]"));
+            Assert.That(controller, Does.Contain("new MapSelectionSurface(_pointerInput"));
+            Assert.That(controller, Does.Contain("selectionSurface.SetMapRenderer(mapRenderer)"));
+            Assert.That(controller, Does.Contain("_unitDamagePopups.SetMapRenderer(mapRenderer)"));
 
             var buildPlacementSession = File.ReadAllText(roots[1]);
             var previewPresentation = File.ReadAllText(roots[2]);
@@ -616,6 +627,8 @@ namespace Panoptes.Tests.EditMode.Composition
             var pathOverlay = File.ReadAllText(roots[4]);
             var pendingDeploy = File.ReadAllText(roots[5]);
             var territoryHighlight = File.ReadAllText(roots[6]);
+            var selectionSurface = File.ReadAllText(roots[7]);
+            var damagePopups = File.ReadAllText(roots[8]);
             Assert.That(buildPlacementSession, Does.Contain("MapRenderer _mapRenderer"));
             Assert.That(buildPlacementSession, Does.Contain("MapRenderer mapRenderer"));
             Assert.That(previewPresentation, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
@@ -629,6 +642,10 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(pathOverlay, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
             Assert.That(pendingDeploy, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
             Assert.That(territoryHighlight, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(selectionSurface, Does.Contain("MapRenderer _mapRenderer"));
+            Assert.That(selectionSurface, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+            Assert.That(damagePopups, Does.Contain("MapRenderer _mapRenderer"));
+            Assert.That(damagePopups, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
         }
 
         [Test]
@@ -651,6 +668,11 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(sceneContent, Does.Contain("m_Name: Game Composition"));
             Assert.That(sceneContent, Does.Contain($"guid: {scriptGuid}"));
             Assert.That(sceneContent, Does.Contain("Panoptes.Presentation.Composition.GameLifetimeScope"));
+        }
+
+        private static string Token(params string[] parts)
+        {
+            return string.Concat(parts);
         }
 
         private static List<string> FindTokenOffenders(IEnumerable<string> roots, string searchPattern, params string[] forbiddenTokens)

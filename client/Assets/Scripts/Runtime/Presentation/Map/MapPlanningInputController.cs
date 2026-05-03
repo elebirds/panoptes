@@ -218,7 +218,7 @@ namespace Panoptes.Presentation.Map
 
             ConfigureMapRenderer(_mapRenderer);
             _movePreviewPresentation.Ensure(transform);
-            _selectionSurface = new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance);
+            _selectionSurface = new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance, _mapRenderer);
             ConfigureBuildPlacementSession();
         }
 
@@ -2064,9 +2064,16 @@ namespace Panoptes.Presentation.Map
         private void ConfigureMapRenderer(MapRenderer mapRenderer)
         {
             _mapRenderer = mapRenderer;
+            if (_selectionSurface is MapSelectionSurface selectionSurface)
+            {
+                selectionSurface.SetMapRenderer(mapRenderer);
+            }
+
+            _unitDamagePopups.SetMapRenderer(mapRenderer);
             _movePreviewPresentation.SetMapRenderer(mapRenderer);
             _pendingDeployGhosts.SetMapRenderer(mapRenderer);
             _territoryHighlights.SetMapRenderer(mapRenderer);
+            ConfigureBuildPlacementSession();
         }
 
         private void ConfigureBuildPlacementSession()
@@ -2300,7 +2307,7 @@ namespace Panoptes.Presentation.Map
 
         private void EnsureSelectionSurface()
         {
-            _selectionSurface ??= new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance);
+            _selectionSurface ??= new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance, _mapRenderer);
         }
         #endregion
     }
