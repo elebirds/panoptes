@@ -29,6 +29,11 @@ namespace Panoptes.Presentation.Composition
             MessageDispatcher messageDispatcher,
             SessionManager sessionManager,
             ConfigCache configCache,
+            ClientRuntimeConfigCache clientRuntimeConfigCache,
+            StaticCatalogCache staticCatalogCache,
+            RoomCache roomCache,
+            GameStateCache gameStateCache,
+            GameChatCache gameChatCache,
             ErrorToast errorToast,
             ConfirmDialog confirmDialog)
         {
@@ -57,6 +62,31 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(configCache));
             }
 
+            if (clientRuntimeConfigCache == null)
+            {
+                throw new ArgumentNullException(nameof(clientRuntimeConfigCache));
+            }
+
+            if (staticCatalogCache == null)
+            {
+                throw new ArgumentNullException(nameof(staticCatalogCache));
+            }
+
+            if (roomCache == null)
+            {
+                throw new ArgumentNullException(nameof(roomCache));
+            }
+
+            if (gameStateCache == null)
+            {
+                throw new ArgumentNullException(nameof(gameStateCache));
+            }
+
+            if (gameChatCache == null)
+            {
+                throw new ArgumentNullException(nameof(gameChatCache));
+            }
+
             if (errorToast == null)
             {
                 throw new ArgumentNullException(nameof(errorToast));
@@ -67,11 +97,26 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(confirmDialog));
             }
 
+            appManager.UseProjectServices(
+                networkManager,
+                messageDispatcher,
+                sessionManager,
+                clientRuntimeConfigCache,
+                configCache,
+                staticCatalogCache,
+                roomCache,
+                gameStateCache,
+                gameChatCache);
             builder.RegisterComponent(appManager).AsSelf();
             builder.RegisterComponent(networkManager).AsSelf();
             builder.RegisterComponent(messageDispatcher).AsSelf();
             builder.RegisterComponent(sessionManager).AsSelf();
             builder.RegisterComponent(configCache).AsSelf();
+            builder.RegisterComponent(clientRuntimeConfigCache).AsSelf();
+            builder.RegisterComponent(staticCatalogCache).AsSelf();
+            builder.RegisterComponent(roomCache).AsSelf();
+            builder.RegisterComponent(gameStateCache).AsSelf();
+            builder.RegisterComponent(gameChatCache).AsSelf();
             builder.RegisterComponent(errorToast).AsSelf();
             builder.RegisterComponent(confirmDialog).AsSelf();
             builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
