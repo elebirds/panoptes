@@ -38,6 +38,12 @@ namespace Panoptes.Presentation.Planning.Feedback
 
         private readonly Dictionary<string, GameObject> _previewsByUnitId = new();
         private Material _proxyMaterial;
+        private MapRenderer _mapRenderer;
+
+        public void SetMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+        }
 
         public void CreateOrUpdate(string unitId, string targetNodeId, Settings settings, MonoBehaviour coroutineHost)
         {
@@ -46,7 +52,7 @@ namespace Panoptes.Presentation.Planning.Feedback
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;

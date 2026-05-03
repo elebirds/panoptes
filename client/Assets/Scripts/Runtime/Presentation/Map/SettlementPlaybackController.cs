@@ -10,7 +10,6 @@ using System;
 using System.Collections;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Animation;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -97,8 +96,6 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
-            EnsureAnimationQueue();
-
             for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
             {
                 var section = settlement.Sections[sectionIndex];
@@ -514,17 +511,6 @@ namespace Panoptes.Presentation.Map
         private static bool CanShowNodeCue(NodeView node)
         {
             return node != null && node.IsCurrentlyVisible;
-        }
-
-        private static void EnsureAnimationQueue()
-        {
-            if (AnimationQueue.Instance != null)
-            {
-                return;
-            }
-
-            var go = new GameObject("AnimationQueue");
-            go.AddComponent<AnimationQueue>();
         }
 
         private void EnsureDamagePopupController()

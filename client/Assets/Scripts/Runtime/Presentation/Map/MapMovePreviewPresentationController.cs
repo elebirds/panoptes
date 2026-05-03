@@ -16,6 +16,7 @@ namespace Panoptes.Presentation.Map
         public void SetMapRenderer(MapRenderer mapRenderer)
         {
             _mapRenderer = mapRenderer;
+            _ghostPresenter.SetMapRenderer(mapRenderer);
             _pathOverlay?.SetMapRenderer(mapRenderer);
             _previewOverlay?.SetMapRenderer(mapRenderer);
         }

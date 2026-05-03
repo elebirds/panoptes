@@ -5,6 +5,7 @@ using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Presentation.Binders.UiToolkit;
+using Panoptes.Presentation.Animation;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.UI.Game;
@@ -79,6 +80,7 @@ namespace Panoptes.Presentation.Composition
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
+            builder.RegisterComponentOnNewGameObject<AnimationQueue>(Lifetime.Singleton, "AnimationQueue");
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
             builder.RegisterComponentInHierarchy<CinemachineMapCameraController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();

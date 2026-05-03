@@ -144,6 +144,7 @@ namespace Panoptes.Presentation.Map
         private readonly MapAttackRangePresenter _attackRangePresenter = new();
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
         private PlanningIntentService _planningIntentService;
+        private AnimationQueue _animationQueue;
         private MapRenderer _mapRenderer;
         private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
@@ -183,6 +184,7 @@ namespace Panoptes.Presentation.Map
             PlanningToolService planningToolService,
             SelectionService selectionService,
             PlanningToolViewModel planningToolViewModel,
+            AnimationQueue animationQueue,
             MapRenderer mapRenderer,
             StaticCatalogStore staticCatalogStore,
             GameStateStore gameStateStore,
@@ -191,6 +193,7 @@ namespace Panoptes.Presentation.Map
             GameplayFeedbackStore feedbackStore)
         {
             _planningIntentService = planningIntentService;
+            _animationQueue = animationQueue;
             ConfigureMapRenderer(mapRenderer);
             _staticCatalogStore = staticCatalogStore;
             _buildingCatalogResolver.Configure(staticCatalogStore);
@@ -430,16 +433,9 @@ namespace Panoptes.Presentation.Map
 
             if (enqueue)
             {
-                var queue = AnimationQueue.Instance;
-                if (queue == null)
+                if (_animationQueue != null)
                 {
-                    var go = new GameObject("AnimationQueue");
-                    queue = go.AddComponent<AnimationQueue>();
-                }
-
-                if (queue != null)
-                {
-                    queue.EnqueueUnitMove(unitId, targetNodeId, followCamera, pathNodeIds);
+                    _animationQueue.EnqueueUnitMove(unitId, targetNodeId, followCamera, pathNodeIds);
                     return;
                 }
             }

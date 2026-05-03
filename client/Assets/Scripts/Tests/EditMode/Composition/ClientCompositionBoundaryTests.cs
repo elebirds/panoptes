@@ -761,6 +761,34 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void MapAnimationAndPreview_ShouldReceiveRendererFromComposition()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Animation/AnimationQueue.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Planning/Feedback/MovePreviewGhostPresenter.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "AnimationQueue.Instance",
+                MapRendererSingletonToken,
+                "new GameObject(\"AnimationQueue\")");
+
+            Assert.That(offenders, Is.Empty, "Animation playback and move previews must receive scene dependencies from composition.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var queue = File.ReadAllText(roots[0]);
+            var presenter = File.ReadAllText(roots[1]);
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<AnimationQueue>"));
+            Assert.That(queue, Does.Contain("Construct(MapRenderer mapRenderer)"));
+            Assert.That(presenter, Does.Contain("SetMapRenderer(MapRenderer mapRenderer)"));
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");
