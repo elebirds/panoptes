@@ -314,16 +314,24 @@ namespace Panoptes.Tests.EditMode.Composition
                 "*.cs",
                 ProtocolNamespaceToken,
                 "GameStateCache",
+                "AppManager.Instance",
+                "ConfigCache.Instance",
+                "ConfigCache.EnsureInstance",
+                "UnitCache.Instance",
                 NetworkManagerSingletonToken);
 
-            Assert.That(offenders, Is.Empty, "MapRenderer must render authoritative game state from GameStateStore, not Protocol or legacy cache paths.");
+            Assert.That(offenders, Is.Empty, "MapRenderer must receive runtime dependencies from VContainer and render authoritative game state from GameStateStore.");
 
             var mapRenderer = File.ReadAllText(rendererPath);
             var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
             Assert.That(mapRenderer, Does.Contain("GameStateStore"));
+            Assert.That(mapRenderer, Does.Contain("AppManager appManager"));
+            Assert.That(mapRenderer, Does.Contain("ConfigCache configCache"));
+            Assert.That(mapRenderer, Does.Contain("UnitCache unitCache"));
             Assert.That(mapRenderer, Does.Contain("[Inject]"));
             Assert.That(mapRenderer, Does.Contain(".State.Subscribe"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<UnitCache>"));
         }
 
         [Test]
