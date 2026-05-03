@@ -7,28 +7,14 @@
  *************************************************/
 
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Panoptes.Presentation.Map
 {
-    public sealed class UnitCache : MonoBehaviour
+    public sealed class UnitCache
     {
-        public static UnitCache Instance { get; private set; }
-
         private readonly Dictionary<string, UnitView> _unitViews = new();
 
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-        }
 
         public void Register(UnitView unitView)
         {

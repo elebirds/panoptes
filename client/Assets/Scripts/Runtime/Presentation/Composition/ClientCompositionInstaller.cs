@@ -101,9 +101,9 @@ namespace Panoptes.Presentation.Composition
             builder.Register<LocalGameSessionResetService>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreHydrationHelper>(Lifetime.Singleton).AsSelf();
             builder.Register<StoreMessageHydrator>(Lifetime.Singleton).AsSelf();
+            builder.Register<UnitCache>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
-            builder.RegisterComponentOnNewGameObject<UnitCache>(Lifetime.Singleton, "UnitCache");
             builder.RegisterComponentOnNewGameObject<AnimationQueue>(Lifetime.Singleton, "AnimationQueue");
             builder.RegisterComponentOnNewGameObject<DamageNumberPopupController>(Lifetime.Singleton, "DamageNumberPopupController");
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
