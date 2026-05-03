@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Panoptes.Presentation.Map;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.Animation
 {
@@ -24,25 +25,18 @@ namespace Panoptes.Presentation.Animation
             public List<string> pathNodeIds;
         }
 
-        public static AnimationQueue Instance { get; private set; }
-
         [Header("Unit Move")]
         [SerializeField] private float moveDuration = 0.35f;
         [SerializeField] private bool followCameraOnMove = true;
 
         private readonly Queue<UnitMoveCommand> _unitMoveQueue = new();
+        private MapRenderer _mapRenderer;
         private bool _isPlayingUnitMoves;
 
-        private void Awake()
+        [Inject]
+        private void Construct(MapRenderer mapRenderer)
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            _mapRenderer = mapRenderer;
         }
 
         public void EnqueueUnitMove(string unitId, string targetNodeId, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
@@ -81,7 +75,7 @@ namespace Panoptes.Presentation.Animation
 
         private IEnumerator PlaySingleUnitMove(UnitMoveCommand cmd)
         {
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 yield break;
