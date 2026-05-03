@@ -106,6 +106,7 @@ namespace Panoptes.Presentation.Map
         private readonly MapCameraContextBuilder _cameraContextBuilder = new();
         private StaticCatalogCache _catalogCache;
         private ConfigCache _configCache;
+        private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
@@ -133,9 +134,10 @@ namespace Panoptes.Presentation.Map
         }
 
         [Inject]
-        private void Construct(GameStateStore gameStateStore)
+        private void Construct(GameStateStore gameStateStore, StaticCatalogStore staticCatalogStore)
         {
             _gameStateStore = gameStateStore;
+            _staticCatalogStore = staticCatalogStore;
             _latestGameState = _gameStateStore?.Snapshot ?? new GameStateStoreState();
             if (isActiveAndEnabled)
             {
@@ -338,6 +340,11 @@ namespace Panoptes.Presentation.Map
         private GameStateStoreState GetGameStateSnapshot()
         {
             return _latestGameState ?? _gameStateStore?.Snapshot ?? new GameStateStoreState();
+        }
+
+        private IReadOnlyDictionary<string, CatalogBuildingDto> GetBuildingCatalog()
+        {
+            return _staticCatalogStore?.Snapshot?.Buildings;
         }
 
         private string GetLocalPlayerId()
@@ -605,7 +612,8 @@ namespace Panoptes.Presentation.Map
             {
                 AutoFillMissingJsonTiles = autoFillMissingJsonTiles,
                 LocalFallbackMapResourcePath = localFallbackMapResourcePath,
-                ServerMapConfigKey = serverMapConfigKey
+                ServerMapConfigKey = serverMapConfigKey,
+                BuildingCatalog = GetBuildingCatalog()
             });
         }
 
@@ -837,7 +845,7 @@ namespace Panoptes.Presentation.Map
                 return true;
             }
 
-            var maxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, hp);
+            var maxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, hp, GetBuildingCatalog());
             nodeView.SetLocalPlayerId(GetLocalPlayerId());
             nodeView.SetBuilding(buildingType, ownerId, hp, maxHp, false);
 
