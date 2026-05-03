@@ -803,6 +803,37 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void UnitInfoHudActions_ShouldUseInjectedReferences()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoPanelController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/UnitInfoActionProviderBase.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "SceneObjectFinder",
+                "FindAnyObjectByType",
+                "FindFirstObjectByType",
+                "FindObjectOfType");
+
+            Assert.That(offenders, Is.Empty, "Unit info HUD/action providers must receive references from composition or local components.");
+
+            var mapInput = File.ReadAllText(roots[0]);
+            var panel = File.ReadAllText(roots[1]);
+            var registrar = File.ReadAllText(roots[3]);
+            Assert.That(mapInput, Does.Contain("UnitSelectionChanged?.Invoke(unit)"));
+            Assert.That(mapInput, Does.Not.Contain("NotifyUnitInfoPanel"));
+            Assert.That(panel, Does.Contain("MapPlanningInputController injectedMapPlanningInputController"));
+            Assert.That(registrar, Does.Contain("MapPlanningInputController injectedMapPlanningInputController"));
+            Assert.That(registrar, Does.Contain("UnitInfoPanelController injectedUnitInfoPanelController"));
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");

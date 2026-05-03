@@ -12,7 +12,6 @@ using Panoptes.Presentation.Animation;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map.InputAdapter;
 using Panoptes.Presentation.Planning.Input.Modes;
 using Panoptes.Presentation.Planning.Feedback;
@@ -163,7 +162,6 @@ namespace Panoptes.Presentation.Map
 
         private UnitView _selectedUnit;
         private float _ignoreInputUntilTime;
-        private UnitInfoPanelController _unitInfoPanelController;
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _buildPlacement.PendingBuilds;
         public UnitView SelectedUnit => _selectedUnit;
@@ -1365,7 +1363,6 @@ namespace Panoptes.Presentation.Map
 
             ClearMoveSelection(false);
             NotifyUnitSelectionChanged(proxy);
-            NotifyUnitInfoPanel(proxy);
             return true;
         }
 
@@ -1438,7 +1435,6 @@ namespace Panoptes.Presentation.Map
             }
 
             NotifyUnitSelectionChanged(null);
-            NotifyUnitInfoPanel(null);
         }
 
         private void SelectUnit(UnitView unit)
@@ -1459,7 +1455,6 @@ namespace Panoptes.Presentation.Map
             ClearMovePreviewState();
             NotifyCombatSelectionChanged();
             NotifyUnitSelectionChanged(_selectedUnit);
-            NotifyUnitInfoPanel(_selectedUnit);
 
             if (!canControl || !IsCombatPhase())
             {
@@ -1485,10 +1480,6 @@ namespace Panoptes.Presentation.Map
                 NotifyUnitSelectionChanged(null);
             }
 
-            if (changed)
-            {
-                NotifyUnitInfoPanel(null);
-            }
         }
 
         private void NotifyUnitSelectionChanged(UnitView unit)
@@ -1501,27 +1492,6 @@ namespace Panoptes.Presentation.Map
             {
                 Debug.LogError($"[MapPlanningInputController] UnitSelectionChanged callback failed: {ex.Message}");
             }
-        }
-
-        private void NotifyUnitInfoPanel(UnitView unit)
-        {
-            if (_unitInfoPanelController == null)
-            {
-                _unitInfoPanelController = SceneObjectFinder.FindFirstSceneObject<UnitInfoPanelController>();
-            }
-
-            if (_unitInfoPanelController == null)
-            {
-                return;
-            }
-
-            if (unit == null)
-            {
-                _unitInfoPanelController.Close();
-                return;
-            }
-
-            _unitInfoPanelController.OpenForUnit(unit);
         }
         #endregion
 
