@@ -1,4 +1,3 @@
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Feedback;
 
@@ -6,21 +5,21 @@ namespace Panoptes.Presentation.Map
 {
     public static class MapCombatTargetingResolver
     {
-        public static bool CanAttack(StaticCatalogCache.UnitEntryJson entry)
+        public static bool CanAttack(CatalogUnitDto entry)
         {
-            return entry != null && !MapInputTokens.HasTag(entry, "civilian");
+            return entry != null && !MapInputTokens.HasTag(entry.Tags, "civilian");
         }
 
-        public static bool CanAttackStructures(StaticCatalogCache.UnitEntryJson entry)
+        public static bool CanAttackStructures(CatalogUnitDto entry)
         {
             return entry != null &&
-                   entry.flags != null &&
-                   entry.flags.can_attack_structures;
+                   entry.Flags != null &&
+                   entry.Flags.CanAttackStructures;
         }
 
-        public static bool CanCharge(StaticCatalogCache.UnitEntryJson entry)
+        public static bool CanCharge(CatalogUnitDto entry)
         {
-            return MapInputTokens.HasTag(entry, "charge");
+            return entry != null && MapInputTokens.HasTag(entry.Tags, "charge");
         }
 
         public static bool IsEnemyStructure(NodeDto nodeState, string localOwnerId)

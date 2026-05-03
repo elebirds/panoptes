@@ -1,12 +1,18 @@
 using System;
-using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Planning.Feedback;
 
 namespace Panoptes.Presentation.Map
 {
     public sealed class MapBuildingCatalogResolver
     {
-        private StaticCatalogCache _staticCatalogCache;
+        private StaticCatalogStore _staticCatalogStore;
+
+        public void Configure(StaticCatalogStore staticCatalogStore)
+        {
+            _staticCatalogStore = staticCatalogStore;
+        }
 
         public string ResolveBackendBuildingType(string buildingType)
         {
@@ -18,7 +24,7 @@ namespace Panoptes.Presentation.Map
 
             if (TryGetBuildingConfig(normalized, out var entry, out var resolvedId) && entry != null)
             {
-                return NormalizeToken(string.IsNullOrWhiteSpace(entry.id) ? resolvedId : entry.id);
+                return NormalizeToken(string.IsNullOrWhiteSpace(entry.Id) ? resolvedId : entry.Id);
             }
 
             return normalized;
@@ -37,14 +43,14 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            placementRule = NormalizeToken(entry.placement_kind);
-            requiredResourceType = NormalizeToken(entry.required_resource_type);
+            placementRule = NormalizeToken(entry.PlacementKind);
+            requiredResourceType = NormalizeToken(entry.RequiredResourceType);
             return !string.IsNullOrEmpty(placementRule);
         }
 
         public bool TryGetBuildingConfig(
             string buildingType,
-            out StaticCatalogCache.BuildingEntryJson entry,
+            out CatalogBuildingDto entry,
             out string resolvedId)
         {
             entry = null;
@@ -56,13 +62,13 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var cache = ResolveStaticCatalogCache();
-            if (cache == null)
+            var buildings = _staticCatalogStore?.Snapshot?.Buildings;
+            if (buildings == null)
             {
                 return false;
             }
 
-            if (cache.TryGetBuilding(key, out entry) && entry != null)
+            if (buildings.TryGetValue(key, out entry) && entry != null)
             {
                 resolvedId = key;
                 return true;
@@ -77,7 +83,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (cache.TryGetBuilding(alias, out entry) && entry != null)
+                if (buildings.TryGetValue(alias, out entry) && entry != null)
                 {
                     resolvedId = alias;
                     return true;
@@ -85,22 +91,6 @@ namespace Panoptes.Presentation.Map
             }
 
             return false;
-        }
-
-        private StaticCatalogCache ResolveStaticCatalogCache()
-        {
-            if (_staticCatalogCache != null)
-            {
-                return _staticCatalogCache;
-            }
-
-            _staticCatalogCache = StaticCatalogCache.Instance;
-            if (_staticCatalogCache == null)
-            {
-                _staticCatalogCache = StaticCatalogCache.EnsureInstance();
-            }
-
-            return _staticCatalogCache;
         }
 
         private static string[] GetBuildingAliasKeys(string key)

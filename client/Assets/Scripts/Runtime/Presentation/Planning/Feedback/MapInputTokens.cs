@@ -7,7 +7,7 @@
  *************************************************/
 
 using System;
-using Panoptes.Core.Application.Cache;
+using System.Collections.Generic;
 
 namespace Panoptes.Presentation.Planning.Feedback
 {
@@ -21,17 +21,17 @@ namespace Panoptes.Presentation.Planning.Feedback
             return (value ?? string.Empty).Trim().ToLowerInvariant();
         }
 
-        public static bool HasTag(StaticCatalogCache.UnitEntryJson entry, string tag)
+        public static bool HasTag(IEnumerable<string> tags, string tag)
         {
-            if (entry == null || entry.tags == null || string.IsNullOrWhiteSpace(tag))
+            if (tags == null || string.IsNullOrWhiteSpace(tag))
             {
                 return false;
             }
 
             var normalized = Normalize(tag);
-            for (var i = 0; i < entry.tags.Length; i++)
+            foreach (var item in tags)
             {
-                if (string.Equals(Normalize(entry.tags[i]), normalized, StringComparison.Ordinal))
+                if (string.Equals(Normalize(item), normalized, StringComparison.Ordinal))
                 {
                     return true;
                 }

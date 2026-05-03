@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using Panoptes.Presentation.Animation;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
@@ -146,6 +145,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
         private PlanningIntentService _planningIntentService;
         private MapRenderer _mapRenderer;
+        private StaticCatalogStore _staticCatalogStore;
         private GameStateStore _gameStateStore;
         private PlanningDraftStore _planningDraftStore;
         private SettlementStore _settlementStore;
@@ -184,6 +184,7 @@ namespace Panoptes.Presentation.Map
             SelectionService selectionService,
             PlanningToolViewModel planningToolViewModel,
             MapRenderer mapRenderer,
+            StaticCatalogStore staticCatalogStore,
             GameStateStore gameStateStore,
             PlanningDraftStore planningDraftStore,
             SettlementStore settlementStore,
@@ -191,6 +192,8 @@ namespace Panoptes.Presentation.Map
         {
             _planningIntentService = planningIntentService;
             ConfigureMapRenderer(mapRenderer);
+            _staticCatalogStore = staticCatalogStore;
+            _buildingCatalogResolver.Configure(staticCatalogStore);
             _gameStateStore = gameStateStore;
             _planningDraftStore = planningDraftStore;
             _settlementStore = settlementStore;
@@ -989,12 +992,13 @@ namespace Panoptes.Presentation.Map
                    MapCombatTargetingResolver.CanCharge(entry);
         }
 
-        private bool TryGetSelectedUnitCatalog(out StaticCatalogCache.UnitEntryJson entry)
+        private bool TryGetSelectedUnitCatalog(out CatalogUnitDto entry)
         {
             entry = null;
-            return _selectedUnit != null &&
-                   StaticCatalogCache.EnsureInstance() != null &&
-                   StaticCatalogCache.Instance.TryGetUnit(_selectedUnit.UnitType, out entry);
+            var unitType = NormalizeToken(_selectedUnit != null ? _selectedUnit.UnitType : string.Empty);
+            return !string.IsNullOrEmpty(unitType) &&
+                   _staticCatalogStore?.Snapshot?.Units != null &&
+                   _staticCatalogStore.Snapshot.Units.TryGetValue(unitType, out entry);
         }
 
         private bool TryIssueStructureTargetOrder(string nodeId)
@@ -1141,7 +1145,7 @@ namespace Panoptes.Presentation.Map
         {
             if (TryGetSelectedUnitCatalog(out var entry) && entry != null)
             {
-                return Mathf.Max(1, entry.attack_range);
+                return Mathf.Max(1, entry.AttackRange);
             }
 
             return 1;
@@ -2229,7 +2233,7 @@ namespace Panoptes.Presentation.Map
                 out requiredResourceType);
         }
 
-        private bool TryGetBuildingConfig(string buildingType, out StaticCatalogCache.BuildingEntryJson entry, out string resolvedId)
+        private bool TryGetBuildingConfig(string buildingType, out CatalogBuildingDto entry, out string resolvedId)
         {
             return _buildingCatalogResolver.TryGetBuildingConfig(buildingType, out entry, out resolvedId);
         }
