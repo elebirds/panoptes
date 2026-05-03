@@ -834,11 +834,13 @@ namespace Panoptes.Tests.EditMode.Lobby
 
             var content = File.ReadAllText(_lobbyServicePath);
             StringAssert.Contains("public void AddBot()", content);
-            StringAssert.Contains("MessageSender.Send(new MsgAddBot())", content);
+            StringAssert.Contains("Send(new MsgAddBot())", content);
             StringAssert.Contains("public void KickPlayer(string playerId)", content);
-            StringAssert.Contains("MessageSender.Send(new MsgKickPlayer", content);
+            StringAssert.Contains("Send(new MsgKickPlayer", content);
             StringAssert.Contains("public void StartGame()", content);
-            StringAssert.Contains("MessageSender.Send(new MsgStartGame())", content);
+            StringAssert.Contains("Send(new MsgStartGame())", content);
+            Assert.That(content, Does.Not.Contain("MessageSender.Send"),
+                "LobbyService 应通过注入的 IClientMessageSender 发送，不应回到静态 MessageSender。");
         }
 
         [Test]

@@ -1,13 +1,20 @@
 using Panoptes.Protocol.V1;
-using Panoptes.Core.Infrastructure.Network;
+using Panoptes.Core.Application.Services;
 
 namespace Panoptes.Core.Infrastructure.Service
 {
     public sealed class LobbyService
     {
+        private readonly IClientMessageSender _messageSender;
+
+        public LobbyService(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+        }
+
         public void CreateRoom(string name, int maxPlayers)
         {
-            MessageSender.Send(new MsgCreateRoom
+            Send(new MsgCreateRoom
             {
                 Name = name,
                 MaxPlayers = maxPlayers
@@ -16,7 +23,7 @@ namespace Panoptes.Core.Infrastructure.Service
 
         public void JoinRoom(string roomCode)
         {
-            MessageSender.Send(new MsgJoinRoom
+            Send(new MsgJoinRoom
             {
                 RoomCode = roomCode
             });
@@ -24,30 +31,35 @@ namespace Panoptes.Core.Infrastructure.Service
 
         public void LeaveRoom()
         {
-            MessageSender.Send(new MsgLeaveRoom());
+            Send(new MsgLeaveRoom());
         }
 
         public void ReadyUp()
         {
-            MessageSender.Send(new MsgReadyUp());
+            Send(new MsgReadyUp());
         }
 
         public void AddBot()
         {
-            MessageSender.Send(new MsgAddBot());
+            Send(new MsgAddBot());
         }
 
         public void StartGame()
         {
-            MessageSender.Send(new MsgStartGame());
+            Send(new MsgStartGame());
         }
 
         public void KickPlayer(string playerId)
         {
-            MessageSender.Send(new MsgKickPlayer
+            Send(new MsgKickPlayer
             {
                 PlayerId = playerId
             });
+        }
+
+        private void Send(Google.Protobuf.IMessage message)
+        {
+            _messageSender?.Send(message);
         }
     }
 }
