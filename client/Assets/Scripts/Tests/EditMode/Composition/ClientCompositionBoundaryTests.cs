@@ -380,7 +380,10 @@ namespace Panoptes.Tests.EditMode.Composition
                 SceneObjectFinderMapRendererToken,
                 FindAnyMapRendererToken,
                 FindFirstMapRendererToken,
-                FindObjectOfTypeMapRendererToken);
+                FindObjectOfTypeMapRendererToken,
+                "FindAnyObjectByType",
+                "FindFirstObjectByType",
+                "FindObjectOfType");
 
             Assert.That(offenders, Is.Empty, "Strategic camera must receive MapRenderer from VContainer instead of singleton or scene lookup.");
 
@@ -393,6 +396,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(camera, Does.Contain("MapRenderer _mapRenderer"));
             Assert.That(camera, Does.Contain("ConfigureMapRenderer(mapRenderer)"));
             Assert.That(camera, Does.Contain("_mapRenderer.CameraContextReady +="));
+            Assert.That(camera, Does.Not.Contain("FindAnyObjectByType<CinemachineCamera>"));
             Assert.That(renderer, Does.Not.Contain("AddComponent<CinemachineMapCameraController>"));
             Assert.That(renderer, Does.Not.Contain("GameObject.Find(\"CameraAnchor\")"));
             Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<CinemachineMapCameraController>"));
