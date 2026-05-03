@@ -9,11 +9,11 @@
 namespace Panoptes.Presentation.Planning.Input
 {
     /// <summary>
-    /// Defines the small lifecycle surface shared by planning input modes without adding a DI framework.
+    /// Defines the small lifecycle surface shared by planning input modes.
     /// </summary>
     public interface IPlanningInputMode
     {
-        void Enter(PlanningInputContext context);
+        void Enter();
         void Exit();
         void Tick();
         bool HandlePrimary();

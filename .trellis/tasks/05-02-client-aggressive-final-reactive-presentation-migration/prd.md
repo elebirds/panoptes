@@ -152,6 +152,17 @@ render without reaching through legacy cache singletons.
 - Expanded UnitInfo boundary tests to cover `UnitInfoPanelController` against
   Protocol, legacy caches, singleton `Instance`, and direct network usage.
 
+## Batch 9 Result
+
+- Removed the empty `PlanningInputContext` compatibility shell and its Unity
+  meta file after legacy cache access was eliminated.
+- Simplified `IPlanningInputMode.Enter(PlanningInputContext context)` to
+  `Enter()` and removed `PlanningInputCoordinator.SetContext(...)`.
+- Updated planning input lifecycle documentation to state that input modes have
+  no context channel for authoritative state or draft cache data.
+- Added composition boundary coverage that asserts the context file stays
+  deleted and scans the `Planning/Input` slice for legacy cache exposure.
+
 ## Out of Scope
 
 - Rewriting every UI prefab in one pass.
