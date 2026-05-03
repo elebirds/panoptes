@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Panoptes.Core.Application.Intents;
+using Google.Protobuf;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
@@ -15,16 +15,21 @@ namespace Panoptes.DebugTools
 {
     public static class DebugTabRegistry
     {
+        public static IReadOnlyList<IDebugTab> CreateDefaultTabs()
+        {
+            return CreateDefaultTabs(null);
+        }
+
         public static IReadOnlyList<IDebugTab> CreateDefaultTabs(IClientMessageSender messageSender)
         {
             return new IDebugTab[]
             {
                 new OverviewDebugTab(),
                 new TimelineDebugTab(),
-                new RawSenderDebugTab(),
+                new RawSenderDebugTab(messageSender),
                 new LobbyDebugTab(messageSender),
-                new GameDebugTab(),
-                new GameIntentsDebugTab(),
+                new GameDebugTab(messageSender),
+                new CommandDebugTab(messageSender),
             };
         }
     }
@@ -376,12 +381,18 @@ namespace Panoptes.DebugTools
 
     internal sealed class RawSenderDebugTab : IDebugTab
     {
+        private readonly IClientMessageSender _messageSender;
         private Vector2 _typeScroll;
         private Vector2 _payloadScroll;
         private string _typeFilter = string.Empty;
 
         public string Id => "raw-sender";
         public string Title => "原始发送器";
+
+        public RawSenderDebugTab(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+        }
 
         public bool IsAvailable(DebugPanelContext context, out string reason)
         {
@@ -487,7 +498,7 @@ namespace Panoptes.DebugTools
             GUILayout.EndArea();
         }
 
-        private static void TrySend(DebugPanelContext.SharedState state, DebugPanelContext context)
+        private void TrySend(DebugPanelContext.SharedState state, DebugPanelContext context)
         {
             if (!DebugMessageRegistry.TryCreateMessage(state.RawMessageType, state.RawPayloadJson, out var message, out var error))
             {
@@ -495,7 +506,7 @@ namespace Panoptes.DebugTools
                 return;
             }
 
-            MessageSender.Send(message);
+            _messageSender?.Send(message);
             context.SetRawSenderStatus($"已发送 {state.RawMessageType}", false);
         }
     }
@@ -616,6 +627,7 @@ namespace Panoptes.DebugTools
 
     internal sealed class GameDebugTab : IDebugTab
     {
+        private readonly IClientMessageSender _messageSender;
         private Vector2 _scroll;
         private string _buildNodeId = "res_food";
         private string _buildingType = "farm";
@@ -637,6 +649,11 @@ namespace Panoptes.DebugTools
 
         public string Id => "game";
         public string Title => "Game";
+
+        public GameDebugTab(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+        }
 
         public bool IsAvailable(DebugPanelContext context, out string reason)
         {
@@ -700,7 +717,7 @@ namespace Panoptes.DebugTools
 
             if (GUILayout.Button("提交回合", GUILayout.Height(28f)))
             {
-                GameIntents.SubmitTurn();
+                SendSubmitTurn();
             }
             GUILayout.EndHorizontal();
 
@@ -708,19 +725,19 @@ namespace Panoptes.DebugTools
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("设置备战国策", GUILayout.Height(28f)))
             {
-                GameIntents.SetPolicy("war_preparedness");
+                SendPolicy("war_preparedness");
             }
 
             if (GUILayout.Button("设置休养国策", GUILayout.Height(28f)))
             {
-                GameIntents.SetPolicy("recovery");
+                SendPolicy("recovery");
             }
             GUILayout.EndHorizontal();
 
             DebugGuiUtil.Section("制度");
             if (GUILayout.Button("装填学术特许", GUILayout.Height(28f)))
             {
-                MessageSender.Send(new MsgSetInstitutionLoadout
+                Send(new MsgSetInstitutionLoadout
                 {
                     PolicyIds = { "academy_charter" }
                 });
@@ -734,7 +751,7 @@ namespace Panoptes.DebugTools
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("发送建造", GUILayout.Height(28f)))
             {
-                GameIntents.BuildToken(_buildNodeId, _buildingType);
+                SendBuild(_buildNodeId, _buildingType);
             }
 
             if (GUILayout.Button("农场模板", GUILayout.Height(28f)))
@@ -754,7 +771,7 @@ namespace Panoptes.DebugTools
             _revealNodeId = GUILayout.TextField(_revealNodeId ?? string.Empty);
             if (GUILayout.Button("发送侦察", GUILayout.Height(28f)))
             {
-                GameIntents.RevealToken(_revealNodeId);
+                SendReveal(_revealNodeId);
             }
 
             DebugGuiUtil.Section("战区");
@@ -778,13 +795,13 @@ namespace Panoptes.DebugTools
                     message.NodeIds.Add(nodeId);
                 }
 
-                MessageSender.Send(message);
+                Send(message);
             }
 
             _warDirective = GUILayout.TextField(_warDirective ?? string.Empty);
             if (GUILayout.Button("发送战区指令", GUILayout.Height(28f)))
             {
-                MessageSender.Send(new MsgWarZoneDirective
+                Send(new MsgWarZoneDirective
                 {
                     ZoneId = _warZoneId ?? string.Empty,
                     Directive = _warDirective ?? string.Empty
@@ -802,17 +819,17 @@ namespace Panoptes.DebugTools
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Move", GUILayout.Height(28f)))
             {
-                GameIntents.MoveUnit(_unitId, _targetNodeId);
+                SendIssueUnitOrder(_unitId, "move", _targetNodeId, null);
             }
 
             if (GUILayout.Button("Attack", GUILayout.Height(28f)))
             {
-                GameIntents.AttackUnit(_unitId, _targetUnitId);
+                SendIssueUnitOrder(_unitId, "attack", null, _targetUnitId);
             }
 
             if (GUILayout.Button("Hold", GUILayout.Height(28f)))
             {
-                GameIntents.HoldUnit(_unitId);
+                SendIssueUnitOrder(_unitId, "hold", null, null);
             }
             GUILayout.EndHorizontal();
 
@@ -827,17 +844,57 @@ namespace Panoptes.DebugTools
             GUILayout.EndArea();
         }
 
-        private static void SubmitCurrentPhase(string phase)
+        private void SubmitCurrentPhase(string phase)
         {
             switch (phase)
             {
                 case GamePhases.Planning:
-                    GameIntents.SubmitTurn();
+                    SendSubmitTurn();
                     return;
                 default:
                     Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
                     return;
             }
+        }
+
+        private bool Send(IMessage message)
+        {
+            return _messageSender != null && _messageSender.Send(message);
+        }
+
+        private void SendSubmitTurn()
+        {
+            Send(new MsgSubmitTurn());
+        }
+
+        private void SendPolicy(string policyId)
+        {
+            Send(new MsgSetPolicy { NationalPolicyId = policyId ?? string.Empty });
+        }
+
+        private void SendBuild(string nodeId, string buildingTypeId)
+        {
+            Send(new MsgBuildStructure
+            {
+                NodeId = nodeId ?? string.Empty,
+                BuildingTypeId = buildingTypeId ?? string.Empty
+            });
+        }
+
+        private void SendReveal(string nodeId)
+        {
+            Send(new MsgRevealNode { NodeId = nodeId ?? string.Empty });
+        }
+
+        private void SendIssueUnitOrder(string unitId, string action, string targetNodeId, string targetUnitId)
+        {
+            Send(new MsgIssueUnitOrder
+            {
+                UnitId = unitId ?? string.Empty,
+                Action = action ?? string.Empty,
+                TargetNodeId = targetNodeId ?? string.Empty,
+                TargetUnitId = targetUnitId ?? string.Empty
+            });
         }
 
         private static IEnumerable<string> SplitCsv(string value)
@@ -947,19 +1004,25 @@ namespace Panoptes.DebugTools
         }
     }
 
-    internal sealed class GameIntentsDebugTab : IDebugTab
+    internal sealed class CommandDebugTab : IDebugTab
     {
+        private readonly IClientMessageSender _messageSender;
         private Vector2 _scroll;
         private IReadOnlyList<DebugActionSection> _sections;
 
-        public string Id => "game-intents";
-        public string Title => "GameIntents";
+        public string Id => "commands";
+        public string Title => "Commands";
+
+        public CommandDebugTab(IClientMessageSender messageSender)
+        {
+            _messageSender = messageSender;
+        }
 
         public bool IsAvailable(DebugPanelContext context, out string reason)
         {
             if (context.GameState == null || string.IsNullOrWhiteSpace(context.GameState.GameID))
             {
-                reason = "等待 MsgGameInit 后再使用 GameIntents 调试页。";
+                reason = "等待 MsgGameInit 后再使用 Commands 调试页。";
                 return false;
             }
 
@@ -984,42 +1047,42 @@ namespace Panoptes.DebugTools
             GUILayout.EndArea();
         }
 
-        private static IReadOnlyList<DebugActionSection> BuildSections()
+        private IReadOnlyList<DebugActionSection> BuildSections()
         {
             return new[]
             {
                 DebugActionCatalog.Section(
                     "阶段提交",
                     DebugActionCatalog.Action("推进当前阶段", SubmitCurrentPhase, "按当前 phase 选择统一回合提交。"),
-                    DebugActionCatalog.Action("提交回合", GameIntents.SubmitTurn)),
+                    DebugActionCatalog.Action("提交回合", SendSubmitTurn)),
                 DebugActionCatalog.Section(
                     "国策",
-                    DebugActionCatalog.Action("设置备战国策", () => GameIntents.SetPolicy("war_preparedness")),
-                    DebugActionCatalog.Action("设置恢复国策", () => GameIntents.SetPolicy("recovery"))),
+                    DebugActionCatalog.Action("设置备战国策", () => SendPolicy("war_preparedness")),
+                    DebugActionCatalog.Action("设置恢复国策", () => SendPolicy("recovery"))),
                 DebugActionCatalog.Section(
                     "制度",
-                    DebugActionCatalog.Action("装填学术特许", () => MessageSender.Send(new MsgSetInstitutionLoadout
+                    DebugActionCatalog.Action("装填学术特许", () => Send(new MsgSetInstitutionLoadout
                     {
                         PolicyIds = { "academy_charter" }
                     }))),
                 DebugActionCatalog.Section(
                     "令牌高频操作",
-                    DebugActionCatalog.Action("粮点建农场", () => GameIntents.BuildToken("res_food", "farm")),
-                    DebugActionCatalog.Action("矿点建矿山", () => GameIntents.BuildToken("res_ore", "mine")),
-                    DebugActionCatalog.Action("侦察粮点", () => GameIntents.RevealToken("res_food"))),
+                    DebugActionCatalog.Action("粮点建农场", () => SendBuild("res_food", "farm")),
+                    DebugActionCatalog.Action("矿点建矿山", () => SendBuild("res_ore", "mine")),
+                    DebugActionCatalog.Action("侦察粮点", () => SendReveal("res_food"))),
                 DebugActionCatalog.Section(
                     "战区",
                     DebugActionCatalog.Action("设置北线战区", SendDefaultWarZone),
-                    DebugActionCatalog.Action("北线进攻", () => MessageSender.Send(new MsgWarZoneDirective
+                    DebugActionCatalog.Action("北线进攻", () => Send(new MsgWarZoneDirective
                     {
                         ZoneId = "zone1",
                         Directive = "attack"
                     }))),
                 DebugActionCatalog.Section(
                     "战斗微操",
-                    DebugActionCatalog.Action("Unit-1 Move Node-B", () => GameIntents.MoveUnit("unit-1", "node-b")),
-                    DebugActionCatalog.Action("Unit-1 Attack Unit-2", () => GameIntents.AttackUnit("unit-1", "unit-2")),
-                    DebugActionCatalog.Action("Unit-1 Hold", () => GameIntents.HoldUnit("unit-1"))),
+                    DebugActionCatalog.Action("Unit-1 Move Node-B", () => SendIssueUnitOrder("unit-1", "move", "node-b", null)),
+                    DebugActionCatalog.Action("Unit-1 Attack Unit-2", () => SendIssueUnitOrder("unit-1", "attack", null, "unit-2")),
+                    DebugActionCatalog.Action("Unit-1 Hold", () => SendIssueUnitOrder("unit-1", "hold", null, null))),
             };
         }
 
@@ -1059,7 +1122,7 @@ namespace Panoptes.DebugTools
             }
         }
 
-        private static void SendDefaultWarZone()
+        private void SendDefaultWarZone()
         {
             var message = new MsgSetWarZone
             {
@@ -1067,10 +1130,10 @@ namespace Panoptes.DebugTools
                 Name = "北线"
             };
             message.NodeIds.Add("res_ore");
-            MessageSender.Send(message);
+            Send(message);
         }
 
-        private static void SubmitCurrentPhase()
+        private void SubmitCurrentPhase()
         {
             var phase = Panoptes.Core.Application.Cache.GameStateCache.Instance != null
                 ? Panoptes.Core.Application.Cache.GameStateCache.Instance.Phase
@@ -1079,12 +1142,52 @@ namespace Panoptes.DebugTools
             switch (phase)
             {
                 case GamePhases.Planning:
-                    GameIntents.SubmitTurn();
+                    SendSubmitTurn();
                     return;
                 default:
                     Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
                     return;
             }
+        }
+
+        private bool Send(IMessage message)
+        {
+            return _messageSender != null && _messageSender.Send(message);
+        }
+
+        private void SendSubmitTurn()
+        {
+            Send(new MsgSubmitTurn());
+        }
+
+        private void SendPolicy(string policyId)
+        {
+            Send(new MsgSetPolicy { NationalPolicyId = policyId ?? string.Empty });
+        }
+
+        private void SendBuild(string nodeId, string buildingTypeId)
+        {
+            Send(new MsgBuildStructure
+            {
+                NodeId = nodeId ?? string.Empty,
+                BuildingTypeId = buildingTypeId ?? string.Empty
+            });
+        }
+
+        private void SendReveal(string nodeId)
+        {
+            Send(new MsgRevealNode { NodeId = nodeId ?? string.Empty });
+        }
+
+        private void SendIssueUnitOrder(string unitId, string action, string targetNodeId, string targetUnitId)
+        {
+            Send(new MsgIssueUnitOrder
+            {
+                UnitId = unitId ?? string.Empty,
+                Action = action ?? string.Empty,
+                TargetNodeId = targetNodeId ?? string.Empty,
+                TargetUnitId = targetUnitId ?? string.Empty
+            });
         }
     }
 }
