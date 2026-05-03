@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="build-catalog-root" class="build-catalog-root">
+        <ui:Label name="build-catalog-title" text="Build Catalog" class="build-catalog-title" />
+        <ui:Label name="build-catalog-empty" text="No buildings available" class="build-catalog-empty" />
+        <ui:ScrollView name="build-catalog-scroll" class="build-catalog-scroll">
+            <ui:VisualElement name="build-catalog-groups" class="build-catalog-groups" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

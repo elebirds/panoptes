@@ -1,0 +1,96 @@
+.build-catalog-root {
+    position: absolute;
+    left: 396px;
+    top: 88px;
+    width: 430px;
+    max-height: 620px;
+    padding: 12px;
+    background-color: rgba(17, 22, 24, 0.92);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(182, 192, 186, 0.34);
+    border-right-color: rgba(182, 192, 186, 0.34);
+    border-top-color: rgba(182, 192, 186, 0.34);
+    border-bottom-color: rgba(182, 192, 186, 0.34);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.build-catalog-title {
+    color: rgb(237, 239, 232);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.build-catalog-empty {
+    color: rgb(146, 157, 158);
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.build-catalog-scroll {
+    max-height: 560px;
+}
+
+.build-catalog-groups {
+    padding-right: 4px;
+}
+
+.build-catalog-group {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top-width: 1px;
+    border-top-color: rgba(182, 192, 186, 0.22);
+}
+
+.build-catalog-group-title {
+    color: rgb(209, 217, 213);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-bottom: 5px;
+}
+
+.build-catalog-item {
+    min-height: 54px;
+    margin-bottom: 6px;
+    padding: 8px;
+    background-color: rgba(37, 45, 47, 0.84);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(156, 168, 164, 0.18);
+    border-right-color: rgba(156, 168, 164, 0.18);
+    border-top-color: rgba(156, 168, 164, 0.18);
+    border-bottom-color: rgba(156, 168, 164, 0.18);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    align-items: stretch;
+}
+
+.build-catalog-item-title {
+    color: rgb(240, 242, 235);
+    font-size: 13px;
+    -unity-font-style: bold;
+}
+
+.build-catalog-item-description {
+    color: rgb(167, 178, 178);
+    font-size: 11px;
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.build-catalog-item-pending {
+    color: rgb(239, 202, 117);
+    font-size: 11px;
+    margin-top: 4px;
+}

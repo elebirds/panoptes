@@ -248,15 +248,15 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Turn Summary UI Toolkit");
-            builder.RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Build Catalog UI Toolkit");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<BuildCatalogUiToolkitBinder>("Prefabs/UI/BuildCatalog"),
+                Lifetime.Singleton);
             builder.RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Tech Tree UI Toolkit");
-            builder.RegisterComponentOnNewGameObject<RecipeSynthesisUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Recipe Synthesis UI Toolkit");
+            builder.RegisterComponentInNewPrefab(
+                LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>("Prefabs/UI/RecipeSynthesis"),
+                Lifetime.Singleton);
             builder.RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Minister Report UI Toolkit");
