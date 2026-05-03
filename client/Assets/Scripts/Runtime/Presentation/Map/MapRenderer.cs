@@ -340,6 +340,11 @@ namespace Panoptes.Presentation.Map
             return _latestGameState ?? _gameStateStore?.Snapshot ?? new GameStateStoreState();
         }
 
+        private string GetLocalPlayerId()
+        {
+            return GetGameStateSnapshot().MyPlayerId;
+        }
+
         private static bool HasBackendNodes(GameStateStoreState state)
         {
             return state?.Nodes != null && state.Nodes.Count > 0;
@@ -411,6 +416,7 @@ namespace Panoptes.Presentation.Map
                 _nodeStates[node.Id] = node;
                 if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
                 {
+                    view.SetLocalPlayerId(GetLocalPlayerId());
                     view.Bind(node);
                 }
             }
@@ -826,11 +832,13 @@ namespace Panoptes.Presentation.Map
 
             if (isGhost)
             {
+                nodeView.SetLocalPlayerId(GetLocalPlayerId());
                 nodeView.SetBuildingGhost(buildingType, ownerId, ghostColor ?? new Color(0.6f, 1f, 0.6f, 0.9f));
                 return true;
             }
 
             var maxHp = MapRenderTokens.ResolveBuildingMaxHp(buildingType, hp);
+            nodeView.SetLocalPlayerId(GetLocalPlayerId());
             nodeView.SetBuilding(buildingType, ownerId, hp, maxHp, false);
 
             if (_nodeStates.TryGetValue(nodeId, out var state) && state != null)
@@ -1027,6 +1035,7 @@ namespace Panoptes.Presentation.Map
 
                 var tile = Instantiate(nodeTilePrefab, EnsureTilesRoot(), false);
                 tile.transform.localPosition = GridToWorldWithTerrain(node.Q, node.R, node.Terrain);
+                tile.SetLocalPlayerId(GetLocalPlayerId());
                 tile.Bind(node);
 
                 _tileViews[node.Id] = tile;
@@ -1452,6 +1461,7 @@ namespace Panoptes.Presentation.Map
             var worldPos = nodeView.UnitAnchor != null
                 ? nodeView.UnitAnchor.position
                 : nodeView.transform.position + Vector3.up * 0.2f;
+            instance.SetLocalPlayerId(GetLocalPlayerId());
             instance.Bind(unit, worldPos);
 
             _unitViews[unit.Id] = instance;

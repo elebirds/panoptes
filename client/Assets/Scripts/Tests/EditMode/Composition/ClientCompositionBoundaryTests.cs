@@ -693,6 +693,39 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void MapRuntimeViews_ShouldReceiveLocalPlayerContextFromRenderer()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/UnitView.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/BuildingView.cs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                MapRendererSingletonToken,
+                NetworkManagerSingletonToken,
+                ProtocolNamespaceToken);
+
+            Assert.That(offenders, Is.Empty, "Runtime map views must receive display context from MapRenderer, not legacy caches.");
+
+            var renderer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs"));
+            var nodeView = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Map/NodeView.cs"));
+            var unitView = File.ReadAllText(roots[0]);
+            var buildingView = File.ReadAllText(roots[1]);
+            Assert.That(renderer, Does.Contain("GetLocalPlayerId()"));
+            Assert.That(renderer, Does.Contain("tile.SetLocalPlayerId(GetLocalPlayerId())"));
+            Assert.That(renderer, Does.Contain("instance.SetLocalPlayerId(GetLocalPlayerId())"));
+            Assert.That(nodeView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
+            Assert.That(nodeView, Does.Contain("_buildingInstance.SetLocalPlayerId(_localPlayerId)"));
+            Assert.That(unitView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
+            Assert.That(buildingView, Does.Contain("SetLocalPlayerId(string localPlayerId)"));
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");

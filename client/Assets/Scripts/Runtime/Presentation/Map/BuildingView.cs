@@ -8,7 +8,6 @@
 
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.UI.HUD;
 using UnityEngine;
@@ -81,6 +80,7 @@ namespace Panoptes.Presentation.Map
         public int TakeoverRequired { get; private set; }
         public bool IsSafeZone { get; private set; }
 
+        private string _localPlayerId = string.Empty;
         private Renderer[] _allRenderers;
         private Transform _cityCoreHpBarRoot;
         private CityCoreHPBar _cityCoreHpBarView;
@@ -101,6 +101,17 @@ namespace Panoptes.Presentation.Map
 
             EnsureCityCoreHpBarState();
             UpdateCityCoreHpBarName();
+        }
+
+        public void SetLocalPlayerId(string localPlayerId)
+        {
+            _localPlayerId = localPlayerId ?? string.Empty;
+            var color = ResolveOwnerColor(OwnerId);
+            ApplyOwnerTint(color);
+            if (_cityCoreHpBarView != null)
+            {
+                _cityCoreHpBarView.SetFactionColor(color);
+            }
         }
 
         public void SetOwner(string ownerId)
@@ -465,9 +476,7 @@ namespace Panoptes.Presentation.Map
                 return neutralOwnerColor;
             }
 
-            var myPlayerId = GameStateCache.Instance != null
-                ? GameStateCache.Instance.MyPlayerID
-                : string.Empty;
+            var myPlayerId = _localPlayerId;
 
             if (!string.IsNullOrEmpty(myPlayerId))
             {
