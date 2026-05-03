@@ -145,6 +145,7 @@ namespace Panoptes.Presentation.Map
         private readonly MapAttackRangePresenter _attackRangePresenter = new();
         private readonly Dictionary<string, QueuedUnitOrderDto> _ordersByUnitId = new(StringComparer.OrdinalIgnoreCase);
         private PlanningIntentService _planningIntentService;
+        private MapRenderer _mapRenderer;
         private GameStateStore _gameStateStore;
         private PlanningDraftStore _planningDraftStore;
         private SettlementStore _settlementStore;
@@ -182,17 +183,23 @@ namespace Panoptes.Presentation.Map
             PlanningToolService planningToolService,
             SelectionService selectionService,
             PlanningToolViewModel planningToolViewModel,
+            MapRenderer mapRenderer,
             GameStateStore gameStateStore,
             PlanningDraftStore planningDraftStore,
             SettlementStore settlementStore,
             GameplayFeedbackStore feedbackStore)
         {
             _planningIntentService = planningIntentService;
+            ConfigureMapRenderer(mapRenderer);
             _gameStateStore = gameStateStore;
             _planningDraftStore = planningDraftStore;
             _settlementStore = settlementStore;
             _feedbackStore = feedbackStore;
             _inputState.Configure(planningToolService, selectionService, planningToolViewModel);
+            if (isActiveAndEnabled)
+            {
+                SubscribeStoreEvents();
+            }
         }
 
         private void Awake()
@@ -209,6 +216,7 @@ namespace Panoptes.Presentation.Map
                 inputCamera = Camera.main;
             }
 
+            ConfigureMapRenderer(_mapRenderer);
             _movePreviewPresentation.Ensure(transform);
             _selectionSurface = new MapSelectionSurface(_pointerInput, () => inputCamera, () => raycastMask, () => raycastDistance);
             ConfigureBuildPlacementSession();
@@ -433,9 +441,9 @@ namespace Panoptes.Presentation.Map
                 }
             }
 
-            if (MapRenderer.Instance != null)
+            if (_mapRenderer != null)
             {
-                MapRenderer.Instance.SetUnitNode(unitId, targetNodeId);
+                _mapRenderer.SetUnitNode(unitId, targetNodeId);
             }
         }
 
@@ -519,7 +527,7 @@ namespace Panoptes.Presentation.Map
             _buildPlacement.ClearBuildPreviewState();
         }
 
-        bool IMapBuildPlacementCoordinatorContext.HasMapRenderer => MapRenderer.Instance != null;
+        bool IMapBuildPlacementCoordinatorContext.HasMapRenderer => _mapRenderer != null;
 
         bool IMapBuildPlacementCoordinatorContext.ShouldLogInvalidBuildClick => logInvalidBuildClick;
 
@@ -934,7 +942,7 @@ namespace Panoptes.Presentation.Map
                     NotifyCombatSelectionChanged();
                     return true;
                 case CombatActionMode.Charge:
-                    var map = MapRenderer.Instance;
+                    var map = _mapRenderer;
                     if (map == null || !map.TryGetNodeIdByGrid(targetUnit.GridPos, out var targetNodeId))
                     {
                         return false;
@@ -1024,7 +1032,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || !map.TryGetNodeState(nodeId.Trim(), out var nodeState) || nodeState == null)
             {
                 return false;
@@ -1042,7 +1050,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || map.TileViews == null || map.TileViews.Count == 0)
             {
                 return;
@@ -1074,7 +1082,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || !map.TryGetNodeView(nodeId.Trim(), out var nodeView) || nodeView == null)
             {
                 return false;
@@ -1106,7 +1114,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return true;
@@ -1232,7 +1240,7 @@ namespace Panoptes.Presentation.Map
                 preview,
                 _moveCommands.HoverPreviewNodeId,
                 _selectedUnit?.UnitId,
-                MapRenderer.Instance != null,
+                _mapRenderer != null,
                 moveInvalidColor,
                 moveHighlightColor,
                 moveFirstTurnColor,
@@ -1301,9 +1309,9 @@ namespace Panoptes.Presentation.Map
                 return pendingNodeId;
             }
 
-            if (MapRenderer.Instance != null
+            if (_mapRenderer != null
                 && !string.IsNullOrEmpty(normalizedUnitId)
-                && MapRenderer.Instance.TryGetUnitView(normalizedUnitId, out var unitView)
+                && _mapRenderer.TryGetUnitView(normalizedUnitId, out var unitView)
                 && unitView != null)
             {
                 var fromView = ResolveNodeIdByGrid(unitView.GridPos);
@@ -1368,7 +1376,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null || nodeView == null || string.IsNullOrWhiteSpace(nodeView.NodeId))
             {
                 return false;
@@ -1521,7 +1529,7 @@ namespace Panoptes.Presentation.Map
 
         private void ClearNodeHighlights()
         {
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 _highlightNodeIds.Clear();
@@ -1702,13 +1710,13 @@ namespace Panoptes.Presentation.Map
                             _movePreviewPresentation.ClearMovePathMarkersForUnit(normalizedUnitId);
                         }
 
-                        if (MapRenderer.Instance == null)
+                        if (_mapRenderer == null)
                         {
                             continue;
                         }
 
                         var grid = new Vector2Int(eventItem.ToQ, eventItem.ToR);
-                        if (!MapRenderer.Instance.TryGetNodeIdByGrid(grid, out var targetNodeId))
+                        if (!_mapRenderer.TryGetNodeIdByGrid(grid, out var targetNodeId))
                         {
                             continue;
                         }
@@ -1828,7 +1836,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;
@@ -1878,7 +1886,7 @@ namespace Panoptes.Presentation.Map
             var previousUnits = previous?.Units;
             var currentUnits = current?.Units;
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return;
@@ -2053,6 +2061,14 @@ namespace Panoptes.Presentation.Map
 
         #region Context
 
+        private void ConfigureMapRenderer(MapRenderer mapRenderer)
+        {
+            _mapRenderer = mapRenderer;
+            _movePreviewPresentation.SetMapRenderer(mapRenderer);
+            _pendingDeployGhosts.SetMapRenderer(mapRenderer);
+            _territoryHighlights.SetMapRenderer(mapRenderer);
+        }
+
         private void ConfigureBuildPlacementSession()
         {
             _buildPlacement.Configure(
@@ -2098,7 +2114,7 @@ namespace Panoptes.Presentation.Map
                 return false;
             }
 
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
             {
                 return string.Equals(NormalizeToken(mapNode.BuildingType), "city_core", StringComparison.Ordinal);
@@ -2121,7 +2137,7 @@ namespace Panoptes.Presentation.Map
             }
 
             var ownerId = NormalizeToken(GetLocalOwnerId());
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map != null && map.TryGetNodeState(nodeId, out var mapNode) && mapNode != null)
             {
                 var owner = NormalizeToken(mapNode.Owner);
@@ -2181,9 +2197,9 @@ namespace Panoptes.Presentation.Map
             return string.Equals(normalized, NormalizeToken(GamePhases.Planning), StringComparison.Ordinal);
         }
 
-        private static string ResolveNodeIdByGrid(Vector2Int gridPos)
+        private string ResolveNodeIdByGrid(Vector2Int gridPos)
         {
-            var map = MapRenderer.Instance;
+            var map = _mapRenderer;
             if (map == null)
             {
                 return string.Empty;
