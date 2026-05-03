@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using UnityEngine;
 
@@ -14,6 +13,7 @@ namespace Panoptes.Presentation.Map
             IReadOnlyDictionary<string, UnitView> unitViews,
             float tileSize,
             float plainElevation,
+            string myPlayerId,
             Func<string, bool> isBaseVehicleUnitType,
             out MapCameraContext context)
         {
@@ -29,6 +29,7 @@ namespace Panoptes.Presentation.Map
                 tileViews,
                 unitViews,
                 plainElevation,
+                myPlayerId,
                 isBaseVehicleUnitType);
             context = new MapCameraContext(worldRect, plainElevation, focusPoint);
             return context.IsValid;
@@ -40,14 +41,15 @@ namespace Panoptes.Presentation.Map
             IReadOnlyDictionary<string, NodeView> tileViews,
             IReadOnlyDictionary<string, UnitView> unitViews,
             float plainElevation,
+            string myPlayerId,
             Func<string, bool> isBaseVehicleUnitType)
         {
-            if (TryGetOwnedCityCoreFocusPoint(nodeStates, tileViews, plainElevation, out var cityCoreFocus))
+            if (TryGetOwnedCityCoreFocusPoint(nodeStates, tileViews, plainElevation, myPlayerId, out var cityCoreFocus))
             {
                 return cityCoreFocus;
             }
 
-            if (TryGetOwnedBaseVehicleFocusPoint(unitViews, plainElevation, isBaseVehicleUnitType, out var baseVehicleFocus))
+            if (TryGetOwnedBaseVehicleFocusPoint(unitViews, plainElevation, myPlayerId, isBaseVehicleUnitType, out var baseVehicleFocus))
             {
                 return baseVehicleFocus;
             }
@@ -58,17 +60,17 @@ namespace Panoptes.Presentation.Map
         private static bool TryGetOwnedBaseVehicleFocusPoint(
             IReadOnlyDictionary<string, UnitView> unitViews,
             float plainElevation,
+            string myPlayerId,
             Func<string, bool> isBaseVehicleUnitType,
             out Vector3 focusPoint)
         {
             focusPoint = default;
-            var cache = GameStateCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID) || unitViews == null)
+            if (string.IsNullOrWhiteSpace(myPlayerId) || unitViews == null)
             {
                 return false;
             }
 
-            var myPlayerId = MapRenderTokens.Normalize(cache.MyPlayerID);
+            var normalizedPlayerId = MapRenderTokens.Normalize(myPlayerId);
             foreach (var pair in unitViews)
             {
                 var unitView = pair.Value;
@@ -77,7 +79,7 @@ namespace Panoptes.Presentation.Map
                     continue;
                 }
 
-                if (!string.Equals(MapRenderTokens.Normalize(unitView.Faction), myPlayerId, StringComparison.Ordinal))
+                if (!string.Equals(MapRenderTokens.Normalize(unitView.Faction), normalizedPlayerId, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -99,16 +101,16 @@ namespace Panoptes.Presentation.Map
             IReadOnlyDictionary<string, NodeDto> nodeStates,
             IReadOnlyDictionary<string, NodeView> tileViews,
             float plainElevation,
+            string myPlayerId,
             out Vector3 focusPoint)
         {
             focusPoint = default;
-            var cache = GameStateCache.Instance;
-            if (cache == null || string.IsNullOrWhiteSpace(cache.MyPlayerID) || nodeStates == null || tileViews == null)
+            if (string.IsNullOrWhiteSpace(myPlayerId) || nodeStates == null || tileViews == null)
             {
                 return false;
             }
 
-            var myPlayerId = MapRenderTokens.Normalize(cache.MyPlayerID);
+            var normalizedPlayerId = MapRenderTokens.Normalize(myPlayerId);
             foreach (var pair in nodeStates)
             {
                 var node = pair.Value;
@@ -118,7 +120,7 @@ namespace Panoptes.Presentation.Map
                 }
 
                 var ownerId = MapRenderTokens.Normalize(string.IsNullOrWhiteSpace(node.TerritoryOwner) ? node.Owner : node.TerritoryOwner);
-                if (!string.Equals(ownerId, myPlayerId, StringComparison.Ordinal))
+                if (!string.Equals(ownerId, normalizedPlayerId, StringComparison.Ordinal))
                 {
                     continue;
                 }

@@ -289,6 +289,28 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void MapRenderer_ShouldReadAuthoritativeStateFromGameStateStore()
+        {
+            var rendererPath = ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapRenderer.cs");
+            var cameraContextBuilderPath = ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapCameraContextBuilder.cs");
+            var offenders = FindTokenOffenders(
+                new[] { rendererPath, cameraContextBuilderPath },
+                "*.cs",
+                "Panoptes.Protocol",
+                "GameStateCache",
+                "NetworkManager.Instance");
+
+            Assert.That(offenders, Is.Empty, "MapRenderer must render authoritative game state from GameStateStore, not Protocol or legacy cache paths.");
+
+            var mapRenderer = File.ReadAllText(rendererPath);
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            Assert.That(mapRenderer, Does.Contain("GameStateStore"));
+            Assert.That(mapRenderer, Does.Contain("[Inject]"));
+            Assert.That(mapRenderer, Does.Contain(".State.Subscribe"));
+            Assert.That(installer, Does.Contain("RegisterComponentInHierarchy<MapRenderer>"));
+        }
+
+        [Test]
         public void TechTreeUiToolkitSlice_ShouldUseViewModelVisibilityStoreAndNoLegacyPanel()
         {
             Assert.That(

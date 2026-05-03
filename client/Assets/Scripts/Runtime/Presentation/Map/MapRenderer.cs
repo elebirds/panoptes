@@ -10,11 +10,14 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Core.Application.App;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.UI.Common;
 using Panoptes.Presentation.UI.HUD;
+using R3;
 using UnityEngine;
+using VContainer;
 
 namespace Panoptes.Presentation.Map
 {
@@ -103,6 +106,9 @@ namespace Panoptes.Presentation.Map
         private readonly MapCameraContextBuilder _cameraContextBuilder = new();
         private StaticCatalogCache _catalogCache;
         private ConfigCache _configCache;
+        private GameStateStore _gameStateStore;
+        private GameStateStoreState _latestGameState = new();
+        private IDisposable _gameStateSubscription;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -126,8 +132,21 @@ namespace Panoptes.Presentation.Map
             Instance = this;
         }
 
+        [Inject]
+        private void Construct(GameStateStore gameStateStore)
+        {
+            _gameStateStore = gameStateStore;
+            _latestGameState = _gameStateStore?.Snapshot ?? new GameStateStoreState();
+            if (isActiveAndEnabled)
+            {
+                SubscribeGameState();
+            }
+        }
+
         private void OnEnable()
         {
+            SubscribeGameState();
+
             if (IsGameRuntime())
             {
                 return;
@@ -138,6 +157,7 @@ namespace Panoptes.Presentation.Map
 
         private void OnDisable()
         {
+            UnsubscribeGameState();
             UnsubscribeServerMapConfig();
         }
 
@@ -186,10 +206,10 @@ namespace Panoptes.Presentation.Map
             RebuildMap();
         }
 
-        private static bool ShouldBuildOnStart()
+        private bool ShouldBuildOnStart()
         {
-            var cache = GameStateCache.Instance;
-            if (cache != null && cache.Nodes != null && cache.Nodes.Count > 0)
+            var state = GetGameStateSnapshot();
+            if (HasBackendNodes(state))
             {
                 return true;
             }
@@ -248,21 +268,16 @@ namespace Panoptes.Presentation.Map
 
         public void RebuildMap()
         {
-            if (GameStateCache.Instance == null)
-            {
-                Debug.LogError("[MapRenderer] Cannot build map: GameStateCache is missing.");
-                return;
-            }
-
             if (IsGameRuntime())
             {
                 BuildBackendGameMap();
                 return;
             }
 
-            if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
+            var state = GetGameStateSnapshot();
+            if (HasBackendNodes(state))
             {
-                var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
+                var backendNodes = SnapshotBackendNodes(state);
                 if (!preferLocalMapWhenBackendHasNoTerritory || MapSourceResolver.HasTerritorySnapshot(backendNodes))
                 {
                     Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
@@ -277,9 +292,9 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (GameStateCache.Instance.Nodes != null && GameStateCache.Instance.Nodes.Count > 0)
+            if (HasBackendNodes(state))
             {
-                var backendNodes = new List<NodeDto>(GameStateCache.Instance.Nodes.Values);
+                var backendNodes = SnapshotBackendNodes(state);
                 Debug.LogWarning($"[MapRenderer] Using backend nodes despite incomplete territory snapshot: {backendNodes.Count}");
                 PrepareRuntimeRoots();
                 BuildFromBackendNodes(backendNodes);
@@ -291,23 +306,149 @@ namespace Panoptes.Presentation.Map
 
         private bool BuildBackendGameMap()
         {
-            var cache = GameStateCache.Instance;
-            if (cache == null)
+            if (_gameStateStore == null)
             {
-                ReportBackendGameMapFailure("GameStateCache 未就绪，无法渲染服务端地图。");
+                ReportBackendGameMapFailure("GameStateStore 未注入，无法渲染服务端地图。");
                 return false;
             }
 
-            if (cache.Nodes == null || cache.Nodes.Count == 0)
+            var state = GetGameStateSnapshot();
+            if (!HasBackendNodes(state))
             {
-                ReportBackendGameMapFailure("服务端未下发地图节点，无法进入对局。");
+                Debug.LogWarning("[MapRenderer] Waiting for server map nodes before rendering game map.");
                 return false;
             }
 
-            var backendNodes = new List<NodeDto>(cache.Nodes.Values);
+            var backendNodes = SnapshotBackendNodes(state);
             Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
             BuildFromBackendNodes(backendNodes);
             return true;
+        }
+
+        private void SubscribeGameState()
+        {
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.OnGameStateChanged(state));
+        }
+
+        private void UnsubscribeGameState()
+        {
+            _gameStateSubscription?.Dispose();
+            _gameStateSubscription = null;
+        }
+
+        private void OnGameStateChanged(GameStateStoreState state)
+        {
+            _latestGameState = state ?? new GameStateStoreState();
+            if (!isActiveAndEnabled || !IsGameRuntime() || !HasBackendNodes(_latestGameState))
+            {
+                return;
+            }
+
+            RefreshRenderedGameState(_latestGameState);
+        }
+
+        private GameStateStoreState GetGameStateSnapshot()
+        {
+            return _latestGameState ?? _gameStateStore?.Snapshot ?? new GameStateStoreState();
+        }
+
+        private static bool HasBackendNodes(GameStateStoreState state)
+        {
+            return state?.Nodes != null && state.Nodes.Count > 0;
+        }
+
+        private static bool HasBackendUnits(GameStateStoreState state)
+        {
+            return state?.Units != null && state.Units.Count > 0;
+        }
+
+        private static List<NodeDto> SnapshotBackendNodes(GameStateStoreState state)
+        {
+            var result = new List<NodeDto>();
+            if (state?.Nodes == null)
+            {
+                return result;
+            }
+
+            foreach (var node in state.Nodes.Values)
+            {
+                if (node != null)
+                {
+                    result.Add(node);
+                }
+            }
+
+            return result;
+        }
+
+        private static List<UnitDto> SnapshotBackendUnits(GameStateStoreState state)
+        {
+            var result = new List<UnitDto>();
+            if (state?.Units == null)
+            {
+                return result;
+            }
+
+            foreach (var unit in state.Units.Values)
+            {
+                if (unit != null)
+                {
+                    result.Add(unit);
+                }
+            }
+
+            return result;
+        }
+
+        private void RefreshRenderedGameState(GameStateStoreState state)
+        {
+            if (!HasBackendNodes(state))
+            {
+                return;
+            }
+
+            if (_tileViews.Count != state.Nodes.Count || HasMissingRenderedNode(state))
+            {
+                BuildFromBackendNodes(SnapshotBackendNodes(state));
+                return;
+            }
+
+            foreach (var node in state.Nodes.Values)
+            {
+                if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                _nodeStates[node.Id] = node;
+                if (_tileViews.TryGetValue(node.Id, out var view) && view != null)
+                {
+                    view.Bind(node);
+                }
+            }
+
+            RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
+            RebuildUnitsForCurrentSource();
+            PublishCameraContext();
+        }
+
+        private bool HasMissingRenderedNode(GameStateStoreState state)
+        {
+            if (state?.Nodes == null)
+            {
+                return false;
+            }
+
+            foreach (var nodeId in state.Nodes.Keys)
+            {
+                if (!_tileViews.ContainsKey(nodeId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void SubscribeServerMapConfig()
@@ -352,7 +493,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
+            if (HasBackendNodes(GetGameStateSnapshot()))
             {
                 return;
             }
@@ -373,7 +514,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (GameStateCache.Instance != null && GameStateCache.Instance.Nodes.Count > 0)
+            if (HasBackendNodes(GetGameStateSnapshot()))
             {
                 return;
             }
@@ -660,11 +801,6 @@ namespace Panoptes.Presentation.Map
             _unitViews.Remove(unitId);
             _unitNodeById.Remove(unitId);
 
-            if (updateCache && GameStateCache.Instance != null)
-            {
-                GameStateCache.Instance.RemoveRuntimeUnit(unitId);
-            }
-
             return true;
         }
 
@@ -760,15 +896,6 @@ namespace Panoptes.Presentation.Map
                 unitView.transform.position = targetNode.UnitAnchor.position;
             }
 
-            if (GameStateCache.Instance != null)
-            {
-                var cachedUnit = GameStateCache.Instance.GetUnit(unitId);
-                if (cachedUnit != null)
-                {
-                    cachedUnit.Q = targetNode.GridPos.x;
-                    cachedUnit.R = targetNode.GridPos.y;
-                }
-            }
         }
 
         public bool TryGetGridBounds(out int minX, out int maxX, out int minY, out int maxY)
@@ -950,6 +1077,7 @@ namespace Panoptes.Presentation.Map
                 _unitViews,
                 tileSize,
                 plainElevation,
+                GetGameStateSnapshot().MyPlayerId,
                 IsBaseVehicleUnitType,
                 out context);
         }
@@ -1103,9 +1231,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (!generateDebugMapOnStart && GameStateCache.Instance != null && GameStateCache.Instance.Units.Count > 0)
+            var state = GetGameStateSnapshot();
+            if (!generateDebugMapOnStart && HasBackendUnits(state))
             {
-                BuildUnitsFromState(GameStateCache.Instance.Units.Values);
+                BuildUnitsFromState(SnapshotBackendUnits(state));
                 return;
             }
 
@@ -1355,11 +1484,6 @@ namespace Panoptes.Presentation.Map
                 unitCache = cacheGo.AddComponent<UnitCache>();
             }
             unitCache.Register(instance);
-
-            if (updateCache && GameStateCache.Instance != null)
-            {
-                GameStateCache.Instance.UpsertRuntimeUnit(unit);
-            }
 
             return true;
         }
