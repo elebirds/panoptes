@@ -38,7 +38,7 @@ DLLs unless the R3 installation strategy is deliberately replaced.
 
 - Manual edits under `client/Assets/Scripts/Protocol/`.
 - `Panoptes.Protocol` references under `client/Assets/Scripts/Runtime/Presentation`.
-- `NetworkManager.Instance` usage under `client/Assets/Scripts/Runtime/Presentation/UI`.
+- Direct NetworkManager singleton calls under `client/Assets/Scripts/Runtime/Presentation/UI`.
 - UI scripts performing gameplay legality validation or resource affordability
   checks.
 - Broad scene/prefab-facing MonoBehaviour renames without updating and
@@ -66,9 +66,14 @@ DLLs unless the R3 installation strategy is deliberately replaced.
   UI` flow through VContainer and R3.
 - Player command submission should prefer `Presentation command ->
   Core command service -> IClientMessageSender -> Server`; migrated
-  Presentation code must not call static `GameIntents`.
+  Presentation code must not call static command compatibility shells.
 - If UI Toolkit is used, start with explicit Binder rendering and add data
   binding only for stable fields/forms after the pilot succeeds.
+- `RegisterComponentOnNewGameObject` is reserved for the current UIDocument
+  management binders until authored UI Toolkit prefabs exist; any expansion of
+  that exception needs a boundary test update.
+- Debug panel dynamic component creation is allowed only behind
+  `UNITY_EDITOR`, `DEVELOPMENT_BUILD`, or `PANOPTES_DEBUG_PANEL` compile gates.
 - Helpers that own runtime Unity objects (`GameObject`, `RenderTexture`,
   cameras, lights) must expose deterministic cleanup. If cleanup can run in
   EditMode tests, use `DestroyImmediate` outside play mode and `Destroy` during

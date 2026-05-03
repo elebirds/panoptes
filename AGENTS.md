@@ -236,22 +236,25 @@ type GameTransport interface {
 
 ```
 UI 脚本
-  → Service 层（AuthService 等）
-  → MessageSender.Send<T>()
-  → NetworkManager.Instance.Send()
+  → 注入的 ViewModel / 命令 Service
+  → IClientMessageSender
+  → NetworkManager
   → WebSocket
 
-❌ UI 脚本不得直接调用 NetworkManager
+❌ UI 脚本不得直接调用 NetworkManager 或静态发送壳
 ```
 
 ### 消息处理规范
 
 ```csharp
-// 在场景的 MonoBehaviour.Awake() 里注册
-MessageDispatcher.Instance.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+// Handler 由 ProjectLifetimeScope 注入 MessageDispatcher 后注册
+public void UseProjectServices(MessageDispatcher dispatcher, GameStateCache cache)
+{
+    dispatcher.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+}
 
-// 在 OnDestroy() 里取消注册
-MessageDispatcher.Instance.Unregister("MsgGameInit");
+// 在 OnDestroy() 里对同一个 dispatcher 对称取消注册
+_dispatcher.Unregister<MsgGameInit>("MsgGameInit", OnGameInit);
 ```
 
 ### UI 脚本职责

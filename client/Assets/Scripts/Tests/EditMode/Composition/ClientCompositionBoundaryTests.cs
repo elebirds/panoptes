@@ -33,7 +33,7 @@ namespace Panoptes.Tests.EditMode.Composition
         [Test]
         public void CompositionScopes_ShouldRegisterFinalStoresWithoutLegacyCacheFacades()
         {
-            var root = ResolveAssetPath("Scripts/Runtime/Presentation/Composition");
+            var root = ResolveAssetPath("Scripts/Runtime/Presentation/Composition/GameLifetimeScope.cs");
             var offenders = FindTokenOffenders(
                 new[] { root },
                 "*.cs",
@@ -81,6 +81,42 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RecipeSynthesisUiToolkitBinder"));
             Assert.That(installer, Does.Contain("MinisterReportViewModel"));
             Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
+        }
+
+        [Test]
+        public void UiToolkitBinders_ShouldBeTheOnlyNewGameObjectCompositionException()
+        {
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var expected = new[]
+            {
+                "RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<RecipeSynthesisUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>",
+                "RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"
+            };
+
+            Assert.That(CountOccurrences(installer, "RegisterComponentOnNewGameObject<"), Is.EqualTo(expected.Length),
+                "Only UIDocument-backed UI Toolkit binders may use generated GameObjects until prefab assets exist.");
+            for (var i = 0; i < expected.Length; i++)
+            {
+                Assert.That(installer, Does.Contain(expected[i]));
+            }
+        }
+
+        [Test]
+        public void DebugPanelDynamicBootstrap_ShouldStayDebugOnly()
+        {
+            var bootstrap = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/PanoptesCompositionBootstrap.cs"));
+            var debugIndex = bootstrap.IndexOf("EnsureOptionalDebugPanel(managers);", StringComparison.Ordinal);
+            var defineIndex = bootstrap.IndexOf("#if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL", StringComparison.Ordinal);
+            var addComponentIndex = bootstrap.IndexOf("owner.AddComponent(debugPanelType);", StringComparison.Ordinal);
+
+            Assert.That(debugIndex, Is.GreaterThanOrEqualTo(0), "Debug panel bootstrap exception must remain explicit.");
+            Assert.That(defineIndex, Is.GreaterThanOrEqualTo(0), "Debug panel bootstrap must be compiled only for editor/dev/debug builds.");
+            Assert.That(addComponentIndex, Is.GreaterThan(defineIndex), "Debug panel AddComponent reflection must remain behind the debug-only compile gate.");
         }
 
         [Test]

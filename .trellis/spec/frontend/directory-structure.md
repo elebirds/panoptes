@@ -103,6 +103,10 @@ but they must share the same application state model. New migrated modules must
 receive dependencies from VContainer scopes and must not actively call legacy
 singleton `*.Instance` APIs.
 
+Command submission lives in Core command services and crosses the network only
+through `IClientMessageSender`. Presentation may call injected services or
+ViewModels, but not removed static command/send compatibility wrappers.
+
 ---
 
 ## Naming Conventions

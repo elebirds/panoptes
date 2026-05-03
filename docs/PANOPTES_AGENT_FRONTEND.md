@@ -139,14 +139,14 @@ panoptes-client/
 │   │   │   │   │   ├── Domain/        # DTO（NodeDto/UnitDto/ResourceDto/SettlementDto/...）
 │   │   │   │   │   └── Events/        # GameEvents（仅暴露 DTO）
 │   │   │   │   ├── Infrastructure/
-│   │   │   │   │   ├── Network/       # NetworkManager/MessageDispatcher/MessageSender
+│   │   │   │   │   ├── Network/       # NetworkManager/MessageDispatcher/NetworkMessageSender
 │   │   │   │   │   ├── Mapper/        # NodeMapper/UnitMapper/MinisterMapper/SettlementMapper
 │   │   │   │   │   ├── Service/       # AuthService/LobbyService/SessionManager
 │   │   │   │   │   └── Debug/         # 调试组件
 │   │   │   │   └── Application/
 │   │   │   │       ├── Cache/         # GameStateCache/StaticCatalogCache/RoomCache
 │   │   │   │       ├── Handler/       # GameMessageHandler/LobbyMessageHandler
-│   │   │   │       ├── Intents/       # GameIntents（原 GameAction）
+│   │   │   │       ├── Services/      # GameIntentService/PlanningIntentService/MinisterCommandService
 │   │   │   │       └── App/           # AppManager/SceneLoader/Config
 │   │   │   │
 │   │   │   └── Presentation/          # Panoptes.Presentation.asmdef
@@ -536,9 +536,7 @@ public class NetworkManager : MonoBehaviour
 // 从ServerFrame提取具体payload并路由到对应Handler
 public class MessageDispatcher : MonoBehaviour
 {
-    public static MessageDispatcher Instance { get; private set; }
-
-    // 注册Handler（在Awake中调用）
+    // 注册Handler（由ProjectLifetimeScope注入后调用）
     public void Register<T>(string messageType, Action<T> handler)
         where T : IMessage<T>, new();
 
@@ -549,16 +547,14 @@ public class MessageDispatcher : MonoBehaviour
 
 Handler注册示例：
 ```csharp
-void Awake()
+public void UseProjectServices(MessageDispatcher dispatcher, GameStateCache cache)
 {
-	MessageDispatcher.Instance.Register<MsgGameInit>(
-	    "MsgGameInit", OnGameInit);
-	MessageDispatcher.Instance.Register<MsgPlanningStart>(
-	    "MsgPlanningStart", OnPlanningStart);
-	MessageDispatcher.Instance.Register<MsgPlanningSnapshot>(
-	    "MsgPlanningSnapshot", OnPlanningSnapshot);
-	MessageDispatcher.Instance.Register<MsgGameSync>(
-	    "MsgGameSync", OnGameSync);
+    _dispatcher = dispatcher;
+    _cache = cache;
+    _dispatcher.Register<MsgGameInit>("MsgGameInit", OnGameInit);
+    _dispatcher.Register<MsgPlanningStart>("MsgPlanningStart", OnPlanningStart);
+    _dispatcher.Register<MsgPlanningSnapshot>("MsgPlanningSnapshot", OnPlanningSnapshot);
+    _dispatcher.Register<MsgGameSync>("MsgGameSync", OnGameSync);
 	// ...
 }
 ```
@@ -667,6 +663,14 @@ public class MetricsPanel : MonoBehaviour
 ```csharp
 public class BuildMenu : MonoBehaviour
 {
+    private PlanningIntentService _planningIntentService;
+
+    [Inject]
+    private void Construct(PlanningIntentService planningIntentService)
+    {
+        _planningIntentService = planningIntentService;
+    }
+
     // 在指定屏幕位置显示可建造列表
     // buildingTypes由外部传入，不在本类计算
     public void Show(string nodeId, Vector2 screenPos, IList<string> buildingTypes);
@@ -677,11 +681,7 @@ public class BuildMenu : MonoBehaviour
     // 玩家选择某个建筑时的回调；这里只打包输入，不做合法性校验
     private void OnBuildingSelected(string nodeId, string buildingTypeId, string cityId)
     {
-        MessageSender.Send(new MsgBuildStructure {
-            NodeId = nodeId,
-            BuildingTypeId = buildingTypeId,
-            CityId = cityId
-        });
+        _planningIntentService.BuildStructure(nodeId, buildingTypeId, cityId);
         Hide();
     }
 }
@@ -694,6 +694,14 @@ public class BuildMenu : MonoBehaviour
 ```csharp
 public class WarZonePanel : MonoBehaviour
 {
+    private GameIntentService _gameIntentService;
+
+    [Inject]
+    private void Construct(GameIntentService gameIntentService)
+    {
+        _gameIntentService = gameIntentService;
+    }
+
     // 进入战区划定模式（格子可框选）
     public void EnterZoneEditMode(string zoneId);
 
@@ -706,11 +714,7 @@ public class WarZonePanel : MonoBehaviour
     // 发送战区指令
     private void OnDirectiveSelected(string zoneId, string directive, string targetNode)
     {
-        MessageSender.Send(new MsgWarZoneDirective {
-            ZoneId = zoneId,
-            Directive = directive,
-            TargetNode = targetNode
-        });
+        _gameIntentService.SetWarZoneDirective(zoneId, directive, targetNode);
     }
 }
 ```
@@ -722,20 +726,30 @@ public class WarZonePanel : MonoBehaviour
 ```csharp
 public class OrderReviewPanel : MonoBehaviour
 {
+    private PlanningToolService _planningToolService;
+    private GameIntentService _gameIntentService;
+
+    [Inject]
+    private void Construct(PlanningToolService planningToolService, GameIntentService gameIntentService)
+    {
+        _planningToolService = planningToolService;
+        _gameIntentService = gameIntentService;
+    }
+
     // 显示部长生成的指令列表
     public void ShowOrders(IList<UnitOrder> orders);
 
     // 否决某条指令（消耗令牌）
     private void OnVetoOrder(string unitId)
     {
-        MessageSender.Send(new MsgTokenVetoCombat { UnitId = unitId });
+        _gameIntentService.VetoCombatOrder(unitId);
     }
 
     // 修改为精确微操（消耗令牌）
     private void OnMicroOrder(string unitId)
     {
         // 进入地图规划输入流程，实际合法性仍由服务端判定
-        MapPlanningInputController.Instance.BeginMoveSelection();
+        _planningToolService.BeginMoveSelection(unitId);
     }
 }
 ```
@@ -751,7 +765,7 @@ public class OrderReviewPanel : MonoBehaviour
 async void Start()
 {
     // 1. 连接WebSocket
-    await NetworkManager.Instance.ConnectAsync(Config.ServerURL);
+    await _networkManager.ConnectAsync(Config.ServerURL);
 
     // 2. 如果有本地存储的token，尝试自动登录
     // Gamejam阶段跳过，直接显示登录界面
@@ -768,16 +782,13 @@ private void OnLoginSuccess(MsgLoginSuccess msg)
 }
 ```
 
-### MessageSender.cs
+### IClientMessageSender / NetworkMessageSender
 
 ```csharp
-// 工具类，统一封装并发送 ClientFrame
-public static class MessageSender
+// 注入式端口，统一封装并发送 ClientFrame
+public interface IClientMessageSender
 {
-    public static void Send<T>(T message) where T : IMessage<T>
-    {
-        NetworkManager.Instance.Send(message);
-    }
+    bool Send(IMessage message);
 }
 ```
 
@@ -899,7 +910,7 @@ public class AnimationQueue : MonoBehaviour
         _isPlaying = false;
 
         // 动画播放完成后，更新缓存和UI
-        GameStateCache.Instance.ApplyCombatSettlement(_pendingSettlement);
+        _gameStateCache.ApplyCombatSettlement(_pendingSettlement);
     }
 
     private IEnumerator PlayEvent(CombatEvent e)
@@ -964,7 +975,7 @@ Step 1：项目基础（Day 1）
   - Boot场景，单例初始化
   - NetworkManager：连接，发送，接收，主线程回调
   - MessageDispatcher：ServerFrame提取与payload路由骨架
-  - MessageSender工具类
+  - IClientMessageSender 与 NetworkMessageSender 注入式发送端口
   - Config.cs：服务器地址配置
 
 Step 2：登录和大厅（Day 2上午）
