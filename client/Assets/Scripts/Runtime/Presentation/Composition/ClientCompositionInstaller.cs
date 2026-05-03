@@ -107,6 +107,7 @@ namespace Panoptes.Presentation.Composition
             }
 
             var messageSender = new NetworkMessageSender(networkManager);
+            roomCache.UseSessionManager(sessionManager);
             appManager.UseProjectServices(
                 networkManager,
                 messageDispatcher,
