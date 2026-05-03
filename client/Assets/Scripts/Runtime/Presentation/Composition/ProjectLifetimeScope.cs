@@ -53,14 +53,30 @@ namespace Panoptes.Presentation.Composition
                 roomCache,
                 gameStateCache,
                 gameChatCache,
+                planningDraftCache,
                 GetComponent<LoadingOverlay>(),
                 overlays.ErrorToast,
                 overlays.ConfirmDialog);
             GetComponent<LobbyMessageHandler>().UseProjectServices(messageDispatcher, roomCache);
-            GetComponent<GameMessageHandler>().UseProjectServices(messageDispatcher, gameStateCache, planningDraftCache, gameChatCache);
+            GetComponent<GameMessageHandler>().UseProjectServices(
+                messageDispatcher,
+                gameStateCache,
+                planningDraftCache,
+                gameChatCache,
+                GetComponent<StaticCatalogCache>());
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || PANOPTES_DEBUG_PANEL
             builder.RegisterBuildCallback(container =>
-                GetComponent<DebugPanel>().UseMessageSender(container.Resolve<IClientMessageSender>()));
+            {
+                var debugPanel = GetComponent<DebugPanel>();
+                debugPanel.UseMessageSender(container.Resolve<IClientMessageSender>());
+                debugPanel.UseRuntimeServices(
+                    GetComponent<AppManager>(),
+                    GetComponent<SessionManager>(),
+                    roomCache,
+                    gameStateCache,
+                    GetComponent<ClientRuntimeConfigCache>(),
+                    GetComponent<NetworkManager>());
+            });
 #endif
         }
     }

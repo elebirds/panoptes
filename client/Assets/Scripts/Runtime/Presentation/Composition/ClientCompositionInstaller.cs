@@ -37,6 +37,7 @@ namespace Panoptes.Presentation.Composition
             RoomCache roomCache,
             GameStateCache gameStateCache,
             GameChatCache gameChatCache,
+            PlanningDraftCache planningDraftCache,
             LoadingOverlay loadingOverlay,
             ErrorToast errorToast,
             ConfirmDialog confirmDialog)
@@ -91,6 +92,11 @@ namespace Panoptes.Presentation.Composition
                 throw new ArgumentNullException(nameof(gameChatCache));
             }
 
+            if (planningDraftCache == null)
+            {
+                throw new ArgumentNullException(nameof(planningDraftCache));
+            }
+
             if (loadingOverlay == null)
             {
                 throw new ArgumentNullException(nameof(loadingOverlay));
@@ -108,6 +114,8 @@ namespace Panoptes.Presentation.Composition
 
             var messageSender = new NetworkMessageSender(networkManager);
             roomCache.UseSessionManager(sessionManager);
+            gameStateCache.UseProjectCaches(staticCatalogCache, planningDraftCache, gameChatCache);
+            messageDispatcher.UseGameEventSessionGate(new GameEventSessionGate(gameStateCache));
             appManager.UseProjectServices(
                 networkManager,
                 messageDispatcher,
@@ -141,7 +149,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponent(loadingOverlay).AsSelf().As<ILoadingOverlayPresenter>();
             builder.RegisterComponent(errorToast).AsSelf();
             builder.RegisterComponent(confirmDialog).AsSelf();
-            builder.Register(_ => new AuthService(), Lifetime.Singleton).AsSelf();
+            builder.Register(_ => new AuthService(networkManager.ServerUrl), Lifetime.Singleton).AsSelf();
             builder.RegisterInstance(messageSender).As<IClientMessageSender>();
             builder.Register<StaticCatalogStore>(Lifetime.Singleton).AsSelf();
             builder.Register<StaticCatalogStoreHydrator>(Lifetime.Singleton).AsSelf();

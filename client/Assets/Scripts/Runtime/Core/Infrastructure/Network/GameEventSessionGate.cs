@@ -13,9 +13,16 @@ using UnityEngine;
 
 namespace Panoptes.Core.Infrastructure.Network
 {
-    internal static class GameEventSessionGate
+    public sealed class GameEventSessionGate
     {
-        public static bool ShouldDispatch(MessageDispatcher.DispatchEntry entry)
+        private readonly GameStateCache _gameStateCache;
+
+        public GameEventSessionGate(GameStateCache gameStateCache)
+        {
+            _gameStateCache = gameStateCache;
+        }
+
+        public bool ShouldDispatch(MessageDispatcher.DispatchEntry entry)
         {
             if (entry.Frame == null || entry.Frame.TargetCase != ServerFrame.TargetOneofCase.Game)
             {
@@ -34,7 +41,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
             if (gameEvent.BodyCase == GameEvent.BodyOneofCase.GameInit)
             {
-                GameStateCache.Instance?.SetActiveGameSession(incomingSessionID);
+                _gameStateCache?.SetActiveGameSession(incomingSessionID);
                 return true;
             }
 
@@ -47,8 +54,8 @@ namespace Panoptes.Core.Infrastructure.Network
                 return true;
             }
 
-            var activeSessionID = GameStateCache.Instance != null
-                ? (GameStateCache.Instance.ActiveGameSessionID ?? string.Empty).Trim()
+            var activeSessionID = _gameStateCache != null
+                ? (_gameStateCache.ActiveGameSessionID ?? string.Empty).Trim()
                 : string.Empty;
 
             if (string.IsNullOrWhiteSpace(activeSessionID))

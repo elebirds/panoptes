@@ -17,17 +17,20 @@ namespace Panoptes.Core.Application.Handler
         private GameStateCache _gameStateCache;
         private PlanningDraftCache _planningDraftCache;
         private GameChatCache _gameChatCache;
+        private StaticCatalogCache _staticCatalogCache;
 
         public void UseProjectServices(
             MessageDispatcher dispatcher,
             GameStateCache gameStateCache,
             PlanningDraftCache planningDraftCache,
-            GameChatCache gameChatCache)
+            GameChatCache gameChatCache,
+            StaticCatalogCache staticCatalogCache)
         {
             _dispatcher = dispatcher;
             _gameStateCache = gameStateCache;
             _planningDraftCache = planningDraftCache;
             _gameChatCache = gameChatCache;
+            _staticCatalogCache = staticCatalogCache;
             RegisterHandlers();
         }
 
@@ -241,7 +244,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             var cache = _gameStateCache;
-            var trueState = NodeMapper.ToDto(msg.TrueState);
+            var trueState = NodeMapper.ToDto(msg.TrueState, _staticCatalogCache);
             cache?.UpdateNode(trueState);
             cache?.PublishRevealResult(new RevealResultEvent
             {
