@@ -183,6 +183,7 @@ namespace Panoptes.Presentation.Map
             SelectionService selectionService,
             PlanningToolViewModel planningToolViewModel,
             AnimationQueue animationQueue,
+            DamageNumberPopupController injectedDamagePopupController,
             MapRenderer mapRenderer,
             StaticCatalogStore staticCatalogStore,
             GameStateStore gameStateStore,
@@ -192,6 +193,10 @@ namespace Panoptes.Presentation.Map
         {
             _planningIntentService = planningIntentService;
             _animationQueue = animationQueue;
+            if (damagePopupController == null)
+            {
+                damagePopupController = injectedDamagePopupController;
+            }
             ConfigureMapRenderer(mapRenderer);
             _staticCatalogStore = staticCatalogStore;
             _buildingCatalogResolver.Configure(staticCatalogStore);
@@ -1909,8 +1914,7 @@ namespace Panoptes.Presentation.Map
                         _unitDamagePopups.TrackMovedUnit(
                             currentUnit,
                             enableUnitDamagePopupFallback,
-                            damagePopupRepeatCooldownSeconds,
-                            ref damagePopupController);
+                            damagePopupRepeatCooldownSeconds);
                     }
                 }
             }
@@ -2040,6 +2044,7 @@ namespace Panoptes.Presentation.Map
             }
 
             _unitDamagePopups.SetMapRenderer(mapRenderer);
+            _unitDamagePopups.SetDamagePopupController(damagePopupController);
             _movePreviewPresentation.SetMapRenderer(mapRenderer);
             _pendingDeployGhosts.SetMapRenderer(mapRenderer);
             _territoryHighlights.SetMapRenderer(mapRenderer);

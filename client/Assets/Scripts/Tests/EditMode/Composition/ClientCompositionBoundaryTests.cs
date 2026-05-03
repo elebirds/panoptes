@@ -834,6 +834,31 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
+        public void DamagePopupPresentation_ShouldUseCompositionController()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapUnitDamagePopupPresenter.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/MapPlanningInputController.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Map/SettlementPlaybackController.cs")
+            };
+
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                "SceneObjectFinder",
+                "FindAnyObjectByType",
+                "new GameObject(\"DamageNumberPopupController");
+
+            Assert.That(offenders, Is.Empty, "Damage popup presentation should use the composed DamageNumberPopupController.");
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            var presenter = File.ReadAllText(roots[0]);
+            Assert.That(installer, Does.Contain("RegisterComponentOnNewGameObject<DamageNumberPopupController>"));
+            Assert.That(presenter, Does.Contain("SetDamagePopupController(DamageNumberPopupController popupController)"));
+        }
+
+        [Test]
         public void PresentationAssembly_ShouldReferenceVContainer()
         {
             var asmdef = ResolveAssetPath("Scripts/Runtime/Presentation/Panoptes.Presentation.asmdef");
