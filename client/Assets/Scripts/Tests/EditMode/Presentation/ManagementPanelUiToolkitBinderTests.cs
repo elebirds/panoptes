@@ -1,7 +1,11 @@
 using System.Reflection;
+using Google.Protobuf;
 using NUnit.Framework;
+using Panoptes.Core.Application.Intents;
+using Panoptes.Core.Application.Services;
 using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.ViewModels;
+using Panoptes.Protocol.V1;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -100,6 +104,54 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
         }
 
+        [Test]
+        public void RecipeSynthesisBinder_ShouldFollowRecipeVisibilityStore()
+        {
+            _root = new GameObject("RecipeSynthesisVisibilityTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore);
+
+            var document = _root.GetComponent<UIDocument>();
+            var rootElement = document.rootVisualElement;
+
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            visibilityStore.Show(ManagementPanelId.RecipeSynthesis);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+
+            visibilityStore.Show(ManagementPanelId.BuildCatalog);
+            Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+        }
+
+        [Test]
+        public void RecipeSynthesisBinder_ShouldSubmitSelectedRecipeThroughPlanningService()
+        {
+            ActionLock.Release();
+            _root = new GameObject("RecipeSynthesisCommandTest");
+            var binder = _root.AddComponent<RecipeSynthesisUiToolkitBinder>();
+            var sender = new RecordingMessageSender();
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new RecipeSynthesisContextStore();
+            contextStore.SetContext("node-a", "mill", "player-1");
+            InjectRecipeFlow(binder, new PlanningIntentService(sender), visibilityStore, contextStore);
+
+            RequestRecipeSelection(binder, "grain");
+
+            Assert.That(sender.LastMessage, Is.TypeOf<MsgSetBuildingRecipe>());
+            var message = (MsgSetBuildingRecipe)sender.LastMessage;
+            Assert.That(message.NodeId, Is.EqualTo("node-a"));
+            Assert.That(message.RecipeId, Is.EqualTo("grain"));
+
+            visibilityStore.Dispose();
+            contextStore.Dispose();
+        }
+
         private static void InjectVisibilityStore(TechTreeUiToolkitBinder binder, ManagementPanelVisibilityStore visibilityStore)
         {
             var method = typeof(TechTreeUiToolkitBinder).GetMethod(
@@ -107,6 +159,39 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[] { visibilityStore });
+        }
+
+        private static void InjectRecipeFlow(
+            RecipeSynthesisUiToolkitBinder binder,
+            PlanningIntentService planningIntentService,
+            ManagementPanelVisibilityStore visibilityStore,
+            RecipeSynthesisContextStore contextStore)
+        {
+            var method = typeof(RecipeSynthesisUiToolkitBinder).GetMethod(
+                "ConstructRecipeFlow",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { planningIntentService, visibilityStore, contextStore });
+        }
+
+        private static void RequestRecipeSelection(RecipeSynthesisUiToolkitBinder binder, string recipeId)
+        {
+            var method = typeof(RecipeSynthesisUiToolkitBinder).GetMethod(
+                "RequestRecipeSelection",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { recipeId });
+        }
+
+        private sealed class RecordingMessageSender : IClientMessageSender
+        {
+            public IMessage LastMessage { get; private set; }
+
+            public bool Send(IMessage message)
+            {
+                LastMessage = message;
+                return true;
+            }
         }
     }
 }

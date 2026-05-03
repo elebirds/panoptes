@@ -57,7 +57,7 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<TurnReportPanel>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<GameOverOverlay>"));
             Assert.That(installer, Does.Contain("RegisterRuntimeSceneComponent<UnitInfoPanelController>"));
-            Assert.That(installer, Does.Contain("RegisterOptionalSceneComponent<RecipeSynthesisPanel>"));
+            Assert.That(installer, Does.Not.Contain("RecipeSynthesisPanel"));
             Assert.That(installer, Does.Not.Contain("RegisterOptionalSceneComponent<TechTreePanelController>"));
             Assert.That(installer, Does.Contain("UnitInfoViewModel"));
             Assert.That(installer, Does.Contain("PlanningToolViewModel"));
@@ -66,6 +66,9 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("ManagementPanelVisibilityStore"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
+            Assert.That(installer, Does.Contain("RecipeSynthesisContextStore"));
+            Assert.That(installer, Does.Contain("RecipeSynthesisViewModel"));
+            Assert.That(installer, Does.Contain("RecipeSynthesisUiToolkitBinder"));
             Assert.That(installer, Does.Contain("MinisterReportViewModel"));
             Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
         }

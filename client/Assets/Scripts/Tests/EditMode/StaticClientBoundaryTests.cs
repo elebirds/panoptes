@@ -26,7 +26,6 @@ namespace Panoptes.Tests.EditMode
         private static readonly IReadOnlyList<LineCountBaseline> HighRiskLineBaselines = new[]
         {
             new LineCountBaseline("Runtime/Presentation/Map/MapPlanningInputController.cs", 3376),
-            new LineCountBaseline("Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs", 1392),
             new LineCountBaseline("Runtime/Presentation/UI/HUD/CityCoreBuildingActionRegistrar.cs", 650),
         };
 
@@ -124,21 +123,74 @@ namespace Panoptes.Tests.EditMode
             Assert.That(offenders, Is.Empty, "Final build catalog slice must stay on Store/ViewModel/Binder/service dependencies.");
         }
 
+        [Test]
+        public void FinalRecipeSynthesisSlice_ShouldNotReferenceLegacyUguiPanelOrPrefabs()
+        {
+            var deletedPaths = new[]
+            {
+                "Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs",
+                "Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisItemView.cs",
+                "Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisRenderedItemRegistry.cs",
+                "Scripts/Runtime/Presentation/UI/Domestic/BuildPanelSlideToggle.cs",
+                "Prefabs/UI/RecipeSynthesisPanel.prefab",
+                "Prefabs/UI/RecipeSynthesisItem.prefab"
+            };
+
+            for (var i = 0; i < deletedPaths.Length; i++)
+            {
+                Assert.That(File.Exists(ResolveAssetPath(deletedPaths[i])), Is.False, $"{deletedPaths[i]} should stay deleted.");
+            }
+
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation"),
+                ResolveAssetPath("Scenes"),
+                ResolveAssetPath("Prefabs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.*",
+                "RecipeSynthesisPanel",
+                "RecipeSynthesisItemView",
+                "RecipeSynthesisRenderedItemRegistry",
+                "BuildPanelSlideToggle",
+                "c3e5f1ab47d34b89b2a6d7e8f9012345",
+                "d4f6a2bc58e14c79a3b7e8f901234567",
+                "a1c3b74de4f24f2bb8e6528a4a6f9f11",
+                "b2d4e95fa63f4e2cae58a2d5d6c4f123",
+                "dd4396002ff64220943d245cfdea0462",
+                "fbeaa39d74c5488997e1df03bd49a651");
+
+            Assert.That(offenders, Is.Empty, "Final recipe synthesis must stay on context Store/ViewModel/UI Toolkit, without legacy uGUI refs.");
+        }
+
         private static List<string> FindTokenOffenders(string root, IReadOnlyList<string> forbiddenTokens)
         {
-            var offenders = new List<string>();
-            foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
-            {
-                var content = File.ReadAllText(path);
-                for (var i = 0; i < forbiddenTokens.Count; i++)
-                {
-                    var token = forbiddenTokens[i];
-                    if (content.IndexOf(token, StringComparison.Ordinal) < 0)
-                    {
-                        continue;
-                    }
+            return FindTokenOffenders(new[] { root }, "*.cs", forbiddenTokens.ToArray());
+        }
 
-                    offenders.Add($"{ToProjectRelativePath(path)} contains {token}");
+        private static List<string> FindTokenOffenders(
+            IReadOnlyList<string> roots,
+            string searchPattern,
+            params string[] forbiddenTokens)
+        {
+            var offenders = new List<string>();
+            for (var rootIndex = 0; rootIndex < roots.Count; rootIndex++)
+            {
+                var root = roots[rootIndex];
+                foreach (var path in Directory.EnumerateFiles(root, searchPattern, SearchOption.AllDirectories))
+                {
+                    var content = File.ReadAllText(path);
+                    for (var i = 0; i < forbiddenTokens.Length; i++)
+                    {
+                        var token = forbiddenTokens[i];
+                        if (content.IndexOf(token, StringComparison.Ordinal) < 0)
+                        {
+                            continue;
+                        }
+
+                        offenders.Add($"{ToProjectRelativePath(path)} contains {token}");
+                    }
                 }
             }
 

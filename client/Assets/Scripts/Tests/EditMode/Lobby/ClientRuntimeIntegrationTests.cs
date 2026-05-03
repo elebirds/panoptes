@@ -36,7 +36,9 @@ namespace Panoptes.Tests.EditMode.Lobby
         private readonly string _techTreeViewModelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/TechTreeViewModel.cs");
         private readonly string _techTreeUiToolkitBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/TechTreeUiToolkitBinder.cs");
         private readonly string _managementPanelVisibilityStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/ManagementPanelVisibilityStore.cs");
-        private readonly string _recipeSynthesisPanelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/Turn/RecipeSynthesisPanel.cs");
+        private readonly string _recipeSynthesisViewModelPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisViewModel.cs");
+        private readonly string _recipeSynthesisUiToolkitBinderPath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/RecipeSynthesisUiToolkitBinder.cs");
+        private readonly string _recipeSynthesisContextStorePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisContextStore.cs");
         private readonly string _configCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/ConfigCache.cs");
         private readonly string _staticCatalogCachePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Application/Cache/StaticCatalogCache.cs");
         private readonly string _configBridgePath = Path.GetFullPath("Assets/Scripts/Runtime/Core/Infrastructure/Network/ConfigMessageBridge.cs");
@@ -902,7 +904,9 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
             Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
             Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
-            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisViewModelPath), Is.True, "RecipeSynthesisViewModel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisUiToolkitBinderPath), Is.True, "RecipeSynthesisUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisContextStorePath), Is.True, "RecipeSynthesisContextStore.cs 不存在。");
             Assert.That(File.Exists(_buildCommandPanelPath), Is.False, "BuildCommandPanel.cs 应已删除。");
             Assert.That(File.Exists(_buildCatalogBinderPath), Is.True, "BuildCatalogUiToolkitBinder.cs 不存在。");
             Assert.That(File.Exists(_buildCatalogContextStorePath), Is.True, "BuildCatalogContextStore.cs 不存在。");
@@ -912,7 +916,8 @@ namespace Panoptes.Tests.EditMode.Lobby
             var staticCatalogCacheContent = File.ReadAllText(_staticCatalogCachePath);
             var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
             var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
-            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var recipeViewModelContent = File.ReadAllText(_recipeSynthesisViewModelPath);
+            var recipeBinderContent = File.ReadAllText(_recipeSynthesisUiToolkitBinderPath);
             var buildBinderContent = File.ReadAllText(_buildCatalogBinderPath);
 
             StringAssert.Contains("public void Clear()", configCacheContent,
@@ -940,8 +945,12 @@ namespace Panoptes.Tests.EditMode.Lobby
                 "科技树应通过规划草稿 Store 标记计划研究目标。");
             StringAssert.Contains("ManagementPanelVisibilityStore", techTreeBinderContent,
                 "科技树 UI Toolkit binder 应订阅最终管理面板显隐状态。");
-            Assert.That(recipeContent, Does.Not.Contain("ConfigCache.Instance"),
-                "配方面板不应再通过 ConfigCache 读取静态配方实体。");
+            Assert.That(recipeViewModelContent, Does.Not.Contain("ConfigCache.Instance"),
+                "配方视图模型不应再通过 ConfigCache 读取静态配方实体。");
+            StringAssert.Contains("RecipeSynthesisContextStore", recipeViewModelContent,
+                "配方合成状态应通过最终上下文 Store 过滤。");
+            StringAssert.Contains("PlanningIntentService", recipeBinderContent,
+                "配方合成点击应通过最终 PlanningIntentService 提交。");
             Assert.That(buildBinderContent, Does.Not.Contain("serverConfigKey = \"buildconfig\""),
                 "建造目录不应再把 buildconfig 作为正式运行时主数据源。");
             StringAssert.Contains("PlanningToolService", buildBinderContent,
@@ -984,14 +993,17 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_techTreeViewModelPath), Is.True, "TechTreeViewModel.cs 不存在。");
             Assert.That(File.Exists(_techTreeUiToolkitBinderPath), Is.True, "TechTreeUiToolkitBinder.cs 不存在。");
             Assert.That(File.Exists(_managementPanelVisibilityStorePath), Is.True, "ManagementPanelVisibilityStore.cs 不存在。");
-            Assert.That(File.Exists(_recipeSynthesisPanelPath), Is.True, "RecipeSynthesisPanel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisViewModelPath), Is.True, "RecipeSynthesisViewModel.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisUiToolkitBinderPath), Is.True, "RecipeSynthesisUiToolkitBinder.cs 不存在。");
+            Assert.That(File.Exists(_recipeSynthesisContextStorePath), Is.True, "RecipeSynthesisContextStore.cs 不存在。");
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
             Assert.That(File.Exists(_resourceHudPath), Is.True, "ResourceHUD.cs 不存在。");
 
             var techTreeContent = File.ReadAllText(_techTreeViewModelPath);
             var techTreeBinderContent = File.ReadAllText(_techTreeUiToolkitBinderPath);
             var managementPanelVisibilityContent = File.ReadAllText(_managementPanelVisibilityStorePath);
-            var recipeContent = File.ReadAllText(_recipeSynthesisPanelPath);
+            var recipeViewModelContent = File.ReadAllText(_recipeSynthesisViewModelPath);
+            var recipeBinderContent = File.ReadAllText(_recipeSynthesisUiToolkitBinderPath);
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
             var resourceHudContent = File.ReadAllText(_resourceHudPath);
 
@@ -1006,14 +1018,20 @@ namespace Panoptes.Tests.EditMode.Lobby
             StringAssert.Contains("BehaviorSubject<ManagementPanelVisibilityState>", managementPanelVisibilityContent,
                 "管理面板显隐状态应通过可订阅 Store 传播。");
 
-            StringAssert.Contains("OnPlanningCommandResult", recipeContent,
-                "配方面板应订阅统一规划命令结果事件以便失败回滚。");
-            StringAssert.Contains("TryGetRecipeSelection(", recipeContent,
-                "配方面板应通过 PlanningDraftCache helper 读取当前节点的配方草稿。");
+            StringAssert.Contains("PlanningDraftStore", recipeViewModelContent,
+                "配方合成 ViewModel 应通过最终规划草稿 Store 标记当前选择。");
+            StringAssert.Contains("RecipeSynthesisContextStore", recipeViewModelContent,
+                "配方合成 ViewModel 应按最终上下文 Store 过滤当前建筑。");
+            StringAssert.Contains("SetBuildingRecipe(nodeId, recipeId)", recipeBinderContent,
+                "配方合成 Binder 应通过 PlanningIntentService 提交当前节点配方。");
             StringAssert.Contains("BuildCatalogContextStore", registrarContent,
                 "主城 Build 入口应把主城节点上下文写入最终建造目录上下文 Store。");
             StringAssert.Contains("Show(ManagementPanelId.BuildCatalog)", registrarContent,
                 "主城 Build 入口应显示最终 UI Toolkit 建造目录。");
+            StringAssert.Contains("RecipeSynthesisContextStore", registrarContent,
+                "Synthesis 入口应把当前建筑上下文写入最终配方上下文 Store。");
+            StringAssert.Contains("Show(ManagementPanelId.RecipeSynthesis)", registrarContent,
+                "Synthesis 入口应显示最终 UI Toolkit 配方面板。");
             Assert.That(registrarContent, Does.Not.Contain("BuildCommandPanel"),
                 "主城 Build 入口不应再引用 legacy BuildCommandPanel。");
             Assert.That(registrarContent, Does.Not.Contain("OnProductionActionClicked("),

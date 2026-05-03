@@ -7,7 +7,8 @@ namespace Panoptes.Presentation.ViewModels
     {
         None = 0,
         TechTree = 1,
-        BuildCatalog = 2
+        BuildCatalog = 2,
+        RecipeSynthesis = 3
     }
 
     public sealed class ManagementPanelVisibilityState

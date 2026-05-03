@@ -8,27 +8,43 @@ namespace Panoptes.Presentation.ViewModels
 {
     public sealed class RecipeSynthesisViewModel : ManagementPanelViewModelBase
     {
+        private readonly RecipeSynthesisContextStore _contextStore;
         private readonly PlanningDraftStore _planningDraftStore;
         private readonly StaticCatalogStore _staticCatalogStore;
 
-        public RecipeSynthesisViewModel(StaticCatalogStore staticCatalogStore, PlanningDraftStore planningDraftStore)
+        public RecipeSynthesisViewModel(
+            StaticCatalogStore staticCatalogStore,
+            PlanningDraftStore planningDraftStore,
+            RecipeSynthesisContextStore contextStore)
         {
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
+            _contextStore = contextStore ?? throw new ArgumentNullException(nameof(contextStore));
             AddSubscription(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            AddSubscription(_contextStore.State.Subscribe(this, static (_, self) => self.Publish()));
             Publish();
         }
 
         protected override ManagementPanelState Project()
         {
+            var context = _contextStore.Current;
+            if (context == null || !context.HasContext)
+            {
+                return new ManagementPanelState("Recipe Synthesis");
+            }
+
             var catalog = _staticCatalogStore.Snapshot;
             if (catalog?.Recipes == null || catalog.Recipes.Count == 0)
             {
                 return new ManagementPanelState("Recipe Synthesis");
             }
 
-            var selectedRecipes = BuildSelectedRecipes(_planningDraftStore.Snapshot);
+            var contextNodeId = Normalize(context.NodeId);
+            var contextBuildingTypeId = Normalize(context.BuildingTypeId);
+            var draft = _planningDraftStore.Snapshot;
+            var selectedRecipeId = ResolveSelectedRecipeId(draft, contextNodeId);
+            var preview = ResolvePreview(draft, contextNodeId);
             var recipes = new List<CatalogRecipeDto>(catalog.Recipes.Values);
             recipes.Sort(CompareRecipes);
 
@@ -42,9 +58,9 @@ namespace Panoptes.Presentation.ViewModels
                 }
 
                 var buildingId = Normalize(recipe.BuildingId);
-                if (string.IsNullOrEmpty(buildingId))
+                if (!string.Equals(buildingId, contextBuildingTypeId, StringComparison.Ordinal))
                 {
-                    buildingId = "general";
+                    continue;
                 }
 
                 if (!groups.TryGetValue(buildingId, out var rows))
@@ -59,38 +75,67 @@ namespace Panoptes.Presentation.ViewModels
                     recipe.Name,
                     recipe.Description,
                     $"Work {recipe.WorkAmount}, base {recipe.BaseProgress}",
-                    selectedRecipes.Contains(recipeId) ? "Selected" : string.Empty,
+                    ResolveStatus(recipeId, selectedRecipeId, preview),
                     "Select"));
             }
 
             return new ManagementPanelState("Recipe Synthesis", BuildGroups(groups));
         }
 
-        private static HashSet<string> BuildSelectedRecipes(PlanningDraftState draft)
+        private static RecipePreviewDto ResolvePreview(PlanningDraftState draft, string contextNodeId)
         {
-            var result = new HashSet<string>(StringComparer.Ordinal);
-            var previewRecipeId = Normalize(draft?.CurrentRecipePreview?.RecipeId);
-            if (!string.IsNullOrEmpty(previewRecipeId))
+            var preview = draft?.CurrentRecipePreview;
+            if (preview == null || !string.Equals(Normalize(preview.NodeId), contextNodeId, StringComparison.Ordinal))
             {
-                result.Add(previewRecipeId);
+                return null;
             }
 
+            return preview;
+        }
+
+        private static string ResolveSelectedRecipeId(PlanningDraftState draft, string contextNodeId)
+        {
             var selections = draft?.RecipeSelections;
             if (selections == null)
             {
-                return result;
+                return string.Empty;
             }
 
             for (var i = 0; i < selections.Count; i++)
             {
+                if (!string.Equals(Normalize(selections[i]?.NodeId), contextNodeId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 var recipeId = Normalize(selections[i]?.RecipeId);
                 if (!string.IsNullOrEmpty(recipeId))
                 {
-                    result.Add(recipeId);
+                    return recipeId;
                 }
             }
 
-            return result;
+            return string.Empty;
+        }
+
+        private static string ResolveStatus(string recipeId, string selectedRecipeId, RecipePreviewDto preview)
+        {
+            if (string.Equals(recipeId, selectedRecipeId, StringComparison.Ordinal))
+            {
+                return "Selected";
+            }
+
+            if (preview == null || !string.Equals(recipeId, Normalize(preview.RecipeId), StringComparison.Ordinal))
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(preview.ErrorCode))
+            {
+                return $"Preview: {preview.ErrorCode.Trim()}";
+            }
+
+            return preview.Valid ? "Preview valid" : "Preview";
         }
 
         private static IReadOnlyList<ManagementPanelGroupState> BuildGroups(Dictionary<string, List<ManagementPanelRowState>> groups)

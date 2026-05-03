@@ -13,20 +13,60 @@ namespace Panoptes.Tests.EditMode.Presentation
         {
             var catalogStore = new StaticCatalogStore();
             var draftStore = new PlanningDraftStore();
-            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore);
+            using var contextStore = new RecipeSynthesisContextStore();
+            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore, contextStore);
 
             catalogStore.Replace(new StaticCatalogState(recipes: new Dictionary<string, CatalogRecipeDto>
             {
-                ["grain"] = new CatalogRecipeDto { Id = "grain", Name = "Mill Grain", BuildingId = "mill", WorkAmount = 3, BaseProgress = 1 }
+                ["grain"] = new CatalogRecipeDto { Id = "grain", Name = "Mill Grain", BuildingId = "mill", WorkAmount = 3, BaseProgress = 1 },
+                ["ore"] = new CatalogRecipeDto { Id = "ore", Name = "Smelt Ore", BuildingId = "foundry", WorkAmount = 5, BaseProgress = 2 }
             }));
+            Assert.That(viewModel.Current.Groups, Is.Empty);
+
             draftStore.Replace(new PlanningDraftState(recipeSelections: new[]
             {
+                new QueuedRecipeSelectionDto { RecipeId = "ore", NodeId = "other" },
                 new QueuedRecipeSelectionDto { RecipeId = " grain ", NodeId = "n1" }
             }));
+            contextStore.SetContext(" n1 ", " mill ", "player-1");
 
             Assert.That(viewModel.Current.Groups[0].Id, Is.EqualTo("mill"));
+            Assert.That(viewModel.Current.Groups[0].Rows, Has.Count.EqualTo(1));
             Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Selected"));
             Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("Select"));
+        }
+
+        [Test]
+        public void RecipeSynthesis_ShouldMarkPreviewOnlyForActiveNode()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            using var contextStore = new RecipeSynthesisContextStore();
+            using var viewModel = new RecipeSynthesisViewModel(catalogStore, draftStore, contextStore);
+
+            catalogStore.Replace(new StaticCatalogState(recipes: new Dictionary<string, CatalogRecipeDto>
+            {
+                ["grain"] = new CatalogRecipeDto { Id = "grain", Name = "Mill Grain", BuildingId = "mill" }
+            }));
+            contextStore.SetContext("n1", "mill", "player-1");
+
+            draftStore.Replace(new PlanningDraftState(currentRecipePreview: new RecipePreviewDto
+            {
+                NodeId = "other",
+                RecipeId = "grain",
+                Valid = true
+            }));
+
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo(string.Empty));
+
+            draftStore.Replace(new PlanningDraftState(currentRecipePreview: new RecipePreviewDto
+            {
+                NodeId = "n1",
+                RecipeId = "grain",
+                Valid = true
+            }));
+
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Preview valid"));
         }
 
         [Test]
