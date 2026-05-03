@@ -224,18 +224,6 @@ namespace Panoptes.Presentation.Map
                 cameraAnchor.AddComponent<CinemachineMapCameraController>();
             }
 
-            if (UnityEngine.Object.FindAnyObjectByType<CityCoreHpBarOverlayController>() == null)
-            {
-                var go = new GameObject("CityCoreHpBarOverlayController");
-                go.AddComponent<CityCoreHpBarOverlayController>();
-            }
-
-            if (UnityEngine.Object.FindAnyObjectByType<BuildingConstructionOverlayController>() == null)
-            {
-                var go = new GameObject("BuildingConstructionOverlayController");
-                go.AddComponent<BuildingConstructionOverlayController>();
-            }
-
             var unitInfoPanel = UnityEngine.Object.FindAnyObjectByType<UnitInfoPanelController>();
             if (unitInfoPanel == null)
             {
