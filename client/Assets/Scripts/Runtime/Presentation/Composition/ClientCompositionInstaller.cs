@@ -80,6 +80,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<GameSceneController>();
             builder.RegisterComponentInHierarchy<MapRenderer>();
             builder.RegisterComponentInHierarchy<SettlementPlaybackController>();
+            builder.RegisterComponentInHierarchy<CinemachineMapCameraController>();
             builder.RegisterComponentInHierarchy<MapPlanningInputController>();
             builder.Register<TokenHudViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<ResourceHudViewModel>(Lifetime.Singleton).AsSelf();
