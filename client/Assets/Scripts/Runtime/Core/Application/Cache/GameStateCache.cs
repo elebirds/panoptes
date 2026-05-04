@@ -425,6 +425,11 @@ namespace Panoptes.Core.Application.Cache
             return CloneTechnologyDto(_researchState);
         }
 
+        public string GetActiveNationalPolicyId()
+        {
+            return MyPlayer != null ? (MyPlayer.ActiveNationalPolicyId ?? string.Empty) : string.Empty;
+        }
+
         public InstitutionStateDto GetInstitutionState()
         {
             return CloneInstitutionStateDto(_institutionState);

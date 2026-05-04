@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using R3;
@@ -8,15 +9,26 @@ namespace Panoptes.Presentation.ViewModels
 {
     public sealed class PolicyFocusViewModel : ManagementPanelViewModelBase
     {
+        private readonly GameStateCache _gameStateCache;
         private readonly PlanningDraftStore _planningDraftStore;
         private readonly StaticCatalogStore _staticCatalogStore;
 
-        public PolicyFocusViewModel(StaticCatalogStore staticCatalogStore, PlanningDraftStore planningDraftStore)
+        public PolicyFocusViewModel(
+            StaticCatalogStore staticCatalogStore,
+            PlanningDraftStore planningDraftStore,
+            GameStateCache gameStateCache = null)
         {
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
+            _gameStateCache = gameStateCache;
             AddSubscription(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            if (_gameStateCache != null)
+            {
+                _gameStateCache.OnStateChanged += Publish;
+                AddCleanup(() => _gameStateCache.OnStateChanged -= Publish);
+            }
+
             Publish();
         }
 
@@ -30,18 +42,9 @@ namespace Panoptes.Presentation.ViewModels
 
             var draft = _planningDraftStore.Snapshot;
             var plannedNational = Normalize(draft.PlannedNationalPolicyId);
-            var plannedInstitutions = new HashSet<string>(StringComparer.Ordinal);
-            if (draft.PlannedInstitutionPolicyIds != null)
-            {
-                for (var i = 0; i < draft.PlannedInstitutionPolicyIds.Count; i++)
-                {
-                    var id = Normalize(draft.PlannedInstitutionPolicyIds[i]);
-                    if (!string.IsNullOrEmpty(id))
-                    {
-                        plannedInstitutions.Add(id);
-                    }
-                }
-            }
+            var activeNational = Normalize(_gameStateCache?.GetActiveNationalPolicyId());
+            var plannedInstitutions = BuildIdSet(draft.PlannedInstitutionPolicyIds);
+            var activeInstitutions = BuildIdSet(_gameStateCache?.GetInstitutionState()?.ActivePolicyIds);
 
             var nationalRows = new List<ManagementPanelRowState>();
             var institutionRows = new List<ManagementPanelRowState>();
@@ -59,12 +62,15 @@ namespace Panoptes.Presentation.ViewModels
                 var planned = isNational
                     ? string.Equals(policyId, plannedNational, StringComparison.Ordinal)
                     : plannedInstitutions.Contains(policyId);
+                var active = isNational
+                    ? string.Equals(policyId, activeNational, StringComparison.Ordinal)
+                    : activeInstitutions.Contains(policyId);
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
                     string.IsNullOrWhiteSpace(policy.ActivationTiming) ? policy.Description : policy.ActivationTiming,
                     policy.Description,
-                    planned ? "已规划" : string.Empty,
+                    planned || active ? "已选择" : string.Empty,
                     isNational ? "采纳" : "设置",
                     policy.IconKey);
                 if (isNational)
@@ -89,6 +95,26 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return new ManagementPanelState("国策", groups);
+        }
+
+        private static HashSet<string> BuildIdSet(IReadOnlyList<string> ids)
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            if (ids == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var id = Normalize(ids[i]);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
         }
     }
 }

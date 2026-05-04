@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using R3;
@@ -8,15 +9,26 @@ namespace Panoptes.Presentation.ViewModels
 {
     public sealed class TechTreeViewModel : ManagementPanelViewModelBase
     {
+        private readonly GameStateCache _gameStateCache;
         private readonly PlanningDraftStore _planningDraftStore;
         private readonly StaticCatalogStore _staticCatalogStore;
 
-        public TechTreeViewModel(StaticCatalogStore staticCatalogStore, PlanningDraftStore planningDraftStore)
+        public TechTreeViewModel(
+            StaticCatalogStore staticCatalogStore,
+            PlanningDraftStore planningDraftStore,
+            GameStateCache gameStateCache = null)
         {
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
+            _gameStateCache = gameStateCache;
             AddSubscription(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            if (_gameStateCache != null)
+            {
+                _gameStateCache.OnStateChanged += Publish;
+                AddCleanup(() => _gameStateCache.OnStateChanged -= Publish);
+            }
+
             Publish();
         }
 
@@ -29,6 +41,11 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             var plannedTechId = Normalize(_planningDraftStore.Snapshot.PlannedResearchTargetTechnologyId);
+            var research = _gameStateCache?.GetCurrentResearchState();
+            var currentTechId = Normalize(research?.TechnologyId);
+            var completedTechIds = BuildIdSet(research?.CompletedTechnologyIds);
+            var activeTechIds = BuildIdSet(research?.ActiveTechnologyIds);
+            var pendingActivationTechIds = BuildIdSet(research?.PendingActivationTechnologyIds);
             var technologies = new List<CatalogTechnologyDto>(catalog.Technologies.Values);
             technologies.Sort(CompareTechnologies);
 
@@ -49,21 +66,70 @@ namespace Panoptes.Presentation.ViewModels
                 }
 
                 var techId = Normalize(technology.Id);
-                var status = string.Equals(techId, plannedTechId, StringComparison.Ordinal)
-                    ? "已设为研究目标"
-                    : $"第 {technology.Tier} 阶";
                 rows.Add(new ManagementPanelRowState(
                     techId,
                     technology.Name,
                     technology.Description,
                     $"研究消耗：{technology.ResearchCost}",
-                    status,
+                    ResolveStatus(
+                        techId,
+                        technology.Tier,
+                        plannedTechId,
+                        currentTechId,
+                        completedTechIds,
+                        activeTechIds,
+                        pendingActivationTechIds),
                     "研究",
                     technology.IconKey,
                     ResolvePrerequisiteIds(technology)));
             }
 
             return new ManagementPanelState("科技树", BuildGroups(groups));
+        }
+
+        private static string ResolveStatus(
+            string techId,
+            int tier,
+            string plannedTechId,
+            string currentTechId,
+            ISet<string> completedTechIds,
+            ISet<string> activeTechIds,
+            ISet<string> pendingActivationTechIds)
+        {
+            if (activeTechIds.Contains(techId) ||
+                completedTechIds.Contains(techId) ||
+                pendingActivationTechIds.Contains(techId))
+            {
+                return "已研究";
+            }
+
+            if (string.Equals(techId, plannedTechId, StringComparison.Ordinal) ||
+                string.Equals(techId, currentTechId, StringComparison.Ordinal))
+            {
+                return "研究中";
+            }
+
+            return $"第 {tier} 阶";
+        }
+
+        private static HashSet<string> BuildIdSet(IReadOnlyList<string> ids)
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            if (ids == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var id = Normalize(ids[i]);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
         }
 
         private static string LocalizeBranch(string branch)

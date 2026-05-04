@@ -98,14 +98,6 @@ namespace Panoptes.Presentation.UI.HUD
                     ? "配方"
                     : recipeActionLabel,
                 unit => _resolver != null && _resolver.IsOwnedRecipeBuildingProxy(unit));
-
-            registry.RegisterAction(
-                policyActionId,
-                OnPolicyActionClicked,
-                string.IsNullOrWhiteSpace(policyActionLabel) || string.Equals(policyActionLabel, "Policy", StringComparison.Ordinal)
-                    ? "国策"
-                    : policyActionLabel,
-                unit => _resolver != null && _resolver.IsCityCoreBuildingProxy(unit));
         }
 
         protected override void Awake()

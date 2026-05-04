@@ -45,6 +45,14 @@ namespace Panoptes.Presentation.ViewModels
             }
         }
 
+        protected void AddCleanup(Action cleanup)
+        {
+            if (cleanup != null)
+            {
+                _subscriptions.Add(new CleanupSubscription(cleanup));
+            }
+        }
+
         protected void Publish()
         {
             if (_disposed)
@@ -61,6 +69,23 @@ namespace Panoptes.Presentation.ViewModels
         protected static string Normalize(string value)
         {
             return (value ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private sealed class CleanupSubscription : IDisposable
+        {
+            private Action _cleanup;
+
+            public CleanupSubscription(Action cleanup)
+            {
+                _cleanup = cleanup;
+            }
+
+            public void Dispose()
+            {
+                var cleanup = _cleanup;
+                _cleanup = null;
+                cleanup?.Invoke();
+            }
         }
     }
 }

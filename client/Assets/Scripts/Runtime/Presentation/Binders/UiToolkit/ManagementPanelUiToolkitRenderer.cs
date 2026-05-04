@@ -164,6 +164,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             rowElement.style.paddingLeft = 12f;
             rowElement.style.paddingRight = 12f;
             rowElement.style.paddingTop = 12f;
+            ApplyRowStatusStyle(rowElement, row);
             var header = new VisualElement { name = "management-panel-row-header" };
             header.AddToClassList("management-panel-row-header");
             header.style.flexDirection = FlexDirection.Row;
@@ -227,6 +228,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             var dependentIds = BuildDependentIds(columns);
             var track = new VisualElement { name = "management-panel-tech-columns" };
             track.AddToClassList("management-panel-tech-columns");
+            track.style.position = Position.Relative;
             track.style.flexDirection = FlexDirection.Row;
             track.style.alignItems = Align.FlexStart;
             track.style.minHeight = 720f;
@@ -237,6 +239,17 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 track.Add(CreateTechColumn(columnIndex, columns.Count, columns[columnIndex], titleById, dependentIds, rowActionRequested));
             }
+
+            var connectorLayer = new VisualElement { name = "management-panel-tech-connector-layer" };
+            connectorLayer.pickingMode = PickingMode.Ignore;
+            connectorLayer.style.position = Position.Absolute;
+            connectorLayer.style.left = 0f;
+            connectorLayer.style.top = 0f;
+            connectorLayer.style.right = 0f;
+            connectorLayer.style.bottom = 0f;
+            track.Add(connectorLayer);
+            connectorLayer.SendToBack();
+            ScheduleTechConnectorRebuild(track, connectorLayer, state);
 
             scroll.Add(track);
             return scroll;
@@ -281,7 +294,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             ISet<string> dependentIds,
             Action<string> rowActionRequested)
         {
-            var wrapper = new VisualElement { name = "management-panel-tech-node-wrap" };
+            var wrapper = new VisualElement { name = "management-panel-tech-node-wrap-" + SafeName(state?.Id) };
             wrapper.style.position = Position.Relative;
             wrapper.style.marginTop = 12f;
             wrapper.style.marginBottom = 14f;
@@ -291,22 +304,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             wrapper.style.flexShrink = 0f;
 
             var row = CreateRow(state, rowActionRequested);
-            if (HasPrerequisites(state))
-            {
-                var input = CreateTechConnectorSegment("management-panel-tech-input-connector");
-                input.style.left = -42f;
-                input.style.width = 42f;
-                wrapper.Add(input);
-            }
-
-            if (columnIndex < columnCount - 1 && dependentIds != null && dependentIds.Contains(NormalizeId(state?.Id)))
-            {
-                var output = CreateTechConnectorSegment("management-panel-tech-output-connector");
-                output.style.left = 260f;
-                output.style.width = 80f;
-                wrapper.Add(output);
-            }
-
             wrapper.Add(row);
             if (HasPrerequisites(state))
             {
@@ -362,6 +359,260 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             connector.style.borderBottomColor = new Color(1f, 0.92f, 0.55f, 0.72f);
             connector.style.borderBottomWidth = 1f;
             return connector;
+        }
+
+        private static void ScheduleTechConnectorRebuild(
+            VisualElement track,
+            VisualElement connectorLayer,
+            ManagementPanelState state)
+        {
+            if (track == null || connectorLayer == null)
+            {
+                return;
+            }
+
+            track.schedule.Execute(() => RebuildTechConnectors(track, connectorLayer, state)).ExecuteLater(0);
+            track.schedule.Execute(() => RebuildTechConnectors(track, connectorLayer, state)).ExecuteLater(120);
+        }
+
+        private static void RebuildTechConnectors(
+            VisualElement track,
+            VisualElement connectorLayer,
+            ManagementPanelState state)
+        {
+            if (track == null || connectorLayer == null || state == null)
+            {
+                return;
+            }
+
+            connectorLayer.Clear();
+            var rows = FlattenRows(state);
+            if (rows.Count == 0)
+            {
+                return;
+            }
+
+            var nodesById = new Dictionary<string, VisualElement>(StringComparer.Ordinal);
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var id = NormalizeId(rows[i]?.Id);
+                if (string.IsNullOrEmpty(id))
+                {
+                    continue;
+                }
+
+                var node = track.Q<VisualElement>("management-panel-tech-node-wrap-" + SafeName(id));
+                if (node != null)
+                {
+                    nodesById[id] = node;
+                }
+            }
+
+            var trackBounds = track.worldBound;
+            if (trackBounds.width <= 1f || trackBounds.height <= 1f)
+            {
+                return;
+            }
+
+            for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+            {
+                var target = rows[rowIndex];
+                var targetId = NormalizeId(target?.Id);
+                if (string.IsNullOrEmpty(targetId) || !nodesById.TryGetValue(targetId, out var targetNode))
+                {
+                    continue;
+                }
+
+                var prerequisites = target.PrerequisiteIds;
+                if (prerequisites == null)
+                {
+                    continue;
+                }
+
+                for (var prerequisiteIndex = 0; prerequisiteIndex < prerequisites.Count; prerequisiteIndex++)
+                {
+                    var prerequisiteId = NormalizeId(prerequisites[prerequisiteIndex]);
+                    if (string.IsNullOrEmpty(prerequisiteId) ||
+                        !nodesById.TryGetValue(prerequisiteId, out var prerequisiteNode))
+                    {
+                        continue;
+                    }
+
+                    AddTechConnector(connectorLayer, trackBounds, prerequisiteNode.worldBound, targetNode.worldBound);
+                }
+            }
+        }
+
+        private static void AddTechConnector(
+            VisualElement connectorLayer,
+            Rect trackBounds,
+            Rect fromBounds,
+            Rect toBounds)
+        {
+            if (connectorLayer == null ||
+                fromBounds.width <= 1f ||
+                fromBounds.height <= 1f ||
+                toBounds.width <= 1f ||
+                toBounds.height <= 1f)
+            {
+                return;
+            }
+
+            var startX = fromBounds.xMax - trackBounds.xMin;
+            var startY = fromBounds.center.y - trackBounds.yMin;
+            var endX = toBounds.xMin - trackBounds.xMin;
+            var endY = toBounds.center.y - trackBounds.yMin;
+            var midX = Mathf.Lerp(startX, endX, 0.5f);
+
+            AddTechConnectorSegment(connectorLayer, startX, startY, midX, startY);
+            AddTechConnectorSegment(connectorLayer, midX, startY, midX, endY);
+            AddTechConnectorSegment(connectorLayer, midX, endY, endX, endY);
+            AddTechConnectorDot(connectorLayer, endX, endY);
+        }
+
+        private static void AddTechConnectorSegment(
+            VisualElement connectorLayer,
+            float x0,
+            float y0,
+            float x1,
+            float y1)
+        {
+            var segment = new VisualElement { name = "management-panel-tech-connector-segment" };
+            segment.AddToClassList("management-panel-tech-connector");
+            segment.pickingMode = PickingMode.Ignore;
+            segment.style.position = Position.Absolute;
+            segment.style.backgroundColor = new Color(1f, 0.72f, 0.28f, 0.88f);
+            segment.style.borderBottomColor = new Color(1f, 0.92f, 0.55f, 0.72f);
+            segment.style.borderBottomWidth = 1f;
+
+            var horizontal = Mathf.Abs(x1 - x0) >= Mathf.Abs(y1 - y0);
+            if (horizontal)
+            {
+                var left = Mathf.Min(x0, x1);
+                var width = Mathf.Max(3f, Mathf.Abs(x1 - x0));
+                segment.style.left = left;
+                segment.style.top = y0 - 1.5f;
+                segment.style.width = width;
+                segment.style.height = 3f;
+            }
+            else
+            {
+                var top = Mathf.Min(y0, y1);
+                var height = Mathf.Max(3f, Mathf.Abs(y1 - y0));
+                segment.style.left = x0 - 1.5f;
+                segment.style.top = top;
+                segment.style.width = 3f;
+                segment.style.height = height;
+            }
+
+            connectorLayer.Add(segment);
+        }
+
+        private static void AddTechConnectorDot(VisualElement connectorLayer, float x, float y)
+        {
+            var dot = new VisualElement { name = "management-panel-tech-connector-dot" };
+            dot.pickingMode = PickingMode.Ignore;
+            dot.style.position = Position.Absolute;
+            dot.style.left = x - 4f;
+            dot.style.top = y - 4f;
+            dot.style.width = 8f;
+            dot.style.height = 8f;
+            dot.style.backgroundColor = new Color(1f, 0.86f, 0.32f, 0.96f);
+            dot.style.borderBottomColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
+            dot.style.borderLeftColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
+            dot.style.borderRightColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
+            dot.style.borderTopColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
+            dot.style.borderBottomWidth = 1f;
+            dot.style.borderLeftWidth = 1f;
+            dot.style.borderRightWidth = 1f;
+            dot.style.borderTopWidth = 1f;
+            connectorLayer.Add(dot);
+        }
+
+        private static List<ManagementPanelRowState> FlattenRows(ManagementPanelState state)
+        {
+            var rows = new List<ManagementPanelRowState>();
+            if (state?.Groups == null)
+            {
+                return rows;
+            }
+
+            for (var groupIndex = 0; groupIndex < state.Groups.Count; groupIndex++)
+            {
+                var groupRows = state.Groups[groupIndex]?.Rows;
+                if (groupRows == null)
+                {
+                    continue;
+                }
+
+                for (var rowIndex = 0; rowIndex < groupRows.Count; rowIndex++)
+                {
+                    if (groupRows[rowIndex] != null)
+                    {
+                        rows.Add(groupRows[rowIndex]);
+                    }
+                }
+            }
+
+            return rows;
+        }
+
+        private static void ApplyRowStatusStyle(VisualElement rowElement, ManagementPanelRowState row)
+        {
+            if (rowElement == null || row == null)
+            {
+                return;
+            }
+
+            var status = row.Status ?? string.Empty;
+            if (ContainsAny(status, "已研究", "已完成", "已激活"))
+            {
+                ApplyRowPalette(
+                    rowElement,
+                    new Color(0.055f, 0.22f, 0.12f, 0.98f),
+                    new Color(0.22f, 0.78f, 0.34f, 0.95f));
+                return;
+            }
+
+            if (ContainsAny(status, "研究中", "已选择", "已规划", "已设为研究目标"))
+            {
+                ApplyRowPalette(
+                    rowElement,
+                    new Color(0.055f, 0.12f, 0.28f, 0.98f),
+                    new Color(0.24f, 0.56f, 1f, 0.95f));
+            }
+        }
+
+        private static void ApplyRowPalette(VisualElement rowElement, Color background, Color border)
+        {
+            rowElement.style.backgroundColor = background;
+            rowElement.style.borderBottomColor = border;
+            rowElement.style.borderLeftColor = border;
+            rowElement.style.borderRightColor = border;
+            rowElement.style.borderTopColor = border;
+            rowElement.style.borderBottomWidth = 2f;
+            rowElement.style.borderLeftWidth = 2f;
+            rowElement.style.borderRightWidth = 2f;
+            rowElement.style.borderTopWidth = 2f;
+        }
+
+        private static bool ContainsAny(string value, params string[] needles)
+        {
+            if (string.IsNullOrWhiteSpace(value) || needles == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < needles.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(needles[i]) &&
+                    value.IndexOf(needles[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static VisualElement CreateAmountStrip(string label, IReadOnlyList<ManagementPanelAmountState> amounts)

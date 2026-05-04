@@ -282,6 +282,7 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
+            builder.RegisterBuildCallback(container => container.Resolve<CityCoreHpBarOverlayController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCorePolicyFocusActionRegistrar>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }

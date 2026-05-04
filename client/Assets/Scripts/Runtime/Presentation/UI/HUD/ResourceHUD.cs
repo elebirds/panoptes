@@ -9,6 +9,7 @@
 using System;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
+using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using UnityEngine;
@@ -44,14 +45,19 @@ namespace Panoptes.Presentation.UI.HUD
         private readonly EventSubscriptionBag _buttonSubscriptions = new();
         private ResourceHudUguiBinder _binder;
         private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
+        private MapPlanningInputController _mapPlanningInputController;
         private IDisposable _stateSubscription;
         private ResourceHudViewModel _viewModel;
 
         [Inject]
-        private void Construct(ResourceHudViewModel viewModel, ManagementPanelVisibilityStore managementPanelVisibilityStore)
+        private void Construct(
+            ResourceHudViewModel viewModel,
+            ManagementPanelVisibilityStore managementPanelVisibilityStore,
+            MapPlanningInputController mapPlanningInputController)
         {
             _viewModel = viewModel;
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
+            _mapPlanningInputController = mapPlanningInputController;
             ResolvePrefabReferences();
             BindManagementButtons();
         }
@@ -209,7 +215,7 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            _managementPanelVisibilityStore.Toggle(ManagementPanelId.TechTree);
+            OpenManagementPanel(ManagementPanelId.TechTree);
         }
 
         private void OnMinisterButtonClicked()
@@ -223,7 +229,13 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            _managementPanelVisibilityStore.Toggle(ManagementPanelId.PolicyFocus);
+            OpenManagementPanel(ManagementPanelId.PolicyFocus);
+        }
+
+        private void OpenManagementPanel(ManagementPanelId panelId)
+        {
+            _mapPlanningInputController?.CancelCurrentMode();
+            _managementPanelVisibilityStore?.Show(panelId);
         }
 
         private void ApplyGeneratedPanelArt()

@@ -28,11 +28,8 @@ namespace Panoptes.Presentation.UI.HUD
 
         protected override void RegisterActions(UnitInfoActionRegistry registry)
         {
-            registry?.RegisterAction(
-                policyActionId,
-                _ => ShowPolicyFocus(),
-                string.IsNullOrWhiteSpace(policyActionLabel) ? "国策" : policyActionLabel,
-                IsCityCoreUnit);
+            // The policy panel is now opened from the resource HUD. Keep this registrar
+            // only for the initial policy prompt and do not add a city-core info button.
         }
 
         [Inject]
