@@ -158,6 +158,35 @@ namespace Panoptes.Presentation.Map
             ApplyRigState(_currentAnchorXZ, _currentDistance > 0f ? _currentDistance : ClampDistance(farDistance));
         }
 
+        public void FocusWorldPosition(Vector3 worldPosition, bool snapInstantly = false)
+        {
+            ResolveRig();
+            var anchor = ClampAnchorToContext(new Vector2(worldPosition.x, worldPosition.z));
+            _targetAnchorXZ = anchor;
+            _dragging = false;
+
+            if (!snapInstantly)
+            {
+                return;
+            }
+
+            _currentAnchorXZ = anchor;
+            _anchorVelocity = Vector2.zero;
+            ApplyRigState(_currentAnchorXZ, _currentDistance > 0f ? _currentDistance : ClampDistance(farDistance));
+        }
+
+        public static bool TryFocus(Vector3 worldPosition, bool snapInstantly = false)
+        {
+            var controller = FindAnyObjectByType<CinemachineMapCameraController>();
+            if (controller == null)
+            {
+                return false;
+            }
+
+            controller.FocusWorldPosition(worldPosition, snapInstantly);
+            return true;
+        }
+
         private void HandleMapCameraContextReady(MapCameraContext context)
         {
             ApplyCameraContext(context, true);

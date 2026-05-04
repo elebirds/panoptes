@@ -7,32 +7,32 @@ namespace Panoptes.Editor
     [InitializeOnLoad]
     internal static class PanoptesPlayModeStartScene
     {
-        private const string LoginScenePath = "Assets/Scenes/Login.unity";
+        private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
 
         static PanoptesPlayModeStartScene()
         {
-            EditorApplication.delayCall += EnsureLoginStartScene;
+            EditorApplication.delayCall += EnsureMainMenuStartScene;
         }
 
-        [MenuItem("Panoptes/Diagnostics/Use Login As Play Mode Start Scene")]
-        private static void EnsureLoginStartSceneFromMenu()
+        [MenuItem("Panoptes/Diagnostics/Use Main Menu As Play Mode Start Scene")]
+        private static void EnsureMainMenuStartSceneFromMenu()
         {
-            EnsureLoginStartScene();
-            Debug.Log("[Panoptes] Play Mode start scene is Login.");
+            EnsureMainMenuStartScene();
+            Debug.Log("[Panoptes] Play Mode start scene is MainMenu.");
         }
 
-        private static void EnsureLoginStartScene()
+        private static void EnsureMainMenuStartScene()
         {
-            var loginScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(LoginScenePath);
-            if (loginScene == null)
+            var mainMenuScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(MainMenuScenePath);
+            if (mainMenuScene == null)
             {
-                Debug.LogWarning($"[Panoptes] Cannot set Play Mode start scene because {LoginScenePath} is missing.");
+                Debug.LogWarning($"[Panoptes] Cannot set Play Mode start scene because {MainMenuScenePath} is missing.");
                 return;
             }
 
-            if (EditorSceneManager.playModeStartScene != loginScene)
+            if (EditorSceneManager.playModeStartScene != mainMenuScene)
             {
-                EditorSceneManager.playModeStartScene = loginScene;
+                EditorSceneManager.playModeStartScene = mainMenuScene;
             }
         }
     }

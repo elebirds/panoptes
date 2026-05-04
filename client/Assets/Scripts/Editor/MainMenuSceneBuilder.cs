@@ -478,9 +478,6 @@ namespace Panoptes.Editor
             Button settingsBackButton)
         {
             var lobbySceneController = canvasGo.GetComponent<LobbySceneController>();
-            var lobbySo = new SerializedObject(lobbySceneController);
-            lobbySo.FindProperty("hideLobbyPanelOnStart").boolValue = true;
-            lobbySo.ApplyModifiedPropertiesWithoutUndo();
 
             var mainMenuController = canvasGo.GetComponent<MainMenuController>();
             var menuSo = new SerializedObject(mainMenuController);
@@ -504,10 +501,10 @@ namespace Panoptes.Editor
             var desiredPaths = new[]
             {
                 "Assets/Scenes/Boot.unity",
+                MainMenuScenePath,
                 "Assets/Scenes/Login.unity",
                 "Assets/Scenes/Lobby.unity",
                 "Assets/Scenes/Game.unity",
-                MainMenuScenePath,
                 GameSettingScenePath,
             };
 

@@ -30,6 +30,8 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private GameObject roadOverlay;
         [SerializeField] private GameObject highlight;
         [SerializeField] private Renderer highlightRenderer;
+        [SerializeField] private bool forceHighlightBelowDetails = true;
+        [SerializeField] private float highlightLocalY = 0.015f;
         [SerializeField] private Transform resourceAnchor;
         [SerializeField] private Transform buildingAnchor;
         [SerializeField] private Transform unitAnchor;
@@ -93,6 +95,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float moveMarkerY = 0.13f;
         [SerializeField] private Vector3 moveArrowScale = new Vector3(0.12f, 0.01f, 0.42f);
         [SerializeField] private float moveArrowHeadScale = 0.15f;
+        [SerializeField] private Sprite moveArrowSprite;
+        [SerializeField] private string moveArrowSpriteResourcesPath = "Textures/Map/GreenMoveArrow";
+        [SerializeField] private Vector2 moveArrowSpriteScale = new Vector2(0.72f, 0.72f);
         [SerializeField] private float moveDestinationScale = 0.24f;
         [SerializeField] private Color moveMarkerDefaultColor = new Color(0.35f, 1f, 0.45f, 0.9f);
 
@@ -128,9 +133,11 @@ namespace Panoptes.Presentation.Map
         private Renderer _moveArrowShaftRenderer;
         private Renderer _moveArrowHeadLeftRenderer;
         private Renderer _moveArrowHeadRightRenderer;
+        private Renderer _moveArrowSpriteRenderer;
         private Renderer _moveDestinationRenderer;
         private MaterialPropertyBlock _moveMarkerBlock;
         private Material _moveMarkerMaterial;
+        private Material _moveMarkerSpriteMaterial;
         private MaterialPropertyBlock _groundBlock;
         private MaterialPropertyBlock _fogOverlayBlock;
         private Material _fogOverlayMaterial;
@@ -139,6 +146,7 @@ namespace Panoptes.Presentation.Map
         private float _currentFogAlpha;
         private float _nextFogUvUpdateTime;
         private bool _fogTextureLoadAttempted;
+        private bool _moveArrowSpriteLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
             new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
         private IReadOnlyDictionary<string, CatalogBuildingDto> _buildingCatalog;
@@ -603,6 +611,11 @@ namespace Panoptes.Presentation.Map
         {
             if (highlight != null)
             {
+                if (isVisible)
+                {
+                    KeepHighlightBelowDetails();
+                }
+
                 highlight.SetActive(isVisible);
             }
         }
@@ -732,31 +745,49 @@ namespace Panoptes.Presentation.Map
                 arrowRoot.transform.SetParent(_moveMarkerRoot, false);
                 arrowRoot.transform.localPosition = Vector3.zero;
 
-                var shaft = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                shaft.name = "Shaft";
-                shaft.transform.SetParent(arrowRoot.transform, false);
-                shaft.transform.localPosition = new Vector3(0f, 0f, -0.04f);
-                shaft.transform.localScale = moveArrowScale;
-                _moveArrowShaftRenderer = shaft.GetComponent<Renderer>();
-                DestroyRuntimeCollider(shaft);
+                var arrowSprite = ResolveMoveArrowSprite();
+                if (arrowSprite != null)
+                {
+                    var spriteGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    spriteGo.name = "GreenArrowSprite";
+                    spriteGo.transform.SetParent(arrowRoot.transform, false);
+                    spriteGo.transform.localPosition = Vector3.zero;
+                    spriteGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    spriteGo.transform.localScale = new Vector3(moveArrowSpriteScale.x, moveArrowSpriteScale.y, 1f);
+                    _moveArrowSpriteRenderer = spriteGo.GetComponent<Renderer>();
+                    ApplyMoveMarkerSpriteMaterial(_moveArrowSpriteRenderer, arrowSprite);
+                    _moveArrowSpriteRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    _moveArrowSpriteRenderer.receiveShadows = false;
+                    DestroyRuntimeCollider(spriteGo);
+                }
+                else
+                {
+                    var shaft = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    shaft.name = "Shaft";
+                    shaft.transform.SetParent(arrowRoot.transform, false);
+                    shaft.transform.localPosition = new Vector3(0f, 0f, -0.04f);
+                    shaft.transform.localScale = moveArrowScale;
+                    _moveArrowShaftRenderer = shaft.GetComponent<Renderer>();
+                    DestroyRuntimeCollider(shaft);
 
-                var headLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                headLeft.name = "HeadLeft";
-                headLeft.transform.SetParent(arrowRoot.transform, false);
-                headLeft.transform.localPosition = new Vector3(-0.06f, 0f, 0.14f);
-                headLeft.transform.localRotation = Quaternion.Euler(0f, -45f, 0f);
-                headLeft.transform.localScale = new Vector3(moveArrowHeadScale, moveArrowScale.y, moveArrowHeadScale);
-                _moveArrowHeadLeftRenderer = headLeft.GetComponent<Renderer>();
-                DestroyRuntimeCollider(headLeft);
+                    var headLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    headLeft.name = "HeadLeft";
+                    headLeft.transform.SetParent(arrowRoot.transform, false);
+                    headLeft.transform.localPosition = new Vector3(-0.06f, 0f, 0.14f);
+                    headLeft.transform.localRotation = Quaternion.Euler(0f, -45f, 0f);
+                    headLeft.transform.localScale = new Vector3(moveArrowHeadScale, moveArrowScale.y, moveArrowHeadScale);
+                    _moveArrowHeadLeftRenderer = headLeft.GetComponent<Renderer>();
+                    DestroyRuntimeCollider(headLeft);
 
-                var headRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                headRight.name = "HeadRight";
-                headRight.transform.SetParent(arrowRoot.transform, false);
-                headRight.transform.localPosition = new Vector3(0.06f, 0f, 0.14f);
-                headRight.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
-                headRight.transform.localScale = new Vector3(moveArrowHeadScale, moveArrowScale.y, moveArrowHeadScale);
-                _moveArrowHeadRightRenderer = headRight.GetComponent<Renderer>();
-                DestroyRuntimeCollider(headRight);
+                    var headRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    headRight.name = "HeadRight";
+                    headRight.transform.SetParent(arrowRoot.transform, false);
+                    headRight.transform.localPosition = new Vector3(0.06f, 0f, 0.14f);
+                    headRight.transform.localRotation = Quaternion.Euler(0f, 45f, 0f);
+                    headRight.transform.localScale = new Vector3(moveArrowHeadScale, moveArrowScale.y, moveArrowHeadScale);
+                    _moveArrowHeadRightRenderer = headRight.GetComponent<Renderer>();
+                    DestroyRuntimeCollider(headRight);
+                }
 
                 _moveArrowRoot = arrowRoot.transform;
                 _moveArrowRoot.gameObject.SetActive(false);
@@ -816,6 +847,68 @@ namespace Panoptes.Presentation.Map
             renderer.receiveShadows = false;
         }
 
+        private void ApplyMoveMarkerSpriteMaterial(Renderer renderer, Sprite sprite)
+        {
+            if (renderer == null || sprite == null)
+            {
+                return;
+            }
+
+            if (_moveMarkerSpriteMaterial == null)
+            {
+                var shader = Shader.Find("Sprites/Default");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Universal Render Pipeline/Unlit");
+                }
+
+                if (shader == null)
+                {
+                    shader = Shader.Find("Unlit/Transparent");
+                }
+
+                if (shader == null)
+                {
+                    shader = Shader.Find("Unlit/Texture");
+                }
+
+                if (shader == null)
+                {
+                    return;
+                }
+
+                _moveMarkerSpriteMaterial = new Material(shader);
+                _moveMarkerSpriteMaterial.name = "MoveMarkerSpriteMat_Runtime";
+                _moveMarkerSpriteMaterial.hideFlags = HideFlags.DontSave;
+                _moveMarkerSpriteMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                if (_moveMarkerSpriteMaterial.HasProperty("_Cull"))
+                {
+                    _moveMarkerSpriteMaterial.SetFloat("_Cull", 0f);
+                }
+                if (_moveMarkerSpriteMaterial.HasProperty("_Surface"))
+                {
+                    _moveMarkerSpriteMaterial.SetFloat("_Surface", 1f);
+                }
+                if (_moveMarkerSpriteMaterial.HasProperty("_ZWrite"))
+                {
+                    _moveMarkerSpriteMaterial.SetFloat("_ZWrite", 0f);
+                }
+            }
+
+            if (_moveMarkerSpriteMaterial.HasProperty("_BaseMap"))
+            {
+                _moveMarkerSpriteMaterial.SetTexture("_BaseMap", sprite.texture);
+            }
+            if (_moveMarkerSpriteMaterial.HasProperty("_MainTex"))
+            {
+                _moveMarkerSpriteMaterial.SetTexture("_MainTex", sprite.texture);
+            }
+
+            renderer.sharedMaterial = _moveMarkerSpriteMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
         private void SetMoveMarkerColor(Color color)
         {
             if (_moveMarkerBlock == null)
@@ -826,6 +919,7 @@ namespace Panoptes.Presentation.Map
             ApplyMoveMarkerColor(_moveArrowShaftRenderer, color);
             ApplyMoveMarkerColor(_moveArrowHeadLeftRenderer, color);
             ApplyMoveMarkerColor(_moveArrowHeadRightRenderer, color);
+            ApplyMoveMarkerColor(_moveArrowSpriteRenderer, color);
             ApplyMoveMarkerColor(_moveDestinationRenderer, color);
         }
 
@@ -840,6 +934,46 @@ namespace Panoptes.Presentation.Map
             _moveMarkerBlock.SetColor("_BaseColor", color);
             _moveMarkerBlock.SetColor("_Color", color);
             renderer.SetPropertyBlock(_moveMarkerBlock);
+        }
+
+        private Sprite ResolveMoveArrowSprite()
+        {
+            if (moveArrowSprite != null)
+            {
+                return moveArrowSprite;
+            }
+
+            if (!_moveArrowSpriteLoadAttempted && !string.IsNullOrWhiteSpace(moveArrowSpriteResourcesPath))
+            {
+                _moveArrowSpriteLoadAttempted = true;
+                moveArrowSprite = Resources.Load<Sprite>(moveArrowSpriteResourcesPath.Trim());
+            }
+
+            return moveArrowSprite;
+        }
+
+        private void KeepHighlightBelowDetails()
+        {
+            if (!forceHighlightBelowDetails || highlight == null)
+            {
+                return;
+            }
+
+            var highlightTransform = highlight.transform;
+            var localPosition = highlightTransform.localPosition;
+            localPosition.y = Mathf.Min(localPosition.y, Mathf.Max(0f, highlightLocalY));
+            highlightTransform.localPosition = localPosition;
+
+            if (highlightRenderer == null)
+            {
+                highlightRenderer = highlight.GetComponentInChildren<Renderer>();
+            }
+
+            if (highlightRenderer != null)
+            {
+                highlightRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                highlightRenderer.receiveShadows = false;
+            }
         }
 
         private static void DestroyRuntimeCollider(GameObject go)

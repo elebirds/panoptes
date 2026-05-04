@@ -236,6 +236,9 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentInHierarchy<UnitInfoPanelController>();
             builder.RegisterComponentInHierarchy<CityCoreBuildingActionRegistrar>();
             builder.RegisterComponentInHierarchy<SettlerUnitActionRegistrar>();
+            builder.RegisterComponentOnNewGameObject<UnitOrderCancelActionRegistrar>(
+                Lifetime.Singleton,
+                "Unit Order Cancel Action Registrar");
             builder.Register<TurnSummaryViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<BuildCatalogContextStore>(Lifetime.Singleton).AsSelf();

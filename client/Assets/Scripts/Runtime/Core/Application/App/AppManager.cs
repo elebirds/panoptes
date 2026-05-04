@@ -39,8 +39,8 @@ namespace Panoptes.Core.Application.App
         public AppState State { get; private set; } = AppState.Initializing;
 
         [Header("Config")]
-        [SerializeField] private string loginSceneName = "Login";
-        [SerializeField] private string lobbySceneName = "Lobby";
+        [SerializeField] private string loginSceneName = "MainMenu";
+        [SerializeField] private string lobbySceneName = "MainMenu";
         [SerializeField] private string gameSceneName = "Game";
 
         [Header("Local Test")]
@@ -145,6 +145,7 @@ namespace Panoptes.Core.Application.App
                 _configCache?.Clear();
                 _gameStateCache?.Clear();
                 _gameChatCache?.Clear();
+                _sessionManager?.Clear();
             }
 
             EnsureRealtimeConnectionIfNeeded(newState);
