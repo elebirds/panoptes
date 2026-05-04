@@ -272,7 +272,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             _lastBuildCatalogVisible = buildVisible;
             _lastRecipePanelVisible = recipeVisible;
-            ReapplyRightBottomShift(false);
+            ReapplyRightBottomShift(!buildVisible && !recipeVisible);
         }
 
         private void OpenBuildCatalogForNode(string nodeId)

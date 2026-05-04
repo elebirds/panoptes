@@ -1139,6 +1139,8 @@ namespace Panoptes.Presentation.Map
             {
                 case "plain":
                     return plainMaterial;
+                case "hill":
+                    return mountainMaterial != null ? mountainMaterial : plainMaterial;
                 case "mountain":
                     return mountainMaterial;
                 case "forest":
@@ -1233,6 +1235,7 @@ namespace Panoptes.Presentation.Map
         {
             switch (NormalizeToken(terrain))
             {
+                case "hill":
                 case "mountain":
                     return mountainUvWorldSize;
                 case "forest":

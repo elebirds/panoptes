@@ -27,6 +27,7 @@ namespace Panoptes.Presentation.UI.HUD
         private static readonly (string ActionId, string Label)[] RequiredSlots =
         {
             ("expand_territory", "Expand"),
+            ("cancel_unit_order", "Cancel"),
             ("action_2", "Action2"),
             ("action_3", "Action3"),
             ("action_4", "Action4"),

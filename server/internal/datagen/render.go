@@ -126,6 +126,8 @@ message PolicyCatalogEntry {
   string layer = 5;
   string activation_timing = 6;
   repeated string tags = 7;
+  string benefit_description = 8;
+  string next_action_description = 9;
 }
 
 message RecipeCatalogEntry {

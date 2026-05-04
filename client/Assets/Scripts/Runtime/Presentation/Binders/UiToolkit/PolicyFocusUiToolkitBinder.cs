@@ -11,6 +11,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private PolicyFocusViewModel _viewModel;
 
         protected override string DefaultTitle => "Policy Focus";
+        protected override bool AllowFallbackTree => false;
 
         [Inject]
         private void ConstructPolicyFlow(

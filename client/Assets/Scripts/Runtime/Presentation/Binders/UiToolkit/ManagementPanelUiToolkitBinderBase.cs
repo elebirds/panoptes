@@ -26,6 +26,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public event Action<string> RowActionRequested;
 
         protected abstract string DefaultTitle { get; }
+        protected virtual bool AllowFallbackTree => true;
 
         [Inject]
         private void Construct(TViewModel viewModel)
@@ -111,6 +112,16 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             ApplyVisibility();
         }
 
+        public void Open()
+        {
+            gameObject.SetActive(true);
+        }
+
+        public void Close()
+        {
+            gameObject.SetActive(false);
+        }
+
         private void EnsureDocument()
         {
             if (_uiDocument == null)
@@ -136,19 +147,27 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var root = _uiDocument.rootVisualElement;
-            if (root == null || root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName) != null)
+            if (root == null)
             {
                 return;
             }
 
-            root.Clear();
-            if (visualTreeAsset != null)
+            if (root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName) == null)
             {
-                visualTreeAsset.CloneTree(root);
-            }
-            else
-            {
-                root.Add(ManagementPanelUiToolkitRenderer.BuildFallbackTree(DefaultTitle));
+                root.Clear();
+                if (visualTreeAsset != null)
+                {
+                    visualTreeAsset.CloneTree(root);
+                }
+                else if (AllowFallbackTree)
+                {
+                    root.Add(ManagementPanelUiToolkitRenderer.BuildFallbackTree(DefaultTitle));
+                }
+                else
+                {
+                    Debug.LogError($"[{GetType().Name}] Missing VisualTreeAsset. Assign a prefab-backed UXML asset instead of using fallback UI generation.");
+                    return;
+                }
             }
 
             if (styleSheet != null && !root.styleSheets.Contains(styleSheet))
@@ -159,7 +178,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void CacheElements()
         {
-            _renderer.Cache(_uiDocument != null ? _uiDocument.rootVisualElement : null);
+            _renderer.Cache(_uiDocument != null ? _uiDocument.rootVisualElement : null, Close);
         }
 
         private void StopSubscription()

@@ -94,7 +94,7 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
-        public void PolicyFocus_ShouldSplitNationalAndInstitutionPolicies()
+        public void PolicyFocus_ShouldShowNationalPolicyOptionsOnly()
         {
             var catalogStore = new StaticCatalogStore();
             var draftStore = new PlanningDraftStore();
@@ -109,9 +109,10 @@ namespace Panoptes.Tests.EditMode.Presentation
                 plannedNationalPolicyId: " centralization ",
                 plannedInstitutionPolicyIds: new[] { " archives " }));
 
-            Assert.That(viewModel.Current.Groups, Has.Count.EqualTo(2));
+            Assert.That(viewModel.Current.Groups, Has.Count.EqualTo(1));
+            Assert.That(viewModel.Current.Groups[0].Id, Is.EqualTo("national"));
             Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Planned"));
-            Assert.That(viewModel.Current.Groups[1].Rows[0].Status, Is.EqualTo("Planned"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Id, Is.EqualTo("centralization"));
         }
 
         [Test]
