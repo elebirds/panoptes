@@ -210,11 +210,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             if (_uiDocument == null)
             {
                 _uiDocument = GetComponent<UIDocument>();
+                if (_uiDocument == null)
+                {
+                    _uiDocument = gameObject.AddComponent<UIDocument>();
+                }
             }
 
-            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            if (_uiDocument != null)
             {
-                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument);
             }
         }
 

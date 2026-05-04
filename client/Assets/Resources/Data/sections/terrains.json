@@ -37,25 +37,6 @@
       ]
     },
     {
-      "id": "hill",
-      "name": "山丘",
-      "description": "可通行的高地",
-      "icon_key": "terrain_hill",
-      "material_key": "M_Hill",
-      "move_cost_no_road": 3,
-      "defense_bonus": 0.15,
-      "attack_penalty": 0,
-      "blocks_cavalry": false,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": false,
-      "sort_order": 25,
-      "tags": [
-        "ground",
-        "elevated"
-      ]
-    },
-    {
       "id": "river",
       "name": "河流",
       "description": "难以通行",

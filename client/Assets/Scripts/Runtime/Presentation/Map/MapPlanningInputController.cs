@@ -148,9 +148,6 @@ namespace Panoptes.Presentation.Map
         private PlanningDraftStore _planningDraftStore;
         private SettlementStore _settlementStore;
         private GameplayFeedbackStore _feedbackStore;
-        private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
-        private BuildCatalogContextStore _buildCatalogContextStore;
-        private RecipeSynthesisContextStore _recipeSynthesisContextStore;
         private ErrorToast _errorToast;
         private IDisposable _gameStateSubscription;
         private IDisposable _planningDraftSubscription;
@@ -192,9 +189,6 @@ namespace Panoptes.Presentation.Map
             PlanningDraftStore planningDraftStore,
             SettlementStore settlementStore,
             GameplayFeedbackStore feedbackStore,
-            ManagementPanelVisibilityStore managementPanelVisibilityStore,
-            BuildCatalogContextStore buildCatalogContextStore,
-            RecipeSynthesisContextStore recipeSynthesisContextStore,
             ErrorToast errorToast)
         {
             _planningIntentService = planningIntentService;
@@ -210,9 +204,6 @@ namespace Panoptes.Presentation.Map
             _planningDraftStore = planningDraftStore;
             _settlementStore = settlementStore;
             _feedbackStore = feedbackStore;
-            _managementPanelVisibilityStore = managementPanelVisibilityStore;
-            _buildCatalogContextStore = buildCatalogContextStore;
-            _recipeSynthesisContextStore = recipeSynthesisContextStore;
             _errorToast = errorToast;
             _inputState.Configure(planningToolService, selectionService, planningToolViewModel);
             if (isActiveAndEnabled)
@@ -1699,7 +1690,7 @@ namespace Panoptes.Presentation.Map
                             continue;
                         }
 
-                        RemoveMovePreview(eventItem.UnitId);
+                        ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true, settledPathNodeIds);
                     }
                 }
             }
@@ -1803,37 +1794,8 @@ namespace Panoptes.Presentation.Map
         {
             var previous = _latestGameState;
             _latestGameState = state ?? new GameStateStoreState();
-            if (!string.IsNullOrWhiteSpace(previous?.Phase) &&
-                !string.Equals(previous.Phase, _latestGameState.Phase, StringComparison.Ordinal))
-            {
-                CloseCurrentOperationState();
-            }
-
             ApplyNodeDelta(previous, _latestGameState);
             ApplyUnitDelta(previous, _latestGameState);
-        }
-
-        private void CloseCurrentOperationState()
-        {
-            ClearCombatSelection();
-            ClearMovePreviewState();
-            ClearAllMovePreviews();
-            ClearAllPendingDeployGhosts();
-            ClearTerritoryHighlights();
-            _moveCommands.ClearAll();
-            _movePreviewPresentation.ClearAllMovePathMarkers();
-            _movePreviewPresentation.ClearPreview(RestoreTerritoryHighlightAfterPreviewOverlayClear);
-            _buildPlacement.ClearHoverState();
-            _nodeInfoProxyFactory.DestroyProxy();
-            _inputState.ClearToolAndSelection();
-            _managementPanelVisibilityStore?.Hide();
-            _buildCatalogContextStore?.Clear();
-            _recipeSynthesisContextStore?.Clear();
-
-            foreach (var panel in FindObjectsByType<UnitInfoPanelController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            {
-                panel.Close();
-            }
         }
 
         private void ApplyNodeDelta(GameStateStoreState previous, GameStateStoreState current)

@@ -1,4 +1,6 @@
-.PHONY: data-gen data-validate gen proto-gen server lint db-migrate-up db-migrate-down db-reset db-sqlc
+.PHONY: data-gen data-validate gen proto-gen server lint c0b-fixture c0b-check c0b-check-unity c0c-check c0c-check-unity c0d-check c0d-check-unity c0e-check c0e-check-unity c0f-fixture c0f-check c0f-check-unity c0-ui-check db-migrate-up db-migrate-down db-reset db-sqlc
+
+UNITY ?= /Applications/Unity/Hub/Editor/6000.4.1f1/Unity.app/Contents/MacOS/Unity
 
 PROTO_GEN_PATHS = \
 	--path panoptes/proto/v1/common.proto \
@@ -37,6 +39,59 @@ server:
 lint:
 	cd server && go vet ./...
 	cd protocol && buf lint
+
+c0b-fixture:
+	cd server && go run ./cmd/c0bgatefixture -out ../client/Assets/Scripts/Tests/EditMode/Fixtures/C0b/server_frames.jsonl
+
+c0b-check: c0b-fixture
+	git diff --exit-code -- client/Assets/Scripts/Tests/EditMode/Fixtures/C0b/server_frames.jsonl
+	cd server && go test -count=1 ./internal/debug ./internal/transport/codec
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	dotnet test client/Panoptes.Tests.EditMode.csproj --no-build
+	$(MAKE) c0b-check-unity
+	git diff --check
+
+c0b-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Presentation.C0bProtocolReplayGateTests -testResults $(CURDIR)/client/Temp/C0bProtocolReplayResults.xml -logFile -
+
+c0c-check:
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0c-check-unity
+	git diff --check
+
+c0c-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Presentation.C0cUiToolkitAssetSmokeTests -testResults $(CURDIR)/client/Temp/C0cUiToolkitAssetSmokeResults.xml -logFile -
+
+c0d-check:
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0d-check-unity
+	git diff --check
+
+c0d-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Composition.C0dGameSceneCompositionSmokeTests -testResults $(CURDIR)/client/Temp/C0dGameSceneCompositionSmokeResults.xml -logFile -
+
+c0e-check:
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0e-check-unity
+	git diff --check
+
+c0e-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform PlayMode -testFilter Panoptes.Tests.PlayMode.Composition.C0ePlayModeCompositionBootstrapTests -testResults $(CURDIR)/client/Temp/C0ePlayModeCompositionBootstrapResults.xml -logFile -
+
+c0f-fixture:
+	cd server && go run ./cmd/c0fgatefixture -out ../client/Assets/Scripts/Tests/EditMode/Fixtures/C0f/server_frames.jsonl
+
+c0f-check: c0f-fixture
+	git diff --exit-code -- client/Assets/Scripts/Tests/EditMode/Fixtures/C0f/server_frames.jsonl
+	cd server && go test -count=1 ./internal/transport/codec ./internal/transport/websocket ./internal/lobby ./internal/game
+	dotnet build client/Panoptes.Tests.EditMode.csproj
+	$(MAKE) c0f-check-unity
+	git diff --check
+
+c0f-check-unity:
+	$(UNITY) -batchmode -projectPath $(CURDIR)/client -runTests -testPlatform EditMode -testFilter Panoptes.Tests.EditMode.Presentation.C0fEndToEndProtocolHydrationGateTests -testResults $(CURDIR)/client/Temp/C0fEndToEndProtocolHydrationResults.xml -logFile -
+
+c0-ui-check: c0b-check c0c-check c0d-check c0e-check c0f-check
 
 # Database migrations
 db-migrate-up:

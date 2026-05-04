@@ -10,7 +10,6 @@ using System;
 using System.Collections;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
-using Panoptes.Presentation.Animation;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -24,28 +23,23 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float damagePulseSeconds = 0.16f;
         [SerializeField] private float damagePulseScale = 1.14f;
         [SerializeField] private float sectionPauseSeconds = 0.14f;
-        [SerializeField] private float actorFocusPauseSeconds = 0.12f;
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
         private SettlementStore _settlementStore;
         private MapRenderer _mapRenderer;
-        private AnimationQueue _animationQueue;
         private IDisposable _settlementSubscription;
         private Coroutine _playbackCoroutine;
-        private UnitView _playbackSelectedUnit;
         private int _lastHandledSettlementSequence;
 
         [Inject]
         private void Construct(
             SettlementStore settlementStore,
             MapRenderer mapRenderer,
-            AnimationQueue animationQueue,
             DamageNumberPopupController injectedDamagePopupController)
         {
             _settlementStore = settlementStore;
             _mapRenderer = mapRenderer;
-            _animationQueue = animationQueue;
             if (damagePopupController == null)
             {
                 damagePopupController = injectedDamagePopupController;
@@ -71,7 +65,6 @@ namespace Panoptes.Presentation.Map
                 StopCoroutine(_playbackCoroutine);
                 _playbackCoroutine = null;
             }
-            ClearPlaybackSelection();
         }
 
         private void SubscribeSettlement()
@@ -176,33 +169,7 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlayMove(TurnEventDto evt)
         {
-            if (_mapRenderer == null || evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
-            {
-                yield break;
-            }
-
-            var grid = new Vector2Int(evt.ToQ, evt.ToR);
-            if (!_mapRenderer.TryGetNodeIdByGrid(grid, out var targetNodeId) ||
-                !_mapRenderer.TryGetNodeView(targetNodeId, out var nodeView) ||
-                nodeView == null)
-            {
-                yield break;
-            }
-
-            if (_animationQueue == null)
-            {
-                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
-                yield break;
-            }
-
-            if (!nodeView.IsCurrentlyVisible && !_mapRenderer.TryGetUnitView(evt.UnitId, out _))
-            {
-                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
-                yield break;
-            }
-
-            yield return _animationQueue.PlayUnitMoveNow(evt.UnitId, targetNodeId, true);
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, moveEventWaitSeconds * 0.25f));
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, moveEventWaitSeconds));
         }
 
         private IEnumerator PlayConflict(TurnEventDto evt)
@@ -212,13 +179,11 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
             TryPlayUnitAttackAnimation(evt.UnitId);
             TryPlayUnitAttackAnimation(!string.IsNullOrWhiteSpace(evt.TargetUnitId) ? evt.TargetUnitId : evt.EnemyUnitId);
             node.SetHighlight(true, new Color(1f, 0.45f, 0.2f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
-            ClearPlaybackSelection();
         }
 
         private IEnumerator PlayDamage(TurnEventDto evt)
@@ -230,11 +195,9 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
             TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
-            ClearPlaybackSelection();
         }
 
         private IEnumerator PlayDeath(TurnEventDto evt)
@@ -246,12 +209,10 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            yield return FocusActorForPlayback(!string.IsNullOrWhiteSpace(evt.KillerId) ? evt.KillerId : ResolveActorUnitId(evt));
             TryPlayUnitAttackAnimation(evt.KillerId);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
-            ClearPlaybackSelection();
         }
 
         private IEnumerator PlayBuildingDamage(TurnEventDto evt)
@@ -262,14 +223,12 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
             TryPlayAttackerAnimation(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
-            ClearPlaybackSelection();
         }
 
         private bool TryPlayAttackerAnimation(TurnEventDto evt)
@@ -552,47 +511,6 @@ namespace Panoptes.Presentation.Map
         private static bool CanShowNodeCue(NodeView node)
         {
             return node != null && node.IsCurrentlyVisible;
-        }
-
-        private IEnumerator FocusActorForPlayback(string unitId)
-        {
-            ClearPlaybackSelection();
-            if (string.IsNullOrWhiteSpace(unitId) ||
-                _mapRenderer == null ||
-                !_mapRenderer.TryGetUnitView(unitId.Trim(), out var unit) ||
-                unit == null ||
-                !unit.gameObject.activeInHierarchy)
-            {
-                yield break;
-            }
-
-            _playbackSelectedUnit = unit;
-            _playbackSelectedUnit.SetSelected(true);
-            CinemachineMapCameraController.TryFocus(unit.transform.position, false);
-            yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, actorFocusPauseSeconds));
-        }
-
-        private void ClearPlaybackSelection()
-        {
-            if (_playbackSelectedUnit == null)
-            {
-                return;
-            }
-
-            _playbackSelectedUnit.SetSelected(false);
-            _playbackSelectedUnit = null;
-        }
-
-        private static string ResolveActorUnitId(TurnEventDto evt)
-        {
-            if (evt == null)
-            {
-                return string.Empty;
-            }
-
-            return !string.IsNullOrWhiteSpace(evt.UnitId)
-                ? evt.UnitId
-                : ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id");
         }
 
     }

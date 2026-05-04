@@ -1,0 +1,67 @@
+.management-panel-root {
+    position: absolute;
+    left: 396px;
+    top: 88px;
+    width: 430px;
+    max-height: 620px;
+    padding: 12px;
+    background-color: rgba(18, 22, 27, 0.94);
+    color: rgb(236, 240, 243);
+}
+
+.management-panel-title {
+    color: rgb(237, 239, 232);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+}
+
+.management-panel-empty {
+    color: rgb(166, 174, 183);
+    margin-bottom: 10px;
+}
+
+.management-panel-scroll {
+    max-height: 560px;
+}
+
+.management-panel-group {
+    margin-bottom: 12px;
+}
+
+.management-panel-group-title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(132, 173, 216);
+    margin-bottom: 6px;
+}
+
+.management-panel-row {
+    margin-bottom: 6px;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-left-width: 3px;
+    border-left-color: rgb(132, 173, 216);
+}
+
+.management-panel-row-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.management-panel-row-summary,
+.management-panel-row-detail,
+.management-panel-row-status,
+.management-panel-row-action {
+    font-size: 13px;
+    white-space: normal;
+}
+
+.management-panel-row-detail {
+    color: rgb(190, 199, 207);
+}
+
+.management-panel-row-status {
+    color: rgb(232, 199, 111);
+}

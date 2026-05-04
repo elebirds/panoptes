@@ -44,30 +44,20 @@ namespace Panoptes.Presentation.ViewModels
             string summary = "",
             string detail = "",
             string status = "",
-            string actionLabel = "",
-            string iconKey = "",
-            string benefitDescription = "",
-            string nextActionDescription = "")
+            string actionLabel = "")
         {
             ActionLabel = actionLabel ?? string.Empty;
-            BenefitDescription = benefitDescription ?? string.Empty;
             Detail = detail ?? string.Empty;
-            IconKey = iconKey ?? string.Empty;
             Id = id ?? string.Empty;
-            NextActionDescription = nextActionDescription ?? string.Empty;
             Status = status ?? string.Empty;
             Summary = summary ?? string.Empty;
             Title = string.IsNullOrWhiteSpace(title) ? Id : title.Trim();
         }
 
         public string ActionLabel { get; }
-        public string BenefitDescription { get; }
         public bool HasAction => !string.IsNullOrWhiteSpace(ActionLabel);
-        public bool HasIcon => !string.IsNullOrWhiteSpace(IconKey);
         public string Detail { get; }
-        public string IconKey { get; }
         public string Id { get; }
-        public string NextActionDescription { get; }
         public string Status { get; }
         public string Summary { get; }
         public string Title { get; }

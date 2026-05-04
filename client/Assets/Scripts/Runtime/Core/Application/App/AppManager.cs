@@ -32,11 +32,15 @@ namespace Panoptes.Core.Application.App
     {
         public static AppManager Instance { get; private set; }
 
+#if UNITY_INCLUDE_TESTS
+        public static bool SuppressInitialTransitionForTests { get; set; }
+#endif
+
         public AppState State { get; private set; } = AppState.Initializing;
 
         [Header("Config")]
-        [SerializeField] private string loginSceneName = "MainMenu";
-        [SerializeField] private string lobbySceneName = "MainMenu";
+        [SerializeField] private string loginSceneName = "Login";
+        [SerializeField] private string lobbySceneName = "Lobby";
         [SerializeField] private string gameSceneName = "Game";
 
         [Header("Local Test")]
@@ -99,6 +103,12 @@ namespace Panoptes.Core.Application.App
         {
             RegisterGlobalHandlers();
             HydrateStaticCatalogStore(_staticCatalogCache);
+#if UNITY_INCLUDE_TESTS
+            if (SuppressInitialTransitionForTests)
+            {
+                return;
+            }
+#endif
             if (bypassLoginForLocalTest)
             {
                 EnterLocalTestMode();
@@ -135,7 +145,6 @@ namespace Panoptes.Core.Application.App
                 _configCache?.Clear();
                 _gameStateCache?.Clear();
                 _gameChatCache?.Clear();
-                _sessionManager?.Clear();
             }
 
             EnsureRealtimeConnectionIfNeeded(newState);

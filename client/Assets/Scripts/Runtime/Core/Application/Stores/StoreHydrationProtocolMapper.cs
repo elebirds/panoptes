@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Protocol.V1;
@@ -31,6 +32,33 @@ namespace Panoptes.Core.Application.Stores
                 nodes: MapNodes(msg.Nodes),
                 units: MapUnits(msg.Units),
                 myResources: MapResources(msg.MyPlayer));
+        }
+
+        public static GameStateStoreState ToGameState(GameStateCache cache)
+        {
+            if (cache == null)
+            {
+                return new GameStateStoreState();
+            }
+
+            var gameId = cache.GameID ?? string.Empty;
+            var activeSessionId = string.IsNullOrWhiteSpace(cache.ActiveGameSessionID)
+                ? gameId
+                : cache.ActiveGameSessionID;
+
+            return new GameStateStoreState(
+                gameId: gameId,
+                activeGameSessionId: activeSessionId,
+                myPlayerId: cache.MyPlayerID,
+                turn: cache.Turn,
+                phase: cache.Phase,
+                mapWidth: cache.MapWidth,
+                mapHeight: cache.MapHeight,
+                isGameOver: cache.IsGameOver,
+                tokensLeft: cache.TokensLeft,
+                nodes: cache.Nodes,
+                units: cache.Units,
+                myResources: MapResources(cache.MyPlayer));
         }
 
         public static GameStateStoreState MergePlanningStart(GameStateStoreState current, MsgPlanningStart msg)
@@ -239,6 +267,24 @@ namespace Panoptes.Core.Application.Stores
                 0,
                 string.Empty,
                 GamePhases.IsPlanning(msg.Phase));
+        }
+
+        public static TurnState ToTurn(GameStateCache cache)
+        {
+            if (cache == null)
+            {
+                return new TurnState();
+            }
+
+            return new TurnState(
+                cache.Turn,
+                cache.Phase,
+                cache.TokensLeft,
+                cache.LastPlanningStartEvents,
+                cache.IsGameOver,
+                0,
+                string.Empty,
+                GamePhases.IsPlanning(cache.Phase) && !cache.IsGameOver);
         }
 
         public static TurnState ToTurn(MsgPlanningStart msg)

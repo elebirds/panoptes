@@ -25,7 +25,6 @@ namespace Panoptes.Presentation.Map
 
         [Header("Time")]
         [SerializeField] private bool useUnscaledTime = true;
-        [SerializeField] private bool snapCameraMovement = true;
 
         [Header("Input Gate")]
         [SerializeField] private bool blockZoomWhenPointerOverUI = true;
@@ -36,12 +35,12 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool enableKeyboardPan = true;
         [SerializeField] private float nearPanSpeed = 8f;
         [SerializeField] private float farPanSpeed = 28f;
-        [SerializeField] private float moveSmoothTime = 0f;
+        [SerializeField] private float moveSmoothTime = 0.08f;
 
         [Header("Zoom")]
         [SerializeField] private float nearDistance = 6.2f;
         [SerializeField] private float farDistance = 36f;
-        [SerializeField] private float distanceSmoothTime = 0f;
+        [SerializeField] private float distanceSmoothTime = 0.06f;
         [SerializeField] private float scrollDistanceStep = 3.5f;
         [SerializeField] private float inputSystemScrollScale = 0.01f;
         [SerializeField] private bool invertScrollDirection = false;
@@ -110,10 +109,12 @@ namespace Panoptes.Presentation.Map
             _targetDistance = ClampDistance(_targetDistance);
             _targetAnchorXZ = ClampAnchorToContext(_targetAnchorXZ);
 
-            if (_dragging || snapCameraMovement || moveSmoothTime <= 0.0001f)
+            if (_dragging)
             {
                 _currentAnchorXZ = _targetAnchorXZ;
+                _currentDistance = _targetDistance;
                 _anchorVelocity = Vector2.zero;
+                _distanceVelocity = 0f;
             }
             else
             {
@@ -124,15 +125,6 @@ namespace Panoptes.Presentation.Map
                     moveSmoothTime,
                     Mathf.Infinity,
                     dt);
-            }
-
-            if (_dragging || snapCameraMovement || distanceSmoothTime <= 0.0001f)
-            {
-                _currentDistance = _targetDistance;
-                _distanceVelocity = 0f;
-            }
-            else
-            {
                 _currentDistance = Mathf.SmoothDamp(
                     _currentDistance,
                     _targetDistance,
@@ -164,35 +156,6 @@ namespace Panoptes.Presentation.Map
             _currentAnchorXZ = _targetAnchorXZ;
             _anchorVelocity = Vector2.zero;
             ApplyRigState(_currentAnchorXZ, _currentDistance > 0f ? _currentDistance : ClampDistance(farDistance));
-        }
-
-        public void FocusWorldPosition(Vector3 worldPosition, bool snapInstantly = false)
-        {
-            ResolveRig();
-            var anchor = ClampAnchorToContext(new Vector2(worldPosition.x, worldPosition.z));
-            _targetAnchorXZ = anchor;
-            _dragging = false;
-
-            if (!snapInstantly)
-            {
-                return;
-            }
-
-            _currentAnchorXZ = anchor;
-            _anchorVelocity = Vector2.zero;
-            ApplyRigState(_currentAnchorXZ, _currentDistance > 0f ? _currentDistance : ClampDistance(farDistance));
-        }
-
-        public static bool TryFocus(Vector3 worldPosition, bool snapInstantly = false)
-        {
-            var controller = FindAnyObjectByType<CinemachineMapCameraController>();
-            if (controller == null)
-            {
-                return false;
-            }
-
-            controller.FocusWorldPosition(worldPosition, snapInstantly);
-            return true;
         }
 
         private void HandleMapCameraContextReady(MapCameraContext context)

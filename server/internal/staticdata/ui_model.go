@@ -121,14 +121,12 @@ type TechnologyCatalogUIFile struct {
 
 type PolicyCatalogUIFile struct {
 	Policies []struct {
-		ID                    string   `json:"id"`
-		Name                  string   `json:"name"`
-		Description           string   `json:"description"`
-		BenefitDescription    string   `json:"benefit_description"`
-		NextActionDescription string   `json:"next_action_description"`
-		IconKey               string   `json:"icon_key"`
-		SortOrder             int      `json:"sort_order"`
-		Tags                  []string `json:"tags"`
+		ID          string   `json:"id"`
+		Name        string   `json:"name"`
+		Description string   `json:"description"`
+		IconKey     string   `json:"icon_key"`
+		SortOrder   int      `json:"sort_order"`
+		Tags        []string `json:"tags"`
 	} `json:"policies"`
 }
 

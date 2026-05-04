@@ -22,16 +22,6 @@
       "buildable": true
     },
     {
-      "id": "hill",
-      "move_cost_no_road": 3,
-      "defense_bonus": 0.15,
-      "attack_penalty": 0.0,
-      "blocks_cavalry": false,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": false
-    },
-    {
       "id": "river",
       "move_cost_no_road": 99,
       "defense_bonus": 0.0,

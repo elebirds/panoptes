@@ -3,7 +3,6 @@
   "terrains": [
     { "id": "plain", "name": "平原", "description": "标准地块", "icon_key": "terrain_plain", "material_key": "M_Plain", "sort_order": 10, "tags": ["ground"] },
     { "id": "forest", "name": "森林", "description": "高防御地块", "icon_key": "terrain_forest", "material_key": "M_Forest", "sort_order": 20, "tags": ["ground"] },
-    { "id": "hill", "name": "山丘", "description": "可通行的高地", "icon_key": "terrain_hill", "material_key": "M_Hill", "sort_order": 25, "tags": ["ground", "elevated"] },
     { "id": "river", "name": "河流", "description": "难以通行", "icon_key": "terrain_river", "material_key": "M_River", "sort_order": 30, "tags": ["ground"] }
   ]
 }

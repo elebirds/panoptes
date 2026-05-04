@@ -190,31 +190,25 @@ func buildBuildMenuLayout(buildings []staticdata.BuildingDefinition) staticdata.
 
 func mergePolicyUI(policies []staticdata.PolicyDefinition, ui staticdata.PolicyCatalogUIFile) {
 	uiByID := make(map[string]struct {
-		Name                  string
-		Description           string
-		BenefitDescription    string
-		NextActionDescription string
-		IconKey               string
-		SortOrder             int
-		Tags                  []string
+		Name        string
+		Description string
+		IconKey     string
+		SortOrder   int
+		Tags        []string
 	}, len(ui.Policies))
 	for _, entry := range ui.Policies {
 		uiByID[entry.ID] = struct {
-			Name                  string
-			Description           string
-			BenefitDescription    string
-			NextActionDescription string
-			IconKey               string
-			SortOrder             int
-			Tags                  []string
-		}{entry.Name, entry.Description, entry.BenefitDescription, entry.NextActionDescription, entry.IconKey, entry.SortOrder, entry.Tags}
+			Name        string
+			Description string
+			IconKey     string
+			SortOrder   int
+			Tags        []string
+		}{entry.Name, entry.Description, entry.IconKey, entry.SortOrder, entry.Tags}
 	}
 	for i := range policies {
 		if entry, ok := uiByID[policies[i].ID]; ok {
 			policies[i].Name = entry.Name
 			policies[i].Description = entry.Description
-			policies[i].BenefitDescription = entry.BenefitDescription
-			policies[i].NextActionDescription = entry.NextActionDescription
 			policies[i].IconKey = entry.IconKey
 			policies[i].SortOrder = entry.SortOrder
 			policies[i].Tags = append([]string(nil), entry.Tags...)

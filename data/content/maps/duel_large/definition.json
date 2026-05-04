@@ -19,7 +19,6 @@
     { "kind": "rect", "terrain": "forest", "x": 22, "y": 10, "width": 4, "height": 6 },
     { "kind": "rect", "terrain": "forest", "x": 12, "y": 26, "width": 4, "height": 5 },
     { "kind": "rect", "terrain": "forest", "x": 26, "y": 12, "width": 5, "height": 4 },
-    { "kind": "rect", "terrain": "hill", "x": 16, "y": 16, "width": 4, "height": 4 },
     {
       "kind": "point",
       "terrain": "river",

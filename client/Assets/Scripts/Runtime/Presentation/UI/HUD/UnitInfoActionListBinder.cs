@@ -27,7 +27,6 @@ namespace Panoptes.Presentation.UI.HUD
         private static readonly (string ActionId, string Label)[] RequiredSlots =
         {
             ("expand_territory", "Expand"),
-            ("cancel_unit_order", "Cancel"),
             ("action_2", "Action2"),
             ("action_3", "Action3"),
             ("action_4", "Action4"),
@@ -220,7 +219,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         public void Refresh(UnitInfoActionButtonSlot[] slots, UnitInfoActionRegistry registry, UnitView currentUnit)
         {
-            EnsureActionProvidersRegistered();
+            EnsureActionProvidersRegistered(registry);
 
             if (slots == null || slots.Length == 0)
             {
@@ -408,8 +407,13 @@ namespace Panoptes.Presentation.UI.HUD
             slot.button.gameObject.SetActive(true);
         }
 
-        private static void EnsureActionProvidersRegistered()
+        private static void EnsureActionProvidersRegistered(UnitInfoActionRegistry registry)
         {
+            if (registry == null)
+            {
+                return;
+            }
+
             var providers = UnityEngine.Object.FindObjectsByType<UnitInfoActionProviderBase>(FindObjectsInactive.Include);
             if (providers == null || providers.Length == 0)
             {
@@ -424,7 +428,7 @@ namespace Panoptes.Presentation.UI.HUD
                     continue;
                 }
 
-                provider.EnsureRegistered();
+                provider.EnsureRegistered(registry);
             }
         }
 

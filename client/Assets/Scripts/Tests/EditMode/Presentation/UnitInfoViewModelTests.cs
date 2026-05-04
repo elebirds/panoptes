@@ -168,52 +168,5 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(viewModel.Current.MaxHp, Is.EqualTo(100));
             Assert.That(viewModel.Current.ShowDirectOrderButtons, Is.False);
         }
-
-        [Test]
-        public void SelectBuildingNode_ShouldUseCatalogMaxHpWhenSnapshotHpIsMissing()
-        {
-            var gameStateStore = new GameStateStore();
-            var selectionStore = new SelectionStore();
-            var staticCatalogStore = new StaticCatalogStore();
-            var planningDraftStore = new PlanningDraftStore();
-            using var viewModel = new UnitInfoViewModel(
-                gameStateStore,
-                selectionStore,
-                staticCatalogStore,
-                planningDraftStore,
-                new SelectionService(selectionStore));
-
-            staticCatalogStore.Replace(new StaticCatalogState(
-                buildings: new Dictionary<string, CatalogBuildingDto>
-                {
-                    ["city_core"] = new CatalogBuildingDto
-                    {
-                        Id = "city_core",
-                        Name = "Castle",
-                        MaxHp = 200
-                    }
-                }));
-            gameStateStore.Replace(new GameStateStoreState(
-                myPlayerId: "p1",
-                phase: GamePhases.Planning,
-                nodes: new Dictionary<string, NodeDto>
-                {
-                    ["n1"] = new NodeDto
-                    {
-                        Id = "n1",
-                        BuildingType = "city_core",
-                        Owner = "p1",
-                        BuildingHp = 0,
-                        BuildingMaxHp = 0
-                    }
-                }));
-
-            viewModel.SelectUnit("n1");
-
-            Assert.That(viewModel.Current.HasSelection, Is.True);
-            Assert.That(viewModel.Current.DisplayName, Is.EqualTo("Castle"));
-            Assert.That(viewModel.Current.Hp, Is.EqualTo(200));
-            Assert.That(viewModel.Current.MaxHp, Is.EqualTo(200));
-        }
     }
 }

@@ -21,6 +21,9 @@ namespace Panoptes.Presentation.Animation
             Camera followCamera,
             bool followCameraEnabled)
         {
+            _ = followCamera;
+            _ = followCameraEnabled;
+
             if (unitView == null)
             {
                 yield break;
@@ -50,11 +53,6 @@ namespace Panoptes.Presentation.Animation
                 // Move unit.
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;
-                if (followCameraEnabled && followCamera != null)
-                {
-                    CinemachineMapCameraController.TryFocus(unitPos, false);
-                }
-
                 if (unitView != null)
                 {
                     unitView.SetMovingVisual(true, 1f, unitPos - prevPos);

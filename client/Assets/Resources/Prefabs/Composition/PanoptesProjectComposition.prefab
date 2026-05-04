@@ -59,8 +59,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46228aeea6f87e8418a77d59f14ac7a7, type: 3}
   m_Name:
   m_EditorClassIdentifier: Panoptes.Core::Panoptes.Core.Application.App.AppManager
-  loginSceneName: MainMenu
-  lobbySceneName: MainMenu
+  loginSceneName: Login
+  lobbySceneName: Lobby
   gameSceneName: Game
   bypassLoginForLocalTest: 0
   localTestSceneName: Game
@@ -238,7 +238,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 100000}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d5212c0dcbc64a948892099976a9593, type: 3}
+  m_Script: {fileID: 11500000, guid: 087d7bdcd6db4db4bafc56150df859cc, type: 3}
   m_Name:
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Composition.ProjectOverlayRegistry
 --- !u!114 &100017

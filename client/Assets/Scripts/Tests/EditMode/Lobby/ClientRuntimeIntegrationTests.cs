@@ -3,8 +3,10 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Panoptes.Core.Application.Cache;
+using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using Panoptes.Core.Events;
+using Panoptes.Core.Infrastructure.Mapper;
 using Panoptes.Core.Infrastructure.Network;
 using Panoptes.Protocol.V1;
 using Panoptes.Presentation.UI.Common;
@@ -1146,10 +1148,16 @@ namespace Panoptes.Tests.EditMode.Lobby
                 Assert.That(catalog.LoadLocalCatalog(), Is.True, "StaticCatalogCache 本地目录加载失败。");
                 Assert.That(catalog.TryGetTechnology("agrarian_foundations", out var technology), Is.True, "测试依赖农业基础科技目录项。");
                 Assert.That(technology, Is.Not.Null);
+                var staticCatalogStore = new StaticCatalogStore();
+                new StaticCatalogStoreHydrator(staticCatalogStore).HydrateFromCache(catalog);
 
                 var cache = cacheObject.AddComponent<GameStateCache>();
                 SetSingletonInstance(typeof(GameStateCache), cache);
-                cache.ApplyGameInit(new MsgGameInit
+                var gameStateStore = new GameStateStore();
+                var settlementStore = new SettlementStore();
+                var gameOverStore = new GameOverStore();
+                var feedbackStore = new GameplayFeedbackStore();
+                var init = new MsgGameInit
                 {
                     GameId = "game-1",
                     YourPlayerId = "player-1",
@@ -1177,7 +1185,9 @@ namespace Panoptes.Tests.EditMode.Lobby
                             BuildingHp = 100
                         }
                     }
-                });
+                };
+                cache.ApplyGameInit(init);
+                gameStateStore.Replace(StoreHydrationProtocolMapper.ToGameState(init));
 
                 var toastPrefab = Resources.Load<GameObject>("Prefabs/UI/ErrorToast");
                 Assert.That(toastPrefab, Is.Not.Null, "ErrorToast 运行时 prefab 不存在。");
@@ -1197,10 +1207,18 @@ namespace Panoptes.Tests.EditMode.Lobby
                 var errorColor = background.color;
 
                 var controller = controllerObject.AddComponent<GameSceneController>();
+                InjectGameSceneController(
+                    controller,
+                    gameStateStore,
+                    settlementStore,
+                    gameOverStore,
+                    feedbackStore,
+                    staticCatalogStore,
+                    toast);
                 InvokeLifecycle(controller, "Awake");
                 InvokeLifecycle(controller, "OnEnable");
 
-                cache.ApplyGameSync(new MsgGameSync
+                var sync = new MsgGameSync
                 {
                     Turn = 1,
                     Phase = "resolving",
@@ -1248,7 +1266,10 @@ namespace Panoptes.Tests.EditMode.Lobby
                             }
                         }
                     }
-                });
+                };
+                cache.ApplyGameSync(sync);
+                gameStateStore.Replace(StoreHydrationProtocolMapper.MergeGameSync(gameStateStore.Snapshot, sync));
+                settlementStore.Replace(SettlementMapper.ToDto(sync));
 
                 Assert.That(message.text, Is.EqualTo("科技研究完成：农业基础"));
                 Assert.That(background.color, Is.Not.EqualTo(errorColor));
@@ -1346,21 +1367,22 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_mapPlanningInputControllerPath), Is.True, "MapPlanningInputController.cs 不存在。");
 
             var content = ReadMapPlanningInputControllerSources(_mapPlanningInputControllerPath);
+            var buildPlacementContent = ReadMapPlanningBuildPlacementSources(_mapPlanningInputControllerPath);
             StringAssert.Contains("public void EnterBuildPlacementAny(string buildingType, string cityId)", content,
                 "建造入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementResource(string buildingType, string cityId)", content,
                 "资源建筑入口应显式要求 cityId。");
             StringAssert.Contains("public void EnterBuildPlacementCity(string buildingType, string cityId)", content,
                 "城内建筑入口应显式要求 cityId。");
-            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", content,
+            StringAssert.Contains("_activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();", buildPlacementContent,
                 "建造模式应保存显式传入的 cityId，而不是临时猜测。");
-            StringAssert.Contains("_intentSender.BuildToken(nodeId, buildingType, _activeBuildCityId);", content,
+            StringAssert.Contains("BuildToken(nodeId, buildingType, _activeBuildCityId);", buildPlacementContent,
                 "建造消息必须透传显式 cityId。");
             Assert.That(content, Does.Not.Contain("SetBuildCastleContext"),
                 "不应再保留隐藏式 SetBuildCastleContext 兼容入口。");
             Assert.That(content, Does.Not.Contain("TryResolveBuildCityId"),
                 "不应再在客户端本地猜测 cityId。");
-            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", content,
+            StringAssert.Contains("缺少建造城市上下文，无法进入建造模式", buildPlacementContent,
                 "缺少 cityId 时应在进入建造模式前直接失败。");
         }
 
@@ -1437,8 +1459,9 @@ namespace Panoptes.Tests.EditMode.Lobby
             Assert.That(File.Exists(_cityCoreBuildingActionRegistrarPath), Is.True, "CityCoreBuildingActionRegistrar.cs 不存在。");
 
             var registrarContent = File.ReadAllText(_cityCoreBuildingActionRegistrarPath);
+            var resolverContent = File.ReadAllText(Path.GetFullPath("Assets/Scripts/Runtime/Presentation/UI/HUD/CityCoreBuildingActionResolver.cs"));
 
-            StringAssert.Contains("\"city_core\"", registrarContent,
+            StringAssert.Contains("\"city_core\"", resolverContent,
                 "主城动作注册必须显式接受 city_core。");
             Assert.That(registrarContent, Does.Not.Contain("= \"castle\""),
                 "主城动作注册不应再保留 castle 运行时别名。");
@@ -1753,6 +1776,35 @@ namespace Panoptes.Tests.EditMode.Lobby
             method.Invoke(instance, null);
         }
 
+        private static void InjectGameSceneController(
+            GameSceneController controller,
+            GameStateStore gameStateStore,
+            SettlementStore settlementStore,
+            GameOverStore gameOverStore,
+            GameplayFeedbackStore feedbackStore,
+            StaticCatalogStore staticCatalogStore,
+            ErrorToast errorToast)
+        {
+            var method = typeof(GameSceneController).GetMethod("Construct",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new AssertionException("缺少 GameSceneController.Construct 注入方法。");
+            }
+
+            method.Invoke(
+                controller,
+                new object[]
+                {
+                    gameStateStore,
+                    settlementStore,
+                    gameOverStore,
+                    feedbackStore,
+                    staticCatalogStore,
+                    errorToast
+                });
+        }
+
         private static void InvokeStaticMessageHandler(string methodName, object message)
         {
             var method = typeof(Panoptes.Core.Application.Handler.GameMessageHandler).GetMethod(methodName,
@@ -1775,6 +1827,22 @@ namespace Panoptes.Tests.EditMode.Lobby
             return string.Join("\n", Directory
                 .GetFiles(mapDirectory, "MapPlanningInputController*.cs", SearchOption.AllDirectories)
                 .OrderBy(file => file, StringComparer.Ordinal)
+                .Select(File.ReadAllText));
+        }
+
+        private static string ReadMapPlanningBuildPlacementSources(string mapPlanningInputControllerPath)
+        {
+            var mapDirectory = Path.GetDirectoryName(mapPlanningInputControllerPath);
+            Assert.That(mapDirectory, Is.Not.Null);
+
+            return string.Join("\n", new[]
+            {
+                mapPlanningInputControllerPath,
+                Path.Combine(mapDirectory!, "MapBuildPlacementSession.cs"),
+                Path.Combine(mapDirectory!, "../Planning/Input/MapBuildPlacementSession.cs")
+            }
+                .Select(Path.GetFullPath)
+                .Where(File.Exists)
                 .Select(File.ReadAllText));
         }
 

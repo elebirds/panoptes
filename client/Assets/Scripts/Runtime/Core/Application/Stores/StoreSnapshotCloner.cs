@@ -557,13 +557,11 @@ namespace Panoptes.Core.Application.Stores
             return new CatalogPolicyDto
             {
                 ActivationTiming = source.ActivationTiming,
-                BenefitDescription = source.BenefitDescription,
                 Description = source.Description,
                 IconKey = source.IconKey,
                 Id = source.Id,
                 Layer = source.Layer,
-                Name = source.Name,
-                NextActionDescription = source.NextActionDescription
+                Name = source.Name
             };
         }
 

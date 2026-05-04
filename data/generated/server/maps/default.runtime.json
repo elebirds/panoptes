@@ -1034,7 +1034,7 @@
       "id": "I6",
       "x": 8,
       "y": 5,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1042,7 +1042,7 @@
       "id": "J6",
       "x": 9,
       "y": 5,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1050,7 +1050,7 @@
       "id": "K6",
       "x": 10,
       "y": 5,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1058,7 +1058,7 @@
       "id": "L6",
       "x": 11,
       "y": 5,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1227,7 +1227,7 @@
       "id": "I7",
       "x": 8,
       "y": 6,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1235,7 +1235,7 @@
       "id": "J7",
       "x": 9,
       "y": 6,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1243,7 +1243,7 @@
       "id": "K7",
       "x": 10,
       "y": 6,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1251,7 +1251,7 @@
       "id": "L7",
       "x": 11,
       "y": 6,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1420,7 +1420,7 @@
       "id": "I8",
       "x": 8,
       "y": 7,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1428,7 +1428,7 @@
       "id": "J8",
       "x": 9,
       "y": 7,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1436,7 +1436,7 @@
       "id": "K8",
       "x": 10,
       "y": 7,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1444,7 +1444,7 @@
       "id": "L8",
       "x": 11,
       "y": 7,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1613,7 +1613,7 @@
       "id": "I9",
       "x": 8,
       "y": 8,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1621,7 +1621,7 @@
       "id": "J9",
       "x": 9,
       "y": 8,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1629,7 +1629,7 @@
       "id": "K9",
       "x": 10,
       "y": 8,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },
@@ -1637,7 +1637,7 @@
       "id": "L9",
       "x": 11,
       "y": 8,
-      "terrain": "hill",
+      "terrain": "plain",
       "has_road": false,
       "is_resource_point": false
     },

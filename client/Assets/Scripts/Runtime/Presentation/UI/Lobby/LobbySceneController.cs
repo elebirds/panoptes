@@ -59,19 +59,6 @@ namespace Panoptes.Presentation.UI.Lobby
             SetRoomVisible(true);
         }
 
-        public void HidePanels()
-        {
-            if (_lobbyPanel != null)
-            {
-                _lobbyPanel.SetActive(false);
-            }
-
-            if (_roomPanel != null)
-            {
-                _roomPanel.SetActive(false);
-            }
-        }
-
         private void OnRoomCreated(string roomId, string roomCode)
         {
             _lobbyPanelController?.HandleRoomCreated(roomId, roomCode);

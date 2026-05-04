@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "d725bda5900e0fed98f39abec8b41f857bc1ca1bfd84d2aa4604d4306b6e067f",
+    "bundle_hash": "4b88d781dc49d3bea52ccee90047cc8698bf31f8c41e1618b4c9b5df00ddd9a8",
     "required_sections": [
       "resources",
       "points",
@@ -40,7 +40,7 @@
       },
       {
         "section_name": "policies",
-        "hash": "7e856f8928e3a055584b12d9f019e1b7303f3f782f2b9cbc98d03c72bf995fc3"
+        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
       },
       {
         "section_name": "recipes",
@@ -60,7 +60,7 @@
       },
       {
         "section_name": "terrains",
-        "hash": "dcb1e062154cca7aecc8eb091a655d59ff6b86881df295f0cbcbc644b04e1489"
+        "hash": "5ea18465e5a9b1279004f1c1f36e9c23d4076d88724d7b9089c13c4b8e309741"
       },
       {
         "section_name": "ui_build_menu_layout",
@@ -1596,8 +1596,6 @@
       "id": "expansion",
       "name": "扩张",
       "description": "开拓者组织工时 -1。",
-      "benefit_description": "开拓者组织工时 -1。",
-      "next_action_description": "适合优先扩张城市边界或抢占新资源点。",
       "icon_key": "policy_expansion",
       "layer": "national",
       "activation_timing": "same_turn",
@@ -1630,8 +1628,6 @@
       "id": "war_preparedness",
       "name": "备战",
       "description": "步兵与弓手训练工时 -1。",
-      "benefit_description": "步兵与弓手训练工时 -1。",
-      "next_action_description": "适合下一步集中训练军队并准备前线推进。",
       "icon_key": "policy_war_preparedness",
       "layer": "national",
       "activation_timing": "same_turn",
@@ -1674,8 +1670,6 @@
       "id": "recovery",
       "name": "恢复",
       "description": "农耕相关配方额外产出粮食。",
-      "benefit_description": "农耕相关配方额外产出粮食。",
-      "next_action_description": "适合下一步补充粮食库存、稳定人口与持续生产。",
       "icon_key": "policy_recovery",
       "layer": "national",
       "activation_timing": "same_turn",
@@ -1712,8 +1706,6 @@
       "id": "reorganization",
       "name": "整饬",
       "description": "每回合工业产出 +1。",
-      "benefit_description": "每回合工业产出 +1。",
-      "next_action_description": "适合下一步转向工坊、冶炼或基础设施建设。",
       "icon_key": "policy_reorganization",
       "layer": "national",
       "activation_timing": "same_turn",
@@ -1742,8 +1734,6 @@
       "id": "academy_charter",
       "name": "学术特许",
       "description": "制度层面的学术组织支持，提升科研产出。",
-      "benefit_description": "科研产出 +1。",
-      "next_action_description": "适合下一步推进科技树与长期研究投入。",
       "icon_key": "policy_academy_charter",
       "layer": "institutional",
       "activation_timing": "next_turn",
@@ -1772,8 +1762,6 @@
       "id": "logistics_corps",
       "name": "转运署",
       "description": "制度层面的转运组织，提高道路基础运量。",
-      "benefit_description": "道路基础运量 +1。",
-      "next_action_description": "适合下一步把物资调往工业、军事或扩张线路。",
       "icon_key": "policy_logistics_corps",
       "layer": "institutional",
       "activation_timing": "next_turn",
@@ -1810,8 +1798,6 @@
       "id": "foundry_directives",
       "name": "冶造敕令",
       "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
-      "benefit_description": "精炼矿石基础进度 +1。",
-      "next_action_description": "适合下一步保障冶炼链条和工业建设材料。",
       "icon_key": "policy_reorganization",
       "layer": "institutional",
       "activation_timing": "next_turn",
@@ -1850,8 +1836,6 @@
       "id": "mercantile_charter",
       "name": "商贸特许",
       "description": "制度层面的市集授权，提高契约调拨效率。",
-      "benefit_description": "粮食、木材、矿石契约基础进度 +1。",
-      "next_action_description": "适合下一步用市场契约快速补齐短缺资源。",
       "icon_key": "policy_logistics_corps",
       "layer": "institutional",
       "activation_timing": "next_turn",
@@ -1902,8 +1886,6 @@
       "id": "research_mandate",
       "name": "研学敕令",
       "description": "制度层面的学术优先令，显著提高科研产出。",
-      "benefit_description": "科研产出 +2。",
-      "next_action_description": "适合下一步集中冲刺关键科技或解锁新能力。",
       "icon_key": "policy_academy_charter",
       "layer": "institutional",
       "activation_timing": "next_turn",
@@ -2484,25 +2466,6 @@
       "sort_order": 20,
       "tags": [
         "ground"
-      ]
-    },
-    {
-      "id": "hill",
-      "name": "山丘",
-      "description": "可通行的高地",
-      "icon_key": "terrain_hill",
-      "material_key": "M_Hill",
-      "move_cost_no_road": 3,
-      "defense_bonus": 0.15,
-      "attack_penalty": 0,
-      "blocks_cavalry": false,
-      "passable_with_road": false,
-      "passable": true,
-      "buildable": false,
-      "sort_order": 25,
-      "tags": [
-        "ground",
-        "elevated"
       ]
     },
     {

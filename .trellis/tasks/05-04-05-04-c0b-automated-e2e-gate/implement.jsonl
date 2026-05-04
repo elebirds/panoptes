@@ -1,0 +1,5 @@
+{"file":"AGENTS.md","reason":"Global Panoptes architecture, protocol, generated-file, and client presentation boundaries."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend test and quality expectations for the fixture generator."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Client boundary and EditMode verification expectations."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Store/ViewModel/Binder state flow that the replay gate must protect."}
+{"file":"docs/2026-05-03-c0a-ui-inventory-and-integration-plan-zh.md","reason":"Approved C0a UI surfaces that C0b should protect before manual prefab debugging."}

@@ -1,14 +1,35 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
+using Panoptes.Protocol.V1;
 using R3;
+using UnityEngine;
 
 namespace Panoptes.Tests.EditMode.Core
 {
     public sealed class StoreHydrationHelperTests
     {
+        private GameObject _cacheObject;
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (_cacheObject != null)
+            {
+                Object.DestroyImmediate(_cacheObject);
+                _cacheObject = null;
+            }
+
+            typeof(GameStateCache)
+                .GetProperty(nameof(GameStateCache.Instance), BindingFlags.Static | BindingFlags.Public)
+                ?.GetSetMethod(true)
+                ?.Invoke(null, new object[] { null });
+        }
+
         [Test]
         public void Hydrate_ShouldPublishRepresentativeStoreStates()
         {
@@ -131,6 +152,79 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(gameStateStore.Snapshot.Turn, Is.Zero);
             Assert.That(planningDraftStore.Snapshot.SnapshotTurn, Is.Zero);
             Assert.That(staticCatalogStore.Snapshot.Buildings, Is.Empty);
+        }
+
+        [Test]
+        public void HydrateGameRuntimeFromCache_ShouldSeedFirstGameSceneSnapshotWithoutResettingCatalog()
+        {
+            var gameStateStore = new GameStateStore();
+            var planningDraftStore = new PlanningDraftStore();
+            var staticCatalogStore = new StaticCatalogStore();
+            var turnStore = new TurnStore();
+            var helper = new StoreHydrationHelper(
+                gameStateStore,
+                planningDraftStore,
+                staticCatalogStore,
+                turnStore);
+            helper.HydrateStaticCatalog(new StaticCatalogState(
+                buildings: new Dictionary<string, CatalogBuildingDto>
+                {
+                    ["farm"] = new CatalogBuildingDto { Id = "farm", Name = "Farm" }
+                }));
+
+            _cacheObject = new GameObject("GameStateCache");
+            var cache = _cacheObject.AddComponent<GameStateCache>();
+            cache.ApplyGameInit(new MsgGameInit
+            {
+                GameId = "game-1",
+                YourPlayerId = "player-1",
+                Turn = 1,
+                Phase = GamePhases.Planning,
+                MapWidth = 12,
+                MapHeight = 10,
+                MyPlayer = new PlayerView
+                {
+                    Id = "player-1",
+                    TokensLeft = 5,
+                    Resources = new ResourceBag
+                    {
+                        Items = { new ResourceValue { Key = ResourceKeys.ResourceWood, Amount = 8 } }
+                    }
+                },
+                Nodes =
+                {
+                    new NodeView
+                    {
+                        Id = "n1",
+                        Pos = new Position { Q = 1, R = -1 },
+                        Terrain = "plain",
+                        ControllerPlayerId = "player-1"
+                    }
+                },
+                Units =
+                {
+                    new Panoptes.Protocol.V1.UnitView
+                    {
+                        Id = "u1",
+                        UnitType = "settler",
+                        Faction = "player-1",
+                        Pos = new Position { Q = 1, R = -1 },
+                        Hp = 10,
+                        MaxHp = 10
+                    }
+                }
+            });
+
+            var hydrated = helper.HydrateGameRuntimeFromCache(cache);
+
+            Assert.That(hydrated, Is.True);
+            Assert.That(gameStateStore.Snapshot.GameId, Is.EqualTo("game-1"));
+            Assert.That(gameStateStore.Snapshot.Nodes.Keys, Does.Contain("n1"));
+            Assert.That(gameStateStore.Snapshot.Units.Keys, Does.Contain("u1"));
+            Assert.That(gameStateStore.Snapshot.MyResources.Wood, Is.EqualTo(8));
+            Assert.That(turnStore.Snapshot.Turn, Is.EqualTo(1));
+            Assert.That(turnStore.Snapshot.TokensLeft, Is.EqualTo(5));
+            Assert.That(staticCatalogStore.Snapshot.Buildings.Keys, Does.Contain("farm"));
         }
     }
 }

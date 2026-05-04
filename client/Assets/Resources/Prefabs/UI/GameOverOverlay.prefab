@@ -139,7 +139,7 @@ MonoBehaviour:
   loserIdText: {fileID: 2016466807284983229}
   narrativeText: {fileID: 2307038655094149652}
   backToBuildRoomButton: {fileID: 6821239033841945826}
-  buildRoomSceneName: MainMenu
+  buildRoomSceneName: Lobby
   autoRebuildInEditorWhenEmpty: 1
 --- !u!1 &2454050183949882900
 GameObject:

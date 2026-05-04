@@ -1,5 +1,10 @@
 {
   "name": "Panoptes.Tests.PlayMode",
-  "references": ["Panoptes.Core", "Panoptes.Presentation", "UnityEngine.TestRunner"],
+  "references": [
+    "Panoptes.Core",
+    "Panoptes.Presentation",
+    "UnityEngine.TestRunner",
+    "VContainer"
+  ],
   "autoReferenced": false
 }

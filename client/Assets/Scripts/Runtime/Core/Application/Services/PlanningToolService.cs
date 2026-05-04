@@ -11,6 +11,8 @@ namespace Panoptes.Core.Application.Services
             _planningToolStore = planningToolStore;
         }
 
+        public bool IsDisposed => _planningToolStore.IsDisposed;
+
         public void ClearTool()
         {
             _planningToolStore.ClearTool();

@@ -81,7 +81,6 @@ namespace Panoptes.Presentation.Map
         private int _maxGridY;
         private bool _hasGridBounds;
         private bool _hasObservationData;
-        private bool _hasFoggedNodes;
         private bool _dirty;
         private float _nextRebuildTime;
         private bool _warnedFogPatternUnavailable;
@@ -155,10 +154,9 @@ namespace Panoptes.Presentation.Map
 
             RefreshGridBounds();
             _hasObservationData = HasObservationData();
-            _hasFoggedNodes = HasFoggedNodes();
             ApplyNodeDetailCullingToAllTiles();
 
-            if (!enabledOnBuild || !_hasGridBounds || _nodesById.Count == 0 || !_hasObservationData || !_hasFoggedNodes)
+            if (!enabledOnBuild || !_hasGridBounds || _nodesById.Count == 0 || !_hasObservationData)
             {
                 SetOverlayVisible(false);
                 return;
@@ -189,10 +187,9 @@ namespace Panoptes.Presentation.Map
             _nodesByGrid[new Vector2Int(node.Q, node.R)] = node;
             RefreshGridBounds();
             _hasObservationData = HasObservationData();
-            _hasFoggedNodes = HasFoggedNodes();
             ApplyNodeDetailCulling(node.Id);
 
-            if (!enabledOnBuild || !_hasGridBounds || !_hasObservationData || !_hasFoggedNodes)
+            if (!enabledOnBuild || !_hasGridBounds || !_hasObservationData)
             {
                 SetOverlayVisible(false);
                 return;
@@ -211,7 +208,6 @@ namespace Panoptes.Presentation.Map
             _hasGridBounds = false;
             _hasGridWorldOrigin = false;
             _hasObservationData = false;
-            _hasFoggedNodes = false;
             _dirty = false;
             SetOverlayVisible(false);
         }
@@ -1026,25 +1022,6 @@ namespace Panoptes.Presentation.Map
             {
                 var node = pair.Value;
                 if (node != null && (node.IsVisible || node.IsMemory || node.LastObservedTurn > 0))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool HasFoggedNodes()
-        {
-            if (!_hasObservationData)
-            {
-                return false;
-            }
-
-            foreach (var pair in _nodesById)
-            {
-                var node = pair.Value;
-                if (node != null && !node.IsVisible)
                 {
                     return true;
                 }

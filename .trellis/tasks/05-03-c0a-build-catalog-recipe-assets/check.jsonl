@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify authored assets do not change command/state ownership."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify boundary tests and generated GameObject exception shrink."}
+{"file": "docs/2026-05-03-c0a-ui-inventory-and-integration-plan-zh.md", "reason": "Verify implementation matches C0a-2."}
+{"command": "dotnet build client/Panoptes.Tests.EditMode.csproj", "result": "passed with existing CS0649/CS0414 warnings"}
+{"command": "dotnet test client/Panoptes.Tests.EditMode.csproj --no-build", "result": "passed"}
+{"command": "Unity EditMode filter Panoptes.Tests.EditMode.Composition.ClientCompositionBoundaryTests", "result": "passed 35/35"}
+{"command": "Unity EditMode filter Panoptes.Tests.EditMode.Presentation.BuildCatalogUiToolkitBinderTests", "result": "passed 3/3"}
+{"command": "Unity EditMode filter Panoptes.Tests.EditMode.Presentation.ManagementPanelUiToolkitBinderTests", "result": "passed 6/6"}
+{"command": "rg boundary scan for Protocol/NetworkManager/legacy cache/singleton usage in BuildCatalog and RecipeSynthesis slice", "result": "passed; no matches"}
+{"command": "git diff --check", "result": "passed"}

@@ -19,6 +19,8 @@ namespace Panoptes.Core.Application.Stores
 
         public Observable<TState> State => _state;
 
+        public bool IsDisposed => _disposed;
+
         protected void Publish(TState nextState)
         {
             ThrowIfDisposed();

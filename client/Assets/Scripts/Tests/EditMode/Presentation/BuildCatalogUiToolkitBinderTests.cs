@@ -70,7 +70,7 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
-        public void ItemClick_ShouldEnterBuildPlanningToolWithCityCoreContext()
+        public void RequestBuild_ShouldEnterBuildPlanningToolWithCityCoreContext()
         {
             _root = new GameObject("BuildCatalogClickTest");
             var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
@@ -80,6 +80,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             var visibilityStore = new ManagementPanelVisibilityStore();
             contextStore.SetCityCoreNode("capital");
             InjectServices(binder, planningToolService, visibilityStore, contextStore);
+            visibilityStore.Show(ManagementPanelId.BuildCatalog);
 
             binder.Render(new BuildCatalogState(new[]
             {
@@ -99,11 +100,7 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             var button = _root.GetComponent<UIDocument>().rootVisualElement.Q<Button>("build-catalog-item-workshop");
             Assert.That(button, Is.Not.Null);
-            using (var click = ClickEvent.GetPooled())
-            {
-                click.target = button;
-                button.SendEvent(click);
-            }
+            InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
 
             var state = planningToolStore.Snapshot;
             Assert.That(state.Mode, Is.EqualTo(PlanningToolMode.Build));
@@ -132,6 +129,18 @@ namespace Panoptes.Tests.EditMode.Presentation
                 visibilityStore ?? new ManagementPanelVisibilityStore(),
                 contextStore ?? new BuildCatalogContextStore()
             });
+        }
+
+        private static void InvokeRequestBuild(
+            BuildCatalogUiToolkitBinder binder,
+            string buildingId,
+            PlanningBuildPlacementRule placementRule)
+        {
+            var method = typeof(BuildCatalogUiToolkitBinder).GetMethod(
+                "RequestBuild",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { buildingId, placementRule });
         }
     }
 }

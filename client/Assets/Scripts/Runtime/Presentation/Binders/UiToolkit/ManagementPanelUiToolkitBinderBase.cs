@@ -26,7 +26,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public event Action<string> RowActionRequested;
 
         protected abstract string DefaultTitle { get; }
-        protected virtual bool AllowFallbackTree => true;
 
         [Inject]
         private void Construct(TViewModel viewModel)
@@ -112,26 +111,20 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             ApplyVisibility();
         }
 
-        public void Open()
-        {
-            gameObject.SetActive(true);
-        }
-
-        public void Close()
-        {
-            gameObject.SetActive(false);
-        }
-
         private void EnsureDocument()
         {
             if (_uiDocument == null)
             {
                 _uiDocument = GetComponent<UIDocument>();
+                if (_uiDocument == null)
+                {
+                    _uiDocument = gameObject.AddComponent<UIDocument>();
+                }
             }
 
-            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            if (_uiDocument != null)
             {
-                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument);
             }
         }
 
@@ -143,27 +136,19 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var root = _uiDocument.rootVisualElement;
-            if (root == null)
+            if (root == null || root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName) != null)
             {
                 return;
             }
 
-            if (root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName) == null)
+            root.Clear();
+            if (visualTreeAsset != null)
             {
-                root.Clear();
-                if (visualTreeAsset != null)
-                {
-                    visualTreeAsset.CloneTree(root);
-                }
-                else if (AllowFallbackTree)
-                {
-                    root.Add(ManagementPanelUiToolkitRenderer.BuildFallbackTree(DefaultTitle));
-                }
-                else
-                {
-                    Debug.LogError($"[{GetType().Name}] Missing VisualTreeAsset. Assign a prefab-backed UXML asset instead of using fallback UI generation.");
-                    return;
-                }
+                visualTreeAsset.CloneTree(root);
+            }
+            else
+            {
+                root.Add(ManagementPanelUiToolkitRenderer.BuildFallbackTree(DefaultTitle));
             }
 
             if (styleSheet != null && !root.styleSheets.Contains(styleSheet))
@@ -174,7 +159,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void CacheElements()
         {
-            _renderer.Cache(_uiDocument != null ? _uiDocument.rootVisualElement : null, Close);
+            _renderer.Cache(_uiDocument != null ? _uiDocument.rootVisualElement : null);
         }
 
         private void StopSubscription()
@@ -218,9 +203,84 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            _uiDocument.rootVisualElement.style.display = _visibilityStore.IsVisible(_visibilityPanelId)
+            var root = _uiDocument.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore;
+            var panelRoot = root.Q<VisualElement>(ManagementPanelUiToolkitRenderer.RootName);
+            if (panelRoot != null)
+            {
+                panelRoot.pickingMode = PickingMode.Position;
+            }
+
+            root.style.display = _visibilityStore.IsVisible(_visibilityPanelId)
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+        }
+    }
+
+    internal static class UiToolkitRuntimeDocument
+    {
+        private const string RuntimeThemeResourcePath = "UnityDefaultRuntimeTheme";
+        private static PanelSettings _sharedPanelSettings;
+        private static ThemeStyleSheet _runtimeTheme;
+
+        public static void EnsureConfigured(UIDocument document, int sortingOrder = 420)
+        {
+            if (document == null)
+            {
+                return;
+            }
+
+            if (document.panelSettings == null || document.panelSettings.name == "RuntimePanelSettings")
+            {
+                document.panelSettings = GetSharedPanelSettings(sortingOrder);
+                return;
+            }
+
+            Configure(document.panelSettings, sortingOrder);
+        }
+
+        private static PanelSettings GetSharedPanelSettings(int sortingOrder)
+        {
+            if (_sharedPanelSettings == null)
+            {
+                _sharedPanelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                _sharedPanelSettings.name = "PanoptesRuntimePanelSettings";
+            }
+
+            Configure(_sharedPanelSettings, sortingOrder);
+            return _sharedPanelSettings;
+        }
+
+        private static void Configure(PanelSettings settings, int sortingOrder)
+        {
+            if (settings == null)
+            {
+                return;
+            }
+
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(1920, 1080);
+            settings.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            settings.match = 0.5f;
+            settings.sortingOrder = sortingOrder;
+            settings.targetDisplay = 0;
+            settings.clearColor = false;
+            settings.clearDepthStencil = false;
+            var theme = ResolveRuntimeTheme();
+            if (theme != null)
+            {
+                settings.themeStyleSheet = theme;
+            }
+        }
+
+        private static ThemeStyleSheet ResolveRuntimeTheme()
+        {
+            if (_runtimeTheme == null)
+            {
+                _runtimeTheme = Resources.Load<ThemeStyleSheet>(RuntimeThemeResourcePath);
+            }
+
+            return _runtimeTheme;
         }
     }
 }

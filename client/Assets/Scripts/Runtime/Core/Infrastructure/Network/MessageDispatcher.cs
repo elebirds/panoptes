@@ -220,7 +220,14 @@ namespace Panoptes.Core.Infrastructure.Network
 
             var entry = new DispatchEntry(frame, messageType, message, payloadJson);
             OnDispatching?.Invoke(entry);
-            if (_gameEventSessionGate != null && !_gameEventSessionGate.ShouldDispatch(entry))
+            var gameEventSessionGate = _gameEventSessionGate;
+            if (gameEventSessionGate == null && Panoptes.Core.Application.Cache.GameStateCache.Instance != null)
+            {
+                gameEventSessionGate = new GameEventSessionGate(Panoptes.Core.Application.Cache.GameStateCache.Instance);
+                _gameEventSessionGate = gameEventSessionGate;
+            }
+
+            if (gameEventSessionGate != null && !gameEventSessionGate.ShouldDispatch(entry))
             {
                 return;
             }

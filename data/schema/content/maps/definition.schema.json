@@ -292,7 +292,6 @@
         "terrain": {
           "enum": [
             "forest",
-            "hill",
             "plain",
             "river"
           ],
@@ -417,7 +416,6 @@
         "default_terrain": {
           "enum": [
             "forest",
-            "hill",
             "plain",
             "river"
           ],
@@ -516,7 +514,6 @@
           "terrain": {
             "enum": [
               "forest",
-              "hill",
               "plain",
               "river",
               ""
@@ -576,7 +573,6 @@
               "terrain": {
                 "enum": [
                   "forest",
-                  "hill",
                   "plain",
                   "river"
                 ],
@@ -606,7 +602,6 @@
               "terrain": {
                 "enum": [
                   "forest",
-                  "hill",
                   "plain",
                   "river"
                 ],

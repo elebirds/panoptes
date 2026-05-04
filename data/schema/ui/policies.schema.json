@@ -10,9 +10,6 @@
       "items": {
         "additionalProperties": false,
         "properties": {
-          "benefit_description": {
-            "type": "string"
-          },
           "description": {
             "type": "string"
           },
@@ -23,9 +20,6 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
-          },
-          "next_action_description": {
             "type": "string"
           },
           "sort_order": {

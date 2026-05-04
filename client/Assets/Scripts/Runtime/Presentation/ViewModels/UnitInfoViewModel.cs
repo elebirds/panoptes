@@ -179,8 +179,8 @@ namespace Panoptes.Presentation.ViewModels
             {
                 var type = !string.IsNullOrWhiteSpace(node.BuildingType) ? node.BuildingType : node.ResourceType;
                 var owner = !string.IsNullOrWhiteSpace(node.Owner) ? node.Owner : node.TerritoryOwner;
-                var maxHp = ResolveBuildingMaxHp(node, type, catalog);
-                var hp = node.BuildingHp > 0 ? node.BuildingHp : maxHp;
+                var hp = node.BuildingHp > 0 ? node.BuildingHp : 1;
+                var maxHp = ResolveBuildingMaxHp(node, type, hp, catalog);
                 return new SelectedUnitProjection(
                     true,
                     selectedId,
@@ -197,11 +197,12 @@ namespace Panoptes.Presentation.ViewModels
         private static int ResolveBuildingMaxHp(
             NodeDto node,
             string buildingType,
+            int hp,
             StaticCatalogState catalog)
         {
             if (node == null || node.IsResourcePoint)
             {
-                return 1;
+                return Math.Max(1, hp);
             }
 
             var maxHp = node.BuildingMaxHp;
@@ -215,12 +216,7 @@ namespace Panoptes.Presentation.ViewModels
                 maxHp = building.MaxHp;
             }
 
-            if (maxHp <= 0)
-            {
-                maxHp = node.BuildingHp > 0 ? node.BuildingHp : 100;
-            }
-
-            return Math.Max(1, maxHp);
+            return Math.Max(1, Math.Max(maxHp, hp));
         }
 
         private static void ResolveCatalogText(

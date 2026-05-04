@@ -94,6 +94,10 @@ DLLs unless the R3 installation strategy is deliberately replaced.
 - Run Unity batchmode or EditMode tests when a licensed Unity environment is
   available. If TestRunner XML is unavailable, record the limitation and at
   least verify Unity script import/compile logs contain no `error CS`.
+- `dotnet test client/Panoptes.Tests.EditMode.csproj` is not sufficient as a
+  Unity assertion gate in the current project shape; it can pass while filtered
+  Unity EditMode tests fail. Use Unity batchmode `-runTests -testPlatform
+  EditMode` for tests that depend on Unity TestRunner behavior.
 
 ---
 

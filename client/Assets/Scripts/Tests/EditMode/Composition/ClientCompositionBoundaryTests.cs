@@ -74,11 +74,18 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("TokenHudViewModel"));
             Assert.That(installer, Does.Contain("ResourceHudViewModel"));
             Assert.That(installer, Does.Contain("ManagementPanelVisibilityStore"));
+            Assert.That(installer, Does.Contain("NationalOverviewViewModel"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<ManagementHostUiToolkitBinder>(\"Prefabs/UI/ManagementHost\")"));
             Assert.That(installer, Does.Contain("TurnSummaryViewModel"));
             Assert.That(installer, Does.Contain("TurnSummaryUiToolkitBinder"));
             Assert.That(installer, Does.Contain("RecipeSynthesisContextStore"));
             Assert.That(installer, Does.Contain("RecipeSynthesisViewModel"));
             Assert.That(installer, Does.Contain("RecipeSynthesisUiToolkitBinder"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<BuildCatalogUiToolkitBinder>(\"Prefabs/UI/BuildCatalog\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>(\"Prefabs/UI/RecipeSynthesis\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
             Assert.That(installer, Does.Contain("MinisterReportViewModel"));
             Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
         }
@@ -90,20 +97,22 @@ namespace Panoptes.Tests.EditMode.Composition
             var expected = new[]
             {
                 "RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<RecipeSynthesisUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"
+                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>"
             };
 
             Assert.That(CountOccurrences(installer, "RegisterComponentOnNewGameObject<"), Is.EqualTo(expected.Length),
-                "Only UIDocument-backed UI Toolkit binders may use generated GameObjects until prefab assets exist.");
+                "Only UI Toolkit binders without authored prefabs may use generated GameObjects.");
             for (var i = 0; i < expected.Length; i++)
             {
                 Assert.That(installer, Does.Contain(expected[i]));
             }
+
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"));
         }
 
         [Test]
@@ -565,6 +574,85 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(uxml, Does.Contain("turn-summary-turn-value"));
             Assert.That(uxml, Does.Contain("turn-summary-phase-value"));
             Assert.That(uxml, Does.Contain("turn-summary-events"));
+        }
+
+        [Test]
+        public void ManagementHostAndNationalOverview_ShouldUseStableNamesAndFinalStores()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/NationalOverviewViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/NationalOverviewState.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/ManagementHostUiToolkitBinder.cs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                ProtocolNamespaceToken,
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                NetworkManagerSingletonToken,
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "C0a management host and national overview must consume final stores only.");
+
+            var uxml = File.ReadAllText(ResolveAssetPath("UI/Toolkit/Management/ManagementHost.uxml"));
+            Assert.That(uxml, Does.Contain("management-host-root"));
+            Assert.That(uxml, Does.Contain("management-host-nav-overview"));
+            Assert.That(uxml, Does.Contain("national-overview-turn-value"));
+            Assert.That(uxml, Does.Contain("national-overview-metrics"));
+            Assert.That(uxml, Does.Contain("national-overview-events"));
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            Assert.That(installer, Does.Contain("RegisterComponentInNewPrefab"));
+            Assert.That(installer, Does.Contain("ManagementHostUiToolkitBinder"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<ManagementHostUiToolkitBinder>"));
+        }
+
+        [Test]
+        public void BuildCatalogAndRecipeSynthesis_ShouldUseAuthoredUiToolkitPrefabs()
+        {
+            var roots = new[]
+            {
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/BuildCatalogViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/BuildCatalogState.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/BuildCatalogUiToolkitBinder.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/RecipeSynthesisViewModel.cs"),
+                ResolveAssetPath("Scripts/Runtime/Presentation/Binders/UiToolkit/RecipeSynthesisUiToolkitBinder.cs")
+            };
+            var offenders = FindTokenOffenders(
+                roots,
+                "*.cs",
+                ProtocolNamespaceToken,
+                "GameStateCache",
+                "PlanningDraftCache",
+                "StaticCatalogCache",
+                NetworkManagerSingletonToken,
+                ".Instance");
+
+            Assert.That(offenders, Is.Empty, "C0a build catalog and recipe synthesis must consume final stores/services only.");
+
+            var buildUxml = File.ReadAllText(ResolveAssetPath("UI/Toolkit/Management/BuildCatalog.uxml"));
+            Assert.That(buildUxml, Does.Contain("build-catalog-root"));
+            Assert.That(buildUxml, Does.Contain("build-catalog-title"));
+            Assert.That(buildUxml, Does.Contain("build-catalog-empty"));
+            Assert.That(buildUxml, Does.Contain("build-catalog-groups"));
+
+            var recipeUxml = File.ReadAllText(ResolveAssetPath("UI/Toolkit/Management/RecipeSynthesis.uxml"));
+            Assert.That(recipeUxml, Does.Contain("management-panel-root"));
+            Assert.That(recipeUxml, Does.Contain("management-panel-title"));
+            Assert.That(recipeUxml, Does.Contain("management-panel-empty"));
+            Assert.That(recipeUxml, Does.Contain("management-panel-groups"));
+
+            Assert.That(File.Exists(ResolveAssetPath("Resources/Prefabs/UI/BuildCatalog.prefab")), Is.True);
+            Assert.That(File.Exists(ResolveAssetPath("Resources/Prefabs/UI/RecipeSynthesis.prefab")), Is.True);
+
+            var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<BuildCatalogUiToolkitBinder>(\"Prefabs/UI/BuildCatalog\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<RecipeSynthesisUiToolkitBinder>(\"Prefabs/UI/RecipeSynthesis\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<BuildCatalogUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<RecipeSynthesisUiToolkitBinder>"));
         }
 
         [Test]

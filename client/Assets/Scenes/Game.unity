@@ -1109,11 +1109,8 @@ RectTransform:
   m_Children:
   - {fileID: 269063929}
   - {fileID: 11170084}
-  - {fileID: 1472178928}
   - {fileID: 854369659}
-  - {fileID: 782103882}
   - {fileID: 62997549}
-  - {fileID: 1112570686}
   - {fileID: 573666989}
   - {fileID: 1036748996}
   m_Father: {fileID: 0}

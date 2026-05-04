@@ -34,11 +34,16 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private TurnSummaryViewModel _viewModel;
         private Label _unitsValue;
         private UIDocument _uiDocument;
+        private IDisposable _visibilitySubscription;
+        private ManagementPanelVisibilityStore _visibilityStore;
 
         [Inject]
-        private void Construct(TurnSummaryViewModel viewModel)
+        private void Construct(TurnSummaryViewModel viewModel, ManagementPanelVisibilityStore visibilityStore)
         {
+            _visibilityStore = visibilityStore;
             Bind(viewModel);
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
         }
 
         private void Awake()
@@ -53,6 +58,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             EnsureDocument();
             EnsureVisualTree();
             CacheElements();
+            EnsureVisibilitySubscription();
+            ApplyVisibility();
             if (_viewModel != null)
             {
                 Bind(_viewModel);
@@ -62,10 +69,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void OnDisable()
         {
             StopSubscription();
+            StopVisibilitySubscription();
         }
 
         private void OnDestroy()
         {
+            StopVisibilitySubscription();
             Unbind();
         }
 
@@ -110,6 +119,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             SetText(_nodesValue, state.VisibleNodeCount.ToString());
             SetText(_unitsValue, state.UnitCount.ToString());
             RenderEvents(state);
+            ApplyVisibility();
         }
 
         private void RenderEvents(TurnSummaryState state)
@@ -161,9 +171,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 _uiDocument = GetComponent<UIDocument>();
             }
 
-            if (_uiDocument != null && _uiDocument.panelSettings == null)
+            if (_uiDocument != null)
             {
-                _uiDocument.panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument);
             }
         }
 
@@ -199,6 +209,41 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 root.styleSheets.Add(styleSheet);
             }
+        }
+
+        private void EnsureVisibilitySubscription()
+        {
+            if (_visibilityStore != null && _visibilitySubscription == null)
+            {
+                _visibilitySubscription = _visibilityStore.State.Subscribe(this, static (_, self) => self.ApplyVisibility());
+            }
+        }
+
+        private void StopVisibilitySubscription()
+        {
+            _visibilitySubscription?.Dispose();
+            _visibilitySubscription = null;
+        }
+
+        private void ApplyVisibility()
+        {
+            EnsureDocument();
+            if (_uiDocument?.rootVisualElement == null)
+            {
+                return;
+            }
+
+            var root = _uiDocument.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore;
+            var summaryRoot = root.Q<VisualElement>(RootName);
+            if (summaryRoot != null)
+            {
+                summaryRoot.pickingMode = PickingMode.Position;
+            }
+
+            root.style.display = _visibilityStore != null && _visibilityStore.IsVisible(ManagementPanelId.TurnSummary)
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
 
         private static VisualElement BuildFallbackTree()

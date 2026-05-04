@@ -17,10 +17,10 @@ namespace Panoptes.DebugTools
     {
         public static IReadOnlyList<IDebugTab> CreateDefaultTabs()
         {
-            return CreateDefaultTabs(null);
+            return CreateDefaultTabsForSender(null);
         }
 
-        public static IReadOnlyList<IDebugTab> CreateDefaultTabs(IClientMessageSender messageSender)
+        internal static IReadOnlyList<IDebugTab> CreateDefaultTabsForSender(IClientMessageSender messageSender)
         {
             return new IDebugTab[]
             {

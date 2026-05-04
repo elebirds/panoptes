@@ -91,8 +91,6 @@ namespace Panoptes.Core.Domain
         public string Id;
         public string Name;
         public string Description;
-        public string BenefitDescription;
-        public string NextActionDescription;
         public string IconKey;
         public string Layer;
         public string ActivationTiming;

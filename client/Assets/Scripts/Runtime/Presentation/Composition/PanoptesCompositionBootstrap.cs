@@ -68,7 +68,11 @@ namespace Panoptes.Presentation.Composition
             overlayObject.name = objectName;
             overlayObject.transform.SetParent(null, false);
             overlayObject.transform.localScale = Vector3.one;
-            UnityEngine.Object.DontDestroyOnLoad(overlayObject);
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.DontDestroyOnLoad(overlayObject);
+            }
+
             return overlayObject.GetComponent<T>();
         }
     }

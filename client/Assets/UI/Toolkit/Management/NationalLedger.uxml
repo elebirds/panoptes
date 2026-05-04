@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="management-panel-root" class="management-panel-root national-ledger-root">
+        <ui:Label name="management-panel-title" text="National Ledger" class="management-panel-title" />
+        <ui:Label name="management-panel-empty" text="No ledger entries available" class="management-panel-empty" />
+        <ui:ScrollView name="management-panel-scroll" class="management-panel-scroll">
+            <ui:VisualElement name="management-panel-groups" class="management-panel-groups" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

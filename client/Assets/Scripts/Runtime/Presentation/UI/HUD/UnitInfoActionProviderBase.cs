@@ -27,6 +27,16 @@ namespace Panoptes.Presentation.UI.HUD
             TryRegister();
         }
 
+        public void EnsureRegistered(UnitInfoActionRegistry registry)
+        {
+            if (actionRegistry == null)
+            {
+                actionRegistry = registry;
+            }
+
+            TryRegister();
+        }
+
         protected void TryRegister()
         {
             if (_registered)

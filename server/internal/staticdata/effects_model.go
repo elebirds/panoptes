@@ -88,18 +88,16 @@ type TechnologyDefinition struct {
 }
 
 type PolicyDefinition struct {
-	ID                    string                        `json:"id"`
-	Name                  string                        `json:"name"`
-	Description           string                        `json:"description"`
-	BenefitDescription    string                        `json:"benefit_description,omitempty"`
-	NextActionDescription string                        `json:"next_action_description,omitempty"`
-	IconKey               string                        `json:"icon_key"`
-	Layer                 string                        `json:"layer"`
-	ActivationTiming      string                        `json:"activation_timing"`
-	Prerequisites         []Prerequisite                `json:"prerequisites"`
-	ExplicitEffects       []ExplicitEffect              `json:"explicit_effects"`
-	ModifierEffects       []ModifierEffect              `json:"modifier_effects"`
-	LogisticsPriority     []LogisticsPriorityDefinition `json:"logistics_priority,omitempty"`
-	SortOrder             int                           `json:"sort_order"`
-	Tags                  []string                      `json:"tags,omitempty"`
+	ID                string                        `json:"id"`
+	Name              string                        `json:"name"`
+	Description       string                        `json:"description"`
+	IconKey           string                        `json:"icon_key"`
+	Layer             string                        `json:"layer"`
+	ActivationTiming  string                        `json:"activation_timing"`
+	Prerequisites     []Prerequisite                `json:"prerequisites"`
+	ExplicitEffects   []ExplicitEffect              `json:"explicit_effects"`
+	ModifierEffects   []ModifierEffect              `json:"modifier_effects"`
+	LogisticsPriority []LogisticsPriorityDefinition `json:"logistics_priority,omitempty"`
+	SortOrder         int                           `json:"sort_order"`
+	Tags              []string                      `json:"tags,omitempty"`
 }

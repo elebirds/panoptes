@@ -39,7 +39,6 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool applyTerrainElevation = false;
         [SerializeField] private float plainElevation = 0f;
         [SerializeField] private float forestElevation = 0.06f;
-        [SerializeField] private float hillElevation = 0.24f;
         [SerializeField] private float mountainElevation = 0.28f;
         [SerializeField] private float riverElevation = -0.1f;
         [SerializeField] private float snowElevation = 0.1f;
@@ -73,7 +72,6 @@ namespace Panoptes.Presentation.Map
 
         [Header("Terrain Decorations")]
         [SerializeField] private bool autoSpawnTerrainDecorations = true;
-        [SerializeField] private bool autoSpawnLargeTerrainFeatures = true;
 
         [Header("Map Backdrop")]
         [SerializeField] private bool autoSpawnMapBackdrop = true;
@@ -91,7 +89,6 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
         private UnitView _baseVehiclePrefabCache;
         private TerrainDecorationSpawner _terrainDecorationSpawner;
-        private LargeTerrainFeatureSpawner _largeTerrainFeatureSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
         private MapFogOverlayController _mapFogOverlayController;
         private MapCameraContext _currentCameraContext;
@@ -108,6 +105,7 @@ namespace Panoptes.Presentation.Map
         private GameStateStoreState _latestGameState = new();
         private IDisposable _gameStateSubscription;
         private IDisposable _staticCatalogSubscription;
+        private bool _hasRenderedBackendMap;
 
         public IReadOnlyDictionary<string, NodeView> TileViews => _tileViews;
         public IReadOnlyDictionary<string, UnitView> UnitViews => _unitViews;
@@ -246,7 +244,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or fallback map available.");
+            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or local tool-scene map source available.");
         }
 
         private bool BuildBackendGameMap()
@@ -267,6 +265,7 @@ namespace Panoptes.Presentation.Map
             var backendNodes = SnapshotBackendNodes(state);
             Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
             BuildFromBackendNodes(backendNodes);
+            _hasRenderedBackendMap = true;
             return true;
         }
 
@@ -274,6 +273,7 @@ namespace Panoptes.Presentation.Map
         {
             _gameStateSubscription?.Dispose();
             _gameStateSubscription = _gameStateStore?.State.Subscribe(this, static (state, self) => self.OnGameStateChanged(state));
+            OnGameStateChanged(_gameStateStore?.Snapshot);
         }
 
         private void UnsubscribeGameState()
@@ -285,7 +285,7 @@ namespace Panoptes.Presentation.Map
         private void OnGameStateChanged(GameStateStoreState state)
         {
             _latestGameState = state ?? new GameStateStoreState();
-            if (!isActiveAndEnabled || !IsGameRuntime() || !HasBackendNodes(_latestGameState))
+            if (!isActiveAndEnabled || !HasBackendNodes(_latestGameState))
             {
                 return;
             }
@@ -363,9 +363,10 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            if (_tileViews.Count != state.Nodes.Count || HasMissingRenderedNode(state))
+            if (!_hasRenderedBackendMap || _tileViews.Count != state.Nodes.Count || HasMissingRenderedNode(state))
             {
                 BuildFromBackendNodes(SnapshotBackendNodes(state));
+                _hasRenderedBackendMap = true;
                 return;
             }
 
@@ -877,8 +878,7 @@ namespace Panoptes.Presentation.Map
 
         private Vector3 GridToWorldWithTerrain(int q, int r, string terrain)
         {
-            var normalizedTerrain = MapRenderTokens.Normalize(terrain);
-            if (!applyTerrainElevation && !string.Equals(normalizedTerrain, "hill", StringComparison.Ordinal))
+            if (!applyTerrainElevation)
             {
                 return GridToWorld(q, r);
             }
@@ -895,9 +895,6 @@ namespace Panoptes.Presentation.Map
             {
                 case "forest":
                     value = forestElevation;
-                    break;
-                case "hill":
-                    value = hillElevation;
                     break;
                 case "mountain":
                     value = mountainElevation;
@@ -989,7 +986,6 @@ namespace Panoptes.Presentation.Map
             }
 
             RebuildTerrainDecorations(nodeList);
-            RebuildLargeTerrainFeatures(nodeList);
             RebuildMapBackdrop();
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
@@ -1042,30 +1038,6 @@ namespace Panoptes.Presentation.Map
             }
 
             _terrainDecorationSpawner.RebuildDecorations(nodeList, _tileViews);
-        }
-
-        private void RebuildLargeTerrainFeatures(List<NodeDto> nodeList)
-        {
-            if (!autoSpawnLargeTerrainFeatures)
-            {
-                if (_largeTerrainFeatureSpawner != null)
-                {
-                    _largeTerrainFeatureSpawner.ClearFeatures();
-                }
-                return;
-            }
-
-            if (_largeTerrainFeatureSpawner == null)
-            {
-                _largeTerrainFeatureSpawner = GetComponent<LargeTerrainFeatureSpawner>();
-            }
-
-            if (_largeTerrainFeatureSpawner == null)
-            {
-                _largeTerrainFeatureSpawner = gameObject.AddComponent<LargeTerrainFeatureSpawner>();
-            }
-
-            _largeTerrainFeatureSpawner.RebuildFeatures(nodeList, _tileViews);
         }
 
         private void RefreshObservationPresentation(bool fullRebuildFog, NodeDto snapshotNode)
@@ -1127,11 +1099,6 @@ namespace Panoptes.Presentation.Map
             if (_terrainDecorationSpawner != null)
             {
                 _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
-            }
-
-            if (_largeTerrainFeatureSpawner != null)
-            {
-                _largeTerrainFeatureSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
             }
         }
 
@@ -1552,6 +1519,7 @@ namespace Panoptes.Presentation.Map
             _tileViews.Clear();
             _tileViewsByGrid.Clear();
             _nodeStates.Clear();
+            _hasRenderedBackendMap = false;
             if (_mapFogOverlayController != null)
             {
                 _mapFogOverlayController.ClearOverlay();

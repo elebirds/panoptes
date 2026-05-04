@@ -44,8 +44,17 @@ namespace Panoptes.Presentation.Map
 
         public void ClearToolAndSelection()
         {
-            _planningToolService?.ClearTool();
-            _selectionService?.Clear();
+            CombatActionMode = MapPlanningInputController.CombatActionMode.None;
+            _legacyBuildModeActive = false;
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.ClearTool();
+            }
+
+            if (_selectionService?.IsDisposed == false)
+            {
+                _selectionService.Clear();
+            }
         }
 
         public void SetCombatActionMode(
@@ -61,16 +70,28 @@ namespace Panoptes.Presentation.Map
             switch (mode)
             {
                 case MapPlanningInputController.CombatActionMode.Move:
-                    _planningToolService?.BeginMove();
+                    if (_planningToolService?.IsDisposed == false)
+                    {
+                        _planningToolService.BeginMove();
+                    }
                     break;
                 case MapPlanningInputController.CombatActionMode.Attack:
-                    _planningToolService?.BeginAttack();
+                    if (_planningToolService?.IsDisposed == false)
+                    {
+                        _planningToolService.BeginAttack();
+                    }
                     break;
                 case MapPlanningInputController.CombatActionMode.Charge:
-                    _planningToolService?.BeginCharge();
+                    if (_planningToolService?.IsDisposed == false)
+                    {
+                        _planningToolService.BeginCharge();
+                    }
                     break;
                 default:
-                    _planningToolService?.ClearTool();
+                    if (_planningToolService?.IsDisposed == false)
+                    {
+                        _planningToolService.ClearTool();
+                    }
                     break;
             }
         }
@@ -84,14 +105,20 @@ namespace Panoptes.Presentation.Map
             _legacyBuildModeActive = active;
             if (active)
             {
-                _planningToolService?.EnterBuild(
-                    buildType,
-                    activeBuildCityId,
-                    ConvertBuildRule(buildRule));
+                if (_planningToolService?.IsDisposed == false)
+                {
+                    _planningToolService.EnterBuild(
+                        buildType,
+                        activeBuildCityId,
+                        ConvertBuildRule(buildRule));
+                }
                 return;
             }
 
-            _planningToolService?.ClearTool();
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.ClearTool();
+            }
         }
 
         public bool IsBuildModeActive()
@@ -106,33 +133,50 @@ namespace Panoptes.Presentation.Map
 
         public void SetMovePreviewTarget(string nodeId)
         {
-            _planningToolService?.SetMovePreviewTarget(nodeId);
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.SetMovePreviewTarget(nodeId);
+            }
         }
 
         public void ClearMovePreviewTarget()
         {
-            _planningToolService?.ClearMovePreviewTarget();
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.ClearMovePreviewTarget();
+            }
         }
 
         public void SetBuildPreviewTarget(string nodeId)
         {
-            _planningToolService?.SetBuildPreviewTarget(nodeId);
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.SetBuildPreviewTarget(nodeId);
+            }
         }
 
         public void ClearBuildPreviewTarget()
         {
-            _planningToolService?.ClearBuildPreviewTarget();
+            if (_planningToolService?.IsDisposed == false)
+            {
+                _planningToolService.ClearBuildPreviewTarget();
+            }
         }
 
         public void PublishSelectedUnit(string unitId)
         {
-            if (string.IsNullOrWhiteSpace(unitId))
+            if (_selectionService?.IsDisposed != false)
             {
-                _selectionService?.Clear();
                 return;
             }
 
-            _selectionService?.SelectUnit(unitId);
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                _selectionService.Clear();
+                return;
+            }
+
+            _selectionService.SelectUnit(unitId);
         }
 
         public static PlanningBuildPlacementRule ConvertBuildRule(MapPlanningInputController.BuildPlacementRule rule)

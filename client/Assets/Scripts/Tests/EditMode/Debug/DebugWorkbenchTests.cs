@@ -169,9 +169,9 @@ namespace Panoptes.Tests.EditMode.Debug
             StringAssert.Contains("Register<MsgPlanningSnapshot>(\"MsgPlanningSnapshot\", OnPlanningSnapshot);", content);
             StringAssert.Contains("Register<MsgGameSync>(\"MsgGameSync\", OnGameSync);", content);
             StringAssert.Contains("Register<MsgPlanningPathPreviewResponse>(\"MsgPlanningPathPreviewResponse\", OnPlanningPathPreviewResponse);", content);
-            StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", OnResearchResult);", content);
-            StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", OnSetBuildingRecipeResult);", content);
-            StringAssert.Contains("Register<MsgGameChatPosted>(\"MsgGameChatPosted\", OnGameChatPosted);", content);
+            StringAssert.Contains("Register<MsgResearchResult>(\"MsgResearchResult\", HandleResearchResult);", content);
+            StringAssert.Contains("Register<MsgSetBuildingRecipeResult>(\"MsgSetBuildingRecipeResult\", HandleSetBuildingRecipeResult);", content);
+            StringAssert.Contains("Register<MsgGameChatPosted>(\"MsgGameChatPosted\", HandleGameChatPosted);", content);
             StringAssert.Contains("Register<MsgGameChatSync>(\"MsgGameChatSync\", OnGameChatSync);", content);
             Assert.That(content, Does.Not.Contain("Register<ErrorResponse>(\"ErrorResponse\", OnGameError);"),
                 "GameMessageHandler 不应继续注册旧 ErrorResponse。");
