@@ -26,9 +26,9 @@ namespace Panoptes.Presentation.Animation
         }
 
         [Header("Unit Move")]
-        [SerializeField] private float moveDuration = 0.35f;
+        [SerializeField] private float moveDuration = 0.98f;
         [SerializeField] private bool followCameraOnMove = true;
-        [SerializeField] private float cameraFocusLeadSeconds = 0.08f;
+        [SerializeField] private float cameraFocusLeadSeconds = 0.65f;
 
         private readonly Queue<UnitMoveCommand> _unitMoveQueue = new();
         private MapRenderer _mapRenderer;
@@ -104,7 +104,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             var camera = Camera.main;
-            var follow = followCameraOnMove && cmd.followCamera && camera != null;
+            var follow = followCameraOnMove && cmd.followCamera;
 
             var target = nodeView.UnitAnchor != null
                 ? nodeView.UnitAnchor.position
@@ -121,7 +121,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             unitView.SetSelected(true);
-            var segmentDuration = Mathf.Max(0.05f, moveDuration / Mathf.Max(1, waypoints.Count));
+            var segmentDuration = Mathf.Max(0.17f, moveDuration / Mathf.Max(1, waypoints.Count));
             for (var i = 0; i < waypoints.Count; i++)
             {
                 yield return UnitMoveAnim.Play(unitView, waypoints[i], segmentDuration, camera, follow);

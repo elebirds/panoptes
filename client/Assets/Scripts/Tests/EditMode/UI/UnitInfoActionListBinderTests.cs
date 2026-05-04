@@ -57,10 +57,11 @@ namespace Panoptes.Tests.EditMode.UI
                 new Vector2(90f, 28f),
                 Color.blue);
 
-            Assert.That(slots, Has.Length.EqualTo(5));
+            Assert.That(slots, Has.Length.EqualTo(6));
             Assert.That(slots.Count(slot => Normalize(slot.actionId) == "action_2"), Is.EqualTo(1));
             Assert.That(slots.Any(slot => Normalize(slot.actionId) == "expand_territory"), Is.True);
             Assert.That(slots.Any(slot => Normalize(slot.actionId) == "open_recipe_synthesis"), Is.True);
+            Assert.That(slots.Any(slot => Normalize(slot.actionId) == "open_policy_focus"), Is.True);
         }
 
         [Test]

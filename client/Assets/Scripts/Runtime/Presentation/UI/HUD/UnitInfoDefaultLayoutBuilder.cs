@@ -373,17 +373,16 @@ namespace Panoptes.Presentation.UI.HUD
             RectTransform panelRoot,
             RectTransform directOrderButtonsRoot)
         {
-            if (directOrderButtonsRoot != null)
+            if (directOrderButtonsRoot == null)
             {
-                return directOrderButtonsRoot;
+                directOrderButtonsRoot = EnsureChild(panelRoot, "DirectOrderButtons");
             }
 
-            directOrderButtonsRoot = EnsureChild(panelRoot, "DirectOrderButtons");
             directOrderButtonsRoot.anchorMin = new Vector2(0f, 1f);
             directOrderButtonsRoot.anchorMax = new Vector2(0f, 1f);
             directOrderButtonsRoot.pivot = new Vector2(0f, 1f);
-            directOrderButtonsRoot.anchoredPosition = new Vector2(14f, -52f);
-            directOrderButtonsRoot.sizeDelta = new Vector2(190f, 72f);
+            directOrderButtonsRoot.anchoredPosition = new Vector2(14f, -10f);
+            directOrderButtonsRoot.sizeDelta = new Vector2(386f, 30f);
             return directOrderButtonsRoot;
         }
 

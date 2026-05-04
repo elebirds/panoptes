@@ -7,7 +7,7 @@ namespace Panoptes.Presentation.ViewModels
             string unitId = "",
             string unitType = "",
             string ownerId = "",
-            string displayName = "Unit",
+            string displayName = "单位",
             string description = "",
             int hp = 0,
             int maxHp = 1,
@@ -24,7 +24,7 @@ namespace Panoptes.Presentation.ViewModels
             CanCharge = canCharge;
             CanMove = canMove;
             Description = description ?? string.Empty;
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? "Unit" : displayName;
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? "单位" : displayName;
             HasSelection = hasSelection;
             Hp = hp;
             IsMilitaryUnit = isMilitaryUnit;

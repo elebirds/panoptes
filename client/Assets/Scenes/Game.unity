@@ -460,9 +460,9 @@ RectTransform:
   - {fileID: 1835991759}
   m_Father: {fileID: 561558469}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 160, y: 0}
   m_SizeDelta: {x: 160, y: 160}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &62997550
@@ -529,8 +529,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 68100ce620bf03a47a524c6055823971, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2034,7 +2034,6 @@ MonoBehaviour:
   preferServerPushedMapConfig: 0
   serverMapConfigKey: mapconfig
   listenServerMapConfigUpdates: 1
-  autoEnsureRuntimeControllers: 1
   nodeTilePrefab: {fileID: 5107247747950518977, guid: 65c27a253136f5543ad363e4d250a016, type: 3}
   tilesRoot: {fileID: 1808281991}
   tileSize: 1
@@ -2281,10 +2280,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ee69c3c57e3564c5092df66736d92254, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Composition.GameLifetimeScope
   parentReference:
-    TypeName:
+    TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
 --- !u!4 &1404044008
@@ -2346,6 +2345,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1504044001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1504044002}
+  - component: {fileID: 1504044003}
+  m_Layer: 0
+  m_Name: SettlementPlaybackController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1504044002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504044001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1504044003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504044001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d4f90e3c7b24a3ea9822cf7d9709b54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.SettlementPlaybackController
+  moveEventWaitSeconds: 0.38
+  conflictFlashSeconds: 0.18
+  damagePulseSeconds: 0.16
+  damagePulseScale: 1.14
+  sectionPauseSeconds: 0.14
+  actorFocusPauseSeconds: 0.18
+  attackPlaybackSeconds: 0.55
+  perUnitPlaybackGapSeconds: 0.14
+  enableDamagePopups: 1
+  damagePopupController: {fileID: 0}
 --- !u!1 &1693350154
 GameObject:
   m_ObjectHideFlags: 0
@@ -2581,11 +2634,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 62997549}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: 160, y: 160}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1835991760
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2615,8 +2668,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2672,7 +2725,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 124.61475, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -3282,11 +3335,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4264437872512284280, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 237.7
+      value: 295.359
       objectReference: {fileID: 0}
     - target: {fileID: 4264437872512284280, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 100
+      value: 113.567
       objectReference: {fileID: 0}
     - target: {fileID: 4264437872512284280, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3349,57 +3402,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 64d9493e79417f44ea75b4e31bada7cf, type: 3}
---- !u!1 &1504044001
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1504044002}
-  - component: {fileID: 1504044003}
-  m_Layer: 0
-  m_Name: SettlementPlaybackController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1504044002
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1504044001}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1504044003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1504044001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d4f90e3c7b24a3ea9822cf7d9709b54, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.Map.SettlementPlaybackController
-  moveEventWaitSeconds: 0.38
-  conflictFlashSeconds: 0.18
-  damagePulseSeconds: 0.16
-  damagePulseScale: 1.14
-  sectionPauseSeconds: 0.14
-  enableDamagePopups: 1
-  damagePopupController: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

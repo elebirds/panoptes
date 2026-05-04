@@ -8,7 +8,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     {
         private GameIntentService _gameIntentService;
 
-        protected override string DefaultTitle => "Tech Tree";
+        protected override string DefaultTitle => "科技树";
+        protected override bool UseFallbackVisualTree => true;
 
         [Inject]
         private void ConstructTechFlow(GameIntentService gameIntentService, ManagementPanelVisibilityStore visibilityStore)

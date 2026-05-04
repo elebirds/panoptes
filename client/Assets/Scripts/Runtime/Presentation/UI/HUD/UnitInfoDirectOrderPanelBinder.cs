@@ -55,6 +55,8 @@ namespace Panoptes.Presentation.UI.HUD
 
     public sealed class UnitInfoDirectOrderPanelBinder
     {
+        private static readonly Vector2 ButtonSize = new(88f, 30f);
+
         public UnitInfoDirectOrderButtons EnsureButtons(
             RectTransform root,
             Button moveButton,
@@ -68,11 +70,17 @@ namespace Panoptes.Presentation.UI.HUD
                 return new UnitInfoDirectOrderButtons(moveButton, attackButton, holdButton, chargeButton);
             }
 
-            return new UnitInfoDirectOrderButtons(
-                moveButton ?? CreateButton(root, "MoveButton", "移动", new Vector2(0f, 0f), new Vector2(88f, 30f), defaultButtonColor),
-                attackButton ?? CreateButton(root, "AttackButton", "攻击", new Vector2(98f, 0f), new Vector2(88f, 30f), defaultButtonColor),
-                holdButton ?? CreateButton(root, "HoldButton", "待命", new Vector2(0f, -38f), new Vector2(88f, 30f), defaultButtonColor),
-                chargeButton ?? CreateButton(root, "ChargeButton", "冲锋", new Vector2(98f, -38f), new Vector2(88f, 30f), defaultButtonColor));
+            ConfigureHorizontalRoot(root);
+            var buttons = new UnitInfoDirectOrderButtons(
+                moveButton ?? CreateButton(root, "MoveButton", "移动", new Vector2(0f, 0f), ButtonSize, defaultButtonColor),
+                attackButton ?? CreateButton(root, "AttackButton", "攻击", new Vector2(98f, 0f), ButtonSize, defaultButtonColor),
+                holdButton ?? CreateButton(root, "HoldButton", "待命", new Vector2(196f, 0f), ButtonSize, defaultButtonColor),
+                chargeButton ?? CreateButton(root, "ChargeButton", "冲锋", new Vector2(294f, 0f), ButtonSize, defaultButtonColor));
+            RepairButtonLayout(buttons.Move, ButtonSize);
+            RepairButtonLayout(buttons.Attack, ButtonSize);
+            RepairButtonLayout(buttons.Hold, ButtonSize);
+            RepairButtonLayout(buttons.Charge, ButtonSize);
+            return buttons;
         }
 
         public Button CreateButton(
@@ -151,17 +159,62 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (!visible)
             {
-                ApplyButtonState(buttons.Move, "Move", visible: false, interactable: false, actionLocked: actionLocked);
-                ApplyButtonState(buttons.Attack, "Attack", visible: false, interactable: false, actionLocked: actionLocked);
-                ApplyButtonState(buttons.Hold, "Hold", visible: false, interactable: false, actionLocked: actionLocked);
-                ApplyButtonState(buttons.Charge, "Charge", visible: false, interactable: false, actionLocked: actionLocked);
+                ApplyButtonState(buttons.Move, "移动", visible: false, interactable: false, actionLocked: actionLocked);
+                ApplyButtonState(buttons.Attack, "攻击", visible: false, interactable: false, actionLocked: actionLocked);
+                ApplyButtonState(buttons.Hold, "待命", visible: false, interactable: false, actionLocked: actionLocked);
+                ApplyButtonState(buttons.Charge, "冲锋", visible: false, interactable: false, actionLocked: actionLocked);
                 return;
             }
 
-            ApplyButtonState(buttons.Move, "Move", visible: true, interactable: state.CanMove, actionLocked: actionLocked);
-            ApplyButtonState(buttons.Attack, "Attack", visible: state.IsMilitaryUnit, interactable: state.CanAttack, actionLocked: actionLocked);
-            ApplyButtonState(buttons.Hold, "Hold", visible: state.IsMilitaryUnit, interactable: state.IsMilitaryUnit, actionLocked: actionLocked);
-            ApplyButtonState(buttons.Charge, "Charge", visible: state.CanCharge, interactable: state.CanCharge, actionLocked: actionLocked);
+            ApplyButtonState(buttons.Move, "移动", visible: true, interactable: state.CanMove, actionLocked: actionLocked);
+            ApplyButtonState(buttons.Attack, "攻击", visible: state.IsMilitaryUnit, interactable: state.CanAttack, actionLocked: actionLocked);
+            ApplyButtonState(buttons.Hold, "待命", visible: state.IsMilitaryUnit, interactable: state.IsMilitaryUnit, actionLocked: actionLocked);
+            ApplyButtonState(buttons.Charge, "冲锋", visible: state.CanCharge, interactable: state.CanCharge, actionLocked: actionLocked);
+        }
+
+        private static void ConfigureHorizontalRoot(RectTransform root)
+        {
+            root.sizeDelta = new Vector2(386f, 30f);
+            var layout = root.GetComponent<HorizontalLayoutGroup>();
+            if (layout == null)
+            {
+                layout = root.gameObject.AddComponent<HorizontalLayoutGroup>();
+            }
+
+            layout.spacing = 10f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            var fitter = root.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+            {
+                fitter = root.gameObject.AddComponent<ContentSizeFitter>();
+            }
+
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        private static void RepairButtonLayout(Button button, Vector2 size)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var layout = button.GetComponent<LayoutElement>();
+            if (layout == null)
+            {
+                layout = button.gameObject.AddComponent<LayoutElement>();
+            }
+
+            layout.minWidth = size.x;
+            layout.preferredWidth = size.x;
+            layout.minHeight = size.y;
+            layout.preferredHeight = size.y;
+            layout.flexibleWidth = 0f;
         }
 
         private static void Bind(Button button, Action action)

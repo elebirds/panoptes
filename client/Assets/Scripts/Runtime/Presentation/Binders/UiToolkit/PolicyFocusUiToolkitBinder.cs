@@ -1,6 +1,7 @@
 using System;
 using Panoptes.Core.Application.Services;
 using Panoptes.Presentation.ViewModels;
+using UnityEngine.UIElements;
 using VContainer;
 
 namespace Panoptes.Presentation.Binders.UiToolkit
@@ -9,8 +10,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     {
         private GameIntentService _gameIntentService;
         private PolicyFocusViewModel _viewModel;
+        private bool _closeAllowedAfterSelection;
 
-        protected override string DefaultTitle => "Policy Focus";
+        protected override string DefaultTitle => "国策";
+        protected override bool UseFallbackVisualTree => true;
 
         [Inject]
         private void ConstructPolicyFlow(
@@ -23,6 +26,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             BindVisibility(visibilityStore, ManagementPanelId.PolicyFocus);
             RowActionRequested -= RequestPolicyAction;
             RowActionRequested += RequestPolicyAction;
+            _closeAllowedAfterSelection = HasSelectedPolicy();
+            ApplyCloseButtonVisibility();
+        }
+
+        private void LateUpdate()
+        {
+            ApplyCloseButtonVisibility();
         }
 
         private void RequestPolicyAction(string policyId)
@@ -35,10 +45,56 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             if (IsInstitutionPolicy(policyId))
             {
                 _gameIntentService?.SetInstitutionLoadout(policyId);
+                _closeAllowedAfterSelection = true;
+                ApplyCloseButtonVisibility();
                 return;
             }
 
             _gameIntentService?.SetPolicy(policyId);
+            _closeAllowedAfterSelection = true;
+            ApplyCloseButtonVisibility();
+        }
+
+        private void ApplyCloseButtonVisibility()
+        {
+            var root = GetComponent<UIDocument>()?.rootVisualElement;
+            var close = root?.Q<Button>(ManagementPanelUiToolkitRenderer.CloseButtonName);
+            if (close == null)
+            {
+                return;
+            }
+
+            close.style.display = (_closeAllowedAfterSelection || HasSelectedPolicy())
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
+
+        private bool HasSelectedPolicy()
+        {
+            var groups = _viewModel?.Current?.Groups;
+            if (groups == null)
+            {
+                return false;
+            }
+
+            for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
+            {
+                var rows = groups[groupIndex]?.Rows;
+                if (rows == null)
+                {
+                    continue;
+                }
+
+                for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+                {
+                    if (!string.IsNullOrWhiteSpace(rows[rowIndex]?.Status))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private bool IsInstitutionPolicy(string policyId)

@@ -43,10 +43,10 @@ namespace Panoptes.Tests.EditMode.Presentation
             var document = _root.GetComponent<UIDocument>();
             var rootElement = document.rootVisualElement;
             Assert.That(rootElement.Q<VisualElement>(BuildCatalogUiToolkitBinder.RootName), Is.Not.Null);
-            Assert.That(rootElement.Q<Label>(BuildCatalogUiToolkitBinder.TitleName).text, Is.EqualTo("Build Catalog"));
+            Assert.That(rootElement.Q<Label>(BuildCatalogUiToolkitBinder.TitleName).text, Is.EqualTo("建造"));
             Assert.That(rootElement.Q<VisualElement>(BuildCatalogUiToolkitBinder.GroupsName).childCount, Is.EqualTo(1));
             Assert.That(rootElement.Q<Button>("build-catalog-item-farm"), Is.Not.Null);
-            Assert.That(rootElement.Q<Label>("build-catalog-item-pending").text, Is.EqualTo("Pending"));
+            Assert.That(rootElement.Q<Label>("build-catalog-item-pending").text, Is.EqualTo("已规划"));
         }
 
         [Test]

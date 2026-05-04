@@ -33,10 +33,13 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private TextMeshProUGUI externalTurnNumText;
         [SerializeField] private TextMeshProUGUI externalPhaseText;
         [SerializeField] private string externalTurnTextFormat = "当前回合数：{0}\n当前回合倒计时：{1}";
+        [SerializeField] private string turnPanelBackgroundSpriteResource = "Textures/UI/turn_panel_parchment_bg";
 
         [Header("Submit Button")]
         [SerializeField] private Button nextStageButton;
         [SerializeField] private bool disableNextStageWhenUnavailable = true;
+        [SerializeField] private string nextStageButtonSpriteResource = "Icons/UI/next_turn_button";
+        [SerializeField] private bool applyNextStageButtonSprite = true;
 
         private IDisposable _turnSubscription;
         private TurnStore _turnStore;
@@ -62,6 +65,8 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveExternalTurnPanelReferences();
             EnsureUi();
+            ApplyTurnPanelBackground();
+            ApplyNextStageButtonSprite();
             RefreshNextStageInteractable();
         }
 
@@ -76,6 +81,8 @@ namespace Panoptes.Presentation.UI.HUD
                 () => ActionLock.OnChanged += OnActionLockChanged,
                 () => ActionLock.OnChanged -= OnActionLockChanged);
             BindNextStageButton();
+            ApplyTurnPanelBackground();
+            ApplyNextStageButtonSprite();
             RefreshFromState(_turnStore?.Snapshot);
         }
 
@@ -261,6 +268,62 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             nextStageButton.interactable = !_gameEnded && _isInteractive && !ActionLock.IsLocked;
+        }
+
+        private void ApplyNextStageButtonSprite()
+        {
+            if (!applyNextStageButtonSprite || nextStageButton == null || string.IsNullOrWhiteSpace(nextStageButtonSpriteResource))
+            {
+                return;
+            }
+
+            var image = nextStageButton.targetGraphic as Image;
+            if (image == null)
+            {
+                image = nextStageButton.GetComponent<Image>();
+            }
+
+            var sprite = Resources.Load<Sprite>(nextStageButtonSpriteResource.Trim());
+            if (image == null || sprite == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+        }
+
+        private void ApplyTurnPanelBackground()
+        {
+            if (string.IsNullOrWhiteSpace(turnPanelBackgroundSpriteResource))
+            {
+                return;
+            }
+
+            EnsureUi();
+            if (root == null)
+            {
+                return;
+            }
+
+            var image = root.GetComponent<Image>();
+            if (image == null)
+            {
+                image = root.gameObject.AddComponent<Image>();
+            }
+
+            var sprite = Resources.Load<Sprite>(turnPanelBackgroundSpriteResource.Trim());
+            if (sprite == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+            image.raycastTarget = false;
         }
 
         private static TextMeshProUGUI FindTextByName(RectTransform rootRect, string name)

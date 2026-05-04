@@ -98,6 +98,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private Sprite moveArrowSprite;
         [SerializeField] private string moveArrowSpriteResourcesPath = "Textures/Map/GreenMoveArrow";
         [SerializeField] private Vector2 moveArrowSpriteScale = new Vector2(0.72f, 0.72f);
+        [SerializeField] private Sprite moveDestinationSprite;
+        [SerializeField] private string moveDestinationSpriteResourcesPath = "Textures/Map/move_path_destination";
+        [SerializeField] private Vector2 moveDestinationSpriteScale = new Vector2(0.58f, 0.58f);
         [SerializeField] private float moveDestinationScale = 0.24f;
         [SerializeField] private Color moveMarkerDefaultColor = new Color(0.35f, 1f, 0.45f, 0.9f);
 
@@ -138,6 +141,7 @@ namespace Panoptes.Presentation.Map
         private MaterialPropertyBlock _moveMarkerBlock;
         private Material _moveMarkerMaterial;
         private Material _moveMarkerSpriteMaterial;
+        private Material _moveDestinationSpriteMaterial;
         private MaterialPropertyBlock _groundBlock;
         private MaterialPropertyBlock _fogOverlayBlock;
         private Material _fogOverlayMaterial;
@@ -147,6 +151,7 @@ namespace Panoptes.Presentation.Map
         private float _nextFogUvUpdateTime;
         private bool _fogTextureLoadAttempted;
         private bool _moveArrowSpriteLoadAttempted;
+        private bool _moveDestinationSpriteLoadAttempted;
         private readonly System.Collections.Generic.Dictionary<string, BuildingView> _runtimeBuildingPrefabCache =
             new System.Collections.Generic.Dictionary<string, BuildingView>(System.StringComparer.OrdinalIgnoreCase);
         private IReadOnlyDictionary<string, CatalogBuildingDto> _buildingCatalog;
@@ -795,20 +800,40 @@ namespace Panoptes.Presentation.Map
 
             if (_moveDestinationRenderer == null)
             {
-                var destination = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                destination.name = "Destination";
-                destination.transform.SetParent(_moveMarkerRoot, false);
-                destination.transform.localPosition = Vector3.zero;
-                destination.transform.localScale = new Vector3(moveDestinationScale, moveArrowScale.y, moveDestinationScale);
-                _moveDestinationRenderer = destination.GetComponent<Renderer>();
-                DestroyRuntimeCollider(destination);
-                destination.SetActive(false);
+                var destinationSprite = ResolveMoveDestinationSprite();
+                if (destinationSprite != null)
+                {
+                    var destination = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    destination.name = "DestinationSprite";
+                    destination.transform.SetParent(_moveMarkerRoot, false);
+                    destination.transform.localPosition = Vector3.zero;
+                    destination.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                    destination.transform.localScale = new Vector3(moveDestinationSpriteScale.x, moveDestinationSpriteScale.y, 1f);
+                    _moveDestinationRenderer = destination.GetComponent<Renderer>();
+                    ApplyMoveDestinationSpriteMaterial(_moveDestinationRenderer, destinationSprite);
+                    DestroyRuntimeCollider(destination);
+                    destination.SetActive(false);
+                }
+                else
+                {
+                    var destination = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    destination.name = "Destination";
+                    destination.transform.SetParent(_moveMarkerRoot, false);
+                    destination.transform.localPosition = Vector3.zero;
+                    destination.transform.localScale = new Vector3(moveDestinationScale, moveArrowScale.y, moveDestinationScale);
+                    _moveDestinationRenderer = destination.GetComponent<Renderer>();
+                    DestroyRuntimeCollider(destination);
+                    destination.SetActive(false);
+                }
             }
 
             ApplyMoveMarkerMaterial(_moveArrowShaftRenderer);
             ApplyMoveMarkerMaterial(_moveArrowHeadLeftRenderer);
             ApplyMoveMarkerMaterial(_moveArrowHeadRightRenderer);
-            ApplyMoveMarkerMaterial(_moveDestinationRenderer);
+            if (moveDestinationSprite == null)
+            {
+                ApplyMoveMarkerMaterial(_moveDestinationRenderer);
+            }
             return true;
         }
 
@@ -849,12 +874,22 @@ namespace Panoptes.Presentation.Map
 
         private void ApplyMoveMarkerSpriteMaterial(Renderer renderer, Sprite sprite)
         {
+            ApplyMoveSpriteMaterial(renderer, sprite, ref _moveMarkerSpriteMaterial, "MoveMarkerSpriteMat_Runtime");
+        }
+
+        private void ApplyMoveDestinationSpriteMaterial(Renderer renderer, Sprite sprite)
+        {
+            ApplyMoveSpriteMaterial(renderer, sprite, ref _moveDestinationSpriteMaterial, "MoveDestinationSpriteMat_Runtime");
+        }
+
+        private void ApplyMoveSpriteMaterial(Renderer renderer, Sprite sprite, ref Material material, string materialName)
+        {
             if (renderer == null || sprite == null)
             {
                 return;
             }
 
-            if (_moveMarkerSpriteMaterial == null)
+            if (material == null)
             {
                 var shader = Shader.Find("Sprites/Default");
                 if (shader == null)
@@ -877,34 +912,34 @@ namespace Panoptes.Presentation.Map
                     return;
                 }
 
-                _moveMarkerSpriteMaterial = new Material(shader);
-                _moveMarkerSpriteMaterial.name = "MoveMarkerSpriteMat_Runtime";
-                _moveMarkerSpriteMaterial.hideFlags = HideFlags.DontSave;
-                _moveMarkerSpriteMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-                if (_moveMarkerSpriteMaterial.HasProperty("_Cull"))
+                material = new Material(shader);
+                material.name = string.IsNullOrWhiteSpace(materialName) ? "MoveSpriteMat_Runtime" : materialName;
+                material.hideFlags = HideFlags.DontSave;
+                material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                if (material.HasProperty("_Cull"))
                 {
-                    _moveMarkerSpriteMaterial.SetFloat("_Cull", 0f);
+                    material.SetFloat("_Cull", 0f);
                 }
-                if (_moveMarkerSpriteMaterial.HasProperty("_Surface"))
+                if (material.HasProperty("_Surface"))
                 {
-                    _moveMarkerSpriteMaterial.SetFloat("_Surface", 1f);
+                    material.SetFloat("_Surface", 1f);
                 }
-                if (_moveMarkerSpriteMaterial.HasProperty("_ZWrite"))
+                if (material.HasProperty("_ZWrite"))
                 {
-                    _moveMarkerSpriteMaterial.SetFloat("_ZWrite", 0f);
+                    material.SetFloat("_ZWrite", 0f);
                 }
             }
 
-            if (_moveMarkerSpriteMaterial.HasProperty("_BaseMap"))
+            if (material.HasProperty("_BaseMap"))
             {
-                _moveMarkerSpriteMaterial.SetTexture("_BaseMap", sprite.texture);
+                material.SetTexture("_BaseMap", sprite.texture);
             }
-            if (_moveMarkerSpriteMaterial.HasProperty("_MainTex"))
+            if (material.HasProperty("_MainTex"))
             {
-                _moveMarkerSpriteMaterial.SetTexture("_MainTex", sprite.texture);
+                material.SetTexture("_MainTex", sprite.texture);
             }
 
-            renderer.sharedMaterial = _moveMarkerSpriteMaterial;
+            renderer.sharedMaterial = material;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
         }
@@ -950,6 +985,22 @@ namespace Panoptes.Presentation.Map
             }
 
             return moveArrowSprite;
+        }
+
+        private Sprite ResolveMoveDestinationSprite()
+        {
+            if (moveDestinationSprite != null)
+            {
+                return moveDestinationSprite;
+            }
+
+            if (!_moveDestinationSpriteLoadAttempted && !string.IsNullOrWhiteSpace(moveDestinationSpriteResourcesPath))
+            {
+                _moveDestinationSpriteLoadAttempted = true;
+                moveDestinationSprite = Resources.Load<Sprite>(moveDestinationSpriteResourcesPath.Trim());
+            }
+
+            return moveDestinationSprite;
         }
 
         private void KeepHighlightBelowDetails()

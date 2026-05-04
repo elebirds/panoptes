@@ -32,8 +32,8 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             Assert.That(viewModel.Current.Groups[0].Id, Is.EqualTo("mill"));
             Assert.That(viewModel.Current.Groups[0].Rows, Has.Count.EqualTo(1));
-            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Selected"));
-            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("Select"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已选择"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].ActionLabel, Is.EqualTo("选择"));
         }
 
         [Test]
@@ -66,7 +66,7 @@ namespace Panoptes.Tests.EditMode.Presentation
                 Valid = true
             }));
 
-            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Preview valid"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("预览可用"));
         }
 
         [Test]
@@ -110,8 +110,8 @@ namespace Panoptes.Tests.EditMode.Presentation
                 plannedInstitutionPolicyIds: new[] { " archives " }));
 
             Assert.That(viewModel.Current.Groups, Has.Count.EqualTo(2));
-            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("Planned"));
-            Assert.That(viewModel.Current.Groups[1].Rows[0].Status, Is.EqualTo("Planned"));
+            Assert.That(viewModel.Current.Groups[0].Rows[0].Status, Is.EqualTo("已规划"));
+            Assert.That(viewModel.Current.Groups[1].Rows[0].Status, Is.EqualTo("已规划"));
         }
 
         [Test]

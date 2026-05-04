@@ -58,6 +58,10 @@ namespace Panoptes.Presentation.Map
         private float _currentDistance;
         private float _targetDistance;
         private float _distanceVelocity;
+        private static CinemachineMapCameraController _activeController;
+        private static int _presentationInputLockCount;
+
+        public static bool IsPresentationInputLocked => _presentationInputLockCount > 0;
 
         private void Awake()
         {
@@ -73,6 +77,7 @@ namespace Panoptes.Presentation.Map
 
         private void OnEnable()
         {
+            _activeController = this;
             ResolveRig();
             InitializeStateFromRig();
             SubscribeToMapRenderer();
@@ -80,6 +85,11 @@ namespace Panoptes.Presentation.Map
 
         private void OnDisable()
         {
+            if (ReferenceEquals(_activeController, this))
+            {
+                _activeController = null;
+            }
+
             UnsubscribeFromMapRenderer();
             _dragging = false;
         }
@@ -98,13 +108,19 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            var pointerOverUI = IsPointerOverUI();
-            HandleZoom(pointerOverUI);
-
             var panDelta = Vector2.zero;
-            panDelta += GetKeyboardPanDelta(dt);
-            panDelta += GetDragPanDelta(pointerOverUI);
-            _targetAnchorXZ += panDelta;
+            if (IsPresentationInputLocked)
+            {
+                _dragging = false;
+            }
+            else
+            {
+                var pointerOverUI = IsPointerOverUI();
+                HandleZoom(pointerOverUI);
+                panDelta += GetKeyboardPanDelta(dt);
+                panDelta += GetDragPanDelta(pointerOverUI);
+                _targetAnchorXZ += panDelta;
+            }
 
             _targetDistance = ClampDistance(_targetDistance);
             _targetAnchorXZ = ClampAnchorToContext(_targetAnchorXZ);
@@ -177,14 +193,28 @@ namespace Panoptes.Presentation.Map
 
         public static bool TryFocus(Vector3 worldPosition, bool snapInstantly = false)
         {
-            var controller = FindAnyObjectByType<CinemachineMapCameraController>();
+            var controller = _activeController != null
+                ? _activeController
+                : FindAnyObjectByType<CinemachineMapCameraController>();
             if (controller == null)
             {
                 return false;
             }
 
+            _activeController = controller;
             controller.FocusWorldPosition(worldPosition, snapInstantly);
             return true;
+        }
+
+        public static void SetPresentationInputLocked(bool locked)
+        {
+            if (locked)
+            {
+                _presentationInputLockCount++;
+                return;
+            }
+
+            _presentationInputLockCount = Mathf.Max(0, _presentationInputLockCount - 1);
         }
 
         private void HandleMapCameraContextReady(MapCameraContext context)
@@ -253,12 +283,20 @@ namespace Panoptes.Presentation.Map
             if (renderCamera == null)
             {
                 renderCamera = Camera.main;
+                if (renderCamera == null)
+                {
+                    renderCamera = FindAnyObjectByType<Camera>();
+                }
             }
 
             if (targetCamera == null)
             {
-                _followComponent = null;
-                return;
+                targetCamera = FindAnyObjectByType<CinemachineCamera>();
+                if (targetCamera == null)
+                {
+                    _followComponent = null;
+                    return;
+                }
             }
 
             if (targetCamera.Follow != transform)
@@ -497,19 +535,19 @@ namespace Panoptes.Presentation.Map
         {
 #if ENABLE_INPUT_SYSTEM
             var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return 0f;
-            }
-
             var value = 0f;
-            if (keyboard.aKey.isPressed)
+            if (keyboard != null && (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed))
             {
                 value -= 1f;
             }
-            if (keyboard.dKey.isPressed)
+            if (keyboard != null && (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed))
             {
                 value += 1f;
+            }
+
+            if (Mathf.Abs(value) <= 0.0001f)
+            {
+                value = ReadLegacyAxisRaw("Horizontal");
             }
 
             return Mathf.Clamp(value, -1f, 1f);
@@ -522,19 +560,19 @@ namespace Panoptes.Presentation.Map
         {
 #if ENABLE_INPUT_SYSTEM
             var keyboard = Keyboard.current;
-            if (keyboard == null)
-            {
-                return 0f;
-            }
-
             var value = 0f;
-            if (keyboard.sKey.isPressed)
+            if (keyboard != null && (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed))
             {
                 value -= 1f;
             }
-            if (keyboard.wKey.isPressed)
+            if (keyboard != null && (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed))
             {
                 value += 1f;
+            }
+
+            if (Mathf.Abs(value) <= 0.0001f)
+            {
+                value = ReadLegacyAxisRaw("Vertical");
             }
 
             return Mathf.Clamp(value, -1f, 1f);
@@ -542,6 +580,18 @@ namespace Panoptes.Presentation.Map
             return Mathf.Clamp(Input.GetAxisRaw("Vertical"), -1f, 1f);
 #endif
         }
+
+#if ENABLE_INPUT_SYSTEM && ENABLE_LEGACY_INPUT_MANAGER
+        private static float ReadLegacyAxisRaw(string axisName)
+        {
+            return Input.GetAxisRaw(axisName);
+        }
+#elif ENABLE_INPUT_SYSTEM
+        private static float ReadLegacyAxisRaw(string axisName)
+        {
+            return 0f;
+        }
+#endif
 
         private static bool SameContext(MapCameraContext lhs, MapCameraContext rhs)
         {

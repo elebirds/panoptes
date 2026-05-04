@@ -44,13 +44,13 @@ namespace Panoptes.Presentation.Animation
                     yield break;
                 }
 
-                elapsed += Time.deltaTime;
+                elapsed += Time.unscaledDeltaTime;
                 var t = Mathf.Clamp01(elapsed / duration);
 
                 // Move unit.
                 var unitPos = Vector3.Lerp(startUnitPos, targetWorldPos, t);
                 unitView.transform.position = unitPos;
-                if (followCameraEnabled && followCamera != null)
+                if (followCameraEnabled)
                 {
                     CinemachineMapCameraController.TryFocus(unitPos, false);
                 }

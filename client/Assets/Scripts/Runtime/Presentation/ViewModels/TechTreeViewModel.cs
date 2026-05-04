@@ -25,7 +25,7 @@ namespace Panoptes.Presentation.ViewModels
             var catalog = _staticCatalogStore.Snapshot;
             if (catalog?.Technologies == null || catalog.Technologies.Count == 0)
             {
-                return new ManagementPanelState("Tech Tree");
+                return new ManagementPanelState("科技树");
             }
 
             var plannedTechId = Normalize(_planningDraftStore.Snapshot.PlannedResearchTargetTechnologyId);
@@ -41,7 +41,7 @@ namespace Panoptes.Presentation.ViewModels
                     continue;
                 }
 
-                var branch = string.IsNullOrWhiteSpace(technology.Branch) ? "General" : technology.Branch.Trim();
+                var branch = string.IsNullOrWhiteSpace(technology.Branch) ? "通用" : LocalizeBranch(technology.Branch);
                 if (!groups.TryGetValue(branch, out var rows))
                 {
                     rows = new List<ManagementPanelRowState>();
@@ -50,18 +50,33 @@ namespace Panoptes.Presentation.ViewModels
 
                 var techId = Normalize(technology.Id);
                 var status = string.Equals(techId, plannedTechId, StringComparison.Ordinal)
-                    ? "Planned research"
-                    : $"Tier {technology.Tier}";
+                    ? "已设为研究目标"
+                    : $"第 {technology.Tier} 阶";
                 rows.Add(new ManagementPanelRowState(
                     techId,
                     technology.Name,
                     technology.Description,
-                    $"Cost {technology.ResearchCost}",
+                    $"研究消耗：{technology.ResearchCost}",
                     status,
-                    "Research"));
+                    "研究",
+                    technology.IconKey,
+                    ResolvePrerequisiteIds(technology)));
             }
 
-            return new ManagementPanelState("Tech Tree", BuildGroups(groups));
+            return new ManagementPanelState("科技树", BuildGroups(groups));
+        }
+
+        private static string LocalizeBranch(string branch)
+        {
+            return Normalize(branch) switch
+            {
+                "economy" => "经济",
+                "military" => "军事",
+                "civic" => "政务",
+                "industry" => "工业",
+                "general" => "通用",
+                _ => branch?.Trim() ?? "通用"
+            };
         }
 
         private static IReadOnlyList<ManagementPanelGroupState> BuildGroups(Dictionary<string, List<ManagementPanelRowState>> groups)
@@ -95,6 +110,29 @@ namespace Panoptes.Presentation.ViewModels
             return sortCompare != 0
                 ? sortCompare
                 : string.Compare(left?.Id, right?.Id, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static IReadOnlyList<string> ResolvePrerequisiteIds(CatalogTechnologyDto technology)
+        {
+            var prerequisites = technology?.Prerequisites;
+            if (prerequisites == null || prerequisites.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var result = new List<string>(prerequisites.Count);
+            for (var i = 0; i < prerequisites.Count; i++)
+            {
+                var prerequisite = prerequisites[i];
+                if (prerequisite == null || string.IsNullOrWhiteSpace(prerequisite.TargetId))
+                {
+                    continue;
+                }
+
+                result.Add(Normalize(prerequisite.TargetId));
+            }
+
+            return result;
         }
     }
 }

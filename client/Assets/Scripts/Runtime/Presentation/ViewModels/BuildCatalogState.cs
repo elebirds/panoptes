@@ -27,7 +27,7 @@ namespace Panoptes.Presentation.ViewModels
             Items = items != null
                 ? new List<BuildCatalogItemState>(items)
                 : new List<BuildCatalogItemState>();
-            Title = string.IsNullOrWhiteSpace(title) ? "Other" : title.Trim();
+            Title = string.IsNullOrWhiteSpace(title) ? "其他" : title.Trim();
         }
 
         public string Id { get; }
@@ -43,10 +43,12 @@ namespace Panoptes.Presentation.ViewModels
             string description = "",
             string placementKind = "",
             PlanningBuildPlacementRule placementRule = PlanningBuildPlacementRule.AnyTerrain,
-            bool isPending = false)
+            bool isPending = false,
+            string iconKey = "")
         {
             BuildingId = buildingId ?? string.Empty;
             Description = description ?? string.Empty;
+            IconKey = iconKey ?? string.Empty;
             IsPending = isPending;
             PlacementKind = placementKind ?? string.Empty;
             PlacementRule = placementRule;
@@ -55,8 +57,9 @@ namespace Panoptes.Presentation.ViewModels
 
         public string BuildingId { get; }
         public string Description { get; }
+        public string IconKey { get; }
         public bool IsPending { get; }
-        public string PendingText => IsPending ? "Pending" : string.Empty;
+        public string PendingText => IsPending ? "已规划" : string.Empty;
         public string PlacementKind { get; }
         public PlanningBuildPlacementRule PlacementRule { get; }
         public string Title { get; }

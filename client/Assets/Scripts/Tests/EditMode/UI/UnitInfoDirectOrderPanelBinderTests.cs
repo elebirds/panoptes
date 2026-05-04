@@ -99,7 +99,7 @@ namespace Panoptes.Tests.EditMode.UI
             Assert.That(root.gameObject.activeSelf, Is.True);
             Assert.That(buttons.Move.gameObject.activeSelf, Is.True);
             Assert.That(buttons.Move.interactable, Is.False);
-            Assert.That(buttons.Move.GetComponentInChildren<TextMeshProUGUI>().text, Is.EqualTo("Move"));
+            Assert.That(buttons.Move.GetComponentInChildren<TextMeshProUGUI>().text, Is.EqualTo("移动"));
             Assert.That(buttons.Attack.gameObject.activeSelf, Is.False);
             Assert.That(buttons.Hold.gameObject.activeSelf, Is.False);
             Assert.That(buttons.Charge.gameObject.activeSelf, Is.False);

@@ -75,9 +75,13 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool useSelectionBeam = true;
         [SerializeField] private bool autoCreateSelectionBeam = true;
         [SerializeField] private Transform selectionBeamRoot;
-        [SerializeField] private float selectionBeamHeight = 1.5f;
-        [SerializeField] private float selectionBeamRadius = 0.22f;
-        [SerializeField] private Color selectionBeamColor = new Color(0.45f, 0.95f, 0.55f, 0.35f);
+        [SerializeField] private float selectionBeamHeight = 2.4f;
+        [SerializeField] private float selectionBeamRadius = 0.32f;
+        [SerializeField] private float selectionBeamTopOffset = 0.35f;
+        [SerializeField] private Color selectionBeamColor = new Color(0.95f, 0.88f, 0.48f, 0.34f);
+        [SerializeField] private float selectionBeamLightIntensity = 2.6f;
+        [SerializeField] private float selectionBeamLightRange = 4.5f;
+        [SerializeField] private float selectionBeamSpotAngle = 34f;
 
         public string UnitId { get; private set; } = string.Empty;
         public string Faction { get; private set; } = string.Empty;
@@ -97,6 +101,7 @@ namespace Panoptes.Presentation.Map
         private Renderer _selectionBeamRenderer;
         private Material _selectionBeamMaterial;
         private MaterialPropertyBlock _selectionBeamBlock;
+        private Light _selectionBeamLight;
         private bool _warnedForceIdleBlocksMove;
         private bool _warnedNoAnimationDriver;
         private bool _warnedMissingMoveBoolParam;
@@ -243,6 +248,11 @@ namespace Panoptes.Presentation.Map
             if (_selectionBeamRenderer != null)
             {
                 _selectionBeamRenderer.gameObject.SetActive(selected);
+            }
+
+            if (_selectionBeamLight != null)
+            {
+                _selectionBeamLight.gameObject.SetActive(selected);
             }
         }
 
@@ -872,7 +882,7 @@ namespace Panoptes.Presentation.Map
                 var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 beam.name = "SelectedBeam";
                 beam.transform.SetParent(transform, false);
-                beam.transform.localPosition = new Vector3(0f, selectionBeamHeight * 0.5f, 0f);
+                beam.transform.localPosition = new Vector3(0f, selectionBeamTopOffset + selectionBeamHeight * 0.5f, 0f);
                 beam.transform.localScale = new Vector3(selectionBeamRadius, selectionBeamHeight * 0.5f, selectionBeamRadius);
 
                 var collider = beam.GetComponent<Collider>();
@@ -883,10 +893,16 @@ namespace Panoptes.Presentation.Map
 
                 selectionBeamRoot = beam.transform;
                 _selectionBeamRenderer = beam.GetComponent<Renderer>();
+                _selectionBeamLight = CreateSelectionSpotLight(selectionBeamRoot);
             }
             else if (selectionBeamRoot != null)
             {
                 _selectionBeamRenderer = selectionBeamRoot.GetComponentInChildren<Renderer>(true);
+                _selectionBeamLight = selectionBeamRoot.GetComponentInChildren<Light>(true);
+                if (_selectionBeamLight == null && autoCreateSelectionBeam)
+                {
+                    _selectionBeamLight = CreateSelectionSpotLight(selectionBeamRoot);
+                }
             }
 
             if (_selectionBeamRenderer == null)
@@ -911,6 +927,43 @@ namespace Panoptes.Presentation.Map
             _selectionBeamRenderer.shadowCastingMode = ShadowCastingMode.Off;
             _selectionBeamRenderer.receiveShadows = false;
             _selectionBeamRenderer.gameObject.SetActive(false);
+
+            if (_selectionBeamLight != null)
+            {
+                ConfigureSelectionSpotLight();
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
+        }
+
+        private Light CreateSelectionSpotLight(Transform parent)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var lightObject = new GameObject("SelectedBeamLight");
+            lightObject.transform.SetParent(parent, false);
+            lightObject.transform.localPosition = new Vector3(0f, selectionBeamHeight * 0.5f, 0f);
+            lightObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            var light = lightObject.AddComponent<Light>();
+            light.type = LightType.Spot;
+            return light;
+        }
+
+        private void ConfigureSelectionSpotLight()
+        {
+            if (_selectionBeamLight == null)
+            {
+                return;
+            }
+
+            _selectionBeamLight.type = LightType.Spot;
+            _selectionBeamLight.color = selectionBeamColor;
+            _selectionBeamLight.intensity = Mathf.Max(0f, selectionBeamLightIntensity);
+            _selectionBeamLight.range = Mathf.Max(0.1f, selectionBeamLightRange);
+            _selectionBeamLight.spotAngle = Mathf.Clamp(selectionBeamSpotAngle, 1f, 179f);
+            _selectionBeamLight.shadows = LightShadows.None;
         }
 
         private Material CreateSelectionBeamMaterial()

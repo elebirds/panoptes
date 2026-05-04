@@ -1,5 +1,4 @@
 using Panoptes.Core.Application.App;
-using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Infrastructure.Service;
 using Panoptes.Presentation.UI.Lobby;
 using TMPro;
@@ -34,7 +33,13 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void Awake()
         {
-            ApplyEmbeddedLoginLayout();
+            EnsureTitleFlameEffect();
+
+            if (!IsLoggedIn())
+            {
+                HideLobbySurface();
+            }
+
             startButton?.onClick.AddListener(ShowLobbyEntry);
             settingsButton?.onClick.AddListener(OpenSettings);
             quitButton?.onClick.AddListener(QuitGame);
@@ -44,22 +49,8 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void Start()
         {
-            ApplyEmbeddedLoginLayout();
             _lastLoggedIn = IsLoggedIn();
             ApplyLoginState(_lastLoggedIn);
-
-            if (!_lastLoggedIn)
-            {
-                ShowMainMenu();
-                return;
-            }
-
-            if (HasActiveRoom())
-            {
-                ShowRoomEntry();
-                return;
-            }
-
             ShowMainMenu();
         }
 
@@ -74,8 +65,6 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void OnRectTransformDimensionsChange()
         {
-            _loginLayoutApplied = false;
-            ApplyEmbeddedLoginLayout();
         }
 
         private void Update()
@@ -92,12 +81,6 @@ namespace Panoptes.Presentation.UI.MainMenu
             if (!loggedIn)
             {
                 ShowMainMenu();
-                return;
-            }
-
-            if (HasActiveRoom())
-            {
-                ShowRoomEntry();
                 return;
             }
 
@@ -118,9 +101,7 @@ namespace Panoptes.Presentation.UI.MainMenu
                 lobbyBackButtonRoot.SetActive(false);
             }
 
-            lobbySceneController?.HidePanels();
-            SetPanelActive(lobbyPanel, false);
-            SetPanelActive(roomPanel, false);
+            HideLobbySurface();
             SetPanelActive(settingsPanel, false);
         }
 
@@ -194,14 +175,13 @@ namespace Panoptes.Presentation.UI.MainMenu
 #endif
         }
 
-        private static bool HasActiveRoom()
-        {
-            return RoomCache.Instance != null && !string.IsNullOrWhiteSpace(RoomCache.Instance.RoomID);
-        }
-
         private void ApplyLoginState(bool loggedIn)
         {
             SetPanelActive(loginPanel, !loggedIn);
+            if (!loggedIn)
+            {
+                HideLobbySurface();
+            }
 
             if (startButton != null)
             {
@@ -232,6 +212,77 @@ namespace Panoptes.Presentation.UI.MainMenu
             }
         }
 
+        private void EnsureTitleFlameEffect()
+        {
+            var texts = GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (var i = 0; i < texts.Length; i++)
+            {
+                var title = texts[i];
+                if (title == null || !string.Equals((title.text ?? string.Empty).Trim(), "PANOPTES", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (title.GetComponent<MainMenuTitleFlameAnimator>() == null)
+                {
+                    title.gameObject.AddComponent<MainMenuTitleFlameAnimator>();
+                }
+                EnsureTitleLogo(title);
+                return;
+            }
+        }
+
+        private static void EnsureTitleLogo(TextMeshProUGUI title)
+        {
+            if (title == null || title.transform.parent == null)
+            {
+                return;
+            }
+
+            const string logoName = "TitleCrossedSwordsLogo";
+            var parent = title.transform.parent;
+            var existing = parent.Find(logoName);
+            var logoRect = existing as RectTransform;
+            if (logoRect == null)
+            {
+                logoRect = new GameObject(logoName, typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
+                logoRect.SetParent(parent, false);
+            }
+
+            logoRect.SetSiblingIndex(Mathf.Max(0, title.transform.GetSiblingIndex()));
+            title.transform.SetSiblingIndex(logoRect.GetSiblingIndex() + 1);
+            logoRect.anchorMin = title.rectTransform.anchorMin;
+            logoRect.anchorMax = title.rectTransform.anchorMax;
+            logoRect.pivot = title.rectTransform.pivot;
+            logoRect.anchoredPosition = title.rectTransform.anchoredPosition + new Vector2(0f, -10f);
+            logoRect.sizeDelta = new Vector2(230f, 230f);
+            logoRect.localScale = Vector3.one;
+
+            var image = logoRect.GetComponent<Image>();
+            if (image == null)
+            {
+                image = logoRect.gameObject.AddComponent<Image>();
+            }
+
+            var sprite = Resources.Load<Sprite>("Icons/UI/main_title_crossed_swords_logo");
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+            }
+
+            image.raycastTarget = false;
+            image.preserveAspect = true;
+            image.color = new Color(1f, 0.85f, 0.52f, 0.62f);
+        }
+
+        private void HideLobbySurface()
+        {
+            lobbySceneController?.HidePanels();
+            SetPanelActive(lobbyPanel, false);
+            SetPanelActive(roomPanel, false);
+            SetPanelActive(lobbyBackButtonRoot, false);
+        }
+
         private void ApplyEmbeddedLoginLayout()
         {
             if (_loginLayoutApplied || loginPanel == null)
@@ -248,25 +299,29 @@ namespace Panoptes.Presentation.UI.MainMenu
             _loginLayoutApplied = true;
 
             var canvasSize = ResolveCanvasSize();
-            var wideLayout = canvasSize.x >= 1180f;
+            var horizontalMargin = Mathf.Clamp(canvasSize.x * 0.055f, 28f, 120f);
+            var verticalMargin = Mathf.Clamp(canvasSize.y * 0.075f, 24f, 96f);
+            var availableWidth = Mathf.Max(300f, canvasSize.x - horizontalMargin * 2f);
+            var availableHeight = Mathf.Max(300f, canvasSize.y - verticalMargin * 2f);
+            var wideLayout = canvasSize.x >= 1180f && availableHeight >= 440f;
             var panelWidth = wideLayout
-                ? Mathf.Clamp(canvasSize.x * 0.30f, 500f, 580f)
-                : Mathf.Clamp(canvasSize.x - 96f, 440f, 560f);
-            var panelHeight = Mathf.Clamp(canvasSize.y * 0.48f, 430f, 520f);
+                ? Mathf.Min(Mathf.Clamp(canvasSize.x * 0.30f, 460f, 580f), availableWidth)
+                : Mathf.Min(Mathf.Clamp(canvasSize.x - horizontalMargin * 2f, 320f, 560f), availableWidth);
+            var panelHeight = Mathf.Min(Mathf.Clamp(canvasSize.y * 0.58f, 440f, 620f), availableHeight);
 
             if (wideLayout)
             {
                 root.anchorMin = new Vector2(1f, 0.5f);
                 root.anchorMax = new Vector2(1f, 0.5f);
                 root.pivot = new Vector2(1f, 0.5f);
-                root.anchoredPosition = new Vector2(-Mathf.Clamp(canvasSize.x * 0.065f, 88f, 150f), 0f);
+                root.anchoredPosition = new Vector2(-horizontalMargin, 0f);
             }
             else
             {
                 root.anchorMin = new Vector2(0.5f, 0.5f);
                 root.anchorMax = new Vector2(0.5f, 0.5f);
                 root.pivot = new Vector2(0.5f, 0.5f);
-                root.anchoredPosition = new Vector2(0f, -Mathf.Clamp(canvasSize.y * 0.05f, 28f, 70f));
+                root.anchoredPosition = new Vector2(0f, -Mathf.Min(48f, verticalMargin * 0.5f));
             }
 
             root.sizeDelta = new Vector2(panelWidth, panelHeight);
@@ -282,24 +337,33 @@ namespace Panoptes.Presentation.UI.MainMenu
             LayoutDecorativeBackground("Bakcground");
             LayoutDecorativeBackground("Background");
 
-            var padding = Mathf.Clamp(panelWidth * 0.09f, 42f, 56f);
-            var labelWidth = 96f;
-            var inputGap = 18f;
-            var inputWidth = Mathf.Max(220f, panelWidth - padding * 2f - labelWidth - inputGap);
-            var inputHeight = 52f;
-            var titleY = -Mathf.Clamp(panelHeight * 0.09f, 34f, 48f);
-            var firstRowY = -Mathf.Clamp(panelHeight * 0.26f, 112f, 136f);
-            var rowGap = Mathf.Clamp(panelHeight * 0.17f, 72f, 88f);
-            var buttonY = -panelHeight + Mathf.Clamp(panelHeight * 0.18f, 76f, 92f);
-            var buttonGap = 22f;
-            var buttonWidth = (panelWidth - padding * 2f - buttonGap) * 0.5f;
+            var padding = Mathf.Clamp(panelWidth * 0.085f, 28f, 56f);
+            var compact = panelWidth < 470f;
+            var labelWidth = compact ? 72f : 96f;
+            var inputGap = compact ? 12f : 18f;
+            var inputWidth = Mathf.Max(180f, panelWidth - padding * 2f - labelWidth - inputGap);
+            var inputHeight = Mathf.Clamp(panelHeight * 0.10f, 44f, 56f);
+            var titleY = -Mathf.Clamp(panelHeight * 0.08f, 30f, 48f);
+            var firstRowY = -Mathf.Clamp(panelHeight * 0.28f, 118f, 158f);
+            var rowGap = Mathf.Clamp(panelHeight * 0.15f, 76f, 96f);
+            var buttonHeight = Mathf.Clamp(panelHeight * 0.11f, 54f, 64f);
+            var buttonTopFromBottom = Mathf.Clamp(panelHeight * 0.14f, 64f, 86f);
+            var buttonY = -panelHeight + buttonTopFromBottom + buttonHeight;
+            var buttonGap = compact ? 12f : 22f;
+            var buttonWidth = Mathf.Max(128f, (panelWidth - padding * 2f - buttonGap) * 0.5f);
+            var passwordBottom = firstRowY - rowGap - inputHeight;
+            var buttonTop = buttonY;
+            if (passwordBottom - buttonTop < 34f)
+            {
+                buttonY = passwordBottom - 34f;
+            }
 
             LayoutText("UserName", new Vector2(padding, firstRowY), new Vector2(labelWidth, inputHeight), "\u8d26\u53f7", 26f, TextAlignmentOptions.Left);
             LayoutText("Password", new Vector2(padding, firstRowY - rowGap), new Vector2(labelWidth, inputHeight), "\u5bc6\u7801", 26f, TextAlignmentOptions.Left);
             LayoutInput("UserNameInput", new Vector2(padding + labelWidth + inputGap, firstRowY + 4f), new Vector2(inputWidth, inputHeight));
             LayoutInput("PasswordInput", new Vector2(padding + labelWidth + inputGap, firstRowY - rowGap + 4f), new Vector2(inputWidth, inputHeight));
-            LayoutButton("LoginButton", new Vector2(padding, buttonY), new Vector2(buttonWidth, 58f), "\u767b\u5f55");
-            LayoutButton("RegisterButton", new Vector2(padding + buttonWidth + buttonGap, buttonY), new Vector2(buttonWidth, 58f), "\u6ce8\u518c");
+            LayoutButton("LoginButton", new Vector2(padding, buttonY), new Vector2(buttonWidth, buttonHeight), "\u767b\u5f55");
+            LayoutButton("RegisterButton", new Vector2(padding + buttonWidth + buttonGap, buttonY), new Vector2(buttonWidth, buttonHeight), "\u6ce8\u518c");
 
             var firstTitle = loginPanel.GetComponentInChildren<TextMeshProUGUI>(true);
             if (firstTitle != null &&
@@ -343,6 +407,18 @@ namespace Panoptes.Presentation.UI.MainMenu
             {
                 var target = FindChild(loginPanel.transform, name);
                 SetRect(target as RectTransform, position, size);
+                if (target == null)
+                {
+                    return;
+                }
+
+                if (target.TryGetComponent<Image>(out var image))
+                {
+                    image.color = new Color(1f, 0.97f, 0.9f, 0.94f);
+                    image.raycastTarget = true;
+                }
+
+                NormalizeInputField(target.transform);
             }
 
             void LayoutDecorativeBackground(string name)
@@ -436,6 +512,13 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private Vector2 ResolveCanvasSize()
         {
+            var canvas = GetComponentInParent<Canvas>();
+            var canvasRect = canvas != null ? canvas.rootCanvas.transform as RectTransform : null;
+            if (canvasRect != null && canvasRect.rect.width > 0f && canvasRect.rect.height > 0f)
+            {
+                return canvasRect.rect.size;
+            }
+
             var rect = transform as RectTransform;
             if (rect != null && rect.rect.width > 0f && rect.rect.height > 0f)
             {
@@ -443,6 +526,22 @@ namespace Panoptes.Presentation.UI.MainMenu
             }
 
             return new Vector2(1920f, 1080f);
+        }
+
+        private static void NormalizeInputField(Transform inputRoot)
+        {
+            var textArea = FindChild(inputRoot, "Text Area") as RectTransform;
+            if (textArea != null)
+            {
+                SetStretch(textArea, new Vector2(12f, 6f), new Vector2(-12f, -6f));
+            }
+
+            foreach (var text in inputRoot.GetComponentsInChildren<TextMeshProUGUI>(true))
+            {
+                text.fontSize = Mathf.Clamp(text.fontSize <= 0f ? 20f : text.fontSize, 18f, 24f);
+                text.alignment = TextAlignmentOptions.MidlineLeft;
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+            }
         }
 
         private static void SetRect(RectTransform rect, Vector2 position, Vector2 size)

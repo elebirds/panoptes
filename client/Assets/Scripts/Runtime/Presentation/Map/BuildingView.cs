@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Panoptes.Core.Domain;
 using Panoptes.Presentation.UI.HUD;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Panoptes.Presentation.Map
 {
@@ -32,6 +33,16 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private string[] tintShaderNameKeywords = { "roof" };
         [SerializeField] private GameObject damagedMark;
         [SerializeField] private GameObject selectedRing;
+        [SerializeField] private bool useSelectionBeam = true;
+        [SerializeField] private bool autoCreateSelectionBeam = true;
+        [SerializeField] private Transform selectionBeamRoot;
+        [SerializeField] private float selectionBeamHeight = 3.2f;
+        [SerializeField] private float selectionBeamRadius = 0.56f;
+        [SerializeField] private float selectionBeamTopOffset = 0.35f;
+        [SerializeField] private Color selectionBeamColor = new Color(0.95f, 0.88f, 0.48f, 0.3f);
+        [SerializeField] private float selectionBeamLightIntensity = 3.4f;
+        [SerializeField] private float selectionBeamLightRange = 6.5f;
+        [SerializeField] private float selectionBeamSpotAngle = 42f;
         [SerializeField] private Color neutralOwnerColor = Color.white;
         [SerializeField] private Color friendlyOwnerColor = new Color(0.26f, 0.78f, 1f, 1f);
         [SerializeField] private Color enemyOwnerColor = new Color(1f, 0.35f, 0.35f, 1f);
@@ -85,6 +96,15 @@ namespace Panoptes.Presentation.Map
         private Transform _cityCoreHpBarRoot;
         private CityCoreHPBar _cityCoreHpBarView;
         private float _cityCoreHpNormalized = 1f;
+        private Renderer _selectionBeamRenderer;
+        private Material _selectionBeamMaterial;
+        private MaterialPropertyBlock _selectionBeamBlock;
+        private Light _selectionBeamLight;
+
+        private void Awake()
+        {
+            EnsureSelectionBeam();
+        }
 
         private void LateUpdate()
         {
@@ -162,6 +182,16 @@ namespace Panoptes.Presentation.Map
             if (selectedRing != null)
             {
                 selectedRing.SetActive(isSelected);
+            }
+
+            if (_selectionBeamRenderer != null)
+            {
+                _selectionBeamRenderer.gameObject.SetActive(isSelected);
+            }
+
+            if (_selectionBeamLight != null)
+            {
+                _selectionBeamLight.gameObject.SetActive(isSelected);
             }
         }
 
@@ -708,9 +738,158 @@ namespace Panoptes.Presentation.Map
             _cityCoreHpBarView.SetName(label);
         }
 
+        private void EnsureSelectionBeam()
+        {
+            if (!useSelectionBeam)
+            {
+                return;
+            }
+
+            if (selectionBeamRoot == null && autoCreateSelectionBeam)
+            {
+                var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                beam.name = "SelectedBeam";
+                beam.transform.SetParent(transform, false);
+                beam.transform.localPosition = new Vector3(0f, selectionBeamTopOffset + selectionBeamHeight * 0.5f, 0f);
+                beam.transform.localScale = new Vector3(selectionBeamRadius, selectionBeamHeight * 0.5f, selectionBeamRadius);
+
+                var collider = beam.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    Destroy(collider);
+                }
+
+                selectionBeamRoot = beam.transform;
+                _selectionBeamRenderer = beam.GetComponent<Renderer>();
+                _selectionBeamLight = CreateSelectionSpotLight(selectionBeamRoot);
+            }
+            else if (selectionBeamRoot != null)
+            {
+                _selectionBeamRenderer = selectionBeamRoot.GetComponentInChildren<Renderer>(true);
+                _selectionBeamLight = selectionBeamRoot.GetComponentInChildren<Light>(true);
+                if (_selectionBeamLight == null && autoCreateSelectionBeam)
+                {
+                    _selectionBeamLight = CreateSelectionSpotLight(selectionBeamRoot);
+                }
+            }
+
+            if (_selectionBeamRenderer != null)
+            {
+                _selectionBeamMaterial = CreateSelectionBeamMaterial();
+                if (_selectionBeamMaterial != null)
+                {
+                    _selectionBeamRenderer.sharedMaterial = _selectionBeamMaterial;
+                }
+
+                _selectionBeamBlock ??= new MaterialPropertyBlock();
+                _selectionBeamRenderer.GetPropertyBlock(_selectionBeamBlock);
+                _selectionBeamBlock.SetColor("_BaseColor", selectionBeamColor);
+                _selectionBeamBlock.SetColor("_Color", selectionBeamColor);
+                _selectionBeamRenderer.SetPropertyBlock(_selectionBeamBlock);
+                _selectionBeamRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                _selectionBeamRenderer.receiveShadows = false;
+                _selectionBeamRenderer.gameObject.SetActive(false);
+            }
+
+            if (_selectionBeamLight != null)
+            {
+                ConfigureSelectionSpotLight();
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
+        }
+
+        private Light CreateSelectionSpotLight(Transform parent)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var lightObject = new GameObject("SelectedBeamLight");
+            lightObject.transform.SetParent(parent, false);
+            lightObject.transform.localPosition = new Vector3(0f, selectionBeamHeight * 0.5f, 0f);
+            lightObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            var light = lightObject.AddComponent<Light>();
+            light.type = LightType.Spot;
+            return light;
+        }
+
+        private void ConfigureSelectionSpotLight()
+        {
+            if (_selectionBeamLight == null)
+            {
+                return;
+            }
+
+            _selectionBeamLight.type = LightType.Spot;
+            _selectionBeamLight.color = selectionBeamColor;
+            _selectionBeamLight.intensity = Mathf.Max(0f, selectionBeamLightIntensity);
+            _selectionBeamLight.range = Mathf.Max(0.1f, selectionBeamLightRange);
+            _selectionBeamLight.spotAngle = Mathf.Clamp(selectionBeamSpotAngle, 1f, 179f);
+            _selectionBeamLight.shadows = LightShadows.None;
+        }
+
+        private Material CreateSelectionBeamMaterial()
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Standard");
+            }
+
+            if (shader == null)
+            {
+                return null;
+            }
+
+            var material = new Material(shader)
+            {
+                name = "BuildingSelectionBeamMat_Runtime",
+                hideFlags = HideFlags.DontSave
+            };
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+            if (material.HasProperty("_Blend"))
+            {
+                material.SetFloat("_Blend", 0f);
+            }
+            if (material.HasProperty("_SrcBlend"))
+            {
+                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            }
+            if (material.HasProperty("_DstBlend"))
+            {
+                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            }
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetFloat("_ZWrite", 0f);
+            }
+
+            material.renderQueue = (int)RenderQueue.Transparent;
+            return material;
+        }
+
         private bool IsCityCoreBuildingType()
         {
             return string.Equals(buildingType, "city_core", StringComparison.Ordinal);
+        }
+
+        private void OnDestroy()
+        {
+            if (_selectionBeamMaterial != null)
+            {
+                Destroy(_selectionBeamMaterial);
+                _selectionBeamMaterial = null;
+            }
         }
 
         private static string NormalizeToken(string value)

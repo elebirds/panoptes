@@ -51,11 +51,23 @@ namespace Panoptes.Presentation.UI.Lobby
 
         public void ShowLobbyPanel()
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             SetRoomVisible(false);
         }
 
         public void ShowRoomPanel()
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             SetRoomVisible(true);
         }
 
@@ -74,23 +86,47 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void OnRoomCreated(string roomId, string roomCode)
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             _lobbyPanelController?.HandleRoomCreated(roomId, roomCode);
         }
 
         private void OnRoomState()
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             _lobbyPanelController?.HandleRoomStateReceived();
             ShowRoomPanel();
         }
 
         private void OnGameStarting(int countdown)
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             ShowRoomPanel();
             _roomPanelController?.HandleGameStarting(countdown);
         }
 
         private void OnLobbyError(string code)
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             if (_roomPanel != null && _roomPanel.activeSelf)
             {
                 _roomPanelController?.HandleLobbyError(code);
@@ -122,11 +158,23 @@ namespace Panoptes.Presentation.UI.Lobby
 
         private void SyncPanelVisibility()
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             SetRoomVisible(_cache != null && !string.IsNullOrWhiteSpace(_cache.RoomID));
         }
 
         private void SetRoomVisible(bool visible)
         {
+            if (!CanShowLobbyPanels())
+            {
+                HidePanels();
+                return;
+            }
+
             if (_roomPanel != null)
             {
                 _roomPanel.SetActive(visible);
@@ -136,6 +184,11 @@ namespace Panoptes.Presentation.UI.Lobby
             {
                 _lobbyPanel.SetActive(!visible);
             }
+        }
+
+        private bool CanShowLobbyPanels()
+        {
+            return _sessionManager != null && _sessionManager.IsLoggedIn;
         }
 
         private void SubscribeStore()

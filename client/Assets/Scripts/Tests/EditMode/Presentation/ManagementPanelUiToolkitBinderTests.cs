@@ -212,12 +212,12 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             Assert.That(rootElement.pickingMode, Is.EqualTo(PickingMode.Ignore));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.RootName).pickingMode, Is.EqualTo(PickingMode.Position));
-            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("Management"));
+            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("管理"));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.OverviewPanelName).style.display.value, Is.EqualTo(DisplayStyle.None));
 
             ShowNationalOverview(binder);
             Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.NationalOverview));
-            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("National Overview"));
+            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("国家概览"));
             Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TurnValueName).text, Is.EqualTo("6"));
             Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.ResearchValueName).text, Is.EqualTo("Irrigation"));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.MetricsName).childCount, Is.EqualTo(1));
@@ -230,7 +230,7 @@ namespace Panoptes.Tests.EditMode.Presentation
             ShowTechTree(binder);
             Assert.That(visibilityStore.Current.ActivePanel, Is.EqualTo(ManagementPanelId.TechTree));
             Assert.That(rootElement.Q<VisualElement>(ManagementHostUiToolkitBinder.OverviewPanelName).style.display.value, Is.EqualTo(DisplayStyle.None));
-            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("Tech Tree"));
+            Assert.That(rootElement.Q<Label>(ManagementHostUiToolkitBinder.TitleName).text, Is.EqualTo("科技树"));
 
             visibilityStore.Dispose();
             viewModel.Dispose();

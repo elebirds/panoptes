@@ -10,8 +10,9 @@ namespace Panoptes.Presentation.UI.MainMenu
         [SerializeField] private float uvAmplitudeY = 0.014f;
         [SerializeField] private float positionAmplitude = 14f;
         [SerializeField] private float scaleAmplitude = 0.012f;
-        [SerializeField] private float alphaMin = 0.04f;
-        [SerializeField] private float alphaMax = 0.16f;
+        [SerializeField] private float alphaMin = 0.18f;
+        [SerializeField] private float alphaMax = 0.46f;
+        [SerializeField] private bool enforcePlayableVisibility = true;
         [SerializeField] private float pulseSpeed = 1.35f;
 
         private Rect[] _baseUvs;
@@ -21,6 +22,13 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void Awake()
         {
+            EnsureVisibleIntensity();
+            CacheBaseValues();
+        }
+
+        private void OnEnable()
+        {
+            EnsureVisibleIntensity();
             CacheBaseValues();
         }
 
@@ -33,6 +41,21 @@ namespace Panoptes.Presentation.UI.MainMenu
             positionAmplitude = Mathf.Max(0f, positionAmplitude);
             scaleAmplitude = Mathf.Max(0f, scaleAmplitude);
             pulseSpeed = Mathf.Max(0.01f, pulseSpeed);
+        }
+
+        private void EnsureVisibleIntensity()
+        {
+            if (!enforcePlayableVisibility)
+            {
+                return;
+            }
+
+            alphaMin = Mathf.Max(alphaMin, 0.12f);
+            alphaMax = Mathf.Max(alphaMax, 0.34f);
+            positionAmplitude = Mathf.Max(positionAmplitude, 18f);
+            scaleAmplitude = Mathf.Max(scaleAmplitude, 0.018f);
+            uvAmplitudeX = Mathf.Max(uvAmplitudeX, 0.012f);
+            uvAmplitudeY = Mathf.Max(uvAmplitudeY, 0.018f);
         }
 
         private void Update()
@@ -74,6 +97,9 @@ namespace Panoptes.Presentation.UI.MainMenu
 
                 var pulse = (Mathf.Sin(time * pulseSpeed + phase) + 1f) * 0.5f;
                 var color = _baseColors[i];
+                color.r = Mathf.Clamp01(color.r * 1.15f);
+                color.g = Mathf.Clamp01(color.g * 0.82f + 0.08f);
+                color.b = Mathf.Clamp01(color.b * 0.62f);
                 color.a = Mathf.Lerp(alphaMin, alphaMax, pulse);
                 layer.color = color;
             }
@@ -81,7 +107,12 @@ namespace Panoptes.Presentation.UI.MainMenu
 
         private void CacheBaseValues()
         {
-            if (fireLayers == null)
+            if (fireLayers == null || fireLayers.Length == 0)
+            {
+                fireLayers = GetComponentsInChildren<RawImage>(true);
+            }
+
+            if (fireLayers == null || fireLayers.Length == 0)
             {
                 _baseUvs = null;
                 _basePositions = null;
@@ -108,6 +139,9 @@ namespace Panoptes.Presentation.UI.MainMenu
                 }
 
                 _baseUvs[i] = layer.uvRect;
+                layer.gameObject.SetActive(true);
+                layer.enabled = true;
+                layer.raycastTarget = false;
                 _basePositions[i] = layer.transform is RectTransform rect ? rect.anchoredPosition : Vector2.zero;
                 _baseScales[i] = layer.transform.localScale;
                 _baseColors[i] = layer.color;

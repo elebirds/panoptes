@@ -1652,7 +1652,7 @@ MonoBehaviour:
   unitInfoPanelController: {fileID: 2274049074370358003}
   nextStageButtonRect: {fileID: 0}
   turnPanelRect: {fileID: 0}
-  recipePanelShiftXWhenOpen: 360
+  sidePanelShiftXWhenOpen: 488
   rightGroupShiftDuration: 0.2
   rightGroupShiftCurve:
     serializedVersion: 2

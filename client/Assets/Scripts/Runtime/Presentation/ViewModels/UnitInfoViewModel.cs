@@ -298,11 +298,11 @@ namespace Panoptes.Presentation.ViewModels
                     continue;
                 }
 
-                var action = string.IsNullOrWhiteSpace(order.Action) ? "order" : order.Action.Trim();
+                var action = LocalizeOrderAction(order.Action);
                 var target = !string.IsNullOrWhiteSpace(order.TargetNodeId)
                     ? order.TargetNodeId.Trim()
                     : order.TargetUnitId?.Trim();
-                return string.IsNullOrWhiteSpace(target) ? $"Planned: {action}" : $"Planned: {action} -> {target}";
+                return string.IsNullOrWhiteSpace(target) ? $"已规划：{action}" : $"已规划：{action} -> {target}";
             }
 
             return string.Empty;
@@ -313,10 +313,39 @@ namespace Panoptes.Presentation.ViewModels
             var type = NormalizeToken(unitType);
             if (string.IsNullOrEmpty(type))
             {
-                return $"Unit {unitId}";
+                return $"单位 {unitId}";
             }
 
-            return $"{type} [{unitId}]";
+            return $"{LocalizeUnitType(type)} [{unitId}]";
+        }
+
+        private static string LocalizeOrderAction(string action)
+        {
+            return NormalizeToken(action) switch
+            {
+                "move" => "移动",
+                "attack" => "攻击",
+                "hold" => "待命",
+                "charge" => "冲锋",
+                "build" => "建造",
+                "" => "指令",
+                _ => action?.Trim() ?? "指令"
+            };
+        }
+
+        private static string LocalizeUnitType(string unitType)
+        {
+            return NormalizeToken(unitType) switch
+            {
+                "city_core" => "城市核心",
+                "settler" => "开拓者",
+                "infantry" => "步兵",
+                "archer" => "弓手",
+                "cavalry" => "骑兵",
+                "spearman" => "枪兵",
+                "resource_point" => "资源点",
+                _ => unitType
+            };
         }
 
         private static bool HasTag(IReadOnlyList<string> tags, string tag)

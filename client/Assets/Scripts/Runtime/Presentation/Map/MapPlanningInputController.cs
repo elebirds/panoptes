@@ -161,9 +161,11 @@ namespace Panoptes.Presentation.Map
 
         private UnitView _selectedUnit;
         private float _ignoreInputUntilTime;
+        private static int _playbackInputLockCount;
 
         public IReadOnlyList<PendingBuildRecord> PendingBuilds => _buildPlacement.PendingBuilds;
         public UnitView SelectedUnit => _selectedUnit;
+        public static bool IsPlaybackInputLocked => _playbackInputLockCount > 0;
         public CombatActionMode CurrentCombatActionMode => _inputState.CombatActionMode;
         public string CurrentCombatPrompt => _selectedUnit == null
             ? "Select your unit to start issuing commands."
@@ -253,7 +255,7 @@ namespace Panoptes.Presentation.Map
                 inputCamera = Camera.main;
             }
 
-            if (inputCamera == null || !HasMouse())
+            if (inputCamera == null || !HasMouse() || IsPlaybackInputLocked)
             {
                 return;
             }
@@ -270,21 +272,41 @@ namespace Panoptes.Presentation.Map
 
         public void EnterBuildPlacementAny(string buildingType, string cityId)
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.AnyTerrain);
         }
 
         public void EnterBuildPlacementResource(string buildingType, string cityId)
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.ResourceOnly);
         }
 
         public void EnterBuildPlacementCity(string buildingType, string cityId)
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             EnterBuildPlacement(buildingType, cityId, BuildPlacementRule.CityOnly);
         }
 
         public void CancelCurrentMode()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             ExitBuildMode();
             ClearCombatSelection();
             BlockInputAfterModeSwitch();
@@ -292,6 +314,11 @@ namespace Panoptes.Presentation.Map
 
         public void BeginMoveSelection()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             if (_selectedUnit == null)
             {
                 return;
@@ -306,6 +333,11 @@ namespace Panoptes.Presentation.Map
 
         public void BeginAttackSelection()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             if (_selectedUnit == null || !CanSelectedUnitAttack())
             {
                 return;
@@ -321,6 +353,11 @@ namespace Panoptes.Presentation.Map
 
         public void BeginChargeSelection()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             if (_selectedUnit == null || !CanSelectedUnitCharge())
             {
                 return;
@@ -335,6 +372,11 @@ namespace Panoptes.Presentation.Map
 
         public void IssueHoldOrder()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return;
+            }
+
             if (_selectedUnit == null)
             {
                 return;
@@ -362,6 +404,11 @@ namespace Panoptes.Presentation.Map
 
         public bool RequestExpandTerritoryForSelectedUnit()
         {
+            if (IsPlaybackInputLocked)
+            {
+                return false;
+            }
+
             if (_selectedUnit == null)
             {
                 return false;
@@ -384,6 +431,11 @@ namespace Panoptes.Presentation.Map
 
         public bool RequestExpandTerritory(string unitId, string centerNodeId = null)
         {
+            if (IsPlaybackInputLocked)
+            {
+                return false;
+            }
+
             if (string.IsNullOrWhiteSpace(unitId))
             {
                 return false;
@@ -2043,6 +2095,38 @@ namespace Panoptes.Presentation.Map
             _pendingDeployGhosts.SetMapRenderer(mapRenderer);
             _territoryHighlights.SetMapRenderer(mapRenderer);
             ConfigureBuildPlacementSession();
+        }
+
+        public static void SetPlaybackInputLocked(bool locked)
+        {
+            if (locked)
+            {
+                var wasUnlocked = _playbackInputLockCount == 0;
+                _playbackInputLockCount++;
+                if (wasUnlocked)
+                {
+                    var controllers = FindObjectsByType<MapPlanningInputController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                    for (var i = 0; i < controllers.Length; i++)
+                    {
+                        controllers[i]?.HandlePlaybackInputLocked();
+                    }
+                }
+
+                return;
+            }
+
+            _playbackInputLockCount = Mathf.Max(0, _playbackInputLockCount - 1);
+        }
+
+        private void HandlePlaybackInputLocked()
+        {
+            ExitBuildMode();
+            ClearCombatSelection();
+            ClearMovePreviewState();
+            ClearAllMovePreviews();
+            _movePreviewPresentation.ClearAllMovePathMarkers();
+            ClearTerritoryHighlights();
+            BlockInputAfterModeSwitch();
         }
 
         private void ConfigureBuildPlacementSession()

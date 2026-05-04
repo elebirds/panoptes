@@ -99,7 +99,8 @@ namespace Panoptes.Presentation.ViewModels
                     building.Description,
                     building.PlacementKind,
                     ResolvePlacementRule(building.PlacementKind),
-                    pendingBuildingIds.Contains(buildingId)));
+                    pendingBuildingIds.Contains(buildingId),
+                    building.IconKey));
             }
 
             var groups = new List<BuildCatalogGroupState>(3);

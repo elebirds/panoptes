@@ -56,7 +56,9 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var buildingType = NormalizeToken(node.BuildingType);
-            if (string.IsNullOrWhiteSpace(buildingType) || !CatalogBuildingHasRecipes(buildingType))
+            if (string.IsNullOrWhiteSpace(buildingType) ||
+                string.Equals(buildingType, CityCoreBuildingType, StringComparison.Ordinal) ||
+                !CatalogBuildingHasRecipes(buildingType))
             {
                 return false;
             }
@@ -71,6 +73,25 @@ namespace Panoptes.Presentation.UI.HUD
             return TryGetNode(unit, state, out var node) && IsOwnedCityCoreBuildingNode(node, state);
         }
 
+        public bool TryResolveCityCoreNodeIdAnyOwner(UnitView unit, out string nodeId)
+        {
+            nodeId = string.Empty;
+            var state = _gameStateStore?.Snapshot;
+            if (!TryGetCityCoreNodeAnyOwner(unit, state, out var node))
+            {
+                return false;
+            }
+
+            nodeId = node.Id;
+            return !string.IsNullOrWhiteSpace(nodeId);
+        }
+
+        public bool IsCityCoreBuildingProxy(UnitView unit)
+        {
+            var state = _gameStateStore?.Snapshot;
+            return TryGetCityCoreNodeAnyOwner(unit, state, out _);
+        }
+
         public bool IsOwnedRecipeBuildingProxy(UnitView unit)
         {
             var state = _gameStateStore?.Snapshot;
@@ -80,7 +101,9 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var buildingType = NormalizeToken(node.BuildingType);
-            return !string.IsNullOrWhiteSpace(buildingType) && CatalogBuildingHasRecipes(buildingType);
+            return !string.IsNullOrWhiteSpace(buildingType) &&
+                   !string.Equals(buildingType, CityCoreBuildingType, StringComparison.Ordinal) &&
+                   CatalogBuildingHasRecipes(buildingType);
         }
 
         private static bool TryGetNode(UnitView unit, GameStateStoreState state, out NodeDto node)
@@ -92,6 +115,51 @@ namespace Panoptes.Presentation.UI.HUD
                    nodes != null &&
                    nodes.TryGetValue(nodeId, out node) &&
                    node != null;
+        }
+
+        private static bool TryGetCityCoreNodeAnyOwner(UnitView unit, GameStateStoreState state, out NodeDto node)
+        {
+            node = null;
+            if (unit == null)
+            {
+                return false;
+            }
+
+            if (TryGetNode(unit, state, out node) && IsCityCore(node))
+            {
+                return true;
+            }
+
+            var nodes = state?.Nodes;
+            if (nodes != null)
+            {
+                foreach (var candidate in nodes.Values)
+                {
+                    if (candidate == null || !IsCityCore(candidate))
+                    {
+                        continue;
+                    }
+
+                    if (candidate.Q == unit.GridPos.x && candidate.R == unit.GridPos.y)
+                    {
+                        node = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            if (string.Equals(NormalizeToken(unit.UnitType), CityCoreBuildingType, StringComparison.Ordinal))
+            {
+                node = new NodeDto
+                {
+                    Id = unit.UnitId,
+                    BuildingType = CityCoreBuildingType,
+                    IsCityCore = true
+                };
+                return !string.IsNullOrWhiteSpace(node.Id);
+            }
+
+            return false;
         }
 
         private bool IsOwnedCityCoreBuildingNode(NodeDto node, GameStateStoreState state)

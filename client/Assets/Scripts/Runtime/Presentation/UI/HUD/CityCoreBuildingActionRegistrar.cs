@@ -13,10 +13,12 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Action IDs")]
         [SerializeField] private string buildActionId = "action_3";
         [SerializeField] private string recipeActionId = "open_recipe_synthesis";
+        [SerializeField] private string policyActionId = "open_policy_focus";
 
         [Header("Labels")]
         [SerializeField] private string buildActionLabel = "Build";
         [SerializeField] private string recipeActionLabel = "Synthesis";
+        [SerializeField] private string policyActionLabel = "Policy";
 
         [Header("References")]
         [SerializeField] private MapPlanningInputController mapPlanningInputController;
@@ -24,8 +26,8 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private RectTransform nextStageButtonRect;
         [SerializeField] private RectTransform turnPanelRect;
 
-        [Header("Recipe Derived Panel")]
-        [SerializeField] private float recipePanelShiftXWhenOpen = 360f;
+        [Header("Right Side Derived Panel")]
+        [SerializeField] private float sidePanelShiftXWhenOpen = 488f;
 
         [Header("Right-Bottom Group Shift")]
         [SerializeField] private float rightGroupShiftDuration = 0.2f;
@@ -45,6 +47,7 @@ namespace Panoptes.Presentation.UI.HUD
         private string _activeUnitInfoNodeId = string.Empty;
         private bool _lastBuildCatalogVisible;
         private bool _lastRecipePanelVisible;
+        private bool _lastPolicyFocusVisible;
 
         [Inject]
         private void Construct(
@@ -83,14 +86,26 @@ namespace Panoptes.Presentation.UI.HUD
             registry.RegisterAction(
                 buildActionId,
                 OnBuildActionClicked,
-                string.IsNullOrWhiteSpace(buildActionLabel) ? "Build" : buildActionLabel,
+                string.IsNullOrWhiteSpace(buildActionLabel) || string.Equals(buildActionLabel, "Build", StringComparison.Ordinal)
+                    ? "建造"
+                    : buildActionLabel,
                 unit => _resolver != null && _resolver.IsOwnedCityCoreBuildingProxy(unit));
 
             registry.RegisterAction(
                 recipeActionId,
                 OnRecipeActionClicked,
-                string.IsNullOrWhiteSpace(recipeActionLabel) ? "Synthesis" : recipeActionLabel,
+                string.IsNullOrWhiteSpace(recipeActionLabel) || string.Equals(recipeActionLabel, "Synthesis", StringComparison.Ordinal)
+                    ? "配方"
+                    : recipeActionLabel,
                 unit => _resolver != null && _resolver.IsOwnedRecipeBuildingProxy(unit));
+
+            registry.RegisterAction(
+                policyActionId,
+                OnPolicyActionClicked,
+                string.IsNullOrWhiteSpace(policyActionLabel) || string.Equals(policyActionLabel, "Policy", StringComparison.Ordinal)
+                    ? "国策"
+                    : policyActionLabel,
+                unit => _resolver != null && _resolver.IsCityCoreBuildingProxy(unit));
         }
 
         protected override void Awake()
@@ -123,13 +138,13 @@ namespace Panoptes.Presentation.UI.HUD
         {
             SyncDerivedPanelStateFromVisibility();
 
-            if (unitInfoPanelController != null && !unitInfoPanelController.IsOpen && IsAnyDerivedPanelVisible())
+            if (unitInfoPanelController != null && !unitInfoPanelController.IsOpen && IsSelectionContextPanelVisible())
             {
                 CloseAllDerivedPanels(resetUnitInfoOffset: true);
             }
 
             var currentSelection = unitInfoPanelController != null ? unitInfoPanelController.CurrentUnit : null;
-            if (currentSelection == null && IsAnyDerivedPanelVisible())
+            if (currentSelection == null && IsSelectionContextPanelVisible())
             {
                 CloseAllDerivedPanels(resetUnitInfoOffset: true);
                 return;
@@ -149,6 +164,14 @@ namespace Panoptes.Presentation.UI.HUD
                 CloseRecipeSynthesis(resetUnitInfoOffset: false);
                 ReapplyRightBottomShift(false);
             }
+
+            if (currentSelection != null &&
+                IsPolicyFocusVisible() &&
+                (_resolver == null || !_resolver.IsCityCoreBuildingProxy(currentSelection)))
+            {
+                ClosePolicyFocus(resetUnitInfoOffset: false);
+                ReapplyRightBottomShift(false);
+            }
         }
 
         private void OnDisable()
@@ -165,9 +188,13 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void ResolveReferences()
         {
+            nextStageButtonRect ??= FindRectTransformByName("NextStageBtn");
+            turnPanelRect ??= FindRectTransformByName("TrunPanel");
+            turnPanelRect ??= FindRectTransformByName("TurnPanel");
+
             if (unitInfoPanelController != null && nextStageButtonRect != null)
             {
-                unitInfoPanelController.SetDockRightOf(nextStageButtonRect);
+                unitInfoPanelController.SetDockRightOf(nextStageButtonRect, 12f);
             }
         }
 
@@ -238,21 +265,34 @@ namespace Panoptes.Presentation.UI.HUD
                    _managementPanelVisibilityStore.IsVisible(ManagementPanelId.RecipeSynthesis);
         }
 
-        private bool IsAnyDerivedPanelVisible()
+        private bool IsPolicyFocusVisible()
+        {
+            return _managementPanelVisibilityStore != null &&
+                   _managementPanelVisibilityStore.IsVisible(ManagementPanelId.PolicyFocus);
+        }
+
+        private bool IsSelectionContextPanelVisible()
         {
             return IsBuildCatalogVisible() || IsRecipeSynthesisVisible();
+        }
+
+        private bool IsAnyDerivedPanelVisible()
+        {
+            return IsSelectionContextPanelVisible() || IsPolicyFocusVisible();
         }
 
         private void UpdateDerivedPanelVisibilitySnapshot()
         {
             _lastBuildCatalogVisible = IsBuildCatalogVisible();
             _lastRecipePanelVisible = IsRecipeSynthesisVisible();
+            _lastPolicyFocusVisible = IsPolicyFocusVisible();
         }
 
         private void SyncDerivedPanelStateFromVisibility()
         {
             var buildVisible = IsBuildCatalogVisible();
             var recipeVisible = IsRecipeSynthesisVisible();
+            var policyVisible = IsPolicyFocusVisible();
 
             if (!buildVisible)
             {
@@ -264,7 +304,9 @@ namespace Panoptes.Presentation.UI.HUD
                 _recipeSynthesisContextStore?.Clear();
             }
 
-            var changed = buildVisible != _lastBuildCatalogVisible || recipeVisible != _lastRecipePanelVisible;
+            var changed = buildVisible != _lastBuildCatalogVisible ||
+                          recipeVisible != _lastRecipePanelVisible ||
+                          policyVisible != _lastPolicyFocusVisible;
             if (!changed)
             {
                 return;
@@ -272,6 +314,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             _lastBuildCatalogVisible = buildVisible;
             _lastRecipePanelVisible = recipeVisible;
+            _lastPolicyFocusVisible = policyVisible;
             ReapplyRightBottomShift(false);
         }
 
@@ -285,6 +328,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             _buildCatalogContextStore.SetCityCoreNode(nodeId);
             _recipeSynthesisContextStore?.Clear();
+            ClearEditorPreviewSelection();
             _managementPanelVisibilityStore.Show(ManagementPanelId.BuildCatalog);
             ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
@@ -300,6 +344,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             _recipeSynthesisContextStore.SetContext(nodeId, buildingType, ownerId);
             _buildCatalogContextStore?.Clear();
+            ClearEditorPreviewSelection();
             _managementPanelVisibilityStore.Show(ManagementPanelId.RecipeSynthesis);
             ReapplyRightBottomShift(false);
             UpdateDerivedPanelVisibilitySnapshot();
@@ -307,6 +352,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void CloseAllDerivedPanels(bool resetUnitInfoOffset)
         {
+            ClosePolicyFocus(resetUnitInfoOffset: false);
             CloseRecipeSynthesis(resetUnitInfoOffset: false);
             CloseBuildCatalog(resetUnitInfoOffset: false);
 
@@ -354,6 +400,24 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             OpenRecipePanelForBuilding(context.NodeId, context.BuildingTypeId, context.OwnerId);
+        }
+
+        private void OnPolicyActionClicked(UnitView unit)
+        {
+            if (unit == null)
+            {
+                return;
+            }
+
+            _activeUnitInfoNodeId = unit.UnitId ?? string.Empty;
+            ResolveReferences();
+            _buildCatalogContextStore?.Clear();
+            _recipeSynthesisContextStore?.Clear();
+            ClearEditorPreviewSelection();
+
+            _managementPanelVisibilityStore?.Show(ManagementPanelId.PolicyFocus);
+            ReapplyRightBottomShift(false);
+            UpdateDerivedPanelVisibilitySnapshot();
         }
 
         private void OnNonBuildingMapClicked()
@@ -409,19 +473,34 @@ namespace Panoptes.Presentation.UI.HUD
             UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        private void ReapplyRightBottomShift(bool immediate)
+        private void ClosePolicyFocus(bool resetUnitInfoOffset)
         {
-            ApplyRightBottomShift(ResolveRecipeShiftXWhenVisible(), immediate);
+            if (IsPolicyFocusVisible())
+            {
+                _managementPanelVisibilityStore.Hide();
+            }
+
+            if (resetUnitInfoOffset)
+            {
+                ReapplyRightBottomShift(false);
+            }
+
+            UpdateDerivedPanelVisibilitySnapshot();
         }
 
-        private float ResolveRecipeShiftXWhenVisible()
+        private void ReapplyRightBottomShift(bool immediate)
         {
-            if (!IsRecipeSynthesisVisible())
+            ApplyRightBottomShift(ResolveSidePanelShiftXWhenVisible(), immediate);
+        }
+
+        private float ResolveSidePanelShiftXWhenVisible()
+        {
+            if (!IsAnyDerivedPanelVisible())
             {
                 return 0f;
             }
 
-            return Mathf.Max(1f, Mathf.Abs(recipePanelShiftXWhenOpen));
+            return Mathf.Max(1f, Mathf.Abs(sidePanelShiftXWhenOpen));
         }
 
         private void ApplyRightBottomShift(float shiftX, bool immediate)
@@ -520,6 +599,25 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 rightGroupShiftCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
+        }
+
+        private static RectTransform FindRectTransformByName(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            var go = GameObject.Find(objectName);
+            return go != null ? go.GetComponent<RectTransform>() : null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private static void ClearEditorPreviewSelection()
+        {
+#if UNITY_EDITOR
+            UnityEditor.Selection.activeObject = null;
+#endif
         }
 
         private void StopShiftRoutine()

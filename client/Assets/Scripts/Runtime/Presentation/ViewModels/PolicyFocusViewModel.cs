@@ -25,7 +25,7 @@ namespace Panoptes.Presentation.ViewModels
             var policies = _staticCatalogStore.Snapshot.Policies;
             if (policies == null || policies.Count == 0)
             {
-                return new ManagementPanelState("Policy Focus");
+                return new ManagementPanelState("国策");
             }
 
             var draft = _planningDraftStore.Snapshot;
@@ -62,10 +62,11 @@ namespace Panoptes.Presentation.ViewModels
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
+                    string.IsNullOrWhiteSpace(policy.ActivationTiming) ? policy.Description : policy.ActivationTiming,
                     policy.Description,
-                    policy.ActivationTiming,
-                    planned ? "Planned" : string.Empty,
-                    isNational ? "Adopt" : "Set");
+                    planned ? "已规划" : string.Empty,
+                    isNational ? "采纳" : "设置",
+                    policy.IconKey);
                 if (isNational)
                 {
                     nationalRows.Add(row);
@@ -79,15 +80,15 @@ namespace Panoptes.Presentation.ViewModels
             var groups = new List<ManagementPanelGroupState>();
             if (nationalRows.Count > 0)
             {
-                groups.Add(new ManagementPanelGroupState("national", "National Focus", nationalRows));
+                groups.Add(new ManagementPanelGroupState("national", "国家方针", nationalRows));
             }
 
             if (institutionRows.Count > 0)
             {
-                groups.Add(new ManagementPanelGroupState("institution", "Institutions", institutionRows));
+                groups.Add(new ManagementPanelGroupState("institution", "制度国策", institutionRows));
             }
 
-            return new ManagementPanelState("Policy Focus", groups);
+            return new ManagementPanelState("国策", groups);
         }
     }
 }

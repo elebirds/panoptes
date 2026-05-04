@@ -13,7 +13,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         public event Action<string, string> RecipeSelectionRequested;
 
-        protected override string DefaultTitle => "Recipe Synthesis";
+        protected override string DefaultTitle => "配方";
+        protected override bool UseFallbackVisualTree => true;
 
         [Inject]
         private void ConstructRecipeFlow(

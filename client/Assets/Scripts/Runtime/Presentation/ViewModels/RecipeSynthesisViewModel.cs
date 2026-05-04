@@ -31,13 +31,13 @@ namespace Panoptes.Presentation.ViewModels
             var context = _contextStore.Current;
             if (context == null || !context.HasContext)
             {
-                return new ManagementPanelState("Recipe Synthesis");
+                return new ManagementPanelState("配方");
             }
 
             var catalog = _staticCatalogStore.Snapshot;
             if (catalog?.Recipes == null || catalog.Recipes.Count == 0)
             {
-                return new ManagementPanelState("Recipe Synthesis");
+                return new ManagementPanelState("配方");
             }
 
             var contextNodeId = Normalize(context.NodeId);
@@ -73,13 +73,17 @@ namespace Panoptes.Presentation.ViewModels
                 rows.Add(new ManagementPanelRowState(
                     recipeId,
                     recipe.Name,
+                    ResolveRecipeSummary(recipe),
                     recipe.Description,
-                    $"Work {recipe.WorkAmount}, base {recipe.BaseProgress}",
                     ResolveStatus(recipeId, selectedRecipeId, preview),
-                    "Select"));
+                    "选择",
+                    recipe.IconKey,
+                    prerequisiteIds: null,
+                    costs: BuildRecipeCosts(recipe, catalog),
+                    outputs: BuildRecipeOutputs(recipe, catalog)));
             }
 
-            return new ManagementPanelState("Recipe Synthesis", BuildGroups(groups));
+            return new ManagementPanelState("配方", BuildGroups(groups));
         }
 
         private static RecipePreviewDto ResolvePreview(PlanningDraftState draft, string contextNodeId)
@@ -122,7 +126,7 @@ namespace Panoptes.Presentation.ViewModels
         {
             if (string.Equals(recipeId, selectedRecipeId, StringComparison.Ordinal))
             {
-                return "Selected";
+                return "已选择";
             }
 
             if (preview == null || !string.Equals(recipeId, Normalize(preview.RecipeId), StringComparison.Ordinal))
@@ -132,10 +136,117 @@ namespace Panoptes.Presentation.ViewModels
 
             if (!string.IsNullOrWhiteSpace(preview.ErrorCode))
             {
-                return $"Preview: {preview.ErrorCode.Trim()}";
+                return $"预览失败：{preview.ErrorCode.Trim()}";
             }
 
-            return preview.Valid ? "Preview valid" : "Preview";
+            return preview.Valid ? "预览可用" : "预览中";
+        }
+
+        private static string ResolveRecipeSummary(CatalogRecipeDto recipe)
+        {
+            if (recipe == null)
+            {
+                return string.Empty;
+            }
+
+            return $"工作量：{recipe.WorkAmount}，基础进度：{recipe.BaseProgress}";
+        }
+
+        private static IReadOnlyList<ManagementPanelAmountState> BuildRecipeCosts(
+            CatalogRecipeDto recipe,
+            StaticCatalogState catalog)
+        {
+            var result = new List<ManagementPanelAmountState>();
+            AddAmounts(result, recipe?.ResourceInputs, catalog?.Resources, "resource_");
+            AddAmounts(result, recipe?.PointInputs, catalog?.Points, "point_");
+            return result;
+        }
+
+        private static IReadOnlyList<ManagementPanelAmountState> BuildRecipeOutputs(
+            CatalogRecipeDto recipe,
+            StaticCatalogState catalog)
+        {
+            var result = new List<ManagementPanelAmountState>();
+            AddAmounts(result, recipe?.Outputs?.Resources, catalog?.Resources, "resource_");
+            AddAmounts(result, recipe?.Outputs?.PointProgress, catalog?.Points, "point_");
+            AddStringOutputs(result, recipe?.Outputs?.Units, catalog?.Units);
+            return result;
+        }
+
+        private static void AddAmounts(
+            List<ManagementPanelAmountState> result,
+            IReadOnlyList<CatalogAmountDto> amounts,
+            IReadOnlyDictionary<string, CatalogHudEntryDto> catalog,
+            string fallbackPrefix)
+        {
+            if (result == null || amounts == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < amounts.Count; i++)
+            {
+                var amount = amounts[i];
+                if (amount == null || string.IsNullOrWhiteSpace(amount.Key))
+                {
+                    continue;
+                }
+
+                var key = Normalize(amount.Key);
+                CatalogHudEntryDto entry = null;
+                catalog?.TryGetValue(key, out entry);
+                result.Add(new ManagementPanelAmountState(
+                    key,
+                    LocalizeAmountName(key),
+                    amount.Amount,
+                    !string.IsNullOrWhiteSpace(entry?.IconKey) ? entry.IconKey : fallbackPrefix + key));
+            }
+        }
+
+        private static void AddStringOutputs(
+            List<ManagementPanelAmountState> result,
+            IReadOnlyList<string> unitIds,
+            IReadOnlyDictionary<string, CatalogUnitDto> units)
+        {
+            if (result == null || unitIds == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < unitIds.Count; i++)
+            {
+                var key = Normalize(unitIds[i]);
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                CatalogUnitDto unit = null;
+                units?.TryGetValue(key, out unit);
+                result.Add(new ManagementPanelAmountState(
+                    key,
+                    string.IsNullOrWhiteSpace(unit?.Name) ? LocalizeAmountName(key) : unit.Name,
+                    1,
+                    !string.IsNullOrWhiteSpace(unit?.IconKey) ? unit.IconKey : "unit_" + key));
+            }
+        }
+
+        private static string LocalizeAmountName(string key)
+        {
+            return Normalize(key) switch
+            {
+                "food" => "粮食",
+                "wood" => "木材",
+                "ore" => "矿石",
+                "research_output" => "科研",
+                "industry_output" => "工业",
+                "settler" => "开拓者",
+                "infantry" => "步兵",
+                "archer" => "弓手",
+                "cavalry" => "骑兵",
+                "spearman" => "枪兵",
+                _ => key
+            };
         }
 
         private static IReadOnlyList<ManagementPanelGroupState> BuildGroups(Dictionary<string, List<ManagementPanelRowState>> groups)

@@ -19,18 +19,19 @@ namespace Panoptes.Presentation.UI.HUD
         private static readonly (string ActionId, string Label)[] DefaultSlots =
         {
             ("settle_city", "坐城"),
-            ("action_2", "Action2"),
-            ("action_3", "Action3"),
-            ("action_4", "Action4")
+            ("action_2", "操作2"),
+            ("action_3", "建造"),
+            ("action_4", "操作4")
         };
 
         private static readonly (string ActionId, string Label)[] RequiredSlots =
         {
-            ("expand_territory", "Expand"),
-            ("action_2", "Action2"),
-            ("action_3", "Action3"),
-            ("action_4", "Action4"),
-            ("open_recipe_synthesis", "Synthesis")
+            ("expand_territory", "扩张"),
+            ("action_2", "操作2"),
+            ("action_3", "建造"),
+            ("action_4", "操作4"),
+            ("open_recipe_synthesis", "配方"),
+            ("open_policy_focus", "国策")
         };
 
         private static Sprite _fallbackButtonSprite;
@@ -401,10 +402,25 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (slot.label != null)
             {
-                slot.label.text = string.IsNullOrWhiteSpace(label) ? slot.actionId : label;
+                slot.label.text = string.IsNullOrWhiteSpace(label) ? ResolveFallbackLabel(slot.actionId) : label;
             }
 
             slot.button.gameObject.SetActive(true);
+        }
+
+        private static string ResolveFallbackLabel(string actionId)
+        {
+            return NormalizeToken(actionId) switch
+            {
+                "settle_city" => "坐城",
+                "expand_territory" => "扩张",
+                "open_recipe_synthesis" => "配方",
+                "open_policy_focus" => "国策",
+                "action_2" => "操作2",
+                "action_3" => "建造",
+                "action_4" => "操作4",
+                _ => string.IsNullOrWhiteSpace(actionId) ? "操作" : actionId
+            };
         }
 
         private static void EnsureActionProvidersRegistered(UnitInfoActionRegistry registry)

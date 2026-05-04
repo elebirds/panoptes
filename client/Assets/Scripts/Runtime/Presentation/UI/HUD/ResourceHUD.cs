@@ -22,6 +22,7 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
         [SerializeField] private Button techButton;
+        [SerializeField] private Button ministerButton;
 
         [Header("Data")]
         [SerializeField] private bool includePoints = true;
@@ -29,6 +30,11 @@ namespace Panoptes.Presentation.UI.HUD
 
         [Header("Icons")]
         [SerializeField] private string[] iconResourcesRoots = { "Icons/Resources", "Icons/Points", "Icons" };
+        [SerializeField] private string panelBackgroundSpriteResource = "Textures/UI/resource_panel_parchment_bg";
+        [SerializeField] private string techButtonSpriteResource = "Icons/UI/icon_tech_tree_round";
+        [SerializeField] private string ministerButtonSpriteResource = "Icons/UI/icon_minister_round";
+        [SerializeField] private Vector2 managementButtonSize = new(54f, 54f);
+        [SerializeField] private float managementButtonSpacing = 8f;
 
         [Header("Change Hint")]
         [SerializeField] private float changeVisibleSeconds = 3f;
@@ -47,12 +53,13 @@ namespace Panoptes.Presentation.UI.HUD
             _viewModel = viewModel;
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
             ResolvePrefabReferences();
-            BindTechButton();
+            BindManagementButtons();
         }
 
         private void Awake()
         {
             ResolvePrefabReferences();
+            ApplyGeneratedPanelArt();
         }
 
         private void OnEnable()
@@ -61,7 +68,8 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureBinder();
             _viewModel?.SetIncludePoints(includePoints);
             SubscribeState();
-            BindTechButton();
+            BindManagementButtons();
+            ApplyGeneratedPanelArt();
             _binder?.Render(_viewModel?.Current ?? new ResourceHudState());
         }
 
@@ -82,6 +90,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveResourceListRoot();
             ResolveTechButtonReference();
+            EnsureMinisterButtonReference();
         }
 
         private void ResolveResourceListRoot()
@@ -109,6 +118,41 @@ namespace Panoptes.Presentation.UI.HUD
             }
         }
 
+        private void EnsureMinisterButtonReference()
+        {
+            if (ministerButton != null)
+            {
+                return;
+            }
+
+            var ministerBtnTransform = transform.Find("MinisterBtn");
+            if (ministerBtnTransform != null)
+            {
+                ministerButton = ministerBtnTransform.GetComponent<Button>();
+                return;
+            }
+
+            if (techButton == null)
+            {
+                return;
+            }
+
+            var clone = Instantiate(techButton.gameObject, techButton.transform.parent, false);
+            clone.name = "MinisterBtn";
+            ministerButton = clone.GetComponent<Button>();
+            ministerButton?.onClick.RemoveAllListeners();
+            var rect = clone.transform as RectTransform;
+            var techRect = techButton.transform as RectTransform;
+            if (rect != null && techRect != null)
+            {
+                rect.anchorMin = techRect.anchorMin;
+                rect.anchorMax = techRect.anchorMax;
+                rect.pivot = techRect.pivot;
+                rect.sizeDelta = managementButtonSize;
+                rect.anchoredPosition = techRect.anchoredPosition + new Vector2(managementButtonSize.x + managementButtonSpacing, 0f);
+            }
+        }
+
         private void SubscribeState()
         {
             _stateSubscription?.Dispose();
@@ -121,24 +165,30 @@ namespace Panoptes.Presentation.UI.HUD
             _stateSubscription = null;
         }
 
-        private void BindTechButton()
+        private void BindManagementButtons()
         {
             _buttonSubscriptions.Clear();
             ResolveTechButtonReference();
+            EnsureMinisterButtonReference();
 
-            var button = techButton;
-            if (button == null)
+            BindButton(techButton, OnTechButtonClicked);
+            BindButton(ministerButton, OnMinisterButtonClicked);
+        }
+
+        private void BindButton(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null || action == null)
             {
                 return;
             }
 
             _buttonSubscriptions.Add(
-                () => button.onClick.AddListener(OnTechButtonClicked),
+                () => button.onClick.AddListener(action),
                 () =>
                 {
                     if (button != null)
                     {
-                        button.onClick.RemoveListener(OnTechButtonClicked);
+                        button.onClick.RemoveListener(action);
                     }
                 });
         }
@@ -160,6 +210,90 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             _managementPanelVisibilityStore.Toggle(ManagementPanelId.TechTree);
+        }
+
+        private void OnMinisterButtonClicked()
+        {
+            if (_managementPanelVisibilityStore == null)
+            {
+                if (logWarnings)
+                {
+                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                }
+                return;
+            }
+
+            _managementPanelVisibilityStore.Toggle(ManagementPanelId.PolicyFocus);
+        }
+
+        private void ApplyGeneratedPanelArt()
+        {
+            ResolvePrefabReferences();
+            ApplyPanelBackground();
+            ApplyButtonSprite(techButton, techButtonSpriteResource);
+            ApplyButtonSprite(ministerButton, ministerButtonSpriteResource);
+        }
+
+        private void ApplyPanelBackground()
+        {
+            if (string.IsNullOrWhiteSpace(panelBackgroundSpriteResource))
+            {
+                return;
+            }
+
+            var image = GetComponent<Image>();
+            if (image == null)
+            {
+                image = gameObject.AddComponent<Image>();
+            }
+
+            var sprite = Resources.Load<Sprite>(panelBackgroundSpriteResource.Trim());
+            if (sprite == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+            image.raycastTarget = false;
+        }
+
+        private void ApplyButtonSprite(Button button, string spriteResource)
+        {
+            if (button == null || string.IsNullOrWhiteSpace(spriteResource))
+            {
+                return;
+            }
+
+            var image = button.targetGraphic as Image;
+            if (image == null)
+            {
+                image = button.GetComponent<Image>();
+            }
+
+            var sprite = Resources.Load<Sprite>(spriteResource.Trim());
+            if (image == null || sprite == null)
+            {
+                return;
+            }
+
+            var rect = button.transform as RectTransform;
+            if (rect != null)
+            {
+                rect.sizeDelta = managementButtonSize;
+            }
+
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+
+            var labels = button.GetComponentsInChildren<TMPro.TMP_Text>(true);
+            for (var i = 0; i < labels.Length; i++)
+            {
+                labels[i].text = string.Empty;
+            }
         }
 
         private void EnsureBinder()

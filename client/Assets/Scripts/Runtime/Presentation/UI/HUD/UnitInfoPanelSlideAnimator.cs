@@ -65,11 +65,22 @@ namespace Panoptes.Presentation.UI.HUD
         {
             var y = _shownBottomMargin;
             var x = -_shownRightMargin;
+            var panelWidth = 0f;
+            if (_panelRoot != null)
+            {
+                panelWidth = Mathf.Max(Mathf.Abs(_panelRoot.rect.width), Mathf.Abs(_panelRoot.sizeDelta.x));
+            }
+            if (panelWidth <= 0.01f)
+            {
+                panelWidth = 360f;
+            }
+
             if (_dockRightOfRect != null)
             {
-                x = _dockRightOfRect.anchoredPosition.x -
-                    Mathf.Abs(_dockRightOfRect.rect.width) -
-                    Mathf.Max(0f, _dockSpacing);
+                var dockWidth = Mathf.Max(Mathf.Abs(_dockRightOfRect.rect.width), Mathf.Abs(_dockRightOfRect.sizeDelta.x));
+                var dockLeft = _dockRightOfRect.anchoredPosition.x - dockWidth * _dockRightOfRect.pivot.x;
+                var panelPivot = _panelRoot != null ? _panelRoot.pivot.x : 1f;
+                x = dockLeft - Mathf.Max(0f, _dockSpacing) - panelWidth * (1f - panelPivot);
                 y = _dockRightOfRect.anchoredPosition.y;
             }
 

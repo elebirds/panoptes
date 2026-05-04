@@ -272,36 +272,36 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             root.AddToClassList("management-host-root");
             var header = new VisualElement { name = "management-host-header" };
             header.AddToClassList("management-host-header");
-            header.Add(CreateLabel("Management", TitleName, "management-host-title"));
-            var closeButton = new Button { name = CloseButtonName, text = "Close" };
+            header.Add(CreateLabel("管理", TitleName, "management-host-title"));
+            var closeButton = new Button { name = CloseButtonName, text = "关闭" };
             closeButton.AddToClassList("management-host-close");
             header.Add(closeButton);
             root.Add(header);
 
             var nav = new VisualElement { name = "management-host-nav" };
             nav.AddToClassList("management-host-nav");
-            nav.Add(CreateNavButton(OverviewButtonName, "Overview"));
-            nav.Add(CreateNavButton(TurnSummaryButtonName, "Turn"));
-            nav.Add(CreateNavButton(LedgerButtonName, "Ledger"));
-            nav.Add(CreateNavButton(TechButtonName, "Tech"));
-            nav.Add(CreateNavButton(BuildButtonName, "Build"));
-            nav.Add(CreateNavButton(RecipeButtonName, "Recipe"));
-            nav.Add(CreateNavButton(PolicyButtonName, "Policy"));
+            nav.Add(CreateNavButton(OverviewButtonName, "概览"));
+            nav.Add(CreateNavButton(TurnSummaryButtonName, "回合"));
+            nav.Add(CreateNavButton(LedgerButtonName, "账本"));
+            nav.Add(CreateNavButton(TechButtonName, "科技"));
+            nav.Add(CreateNavButton(BuildButtonName, "建造"));
+            nav.Add(CreateNavButton(RecipeButtonName, "配方"));
+            nav.Add(CreateNavButton(PolicyButtonName, "国策"));
             root.Add(nav);
 
             var overview = new VisualElement { name = OverviewPanelName };
             overview.AddToClassList("national-overview-panel");
-            overview.Add(BuildSummaryRow("Turn", TurnValueName));
-            overview.Add(BuildSummaryRow("Phase", PhaseValueName));
-            overview.Add(BuildSummaryRow("Tokens", TokensValueName));
-            overview.Add(BuildSummaryRow("Research", ResearchValueName));
-            overview.Add(BuildSummaryRow("Policy", PolicyValueName));
-            overview.Add(CreateLabel("Metrics", "national-overview-metrics-title", "national-overview-section-title"));
+            overview.Add(BuildSummaryRow("回合", TurnValueName));
+            overview.Add(BuildSummaryRow("阶段", PhaseValueName));
+            overview.Add(BuildSummaryRow("令牌", TokensValueName));
+            overview.Add(BuildSummaryRow("科研", ResearchValueName));
+            overview.Add(BuildSummaryRow("国策", PolicyValueName));
+            overview.Add(CreateLabel("指标", "national-overview-metrics-title", "national-overview-section-title"));
             overview.Add(new VisualElement { name = MetricsName });
-            overview.Add(CreateLabel("Resources", "national-overview-resources-title", "national-overview-section-title"));
+            overview.Add(CreateLabel("资源", "national-overview-resources-title", "national-overview-section-title"));
             overview.Add(new VisualElement { name = ResourcesName });
-            overview.Add(CreateLabel("Recent Events", "national-overview-events-title", "national-overview-section-title"));
-            overview.Add(CreateLabel("No recent events", EmptyEventsName, "national-overview-empty"));
+            overview.Add(CreateLabel("近期事件", "national-overview-events-title", "national-overview-section-title"));
+            overview.Add(CreateLabel("暂无近期事件", EmptyEventsName, "national-overview-empty"));
             overview.Add(new VisualElement { name = EventsName });
             root.Add(overview);
             return root;
@@ -486,15 +486,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             return panel switch
             {
-                ManagementPanelId.NationalOverview => "National Overview",
-                ManagementPanelId.TurnSummary => "Turn Summary",
-                ManagementPanelId.NationalLedger => "National Ledger",
-                ManagementPanelId.TechTree => "Tech Tree",
-                ManagementPanelId.BuildCatalog => "Build Catalog",
-                ManagementPanelId.RecipeSynthesis => "Recipe Synthesis",
-                ManagementPanelId.PolicyFocus => "Policy Focus",
-                ManagementPanelId.MinisterReport => "Minister Report",
-                _ => "Management"
+                ManagementPanelId.NationalOverview => "国家概览",
+                ManagementPanelId.TurnSummary => "回合总结",
+                ManagementPanelId.NationalLedger => "国家账本",
+                ManagementPanelId.TechTree => "科技树",
+                ManagementPanelId.BuildCatalog => "建造",
+                ManagementPanelId.RecipeSynthesis => "配方",
+                ManagementPanelId.PolicyFocus => "国策",
+                ManagementPanelId.MinisterReport => "大臣报告",
+                _ => "管理"
             };
         }
 

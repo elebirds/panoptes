@@ -19,12 +19,14 @@ namespace Panoptes.Presentation.Map
 {
     public sealed class SettlementPlaybackController : MonoBehaviour
     {
-        [SerializeField] private float moveEventWaitSeconds = 0.38f;
+        [SerializeField] private float moveEventWaitSeconds = 0.54f;
         [SerializeField] private float conflictFlashSeconds = 0.18f;
         [SerializeField] private float damagePulseSeconds = 0.16f;
         [SerializeField] private float damagePulseScale = 1.14f;
         [SerializeField] private float sectionPauseSeconds = 0.14f;
-        [SerializeField] private float actorFocusPauseSeconds = 0.12f;
+        [SerializeField] private float actorFocusPauseSeconds = 0.5f;
+        [SerializeField] private float attackPlaybackSeconds = 0.55f;
+        [SerializeField] private float perUnitPlaybackGapSeconds = 0.14f;
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
@@ -35,6 +37,7 @@ namespace Panoptes.Presentation.Map
         private Coroutine _playbackCoroutine;
         private UnitView _playbackSelectedUnit;
         private int _lastHandledSettlementSequence;
+        private bool _inputLockedForPlayback;
 
         [Inject]
         private void Construct(
@@ -71,6 +74,7 @@ namespace Panoptes.Presentation.Map
                 StopCoroutine(_playbackCoroutine);
                 _playbackCoroutine = null;
             }
+            EndPlaybackInputLock();
             ClearPlaybackSelection();
         }
 
@@ -98,6 +102,7 @@ namespace Panoptes.Presentation.Map
             if (_playbackCoroutine != null)
             {
                 StopCoroutine(_playbackCoroutine);
+                EndPlaybackInputLock();
             }
 
             _playbackCoroutine = StartCoroutine(PlaySettlement(settlement));
@@ -105,73 +110,80 @@ namespace Panoptes.Presentation.Map
 
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
-            for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
+            BeginPlaybackInputLock();
+            try
             {
-                var section = settlement.Sections[sectionIndex];
-                if (section?.Events == null)
+                for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
                 {
-                    continue;
-                }
-
-                for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
-                {
-                    var evt = section.Events[eventIndex];
-                    if (evt == null)
+                    var section = settlement.Sections[sectionIndex];
+                    if (section?.Events == null)
                     {
                         continue;
                     }
 
-                    switch (evt.Type)
+                    for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
                     {
-                        case "unit_moved":
-                            yield return PlayMove(evt);
-                            break;
-                        case "conflict":
-                            yield return PlayConflict(evt);
-                            break;
-                        case "unit_damaged":
-                            yield return PlayDamage(evt);
-                            break;
-                        case "unit_died":
-                            yield return PlayDeath(evt);
-                            break;
-                        case "city_founded":
-                        case "building_built":
-                        case "building_status_changed":
-                        case "facility_takeover_progressed":
-                        case "facility_takeover_completed":
-                        case "building_ruined":
-                        case "road_built":
-                            yield return PlayMapPulse(evt);
-                            break;
-                        case "building_damaged":
-                        case "city_core_damaged":
-                        case "city_core_destroyed":
-                            yield return PlayBuildingDamage(evt);
-                            break;
-                        case "recipe_progressed":
-                        case "recipe_skipped":
-                        case "recipe_completed":
-                        case "technology_completed":
-                        case "technology_activated":
-                        case "technology_grant_applied":
-                        case "national_policy_changed":
-                        case "institution_loadout_activated":
-                            yield return PlayAuthorityCue(evt);
-                            break;
-                        default:
-                            yield return null;
-                            break;
+                        var evt = section.Events[eventIndex];
+                        if (evt == null)
+                        {
+                            continue;
+                        }
+
+                        switch (evt.Type)
+                        {
+                            case "unit_moved":
+                                yield return PlayMove(evt);
+                                break;
+                            case "conflict":
+                                yield return PlayConflict(evt);
+                                break;
+                            case "unit_damaged":
+                                yield return PlayDamage(evt);
+                                break;
+                            case "unit_died":
+                                yield return PlayDeath(evt);
+                                break;
+                            case "city_founded":
+                            case "building_built":
+                            case "building_status_changed":
+                            case "facility_takeover_progressed":
+                            case "facility_takeover_completed":
+                            case "building_ruined":
+                            case "road_built":
+                                yield return PlayMapPulse(evt);
+                                break;
+                            case "building_damaged":
+                            case "city_core_damaged":
+                            case "city_core_destroyed":
+                                yield return PlayBuildingDamage(evt);
+                                break;
+                            case "recipe_progressed":
+                            case "recipe_skipped":
+                            case "recipe_completed":
+                            case "technology_completed":
+                            case "technology_activated":
+                            case "technology_grant_applied":
+                            case "national_policy_changed":
+                            case "institution_loadout_activated":
+                                yield return PlayAuthorityCue(evt);
+                                break;
+                            default:
+                                yield return null;
+                                break;
+                        }
+                    }
+
+                    if (sectionIndex < settlement.Sections.Count - 1)
+                    {
+                        yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, sectionPauseSeconds));
                     }
                 }
-
-                if (sectionIndex < settlement.Sections.Count - 1)
-                {
-                    yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, sectionPauseSeconds));
-                }
             }
-
-            _playbackCoroutine = null;
+            finally
+            {
+                EndPlaybackInputLock();
+                _playbackCoroutine = null;
+            }
         }
 
         private IEnumerator PlayMove(TurnEventDto evt)
@@ -212,9 +224,14 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
-            TryPlayUnitAttackAnimation(evt.UnitId);
-            TryPlayUnitAttackAnimation(!string.IsNullOrWhiteSpace(evt.TargetUnitId) ? evt.TargetUnitId : evt.EnemyUnitId);
+            var actorId = ResolveActorUnitId(evt);
+            yield return PlayUnitAttackForPlayback(actorId);
+            var counterActorId = !string.IsNullOrWhiteSpace(evt.TargetUnitId) ? evt.TargetUnitId : evt.EnemyUnitId;
+            if (!string.Equals(actorId, counterActorId, StringComparison.Ordinal))
+            {
+                yield return PlayUnitAttackForPlayback(counterActorId);
+            }
+
             node.SetHighlight(true, new Color(1f, 0.45f, 0.2f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
@@ -225,13 +242,12 @@ namespace Panoptes.Presentation.Map
         {
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
-                TryPlayAttackerAnimation(evt);
+                yield return PlayAttackerAnimation(evt);
                 TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
-            TryPlayAttackerAnimation(evt);
+            yield return PlayAttackerAnimation(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             ClearPlaybackSelection();
@@ -241,13 +257,12 @@ namespace Panoptes.Presentation.Map
         {
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
-                TryPlayUnitAttackAnimation(evt.KillerId);
+                yield return PlayUnitAttackForPlayback(evt.KillerId);
                 TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
-            yield return FocusActorForPlayback(!string.IsNullOrWhiteSpace(evt.KillerId) ? evt.KillerId : ResolveActorUnitId(evt));
-            TryPlayUnitAttackAnimation(evt.KillerId);
+            yield return PlayUnitAttackForPlayback(!string.IsNullOrWhiteSpace(evt.KillerId) ? evt.KillerId : ResolveActorUnitId(evt));
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
             _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
@@ -262,14 +277,53 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
-            yield return FocusActorForPlayback(ResolveActorUnitId(evt));
-            TryPlayAttackerAnimation(evt);
+            yield return PlayAttackerAnimation(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
             ClearPlaybackSelection();
+        }
+
+        private IEnumerator PlayAttackerAnimation(TurnEventDto evt)
+        {
+            if (evt == null)
+            {
+                yield break;
+            }
+
+            var attackerId = ResolveActorUnitId(evt);
+            if (!string.IsNullOrWhiteSpace(attackerId))
+            {
+                yield return PlayUnitAttackForPlayback(attackerId);
+                yield break;
+            }
+
+            yield return PlayUnitAttackForPlayback(ReadEventString(evt, "attacker", "attacker_unit_id", "killer_id"));
+        }
+
+        private IEnumerator PlayUnitAttackForPlayback(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                yield break;
+            }
+
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(unitId.Trim(), out var unit) || unit == null)
+            {
+                yield break;
+            }
+
+            yield return FocusActorForPlayback(unitId);
+            unit.PlayAttackAnimation();
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, attackPlaybackSeconds));
+            ClearPlaybackSelection();
+
+            if (perUnitPlaybackGapSeconds > 0.0001f)
+            {
+                yield return new WaitForSecondsRealtime(perUnitPlaybackGapSeconds);
+            }
         }
 
         private bool TryPlayAttackerAnimation(TurnEventDto evt)
@@ -581,6 +635,30 @@ namespace Panoptes.Presentation.Map
 
             _playbackSelectedUnit.SetSelected(false);
             _playbackSelectedUnit = null;
+        }
+
+        private void BeginPlaybackInputLock()
+        {
+            if (_inputLockedForPlayback)
+            {
+                return;
+            }
+
+            _inputLockedForPlayback = true;
+            MapPlanningInputController.SetPlaybackInputLocked(true);
+            CinemachineMapCameraController.SetPresentationInputLocked(true);
+        }
+
+        private void EndPlaybackInputLock()
+        {
+            if (!_inputLockedForPlayback)
+            {
+                return;
+            }
+
+            _inputLockedForPlayback = false;
+            MapPlanningInputController.SetPlaybackInputLocked(false);
+            CinemachineMapCameraController.SetPresentationInputLocked(false);
         }
 
         private static string ResolveActorUnitId(TurnEventDto evt)
