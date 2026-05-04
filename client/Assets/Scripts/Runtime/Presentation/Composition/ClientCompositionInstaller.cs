@@ -256,9 +256,6 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>(
                 Lifetime.Singleton,
                 "Minister Report UI Toolkit");
-            builder.RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>(
-                Lifetime.Singleton,
-                "Policy Focus UI Toolkit");
             builder.RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>(
                 Lifetime.Singleton,
                 "National Ledger UI Toolkit");
@@ -268,7 +265,6 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<TechTreeUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
-            builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
         }
 

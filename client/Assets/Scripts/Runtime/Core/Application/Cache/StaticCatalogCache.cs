@@ -115,6 +115,8 @@ namespace Panoptes.Core.Application.Cache
             public string id;
             public string name;
             public string description;
+            public string benefit_description;
+            public string next_action_description;
             public string icon_key;
             public string layer;
             public string activation_timing;
@@ -1274,6 +1276,8 @@ namespace Panoptes.Core.Application.Cache
                     id = item != null ? item.Id : string.Empty,
                     name = item != null ? item.Name : string.Empty,
                     description = item != null ? item.Description : string.Empty,
+                    benefit_description = item != null ? item.BenefitDescription : string.Empty,
+                    next_action_description = item != null ? item.NextActionDescription : string.Empty,
                     icon_key = item != null ? item.IconKey : string.Empty,
                     layer = item != null ? item.Layer : string.Empty,
                     activation_timing = item != null ? item.ActivationTiming : string.Empty

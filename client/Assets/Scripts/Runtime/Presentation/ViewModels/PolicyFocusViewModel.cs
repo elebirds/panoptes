@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Panoptes.Core.Application.Cache;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Core.Domain;
 using R3;
@@ -17,12 +18,22 @@ namespace Panoptes.Presentation.ViewModels
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
             AddSubscription(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            if (StaticCatalogCache.Instance != null)
+            {
+                StaticCatalogCache.Instance.CatalogChanged += Publish;
+            }
+
             Publish();
         }
 
         protected override ManagementPanelState Project()
         {
             var policies = _staticCatalogStore.Snapshot.Policies;
+            if ((policies == null || policies.Count == 0) && StaticCatalogCache.Instance != null)
+            {
+                return ProjectFromRuntimeCache();
+            }
+
             if (policies == null || policies.Count == 0)
             {
                 return new ManagementPanelState("Policy Focus");
@@ -44,7 +55,6 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             var nationalRows = new List<ManagementPanelRowState>();
-            var institutionRows = new List<ManagementPanelRowState>();
             foreach (var pair in policies)
             {
                 var policy = pair.Value;
@@ -59,21 +69,22 @@ namespace Panoptes.Presentation.ViewModels
                 var planned = isNational
                     ? string.Equals(policyId, plannedNational, StringComparison.Ordinal)
                     : plannedInstitutions.Contains(policyId);
+                if (!isNational)
+                {
+                    continue;
+                }
+
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
-                    policy.Description,
-                    policy.ActivationTiming,
+                    FirstText(policy.BenefitDescription, policy.Description),
+                    FirstText(policy.NextActionDescription, policy.ActivationTiming),
                     planned ? "Planned" : string.Empty,
-                    isNational ? "Adopt" : "Set");
-                if (isNational)
-                {
-                    nationalRows.Add(row);
-                }
-                else
-                {
-                    institutionRows.Add(row);
-                }
+                    "Adopt",
+                    policy.IconKey,
+                    FirstText(policy.BenefitDescription, policy.Description),
+                    FirstText(policy.NextActionDescription, policy.ActivationTiming));
+                nationalRows.Add(row);
             }
 
             var groups = new List<ManagementPanelGroupState>();
@@ -82,12 +93,54 @@ namespace Panoptes.Presentation.ViewModels
                 groups.Add(new ManagementPanelGroupState("national", "National Focus", nationalRows));
             }
 
-            if (institutionRows.Count > 0)
+            return new ManagementPanelState("Policy Focus", groups);
+        }
+
+        private ManagementPanelState ProjectFromRuntimeCache()
+        {
+            var cache = StaticCatalogCache.Instance;
+            var draft = _planningDraftStore.Snapshot;
+            var plannedNational = Normalize(draft.PlannedNationalPolicyId);
+            var rows = new List<ManagementPanelRowState>();
+
+            foreach (var pair in cache.Policies)
             {
-                groups.Add(new ManagementPanelGroupState("institution", "Institutions", institutionRows));
+                var policy = pair.Value;
+                if (policy == null || string.IsNullOrWhiteSpace(policy.id))
+                {
+                    continue;
+                }
+
+                var policyId = Normalize(policy.id);
+                var isNational = string.Equals(Normalize(policy.layer), "national", StringComparison.Ordinal) ||
+                                 string.Equals(Normalize(policy.layer), "national_focus", StringComparison.Ordinal);
+                if (!isNational)
+                {
+                    continue;
+                }
+
+                var benefit = FirstText(policy.benefit_description, policy.description);
+                var nextAction = FirstText(policy.next_action_description, policy.activation_timing);
+                rows.Add(new ManagementPanelRowState(
+                    policyId,
+                    policy.name,
+                    benefit,
+                    nextAction,
+                    string.Equals(policyId, plannedNational, StringComparison.Ordinal) ? "Planned" : string.Empty,
+                    "Adopt",
+                    policy.icon_key,
+                    benefit,
+                    nextAction));
             }
 
-            return new ManagementPanelState("Policy Focus", groups);
+            return rows.Count == 0
+                ? new ManagementPanelState("Policy Focus")
+                : new ManagementPanelState("Policy Focus", new[] { new ManagementPanelGroupState("national", "National Focus", rows) });
+        }
+
+        private static string FirstText(string preferred, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(preferred) ? fallback ?? string.Empty : preferred;
         }
     }
 }

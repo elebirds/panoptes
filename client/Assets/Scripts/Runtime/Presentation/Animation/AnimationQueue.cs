@@ -28,6 +28,7 @@ namespace Panoptes.Presentation.Animation
         [Header("Unit Move")]
         [SerializeField] private float moveDuration = 0.35f;
         [SerializeField] private bool followCameraOnMove = true;
+        [SerializeField] private float cameraFocusLeadSeconds = 0.08f;
 
         private readonly Queue<UnitMoveCommand> _unitMoveQueue = new();
         private MapRenderer _mapRenderer;
@@ -58,6 +59,17 @@ namespace Panoptes.Presentation.Animation
             {
                 StartCoroutine(PlayUnitMoveQueue());
             }
+        }
+
+        public IEnumerator PlayUnitMoveNow(string unitId, string targetNodeId, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
+        {
+            yield return PlaySingleUnitMove(new UnitMoveCommand
+            {
+                unitId = unitId,
+                targetNodeId = targetNodeId,
+                followCamera = followCamera,
+                pathNodeIds = pathNodeIds != null ? new List<string>(pathNodeIds) : null
+            });
         }
 
         private IEnumerator PlayUnitMoveQueue()
@@ -99,11 +111,22 @@ namespace Panoptes.Presentation.Animation
                 : nodeView.transform.position + Vector3.up * 0.2f;
 
             var waypoints = BuildWaypoints(map, unitView, cmd.targetNodeId, target, cmd.pathNodeIds);
+            if (follow)
+            {
+                CinemachineMapCameraController.TryFocus(unitView.transform.position, false);
+                if (cameraFocusLeadSeconds > 0.0001f)
+                {
+                    yield return new WaitForSecondsRealtime(cameraFocusLeadSeconds);
+                }
+            }
+
+            unitView.SetSelected(true);
             var segmentDuration = Mathf.Max(0.05f, moveDuration / Mathf.Max(1, waypoints.Count));
             for (var i = 0; i < waypoints.Count; i++)
             {
                 yield return UnitMoveAnim.Play(unitView, waypoints[i], segmentDuration, camera, follow);
             }
+            unitView.SetSelected(false);
 
             if (map.TryGetUnitView(cmd.unitId, out var stillAliveUnit) && stillAliveUnit != null)
             {

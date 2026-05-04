@@ -447,6 +447,8 @@ MonoBehaviour:
   roadOverlay: {fileID: 1084501715393880173}
   highlight: {fileID: 5053331373000196553}
   highlightRenderer: {fileID: 7324592989746014251}
+  forceHighlightBelowDetails: 1
+  highlightLocalY: 0.015
   resourceAnchor: {fileID: 1697120485641667070}
   buildingAnchor: {fileID: 7505964873251956980}
   unitAnchor: {fileID: 7253903450159226267}
@@ -525,6 +527,9 @@ MonoBehaviour:
   moveMarkerY: 0.13
   moveArrowScale: {x: 0.12, y: 0.01, z: 0.42}
   moveArrowHeadScale: 0.15
+  moveArrowSprite: {fileID: 0}
+  moveArrowSpriteResourcesPath: Textures/Map/GreenMoveArrow
+  moveArrowSpriteScale: {x: 0.72, y: 0.72}
   moveDestinationScale: 0.24
   moveMarkerDefaultColor: {r: 0.35, g: 1, b: 0.45, a: 0.9}
 --- !u!1 &5706546515238586262

@@ -1,5 +1,6 @@
 using System;
 using Panoptes.Presentation.ViewModels;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Panoptes.Presentation.Binders.UiToolkit
@@ -7,19 +8,35 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     public sealed class ManagementPanelUiToolkitRenderer
     {
         public const string RootName = "management-panel-root";
+        public const string HeaderName = "management-panel-header";
         public const string TitleName = "management-panel-title";
+        public const string CloseButtonName = "management-panel-close-button";
         public const string EmptyName = "management-panel-empty";
         public const string GroupsName = "management-panel-groups";
 
+        private Button _closeButton;
+        private Action _closeRequested;
         private Label _empty;
         private VisualElement _groups;
         private Label _title;
 
-        public void Cache(VisualElement root)
+        public void Cache(VisualElement root, Action closeRequested = null)
         {
+            if (_closeButton != null && _closeRequested != null)
+            {
+                _closeButton.clicked -= _closeRequested;
+            }
+
             _title = root?.Q<Label>(TitleName);
+            _closeButton = root?.Q<Button>(CloseButtonName);
             _empty = root?.Q<Label>(EmptyName);
             _groups = root?.Q<VisualElement>(GroupsName);
+            _closeRequested = closeRequested;
+
+            if (_closeButton != null && _closeRequested != null)
+            {
+                _closeButton.clicked += _closeRequested;
+            }
         }
 
         public void Render(ManagementPanelState state, Action<string> rowActionRequested)
@@ -49,7 +66,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             var root = new VisualElement { name = RootName };
             root.AddToClassList("management-panel-root");
-            root.Add(new Label(string.IsNullOrWhiteSpace(title) ? "Panel" : title) { name = TitleName });
+
+            var header = new VisualElement { name = HeaderName };
+            header.AddToClassList("management-panel-header");
+            header.Add(new Label(string.IsNullOrWhiteSpace(title) ? "Panel" : title) { name = TitleName });
+            header.Add(new Button { name = CloseButtonName, text = "X", tooltip = "Close" });
+            root.Add(header);
+
             root.Add(new Label("No entries") { name = EmptyName });
             root.Add(new VisualElement { name = GroupsName });
             return root;
@@ -80,16 +103,27 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 : new VisualElement();
             rowElement.name = "management-panel-row-" + SafeName(row?.Id);
             rowElement.AddToClassList("management-panel-row");
-            rowElement.Add(new Label(row?.Title ?? "Entry") { name = "management-panel-row-title" });
+            if (row != null && row.HasIcon)
+            {
+                rowElement.Add(CreateImage(row.IconKey));
+            }
+
+            var title = new Label(row?.Title ?? "Entry") { name = "management-panel-row-title" };
+            title.AddToClassList("management-panel-row-title");
+            rowElement.Add(title);
 
             if (!string.IsNullOrWhiteSpace(row?.Summary))
             {
-                rowElement.Add(new Label(row.Summary) { name = "management-panel-row-summary" });
+                var summary = new Label(row.Summary) { name = "management-panel-row-summary" };
+                summary.AddToClassList("management-panel-row-summary");
+                rowElement.Add(summary);
             }
 
             if (!string.IsNullOrWhiteSpace(row?.Detail))
             {
-                rowElement.Add(new Label(row.Detail) { name = "management-panel-row-detail" });
+                var detail = new Label(row.Detail) { name = "management-panel-row-detail" };
+                detail.AddToClassList("management-panel-row-detail");
+                rowElement.Add(detail);
             }
 
             if (!string.IsNullOrWhiteSpace(row?.Status))
@@ -103,6 +137,32 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             return rowElement;
+        }
+
+        private static VisualElement CreateImage(string iconKey)
+        {
+            var image = new VisualElement { name = "management-panel-row-image" };
+            image.AddToClassList("management-panel-row-image");
+            var texture = LoadPolicyTexture(iconKey);
+            if (texture != null)
+            {
+                image.style.backgroundImage = new StyleBackground(texture);
+            }
+
+            return image;
+        }
+
+        private static Texture2D LoadPolicyTexture(string iconKey)
+        {
+            if (string.IsNullOrWhiteSpace(iconKey))
+            {
+                return null;
+            }
+
+            var key = iconKey.Trim();
+            return Resources.Load<Texture2D>("Icons/Policy/" + key) ??
+                   Resources.Load<Texture2D>("Icons/Policies/" + key) ??
+                   Resources.Load<Texture2D>("Icons/" + key);
         }
 
         private static string SafeName(string value)

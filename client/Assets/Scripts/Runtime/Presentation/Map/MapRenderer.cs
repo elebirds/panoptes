@@ -39,6 +39,7 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private bool applyTerrainElevation = false;
         [SerializeField] private float plainElevation = 0f;
         [SerializeField] private float forestElevation = 0.06f;
+        [SerializeField] private float hillElevation = 0.24f;
         [SerializeField] private float mountainElevation = 0.28f;
         [SerializeField] private float riverElevation = -0.1f;
         [SerializeField] private float snowElevation = 0.1f;
@@ -72,6 +73,7 @@ namespace Panoptes.Presentation.Map
 
         [Header("Terrain Decorations")]
         [SerializeField] private bool autoSpawnTerrainDecorations = true;
+        [SerializeField] private bool autoSpawnLargeTerrainFeatures = true;
 
         [Header("Map Backdrop")]
         [SerializeField] private bool autoSpawnMapBackdrop = true;
@@ -89,6 +91,7 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
         private UnitView _baseVehiclePrefabCache;
         private TerrainDecorationSpawner _terrainDecorationSpawner;
+        private LargeTerrainFeatureSpawner _largeTerrainFeatureSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
         private MapFogOverlayController _mapFogOverlayController;
         private MapCameraContext _currentCameraContext;
@@ -874,7 +877,8 @@ namespace Panoptes.Presentation.Map
 
         private Vector3 GridToWorldWithTerrain(int q, int r, string terrain)
         {
-            if (!applyTerrainElevation)
+            var normalizedTerrain = MapRenderTokens.Normalize(terrain);
+            if (!applyTerrainElevation && !string.Equals(normalizedTerrain, "hill", StringComparison.Ordinal))
             {
                 return GridToWorld(q, r);
             }
@@ -891,6 +895,9 @@ namespace Panoptes.Presentation.Map
             {
                 case "forest":
                     value = forestElevation;
+                    break;
+                case "hill":
+                    value = hillElevation;
                     break;
                 case "mountain":
                     value = mountainElevation;
@@ -982,6 +989,7 @@ namespace Panoptes.Presentation.Map
             }
 
             RebuildTerrainDecorations(nodeList);
+            RebuildLargeTerrainFeatures(nodeList);
             RebuildMapBackdrop();
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
@@ -1034,6 +1042,30 @@ namespace Panoptes.Presentation.Map
             }
 
             _terrainDecorationSpawner.RebuildDecorations(nodeList, _tileViews);
+        }
+
+        private void RebuildLargeTerrainFeatures(List<NodeDto> nodeList)
+        {
+            if (!autoSpawnLargeTerrainFeatures)
+            {
+                if (_largeTerrainFeatureSpawner != null)
+                {
+                    _largeTerrainFeatureSpawner.ClearFeatures();
+                }
+                return;
+            }
+
+            if (_largeTerrainFeatureSpawner == null)
+            {
+                _largeTerrainFeatureSpawner = GetComponent<LargeTerrainFeatureSpawner>();
+            }
+
+            if (_largeTerrainFeatureSpawner == null)
+            {
+                _largeTerrainFeatureSpawner = gameObject.AddComponent<LargeTerrainFeatureSpawner>();
+            }
+
+            _largeTerrainFeatureSpawner.RebuildFeatures(nodeList, _tileViews);
         }
 
         private void RefreshObservationPresentation(bool fullRebuildFog, NodeDto snapshotNode)
@@ -1095,6 +1127,11 @@ namespace Panoptes.Presentation.Map
             if (_terrainDecorationSpawner != null)
             {
                 _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
+            }
+
+            if (_largeTerrainFeatureSpawner != null)
+            {
+                _largeTerrainFeatureSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
             }
         }
 

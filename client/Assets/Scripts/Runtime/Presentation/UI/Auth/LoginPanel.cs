@@ -48,14 +48,27 @@ namespace Panoptes.Presentation.UI.Auth
 
         private void Awake()
         {
-            loginButton.onClick.AddListener(OnClickLogin);
-            registerButton.onClick.AddListener(OnClickRegister);
+            loginButton?.onClick.AddListener(OnClickLogin);
+            registerButton?.onClick.AddListener(OnClickRegister);
+        }
+
+        private void OnDestroy()
+        {
+            loginButton?.onClick.RemoveListener(OnClickLogin);
+            registerButton?.onClick.RemoveListener(OnClickRegister);
         }
 
         private void SetButtonsInteractable(bool value)
         {
-            loginButton.interactable = value;
-            registerButton.interactable = value;
+            if (loginButton != null)
+            {
+                loginButton.interactable = value;
+            }
+
+            if (registerButton != null)
+            {
+                registerButton.interactable = value;
+            }
         }
 
         private bool IsValid(bool showTip)
@@ -99,6 +112,12 @@ namespace Panoptes.Presentation.UI.Auth
             try
             {
                 SetButtonsInteractable(false);
+                if (_authService == null)
+                {
+                    ShowTip("系统未初始化", false);
+                    return;
+                }
+
                 var result = await _authService.LoginAsync(Username, Password);
                 if (!result.Success)
                 {
@@ -143,6 +162,12 @@ namespace Panoptes.Presentation.UI.Auth
             try
             {
                 SetButtonsInteractable(false);
+                if (_authService == null)
+                {
+                    ShowTip("系统未初始化", false);
+                    return;
+                }
+
                 var result = await _authService.RegisterAsync(Username, Password);
                 if (!result.Success)
                 {

@@ -105,6 +105,14 @@ namespace Panoptes.Core.Application.Services
             return IssueUnitOrder(unitId, "charge", targetNodeId, targetUnitId, null);
         }
 
+        public bool CancelUnitOrder(string unitId)
+        {
+            return SendIfUnlocked(new MsgCancelUnitOrder
+            {
+                UnitId = unitId ?? string.Empty
+            });
+        }
+
         private bool IssueUnitOrder(
             string unitId,
             string action,
