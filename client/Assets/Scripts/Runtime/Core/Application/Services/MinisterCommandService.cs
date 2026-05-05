@@ -31,6 +31,16 @@ namespace Panoptes.Core.Application.Services
             return SendDirective("reject", draftId, ministerRole);
         }
 
+        public bool AcceptRole(string ministerRole)
+        {
+            return SendDirective("accept_role", string.Empty, ministerRole);
+        }
+
+        public bool RejectRole(string ministerRole)
+        {
+            return SendDirective("reject_role", string.Empty, ministerRole);
+        }
+
         private bool SendDirective(string directiveType, string draftId, string ministerRole)
         {
             if (ActionLock.IsLocked)

@@ -94,25 +94,16 @@ namespace Panoptes.Tests.EditMode.Composition
         public void UiToolkitBinders_ShouldBeTheOnlyNewGameObjectCompositionException()
         {
             var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
-            var expected = new[]
-            {
-                "RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>",
-                "RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>"
-            };
-
-            Assert.That(CountOccurrences(installer, "RegisterComponentOnNewGameObject<"), Is.EqualTo(expected.Length),
-                "Only UI Toolkit binders without authored prefabs may use generated GameObjects.");
-            for (var i = 0; i < expected.Length; i++)
-            {
-                Assert.That(installer, Does.Contain(expected[i]));
-            }
 
             Assert.That(installer, Does.Contain("LoadRequiredComponent<TechTreeUiToolkitBinder>(\"Prefabs/UI/TechTree\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<PolicyFocusUiToolkitBinder>(\"Prefabs/UI/PolicyFocus\")"));
             Assert.That(installer, Does.Contain("LoadRequiredComponent<NationalLedgerUiToolkitBinder>(\"Prefabs/UI/NationalLedger\")"));
+            Assert.That(installer, Does.Contain("LoadRequiredComponent<MinisterReportUiToolkitBinder>(\"Prefabs/UI/MinisterReport\")"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TurnSummaryUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<TechTreeUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<PolicyFocusUiToolkitBinder>"));
             Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<NationalLedgerUiToolkitBinder>"));
+            Assert.That(installer, Does.Not.Contain("RegisterComponentOnNewGameObject<MinisterReportUiToolkitBinder>"));
         }
 
         [Test]
@@ -677,13 +668,11 @@ namespace Panoptes.Tests.EditMode.Composition
                 roots,
                 "*.cs",
                 ProtocolNamespaceToken,
-                "GameStateCache",
                 "PlanningDraftCache",
-                "StaticCatalogCache",
                 NetworkManagerSingletonToken,
                 ".Instance");
 
-            Assert.That(offenders, Is.Empty, "Minister report final UI slice must render PlanningDraftStore through ViewModel/Binder only.");
+            Assert.That(offenders, Is.Empty, "Minister report final UI slice must use injected stores/services and avoid legacy cache singletons.");
 
             var installer = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/Composition/ClientCompositionInstaller.cs"));
             var viewModel = File.ReadAllText(ResolveAssetPath("Scripts/Runtime/Presentation/ViewModels/MinisterReportViewModel.cs"));
@@ -694,7 +683,10 @@ namespace Panoptes.Tests.EditMode.Composition
             Assert.That(installer, Does.Contain("MinisterReportUiToolkitBinder"));
             Assert.That(installer, Does.Not.Contain("RegisterRuntimeSceneComponent<MinisterPanel>"));
             Assert.That(viewModel, Does.Contain("PlanningDraftStore"));
-            Assert.That(binder, Does.Contain("ManagementPanelUiToolkitBinderBase<MinisterReportViewModel>"));
+            Assert.That(viewModel, Does.Contain("GameStateCache"));
+            Assert.That(viewModel, Does.Contain("StaticCatalogCache"));
+            Assert.That(viewModel, Does.Contain("MinisterCommandService"));
+            Assert.That(binder, Does.Contain("IBinder<MinisterReportViewModel>"));
 
             var assetOffenders = FindTokenOffenders(
                 new[]

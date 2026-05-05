@@ -350,12 +350,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Panoptes.Presentation::Panoptes.Presentation.UI.HUD.ResourceHUD
   resourceListRoot: {fileID: 3591150627554691593}
   techButton: {fileID: 2544276165122947556}
+  policyButton: {fileID: 0}
+  ministerButton: {fileID: 0}
   includePoints: 1
   logWarnings: 0
   iconResourcesRoots:
   - Icons/Resources
   - Icons/Points
   - Icons
+  panelBackgroundSpriteResource: Textures/UI/resource_panel_parchment_bg
+  techButtonSpriteResource: Icons/UI/icon_tech_tree_round
+  policyButtonSpriteResource: Icons/UI/icon_policy_round
+  ministerButtonSpriteResource: Icons/UI/icon_minister_round
+  managementButtonSize: {x: 54, y: 54}
+  managementButtonSpacing: 8
   changeVisibleSeconds: 3
   increaseColor: {r: 0.15, g: 0.95, b: 0.35, a: 1}
   decreaseColor: {r: 0.95, g: 0.25, b: 0.25, a: 1}

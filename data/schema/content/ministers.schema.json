@@ -18,6 +18,9 @@
             "minimum": 0,
             "type": "integer"
           },
+          "icon_key": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -42,6 +45,7 @@
           "id",
           "name",
           "role",
+          "icon_key",
           "ability",
           "personality",
           "personality_desc",

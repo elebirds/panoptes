@@ -49,6 +49,7 @@ func GenerateProceduralMap(base *staticdata.MapRuntimeBundle, playerCount int, s
 	resourceByPos := assignResourceTypes(resourcePositions)
 
 	spawnPoints := pickSpawnPoints(rng, terrainGrid, width, height, resourceByPos, playerCount)
+	enforcePassableTerrainAroundSpawns(terrainGrid, width, height, spawnPoints, spawnPassableRadius)
 	baseNodesByPos := indexBaseNodesByPos(base.Nodes)
 	nodes := buildRuntimeNodes(terrainGrid, width, height, baseNodesByPos, resourceByPos)
 

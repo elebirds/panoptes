@@ -8,9 +8,13 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
 	"github.com/elebirds/panoptes/internal/game/ai"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
+	"github.com/elebirds/panoptes/internal/game/planning"
+	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
 const domesticMinisterRole = "domestic"
+const militaryMinisterRole = "military"
 
 func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 	if r == nil || r.state == nil || turn <= 0 {
@@ -36,8 +40,8 @@ func (r *Runtime) PrepareMinisterDraftCacheForTurn(turn int) {
 			State:       r.state,
 			Observation: observation,
 		}
-		candidates := ai.BuildDomesticDraftCandidates(context.Background(), req)
-		drafts := buildDomesticMinisterDrafts(turn, playerID, candidates)
+		intents, _ := (ai.RuleBotProvider{}).BuildPlanningIntents(context.Background(), req)
+		drafts := buildMinisterDraftsFromIntents(turn, playerID, intents)
 		draftsByPlayer[playerID] = drafts
 		for _, draft := range drafts {
 			r.RecordMinisterMemory(playerID, draft.MinisterRole, ministerengine.MemoryEntry{
@@ -103,51 +107,199 @@ func (r *Runtime) ApplyPreparedMinisterDrafts(turn int) {
 	r.preparedMinisterDraftsMu.RUnlock()
 }
 
-func buildDomesticMinisterDrafts(turn int, playerID string, candidates []ai.DomesticDraftCandidate) []domain.MinisterDraft {
-	if len(candidates) == 0 {
+func buildMinisterDraftsFromIntents(turn int, playerID string, intents []planning.Intent) []domain.MinisterDraft {
+	if len(intents) == 0 {
 		return nil
 	}
 
-	out := make([]domain.MinisterDraft, 0, len(candidates))
-	for _, candidate := range candidates {
-		targetID := strings.TrimSpace(candidate.TargetID)
-		kind := strings.TrimSpace(candidate.Kind)
-		if targetID == "" || kind == "" {
+	out := make([]domain.MinisterDraft, 0, len(intents))
+	for _, intent := range intents {
+		draft, ok := ministerDraftFromIntent(turn, playerID, intent)
+		if !ok {
 			continue
 		}
-
-		targetLabel := strings.TrimSpace(candidate.TargetLabel)
-		if targetLabel == "" {
-			targetLabel = targetID
-		}
-		title, summary, rationale, riskNote := domesticDraftText(kind, targetLabel)
-		out = append(out, domain.MinisterDraft{
-			DraftID:      fmt.Sprintf("domestic:%s:%s:%d", kind, targetID, turn),
-			PlayerID:     playerID,
-			MinisterRole: domesticMinisterRole,
-			Kind:         domain.MinisterDraftKind(kind),
-			TargetID:     targetID,
-			TargetLabel:  targetLabel,
-			Title:        title,
-			Summary:      summary,
-			Rationale:    rationale,
-			RiskNote:     riskNote,
-			Status:       domain.MinisterDraftStatusPending,
-			Available:    true,
-			Turn:         turn,
-			Source:       domain.MinisterDraftSourceRuleOnly,
-		})
+		out = append(out, draft)
 	}
 	return out
 }
 
-func domesticDraftText(kind string, targetLabel string) (string, string, string, string) {
+func ministerDraftFromIntent(turn int, playerID string, intent planning.Intent) (domain.MinisterDraft, bool) {
+	switch typed := intent.(type) {
+	case planning.SetResearchTargetIntent:
+		targetID := strings.TrimSpace(typed.TechnologyID)
+		if targetID == "" {
+			return domain.MinisterDraft{}, false
+		}
+		return baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindResearch, targetID, technologyLabel(targetID)), true
+	case planning.SetPolicyIntent:
+		targetID := strings.TrimSpace(typed.NationalPolicyID)
+		if targetID == "" {
+			return domain.MinisterDraft{}, false
+		}
+		return baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindPolicy, targetID, policyLabel(targetID)), true
+	case planning.SetInstitutionLoadoutIntent:
+		policyIDs := domain.NormalizePolicyIDList(typed.PolicyIDs)
+		if len(policyIDs) == 0 {
+			return domain.MinisterDraft{}, false
+		}
+		targetID := strings.Join(policyIDs, ",")
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindInstitution, targetID, institutionLabel(policyIDs))
+		draft.PolicyIDs = policyIDs
+		return draft, true
+	case planning.BuildStructureIntent:
+		nodeID := strings.TrimSpace(typed.NodeID)
+		buildingTypeID := strings.TrimSpace(typed.BuildingTypeID)
+		if nodeID == "" || buildingTypeID == "" {
+			return domain.MinisterDraft{}, false
+		}
+		targetID := nodeID + ":" + buildingTypeID
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindBuild, targetID, buildingLabel(buildingTypeID)+" @ "+nodeID)
+		draft.NodeID = nodeID
+		draft.BuildingTypeID = buildingTypeID
+		draft.CityID = strings.TrimSpace(typed.CityID)
+		return draft, true
+	case planning.SetBuildingRecipeIntent:
+		nodeID := strings.TrimSpace(typed.NodeID)
+		recipeID := strings.TrimSpace(typed.RecipeID)
+		if nodeID == "" || recipeID == "" {
+			return domain.MinisterDraft{}, false
+		}
+		targetID := nodeID + ":" + recipeID
+		draft := baseMinisterDraft(turn, playerID, domesticMinisterRole, domain.MinisterDraftKindRecipe, targetID, recipeLabel(recipeID)+" @ "+nodeID)
+		draft.NodeID = nodeID
+		draft.RecipeID = recipeID
+		return draft, true
+	case planning.IssueUnitOrderIntent:
+		unitID := strings.TrimSpace(typed.UnitID)
+		action := strings.TrimSpace(typed.Action)
+		if unitID == "" || action == "" {
+			return domain.MinisterDraft{}, false
+		}
+		role := militaryMinisterRole
+		if gameorders.UnitAction(action) == gameorders.ActionSettleCity {
+			role = domesticMinisterRole
+		}
+		targetID := unitID + ":" + action + ":" + strings.TrimSpace(typed.TargetNodeID) + ":" + strings.TrimSpace(typed.TargetUnitID)
+		draft := baseMinisterDraft(turn, playerID, role, domain.MinisterDraftKindUnitOrder, targetID, unitOrderLabel(typed))
+		draft.UnitID = unitID
+		draft.Action = action
+		draft.TargetNodeID = strings.TrimSpace(typed.TargetNodeID)
+		draft.TargetUnitID = strings.TrimSpace(typed.TargetUnitID)
+		draft.SecondaryNodeID = strings.TrimSpace(typed.SecondaryNodeID)
+		draft.Params = cloneStringMap(typed.Params)
+		return draft, true
+	default:
+		return domain.MinisterDraft{}, false
+	}
+}
+
+func baseMinisterDraft(turn int, playerID string, role string, kind domain.MinisterDraftKind, targetID string, targetLabel string) domain.MinisterDraft {
+	targetID = strings.TrimSpace(targetID)
+	targetLabel = strings.TrimSpace(targetLabel)
+	if targetLabel == "" {
+		targetLabel = targetID
+	}
+	title, summary, rationale, riskNote := ministerDraftText(role, string(kind), targetLabel)
+	return domain.MinisterDraft{
+		DraftID:      fmt.Sprintf("%s:%s:%s:%d", strings.TrimSpace(role), strings.TrimSpace(string(kind)), safeDraftIDPart(targetID), turn),
+		PlayerID:     playerID,
+		MinisterRole: role,
+		Kind:         kind,
+		TargetID:     targetID,
+		TargetLabel:  targetLabel,
+		Title:        title,
+		Summary:      summary,
+		Rationale:    rationale,
+		RiskNote:     riskNote,
+		Status:       domain.MinisterDraftStatusPending,
+		Available:    true,
+		Turn:         turn,
+		Source:       domain.MinisterDraftSourceRuleOnly,
+	}
+}
+
+func ministerDraftText(role string, kind string, targetLabel string) (string, string, string, string) {
+	if strings.TrimSpace(role) == militaryMinisterRole {
+		return "Military recommendation", "Execute " + targetLabel + " this turn.", "This plan is generated from the rule planner's current tactical evaluation.", "Reject it if you want to issue military orders manually."
+	}
 	switch strings.TrimSpace(kind) {
 	case string(domain.MinisterDraftKindPolicy):
-		return "调整国家政策", targetLabel + "适合当前国势，可作为本回合优先政策。", "这项建议来自现有规则评估，目标是让国家政策与当前局势更一致。", "若本回合还有其他更重要的手动安排，这张卡可能会变为“已偏离”。"
+		return "Policy recommendation", targetLabel + " fits the current situation.", "This recommendation comes from the rule planner's policy evaluation.", "Reject it if you want to keep the current national policy."
+	case string(domain.MinisterDraftKindInstitution):
+		return "Institution recommendation", "Activate " + targetLabel + ".", "This loadout uses the strongest available institutional policies for this turn.", "Reject it if you want to keep institution slots unchanged."
+	case string(domain.MinisterDraftKindBuild):
+		return "Construction recommendation", "Build " + targetLabel + ".", "This construction was selected from visible controlled nodes and unlocked buildings.", "Reject it if you want to reserve industry for another build."
+	case string(domain.MinisterDraftKindRecipe):
+		return "Production recommendation", "Set production to " + targetLabel + ".", "This recipe was selected from the building's available production options.", "Reject it if you want to keep production unchanged."
+	case string(domain.MinisterDraftKindUnitOrder):
+		return "Expansion recommendation", "Execute " + targetLabel + ".", "This order supports civilian expansion this turn.", "Reject it if you want to move the unit manually."
 	default:
-		return "锁定科研目标", targetLabel + "是当前最优科研候选，可作为本回合主线研究。", "这项建议来自现有规则评估，优先兼顾当前局面与后续解锁收益。", "如果你改选其他科技，这张卡会保留但标记为“已偏离”。"
+		return "Research recommendation", targetLabel + " is the preferred research target.", "This recommendation comes from the rule planner's research evaluation.", "Reject it if you want to choose a different technology."
 	}
+}
+
+func technologyLabel(technologyID string) string {
+	if tech, ok := staticdata.Default().GetTechnology(strings.TrimSpace(technologyID)); ok && strings.TrimSpace(tech.Name) != "" {
+		return strings.TrimSpace(tech.Name)
+	}
+	return strings.TrimSpace(technologyID)
+}
+
+func policyLabel(policyID string) string {
+	if policy, ok := staticdata.Default().GetPolicy(strings.TrimSpace(policyID)); ok && strings.TrimSpace(policy.Name) != "" {
+		return strings.TrimSpace(policy.Name)
+	}
+	return strings.TrimSpace(policyID)
+}
+
+func institutionLabel(policyIDs []string) string {
+	labels := make([]string, 0, len(policyIDs))
+	for _, policyID := range policyIDs {
+		labels = append(labels, policyLabel(policyID))
+	}
+	return strings.Join(labels, ", ")
+}
+
+func buildingLabel(buildingTypeID string) string {
+	if building, ok := staticdata.Default().GetBuilding(strings.TrimSpace(buildingTypeID)); ok && strings.TrimSpace(building.Name) != "" {
+		return strings.TrimSpace(building.Name)
+	}
+	return strings.TrimSpace(buildingTypeID)
+}
+
+func recipeLabel(recipeID string) string {
+	if recipe, ok := staticdata.Default().GetRecipe(strings.TrimSpace(recipeID)); ok && strings.TrimSpace(recipe.Name) != "" {
+		return strings.TrimSpace(recipe.Name)
+	}
+	return strings.TrimSpace(recipeID)
+}
+
+func unitOrderLabel(intent planning.IssueUnitOrderIntent) string {
+	action := strings.TrimSpace(intent.Action)
+	target := strings.TrimSpace(intent.TargetNodeID)
+	if target == "" {
+		target = strings.TrimSpace(intent.TargetUnitID)
+	}
+	if target == "" {
+		return strings.TrimSpace(intent.UnitID) + " " + action
+	}
+	return strings.TrimSpace(intent.UnitID) + " " + action + " -> " + target
+}
+
+func safeDraftIDPart(value string) string {
+	replacer := strings.NewReplacer(" ", "_", ":", "_", ",", "_", "/", "_", "\\", "_")
+	return replacer.Replace(strings.TrimSpace(value))
+}
+
+func cloneStringMap(src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return nil
+	}
+	dst := make(map[string]string, len(src))
+	for key, value := range src {
+		dst[key] = value
+	}
+	return dst
 }
 
 type preparedMinisterDraftPolishJob struct {

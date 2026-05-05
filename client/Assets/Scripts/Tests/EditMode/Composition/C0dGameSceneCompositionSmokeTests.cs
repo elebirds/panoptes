@@ -11,6 +11,7 @@ using Panoptes.Presentation.UI.Turn;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace Panoptes.Tests.EditMode.Composition
 {
@@ -37,6 +38,7 @@ namespace Panoptes.Tests.EditMode.Composition
                 yield return new ResourcePrefabCase("Prefabs/UI/TechTree", typeof(TechTreeUiToolkitBinder));
                 yield return new ResourcePrefabCase("Prefabs/UI/RecipeSynthesis", typeof(RecipeSynthesisUiToolkitBinder));
                 yield return new ResourcePrefabCase("Prefabs/UI/PolicyFocus", typeof(PolicyFocusUiToolkitBinder));
+                yield return new ResourcePrefabCase("Prefabs/UI/MinisterReport", typeof(MinisterReportUiToolkitBinder));
                 yield return new ResourcePrefabCase("Prefabs/UI/NationalLedger", typeof(NationalLedgerUiToolkitBinder));
             }
         }
@@ -98,6 +100,17 @@ namespace Panoptes.Tests.EditMode.Composition
                 prefab.GetComponent(testCase.ComponentType),
                 Is.Not.Null,
                 "Resources/" + testCase.ResourcePath + ".prefab must carry " + testCase.ComponentType.Name + ".");
+        }
+
+        [Test]
+        public void MinisterReportPrefab_ShouldCarryExplicitUiDocument()
+        {
+            var prefab = Resources.Load<GameObject>("Prefabs/UI/MinisterReport");
+            Assert.That(prefab, Is.Not.Null, "Resources/Prefabs/UI/MinisterReport.prefab must exist.");
+            Assert.That(
+                prefab.GetComponent<UIDocument>(),
+                Is.Not.Null,
+                "MinisterReport must serialize UIDocument instead of relying on runtime component injection.");
         }
 
         private static Scene OpenGameScene()

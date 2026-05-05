@@ -23,6 +23,7 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
         [SerializeField] private Button techButton;
+        [SerializeField] private Button policyButton;
         [SerializeField] private Button ministerButton;
 
         [Header("Data")]
@@ -33,6 +34,7 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private string[] iconResourcesRoots = { "Icons/Resources", "Icons/Points", "Icons" };
         [SerializeField] private string panelBackgroundSpriteResource = "Textures/UI/resource_panel_parchment_bg";
         [SerializeField] private string techButtonSpriteResource = "Icons/UI/icon_tech_tree_round";
+        [SerializeField] private string policyButtonSpriteResource = "Icons/UI/icon_policy_round";
         [SerializeField] private string ministerButtonSpriteResource = "Icons/UI/icon_minister_round";
         [SerializeField] private Vector2 managementButtonSize = new(54f, 54f);
         [SerializeField] private float managementButtonSpacing = 8f;
@@ -52,14 +54,19 @@ namespace Panoptes.Presentation.UI.HUD
         [Inject]
         private void Construct(
             ResourceHudViewModel viewModel,
-            ManagementPanelVisibilityStore managementPanelVisibilityStore,
-            MapPlanningInputController mapPlanningInputController)
+            ManagementPanelVisibilityStore managementPanelVisibilityStore)
         {
             _viewModel = viewModel;
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
-            _mapPlanningInputController = mapPlanningInputController;
             ResolvePrefabReferences();
             BindManagementButtons();
+        }
+
+        [Inject]
+        private void ConstructPlanningInput(
+            MapPlanningInputController mapPlanningInputController)
+        {
+            _mapPlanningInputController = mapPlanningInputController;
         }
 
         private void Awake()
@@ -96,7 +103,9 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveResourceListRoot();
             ResolveTechButtonReference();
+            EnsurePolicyButtonReference();
             EnsureMinisterButtonReference();
+            LayoutManagementButtons();
         }
 
         private void ResolveResourceListRoot()
@@ -143,11 +152,74 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            var clone = Instantiate(techButton.gameObject, techButton.transform.parent, false);
-            clone.name = "MinisterBtn";
+            var clone = CreateManagementButtonClone("MinisterBtn");
+            if (clone == null)
+            {
+                return;
+            }
+
             ministerButton = clone.GetComponent<Button>();
-            ministerButton?.onClick.RemoveAllListeners();
-            var rect = clone.transform as RectTransform;
+        }
+
+        private void EnsurePolicyButtonReference()
+        {
+            if (policyButton != null)
+            {
+                return;
+            }
+
+            var policyBtnTransform = transform.Find("PolicyBtn");
+            if (policyBtnTransform != null)
+            {
+                policyButton = policyBtnTransform.GetComponent<Button>();
+                return;
+            }
+
+            var clone = CreateManagementButtonClone("PolicyBtn");
+            if (clone == null)
+            {
+                return;
+            }
+
+            policyButton = clone.GetComponent<Button>();
+        }
+
+        private GameObject CreateManagementButtonClone(string buttonName)
+        {
+            if (techButton == null)
+            {
+                return null;
+            }
+
+            var clone = Instantiate(techButton.gameObject, techButton.transform.parent, false);
+            clone.name = buttonName;
+            var cloneButton = clone.GetComponent<Button>();
+            cloneButton?.onClick.RemoveAllListeners();
+            return clone;
+        }
+
+        private void LayoutManagementButtons()
+        {
+            var origin = ResolveManagementButtonOrigin();
+            LayoutManagementButton(techButton, origin);
+            LayoutManagementButton(policyButton, origin + new Vector2(managementButtonSize.x + managementButtonSpacing, 0f));
+            LayoutManagementButton(ministerButton, origin + new Vector2((managementButtonSize.x + managementButtonSpacing) * 2f, 0f));
+        }
+
+        private Vector2 ResolveManagementButtonOrigin()
+        {
+            var techRect = techButton != null ? techButton.transform as RectTransform : null;
+            return techRect != null ? techRect.anchoredPosition : Vector2.zero;
+        }
+
+        private void LayoutManagementButton(Button button, Vector2 anchoredPosition)
+        {
+            if (button == null || techButton == null)
+            {
+                return;
+            }
+
+            var rect = button.transform as RectTransform;
             var techRect = techButton.transform as RectTransform;
             if (rect != null && techRect != null)
             {
@@ -155,7 +227,7 @@ namespace Panoptes.Presentation.UI.HUD
                 rect.anchorMax = techRect.anchorMax;
                 rect.pivot = techRect.pivot;
                 rect.sizeDelta = managementButtonSize;
-                rect.anchoredPosition = techRect.anchoredPosition + new Vector2(managementButtonSize.x + managementButtonSpacing, 0f);
+                rect.anchoredPosition = anchoredPosition;
             }
         }
 
@@ -175,9 +247,12 @@ namespace Panoptes.Presentation.UI.HUD
         {
             _buttonSubscriptions.Clear();
             ResolveTechButtonReference();
+            EnsurePolicyButtonReference();
             EnsureMinisterButtonReference();
+            LayoutManagementButtons();
 
             BindButton(techButton, OnTechButtonClicked);
+            BindButton(policyButton, OnPolicyButtonClicked);
             BindButton(ministerButton, OnMinisterButtonClicked);
         }
 
@@ -229,13 +304,27 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
+            OpenManagementPanel(ManagementPanelId.MinisterReport);
+        }
+
+        private void OnPolicyButtonClicked()
+        {
+            if (_managementPanelVisibilityStore == null)
+            {
+                if (logWarnings)
+                {
+                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                }
+                return;
+            }
+
             OpenManagementPanel(ManagementPanelId.PolicyFocus);
         }
 
         private void OpenManagementPanel(ManagementPanelId panelId)
         {
             _mapPlanningInputController?.CancelCurrentMode();
-            _managementPanelVisibilityStore?.Show(panelId);
+            _managementPanelVisibilityStore?.Toggle(panelId);
         }
 
         private void ApplyGeneratedPanelArt()
@@ -243,6 +332,7 @@ namespace Panoptes.Presentation.UI.HUD
             ResolvePrefabReferences();
             ApplyPanelBackground();
             ApplyButtonSprite(techButton, techButtonSpriteResource);
+            ApplyButtonSprite(policyButton, policyButtonSpriteResource);
             ApplyButtonSprite(ministerButton, ministerButtonSpriteResource);
         }
 

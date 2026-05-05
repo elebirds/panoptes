@@ -80,10 +80,51 @@ func commandEnvelopeForMinisterDraft(draft domain.MinisterDraft) *pb.CommandEnve
 		envelope.Body = &pb.CommandEnvelope_SetPolicy{
 			SetPolicy: &pb.MsgSetPolicy{NationalPolicyId: strings.TrimSpace(draft.TargetID)},
 		}
+	case domain.MinisterDraftKindInstitution:
+		envelope.Body = &pb.CommandEnvelope_SetInstitutionLoadout{
+			SetInstitutionLoadout: &pb.MsgSetInstitutionLoadout{PolicyIds: append([]string(nil), draft.PolicyIDs...)},
+		}
+	case domain.MinisterDraftKindBuild:
+		envelope.Body = &pb.CommandEnvelope_BuildStructure{
+			BuildStructure: &pb.MsgBuildStructure{
+				NodeId:         strings.TrimSpace(draft.NodeID),
+				BuildingTypeId: strings.TrimSpace(draft.BuildingTypeID),
+				CityId:         strings.TrimSpace(draft.CityID),
+			},
+		}
+	case domain.MinisterDraftKindRecipe:
+		envelope.Body = &pb.CommandEnvelope_SetBuildingRecipe{
+			SetBuildingRecipe: &pb.MsgSetBuildingRecipe{
+				NodeId:   strings.TrimSpace(draft.NodeID),
+				RecipeId: strings.TrimSpace(draft.RecipeID),
+			},
+		}
+	case domain.MinisterDraftKindUnitOrder:
+		envelope.Body = &pb.CommandEnvelope_IssueUnitOrder{
+			IssueUnitOrder: &pb.MsgIssueUnitOrder{
+				UnitId:          strings.TrimSpace(draft.UnitID),
+				Action:          strings.TrimSpace(draft.Action),
+				TargetNodeId:    strings.TrimSpace(draft.TargetNodeID),
+				TargetUnitId:    strings.TrimSpace(draft.TargetUnitID),
+				SecondaryNodeId: strings.TrimSpace(draft.SecondaryNodeID),
+				Params:          cloneDraftParams(draft.Params),
+			},
+		}
 	default:
 		return nil
 	}
 	return envelope
+}
+
+func cloneDraftParams(src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return nil
+	}
+	dst := make(map[string]string, len(src))
+	for key, value := range src {
+		dst[key] = value
+	}
+	return dst
 }
 
 func BuildMinisterRosterViews() []*pb.MinisterView {

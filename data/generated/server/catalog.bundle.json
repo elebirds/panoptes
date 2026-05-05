@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "4b88d781dc49d3bea52ccee90047cc8698bf31f8c41e1618b4c9b5df00ddd9a8",
+    "bundle_hash": "ffab8e00ec05cc781d6ab4647504cce51f71e49823c702e71d7b095492a635f8",
     "required_sections": [
       "resources",
       "points",
@@ -32,7 +32,7 @@
       },
       {
         "section_name": "ministers",
-        "hash": "28106d6f11e9afcdd6e6e638a7d790a5b61eb854292b4a2a7f88b4d9a82cda75"
+        "hash": "0ccc2f985b251511a7ce930619d5eabfa773b482f303fa9cd451efe43a81db26"
       },
       {
         "section_name": "points",
@@ -2507,6 +2507,7 @@
       "id": "m001",
       "name": "李猛",
       "role": "military",
+      "icon_key": "military",
       "ability": 8,
       "personality": "aggressive",
       "personality_desc": "果敢激进",
@@ -2517,6 +2518,7 @@
       "id": "m002",
       "name": "沈衡",
       "role": "domestic",
+      "icon_key": "domestic",
       "ability": 7,
       "personality": "steady",
       "personality_desc": "稳健审慎",

@@ -451,7 +451,17 @@ namespace Panoptes.Core.Application.Stores
                 TargetId = source.TargetId,
                 TargetLabel = source.TargetLabel,
                 Title = source.Title,
-                Turn = source.Turn
+                Turn = source.Turn,
+                PolicyIds = source.PolicyIds != null ? (string[])source.PolicyIds.Clone() : Array.Empty<string>(),
+                NodeId = source.NodeId,
+                BuildingTypeId = source.BuildingTypeId,
+                CityId = source.CityId,
+                RecipeId = source.RecipeId,
+                UnitId = source.UnitId,
+                Action = source.Action,
+                TargetNodeId = source.TargetNodeId,
+                TargetUnitId = source.TargetUnitId,
+                SecondaryNodeId = source.SecondaryNodeId
             };
         }
 

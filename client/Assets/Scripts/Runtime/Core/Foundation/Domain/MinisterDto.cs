@@ -25,6 +25,16 @@ namespace Panoptes.Core.Domain
         public bool Available;
         public int Turn;
         public string Source;
+        public string[] PolicyIds;
+        public string NodeId;
+        public string BuildingTypeId;
+        public string CityId;
+        public string RecipeId;
+        public string UnitId;
+        public string Action;
+        public string TargetNodeId;
+        public string TargetUnitId;
+        public string SecondaryNodeId;
 
         public bool IsDomestic => string.Equals(MinisterRole, "domestic", StringComparison.OrdinalIgnoreCase);
 

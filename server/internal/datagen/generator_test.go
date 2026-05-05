@@ -804,6 +804,7 @@ func writeFixtureRepo(t *testing.T, repoRoot string) {
       "id": "m001",
       "name": "李猛",
       "role": "military",
+      "icon_key": "military",
       "ability": 8,
       "personality": "aggressive",
       "personality_desc": "果敢激进",

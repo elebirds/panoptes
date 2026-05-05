@@ -6,7 +6,14 @@
 
 package maploader
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/elebirds/panoptes/internal/algo/geometry"
+	"github.com/elebirds/panoptes/internal/staticdata"
+)
+
+const spawnPassableRadius = 6
 
 type terrainPatchCfg struct {
 	Terrain    string
@@ -187,4 +194,46 @@ func pickRandomPlainCell(rng *rand.Rand, grid [][]string, width, height int) (ma
 	}
 
 	return mapPoint{}, false
+}
+
+func enforcePassableTerrainAroundSpawns(grid [][]string, width, height int, spawns []staticdata.SpawnPoint, radius int) {
+	if radius < 0 || width <= 0 || height <= 0 || len(grid) == 0 {
+		return
+	}
+
+	for _, spawn := range spawns {
+		center := geometry.OffsetToAxial(spawn.X, spawn.Y)
+		for y := 0; y < height; y++ {
+			if y < 0 || y >= len(grid) {
+				continue
+			}
+			for x := 0; x < width; x++ {
+				if x < 0 || x >= len(grid[y]) {
+					continue
+				}
+				pos := geometry.OffsetToAxial(x, y)
+				if pos.DistanceTo(center) > radius {
+					continue
+				}
+				if isProceduralTerrainImpassable(grid[y][x]) {
+					grid[y][x] = "plain"
+				}
+			}
+		}
+	}
+}
+
+func isProceduralTerrainImpassable(terrain string) bool {
+	if catalog := staticdata.Default(); catalog != nil {
+		if def, ok := catalog.GetTerrain(terrain); ok {
+			return !def.Passable
+		}
+	}
+
+	switch terrain {
+	case "plain", "forest":
+		return false
+	default:
+		return true
+	}
 }

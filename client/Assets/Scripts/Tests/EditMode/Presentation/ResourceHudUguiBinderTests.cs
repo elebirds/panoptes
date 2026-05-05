@@ -99,6 +99,30 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.TechTree), Is.False);
         }
 
+        [Test]
+        public void MinisterButton_ShouldToggleMinisterReportVisibilityStore()
+        {
+            _root = new GameObject("ResourceHudMinisterButtonTest", typeof(RectTransform));
+            var listObject = new GameObject("ResourceList", typeof(RectTransform));
+            listObject.transform.SetParent(_root.transform, false);
+            var techButtonObject = new GameObject("TechBtn", typeof(RectTransform), typeof(Button));
+            techButtonObject.transform.SetParent(_root.transform, false);
+            var ministerButtonObject = new GameObject("MinisterBtn", typeof(RectTransform), typeof(Button));
+            ministerButtonObject.transform.SetParent(_root.transform, false);
+
+            var hud = _root.AddComponent<ResourceHUD>();
+            using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectDependencies(hud, viewModel, visibilityStore);
+
+            var button = ministerButtonObject.GetComponent<Button>();
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.True);
+
+            button.onClick.Invoke();
+            Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.False);
+        }
+
         private RectTransform CreateResourceListRoot()
         {
             _root = new GameObject("ResourceHudBinderTestRoot", typeof(RectTransform), typeof(CoroutineHost));

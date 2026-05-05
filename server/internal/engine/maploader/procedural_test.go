@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/elebirds/panoptes/internal/algo/geometry"
 	"github.com/elebirds/panoptes/internal/staticdata"
 )
 
@@ -47,5 +48,91 @@ func TestGenerateProceduralMapDeterministicForSeed(t *testing.T) {
 	}
 	if len(first.SpawnPoints) != 3 {
 		t.Fatalf("spawn points len = %d, want 3", len(first.SpawnPoints))
+	}
+}
+
+func TestEnforcePassableTerrainAroundSpawnsClearsSixHexRadius(t *testing.T) {
+	previousCatalog := staticdata.Default()
+	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true},
+			{ID: "forest", Passable: true},
+			{ID: "river", Passable: false},
+			{ID: "mountain", Passable: false},
+		},
+	}))
+	t.Cleanup(func() {
+		staticdata.SetDefault(previousCatalog)
+	})
+
+	width := 15
+	height := 15
+	grid := make([][]string, height)
+	for y := 0; y < height; y++ {
+		grid[y] = make([]string, width)
+		for x := 0; x < width; x++ {
+			grid[y][x] = "river"
+		}
+	}
+	grid[7][7] = "mountain"
+
+	spawn := staticdata.SpawnPoint{Slot: 0, X: 7, Y: 7}
+	enforcePassableTerrainAroundSpawns(grid, width, height, []staticdata.SpawnPoint{spawn}, spawnPassableRadius)
+
+	center := geometry.OffsetToAxial(spawn.X, spawn.Y)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			distance := geometry.OffsetToAxial(x, y).DistanceTo(center)
+			if distance <= spawnPassableRadius && grid[y][x] != "plain" {
+				t.Fatalf("terrain at (%d,%d), distance %d = %q, want plain", x, y, distance, grid[y][x])
+			}
+			if distance > spawnPassableRadius && grid[y][x] != "river" {
+				t.Fatalf("terrain outside spawn radius at (%d,%d), distance %d = %q, want river", x, y, distance, grid[y][x])
+			}
+		}
+	}
+}
+
+func TestGenerateProceduralMapKeepsSpawnRadiusPassable(t *testing.T) {
+	previousCatalog := staticdata.Default()
+	catalog := staticdata.NewCatalog(staticdata.CatalogBundle{
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true},
+			{ID: "forest", Passable: true},
+			{ID: "river", Passable: false},
+		},
+		Rules: staticdata.Rules{InitialCityTerritoryRadius: 2},
+	})
+	staticdata.SetDefault(catalog)
+	t.Cleanup(func() {
+		staticdata.SetDefault(previousCatalog)
+	})
+
+	base := &staticdata.MapRuntimeBundle{
+		ID:     "spawn-safe",
+		Name:   "Spawn Safe",
+		Width:  20,
+		Height: 20,
+	}
+
+	for seed := int64(1); seed <= 30; seed++ {
+		runtime := GenerateProceduralMap(base, 2, seed)
+		if runtime == nil {
+			t.Fatalf("GenerateProceduralMap(seed=%d) returned nil", seed)
+		}
+
+		for _, spawn := range runtime.SpawnPoints {
+			center := geometry.OffsetToAxial(spawn.X, spawn.Y)
+			for _, node := range runtime.Nodes {
+				distance := geometry.OffsetToAxial(node.X, node.Y).DistanceTo(center)
+				if distance > spawnPassableRadius {
+					continue
+				}
+				terrain, ok := catalog.GetTerrain(node.Terrain)
+				if !ok || !terrain.Passable {
+					t.Fatalf("seed %d spawn slot %d has impassable terrain %q at (%d,%d), distance %d", seed, spawn.Slot, node.Terrain, node.X, node.Y, distance)
+				}
+			}
+		}
 	}
 }

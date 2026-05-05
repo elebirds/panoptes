@@ -41,6 +41,7 @@ type Minister struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	Role            string `json:"role"`
+	IconKey         string `json:"icon_key"`
 	Ability         int    `json:"ability"`
 	Personality     string `json:"personality"`
 	PersonalityDesc string `json:"personality_desc"`

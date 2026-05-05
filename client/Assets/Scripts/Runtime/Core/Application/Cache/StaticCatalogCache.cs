@@ -228,6 +228,7 @@ namespace Panoptes.Core.Application.Cache
             public string id;
             public string name;
             public string role;
+            public string icon_key;
             public int ability;
             public string personality;
             public string personality_desc;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using UnityEngine;
@@ -417,7 +418,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
     internal static class UiToolkitRuntimeDocument
     {
         private const string RuntimeThemeResourcePath = "UnityDefaultRuntimeTheme";
-        private static PanelSettings _sharedPanelSettings;
+        private static readonly Dictionary<int, PanelSettings> SharedPanelSettingsBySortingOrder = new();
         private static ThemeStyleSheet _runtimeTheme;
 
         public static void EnsureConfigured(UIDocument document, int sortingOrder = 420)
@@ -427,7 +428,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
-            if (document.panelSettings == null || document.panelSettings.name == "RuntimePanelSettings")
+            var settingsName = document.panelSettings != null ? document.panelSettings.name : string.Empty;
+            if (document.panelSettings == null ||
+                string.Equals(settingsName, "RuntimePanelSettings", StringComparison.Ordinal) ||
+                settingsName.StartsWith("PanoptesRuntimePanelSettings", StringComparison.Ordinal))
             {
                 document.panelSettings = GetSharedPanelSettings(sortingOrder);
                 return;
@@ -438,14 +442,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private static PanelSettings GetSharedPanelSettings(int sortingOrder)
         {
-            if (_sharedPanelSettings == null)
+            if (!SharedPanelSettingsBySortingOrder.TryGetValue(sortingOrder, out var settings) || settings == null)
             {
-                _sharedPanelSettings = ScriptableObject.CreateInstance<PanelSettings>();
-                _sharedPanelSettings.name = "PanoptesRuntimePanelSettings";
+                settings = ScriptableObject.CreateInstance<PanelSettings>();
+                settings.name = "PanoptesRuntimePanelSettings_" + sortingOrder;
+                SharedPanelSettingsBySortingOrder[sortingOrder] = settings;
             }
 
-            Configure(_sharedPanelSettings, sortingOrder);
-            return _sharedPanelSettings;
+            Configure(settings, sortingOrder);
+            return settings;
         }
 
         private static void Configure(PanelSettings settings, int sortingOrder)

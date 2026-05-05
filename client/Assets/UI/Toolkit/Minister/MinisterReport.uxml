@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="minister-report-root" class="minister-report-root">
+        <ui:VisualElement class="minister-report-header">
+            <ui:Label name="minister-report-title" text="大臣汇报" class="minister-report-title" />
+            <ui:Button name="minister-report-close" text="X" class="minister-report-close" />
+        </ui:VisualElement>
+        <ui:VisualElement class="minister-report-body">
+            <ui:VisualElement name="minister-report-tabs" class="minister-report-tabs" />
+            <ui:VisualElement class="minister-report-conversation">
+                <ui:Label name="minister-report-empty" text="暂无大臣汇报" class="minister-report-empty" />
+                <ui:ScrollView name="minister-report-scroll" class="minister-report-scroll">
+                    <ui:VisualElement name="minister-report-chat" class="minister-report-chat" />
+                </ui:ScrollView>
+                <ui:VisualElement name="minister-report-options" class="minister-report-options" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

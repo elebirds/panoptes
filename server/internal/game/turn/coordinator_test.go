@@ -152,7 +152,7 @@ func TestCoordinatorBeginPlanningTriggersDomesticMinisterReports(t *testing.T) {
 	}
 }
 
-func TestCoordinatorBeginPlanningAppliesHumanMinisterDefaultsBeforeNotify(t *testing.T) {
+func TestCoordinatorBeginPlanningExposesHumanMinisterDefaultDraftsBeforeNotify(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Rules: staticdata.Rules{
 			TurnTimeLimitPlanning:      10,
@@ -199,14 +199,14 @@ func TestCoordinatorBeginPlanningAppliesHumanMinisterDefaultsBeforeNotify(t *tes
 	runtime.PreparePlanningStartStateIfNeeded()
 	coordinator.beginPlanning(context.Background(), true)
 
-	if got := runtime.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "agrarian_foundations" {
-		t.Fatalf("pending research = %q, want agrarian_foundations", got)
+	if got := runtime.State().TurnRuntime.Planning.PendingResearchTarget("player-1"); got != "" {
+		t.Fatalf("pending research = %q, want empty before minister approval", got)
 	}
-	if got := runtime.State().TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("expansion") {
-		t.Fatalf("pending policy = %q, want expansion", got)
+	if got := runtime.State().TurnRuntime.Planning.PendingPolicy("player-1"); got != domain.Policy("") {
+		t.Fatalf("pending policy = %q, want empty before minister approval", got)
 	}
-	if len(runtime.State().TurnRuntime.Planning.BuildOrders) != 1 {
-		t.Fatalf("build orders = %#v, want one minister default", runtime.State().TurnRuntime.Planning.BuildOrders)
+	if len(runtime.State().TurnRuntime.Planning.BuildOrders) != 0 {
+		t.Fatalf("build orders = %#v, want none before minister approval", runtime.State().TurnRuntime.Planning.BuildOrders)
 	}
 
 	msgs := transport.messages["player-1"]
@@ -214,12 +214,18 @@ func TestCoordinatorBeginPlanningAppliesHumanMinisterDefaultsBeforeNotify(t *tes
 	if !ok {
 		t.Fatalf("last message = %T, want MsgPlanningStart", msgs[len(msgs)-1])
 	}
-	if start.GetSnapshot().GetPlannedResearchTargetTechnologyId() != "agrarian_foundations" ||
-		start.GetSnapshot().GetPlannedNationalPolicyId() != "expansion" {
-		t.Fatalf("planning snapshot = %#v, want minister defaults", start.GetSnapshot())
+	if start.GetSnapshot().GetPlannedResearchTargetTechnologyId() != "" ||
+		start.GetSnapshot().GetPlannedNationalPolicyId() != "" {
+		t.Fatalf("planning snapshot = %#v, want no applied minister defaults", start.GetSnapshot())
 	}
-	if status := ministerDraftStatusFromStart(t, start, "research"); status != string(domain.MinisterDraftStatusAccepted) {
-		t.Fatalf("research draft status = %q, want accepted", status)
+	if status := ministerDraftStatusFromStart(t, start, "research"); status != string(domain.MinisterDraftStatusPending) {
+		t.Fatalf("research draft status = %q, want pending", status)
+	}
+	if status := ministerDraftStatusFromStart(t, start, "policy"); status != string(domain.MinisterDraftStatusPending) {
+		t.Fatalf("policy draft status = %q, want pending", status)
+	}
+	if status := ministerDraftStatusFromStart(t, start, "build"); status != string(domain.MinisterDraftStatusPending) {
+		t.Fatalf("build draft status = %q, want pending", status)
 	}
 }
 

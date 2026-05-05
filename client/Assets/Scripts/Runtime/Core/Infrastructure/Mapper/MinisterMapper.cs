@@ -105,7 +105,17 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 Status = payload.status ?? string.Empty,
                 Available = view.Available && payload.available,
                 Turn = payload.turn,
-                Source = payload.source ?? string.Empty
+                Source = payload.source ?? string.Empty,
+                PolicyIds = payload.policy_ids ?? Array.Empty<string>(),
+                NodeId = payload.node_id ?? string.Empty,
+                BuildingTypeId = payload.building_type_id ?? string.Empty,
+                CityId = payload.city_id ?? string.Empty,
+                RecipeId = payload.recipe_id ?? string.Empty,
+                UnitId = payload.unit_id ?? string.Empty,
+                Action = payload.action ?? string.Empty,
+                TargetNodeId = payload.target_node_id ?? string.Empty,
+                TargetUnitId = payload.target_unit_id ?? string.Empty,
+                SecondaryNodeId = payload.secondary_node_id ?? string.Empty
             };
         }
 
@@ -126,6 +136,16 @@ namespace Panoptes.Core.Infrastructure.Mapper
             public bool available;
             public int turn;
             public string source;
+            public string[] policy_ids;
+            public string node_id;
+            public string building_type_id;
+            public string city_id;
+            public string recipe_id;
+            public string unit_id;
+            public string action;
+            public string target_node_id;
+            public string target_unit_id;
+            public string secondary_node_id;
         }
     }
 }

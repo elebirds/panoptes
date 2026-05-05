@@ -13,6 +13,7 @@ import (
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/engine/economy"
 	ministerengine "github.com/elebirds/panoptes/internal/engine/minister"
+	gameorders "github.com/elebirds/panoptes/internal/game/orders"
 	pb "github.com/elebirds/panoptes/internal/gen/proto"
 	transportproblem "github.com/elebirds/panoptes/internal/transport/problem"
 )
@@ -32,18 +33,25 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 	if state == nil {
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
 	}
-	draft, idx, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
-	if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
-		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
-	}
-	if intent.DirectiveType == "accept" && !draft.Available {
-		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft is unavailable")
-	}
-
 	switch intent.DirectiveType {
+	case "accept_role":
+		return s.acceptMinisterRoleDrafts(delivery, room, playerID, intent.MinisterRole)
+	case "reject_role":
+		return s.rejectMinisterRoleDrafts(delivery, room, playerID, intent.MinisterRole)
 	case "accept":
+		draft, _, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
+		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
+		}
+		if !draft.Available {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft is unavailable")
+		}
 		return s.acceptMinisterDraft(delivery, room, playerID, draft)
 	case "reject":
+		draft, idx, ok := state.TurnRuntime.Planning.FindMinisterDraft(playerID, intent.DraftID)
+		if !ok || draft.MinisterRole != intent.MinisterRole || draft.Turn != state.Turn {
+			return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "minister draft not found")
+		}
 		before := draft.Status
 		draft.Status = domain.MinisterDraftStatusRejected
 		draft.Available = false
@@ -58,6 +66,67 @@ func (s *Service) handleMinisterDirective(delivery commandDelivery, room Session
 	default:
 		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}
+}
+
+func (s *Service) acceptMinisterRoleDrafts(delivery commandDelivery, room Session, playerID string, role string) (handleIntentResult, error) {
+	state := room.State()
+	if state == nil {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
+	}
+	role = strings.TrimSpace(role)
+	applied := 0
+	for _, draft := range state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID) {
+		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || strings.TrimSpace(draft.MinisterRole) != role {
+			continue
+		}
+		result, err := s.acceptMinisterDraft(delivery, room, playerID, draft)
+		if err != nil {
+			return result, err
+		}
+		if result.accepted {
+			applied++
+		}
+	}
+	if applied == 0 {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "no available minister drafts")
+	}
+	return acceptedHandleIntentResult(), nil
+}
+
+func (s *Service) rejectMinisterRoleDrafts(delivery commandDelivery, room Session, playerID string, role string) (handleIntentResult, error) {
+	state := room.State()
+	if state == nil {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "state is nil")
+	}
+	role = strings.TrimSpace(role)
+	drafts := state.TurnRuntime.Planning.MinisterDraftsForPlayer(playerID)
+	transitions := make([]ministerDraftTransition, 0)
+	changed := false
+	for idx := range drafts {
+		draft := drafts[idx]
+		if draft.Turn != state.Turn || !isMinisterDraftInteractive(draft) || strings.TrimSpace(draft.MinisterRole) != role {
+			continue
+		}
+		before := draft.Status
+		draft.Status = domain.MinisterDraftStatusRejected
+		draft.Available = false
+		drafts[idx] = draft
+		changed = true
+		transitions = append(transitions, ministerDraftTransition{Draft: draft, FromStatus: before, ToStatus: draft.Status})
+	}
+	if !changed {
+		return rejectedHandleIntentResult("invalid_directive"), transportproblem.New("invalid_directive", "no available minister drafts")
+	}
+	state.TurnRuntime.Planning.SetMinisterDrafts(playerID, drafts)
+	delivery.snapshot()
+	recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
+	return acceptedHandleIntentResult(), nil
+}
+
+func isMinisterDraftInteractive(draft domain.MinisterDraft) bool {
+	return draft.Available &&
+		draft.Status != domain.MinisterDraftStatusAccepted &&
+		draft.Status != domain.MinisterDraftStatusRejected
 }
 
 func (s *Service) acceptMinisterDraft(delivery commandDelivery, room Session, playerID string, draft domain.MinisterDraft) (handleIntentResult, error) {
@@ -92,6 +161,83 @@ func (s *Service) acceptMinisterDraft(delivery commandDelivery, room Session, pl
 		state.TurnRuntime.Planning.SetPendingPolicy(playerID, domain.Policy(policyID))
 		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
 		delivery.sendWithSnapshot(&pb.MsgSetPolicyResult{Success: true, NationalPolicyId: policyID})
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
+		return acceptedHandleIntentResult(), nil
+	case domain.MinisterDraftKindInstitution:
+		result, err := s.handleInstitutionLoadout(delivery, room, playerID, playerState, draft.PolicyIDs)
+		if err != nil || !result.accepted {
+			return result, err
+		}
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
+		return acceptedHandleIntentResult(), nil
+	case domain.MinisterDraftKindBuild:
+		eval := evaluateBuildCommand(room, playerID, playerState, draft.NodeID, draft.BuildingTypeID, draft.CityID)
+		if !eval.OK {
+			delivery.send(&pb.MsgBuildStructureResult{
+				Success:         false,
+				NodeId:          strings.TrimSpace(draft.NodeID),
+				BuildingTypeId:  strings.TrimSpace(draft.BuildingTypeID),
+				CityId:          strings.TrimSpace(draft.CityID),
+				ErrorCode:       eval.ErrorCode,
+				FeedbackMessage: eval.FeedbackMessage,
+				FeedbackDetails: eval.FeedbackDetails,
+			})
+			return rejectedHandleIntentResult(eval.ErrorCode), nil
+		}
+		room.QueueBuildOrder(domain.BuildOrder{
+			PlayerID:     playerID,
+			NodeID:       strings.TrimSpace(draft.NodeID),
+			BuildingType: strings.TrimSpace(draft.BuildingTypeID),
+			CityID:       strings.TrimSpace(draft.CityID),
+		})
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		delivery.sendWithSnapshot(&pb.MsgBuildStructureResult{
+			Success:        true,
+			NodeId:         strings.TrimSpace(draft.NodeID),
+			BuildingTypeId: strings.TrimSpace(draft.BuildingTypeID),
+			CityId:         strings.TrimSpace(draft.CityID),
+		})
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
+		return acceptedHandleIntentResult(), nil
+	case domain.MinisterDraftKindRecipe:
+		result, err := s.handleSetBuildingRecipe(delivery, room, playerID, draft.NodeID, draft.RecipeID)
+		if err != nil || !result.accepted {
+			return result, err
+		}
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
+		return acceptedHandleIntentResult(), nil
+	case domain.MinisterDraftKindUnitOrder:
+		order := gameorders.UnitOrder{
+			PlayerID:        playerID,
+			UnitID:          strings.TrimSpace(draft.UnitID),
+			Action:          gameorders.UnitAction(strings.TrimSpace(draft.Action)),
+			TargetNodeID:    strings.TrimSpace(draft.TargetNodeID),
+			TargetUnitID:    strings.TrimSpace(draft.TargetUnitID),
+			SecondaryNodeID: strings.TrimSpace(draft.SecondaryNodeID),
+			Params:          cloneParams(draft.Params),
+		}
+		if errCode := gameorders.ValidatePlanningUnitOrder(state, playerID, order); errCode != "" {
+			delivery.send(&pb.MsgIssueUnitOrderResult{
+				Success:      false,
+				UnitId:       order.UnitID,
+				Action:       string(order.Action),
+				TargetNodeId: order.TargetNodeID,
+				TargetUnitId: order.TargetUnitID,
+				ErrorCode:    errCode,
+			})
+			return rejectedHandleIntentResult(errCode), nil
+		}
+		room.SetUnitOrder(order)
+		transitions := reconcileMinisterDraftBindings(state, playerID, strings.TrimSpace(draft.DraftID))
+		delivery.sendWithSnapshot(&pb.MsgIssueUnitOrderResult{
+			Success:      true,
+			UnitId:       order.UnitID,
+			Action:       string(order.Action),
+			TargetNodeId: order.TargetNodeID,
+			TargetUnitId: order.TargetUnitID,
+		})
 		recordMinisterDraftTransitions(room, playerID, state.Turn, transitions)
 		return acceptedHandleIntentResult(), nil
 	default:

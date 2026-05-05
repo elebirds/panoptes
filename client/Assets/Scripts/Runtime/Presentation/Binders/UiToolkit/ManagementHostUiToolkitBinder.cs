@@ -468,6 +468,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             }
 
             var activePanel = _visibilityStore?.Current.ActivePanel ?? ManagementPanelId.None;
+            if (activePanel == ManagementPanelId.MinisterReport)
+            {
+                root.style.display = DisplayStyle.None;
+                return;
+            }
+
             root.pickingMode = PickingMode.Ignore;
             var hostRoot = root.Q<VisualElement>(RootName);
             if (hostRoot != null)
@@ -493,7 +499,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 ManagementPanelId.BuildCatalog => "建造",
                 ManagementPanelId.RecipeSynthesis => "配方",
                 ManagementPanelId.PolicyFocus => "国策",
-                ManagementPanelId.MinisterReport => "大臣报告",
+                ManagementPanelId.MinisterReport => "大臣汇报",
                 _ => "管理"
             };
         }

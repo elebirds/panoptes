@@ -5,8 +5,12 @@ import "strings"
 type MinisterDraftKind string
 
 const (
-	MinisterDraftKindResearch MinisterDraftKind = "research"
-	MinisterDraftKindPolicy   MinisterDraftKind = "policy"
+	MinisterDraftKindResearch    MinisterDraftKind = "research"
+	MinisterDraftKindPolicy      MinisterDraftKind = "policy"
+	MinisterDraftKindInstitution MinisterDraftKind = "institution"
+	MinisterDraftKindBuild       MinisterDraftKind = "build"
+	MinisterDraftKindRecipe      MinisterDraftKind = "recipe"
+	MinisterDraftKindUnitOrder   MinisterDraftKind = "unit_order"
 )
 
 type MinisterDraftStatus string
@@ -26,20 +30,31 @@ const (
 )
 
 type MinisterDraft struct {
-	DraftID      string              `json:"draft_id"`
-	PlayerID     string              `json:"player_id"`
-	MinisterRole string              `json:"minister_role"`
-	Kind         MinisterDraftKind   `json:"kind"`
-	TargetID     string              `json:"target_id"`
-	TargetLabel  string              `json:"target_label"`
-	Title        string              `json:"title"`
-	Summary      string              `json:"summary"`
-	Rationale    string              `json:"rationale"`
-	RiskNote     string              `json:"risk_note"`
-	Status       MinisterDraftStatus `json:"status"`
-	Available    bool                `json:"available"`
-	Turn         int                 `json:"turn"`
-	Source       MinisterDraftSource `json:"source"`
+	DraftID         string              `json:"draft_id"`
+	PlayerID        string              `json:"player_id"`
+	MinisterRole    string              `json:"minister_role"`
+	Kind            MinisterDraftKind   `json:"kind"`
+	TargetID        string              `json:"target_id"`
+	TargetLabel     string              `json:"target_label"`
+	Title           string              `json:"title"`
+	Summary         string              `json:"summary"`
+	Rationale       string              `json:"rationale"`
+	RiskNote        string              `json:"risk_note"`
+	Status          MinisterDraftStatus `json:"status"`
+	Available       bool                `json:"available"`
+	Turn            int                 `json:"turn"`
+	Source          MinisterDraftSource `json:"source"`
+	PolicyIDs       []string            `json:"policy_ids,omitempty"`
+	NodeID          string              `json:"node_id,omitempty"`
+	BuildingTypeID  string              `json:"building_type_id,omitempty"`
+	CityID          string              `json:"city_id,omitempty"`
+	RecipeID        string              `json:"recipe_id,omitempty"`
+	UnitID          string              `json:"unit_id,omitempty"`
+	Action          string              `json:"action,omitempty"`
+	TargetNodeID    string              `json:"target_node_id,omitempty"`
+	TargetUnitID    string              `json:"target_unit_id,omitempty"`
+	SecondaryNodeID string              `json:"secondary_node_id,omitempty"`
+	Params          map[string]string   `json:"params,omitempty"`
 }
 
 func (p *PlanningInputs) SetMinisterDrafts(playerID string, drafts []MinisterDraft) {

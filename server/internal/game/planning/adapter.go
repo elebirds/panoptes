@@ -158,7 +158,10 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	if msg == nil {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "minister directive is nil")
 	}
-	if strings.TrimSpace(msg.GetMinisterRole()) != "domestic" {
+	role := strings.TrimSpace(msg.GetMinisterRole())
+	switch role {
+	case "domestic", "military":
+	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister role")
 	}
 	var payload struct {
@@ -171,15 +174,15 @@ func ministerDirectiveIntent(msg *pb.MsgSetMinisterDirective) (SetMinisterDirect
 	payload.DirectiveType = strings.TrimSpace(payload.DirectiveType)
 	payload.DraftID = strings.TrimSpace(payload.DraftID)
 	switch payload.DirectiveType {
-	case "accept", "reject":
+	case "accept", "reject", "accept_role", "reject_role":
 	default:
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "unsupported minister directive type")
 	}
-	if payload.DraftID == "" {
+	if (payload.DirectiveType == "accept" || payload.DirectiveType == "reject") && payload.DraftID == "" {
 		return SetMinisterDirectiveIntent{}, transportproblem.New("invalid_directive", "draft_id is required")
 	}
 	return SetMinisterDirectiveIntent{
-		MinisterRole:  "domestic",
+		MinisterRole:  role,
 		DirectiveType: payload.DirectiveType,
 		DraftID:       payload.DraftID,
 	}, nil
