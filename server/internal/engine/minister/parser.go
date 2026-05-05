@@ -135,11 +135,31 @@ func stripMarkdownJSONFence(response string) string {
 }
 
 func extractFirstJSONObject(response string) (string, bool) {
-	start := strings.IndexByte(response, '{')
-	if start < 0 {
-		return "", false
+	for start := strings.IndexByte(response, '{'); start >= 0; start = nextJSONObjectStart(response, start+1) {
+		object, ok := scanJSONObjectAt(response, start)
+		if !ok {
+			continue
+		}
+		if json.Valid([]byte(object)) {
+			return object, true
+		}
 	}
 
+	return "", false
+}
+
+func nextJSONObjectStart(response string, offset int) int {
+	if offset >= len(response) {
+		return -1
+	}
+	next := strings.IndexByte(response[offset:], '{')
+	if next < 0 {
+		return -1
+	}
+	return offset + next
+}
+
+func scanJSONObjectAt(response string, start int) (string, bool) {
 	depth := 0
 	inString := false
 	escaped := false

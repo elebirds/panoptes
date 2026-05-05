@@ -84,6 +84,26 @@ func TestParseMinisterResponseAcceptsFencedJSON(t *testing.T) {
 	}
 }
 
+func TestParseMinisterResponseSkipsBraceNoiseBeforeJSONObject(t *testing.T) {
+	out, err := ParseMinisterResponse("提示：沿用 {report} 字段，不要改键名。\n{\"report\":\"边境驻军已完成轮换。\",\"metrics\":[{\"label\":\"前线兵力\",\"value\":\"稳定\",\"trend\":\"stable\",\"confidence\":\"high\",\"is_delayed\":false}],\"actions\":[],\"action_id\":\"hold_line\"}")
+	if err != nil {
+		t.Fatalf("ParseMinisterResponse error = %v", err)
+	}
+
+	if out.Report != "边境驻军已完成轮换。" {
+		t.Fatalf("Report = %q, want extracted JSON report", out.Report)
+	}
+	if len(out.Metrics) != 1 {
+		t.Fatalf("metrics len = %d, want 1", len(out.Metrics))
+	}
+	if out.Metrics[0].GetLabel() != "前线兵力" || out.Metrics[0].GetValue() != "稳定" {
+		t.Fatalf("Metric content = %+v, want preserved Chinese strings", out.Metrics[0])
+	}
+	if out.ActionID != "hold_line" {
+		t.Fatalf("ActionID = %q, want hold_line", out.ActionID)
+	}
+}
+
 func TestParseDraftResponseSanitizesObviouslyEnglishPlayerText(t *testing.T) {
 	out, err := ParseDraftResponse(`{
 		"title":"Hold the Line",

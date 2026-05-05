@@ -10,7 +10,7 @@ import (
 func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
 	req := BuildDraftPrompt(MinisterProfile{
 		ID:              "m002",
-		Name:            "沈衍",
+		Name:            "沈衡",
 		Role:            "domestic",
 		Ability:         7,
 		Personality:     "steady",
@@ -39,7 +39,7 @@ func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
 		},
 	})
 
-	if !strings.Contains(req.SystemPrompt, "沈衍") || !strings.Contains(req.SystemPrompt, "稳健审慎") {
+	if !strings.Contains(req.SystemPrompt, "沈衡") || !strings.Contains(req.SystemPrompt, "稳健审慎") {
 		t.Fatalf("SystemPrompt = %q, want injected minister profile", req.SystemPrompt)
 	}
 	if !strings.Contains(req.SystemPrompt, "不得改写目标") || !strings.Contains(req.SystemPrompt, "必须使用简体中文") {
@@ -59,7 +59,7 @@ func TestBuildDraftPromptInjectsProfileAndChineseConstraints(t *testing.T) {
 func TestBuildReportPromptInjectsObservationBoundaryAndChineseContract(t *testing.T) {
 	req := BuildReportPrompt(MinisterProfile{
 		ID:              "m002",
-		Name:            "沈衍",
+		Name:            "沈衡",
 		Role:            "domestic",
 		Ability:         7,
 		Personality:     "steady",
