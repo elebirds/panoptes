@@ -1,0 +1,28 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.1f1 (8535861f39e1) revision 8729990'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-27902" at "2026-05-05T08:06:43.3529731Z"
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'zh' Physical Memory: 15999 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-05-05T08:06:43Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Unity.exe
+-batchmode
+-nographics
+-projectPath
+C:\Users\27902\GolandProjects\panoptes\client
+-runTests
+-testPlatform
+EditMode
+-testFilter
+Panoptes.Tests.EditMode.Presentation.BuildCatalogUiToolkitBinderTests
+-testResults
+C:\Users\27902\GolandProjects\panoptes\client\TestResults\BuildCatalogUiToolkitBinderTests.xml
+-logFile
+C:\Users\27902\GolandProjects\panoptes\client\TestResults\BuildCatalogUiToolkitBinderTests.log
+-quit
+Successfully changed project path to: C:\Users\27902\GolandProjects\panoptes\client
+C:/Users/27902/GolandProjects/panoptes/client
+Exiting without the bug reporter. Application will terminate with return code 1

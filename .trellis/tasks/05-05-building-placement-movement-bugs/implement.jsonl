@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entrypoint for state/query/event placement rules and implementation conventions"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Package ownership and dependency rules for domain/event/session changes"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer guardrails for shared spawn semantics consumed by multiple runtime paths"}

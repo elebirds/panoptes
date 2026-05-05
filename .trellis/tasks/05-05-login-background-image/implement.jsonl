@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/index.md","reason":"Frontend spec index for required client-side guidance."}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Keep changes in existing prefab/asset structure without moving presentation code."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve prefab-facing component compatibility and serialized references."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Respect Unity prefab safety and avoid presentation-layer regressions."}
