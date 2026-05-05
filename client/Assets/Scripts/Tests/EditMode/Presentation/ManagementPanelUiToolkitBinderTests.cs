@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using Google.Protobuf;
 using NUnit.Framework;
@@ -8,8 +9,11 @@ using Panoptes.Core.Domain;
 using Panoptes.Presentation.Binders.UiToolkit;
 using Panoptes.Presentation.ViewModels;
 using Panoptes.Protocol.V1;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UguiButton = UnityEngine.UI.Button;
+using UguiImage = UnityEngine.UI.Image;
 
 namespace Panoptes.Tests.EditMode.Presentation
 {
@@ -155,6 +159,63 @@ namespace Panoptes.Tests.EditMode.Presentation
             visibilityStore.Show(ManagementPanelId.TechTree);
             Assert.That(rootElement.style.display.value, Is.EqualTo(DisplayStyle.None));
             visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void MinisterReportBinder_ShouldRenderUguiMinisterConversationWhenVisible()
+        {
+            _root = new GameObject("MinisterReportPaintTest");
+            var binder = _root.AddComponent<MinisterReportUiToolkitBinder>();
+            var draftStore = new PlanningDraftStore();
+            var viewModel = new MinisterReportViewModel(draftStore);
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            InjectMinisterReport(binder, viewModel, visibilityStore);
+            binder.Render(new MinisterReportState(
+                "大臣汇报",
+                "domestic",
+                new[]
+                {
+                    new MinisterTabState("domestic", "内政大臣", "内政大臣", string.Empty, "内", true, 12),
+                    new MinisterTabState("military", "军事大臣", "军事大臣", string.Empty, "军", false, 8)
+                },
+                new[]
+                {
+                    new MinisterChatMessageState("m1", "domestic", "内政大臣", "内政大臣", string.Empty, "内", "建议扩张粮食产出。", false, false),
+                    new MinisterChatMessageState("m2", "domestic", string.Empty, string.Empty, string.Empty, string.Empty, "接受。", true, false)
+                },
+                new[]
+                {
+                    new MinisterReplyOptionState("accept", string.Empty, "domestic", "采纳全部", "采纳", true),
+                    new MinisterReplyOptionState("reject", string.Empty, "domestic", "暂不采纳", "暂不采纳", false)
+                }));
+
+            visibilityStore.Show(ManagementPanelId.MinisterReport);
+
+            var canvas = _root.GetComponent<Canvas>();
+            Assert.That(canvas, Is.Not.Null);
+            Assert.That(canvas.enabled, Is.True);
+            Assert.That(canvas.sortingOrder, Is.EqualTo(5000));
+            Assert.That(_root.GetComponent<UIDocument>() == null || !_root.GetComponent<UIDocument>().enabled, Is.True);
+
+            var texts = _root.GetComponentsInChildren<TextMeshProUGUI>(true);
+            Assert.That(ContainsText(texts, "内政大臣"), Is.True);
+            Assert.That(ContainsText(texts, "军事大臣"), Is.True);
+            Assert.That(ContainsText(texts, "好感 12"), Is.True);
+            Assert.That(ContainsText(texts, "建议扩张粮食产出。"), Is.True);
+            Assert.That(ContainsText(texts, "采纳全部"), Is.True);
+            Assert.That(ContainsText(texts, "暂不采纳"), Is.True);
+
+            var images = _root.GetComponentsInChildren<UguiImage>(true);
+            Assert.That(images, Has.Some.Matches<UguiImage>(image =>
+                image.gameObject.name == MinisterReportUiToolkitBinder.RootName &&
+                image.color.r < 0.1f &&
+                image.color.g < 0.1f &&
+                image.color.b < 0.1f));
+            Assert.That(_root.GetComponentsInChildren<UguiButton>(true).Length, Is.GreaterThanOrEqualTo(5));
+
+            visibilityStore.Dispose();
+            viewModel.Dispose();
+            draftStore.Dispose();
         }
 
         [Test]
@@ -318,6 +379,31 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[] { visibilityStore });
+        }
+
+        private static void InjectMinisterReport(
+            MinisterReportUiToolkitBinder binder,
+            MinisterReportViewModel viewModel,
+            ManagementPanelVisibilityStore visibilityStore)
+        {
+            var method = typeof(MinisterReportUiToolkitBinder).GetMethod(
+                "Construct",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(binder, new object[] { viewModel, visibilityStore });
+        }
+
+        private static bool ContainsText(IEnumerable<TextMeshProUGUI> texts, string expected)
+        {
+            foreach (var text in texts)
+            {
+                if (text != null && text.text == expected)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void InjectManagementHost(

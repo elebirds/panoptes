@@ -103,14 +103,18 @@ namespace Panoptes.Tests.EditMode.Composition
         }
 
         [Test]
-        public void MinisterReportPrefab_ShouldCarryExplicitUiDocument()
+        public void MinisterReportPrefab_ShouldUseUguiRuntimeCanvas_NotUiDocument()
         {
             var prefab = Resources.Load<GameObject>("Prefabs/UI/MinisterReport");
             Assert.That(prefab, Is.Not.Null, "Resources/Prefabs/UI/MinisterReport.prefab must exist.");
             Assert.That(
-                prefab.GetComponent<UIDocument>(),
+                prefab.GetComponent<MinisterReportUiToolkitBinder>(),
                 Is.Not.Null,
-                "MinisterReport must serialize UIDocument instead of relying on runtime component injection.");
+                "MinisterReport must keep the composition binder component.");
+            Assert.That(
+                prefab.GetComponent<UIDocument>(),
+                Is.Null,
+                "MinisterReport is now a runtime UGUI panel and must not serialize UIDocument.");
         }
 
         private static Scene OpenGameScene()

@@ -2,15 +2,22 @@ using System;
 using System.Collections.Generic;
 using Panoptes.Presentation.ViewModels;
 using R3;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 using VContainer;
+using UguiButton = UnityEngine.UI.Button;
+using UguiImage = UnityEngine.UI.Image;
 
 namespace Panoptes.Presentation.Binders.UiToolkit
 {
-    [RequireComponent(typeof(UIDocument))]
     public sealed class MinisterReportUiToolkitBinder : MonoBehaviour, IBinder<MinisterReportViewModel>
     {
+        private const int MinisterSortingOrder = 5000;
+        private const int HiddenManagementSortingOrder = -1000;
         public const string RootName = "minister-report-root";
         public const string TitleName = "minister-report-title";
         public const string CloseButtonName = "minister-report-close";
@@ -20,22 +27,26 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string EmptyName = "minister-report-empty";
         public const string OptionsName = "minister-report-options";
 
-        [SerializeField] private VisualTreeAsset visualTreeAsset;
-        [SerializeField] private StyleSheet styleSheet;
         [SerializeField] private string avatarTextureRoot = "Icons/Ministers";
-        [SerializeField] private string affectionHeartTextureResource = "Icons/UI/icon_affection_heart";
-        [SerializeField] private string backgroundTextureResource = "Textures/UI/minister_report_background";
 
-        private readonly Dictionary<string, int> _lastAffectionPulseByRole = new(StringComparer.OrdinalIgnoreCase);
-        private VisualElement _chatList;
-        private ScrollView _chatScroll;
-        private Button _closeButton;
-        private Label _emptyLabel;
-        private VisualElement _options;
+        private static readonly Color PanelColor = new(0.038f, 0.027f, 0.022f, 0.98f);
+        private static readonly Color HeaderColor = new(0.11f, 0.09f, 0.075f, 0.96f);
+        private static readonly Color ConversationColor = new(0.03f, 0.04f, 0.045f, 0.82f);
+        private static readonly Color BorderColor = new(0.86f, 0.52f, 0.18f, 0.95f);
+        private static readonly Color TextColor = new(0.98f, 0.9f, 0.72f, 1f);
+        private static readonly Color MutedTextColor = new(0.66f, 0.72f, 0.75f, 1f);
+        private static readonly Dictionary<string, Sprite> AvatarSprites = new(StringComparer.OrdinalIgnoreCase);
+
+        private readonly List<UguiButton> _optionButtons = new();
+        private readonly List<UguiButton> _tabButtons = new();
+        private Canvas _canvas;
+        private RectTransform _chatContent;
+        private RectTransform _optionsRoot;
+        private RectTransform _panelRoot;
+        private ScrollRect _scrollRect;
+        private TextMeshProUGUI _titleText;
+        private RectTransform _tabsContent;
         private IDisposable _stateSubscription;
-        private VisualElement _tabs;
-        private Label _title;
-        private UIDocument _uiDocument;
         private IDisposable _visibilitySubscription;
         private ManagementPanelVisibilityStore _visibilityStore;
         private MinisterReportViewModel _viewModel;
@@ -53,18 +64,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void Awake()
         {
-            EnsureDocument();
-            EnsureVisualTree();
-            CacheElements();
-            BindButtons();
+            EnsureCanvas();
+            ApplyVisibility();
         }
 
         private void OnEnable()
         {
-            EnsureDocument();
-            EnsureVisualTree();
-            CacheElements();
-            BindButtons();
+            EnsureCanvas();
             EnsureStateSubscription();
             EnsureVisibilitySubscription();
             Render(_viewModel?.Current);
@@ -73,7 +79,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void OnDisable()
         {
-            UnbindButtons();
             StopStateSubscription();
             StopVisibilitySubscription();
         }
@@ -107,12 +112,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         public void Render(MinisterReportState state)
         {
-            EnsureDocument();
-            EnsureVisualTree();
-            CacheElements();
-
+            EnsureCanvas();
             state ??= new MinisterReportState("大臣汇报", string.Empty, null, null, null);
-            SetText(_title, state.Title);
+            SetText(_titleText, state.Title);
             RenderTabs(state);
             RenderMessages(state);
             RenderOptions(state);
@@ -121,457 +123,396 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void RenderTabs(MinisterReportState state)
         {
-            if (_tabs == null)
-            {
-                return;
-            }
+            ClearChildren(_tabsContent);
+            _tabButtons.Clear();
 
-            _tabs.Clear();
             for (var i = 0; i < state.Ministers.Count; i++)
             {
                 var minister = state.Ministers[i];
-                var button = new Button(() => _viewModel?.SelectMinister(minister.Role))
-                {
-                    name = "minister-report-tab-" + SafeName(minister.Role)
-                };
-                button.AddToClassList("minister-report-tab");
-                if (minister.IsSelected)
-                {
-                    button.AddToClassList("is-selected");
-                }
-
-                button.Add(CreateAvatar(minister.IconResource, minister.Role, minister.AvatarText, "minister-report-tab-avatar"));
-
-                var text = new VisualElement();
-                text.AddToClassList("minister-report-tab-text");
-                text.Add(CreateLabel(minister.Name, "minister-report-tab-name"));
-                text.Add(CreateLabel(minister.Title, "minister-report-tab-title"));
-                button.Add(text);
-
-                var affection = CreateAffectionBadge(minister, out var heartIcon, out var deltaLabel);
-                button.Add(affection);
-                _tabs.Add(button);
-                PlayAffectionPulseIfNeeded(minister, heartIcon, deltaLabel);
+                var tab = CreateTab(minister);
+                _tabButtons.Add(tab);
             }
         }
 
-        private VisualElement CreateAffectionBadge(MinisterTabState minister, out VisualElement heartIcon, out Label deltaLabel)
+        private UguiButton CreateTab(MinisterTabState minister)
         {
-            var badge = new VisualElement();
-            badge.AddToClassList("minister-report-affection");
+            var rect = CreateUiObject("minister-tab-" + SafeName(minister.Role), _tabsContent);
+            rect.sizeDelta = new Vector2(0f, 82f);
+            var layout = rect.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = 82f;
+            layout.preferredHeight = 82f;
 
-            heartIcon = new VisualElement();
-            heartIcon.AddToClassList("minister-report-affection-heart");
-            var texture = LoadAffectionHeartTexture();
-            if (texture != null)
+            var image = rect.gameObject.AddComponent<UguiImage>();
+            image.color = minister.IsSelected
+                ? new Color(0.55f, 0.34f, 0.12f, 0.92f)
+                : new Color(1f, 1f, 1f, 0.07f);
+            var button = rect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => _viewModel?.SelectMinister(minister.Role));
+
+            var avatarRect = CreateUiObject("Avatar", rect);
+            AnchorFixed(avatarRect, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(54f, 54f));
+            var avatarImage = avatarRect.gameObject.AddComponent<UguiImage>();
+            avatarImage.color = new Color(0.26f, 0.28f, 0.32f, 1f);
+            var sprite = LoadAvatarSprite(minister.IconResource, minister.Role);
+            if (sprite != null)
             {
-                heartIcon.style.backgroundImage = new StyleBackground(texture);
+                avatarImage.sprite = sprite;
+                avatarImage.color = Color.white;
+                avatarImage.preserveAspect = true;
             }
 
-            var value = CreateLabel(minister.Affection.ToString(), "minister-report-affection-value");
-            deltaLabel = CreateLabel("+" + Math.Max(0, minister.AffectionPulseDelta) + " \u597d\u611f", "minister-report-affection-delta");
-            deltaLabel.style.display = DisplayStyle.None;
+            var avatarLabel = CreateText(avatarRect, "AvatarText", minister.AvatarText, 22f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(avatarLabel.rectTransform, Vector2.zero, Vector2.zero);
+            avatarLabel.gameObject.SetActive(sprite == null);
 
-            badge.Add(heartIcon);
-            badge.Add(value);
-            badge.Add(deltaLabel);
-            return badge;
-        }
+            var title = CreateText(rect, "Title", minister.Title, 15f, FontStyles.Bold, TextAlignmentOptions.Left);
+            Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -30f), new Vector2(-10f, -8f));
 
-        private void PlayAffectionPulseIfNeeded(MinisterTabState minister, VisualElement heartIcon, Label deltaLabel)
-        {
-            if (minister == null || heartIcon == null || minister.AffectionPulseSequence <= 0)
-            {
-                return;
-            }
+            var name = CreateText(rect, "Name", minister.Name, 12.5f, FontStyles.Normal, TextAlignmentOptions.Left);
+            name.color = new Color(0.86f, 0.91f, 0.94f, 1f);
+            Anchor(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(74f, -51f), new Vector2(-10f, -31f));
 
-            var role = minister.Role ?? string.Empty;
-            _lastAffectionPulseByRole.TryGetValue(role, out var lastSequence);
-            if (lastSequence >= minister.AffectionPulseSequence)
-            {
-                return;
-            }
+            var affection = CreateText(rect, "Affection", "好感 " + minister.Affection, 12f, FontStyles.Bold, TextAlignmentOptions.Left);
+            affection.color = new Color(1f, 0.77f, 0.88f, 1f);
+            Anchor(affection.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(74f, 8f), new Vector2(-10f, 26f));
 
-            _lastAffectionPulseByRole[role] = minister.AffectionPulseSequence;
-            PlayAffectionPulse(heartIcon, deltaLabel);
-        }
-
-        private static void PlayAffectionPulse(VisualElement heartIcon, Label deltaLabel)
-        {
-            heartIcon.AddToClassList("is-pulsing");
-            heartIcon.style.width = 24;
-            heartIcon.style.height = 24;
-            if (deltaLabel != null)
-            {
-                deltaLabel.style.display = DisplayStyle.Flex;
-                deltaLabel.style.opacity = 1f;
-            }
-
-            heartIcon.schedule.Execute(() =>
-            {
-                heartIcon.style.width = 34;
-                heartIcon.style.height = 34;
-            }).ExecuteLater(25);
-            heartIcon.schedule.Execute(() =>
-            {
-                heartIcon.style.width = 24;
-                heartIcon.style.height = 24;
-            }).ExecuteLater(210);
-            heartIcon.schedule.Execute(() =>
-            {
-                heartIcon.RemoveFromClassList("is-pulsing");
-                if (deltaLabel != null)
-                {
-                    deltaLabel.style.opacity = 0f;
-                }
-            }).ExecuteLater(650);
-            heartIcon.schedule.Execute(() =>
-            {
-                if (deltaLabel != null)
-                {
-                    deltaLabel.style.display = DisplayStyle.None;
-                }
-            }).ExecuteLater(900);
+            return button;
         }
 
         private void RenderMessages(MinisterReportState state)
         {
-            if (_chatList == null)
+            ClearChildren(_chatContent);
+            if (state.Messages.Count == 0)
             {
+                var empty = CreateText(_chatContent, EmptyName, "暂无大臣汇报", 16f, FontStyles.Normal, TextAlignmentOptions.Left);
+                empty.color = MutedTextColor;
+                empty.textWrappingMode = TextWrappingModes.Normal;
+                empty.rectTransform.sizeDelta = new Vector2(0f, 32f);
+                empty.gameObject.AddComponent<LayoutElement>().preferredHeight = 32f;
                 return;
             }
 
-            _chatList.Clear();
-            SetDisplay(_emptyLabel, state.HasMessages ? DisplayStyle.None : DisplayStyle.Flex);
-
             for (var i = 0; i < state.Messages.Count; i++)
             {
-                _chatList.Add(CreateMessageRow(state.Messages[i]));
+                CreateMessageRow(state.Messages[i]);
             }
 
-            ScrollToBottom();
+            Canvas.ForceUpdateCanvases();
+            if (_scrollRect != null)
+            {
+                _scrollRect.verticalNormalizedPosition = 0f;
+            }
         }
 
-        private VisualElement CreateMessageRow(MinisterChatMessageState message)
+        private void CreateMessageRow(MinisterChatMessageState message)
         {
-            var row = new VisualElement
-            {
-                name = "minister-report-message-" + SafeName(message.Id)
-            };
-            row.AddToClassList("minister-report-message");
-            row.AddToClassList(message.IsPlayer ? "is-player" : "is-minister");
+            var row = CreateUiObject("message-" + SafeName(message.Id), _chatContent);
+            var rowLayout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.spacing = 10f;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = false;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childAlignment = message.IsPlayer ? TextAnchor.UpperRight : TextAnchor.UpperLeft;
+            var rowElement = row.gameObject.AddComponent<LayoutElement>();
+            rowElement.minHeight = 58f;
+            rowElement.flexibleWidth = 1f;
 
             if (!message.IsPlayer)
             {
-                row.Add(CreateAvatar(message.IconResource, message.MinisterRole, message.AvatarText, "minister-report-message-avatar"));
+                var avatarRect = CreateUiObject("Avatar", row);
+                avatarRect.sizeDelta = new Vector2(42f, 42f);
+                avatarRect.gameObject.AddComponent<LayoutElement>().preferredWidth = 42f;
+                var avatarImage = avatarRect.gameObject.AddComponent<UguiImage>();
+                avatarImage.color = new Color(0.26f, 0.28f, 0.32f, 1f);
+                var sprite = LoadAvatarSprite(message.IconResource, message.MinisterRole);
+                if (sprite != null)
+                {
+                    avatarImage.sprite = sprite;
+                    avatarImage.color = Color.white;
+                    avatarImage.preserveAspect = true;
+                }
+
+                var avatarLabel = CreateText(avatarRect, "AvatarText", message.AvatarText, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
+                Stretch(avatarLabel.rectTransform, Vector2.zero, Vector2.zero);
+                avatarLabel.gameObject.SetActive(sprite == null);
             }
 
-            var body = new VisualElement();
-            body.AddToClassList("minister-report-message-body");
-
-            if (!message.IsPlayer)
-            {
-                var header = new VisualElement();
-                header.AddToClassList("minister-report-message-header");
-                header.Add(CreateLabel(message.MinisterName, "minister-report-message-name"));
-                header.Add(CreateLabel(message.MinisterTitle, "minister-report-message-title"));
-                body.Add(header);
-            }
-
-            var bubbleRow = new VisualElement();
-            bubbleRow.AddToClassList("minister-report-bubble-row");
-            if (!message.IsPlayer)
-            {
-                var tail = new VisualElement { name = "minister-report-bubble-tail-left" };
-                tail.AddToClassList("minister-report-bubble-tail");
-                tail.AddToClassList("is-left");
-                bubbleRow.Add(tail);
-            }
-
-            var bubble = CreateLabel(message.Text, "minister-report-message-bubble");
-            if (message.IsStreaming)
-            {
-                bubble.text += " ...";
-            }
-
-            bubbleRow.Add(bubble);
             if (message.IsPlayer)
             {
-                var tail = new VisualElement { name = "minister-report-bubble-tail-right" };
-                tail.AddToClassList("minister-report-bubble-tail");
-                tail.AddToClassList("is-right");
-                bubbleRow.Add(tail);
+                var spacer = CreateUiObject("Spacer", row);
+                spacer.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
             }
 
-            body.Add(bubbleRow);
-            row.Add(body);
-            return row;
+            var bubbleRoot = CreateUiObject("Bubble", row);
+            var bubbleLayoutElement = bubbleRoot.gameObject.AddComponent<LayoutElement>();
+            bubbleLayoutElement.preferredWidth = 920f;
+            bubbleLayoutElement.flexibleWidth = 0f;
+            var bubbleImage = bubbleRoot.gameObject.AddComponent<UguiImage>();
+            bubbleImage.color = message.IsPlayer
+                ? new Color(0.24f, 0.42f, 0.55f, 0.92f)
+                : new Color(1f, 1f, 1f, 0.09f);
+
+            var bubbleLayout = bubbleRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            bubbleLayout.padding = new RectOffset(12, 12, 10, 10);
+            bubbleLayout.spacing = 4f;
+            bubbleLayout.childControlWidth = true;
+            bubbleLayout.childControlHeight = true;
+            bubbleLayout.childForceExpandWidth = true;
+            bubbleLayout.childForceExpandHeight = false;
+            bubbleRoot.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            if (!message.IsPlayer)
+            {
+                var header = CreateText(bubbleRoot, "Header", BuildMessageHeader(message), 12f, FontStyles.Bold, TextAlignmentOptions.Left);
+                header.color = new Color(0.96f, 0.83f, 0.55f, 1f);
+            }
+
+            var body = CreateText(bubbleRoot, "Text", message.Text + (message.IsStreaming ? " ..." : string.Empty), 14f, FontStyles.Normal, TextAlignmentOptions.Left);
+            body.color = new Color(0.93f, 0.96f, 0.97f, 1f);
+            body.textWrappingMode = TextWrappingModes.Normal;
+
+            if (!message.IsPlayer)
+            {
+                var spacer = CreateUiObject("Spacer", row);
+                spacer.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            }
         }
 
         private void RenderOptions(MinisterReportState state)
         {
-            if (_options == null)
-            {
-                return;
-            }
+            ClearChildren(_optionsRoot);
+            _optionButtons.Clear();
 
-            _options.Clear();
             if (state.Options.Count == 0)
             {
-                _options.Add(CreateLabel("暂无待回复选项", "minister-report-option-empty"));
+                var empty = CreateText(_optionsRoot, "minister-report-option-empty", "暂无待回复选项", 13f, FontStyles.Normal, TextAlignmentOptions.Left);
+                empty.color = MutedTextColor;
+                empty.gameObject.AddComponent<LayoutElement>().preferredWidth = 220f;
                 return;
             }
 
             for (var i = 0; i < state.Options.Count; i++)
             {
                 var option = state.Options[i];
-                var button = new Button(() => _viewModel?.ChooseOption(option))
-                {
-                    name = "minister-report-option-" + SafeName(option.Id),
-                    text = option.Label
-                };
-                button.AddToClassList("minister-report-option");
-                button.AddToClassList(option.Accept ? "is-accept" : "is-reject");
-                _options.Add(button);
+                var button = CreateOptionButton(option);
+                _optionButtons.Add(button);
             }
         }
 
-        private VisualElement CreateAvatar(string iconResource, string role, string fallbackText, string className)
+        private UguiButton CreateOptionButton(MinisterReplyOptionState option)
         {
-            var avatar = new VisualElement();
-            avatar.AddToClassList(className);
-            avatar.AddToClassList("minister-report-avatar");
+            var rect = CreateUiObject("option-" + SafeName(option.Id), _optionsRoot);
+            rect.sizeDelta = new Vector2(150f, 38f);
+            var layout = rect.gameObject.AddComponent<LayoutElement>();
+            layout.preferredWidth = Mathf.Max(120f, 22f + (option.Label?.Length ?? 0) * 15f);
+            layout.preferredHeight = 38f;
 
-            var texture = LoadAvatarTexture(iconResource, role);
-            if (texture != null)
-            {
-                avatar.style.backgroundImage = new StyleBackground(texture);
-            }
+            var image = rect.gameObject.AddComponent<UguiImage>();
+            image.color = option.Accept
+                ? new Color(0.34f, 0.48f, 0.25f, 0.94f)
+                : new Color(0.52f, 0.31f, 0.28f, 0.92f);
+            var button = rect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => _viewModel?.ChooseOption(option));
 
-            var label = CreateLabel(fallbackText, "minister-report-avatar-text");
-            if (texture != null)
-            {
-                label.style.display = DisplayStyle.None;
-            }
-
-            avatar.Add(label);
-            return avatar;
+            var label = CreateText(rect, "Label", option.Label, 14f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(label.rectTransform, Vector2.zero, Vector2.zero);
+            return button;
         }
 
-        private Texture2D LoadAvatarTexture(string iconResource, string role)
+        private void EnsureCanvas()
         {
-            if (!string.IsNullOrWhiteSpace(iconResource))
+            DisableLegacyDocument();
+            var rect = EnsureRectTransform(gameObject);
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            _canvas = GetComponent<Canvas>();
+            if (_canvas == null)
             {
-                var explicitTexture = Resources.Load<Texture2D>(iconResource.Trim().Trim('/'));
-                if (explicitTexture != null)
+                _canvas = gameObject.AddComponent<Canvas>();
+            }
+
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.overrideSorting = true;
+            _canvas.sortingOrder = MinisterSortingOrder;
+
+            var scaler = GetComponent<CanvasScaler>();
+            if (scaler == null)
+            {
+                scaler = gameObject.AddComponent<CanvasScaler>();
+            }
+
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            if (GetComponent<GraphicRaycaster>() == null)
+            {
+                gameObject.AddComponent<GraphicRaycaster>();
+            }
+
+            EnsureEventSystem();
+            EnsureLayout(rect);
+        }
+
+        private void DisableLegacyDocument()
+        {
+            var document = GetComponent<UIDocument>();
+            if (document != null)
+            {
+                document.enabled = false;
+                if (document.rootVisualElement != null)
                 {
-                    return explicitTexture;
+                    document.rootVisualElement.style.display = DisplayStyle.None;
                 }
             }
-
-            if (string.IsNullOrWhiteSpace(role) || string.IsNullOrWhiteSpace(avatarTextureRoot))
-            {
-                return null;
-            }
-
-            return Resources.Load<Texture2D>(avatarTextureRoot.Trim().Trim('/') + "/" + role.Trim().ToLowerInvariant());
         }
 
-        private Texture2D LoadAffectionHeartTexture()
+        private void EnsureLayout(RectTransform root)
         {
-            return string.IsNullOrWhiteSpace(affectionHeartTextureResource)
-                ? null
-                : Resources.Load<Texture2D>(affectionHeartTextureResource.Trim().Trim('/'));
-        }
-
-        private void EnsureDocument()
-        {
-            if (_uiDocument == null)
-            {
-                _uiDocument = GetComponent<UIDocument>();
-                if (_uiDocument == null)
-                {
-                    _uiDocument = gameObject.AddComponent<UIDocument>();
-                }
-            }
-
-            if (_uiDocument != null)
-            {
-                UiToolkitRuntimeDocument.EnsureConfigured(_uiDocument, 430);
-            }
-        }
-
-        private void EnsureVisualTree()
-        {
-            if (_uiDocument?.rootVisualElement == null)
+            if (_panelRoot != null)
             {
                 return;
             }
 
-            var root = _uiDocument.rootVisualElement;
-            var existingRoot = root.Q<VisualElement>(RootName);
-            if (existingRoot != null && existingRoot.ClassListContains("runtime-fallback-tree"))
+            _panelRoot = CreateUiObject(RootName, root);
+            _panelRoot.anchorMin = new Vector2(0.05f, 0.05f);
+            _panelRoot.anchorMax = new Vector2(0.95f, 0.95f);
+            _panelRoot.offsetMin = Vector2.zero;
+            _panelRoot.offsetMax = Vector2.zero;
+
+            var panelImage = _panelRoot.gameObject.AddComponent<UguiImage>();
+            panelImage.color = PanelColor;
+
+            CreateBorder(_panelRoot);
+
+            var header = CreateUiObject("minister-report-header", _panelRoot);
+            Anchor(header, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(28f, -82f), new Vector2(-28f, -24f));
+            header.gameObject.AddComponent<UguiImage>().color = HeaderColor;
+
+            _titleText = CreateText(header, TitleName, "大臣汇报", 22f, FontStyles.Bold, TextAlignmentOptions.Left);
+            Anchor(_titleText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(16f, 0f), new Vector2(-58f, 0f));
+
+            var closeButton = CreateHeaderButton(header, CloseButtonName, "X");
+            closeButton.onClick.AddListener(Close);
+
+            var body = CreateUiObject("minister-report-body", _panelRoot);
+            Anchor(body, Vector2.zero, Vector2.one, new Vector2(28f, 24f), new Vector2(-28f, -102f));
+
+            var tabsPanel = CreateUiObject(TabListName, body);
+            Anchor(tabsPanel, Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(230f, 0f));
+            tabsPanel.gameObject.AddComponent<UguiImage>().color = new Color(1f, 1f, 1f, 0.035f);
+
+            _tabsContent = CreateUiObject("TabsContent", tabsPanel);
+            Stretch(_tabsContent, new Vector2(10f, 10f), new Vector2(-10f, -10f));
+            var tabsLayout = _tabsContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            tabsLayout.spacing = 10f;
+            tabsLayout.childControlWidth = true;
+            tabsLayout.childControlHeight = true;
+            tabsLayout.childForceExpandWidth = true;
+            tabsLayout.childForceExpandHeight = false;
+
+            var conversation = CreateUiObject("minister-report-conversation", body);
+            Anchor(conversation, new Vector2(0f, 0f), Vector2.one, new Vector2(254f, 0f), Vector2.zero);
+            conversation.gameObject.AddComponent<UguiImage>().color = ConversationColor;
+
+            CreateChatScroll(conversation);
+            CreateOptionsRoot(conversation);
+        }
+
+        private void CreateChatScroll(RectTransform parent)
+        {
+            var scrollRoot = CreateUiObject(ChatScrollName, parent);
+            Anchor(scrollRoot, new Vector2(0f, 0f), Vector2.one, new Vector2(18f, 92f), new Vector2(-18f, -16f));
+
+            var viewport = CreateUiObject("Viewport", scrollRoot);
+            Stretch(viewport, Vector2.zero, Vector2.zero);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            viewport.gameObject.AddComponent<UguiImage>().color = Color.clear;
+
+            _chatContent = CreateUiObject(ChatListName, viewport);
+            _chatContent.anchorMin = new Vector2(0f, 1f);
+            _chatContent.anchorMax = new Vector2(1f, 1f);
+            _chatContent.pivot = new Vector2(0.5f, 1f);
+            _chatContent.offsetMin = Vector2.zero;
+            _chatContent.offsetMax = Vector2.zero;
+            var layout = _chatContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 14f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            _chatContent.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            _scrollRect = scrollRoot.gameObject.AddComponent<ScrollRect>();
+            _scrollRect.viewport = viewport;
+            _scrollRect.content = _chatContent;
+            _scrollRect.horizontal = false;
+            _scrollRect.vertical = true;
+            _scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        }
+
+        private void CreateOptionsRoot(RectTransform parent)
+        {
+            _optionsRoot = CreateUiObject(OptionsName, parent);
+            Anchor(_optionsRoot, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(18f, 16f), new Vector2(-18f, 78f));
+            var layout = _optionsRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 8f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+        }
+
+        private UguiButton CreateHeaderButton(RectTransform parent, string name, string label)
+        {
+            var rect = CreateUiObject(name, parent);
+            AnchorFixed(rect, new Vector2(1f, 0.5f), new Vector2(-22f, 0f), new Vector2(36f, 32f));
+            var image = rect.gameObject.AddComponent<UguiImage>();
+            image.color = new Color(0.46f, 0.28f, 0.13f, 0.95f);
+            var button = rect.gameObject.AddComponent<UguiButton>();
+            button.targetGraphic = image;
+            var text = CreateText(rect, "Label", label, 18f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(text.rectTransform, Vector2.zero, Vector2.zero);
+            return button;
+        }
+
+        private static void CreateBorder(RectTransform parent)
+        {
+            CreateLine(parent, "BorderTop", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -2f), Vector2.zero);
+            CreateLine(parent, "BorderBottom", Vector2.zero, new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 2f));
+            CreateLine(parent, "BorderLeft", Vector2.zero, new Vector2(0f, 1f), Vector2.zero, new Vector2(2f, 0f));
+            CreateLine(parent, "BorderRight", new Vector2(1f, 0f), Vector2.one, new Vector2(-2f, 0f), Vector2.zero);
+        }
+
+        private static void CreateLine(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var rect = CreateUiObject(name, parent);
+            Anchor(rect, anchorMin, anchorMax, offsetMin, offsetMax);
+            rect.gameObject.AddComponent<UguiImage>().color = BorderColor;
+        }
+
+        private void ApplyVisibility()
+        {
+            EnsureCanvas();
+            var isVisible = _visibilityStore != null && _visibilityStore.IsVisible(ManagementPanelId.MinisterReport);
+            _canvas.enabled = isVisible;
+            if (_panelRoot != null)
             {
-                EnsureRuntimeStyleSheet(root);
-                return;
+                _panelRoot.gameObject.SetActive(isVisible);
             }
 
-            root.Clear();
-            root.Add(BuildFallbackTree());
-            EnsureRuntimeStyleSheet(root);
-        }
-
-        private void EnsureRuntimeStyleSheet(VisualElement root)
-        {
-            if (styleSheet != null && !root.styleSheets.Contains(styleSheet))
+            if (isVisible)
             {
-                root.styleSheets.Add(styleSheet);
-            }
-        }
-
-        private static VisualElement BuildFallbackTree()
-        {
-            var root = new VisualElement { name = RootName };
-            root.AddToClassList("minister-report-root");
-            root.AddToClassList("runtime-fallback-tree");
-            root.style.flexDirection = FlexDirection.Column;
-            root.style.flexGrow = 1f;
-            root.style.color = new Color(0.95f, 0.89f, 0.78f, 1f);
-            root.style.backgroundColor = new Color(0.038f, 0.027f, 0.022f, 0.98f);
-            root.style.borderBottomColor = new Color(0.86f, 0.52f, 0.18f, 0.95f);
-            root.style.borderLeftColor = new Color(0.86f, 0.52f, 0.18f, 0.95f);
-            root.style.borderRightColor = new Color(0.86f, 0.52f, 0.18f, 0.95f);
-            root.style.borderTopColor = new Color(0.86f, 0.52f, 0.18f, 0.95f);
-            root.style.borderBottomWidth = 2f;
-            root.style.borderLeftWidth = 2f;
-            root.style.borderRightWidth = 2f;
-            root.style.borderTopWidth = 2f;
-
-            var header = new VisualElement();
-            header.AddToClassList("minister-report-header");
-            header.style.flexDirection = FlexDirection.Row;
-            header.style.alignItems = Align.Center;
-            header.style.justifyContent = Justify.SpaceBetween;
-            header.style.height = 48f;
-            header.style.marginBottom = 12f;
-            header.style.paddingLeft = 14f;
-            header.style.paddingRight = 8f;
-            header.style.backgroundColor = new Color(0.11f, 0.09f, 0.075f, 0.92f);
-            header.style.borderBottomColor = new Color(0.86f, 0.52f, 0.18f, 0.55f);
-            header.style.borderBottomWidth = 1f;
-
-            var title = CreateLabel("大臣汇报", TitleName, "minister-report-title");
-            title.style.fontSize = 20f;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.color = new Color(0.98f, 0.89f, 0.68f, 1f);
-            header.Add(title);
-
-            var close = new Button { name = CloseButtonName, text = "X" };
-            close.AddToClassList("minister-report-close");
-            close.style.width = 34f;
-            close.style.height = 30f;
-            close.style.paddingBottom = 0f;
-            close.style.paddingLeft = 0f;
-            close.style.paddingRight = 0f;
-            close.style.paddingTop = 0f;
-            close.style.backgroundColor = new Color(0.46f, 0.28f, 0.13f, 0.95f);
-            close.style.color = new Color(1f, 0.92f, 0.78f, 1f);
-            close.style.unityFontStyleAndWeight = FontStyle.Bold;
-            header.Add(close);
-            root.Add(header);
-
-            var body = new VisualElement();
-            body.AddToClassList("minister-report-body");
-            body.style.flexGrow = 1f;
-            body.style.minHeight = 0f;
-            body.style.flexDirection = FlexDirection.Row;
-
-            var tabs = new VisualElement { name = TabListName };
-            tabs.AddToClassList("minister-report-tabs");
-            tabs.style.width = 210f;
-            tabs.style.flexShrink = 0f;
-            tabs.style.paddingTop = 4f;
-            tabs.style.paddingRight = 14f;
-            tabs.style.borderRightColor = new Color(0.82f, 0.58f, 0.28f, 0.45f);
-            tabs.style.borderRightWidth = 1f;
-            body.Add(tabs);
-
-            var conversation = new VisualElement();
-            conversation.AddToClassList("minister-report-conversation");
-            conversation.style.flexGrow = 1f;
-            conversation.style.minWidth = 0f;
-            conversation.style.minHeight = 0f;
-            conversation.style.paddingLeft = 18f;
-            conversation.style.paddingRight = 12f;
-            conversation.style.paddingTop = 10f;
-            conversation.style.backgroundColor = new Color(0.03f, 0.04f, 0.045f, 0.62f);
-
-            var empty = CreateLabel("暂无大臣汇报", EmptyName, "minister-report-empty");
-            empty.style.color = new Color(0.63f, 0.67f, 0.69f, 1f);
-            empty.style.marginBottom = 8f;
-            conversation.Add(empty);
-
-            var scroll = new ScrollView { name = ChatScrollName };
-            scroll.AddToClassList("minister-report-scroll");
-            scroll.style.flexGrow = 1f;
-            scroll.style.minHeight = 0f;
-            scroll.style.marginBottom = 12f;
-            scroll.style.overflow = Overflow.Hidden;
-
-            var chat = new VisualElement { name = ChatListName };
-            chat.AddToClassList("minister-report-chat");
-            chat.style.flexGrow = 1f;
-            chat.style.minHeight = 0f;
-            scroll.Add(chat);
-            conversation.Add(scroll);
-
-            var options = new VisualElement { name = OptionsName };
-            options.AddToClassList("minister-report-options");
-            options.style.minHeight = 48f;
-            options.style.flexDirection = FlexDirection.Row;
-            options.style.flexWrap = Wrap.Wrap;
-            options.style.alignItems = Align.Center;
-            options.style.paddingTop = 10f;
-            options.style.borderTopColor = new Color(0.82f, 0.58f, 0.28f, 0.45f);
-            options.style.borderTopWidth = 1f;
-            conversation.Add(options);
-            body.Add(conversation);
-            root.Add(body);
-            return root;
-        }
-
-        private void CacheElements()
-        {
-            var root = _uiDocument?.rootVisualElement;
-            _title = root?.Q<Label>(TitleName);
-            _closeButton = root?.Q<Button>(CloseButtonName);
-            _tabs = root?.Q<VisualElement>(TabListName);
-            _chatScroll = root?.Q<ScrollView>(ChatScrollName);
-            _chatList = root?.Q<VisualElement>(ChatListName);
-            _emptyLabel = root?.Q<Label>(EmptyName);
-            _options = root?.Q<VisualElement>(OptionsName);
-            if (_chatScroll != null)
-            {
-                _chatScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-                _chatScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
-                ManagementPanelUiToolkitRenderer.EnableDragScroll(_chatScroll);
-            }
-        }
-
-        private void BindButtons()
-        {
-            if (_closeButton != null)
-            {
-                _closeButton.clicked -= Close;
-                _closeButton.clicked += Close;
-            }
-        }
-
-        private void UnbindButtons()
-        {
-            if (_closeButton != null)
-            {
-                _closeButton.clicked -= Close;
+                HideOtherManagementDocuments();
+                Debug.Log($"[MinisterReportUGUI] visible ministers={_viewModel?.Current?.Ministers.Count ?? 0} messages={_viewModel?.Current?.Messages.Count ?? 0} options={_viewModel?.Current?.Options.Count ?? 0}");
             }
         }
 
@@ -608,62 +549,192 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             _visibilitySubscription = null;
         }
 
-        private void ApplyVisibility()
+        private Sprite LoadAvatarSprite(string iconResource, string role)
         {
-            EnsureDocument();
-            EnsureVisualTree();
-            CacheElements();
+            var path = !string.IsNullOrWhiteSpace(iconResource)
+                ? iconResource.Trim().Trim('/')
+                : (!string.IsNullOrWhiteSpace(role) && !string.IsNullOrWhiteSpace(avatarTextureRoot)
+                    ? avatarTextureRoot.Trim().Trim('/') + "/" + role.Trim().ToLowerInvariant()
+                    : string.Empty);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
 
-            var root = _uiDocument?.rootVisualElement;
-            var panelRoot = root?.Q<VisualElement>(RootName);
-            if (root == null || panelRoot == null)
+            if (AvatarSprites.TryGetValue(path, out var cached))
+            {
+                return cached;
+            }
+
+            var texture = Resources.Load<Texture2D>(path);
+            if (texture == null)
+            {
+                AvatarSprites[path] = null;
+                return null;
+            }
+
+            var sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+            sprite.name = texture.name + "_Sprite";
+            AvatarSprites[path] = sprite;
+            return sprite;
+        }
+
+        private static string BuildMessageHeader(MinisterChatMessageState message)
+        {
+            if (string.IsNullOrWhiteSpace(message.MinisterTitle))
+            {
+                return message.MinisterName ?? string.Empty;
+            }
+
+            return string.IsNullOrWhiteSpace(message.MinisterName)
+                ? message.MinisterTitle
+                : message.MinisterName + "  " + message.MinisterTitle;
+        }
+
+        private static TextMeshProUGUI CreateText(RectTransform parent, string name, string text, float fontSize, FontStyles style, TextAlignmentOptions alignment)
+        {
+            var rect = CreateUiObject(name, parent);
+            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            label.text = text ?? string.Empty;
+            label.fontSize = fontSize;
+            label.fontStyle = style;
+            label.alignment = alignment;
+            label.color = TextColor;
+            label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Truncate;
+            if (TMP_Settings.defaultFontAsset != null)
+            {
+                label.font = TMP_Settings.defaultFontAsset;
+            }
+
+            return label;
+        }
+
+        private static void SetText(TMP_Text text, string value)
+        {
+            if (text != null)
+            {
+                text.text = value ?? string.Empty;
+            }
+        }
+
+        private static RectTransform CreateUiObject(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            return go.GetComponent<RectTransform>();
+        }
+
+        private static RectTransform EnsureRectTransform(GameObject target)
+        {
+            var rect = target.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                return rect;
+            }
+
+            return target.AddComponent<RectTransform>();
+        }
+
+        private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = offsetMin;
+            rect.offsetMax = offsetMax;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void AnchorFixed(RectTransform rect, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
+        {
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void Stretch(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            Anchor(rect, Vector2.zero, Vector2.one, offsetMin, offsetMax);
+        }
+
+        private static void ClearChildren(RectTransform root)
+        {
+            if (root == null)
             {
                 return;
             }
 
-            root.pickingMode = PickingMode.Ignore;
-            ManagementPanelRuntimeLayout.ApplyLargeModalPanel(root, panelRoot);
-            ApplyRuntimePaint(root, panelRoot);
-            var isVisible = _visibilityStore != null && _visibilityStore.IsVisible(ManagementPanelId.MinisterReport);
-
-            root.style.display = isVisible ? DisplayStyle.Flex : DisplayStyle.None;
+            for (var i = root.childCount - 1; i >= 0; i--)
+            {
+                var child = root.GetChild(i).gameObject;
+                if (Application.isPlaying)
+                {
+                    Destroy(child);
+                }
+                else
+                {
+                    DestroyImmediate(child);
+                }
+            }
         }
 
-        private static void ApplyRuntimePaint(VisualElement root, VisualElement panelRoot)
+        private static string SafeName(string value)
         {
-            if (root == null || panelRoot == null)
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "empty";
+            }
+
+            var chars = value.Trim().ToLowerInvariant().ToCharArray();
+            for (var i = 0; i < chars.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(chars[i]) && chars[i] != '-' && chars[i] != '_')
+                {
+                    chars[i] = '-';
+                }
+            }
+
+            return new string(chars);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null || HasSceneEventSystem())
             {
                 return;
             }
 
-            root.style.backgroundColor = Color.clear;
-            root.style.backgroundImage = StyleKeyword.None;
-            panelRoot.style.backgroundImage = StyleKeyword.None;
-            panelRoot.style.backgroundColor = new Color(0.038f, 0.027f, 0.022f, 0.98f);
-
-            var header = panelRoot.Q<VisualElement>(className: "minister-report-header");
-            if (header != null)
-            {
-                header.style.backgroundImage = StyleKeyword.None;
-                header.style.backgroundColor = new Color(0.11f, 0.09f, 0.075f, 0.92f);
-            }
-
-            var conversation = panelRoot.Q<VisualElement>(className: "minister-report-conversation");
-            if (conversation != null)
-            {
-                conversation.style.backgroundImage = StyleKeyword.None;
-                conversation.style.backgroundColor = new Color(0.03f, 0.04f, 0.045f, 0.62f);
-            }
+            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
         }
 
-        private static void HideOtherManagementDocuments(UIDocument currentDocument)
+        private static bool HasSceneEventSystem()
+        {
+            var eventSystems = Resources.FindObjectsOfTypeAll<EventSystem>();
+            for (var i = 0; i < eventSystems.Length; i++)
+            {
+                var eventSystem = eventSystems[i];
+                if (eventSystem != null &&
+                    eventSystem.gameObject != null &&
+                    eventSystem.gameObject.scene.IsValid())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void HideOtherManagementDocuments()
         {
             var documents = Resources.FindObjectsOfTypeAll<UIDocument>();
             for (var i = 0; i < documents.Length; i++)
             {
                 var document = documents[i];
                 if (document == null ||
-                    ReferenceEquals(document, currentDocument) ||
                     document.gameObject == null ||
                     !document.gameObject.scene.IsValid() ||
                     !IsManagementDocument(document.gameObject.name))
@@ -677,6 +748,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                     root.style.display = DisplayStyle.None;
                 }
 
+                document.sortingOrder = HiddenManagementSortingOrder;
+                if (document.panelSettings != null)
+                {
+                    document.panelSettings.sortingOrder = HiddenManagementSortingOrder;
+                    document.panelSettings.clearColor = false;
+                    document.panelSettings.clearDepthStencil = false;
+                }
             }
         }
 
@@ -693,80 +771,6 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 objectName.StartsWith("RecipeSynthesis", StringComparison.Ordinal) ||
                 objectName.StartsWith("PolicyFocus", StringComparison.Ordinal) ||
                 objectName.StartsWith("NationalLedger", StringComparison.Ordinal);
-        }
-
-        private void ApplyPanelBackground(VisualElement panelRoot)
-        {
-            if (panelRoot == null || string.IsNullOrWhiteSpace(backgroundTextureResource))
-            {
-                return;
-            }
-
-            var texture = Resources.Load<Texture2D>(backgroundTextureResource.Trim());
-            if (texture != null)
-            {
-                panelRoot.style.backgroundImage = new StyleBackground(texture);
-            }
-        }
-
-        private void ScrollToBottom()
-        {
-            if (_chatScroll == null)
-            {
-                return;
-            }
-
-            _chatScroll.schedule.Execute(() =>
-            {
-                if (_chatScroll != null)
-                {
-                    _chatScroll.scrollOffset = new Vector2(0f, float.MaxValue);
-                }
-            });
-        }
-
-        private static Label CreateLabel(string text, string className)
-        {
-            return CreateLabel(text, string.Empty, className);
-        }
-
-        private static Label CreateLabel(string text, string name, string className)
-        {
-            var label = new Label(text ?? string.Empty);
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                label.name = name;
-            }
-
-            if (!string.IsNullOrWhiteSpace(className))
-            {
-                label.AddToClassList(className);
-            }
-
-            return label;
-        }
-
-        private static void SetDisplay(VisualElement element, DisplayStyle display)
-        {
-            if (element != null)
-            {
-                element.style.display = display;
-            }
-        }
-
-        private static void SetText(Label label, string text)
-        {
-            if (label != null)
-            {
-                label.text = text ?? string.Empty;
-            }
-        }
-
-        private static string SafeName(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? "empty"
-                : value.Trim().ToLowerInvariant().Replace(' ', '-').Replace(':', '-');
         }
     }
 }

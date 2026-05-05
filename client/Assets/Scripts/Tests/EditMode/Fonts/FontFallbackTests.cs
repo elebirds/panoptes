@@ -62,6 +62,31 @@ namespace Panoptes.Tests.EditMode.Fonts
         }
 
         [Test]
+        public void RuntimeScripts_ShouldNotCreateStandaloneInputModule()
+        {
+            var scriptsRoot = Path.GetFullPath("Assets/Scripts/Runtime");
+            Assert.That(Directory.Exists(scriptsRoot), Is.True, "Runtime scripts directory missing.");
+
+            foreach (var sourcePath in Directory.EnumerateFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories))
+            {
+                var content = File.ReadAllText(sourcePath);
+                Assert.That(content, Does.Not.Contain("StandaloneInputModule"),
+                    sourcePath + " must use InputSystemUIInputModule when creating an EventSystem.");
+            }
+        }
+
+        [Test]
+        public void MinisterReportBinder_ShouldNotPersistRuntimeEventSystemAcrossScenes()
+        {
+            var sourcePath = Path.GetFullPath("Assets/Scripts/Runtime/Presentation/Binders/UiToolkit/MinisterReportUiToolkitBinder.cs");
+            Assert.That(File.Exists(sourcePath), Is.True, "MinisterReportUiToolkitBinder.cs missing.");
+
+            var content = File.ReadAllText(sourcePath);
+            Assert.That(content, Does.Not.Contain("DontDestroyOnLoad"),
+                "Runtime-created EventSystem must not persist across scene loads because scenes already own EventSystem instances.");
+        }
+
+        [Test]
         public void LobbyScene_ShouldKeepRoomPanelHiddenByDefault()
         {
             var scenePath = Path.GetFullPath("Assets/Scenes/Lobby.unity");

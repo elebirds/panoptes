@@ -11,6 +11,8 @@ using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.Common;
 using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
+using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using R3;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,6 +22,8 @@ namespace Panoptes.Presentation.UI.HUD
 {
     public sealed class ResourceHUD : MonoBehaviour
     {
+        private const string MinisterAttentionBadgeName = "MinisterAttentionBadge";
+
         [Header("Root")]
         [SerializeField] private RectTransform resourceListRoot;
         [SerializeField] private Button techButton;
@@ -44,10 +48,15 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private Color increaseColor = new Color(0.15f, 0.95f, 0.35f, 1f);
         [SerializeField] private Color decreaseColor = new Color(0.95f, 0.25f, 0.25f, 1f);
 
+        private static Sprite _ministerAttentionSprite;
+
         private readonly EventSubscriptionBag _buttonSubscriptions = new();
         private ResourceHudUguiBinder _binder;
         private ManagementPanelVisibilityStore _managementPanelVisibilityStore;
         private MapPlanningInputController _mapPlanningInputController;
+        private GameObject _ministerAttentionBadge;
+        private IDisposable _ministerAttentionSubscription;
+        private PlanningDraftStore _planningDraftStore;
         private IDisposable _stateSubscription;
         private ResourceHudViewModel _viewModel;
 
@@ -60,6 +69,14 @@ namespace Panoptes.Presentation.UI.HUD
             _managementPanelVisibilityStore = managementPanelVisibilityStore;
             ResolvePrefabReferences();
             BindManagementButtons();
+        }
+
+        [Inject]
+        private void ConstructMinisterAttention(PlanningDraftStore planningDraftStore)
+        {
+            _planningDraftStore = planningDraftStore;
+            SubscribeMinisterAttention();
+            UpdateMinisterAttentionBadge();
         }
 
         [Inject]
@@ -81,20 +98,24 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureBinder();
             _viewModel?.SetIncludePoints(includePoints);
             SubscribeState();
+            SubscribeMinisterAttention();
             BindManagementButtons();
             ApplyGeneratedPanelArt();
             _binder?.Render(_viewModel?.Current ?? new ResourceHudState());
+            UpdateMinisterAttentionBadge();
         }
 
         private void OnDisable()
         {
             UnsubscribeState();
+            UnsubscribeMinisterAttention();
             UnbindTechButton();
             _binder?.StopAllHideCoroutines();
         }
 
         private void OnDestroy()
         {
+            UnsubscribeMinisterAttention();
             _binder?.Dispose();
             _binder = null;
         }
@@ -106,6 +127,8 @@ namespace Panoptes.Presentation.UI.HUD
             EnsurePolicyButtonReference();
             EnsureMinisterButtonReference();
             LayoutManagementButtons();
+            EnsureMinisterAttentionBadge();
+            UpdateMinisterAttentionBadge();
         }
 
         private void ResolveResourceListRoot()
@@ -243,6 +266,24 @@ namespace Panoptes.Presentation.UI.HUD
             _stateSubscription = null;
         }
 
+        private void SubscribeMinisterAttention()
+        {
+            if (_planningDraftStore == null || _ministerAttentionSubscription != null)
+            {
+                return;
+            }
+
+            _ministerAttentionSubscription = _planningDraftStore.State.Subscribe(
+                this,
+                static (state, self) => self.UpdateMinisterAttentionBadge(state));
+        }
+
+        private void UnsubscribeMinisterAttention()
+        {
+            _ministerAttentionSubscription?.Dispose();
+            _ministerAttentionSubscription = null;
+        }
+
         private void BindManagementButtons()
         {
             _buttonSubscriptions.Clear();
@@ -305,6 +346,123 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             OpenManagementPanel(ManagementPanelId.MinisterReport);
+        }
+
+        private void EnsureMinisterAttentionBadge()
+        {
+            if (ministerButton == null)
+            {
+                return;
+            }
+
+            var buttonRect = ministerButton.transform as RectTransform;
+            if (buttonRect == null)
+            {
+                return;
+            }
+
+            if (_ministerAttentionBadge != null)
+            {
+                return;
+            }
+
+            var existing = buttonRect.Find(MinisterAttentionBadgeName);
+            if (existing != null)
+            {
+                _ministerAttentionBadge = existing.gameObject;
+                return;
+            }
+
+            var badge = new GameObject(MinisterAttentionBadgeName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            badge.transform.SetParent(buttonRect, false);
+            var rect = badge.transform as RectTransform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(20f, 20f);
+            rect.anchoredPosition = new Vector2(-2f, 2f);
+
+            var image = badge.GetComponent<Image>();
+            image.sprite = CreateMinisterAttentionSprite();
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            _ministerAttentionBadge = badge;
+        }
+
+        private void UpdateMinisterAttentionBadge()
+        {
+            UpdateMinisterAttentionBadge(_planningDraftStore?.Snapshot);
+        }
+
+        private void UpdateMinisterAttentionBadge(PlanningDraftState state)
+        {
+            EnsureMinisterAttentionBadge();
+            if (_ministerAttentionBadge != null)
+            {
+                _ministerAttentionBadge.SetActive(HasInteractiveMinisterDrafts(state?.MinisterDrafts));
+            }
+        }
+
+        private static bool HasInteractiveMinisterDrafts(System.Collections.Generic.IReadOnlyList<MinisterDraftDto> drafts)
+        {
+            if (drafts == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < drafts.Count; i++)
+            {
+                if (drafts[i]?.IsInteractive == true)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Sprite CreateMinisterAttentionSprite()
+        {
+            if (_ministerAttentionSprite != null)
+            {
+                return _ministerAttentionSprite;
+            }
+
+            const int size = 32;
+            const float center = (size - 1) * 0.5f;
+            const float radius = 14.5f;
+            var pixels = new Color32[size * size];
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var dx = x - center;
+                    var dy = y - center;
+                    var insideCircle = dx * dx + dy * dy <= radius * radius;
+                    var isStroke = insideCircle && dx * dx + dy * dy >= (radius - 1.7f) * (radius - 1.7f);
+                    var isBar = x >= 14 && x <= 17 && y >= 12 && y <= 23;
+                    var isDot = x >= 14 && x <= 17 && y >= 7 && y <= 10;
+                    pixels[y * size + x] = isBar || isDot
+                        ? new Color32(0, 0, 0, 255)
+                        : insideCircle
+                            ? isStroke
+                                ? new Color32(255, 126, 126, 255)
+                                : new Color32(230, 25, 40, 255)
+                            : new Color32(0, 0, 0, 0);
+                }
+            }
+
+            var texture = new Texture2D(size, size, TextureFormat.ARGB32, false)
+            {
+                name = "MinisterAttentionBadgeRuntime",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            _ministerAttentionSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+            _ministerAttentionSprite.name = "MinisterAttentionBadgeRuntime";
+            return _ministerAttentionSprite;
         }
 
         private void OnPolicyButtonClicked()

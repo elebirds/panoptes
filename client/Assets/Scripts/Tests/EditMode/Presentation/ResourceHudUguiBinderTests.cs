@@ -1,6 +1,7 @@
 using System.Reflection;
 using NUnit.Framework;
 using Panoptes.Core.Application.Stores;
+using Panoptes.Core.Domain;
 using Panoptes.Presentation.Binders.Ugui;
 using Panoptes.Presentation.UI.HUD;
 using Panoptes.Presentation.ViewModels;
@@ -123,6 +124,55 @@ namespace Panoptes.Tests.EditMode.Presentation
             Assert.That(visibilityStore.IsVisible(ManagementPanelId.MinisterReport), Is.False);
         }
 
+        [Test]
+        public void MinisterAttentionBadge_ShouldFollowInteractiveMinisterDrafts()
+        {
+            _root = new GameObject("ResourceHudMinisterBadgeTest", typeof(RectTransform));
+            var listObject = new GameObject("ResourceList", typeof(RectTransform));
+            listObject.transform.SetParent(_root.transform, false);
+            var techButtonObject = new GameObject("TechBtn", typeof(RectTransform), typeof(Button));
+            techButtonObject.transform.SetParent(_root.transform, false);
+            var ministerButtonObject = new GameObject("MinisterBtn", typeof(RectTransform), typeof(Button));
+            ministerButtonObject.transform.SetParent(_root.transform, false);
+
+            var hud = _root.AddComponent<ResourceHUD>();
+            using var viewModel = new ResourceHudViewModel(new GameStateStore(), new StaticCatalogStore());
+            using var visibilityStore = new ManagementPanelVisibilityStore();
+            using var draftStore = new PlanningDraftStore();
+            InjectDependencies(hud, viewModel, visibilityStore);
+            InjectMinisterAttention(hud, draftStore);
+
+            var badge = ministerButtonObject.transform.Find("MinisterAttentionBadge");
+            Assert.That(badge, Is.Not.Null);
+            Assert.That(badge.gameObject.activeSelf, Is.False);
+
+            draftStore.Replace(new PlanningDraftState(ministerDrafts: new[]
+            {
+                new MinisterDraftDto
+                {
+                    DraftId = "draft-1",
+                    MinisterRole = "domestic",
+                    Available = true,
+                    Status = "pending"
+                }
+            }));
+
+            Assert.That(badge.gameObject.activeSelf, Is.True);
+
+            draftStore.Replace(new PlanningDraftState(ministerDrafts: new[]
+            {
+                new MinisterDraftDto
+                {
+                    DraftId = "draft-1",
+                    MinisterRole = "domestic",
+                    Available = true,
+                    Status = "accepted"
+                }
+            }));
+
+            Assert.That(badge.gameObject.activeSelf, Is.False);
+        }
+
         private RectTransform CreateResourceListRoot()
         {
             _root = new GameObject("ResourceHudBinderTestRoot", typeof(RectTransform), typeof(CoroutineHost));
@@ -151,6 +201,13 @@ namespace Panoptes.Tests.EditMode.Presentation
             var method = typeof(ResourceHUD).GetMethod("Construct", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(hud, new object[] { viewModel, visibilityStore });
+        }
+
+        private static void InjectMinisterAttention(ResourceHUD hud, PlanningDraftStore draftStore)
+        {
+            var method = typeof(ResourceHUD).GetMethod("ConstructMinisterAttention", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method!.Invoke(hud, new object[] { draftStore });
         }
 
         private static void CreateResourceItem(Transform parent)

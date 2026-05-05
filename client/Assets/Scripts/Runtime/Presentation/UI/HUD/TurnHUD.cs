@@ -64,6 +64,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void Awake()
         {
             ResolveExternalTurnPanelReferences();
+            ResolveNextStageButtonReference();
             EnsureUi();
             ApplyTurnPanelBackground();
             ApplyNextStageButtonSprite();
@@ -73,6 +74,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void OnEnable()
         {
             ResolveExternalTurnPanelReferences();
+            ResolveNextStageButtonReference();
             _subscriptions.Clear();
             _turnSubscription?.Dispose();
             _turnSubscription = _turnStore?.State.Subscribe(this, static (state, self) => self.RefreshFromState(state));
@@ -242,6 +244,7 @@ namespace Panoptes.Presentation.UI.HUD
         private void BindNextStageButton()
         {
             _buttonSubscriptions.Clear();
+            ResolveNextStageButtonReference();
 
             var button = nextStageButton;
             if (button == null)
@@ -258,6 +261,16 @@ namespace Panoptes.Presentation.UI.HUD
                         button.onClick.RemoveListener(OnNextStageButtonClicked);
                     }
                 });
+        }
+
+        private void ResolveNextStageButtonReference()
+        {
+            if (nextStageButton != null)
+            {
+                return;
+            }
+
+            nextStageButton = FindButtonByName("NextStageBtn");
         }
 
         private void RefreshNextStageInteractable()
@@ -349,6 +362,17 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return null;
+        }
+
+        private static Button FindButtonByName(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            var go = GameObject.Find(objectName);
+            return go != null ? go.GetComponent<Button>() : null;
         }
 
         private void EnsureUi()

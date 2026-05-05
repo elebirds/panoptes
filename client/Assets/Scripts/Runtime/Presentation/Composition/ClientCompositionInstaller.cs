@@ -249,7 +249,6 @@ namespace Panoptes.Presentation.Composition
             builder.Register<RecipeSynthesisContextStore>(Lifetime.Singleton).AsSelf();
             builder.Register<RecipeSynthesisViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<MinisterReportViewModel>(Lifetime.Singleton).AsSelf();
-            builder.Register<MinisterReportAutoOpenController>(Lifetime.Singleton).AsSelf();
             builder.Register<PolicyFocusViewModel>(Lifetime.Singleton).AsSelf();
             builder.Register<NationalLedgerViewModel>(Lifetime.Singleton).AsSelf();
             builder.RegisterComponentInNewPrefab(
@@ -287,7 +286,6 @@ namespace Panoptes.Presentation.Composition
             builder.RegisterBuildCallback(container => container.Resolve<RecipeSynthesisUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<PolicyFocusUiToolkitBinder>());
             builder.RegisterBuildCallback(container => container.Resolve<MinisterReportUiToolkitBinder>());
-            builder.RegisterBuildCallback(container => container.Resolve<MinisterReportAutoOpenController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCoreHpBarOverlayController>());
             builder.RegisterBuildCallback(container => container.Resolve<CityCorePolicyFocusActionRegistrar>());
             builder.RegisterBuildCallback(container => container.Resolve<NationalLedgerUiToolkitBinder>());
