@@ -220,21 +220,21 @@ func baseMinisterDraft(turn int, playerID string, role string, kind domain.Minis
 
 func ministerDraftText(role string, kind string, targetLabel string) (string, string, string, string) {
 	if strings.TrimSpace(role) == militaryMinisterRole {
-		return "Military recommendation", "Execute " + targetLabel + " this turn.", "This plan is generated from the rule planner's current tactical evaluation.", "Reject it if you want to issue military orders manually."
+		return "军事建议", "建议本回合执行：" + targetLabel + "。", "该方案基于规则规划器当前的战术评估生成。", "如果你想手动下达军事命令，可以不采纳这条建议。"
 	}
 	switch strings.TrimSpace(kind) {
 	case string(domain.MinisterDraftKindPolicy):
-		return "Policy recommendation", targetLabel + " fits the current situation.", "This recommendation comes from the rule planner's policy evaluation.", "Reject it if you want to keep the current national policy."
+		return "国策建议", targetLabel + " 更符合当前局势。", "这条建议来自规则规划器对国策收益的评估。", "如果你想保持当前国策不变，可以不采纳这条建议。"
 	case string(domain.MinisterDraftKindInstitution):
-		return "Institution recommendation", "Activate " + targetLabel + ".", "This loadout uses the strongest available institutional policies for this turn.", "Reject it if you want to keep institution slots unchanged."
+		return "制度建议", "建议启用：" + targetLabel + "。", "该搭配使用了本回合当前可用的较优制度组合。", "如果你想保持制度槽位不变，可以不采纳这条建议。"
 	case string(domain.MinisterDraftKindBuild):
-		return "Construction recommendation", "Build " + targetLabel + ".", "This construction was selected from visible controlled nodes and unlocked buildings.", "Reject it if you want to reserve industry for another build."
+		return "建设建议", "建议建设：" + targetLabel + "。", "该建设方案从当前可见且已控制的节点与已解锁建筑中筛选得出。", "如果你想把工业留给其他建设项目，可以不采纳这条建议。"
 	case string(domain.MinisterDraftKindRecipe):
-		return "Production recommendation", "Set production to " + targetLabel + ".", "This recipe was selected from the building's available production options.", "Reject it if you want to keep production unchanged."
+		return "生产建议", "建议将生产切换为：" + targetLabel + "。", "该配方从建筑当前可用的生产选项中筛选得出。", "如果你想保持当前生产不变，可以不采纳这条建议。"
 	case string(domain.MinisterDraftKindUnitOrder):
-		return "Expansion recommendation", "Execute " + targetLabel + ".", "This order supports civilian expansion this turn.", "Reject it if you want to move the unit manually."
+		return "扩张建议", "建议执行：" + targetLabel + "。", "这条命令有助于本回合的民用扩张推进。", "如果你想手动移动单位，可以不采纳这条建议。"
 	default:
-		return "Research recommendation", targetLabel + " is the preferred research target.", "This recommendation comes from the rule planner's research evaluation.", "Reject it if you want to choose a different technology."
+		return "研究建议", targetLabel + " 是当前优先研究目标。", "这条建议来自规则规划器对科研收益的评估。", "如果你想改选其他科技，可以不采纳这条建议。"
 	}
 }
 

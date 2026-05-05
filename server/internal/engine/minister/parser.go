@@ -9,6 +9,8 @@ package minister
 import (
 	"encoding/json"
 	"log/slog"
+	"strings"
+	"unicode"
 
 	"github.com/elebirds/panoptes/internal/domain"
 	"github.com/elebirds/panoptes/internal/ecs"
@@ -35,7 +37,18 @@ type MinisterActionItem struct {
 	Params map[string]any
 }
 
+const (
+	chineseReportFallback        = "大臣暂未生成中文汇报，请以当前观察和既定计划为准。"
+	chineseMetricLabelFallback   = "战局指标"
+	chineseMetricValueFallback   = "待补充中文说明"
+	chineseDraftTitleFallback    = "本轮建议待补充中文标题"
+	chineseDraftSummaryFallback  = "大臣暂未生成中文摘要，请结合当前局势评估。"
+	chineseDraftReasonFallback   = "中文理由暂缺，请以现有规则目标和观察信息为准。"
+	chineseDraftRiskNoteFallback = "风险提示暂缺，请谨慎执行。"
+)
+
 func ParseMinisterResponse(response string) (*MinisterOutput, error) {
+	response = normalizeJSONObjectPayload(response)
 	var raw struct {
 		Report  string `json:"report"`
 		Metrics []struct {
@@ -59,8 +72,8 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	out.Metrics = make([]*pb.MetricItem, 0, len(raw.Metrics))
 	for _, m := range raw.Metrics {
 		out.Metrics = append(out.Metrics, &pb.MetricItem{
-			Label:      m.Label,
-			Value:      m.Value,
+			Label:      sanitizePlayerVisibleChinese(m.Label, chineseMetricLabelFallback),
+			Value:      sanitizePlayerVisibleChinese(m.Value, chineseMetricValueFallback),
 			Trend:      m.Trend,
 			Confidence: m.Confidence,
 			IsDelayed:  m.IsDelayed,
@@ -70,10 +83,12 @@ func ParseMinisterResponse(response string) (*MinisterOutput, error) {
 	for _, a := range raw.Actions {
 		out.Actions = append(out.Actions, MinisterActionItem{Type: a.Type, Params: a.Params})
 	}
+	out.Report = sanitizePlayerVisibleChinese(out.Report, chineseReportFallback)
 	return out, nil
 }
 
 func ParseDraftResponse(response string) (*DraftOutput, error) {
+	response = normalizeJSONObjectPayload(response)
 	var raw struct {
 		Title     string `json:"title"`
 		Summary   string `json:"summary"`
@@ -84,11 +99,122 @@ func ParseDraftResponse(response string) (*DraftOutput, error) {
 		return nil, err
 	}
 	return &DraftOutput{
-		Title:     raw.Title,
-		Summary:   raw.Summary,
-		Rationale: raw.Rationale,
-		RiskNote:  raw.RiskNote,
+		Title:     sanitizePlayerVisibleChinese(raw.Title, chineseDraftTitleFallback),
+		Summary:   sanitizePlayerVisibleChinese(raw.Summary, chineseDraftSummaryFallback),
+		Rationale: sanitizePlayerVisibleChinese(raw.Rationale, chineseDraftReasonFallback),
+		RiskNote:  sanitizePlayerVisibleChinese(raw.RiskNote, chineseDraftRiskNoteFallback),
 	}, nil
+}
+
+func normalizeJSONObjectPayload(response string) string {
+	response = strings.TrimSpace(response)
+	if response == "" {
+		return response
+	}
+
+	response = stripMarkdownJSONFence(response)
+	if object, ok := extractFirstJSONObject(response); ok {
+		return object
+	}
+	return response
+}
+
+func stripMarkdownJSONFence(response string) string {
+	lines := strings.Split(response, "\n")
+	if len(lines) < 3 {
+		return response
+	}
+
+	first := strings.TrimSpace(lines[0])
+	last := strings.TrimSpace(lines[len(lines)-1])
+	if !strings.HasPrefix(first, "```") || last != "```" {
+		return response
+	}
+
+	return strings.TrimSpace(strings.Join(lines[1:len(lines)-1], "\n"))
+}
+
+func extractFirstJSONObject(response string) (string, bool) {
+	start := strings.IndexByte(response, '{')
+	if start < 0 {
+		return "", false
+	}
+
+	depth := 0
+	inString := false
+	escaped := false
+	for i := start; i < len(response); i++ {
+		switch response[i] {
+		case '\\':
+			if inString {
+				escaped = !escaped
+			}
+		case '"':
+			if !escaped {
+				inString = !inString
+			}
+			escaped = false
+		case '{':
+			if !inString {
+				depth++
+			}
+			escaped = false
+		case '}':
+			if !inString {
+				depth--
+				if depth == 0 {
+					return response[start : i+1], true
+				}
+			}
+			escaped = false
+		default:
+			escaped = false
+		}
+	}
+
+	return "", false
+}
+
+func sanitizePlayerVisibleChinese(text string, fallback string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return fallback
+	}
+	if isObviouslyEnglishText(text) {
+		return fallback
+	}
+	return text
+}
+
+func isObviouslyEnglishText(text string) bool {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return false
+	}
+
+	latinLetters := 0
+	latinRun := 0
+	hasLatinWord := false
+	for _, r := range text {
+		if unicode.Is(unicode.Han, r) {
+			return false
+		}
+		if isLatinLetter(r) {
+			latinLetters++
+			latinRun++
+			if latinRun >= 3 {
+				hasLatinWord = true
+			}
+			continue
+		}
+		latinRun = 0
+	}
+
+	return hasLatinWord && latinLetters >= 3
+}
+
+func isLatinLetter(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
 
 type ActionRoom interface {

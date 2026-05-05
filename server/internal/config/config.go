@@ -38,5 +38,5 @@ type Config struct {
 	MinisterLLMEnabled   bool   `env:"MINISTER_LLM_ENABLED" envDefault:"false"`
 	MinisterLLMProvider  string `env:"MINISTER_LLM_PROVIDER" envDefault:"qwen"`
 	MinisterLLMModel     string `env:"MINISTER_LLM_MODEL" envDefault:""`
-	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"5000"`
+	MinisterLLMTimeoutMs int    `env:"MINISTER_LLM_TIMEOUT_MS" envDefault:"50000"`
 }

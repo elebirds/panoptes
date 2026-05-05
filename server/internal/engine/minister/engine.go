@@ -3,7 +3,6 @@
 // Author: elebirds <hhmcn@outlook.com>
 // Updated: 2026-04-14 18:45:09 +0800
 // Description: 实现部长引擎的引擎协调逻辑。
-
 package minister
 
 import (
@@ -115,16 +114,26 @@ func (e *MinisterEngine) generateOneReport(ctx context.Context, playerID string,
 	prompt.Model = e.requestModel()
 	prompt.SessionID = fmt.Sprintf("%s:%s:%d", playerID, profile.Role, input.Turn)
 
-	raw, ok := e.streamOrFallback(ctx, room, playerID, profile.Role, prompt)
+	raw, ok := e.collectReportResponse(ctx, prompt)
 	if !ok {
 		return
 	}
 	output, err := ParseMinisterResponse(raw)
 	if err != nil {
 		slog.Warn("parse minister response failed", "player_id", playerID, "role", profile.Role, "err", err)
-		return
+		output, err = ParseMinisterResponse(fallbackJSON(chineseReportFallback))
+		if err != nil {
+			slog.Warn("parse minister fallback response failed", "player_id", playerID, "role", profile.Role, "err", err)
+			return
+		}
 	}
-	if err := room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterMetrics{MinisterRole: profile.Role, Metrics: output.Metrics}); err != nil {
+	if err := sendMinisterReport(room, playerID, profile.Role, output.Report); err != nil {
+		slog.Warn("send minister report failed", "player_id", playerID, "role", profile.Role, "err", err)
+	}
+	if err := room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterMetrics{
+		MinisterRole: profile.Role,
+		Metrics:      output.Metrics,
+	}); err != nil {
 		slog.Warn("send minister metrics failed", "player_id", playerID, "role", profile.Role, "err", err)
 	}
 
@@ -170,21 +179,17 @@ func (e *MinisterEngine) PolishDraft(ctx context.Context, playerID string, draft
 	return output, true
 }
 
-func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom, playerID, role string, req llm.CompletionRequest) (string, bool) {
+func (e *MinisterEngine) collectReportResponse(ctx context.Context, req llm.CompletionRequest) (string, bool) {
 	if e.llmClient == nil {
-		fallback := "目前局势稳定，建议优先巩固补给线并保持战区侦察。"
-		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
-		return fallbackJSON(fallback), true
+		return fallbackJSON("目前局势稳定，建议优先巩固补给线并保持战区侦察。"), true
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, e.timeout())
 	defer cancel()
 	stream, err := e.llmClient.Stream(ctx, req)
 	if err != nil {
-		slog.Warn("minister llm stream failed", "player_id", playerID, "role", role, "err", err)
-		fallback := "当前汇报链路拥堵，建议按既定国策稳步推进。"
-		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: fallback, IsFinal: true})
-		return fallbackJSON(fallback), true
+		slog.Warn("minister llm stream failed", "session_id", req.SessionID, "err", err)
+		return fallbackJSON("当前汇报链路拥堵，建议按既定国策稳步推进。"), true
 	}
 
 	var b strings.Builder
@@ -193,10 +198,28 @@ func (e *MinisterEngine) streamOrFallback(ctx context.Context, room RuntimeRoom,
 			continue
 		}
 		b.WriteString(chunk)
-		_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: chunk, IsFinal: false})
 	}
-	_ = room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{MinisterRole: role, Chunk: "", IsFinal: true})
 	return b.String(), true
+}
+
+func sendMinisterReport(room RuntimeRoom, playerID string, role string, report string) error {
+	if room == nil {
+		return nil
+	}
+	if report != "" {
+		if err := room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{
+			MinisterRole: role,
+			Chunk:        report,
+			IsFinal:      false,
+		}); err != nil {
+			return err
+		}
+	}
+	return room.SendToPlayer(context.Background(), playerID, &pb.MsgMinisterReportChunk{
+		MinisterRole: role,
+		Chunk:        "",
+		IsFinal:      true,
+	})
 }
 
 func (e *MinisterEngine) collectText(ctx context.Context, req llm.CompletionRequest) (string, bool) {
@@ -235,7 +258,16 @@ func (e *MinisterEngine) getOrCreateMemory(playerID, role string) *MinisterMemor
 func pickProfiles() []MinisterProfile {
 	pool := staticdata.Default().Ministers()
 	if len(pool) == 0 {
-		return []MinisterProfile{{ID: "finance", Name: "财政大臣", Role: "finance", Ability: 5, Personality: "steady", PersonalityDesc: "稳健", Loyalty: 6, Ambition: 5}}
+		return []MinisterProfile{{
+			ID:              "finance",
+			Name:            "财政大臣",
+			Role:            "finance",
+			Ability:         5,
+			Personality:     "steady",
+			PersonalityDesc: "稳健",
+			Loyalty:         6,
+			Ambition:        5,
+		}}
 	}
 	out := make([]MinisterProfile, 0, len(pool))
 	for _, p := range pool {
