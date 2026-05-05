@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
 using Panoptes.Presentation.Binders.UiToolkit;
+using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -70,16 +71,16 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
-        public void RequestBuild_ShouldEnterBuildPlanningToolWithCityCoreContext()
+        public void RequestBuild_ShouldEnterBuildPlacementSessionWithCityCoreContext()
         {
             _root = new GameObject("BuildCatalogClickTest");
             var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
-            var planningToolStore = new PlanningToolStore();
-            var planningToolService = new PlanningToolService(planningToolStore);
+            var mapPlanningInputController = _root.AddComponent<MapPlanningInputController>();
             var contextStore = new BuildCatalogContextStore();
             var visibilityStore = new ManagementPanelVisibilityStore();
             contextStore.SetCityCoreNode("capital");
-            InjectServices(binder, planningToolService, visibilityStore, contextStore);
+            InjectServices(binder, visibilityStore: visibilityStore, contextStore: contextStore);
+            SetMapPlanningInputController(binder, mapPlanningInputController);
             visibilityStore.Show(ManagementPanelId.BuildCatalog);
 
             binder.Render(new BuildCatalogState(new[]
@@ -100,6 +101,60 @@ namespace Panoptes.Tests.EditMode.Presentation
 
             var button = _root.GetComponent<UIDocument>().rootVisualElement.Q<Button>("build-catalog-item-workshop");
             Assert.That(button, Is.Not.Null);
+            InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
+
+            var session = GetBuildPlacementSession(mapPlanningInputController);
+            Assert.That(session.ActiveBuildType, Is.EqualTo("workshop"));
+            Assert.That(session.ActiveBuildCityId, Is.EqualTo("capital"));
+
+            contextStore.Dispose();
+            visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void RequestBuild_ShouldNotFallbackToPlanningToolStore_WhenCityCoreContextIsMissing()
+        {
+            _root = new GameObject("BuildCatalogMissingContextTest");
+            var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
+            var mapPlanningInputController = _root.AddComponent<MapPlanningInputController>();
+            var planningToolStore = new PlanningToolStore();
+            var planningToolService = new PlanningToolService(planningToolStore);
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new BuildCatalogContextStore();
+            InjectServices(
+                binder,
+                planningToolService,
+                visibilityStore,
+                contextStore);
+            SetMapPlanningInputController(binder, mapPlanningInputController);
+
+            InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
+
+            var session = GetBuildPlacementSession(mapPlanningInputController);
+            Assert.That(session.ActiveBuildType, Is.Empty);
+            Assert.That(session.ActiveBuildCityId, Is.Empty);
+            Assert.That(planningToolStore.Snapshot.Mode, Is.EqualTo(PlanningToolMode.None));
+
+            contextStore.Dispose();
+            visibilityStore.Dispose();
+        }
+
+        [Test]
+        public void RequestBuild_ShouldFallbackToPlanningToolStore_WhenMapInputControllerIsUnavailable()
+        {
+            _root = new GameObject("BuildCatalogFallbackTest");
+            var binder = _root.AddComponent<BuildCatalogUiToolkitBinder>();
+            var planningToolStore = new PlanningToolStore();
+            var planningToolService = new PlanningToolService(planningToolStore);
+            var visibilityStore = new ManagementPanelVisibilityStore();
+            var contextStore = new BuildCatalogContextStore();
+            contextStore.SetCityCoreNode("capital");
+            InjectServices(
+                binder,
+                planningToolService,
+                visibilityStore,
+                contextStore);
+
             InvokeRequestBuild(binder, "workshop", PlanningBuildPlacementRule.CityOnly);
 
             var state = planningToolStore.Snapshot;
@@ -141,6 +196,28 @@ namespace Panoptes.Tests.EditMode.Presentation
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method!.Invoke(binder, new object[] { buildingId, placementRule });
+        }
+
+        private static MapBuildPlacementSession GetBuildPlacementSession(MapPlanningInputController controller)
+        {
+            var field = typeof(MapPlanningInputController).GetField(
+                "_buildPlacement",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null);
+            var session = field!.GetValue(controller) as MapBuildPlacementSession;
+            Assert.That(session, Is.Not.Null);
+            return session!;
+        }
+
+        private static void SetMapPlanningInputController(
+            BuildCatalogUiToolkitBinder binder,
+            MapPlanningInputController controller)
+        {
+            var field = typeof(BuildCatalogUiToolkitBinder).GetField(
+                "_mapPlanningInputController",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null);
+            field!.SetValue(binder, controller);
         }
     }
 }

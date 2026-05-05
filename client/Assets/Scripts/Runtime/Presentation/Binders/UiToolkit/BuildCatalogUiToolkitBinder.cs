@@ -1,6 +1,7 @@
 using System;
 using Panoptes.Core.Application.Services;
 using Panoptes.Core.Application.Stores;
+using Panoptes.Presentation.Map;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using UnityEngine;
@@ -25,6 +26,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private IDisposable _visibilitySubscription;
         private BuildCatalogContextStore _contextStore;
         private ManagementPanelVisibilityStore _visibilityStore;
+        private MapPlanningInputController _mapPlanningInputController;
         private PlanningToolService _planningToolService;
         private Label _title;
         private UIDocument _uiDocument;
@@ -264,10 +266,53 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private void RequestBuild(string buildingId, PlanningBuildPlacementRule placementRule)
         {
             BuildRequested?.Invoke(buildingId, placementRule);
-            _planningToolService?.EnterBuild(
-                buildingId,
-                _contextStore?.Current?.CityCoreNodeId ?? string.Empty,
-                placementRule);
+            var cityCoreNodeId = _contextStore?.Current?.CityCoreNodeId ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(cityCoreNodeId))
+            {
+                return;
+            }
+
+            if (TryEnterBuildPlacementViaMapInput(buildingId, cityCoreNodeId, placementRule))
+            {
+                return;
+            }
+
+            _planningToolService?.EnterBuild(buildingId, cityCoreNodeId, placementRule);
+        }
+
+        private bool TryEnterBuildPlacementViaMapInput(
+            string buildingId,
+            string cityCoreNodeId,
+            PlanningBuildPlacementRule placementRule)
+        {
+            var mapPlanningInputController = ResolveMapPlanningInputController();
+            if (mapPlanningInputController == null)
+            {
+                return false;
+            }
+
+            switch (placementRule)
+            {
+                case PlanningBuildPlacementRule.ResourceOnly:
+                    mapPlanningInputController.EnterBuildPlacementResource(buildingId, cityCoreNodeId);
+                    return true;
+                case PlanningBuildPlacementRule.CityOnly:
+                    mapPlanningInputController.EnterBuildPlacementCity(buildingId, cityCoreNodeId);
+                    return true;
+                default:
+                    mapPlanningInputController.EnterBuildPlacementAny(buildingId, cityCoreNodeId);
+                    return true;
+            }
+        }
+
+        private MapPlanningInputController ResolveMapPlanningInputController()
+        {
+            if (_mapPlanningInputController == null)
+            {
+                _mapPlanningInputController = FindFirstObjectByType<MapPlanningInputController>(FindObjectsInactive.Exclude);
+            }
+
+            return _mapPlanningInputController;
         }
 
         private void EnsureDocument()
