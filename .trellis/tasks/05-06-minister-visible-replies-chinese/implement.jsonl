@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "This is a backend-only change in the minister/llm server path; implementer should load the backend spec index before editing."}
