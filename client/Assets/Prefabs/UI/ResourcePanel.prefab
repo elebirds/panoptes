@@ -364,7 +364,6 @@ MonoBehaviour:
   ministerButtonSpriteResource: Icons/UI/icon_minister_round
   managementButtonSize: {x: 54, y: 54}
   managementButtonSpacing: 8
-  changeVisibleSeconds: 3
   increaseColor: {r: 0.15, g: 0.95, b: 0.35, a: 1}
   decreaseColor: {r: 0.95, g: 0.25, b: 0.25, a: 1}
 --- !u!1 &7892254517966363383

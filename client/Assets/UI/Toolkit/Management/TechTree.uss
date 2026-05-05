@@ -23,9 +23,10 @@
 
 .management-panel-title {
     color: rgb(237, 239, 232);
-    font-size: 16px;
+    font-size: 30px;
     -unity-font-style: bold;
-    margin-bottom: 8px;
+    -unity-text-align: middle-center;
+    margin-bottom: 18px;
 }
 
 .management-panel-empty {
@@ -36,6 +37,11 @@
 
 .management-panel-scroll {
     max-height: 560px;
+}
+
+.management-panel-tech-scroll {
+    flex-grow: 1;
+    min-height: 0;
 }
 
 .management-panel-group {

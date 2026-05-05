@@ -118,6 +118,18 @@ namespace Panoptes.Core.Application.Cache
             public string icon_key;
             public string layer;
             public string activation_timing;
+            public ModifierEffectEntryJson[] modifier_effects;
+        }
+
+        [Serializable]
+        public sealed class ModifierEffectEntryJson
+        {
+            public string trigger;
+            public string target_id;
+            public string resource_key;
+            public string point_key;
+            public string modifier_type;
+            public int value;
         }
 
         [Serializable]
@@ -1281,7 +1293,8 @@ namespace Panoptes.Core.Application.Cache
                     description = item != null ? item.Description : string.Empty,
                     icon_key = item != null ? item.IconKey : string.Empty,
                     layer = item != null ? item.Layer : string.Empty,
-                    activation_timing = item != null ? item.ActivationTiming : string.Empty
+                    activation_timing = item != null ? item.ActivationTiming : string.Empty,
+                    modifier_effects = Array.Empty<ModifierEffectEntryJson>()
                 };
             }
 

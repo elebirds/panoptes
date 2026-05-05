@@ -140,8 +140,40 @@ namespace Panoptes.Core.Application.Stores
                 Description = entry.description,
                 IconKey = entry.icon_key,
                 Layer = entry.layer,
-                ActivationTiming = entry.activation_timing
+                ActivationTiming = entry.activation_timing,
+                ModifierEffects = MapModifierEffects(entry.modifier_effects)
             });
+        }
+
+        private static List<CatalogPolicyModifierEffectDto> MapModifierEffects(
+            StaticCatalogCache.ModifierEffectEntryJson[] source)
+        {
+            var result = new List<CatalogPolicyModifierEffectDto>();
+            if (source == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < source.Length; i++)
+            {
+                var entry = source[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                result.Add(new CatalogPolicyModifierEffectDto
+                {
+                    Trigger = entry.trigger,
+                    TargetId = entry.target_id,
+                    ResourceKey = entry.resource_key,
+                    PointKey = entry.point_key,
+                    ModifierType = entry.modifier_type,
+                    Value = entry.value
+                });
+            }
+
+            return result;
         }
 
         private static Dictionary<string, CatalogUnitDto> MapUnits(

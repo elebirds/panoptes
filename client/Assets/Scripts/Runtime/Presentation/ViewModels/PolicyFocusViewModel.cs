@@ -65,12 +65,13 @@ namespace Panoptes.Presentation.ViewModels
                 var active = isNational
                     ? string.Equals(policyId, activeNational, StringComparison.Ordinal)
                     : activeInstitutions.Contains(policyId);
+                var status = planned ? "已规划" : active ? "已选择" : string.Empty;
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
-                    string.IsNullOrWhiteSpace(policy.ActivationTiming) ? policy.Description : policy.ActivationTiming,
+                    BuildPolicyEffectSummary(policy),
                     policy.Description,
-                    planned || active ? "已选择" : string.Empty,
+                    status,
                     isNational ? "采纳" : "设置",
                     policy.IconKey);
                 if (isNational)
@@ -95,6 +96,68 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             return new ManagementPanelState("国策", groups);
+        }
+
+        private static string BuildPolicyEffectSummary(CatalogPolicyDto policy)
+        {
+            var effects = policy?.ModifierEffects;
+            if (effects == null || effects.Count == 0)
+            {
+                return policy?.Description ?? string.Empty;
+            }
+
+            var values = new List<string>();
+            for (var i = 0; i < effects.Count; i++)
+            {
+                var text = FormatModifierEffect(effects[i]);
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    values.Add(text);
+                }
+            }
+
+            return values.Count > 0 ? string.Join("；", values) : policy?.Description ?? string.Empty;
+        }
+
+        private static string FormatModifierEffect(CatalogPolicyModifierEffectDto effect)
+        {
+            if (effect == null)
+            {
+                return string.Empty;
+            }
+
+            var value = FormatSigned(effect.Value);
+            var target = FormatKey(effect.TargetId);
+            var trigger = Normalize(effect.Trigger);
+            switch (trigger)
+            {
+                case "recipe.work_amount":
+                    return string.IsNullOrWhiteSpace(target) ? $"工时 {value}" : $"{target} 工时 {value}";
+                case "recipe.resource_output":
+                    var resource = FormatKey(effect.ResourceKey);
+                    return string.IsNullOrWhiteSpace(target)
+                        ? $"{resource}产出 {value}"
+                        : $"{target} {resource}产出 {value}";
+                case "recipe.base_progress":
+                    return string.IsNullOrWhiteSpace(target) ? $"基础进度 {value}" : $"{target} 基础进度 {value}";
+                case "point.output":
+                    var point = FormatKey(effect.PointKey);
+                    return string.IsNullOrWhiteSpace(point) ? $"点数产出 {value}" : $"{point} {value}";
+                case "logistics.road_capacity":
+                    return $"道路运力 {value}";
+                default:
+                    return string.IsNullOrWhiteSpace(trigger) ? value : $"{trigger} {value}";
+            }
+        }
+
+        private static string FormatSigned(int value)
+        {
+            return value > 0 ? "+" + value : value.ToString();
+        }
+
+        private static string FormatKey(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().Replace('_', ' ');
         }
 
         private static HashSet<string> BuildIdSet(IReadOnlyList<string> ids)

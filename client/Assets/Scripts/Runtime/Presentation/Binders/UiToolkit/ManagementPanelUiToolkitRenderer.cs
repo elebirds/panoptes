@@ -15,6 +15,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         public const string GroupsName = "management-panel-groups";
         private const string TechTreeBackgroundResource = "Textures/UI/tech_tree_background";
         private const string PolicyFocusBackgroundResource = "Textures/UI/policy_focus_background";
+        private static readonly TechConnectorColors[] TechConnectorPalette =
+        {
+            new(new Color(0.98f, 0.98f, 0.92f, 0.95f), new Color(1f, 1f, 0.96f, 1f)),
+            new(new Color(0.02f, 0.02f, 0.02f, 0.95f), new Color(0f, 0f, 0f, 1f)),
+            new(new Color(0.22f, 0.55f, 1f, 0.95f), new Color(0.36f, 0.68f, 1f, 1f)),
+            new(new Color(0.16f, 0.82f, 0.34f, 0.95f), new Color(0.26f, 0.95f, 0.46f, 1f)),
+            new(new Color(1f, 0.22f, 0.18f, 0.95f), new Color(1f, 0.34f, 0.30f, 1f)),
+            new(new Color(0.70f, 0.32f, 1f, 0.95f), new Color(0.82f, 0.48f, 1f, 1f))
+        };
 
         private Button _closeButton;
         private Label _empty;
@@ -53,6 +62,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             state ??= new ManagementPanelState();
             SetText(_title, state.Title);
+            ApplyTitleStyle(state.Title);
+            ApplyCloseButtonStyle(state.Title);
             ApplyPanelBackground(state.Title);
             if (_groups == null)
             {
@@ -69,7 +80,16 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             SetDisplay(_empty, DisplayStyle.None);
             if (IsTechTreeTitle(state.Title))
             {
+                ApplyTechTreeTitleStyle();
+                ConfigureTechTreeOuterScroll();
                 _groups.Add(CreateTechTree(state, rowActionRequested));
+                return;
+            }
+
+            if (IsPolicyFocusTitle(state.Title))
+            {
+                ConfigurePolicyFocusOuterScroll();
+                _groups.Add(CreatePolicyFocusList(state, rowActionRequested));
                 return;
             }
 
@@ -193,6 +213,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             {
                 rowElement.Add(CreateAmountStrip("消耗", row.Costs));
             }
+            else if (!string.IsNullOrWhiteSpace(row?.EmptyCostsLabel))
+            {
+                rowElement.Add(CreateAmountStrip("消耗", row.Costs, row.EmptyCostsLabel));
+            }
 
             if (row?.Outputs != null && row.Outputs.Count > 0)
             {
@@ -207,6 +231,109 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             if (row != null && row.HasAction)
             {
                 rowElement.Add(CreateLabel(row.ActionLabel, "management-panel-row-action", "management-panel-row-action"));
+            }
+
+            return rowElement;
+        }
+
+        private static VisualElement CreatePolicyFocusList(ManagementPanelState state, Action<string> rowActionRequested)
+        {
+            var scroll = new ScrollView(ScrollViewMode.Horizontal) { name = "management-panel-policy-scroll" };
+            scroll.AddToClassList("management-panel-policy-scroll");
+            scroll.style.flexGrow = 1f;
+            scroll.style.minHeight = 0f;
+            scroll.style.overflow = Overflow.Hidden;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            EnableHorizontalDragScroll(scroll);
+
+            var track = new VisualElement { name = "management-panel-policy-track" };
+            track.AddToClassList("management-panel-policy-track");
+            track.style.flexDirection = FlexDirection.Row;
+            track.style.alignItems = Align.Stretch;
+            track.style.minHeight = 720f;
+            track.style.paddingBottom = 24f;
+            track.style.paddingRight = 56f;
+
+            var rows = FlattenRows(state);
+            for (var i = 0; i < rows.Count; i++)
+            {
+                track.Add(CreatePolicyFocusRow(rows[i], rowActionRequested));
+            }
+
+            scroll.Add(track);
+            return scroll;
+        }
+
+        private static VisualElement CreatePolicyFocusRow(ManagementPanelRowState row, Action<string> rowActionRequested)
+        {
+            var rowElement = row != null && row.HasAction
+                ? new Button(() => rowActionRequested?.Invoke(row.Id))
+                : new VisualElement();
+            rowElement.name = "management-panel-row-" + SafeName(row?.Id);
+            rowElement.AddToClassList("management-panel-row");
+            rowElement.AddToClassList("policy-focus-row");
+            rowElement.tooltip = row?.ActionLabel ?? string.Empty;
+            rowElement.style.flexDirection = FlexDirection.Column;
+            rowElement.style.alignItems = Align.Stretch;
+            rowElement.style.width = 360f;
+            rowElement.style.minHeight = 700f;
+            rowElement.style.height = Length.Percent(100f);
+            rowElement.style.flexShrink = 0f;
+            rowElement.style.marginRight = 22f;
+            rowElement.style.paddingBottom = 24f;
+            rowElement.style.paddingLeft = 22f;
+            rowElement.style.paddingRight = 22f;
+            rowElement.style.paddingTop = 22f;
+            rowElement.style.backgroundColor = new Color(0.10f, 0.07f, 0.055f, 0.96f);
+            rowElement.style.borderBottomColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            rowElement.style.borderLeftColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            rowElement.style.borderRightColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            rowElement.style.borderTopColor = new Color(0.36f, 0.24f, 0.14f, 0.95f);
+            rowElement.style.borderBottomWidth = 1f;
+            rowElement.style.borderLeftWidth = 1f;
+            rowElement.style.borderRightWidth = 1f;
+            rowElement.style.borderTopWidth = 1f;
+            ApplyRowStatusStyle(rowElement, row);
+
+            var icon = CreateIcon(row);
+            if (icon != null)
+            {
+                icon.AddToClassList("policy-focus-row-image");
+                icon.style.alignSelf = Align.Center;
+                icon.style.width = 310f;
+                icon.style.height = 220f;
+                icon.style.marginBottom = 20f;
+                icon.style.marginRight = 0f;
+                rowElement.Add(icon);
+            }
+
+            var title = CreateLabel(row?.Title ?? "条目", "management-panel-row-title", "management-panel-row-title");
+            title.AddToClassList("policy-focus-row-title");
+            title.style.fontSize = 26f;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.unityTextAlign = TextAnchor.MiddleCenter;
+            title.style.marginBottom = 18f;
+            rowElement.Add(title);
+
+            if (!string.IsNullOrWhiteSpace(row?.Summary))
+            {
+                var summary = CreateLabel(row.Summary, "management-panel-row-summary", "management-panel-row-summary");
+                summary.AddToClassList("policy-focus-row-effect");
+                summary.style.fontSize = 20f;
+                summary.style.unityFontStyleAndWeight = FontStyle.Bold;
+                summary.style.color = new Color(1f, 0.83f, 0.42f, 1f);
+                summary.style.marginBottom = 18f;
+                rowElement.Add(summary);
+            }
+
+            if (!string.IsNullOrWhiteSpace(row?.Detail))
+            {
+                var detail = CreateLabel(row.Detail, "management-panel-row-detail", "management-panel-row-detail");
+                detail.AddToClassList("policy-focus-row-detail");
+                detail.style.fontSize = 18f;
+                detail.style.color = new Color(0.88f, 0.91f, 0.94f, 1f);
+                rowElement.Add(detail);
             }
 
             return rowElement;
@@ -233,7 +360,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             track.style.alignItems = Align.FlexStart;
             track.style.minHeight = 720f;
             track.style.paddingBottom = 40f;
-            track.style.paddingRight = 80f;
+            track.style.paddingRight = 40f;
 
             for (var columnIndex = 0; columnIndex < columns.Count; columnIndex++)
             {
@@ -250,6 +377,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             track.Add(connectorLayer);
             connectorLayer.SendToBack();
             ScheduleTechConnectorRebuild(track, connectorLayer, state);
+            track.RegisterCallback<GeometryChangedEvent>(_ => RebuildTechConnectors(track, connectorLayer, state));
 
             scroll.Add(track);
             return scroll;
@@ -265,10 +393,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             var column = new VisualElement { name = "management-panel-tech-column-" + columnIndex };
             column.AddToClassList("management-panel-tech-column");
-            column.style.width = 280f;
+            column.style.width = 268f;
             column.style.flexShrink = 0f;
-            column.style.marginRight = 80f;
-            column.Add(CreateLabel(columnIndex == 0 ? "无前置科技" : $"第 {columnIndex + 1} 列", "management-panel-tech-column-title", "management-panel-group-title"));
+            column.style.marginRight = columnIndex < columnCount - 1 ? 48f : 0f;
 
             if (rows != null)
             {
@@ -276,8 +403,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 {
                     var row = CreateTechNode(rows[i], columnIndex, columnCount, titleById, dependentIds, rowActionRequested);
                     row.AddToClassList("management-panel-tech-node");
-                    row.style.width = 260f;
-                    row.style.minHeight = 220f;
+                    row.style.width = 244f;
+                    row.style.minHeight = 168f;
                     row.style.flexShrink = 0f;
                     column.Add(row);
                 }
@@ -298,9 +425,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             wrapper.style.position = Position.Relative;
             wrapper.style.marginTop = 12f;
             wrapper.style.marginBottom = 14f;
-            wrapper.style.marginLeft = columnIndex > 0 ? 42f : 0f;
+            wrapper.style.marginLeft = columnIndex > 0 ? 16f : 0f;
             wrapper.style.marginRight = 0f;
-            wrapper.style.width = 302f;
+            wrapper.style.width = 260f;
             wrapper.style.flexShrink = 0f;
 
             var row = CreateRow(state, rowActionRequested);
@@ -373,6 +500,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
             track.schedule.Execute(() => RebuildTechConnectors(track, connectorLayer, state)).ExecuteLater(0);
             track.schedule.Execute(() => RebuildTechConnectors(track, connectorLayer, state)).ExecuteLater(120);
+            track.schedule.Execute(() => RebuildTechConnectors(track, connectorLayer, state)).ExecuteLater(300);
         }
 
         private static void RebuildTechConnectors(
@@ -414,6 +542,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return;
             }
 
+            var colorsById = BuildTechConnectorColors(rows, nodesById);
             for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
             {
                 var target = rows[rowIndex];
@@ -438,7 +567,12 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                         continue;
                     }
 
-                    AddTechConnector(connectorLayer, trackBounds, prerequisiteNode.worldBound, targetNode.worldBound);
+                    AddTechConnector(
+                        connectorLayer,
+                        trackBounds,
+                        prerequisiteNode.worldBound,
+                        targetNode.worldBound,
+                        ResolveTechConnectorColors(targetId, colorsById));
                 }
             }
         }
@@ -447,7 +581,8 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             VisualElement connectorLayer,
             Rect trackBounds,
             Rect fromBounds,
-            Rect toBounds)
+            Rect toBounds,
+            TechConnectorColors colors)
         {
             if (connectorLayer == null ||
                 fromBounds.width <= 1f ||
@@ -462,71 +597,261 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             var startY = fromBounds.center.y - trackBounds.yMin;
             var endX = toBounds.xMin - trackBounds.xMin;
             var endY = toBounds.center.y - trackBounds.yMin;
-            var midX = Mathf.Lerp(startX, endX, 0.5f);
 
-            AddTechConnectorSegment(connectorLayer, startX, startY, midX, startY);
-            AddTechConnectorSegment(connectorLayer, midX, startY, midX, endY);
-            AddTechConnectorSegment(connectorLayer, midX, endY, endX, endY);
-            AddTechConnectorDot(connectorLayer, endX, endY);
+            var line = new TechConnectorLine(
+                new Vector2(startX, startY),
+                new Vector2(endX, endY),
+                3f,
+                colors.Line,
+                colors.Arrow)
+            {
+                name = "management-panel-tech-connector-line",
+                pickingMode = PickingMode.Ignore
+            };
+            line.AddToClassList("management-panel-tech-connector");
+            line.style.position = Position.Absolute;
+            line.style.left = 0f;
+            line.style.top = 0f;
+            line.style.right = 0f;
+            line.style.bottom = 0f;
+            connectorLayer.Add(line);
         }
 
-        private static void AddTechConnectorSegment(
-            VisualElement connectorLayer,
-            float x0,
-            float y0,
-            float x1,
-            float y1)
+        private readonly struct TechConnectorColors
         {
-            var segment = new VisualElement { name = "management-panel-tech-connector-segment" };
-            segment.AddToClassList("management-panel-tech-connector");
-            segment.pickingMode = PickingMode.Ignore;
-            segment.style.position = Position.Absolute;
-            segment.style.backgroundColor = new Color(1f, 0.72f, 0.28f, 0.88f);
-            segment.style.borderBottomColor = new Color(1f, 0.92f, 0.55f, 0.72f);
-            segment.style.borderBottomWidth = 1f;
+            public readonly Color Arrow;
+            public readonly Color Line;
 
-            var horizontal = Mathf.Abs(x1 - x0) >= Mathf.Abs(y1 - y0);
-            if (horizontal)
+            public TechConnectorColors(Color line, Color arrow)
             {
-                var left = Mathf.Min(x0, x1);
-                var width = Mathf.Max(3f, Mathf.Abs(x1 - x0));
-                segment.style.left = left;
-                segment.style.top = y0 - 1.5f;
-                segment.style.width = width;
-                segment.style.height = 3f;
+                Line = line;
+                Arrow = arrow;
             }
-            else
-            {
-                var top = Mathf.Min(y0, y1);
-                var height = Mathf.Max(3f, Mathf.Abs(y1 - y0));
-                segment.style.left = x0 - 1.5f;
-                segment.style.top = top;
-                segment.style.width = 3f;
-                segment.style.height = height;
-            }
-
-            connectorLayer.Add(segment);
         }
 
-        private static void AddTechConnectorDot(VisualElement connectorLayer, float x, float y)
+        private static TechConnectorColors ResolveTechConnectorColors(
+            string technologyId,
+            IReadOnlyDictionary<string, TechConnectorColors> colorsById)
         {
-            var dot = new VisualElement { name = "management-panel-tech-connector-dot" };
-            dot.pickingMode = PickingMode.Ignore;
-            dot.style.position = Position.Absolute;
-            dot.style.left = x - 4f;
-            dot.style.top = y - 4f;
-            dot.style.width = 8f;
-            dot.style.height = 8f;
-            dot.style.backgroundColor = new Color(1f, 0.86f, 0.32f, 0.96f);
-            dot.style.borderBottomColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
-            dot.style.borderLeftColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
-            dot.style.borderRightColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
-            dot.style.borderTopColor = new Color(0.42f, 0.20f, 0.04f, 0.92f);
-            dot.style.borderBottomWidth = 1f;
-            dot.style.borderLeftWidth = 1f;
-            dot.style.borderRightWidth = 1f;
-            dot.style.borderTopWidth = 1f;
-            connectorLayer.Add(dot);
+            return !string.IsNullOrWhiteSpace(technologyId) &&
+                   colorsById != null &&
+                   colorsById.TryGetValue(technologyId, out var colors)
+                ? colors
+                : TechConnectorPalette[0];
+        }
+
+        private static IReadOnlyDictionary<string, TechConnectorColors> BuildTechConnectorColors(
+            IReadOnlyList<ManagementPanelRowState> rows,
+            IReadOnlyDictionary<string, VisualElement> nodesById)
+        {
+            var result = new Dictionary<string, TechConnectorColors>(StringComparer.Ordinal);
+            var rowsById = new Dictionary<string, ManagementPanelRowState>(StringComparer.Ordinal);
+            var orderById = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (rows == null || rows.Count == 0)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var id = NormalizeId(rows[i]?.Id);
+                if (string.IsNullOrEmpty(id))
+                {
+                    continue;
+                }
+
+                rowsById[id] = rows[i];
+                orderById[id] = i;
+            }
+
+            var roots = new List<ManagementPanelRowState>();
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                if (row != null && !HasPrerequisites(row))
+                {
+                    roots.Add(row);
+                }
+            }
+
+            roots.Sort((left, right) => CompareTechRowsByVisualTop(left, right, nodesById, orderById));
+            for (var i = 0; i < roots.Count; i++)
+            {
+                var id = NormalizeId(roots[i]?.Id);
+                if (!string.IsNullOrEmpty(id))
+                {
+                    result[id] = TechConnectorPalette[i % TechConnectorPalette.Length];
+                }
+            }
+
+            for (var i = 0; i < rows.Count; i++)
+            {
+                ResolveInheritedTechConnectorColors(rows[i], rowsById, nodesById, orderById, result, new HashSet<string>(StringComparer.Ordinal));
+            }
+
+            return result;
+        }
+
+        private static TechConnectorColors ResolveInheritedTechConnectorColors(
+            ManagementPanelRowState row,
+            IReadOnlyDictionary<string, ManagementPanelRowState> rowsById,
+            IReadOnlyDictionary<string, VisualElement> nodesById,
+            IReadOnlyDictionary<string, int> orderById,
+            IDictionary<string, TechConnectorColors> result,
+            ISet<string> visiting)
+        {
+            var id = NormalizeId(row?.Id);
+            if (string.IsNullOrEmpty(id))
+            {
+                return TechConnectorPalette[0];
+            }
+
+            if (result.TryGetValue(id, out var existing))
+            {
+                return existing;
+            }
+
+            if (!visiting.Add(id))
+            {
+                return TechConnectorPalette[0];
+            }
+
+            var selectedPrerequisite = ResolveUpperPrerequisiteId(row, rowsById, nodesById, orderById);
+            var colors = !string.IsNullOrEmpty(selectedPrerequisite) &&
+                         rowsById.TryGetValue(selectedPrerequisite, out var prerequisite)
+                ? ResolveInheritedTechConnectorColors(prerequisite, rowsById, nodesById, orderById, result, visiting)
+                : TechConnectorPalette[0];
+
+            visiting.Remove(id);
+            result[id] = colors;
+            return colors;
+        }
+
+        private static string ResolveUpperPrerequisiteId(
+            ManagementPanelRowState row,
+            IReadOnlyDictionary<string, ManagementPanelRowState> rowsById,
+            IReadOnlyDictionary<string, VisualElement> nodesById,
+            IReadOnlyDictionary<string, int> orderById)
+        {
+            var prerequisites = row?.PrerequisiteIds;
+            if (prerequisites == null || prerequisites.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var selected = string.Empty;
+            for (var i = 0; i < prerequisites.Count; i++)
+            {
+                var prerequisiteId = NormalizeId(prerequisites[i]);
+                if (string.IsNullOrEmpty(prerequisiteId) || !rowsById.ContainsKey(prerequisiteId))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(selected) ||
+                    CompareTechIdsByVisualTop(prerequisiteId, selected, nodesById, orderById) < 0)
+                {
+                    selected = prerequisiteId;
+                }
+            }
+
+            return selected;
+        }
+
+        private static int CompareTechRowsByVisualTop(
+            ManagementPanelRowState left,
+            ManagementPanelRowState right,
+            IReadOnlyDictionary<string, VisualElement> nodesById,
+            IReadOnlyDictionary<string, int> orderById)
+        {
+            return CompareTechIdsByVisualTop(NormalizeId(left?.Id), NormalizeId(right?.Id), nodesById, orderById);
+        }
+
+        private static int CompareTechIdsByVisualTop(
+            string leftId,
+            string rightId,
+            IReadOnlyDictionary<string, VisualElement> nodesById,
+            IReadOnlyDictionary<string, int> orderById)
+        {
+            var topCompare = ResolveTechNodeTop(leftId, nodesById).CompareTo(ResolveTechNodeTop(rightId, nodesById));
+            if (topCompare != 0)
+            {
+                return topCompare;
+            }
+
+            return ResolveTechRowOrder(leftId, orderById).CompareTo(ResolveTechRowOrder(rightId, orderById));
+        }
+
+        private static float ResolveTechNodeTop(string id, IReadOnlyDictionary<string, VisualElement> nodesById)
+        {
+            return !string.IsNullOrEmpty(id) &&
+                   nodesById != null &&
+                   nodesById.TryGetValue(id, out var node) &&
+                   node != null
+                ? node.worldBound.yMin
+                : float.MaxValue;
+        }
+
+        private static int ResolveTechRowOrder(string id, IReadOnlyDictionary<string, int> orderById)
+        {
+            return !string.IsNullOrEmpty(id) &&
+                   orderById != null &&
+                   orderById.TryGetValue(id, out var order)
+                ? order
+                : int.MaxValue;
+        }
+
+        private sealed class TechConnectorLine : VisualElement
+        {
+            private readonly Color _color;
+            private readonly Vector2 _end;
+            private readonly Color _headColor;
+            private readonly Vector2 _start;
+            private readonly float _width;
+
+            public TechConnectorLine(Vector2 start, Vector2 end, float width, Color color, Color headColor)
+            {
+                _start = start;
+                _end = end;
+                _width = Mathf.Max(1f, width);
+                _color = color;
+                _headColor = headColor;
+                generateVisualContent += OnGenerateVisualContent;
+            }
+
+            private void OnGenerateVisualContent(MeshGenerationContext context)
+            {
+                var direction = _end - _start;
+                if (direction.sqrMagnitude <= 0.01f)
+                {
+                    return;
+                }
+
+                direction.Normalize();
+                var normal = new Vector2(-direction.y, direction.x);
+                const float arrowLength = 13f;
+                const float arrowHalfWidth = 6f;
+                var lineEnd = _end - direction * 3f;
+                var arrowBase = _end - direction * arrowLength;
+                var arrowLeft = arrowBase + normal * arrowHalfWidth;
+                var arrowRight = arrowBase - normal * arrowHalfWidth;
+
+                var painter = context.painter2D;
+                painter.lineWidth = _width;
+                painter.strokeColor = _color;
+                painter.BeginPath();
+                painter.MoveTo(_start);
+                painter.LineTo(lineEnd);
+                painter.Stroke();
+
+                painter.fillColor = _headColor;
+                painter.BeginPath();
+                painter.MoveTo(_end);
+                painter.LineTo(arrowLeft);
+                painter.LineTo(arrowRight);
+                painter.ClosePath();
+                painter.Fill();
+            }
         }
 
         private static List<ManagementPanelRowState> FlattenRows(ManagementPanelState state)
@@ -615,7 +940,10 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             return false;
         }
 
-        private static VisualElement CreateAmountStrip(string label, IReadOnlyList<ManagementPanelAmountState> amounts)
+        private static VisualElement CreateAmountStrip(
+            string label,
+            IReadOnlyList<ManagementPanelAmountState> amounts,
+            string emptyLabel = "")
         {
             var strip = new VisualElement { name = "management-panel-amount-strip-" + SafeName(label) };
             strip.AddToClassList("management-panel-amount-strip");
@@ -630,7 +958,15 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             title.style.color = new Color(1f, 0.82f, 0.52f, 1f);
             strip.Add(title);
 
-            for (var i = 0; i < amounts.Count; i++)
+            if ((amounts == null || amounts.Count == 0) && !string.IsNullOrWhiteSpace(emptyLabel))
+            {
+                var empty = CreateLabel(emptyLabel, "management-panel-amount-empty", "management-panel-amount-empty");
+                empty.style.color = new Color(0.86f, 0.78f, 0.64f, 1f);
+                strip.Add(empty);
+                return strip;
+            }
+
+            for (var i = 0; amounts != null && i < amounts.Count; i++)
             {
                 var amount = amounts[i];
                 if (amount == null)
@@ -719,20 +1055,72 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 scroll.userData = new DragScrollState();
             }
 
+            if (scroll.userData is DragScrollState state)
+            {
+                state.HorizontalOnly = false;
+            }
+
+            scroll.UnregisterCallback<WheelEvent>(OnHorizontalWheelScroll);
+            scroll.UnregisterCallback<PointerDownEvent>(OnDragScrollPointerDown, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerMoveEvent>(OnDragScrollPointerMove, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerUpEvent>(OnDragScrollPointerUp, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel, TrickleDown.TrickleDown);
             scroll.UnregisterCallback<PointerDownEvent>(OnDragScrollPointerDown);
             scroll.UnregisterCallback<PointerMoveEvent>(OnDragScrollPointerMove);
             scroll.UnregisterCallback<PointerUpEvent>(OnDragScrollPointerUp);
             scroll.UnregisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel);
-            scroll.RegisterCallback<PointerDownEvent>(OnDragScrollPointerDown);
-            scroll.RegisterCallback<PointerMoveEvent>(OnDragScrollPointerMove);
-            scroll.RegisterCallback<PointerUpEvent>(OnDragScrollPointerUp);
-            scroll.RegisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel);
+            scroll.RegisterCallback<PointerDownEvent>(OnDragScrollPointerDown, TrickleDown.TrickleDown);
+            scroll.RegisterCallback<PointerMoveEvent>(OnDragScrollPointerMove, TrickleDown.TrickleDown);
+            scroll.RegisterCallback<PointerUpEvent>(OnDragScrollPointerUp, TrickleDown.TrickleDown);
+            scroll.RegisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel, TrickleDown.TrickleDown);
+        }
+
+        public static void EnableHorizontalDragScroll(ScrollView scroll)
+        {
+            EnableDragScroll(scroll);
+            if (scroll == null)
+            {
+                return;
+            }
+
+            if (scroll.userData is DragScrollState state)
+            {
+                state.HorizontalOnly = true;
+            }
+
+            scroll.UnregisterCallback<WheelEvent>(OnHorizontalWheelScroll);
+            scroll.RegisterCallback<WheelEvent>(OnHorizontalWheelScroll);
+        }
+
+        public static void DisableDragScroll(ScrollView scroll)
+        {
+            if (scroll == null)
+            {
+                return;
+            }
+
+            scroll.UnregisterCallback<WheelEvent>(OnHorizontalWheelScroll);
+            scroll.UnregisterCallback<PointerDownEvent>(OnDragScrollPointerDown);
+            scroll.UnregisterCallback<PointerMoveEvent>(OnDragScrollPointerMove);
+            scroll.UnregisterCallback<PointerUpEvent>(OnDragScrollPointerUp);
+            scroll.UnregisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel);
+            scroll.UnregisterCallback<PointerDownEvent>(OnDragScrollPointerDown, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerMoveEvent>(OnDragScrollPointerMove, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerUpEvent>(OnDragScrollPointerUp, TrickleDown.TrickleDown);
+            scroll.UnregisterCallback<PointerCancelEvent>(OnDragScrollPointerCancel, TrickleDown.TrickleDown);
+            if (scroll.userData is DragScrollState)
+            {
+                scroll.userData = null;
+            }
         }
 
         private sealed class DragScrollState
         {
             public bool Dragging;
+            public bool HorizontalOnly;
             public Vector2 LastPosition;
+            public bool Pressed;
+            public Vector2 StartPosition;
         }
 
         private static void OnDragScrollPointerDown(PointerDownEvent evt)
@@ -749,33 +1137,90 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 scroll.userData = state;
             }
 
-            state.Dragging = true;
+            state.Dragging = false;
+            state.Pressed = true;
+            state.StartPosition = evt.position;
             state.LastPosition = evt.position;
-            scroll.CapturePointer(evt.pointerId);
-            evt.StopPropagation();
         }
 
         private static void OnDragScrollPointerMove(PointerMoveEvent evt)
         {
             if (evt.currentTarget is not ScrollView scroll ||
                 scroll.userData is not DragScrollState state ||
-                !state.Dragging ||
-                !scroll.HasPointerCapture(evt.pointerId))
+                !state.Pressed)
             {
                 return;
             }
 
             var current = (Vector2)evt.position;
+            if ((evt.pressedButtons & 1) == 0)
+            {
+                ReleaseDragScrollPointer(scroll, evt.pointerId);
+                return;
+            }
+
             var delta = current - state.LastPosition;
+            if (!state.Dragging)
+            {
+                var total = current - state.StartPosition;
+                if (state.HorizontalOnly && Mathf.Abs(total.x) < Mathf.Abs(total.y))
+                {
+                    ReleaseDragScrollPointer(scroll, evt.pointerId);
+                    return;
+                }
+
+                var dragDistance = state.HorizontalOnly
+                    ? Mathf.Abs(current.x - state.StartPosition.x)
+                    : Vector2.Distance(current, state.StartPosition);
+                if (dragDistance < 6f)
+                {
+                    return;
+                }
+
+                state.Dragging = true;
+                scroll.CapturePointer(evt.pointerId);
+            }
+
             state.LastPosition = current;
+            if (state.HorizontalOnly)
+            {
+                delta.y = 0f;
+            }
+
             scroll.scrollOffset -= delta;
+            evt.StopPropagation();
+        }
+
+        private static void OnHorizontalWheelScroll(WheelEvent evt)
+        {
+            if (evt.currentTarget is not ScrollView scroll)
+            {
+                return;
+            }
+
+            var wheelDelta = Mathf.Abs(evt.delta.x) > Mathf.Abs(evt.delta.y)
+                ? evt.delta.x
+                : evt.delta.y;
+            if (Mathf.Approximately(wheelDelta, 0f))
+            {
+                return;
+            }
+
+            scroll.scrollOffset = new Vector2(
+                Mathf.Max(0f, scroll.scrollOffset.x + wheelDelta * 48f),
+                scroll.scrollOffset.y);
             evt.StopPropagation();
         }
 
         private static void OnDragScrollPointerUp(PointerUpEvent evt)
         {
-            ReleaseDragScrollPointer(evt.currentTarget as ScrollView, evt.pointerId);
-            evt.StopPropagation();
+            var scroll = evt.currentTarget as ScrollView;
+            var wasDragging = scroll?.userData is DragScrollState state && state.Dragging;
+            ReleaseDragScrollPointer(scroll, evt.pointerId);
+            if (wasDragging)
+            {
+                evt.StopPropagation();
+            }
         }
 
         private static void OnDragScrollPointerCancel(PointerCancelEvent evt)
@@ -793,6 +1238,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             if (scroll.userData is DragScrollState state)
             {
                 state.Dragging = false;
+                state.Pressed = false;
             }
 
             if (scroll.HasPointerCapture(pointerId))
@@ -810,6 +1256,108 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         {
             return string.Equals(title, "Tech Tree", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(title, "科技树", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ApplyTechTreeTitleStyle()
+        {
+            if (_title == null)
+            {
+                return;
+            }
+
+            _title.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _title.style.fontSize = 30f;
+            _title.style.marginBottom = 18f;
+        }
+
+        private void ConfigureTechTreeOuterScroll()
+        {
+            var scroll = _root?.Q<ScrollView>("management-panel-scroll");
+            if (scroll == null)
+            {
+                return;
+            }
+
+            DisableDragScroll(scroll);
+            scroll.scrollOffset = Vector2.zero;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+        }
+
+        private void ConfigurePolicyFocusOuterScroll()
+        {
+            var scroll = _root?.Q<ScrollView>("management-panel-scroll");
+            if (scroll == null)
+            {
+                return;
+            }
+
+            DisableDragScroll(scroll);
+            scroll.scrollOffset = Vector2.zero;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+        }
+
+        private static bool IsPolicyFocusTitle(string title)
+        {
+            return string.Equals(title, "Policy Focus", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(title, "国策", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ApplyTitleStyle(string title)
+        {
+            if (_title == null)
+            {
+                return;
+            }
+
+            if (IsPolicyFocusTitle(title))
+            {
+                _title.style.fontSize = 28f;
+                _title.style.unityFontStyleAndWeight = FontStyle.Bold;
+                _title.style.unityTextAlign = TextAnchor.MiddleCenter;
+                _title.style.alignSelf = Align.Auto;
+                _title.style.marginBottom = 20f;
+                _title.style.flexGrow = 1f;
+                _title.style.width = StyleKeyword.Auto;
+                return;
+            }
+
+            _title.style.fontSize = 16f;
+            _title.style.unityTextAlign = TextAnchor.MiddleLeft;
+            _title.style.alignSelf = Align.Auto;
+            _title.style.flexGrow = 1f;
+            _title.style.width = StyleKeyword.Auto;
+        }
+
+        private void ApplyCloseButtonStyle(string title)
+        {
+            if (_closeButton == null)
+            {
+                return;
+            }
+
+            if (IsPolicyFocusTitle(title))
+            {
+                _closeButton.style.width = 52f;
+                _closeButton.style.height = 46f;
+                _closeButton.style.flexShrink = 0f;
+                _closeButton.style.marginLeft = 16f;
+                _closeButton.style.marginRight = 0f;
+                _closeButton.style.marginTop = 0f;
+                _closeButton.style.marginBottom = 12f;
+                _closeButton.style.fontSize = 24f;
+                _closeButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+                _closeButton.style.backgroundColor = new Color(0.20f, 0.08f, 0.045f, 0.98f);
+                _closeButton.style.color = new Color(1f, 0.86f, 0.62f, 1f);
+                return;
+            }
+
+            _closeButton.style.width = 34f;
+            _closeButton.style.height = 30f;
+            _closeButton.style.marginLeft = 0f;
+            _closeButton.style.marginBottom = 0f;
+            _closeButton.style.fontSize = 12f;
         }
 
         private void ApplyPanelBackground(string title)
@@ -843,8 +1391,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
                 return TechTreeBackgroundResource;
             }
 
-            if (string.Equals(title, "Policy Focus", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(title, "国策", StringComparison.OrdinalIgnoreCase))
+            if (IsPolicyFocusTitle(title))
             {
                 return PolicyFocusBackgroundResource;
             }

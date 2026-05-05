@@ -103,7 +103,8 @@ namespace Panoptes.Core.Application.Stores
                 Description = entry.Description,
                 IconKey = entry.IconKey,
                 Layer = entry.Layer,
-                ActivationTiming = entry.ActivationTiming
+                ActivationTiming = entry.ActivationTiming,
+                ModifierEffects = new List<CatalogPolicyModifierEffectDto>()
             });
         }
 

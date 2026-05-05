@@ -2190,10 +2190,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
   TrackerSettings:
     BindingMode: 4
-    PositionDamping: {x: 1, y: 1, z: 1}
+    PositionDamping: {x: 0, y: 0, z: 0}
     AngularDampingMode: 0
-    RotationDamping: {x: 1, y: 1, z: 1}
-    QuaternionDamping: 1
+    RotationDamping: {x: 0, y: 0, z: 0}
+    QuaternionDamping: 0
   FollowOffset: {x: 0, y: 12, z: -12}
 --- !u!114 &1285543297
 MonoBehaviour:

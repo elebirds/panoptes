@@ -9,20 +9,24 @@ namespace Panoptes.Presentation.ViewModels
     public sealed class RecipeSynthesisViewModel : ManagementPanelViewModelBase
     {
         private readonly RecipeSynthesisContextStore _contextStore;
+        private readonly GameStateStore _gameStateStore;
         private readonly PlanningDraftStore _planningDraftStore;
         private readonly StaticCatalogStore _staticCatalogStore;
 
         public RecipeSynthesisViewModel(
             StaticCatalogStore staticCatalogStore,
             PlanningDraftStore planningDraftStore,
-            RecipeSynthesisContextStore contextStore)
+            RecipeSynthesisContextStore contextStore,
+            GameStateStore gameStateStore)
         {
             _staticCatalogStore = staticCatalogStore ?? throw new ArgumentNullException(nameof(staticCatalogStore));
             _planningDraftStore = planningDraftStore ?? throw new ArgumentNullException(nameof(planningDraftStore));
             _contextStore = contextStore ?? throw new ArgumentNullException(nameof(contextStore));
+            _gameStateStore = gameStateStore ?? throw new ArgumentNullException(nameof(gameStateStore));
             AddSubscription(_staticCatalogStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_planningDraftStore.State.Subscribe(this, static (_, self) => self.Publish()));
             AddSubscription(_contextStore.State.Subscribe(this, static (_, self) => self.Publish()));
+            AddSubscription(_gameStateStore.State.Subscribe(this, static (_, self) => self.Publish()));
             Publish();
         }
 
@@ -43,7 +47,8 @@ namespace Panoptes.Presentation.ViewModels
             var contextNodeId = Normalize(context.NodeId);
             var contextBuildingTypeId = Normalize(context.BuildingTypeId);
             var draft = _planningDraftStore.Snapshot;
-            var selectedRecipeId = ResolveSelectedRecipeId(draft, contextNodeId);
+            var game = _gameStateStore.Snapshot;
+            var selectedRecipeId = ResolveSelectedRecipeId(draft, game, contextNodeId);
             var preview = ResolvePreview(draft, contextNodeId);
             var recipes = new List<CatalogRecipeDto>(catalog.Recipes.Values);
             recipes.Sort(CompareRecipes);
@@ -80,7 +85,8 @@ namespace Panoptes.Presentation.ViewModels
                     recipe.IconKey,
                     prerequisiteIds: null,
                     costs: BuildRecipeCosts(recipe, catalog),
-                    outputs: BuildRecipeOutputs(recipe, catalog)));
+                    outputs: BuildRecipeOutputs(recipe, catalog),
+                    emptyCostsLabel: "无消耗"));
             }
 
             return new ManagementPanelState("配方", BuildGroups(groups));
@@ -97,7 +103,18 @@ namespace Panoptes.Presentation.ViewModels
             return preview;
         }
 
-        private static string ResolveSelectedRecipeId(PlanningDraftState draft, string contextNodeId)
+        private static string ResolveSelectedRecipeId(
+            PlanningDraftState draft,
+            GameStateStoreState game,
+            string contextNodeId)
+        {
+            var draftSelection = ResolveDraftSelectedRecipeId(draft, contextNodeId);
+            return !string.IsNullOrEmpty(draftSelection)
+                ? draftSelection
+                : ResolveOperationSelectedRecipeId(game, contextNodeId);
+        }
+
+        private static string ResolveDraftSelectedRecipeId(PlanningDraftState draft, string contextNodeId)
         {
             var selections = draft?.RecipeSelections;
             if (selections == null)
@@ -116,6 +133,30 @@ namespace Panoptes.Presentation.ViewModels
                 if (!string.IsNullOrEmpty(recipeId))
                 {
                     return recipeId;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private static string ResolveOperationSelectedRecipeId(GameStateStoreState game, string contextNodeId)
+        {
+            var nodes = game?.Nodes;
+            if (nodes == null || string.IsNullOrEmpty(contextNodeId))
+            {
+                return string.Empty;
+            }
+
+            if (nodes.TryGetValue(contextNodeId, out var node))
+            {
+                return Normalize(node?.OperationSelectedRecipeId);
+            }
+
+            foreach (var candidate in nodes.Values)
+            {
+                if (string.Equals(Normalize(candidate?.Id), contextNodeId, StringComparison.Ordinal))
+                {
+                    return Normalize(candidate?.OperationSelectedRecipeId);
                 }
             }
 

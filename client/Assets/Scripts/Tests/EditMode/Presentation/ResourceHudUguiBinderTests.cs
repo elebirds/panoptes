@@ -79,6 +79,42 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void Render_ShouldKeepDeltaHintUntilNextDeltaForSameResource()
+        {
+            var listRoot = CreateResourceListRoot();
+            _binder = CreateBinder(listRoot);
+            _binder.Render(new ResourceHudState(new[]
+            {
+                new ResourceHudRowState("ore", 3)
+            }));
+
+            _binder.Render(new ResourceHudState(new[]
+            {
+                new ResourceHudRowState("ore", 7)
+            }));
+
+            var changeText = FindText(listRoot.GetChild(0), "ChangeNum");
+            Assert.That(changeText.gameObject.activeSelf, Is.True);
+            Assert.That(changeText.text, Is.EqualTo("+4"));
+
+            _binder.Render(new ResourceHudState(new[]
+            {
+                new ResourceHudRowState("ore", 7)
+            }));
+
+            Assert.That(changeText.gameObject.activeSelf, Is.True);
+            Assert.That(changeText.text, Is.EqualTo("+4"));
+
+            _binder.Render(new ResourceHudState(new[]
+            {
+                new ResourceHudRowState("ore", 5)
+            }));
+
+            Assert.That(changeText.gameObject.activeSelf, Is.True);
+            Assert.That(changeText.text, Is.EqualTo("-2"));
+        }
+
+        [Test]
         public void TechButton_ShouldToggleFinalTechTreeVisibilityStore()
         {
             _root = new GameObject("ResourceHudTechButtonTest", typeof(RectTransform));
@@ -185,10 +221,8 @@ namespace Panoptes.Tests.EditMode.Presentation
         private ResourceHudUguiBinder CreateBinder(RectTransform listRoot)
         {
             return new ResourceHudUguiBinder(
-                _root.GetComponent<CoroutineHost>(),
                 listRoot,
                 new[] { "Icons/Resources" },
-                3f,
                 Color.green,
                 Color.red);
         }

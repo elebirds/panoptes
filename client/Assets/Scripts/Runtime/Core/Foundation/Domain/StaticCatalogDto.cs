@@ -71,6 +71,16 @@ namespace Panoptes.Core.Domain
         public int InstitutionSlots;
     }
 
+    public sealed class CatalogPolicyModifierEffectDto
+    {
+        public string Trigger;
+        public string TargetId;
+        public string ResourceKey;
+        public string PointKey;
+        public string ModifierType;
+        public int Value;
+    }
+
     public sealed class CatalogTechnologyDto
     {
         public string Id;
@@ -94,6 +104,7 @@ namespace Panoptes.Core.Domain
         public string IconKey;
         public string Layer;
         public string ActivationTiming;
+        public List<CatalogPolicyModifierEffectDto> ModifierEffects;
     }
 
     public sealed class CatalogUnitFlagsDto

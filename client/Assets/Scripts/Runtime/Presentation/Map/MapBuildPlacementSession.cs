@@ -156,7 +156,12 @@ namespace Panoptes.Presentation.Map
 
             if (HasPendingBuild(nodeId))
             {
-                return settings.PlacedGhostColor;
+                return settings.InvalidColor;
+            }
+
+            if (IsBuildTargetOccupied(nodeId))
+            {
+                return settings.InvalidColor;
             }
 
             if (TryGetCurrentBuildPreview(nodeId, out var preview) && preview != null)
@@ -171,6 +176,11 @@ namespace Panoptes.Presentation.Map
 
         public bool ShouldRequestBuildPreview(string nodeId)
         {
+            if (IsBuildTargetOccupied(nodeId))
+            {
+                return false;
+            }
+
             return !TryGetCurrentBuildPreview(nodeId, out _) &&
                    Time.unscaledTime >= _nextBuildPreviewRequestAt;
         }
@@ -204,7 +214,8 @@ namespace Panoptes.Presentation.Map
         {
             if (string.IsNullOrWhiteSpace(nodeId) ||
                 string.IsNullOrWhiteSpace(_buildType) ||
-                string.IsNullOrWhiteSpace(_activeBuildCityId))
+                string.IsNullOrWhiteSpace(_activeBuildCityId) ||
+                IsBuildTargetOccupied(nodeId))
             {
                 return;
             }
@@ -234,11 +245,20 @@ namespace Panoptes.Presentation.Map
             }
 
             var backendBuildingType = ResolveBackendBuildingType(_buildType);
+            if (IsBuildTargetOccupied(node.NodeId) || HasPendingBuild(node.NodeId))
+            {
+                showUserError?.Invoke("building_exists: target node already has a building.");
+                ExitBuildMode();
+                return false;
+            }
+
             if (TryGetCurrentBuildPreview(node.NodeId, out var preview) &&
                 preview != null &&
                 !preview.Valid)
             {
                 showUserError?.Invoke(BuildPreviewPresenter.ResolveMessage(preview));
+                ExitBuildMode();
+                return false;
             }
 
             if (!SendBuildCommand(backendBuildingType, node.NodeId, showUserError, buildCommandSent))
@@ -247,9 +267,15 @@ namespace Panoptes.Presentation.Map
             }
 
             var ownerId = ResolveLocalOwnerId();
-            if (ShouldRenderPendingBuildGhost(node.NodeId))
+            if (!_mapRenderer.ApplyBuildingPlacement(
+                    node.NodeId,
+                    backendBuildingType,
+                    ownerId,
+                    true,
+                    100,
+                    settings.PlacedGhostColor))
             {
-                _mapRenderer.ApplyBuildingPlacement(node.NodeId, backendBuildingType, ownerId, true, 100, settings.PlacedGhostColor);
+                Debug.LogWarning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
             }
 
             _pendingBuildState.Add(new MapPlanningInputController.PendingBuildRecord
@@ -311,6 +337,20 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (_mapRenderer.TryGetNodeState(nodeId, out var nodeState) &&
+                nodeState != null &&
+                !string.IsNullOrWhiteSpace(nodeState.BuildingType))
+            {
+                var hp = nodeState.BuildingHp > 0 ? nodeState.BuildingHp : 100;
+                _mapRenderer.ApplyBuildingPlacement(
+                    nodeId,
+                    nodeState.BuildingType,
+                    nodeState.Owner,
+                    false,
+                    hp);
+                return;
+            }
+
             _mapRenderer.ApplyBuildingPlacement(nodeId, string.Empty, string.Empty, false, 0);
         }
 
@@ -330,6 +370,11 @@ namespace Panoptes.Presentation.Map
         {
             ClearHoverGhost();
             if (node == null || string.IsNullOrEmpty(_buildType))
+            {
+                return;
+            }
+
+            if (IsBuildTargetOccupied(node.NodeId) || HasPendingBuild(node.NodeId))
             {
                 return;
             }
@@ -388,6 +433,28 @@ namespace Panoptes.Presentation.Map
             return _mapRenderer.TryGetNodeState(nodeId, out var nodeState) &&
                    nodeState != null &&
                    string.IsNullOrWhiteSpace(nodeState.BuildingType);
+        }
+
+        private bool IsBuildTargetOccupied(string nodeId)
+        {
+            if (_mapRenderer == null || string.IsNullOrWhiteSpace(nodeId))
+            {
+                return false;
+            }
+
+            var normalizedNodeId = nodeId.Trim();
+            if (_mapRenderer.TryGetNodeState(normalizedNodeId, out var nodeState) &&
+                nodeState != null &&
+                !string.IsNullOrWhiteSpace(nodeState.BuildingType))
+            {
+                return true;
+            }
+
+            return _mapRenderer.TryGetNodeView(normalizedNodeId, out var nodeView) &&
+                   nodeView != null &&
+                   nodeView.BuildingInstance != null &&
+                   !nodeView.BuildingInstance.IsGhost &&
+                   !string.IsNullOrWhiteSpace(nodeView.BuildingType);
         }
 
         private string ResolveBackendBuildingType(string buildingType)

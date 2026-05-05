@@ -83,6 +83,11 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float selectionBeamLightRange = 4.5f;
         [SerializeField] private float selectionBeamSpotAngle = 34f;
 
+        [Header("Selection Edge Glow")]
+        [SerializeField] private bool useSelectionEdgeGlow = true;
+        [SerializeField] private bool autoCreateSelectionEdgeGlow = true;
+        [SerializeField] private SelectionEdgeGlow selectionEdgeGlow;
+
         public string UnitId { get; private set; } = string.Empty;
         public string Faction { get; private set; } = string.Empty;
         public string UnitType { get; private set; } = string.Empty;
@@ -153,7 +158,8 @@ namespace Panoptes.Presentation.Map
             _attackTriggerHash = string.IsNullOrWhiteSpace(attackTriggerParam) ? 0 : Animator.StringToHash(attackTriggerParam);
             _idleStateHash = string.IsNullOrWhiteSpace(idleStateName) ? 0 : Animator.StringToHash(idleStateName);
             RefreshAnimatorParameterAvailability();
-            EnsureSelectionBeam();
+            EnsureSelectionEdgeGlow();
+            HideLegacySelectionVisuals();
 
             if (GetComponent<Collider>() == null)
             {
@@ -231,6 +237,7 @@ namespace Panoptes.Presentation.Map
             }
 
             ApplyRenderBudgetForCurrentUnitType();
+            selectionEdgeGlow?.Refresh();
         }
 
         public void SetGridPosition(Vector2Int gridPos)
@@ -242,17 +249,22 @@ namespace Panoptes.Presentation.Map
         {
             if (selectedRing != null)
             {
-                selectedRing.SetActive(selected);
+                selectedRing.SetActive(false);
             }
 
             if (_selectionBeamRenderer != null)
             {
-                _selectionBeamRenderer.gameObject.SetActive(selected);
+                _selectionBeamRenderer.gameObject.SetActive(false);
             }
 
             if (_selectionBeamLight != null)
             {
-                _selectionBeamLight.gameObject.SetActive(selected);
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
+
+            if (selectionEdgeGlow != null)
+            {
+                selectionEdgeGlow.SetSelected(selected);
             }
         }
 
@@ -1017,6 +1029,49 @@ namespace Panoptes.Presentation.Map
 
             material.renderQueue = (int)RenderQueue.Transparent;
             return material;
+        }
+
+        private void EnsureSelectionEdgeGlow()
+        {
+            if (!useSelectionEdgeGlow)
+            {
+                return;
+            }
+
+            if (selectionEdgeGlow == null)
+            {
+                selectionEdgeGlow = GetComponentInChildren<SelectionEdgeGlow>(true);
+            }
+
+            if (selectionEdgeGlow == null && autoCreateSelectionEdgeGlow)
+            {
+                selectionEdgeGlow = gameObject.AddComponent<SelectionEdgeGlow>();
+            }
+
+            selectionEdgeGlow?.SetSelected(false);
+        }
+
+        private void HideLegacySelectionVisuals()
+        {
+            if (selectedRing != null)
+            {
+                selectedRing.SetActive(false);
+            }
+
+            if (selectionBeamRoot != null)
+            {
+                selectionBeamRoot.gameObject.SetActive(false);
+            }
+
+            if (_selectionBeamRenderer != null)
+            {
+                _selectionBeamRenderer.gameObject.SetActive(false);
+            }
+
+            if (_selectionBeamLight != null)
+            {
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
         }
 
         private void OnDestroy()

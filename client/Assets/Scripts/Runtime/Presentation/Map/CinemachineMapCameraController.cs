@@ -313,6 +313,8 @@ namespace Panoptes.Presentation.Map
             {
                 _followComponent = targetCamera.GetComponent<CinemachineFollow>();
             }
+
+            ConfigureFixedAngleFollowRig();
         }
 
         private void InitializeStateFromRig()
@@ -338,6 +340,20 @@ namespace Panoptes.Presentation.Map
 
             var offset = _followComponent.FollowOffset;
             return Mathf.Max(nearDistance, Mathf.Max(Mathf.Abs(offset.y), Mathf.Abs(offset.z)));
+        }
+
+        private void ConfigureFixedAngleFollowRig()
+        {
+            if (_followComponent == null)
+            {
+                return;
+            }
+
+            var trackerSettings = _followComponent.TrackerSettings;
+            trackerSettings.PositionDamping = Vector3.zero;
+            trackerSettings.RotationDamping = Vector3.zero;
+            trackerSettings.QuaternionDamping = 0f;
+            _followComponent.TrackerSettings = trackerSettings;
         }
 
         private void ApplyRigState(Vector2 anchorXZ, float distance)

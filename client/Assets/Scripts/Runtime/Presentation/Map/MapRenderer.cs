@@ -773,6 +773,13 @@ namespace Panoptes.Presentation.Map
 
             if (isGhost)
             {
+                if (TryGetNodeState(nodeId, out var existingState) &&
+                    existingState != null &&
+                    !string.IsNullOrWhiteSpace(existingState.BuildingType))
+                {
+                    return false;
+                }
+
                 nodeView.SetLocalPlayerId(GetLocalPlayerId());
                 nodeView.SetBuildingGhost(buildingType, ownerId, ghostColor ?? new Color(0.6f, 1f, 0.6f, 0.9f));
                 return true;

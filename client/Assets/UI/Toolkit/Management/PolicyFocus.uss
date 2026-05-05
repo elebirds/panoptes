@@ -1,71 +1,82 @@
 .management-panel-root {
     position: absolute;
-    left: 396px;
-    top: 88px;
-    width: 430px;
-    max-height: 620px;
-    padding: 12px;
-    background-color: rgba(18, 22, 27, 0.94);
-    color: rgb(236, 240, 243);
+    left: 5%;
+    right: 5%;
+    top: 5%;
+    bottom: 5%;
+    padding: 24px 28px;
+    background-color: rgba(10, 7, 6, 0.97);
+    color: rgb(250, 230, 184);
 }
 
 .management-panel-title {
+    width: 100%;
     color: rgb(237, 239, 232);
-    font-size: 16px;
+    font-size: 28px;
     -unity-font-style: bold;
-    margin-bottom: 12px;
+    -unity-text-align: middle-center;
+    margin-bottom: 20px;
 }
 
 .management-panel-empty {
-    color: rgb(166, 174, 183);
+    color: rgb(188, 194, 202);
+    font-size: 16px;
     margin-bottom: 10px;
 }
 
-.management-panel-scroll {
-    max-height: 560px;
+.management-panel-scroll,
+.management-panel-policy-scroll {
+    flex-grow: 1;
+    min-height: 0;
 }
 
-.management-panel-group {
-    margin-bottom: 12px;
+.management-panel-groups,
+.management-panel-policy-track {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 720px;
+    padding-bottom: 24px;
+    padding-right: 56px;
 }
 
-.management-panel-group-title {
-    font-size: 15px;
+.policy-focus-row {
+    width: 360px;
+    min-height: 700px;
+    height: 100%;
+    flex-shrink: 0;
+    flex-direction: column;
+    margin-right: 22px;
+    padding: 22px 22px 24px 22px;
+    background-color: rgba(26, 18, 14, 0.96);
+    border-width: 1px;
+    border-color: rgba(92, 61, 36, 0.95);
+}
+
+.policy-focus-row-image {
+    width: 310px;
+    height: 220px;
+    align-self: center;
+    margin-right: 0;
+    margin-bottom: 20px;
+}
+
+.policy-focus-row-title {
+    font-size: 26px;
     -unity-font-style: bold;
-    color: rgb(176, 163, 103);
-    margin-bottom: 6px;
+    -unity-text-align: middle-center;
+    margin-bottom: 18px;
 }
 
-.management-panel-row {
-    margin-bottom: 6px;
-    padding: 10px;
-    border-radius: 6px;
-    background-color: rgba(255, 255, 255, 0.06);
-    border-left-width: 3px;
-    border-left-color: rgb(176, 163, 103);
-}
-
-.management-panel-row-title {
-    font-size: 16px;
+.policy-focus-row-effect {
+    color: rgb(255, 212, 107);
+    font-size: 20px;
     -unity-font-style: bold;
-}
-
-.management-panel-row-summary,
-.management-panel-row-detail,
-.management-panel-row-status,
-.management-panel-row-action {
-    font-size: 13px;
     white-space: normal;
+    margin-bottom: 18px;
 }
 
-.management-panel-row-detail {
-    color: rgb(190, 199, 207);
-}
-
-.management-panel-row-status {
-    color: rgb(232, 199, 111);
-}
-
-.management-panel-row-action {
-    color: rgb(176, 163, 103);
+.policy-focus-row-detail {
+    color: rgb(224, 232, 240);
+    font-size: 18px;
+    white-space: normal;
 }

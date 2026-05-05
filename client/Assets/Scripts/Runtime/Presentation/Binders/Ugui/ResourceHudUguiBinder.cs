@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Panoptes.Presentation.ViewModels;
 using TMPro;
@@ -16,34 +15,27 @@ namespace Panoptes.Presentation.Binders.Ugui
             public Image Icon;
             public TMP_Text BaseNumText;
             public TMP_Text ChangeNumText;
-            public Coroutine HideCoroutine;
             public string Key = string.Empty;
         }
 
-        private readonly MonoBehaviour _coroutineOwner;
         private readonly List<ResourceItemBinding> _items = new();
         private readonly Dictionary<string, int> _lastAmounts = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Sprite> _iconCache = new(StringComparer.OrdinalIgnoreCase);
         private RectTransform _resourceListRoot;
         private IReadOnlyList<string> _iconResourcesRoots;
-        private float _changeVisibleSeconds;
         private Color _increaseColor;
         private Color _decreaseColor;
         private bool _hasSnapshot;
 
         public ResourceHudUguiBinder(
-            MonoBehaviour coroutineOwner,
             RectTransform resourceListRoot,
             IReadOnlyList<string> iconResourcesRoots,
-            float changeVisibleSeconds,
             Color increaseColor,
             Color decreaseColor)
         {
-            _coroutineOwner = coroutineOwner ?? throw new ArgumentNullException(nameof(coroutineOwner));
             RebindReferences(
                 resourceListRoot,
                 iconResourcesRoots,
-                changeVisibleSeconds,
                 increaseColor,
                 decreaseColor);
         }
@@ -51,13 +43,12 @@ namespace Panoptes.Presentation.Binders.Ugui
         public void RebindReferences(
             RectTransform resourceListRoot,
             IReadOnlyList<string> iconResourcesRoots,
-            float changeVisibleSeconds,
             Color increaseColor,
             Color decreaseColor)
         {
             if (_resourceListRoot != resourceListRoot)
             {
-                StopAllHideCoroutines();
+                HideAllChangeHints();
                 _items.Clear();
                 _hasSnapshot = false;
                 _lastAmounts.Clear();
@@ -65,7 +56,6 @@ namespace Panoptes.Presentation.Binders.Ugui
 
             _resourceListRoot = resourceListRoot;
             _iconResourcesRoots = iconResourcesRoots ?? Array.Empty<string>();
-            _changeVisibleSeconds = changeVisibleSeconds;
             _increaseColor = increaseColor;
             _decreaseColor = decreaseColor;
         }
@@ -91,6 +81,8 @@ namespace Panoptes.Presentation.Binders.Ugui
 
                 if (i >= rows.Count)
                 {
+                    HideChangeHint(item);
+                    item.Key = string.Empty;
                     item.Root.gameObject.SetActive(false);
                     continue;
                 }
@@ -103,21 +95,14 @@ namespace Panoptes.Presentation.Binders.Ugui
 
         public void StopAllHideCoroutines()
         {
+            HideAllChangeHints();
+        }
+
+        public void HideAllChangeHints()
+        {
             for (var i = 0; i < _items.Count; i++)
             {
-                var item = _items[i];
-                if (item == null || item.ChangeNumText == null)
-                {
-                    continue;
-                }
-
-                if (item.HideCoroutine != null)
-                {
-                    _coroutineOwner.StopCoroutine(item.HideCoroutine);
-                    item.HideCoroutine = null;
-                }
-
-                item.ChangeNumText.gameObject.SetActive(false);
+                HideChangeHint(_items[i]);
             }
         }
 
@@ -134,6 +119,11 @@ namespace Panoptes.Presentation.Binders.Ugui
         {
             row ??= new ResourceHudRowState(string.Empty, 0);
             item.Root.gameObject.SetActive(true);
+            if (!string.Equals(item.Key, row.Key, StringComparison.OrdinalIgnoreCase))
+            {
+                HideChangeHint(item);
+            }
+
             item.Key = row.Key;
 
             if (item.Icon != null)
@@ -234,33 +224,21 @@ namespace Panoptes.Presentation.Binders.Ugui
                 return;
             }
 
-            if (item.HideCoroutine != null)
-            {
-                _coroutineOwner.StopCoroutine(item.HideCoroutine);
-                item.HideCoroutine = null;
-            }
-
             if (delta == 0)
             {
-                item.ChangeNumText.gameObject.SetActive(false);
                 return;
             }
 
             item.ChangeNumText.gameObject.SetActive(true);
             item.ChangeNumText.color = delta > 0 ? _increaseColor : _decreaseColor;
             item.ChangeNumText.text = delta > 0 ? $"+{delta}" : delta.ToString();
-            item.HideCoroutine = _coroutineOwner.StartCoroutine(HideChangeAfterDelay(item));
         }
 
-        private IEnumerator HideChangeAfterDelay(ResourceItemBinding item)
+        private static void HideChangeHint(ResourceItemBinding item)
         {
-            var delay = Mathf.Max(0.05f, _changeVisibleSeconds);
-            yield return new WaitForSecondsRealtime(delay);
-
             if (item != null && item.ChangeNumText != null)
             {
                 item.ChangeNumText.gameObject.SetActive(false);
-                item.HideCoroutine = null;
             }
         }
 

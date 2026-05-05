@@ -44,7 +44,6 @@ namespace Panoptes.Presentation.UI.HUD
         [SerializeField] private float managementButtonSpacing = 8f;
 
         [Header("Change Hint")]
-        [SerializeField] private float changeVisibleSeconds = 3f;
         [SerializeField] private Color increaseColor = new Color(0.15f, 0.95f, 0.35f, 1f);
         [SerializeField] private Color decreaseColor = new Color(0.95f, 0.25f, 0.25f, 1f);
 
@@ -561,10 +560,8 @@ namespace Panoptes.Presentation.UI.HUD
             if (_binder == null)
             {
                 _binder = new ResourceHudUguiBinder(
-                    this,
                     resourceListRoot,
                     iconResourcesRoots,
-                    changeVisibleSeconds,
                     increaseColor,
                     decreaseColor);
                 return;
@@ -573,7 +570,6 @@ namespace Panoptes.Presentation.UI.HUD
             _binder.RebindReferences(
                 resourceListRoot,
                 iconResourcesRoots,
-                changeVisibleSeconds,
                 increaseColor,
                 decreaseColor);
         }

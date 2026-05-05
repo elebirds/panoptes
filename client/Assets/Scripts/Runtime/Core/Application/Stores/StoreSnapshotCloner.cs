@@ -571,8 +571,40 @@ namespace Panoptes.Core.Application.Stores
                 IconKey = source.IconKey,
                 Id = source.Id,
                 Layer = source.Layer,
-                Name = source.Name
+                Name = source.Name,
+                ModifierEffects = CloneCatalogPolicyModifierEffects(source.ModifierEffects)
             };
+        }
+
+        private static List<CatalogPolicyModifierEffectDto> CloneCatalogPolicyModifierEffects(
+            IReadOnlyList<CatalogPolicyModifierEffectDto> source)
+        {
+            var result = new List<CatalogPolicyModifierEffectDto>();
+            if (source == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < source.Count; i++)
+            {
+                var entry = source[i];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                result.Add(new CatalogPolicyModifierEffectDto
+                {
+                    ModifierType = entry.ModifierType,
+                    PointKey = entry.PointKey,
+                    ResourceKey = entry.ResourceKey,
+                    TargetId = entry.TargetId,
+                    Trigger = entry.Trigger,
+                    Value = entry.Value
+                });
+            }
+
+            return result;
         }
 
         private static CatalogUnitDto CloneCatalogUnit(CatalogUnitDto source)

@@ -49,13 +49,15 @@ namespace Panoptes.Presentation.ViewModels
             string iconKey = "",
             IReadOnlyList<string> prerequisiteIds = null,
             IReadOnlyList<ManagementPanelAmountState> costs = null,
-            IReadOnlyList<ManagementPanelAmountState> outputs = null)
+            IReadOnlyList<ManagementPanelAmountState> outputs = null,
+            string emptyCostsLabel = "")
         {
             ActionLabel = actionLabel ?? string.Empty;
             Costs = costs != null
                 ? costs.Where(value => value != null && !string.IsNullOrWhiteSpace(value.Id)).ToList()
                 : new List<ManagementPanelAmountState>();
             Detail = detail ?? string.Empty;
+            EmptyCostsLabel = emptyCostsLabel ?? string.Empty;
             IconKey = iconKey ?? string.Empty;
             Id = id ?? string.Empty;
             Outputs = outputs != null
@@ -73,6 +75,7 @@ namespace Panoptes.Presentation.ViewModels
         public IReadOnlyList<ManagementPanelAmountState> Costs { get; }
         public bool HasAction => !string.IsNullOrWhiteSpace(ActionLabel);
         public string Detail { get; }
+        public string EmptyCostsLabel { get; }
         public string IconKey { get; }
         public string Id { get; }
         public IReadOnlyList<ManagementPanelAmountState> Outputs { get; }

@@ -43,6 +43,9 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float selectionBeamLightIntensity = 3.4f;
         [SerializeField] private float selectionBeamLightRange = 6.5f;
         [SerializeField] private float selectionBeamSpotAngle = 42f;
+        [SerializeField] private bool useSelectionEdgeGlow = true;
+        [SerializeField] private bool autoCreateSelectionEdgeGlow = true;
+        [SerializeField] private SelectionEdgeGlow selectionEdgeGlow;
         [SerializeField] private Color neutralOwnerColor = Color.white;
         [SerializeField] private Color friendlyOwnerColor = new Color(0.26f, 0.78f, 1f, 1f);
         [SerializeField] private Color enemyOwnerColor = new Color(1f, 0.35f, 0.35f, 1f);
@@ -103,7 +106,8 @@ namespace Panoptes.Presentation.Map
 
         private void Awake()
         {
-            EnsureSelectionBeam();
+            EnsureSelectionEdgeGlow();
+            HideLegacySelectionVisuals();
         }
 
         private void LateUpdate()
@@ -169,6 +173,7 @@ namespace Panoptes.Presentation.Map
 
             UpdateDamageMark();
             UpdateCityCoreHpBarValue();
+            selectionEdgeGlow?.Refresh();
         }
 
         public void SetCityCoreHpBarEnabled(bool enabled)
@@ -181,17 +186,22 @@ namespace Panoptes.Presentation.Map
         {
             if (selectedRing != null)
             {
-                selectedRing.SetActive(isSelected);
+                selectedRing.SetActive(false);
             }
 
             if (_selectionBeamRenderer != null)
             {
-                _selectionBeamRenderer.gameObject.SetActive(isSelected);
+                _selectionBeamRenderer.gameObject.SetActive(false);
             }
 
             if (_selectionBeamLight != null)
             {
-                _selectionBeamLight.gameObject.SetActive(isSelected);
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
+
+            if (selectionEdgeGlow != null)
+            {
+                selectionEdgeGlow.SetSelected(isSelected);
             }
         }
 
@@ -876,6 +886,49 @@ namespace Panoptes.Presentation.Map
 
             material.renderQueue = (int)RenderQueue.Transparent;
             return material;
+        }
+
+        private void EnsureSelectionEdgeGlow()
+        {
+            if (!useSelectionEdgeGlow)
+            {
+                return;
+            }
+
+            if (selectionEdgeGlow == null)
+            {
+                selectionEdgeGlow = GetComponentInChildren<SelectionEdgeGlow>(true);
+            }
+
+            if (selectionEdgeGlow == null && autoCreateSelectionEdgeGlow)
+            {
+                selectionEdgeGlow = gameObject.AddComponent<SelectionEdgeGlow>();
+            }
+
+            selectionEdgeGlow?.SetSelected(false);
+        }
+
+        private void HideLegacySelectionVisuals()
+        {
+            if (selectedRing != null)
+            {
+                selectedRing.SetActive(false);
+            }
+
+            if (selectionBeamRoot != null)
+            {
+                selectionBeamRoot.gameObject.SetActive(false);
+            }
+
+            if (_selectionBeamRenderer != null)
+            {
+                _selectionBeamRenderer.gameObject.SetActive(false);
+            }
+
+            if (_selectionBeamLight != null)
+            {
+                _selectionBeamLight.gameObject.SetActive(false);
+            }
         }
 
         private bool IsCityCoreBuildingType()

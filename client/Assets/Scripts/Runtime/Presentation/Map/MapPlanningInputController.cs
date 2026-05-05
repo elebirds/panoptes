@@ -160,6 +160,7 @@ namespace Panoptes.Presentation.Map
         private IMapSelectionSurface _selectionSurface;
 
         private UnitView _selectedUnit;
+        private BuildingView _selectedBuilding;
         private float _ignoreInputUntilTime;
         private static int _playbackInputLockCount;
 
@@ -242,6 +243,7 @@ namespace Panoptes.Presentation.Map
             _movePreviewPresentation.DisposeGhostMaterial();
             ClearAllPendingDeployGhosts();
             ClearTerritoryHighlights();
+            ClearBuildingSelection();
             _inputState.ClearToolAndSelection();
             _buildPlacement.ClearHoverState();
             _unitDamagePopups.Clear();
@@ -1413,6 +1415,7 @@ namespace Panoptes.Presentation.Map
             }
 
             ClearMoveSelection(false);
+            SelectBuildingVisual(node);
             NotifyUnitSelectionChanged(proxy);
             return true;
         }
@@ -1485,6 +1488,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            ClearBuildingSelection();
             NotifyUnitSelectionChanged(null);
         }
 
@@ -1498,6 +1502,7 @@ namespace Panoptes.Presentation.Map
             var canControl = !onlyControlOwnUnits || CanControlUnit(unit);
 
             ClearTerritoryHighlights();
+            ClearBuildingSelection();
             ClearMoveSelection(false);
             _selectedUnit = unit;
             _selectedUnit.SetSelected(true);
@@ -1531,6 +1536,29 @@ namespace Panoptes.Presentation.Map
                 NotifyUnitSelectionChanged(null);
             }
 
+        }
+
+        private void SelectBuildingVisual(NodeView node)
+        {
+            ClearBuildingSelection();
+
+            if (node == null || node.BuildingInstance == null)
+            {
+                return;
+            }
+
+            _selectedBuilding = node.BuildingInstance;
+            _selectedBuilding.SetSelected(true);
+        }
+
+        private void ClearBuildingSelection()
+        {
+            if (_selectedBuilding != null)
+            {
+                _selectedBuilding.SetSelected(false);
+            }
+
+            _selectedBuilding = null;
         }
 
         private void NotifyUnitSelectionChanged(UnitView unit)
