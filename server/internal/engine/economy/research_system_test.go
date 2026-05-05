@@ -135,6 +135,9 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 		Units: []staticdata.UnitDefinition{
 			{ID: "infantry", Class: "melee", MaxHP: 30, Attack: 10, AttackRange: 1, MoveRange: 2, VisionRange: 3, TrainCost: staticdata.ResourceAmounts{}, Upkeep: staticdata.ResourceAmounts{}},
 		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
 		Technologies: []staticdata.TechnologyDefinition{
 			{
 				ID:           "militia_mobilization",
@@ -150,10 +153,20 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 
 	world := donburi.NewWorld()
 	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 1, R: 1, Terrain: "plain"})
+	nodeA := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 2, R: 1, Terrain: "plain"})
+	nodeB := ecs.CreateNode(world, ecs.MapNode{ID: "A2", Q: 3, R: 1, Terrain: "plain"})
+	nodeC := ecs.CreateNode(world, ecs.MapNode{ID: "A3", Q: 4, R: 1, Terrain: "plain"})
+	nodeD := ecs.CreateNode(world, ecs.MapNode{ID: "A4", Q: 5, R: 1, Terrain: "plain"})
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
 		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 1, R: 1}},
-		NodeIndex:    map[string]donburi.Entity{"C1": nodeEntity},
+		NodeIndex: map[string]donburi.Entity{
+			"C1": nodeEntity,
+			"A1": nodeA,
+			"A2": nodeB,
+			"A3": nodeC,
+			"A4": nodeD,
+		},
 	})
 	state.World = world
 	state.Players["player-1"].Research.CurrentProgress = 1
@@ -164,8 +177,8 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 0 {
 		t.Fatalf("food after completion turn = %d, want 0", got)
 	}
-	if got := domain.GetUnitsByNode(world, domain.Position{Q: 1, R: 1}); len(got) != 0 {
-		t.Fatalf("granted units at spawn on completion turn = %d, want 0", len(got))
+	if got := domain.GetUnitsByNode(world, domain.Position{Q: 2, R: 1}); len(got) != 0 {
+		t.Fatalf("granted units before activation = %d, want 0", len(got))
 	}
 
 	state.Turn++
@@ -174,8 +187,8 @@ func TestEconomyRunnerResearchGrantAppliesResourcesAndUnits(t *testing.T) {
 	if got := state.Players["player-1"].Resources.Get(domain.ResourceFood); got != 3 {
 		t.Fatalf("food after activation = %d, want 3", got)
 	}
-	if got := domain.GetUnitsByNode(world, domain.Position{Q: 1, R: 1}); len(got) != 1 {
-		t.Fatalf("granted units at spawn after activation = %d, want 1", len(got))
+	if got := domain.GetUnitsByNode(world, domain.Position{Q: 2, R: 1}); len(got) != 1 {
+		t.Fatalf("granted units on resolved spawn tile after activation = %d, want 1", len(got))
 	}
 }
 
@@ -533,6 +546,10 @@ func newOwnedNodeState() (donburi.World, *domain.GameState, *donburi.Entry) {
 	world := donburi.NewWorld()
 	cityEntity := ecs.CreateNode(world, ecs.MapNode{ID: "C1", Q: 0, R: 0, Terrain: "plain"})
 	nodeEntity := ecs.CreateNode(world, ecs.MapNode{ID: "A1", Q: 1, R: 0, Terrain: "plain"})
+	nodeEntity2 := ecs.CreateNode(world, ecs.MapNode{ID: "A2", Q: 2, R: 0, Terrain: "plain"})
+	nodeEntity3 := ecs.CreateNode(world, ecs.MapNode{ID: "A3", Q: 3, R: 0, Terrain: "plain"})
+	nodeEntity4 := ecs.CreateNode(world, ecs.MapNode{ID: "A4", Q: 4, R: 0, Terrain: "plain"})
+	nodeEntity5 := ecs.CreateNode(world, ecs.MapNode{ID: "A5", Q: 5, R: 0, Terrain: "plain"})
 	cityEntry := world.Entry(cityEntity)
 	nodeEntry := world.Entry(nodeEntity)
 	for _, entry := range []*donburi.Entry{cityEntry, nodeEntry} {
@@ -542,8 +559,15 @@ func newOwnedNodeState() (donburi.World, *domain.GameState, *donburi.Entry) {
 	ecs.CreateBuilding(world, "city_core", "player-1", "C1", cityEntry)
 
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
-		ID:        "default",
-		NodeIndex: map[string]donburi.Entity{"C1": cityEntity, "A1": nodeEntity},
+		ID: "default",
+		NodeIndex: map[string]donburi.Entity{
+			"C1": cityEntity,
+			"A1": nodeEntity,
+			"A2": nodeEntity2,
+			"A3": nodeEntity3,
+			"A4": nodeEntity4,
+			"A5": nodeEntity5,
+		},
 	})
 	state.World = world
 	state.EnsureCityState("player-1", "C1")

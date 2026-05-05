@@ -42,12 +42,26 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 				VisionRange: 2,
 			},
 		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
 	}))
 
+	world := donburi.NewWorld()
+	nodeIndex := map[string]donburi.Entity{
+		"S0": ecs.CreateNode(world, ecs.MapNode{ID: "S0", Q: 2, R: 1, Terrain: "plain"}),
+		"S1": ecs.CreateNode(world, ecs.MapNode{ID: "S1", Q: 3, R: 1, Terrain: "plain"}),
+		"S2": ecs.CreateNode(world, ecs.MapNode{ID: "S2", Q: 4, R: 1, Terrain: "plain"}),
+		"S3": ecs.CreateNode(world, ecs.MapNode{ID: "S3", Q: 5, R: 1, Terrain: "plain"}),
+		"S4": ecs.CreateNode(world, ecs.MapNode{ID: "S4", Q: 6, R: 1, Terrain: "plain"}),
+	}
 	state := domain.NewGameState("game-1", []string{"player-1"}, []string{"alice"}, &domain.MapData{
 		ID:           "default",
 		PlayerSpawns: map[string]domain.Position{"player-1": {Q: 2, R: 1}},
+		NodeIndex:    nodeIndex,
 	})
+	state.World = world
+	state.NodeIndex = nodeIndex
 	state.Turn = 3
 	state.Players["player-1"].TokensLeft = 1
 	state.Players["player-1"].Research.MarkTechnologyCompleted("agrarian_foundations", 2)
@@ -110,7 +124,7 @@ func TestPlanningStartRunnerPromotesPendingTechAndInstitutionsWithoutRefreshingT
 		}
 		stats := ecs.UnitStatsC.Get(entry)
 		pos := ecs.PositionC.Get(entry)
-		if stats.Faction == "player-1" && string(stats.Type) == "scout" && pos.Q == 2 && pos.R == 1 {
+		if stats.Faction == "player-1" && string(stats.Type) == "scout" && pos.Q == 3 && pos.R == 1 {
 			unitsAtSpawn++
 		}
 	})

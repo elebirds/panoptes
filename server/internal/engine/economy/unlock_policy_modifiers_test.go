@@ -159,6 +159,9 @@ func TestWarPreparednessCompletesArcherRecipeInOneTurn(t *testing.T) {
 				},
 			},
 		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
+		},
 		Policies: []staticdata.PolicyDefinition{
 			{
 				ID:               "war_preparedness",
@@ -249,6 +252,9 @@ func TestExpansionPolicyCompletesSettlerRecipeInOneTurn(t *testing.T) {
 				Upkeep:      staticdata.ResourceAmounts{"food": 1},
 				Flags:       staticdata.UnitFlags{CanCapture: true},
 			},
+		},
+		Terrains: []staticdata.TerrainDefinition{
+			{ID: "plain", Passable: true, Buildable: true},
 		},
 		Policies: []staticdata.PolicyDefinition{
 			{

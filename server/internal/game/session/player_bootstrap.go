@@ -122,48 +122,14 @@ func (r *Runtime) ensureStartingInfantryAtSpawn(playerID string, spawnEntry *don
 
 	pos := ecs.PositionC.Get(spawnEntry)
 	spawnPos := domain.Position{Q: pos.Q, R: pos.R}
-	infantryPos := r.resolveStartingInfantryPosition(spawnPos)
+	infantryPos, ok := domain.ResolveUnitSpawnPosition(r.state, spawnPos)
+	if !ok {
+		return
+	}
 	if r.hasOwnedUnitAtPosition(playerID, domain.UnitTypeInfantry, infantryPos) {
 		return
 	}
 	ecs.CreateUnit(r.state.World, string(domain.UnitTypeInfantry), playerID, infantryPos)
-}
-
-func (r *Runtime) resolveStartingInfantryPosition(spawnPos domain.Position) domain.Position {
-	if r == nil || r.state == nil || r.state.World == nil {
-		return spawnPos
-	}
-
-	for _, candidate := range spawnPos.Neighbors() {
-		if r.canPlaceStartingInfantryAt(candidate) {
-			return candidate
-		}
-	}
-	return spawnPos
-}
-
-func (r *Runtime) canPlaceStartingInfantryAt(pos domain.Position) bool {
-	if r == nil || r.state == nil || r.state.World == nil {
-		return false
-	}
-
-	entry, ok := domain.GetNodeAt(r.state.World, pos)
-	if !ok || entry == nil {
-		return false
-	}
-	if entry.HasComponent(ecs.BuildingC) || r.hasAnyUnitAtPosition(pos) {
-		return false
-	}
-
-	node := ecs.NodeC.Get(entry)
-	terrain, ok := staticdata.Default().GetTerrain(string(node.Terrain))
-	if !ok {
-		return false
-	}
-	if node.HasRoad && terrain.PassableWithRoad {
-		return true
-	}
-	return terrain.Passable
 }
 
 func (r *Runtime) hasOwnedUnitAtPosition(playerID string, unitType domain.UnitType, pos domain.Position) bool {
@@ -178,24 +144,6 @@ func (r *Runtime) hasOwnedUnitAtPosition(playerID string, unitType domain.UnitTy
 		}
 		stats := ecs.UnitStatsC.Get(entry)
 		if stats.Faction != playerID || stats.Type != unitType {
-			return
-		}
-		unitPos := ecs.PositionC.Get(entry)
-		if unitPos.Q == pos.Q && unitPos.R == pos.R {
-			found = true
-		}
-	})
-	return found
-}
-
-func (r *Runtime) hasAnyUnitAtPosition(pos domain.Position) bool {
-	if r == nil || r.state == nil || r.state.World == nil {
-		return false
-	}
-
-	found := false
-	ecs.AllUnits(r.state.World).Each(r.state.World, func(entry *donburi.Entry) {
-		if found || entry == nil {
 			return
 		}
 		unitPos := ecs.PositionC.Get(entry)

@@ -936,7 +936,7 @@ func TestBootstrapStartingPlayersPlacesInitialInfantryAdjacentToCapitalWhenAvail
 	}))
 
 	spawnPos := domain.Position{Q: 1, R: 1}
-	state := newBootstrapStateForSinglePlayer(3, 3, spawnPos)
+	state := newBootstrapStateForSinglePlayer(6, 6, spawnPos)
 	player := &capturePlayer{playerID: "player-1", username: "alice"}
 	runtime := newTestRuntime("game-1", []*capturePlayer{player}, nil)
 	runtime.state = state
@@ -958,7 +958,7 @@ func TestBootstrapStartingPlayersPlacesInitialInfantryAdjacentToCapitalWhenAvail
 	}
 }
 
-func TestBootstrapStartingPlayersFallsBackToCapitalWhenAdjacentTilesUnavailable(t *testing.T) {
+func TestBootstrapStartingPlayersSkipsInfantryWhenNoSafeSpawnExists(t *testing.T) {
 	staticdata.SetDefault(staticdata.NewCatalog(staticdata.CatalogBundle{
 		Manifest: staticdata.Manifest{DefaultMapID: "runtime_bootstrap"},
 		Rules: staticdata.Rules{
@@ -1020,16 +1020,8 @@ func TestBootstrapStartingPlayersFallsBackToCapitalWhenAdjacentTilesUnavailable(
 		t.Fatalf("bootstrapStartingPlayers() error = %v", err)
 	}
 
-	if got := countOwnedUnitsByType(state.World, "player-1", "infantry"); got != 1 {
-		t.Fatalf("player-1 infantry count = %d, want 1", got)
-	}
-	unitEntry, ok := findOwnedUnitEntryByType(state.World, "player-1", "infantry")
-	if !ok {
-		t.Fatalf("player-1 infantry missing")
-	}
-	gotPos := ecs.PositionC.Get(unitEntry)
-	if gotPos.Q != spawnPos.Q || gotPos.R != spawnPos.R {
-		t.Fatalf("initial infantry position = (%d,%d), want capital (%d,%d)", gotPos.Q, gotPos.R, spawnPos.Q, spawnPos.R)
+	if got := countOwnedUnitsByType(state.World, "player-1", "infantry"); got != 0 {
+		t.Fatalf("player-1 infantry count = %d, want 0 when no safe spawn exists", got)
 	}
 }
 

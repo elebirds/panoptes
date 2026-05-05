@@ -63,16 +63,18 @@ func TestRealContentD2PlayabilityChainCoversAuthoredExpansion(t *testing.T) {
 	}
 
 	selectRealContentRecipe(t, state, "E2", "watchtower_scout")
+	wantScoutNodeID := resolvedSpawnNodeID(t, state, "E2")
 	runSelectedRecipeToCompletion(t, state, "E2")
 	clearSelectedRecipe(t, state, "E2")
 	scoutID := findOwnedUnitIDByType(t, state, playerID, "scout")
-	assertUnitAtNode(t, state, scoutID, "E2")
+	assertUnitAtNode(t, state, scoutID, wantScoutNodeID)
 
 	selectRealContentRecipe(t, state, "F2", "training_ground_spearman")
+	wantSpearmanNodeID := resolvedSpawnNodeID(t, state, "F2")
 	runSelectedRecipeToCompletion(t, state, "F2")
 	clearSelectedRecipe(t, state, "F2")
 	spearmanID := findOwnedUnitIDByType(t, state, playerID, "spearman")
-	assertUnitAtNode(t, state, spearmanID, "F2")
+	assertUnitAtNode(t, state, spearmanID, wantSpearmanNodeID)
 	AssertStateInvariants(t, state)
 }
 
@@ -241,4 +243,23 @@ func runSelectedRecipeToCompletion(t *testing.T, state *domain.GameState, nodeID
 		state.Turn++
 	}
 	t.Fatalf("recipe at node %s did not complete", nodeID)
+}
+
+func resolvedSpawnNodeID(t *testing.T, state *domain.GameState, originNodeID string) string {
+	t.Helper()
+
+	entry, ok := state.GetNode(originNodeID)
+	if !ok {
+		t.Fatalf("missing node %s", originNodeID)
+	}
+	pos := ecs.PositionC.Get(entry)
+	spawnPos, ok := domain.ResolveUnitSpawnPosition(state, domain.Position{Q: pos.Q, R: pos.R})
+	if !ok {
+		t.Fatalf("ResolveUnitSpawnPosition(%s) = not found", originNodeID)
+	}
+	nodeID := nodeIDAt(state.World, spawnPos)
+	if nodeID == "" {
+		t.Fatalf("resolved spawn position %+v does not map to a node", spawnPos)
+	}
+	return nodeID
 }

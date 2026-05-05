@@ -30,8 +30,13 @@ func (e UnitProducedEvent) Apply(world donburi.World, state *domain.GameState) {
 	}
 	state.ConsumeResources(e.Faction, e.CityID, e.Cost)
 	pos := ecs.PositionC.Get(nodeEntry)
+	origin := domain.Position{Q: pos.Q, R: pos.R}
 	for i := 0; i < e.Count; i++ {
-		ecs.CreateUnit(world, e.UnitType, e.Faction, domain.Position{Q: pos.Q, R: pos.R})
+		spawnPos, ok := domain.ResolveUnitSpawnPosition(state, origin)
+		if !ok {
+			continue
+		}
+		ecs.CreateUnit(world, e.UnitType, e.Faction, spawnPos)
 	}
 }
 

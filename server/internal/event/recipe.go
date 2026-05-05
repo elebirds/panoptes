@@ -177,8 +177,13 @@ func (e RecipeCompletedEvent) Apply(world donburi.World, state *domain.GameState
 		return
 	}
 	pos := ecs.PositionC.Get(entry)
+	origin := domain.Position{Q: pos.Q, R: pos.R}
 	for _, unitType := range e.Units {
-		ecs.CreateUnit(world, unitType, e.Owner, domain.Position{Q: pos.Q, R: pos.R})
+		spawnPos, ok := domain.ResolveUnitSpawnPosition(state, origin)
+		if !ok {
+			continue
+		}
+		ecs.CreateUnit(world, unitType, e.Owner, spawnPos)
 	}
 }
 

@@ -162,11 +162,15 @@ func (e TechnologyGrantAppliedEvent) Apply(world donburi.World, state *domain.Ga
 
 	// grant 单位优先落在主城市，没有城市时再回退到玩家出生点。
 	// 这样后续即便科技 grant 和“主城体系”继续演化，这里的行为仍然稳定可预测。
-	spawnPos, ok := resolveGrantSpawnPosition(world, state, e.PlayerID)
+	spawnOrigin, ok := resolveGrantSpawnOrigin(world, state, e.PlayerID)
 	if !ok {
 		return
 	}
 	for _, unitType := range e.UnitTypes {
+		spawnPos, ok := domain.ResolveUnitSpawnPosition(state, spawnOrigin)
+		if !ok {
+			continue
+		}
 		ecs.CreateUnit(world, unitType, e.PlayerID, spawnPos)
 	}
 }
@@ -177,7 +181,7 @@ func (e TechnologyGrantAppliedEvent) String() string {
 	return fmt.Sprintf("TechnologyGrantAppliedEvent player=%s technology=%s", e.PlayerID, e.SourceTech)
 }
 
-func resolveGrantSpawnPosition(world donburi.World, state *domain.GameState, playerID string) (domain.Position, bool) {
+func resolveGrantSpawnOrigin(world donburi.World, state *domain.GameState, playerID string) (domain.Position, bool) {
 	if state == nil {
 		return domain.Position{}, false
 	}
