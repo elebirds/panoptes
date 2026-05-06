@@ -140,6 +140,44 @@ namespace Panoptes.Tests.EditMode.Presentation
         }
 
         [Test]
+        public void PolicyFocus_ShouldLocalizeModifierEffectSummaryFromCatalog()
+        {
+            var catalogStore = new StaticCatalogStore();
+            var draftStore = new PlanningDraftStore();
+            using var viewModel = new PolicyFocusViewModel(catalogStore, draftStore);
+
+            catalogStore.Replace(new StaticCatalogState(
+                recipes: new Dictionary<string, CatalogRecipeDto>
+                {
+                    ["farm_food"] = new CatalogRecipeDto { Id = "farm_food", Name = "基础农耕" }
+                },
+                policies: new Dictionary<string, CatalogPolicyDto>
+                {
+                    ["recovery"] = new CatalogPolicyDto
+                    {
+                        Id = "recovery",
+                        Name = "恢复",
+                        Layer = "national_focus",
+                        ModifierEffects = new List<CatalogPolicyModifierEffectDto>
+                        {
+                            new CatalogPolicyModifierEffectDto
+                            {
+                                Trigger = "recipe.resource_output",
+                                TargetId = "farm_food",
+                                ResourceKey = "food",
+                                Value = 1
+                            }
+                        }
+                    }
+                }));
+
+            var summary = viewModel.Current.Groups[0].Rows[0].Summary;
+            Assert.That(summary, Is.EqualTo("基础农耕 粮食产出 +1"));
+            Assert.That(summary, Does.Not.Contain("farm food"));
+            Assert.That(summary, Does.Not.Contain("food产出"));
+        }
+
+        [Test]
         public void NationalLedger_ShouldProjectGameAndCatalogCounters()
         {
             var gameStateStore = new GameStateStore();

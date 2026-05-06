@@ -26,11 +26,11 @@ namespace Panoptes.Tests.EditMode.Presentation
             staticCatalogStore.Replace(new StaticCatalogState(
                 technologies: new Dictionary<string, CatalogTechnologyDto>
                 {
-                    ["irrigation"] = new CatalogTechnologyDto { Id = "irrigation", Name = "Irrigation" }
+                    ["irrigation"] = new CatalogTechnologyDto { Id = "irrigation", Name = "灌溉" }
                 },
                 policies: new Dictionary<string, CatalogPolicyDto>
                 {
-                    ["logistics"] = new CatalogPolicyDto { Id = "logistics", Name = "Logistics" }
+                    ["logistics_corps"] = new CatalogPolicyDto { Id = "logistics_corps", Name = "转运署" }
                 }));
             gameStateStore.Replace(new GameStateStoreState(
                 turn: 2,
@@ -63,21 +63,22 @@ namespace Panoptes.Tests.EditMode.Presentation
                 }));
             planningDraftStore.Replace(new PlanningDraftState(
                 plannedResearchTargetTechnologyId: "irrigation",
-                plannedNationalPolicyId: "logistics"));
+                plannedNationalPolicyId: "logistics_corps"));
 
             var state = viewModel.Current;
             Assert.That(state.TurnText, Is.EqualTo("2"));
             Assert.That(state.PhaseText, Is.EqualTo("回合规划"));
             Assert.That(state.TokensText, Is.EqualTo("3"));
-            Assert.That(state.PlannedResearchText, Is.EqualTo("Irrigation"));
-            Assert.That(state.PlannedPolicyText, Is.EqualTo("Logistics"));
+            Assert.That(state.PlannedResearchText, Is.EqualTo("灌溉"));
+            Assert.That(state.PlannedPolicyText, Is.EqualTo("转运署"));
             Assert.That(state.Metrics, Has.Count.EqualTo(4));
             Assert.That(state.Metrics[0].Value, Is.EqualTo("2"));
             Assert.That(state.Metrics[1].Value, Is.EqualTo("2"));
             Assert.That(state.Metrics[2].Value, Is.EqualTo("2"));
             Assert.That(state.Resources[0].Amount, Is.EqualTo(8));
+            Assert.That(state.Resources[0].Label, Is.EqualTo("粮食"));
             Assert.That(state.Events, Has.Count.EqualTo(1));
-            Assert.That(state.Events[0].Title, Is.EqualTo("unit moved"));
+            Assert.That(state.Events[0].Title, Is.EqualTo("单位移动"));
         }
     }
 }

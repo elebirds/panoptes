@@ -5,15 +5,15 @@ namespace Panoptes.Presentation.ViewModels
     public sealed class NationalOverviewState
     {
         public NationalOverviewState(
-            string title = "National Overview",
+            string title = "国家概览",
             string turnText = "--",
             string phaseText = "--",
             string tokensText = "--",
             IReadOnlyList<NationalOverviewMetricState> metrics = null,
             IReadOnlyList<NationalOverviewResourceState> resources = null,
             IReadOnlyList<NationalOverviewEventState> events = null,
-            string plannedResearchText = "None",
-            string plannedPolicyText = "None")
+            string plannedResearchText = "无",
+            string plannedPolicyText = "无")
         {
             Events = events != null
                 ? new List<NationalOverviewEventState>(events)
@@ -22,12 +22,12 @@ namespace Panoptes.Presentation.ViewModels
                 ? new List<NationalOverviewMetricState>(metrics)
                 : new List<NationalOverviewMetricState>();
             PhaseText = string.IsNullOrWhiteSpace(phaseText) ? "--" : phaseText.Trim();
-            PlannedPolicyText = string.IsNullOrWhiteSpace(plannedPolicyText) ? "None" : plannedPolicyText.Trim();
-            PlannedResearchText = string.IsNullOrWhiteSpace(plannedResearchText) ? "None" : plannedResearchText.Trim();
+            PlannedPolicyText = string.IsNullOrWhiteSpace(plannedPolicyText) ? "无" : plannedPolicyText.Trim();
+            PlannedResearchText = string.IsNullOrWhiteSpace(plannedResearchText) ? "无" : plannedResearchText.Trim();
             Resources = resources != null
                 ? new List<NationalOverviewResourceState>(resources)
                 : new List<NationalOverviewResourceState>();
-            Title = string.IsNullOrWhiteSpace(title) ? "National Overview" : title.Trim();
+            Title = string.IsNullOrWhiteSpace(title) ? "国家概览" : title.Trim();
             TokensText = string.IsNullOrWhiteSpace(tokensText) ? "--" : tokensText.Trim();
             TurnText = string.IsNullOrWhiteSpace(turnText) ? "--" : turnText.Trim();
         }
@@ -80,7 +80,7 @@ namespace Panoptes.Presentation.ViewModels
         public NationalOverviewEventState(string title = "", string detail = "")
         {
             Detail = detail ?? string.Empty;
-            Title = string.IsNullOrWhiteSpace(title) ? "Event" : title.Trim();
+            Title = string.IsNullOrWhiteSpace(title) ? "事件" : title.Trim();
         }
 
         public string Detail { get; }

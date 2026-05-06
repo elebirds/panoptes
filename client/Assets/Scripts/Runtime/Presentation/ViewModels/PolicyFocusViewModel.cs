@@ -69,7 +69,7 @@ namespace Panoptes.Presentation.ViewModels
                 var row = new ManagementPanelRowState(
                     policyId,
                     policy.Name,
-                    BuildPolicyEffectSummary(policy),
+                    BuildPolicyEffectSummary(policy, _staticCatalogStore.Snapshot),
                     policy.Description,
                     status,
                     isNational ? "采纳" : "设置",
@@ -98,7 +98,7 @@ namespace Panoptes.Presentation.ViewModels
             return new ManagementPanelState("国策", groups);
         }
 
-        private static string BuildPolicyEffectSummary(CatalogPolicyDto policy)
+        private static string BuildPolicyEffectSummary(CatalogPolicyDto policy, StaticCatalogState catalog)
         {
             var effects = policy?.ModifierEffects;
             if (effects == null || effects.Count == 0)
@@ -109,7 +109,7 @@ namespace Panoptes.Presentation.ViewModels
             var values = new List<string>();
             for (var i = 0; i < effects.Count; i++)
             {
-                var text = FormatModifierEffect(effects[i]);
+                var text = FormatModifierEffect(effects[i], catalog);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     values.Add(text);
@@ -119,7 +119,7 @@ namespace Panoptes.Presentation.ViewModels
             return values.Count > 0 ? string.Join("；", values) : policy?.Description ?? string.Empty;
         }
 
-        private static string FormatModifierEffect(CatalogPolicyModifierEffectDto effect)
+        private static string FormatModifierEffect(CatalogPolicyModifierEffectDto effect, StaticCatalogState catalog)
         {
             if (effect == null)
             {
@@ -127,26 +127,26 @@ namespace Panoptes.Presentation.ViewModels
             }
 
             var value = FormatSigned(effect.Value);
-            var target = FormatKey(effect.TargetId);
+            var target = CatalogDisplayNameResolver.ResolveEffectTargetName(effect.TargetId, catalog);
             var trigger = Normalize(effect.Trigger);
             switch (trigger)
             {
                 case "recipe.work_amount":
                     return string.IsNullOrWhiteSpace(target) ? $"工时 {value}" : $"{target} 工时 {value}";
                 case "recipe.resource_output":
-                    var resource = FormatKey(effect.ResourceKey);
+                    var resource = CatalogDisplayNameResolver.ResolveResourceName(effect.ResourceKey);
                     return string.IsNullOrWhiteSpace(target)
                         ? $"{resource}产出 {value}"
                         : $"{target} {resource}产出 {value}";
                 case "recipe.base_progress":
                     return string.IsNullOrWhiteSpace(target) ? $"基础进度 {value}" : $"{target} 基础进度 {value}";
                 case "point.output":
-                    var point = FormatKey(effect.PointKey);
+                    var point = CatalogDisplayNameResolver.ResolvePointName(effect.PointKey);
                     return string.IsNullOrWhiteSpace(point) ? $"点数产出 {value}" : $"{point} {value}";
                 case "logistics.road_capacity":
                     return $"道路运力 {value}";
                 default:
-                    return string.IsNullOrWhiteSpace(trigger) ? value : $"{trigger} {value}";
+                    return string.IsNullOrWhiteSpace(trigger) ? value : $"{FormatTrigger(trigger)} {value}";
             }
         }
 
@@ -155,9 +155,17 @@ namespace Panoptes.Presentation.ViewModels
             return value > 0 ? "+" + value : value.ToString();
         }
 
-        private static string FormatKey(string value)
+        private static string FormatTrigger(string trigger)
         {
-            return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().Replace('_', ' ');
+            return Normalize(trigger) switch
+            {
+                "recipe.work_amount" => "配方工时",
+                "recipe.resource_output" => "配方资源产出",
+                "recipe.base_progress" => "配方基础进度",
+                "point.output" => "点数产出",
+                "logistics.road_capacity" => "道路运力",
+                _ => CatalogDisplayNameResolver.ToReadableKey(trigger)
+            };
         }
 
         private static HashSet<string> BuildIdSet(IReadOnlyList<string> ids)

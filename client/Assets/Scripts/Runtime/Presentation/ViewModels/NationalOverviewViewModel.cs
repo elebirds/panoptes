@@ -96,10 +96,10 @@ namespace Panoptes.Presentation.ViewModels
         {
             return new List<NationalOverviewMetricState>
             {
-                new("visible_nodes", "Visible Nodes", CountVisibleNodes(game).ToString()),
-                new("known_units", "Known Units", (game.Units?.Count ?? 0).ToString()),
-                new("cities", "Cities", CountCities(game).ToString()),
-                new("map", "Map", game.MapWidth > 0 && game.MapHeight > 0 ? $"{game.MapWidth} x {game.MapHeight}" : "--")
+                new("visible_nodes", "可见地块", CountVisibleNodes(game).ToString()),
+                new("known_units", "已知单位", (game.Units?.Count ?? 0).ToString()),
+                new("cities", "城市", CountCities(game).ToString()),
+                new("map", "地图", game.MapWidth > 0 && game.MapHeight > 0 ? $"{game.MapWidth} x {game.MapHeight}" : "--")
             };
         }
 
@@ -156,10 +156,10 @@ namespace Panoptes.Presentation.ViewModels
         {
             var rows = new List<NationalOverviewResourceState>
             {
-                new(ResourceKeys.ResourceFood, "Food", resources?.Food ?? 0),
-                new(ResourceKeys.ResourceWood, "Wood", resources?.Wood ?? 0),
-                new(ResourceKeys.ResourceOre, "Ore", resources?.Ore ?? 0),
-                new("industry_output", "Industry", resources?.IndustryOutput ?? 0)
+                new(ResourceKeys.ResourceFood, CatalogDisplayNameResolver.ResolveResourceName(ResourceKeys.ResourceFood), resources?.Food ?? 0),
+                new(ResourceKeys.ResourceWood, CatalogDisplayNameResolver.ResolveResourceName(ResourceKeys.ResourceWood), resources?.Wood ?? 0),
+                new(ResourceKeys.ResourceOre, CatalogDisplayNameResolver.ResolveResourceName(ResourceKeys.ResourceOre), resources?.Ore ?? 0),
+                new("industry_output", CatalogDisplayNameResolver.ResolvePointName("industry_output"), resources?.IndustryOutput ?? 0)
             };
 
             AddExtraAmounts(rows, resources?.ResourceAmounts);
@@ -182,7 +182,7 @@ namespace Panoptes.Presentation.ViewModels
                     continue;
                 }
 
-                rows.Add(new NationalOverviewResourceState(id, ToTitle(id), pair.Value));
+                rows.Add(new NationalOverviewResourceState(id, CatalogDisplayNameResolver.ResolveKnownName(id), pair.Value));
             }
         }
 
@@ -242,7 +242,7 @@ namespace Panoptes.Presentation.ViewModels
                 return ToTitle(evt.Type);
             }
 
-            return !string.IsNullOrWhiteSpace(evt.Section) ? ToTitle(evt.Section) : "Event";
+            return !string.IsNullOrWhiteSpace(evt.Section) ? ToTitle(evt.Section) : "事件";
         }
 
         private static string BuildEventDetail(TurnEventDto evt)
@@ -275,15 +275,10 @@ namespace Panoptes.Presentation.ViewModels
             var id = Normalize(technologyId);
             if (string.IsNullOrEmpty(id))
             {
-                return "None";
+                return "无";
             }
 
-            return catalog?.Technologies != null &&
-                   catalog.Technologies.TryGetValue(id, out var technology) &&
-                   technology != null &&
-                   !string.IsNullOrWhiteSpace(technology.Name)
-                ? technology.Name.Trim()
-                : id;
+            return CatalogDisplayNameResolver.ResolveTechnologyName(id, catalog, "无");
         }
 
         private static string ResolvePolicyName(string policyId, StaticCatalogState catalog)
@@ -291,15 +286,10 @@ namespace Panoptes.Presentation.ViewModels
             var id = Normalize(policyId);
             if (string.IsNullOrEmpty(id))
             {
-                return "None";
+                return "无";
             }
 
-            return catalog?.Policies != null &&
-                   catalog.Policies.TryGetValue(id, out var policy) &&
-                   policy != null &&
-                   !string.IsNullOrWhiteSpace(policy.Name)
-                ? policy.Name.Trim()
-                : id;
+            return CatalogDisplayNameResolver.ResolvePolicyName(id, catalog, "无");
         }
 
         private static string Normalize(string value)
@@ -309,9 +299,29 @@ namespace Panoptes.Presentation.ViewModels
 
         private static string ToTitle(string value)
         {
-            return string.IsNullOrWhiteSpace(value)
-                ? string.Empty
-                : value.Trim().Replace('_', ' ');
+            var id = Normalize(value);
+            return id switch
+            {
+                "" => string.Empty,
+                "unit_moved" => "单位移动",
+                "technology_activated" => "科技生效",
+                "technology_completed" => "科技完成",
+                "technology_grant_applied" => "科技奖励生效",
+                "building_built" => "建筑完工",
+                "building_skipped" => "建筑跳过",
+                "building_status_changed" => "建筑状态变化",
+                "building_damaged" => "建筑受损",
+                "building_ruined" => "建筑毁坏",
+                "city_core_damaged" => "城市核心受损",
+                "recipe_progressed" => "配方推进",
+                "recipe_skipped" => "配方未推进",
+                "recipe_completed" => "配方完成",
+                "road_built" => "道路建成",
+                "facility_takeover_progressed" => "设施接管推进",
+                "national_policy_changed" => "国策变更",
+                "institution_loadout_activated" => "制度配置生效",
+                _ => CatalogDisplayNameResolver.ResolveKnownName(id)
+            };
         }
     }
 }
