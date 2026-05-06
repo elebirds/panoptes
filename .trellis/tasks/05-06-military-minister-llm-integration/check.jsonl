@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Check backend implementation against package and quality guidelines."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Verify package boundaries and placement."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Verify tests and forbidden patterns."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify LLM fallback/error handling remains safe."}
+{"file": ".trellis/tasks/05-06-military-minister-llm-integration/prd.md", "reason": "Check implementation against agreed requirements."}

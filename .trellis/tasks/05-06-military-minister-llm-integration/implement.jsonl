@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend implementation must follow package and quality guidelines."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Minister engine/session/app changes must stay within backend package boundaries."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Use project quality rules for tests and forbidden patterns."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Preserve existing fallback/error behavior for LLM failures."}
+{"file": ".trellis/tasks/05-06-military-minister-llm-integration/prd.md", "reason": "Implementation requirements and accepted design for military minister LLM integration."}
