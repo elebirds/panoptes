@@ -69,11 +69,19 @@ namespace Panoptes.Presentation.UI.HUD
             public TextMeshProUGUI CountText;
             public float WorldHeightOffset;
             public float ScreenYOffset;
+            public int SeenVersion;
+            public int LastHp = int.MinValue;
+            public int LastMaxHp = int.MinValue;
+            public int LastCount = int.MinValue;
+            public float LastRatio = -1f;
+            public string LastOwnerId = string.Empty;
         }
 
         private readonly Dictionary<string, Entry> _cityCoreEntries = new Dictionary<string, Entry>();
         private readonly Dictionary<string, Entry> _unitStackEntries = new Dictionary<string, Entry>();
         private readonly List<UnitView> _unitStackScratch = new List<UnitView>(8);
+        private readonly List<string> _staleScratch = new List<string>(16);
+        private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
@@ -81,6 +89,8 @@ namespace Panoptes.Presentation.UI.HUD
         private StaticCatalogStore _staticCatalogStore;
         private MapRenderer _mapRenderer;
         private Sprite _defaultUiSprite;
+        private bool _entriesDirty = true;
+        private int _syncVersion;
 
         [Inject]
         private void Construct(GameStateStore gameStateStore, StaticCatalogStore staticCatalogStore, MapRenderer mapRenderer)
@@ -106,6 +116,17 @@ namespace Panoptes.Presentation.UI.HUD
         {
             ResolveCamera();
             EnsureCanvas();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeMapRenderer();
+            _entriesDirty = true;
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeMapRenderer();
         }
 
         private void LateUpdate()
@@ -139,9 +160,40 @@ namespace Panoptes.Presentation.UI.HUD
                 return;
             }
 
-            SyncEntriesFromMap(map);
-            SyncUnitStackEntriesFromMap(map);
+            if (_entriesDirty)
+            {
+                _entriesDirty = false;
+                SyncEntriesFromMap(map);
+                SyncUnitStackEntriesFromMap(map);
+            }
+
             UpdateEntryTransforms();
+        }
+
+        private void SubscribeMapRenderer()
+        {
+            if (_mapRenderer == null)
+            {
+                return;
+            }
+
+            _mapRenderer.StatePresentationRefreshed -= MarkEntriesDirty;
+            _mapRenderer.StatePresentationRefreshed += MarkEntriesDirty;
+        }
+
+        private void UnsubscribeMapRenderer()
+        {
+            if (_mapRenderer == null)
+            {
+                return;
+            }
+
+            _mapRenderer.StatePresentationRefreshed -= MarkEntriesDirty;
+        }
+
+        private void MarkEntriesDirty()
+        {
+            _entriesDirty = true;
         }
 
         private void ResolveCamera()
@@ -193,7 +245,7 @@ namespace Panoptes.Presentation.UI.HUD
 
         private void SyncEntriesFromMap(MapRenderer map)
         {
-            var alive = new HashSet<string>();
+            _syncVersion++;
             foreach (var pair in map.TileViews)
             {
                 var node = pair.Value;
@@ -214,7 +266,6 @@ namespace Panoptes.Presentation.UI.HUD
                     continue;
                 }
 
-                alive.Add(nodeId);
                 if (!_cityCoreEntries.TryGetValue(nodeId, out var entry) || entry == null)
                 {
                     entry = CreateCityCoreEntry(nodeId, node, building);
@@ -223,10 +274,14 @@ namespace Panoptes.Presentation.UI.HUD
                 else
                 {
                     entry.Node = node;
-                    entry.Building = building;
-                    entry.WorldHeightOffset = ComputeHeightOffset(building);
+                    if (!ReferenceEquals(entry.Building, building))
+                    {
+                        entry.Building = building;
+                        entry.WorldHeightOffset = ComputeHeightOffset(building);
+                    }
                 }
 
+                entry.SeenVersion = _syncVersion;
                 if (disableWorldSpaceCityCoreHpBar && building != null && building.IsCityCoreHpBarEnabled)
                 {
                     building.SetCityCoreHpBarEnabled(false);
@@ -235,24 +290,26 @@ namespace Panoptes.Presentation.UI.HUD
                 RefreshEntryVisual(entry);
             }
 
-            var stale = new List<string>();
+            _staleScratch.Clear();
             foreach (var pair in _cityCoreEntries)
             {
-                if (!alive.Contains(pair.Key))
+                if (pair.Value == null || pair.Value.SeenVersion != _syncVersion)
                 {
-                    stale.Add(pair.Key);
+                    _staleScratch.Add(pair.Key);
                 }
             }
 
-            for (var i = 0; i < stale.Count; i++)
+            for (var i = 0; i < _staleScratch.Count; i++)
             {
-                RemoveEntry(stale[i]);
+                RemoveEntry(_staleScratch[i]);
             }
+
+            _staleScratch.Clear();
         }
 
         private void SyncUnitStackEntriesFromMap(MapRenderer map)
         {
-            var alive = new HashSet<string>();
+            _syncVersion++;
             foreach (var pair in map.TileViews)
             {
                 var node = pair.Value;
@@ -288,7 +345,6 @@ namespace Panoptes.Presentation.UI.HUD
                     continue;
                 }
 
-                alive.Add(node.NodeId);
                 if (!_unitStackEntries.TryGetValue(node.NodeId, out var entry) || entry == null)
                 {
                     entry = CreateUnitStackEntry(node);
@@ -297,25 +353,31 @@ namespace Panoptes.Presentation.UI.HUD
                 else
                 {
                     entry.Node = node;
-                    entry.WorldHeightOffset = ComputeUnitStackHeightOffset(_unitStackScratch, node);
+                    if (entry.LastCount != count)
+                    {
+                        entry.WorldHeightOffset = ComputeUnitStackHeightOffset(_unitStackScratch, node);
+                    }
                 }
 
+                entry.SeenVersion = _syncVersion;
                 RefreshUnitStackVisual(entry, totalHp, totalMaxHp, count);
             }
 
-            var stale = new List<string>();
+            _staleScratch.Clear();
             foreach (var pair in _unitStackEntries)
             {
-                if (!alive.Contains(pair.Key))
+                if (pair.Value == null || pair.Value.SeenVersion != _syncVersion)
                 {
-                    stale.Add(pair.Key);
+                    _staleScratch.Add(pair.Key);
                 }
             }
 
-            for (var i = 0; i < stale.Count; i++)
+            for (var i = 0; i < _staleScratch.Count; i++)
             {
-                RemoveEntry(_unitStackEntries, stale[i]);
+                RemoveEntry(_unitStackEntries, _staleScratch[i]);
             }
+
+            _staleScratch.Clear();
         }
 
         private Entry CreateCityCoreEntry(string nodeId, NodeView node, BuildingView building)
@@ -495,12 +557,14 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var ownerColor = ResolveOwnerColor(entry.Building.OwnerId);
-            if (entry.Plate != null)
+            var ownerId = entry.Building.OwnerId ?? string.Empty;
+            if (entry.Plate != null && !string.Equals(entry.LastOwnerId, ownerId, System.StringComparison.Ordinal))
             {
                 entry.Plate.color = ownerColor;
+                entry.LastOwnerId = ownerId;
             }
 
-            if (entry.Name != null)
+            if (entry.Name != null && entry.Name.text != "城堡")
             {
                 entry.Name.text = "城堡";
                 entry.Name.color = Color.white;
@@ -509,18 +573,21 @@ namespace Panoptes.Presentation.UI.HUD
             var maxHp = Mathf.Max(1, entry.Building.MaxHitPoints);
             var hp = Mathf.Clamp(entry.Building.HitPoints, 0, maxHp);
             var ratio = Mathf.Clamp01(hp / (float)maxHp);
-            if (entry.Fill != null)
+            if (entry.Fill != null && !Mathf.Approximately(entry.LastRatio, ratio))
             {
                 entry.Fill.fillAmount = ratio;
                 entry.Fill.color = ResolveHpColor(ratio);
+                entry.LastRatio = ratio;
             }
 
-            if (entry.ValueText != null)
+            if (entry.ValueText != null && (entry.LastHp != hp || entry.LastMaxHp != maxHp))
             {
                 entry.ValueText.text = $"{hp}/{maxHp}";
             }
-        }
 
+            entry.LastHp = hp;
+            entry.LastMaxHp = maxHp;
+        }
         private void RefreshUnitStackVisual(Entry entry, int hp, int maxHp, int count)
         {
             if (entry == null)
@@ -531,18 +598,22 @@ namespace Panoptes.Presentation.UI.HUD
             maxHp = Mathf.Max(1, maxHp);
             hp = Mathf.Clamp(hp, 0, maxHp);
             var ratio = Mathf.Clamp01(hp / (float)maxHp);
-            if (entry.Fill != null)
+            if (entry.Fill != null && !Mathf.Approximately(entry.LastRatio, ratio))
             {
                 entry.Fill.fillAmount = ratio;
                 entry.Fill.color = ResolveHpColor(ratio);
+                entry.LastRatio = ratio;
             }
 
-            if (entry.CountText != null)
+            if (entry.CountText != null && entry.LastCount != count)
             {
                 entry.CountText.text = $"x{Mathf.Max(1, count)}";
             }
-        }
 
+            entry.LastHp = hp;
+            entry.LastMaxHp = maxHp;
+            entry.LastCount = count;
+        }
         private void UpdateEntryTransforms()
         {
             UpdateEntryTransforms(_cityCoreEntries);
@@ -561,7 +632,7 @@ namespace Panoptes.Presentation.UI.HUD
 
                 if (!TryResolveWorldAnchor(entry, out var world))
                 {
-                    entry.Root.gameObject.SetActive(false);
+                    SetActiveIfChanged(entry.Root.gameObject, false);
                     continue;
                 }
 
@@ -581,11 +652,11 @@ namespace Panoptes.Presentation.UI.HUD
 
                 if (!visible)
                 {
-                    entry.Root.gameObject.SetActive(false);
+                    SetActiveIfChanged(entry.Root.gameObject, false);
                     continue;
                 }
 
-                entry.Root.gameObject.SetActive(true);
+                SetActiveIfChanged(entry.Root.gameObject, true);
                 var sp = new Vector2(screen.x, screen.y + entry.ScreenYOffset);
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, sp, null, out var localPos);
                 entry.Root.anchoredPosition = localPos;
@@ -618,32 +689,9 @@ namespace Panoptes.Presentation.UI.HUD
                 return 1.2f;
             }
 
-            var renderers = building.GetComponentsInChildren<Renderer>(true);
-            if (renderers == null || renderers.Length == 0)
-            {
-                return 1.2f;
-            }
-
             var hasBounds = false;
             var bounds = default(Bounds);
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                var r = renderers[i];
-                if (r == null || !r.enabled)
-                {
-                    continue;
-                }
-
-                if (!hasBounds)
-                {
-                    bounds = r.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(r.bounds);
-                }
-            }
+            EncapsulateRendererBounds(building, ref hasBounds, ref bounds);
 
             if (!hasBounds)
             {
@@ -667,25 +715,7 @@ namespace Panoptes.Presentation.UI.HUD
                         continue;
                     }
 
-                    var renderers = unit.GetComponentsInChildren<Renderer>(true);
-                    for (var r = 0; r < renderers.Length; r++)
-                    {
-                        var renderer = renderers[r];
-                        if (renderer == null || !renderer.enabled)
-                        {
-                            continue;
-                        }
-
-                        if (!hasBounds)
-                        {
-                            bounds = renderer.bounds;
-                            hasBounds = true;
-                        }
-                        else
-                        {
-                            bounds.Encapsulate(renderer.bounds);
-                        }
-                    }
+                    EncapsulateRendererBounds(unit, ref hasBounds, ref bounds);
                 }
             }
 
@@ -696,6 +726,37 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             return Mathf.Max(0.42f, bounds.max.y - originY + 0.02f);
+        }
+
+        private void EncapsulateRendererBounds(Component source, ref bool hasBounds, ref Bounds bounds)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            _rendererScratch.Clear();
+            source.GetComponentsInChildren(true, _rendererScratch);
+            for (var i = 0; i < _rendererScratch.Count; i++)
+            {
+                var renderer = _rendererScratch[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            _rendererScratch.Clear();
         }
 
         private bool IsCombatUnit(UnitView unit)
@@ -795,8 +856,16 @@ namespace Panoptes.Presentation.UI.HUD
                 var entry = pair.Value;
                 if (entry?.Root != null)
                 {
-                    entry.Root.gameObject.SetActive(false);
+                    SetActiveIfChanged(entry.Root.gameObject, false);
                 }
+            }
+        }
+
+        private static void SetActiveIfChanged(GameObject go, bool active)
+        {
+            if (go != null && go.activeSelf != active)
+            {
+                go.SetActive(active);
             }
         }
 

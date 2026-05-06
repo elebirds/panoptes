@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Panoptes.Presentation.ViewModels;
 using R3;
 using TMPro;
@@ -50,6 +51,9 @@ namespace Panoptes.Presentation.Binders.UiToolkit
         private IDisposable _visibilitySubscription;
         private ManagementPanelVisibilityStore _visibilityStore;
         private MinisterReportViewModel _viewModel;
+        private string _lastMessagesSignature;
+        private string _lastOptionsSignature;
+        private string _lastTabsSignature;
 
         [Inject]
         private void Construct(
@@ -123,6 +127,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void RenderTabs(MinisterReportState state)
         {
+            var signature = BuildTabsSignature(state);
+            if (string.Equals(signature, _lastTabsSignature, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastTabsSignature = signature;
             ClearChildren(_tabsContent);
             _tabButtons.Clear();
 
@@ -182,6 +193,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void RenderMessages(MinisterReportState state)
         {
+            var signature = BuildMessagesSignature(state);
+            if (string.Equals(signature, _lastMessagesSignature, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastMessagesSignature = signature;
             ClearChildren(_chatContent);
             if (state.Messages.Count == 0)
             {
@@ -282,6 +300,13 @@ namespace Panoptes.Presentation.Binders.UiToolkit
 
         private void RenderOptions(MinisterReportState state)
         {
+            var signature = BuildOptionsSignature(state);
+            if (string.Equals(signature, _lastOptionsSignature, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastOptionsSignature = signature;
             ClearChildren(_optionsRoot);
             _optionButtons.Clear();
 
@@ -320,6 +345,96 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             var label = CreateText(rect, "Label", option.Label, 14f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(label.rectTransform, Vector2.zero, Vector2.zero);
             return button;
+        }
+
+        private static string BuildTabsSignature(MinisterReportState state)
+        {
+            if (state?.Ministers == null || state.Ministers.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder(state.Ministers.Count * 64);
+            for (var i = 0; i < state.Ministers.Count; i++)
+            {
+                var item = state.Ministers[i];
+                if (item == null)
+                {
+                    builder.Append("<null>|");
+                    continue;
+                }
+
+                builder.Append(item.Role).Append('|')
+                    .Append(item.Name).Append('|')
+                    .Append(item.Title).Append('|')
+                    .Append(item.IconResource).Append('|')
+                    .Append(item.AvatarText).Append('|')
+                    .Append(item.IsSelected).Append('|')
+                    .Append(item.Affection).Append('|')
+                    .Append(item.AffectionPulseSequence).Append('|')
+                    .Append(item.AffectionPulseDelta).Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildMessagesSignature(MinisterReportState state)
+        {
+            if (state?.Messages == null || state.Messages.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder(state.Messages.Count * 96);
+            for (var i = 0; i < state.Messages.Count; i++)
+            {
+                var item = state.Messages[i];
+                if (item == null)
+                {
+                    builder.Append("<null>|");
+                    continue;
+                }
+
+                builder.Append(item.Id).Append('|')
+                    .Append(item.MinisterRole).Append('|')
+                    .Append(item.MinisterName).Append('|')
+                    .Append(item.MinisterTitle).Append('|')
+                    .Append(item.IconResource).Append('|')
+                    .Append(item.AvatarText).Append('|')
+                    .Append(item.IsPlayer).Append('|')
+                    .Append(item.IsStreaming).Append('|')
+                    .Append(item.Text).Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildOptionsSignature(MinisterReportState state)
+        {
+            if (state?.Options == null || state.Options.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder(state.Options.Count * 64);
+            for (var i = 0; i < state.Options.Count; i++)
+            {
+                var item = state.Options[i];
+                if (item == null)
+                {
+                    builder.Append("<null>|");
+                    continue;
+                }
+
+                builder.Append(item.Id).Append('|')
+                    .Append(item.DraftId).Append('|')
+                    .Append(item.MinisterRole).Append('|')
+                    .Append(item.Label).Append('|')
+                    .Append(item.PlayerText).Append('|')
+                    .Append(item.Accept).Append('\n');
+            }
+
+            return builder.ToString();
         }
 
         private void EnsureCanvas()
@@ -512,7 +627,7 @@ namespace Panoptes.Presentation.Binders.UiToolkit
             if (isVisible)
             {
                 HideOtherManagementDocuments();
-                Debug.Log($"[MinisterReportUGUI] visible ministers={_viewModel?.Current?.Ministers.Count ?? 0} messages={_viewModel?.Current?.Messages.Count ?? 0} options={_viewModel?.Current?.Options.Count ?? 0}");
+                PanoptesLog.Log($"[MinisterReportUGUI] visible ministers={_viewModel?.Current?.Ministers.Count ?? 0} messages={_viewModel?.Current?.Messages.Count ?? 0} options={_viewModel?.Current?.Options.Count ?? 0}");
             }
         }
 

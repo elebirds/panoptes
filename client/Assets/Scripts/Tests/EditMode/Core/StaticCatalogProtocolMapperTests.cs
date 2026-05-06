@@ -73,6 +73,8 @@ namespace Panoptes.Tests.EditMode.Core
                     new ResourceDescriptor
                     {
                         Key = "food",
+                        DisplayName = "Food",
+                        Description = "Basic food stock",
                         IconKey = "food_icon",
                         SortOrder = 10,
                         VisibleInHud = true
@@ -83,6 +85,8 @@ namespace Panoptes.Tests.EditMode.Core
                     new PointDescriptor
                     {
                         Key = "industry_output",
+                        DisplayName = "Industry",
+                        Description = "Build progress",
                         IconKey = "industry_icon",
                         SortOrder = 30,
                         VisibleInHud = false
@@ -91,7 +95,10 @@ namespace Panoptes.Tests.EditMode.Core
             });
 
             Assert.That(state.Resources["food"].IconKey, Is.EqualTo("food_icon"));
+            Assert.That(state.Resources["food"].Name, Is.EqualTo("Food"));
+            Assert.That(state.Resources["food"].Description, Is.EqualTo("Basic food stock"));
             Assert.That(state.Resources["food"].VisibleInHud, Is.True);
+            Assert.That(state.Points["industry_output"].Name, Is.EqualTo("Industry"));
             Assert.That(state.Points["industry_output"].SortOrder, Is.EqualTo(30));
             Assert.That(state.Points["industry_output"].VisibleInHud, Is.False);
             Assert.That(state.Buildings["farm"].RequiredResourceType, Is.EqualTo("food"));

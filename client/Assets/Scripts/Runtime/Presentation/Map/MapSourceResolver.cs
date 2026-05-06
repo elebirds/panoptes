@@ -151,7 +151,7 @@ namespace Panoptes.Presentation.Map
             snapshot = default;
             if (jsonAsset == null)
             {
-                Debug.LogWarning("[MapRenderer] LoadMapFromJsonAsset failed: asset is null.");
+                PanoptesLog.Warning("[MapRenderer] LoadMapFromJsonAsset failed: asset is null.");
                 return false;
             }
 
@@ -163,7 +163,7 @@ namespace Panoptes.Presentation.Map
             snapshot = default;
             if (string.IsNullOrWhiteSpace(json))
             {
-                Debug.LogWarning("[MapRenderer] Map JSON is empty.");
+                PanoptesLog.Warning("[MapRenderer] Map JSON is empty.");
                 return false;
             }
 
@@ -193,20 +193,20 @@ namespace Panoptes.Presentation.Map
 
             if (config == null || config.nodes == null || config.nodes.Length == 0)
             {
-                Debug.LogWarning("[MapRenderer] Failed to parse map JSON or JSON has no nodes.");
+                PanoptesLog.Warning("[MapRenderer] Failed to parse map JSON or JSON has no nodes.");
                 return false;
             }
 
             var nodes = BuildNodesFromJsonConfig(config);
             if (nodes.Count == 0)
             {
-                Debug.LogWarning("[MapRenderer] Parsed map JSON but got 0 valid nodes.");
+                PanoptesLog.Warning("[MapRenderer] Parsed map JSON but got 0 valid nodes.");
                 return false;
             }
 
             var units = BuildUnitsFromJsonConfig(config);
             snapshot = new MapSourceSnapshot(nodes, units, config.mapId);
-            Debug.Log($"[MapRenderer] Loaded map JSON: mapId='{config.mapId}', nodes={nodes.Count}, units={units.Count}.");
+            PanoptesLog.Log($"[MapRenderer] Loaded map JSON: mapId='{config.mapId}', nodes={nodes.Count}, units={units.Count}.");
             return true;
         }
 

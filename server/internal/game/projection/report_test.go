@@ -52,6 +52,44 @@ func TestEventPayloadFromEventMapsKnownEvents(t *testing.T) {
 	}
 }
 
+func TestEventPayloadFromEventMapsCombatAttackers(t *testing.T) {
+	t.Parallel()
+
+	unitDamage := projectEventPayload(event.UnitDamagedEvent{
+		UnitID:     "defender-1",
+		Damage:     4,
+		HPAfter:    6,
+		Source:     "combat",
+		AttackerID: "attacker-1",
+	})
+	if got := unitDamage.GetData()["unit_id"]; got != "defender-1" {
+		t.Fatalf("unit_damaged unit_id = %q, want defender-1", got)
+	}
+	if got := unitDamage.GetData()["attacker"]; got != "attacker-1" {
+		t.Fatalf("unit_damaged attacker = %q, want attacker-1", got)
+	}
+
+	buildingDamage := projectEventPayload(event.BuildingDamagedEvent{
+		NodeID:     "node-1",
+		Damage:     5,
+		HPAfter:    15,
+		AttackerID: "attacker-2",
+	})
+	if got := buildingDamage.GetData()["attacker"]; got != "attacker-2" {
+		t.Fatalf("building_damaged attacker = %q, want attacker-2", got)
+	}
+
+	cityCoreDamage := projectEventPayload(event.CityCoreDamagedEvent{
+		NodeID:     "core-1",
+		Damage:     6,
+		HPAfter:    20,
+		AttackerID: "attacker-3",
+	})
+	if got := cityCoreDamage.GetData()["attacker"]; got != "attacker-3" {
+		t.Fatalf("city_core_damaged attacker = %q, want attacker-3", got)
+	}
+}
+
 func TestEventPayloadFromEventMapsBuildingBuiltOnlineTurn(t *testing.T) {
 	t.Parallel()
 

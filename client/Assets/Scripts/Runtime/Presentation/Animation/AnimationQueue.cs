@@ -32,6 +32,7 @@ namespace Panoptes.Presentation.Animation
 
         private readonly Queue<UnitMoveCommand> _unitMoveQueue = new();
         private MapRenderer _mapRenderer;
+        private Coroutine _unitMoveCoroutine;
         private bool _isPlayingUnitMoves;
 
         [Inject]
@@ -57,8 +58,20 @@ namespace Panoptes.Presentation.Animation
 
             if (!_isPlayingUnitMoves)
             {
-                StartCoroutine(PlayUnitMoveQueue());
+                _unitMoveCoroutine = StartCoroutine(PlayUnitMoveQueue());
             }
+        }
+
+        public void CancelUnitMoves()
+        {
+            _unitMoveQueue.Clear();
+            if (_unitMoveCoroutine != null)
+            {
+                StopCoroutine(_unitMoveCoroutine);
+                _unitMoveCoroutine = null;
+            }
+
+            _isPlayingUnitMoves = false;
         }
 
         public IEnumerator PlayUnitMoveNow(string unitId, string targetNodeId, bool followCamera = true, IReadOnlyList<string> pathNodeIds = null)
@@ -83,6 +96,7 @@ namespace Panoptes.Presentation.Animation
             }
 
             _isPlayingUnitMoves = false;
+            _unitMoveCoroutine = null;
         }
 
         private IEnumerator PlaySingleUnitMove(UnitMoveCommand cmd)

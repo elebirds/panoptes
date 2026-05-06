@@ -207,16 +207,16 @@ namespace Panoptes.DebugTools
             switch (direction)
             {
                 case "ERR":
-                    Debug.LogError(WrapColor(text, ColorError));
+                    PanoptesLog.Error(WrapColor(text, ColorError));
                     break;
                 case "OUT":
-                    Debug.Log(WrapColor(text, ColorOutgoing));
+                    PanoptesLog.Log(WrapColor(text, ColorOutgoing));
                     break;
                 case "IN":
-                    Debug.Log(WrapColor(text, ColorIncoming));
+                    PanoptesLog.Log(WrapColor(text, ColorIncoming));
                     break;
                 default:
-                    Debug.Log(text);
+                    PanoptesLog.Log(text);
                     break;
             }
         }

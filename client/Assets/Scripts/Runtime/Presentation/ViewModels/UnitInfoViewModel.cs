@@ -121,7 +121,14 @@ namespace Panoptes.Presentation.ViewModels
                 return new UnitInfoState(actionLocked: _actionLocked);
             }
 
-            ResolveCatalogText(catalog, selected.UnitType, selected.IsBuildingOrResource, out var displayName, out var description);
+            ResolveCatalogText(
+                catalog,
+                selected.UnitType,
+                selected.IsBuildingOrResource,
+                selected.IsResourcePoint,
+                out var displayName,
+                out var description,
+                out var iconKey);
             if (string.IsNullOrWhiteSpace(displayName))
             {
                 displayName = BuildDisplayName(selected.UnitId, selected.UnitType);
@@ -142,6 +149,7 @@ namespace Panoptes.Presentation.ViewModels
                 ownerId: selected.OwnerId,
                 displayName: displayName,
                 description: description,
+                iconKey: iconKey,
                 hp: selected.Hp,
                 maxHp: selected.MaxHp,
                 planningSummary: ResolvePlanningSummary(planning, selected.UnitId),
@@ -188,7 +196,8 @@ namespace Panoptes.Presentation.ViewModels
                     owner,
                     hp,
                     maxHp,
-                    isBuildingOrResource: true);
+                    isBuildingOrResource: true,
+                    isResourcePoint: node.IsResourcePoint && string.IsNullOrWhiteSpace(node.BuildingType));
             }
 
             return default;
@@ -199,7 +208,12 @@ namespace Panoptes.Presentation.ViewModels
             string buildingType,
             StaticCatalogState catalog)
         {
-            if (node == null || node.IsResourcePoint)
+            if (node == null)
+            {
+                return 1;
+            }
+
+            if (node.IsResourcePoint && string.IsNullOrWhiteSpace(buildingType))
             {
                 return 1;
             }
@@ -227,11 +241,14 @@ namespace Panoptes.Presentation.ViewModels
             StaticCatalogState catalog,
             string unitType,
             bool isBuildingOrResource,
+            bool isResourcePoint,
             out string displayName,
-            out string description)
+            out string description,
+            out string iconKey)
         {
             displayName = string.Empty;
             description = string.Empty;
+            iconKey = string.Empty;
             var normalizedType = NormalizeToken(unitType);
             if (string.IsNullOrWhiteSpace(normalizedType) || catalog == null)
             {
@@ -245,6 +262,17 @@ namespace Panoptes.Presentation.ViewModels
             {
                 displayName = unit.Name?.Trim() ?? string.Empty;
                 description = unit.Description?.Trim() ?? string.Empty;
+                iconKey = unit.IconKey?.Trim() ?? string.Empty;
+                return;
+            }
+
+            if (isResourcePoint &&
+                TryGetResourceEntry(catalog, normalizedType, out var resource) &&
+                resource != null)
+            {
+                displayName = resource.Name?.Trim() ?? string.Empty;
+                description = resource.Description?.Trim() ?? string.Empty;
+                iconKey = resource.IconKey?.Trim() ?? string.Empty;
                 return;
             }
 
@@ -254,7 +282,29 @@ namespace Panoptes.Presentation.ViewModels
             {
                 displayName = building.Name?.Trim() ?? string.Empty;
                 description = building.Description?.Trim() ?? string.Empty;
+                iconKey = building.IconKey?.Trim() ?? string.Empty;
             }
+        }
+
+        private static bool TryGetResourceEntry(
+            StaticCatalogState catalog,
+            string normalizedType,
+            out CatalogHudEntryDto resource)
+        {
+            resource = null;
+            if (catalog?.Resources == null || string.IsNullOrWhiteSpace(normalizedType))
+            {
+                return false;
+            }
+
+            if (catalog.Resources.TryGetValue(normalizedType, out resource))
+            {
+                return true;
+            }
+
+            const string resourcePrefix = "resource_";
+            return normalizedType.StartsWith(resourcePrefix, StringComparison.Ordinal) &&
+                   catalog.Resources.TryGetValue(normalizedType.Substring(resourcePrefix.Length), out resource);
         }
 
         private static DirectOrderProjection ResolveDirectOrderState(
@@ -398,6 +448,7 @@ namespace Panoptes.Presentation.ViewModels
             public readonly bool HasSelection;
             public readonly int Hp;
             public readonly bool IsBuildingOrResource;
+            public readonly bool IsResourcePoint;
             public readonly int MaxHp;
             public readonly string OwnerId;
             public readonly string UnitId;
@@ -410,11 +461,13 @@ namespace Panoptes.Presentation.ViewModels
                 string ownerId,
                 int hp,
                 int maxHp,
-                bool isBuildingOrResource)
+                bool isBuildingOrResource,
+                bool isResourcePoint = false)
             {
                 HasSelection = hasSelection;
                 Hp = hp;
                 IsBuildingOrResource = isBuildingOrResource;
+                IsResourcePoint = isResourcePoint;
                 MaxHp = maxHp <= 0 ? 1 : maxHp;
                 OwnerId = ownerId ?? string.Empty;
                 UnitId = unitId ?? string.Empty;

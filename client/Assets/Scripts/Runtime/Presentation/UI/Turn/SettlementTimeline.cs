@@ -250,7 +250,7 @@ namespace Panoptes.Presentation.UI.Turn
             if (!ok && logWarning && !_warnedMissingUi)
             {
                 _warnedMissingUi = true;
-                Debug.LogWarning("[SettlementTimeline] Missing UI references. Assign root/background/titleText/timelineText in prefab.");
+                PanoptesLog.Warning("[SettlementTimeline] Missing UI references. Assign root/background/titleText/timelineText in prefab.");
             }
 
             return ok;

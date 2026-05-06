@@ -4,7 +4,7 @@
     "content_version": "2026-04-15.alpha",
     "default_locale": "zh-CN",
     "default_map_id": "default",
-    "bundle_hash": "ffab8e00ec05cc781d6ab4647504cce51f71e49823c702e71d7b095492a635f8",
+    "bundle_hash": "5c77c71828bd4060b6e5a4f7c8199a6b2fd2d1fddf7aff1cd1ed8126b5be4f92",
     "required_sections": [
       "resources",
       "points",
@@ -40,7 +40,7 @@
       },
       {
         "section_name": "policies",
-        "hash": "9fd72c7b085c7efae164cc25cc8ed03047bb37efbbc2c9ed65e343a48dab2c2c"
+        "hash": "c0cd7f1582ba47b2a25be3762e8c3310d5b3477797256ea68a03472c928bf6cc"
       },
       {
         "section_name": "recipes",
@@ -1798,7 +1798,7 @@
       "id": "foundry_directives",
       "name": "冶造敕令",
       "description": "制度层面的冶造调度，提高冶炼效率并优先保障工业链。",
-      "icon_key": "policy_reorganization",
+      "icon_key": "policy_foundry_directives",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -1836,7 +1836,7 @@
       "id": "mercantile_charter",
       "name": "商贸特许",
       "description": "制度层面的市集授权，提高契约调拨效率。",
-      "icon_key": "policy_logistics_corps",
+      "icon_key": "policy_mercantile_charter",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [
@@ -1886,7 +1886,7 @@
       "id": "research_mandate",
       "name": "研学敕令",
       "description": "制度层面的学术优先令，显著提高科研产出。",
-      "icon_key": "policy_academy_charter",
+      "icon_key": "policy_research_mandate",
       "layer": "institutional",
       "activation_timing": "next_turn",
       "prerequisites": [

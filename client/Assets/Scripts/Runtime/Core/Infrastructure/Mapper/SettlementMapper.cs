@@ -131,15 +131,17 @@ namespace Panoptes.Core.Infrastructure.Mapper
             var data = evt.Data != null
                 ? evt.Data.ToDictionary(pair => pair.Key, pair => pair.Value)
                 : new Dictionary<string, string>();
+            ApplyTypedEventData(evt, data);
 
             return new TurnEventDto
             {
                 Section = section,
-                Type = NormalizeToken(evt.Kind),
+                Type = ResolveEventType(evt),
                 Data = data,
                 ReasonMessage = ReadString(data, "reason_message"),
                 BlockedReasonMessage = ReadString(data, "blocked_reason_message"),
-                UnitId = ReadString(data, "unit_id", "attacker", "unit_a_id"),
+                UnitId = ReadString(data, "unit_id", "unit_a_id"),
+                AttackerUnitId = ReadString(data, "attacker", "attacker_unit_id", "killer_id"),
                 TargetUnitId = ReadString(data, "target_unit_id", "unit_b_id"),
                 EnemyUnitId = ReadString(data, "enemy_unit_id", "unit_b_id"),
                 KillerId = ReadString(data, "killer_id"),
@@ -156,6 +158,52 @@ namespace Panoptes.Core.Infrastructure.Mapper
                 ToQ = ReadInt(data, 0, "to_q"),
                 ToR = ReadInt(data, 0, "to_r")
             };
+        }
+
+        private static string ResolveEventType(DomainEventEnvelope evt)
+        {
+            var kind = NormalizeToken(evt?.Kind);
+            if (!string.IsNullOrWhiteSpace(kind))
+            {
+                return kind;
+            }
+
+            if (evt?.UnitMoved != null)
+            {
+                return "unit_moved";
+            }
+
+            return string.Empty;
+        }
+
+        private static void ApplyTypedEventData(DomainEventEnvelope evt, IDictionary<string, string> data)
+        {
+            if (evt == null || data == null)
+            {
+                return;
+            }
+
+            if (evt.UnitMoved != null)
+            {
+                SetIfMissing(data, "unit_id", evt.UnitMoved.UnitId);
+                SetIfMissing(data, "from_q", evt.UnitMoved.FromQ.ToString());
+                SetIfMissing(data, "from_r", evt.UnitMoved.FromR.ToString());
+                SetIfMissing(data, "to_q", evt.UnitMoved.ToQ.ToString());
+                SetIfMissing(data, "to_r", evt.UnitMoved.ToR.ToString());
+            }
+        }
+
+        private static void SetIfMissing(IDictionary<string, string> data, string key, string value)
+        {
+            if (data == null || string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            if (!data.ContainsKey(key) || string.IsNullOrWhiteSpace(data[key]))
+            {
+                data[key] = value.Trim();
+            }
         }
 
         private static string NormalizeToken(string value)

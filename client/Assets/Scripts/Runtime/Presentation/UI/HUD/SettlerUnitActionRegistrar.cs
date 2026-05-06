@@ -56,13 +56,13 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (_planningIntentService == null)
             {
-                Debug.LogWarning("[SettlerUnitActionRegistrar] PlanningIntentService missing, cannot send expand request.");
+                PanoptesLog.Warning("[SettlerUnitActionRegistrar] PlanningIntentService missing, cannot send expand request.");
                 return;
             }
 
             if (!TryResolveCenterNodeId(unit, out var centerNodeId))
             {
-                Debug.LogWarning("[SettlerUnitActionRegistrar] Could not resolve center node from GameStateStore; sending empty center for server-side unit-position resolution.");
+                PanoptesLog.Warning("[SettlerUnitActionRegistrar] Could not resolve center node from GameStateStore; sending empty center for server-side unit-position resolution.");
                 centerNodeId = string.Empty;
             }
 

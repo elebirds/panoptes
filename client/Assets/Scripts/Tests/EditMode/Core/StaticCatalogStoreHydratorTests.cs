@@ -55,6 +55,8 @@ namespace Panoptes.Tests.EditMode.Core
                     new ResourceDescriptor
                     {
                         Key = "ore",
+                        DisplayName = "Ore",
+                        Description = "Mineable resource",
                         IconKey = "ore_icon",
                         SortOrder = 20,
                         VisibleInHud = true
@@ -79,6 +81,8 @@ namespace Panoptes.Tests.EditMode.Core
             Assert.That(store.Snapshot.Buildings["farm"].Name, Is.EqualTo("Farm"));
             Assert.That(store.Snapshot.Buildings["farm"].PlacementKind, Is.EqualTo("resource_node"));
             Assert.That(store.Snapshot.Resources["ore"].IconKey, Is.EqualTo("ore_icon"));
+            Assert.That(store.Snapshot.Resources["ore"].Name, Is.EqualTo("Ore"));
+            Assert.That(store.Snapshot.Resources["ore"].Description, Is.EqualTo("Mineable resource"));
             Assert.That(store.Snapshot.Resources["ore"].VisibleInHud, Is.True);
             Assert.That(store.Snapshot.Points["industry_output"].SortOrder, Is.EqualTo(40));
             Assert.That(store.Snapshot.Technologies["irrigation"].ResearchCost, Is.EqualTo(4));

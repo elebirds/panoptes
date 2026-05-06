@@ -99,7 +99,7 @@ namespace Panoptes.Presentation.UI.Game
 
             if (Debug.isDebugBuild)
             {
-                Debug.Log($"[GameScene] {summary}");
+                PanoptesLog.Log($"[GameScene] {summary}");
             }
         }
 
@@ -290,11 +290,11 @@ namespace Panoptes.Presentation.UI.Game
 
             if (success)
             {
-                Debug.Log($"[GameScene] {message}");
+                PanoptesLog.Log($"[GameScene] {message}");
                 return;
             }
 
-            Debug.LogWarning($"[GameScene] {message}");
+            PanoptesLog.Warning($"[GameScene] {message}");
         }
     }
 }

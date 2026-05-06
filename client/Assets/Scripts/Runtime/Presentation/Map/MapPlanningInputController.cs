@@ -430,7 +430,7 @@ namespace Panoptes.Presentation.Map
             ShowPendingDeployCityCoreGhost(_selectedUnit.UnitId, centerNodeId);
             _planningIntentService?.ExpandTerritory(_selectedUnit.UnitId, centerNodeId);
             var phase = _latestGameState?.Phase ?? string.Empty;
-            Debug.Log($"[MapPlanningInputController] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
+            PanoptesLog.Log($"[MapPlanningInputController] territory action sent. unit={_selectedUnit.UnitId} center={centerNodeId} phase={phase}");
             return true;
         }
 
@@ -462,7 +462,7 @@ namespace Panoptes.Presentation.Map
             ShowPendingDeployCityCoreGhost(unitId, resolvedCenterNodeId);
             _planningIntentService?.ExpandTerritory(unitId, resolvedCenterNodeId);
             var phase = _latestGameState?.Phase ?? string.Empty;
-            Debug.Log($"[MapPlanningInputController] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
+            PanoptesLog.Log($"[MapPlanningInputController] territory action sent. unit={unitId} center={resolvedCenterNodeId} phase={phase}");
             return true;
         }
 
@@ -648,7 +648,7 @@ namespace Panoptes.Presentation.Map
 
         void IMapBuildPlacementCoordinatorContext.LogInvalidBuildTarget()
         {
-            Debug.LogWarning("[MapPlanningInputController] Invalid build target: cursor is outside map tile.");
+            PanoptesLog.Warning("[MapPlanningInputController] Invalid build target: cursor is outside map tile.");
         }
 
         void IMapBuildPlacementCoordinatorContext.TryCommitBuildPlacement(NodeView node)
@@ -900,7 +900,7 @@ namespace Panoptes.Presentation.Map
                     return false;
                 }
 
-            Debug.Log($"[MapPlanningInputController] 涓嬭揪绉诲姩鍛戒护 unit={_selectedUnit.UnitId} target={targetNodeId} preview_valid={preview.Valid} preview_nodes={preview.PathNodeIds.Count}");
+            PanoptesLog.Log($"[MapPlanningInputController] 涓嬭揪绉诲姩鍛戒护 unit={_selectedUnit.UnitId} target={targetNodeId} preview_valid={preview.Valid} preview_nodes={preview.PathNodeIds.Count}");
             SendMoveCommand(_selectedUnit.UnitId, targetNodeId);
             return true;
         }
@@ -1227,7 +1227,7 @@ namespace Panoptes.Presentation.Map
             {
                 _movePreviewPresentation.ClearMovePathMarkersForUnit(unitId);
             }
-            Debug.Log($"[MapPlanningInputController] 发送移动消息 unit={unitId} target={targetNodeId}");
+            PanoptesLog.Log($"[MapPlanningInputController] 发送移动消息 unit={unitId} target={targetNodeId}");
             _planningIntentService?.MoveUnit(unitId, targetNodeId);
             MoveCommandSent?.Invoke(unitId, targetNodeId);
             ClearNodeHighlights();
@@ -1579,7 +1579,7 @@ namespace Panoptes.Presentation.Map
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[MapPlanningInputController] UnitSelectionChanged callback failed: {ex.Message}");
+                PanoptesLog.Error($"[MapPlanningInputController] UnitSelectionChanged callback failed: {ex.Message}");
             }
         }
         #endregion
@@ -1765,27 +1765,12 @@ namespace Panoptes.Presentation.Map
                             continue;
                         }
 
-                        var settledPathNodeIds = GetRememberedMovePathNodeIds(eventItem.UnitId);
-
                         if (!string.IsNullOrWhiteSpace(eventItem.UnitId))
                         {
                             var normalizedUnitId = eventItem.UnitId.Trim();
                             _moveCommands.ClearUnit(normalizedUnitId);
                             _movePreviewPresentation.ClearMovePathMarkersForUnit(normalizedUnitId);
                         }
-
-                        if (_mapRenderer == null)
-                        {
-                            continue;
-                        }
-
-                        var grid = new Vector2Int(eventItem.ToQ, eventItem.ToR);
-                        if (!_mapRenderer.TryGetNodeIdByGrid(grid, out var targetNodeId))
-                        {
-                            continue;
-                        }
-
-                        ApplyBackendMoveCommand(eventItem.UnitId, targetNodeId, true, true, settledPathNodeIds);
                     }
                 }
             }
@@ -1963,6 +1948,12 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            if (GamePhases.IsResolving(current?.Phase))
+            {
+                SyncUnitDamagePopupBaselines(previousUnits, currentUnits);
+                return;
+            }
+
             if (previousUnits != null)
             {
                 foreach (var pair in previousUnits)
@@ -2021,10 +2012,44 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void SyncUnitDamagePopupBaselines(
+            IReadOnlyDictionary<string, UnitDto> previousUnits,
+            IReadOnlyDictionary<string, UnitDto> currentUnits)
+        {
+            if (previousUnits != null)
+            {
+                foreach (var pair in previousUnits)
+                {
+                    var removedId = pair.Key;
+                    if (string.IsNullOrWhiteSpace(removedId) ||
+                        (currentUnits != null && currentUnits.ContainsKey(removedId)))
+                    {
+                        continue;
+                    }
+
+                    _unitDamagePopups.ForgetUnit(removedId.Trim());
+                }
+            }
+
+            if (currentUnits == null)
+            {
+                return;
+            }
+
+            foreach (var pair in currentUnits)
+            {
+                if (pair.Value != null)
+                {
+                    _unitDamagePopups.RememberUnit(pair.Value);
+                }
+            }
+        }
+
         private void OnPlanningDraftChanged(PlanningDraftState state)
         {
             _latestPlanningDraft = state ?? new PlanningDraftState();
             RebuildOrdersByUnitId(_latestPlanningDraft.UnitOrders);
+            SyncQueuedBuildOrderGhosts(_latestPlanningDraft.BuildOrders);
             RefreshPreviewVisuals();
             RefreshBuildPreviewVisuals();
             RememberQueuedMovePaths();
@@ -2033,6 +2058,60 @@ namespace Panoptes.Presentation.Map
             {
                 RefreshAttackRangeHighlights();
             }
+        }
+
+        private void SyncQueuedBuildOrderGhosts(IReadOnlyList<QueuedBuildOrderDto> buildOrders)
+        {
+            if (buildOrders == null || buildOrders.Count == 0)
+            {
+                return;
+            }
+
+            ConfigureBuildPlacementSession();
+            var ownerId = GetLocalOwnerId();
+            for (var i = 0; i < buildOrders.Count; i++)
+            {
+                var order = buildOrders[i];
+                if (order == null ||
+                    string.IsNullOrWhiteSpace(order.NodeId) ||
+                    string.IsNullOrWhiteSpace(order.BuildingTypeId))
+                {
+                    continue;
+                }
+
+                var nodeId = order.NodeId.Trim();
+                if (HasPendingBuild(nodeId) || IsCommittedBuildingNode(nodeId))
+                {
+                    continue;
+                }
+
+                var buildingType = ResolveBackendBuildingType(order.BuildingTypeId);
+                if (string.IsNullOrWhiteSpace(buildingType))
+                {
+                    continue;
+                }
+
+                _buildPlacement.RememberPendingBuild(new PendingBuildRecord
+                {
+                    buildingType = buildingType,
+                    nodeId = nodeId,
+                    ownerId = ownerId,
+                    isGhost = true
+                });
+                ApplyBackendBuildCommand(buildingType, nodeId, true, ownerId);
+            }
+        }
+
+        private bool IsCommittedBuildingNode(string nodeId)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) || _mapRenderer == null)
+            {
+                return false;
+            }
+
+            return _mapRenderer.TryGetNodeState(nodeId.Trim(), out var nodeState) &&
+                   nodeState != null &&
+                   !string.IsNullOrWhiteSpace(nodeState.BuildingType);
         }
 
         private void RebuildOrdersByUnitId(IReadOnlyList<QueuedUnitOrderDto> unitOrders)
@@ -2398,7 +2477,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            Debug.LogWarning($"[MapPlanningInputController] {message}");
+            PanoptesLog.Warning($"[MapPlanningInputController] {message}");
         }
 
         private void BlockInputAfterModeSwitch()

@@ -98,7 +98,7 @@ namespace Panoptes.Presentation.Map
             _buildType = ResolveBackendBuildingType(Normalize(buildingType));
             if (IsManualPlacementBlocked(_buildType, settings))
             {
-                Debug.Log($"[MapPlanningInputController] {_buildType} is pre-placed by map config and cannot be manually built.");
+                PanoptesLog.Log($"[MapPlanningInputController] {_buildType} is pre-placed by map config and cannot be manually built.");
                 ExitBuildMode();
                 return false;
             }
@@ -106,7 +106,7 @@ namespace Panoptes.Presentation.Map
             _activeBuildCityId = string.IsNullOrWhiteSpace(cityId) ? string.Empty : cityId.Trim();
             if (string.IsNullOrEmpty(_activeBuildCityId))
             {
-                Debug.LogWarning($"[MapPlanningInputController] Missing build city context before entering build mode. building={_buildType}");
+                PanoptesLog.Warning($"[MapPlanningInputController] Missing build city context before entering build mode. building={_buildType}");
                 showUserError?.Invoke("缺少建造城市上下文，无法进入建造模式");
                 ExitBuildMode();
                 return false;
@@ -285,7 +285,7 @@ namespace Panoptes.Presentation.Map
                     settings.PlacedGhostColor,
                     settings.PlacedEdgeGlowColor))
             {
-                Debug.LogWarning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
+                PanoptesLog.Warning($"[MapBuildPlacementSession] Failed to render pending build ghost. node={node.NodeId} building={backendBuildingType}");
             }
 
             ExitBuildMode();
@@ -531,7 +531,7 @@ namespace Panoptes.Presentation.Map
             buildingType = ResolveBackendBuildingType(buildingType);
             if (string.IsNullOrWhiteSpace(_activeBuildCityId))
             {
-                Debug.LogWarning($"[MapPlanningInputController] Missing build city context. node={nodeId} building={buildingType}");
+                PanoptesLog.Warning($"[MapPlanningInputController] Missing build city context. node={nodeId} building={buildingType}");
                 showUserError?.Invoke("Current node is missing city context.");
                 return false;
             }

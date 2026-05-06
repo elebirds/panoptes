@@ -152,7 +152,7 @@ namespace Panoptes.DebugTools
                 }
 
                 _settlementChecked = true;
-                Debug.Log("[Check] ✓ GameSync 处理正常");
+                PanoptesLog.Log("[Check] ✓ GameSync 处理正常");
                 TryFinalize();
             }
             catch (System.Exception e)
@@ -171,7 +171,7 @@ namespace Panoptes.DebugTools
             if (_initChecked && _planningChecked && _settlementChecked)
             {
                 _allPassedLogged = true;
-                Debug.Log("[Integration] ✓ 所有检查通过，Turn V2 链路正常");
+                PanoptesLog.Log("[Integration] ✓ 所有检查通过，Turn V2 链路正常");
             }
         }
 
@@ -183,7 +183,7 @@ namespace Panoptes.DebugTools
             }
 
             _failed = true;
-            Debug.LogError($"[Integration] ✗ 检查失败: {reason}");
+            PanoptesLog.Error($"[Integration] ✗ 检查失败: {reason}");
         }
 
         private static string NormalizePlayerId(string primary, string fallback)

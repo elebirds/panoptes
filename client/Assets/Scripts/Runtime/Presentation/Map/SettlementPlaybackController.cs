@@ -24,9 +24,11 @@ namespace Panoptes.Presentation.Map
         [SerializeField] private float damagePulseSeconds = 0.16f;
         [SerializeField] private float damagePulseScale = 1.14f;
         [SerializeField] private float sectionPauseSeconds = 0.14f;
-        [SerializeField] private float actorFocusPauseSeconds = 0.5f;
+        [SerializeField] private float actorFocusPauseSeconds = 0.25f;
+        [SerializeField] private float initialPlaybackDelaySeconds = 0.25f;
+        [SerializeField] private float unitMoveDurationSeconds = 0.98f;
         [SerializeField] private float attackPlaybackSeconds = 0.55f;
-        [SerializeField] private float perUnitPlaybackGapSeconds = 0.14f;
+        [SerializeField] private float perUnitPlaybackGapSeconds = 0.5f;
         [SerializeField] private bool enableDamagePopups = true;
         [SerializeField] private DamageNumberPopupController damagePopupController;
 
@@ -111,78 +113,103 @@ namespace Panoptes.Presentation.Map
         private IEnumerator PlaySettlement(TurnSettlementDto settlement)
         {
             BeginPlaybackInputLock();
+            _animationQueue?.CancelUnitMoves();
             try
             {
-                for (var sectionIndex = 0; sectionIndex < settlement.Sections.Count; sectionIndex++)
+                var steps = SettlementPlaybackPlanBuilder.Build(settlement);
+                if (steps.Count == 0)
                 {
-                    var section = settlement.Sections[sectionIndex];
-                    if (section?.Events == null)
-                    {
-                        continue;
-                    }
+                    _mapRenderer?.ReconcileUnitsToCurrentState();
+                    yield break;
+                }
 
-                    for (var eventIndex = 0; eventIndex < section.Events.Count; eventIndex++)
-                    {
-                        var evt = section.Events[eventIndex];
-                        if (evt == null)
-                        {
-                            continue;
-                        }
+                _mapRenderer?.PrepareSettlementPlaybackUnits(steps);
+                if (initialPlaybackDelaySeconds > 0.0001f)
+                {
+                    yield return new WaitForSecondsRealtime(initialPlaybackDelaySeconds);
+                }
 
-                        switch (evt.Type)
-                        {
-                            case "unit_moved":
-                                yield return PlayMove(evt);
-                                break;
-                            case "conflict":
-                                yield return PlayConflict(evt);
-                                break;
-                            case "unit_damaged":
-                                yield return PlayDamage(evt);
-                                break;
-                            case "unit_died":
-                                yield return PlayDeath(evt);
-                                break;
-                            case "city_founded":
-                            case "building_built":
-                            case "building_status_changed":
-                            case "facility_takeover_progressed":
-                            case "facility_takeover_completed":
-                            case "building_ruined":
-                            case "road_built":
-                                yield return PlayMapPulse(evt);
-                                break;
-                            case "building_damaged":
-                            case "city_core_damaged":
-                            case "city_core_destroyed":
-                                yield return PlayBuildingDamage(evt);
-                                break;
-                            case "recipe_progressed":
-                            case "recipe_skipped":
-                            case "recipe_completed":
-                            case "technology_completed":
-                            case "technology_activated":
-                            case "technology_grant_applied":
-                            case "national_policy_changed":
-                            case "institution_loadout_activated":
-                                yield return PlayAuthorityCue(evt);
-                                break;
-                            default:
-                                yield return null;
-                                break;
-                        }
-                    }
-
-                    if (sectionIndex < settlement.Sections.Count - 1)
-                    {
-                        yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, sectionPauseSeconds));
-                    }
+                for (var stepIndex = 0; stepIndex < steps.Count; stepIndex++)
+                {
+                    yield return PlayStep(steps[stepIndex]);
                 }
             }
             finally
             {
+                _mapRenderer?.ReconcileUnitsToCurrentState();
                 EndPlaybackInputLock();
                 _playbackCoroutine = null;
+            }
+        }
+
+        private IEnumerator PlayStep(SettlementPlaybackStep step)
+        {
+            if (step == null)
+            {
+                yield break;
+            }
+
+            if (step.HasMove)
+            {
+                _mapRenderer?.PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent);
+            }
+
+            if (step.HasActor)
+            {
+                yield return FocusActorForPlayback(step.ActorUnitId);
+            }
+
+            if (step.HasMove)
+            {
+                yield return PlayMove(step.MoveEvent);
+            }
+
+            if (step.HasImpacts)
+            {
+                if (step.HasActor)
+                {
+                    yield return PlayAttackForStep(step.ActorUnitId);
+                }
+
+                for (var i = 0; i < step.Impacts.Count; i++)
+                {
+                    yield return PlayImpact(step.Impacts[i]);
+                }
+            }
+
+            if (perUnitPlaybackGapSeconds > 0.0001f)
+            {
+                yield return new WaitForSecondsRealtime(perUnitPlaybackGapSeconds);
+            }
+
+            ClearPlaybackSelection();
+        }
+
+        private IEnumerator PlayImpact(SettlementPlaybackImpact impact)
+        {
+            if (impact == null)
+            {
+                yield break;
+            }
+
+            if (impact.IsUnitImpact)
+            {
+                if (impact.DamageEvent != null)
+                {
+                    yield return PlayDamage(impact.DamageEvent);
+                }
+
+                if (impact.DeathEvent != null)
+                {
+                    yield return PlayDeath(impact.DeathEvent, showDamageCue: impact.DamageEvent == null);
+                }
+
+                yield break;
+            }
+
+            if (impact.IsBuildingImpact)
+            {
+                yield return PlayBuildingDamage(impact.BuildingEvent);
             }
         }
 
@@ -193,17 +220,12 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
+            _mapRenderer.PlaceSettlementPlaybackUnitAtMoveStart(evt);
             var grid = new Vector2Int(evt.ToQ, evt.ToR);
             if (!_mapRenderer.TryGetNodeIdByGrid(grid, out var targetNodeId) ||
                 !_mapRenderer.TryGetNodeView(targetNodeId, out var nodeView) ||
                 nodeView == null)
             {
-                yield break;
-            }
-
-            if (_animationQueue == null)
-            {
-                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
                 yield break;
             }
 
@@ -213,7 +235,22 @@ namespace Panoptes.Presentation.Map
                 yield break;
             }
 
-            yield return _animationQueue.PlayUnitMoveNow(evt.UnitId, targetNodeId, true);
+            if (!_mapRenderer.TryGetUnitView(evt.UnitId, out var unitView) || unitView == null)
+            {
+                _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
+                yield break;
+            }
+
+            var target = nodeView.UnitAnchor != null
+                ? nodeView.UnitAnchor.position
+                : nodeView.transform.position + Vector3.up * 0.2f;
+            yield return UnitMoveAnim.Play(
+                unitView,
+                target,
+                Mathf.Max(0.05f, unitMoveDurationSeconds),
+                Camera.main,
+                followCameraEnabled: true);
+            _mapRenderer.SetUnitNode(evt.UnitId, targetNodeId);
             yield return new WaitForSecondsRealtime(Mathf.Max(0.02f, moveEventWaitSeconds * 0.25f));
         }
 
@@ -242,31 +279,31 @@ namespace Panoptes.Presentation.Map
         {
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
-                yield return PlayAttackerAnimation(evt);
                 TryShowUnitDamagePopupFallback(evt);
                 yield break;
             }
 
-            yield return PlayAttackerAnimation(evt);
             TryShowDamagePopup(unit.transform, evt, isBuilding: false);
             yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
-            ClearPlaybackSelection();
         }
 
-        private IEnumerator PlayDeath(TurnEventDto evt)
+        private IEnumerator PlayDeath(TurnEventDto evt, bool showDamageCue)
         {
             if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(evt.UnitId, out var unit) || unit == null)
             {
-                yield return PlayUnitAttackForPlayback(evt.KillerId);
-                TryShowUnitDamagePopupFallback(evt);
+                if (showDamageCue)
+                {
+                    TryShowUnitDamagePopupFallback(evt);
+                }
                 yield break;
             }
 
-            yield return PlayUnitAttackForPlayback(!string.IsNullOrWhiteSpace(evt.KillerId) ? evt.KillerId : ResolveActorUnitId(evt));
-            TryShowDamagePopup(unit.transform, evt, isBuilding: false);
-            yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
+            if (showDamageCue)
+            {
+                TryShowDamagePopup(unit.transform, evt, isBuilding: false);
+                yield return PulseUnit(unit.transform, Mathf.Max(0.05f, damagePulseSeconds), Mathf.Max(1.02f, damagePulseScale));
+            }
             _mapRenderer.RemoveRuntimeUnit(evt.UnitId, false);
-            ClearPlaybackSelection();
         }
 
         private IEnumerator PlayBuildingDamage(TurnEventDto evt)
@@ -277,13 +314,11 @@ namespace Panoptes.Presentation.Map
             }
 
             var popupTarget = node.BuildingInstance != null ? node.BuildingInstance.transform : node.transform;
-            yield return PlayAttackerAnimation(evt);
             TryShowDamagePopup(popupTarget, evt, isBuilding: true);
 
             node.SetHighlight(true, new Color(0.35f, 0.9f, 1f, 1f));
             yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, conflictFlashSeconds));
             node.SetHighlightVisible(false);
-            ClearPlaybackSelection();
         }
 
         private IEnumerator PlayAttackerAnimation(TurnEventDto evt)
@@ -324,6 +359,22 @@ namespace Panoptes.Presentation.Map
             {
                 yield return new WaitForSecondsRealtime(perUnitPlaybackGapSeconds);
             }
+        }
+
+        private IEnumerator PlayAttackForStep(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                yield break;
+            }
+
+            if (_mapRenderer == null || !_mapRenderer.TryGetUnitView(unitId.Trim(), out var unit) || unit == null)
+            {
+                yield break;
+            }
+
+            unit.PlayAttackAnimation();
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.05f, attackPlaybackSeconds));
         }
 
         private bool TryPlayAttackerAnimation(TurnEventDto evt)

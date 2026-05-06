@@ -47,10 +47,11 @@ namespace Panoptes.Presentation.UI.HUD
         [Header("Icon")]
         [SerializeField] private string unitIconResourcesRoot = "Icons/Units";
         [SerializeField] private string buildingIconResourcesRoot = "Icons/Buildings";
+        [SerializeField] private string resourceIconResourcesRoot = "Icons/Resources";
 
         [Header("Portrait Camera")]
         [SerializeField] private RawImage unitPortraitRawImage;
-        [SerializeField] private bool enablePortraitCamera = true;
+        [SerializeField] private bool enablePortraitCamera = false;
         [SerializeField] private bool portraitRealtime = false;
         [SerializeField] private bool portraitKeepSceneBackground = true;
         [SerializeField] private int portraitTextureSize = 256;
@@ -310,12 +311,7 @@ namespace Panoptes.Presentation.UI.HUD
             EnsureUnitDescriptionUi();
             RenderReactiveState();
 
-            if (TryRefreshUnitPortrait(forceRender: true))
-            {
-                SetPortraitVisible(true);
-                return;
-            }
-
+            DisablePortraitCamera();
             SetPortraitVisible(false);
             RefreshUnitIcon();
         }
@@ -348,21 +344,67 @@ namespace Panoptes.Presentation.UI.HUD
             }
 
             var unitType = NormalizeToken(_currentUnit.UnitType);
-            if (string.IsNullOrEmpty(unitType))
+            var state = _unitInfoViewModel?.Current;
+            var iconKey = NormalizeToken(state != null &&
+                state.HasSelection &&
+                string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal)
+                    ? state.IconKey
+                    : string.Empty);
+            if (string.IsNullOrEmpty(unitType) && string.IsNullOrEmpty(iconKey))
             {
                 unitIcon.sprite = null;
                 return;
             }
 
-            var spritePath = $"{unitIconResourcesRoot}/{unitType}";
-            var sprite = Resources.Load<Sprite>(spritePath);
-            if (sprite == null)
-            {
-                var buildingSpritePath = $"{buildingIconResourcesRoot}/{unitType}";
-                sprite = Resources.Load<Sprite>(buildingSpritePath);
-            }
+            var sprite = LoadIconSprite(iconKey, unitType);
+            unitIcon.enabled = true;
+            unitIcon.gameObject.SetActive(true);
+            unitIcon.preserveAspect = true;
             unitIcon.sprite = sprite;
             unitIcon.color = sprite == null ? new Color(0.3f, 0.3f, 0.3f, 1f) : Color.white;
+        }
+
+        private Sprite LoadIconSprite(string iconKey, string fallbackId)
+        {
+            var sprite = LoadIconSpriteByKey(iconKey);
+            return sprite != null ? sprite : LoadIconSpriteByKey(fallbackId);
+        }
+
+        private Sprite LoadIconSpriteByKey(string key)
+        {
+            key = NormalizeToken(key);
+            if (string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+
+            var sprite = Resources.Load<Sprite>(key);
+            if (sprite == null)
+            {
+                sprite = LoadIconSpriteFromRoot(unitIconResourcesRoot, key);
+            }
+
+            if (sprite == null)
+            {
+                sprite = LoadIconSpriteFromRoot(buildingIconResourcesRoot, key);
+            }
+
+            if (sprite == null)
+            {
+                sprite = LoadIconSpriteFromRoot(resourceIconResourcesRoot, key);
+            }
+
+            return sprite;
+        }
+
+        private static Sprite LoadIconSpriteFromRoot(string root, string key)
+        {
+            if (string.IsNullOrWhiteSpace(root) || string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            return Resources.Load<Sprite>($"{root.Trim().TrimEnd('/')}/{key}");
         }
 
         private bool TryRefreshUnitPortrait(bool forceRender)
@@ -757,6 +799,7 @@ namespace Panoptes.Presentation.UI.HUD
                 state.HasSelection &&
                 string.Equals(state.UnitId, _currentUnit.UnitId, StringComparison.Ordinal))
             {
+                RefreshUnitIcon();
                 return;
             }
 
@@ -800,7 +843,11 @@ namespace Panoptes.Presentation.UI.HUD
                 hpSlider,
                 hpValueText,
                 directOrderButtonsRoot,
-                GetDirectOrderButtons());
+                GetDirectOrderButtons(),
+                unitIcon,
+                unitIconResourcesRoot,
+                buildingIconResourcesRoot,
+                resourceIconResourcesRoot);
         }
 
         private static bool ReactiveBinderReferencesMatch(
@@ -813,6 +860,10 @@ namespace Panoptes.Presentation.UI.HUD
                    ReferenceEquals(current.HpSlider, next.HpSlider) &&
                    ReferenceEquals(current.HpValueText, next.HpValueText) &&
                    ReferenceEquals(current.DirectOrderButtonsRoot, next.DirectOrderButtonsRoot) &&
+                   ReferenceEquals(current.UnitIcon, next.UnitIcon) &&
+                   string.Equals(current.UnitIconResourcesRoot, next.UnitIconResourcesRoot, StringComparison.Ordinal) &&
+                   string.Equals(current.BuildingIconResourcesRoot, next.BuildingIconResourcesRoot, StringComparison.Ordinal) &&
+                   string.Equals(current.ResourceIconResourcesRoot, next.ResourceIconResourcesRoot, StringComparison.Ordinal) &&
                    ReferenceEquals(current.DirectOrderButtons.Move, next.DirectOrderButtons.Move) &&
                    ReferenceEquals(current.DirectOrderButtons.Attack, next.DirectOrderButtons.Attack) &&
                    ReferenceEquals(current.DirectOrderButtons.Hold, next.DirectOrderButtons.Hold) &&

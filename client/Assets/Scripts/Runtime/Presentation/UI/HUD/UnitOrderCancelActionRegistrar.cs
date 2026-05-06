@@ -53,7 +53,7 @@ namespace Panoptes.Presentation.UI.HUD
 
             if (_planningIntentService == null)
             {
-                Debug.LogWarning("[UnitOrderCancelActionRegistrar] PlanningIntentService missing, cannot cancel unit order.");
+                PanoptesLog.Warning("[UnitOrderCancelActionRegistrar] PlanningIntentService missing, cannot cancel unit order.");
                 return;
             }
 

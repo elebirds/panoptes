@@ -20,7 +20,7 @@ namespace Panoptes.Presentation.Composition
             var prefab = Resources.Load<GameObject>(ProjectCompositionPrefabPath);
             if (prefab == null)
             {
-                Debug.LogError($"[Composition] Missing project composition prefab at Resources/{ProjectCompositionPrefabPath}.prefab");
+                PanoptesLog.Error($"[Composition] Missing project composition prefab at Resources/{ProjectCompositionPrefabPath}.prefab");
                 return;
             }
 
@@ -31,7 +31,7 @@ namespace Panoptes.Presentation.Composition
             var overlays = managers.GetComponent<ProjectOverlayRegistry>();
             if (overlays == null)
             {
-                Debug.LogError("[Composition] Project composition prefab is missing ProjectOverlayRegistry.");
+                PanoptesLog.Error("[Composition] Project composition prefab is missing ProjectOverlayRegistry.");
                 return;
             }
 
@@ -60,7 +60,7 @@ namespace Panoptes.Presentation.Composition
             var prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
             {
-                Debug.LogError($"[Composition] Missing overlay prefab at Resources/{resourcePath}.prefab");
+                PanoptesLog.Error($"[Composition] Missing overlay prefab at Resources/{resourcePath}.prefab");
                 return null;
             }
 

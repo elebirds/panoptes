@@ -93,7 +93,7 @@ namespace Panoptes.Presentation.UI.HUD
             if (!ok && logWarning && !_warnedMissingUi)
             {
                 _warnedMissingUi = true;
-                Debug.LogWarning("[TokenHUD] Missing UI references. Assign root/tokenText/stateText in prefab.");
+                PanoptesLog.Warning("[TokenHUD] Missing UI references. Assign root/tokenText/stateText in prefab.");
             }
 
             return ok;

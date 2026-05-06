@@ -60,7 +60,7 @@ namespace Panoptes.Presentation.UI.Common
         {
             if (!HasValidReferences())
             {
-                Debug.LogError("[ConfirmDialog] Missing serialized references on prefab.");
+                PanoptesLog.Error("[ConfirmDialog] Missing serialized references on prefab.");
                 return;
             }
 

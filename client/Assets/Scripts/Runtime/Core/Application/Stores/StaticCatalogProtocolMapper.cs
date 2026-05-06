@@ -30,6 +30,8 @@ namespace Panoptes.Core.Application.Stores
             return MapCatalog(source, entry => entry?.Key, entry => new CatalogHudEntryDto
             {
                 Key = entry.Key,
+                Name = entry.DisplayName,
+                Description = entry.Description,
                 IconKey = entry.IconKey,
                 SortOrder = entry.SortOrder,
                 VisibleInHud = entry.VisibleInHud
@@ -41,6 +43,8 @@ namespace Panoptes.Core.Application.Stores
             return MapCatalog(source, entry => entry?.Key, entry => new CatalogHudEntryDto
             {
                 Key = entry.Key,
+                Name = entry.DisplayName,
+                Description = entry.Description,
                 IconKey = entry.IconKey,
                 SortOrder = entry.SortOrder,
                 VisibleInHud = entry.VisibleInHud

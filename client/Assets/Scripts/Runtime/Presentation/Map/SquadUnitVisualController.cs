@@ -1589,7 +1589,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            Debug.Log($"[SquadUnitVisualController] {message}", this);
+            PanoptesLog.Log($"[SquadUnitVisualController] {message}", this);
         }
 
         private void LogAnimationWarning(string message)
@@ -1599,7 +1599,7 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
-            Debug.LogWarning($"[SquadUnitVisualController] {message}", this);
+            PanoptesLog.Warning($"[SquadUnitVisualController] {message}", this);
         }
 
         private static string NormalizeToken(string value)

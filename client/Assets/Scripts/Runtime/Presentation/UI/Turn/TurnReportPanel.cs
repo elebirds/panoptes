@@ -115,7 +115,7 @@ namespace Panoptes.Presentation.UI.Turn
             if (!ok && logWarning && !_warnedMissingUi)
             {
                 _warnedMissingUi = true;
-                Debug.LogWarning("[TurnReportPanel] Missing UI references. Assign root/background/titleText/reportText in prefab.");
+                PanoptesLog.Warning("[TurnReportPanel] Missing UI references. Assign root/background/titleText/reportText in prefab.");
             }
 
             return ok;

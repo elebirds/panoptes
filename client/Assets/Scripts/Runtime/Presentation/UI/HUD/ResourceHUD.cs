@@ -325,7 +325,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 if (logWarnings)
                 {
-                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                    PanoptesLog.Warning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
                 }
                 return;
             }
@@ -339,7 +339,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 if (logWarnings)
                 {
-                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                    PanoptesLog.Warning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
                 }
                 return;
             }
@@ -470,7 +470,7 @@ namespace Panoptes.Presentation.UI.HUD
             {
                 if (logWarnings)
                 {
-                    Debug.LogWarning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
+                    PanoptesLog.Warning("[ResourceHUD] ManagementPanelVisibilityStore not injected.");
                 }
                 return;
             }

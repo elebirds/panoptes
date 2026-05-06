@@ -1,4 +1,4 @@
-﻿/*************************************************
+/*************************************************
  * Project: Panoptes
  * File: LoginPanel.cs
  * Author: Panoptes Team
@@ -96,11 +96,11 @@ namespace Panoptes.Presentation.UI.Auth
 
             if (success)
             {
-                Debug.Log(message);
+                PanoptesLog.Log(message);
                 return;
             }
 
-            Debug.LogWarning(message);
+            PanoptesLog.Warning(message);
         }
         
         private async void OnClickLogin()
@@ -143,7 +143,7 @@ namespace Panoptes.Presentation.UI.Auth
             }
             catch (Exception e)
             {
-                Debug.LogError($"[LoginPanel] Login failed: {e}");
+                PanoptesLog.Error($"[LoginPanel] Login failed: {e}");
                 ShowTip("服务器错误，请稍后重试", false);
             }
             finally
@@ -180,7 +180,7 @@ namespace Panoptes.Presentation.UI.Auth
             }
             catch (Exception e)
             {
-                Debug.LogError($"[LoginPanel] Register failed: {e}");
+                PanoptesLog.Error($"[LoginPanel] Register failed: {e}");
                 ShowTip("服务器错误，请稍后重试" + e.Message, false);
             }
             finally

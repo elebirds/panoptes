@@ -852,7 +852,7 @@ namespace Panoptes.DebugTools
                     SendSubmitTurn();
                     return;
                 default:
-                    Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
+                    PanoptesLog.Warning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
                     return;
             }
         }
@@ -934,12 +934,12 @@ namespace Panoptes.DebugTools
                 _visionStatus = result.Refreshed
                     ? (_fullMapEnabled.Value ? "全图已开启，已刷新当前 planning 视图" : "全图已关闭，已刷新当前 planning 视图")
                     : (_fullMapEnabled.Value ? "全图已开启，等待下一次 planning 刷新" : "全图已关闭，等待下一次 planning 刷新");
-                Debug.Log($"[DebugPanel] vision full_map={result.FullMap} visible_nodes={result.VisibleNodeCount}/{result.TotalNodeCount} visible_units={result.VisibleUnitCount} refreshed={result.Refreshed}");
+                PanoptesLog.Log($"[DebugPanel] vision full_map={result.FullMap} visible_nodes={result.VisibleNodeCount}/{result.TotalNodeCount} visible_units={result.VisibleUnitCount} refreshed={result.Refreshed}");
             }
             catch (Exception ex)
             {
                 _visionStatus = $"切换失败: {ex.Message}";
-                Debug.LogWarning($"[DebugPanel] toggle vision failed: {ex.Message}");
+                PanoptesLog.Warning($"[DebugPanel] toggle vision failed: {ex.Message}");
             }
             finally
             {
@@ -1145,7 +1145,7 @@ namespace Panoptes.DebugTools
                     SendSubmitTurn();
                     return;
                 default:
-                    Debug.LogWarning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
+                    PanoptesLog.Warning($"[DebugPanel] 当前阶段不可手动推进 phase={phase}");
                     return;
             }
         }

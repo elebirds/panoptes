@@ -208,7 +208,7 @@ func damageUnit(ctx *ResolutionContext, targetID string, damage int, source stri
 		nextHP = 0
 	}
 	ctx.SetHP(targetID, nextHP)
-	ctx.Events = append(ctx.Events, event.UnitDamagedEvent{UnitID: targetID, Damage: damage, HPAfter: nextHP, Source: source})
+	ctx.Events = append(ctx.Events, event.UnitDamagedEvent{UnitID: targetID, Damage: damage, HPAfter: nextHP, Source: source, AttackerID: killerID})
 	if nextHP == 0 {
 		ctx.DeadUnits[targetID] = true
 		ctx.Events = append(ctx.Events, event.UnitDiedEvent{UnitID: targetID, KillerID: killerID, Pos: pos})
@@ -301,9 +301,10 @@ func damageStructure(ctx *ResolutionContext, target SnapshotStructure, damage in
 	}
 
 	ctx.Events = append(ctx.Events, event.BuildingDamagedEvent{
-		NodeID:  target.NodeID,
-		Damage:  damage,
-		HPAfter: nextHP,
+		NodeID:     target.NodeID,
+		Damage:     damage,
+		HPAfter:    nextHP,
+		AttackerID: attackerID,
 	})
 	if nextHP == 0 {
 		ctx.Events = append(ctx.Events, event.BuildingRuinedEvent{

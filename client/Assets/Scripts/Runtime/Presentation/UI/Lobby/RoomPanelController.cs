@@ -505,7 +505,7 @@ namespace Panoptes.Presentation.UI.Lobby
                 return;
             }
 
-            Debug.LogWarning($"[RoomPanelController] ConfirmDialog is unavailable for action: {title}");
+            PanoptesLog.Warning($"[RoomPanelController] ConfirmDialog is unavailable for action: {title}");
             ShowToast("确认面板未就绪，请稍后重试", false);
         }
 
@@ -520,11 +520,11 @@ namespace Panoptes.Presentation.UI.Lobby
 
             if (success)
             {
-                Debug.Log(message);
+                PanoptesLog.Log(message);
                 return;
             }
 
-            Debug.LogWarning(message);
+            PanoptesLog.Warning(message);
         }
 
         private string ResolvePlayerDisplayName(string playerId)

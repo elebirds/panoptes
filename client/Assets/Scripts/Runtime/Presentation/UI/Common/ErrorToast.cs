@@ -56,7 +56,7 @@ namespace Panoptes.Presentation.UI.Common
         {
             if (!HasValidReferences())
             {
-                Debug.LogError("[ErrorToast] Missing serialized references on prefab.");
+                PanoptesLog.Error("[ErrorToast] Missing serialized references on prefab.");
                 return;
             }
 

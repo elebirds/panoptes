@@ -11,6 +11,8 @@ namespace Panoptes.Core.Domain
     public sealed class CatalogHudEntryDto
     {
         public string Key;
+        public string Name;
+        public string Description;
         public string IconKey;
         public int SortOrder;
         public bool VisibleInHud;

@@ -864,7 +864,7 @@ namespace Panoptes.Presentation.Map
                 if (!_warnedFogPatternUnavailable)
                 {
                     _warnedFogPatternUnavailable = true;
-                    Debug.LogWarning($"[MapFogOverlay] Fog pattern not found at Resources/{fogPatternResourcePath} or fallback {fogPatternFallbackResourcePath}. Fallback to procedural fog.");
+                    PanoptesLog.Warning($"[MapFogOverlay] Fog pattern not found at Resources/{fogPatternResourcePath} or fallback {fogPatternFallbackResourcePath}. Fallback to procedural fog.");
                 }
                 return null;
             }
@@ -880,7 +880,7 @@ namespace Panoptes.Presentation.Map
                 if (!_warnedFogPatternUnreadable)
                 {
                     _warnedFogPatternUnreadable = true;
-                    Debug.LogWarning($"[MapFogOverlay] Fog pattern '{fogPatternTexture.name}' is not Read/Write enabled. Fallback to procedural fog.");
+                    PanoptesLog.Warning($"[MapFogOverlay] Fog pattern '{fogPatternTexture.name}' is not Read/Write enabled. Fallback to procedural fog.");
                 }
 
                 return null;

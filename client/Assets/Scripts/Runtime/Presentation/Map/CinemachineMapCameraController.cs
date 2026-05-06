@@ -155,11 +155,20 @@ namespace Panoptes.Presentation.Map
 
         public void ApplyCameraContext(MapCameraContext context, bool snapInstantly = true)
         {
+            var hadCameraContext = _hasCameraContext;
             _cameraContext = context;
             _hasCameraContext = context.IsValid;
 
             if (!_hasCameraContext)
             {
+                return;
+            }
+
+            if (hadCameraContext || IsPresentationInputLocked)
+            {
+                _targetAnchorXZ = ClampAnchorToContext(_targetAnchorXZ);
+                _currentAnchorXZ = ClampAnchorToContext(_currentAnchorXZ);
+                ApplyRigState(_currentAnchorXZ, _currentDistance > 0f ? _currentDistance : ClampDistance(farDistance));
                 return;
             }
 

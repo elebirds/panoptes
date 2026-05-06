@@ -294,6 +294,7 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			"damage":   strconv.Itoa(e.Damage),
 			"hp_after": strconv.Itoa(e.HPAfter),
 			"source":   e.Source,
+			"attacker": e.AttackerID,
 		}
 	case event.UnitDiedEvent:
 		return e.Kind(), map[string]string{
@@ -333,6 +334,7 @@ func EventPayloadFromEvent(evt event.Event) (string, map[string]string) {
 			"node_id":  e.NodeID,
 			"damage":   strconv.Itoa(e.Damage),
 			"hp_after": strconv.Itoa(e.HPAfter),
+			"attacker": e.AttackerID,
 		}
 	case event.CityCapturedEvent:
 		data := map[string]string{

@@ -79,7 +79,7 @@ namespace Panoptes.Presentation.UI.Lobby
         public void HandleRoomCreated(string roomId, string roomCode)
         {
             ShowToast($"房间已创建，邀请码：{roomCode}", true);
-            Debug.Log($"[LobbyPanel] Room created: {roomId} / {roomCode}");
+            PanoptesLog.Log($"[LobbyPanel] Room created: {roomId} / {roomCode}");
         }
 
         public void HandleRoomStateReceived()
@@ -218,11 +218,11 @@ namespace Panoptes.Presentation.UI.Lobby
 
             if (success)
             {
-                Debug.Log(message);
+                PanoptesLog.Log(message);
                 return;
             }
 
-            Debug.LogWarning(message);
+            PanoptesLog.Warning(message);
         }
 
         private static string MapLobbyError(string code)

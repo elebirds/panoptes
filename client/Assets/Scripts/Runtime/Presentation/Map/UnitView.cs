@@ -308,7 +308,7 @@ namespace Panoptes.Presentation.Map
                 {
                     _hasLastRequestedMovingState = true;
                     _lastRequestedMovingState = isMoving;
-                    Debug.Log($"[UnitView] Unit '{UnitId}' SetMovingVisual isMoving={isMoving} speed={normalizedSpeed:0.00}", this);
+                    PanoptesLog.Log($"[UnitView] Unit '{UnitId}' SetMovingVisual isMoving={isMoving} speed={normalizedSpeed:0.00}", this);
                 }
             }
 
@@ -317,7 +317,7 @@ namespace Panoptes.Presentation.Map
                 if (isMoving && !_warnedForceIdleBlocksMove && enableAnimationDiagnostics)
                 {
                     _warnedForceIdleBlocksMove = true;
-                    Debug.LogWarning($"[UnitView] Unit '{UnitId}' move visual blocked by forceIdleAnimation=true.", this);
+                    PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' move visual blocked by forceIdleAnimation=true.", this);
                 }
                 PlayIdleAnimation();
             }
@@ -333,7 +333,7 @@ namespace Panoptes.Presentation.Map
                         if (!_warnedAnimatorSpeedReset && enableAnimationDiagnostics)
                         {
                             _warnedAnimatorSpeedReset = true;
-                            Debug.LogWarning($"[UnitView] Unit '{UnitId}' animator.speed<=0, force set to 1.", this);
+                            PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' animator.speed<=0, force set to 1.", this);
                         }
                     }
 
@@ -345,7 +345,7 @@ namespace Panoptes.Presentation.Map
                     {
                         _warnedMissingMoveBoolParam = true;
                         var controllerName = animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "<null>";
-                        Debug.LogWarning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing bool param '{movingBoolParam}' (hash={_movingBoolHash}).", this);
+                        PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing bool param '{movingBoolParam}' (hash={_movingBoolHash}).", this);
                     }
 
                     if (_speedFloatHash != 0 && _hasSpeedFloatParam)
@@ -356,7 +356,7 @@ namespace Panoptes.Presentation.Map
                     {
                         _warnedMissingSpeedFloatParam = true;
                         var controllerName = animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.name : "<null>";
-                        Debug.LogWarning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing float param '{speedFloatParam}' (hash={_speedFloatHash}).", this);
+                        PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' Animator controller '{controllerName}' missing float param '{speedFloatParam}' (hash={_speedFloatHash}).", this);
                     }
                 }
 
@@ -367,7 +367,7 @@ namespace Panoptes.Presentation.Map
                 else if (animator == null && isMoving && !_warnedNoAnimationDriver && enableAnimationDiagnostics)
                 {
                     _warnedNoAnimationDriver = true;
-                    Debug.LogWarning($"[UnitView] Unit '{UnitId}' has no Animator and no SquadUnitVisualController, cannot play move animation.", this);
+                    PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' has no Animator and no SquadUnitVisualController, cannot play move animation.", this);
                 }
             }
 
@@ -831,7 +831,7 @@ namespace Panoptes.Presentation.Map
             if (!_warnedLayerWeightReset && enableAnimationDiagnostics)
             {
                 _warnedLayerWeightReset = true;
-                Debug.LogWarning($"[UnitView] Unit '{UnitId}' layer0 weight was {layerWeight:0.###}, force set to 1.", this);
+                PanoptesLog.Warning($"[UnitView] Unit '{UnitId}' layer0 weight was {layerWeight:0.###}, force set to 1.", this);
             }
         }
 

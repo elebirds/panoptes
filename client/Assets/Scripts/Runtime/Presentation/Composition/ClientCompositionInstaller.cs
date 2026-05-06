@@ -276,7 +276,7 @@ namespace Panoptes.Presentation.Composition
                 if (hydrationHelper.HydrateGameRuntimeFromCache(gameStateCache))
                 {
                     var gameState = container.Resolve<GameStateStore>().Snapshot;
-                    Debug.Log($"[GameStore] Hydrated initial game runtime from project cache: turn={gameState.Turn} phase={gameState.Phase} nodes={gameState.Nodes.Count} units={gameState.Units.Count}");
+                    PanoptesLog.Log($"[GameStore] Hydrated initial game runtime from project cache: turn={gameState.Turn} phase={gameState.Phase} nodes={gameState.Nodes.Count} units={gameState.Units.Count}");
                 }
 
                 container.Resolve<StoreMessageHydrator>().Attach();

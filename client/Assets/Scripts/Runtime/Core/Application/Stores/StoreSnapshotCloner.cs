@@ -469,6 +469,7 @@ namespace Panoptes.Core.Application.Stores
         {
             return new TurnEventDto
             {
+                AttackerUnitId = source.AttackerUnitId,
                 BlockedReasonMessage = source.BlockedReasonMessage,
                 ConflictType = source.ConflictType,
                 Damage = source.Damage,
@@ -518,8 +519,10 @@ namespace Panoptes.Core.Application.Stores
         {
             return new CatalogHudEntryDto
             {
+                Description = source.Description,
                 IconKey = source.IconKey,
                 Key = source.Key,
+                Name = source.Name,
                 SortOrder = source.SortOrder,
                 VisibleInHud = source.VisibleInHud
             };

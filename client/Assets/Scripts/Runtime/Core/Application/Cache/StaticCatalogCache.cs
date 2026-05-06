@@ -503,7 +503,7 @@ namespace Panoptes.Core.Application.Cache
             {
                 if (logStatus)
                 {
-                    Debug.LogWarning($"[StaticCatalogCache] Catalog bundle missing at Resources/{catalogBundleResourcePath}.");
+                    PanoptesLog.Warning($"[StaticCatalogCache] Catalog bundle missing at Resources/{catalogBundleResourcePath}.");
                 }
                 return false;
             }
@@ -515,7 +515,7 @@ namespace Panoptes.Core.Application.Cache
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[StaticCatalogCache] Failed to parse local catalog bundle: {ex.Message}");
+                PanoptesLog.Warning($"[StaticCatalogCache] Failed to parse local catalog bundle: {ex.Message}");
                 return false;
             }
 
@@ -545,7 +545,7 @@ namespace Panoptes.Core.Application.Cache
 
             if (logStatus)
             {
-                Debug.Log($"[StaticCatalogCache] Loaded local catalog bundle hash={LocalManifest.bundle_hash}.");
+                PanoptesLog.Log($"[StaticCatalogCache] Loaded local catalog bundle hash={LocalManifest.bundle_hash}.");
             }
 
             CatalogChanged?.Invoke();
@@ -560,7 +560,7 @@ namespace Panoptes.Core.Application.Cache
                 !string.IsNullOrWhiteSpace(manifest.BundleHash) &&
                 !string.Equals(LocalManifest.bundle_hash, manifest.BundleHash, StringComparison.Ordinal))
             {
-                Debug.LogWarning($"[StaticCatalogCache] Local bundle hash '{LocalManifest.bundle_hash}' differs from server '{manifest.BundleHash}'.");
+                PanoptesLog.Warning($"[StaticCatalogCache] Local bundle hash '{LocalManifest.bundle_hash}' differs from server '{manifest.BundleHash}'.");
             }
         }
 
@@ -765,7 +765,7 @@ namespace Panoptes.Core.Application.Cache
 
             if (logStatus)
             {
-                Debug.Log($"[StaticCatalogCache] Applied server snapshot: techs={_technologiesById.Count} recipes={_recipesById.Count}.");
+                PanoptesLog.Log($"[StaticCatalogCache] Applied server snapshot: techs={_technologiesById.Count} recipes={_recipesById.Count}.");
             }
 
             CatalogChanged?.Invoke();
@@ -844,7 +844,7 @@ namespace Panoptes.Core.Application.Cache
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[StaticCatalogCache] Failed to parse map bundle '{key}': {ex.Message}");
+                PanoptesLog.Warning($"[StaticCatalogCache] Failed to parse map bundle '{key}': {ex.Message}");
                 return false;
             }
 
@@ -1033,7 +1033,7 @@ namespace Panoptes.Core.Application.Cache
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[StaticCatalogCache] Failed to decompress section '{accumulator.SectionName}': {ex.Message}");
+                    PanoptesLog.Warning($"[StaticCatalogCache] Failed to decompress section '{accumulator.SectionName}': {ex.Message}");
                     return null;
                 }
             }
@@ -1101,7 +1101,7 @@ namespace Panoptes.Core.Application.Cache
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[StaticCatalogCache] Failed to apply section '{sectionName}': {ex.Message}");
+                PanoptesLog.Warning($"[StaticCatalogCache] Failed to apply section '{sectionName}': {ex.Message}");
                 return false;
             }
         }

@@ -314,7 +314,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (_managementPanelVisibilityStore == null || _buildCatalogContextStore == null)
             {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Build catalog stores are missing.");
+                PanoptesLog.Warning("[CityCoreBuildingActionRegistrar] Build catalog stores are missing.");
                 return;
             }
 
@@ -330,7 +330,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (_managementPanelVisibilityStore == null || _recipeSynthesisContextStore == null)
             {
-                Debug.LogWarning("[CityCoreBuildingActionRegistrar] Recipe synthesis stores are missing.");
+                PanoptesLog.Warning("[CityCoreBuildingActionRegistrar] Recipe synthesis stores are missing.");
                 return;
             }
 

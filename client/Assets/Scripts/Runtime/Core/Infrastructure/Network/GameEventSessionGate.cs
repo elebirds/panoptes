@@ -60,7 +60,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
             if (string.IsNullOrWhiteSpace(activeSessionID))
             {
-                Debug.LogWarning(
+                PanoptesLog.Warning(
                     $"[Dispatcher] Dropping {entry.MessageType} because no active game session is established. incoming_session={incomingSessionID}");
                 return false;
             }
@@ -70,7 +70,7 @@ namespace Panoptes.Core.Infrastructure.Network
                 return true;
             }
 
-            Debug.LogWarning(
+            PanoptesLog.Warning(
                 $"[Dispatcher] Dropping cross-session game event {entry.MessageType}. incoming_session={incomingSessionID} active_session={activeSessionID}");
             return false;
         }

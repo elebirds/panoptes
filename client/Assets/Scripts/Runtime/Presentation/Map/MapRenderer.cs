@@ -87,6 +87,9 @@ namespace Panoptes.Presentation.Map
         private readonly Dictionary<string, UnitView> _unitViews = new();
         private readonly Dictionary<string, string> _unitNodeById = new();
         private readonly Dictionary<string, HashSet<string>> _unitsByNodeId = new();
+        private readonly Dictionary<string, UnitDto> _settlementPlaybackUnitSnapshots = new();
+        private readonly List<string> _scratchRemovedUnitIds = new();
+        private readonly List<NodeDto> _scratchChangedNodes = new();
         private UnitView _baseVehiclePrefabCache;
         private TerrainDecorationSpawner _terrainDecorationSpawner;
         private MapBackdropSpawner _mapBackdropSpawner;
@@ -224,7 +227,7 @@ namespace Panoptes.Presentation.Map
                 var backendNodes = SnapshotBackendNodes(state);
                 if (!preferLocalMapWhenBackendHasNoTerritory || MapSourceResolver.HasTerritorySnapshot(backendNodes))
                 {
-                    Debug.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
+                    PanoptesLog.Log($"[MapRenderer] Rebuild from backend nodes: {backendNodes.Count}");
                     PrepareRuntimeRoots();
                     BuildFromBackendNodes(backendNodes);
                     return;
@@ -239,32 +242,32 @@ namespace Panoptes.Presentation.Map
             if (HasBackendNodes(state))
             {
                 var backendNodes = SnapshotBackendNodes(state);
-                Debug.LogWarning($"[MapRenderer] Using backend nodes despite incomplete territory snapshot: {backendNodes.Count}");
+                PanoptesLog.Warning($"[MapRenderer] Using backend nodes despite incomplete territory snapshot: {backendNodes.Count}");
                 PrepareRuntimeRoots();
                 BuildFromBackendNodes(backendNodes);
                 return;
             }
 
-            Debug.LogError("[MapRenderer] Cannot build map: no backend nodes or local tool-scene map source available.");
+            PanoptesLog.Error("[MapRenderer] Cannot build map: no backend nodes or local tool-scene map source available.");
         }
 
         private bool BuildBackendGameMap()
         {
             if (_gameStateStore == null)
             {
-                ReportBackendGameMapFailure("GameStateStore 未注入，无法渲染服务端地图。");
+                ReportBackendGameMapFailure("GameStateStore is not injected; cannot render server map.");
                 return false;
             }
 
             var state = GetGameStateSnapshot();
             if (!HasBackendNodes(state))
             {
-                Debug.LogWarning("[MapRenderer] Waiting for server map nodes before rendering game map.");
+                PanoptesLog.Warning("[MapRenderer] Waiting for server map nodes before rendering game map.");
                 return false;
             }
 
             var backendNodes = SnapshotBackendNodes(state);
-            Debug.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
+            PanoptesLog.Log($"[MapRenderer] Rebuild game map from backend nodes: {backendNodes.Count}");
             BuildFromBackendNodes(backendNodes);
             _hasRenderedBackendMap = true;
             return true;
@@ -285,13 +288,25 @@ namespace Panoptes.Presentation.Map
 
         private void OnGameStateChanged(GameStateStoreState state)
         {
-            _latestGameState = state ?? new GameStateStoreState();
+            var incomingState = state ?? new GameStateStoreState();
+            var wasResolving = GamePhases.IsResolving(_latestGameState?.Phase);
+            var isResolving = GamePhases.IsResolving(incomingState.Phase);
+            if (isResolving && !wasResolving)
+            {
+                CaptureSettlementPlaybackUnitSnapshots();
+            }
+
+            _latestGameState = incomingState;
             if (!isActiveAndEnabled || !HasBackendNodes(_latestGameState))
             {
                 return;
             }
 
             RefreshRenderedGameState(_latestGameState);
+            if (!isResolving)
+            {
+                CaptureSettlementPlaybackUnitSnapshots();
+            }
         }
 
         private GameStateStoreState GetGameStateSnapshot()
@@ -371,9 +386,16 @@ namespace Panoptes.Presentation.Map
                 return;
             }
 
+            _scratchChangedNodes.Clear();
             foreach (var node in state.Nodes.Values)
             {
                 if (node == null || string.IsNullOrWhiteSpace(node.Id))
+                {
+                    continue;
+                }
+
+                _nodeStates.TryGetValue(node.Id, out var previousNode);
+                if (NodeSnapshotsEqual(previousNode, node))
                 {
                     continue;
                 }
@@ -385,12 +407,238 @@ namespace Panoptes.Presentation.Map
                     view.SetBuildingCatalog(GetBuildingCatalog());
                     view.Bind(node);
                 }
+
+                _scratchChangedNodes.Add(node);
             }
 
-            RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
-            RebuildUnitsForCurrentSource();
+            if (_scratchChangedNodes.Count > 0)
+            {
+                RefreshObservationPresentationForChangedNodes(_scratchChangedNodes);
+            }
+
+            var unitsChanged = GamePhases.IsResolving(state.Phase)
+                ? false
+                : RefreshUnitsForCurrentSource();
+            if (_scratchChangedNodes.Count > 0 || unitsChanged)
+            {
+                PublishCameraContext();
+                StatePresentationRefreshed?.Invoke();
+            }
+        }
+
+        public void ReconcileUnitsToCurrentState()
+        {
+            var unitsChanged = RefreshUnitsForCurrentSource();
+            if (!unitsChanged)
+            {
+                return;
+            }
+
             PublishCameraContext();
             StatePresentationRefreshed?.Invoke();
+        }
+
+        public void PrepareSettlementPlaybackUnits(IReadOnlyList<SettlementPlaybackStep> steps)
+        {
+            if (steps == null || steps.Count == 0)
+            {
+                return;
+            }
+
+            if (_settlementPlaybackUnitSnapshots.Count == 0)
+            {
+                CaptureSettlementPlaybackUnitSnapshots();
+            }
+
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                if (step == null)
+                {
+                    continue;
+                }
+
+                if (step.MoveEvent != null && !string.IsNullOrWhiteSpace(step.MoveEvent.UnitId))
+                {
+                    PlaceSettlementPlaybackUnitAtMoveStart(step.MoveEvent);
+                }
+
+                for (var impactIndex = 0; impactIndex < step.Impacts.Count; impactIndex++)
+                {
+                    var impact = step.Impacts[impactIndex];
+                    EnsureSettlementPlaybackImpactUnit(impact?.DamageEvent);
+                    EnsureSettlementPlaybackImpactUnit(impact?.DeathEvent);
+                }
+            }
+        }
+
+        public bool PlaceSettlementPlaybackUnitAtMoveStart(TurnEventDto moveEvent)
+        {
+            if (moveEvent == null || string.IsNullOrWhiteSpace(moveEvent.UnitId))
+            {
+                return false;
+            }
+
+            var startGrid = new Vector2Int(moveEvent.FromQ, moveEvent.FromR);
+            if (!TryGetNodeIdByGrid(startGrid, out var startNodeId))
+            {
+                PanoptesLog.Warning($"[MapRenderer] Cannot place settlement unit '{moveEvent.UnitId}' at move start ({moveEvent.FromQ},{moveEvent.FromR}); node not found.");
+                return false;
+            }
+
+            EnsureSettlementPlaybackUnit(moveEvent.UnitId, hasGrid: true, grid: startGrid, forceGrid: true);
+            if (!_unitViews.TryGetValue(moveEvent.UnitId.Trim(), out var unitView) || unitView == null)
+            {
+                PanoptesLog.Warning($"[MapRenderer] Cannot place settlement unit '{moveEvent.UnitId}' at move start; unit view not found.");
+                return false;
+            }
+
+            SetUnitNode(moveEvent.UnitId.Trim(), startNodeId);
+            return true;
+        }
+
+        private void EnsureSettlementPlaybackImpactUnit(TurnEventDto evt)
+        {
+            if (evt == null || string.IsNullOrWhiteSpace(evt.UnitId))
+            {
+                return;
+            }
+
+            var hasGrid = TryGetEventGrid(evt, out var grid);
+            EnsureSettlementPlaybackUnit(evt.UnitId, hasGrid, grid, forceGrid: false);
+        }
+
+        private void EnsureSettlementPlaybackUnit(string unitId, bool hasGrid, Vector2Int grid, bool forceGrid)
+        {
+            var normalizedUnitId = string.IsNullOrWhiteSpace(unitId) ? string.Empty : unitId.Trim();
+            if (string.IsNullOrEmpty(normalizedUnitId))
+            {
+                return;
+            }
+
+            var unit = ResolveSettlementPlaybackUnitSnapshot(normalizedUnitId);
+            if (unit == null)
+            {
+                return;
+            }
+
+            if ((forceGrid || !_unitViews.ContainsKey(normalizedUnitId)) && hasGrid)
+            {
+                unit.Q = grid.x;
+                unit.R = grid.y;
+            }
+
+            if (_unitViews.TryGetValue(normalizedUnitId, out var existingView) && existingView != null)
+            {
+                if (forceGrid)
+                {
+                    RebindRuntimeUnit(existingView, unit);
+                }
+                return;
+            }
+
+            TrySpawnUnitInternal(unit, false, false, _unitCache);
+        }
+
+        private UnitDto ResolveSettlementPlaybackUnitSnapshot(string unitId)
+        {
+            if (string.IsNullOrWhiteSpace(unitId))
+            {
+                return null;
+            }
+
+            var normalizedUnitId = unitId.Trim();
+            if (_settlementPlaybackUnitSnapshots.TryGetValue(normalizedUnitId, out var snapshot) && snapshot != null)
+            {
+                return CloneUnitDto(snapshot);
+            }
+
+            var state = GetGameStateSnapshot();
+            if (state?.Units != null && state.Units.TryGetValue(normalizedUnitId, out var currentUnit) && currentUnit != null)
+            {
+                return CloneUnitDto(currentUnit);
+            }
+
+            if (_unitViews.TryGetValue(normalizedUnitId, out var view) && view != null)
+            {
+                return CreateUnitSnapshot(view);
+            }
+
+            return null;
+        }
+
+        private void CaptureSettlementPlaybackUnitSnapshots()
+        {
+            _settlementPlaybackUnitSnapshots.Clear();
+            foreach (var pair in _unitViews)
+            {
+                var view = pair.Value;
+                if (view == null || string.IsNullOrWhiteSpace(view.UnitId))
+                {
+                    continue;
+                }
+
+                _settlementPlaybackUnitSnapshots[view.UnitId.Trim()] = CreateUnitSnapshot(view);
+            }
+        }
+
+        private static UnitDto CreateUnitSnapshot(UnitView view)
+        {
+            if (view == null)
+            {
+                return null;
+            }
+
+            return new UnitDto
+            {
+                Id = view.UnitId,
+                Type = view.UnitType,
+                Owner = view.Faction,
+                Q = view.GridPos.x,
+                R = view.GridPos.y,
+                Hp = view.HitPoints,
+                MaxHp = view.MaxHitPoints
+            };
+        }
+
+        private static UnitDto CloneUnitDto(UnitDto source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new UnitDto
+            {
+                Id = source.Id,
+                Type = source.Type,
+                Owner = source.Owner,
+                Q = source.Q,
+                R = source.R,
+                Hp = source.Hp,
+                MaxHp = source.MaxHp
+            };
+        }
+
+        private static bool TryGetEventGrid(TurnEventDto evt, out Vector2Int grid)
+        {
+            grid = default;
+            if (evt == null)
+            {
+                return false;
+            }
+
+            if (evt.Data != null &&
+                (evt.Data.ContainsKey("pos_q") ||
+                 evt.Data.ContainsKey("pos_r") ||
+                 evt.Data.ContainsKey("q") ||
+                 evt.Data.ContainsKey("r")))
+            {
+                grid = new Vector2Int(evt.PosQ, evt.PosR);
+                return true;
+            }
+
+            return false;
         }
 
         private bool HasMissingRenderedNode(GameStateStoreState state)
@@ -514,9 +762,9 @@ namespace Panoptes.Presentation.Map
             ClearUnits();
 
             var resolvedMessage = string.IsNullOrWhiteSpace(message)
-                ? "服务端地图加载失败。"
+                ? "Server map failed to load."
                 : message.Trim();
-            Debug.LogError($"[MapRenderer] {resolvedMessage}");
+            PanoptesLog.Error($"[MapRenderer] {resolvedMessage}");
 
             if (_errorToast != null)
             {
@@ -955,7 +1203,7 @@ namespace Panoptes.Presentation.Map
         {
             if (nodeTilePrefab == null)
             {
-                Debug.LogError("[MapRenderer] NodeTile prefab is not assigned.");
+                PanoptesLog.Error("[MapRenderer] NodeTile prefab is not assigned.");
                 return;
             }
 
@@ -998,7 +1246,10 @@ namespace Panoptes.Presentation.Map
             RebuildMapBackdrop();
             RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
 
-            RebuildUnitsForCurrentSource();
+            if (!GamePhases.IsResolving(GetGameStateSnapshot().Phase))
+            {
+                RebuildUnitsForCurrentSource();
+            }
             PublishCameraContext();
             StatePresentationRefreshed?.Invoke();
         }
@@ -1112,6 +1363,58 @@ namespace Panoptes.Presentation.Map
             }
         }
 
+        private void RefreshObservationPresentationForChangedNodes(IReadOnlyList<NodeDto> changedNodes)
+        {
+            if (changedNodes == null || changedNodes.Count == 0)
+            {
+                return;
+            }
+
+            if (changedNodes.Count > 32)
+            {
+                RefreshObservationPresentation(fullRebuildFog: true, snapshotNode: null);
+                return;
+            }
+
+            var hasObservationData = HasObservationData(_nodeStates.Values);
+            var hideUnknownNodeDetailsEffective = hideUnknownNodeDetails && hasObservationData;
+            var hideUnknownGroundEffective = false;
+
+            if (useGlobalObservationFog)
+            {
+                if (_mapFogOverlayController == null)
+                {
+                    _mapFogOverlayController = GetComponent<MapFogOverlayController>();
+                }
+
+                if (_mapFogOverlayController == null)
+                {
+                    _mapFogOverlayController = gameObject.AddComponent<MapFogOverlayController>();
+                }
+
+                _mapFogOverlayController.ConfigureUnknownCulling(
+                    hideUnknownNodeDetailsEffective,
+                    hideUnknownGroundEffective);
+
+                for (var i = 0; i < changedNodes.Count; i++)
+                {
+                    if (changedNodes[i] != null)
+                    {
+                        _mapFogOverlayController.ApplyNodeSnapshot(changedNodes[i]);
+                    }
+                }
+            }
+            else if (_mapFogOverlayController != null)
+            {
+                _mapFogOverlayController.ClearOverlay();
+            }
+
+            if (_terrainDecorationSpawner != null)
+            {
+                _terrainDecorationSpawner.ApplyObservationState(_nodeStates, hideUnknownNodeDetailsEffective);
+            }
+        }
+
         private static bool HasObservationData(IEnumerable<NodeDto> nodes)
         {
             if (nodes == null)
@@ -1190,6 +1493,126 @@ namespace Panoptes.Presentation.Map
             {
                 BuildUnitsFromState(CreateDebugUnits());
             }
+        }
+
+        private bool RefreshUnitsForCurrentSource()
+        {
+            if (_jsonUnits.Count > 0)
+            {
+                RebuildUnitsForCurrentSource();
+                return true;
+            }
+
+            var state = GetGameStateSnapshot();
+            if (!generateDebugMapOnStart && HasBackendUnits(state))
+            {
+                return RefreshUnitsFromState(SnapshotBackendUnits(state));
+            }
+
+            if (spawnDebugUnitsWhenNoUnits)
+            {
+                RebuildUnitsForCurrentSource();
+                return true;
+            }
+
+            if (_unitViews.Count == 0)
+            {
+                return false;
+            }
+
+            ClearUnits();
+            return true;
+        }
+
+        private bool RefreshUnitsFromState(IReadOnlyList<UnitDto> units)
+        {
+            _scratchRemovedUnitIds.Clear();
+            foreach (var pair in _unitViews)
+            {
+                _scratchRemovedUnitIds.Add(pair.Key);
+            }
+
+            var changed = false;
+            if (units != null)
+            {
+                for (var i = 0; i < units.Count; i++)
+                {
+                    var unit = units[i];
+                    if (unit == null || string.IsNullOrWhiteSpace(unit.Id))
+                    {
+                        continue;
+                    }
+
+                    var unitId = unit.Id;
+                    _scratchRemovedUnitIds.Remove(unitId);
+
+                    if (!_unitViews.TryGetValue(unitId, out var view) || view == null)
+                    {
+                        changed |= TrySpawnUnitInternal(unit, false, false, _unitCache);
+                        continue;
+                    }
+
+                    if (UnitViewMatches(view, unit))
+                    {
+                        continue;
+                    }
+
+                    changed |= RebindRuntimeUnit(view, unit);
+                }
+            }
+
+            for (var i = 0; i < _scratchRemovedUnitIds.Count; i++)
+            {
+                changed |= RemoveRuntimeUnit(_scratchRemovedUnitIds[i], false);
+            }
+
+            _scratchRemovedUnitIds.Clear();
+            return changed;
+        }
+
+        private bool RebindRuntimeUnit(UnitView view, UnitDto unit)
+        {
+            if (view == null || unit == null || string.IsNullOrWhiteSpace(unit.Id))
+            {
+                return false;
+            }
+
+            if (!string.Equals(view.UnitType, unit.Type ?? string.Empty, StringComparison.Ordinal))
+            {
+                RemoveRuntimeUnit(unit.Id, false);
+                return TrySpawnUnitInternal(unit, false, false, _unitCache);
+            }
+
+            var gridPos = new Vector2Int(unit.Q, unit.R);
+            if (!TryGetNodeViewByGrid(gridPos, out var nodeView) || nodeView == null)
+            {
+                return false;
+            }
+
+            var previousNodeId = _unitNodeById.TryGetValue(unit.Id, out var oldNodeId)
+                ? oldNodeId
+                : string.Empty;
+            if (!string.IsNullOrWhiteSpace(previousNodeId) &&
+                !string.Equals(previousNodeId, nodeView.NodeId, StringComparison.Ordinal) &&
+                _unitsByNodeId.TryGetValue(previousNodeId, out var oldSet))
+            {
+                oldSet.Remove(unit.Id);
+            }
+
+            if (!_unitsByNodeId.TryGetValue(nodeView.NodeId, out var newSet))
+            {
+                newSet = new HashSet<string>();
+                _unitsByNodeId[nodeView.NodeId] = newSet;
+            }
+            newSet.Add(unit.Id);
+            _unitNodeById[unit.Id] = nodeView.NodeId;
+
+            var worldPos = nodeView.UnitAnchor != null
+                ? nodeView.UnitAnchor.position
+                : nodeView.transform.position + Vector3.up * 0.2f;
+            view.SetLocalPlayerId(GetLocalPlayerId());
+            view.Bind(unit, worldPos);
+            return true;
         }
 
         private List<UnitDto> CreateDebugUnits()
@@ -1324,7 +1747,7 @@ namespace Panoptes.Presentation.Map
 
             if (injected > 0)
             {
-                Debug.Log($"[MapRenderer] Injected {injected} resource points (current={current + injected}, target={target}).");
+                PanoptesLog.Log($"[MapRenderer] Injected {injected} resource points (current={current + injected}, target={target}).");
             }
         }
 
@@ -1423,6 +1846,65 @@ namespace Panoptes.Presentation.Map
             unitCache?.Register(instance);
 
             return true;
+        }
+
+        private static bool UnitViewMatches(UnitView view, UnitDto unit)
+        {
+            if (view == null || unit == null)
+            {
+                return false;
+            }
+
+            return string.Equals(view.UnitId, unit.Id ?? string.Empty, StringComparison.Ordinal) &&
+                   string.Equals(view.Faction, unit.Owner ?? string.Empty, StringComparison.Ordinal) &&
+                   string.Equals(view.UnitType, unit.Type ?? string.Empty, StringComparison.Ordinal) &&
+                   view.HitPoints == unit.Hp &&
+                   view.MaxHitPoints == unit.MaxHp &&
+                   view.GridPos.x == unit.Q &&
+                   view.GridPos.y == unit.R;
+        }
+
+        private static bool NodeSnapshotsEqual(NodeDto left, NodeDto right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left == null || right == null)
+            {
+                return false;
+            }
+
+            return string.Equals(left.Id, right.Id, StringComparison.Ordinal) &&
+                   left.Q == right.Q &&
+                   left.R == right.R &&
+                   string.Equals(left.Type, right.Type, StringComparison.Ordinal) &&
+                   string.Equals(left.Owner, right.Owner, StringComparison.Ordinal) &&
+                   string.Equals(left.TerritoryOwner, right.TerritoryOwner, StringComparison.Ordinal) &&
+                   string.Equals(left.BuildingType, right.BuildingType, StringComparison.Ordinal) &&
+                   left.BuildingHp == right.BuildingHp &&
+                   left.BuildingMaxHp == right.BuildingMaxHp &&
+                   string.Equals(left.BuildingStatus, right.BuildingStatus, StringComparison.Ordinal) &&
+                   string.Equals(left.OperationSelectedRecipeId, right.OperationSelectedRecipeId, StringComparison.Ordinal) &&
+                   left.OperationCurrentProgress == right.OperationCurrentProgress &&
+                   left.OperationRequiredProgress == right.OperationRequiredProgress &&
+                   left.OperationBaseProgress == right.OperationBaseProgress &&
+                   string.Equals(left.OperationBlockedReason, right.OperationBlockedReason, StringComparison.Ordinal) &&
+                   string.Equals(left.OperationBlockedMessage, right.OperationBlockedMessage, StringComparison.Ordinal) &&
+                   string.Equals(left.CityId, right.CityId, StringComparison.Ordinal) &&
+                   string.Equals(left.ServiceCityId, right.ServiceCityId, StringComparison.Ordinal) &&
+                   left.TakeoverProgress == right.TakeoverProgress &&
+                   left.TakeoverRequired == right.TakeoverRequired &&
+                   left.IsCityCore == right.IsCityCore &&
+                   left.IsVisible == right.IsVisible &&
+                   left.IsMemory == right.IsMemory &&
+                   left.LastObservedTurn == right.LastObservedTurn &&
+                   left.HasRoad == right.HasRoad &&
+                   string.Equals(left.Terrain, right.Terrain, StringComparison.Ordinal) &&
+                   left.IsResourcePoint == right.IsResourcePoint &&
+                   string.Equals(left.ResourceType, right.ResourceType, StringComparison.Ordinal) &&
+                   left.IsSafeZone == right.IsSafeZone;
         }
 
         private UnitView CreateUnitInstance(UnitDto unit)

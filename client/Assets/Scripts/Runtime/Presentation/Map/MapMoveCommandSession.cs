@@ -50,7 +50,7 @@ namespace Panoptes.Presentation.Map
             _nextMovePreviewRequestAt = Time.unscaledTime + Mathf.Max(0.02f, throttleSeconds);
             _movePreviewRequestSequence++;
             var requestId = $"move-preview-{normalizedUnitId}-{_movePreviewRequestSequence}";
-            Debug.Log($"[MapPlanningInputController] 请求路径预览 unit={normalizedUnitId} hover_node={targetNodeId} request={requestId}");
+            PanoptesLog.Log($"[MapPlanningInputController] 请求路径预览 unit={normalizedUnitId} hover_node={targetNodeId} request={requestId}");
             planningIntentService?.PreviewMove(requestId, normalizedUnitId, targetNodeId);
         }
 

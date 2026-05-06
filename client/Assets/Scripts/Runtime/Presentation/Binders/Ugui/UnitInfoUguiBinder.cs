@@ -62,6 +62,7 @@ namespace Panoptes.Presentation.Binders.Ugui
                 SetActive(_references.UnitDescriptionText, false);
                 SetText(_references.PlanningSummaryText, string.Empty);
                 SetActive(_references.PlanningSummaryText, false);
+                SetIcon(_references.UnitIcon, null);
                 UnitInfoHpBinder.Apply(_references.HpSlider, _references.HpValueText, new UnitInfoHpState(0, 1));
                 _directOrderPanelBinder.ApplyState(
                     _references.DirectOrderButtonsRoot,
@@ -77,6 +78,12 @@ namespace Panoptes.Presentation.Binders.Ugui
             SetActive(_references.UnitDescriptionText, state.DescriptionVisible);
             SetText(_references.PlanningSummaryText, state.PlanningSummary);
             SetActive(_references.PlanningSummaryText, state.PlanningSummaryVisible);
+            SetIcon(_references.UnitIcon, LoadIconSprite(
+                state.IconKey,
+                state.UnitType,
+                _references.UnitIconResourcesRoot,
+                _references.BuildingIconResourcesRoot,
+                _references.ResourceIconResourcesRoot));
             UnitInfoHpBinder.Apply(_references.HpSlider, _references.HpValueText, new UnitInfoHpState(state.Hp, state.MaxHp));
             _directOrderPanelBinder.ApplyState(
                 _references.DirectOrderButtonsRoot,
@@ -102,13 +109,79 @@ namespace Panoptes.Presentation.Binders.Ugui
             }
         }
 
+        private static void SetIcon(Image image, Sprite sprite)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            image.sprite = sprite;
+            image.color = sprite == null ? new Color(0.3f, 0.3f, 0.3f, 1f) : Color.white;
+            image.enabled = true;
+        }
+
+        private static Sprite LoadIconSprite(string iconKey, string fallbackId, params string[] roots)
+        {
+            var sprite = LoadIconSpriteByKey(iconKey, roots);
+            return sprite != null ? sprite : LoadIconSpriteByKey(fallbackId, roots);
+        }
+
+        private static Sprite LoadIconSpriteByKey(string key, params string[] roots)
+        {
+            key = NormalizeIconKey(key);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            var direct = Resources.Load<Sprite>(key);
+            if (direct != null)
+            {
+                return direct;
+            }
+
+            if (roots == null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < roots.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(roots[i]))
+                {
+                    continue;
+                }
+
+                var root = roots[i].Trim().TrimEnd('/');
+                var sprite = Resources.Load<Sprite>($"{root}/{key}");
+                if (sprite != null)
+                {
+                    return sprite;
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeIconKey(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().ToLowerInvariant();
+        }
+
         public readonly struct References
         {
             public readonly UnitInfoDirectOrderButtons DirectOrderButtons;
             public readonly RectTransform DirectOrderButtonsRoot;
+            public readonly string BuildingIconResourcesRoot;
             public readonly Slider HpSlider;
             public readonly TMP_Text HpValueText;
             public readonly TMP_Text PlanningSummaryText;
+            public readonly string ResourceIconResourcesRoot;
+            public readonly Image UnitIcon;
+            public readonly string UnitIconResourcesRoot;
             public readonly TMP_Text UnitDescriptionText;
             public readonly TMP_Text UnitNameText;
 
@@ -119,13 +192,21 @@ namespace Panoptes.Presentation.Binders.Ugui
                 Slider hpSlider,
                 TMP_Text hpValueText,
                 RectTransform directOrderButtonsRoot,
-                UnitInfoDirectOrderButtons directOrderButtons)
+                UnitInfoDirectOrderButtons directOrderButtons,
+                Image unitIcon = null,
+                string unitIconResourcesRoot = "Icons/Units",
+                string buildingIconResourcesRoot = "Icons/Buildings",
+                string resourceIconResourcesRoot = "Icons/Resources")
             {
+                BuildingIconResourcesRoot = buildingIconResourcesRoot;
                 DirectOrderButtons = directOrderButtons;
                 DirectOrderButtonsRoot = directOrderButtonsRoot;
                 HpSlider = hpSlider;
                 HpValueText = hpValueText;
                 PlanningSummaryText = planningSummaryText;
+                ResourceIconResourcesRoot = resourceIconResourcesRoot;
+                UnitIcon = unitIcon;
+                UnitIconResourcesRoot = unitIconResourcesRoot;
                 UnitDescriptionText = unitDescriptionText;
                 UnitNameText = unitNameText;
             }

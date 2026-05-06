@@ -132,6 +132,7 @@ namespace Panoptes.Core.Domain
         public string ReasonMessage;
         public string BlockedReasonMessage;
         public string UnitId;
+        public string AttackerUnitId;
         public string TargetUnitId;
         public string EnemyUnitId;
         public string KillerId;

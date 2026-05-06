@@ -9,6 +9,7 @@ namespace Panoptes.Presentation.ViewModels
             string ownerId = "",
             string displayName = "单位",
             string description = "",
+            string iconKey = "",
             int hp = 0,
             int maxHp = 1,
             string planningSummary = "",
@@ -27,6 +28,7 @@ namespace Panoptes.Presentation.ViewModels
             DisplayName = string.IsNullOrWhiteSpace(displayName) ? "单位" : displayName;
             HasSelection = hasSelection;
             Hp = hp;
+            IconKey = iconKey ?? string.Empty;
             IsMilitaryUnit = isMilitaryUnit;
             MaxHp = maxHp <= 0 ? 1 : maxHp;
             OwnerId = ownerId ?? string.Empty;
@@ -45,6 +47,7 @@ namespace Panoptes.Presentation.ViewModels
         public string DisplayName { get; }
         public bool HasSelection { get; }
         public int Hp { get; }
+        public string IconKey { get; }
         public bool IsMilitaryUnit { get; }
         public int MaxHp { get; }
         public string OwnerId { get; }
@@ -63,6 +66,7 @@ namespace Panoptes.Presentation.ViewModels
                 OwnerId,
                 DisplayName,
                 Description,
+                IconKey,
                 Hp,
                 MaxHp,
                 PlanningSummary,

@@ -1,4 +1,4 @@
-﻿/*************************************************
+/*************************************************
  * Project: Panoptes
  * File: MessageDispatcher.cs
  * Author: Panoptes Team
@@ -76,7 +76,7 @@ namespace Panoptes.Core.Infrastructure.Network
                     return;
                 }
 
-                Debug.LogError($"[Dispatcher] Message type mismatch for {messageType}: {message?.GetType().Name ?? "null"}");
+                PanoptesLog.Error($"[Dispatcher] Message type mismatch for {messageType}: {message?.GetType().Name ?? "null"}");
             };
 
             if (!_typedHandlerWrappers.TryGetValue(messageType, out var wrappers))
@@ -109,13 +109,13 @@ namespace Panoptes.Core.Infrastructure.Network
         {
             if (string.IsNullOrWhiteSpace(messageType))
             {
-                Debug.LogWarning("[Dispatcher] RegisterRaw failed: messageType is empty.");
+                PanoptesLog.Warning("[Dispatcher] RegisterRaw failed: messageType is empty.");
                 return;
             }
 
             if (handler == null)
             {
-                Debug.LogWarning($"[Dispatcher] RegisterRaw failed: handler is null for {messageType}.");
+                PanoptesLog.Warning($"[Dispatcher] RegisterRaw failed: handler is null for {messageType}.");
                 return;
             }
 
@@ -208,13 +208,13 @@ namespace Panoptes.Core.Infrastructure.Network
         {
             if (frame == null)
             {
-                Debug.LogWarning("[Dispatcher] Received null server frame.");
+                PanoptesLog.Warning("[Dispatcher] Received null server frame.");
                 return;
             }
 
             if (!TransportFrames.TryExtract(frame, out var message, out var messageType, out var payloadJson))
             {
-                Debug.LogWarning("[Dispatcher] Failed to extract payload from ServerFrame.");
+                PanoptesLog.Warning("[Dispatcher] Failed to extract payload from ServerFrame.");
                 return;
             }
 
@@ -246,7 +246,7 @@ namespace Panoptes.Core.Infrastructure.Network
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[Dispatcher] Raw handler failed for {messageType}: {e}");
+                        PanoptesLog.Error($"[Dispatcher] Raw handler failed for {messageType}: {e}");
                     }
                 }
             }
@@ -262,7 +262,7 @@ namespace Panoptes.Core.Infrastructure.Network
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[Dispatcher] Typed handler failed for {messageType}: {e}");
+                        PanoptesLog.Error($"[Dispatcher] Typed handler failed for {messageType}: {e}");
                     }
                 }
                 return;
@@ -270,7 +270,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
             if (!hasRawHandlers)
             {
-                Debug.LogWarning($"[Dispatcher] No handler for: {messageType}");
+                PanoptesLog.Warning($"[Dispatcher] No handler for: {messageType}");
             }
         }
     }

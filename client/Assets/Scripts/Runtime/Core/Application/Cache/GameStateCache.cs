@@ -122,11 +122,11 @@ namespace Panoptes.Core.Application.Cache
             if (_nodes.Count > 0)
             {
                 var firstNodeId = _nodes.Values.FirstOrDefault()?.Id ?? string.Empty;
-                Debug.Log($"[Game] 游戏初始化 turn={Turn} phase={Phase} nodes={_nodes.Count} first_node={firstNodeId}");
+                PanoptesLog.Log($"[Game] 游戏初始化 turn={Turn} phase={Phase} nodes={_nodes.Count} first_node={firstNodeId}");
             }
             else
             {
-                Debug.LogWarning($"[Game] 游戏初始化缺少地图节点 turn={Turn} phase={Phase}");
+                PanoptesLog.Warning($"[Game] 游戏初始化缺少地图节点 turn={Turn} phase={Phase}");
             }
 
             MyPlayer = msg.MyPlayer?.Clone();
@@ -1024,7 +1024,7 @@ namespace Panoptes.Core.Application.Cache
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Cache] 事件 {evtName} 触发异常: {e.Message}\n{e.StackTrace}");
+                PanoptesLog.Error($"[Cache] 事件 {evtName} 触发异常: {e.Message}\n{e.StackTrace}");
             }
         }
 

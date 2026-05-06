@@ -38,10 +38,11 @@ func (e UnitMovedEvent) String() string {
 }
 
 type UnitDamagedEvent struct {
-	UnitID  string
-	Damage  int
-	HPAfter int
-	Source  string
+	UnitID     string
+	Damage     int
+	HPAfter    int
+	Source     string
+	AttackerID string
 }
 
 func (e UnitDamagedEvent) Apply(world donburi.World, _ *domain.GameState) {
@@ -56,7 +57,7 @@ func (e UnitDamagedEvent) Apply(world donburi.World, _ *domain.GameState) {
 func (e UnitDamagedEvent) Kind() string { return "unit_damaged" }
 
 func (e UnitDamagedEvent) String() string {
-	return fmt.Sprintf("UnitDamagedEvent unit=%s dmg=%d hp_after=%d source=%s", e.UnitID, e.Damage, e.HPAfter, e.Source)
+	return fmt.Sprintf("UnitDamagedEvent unit=%s dmg=%d hp_after=%d source=%s attacker=%s", e.UnitID, e.Damage, e.HPAfter, e.Source, e.AttackerID)
 }
 
 type UnitDiedEvent struct {
@@ -141,9 +142,10 @@ func (e RoadDestroyedEvent) String() string {
 }
 
 type BuildingDamagedEvent struct {
-	NodeID  string
-	Damage  int
-	HPAfter int
+	NodeID     string
+	Damage     int
+	HPAfter    int
+	AttackerID string
 }
 
 func (e BuildingDamagedEvent) Apply(world donburi.World, state *domain.GameState) {
@@ -158,7 +160,7 @@ func (e BuildingDamagedEvent) Apply(world donburi.World, state *domain.GameState
 func (e BuildingDamagedEvent) Kind() string { return "building_damaged" }
 
 func (e BuildingDamagedEvent) String() string {
-	return fmt.Sprintf("BuildingDamagedEvent node=%s dmg=%d hp_after=%d", e.NodeID, e.Damage, e.HPAfter)
+	return fmt.Sprintf("BuildingDamagedEvent node=%s dmg=%d hp_after=%d attacker=%s", e.NodeID, e.Damage, e.HPAfter, e.AttackerID)
 }
 
 type ConflictResolvedEvent struct {

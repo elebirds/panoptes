@@ -96,7 +96,7 @@ namespace Panoptes.Presentation.UI.HUD
         {
             if (_managementPanelVisibilityStore == null)
             {
-                Debug.LogWarning("[CityCorePolicyFocusActionRegistrar] Policy focus visibility store is missing.");
+                PanoptesLog.Warning("[CityCorePolicyFocusActionRegistrar] Policy focus visibility store is missing.");
                 return;
             }
 

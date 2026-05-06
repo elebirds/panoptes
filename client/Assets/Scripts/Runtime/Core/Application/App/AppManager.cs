@@ -312,7 +312,7 @@ namespace Panoptes.Core.Application.App
                     });
                     break;
                 default:
-                    Debug.LogWarning($"[AppManager] Problem received code={code} message={message}");
+                    PanoptesLog.Warning($"[AppManager] Problem received code={code} message={message}");
                     break;
             }
         }
@@ -342,7 +342,7 @@ namespace Panoptes.Core.Application.App
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[AppManager] Failed to establish realtime connection: {e.Message}");
+                PanoptesLog.Warning($"[AppManager] Failed to establish realtime connection: {e.Message}");
             }
         }
 
@@ -356,12 +356,12 @@ namespace Panoptes.Core.Application.App
 
             if (logLocalTestBypass)
             {
-                Debug.Log($"[AppManager] Local test mode enabled, bypass login and load scene '{sceneName}'.");
+                PanoptesLog.Log($"[AppManager] Local test mode enabled, bypass login and load scene '{sceneName}'.");
             }
 
             if (!CanLoadScene(sceneName))
             {
-                Debug.LogWarning($"[AppManager] Local test scene '{sceneName}' is not loadable. Fallback to '{gameSceneName}'.");
+                PanoptesLog.Warning($"[AppManager] Local test scene '{sceneName}' is not loadable. Fallback to '{gameSceneName}'.");
                 sceneName = gameSceneName;
             }
 

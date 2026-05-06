@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using NUnit.Framework;
+using Panoptes.Presentation.Map;
+using UnityEngine;
 
 namespace Panoptes.Tests.EditMode.Map
 {
@@ -59,6 +61,28 @@ namespace Panoptes.Tests.EditMode.Map
             var content = File.ReadAllText(_unitMoveAnimPath);
             Assert.That(content, Does.Not.Contain("followCamera.transform.position ="),
                 "UnitMoveAnim 不应继续直接写相机 Transform。");
+        }
+
+        [Test]
+        public void CinemachineMapCameraController_ShouldPreserveFocusWhenContextRefreshes()
+        {
+            var cameraObject = new GameObject("StrategicCameraTest");
+            try
+            {
+                var controller = cameraObject.AddComponent<CinemachineMapCameraController>();
+                var bounds = Rect.MinMaxRect(-50f, -50f, 50f, 50f);
+
+                controller.ApplyCameraContext(new MapCameraContext(bounds, 0f, new Vector3(10f, 0f, 10f)), true);
+                controller.FocusWorldPosition(new Vector3(2f, 0f, 3f), true);
+                controller.ApplyCameraContext(new MapCameraContext(bounds, 0f, new Vector3(25f, 0f, 25f)), true);
+
+                Assert.That(cameraObject.transform.position.x, Is.EqualTo(2f).Within(0.001f));
+                Assert.That(cameraObject.transform.position.z, Is.EqualTo(3f).Within(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+            }
         }
 
         private static Type ResolvePresentationType(string fullName)

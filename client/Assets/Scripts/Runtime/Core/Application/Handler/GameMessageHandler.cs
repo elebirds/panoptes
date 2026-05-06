@@ -112,7 +112,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             _gameStateCache?.ApplyPlanningStart(msg);
-            Debug.Log(FormatPhaseStartLog($"[Game] 规划阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
+            PanoptesLog.Log(FormatPhaseStartLog($"[Game] 规划阶段开始 turn={msg.Turn} timeout={msg.Timeout}s tokens={msg.Tokens} phase={msg.Phase}"));
         }
 
         private void OnPlanningSnapshot(MsgPlanningSnapshot msg)
@@ -123,7 +123,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             _gameStateCache?.ApplyPlanningSnapshot(msg);
-            Debug.Log($"[Game] 规划快照 turn={msg.Turn} phase={msg.Phase} unit_orders={msg.UnitOrders.Count}");
+            PanoptesLog.Log($"[Game] 规划快照 turn={msg.Turn} phase={msg.Phase} unit_orders={msg.UnitOrders.Count}");
         }
 
         private void OnPlanningPathPreviewResponse(MsgPlanningPathPreviewResponse msg)
@@ -131,7 +131,7 @@ namespace Panoptes.Core.Application.Handler
             _planningDraftCache?.ApplyPreviewResponse(msg);
             if (msg != null)
             {
-                Debug.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
+                PanoptesLog.Log($"[Game] 路径预览 unit={msg.UnitId} target={msg.TargetNodeId} valid={msg.Valid} path_nodes={msg.PathNodeIds.Count} error={msg.ErrorCode}");
             }
         }
 
@@ -140,7 +140,7 @@ namespace Panoptes.Core.Application.Handler
             _planningDraftCache?.ApplyBuildPreviewResponse(msg);
             if (msg != null)
             {
-                Debug.Log($"[Game] 建造预览 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} valid={msg.Valid} error={msg.ErrorCode}");
+                PanoptesLog.Log($"[Game] 建造预览 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
@@ -149,7 +149,7 @@ namespace Panoptes.Core.Application.Handler
             _planningDraftCache?.ApplyRecipePreviewResponse(msg);
             if (msg != null)
             {
-                Debug.Log($"[Game] 配方预览 node={msg.NodeId} recipe={msg.RecipeId} valid={msg.Valid} error={msg.ErrorCode}");
+                PanoptesLog.Log($"[Game] 配方预览 node={msg.NodeId} recipe={msg.RecipeId} valid={msg.Valid} error={msg.ErrorCode}");
             }
         }
 
@@ -161,7 +161,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             _gameStateCache?.ApplyGameSync(msg);
-            Debug.Log($"[Game] 游戏同步 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} events={msg.Events.Count}");
+            PanoptesLog.Log($"[Game] 游戏同步 turn={msg.Turn} phase={msg.Phase} next_phase={msg.NextPhase} events={msg.Events.Count}");
             for (var i = 0; i < msg.Events.Count; i++)
             {
                 var evt = msg.Events[i];
@@ -170,7 +170,7 @@ namespace Panoptes.Core.Application.Handler
                     continue;
                 }
 
-                Debug.Log($"  event={evt.Kind} channel={evt.Channel}");
+                PanoptesLog.Log($"  event={evt.Kind} channel={evt.Channel}");
             }
 
             // Combat diagnostics: quickly surface whether structure damage actually arrived from server.
@@ -204,7 +204,7 @@ namespace Panoptes.Core.Application.Handler
                         continue;
                     }
 
-                    Debug.Log($"[Game][SyncEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
+                    PanoptesLog.Log($"[Game][SyncEvent] section={section.Section} type={eventType} unit={evt.UnitId} node={evt.NodeId} damage={evt.Damage} hp_after={evt.HpAfter} killer={evt.KillerId}");
                 }
             }
         }
@@ -220,11 +220,11 @@ namespace Panoptes.Core.Application.Handler
             if (msg.Success)
             {
                 cache?.UpdateTokens(msg.TokensLeft);
-                Debug.Log($"[Game] 指令成功 action={msg.Action} tokens_left={msg.TokensLeft}");
+                PanoptesLog.Log($"[Game] 指令成功 action={msg.Action} tokens_left={msg.TokensLeft}");
             }
             else
             {
-                Debug.LogWarning($"[Game] 指令失败 error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 指令失败 error={msg.ErrorCode}");
             }
 
             cache?.PublishTokenResult(new TokenResultEvent
@@ -251,7 +251,7 @@ namespace Panoptes.Core.Application.Handler
                 NodeID = msg.NodeId,
                 TrueState = trueState
             });
-            Debug.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
+            PanoptesLog.Log($"[Game] 节点侦察完成 id={msg.NodeId}");
         }
 
         private void OnIssueUnitOrderResult(MsgIssueUnitOrderResult msg)
@@ -285,11 +285,11 @@ namespace Panoptes.Core.Application.Handler
                     ("action", msg.Action),
                     ("target_node_id", msg.TargetNodeId),
                     ("target_unit_id", msg.TargetUnitId)));
-                Debug.LogWarning($"[Game] 单位命令失败 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 单位命令失败 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 单位命令草案已接受 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId}");
+            PanoptesLog.Log($"[Game] 单位命令草案已接受 unit={msg.UnitId} action={msg.Action} node={msg.TargetNodeId} target={msg.TargetUnitId}");
         }
 
         private void HandleResearchResult(MsgResearchResult msg)
@@ -323,11 +323,11 @@ namespace Panoptes.Core.Application.Handler
             if (!msg.Success)
             {
                 PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("technology_id", msg.TechnologyId)));
-                Debug.LogWarning($"[Game] 研究目标设置失败 tech={msg.TechnologyId} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 研究目标设置失败 tech={msg.TechnologyId} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 研究目标草案已接受 tech={msg.TechnologyId}");
+            PanoptesLog.Log($"[Game] 研究目标草案已接受 tech={msg.TechnologyId}");
         }
 
         private void HandleSetPolicyResult(MsgSetPolicyResult msg)
@@ -361,11 +361,11 @@ namespace Panoptes.Core.Application.Handler
             if (!msg.Success)
             {
                 PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("national_policy_id", msg.NationalPolicyId)));
-                Debug.LogWarning($"[Game] 国策设置失败 policy={msg.NationalPolicyId} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 国策设置失败 policy={msg.NationalPolicyId} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
+            PanoptesLog.Log($"[Game] 国策草案已接受 policy={msg.NationalPolicyId}");
         }
 
         private void HandleSetInstitutionLoadoutResult(MsgSetInstitutionLoadoutResult msg)
@@ -400,11 +400,11 @@ namespace Panoptes.Core.Application.Handler
             if (!msg.Success)
             {
                 PublishGameError(cache, msg.ErrorCode, ResolveFailureMessage(false, string.Empty, msg.ErrorCode), BuildDetails(("policy_ids", string.Join(",", msg.PolicyIds))));
-                Debug.LogWarning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 制度装填失败 policies={string.Join(",", msg.PolicyIds)} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
+            PanoptesLog.Log($"[Game] 制度装填草案已接受 policies={string.Join(",", msg.PolicyIds)}");
         }
 
         private void HandleSetBuildingRecipeResult(MsgSetBuildingRecipeResult msg)
@@ -441,11 +441,11 @@ namespace Panoptes.Core.Application.Handler
             if (!msg.Success)
             {
                 PublishGameError(cache, msg.ErrorCode, message, details);
-                Debug.LogWarning($"[Game] 生产配方设置失败 node={msg.NodeId} recipe={msg.RecipeId} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 生产配方设置失败 node={msg.NodeId} recipe={msg.RecipeId} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
+            PanoptesLog.Log($"[Game] 生产配方已设置 node={msg.NodeId} recipe={msg.RecipeId}");
         }
 
         private void HandleBuildStructureResult(MsgBuildStructureResult msg)
@@ -483,11 +483,11 @@ namespace Panoptes.Core.Application.Handler
             if (!msg.Success)
             {
                 PublishGameError(cache, msg.ErrorCode, message, details);
-                Debug.LogWarning($"[Game] 建筑建造失败 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} error={msg.ErrorCode}");
+                PanoptesLog.Warning($"[Game] 建筑建造失败 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId} error={msg.ErrorCode}");
                 return;
             }
 
-            Debug.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
+            PanoptesLog.Log($"[Game] 建筑建造草案已记录 node={msg.NodeId} building={msg.BuildingTypeId} city={msg.CityId}");
         }
 
         private void OnMinisterReportChunk(MsgMinisterReportChunk msg)
@@ -538,7 +538,7 @@ namespace Panoptes.Core.Application.Handler
 
             cache?.ApplyPosted(msg);
             var entry = msg.Entry;
-            Debug.Log($"[Game] 聊天表情 sender={entry?.SenderPlayerId} turn={entry?.Turn} phase={entry?.Phase} payload={entry?.Payload?.BodyCase}");
+            PanoptesLog.Log($"[Game] 聊天表情 sender={entry?.SenderPlayerId} turn={entry?.Turn} phase={entry?.Phase} payload={entry?.Payload?.BodyCase}");
         }
 
         private void OnGameChatSync(MsgGameChatSync msg)
@@ -549,7 +549,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             _gameChatCache?.ApplySync(msg);
-            Debug.Log($"[Game] 聊天同步 entries={msg.Entries.Count}");
+            PanoptesLog.Log($"[Game] 聊天同步 entries={msg.Entries.Count}");
         }
 
         private void OnGameOver(MsgGameOver msg)
@@ -560,7 +560,7 @@ namespace Panoptes.Core.Application.Handler
             }
 
             _gameStateCache?.ApplyGameOver(msg);
-            Debug.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
+            PanoptesLog.Log($"[Game] 游戏结束 winner={msg.WinnerId} reason={msg.Reason}");
         }
 
         private void PublishGameError(string code, string message, Dictionary<string, string> details = null)

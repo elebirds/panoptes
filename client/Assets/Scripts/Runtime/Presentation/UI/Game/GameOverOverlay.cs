@@ -1,4 +1,4 @@
-﻿/*************************************************
+/*************************************************
  * Project: Panoptes
  * File: GameOverOverlay.cs
  * Author: Panoptes Team
@@ -195,7 +195,7 @@ namespace Panoptes.Presentation.UI.Game
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogWarning($"[GameOverOverlay] Cannot load scene '{sceneName}'. Add it to Build Settings.");
+                PanoptesLog.Warning($"[GameOverOverlay] Cannot load scene '{sceneName}'. Add it to Build Settings.");
                 return;
             }
 

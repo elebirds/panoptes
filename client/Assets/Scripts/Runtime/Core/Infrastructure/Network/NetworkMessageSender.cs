@@ -17,13 +17,13 @@ namespace Panoptes.Core.Infrastructure.Network
         {
             if (message == null)
             {
-                Debug.LogWarning("[NetworkMessageSender] Send ignored: message is null.");
+                PanoptesLog.Warning("[NetworkMessageSender] Send ignored: message is null.");
                 return false;
             }
 
             if (_networkManager == null)
             {
-                Debug.LogWarning($"[NetworkMessageSender] Send ignored: NetworkManager is missing for {message.Descriptor.Name}.");
+                PanoptesLog.Warning($"[NetworkMessageSender] Send ignored: NetworkManager is missing for {message.Descriptor.Name}.");
                 return false;
             }
 

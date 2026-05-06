@@ -1702,8 +1702,9 @@ MonoBehaviour:
   autoBuildDefaultLayout: 1
   unitIconResourcesRoot: Icons/Units
   buildingIconResourcesRoot: Icons/Buildings
+  resourceIconResourcesRoot: Icons/Resources
   unitPortraitRawImage: {fileID: 8753112246700011226}
-  enablePortraitCamera: 1
+  enablePortraitCamera: 0
   portraitRealtime: 0
   portraitKeepSceneBackground: 1
   portraitTextureSize: 256

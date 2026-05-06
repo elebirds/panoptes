@@ -109,7 +109,7 @@ namespace Panoptes.Core.Infrastructure.Network
             _ws.OnOpen += () =>
             {
                 IsConnecting = false;
-                Debug.Log("[Network] Connected");
+                PanoptesLog.Log("[Network] Connected");
                 HideLoadingOverlay();
                 OnConnected?.Invoke();
             };
@@ -117,14 +117,14 @@ namespace Panoptes.Core.Infrastructure.Network
             _ws.OnClose += code =>
             {
                 IsConnecting = false;
-                Debug.Log($"[Network] Disconnected: {code}");
+                PanoptesLog.Log($"[Network] Disconnected: {code}");
                 _ = HandleDisconnectAsync();
             };
 
             _ws.OnError += err =>
             {
                 IsConnecting = false;
-                Debug.LogError($"[Network] Error: {err}");
+                PanoptesLog.Error($"[Network] Error: {err}");
                 OnError?.Invoke(err);
             };
 
@@ -165,13 +165,13 @@ namespace Panoptes.Core.Infrastructure.Network
         {
             if (!IsConnected)
             {
-                Debug.LogWarning("[Network] Not connected, dropping message");
+                PanoptesLog.Warning("[Network] Not connected, dropping message");
                 return;
             }
 
             if (!TransportFrames.TryCreateClientFrame(message, out var frame, out var error))
             {
-                Debug.LogError($"[Network] Failed to wrap outbound message {message.Descriptor.Name}: {error}");
+                PanoptesLog.Error($"[Network] Failed to wrap outbound message {message.Descriptor.Name}: {error}");
                 OnError?.Invoke("invalid_request");
                 return;
             }
@@ -197,7 +197,7 @@ namespace Panoptes.Core.Infrastructure.Network
 
                 if (_messageDispatcher == null)
                 {
-                    Debug.LogWarning("[Network] MessageDispatcher is not ready.");
+                    PanoptesLog.Warning("[Network] MessageDispatcher is not ready.");
                     return;
                 }
 
@@ -205,7 +205,7 @@ namespace Panoptes.Core.Infrastructure.Network
             }
             catch (Exception e)
             {
-                Debug.LogError($"[Network] Failed to parse message: {e}");
+                PanoptesLog.Error($"[Network] Failed to parse message: {e}");
                 OnError?.Invoke("invalid_message");
             }
         }
@@ -229,7 +229,7 @@ namespace Panoptes.Core.Infrastructure.Network
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[Network] Close failed: {e.Message}");
+                PanoptesLog.Warning($"[Network] Close failed: {e.Message}");
             }
         }
 
@@ -270,7 +270,7 @@ namespace Panoptes.Core.Infrastructure.Network
                     }
                     catch (Exception e)
                     {
-                        Debug.LogWarning($"[Network] Reconnect failed ({retry + 1}/5): {e.Message}");
+                        PanoptesLog.Warning($"[Network] Reconnect failed ({retry + 1}/5): {e.Message}");
                     }
                 }
             }

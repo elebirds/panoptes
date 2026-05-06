@@ -94,7 +94,7 @@ namespace Panoptes.Core.Application.Cache
             _jsonByKey[key] = json;
             if (logUpdates)
             {
-                Debug.Log($"[ConfigCache] Updated config '{key}', length={json.Length}.");
+                PanoptesLog.Log($"[ConfigCache] Updated config '{key}', length={json.Length}.");
             }
 
             if (notify)

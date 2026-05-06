@@ -200,7 +200,7 @@ namespace Panoptes.Presentation.Map
         {
             if (node == null)
             {
-                Debug.LogWarning("[NodeView] Bind called with null node.");
+                PanoptesLog.Warning("[NodeView] Bind called with null node.");
                 return;
             }
 
@@ -250,7 +250,7 @@ namespace Panoptes.Presentation.Map
         {
             if (groundRenderer == null)
             {
-                Debug.LogWarning($"[NodeView:{NodeId}] Missing ground renderer.");
+                PanoptesLog.Warning($"[NodeView:{NodeId}] Missing ground renderer.");
                 return;
             }
 
